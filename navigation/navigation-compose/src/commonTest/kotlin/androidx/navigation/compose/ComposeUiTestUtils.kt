@@ -18,11 +18,10 @@ package androidx.navigation.compose
 
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 
-@Suppress("DEPRECATION")
 @OptIn(ExperimentalTestApi::class)
-@Deprecated("v1.runComposeUiTest is deprecated")
+@Suppress("DEPRECATION")
 internal fun runComposeUiTestOnUiThread(block: ComposeUiTest.() -> Unit) {
     runComposeUiTest {
         runOnUiThread { block() }

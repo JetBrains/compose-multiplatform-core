@@ -31,17 +31,15 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation.NavBackStackEntry
@@ -52,7 +50,6 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.Navigator
-import androidx.navigation.compose.internal.PredictiveBackHandler
 import androidx.navigation.createGraph
 import androidx.navigation.get
 import kotlin.jvm.JvmSuppressWildcards
@@ -826,48 +823,27 @@ public fun NavHost(
 
     val currentBackStack by composeNavigator.backStack.collectAsState()
 
-    var progress by remember { mutableFloatStateOf(0f) }
-    var inPredictiveBack by remember { mutableStateOf(false) }
-    var swipeEdge by remember { mutableIntStateOf(0) }
-    PredictiveBackHandler(currentBackStack.size > 1) { backEvent ->
-        // This block handles the three phases of a predictive back gesture:
-        // 1. OnStarted: When the gesture begins.
-        // 2. OnProgressed: As the user drags their finger.
-        // 3. OnCompleted or OnCancelled: When the gesture finishes or is cancelled.
-        //
-        // Returns early if `currentBackStack.size < 2`
-
-        // --- OnStarted ---
-        if (currentBackStack.size < 2) {
-            // The PredictiveBackHandler requires that we collect the flow, so
-            // we collect and do nothing with it.
-            backEvent.collect {}
-            return@PredictiveBackHandler
-        }
-
-        progress = 0f
-        val currentBackStackEntry: NavBackStackEntry = currentBackStack.last()
-        composeNavigator.prepareForTransition(currentBackStackEntry)
-        val previousEntry: NavBackStackEntry = currentBackStack[currentBackStack.size - 2]
-        composeNavigator.prepareForTransition(previousEntry)
-        try {
-            backEvent.collect {
-                // --- OnProgressed ---
-                inPredictiveBack = true
-                progress = it.progress
-                swipeEdge = it.swipeEdge
-            }
-            // --- OnCompleted ---
-            composeNavigator.popBackStack(currentBackStackEntry, false)
-        } finally {
-            inPredictiveBack = false
-        }
-    }
+    val backHandler =
+        rememberNavHostEventHandler(composeNavigator, enabled = currentBackStack.size > 1)
+    val inPredictiveBack = backHandler.inPredictiveBack
+    val progress = backHandler.progress
+    val swipeEdge = backHandler.swipeEdge
 
     DisposableEffect(lifecycleOwner) {
         // Setup the navController with proper owners
         navController.setLifecycleOwner(lifecycleOwner)
         onDispose {}
+    }
+
+    SideEffect {
+        backHandler.isBackEnabled = currentBackStack.size > 1
+        backHandler.setInfo(
+            currentInfo = NavBackStackEntryInfo(currentBackStack.lastOrNull()),
+            backInfo =
+                currentBackStack.dropLast(1).reversed().fastMap { entry ->
+                    NavBackStackEntryInfo(entry)
+                },
+        )
     }
 
     val saveableStateHolder = rememberSaveableStateHolder()
