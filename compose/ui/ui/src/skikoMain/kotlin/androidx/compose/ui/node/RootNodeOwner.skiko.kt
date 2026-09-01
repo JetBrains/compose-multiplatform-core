@@ -540,7 +540,7 @@ internal class RootNodeOwner(
             PointerIconServiceImpl()
         }
 
-        override val uriHandler by lazy(LazyThreadSafetyMode.NONE) { createPlatformUriHandler() }
+        override val uriHandler : UriHandler get() = platformContext.uriHandler
 
         override val semanticsOwner = SemanticsOwner(root, rootSemanticsNode, layoutNodes)
         override val windowInfo get() = platformContext.windowInfo
