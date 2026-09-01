@@ -27,6 +27,9 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.LocalSystemTheme
@@ -77,6 +80,7 @@ import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.PlatformOutOfFrameExecutor
 import androidx.compose.ui.platform.PlatformPrefetchScheduler
+import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.WebPrefetchScheduler
 import androidx.compose.ui.platform.isIdleCallbackSupported
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
@@ -278,6 +282,12 @@ internal class ComposeWindow(
             override val outOfFrameExecutor: PlatformOutOfFrameExecutor? get() = webOutOfFrameExecutor
 
             override val windowInfo get() = _windowInfo
+
+            override val screenReader: PlatformScreenReader
+                get() = object : PlatformScreenReader {
+                    override var isActive = configuration.isA11YEnabled
+                }
+
             override val architectureComponentsOwner get() = archComponentsOwner
             override val windowInsets get() = insetsManager?.windowInsets ?: EmptyPlatformWindowInsets
 
