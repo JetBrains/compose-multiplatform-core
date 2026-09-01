@@ -135,10 +135,7 @@ public object ComposeUiFlags {
     // TODO: b/535296682 - Cleanup feature flag
     @field:Suppress("MutableBareField")
     @JvmField
-<<<<<<< HEAD
     // TODO https://youtrack.jetbrains.com/issue/CMP-10707/Restore-ComposeUiFlags.isTrackpadPanHoverFixEnabled-to-the-AOSP-value
-=======
->>>>>>> 1fcf3d987272960ac54964df3f4a35b2aa814b97
     public var isTrackpadPanHoverFixEnabled: Boolean = false
 
     /**
