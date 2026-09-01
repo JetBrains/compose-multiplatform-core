@@ -548,9 +548,8 @@ internal class RootNodeOwner(
         override val semanticsOwner = SemanticsOwner(root, rootSemanticsNode, layoutNodes)
         override val windowInfo get() = platformContext.windowInfo
 
-        //TODO https://youtrack.jetbrains.com/issue/CMP-10709/Support-mediaQuery-derivedMediaQuery
         @ExperimentalMediaQueryApi
-        override val uiMediaScope: UiMediaScope? get() = null
+        override val uiMediaScope: UiMediaScope get() = platformContext.mediaScope
         override val retainedValuesStore: RetainedValuesStore get() = ForgetfulRetainedValuesStore
         override val rectManager = RectManager(layoutNodes)
 
