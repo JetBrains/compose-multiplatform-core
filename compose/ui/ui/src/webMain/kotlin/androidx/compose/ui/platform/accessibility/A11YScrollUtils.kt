@@ -97,11 +97,7 @@ internal class A11YScrollController(
             SemanticsProperties.VerticalScrollAxisRange
         }
         val isReverse = this.getOrNull(key)?.reverseScrolling == true
-        return if (isReverse) {
-            -1f
-        } else {
-            1f
-        }
+        return if (isReverse) -1f else 1f
     }
 
     fun getScrollOffset(semanticsNode: SemanticsNode): Offset {
@@ -138,14 +134,15 @@ internal class A11YScrollController(
             vertical = verticalRange != null,
         )
 
-        when {
-            verticalRange != null && horizontalRange == null ->
-                htmlNode.setAttribute("aria-orientation", "vertical")
-            horizontalRange != null && verticalRange == null ->
-                htmlNode.setAttribute("aria-orientation", "horizontal")
-            else ->
-                // Bidirectional scroll, or no scroll range at all
-                htmlNode.removeAttribute("aria-orientation")
+        val ariaOrientation = when {
+            verticalRange != null && horizontalRange == null -> "vertical"
+            horizontalRange != null && verticalRange == null -> "horizontal"
+            else -> null // Bidirectional scroll, or no scroll range at all
+        }
+        if (ariaOrientation != null) {
+            htmlNode.setAttribute("aria-orientation", ariaOrientation)
+        } else {
+            htmlNode.removeAttribute("aria-orientation")
         }
 
         val density = semanticsNode.layoutNode.density.density
@@ -198,6 +195,8 @@ internal class A11YScrollController(
             val element = idToA11YNode[id] ?: return@forEach
             val sizer = domScrollSizers[id] ?: return@forEach
             if (sizer.parentElement !== element || element.firstElementChild !== sizer) {
+                // The sizer element is not mirroring any SemanticsNode, it's synthetic.
+                // We added it first.
                 element.insertBefore(sizer, element.firstChild)
             }
 
