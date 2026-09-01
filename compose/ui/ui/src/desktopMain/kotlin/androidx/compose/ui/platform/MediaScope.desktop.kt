@@ -22,7 +22,7 @@ import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.UiMediaScope
 import androidx.compose.ui.unit.Dp
 
-internal class DesktopMediaEnvironment(val windowInfo: WindowInfo) : UiMediaScope {
+internal class DesktopMediaScope(val windowInfo: WindowInfo) : UiMediaScope {
 
     override val windowPosture: UiMediaScope.Posture
         get() = UiMediaScope.Posture.Flat

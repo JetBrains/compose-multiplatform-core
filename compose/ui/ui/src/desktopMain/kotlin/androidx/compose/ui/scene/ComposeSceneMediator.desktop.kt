@@ -53,7 +53,7 @@ import androidx.compose.ui.navigationevent.BackNavigationEventInput
 import androidx.compose.ui.platform.AwtDragAndDropManager
 import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.DelegateRootForTestListener
-import androidx.compose.ui.platform.DesktopMediaEnvironment
+import androidx.compose.ui.platform.DesktopMediaScope
 import androidx.compose.ui.platform.DesktopTextInputService
 import androidx.compose.ui.platform.DesktopTextInputService2
 import androidx.compose.ui.platform.FrameRecomposer
@@ -165,7 +165,7 @@ internal class ComposeSceneMediator(
         DesktopTextInputService(platformComponent)
     }
 
-    private val desktopMediaEnvironment = DesktopMediaEnvironment(windowInfo = windowContext.windowInfo)
+    private val desktopMediaScope = DesktopMediaScope(windowInfo = windowContext.windowInfo)
 
     private val textInputService2 by lazy(LazyThreadSafetyMode.NONE) {
         DesktopTextInputService2(platformComponent)
@@ -635,7 +635,7 @@ internal class ComposeSceneMediator(
         // Since rendering will not happen after, we need to execute all scheduled updates
         interopContainer.dispose()
 
-        desktopMediaEnvironment.dispose()
+        desktopMediaScope.dispose()
 
         _onComponentAttached = null
     }
@@ -843,7 +843,7 @@ internal class ComposeSceneMediator(
     private inner class DesktopPlatformContext : PlatformContext {
         override val windowInfo: WindowInfo get() = windowContext.windowInfo
         @OptIn(ExperimentalMediaQueryApi::class)
-        override val mediaEnvironment: UiMediaScope get() = desktopMediaEnvironment
+        override val mediaScope: UiMediaScope get() = desktopMediaScope
 
         override val taskDispatchers: TaskDispatchers = object : TaskDispatchers {
             override val Default = Dispatchers.Default
