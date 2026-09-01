@@ -50,6 +50,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.enableSavedStateHandles
 import kotlin.reflect.KProperty
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
 
 /**
@@ -61,6 +62,11 @@ interface PlatformContext {
      * The value that will be provided to [LocalWindowInfo] by default.
      */
     val windowInfo: WindowInfo
+
+    /**
+     * Provide [TaskDispatchers] for coroutines running within a Compose hierarchy.
+     */
+    val taskDispatchers: TaskDispatchers
 
     /**
      * The value that will be provided to [LocalPlatformScreenReader] by default.
@@ -264,6 +270,8 @@ interface PlatformContext {
             isWindowFocused = true
         }
 
+        override val taskDispatchers: TaskDispatchers = DefaultTaskDispatchers
+
         override val inputModeManager: InputModeManager by lazy(LazyThreadSafetyMode.NONE) {
             DefaultInputModeManager()
         }
@@ -388,4 +396,9 @@ internal class DelegateRootForTestListener : PlatformContext.RootForTestListener
             listener?.onRootForTestCreated(root)
         }
     }
+}
+
+private object DefaultTaskDispatchers: TaskDispatchers {
+    override val Default = Dispatchers.Default
+    override val IO = Dispatchers.Default
 }

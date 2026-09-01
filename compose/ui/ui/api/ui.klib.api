@@ -1057,6 +1057,13 @@ abstract interface androidx.compose.ui.platform/SoundEffect { // androidx.compos
     abstract fun playClickSound() // androidx.compose.ui.platform/SoundEffect.playClickSound|playClickSound(){}[0]
 }
 
+abstract interface androidx.compose.ui.platform/TaskDispatchers { // androidx.compose.ui.platform/TaskDispatchers|null[0]
+    abstract val Default // androidx.compose.ui.platform/TaskDispatchers.Default|{}Default[0]
+        abstract fun <get-Default>(): kotlinx.coroutines/CoroutineDispatcher // androidx.compose.ui.platform/TaskDispatchers.Default.<get-Default>|<get-Default>(){}[0]
+    abstract val IO // androidx.compose.ui.platform/TaskDispatchers.IO|{}IO[0]
+        abstract fun <get-IO>(): kotlinx.coroutines/CoroutineDispatcher // androidx.compose.ui.platform/TaskDispatchers.IO.<get-IO>|<get-IO>(){}[0]
+}
+
 abstract interface androidx.compose.ui.platform/TextToolbar { // androidx.compose.ui.platform/TextToolbar|null[0]
     abstract val status // androidx.compose.ui.platform/TextToolbar.status|{}status[0]
         abstract fun <get-status>(): androidx.compose.ui.platform/TextToolbarStatus // androidx.compose.ui.platform/TextToolbar.status.<get-status>|<get-status>(){}[0]
@@ -3720,6 +3727,8 @@ final object androidx.compose.ui.semantics/SemanticsActions { // androidx.compos
 }
 
 final object androidx.compose.ui.semantics/SemanticsProperties { // androidx.compose.ui.semantics/SemanticsProperties|null[0]
+    final val BackgroundColor // androidx.compose.ui.semantics/SemanticsProperties.BackgroundColor|{}BackgroundColor[0]
+        final fun <get-BackgroundColor>(): androidx.compose.ui.semantics/SemanticsPropertyKey<androidx.compose.ui.graphics/ColorProducer> // androidx.compose.ui.semantics/SemanticsProperties.BackgroundColor.<get-BackgroundColor>|<get-BackgroundColor>(){}[0]
     final val CollectionInfo // androidx.compose.ui.semantics/SemanticsProperties.CollectionInfo|{}CollectionInfo[0]
         final fun <get-CollectionInfo>(): androidx.compose.ui.semantics/SemanticsPropertyKey<androidx.compose.ui.semantics/CollectionInfo> // androidx.compose.ui.semantics/SemanticsProperties.CollectionInfo.<get-CollectionInfo>|<get-CollectionInfo>(){}[0]
     final val CollectionItemInfo // androidx.compose.ui.semantics/SemanticsProperties.CollectionItemInfo|{}CollectionItemInfo[0]
@@ -3764,6 +3773,8 @@ final object androidx.compose.ui.semantics/SemanticsProperties { // androidx.com
         final fun <get-IsDialog>(): androidx.compose.ui.semantics/SemanticsPropertyKey<kotlin/Unit> // androidx.compose.ui.semantics/SemanticsProperties.IsDialog.<get-IsDialog>|<get-IsDialog>(){}[0]
     final val IsEditable // androidx.compose.ui.semantics/SemanticsProperties.IsEditable|{}IsEditable[0]
         final fun <get-IsEditable>(): androidx.compose.ui.semantics/SemanticsPropertyKey<kotlin/Boolean> // androidx.compose.ui.semantics/SemanticsProperties.IsEditable.<get-IsEditable>|<get-IsEditable>(){}[0]
+    final val IsPasswordObfuscated // androidx.compose.ui.semantics/SemanticsProperties.IsPasswordObfuscated|{}IsPasswordObfuscated[0]
+        final fun <get-IsPasswordObfuscated>(): androidx.compose.ui.semantics/SemanticsPropertyKey<kotlin/Boolean> // androidx.compose.ui.semantics/SemanticsProperties.IsPasswordObfuscated.<get-IsPasswordObfuscated>|<get-IsPasswordObfuscated>(){}[0]
     final val IsPopup // androidx.compose.ui.semantics/SemanticsProperties.IsPopup|{}IsPopup[0]
         final fun <get-IsPopup>(): androidx.compose.ui.semantics/SemanticsPropertyKey<kotlin/Unit> // androidx.compose.ui.semantics/SemanticsProperties.IsPopup.<get-IsPopup>|<get-IsPopup>(){}[0]
     final val IsSensitiveData // androidx.compose.ui.semantics/SemanticsProperties.IsSensitiveData|{}IsSensitiveData[0]
@@ -4065,6 +4076,8 @@ final val androidx.compose.ui.platform/LocalSoftwareKeyboardController // androi
     final fun <get-LocalSoftwareKeyboardController>(): androidx.compose.runtime/ProvidableCompositionLocal<androidx.compose.ui.platform/SoftwareKeyboardController?> // androidx.compose.ui.platform/LocalSoftwareKeyboardController.<get-LocalSoftwareKeyboardController>|<get-LocalSoftwareKeyboardController>(){}[0]
 final val androidx.compose.ui.platform/LocalSoundEffect // androidx.compose.ui.platform/LocalSoundEffect|{}LocalSoundEffect[0]
     final fun <get-LocalSoundEffect>(): androidx.compose.runtime/ProvidableCompositionLocal<androidx.compose.ui.platform/SoundEffect> // androidx.compose.ui.platform/LocalSoundEffect.<get-LocalSoundEffect>|<get-LocalSoundEffect>(){}[0]
+final val androidx.compose.ui.platform/LocalTaskDispatchers // androidx.compose.ui.platform/LocalTaskDispatchers|{}LocalTaskDispatchers[0]
+    final fun <get-LocalTaskDispatchers>(): androidx.compose.runtime/ProvidableCompositionLocal<androidx.compose.ui.platform/TaskDispatchers> // androidx.compose.ui.platform/LocalTaskDispatchers.<get-LocalTaskDispatchers>|<get-LocalTaskDispatchers>(){}[0]
 final val androidx.compose.ui.platform/LocalTextInputService // androidx.compose.ui.platform/LocalTextInputService|{}LocalTextInputService[0]
     final fun <get-LocalTextInputService>(): androidx.compose.runtime/ProvidableCompositionLocal<androidx.compose.ui.text.input/TextInputService?> // androidx.compose.ui.platform/LocalTextInputService.<get-LocalTextInputService>|<get-LocalTextInputService>(){}[0]
 final val androidx.compose.ui.platform/LocalTextToolbar // androidx.compose.ui.platform/LocalTextToolbar|{}LocalTextToolbar[0]
@@ -4127,6 +4140,9 @@ final val androidx.compose.ui/androidx_compose_ui_Modifier_Node$stableprop // an
 final var androidx.compose.ui.platform/isDebugInspectorInfoEnabled // androidx.compose.ui.platform/isDebugInspectorInfoEnabled|{}isDebugInspectorInfoEnabled[0]
     final fun <get-isDebugInspectorInfoEnabled>(): kotlin/Boolean // androidx.compose.ui.platform/isDebugInspectorInfoEnabled.<get-isDebugInspectorInfoEnabled>|<get-isDebugInspectorInfoEnabled>(){}[0]
     final fun <set-isDebugInspectorInfoEnabled>(kotlin/Boolean) // androidx.compose.ui.platform/isDebugInspectorInfoEnabled.<set-isDebugInspectorInfoEnabled>|<set-isDebugInspectorInfoEnabled>(kotlin.Boolean){}[0]
+final var androidx.compose.ui.semantics/backgroundColor // androidx.compose.ui.semantics/backgroundColor|@androidx.compose.ui.semantics.SemanticsPropertyReceiver{}backgroundColor[0]
+    final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).<get-backgroundColor>(): androidx.compose.ui.graphics/ColorProducer // androidx.compose.ui.semantics/backgroundColor.<get-backgroundColor>|<get-backgroundColor>@androidx.compose.ui.semantics.SemanticsPropertyReceiver(){}[0]
+    final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).<set-backgroundColor>(androidx.compose.ui.graphics/ColorProducer) // androidx.compose.ui.semantics/backgroundColor.<set-backgroundColor>|<set-backgroundColor>@androidx.compose.ui.semantics.SemanticsPropertyReceiver(androidx.compose.ui.graphics.ColorProducer){}[0]
 final var androidx.compose.ui.semantics/collectionInfo // androidx.compose.ui.semantics/collectionInfo|@androidx.compose.ui.semantics.SemanticsPropertyReceiver{}collectionInfo[0]
     final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).<get-collectionInfo>(): androidx.compose.ui.semantics/CollectionInfo // androidx.compose.ui.semantics/collectionInfo.<get-collectionInfo>|<get-collectionInfo>@androidx.compose.ui.semantics.SemanticsPropertyReceiver(){}[0]
     final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).<set-collectionInfo>(androidx.compose.ui.semantics/CollectionInfo) // androidx.compose.ui.semantics/collectionInfo.<set-collectionInfo>|<set-collectionInfo>@androidx.compose.ui.semantics.SemanticsPropertyReceiver(androidx.compose.ui.semantics.CollectionInfo){}[0]
@@ -4282,6 +4298,7 @@ final fun (androidx.compose.ui.layout/Placeable.PlacementScope).androidx.compose
 final fun (androidx.compose.ui.layout/RectRulers.Companion).androidx.compose.ui.layout/innermostOf(kotlin/Array<out androidx.compose.ui.layout/RectRulers>...): androidx.compose.ui.layout/RectRulers // androidx.compose.ui.layout/innermostOf|innermostOf@androidx.compose.ui.layout.RectRulers.Companion(kotlin.Array<out|androidx.compose.ui.layout.RectRulers>...){}[0]
 final fun (androidx.compose.ui.layout/RectRulers.Companion).androidx.compose.ui.layout/outermostOf(kotlin/Array<out androidx.compose.ui.layout/RectRulers>...): androidx.compose.ui.layout/RectRulers // androidx.compose.ui.layout/outermostOf|outermostOf@androidx.compose.ui.layout.RectRulers.Companion(kotlin.Array<out|androidx.compose.ui.layout.RectRulers>...){}[0]
 final fun (androidx.compose.ui.layout/ScaleFactor).androidx.compose.ui.layout/times(androidx.compose.ui.geometry/Size): androidx.compose.ui.geometry/Size // androidx.compose.ui.layout/times|times@androidx.compose.ui.layout.ScaleFactor(androidx.compose.ui.geometry.Size){}[0]
+final fun (androidx.compose.ui.node/DelegatableNode).androidx.compose.ui.focus/requestFocusForChildInLocalBounds(kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int): kotlin/Boolean // androidx.compose.ui.focus/requestFocusForChildInLocalBounds|requestFocusForChildInLocalBounds@androidx.compose.ui.node.DelegatableNode(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
 final fun (androidx.compose.ui.node/DelegatableNode).androidx.compose.ui.focus/requestFocusForChildInRootBounds(kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int): kotlin/Boolean // androidx.compose.ui.focus/requestFocusForChildInRootBounds|requestFocusForChildInRootBounds@androidx.compose.ui.node.DelegatableNode(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
 final fun (androidx.compose.ui.node/DelegatableNode).androidx.compose.ui.layout/registerOnGlobalLayoutListener(kotlin/Long, kotlin/Long, kotlin/Function1<androidx.compose.ui.spatial/RelativeLayoutBounds, kotlin/Unit>): androidx.compose.ui.node/DelegatableNode.RegistrationHandle // androidx.compose.ui.layout/registerOnGlobalLayoutListener|registerOnGlobalLayoutListener@androidx.compose.ui.node.DelegatableNode(kotlin.Long;kotlin.Long;kotlin.Function1<androidx.compose.ui.spatial.RelativeLayoutBounds,kotlin.Unit>){}[0]
 final fun (androidx.compose.ui.node/DelegatableNode).androidx.compose.ui.layout/registerOnLayoutRectChanged(kotlin/Long, kotlin/Long, kotlin/Function1<androidx.compose.ui.spatial/RelativeLayoutBounds, kotlin/Unit>): androidx.compose.ui.node/DelegatableNode.RegistrationHandle // androidx.compose.ui.layout/registerOnLayoutRectChanged|registerOnLayoutRectChanged@androidx.compose.ui.node.DelegatableNode(kotlin.Long;kotlin.Long;kotlin.Function1<androidx.compose.ui.spatial.RelativeLayoutBounds,kotlin.Unit>){}[0]
@@ -4336,6 +4353,7 @@ final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).androidx.com
 final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).androidx.compose.ui.semantics/pageRight(kotlin/String? = ..., kotlin/Function0<kotlin/Boolean>?) // androidx.compose.ui.semantics/pageRight|pageRight@androidx.compose.ui.semantics.SemanticsPropertyReceiver(kotlin.String?;kotlin.Function0<kotlin.Boolean>?){}[0]
 final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).androidx.compose.ui.semantics/pageUp(kotlin/String? = ..., kotlin/Function0<kotlin/Boolean>?) // androidx.compose.ui.semantics/pageUp|pageUp@androidx.compose.ui.semantics.SemanticsPropertyReceiver(kotlin.String?;kotlin.Function0<kotlin.Boolean>?){}[0]
 final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).androidx.compose.ui.semantics/password() // androidx.compose.ui.semantics/password|password@androidx.compose.ui.semantics.SemanticsPropertyReceiver(){}[0]
+final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).androidx.compose.ui.semantics/password(kotlin/Boolean = ...) // androidx.compose.ui.semantics/password|password@androidx.compose.ui.semantics.SemanticsPropertyReceiver(kotlin.Boolean){}[0]
 final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).androidx.compose.ui.semantics/pasteText(kotlin/String? = ..., kotlin/Function0<kotlin/Boolean>?) // androidx.compose.ui.semantics/pasteText|pasteText@androidx.compose.ui.semantics.SemanticsPropertyReceiver(kotlin.String?;kotlin.Function0<kotlin.Boolean>?){}[0]
 final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).androidx.compose.ui.semantics/performImeAction(kotlin/String? = ..., kotlin/Function0<kotlin/Boolean>?) // androidx.compose.ui.semantics/performImeAction|performImeAction@androidx.compose.ui.semantics.SemanticsPropertyReceiver(kotlin.String?;kotlin.Function0<kotlin.Boolean>?){}[0]
 final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).androidx.compose.ui.semantics/popup() // androidx.compose.ui.semantics/popup|popup@androidx.compose.ui.semantics.SemanticsPropertyReceiver(){}[0]

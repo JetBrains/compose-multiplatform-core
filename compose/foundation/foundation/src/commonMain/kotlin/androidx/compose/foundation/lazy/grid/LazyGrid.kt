@@ -100,6 +100,7 @@ internal fun LazyGrid(
     val graphicsContext = LocalGraphicsContext.current
     val stickyHeadersEnabled = !LocalScrollCaptureInProgress.current
 
+    @Suppress("DEPRECATION")
     val prefetchStrategy =
         remember(state, cacheWindow) {
             state.legacyPrefetchStrategy
@@ -230,7 +231,7 @@ private fun rememberLazyGridMeasurePolicy(
     /** Prefetch state used in our layout */
     prefetchState: LazyLayoutPrefetchState?,
     /** Prefetch strategy used in our layout */
-    prefetchStrategy: LazyGridPrefetchStrategy?,
+    @Suppress("DEPRECATION") prefetchStrategy: LazyGridPrefetchStrategy?,
 ) =
     remember(
         state,
@@ -481,11 +482,13 @@ private fun rememberLazyGridMeasurePolicy(
                 )
             state.applyMeasureResult(measureResult, isLookingAhead = isLookingAhead)
             // apply keep around after updating the strategy with measure result.
-            (prefetchStrategy as? CacheWindowLogic)?.keepAroundItems(
-                measureResult.orientation,
-                measureResult.visibleItemsInfo,
-                measuredLineProvider,
-            )
+            if (!ComposeFoundationFlags.isKeepAroundDuringLookaheadDisabled || !isLookingAhead) {
+                (prefetchStrategy as? CacheWindowLogic)?.keepAroundItems(
+                    measureResult.orientation,
+                    measureResult.visibleItemsInfo,
+                    measuredLineProvider,
+                )
+            }
             measureResult
         }
     }

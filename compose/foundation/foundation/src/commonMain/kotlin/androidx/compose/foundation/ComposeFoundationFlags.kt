@@ -165,7 +165,7 @@ public object ComposeFoundationFlags {
     // TODO: Remove this flag after 1.12 (b/507967106)
     @field:Suppress("MutableBareField")
     @JvmField
-    public var isBasicTextFieldSizeOptimizationEnabled: Boolean = false
+    public var isBasicTextFieldSizeOptimizationEnabled: Boolean = true
 
     /**
      * This flag controls the fix where we correctly dispatch deltas in pager's default
@@ -194,6 +194,16 @@ public object ComposeFoundationFlags {
     @field:Suppress("MutableBareField")
     @JvmField
     public var isDragNodeOffsetDoubleCountingFixEnabled: Boolean = true
+
+    /**
+     * This flag controls the fix where we prioritize consumption on initial pass in Draggable. If a
+     * drag gesture started immediately, it should block subsequent nested gestures because the
+     * initial down was consumed.
+     */
+    // TODO: Remove this flag once it has soaked (b/518770709)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isDraggableInitialPassConsumptionFixEnabled: Boolean = true
 
     /**
      * This flag controls whether selecting text in
@@ -248,18 +258,6 @@ public object ComposeFoundationFlags {
     public var isDraggableZeroDeltaConsumptionEnabled: Boolean = true
 
     /**
-     * This flag controls a fix in the lazy layout prefetch scheduler's idle detection. When
-     * enabled, it prevents the scheduler from incorrectly identifying an idle state when a frame is
-     * delayed longer than our idle detection threshold. If disabled, only the idle detection
-     * threshold will be used to determine if a frame is idle, which could lead to janky frames when
-     * scrolling.
-     */
-    // TODO: b/531649461
-    @field:Suppress("MutableBareField")
-    @JvmField
-    public var isPrefetchSchedulerLateFrameDetectionEnabled: Boolean = true
-
-    /**
      * This flag controls whether [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow]
      * checks if the number of visible items has changed across iterations without scroll deltas
      * (such as when changing lookahead window sizes) and refills the cache window if needed.
@@ -270,6 +268,18 @@ public object ComposeFoundationFlags {
     public var isCacheWindowLookaheadCheckEnabled: Boolean = true
 
     /**
+     * This flag controls whether [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow]
+     * only executes `keepAroundItems` during non-lookahead (approach) measure passes in
+     * [androidx.compose.foundation.lazy.LazyList],
+     * [androidx.compose.foundation.lazy.grid.LazyGrid], and
+     * [androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGrid].
+     */
+    // TODO: b/543772810
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isKeepAroundDuringLookaheadDisabled: Boolean = true
+
+    /**
      * This flag controls whether [androidx.compose.foundation.lazy.grid.LazyGrid] prefers using the
      * default [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow] over
      * [androidx.compose.foundation.lazy.grid.LazyGridPrefetchStrategy].
@@ -278,6 +288,18 @@ public object ComposeFoundationFlags {
     @field:Suppress("MutableBareField")
     @JvmField
     public var isPreferDefaultCacheWindowOverPrefetchStrategy: Boolean = true
+
+    /**
+     * This flag controls whether lazy list measure passes calculate `firstVisibleIndex` and
+     * `lastVisibleIndex` from layout visible items before item placement animations run, preventing
+     * moving-away items added by [androidx.compose.foundation.lazy.layout.LazyLayoutItemAnimator]
+     * from corrupting visible item bounds and causing unwanted composition in prefetch or cache
+     * window strategies.
+     */
+    // TODO: b/543329409
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isLazyListItemAnimatorVisibleBoundsFixEnabled: Boolean = true
 }
 
 /** The initial value of [ComposeFoundationFlags.isNewContextMenuEnabled] */
