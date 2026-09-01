@@ -16,7 +16,9 @@
 
 package androidx.compose.ui.platform.accessibility
 
+import androidx.collection.MutableIntObjectMap
 import androidx.collection.MutableScatterMap
+import androidx.collection.mutableObjectListOf
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.PlatformContext
@@ -139,7 +141,7 @@ internal class ComposeWebSemanticsListener(
         webSemanticsRoot.addEventListener("click", onClick)
     }
 
-    private val semanticsOwners = mutableListOf<SemanticsOwner>()
+    private val semanticsOwners = mutableObjectListOf<SemanticsOwner>()
 
     override fun onSemanticsOwnerAppended(semanticsOwner: SemanticsOwner) {
         if (semanticsOwners.contains(semanticsOwner)) return
@@ -168,7 +170,7 @@ internal class ComposeWebSemanticsListener(
     private val dfsA11YParents = ArrayDeque<HTMLElement>()
 
     // Lookup maps between semantics nodes and corresponding A11Y DOM elements:
-    private val idToA11YNode = MutableScatterMap<Int, HTMLElement>()
+    private val idToA11YNode = MutableIntObjectMap<HTMLElement>()
     private val a11yNodeToSemanticsNode = MutableScatterMap<HTMLElement, SemanticsNode>()
 
     // An intermediate tree representation which is applied to the actual DOM after every sync:
@@ -208,7 +210,7 @@ internal class ComposeWebSemanticsListener(
         targetParentToChildren.clear()
         targetChildToParent.clear()
 
-        semanticsOwners.fastForEach {
+        semanticsOwners.forEach {
             syncSemanticsWithWebA11Y(it)
         }
 
