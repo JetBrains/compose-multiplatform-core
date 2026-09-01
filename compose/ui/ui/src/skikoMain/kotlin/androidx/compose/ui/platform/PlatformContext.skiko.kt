@@ -237,7 +237,7 @@ interface PlatformContext {
      * using media state remains safe on platforms that do not provide a richer
      * implementation.
      */
-    @OptIn(ExperimentalMediaQueryApi::class)
+    @ExperimentalMediaQueryApi
     val mediaScope: UiMediaScope get() = EmptyMediaScope
 
     interface RootForTestListener {
@@ -419,7 +419,7 @@ private object NoOpHapticFeedback : HapticFeedback {
     override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) = Unit
 }
 
-@OptIn(ExperimentalMediaQueryApi::class)
+@ExperimentalMediaQueryApi
 private object EmptyMediaScope : UiMediaScope {
     override val windowPosture: UiMediaScope.Posture
         get() = UiMediaScope.Posture.Flat

@@ -24,6 +24,7 @@ import androidx.compose.runtime.ProvidedValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.LocalUiMediaScope
@@ -90,16 +91,25 @@ internal fun ProvidePlatformCompositionLocals(
         HostDefaultProviderImpl(platformContext)
     }
 
+    val mediaScope = if (
+        !ComposeUiFlags.isMinimalistLocalsEnabled &&
+        ComposeUiFlags.isMediaQueryIntegrationEnabled
+    ) {
+        arrayOf(LocalUiMediaScope provides platformContext.mediaScope)
+    } else {
+        emptyArray()
+    }
+
     CompositionLocalProvider(
         *values,
         LocalPlatformScreenReader provides platformContext.screenReader,
         LocalPlatformWindowInsets provides platformContext.windowInsets,
         LocalPlatformPrefetchScheduler provides platformContext.prefetchScheduler,
-        LocalUiMediaScope provides platformContext.mediaScope,
         androidx.lifecycle.compose.LocalLifecycleOwner provides platformContext.architectureComponentsOwner.lifecycleOwner,
         LocalSavedStateRegistryOwner provides platformContext.architectureComponentsOwner.savedStateRegistryOwner,
         LocalSaveableStateRegistry provides saveableStateRegistry,
         LocalHostDefaultProvider provides hostDefaultProvider,
+        *mediaScope,
         content = content,
     )
 }
