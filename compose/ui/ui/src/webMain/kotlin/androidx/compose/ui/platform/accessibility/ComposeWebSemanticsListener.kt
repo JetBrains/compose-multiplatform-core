@@ -392,8 +392,8 @@ internal class ComposeWebSemanticsListener(
         text: String?,
         justCreated: Boolean = false,
     ) {
-        if (text != null && htmlNode.innerText != text) {
-            htmlNode.innerText = text
+        if (text != null && htmlNode.textContent != text) {
+            htmlNode.textContent = text
         }
 
         if (config.contains(SemanticsProperties.ContentDescription)) {
@@ -408,8 +408,8 @@ internal class ComposeWebSemanticsListener(
 
         if (config.contains(SemanticsProperties.EditableText)) {
             val editableText = config[SemanticsProperties.EditableText].text
-            if (htmlNode.innerText != editableText) {
-                htmlNode.innerText = editableText
+            if (htmlNode.textContent != editableText) {
+                htmlNode.textContent = editableText
             }
 
             if (justCreated) {
