@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:OptIn(ExperimentalMediaQueryApi::class)
 
 package androidx.compose.ui.platform
 
@@ -106,7 +105,6 @@ internal fun ProvidePlatformCompositionLocals(
         LocalPlatformScreenReader provides platformContext.screenReader,
         LocalPlatformWindowInsets provides platformContext.windowInsets,
         LocalPlatformPrefetchScheduler provides platformContext.prefetchScheduler,
-        LocalUiMediaScope provides platformContext.mediaEnvironment,
         androidx.lifecycle.compose.LocalLifecycleOwner provides platformContext.architectureComponentsOwner.lifecycleOwner,
         LocalSavedStateRegistryOwner provides platformContext.architectureComponentsOwner.savedStateRegistryOwner,
         LocalSaveableStateRegistry provides saveableStateRegistry,
