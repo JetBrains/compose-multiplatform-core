@@ -16,57 +16,13 @@
 
 package androidx.compose.ui.integrations
 
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
-import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
-import androidx.compose.ui.platform.FrameChoreographer
-import androidx.compose.ui.platform.PlatformWindowContext
-import androidx.compose.ui.platform.registerSkikoComposeImplementation
-import androidx.compose.ui.scene.ComposeSceneContext
-import androidx.compose.ui.scene.ComposeSceneMediator
-import androidx.compose.ui.scene.PlatformLayersComposeScene
 import androidx.compose.ui.test.runUIKitInstrumentedTest
-import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
-import androidx.compose.ui.uikit.InterfaceOrientation
-import androidx.compose.ui.uikit.OnFocusBehavior
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntRect
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.center
-import kotlin.coroutines.CoroutineContext
 import kotlin.test.Test
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.runBlocking
 import platform.CoreGraphics.CGRectMake
-import platform.UIKit.UIWindowScene
 
 class ComposeSceneMediatorTest {
-    @Test
-    fun testDisposedMediatorShouldNotCrash() = runBlocking {
-        val context = Dispatchers.Main + Job()
-        val frameChoreographer = FrameChoreographer.choreographerForScene(UIWindowScene())
-        val mediator = makeMediator(
-            coroutineContext = context,
-            frameChoreographer = frameChoreographer
-        )
-        mediator.setContent(
-            parentCompositionContext = frameChoreographer.frameRecomposer.compositionContext
-        ) {}
-        context.cancel()
-
-        mediator.composeSceneDensity = Density(2f)
-        mediator.layoutDirection = LayoutDirection.Rtl
-        mediator.interactionBounds = IntRect.Zero
-        mediator.isFocusEnabled = true
-        mediator.prepareAndGetSizeTransitionAnimation { onFrame -> onFrame(1.0f) }
-        Unit
-    }
-
-    @OptIn(ExperimentalForeignApi::class)
     @Test
     fun testDisposedViewControllerTapNoCrash() = runUIKitInstrumentedTest {
         setContent {}
@@ -89,41 +45,5 @@ class ComposeSceneMediatorTest {
         viewController.view.layoutIfNeeded()
 
         waitForIdle()
-    }
-
-    @OptIn(ExperimentalForeignApi::class)
-    private fun makeMediator(
-        coroutineContext: CoroutineContext,
-        frameChoreographer: FrameChoreographer
-    ): ComposeSceneMediator {
-        val mediator = ComposeSceneMediator(
-            frameChoreographer = frameChoreographer,
-            onFocusBehavior = OnFocusBehavior.DoNothing,
-            isClearFocusOnMouseDownEnabled = false,
-            focusedViewsList = null,
-            windowContext = PlatformWindowContext(),
-            architectureComponentsOwner = DefaultArchitectureComponentsOwner(),
-            coroutineContext = coroutineContext,
-            navigationEventInput = UIKitNavigationEventInput(
-                density = Density(1f),
-                initialLayoutDirection = LayoutDirection.Ltr,
-                getTopLeftOffsetInWindow = { IntOffset.Zero },
-                endEdgePanGestureBehavior = EndEdgePanGestureBehavior.Disabled,
-            ),
-            interfaceOrientationState = mutableStateOf(InterfaceOrientation.Portrait),
-            composeSceneFactory = { platformContext ->
-                registerSkikoComposeImplementation()
-                PlatformLayersComposeScene(
-                    frameRecomposer = frameChoreographer.frameRecomposer,
-                    density = Density(1f),
-                    composeSceneContext = object : ComposeSceneContext {
-                        override val platformContext = platformContext
-                    },
-                    invalidateLayout = {},
-                    invalidateDraw = {},
-                )
-            },
-        )
-        return mediator
     }
 }

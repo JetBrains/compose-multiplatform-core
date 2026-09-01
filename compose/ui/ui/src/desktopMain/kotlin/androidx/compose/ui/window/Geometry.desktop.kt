@@ -55,19 +55,23 @@ internal fun Dimension.copy(
 ): Dimension = Dimension(width, height)
 
 internal fun Point.toDpOffset() = DpOffset(x.dp, y.dp)
-internal fun Rectangle.toDpRect() = DpRect(
-    left = x.dp,
-    top = y.dp,
-    right = (x + width).dp,
-    bottom = (y + height).dp
-)
+internal fun Rectangle.toDpRect() =
+    DpRect(
+        left = x.dp,
+        top = y.dp,
+        right = (x + width).dp,
+        bottom = (y + height).dp
+    )
 
-internal fun DpSize.roundToDimension() = Dimension(
-    width.value.roundToInt(),
-    height.value.roundToInt()
-)
+internal fun DpSize.roundToDimension() =
+    Dimension(
+        width.value.roundToInt(),
+        height.value.roundToInt()
+    )
 internal fun DpSize.roundToDimensionOrNull() =
     if (isSpecified) roundToDimension() else null
+
+internal fun DpOffset.roundToPoint() = Point(x.value.roundToInt(), y.value.roundToInt())
 
 /**
  * Converts AWT [Insets] to [DpInsets].
@@ -78,3 +82,4 @@ internal fun Insets.toDpInsets() = DpInsets(
     bottom = bottom.dp,
     right = right.dp
 )
+

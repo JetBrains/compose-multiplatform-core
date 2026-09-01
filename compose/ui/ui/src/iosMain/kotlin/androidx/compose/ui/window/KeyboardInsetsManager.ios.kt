@@ -41,7 +41,7 @@ internal class KeyboardInsetsManager(
     private val view: UIView,
     private val frameChoreographer: FrameChoreographer,
     private val onKeyboardOverlapHeightChanged: (Dp) -> Unit
-) : KeyboardVisibilityObserver, FrameChoreographer.Listener {
+) : KeyboardVisibilitySubscriber, FrameChoreographer.Listener {
     private var isDisposed: Boolean = false
     private var isStarted = false
     private val activitiesHandler = frameChoreographer.createActivitiesHandler()
@@ -61,7 +61,7 @@ internal class KeyboardInsetsManager(
         isStarted = true
 
         KeyboardVisibilityListener.initialize()
-        KeyboardVisibilityListener.addObserver(this)
+        KeyboardVisibilityListener.addSubscriber(this)
         frameChoreographer.addListener(this)
 
         adjustViewBounds(
@@ -76,7 +76,7 @@ internal class KeyboardInsetsManager(
         if (!isStarted) return
         isStarted = false
         cancelAwaitingKeyboardFrame()
-        KeyboardVisibilityListener.removeObserver(this)
+        KeyboardVisibilityListener.removeSubscriber(this)
         frameChoreographer.removeListener(this)
         cancelActiveAnimation()
     }

@@ -71,6 +71,16 @@ internal interface InteropContainer {
      */
     fun scheduleUpdate(action: () -> Unit)
 
+    /**
+     * Schedules an update of an already attached interop view.
+     *
+     * Most platforms apply it using their regular update strategy. Platforms that need a distinct
+     * strategy for user-provided view updates can override this method.
+     */
+    fun scheduleUpdate(holder: InteropViewHolder) {
+        scheduleUpdate { holder.update() }
+    }
+
     // TODO: Should be the same as [Owner.onInteropViewLayoutChange]?
 //    /**
 //     * Callback to be invoked when the layout of the interop view changes to notify the system

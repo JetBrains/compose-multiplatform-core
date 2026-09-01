@@ -26,7 +26,7 @@ import androidx.compose.ui.platform.EmptyInputTraits
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.SkikoUITextInputTraits
 import androidx.compose.ui.platform.TextEditingDelegate
-import androidx.compose.ui.platform.UIKitNativeTextInputContextMenuCustomAction
+import androidx.compose.ui.platform.NativeTextInputContextMenuCustomAction
 import androidx.compose.ui.platform.getUITextInputTraits
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.text.TextRange
@@ -40,6 +40,7 @@ import androidx.compose.ui.window.NativeTextInputView
 import androidx.compose.ui.window.OverlayInputView
 import kotlin.math.absoluteValue
 import kotlin.math.min
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -104,7 +105,7 @@ internal abstract class TextInputConnection(
     }
 
     open fun dismissKeyboard() {
-        focusedViewsList?.remove(textInputView, delayMillis = CLEAR_FOCUS_DELAY)
+        focusedViewsList?.remove(textInputView, delay = CLEAR_FOCUS_DELAY)
     }
 
     open fun onTextFieldValueUpdated(newValue: TextFieldValue) {
@@ -150,13 +151,13 @@ internal abstract class TextInputConnection(
         paste: (() -> Unit)?,
         cut: (() -> Unit)?,
         selectAll: (() -> Unit)?,
-        customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
+        customActions: List<NativeTextInputContextMenuCustomAction>?
     )
 
     /**
      * Workaround to prevent IME action from being called multiple times with hardware keyboards.
      * When the hardware return key is held down, iOS sends multiple newline characters to the application,
-     * which makes UIKitTextInputService call the current IME action multiple times without an additional
+     * which makes TextInputService call the current IME action multiple times without an additional
      * debouncing logic.
      *
      * @see _tempHardwareReturnKeyPressed is set to true when the return key is pressed with a
@@ -488,7 +489,7 @@ internal abstract class TextInputConnection(
         // Due to unexpected delays between the commands to show/hide the keyboard,
         // it may jump when switching between text fields.
         // Adding a delay to the 'resignFirstResponder' function call to eliminate this issue.
-        internal const val CLEAR_FOCUS_DELAY: Long = 10L
+        internal val CLEAR_FOCUS_DELAY: Duration = 10.milliseconds
     }
 }
 

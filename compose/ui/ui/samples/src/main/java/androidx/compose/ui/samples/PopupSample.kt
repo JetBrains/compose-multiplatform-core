@@ -25,8 +25,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.material.Button
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -123,6 +123,22 @@ fun PopupFromServiceSample() {
             Box(Modifier.size(200.dp, 100.dp).background(Color.Blue.copy(alpha = 0.8f))) {
                 Text("Popup Content (Service)", color = Color.White)
             }
+        }
+    }
+}
+
+@Sampled
+@Composable
+fun PopupWithBlurSample() {
+    // Tip: Displaying rich content or an image behind the popup makes the blur effect clearly
+    // visible.
+
+    Popup(
+        onDismissRequest = {},
+        properties = PopupProperties(scrimAlpha = 0.0f, blurBehindRadius = 15.dp),
+    ) {
+        Box(modifier = Modifier.background(Color.Gray.copy(alpha = 1f)).padding(24.dp)) {
+            Text(text = "Popup", modifier = Modifier.padding(24.dp))
         }
     }
 }

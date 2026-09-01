@@ -27,19 +27,15 @@ import androidx.build.PlatformIdentifier
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
-    redirect("androidx.compose.ui") {
-        androidLibrary {
-            compileSdk = 35
-            namespace = "org.jetbrains.androidx.compose.ui.tooling"
-
-            androidResources.enable = true
-        }
+    androidLibrary {
+        compileSdk { version = release(37) }
+        namespace = "androidx.compose.ui.tooling"
+        androidResources.enable = true
     }
-    desktop()
+    jvmStubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -53,7 +49,9 @@ androidXMultiplatform {
 
         androidMain.dependencies {
             api("androidx.annotation:annotation:1.8.1")
-            implementation(project(":compose:animation:animation"))
+            implementation("androidx.compose.animation:animation:1.10.0")
+            implementation("androidx.navigationevent:navigationevent:1.1.1")
+            implementation("androidx.navigationevent:navigationevent-compose:1.1.1")
             implementation("androidx.savedstate:savedstate-ktx:1.2.1")
             implementation("androidx.compose.material3:material3:1.3.1")
             implementation("androidx.activity:activity-compose:1.7.0")
@@ -88,7 +86,6 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2019"
     description = "Compose tooling library. This library exposes information to our tools for better IDE support."
-    legacyDisableKotlinStrictApiMode = true
     samples(project(":compose:animation:animation:animation-samples"))
     // samples(project(":compose:animation:animation-core:animation-core-samples")) TODO(b/318840087)
 }

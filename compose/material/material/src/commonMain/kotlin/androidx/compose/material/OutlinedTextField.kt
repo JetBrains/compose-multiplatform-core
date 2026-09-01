@@ -156,7 +156,7 @@ import kotlin.math.roundToInt
  *   interactions will still happen internally.
  */
 @Composable
-fun OutlinedTextField(
+public fun OutlinedTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -316,7 +316,7 @@ fun OutlinedTextField(
  *   different states. See [TextFieldDefaults.outlinedTextFieldColors]
  */
 @Composable
-fun OutlinedTextField(
+public fun OutlinedTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -413,7 +413,7 @@ fun OutlinedTextField(
     level = DeprecationLevel.HIDDEN,
 )
 @Composable
-fun OutlinedTextField(
+public fun OutlinedTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -523,7 +523,7 @@ fun OutlinedTextField(
  *   different states. See [TextFieldDefaults.outlinedTextFieldColors]
  */
 @Composable
-fun OutlinedTextField(
+public fun OutlinedTextField(
     value: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
@@ -620,7 +620,7 @@ fun OutlinedTextField(
     level = DeprecationLevel.HIDDEN,
 )
 @Composable
-fun OutlinedTextField(
+public fun OutlinedTextField(
     value: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
@@ -1186,7 +1186,8 @@ internal fun Modifier.outlineCutout(labelSize: Size, paddingValues: PaddingValue
         }
     }
 
-private val OutlinedTextFieldInnerPadding = 4.dp
+private val OutlinedTextFieldInnerPadding
+    get() = 4.dp
 
 /**
  * In the focused state, the top half of the label sticks out above the text field. This default
@@ -1194,6 +1195,7 @@ private val OutlinedTextFieldInnerPadding = 4.dp
  * it. It is sufficient when the label is a single line and developers do not override the label's
  * font size/style. Otherwise, developers will need to add additional padding themselves.
  */
-internal val OutlinedTextFieldTopPadding = 8.sp
+internal val OutlinedTextFieldTopPadding
+    get() = 8.sp
 
 internal const val BorderId = "border"

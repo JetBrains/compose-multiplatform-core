@@ -28,23 +28,30 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
-import androidx.compose.material3.scrollbar
+import androidx.compose.material3.nonInteractiveScrollbar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
+@Preview(showBackground = true)
 @Sampled
 @Composable
-fun ScrollbarWithLazyColumnSample() {
+fun NonInteractiveScrollbarWithLazyColumnSample() {
     val state = rememberLazyListState()
+    val scrollIndicatorState = state.scrollIndicatorState
+    val scrollbarModifier =
+        if (scrollIndicatorState != null) {
+            Modifier.nonInteractiveScrollbar(
+                scrollIndicatorState,
+                orientation = Orientation.Vertical,
+            )
+        } else {
+            Modifier
+        }
 
-    LazyColumn(
-        state = state,
-        modifier =
-            Modifier.fillMaxSize()
-                .scrollbar(state.scrollIndicatorState, orientation = Orientation.Vertical),
-    ) {
+    LazyColumn(state = state, modifier = Modifier.fillMaxSize().then(scrollbarModifier)) {
         items(100) { index ->
             Text(
                 text = "Item $index",
@@ -56,14 +63,24 @@ fun ScrollbarWithLazyColumnSample() {
 
 @Sampled
 @Composable
-fun ScrollbarWithVerticalScrollSample() {
+fun NonInteractiveScrollbarWithVerticalScrollSample() {
     val state = rememberScrollState()
+    val scrollIndicatorState = state.scrollIndicatorState
+    val scrollbarModifier =
+        if (scrollIndicatorState != null) {
+            Modifier.nonInteractiveScrollbar(
+                scrollIndicatorState,
+                orientation = Orientation.Vertical,
+            )
+        } else {
+            Modifier
+        }
 
     Column(
         modifier =
             Modifier.fillMaxSize()
                 // Chain before verticalScroll so the scrollbar doesn't scroll with content.
-                .scrollbar(state.scrollIndicatorState, orientation = Orientation.Vertical)
+                .then(scrollbarModifier)
                 .verticalScroll(state)
     ) {
         repeat(100) { index ->

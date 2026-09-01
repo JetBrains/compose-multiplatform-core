@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package androidx.compose.material3.samples
 
 import androidx.annotation.Sampled
@@ -59,6 +61,7 @@ import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.material3.CheckableDropdownMenuItem
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuGroup
 import androidx.compose.material3.DropdownMenuItem
@@ -73,6 +76,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MenuAnchorPosition
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.SelectableDropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
@@ -210,13 +214,13 @@ fun GroupedMenuSample() {
                     shapes = MenuDefaults.groupShape(groupIndex, groupCount),
                     interactionSource = groupInteractionSource,
                 ) {
-                    MenuDefaults.Label { Text(label) }
+                    MenuDefaults.DropdownMenuGroupLabel { Text(label) }
                     HorizontalDivider(
                         modifier = Modifier.padding(MenuDefaults.HorizontalDividerPadding)
                     )
                     val groupItemCount = groupItemLabels[groupIndex].size
                     groupItemLabels[groupIndex].fastForEachIndexed { itemIndex, itemLabel ->
-                        DropdownMenuItem(
+                        CheckableDropdownMenuItem(
                             text = { Text(itemLabel) },
                             supportingText =
                                 groupItemSupportingText[groupIndex][itemIndex]?.let { supportingText
@@ -241,7 +245,7 @@ fun GroupedMenuSample() {
                                     contentDescription = null,
                                 )
                             },
-                            trailingIcon =
+                            trailingContent =
                                 if (checked[groupIndex][itemIndex]) {
                                     groupItemCheckedTrailingIcons[groupIndex][itemIndex]?.let {
                                         iconData ->
@@ -353,7 +357,7 @@ fun MenuWithCascadingMenusSample() {
                                     contentDescription = null,
                                 )
                             },
-                            trailingIcon = {
+                            trailingContent = {
                                 Icon(
                                     Icons.AutoMirrored.Filled.ArrowRight,
                                     modifier = Modifier.size(MenuDefaults.TrailingIconSize),
@@ -443,12 +447,12 @@ private fun TextSubmenu(interactionSource: MutableInteractionSource) {
         shapes = MenuDefaults.groupShape(0, 1),
         interactionSource = interactionSource,
     ) {
-        DropdownMenuItem(
+        CheckableDropdownMenuItem(
             checked = boldChecked,
             onCheckedChange = { boldChecked = it },
             text = { Text("Bold") },
             shapes = MenuDefaults.itemShape(0, 3),
-            trailingIcon = {
+            trailingContent = {
                 if (boldChecked) {
                     Icon(
                         Icons.Filled.FormatBold,
@@ -464,12 +468,12 @@ private fun TextSubmenu(interactionSource: MutableInteractionSource) {
                 }
             },
         )
-        DropdownMenuItem(
+        CheckableDropdownMenuItem(
             checked = italicChecked,
             onCheckedChange = { italicChecked = it },
             text = { Text("Italic") },
             shapes = MenuDefaults.itemShape(1, 3),
-            trailingIcon = {
+            trailingContent = {
                 if (italicChecked) {
                     Icon(
                         Icons.Filled.FormatItalic,
@@ -485,12 +489,12 @@ private fun TextSubmenu(interactionSource: MutableInteractionSource) {
                 }
             },
         )
-        DropdownMenuItem(
+        CheckableDropdownMenuItem(
             checked = underlineChecked,
             onCheckedChange = { underlineChecked = it },
             text = { Text("Underline") },
             shapes = MenuDefaults.itemShape(2, 3),
-            trailingIcon = {
+            trailingContent = {
                 if (underlineChecked) {
                     Icon(
                         Icons.Filled.FormatUnderlined,
@@ -517,7 +521,7 @@ private fun AlignSubmenu(interactionSource: MutableInteractionSource) {
         shapes = MenuDefaults.groupShape(0, 1),
         interactionSource = interactionSource,
     ) {
-        DropdownMenuItem(
+        SelectableDropdownMenuItem(
             selected = selectedAlignment == 0,
             onClick = { selectedAlignment = 0 },
             text = { Text("Left") },
@@ -529,7 +533,7 @@ private fun AlignSubmenu(interactionSource: MutableInteractionSource) {
                     contentDescription = null,
                 )
             },
-            trailingIcon = {
+            trailingContent = {
                 Icon(
                     Icons.AutoMirrored.Filled.FormatAlignLeft,
                     modifier = Modifier.size(MenuDefaults.TrailingIconSize),
@@ -537,7 +541,7 @@ private fun AlignSubmenu(interactionSource: MutableInteractionSource) {
                 )
             },
         )
-        DropdownMenuItem(
+        SelectableDropdownMenuItem(
             selected = selectedAlignment == 1,
             onClick = { selectedAlignment = 1 },
             text = { Text("Center") },
@@ -549,7 +553,7 @@ private fun AlignSubmenu(interactionSource: MutableInteractionSource) {
                     contentDescription = null,
                 )
             },
-            trailingIcon = {
+            trailingContent = {
                 Icon(
                     Icons.Filled.FormatAlignCenter,
                     modifier = Modifier.size(MenuDefaults.TrailingIconSize),
@@ -557,7 +561,7 @@ private fun AlignSubmenu(interactionSource: MutableInteractionSource) {
                 )
             },
         )
-        DropdownMenuItem(
+        SelectableDropdownMenuItem(
             selected = selectedAlignment == 2,
             onClick = { selectedAlignment = 2 },
             text = { Text("Right") },
@@ -569,7 +573,7 @@ private fun AlignSubmenu(interactionSource: MutableInteractionSource) {
                     contentDescription = null,
                 )
             },
-            trailingIcon = {
+            trailingContent = {
                 Icon(
                     Icons.AutoMirrored.Filled.FormatAlignRight,
                     modifier = Modifier.size(MenuDefaults.TrailingIconSize),
@@ -577,7 +581,7 @@ private fun AlignSubmenu(interactionSource: MutableInteractionSource) {
                 )
             },
         )
-        DropdownMenuItem(
+        SelectableDropdownMenuItem(
             selected = selectedAlignment == 3,
             onClick = { selectedAlignment = 3 },
             text = { Text("Justify") },
@@ -589,7 +593,7 @@ private fun AlignSubmenu(interactionSource: MutableInteractionSource) {
                     contentDescription = null,
                 )
             },
-            trailingIcon = {
+            trailingContent = {
                 Icon(
                     Icons.Filled.FormatAlignJustify,
                     modifier = Modifier.size(MenuDefaults.TrailingIconSize),
@@ -608,7 +612,7 @@ private fun LineSpacingSubmenu(interactionSource: MutableInteractionSource) {
         shapes = MenuDefaults.groupShape(0, 1),
         interactionSource = interactionSource,
     ) {
-        DropdownMenuItem(
+        SelectableDropdownMenuItem(
             selected = selectedSpacing == 0,
             onClick = { selectedSpacing = 0 },
             text = { Text("Single") },
@@ -621,7 +625,7 @@ private fun LineSpacingSubmenu(interactionSource: MutableInteractionSource) {
                 )
             },
         )
-        DropdownMenuItem(
+        SelectableDropdownMenuItem(
             selected = selectedSpacing == 1,
             onClick = { selectedSpacing = 1 },
             text = { Text("1.15") },
@@ -634,7 +638,7 @@ private fun LineSpacingSubmenu(interactionSource: MutableInteractionSource) {
                 )
             },
         )
-        DropdownMenuItem(
+        SelectableDropdownMenuItem(
             selected = selectedSpacing == 2,
             onClick = { selectedSpacing = 2 },
             text = { Text("1.5") },
@@ -647,7 +651,7 @@ private fun LineSpacingSubmenu(interactionSource: MutableInteractionSource) {
                 )
             },
         )
-        DropdownMenuItem(
+        SelectableDropdownMenuItem(
             selected = selectedSpacing == 3,
             onClick = { selectedSpacing = 3 },
             text = { Text("Double") },

@@ -69,7 +69,7 @@ private class WebWindowInsets(
  *
  */
 internal class WebWindowInsetsManager(
-    private val density: Density,
+    private val densityProvider: () -> Density,
     canvas: Element
 ) {
     private var canvasRect: DOMRect = canvas.getBoundingClientRect()
@@ -127,7 +127,7 @@ internal class WebWindowInsetsManager(
         val adjustedRight = maxOf(0f, readCssVarRight() - (vw - canvasRect.right.toFloat()))
         val adjustedBottom = maxOf(0f, readCssVarBottom() - (vh - canvasRect.bottom.toFloat()))
 
-        safeAreaInsets.value = with(density) {
+        safeAreaInsets.value = with(densityProvider()) {
             PlatformInsets(
                 left = adjustedLeft.dp.roundToPx(),
                 top = adjustedTop.dp.roundToPx(),
@@ -146,7 +146,7 @@ internal class WebWindowInsetsManager(
         val vh = window.innerHeight.toFloat()
         val adjustedBottom = maxOf(0f, rawHeight - (vh - canvasRect.bottom.toFloat()))
 
-        imeInsets.value = with(density) {
+        imeInsets.value = with(densityProvider()) {
             PlatformInsets(bottom = adjustedBottom.dp.roundToPx())
         }
     }
