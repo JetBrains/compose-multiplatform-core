@@ -153,12 +153,7 @@ internal interface TextEditingDelegate {
      * Returned value must be in range between 0 and length of the text (inclusive).
      */
     fun verticalPositionFromPosition(position: Int, verticalOffset: Int): Int?
-}
 
-/**
- * Extension of [TextEditingDelegate] for the Native iOS Text Input path.
- */
-internal interface NativeTextEditingDelegate : TextEditingDelegate {
     /**
      * Returns the caret rectangle for a given text position.
      * https://developer.apple.com/documentation/uikit/uitextinput/caretrect(for:)
@@ -167,7 +162,12 @@ internal interface NativeTextEditingDelegate : TextEditingDelegate {
      * if the position is invalid.
      */
     fun caretDpRectForPosition(position: Int): DpRect?
+}
 
+/**
+ * Extension of [TextEditingDelegate] for the Native iOS Text Input path.
+ */
+internal interface NativeTextEditingDelegate : TextEditingDelegate {
     /**
      * Returns the selection rectangles that enclose a range of text.
      * https://developer.apple.com/documentation/uikit/uitextinput/selectionrects(for:)

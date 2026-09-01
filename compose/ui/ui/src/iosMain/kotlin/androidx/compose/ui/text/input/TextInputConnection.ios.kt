@@ -32,6 +32,7 @@ import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.window.BackgroundInputView
 import androidx.compose.ui.window.ComposeTextInputView
@@ -490,6 +491,13 @@ internal abstract class TextInputConnection(
         // it may jump when switching between text fields.
         // Adding a delay to the 'resignFirstResponder' function call to eliminate this issue.
         internal val CLEAR_FOCUS_DELAY: Duration = 10.milliseconds
+
+        /**
+         * Matches DefaultCursorThickness
+         *
+         * Must be at least 1.dp to make caret interactable
+         */
+        internal val CURSOR_THICKNESS = 2.dp
     }
 }
 

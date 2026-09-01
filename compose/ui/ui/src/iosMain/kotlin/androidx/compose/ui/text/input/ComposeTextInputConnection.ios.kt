@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.utils.CMPEditMenuCustomAction
+import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.toCGRect
 import androidx.compose.ui.unit.toDpOffset
 import androidx.compose.ui.unit.toDpRect
@@ -108,6 +109,27 @@ internal open class ComposeTextInputConnection(
         }
         if (selectionChanged) {
             textInputView.selectionDidChange()
+        }
+    }
+
+    override fun caretDpRectForPosition(position: Int): DpRect? {
+        val viewOriginInRoot = textFieldRectInRoot?.topLeft ?: return null
+        val textOffsetInRoot = unclippedTextOffsetInRoot ?: return null
+        val text = currentTextFieldValue?.text ?: return null
+        val currentTextLayoutResult = textLayoutResult ?: return null
+
+        if (position < 0 || position > text.length) {
+            return null
+        }
+        if (position > currentTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) {
+            return null
+        }
+        val offset = textOffsetInRoot - viewOriginInRoot
+        val rect = currentTextLayoutResult.getCursorRect(position).translate(offset)
+        return rect.toDpRect(rootView.density).let {
+            val halfWidth = CURSOR_THICKNESS / 2
+            val center = (it.left + it.right) / 2
+            it.copy(left = center - halfWidth, right = center + halfWidth)
         }
     }
 
