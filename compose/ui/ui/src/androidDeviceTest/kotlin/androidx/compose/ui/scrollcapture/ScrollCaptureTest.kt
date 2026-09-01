@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.AndroidComposeUiFlags.isAlwaysScrollDuringScrollCaptureEnabled
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -51,7 +52,6 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -65,7 +65,7 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = 31)
 class ScrollCaptureTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val captureTester = ScrollCaptureTester(rule)
 
@@ -330,7 +330,14 @@ class ScrollCaptureTest {
 
                 val target = captureTester.findCaptureTargets().single()
                 captureTester.capture(target, captureWindowHeight = halfSize) {
-                    // First request is at origin, no scrolling required.
+                    // First request is at origin
+                    if (isAlwaysScrollDuringScrollCaptureEnabled) {
+                        // Scroll requested but doesn't actually go anywhere since we're at the top.
+                        expectScrollRequest(
+                            Offset(0f, -centeringOffset.toFloat()),
+                            consume = Offset.Zero,
+                        )
+                    }
                     assertThat(performCaptureDiscardingBitmap())
                         .isEqualTo(Rect(0, 0, size, halfSize))
                     assertNoPendingScrollRequests()
@@ -343,14 +350,28 @@ class ScrollCaptureTest {
                     shiftWindowBy(-halfSize)
                     assertThat(performCaptureDiscardingBitmap()).isEqualTo(Rect(0, -4, size, 0))
 
-                    // Forward one half-page – already in viewport, no scrolling required.
+                    // Forward one half-page – already in viewport
+                    if (isAlwaysScrollDuringScrollCaptureEnabled) {
+                        expectScrollRequest(Offset(0f, 4f - centeringOffset))
+                    }
                     shiftWindowBy(halfSize)
                     assertThat(performCaptureDiscardingBitmap())
                         .isEqualTo(Rect(0, 0, size, halfSize))
                     assertNoPendingScrollRequests()
 
-                    // Forward another half-page. This time we need to scroll.
-                    expectScrollRequest(Offset(0f, 4f + centeringOffset))
+                    // Forward another half-page
+                    expectScrollRequest(
+                        Offset(
+                            0f,
+                            if (isAlwaysScrollDuringScrollCaptureEnabled) {
+                                // Previous tile was centered, scrooll by halfSize to put the next
+                                // one in the center.
+                                halfSize.toFloat()
+                            } else {
+                                4f + centeringOffset
+                            },
+                        )
+                    )
                     shiftWindowBy(halfSize)
                     assertThat(performCaptureDiscardingBitmap())
                         .isEqualTo(Rect(0, halfSize, size, size))
@@ -391,7 +412,14 @@ class ScrollCaptureTest {
 
                 val target = captureTester.findCaptureTargets().single()
                 captureTester.capture(target, captureWindowHeight = halfSize) {
-                    // First request is at origin, no scrolling required.
+                    // First request is at origin
+                    if (isAlwaysScrollDuringScrollCaptureEnabled) {
+                        // Scroll requested but doesn't actually go anywhere since we're at the top.
+                        expectScrollRequest(
+                            Offset(0f, centeringOffset.toFloat()),
+                            consume = Offset.Zero,
+                        )
+                    }
                     assertThat(performCaptureDiscardingBitmap())
                         .isEqualTo(Rect(0, 0, size, halfSize))
                     assertNoPendingScrollRequests()
@@ -404,14 +432,26 @@ class ScrollCaptureTest {
                     shiftWindowBy(-halfSize)
                     assertThat(performCaptureDiscardingBitmap()).isEqualTo(Rect(0, -4, size, 0))
 
-                    // Forward one half-page – already in viewport, no scrolling required.
+                    // Forward one half-page – already in viewport
+                    if (isAlwaysScrollDuringScrollCaptureEnabled) {
+                        expectScrollRequest(Offset(0f, -4f + centeringOffset))
+                    }
                     shiftWindowBy(halfSize)
                     assertThat(performCaptureDiscardingBitmap())
                         .isEqualTo(Rect(0, 0, size, halfSize))
                     assertNoPendingScrollRequests()
 
                     // Forward another half-page. This time we need to scroll.
-                    expectScrollRequest(Offset(0f, -4f - centeringOffset))
+                    expectScrollRequest(
+                        Offset(
+                            0f,
+                            if (isAlwaysScrollDuringScrollCaptureEnabled) {
+                                -halfSize.toFloat()
+                            } else {
+                                -4f - centeringOffset
+                            },
+                        )
+                    )
                     shiftWindowBy(halfSize)
                     assertThat(performCaptureDiscardingBitmap())
                         .isEqualTo(Rect(0, halfSize, size, size))

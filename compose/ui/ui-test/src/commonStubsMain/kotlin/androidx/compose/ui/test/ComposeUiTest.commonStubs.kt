@@ -16,8 +16,6 @@
 
 package androidx.compose.ui.test
 
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.unit.Density
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlinx.coroutines.test.TestResult
@@ -30,31 +28,9 @@ import kotlinx.coroutines.test.TestResult
     level = DeprecationLevel.WARNING,
 )
 @ExperimentalTestApi
-actual fun runComposeUiTest(
+public actual fun runComposeUiTest(
     effectContext: CoroutineContext,
     runTestContext: CoroutineContext,
     testTimeout: Duration,
     block: suspend ComposeUiTest.() -> Unit,
 ): TestResult = implementedInJetBrainsFork()
-
-@ExperimentalTestApi
-actual sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
-    actual val density: Density
-    actual val mainClock: MainTestClock
-
-    actual fun <T> runOnUiThread(action: () -> T): T
-
-    actual fun <T> runOnIdle(action: () -> T): T
-
-    actual fun waitForIdle()
-
-    actual suspend fun awaitIdle()
-
-    actual fun waitUntil(
-        conditionDescription: String?,
-        timeoutMillis: Long,
-        condition: () -> Boolean,
-    )
-
-    actual fun setContent(composable: @Composable () -> Unit)
-}

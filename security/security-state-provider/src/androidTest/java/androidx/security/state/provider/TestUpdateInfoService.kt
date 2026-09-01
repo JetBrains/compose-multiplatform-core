@@ -18,6 +18,7 @@ package androidx.security.state.provider
 
 import android.content.Context
 import android.content.Intent
+import android.os.Binder
 import androidx.security.state.IUpdateInfoService
 import androidx.security.state.UpdateCheckResult
 import androidx.security.state.UpdateInfo
@@ -66,6 +67,12 @@ class TestUpdateInfoService : UpdateInfoService() {
     /** If `true`, [fetchUpdates] will throw an [IOException] to simulate a network failure. */
     var shouldThrowError: Boolean = false
 
+    /**
+     * Controls the behavior of package validation. Set to `false` to simulate a spoofed package
+     * name being provided by a malicious client.
+     */
+    var testIsValidPackage = true
+
     /** The list of updates to return from a successful [fetchUpdates] call. */
     var updatesToReturn: List<UpdateInfo> = emptyList()
 
@@ -86,17 +93,36 @@ class TestUpdateInfoService : UpdateInfoService() {
     }
 
     /**
-     * Helper to call the protected AIDL method directly from a test context. This simulates an
-     * incoming IPC call from a client by binding via [onBind].
+     * Helper to simulate a complete client IPC lifecycle directly from a test context.
      *
-     * @throws IllegalStateException if the service refuses to bind.
+     * This method accurately mimics the interactions of the `SecurityPatchState` client library
+     * under the Session Pattern architecture by:
+     * 1. Binding to the service to retrieve the factory interface.
+     * 2. Opening a session using a test package name.
+     * 3. Executing the update check query.
+     * 4. Closing the session to trigger cleanup hooks.
+     *
+     * @return The [UpdateCheckResult] returned by the service.
+     * @throws IllegalStateException if the service refuses the initial binding.
      */
     fun callListAvailableUpdates(): UpdateCheckResult {
         val intent = Intent("androidx.security.state.provider.UPDATE_INFO_SERVICE")
-        val binder =
+
+        // 1. Bind to retrieve the Factory interface
+        val factory =
             onBind(intent) as? IUpdateInfoService
                 ?: throw IllegalStateException("Service refused to bind (check Intent action)")
-        return binder.listAvailableUpdates()
+
+        // 2. Open a dedicated session (simulating the client passing its package name)
+        val session = factory.openSession("com.test.client", Binder())
+
+        // 3. Execute the update check through the session
+        val result = session.listAvailableUpdates()
+
+        // 4. Close the session to trigger the disconnection lifecycle hooks
+        session.close()
+
+        return result
     }
 
     /**
@@ -148,5 +174,29 @@ class TestUpdateInfoService : UpdateInfoService() {
     override fun onFetchFailed(e: Exception) {
         wasOnFetchFailedCalled = true
         super.onFetchFailed(e)
+    }
+
+    /**
+     * Bypasses the strict Android system [android.app.AppOpsManager] checks during unit tests.
+     *
+     * In a real environment, the OS verifies that the [packageName] belongs to the [uid]. However,
+     * in unit tests, we frequently use fake package names (like "com.test.client") that the real OS
+     * would reject.
+     *
+     * This override relies on the [testIsValidPackage] control flag instead. This allows tests to
+     * seamlessly simulate both valid connections and spoofed package attacks without requiring
+     * complex framework mocking.
+     *
+     * @param packageName The package name to validate.
+     * @param uid The UID to validate against.
+     * @throws SecurityException If [testIsValidPackage] is false, simulating a spoofed package
+     *   attack.
+     */
+    override fun enforceValidPackageForUid(packageName: String, uid: Int) {
+        if (!testIsValidPackage) {
+            throw SecurityException(
+                "Simulated validation failure. Package '$packageName' does not belong to UID $uid."
+            )
+        }
     }
 }

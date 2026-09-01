@@ -18,6 +18,7 @@ package androidx.camera.camera2.adapter
 
 import android.hardware.camera2.CameraDevice
 import android.media.MediaCodec
+import android.os.Build
 import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.impl.Camera2ImplConfig
 import androidx.camera.camera2.impl.Camera2Logger
@@ -41,19 +42,62 @@ public class SessionConfigAdapter(
     private val useCases: Collection<UseCase>,
     private val isPrimary: Boolean = true,
 ) {
-    public val surfaceToStreamUseCaseMap: Map<DeferrableSurface, Long> by lazy {
+    public val surfaceConfigOptionsMap: Map<DeferrableSurface, SurfaceConfigOptions> by lazy {
         val sessionConfigs = mutableListOf<SessionConfig>()
         val useCaseConfigs = mutableListOf<UseCaseConfig<*>>()
         for (useCase in useCases) {
             sessionConfigs.add(useCase.getSessionConfig(isPrimary))
             useCaseConfigs.add(useCase.currentConfig)
         }
-        getSurfaceToStreamUseCaseMapping(sessionConfigs, useCaseConfigs)
+        val streamUseCaseMap = getSurfaceToStreamUseCaseMapping(sessionConfigs, useCaseConfigs)
+        val streamUseHintMap = getSurfaceToStreamUseHintMapping(sessionConfigs)
+
+        val mapping = mutableMapOf<DeferrableSurface, SurfaceConfigOptions>()
+        for (useCase in useCases) {
+            val camera2Config = Camera2ImplConfig(useCase.currentConfig)
+            val groupId =
+                camera2Config
+                    .getSurfaceGroupId(SessionConfig.OutputConfig.SURFACE_GROUP_ID_NONE)
+                    .takeIf { it != SessionConfig.OutputConfig.SURFACE_GROUP_ID_NONE }
+            val timestampBase = camera2Config.getTimestampBase(null)
+            val profile = camera2Config.getDynamicRangeProfile(null)
+            val mirrorMode = camera2Config.getMirrorMode(null)
+            val sensorPixelModes =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    camera2Config.getSensorPixelModesUsed(null)
+                } else {
+                    null
+                }
+
+            for (surface in useCase.getSessionConfig(isPrimary).surfaces) {
+                val streamUseCase = streamUseCaseMap[surface]
+                val streamUseHint = streamUseHintMap[surface]
+
+                if (
+                    streamUseCase != null ||
+                        streamUseHint != null ||
+                        groupId != null ||
+                        timestampBase != null ||
+                        profile != null ||
+                        mirrorMode != null ||
+                        sensorPixelModes != null
+                ) {
+                    mapping[surface] =
+                        SurfaceConfigOptions(
+                            streamUseCase = streamUseCase,
+                            streamUseHint = streamUseHint,
+                            surfaceGroupId = groupId,
+                            timestampBase = timestampBase,
+                            dynamicRangeProfile = profile,
+                            mirrorMode = mirrorMode,
+                            sensorPixelModes = sensorPixelModes,
+                        )
+                }
+            }
+        }
+        mapping
     }
-    public val surfaceToStreamUseHintMap: Map<DeferrableSurface, Long> by lazy {
-        val sessionConfigs = useCases.map { it.getSessionConfig(isPrimary) }
-        getSurfaceToStreamUseHintMapping(sessionConfigs)
-    }
+
     private val validatingBuilder: SessionConfig.ValidatingBuilder by lazy {
         val validatingBuilder = SessionConfig.ValidatingBuilder()
 

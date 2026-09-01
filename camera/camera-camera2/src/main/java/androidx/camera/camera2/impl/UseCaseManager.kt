@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.camera.camera2.impl
 
 import android.content.Context
@@ -40,7 +42,6 @@ import androidx.camera.core.DynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.UseCase
 import androidx.camera.core.concurrent.CameraCoordinator
-import androidx.camera.core.featuregroup.impl.FeatureCombinationQuery
 import androidx.camera.core.impl.AttachedSurfaceInfo
 import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.CameraInternal
@@ -92,7 +93,7 @@ public class UseCaseManager
 constructor(
     private val cameraPipe: CameraPipe,
     @GuardedBy("lock") private val cameraCoordinator: CameraCoordinator,
-    private val builder: UseCaseCameraComponent.Builder,
+    private val builder: Provider<UseCaseCameraComponent.Builder>,
     private val zslControl: ZslControl,
     private val lowLightBoostControl: LowLightBoostControl,
     @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN") // Java version required for Dagger
@@ -106,6 +107,7 @@ constructor(
     private val cameraProperties: CameraProperties,
     private val cameraXConfig: CameraXConfig,
     private val cameraGraphConfigProvider: CameraGraphConfigProvider,
+    private val supportedSurfaceCombination: SupportedSurfaceCombination,
     context: Context,
     displayInfoManager: DisplayInfoManager,
 ) {
@@ -135,16 +137,6 @@ constructor(
 
     private val meteringRepeating =
         MeteringRepeating.Builder(cameraProperties, displayInfoManager).build()
-
-    private val supportedSurfaceCombination =
-        SupportedSurfaceCombination(
-            context,
-            cameraProperties.metadata,
-            encoderProfilesProvider,
-            // TODO: b/406367951 - Create and use a proper impl. of FeatureCombinationQuery in
-            //   order to handle MeteringRepeating scenarios
-            FeatureCombinationQuery.NO_OP_FEATURE_COMBINATION_QUERY,
-        )
 
     private val dynamicRangeResolver = DynamicRangeResolver(cameraProperties.metadata)
     private val defaultCameraGraphFactory: (CameraGraph.Config) -> CameraGraph = { config ->
@@ -422,6 +414,7 @@ constructor(
             }
         }
         sessionProcessor?.deInitSession()
+        deferredUseCaseCameraConfig = null
     }
 
     @GuardedBy("lock")
@@ -447,7 +440,7 @@ constructor(
     @GuardedBy("lock")
     private fun beginComponentCreation(useCaseCameraConfig: UseCaseCameraConfig) {
         // Create and configure the new camera component.
-        _activeComponent = builder.config(useCaseCameraConfig).build()
+        _activeComponent = builder.get().config(useCaseCameraConfig).build()
 
         val newUseCaseCamera = checkNotNull(camera)
         newUseCaseCamera.start()
@@ -695,11 +688,13 @@ constructor(
     private fun Collection<UseCase>.getSessionSurfacesConfigs(): List<SurfaceConfig> =
         mutableListOf<SurfaceConfig>().apply {
             this@getSessionSurfacesConfigs.forEach { useCase ->
-                useCase.sessionConfig.surfaces.forEach { deferrableSurface ->
+                val inputFormats = useCase.inputFormats
+                useCase.sessionConfig.surfaces.forEachIndexed { index, deferrableSurface ->
+                    val format = inputFormats.getOrElse(index) { inputFormats.first() }
                     add(
                         supportedSurfaceCombination.transformSurfaceConfig(
                             getCameraMode(),
-                            useCase.currentConfig.inputFormat,
+                            format,
                             deferrableSurface.prescribedSize,
                             useCase.currentConfig.streamUseCase,
                         )

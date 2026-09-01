@@ -110,9 +110,8 @@ import kotlinx.coroutines.launch
  * @param horizontalAlignment the horizontal alignment of the FAB Menu Items
  * @param content the content of this FAB Menu, typically a list of [FloatingActionButtonMenuItem]s
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun FloatingActionButtonMenu(
+public fun FloatingActionButtonMenu(
     expanded: Boolean,
     button: @Composable () -> Unit,
     modifier: Modifier = Modifier,
@@ -141,7 +140,8 @@ fun FloatingActionButtonMenu(
                         expanded &&
                             it.type == KeyEventType.KeyDown &&
                             ((it.key == Key.Tab && !it.isShiftPressed) ||
-                                it.key == Key.DirectionDown)
+                                it.key == Key.DirectionDown ||
+                                it.key == Key.NumPadDirectionDown)
                     ) {
                         focusRequester.requestFocus()
                         return@onKeyEvent true
@@ -189,7 +189,6 @@ fun FloatingActionButtonMenu(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun FloatingActionButtonMenuItemColumn(
     modifier: Modifier,
@@ -307,9 +306,8 @@ private fun FloatingActionButtonMenuItemColumn(
 }
 
 /** Scope for the children of [FloatingActionButtonMenu] */
-@ExperimentalMaterial3ExpressiveApi
-interface FloatingActionButtonMenuScope {
-    val horizontalAlignment: Alignment.Horizontal
+public interface FloatingActionButtonMenuScope {
+    public val horizontalAlignment: Alignment.Horizontal
 }
 
 // TODO: link to spec and image
@@ -327,9 +325,8 @@ interface FloatingActionButtonMenuScope {
  *   the matching content color for [containerColor], or to the current [LocalContentColor] if
  *   [containerColor] is not a color from the theme.
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun FloatingActionButtonMenuScope.FloatingActionButtonMenuItem(
+public fun FloatingActionButtonMenuScope.FloatingActionButtonMenuItem(
     onClick: () -> Unit,
     text: @Composable () -> Unit,
     icon: @Composable () -> Unit,
@@ -440,9 +437,8 @@ private val MenuItemRuler = HorizontalRuler()
  * @param content the content of this Toggleable FAB, typically an [Icon] that switches from an Add
  *   to a Close sign at 50% checked progress
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun ToggleFloatingActionButton(
+public fun ToggleFloatingActionButton(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -501,7 +497,6 @@ fun ToggleFloatingActionButton(
  * @param content the content of this Toggleable FAB, typically an [Icon] that switches from an Add
  *   to a Close sign at 50% checked progress
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 private fun ToggleFloatingActionButton(
     checked: Boolean,
@@ -550,7 +545,7 @@ private fun ToggleFloatingActionButton(
                     value = checked,
                     onValueChange = onCheckedChange,
                     interactionSource = null,
-                    indication = ripple(radius = fabRippleRadius),
+                    indication = ripple(radius = fabRippleRadius, focusRingShape = shape),
                 )
                 .layout { measurable, constraints ->
                     val placeable = measurable.measure(constraints)
@@ -576,51 +571,55 @@ private fun ToggleFloatingActionButton(
 }
 
 /** Contains the default values used by [ToggleFloatingActionButton] */
-@ExperimentalMaterial3ExpressiveApi
-object ToggleFloatingActionButtonDefaults {
+public object ToggleFloatingActionButtonDefaults {
 
     @Composable
-    fun containerColor(
+    public fun containerColor(
         initialColor: Color = MaterialTheme.colorScheme.primaryContainer,
         finalColor: Color = MaterialTheme.colorScheme.primary,
     ): (Float) -> Color = { progress -> lerp(initialColor, finalColor, progress) }
 
-    fun containerSize(initialSize: Dp, finalSize: Dp = FabFinalSize): (Float) -> Dp = { progress ->
-        lerp(initialSize, finalSize, progress)
-    }
+    public fun containerSize(initialSize: Dp, finalSize: Dp = FabFinalSize): (Float) -> Dp =
+        { progress ->
+            lerp(initialSize, finalSize, progress)
+        }
 
-    fun containerSize() = containerSize(FabInitialSize)
+    public fun containerSize(): (Float) -> Dp = containerSize(FabInitialSize)
 
-    fun containerSizeMedium() = containerSize(FabMediumInitialSize)
+    public fun containerSizeMedium(): (Float) -> Dp = containerSize(FabMediumInitialSize)
 
-    fun containerSizeLarge() = containerSize(FabLargeInitialSize)
+    public fun containerSizeLarge(): (Float) -> Dp = containerSize(FabLargeInitialSize)
 
-    fun containerCornerRadius(
+    public fun containerCornerRadius(
         initialSize: Dp,
         finalSize: Dp = FabFinalCornerRadius,
     ): (Float) -> Dp = { progress -> lerp(initialSize, finalSize, progress) }
 
-    fun containerCornerRadius() = containerCornerRadius(FabInitialCornerRadius)
+    public fun containerCornerRadius(): (Float) -> Dp =
+        containerCornerRadius(FabInitialCornerRadius)
 
-    fun containerCornerRadiusMedium() = containerCornerRadius(FabMediumInitialCornerRadius)
+    public fun containerCornerRadiusMedium(): (Float) -> Dp =
+        containerCornerRadius(FabMediumInitialCornerRadius)
 
-    fun containerCornerRadiusLarge() = containerCornerRadius(FabLargeInitialCornerRadius)
+    public fun containerCornerRadiusLarge(): (Float) -> Dp =
+        containerCornerRadius(FabLargeInitialCornerRadius)
 
     @Composable
-    fun iconColor(
+    public fun iconColor(
         initialColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
         finalColor: Color = MaterialTheme.colorScheme.onPrimary,
     ): (Float) -> Color = { progress -> lerp(initialColor, finalColor, progress) }
 
-    fun iconSize(initialSize: Dp, finalSize: Dp = FabFinalIconSize): (Float) -> Dp = { progress ->
-        lerp(initialSize, finalSize, progress)
-    }
+    public fun iconSize(initialSize: Dp, finalSize: Dp = FabFinalIconSize): (Float) -> Dp =
+        { progress ->
+            lerp(initialSize, finalSize, progress)
+        }
 
-    fun iconSize() = iconSize(FabInitialIconSize)
+    public fun iconSize(): (Float) -> Dp = iconSize(FabInitialIconSize)
 
-    fun iconSizeMedium() = iconSize(FabMediumInitialIconSize)
+    public fun iconSizeMedium(): (Float) -> Dp = iconSize(FabMediumInitialIconSize)
 
-    fun iconSizeLarge() = iconSize(FabLargeInitialIconSize)
+    public fun iconSizeLarge(): (Float) -> Dp = iconSize(FabLargeInitialIconSize)
 
     /**
      * Modifier for animating the color and size of an icon within [ToggleFloatingActionButton]
@@ -631,11 +630,11 @@ object ToggleFloatingActionButtonDefaults {
      * @param size the size of the icon, based on the checked progress value from 0-1
      */
     @Composable
-    fun Modifier.animateIcon(
+    public fun Modifier.animateIcon(
         checkedProgress: () -> Float,
         color: (Float) -> Color = iconColor(),
         size: (Float) -> Dp = iconSize(),
-    ) =
+    ): Modifier =
         this.layout { measurable, _ ->
                 val sizePx = size(checkedProgress()).roundToPx()
                 val placeable = measurable.measure(Constraints.fixed(sizePx, sizePx))
@@ -653,10 +652,9 @@ object ToggleFloatingActionButtonDefaults {
 }
 
 /** Scope for the children of [ToggleFloatingActionButton] */
-@ExperimentalMaterial3ExpressiveApi
-interface ToggleFloatingActionButtonScope {
+public interface ToggleFloatingActionButtonScope {
 
-    val checkedProgress: Float
+    public val checkedProgress: Float
 }
 
 @Stable
@@ -708,25 +706,45 @@ private class MenuItemVisibilityModifier(isVisible: () -> Boolean) :
 private val Placeable.isVisible: Boolean
     get() = (this.parentData as? MenuItemVisibilityModifier)?.visible?.invoke() != false
 
-private val FabInitialSize = FabBaselineTokens.ContainerHeight
-private val FabInitialCornerRadius = 16.dp
-private val FabInitialIconSize = FabBaselineTokens.IconSize
-private val FabMediumInitialSize = FabMediumTokens.ContainerHeight
-private val FabMediumInitialCornerRadius = 20.dp
-private val FabMediumInitialIconSize = FabMediumTokens.IconSize
-private val FabLargeInitialSize = FabLargeTokens.ContainerHeight
-private val FabLargeInitialCornerRadius = 28.dp
+private val FabInitialSize
+    get() = FabBaselineTokens.ContainerHeight
+private val FabInitialCornerRadius
+    get() = 16.dp
+private val FabInitialIconSize
+    get() = FabBaselineTokens.IconSize
+private val FabMediumInitialSize
+    get() = FabMediumTokens.ContainerHeight
+private val FabMediumInitialCornerRadius
+    get() = 20.dp
+private val FabMediumInitialIconSize
+    get() = FabMediumTokens.IconSize
+private val FabLargeInitialSize
+    get() = FabLargeTokens.ContainerHeight
+private val FabLargeInitialCornerRadius
+    get() = 28.dp
 private val FabLargeInitialIconSize = 36.dp // TODO: FabLargeTokens.IconSize is incorrect
-private val FabFinalSize = FabMenuBaselineTokens.CloseButtonContainerHeight
+private val FabFinalSize
+    get() = FabMenuBaselineTokens.CloseButtonContainerHeight
 private val FabFinalCornerRadius = FabFinalSize.div(2)
-private val FabFinalIconSize = FabMenuBaselineTokens.CloseButtonIconSize
-private val FabShadowElevation = FabPrimaryContainerTokens.ContainerElevation
-private val FabMenuPaddingHorizontal = 16.dp
-private val FabMenuPaddingBottom = FabMenuBaselineTokens.CloseButtonBetweenSpace
-private val FabMenuButtonPaddingBottom = 16.dp
-private val FabMenuItemMinWidth = FabMenuBaselineTokens.ListItemContainerHeight
-private val FabMenuItemHeight = FabMenuBaselineTokens.ListItemContainerHeight
-private val FabMenuItemSpacingVertical = FabMenuBaselineTokens.ListItemBetweenSpace
-private val FabMenuItemContentPaddingStart = FabMenuBaselineTokens.ListItemLeadingSpace
-private val FabMenuItemContentPaddingEnd = FabMenuBaselineTokens.ListItemTrailingSpace
-private val FabMenuItemContentSpacingHorizontal = FabMenuBaselineTokens.ListItemIconLabelSpace
+private val FabFinalIconSize
+    get() = FabMenuBaselineTokens.CloseButtonIconSize
+private val FabShadowElevation
+    get() = FabPrimaryContainerTokens.ContainerElevation
+private val FabMenuPaddingHorizontal
+    get() = 16.dp
+private val FabMenuPaddingBottom
+    get() = FabMenuBaselineTokens.CloseButtonBetweenSpace
+private val FabMenuButtonPaddingBottom
+    get() = 16.dp
+private val FabMenuItemMinWidth
+    get() = FabMenuBaselineTokens.ListItemContainerHeight
+private val FabMenuItemHeight
+    get() = FabMenuBaselineTokens.ListItemContainerHeight
+private val FabMenuItemSpacingVertical
+    get() = FabMenuBaselineTokens.ListItemBetweenSpace
+private val FabMenuItemContentPaddingStart
+    get() = FabMenuBaselineTokens.ListItemLeadingSpace
+private val FabMenuItemContentPaddingEnd
+    get() = FabMenuBaselineTokens.ListItemTrailingSpace
+private val FabMenuItemContentSpacingHorizontal
+    get() = FabMenuBaselineTokens.ListItemIconLabelSpace

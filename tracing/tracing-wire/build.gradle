@@ -39,6 +39,9 @@ androidXMultiplatform {
             implementation(libs.wireRuntime)
             implementation(libs.okio)
         }
+        androidMain.dependencies {
+            api("androidx.startup:startup-runtime:1.2.0")
+        }
         commonTest.dependencies {
             implementation(libs.kotlinTest)
             implementation(libs.kotlinCoroutinesCore)
@@ -62,12 +65,6 @@ androidXMultiplatform {
             implementation(libs.testRules)
         }
     }
-}
-
-// Workarounds for Wire's plugin not setting code generation directory as task output correctly
-// See https://github.com/square/wire/issues/3199
-tasks.named("multiplatformSourceJar").configure {
-    dependsOn(tasks.named("generateCommonMainProtos"))
 }
 
 kotlin {

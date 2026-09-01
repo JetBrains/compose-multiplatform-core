@@ -26,8 +26,9 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.integration.view.TestUtil.assertPreviewStreamingState
 import androidx.camera.integration.view.TestUtil.getFragment
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.testing.impl.AndroidUtil
 import androidx.camera.testing.impl.CameraUtil
-import androidx.camera.testing.impl.CoreAppTestUtil
+import androidx.camera.testing.impl.RequireForegroundRule
 import androidx.camera.view.PreviewView
 import androidx.fragment.app.testing.FragmentScenario
 import androidx.lifecycle.Lifecycle
@@ -38,7 +39,6 @@ import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
-import org.junit.After
 import org.junit.Assume.assumeFalse
 import org.junit.Before
 import org.junit.Rule
@@ -53,6 +53,15 @@ class EffectsFragmentDeviceTest(
     private val implName: String,
     private val cameraConfig: CameraXConfig,
 ) {
+    @get:Rule
+    val requireForegroundRule = RequireForegroundRule {
+        assumeFalse("Test fails on API 24 emulator (b/539514196)", AndroidUtil.isEmulator(24))
+        assumeFalse(
+            "Test fails on cuttlefish (b/465855844)",
+            MODEL.contains("Cuttlefish", ignoreCase = true),
+        )
+    }
+
     @get:Rule
     val useCameraRule =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
@@ -73,14 +82,6 @@ class EffectsFragmentDeviceTest(
 
     @Before
     fun setup() {
-        assumeFalse(
-            "Test fails on cuttlefish (b/465855844)",
-            MODEL.contains("Cuttlefish", ignoreCase = true),
-        )
-
-        // Clear the device UI and check if there is no dialog or lock screen on the top of the
-        // window before start the test.
-        CoreAppTestUtil.prepareDeviceUI(instrumentation)
         ProcessCameraProvider.configureInstance(cameraConfig)
         cameraProvider =
             ProcessCameraProvider.getInstance(ApplicationProvider.getApplicationContext())[
@@ -93,15 +94,17 @@ class EffectsFragmentDeviceTest(
                 null,
             )
         fragment = fragmentScenario.getFragment()
-    }
 
-    @After
-    fun tearDown() {
-        if (::fragmentScenario.isInitialized) {
-            fragmentScenario.moveToState(Lifecycle.State.DESTROYED)
-        }
-        if (::cameraProvider.isInitialized) {
-            cameraProvider.shutdownAsync()[10000, TimeUnit.MILLISECONDS]
+        requireForegroundRule.deferCleanup {
+            try {
+                if (::fragmentScenario.isInitialized) {
+                    fragmentScenario.moveToState(Lifecycle.State.DESTROYED)
+                }
+            } finally {
+                if (::cameraProvider.isInitialized) {
+                    cameraProvider.shutdownAsync()[10000, TimeUnit.MILLISECONDS]
+                }
+            }
         }
     }
 

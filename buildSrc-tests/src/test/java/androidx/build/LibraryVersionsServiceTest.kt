@@ -16,6 +16,8 @@
 
 package androidx.build
 
+import androidx.build.pinneddependencies.TIP_OF_TREE_EXEMPTIONS_FILE_NAME
+import androidx.build.pinneddependencies.TipOfTreeExemption
 import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
 import org.gradle.api.Project
@@ -35,12 +37,12 @@ class LibraryVersionsServiceTest {
         val service =
             createLibraryVersionsService(
                 """
-            [versions]
-            V1 = "1.2.3"
-            [groups]
-            G1 = { group = "g.g1", atomicGroupVersion = "versions.V1" }
-            G2 = { group = "g.g2"}
-        """
+                [versions]
+                V1 = "1.2.3"
+                [groups]
+                G1 = { group = "g.g1", atomicGroupVersion = "versions.V1" }
+                G2 = { group = "g.g2"}
+                """
                     .trimIndent()
             )
         assertThat(service.libraryGroups["G1"])
@@ -54,18 +56,18 @@ class LibraryVersionsServiceTest {
         val service =
             createLibraryVersionsService(
                 """
-            [versions]
-            V1 = "1.2.3"
-            [groups]
-            G1 = { group = "g.g1", atomicGroupVersion = "versions.V1" }
-            G1 = { group = "g.g1"}
-        """
+                [versions]
+                V1 = "1.2.3"
+                [groups]
+                G1 = { group = "g.g1", atomicGroupVersion = "versions.V1" }
+                G1 = { group = "g.g1"}
+                """
                     .trimIndent()
             )
         assertThrows<Exception> { service.libraryGroups["G1"] }
             .hasMessageThat()
             .contains(
-                "libraryversions.toml:line 5, column 1: G1 previously defined at line 4, column 1"
+                "libraryversions.toml:line 5, column 23: Duplicate key"
             )
     }
 
@@ -74,11 +76,11 @@ class LibraryVersionsServiceTest {
         val service =
             createLibraryVersionsService(
                 """
-            [versions]
-            V1 = "1.2.3"
-            [groups]
-            G1 = { group = "g.g1", atomicGroupVersion = "versions.doesNotExist" }
-        """
+                [versions]
+                V1 = "1.2.3"
+                [groups]
+                G1 = { group = "g.g1", atomicGroupVersion = "versions.doesNotExist" }
+                """
                     .trimIndent()
             )
         val result = runCatching { service.libraryGroups["G1"] }
@@ -92,11 +94,11 @@ class LibraryVersionsServiceTest {
         val service =
             createLibraryVersionsService(
                 """
-            [versions]
-            V1 = "1.2.3"
-            [groups]
-            G1 = { group = "g.g1", atomicGroupVersion = "v1" }
-        """
+                [versions]
+                V1 = "1.2.3"
+                [groups]
+                G1 = { group = "g.g1", atomicGroupVersion = "v1" }
+                """
                     .trimIndent()
             )
         val result = runCatching { service.libraryGroups["G1"] }
@@ -158,18 +160,213 @@ class LibraryVersionsServiceTest {
             .contains("Multiple atomic groups defined with the same Maven group ID: g.g1")
     }
 
+    @Test
+    fun libraryVersionsDirectAccess() {
+        val service =
+            createLibraryVersionsService(
+                """
+            [versions]
+            V1 = "1.2.3"
+            V2 = "2.0.0-alpha01"
+            [groups]
+            """
+                    .trimIndent()
+            )
+        assertThat(service.libraryVersions["V1"]).isEqualTo(Version("1.2.3"))
+        assertThat(service.libraryVersions["V2"]).isEqualTo(Version("2.0.0-alpha01"))
+    }
+
+    @Test
+    fun malformedVersionFormat() {
+        val service =
+            createLibraryVersionsService(
+                """
+            [versions]
+            V1 = "not_a_valid_semver"
+            [groups]
+            """
+                    .trimIndent()
+            )
+        assertThrows<Exception> { service.libraryVersions["V1"] }
+            .hasMessageThat()
+            .contains("V1 does not match expected format - not_a_valid_semver")
+    }
+
+    @Test
+    fun missingVersionsTable() {
+        val service =
+            createLibraryVersionsService(
+                """
+            [groups]
+            G1 = { group = "g.g1" }
+            """
+                    .trimIndent()
+            )
+        assertThrows<Exception> { service.libraryVersions }
+            .hasMessageThat()
+            .contains("Library versions toml file is missing [versions] table")
+    }
+
+    @Test
+    fun missingGroupsTable() {
+        val service =
+            createLibraryVersionsService(
+                """
+            [versions]
+            V1 = "1.2.3"
+            """
+                    .trimIndent()
+            )
+        assertThrows<Exception> { service.libraryGroups }
+            .hasMessageThat()
+            .contains("Library versions toml file is missing [groups] table")
+    }
+
+    @Test
+    fun missingGroupFieldInGroupDefinition() {
+        val service =
+            createLibraryVersionsService(
+                """
+            [versions]
+            V1 = "1.2.3"
+            [groups]
+            G1 = { atomicGroupVersion = "versions.V1" }
+            """
+                    .trimIndent()
+            )
+        assertThrows<Exception> { service.libraryGroups["G1"] }
+            .hasMessageThat()
+            .contains("Group entry G1 is missing 'group' field")
+    }
+
+    @Test
+    fun duplicateNonAtomicGroupIdsWithoutOverrideInclude() {
+        val service =
+            createLibraryVersionsService(
+                """
+            [versions]
+            [groups]
+            G1 = { group = "g.g1" }
+            G2 = { group = "g.g1" }
+            """
+                    .trimIndent()
+            )
+        assertThrows<Exception> { service.libraryGroupsByGroupId["g.g1"] }
+            .hasMessageThat()
+            .contains(
+                "Duplicate library group g.g1 defined in G2 does not set overrideInclude. " +
+                    "Declarations beyond the first can only have an effect if they set overrideInclude"
+            )
+    }
+
+    @Test
+    fun duplicateNonAtomicGroupIdsWithOverrideInclude() {
+        val service =
+            createLibraryVersionsService(
+                """
+            [versions]
+            [groups]
+            G1 = { group = "g.g1" }
+            G2 = { group = "g.g1", overrideInclude = [":other:project"] }
+            """
+                    .trimIndent()
+            )
+        assertThat(service.libraryGroupsByGroupId["g.g1"]?.group).isEqualTo("g.g1")
+        assertThat(service.overrideLibraryGroupsByProjectPath[":other:project"]?.group)
+            .isEqualTo("g.g1")
+    }
+
+    @Test
+    fun allowedAtomicGroupExceptionWithOverrideInclude() {
+        val service =
+            createLibraryVersionsService(
+                """
+            [versions]
+            V1 = "1.0.0"
+            V2 = "1.1.0"
+            [groups]
+            CAM1 = { group = "androidx.camera", atomicGroupVersion = "versions.V1" }
+            CAM2 = { group = "androidx.camera", atomicGroupVersion = "versions.V2", overrideInclude = [":camera:camera-extensions"] }
+            """
+                    .trimIndent()
+            )
+        assertThat(service.libraryGroupsByGroupId["androidx.camera"]?.atomicGroupVersion)
+            .isEqualTo(Version("1.0.0"))
+        assertThat(
+                service.overrideLibraryGroupsByProjectPath[":camera:camera-extensions"]
+                    ?.atomicGroupVersion
+            )
+            .isEqualTo(Version("1.1.0"))
+    }
+
+    @Test
+    fun invalidTomlSyntax() {
+        val service =
+            createLibraryVersionsService(
+                """
+            [versions
+            V1 = "1.2.3"
+            """
+                    .trimIndent()
+            )
+        assertThrows<Exception> { service.libraryVersions }
+            .hasMessageThat()
+            .contains("libraryversions.toml file has issues.")
+    }
+
+    @Test
+    fun tipOfTreeExemptions_absentFileIsEmpty() {
+        val service = createLibraryVersionsService("[versions]\n[groups]\n", exemptions = null)
+        assertThat(service.tipOfTreeExemptions).isEmpty()
+    }
+
+    @Test
+    fun tipOfTreeExemptions_emptyListIsEmpty() {
+        val service = createLibraryVersionsService("[versions]\n[groups]\n")
+        assertThat(service.tipOfTreeExemptions).isEmpty()
+    }
+
+    @Test
+    fun tipOfTreeExemptions_parsesEntries() {
+        val service =
+            createLibraryVersionsService(
+                "[versions]\n[groups]\n",
+                exemptions =
+                    """
+                    [[tipOfTreeExemptions]]
+                    library = ":fragment:fragment"
+                    dependsOn = ":tracing:tracing"
+                    validThroughLibraryVersion = "1.9.0-rc01"
+                    reason = "b/12345 - needs an unreleased API"
+                    """
+                        .trimIndent(),
+            )
+        assertThat(service.tipOfTreeExemptions)
+            .containsExactly(
+                TipOfTreeExemption(
+                    library = ":fragment:fragment",
+                    dependsOn = ":tracing:tracing",
+                    validThroughLibraryVersion = "1.9.0-rc01",
+                    reason = "b/12345 - needs an unreleased API",
+                )
+            )
+    }
+
     private fun createLibraryVersionsService(
         tomlFileContents: String,
         tomlFileName: String = "libraryversions.toml",
-        project: Project = ProjectBuilder.builder().withProjectDir(tempDir.newFolder()).build()
+        exemptions: String? = "tipOfTreeExemptions = []",
+        project: Project = ProjectBuilder.builder().withProjectDir(tempDir.newFolder()).build(),
     ): LibraryVersionsService {
         val serviceProvider =
             project.gradle.sharedServices.registerIfAbsent(
                 "libraryVersionsService",
-                LibraryVersionsService::class.java
+                LibraryVersionsService::class.java,
             ) { spec ->
-                spec.parameters.tomlFileContents = project.provider { tomlFileContents }
-                spec.parameters.tomlFileName = tomlFileName
+                spec.parameters.tomlFileContents.set(tomlFileContents)
+                spec.parameters.tomlFileName.set(tomlFileName)
+                spec.parameters.tipOfTreeExemptionsFileName.set(TIP_OF_TREE_EXEMPTIONS_FILE_NAME)
+                spec.parameters.tipOfTreeExemptionsFileContents.set(exemptions)
             }
         return serviceProvider.get()
     }

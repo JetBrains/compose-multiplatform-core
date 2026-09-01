@@ -26,6 +26,8 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(libs.leakcanary)
+    androidTestImplementation(libs.leakcanaryInstrumentation)
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(libs.opentest4j)
@@ -36,7 +38,6 @@ dependencies {
 
 android {
     compileSdk { version = release(35) }
-    defaultConfig.consumerProguardFiles("proguard-rules.pro")
     aaptOptions {
         additionalParameters "--no-version-transitions"
     }

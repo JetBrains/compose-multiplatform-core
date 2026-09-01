@@ -28,6 +28,8 @@ import android.view.inputmethod.BaseInputConnection
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import androidx.compose.runtime.collection.mutableVectorOf
+import androidx.compose.ui.AndroidComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.input.pointer.MatrixPositionCalculator
@@ -48,29 +50,33 @@ private const val DEBUG_CLASS = "TextInputServiceAndroid"
 /**
  * Provide Android specific input service with the Operating System.
  *
- * @param inputCommandProcessorExecutor [Executor] used to schedule the [processInputCommands]
- *   function when a input command is first requested for a frame.
+ * Two executors are used to schedule [processInputCommands] so that commands requiring low-latency
+ * responses (e.g. showing the keyboard) can be dispatched immediately out-of-frame, while cleanup
+ * commands (e.g. stopping input) are delayed to the animation frame so a subsequent start command
+ * can override them during focus transfers.
+ *
+ * @param afterFrameCommandExecutor [Executor] used to schedule immediate out-of-frame execution of
+ *   commands that require low-latency responses.
+ * @param nextFrameCommandExecutor [Executor] used to delay cleanup commands to the next animation
+ *   frame.
  */
-@Deprecated(
-    "Only exists to support the legacy TextInputService APIs. It is not used by any Compose " +
-        "code. A copy of this class in foundation is used by the legacy BasicTextField."
-)
 internal class TextInputServiceAndroid(
     val view: View,
     rootPositionCalculator: MatrixPositionCalculator,
     private val inputMethodManager: InputMethodManager,
-    private val inputCommandProcessorExecutor: Executor = Choreographer.getInstance().asExecutor(),
+    val afterFrameCommandExecutor: Executor,
+    val nextFrameCommandExecutor: Executor,
 ) : PlatformTextInputService {
 
     /**
      * Commands that can be sent into [textInputCommandQueue] to be processed by
      * [processInputCommands].
      */
-    private enum class TextInputCommand {
-        StartInput,
-        StopInput,
-        ShowKeyboard,
-        HideKeyboard,
+    private enum class TextInputCommand(val preferImmediateDispatch: Boolean) {
+        StartInput(true),
+        StopInput(false),
+        ShowKeyboard(true),
+        HideKeyboard(false),
     }
 
     /**
@@ -115,11 +121,20 @@ internal class TextInputServiceAndroid(
      */
     private val textInputCommandQueue = mutableVectorOf<TextInputCommand>()
     private var frameCallback: Runnable? = null
+    private var scheduledForImmediateDispatch = false
 
     constructor(
         view: View,
         positionCalculator: MatrixPositionCalculator,
-    ) : this(view, positionCalculator, InputMethodManagerImpl(view))
+        afterFrameCommandExecutor: Executor,
+        nextFrameCommandExecutor: Executor,
+    ) : this(
+        view,
+        positionCalculator,
+        InputMethodManagerImpl(view),
+        afterFrameCommandExecutor,
+        nextFrameCommandExecutor,
+    )
 
     init {
         if (DEBUG) {
@@ -256,13 +271,38 @@ internal class TextInputServiceAndroid(
     private fun sendInputCommand(command: TextInputCommand) {
         textInputCommandQueue += command
         if (frameCallback == null) {
-            frameCallback =
-                Runnable {
+            @OptIn(ExperimentalComposeUiApi::class)
+            val preferImmediateDispatch =
+                AndroidComposeUiFlags.isOutOfFrameSchedulerForTextInputEventsEnabled &&
+                    command.preferImmediateDispatch
+            scheduleInputCommandProcessing(preferImmediate = preferImmediateDispatch)
+        } else if (scheduledForImmediateDispatch && !command.preferImmediateDispatch) {
+            // An after-frame dispatch was scheduled, but a cleanup command (e.g. StopInput) arrived
+            // before it ran. Demote to next-frame dispatch so cleanup commands are deferred to the
+            // animation frame.
+            scheduleInputCommandProcessing(preferImmediate = false)
+        }
+    }
+
+    private fun scheduleInputCommandProcessing(preferImmediate: Boolean) {
+        scheduledForImmediateDispatch = preferImmediate
+        val runner =
+            if (preferImmediate) {
+                afterFrameCommandExecutor
+            } else {
+                nextFrameCommandExecutor
+            }
+        frameCallback =
+            object : Runnable {
+                override fun run() {
+                    if (frameCallback === this) {
                         frameCallback = null
+                        scheduledForImmediateDispatch = false
                         processInputCommands()
                     }
-                    .also(inputCommandProcessorExecutor::execute)
-        }
+                }
+            }
+        runner.execute(frameCallback)
     }
 
     private fun processInputCommands() {
@@ -531,11 +571,78 @@ internal fun EditorInfo.update(imeOptions: ImeOptions, textFieldValue: TextField
         KeyboardType.Decimal -> {
             this.inputType = InputType.TYPE_CLASS_NUMBER or EditorInfo.TYPE_NUMBER_FLAG_DECIMAL
         }
+        KeyboardType.PasswordVisible -> {
+            this.inputType =
+                InputType.TYPE_CLASS_TEXT or EditorInfo.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+        }
+        KeyboardType.PostalAddress -> {
+            this.inputType =
+                InputType.TYPE_CLASS_TEXT or EditorInfo.TYPE_TEXT_VARIATION_POSTAL_ADDRESS
+        }
+        KeyboardType.PersonName -> {
+            this.inputType = InputType.TYPE_CLASS_TEXT or EditorInfo.TYPE_TEXT_VARIATION_PERSON_NAME
+        }
+        KeyboardType.EmailSubject -> {
+            this.inputType =
+                InputType.TYPE_CLASS_TEXT or EditorInfo.TYPE_TEXT_VARIATION_EMAIL_SUBJECT
+        }
+        KeyboardType.ShortMessage -> {
+            this.inputType =
+                InputType.TYPE_CLASS_TEXT or EditorInfo.TYPE_TEXT_VARIATION_SHORT_MESSAGE
+        }
+        KeyboardType.LongMessage -> {
+            this.inputType =
+                InputType.TYPE_CLASS_TEXT or EditorInfo.TYPE_TEXT_VARIATION_LONG_MESSAGE
+        }
+        KeyboardType.Filter -> {
+            this.inputType = InputType.TYPE_CLASS_TEXT or EditorInfo.TYPE_TEXT_VARIATION_FILTER
+        }
+        KeyboardType.Phonetic -> {
+            this.inputType = InputType.TYPE_CLASS_TEXT or EditorInfo.TYPE_TEXT_VARIATION_PHONETIC
+        }
+        KeyboardType.DateTime -> {
+            this.inputType =
+                InputType.TYPE_CLASS_DATETIME or InputType.TYPE_DATETIME_VARIATION_NORMAL
+        }
+        KeyboardType.Date -> {
+            this.inputType = InputType.TYPE_CLASS_DATETIME or InputType.TYPE_DATETIME_VARIATION_DATE
+        }
+        KeyboardType.Time -> {
+            this.inputType = InputType.TYPE_CLASS_DATETIME or InputType.TYPE_DATETIME_VARIATION_TIME
+        }
+        KeyboardType.NumberSigned -> {
+            this.inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_SIGNED
+        }
+        KeyboardType.DecimalSigned -> {
+            this.inputType =
+                InputType.TYPE_CLASS_NUMBER or
+                    InputType.TYPE_NUMBER_FLAG_DECIMAL or
+                    InputType.TYPE_NUMBER_FLAG_SIGNED
+        }
+        KeyboardType.DecimalPassword -> {
+            this.inputType =
+                InputType.TYPE_CLASS_NUMBER or
+                    InputType.TYPE_NUMBER_VARIATION_PASSWORD or
+                    InputType.TYPE_NUMBER_FLAG_DECIMAL
+        }
+        KeyboardType.NumberPasswordSigned -> {
+            this.inputType =
+                InputType.TYPE_CLASS_NUMBER or
+                    InputType.TYPE_NUMBER_VARIATION_PASSWORD or
+                    InputType.TYPE_NUMBER_FLAG_SIGNED
+        }
+        KeyboardType.DecimalPasswordSigned -> {
+            this.inputType =
+                InputType.TYPE_CLASS_NUMBER or
+                    InputType.TYPE_NUMBER_VARIATION_PASSWORD or
+                    InputType.TYPE_NUMBER_FLAG_DECIMAL or
+                    InputType.TYPE_NUMBER_FLAG_SIGNED
+        }
         else -> error("Invalid Keyboard Type")
     }
 
     if (!imeOptions.singleLine) {
-        if (hasFlag(this.inputType, InputType.TYPE_CLASS_TEXT)) {
+        if ((this.inputType and InputType.TYPE_MASK_CLASS) == InputType.TYPE_CLASS_TEXT) {
             // TextView.java#setInputTypeSingleLine
             this.inputType = this.inputType or InputType.TYPE_TEXT_FLAG_MULTI_LINE
 
@@ -545,7 +652,7 @@ internal fun EditorInfo.update(imeOptions: ImeOptions, textFieldValue: TextField
         }
     }
 
-    if (hasFlag(this.inputType, InputType.TYPE_CLASS_TEXT)) {
+    if ((this.inputType and InputType.TYPE_MASK_CLASS) == InputType.TYPE_CLASS_TEXT) {
         when (imeOptions.capitalization) {
             KeyboardCapitalization.Characters -> {
                 this.inputType = this.inputType or InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
@@ -577,5 +684,3 @@ internal fun EditorInfo.update(imeOptions: ImeOptions, textFieldValue: TextField
 internal fun Choreographer.asExecutor(): Executor = Executor { runnable ->
     postFrameCallback { runnable.run() }
 }
-
-private fun hasFlag(bits: Int, flag: Int): Boolean = (bits and flag) == flag

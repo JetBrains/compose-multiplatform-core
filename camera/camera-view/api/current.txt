@@ -31,12 +31,14 @@ package androidx.camera.view {
     method @MainThread public android.util.Range<java.lang.Integer!> getVideoCaptureTargetFrameRate();
     method @MainThread public androidx.lifecycle.LiveData<androidx.camera.core.ZoomState!> getZoomState();
     method @MainThread public boolean hasCamera(androidx.camera.core.CameraSelector);
+    method @MainThread public boolean isAutoRotationEnabled();
     method @MainThread public boolean isImageAnalysisEnabled();
     method @MainThread public boolean isImageCaptureEnabled();
     method @MainThread public boolean isPinchToZoomEnabled();
     method @MainThread public boolean isRecording();
     method @MainThread public boolean isTapToFocusEnabled();
     method @MainThread public boolean isVideoCaptureEnabled();
+    method @MainThread public void setAutoRotationEnabled(boolean);
     method @MainThread public void setCameraSelector(androidx.camera.core.CameraSelector);
     method @MainThread public void setEffects(java.util.Set<androidx.camera.core.CameraEffect!>);
     method @MainThread public void setEnabledUseCases(int);

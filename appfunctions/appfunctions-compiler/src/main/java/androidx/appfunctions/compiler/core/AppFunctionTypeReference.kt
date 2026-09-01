@@ -25,6 +25,8 @@ import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionS
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_PROXY_LIST
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_PROXY_SINGULAR
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_SINGULAR
+import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.URI_LIST
+import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.URI_SINGULAR
 import androidx.appfunctions.compiler.core.IntrospectionHelper.PARCELABLE_CLASS_NAME
 import androidx.appfunctions.compiler.core.metadata.AppFunctionDataTypeMetadata
 import com.google.devtools.ksp.getAllSuperTypes
@@ -44,7 +46,9 @@ import com.squareup.kotlinpoet.LONG
 import com.squareup.kotlinpoet.LONG_ARRAY
 import com.squareup.kotlinpoet.TypeName
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
 
 /** Represents a type that is supported by AppFunction and AppFunctionSerializable. */
@@ -62,6 +66,8 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
                 PRIMITIVE_SINGULAR
             selfTypeReference.asStringWithoutNullQualifier() in SUPPORTED_ARRAY_PRIMITIVE_TYPES ->
                 PRIMITIVE_ARRAY
+            isUriType(selfTypeReference) -> URI_SINGULAR
+            isUriListType(selfTypeReference) -> URI_LIST
             isAppFunctionSerializableProxyType(selfTypeReference) -> SERIALIZABLE_PROXY_SINGULAR
             isSupportedPrimitiveListType(selfTypeReference) -> PRIMITIVE_LIST
             isAppFunctionSerializableProxyListType(selfTypeReference) -> SERIALIZABLE_PROXY_LIST
@@ -143,6 +149,26 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
         return defaultValue
     }
 
+    /** Checks if the type reference or its item type is an AppFunctionSerializable. */
+    fun typeOrItemTypeIsAppFunctionSerializable(): Boolean {
+        return this.isOfTypeCategory(AppFunctionSupportedTypeCategory.SERIALIZABLE_SINGULAR) ||
+            this.isOfTypeCategory(AppFunctionSupportedTypeCategory.SERIALIZABLE_LIST)
+    }
+
+    /** Resolves the AppFunctionSerializable type for this reference. */
+    fun getAnnotatedAppFunctionSerializable(): AppFunctionSerializableType {
+        val appFunctionSerializableKSType = this.selfOrItemTypeReference.resolve()
+        return AppFunctionSerializableType.create(
+            classDeclaration =
+                appFunctionSerializableKSType.declaration as? KSClassDeclaration
+                    ?: throw ProcessingException(
+                        "Only classes/interfaces should be annotated with @AppFunctionSerializable",
+                        appFunctionSerializableKSType.declaration,
+                    ),
+            typeArguments = appFunctionSerializableKSType.arguments,
+        )
+    }
+
     /**
      * The category of types that are supported by app functions.
      *
@@ -161,6 +187,8 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
         SERIALIZABLE_INTERFACE_LIST,
         PARCELABLE_SINGULAR,
         PARCELABLE_LIST,
+        URI_SINGULAR,
+        URI_LIST,
     }
 
     companion object {
@@ -199,6 +227,7 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
             }
             return typeReferenceArgument.asStringWithoutNullQualifier() in SUPPORTED_TYPES ||
                 isSupportedPrimitiveListType(typeReferenceArgument) ||
+                isUriListType(typeReferenceArgument) ||
                 isAppFunctionSerializableType(typeReferenceArgument) ||
                 isAppFunctionSerializableListType(typeReferenceArgument) ||
                 isAppFunctionSerializableProxyListType(typeReferenceArgument) ||
@@ -244,6 +273,13 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
                 typeReferenceArgument
                     .resolveListParameterizedType()
                     .asStringWithoutNullQualifier() in SUPPORTED_PRIMITIVE_TYPES_IN_LIST
+
+        internal fun isUriType(typeReferenceArgument: KSTypeReference): Boolean =
+            typeReferenceArgument.asStringWithoutNullQualifier() in SUPPORTED_SINGLE_URI_TYPES
+
+        internal fun isUriListType(typeReferenceArgument: KSTypeReference): Boolean =
+            typeReferenceArgument.isListType() &&
+                isUriType(typeReferenceArgument.resolveListParameterizedType())
 
         private fun isAppFunctionSerializableListType(
             typeReferenceArgument: KSTypeReference
@@ -337,7 +373,7 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
             toTypeName().ignoreNullable().toString()
 
         // Android Only primitives
-        private const val ANDROID_URI = "android.net.Uri"
+        private val ANDROID_URI = IntrospectionHelper.UriClass.URI_CLASS_NAME.canonicalName
 
         private val SUPPORTED_ARRAY_PRIMITIVE_TYPES =
             setOf(
@@ -365,17 +401,21 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
         private val SUPPORTED_SINGLE_SERIALIZABLE_PROXY_TYPES =
             setOf(
                 LocalDateTime::class.ensureQualifiedName(),
-                ANDROID_URI,
                 ZoneId::class.ensureQualifiedName(),
                 Instant::class.ensureQualifiedName(),
+                LocalDate::class.ensureQualifiedName(),
+                LocalTime::class.ensureQualifiedName(),
             )
+
+        private val SUPPORTED_SINGLE_URI_TYPES = setOf(ANDROID_URI)
 
         private val SUPPORTED_PRIMITIVE_TYPES_IN_LIST = setOf(String::class.ensureQualifiedName())
 
         private val SUPPORTED_TYPES =
             SUPPORTED_SINGLE_PRIMITIVE_TYPES +
                 SUPPORTED_ARRAY_PRIMITIVE_TYPES +
-                SUPPORTED_SINGLE_SERIALIZABLE_PROXY_TYPES
+                SUPPORTED_SINGLE_SERIALIZABLE_PROXY_TYPES +
+                SUPPORTED_SINGLE_URI_TYPES
 
         val SUPPORTED_TYPES_STRING: String =
             SUPPORTED_TYPES.joinToString(",\n") +

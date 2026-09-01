@@ -43,17 +43,20 @@ dependencies {
     androidTestImplementation(libs.truth)
 }
 
-tasks.withType(KotlinCompile).configureEach {
-    it.kotlinOptions {
-        freeCompilerArgs += [
+tasks.withType(KotlinCompile).configureEach { task ->
+    task.compilerOptions {
+        it.freeCompilerArgs.add(
                 // Enable experimental benchmark APIs internally
                 "-opt-in=androidx.benchmark.ExperimentalBenchmarkConfigApi",
-        ]
+        )
     }
 }
 
 android {
-    compileSdk { version = release(35) }
+    compileSdk { version = release(37) }
+    defaultConfig {
+        minSdk { version = release(24) }
+    }
 
     namespace = "androidx.compose.integration.hero.jetsnack.microbenchmark"
 }

@@ -37,6 +37,7 @@ import androidx.camera.camera2.pipe.RequestFailure
 import androidx.camera.camera2.pipe.RequestMetadata
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.media.AndroidImage
+import androidx.camera.common.unwrapAs
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.impl.CameraCaptureResults
@@ -86,13 +87,6 @@ constructor(
                 }
             }
 
-        val callbacks =
-            CameraCallbackMap().apply {
-                captureConfig.cameraCaptureCallbacks.forEach { callback ->
-                    addCaptureCallback(callback, threads.sequentialExecutor)
-                }
-            }
-
         val configOptions = captureConfig.implementationOptions
         val optionBuilder = Camera2ImplConfig.Builder()
 
@@ -101,6 +95,23 @@ constructor(
         // P2 SessionConfig options
         optionBuilder.insertAllOptions(sessionConfigOptions)
         optionBuilder.insertAllOptions(configOptions)
+
+        val mergedConfig = optionBuilder.build()
+        val stillCaptureCallback =
+            mergedConfig.retrieveOption(Camera2ImplConfig.STILL_CAPTURE_CALLBACK_OPTION, null)
+
+        val callbacks =
+            CameraCallbackMap().apply {
+                captureConfig.cameraCaptureCallbacks.forEach { callback ->
+                    addCaptureCallback(callback, threads.sequentialExecutor)
+                }
+                stillCaptureCallback?.let {
+                    addCaptureCallback(
+                        CameraUseCaseAdapter.CaptureCallbackContainer.create(it),
+                        threads.sequentialExecutor,
+                    )
+                }
+            }
 
         // Add capture options defined in CaptureConfig
         if (configOptions.containsOption(CaptureConfig.OPTION_ROTATION)) {
@@ -131,7 +142,7 @@ constructor(
                         "Unexpected capture result type: ${cameraCaptureResult.javaClass}"
                     }
                     val imageWrapper = AndroidImage(checkNotNull(imageProxy.image))
-                    val frameInfo = checkNotNull(cameraCaptureResult.unwrapAs(FrameInfo::class))
+                    val frameInfo = checkNotNull(cameraCaptureResult.unwrapAs<FrameInfo>())
                     inputRequest = InputRequest(imageWrapper, frameInfo)
 
                     // It's essential to call ImageProxy#close().

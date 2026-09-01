@@ -31,6 +31,9 @@ plugins {
 }
 
 android {
+    defaultConfig {
+        minSdk { version = release(24) }
+    }
     sourceSets {
         // This is required because of release variant specific code used by hilt.
         releaseLibrariesOnly {
@@ -86,7 +89,7 @@ configurations {
         attributes {
             attribute(
                     LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
-                    objects.named(LibraryElements, 'profileverification-apkAssets')
+                    objects.named(LibraryElements, "profileverification-apkAssets")
             )
         }
     }

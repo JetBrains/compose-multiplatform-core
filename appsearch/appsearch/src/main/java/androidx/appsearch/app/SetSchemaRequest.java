@@ -26,6 +26,7 @@ import androidx.annotation.OptIn;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.exceptions.AppSearchException;
 import androidx.appsearch.flags.FlaggedApi;
 import androidx.appsearch.flags.Flags;
@@ -99,8 +100,8 @@ public final class SetSchemaRequest {
      * {@link SetSchemaRequest.Builder#addRequiredPermissionsForSchemaTypeVisibility}
      *
      * @see android.Manifest.permission
-     * @exportToFramework:hide
      */
+    @HideInPlatform
     @IntDef(value = {
             READ_SMS,
             READ_CALENDAR,
@@ -113,6 +114,7 @@ public final class SetSchemaRequest {
             EXECUTE_APP_FUNCTIONS,
             PACKAGE_USAGE_STATS,
             PRIVATE_COMPUTE_CORE_UID_ACCESS,
+            DISCOVER_APP_FUNCTIONS
     })
     @Retention(RetentionPolicy.SOURCE)
     @RequiresFeature(
@@ -181,9 +183,8 @@ public final class SetSchemaRequest {
      * SetSchemaRequest.Builder#addRequiredPermissionsForSchemaTypeVisibility} to be visible to an
      * {@link EnterpriseGlobalSearchSession}. A call from a regular {@link GlobalSearchSession} will
      * not count as having this permission.
-     *
-     * @exportToFramework:hide
      */
+    @HideInPlatform
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final int ENTERPRISE_ACCESS = 7;
 
@@ -193,9 +194,8 @@ public final class SetSchemaRequest {
      * to have managed profile contacts access from {@link android.app.admin.DevicePolicyManager} to
      * be visible. This permission indicates that the protected schema may expose managed profile
      * data for contacts search.
-     *
-     * @exportToFramework:hide
      */
+    @HideInPlatform
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final int MANAGED_PROFILE_CONTACTS_ACCESS = 8;
 
@@ -208,18 +208,16 @@ public final class SetSchemaRequest {
      * <p>This is internally used by AppFunctions API to store app functions runtime metadata so it
      * is visible to packages holding {@link android.Manifest.permission#EXECUTE_APP_FUNCTIONS}
      * permission (currently associated with system assistant apps).
-     *
-     * @exportToFramework:hide
      */
+    @HideInPlatform
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final int EXECUTE_APP_FUNCTIONS = 9;
 
     /**
      * @deprecated The corresponding permission is deprecated. Some documents are already persisted
      *     with this constant, therefore keeping the constant here for compatibility reasons.
-     *
-     * @exportToFramework:hide
      */
+    @HideInPlatform
     @Deprecated
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final int EXECUTE_APP_FUNCTIONS_TRUSTED = 10;
@@ -227,21 +225,38 @@ public final class SetSchemaRequest {
     /**
      * The {@link android.Manifest.permission#PACKAGE_USAGE_STATS} AppSearch supported in {@link
      * SetSchemaRequest.Builder#addRequiredPermissionsForSchemaTypeVisibility}
-     *
-     * @exportToFramework:hide
      */
+    @HideInPlatform
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final int PACKAGE_USAGE_STATS = 11;
 
     /**
      * The visibility access for Private Compute Core.
      *
-     * <p>A schema with this permission allows callers with a UID for which {@link
+     * <p>A schema with this permission requires callers to have a UID for which {@link
      * android.os.Process#isPrivateComputeCoreUid} returns true to access the data.
+     *
+     * <p>This permission can be combined with other permissions in the same set. In such cases, the
+     * caller must both have a Private Compute Core UID and hold all other permissions in the set to
+     * gain access.
      */
-    @FlaggedApi(Flags.FLAG_ENABLE_PRIVATE_COMPUTE_CORE_UID_ACCESS)
-    @ExperimentalAppSearchApi
     public static final int PRIVATE_COMPUTE_CORE_UID_ACCESS = 12;
+
+    /**
+     * The {@code android.Manifest.permission#DISCOVER_APP_FUNCTIONS} AppSearch supported in
+     * {@link SetSchemaRequest.Builder#addRequiredPermissionsForSchemaTypeVisibility}.
+     */
+    @HideInPlatform
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final int DISCOVER_APP_FUNCTIONS = 13;
+
+    /**
+     * The {@code android.Manifest.permission#EXECUTE_APP_FUNCTIONS_SYSTEM} AppSearch supported in
+     * {@link SetSchemaRequest.Builder#addRequiredPermissionsForSchemaTypeVisibility}.
+     */
+    @HideInPlatform
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final int EXECUTE_APP_FUNCTIONS_SYSTEM = 14;
 
     private final Set<AppSearchSchema> mSchemas;
     private final Set<String> mSchemasNotDisplayedBySystem;
@@ -402,9 +417,8 @@ public final class SetSchemaRequest {
      * <p>A more efficient version of {@link #getSchemasVisibleToPackages}, but it returns a
      * modifiable map. This is not meant to be unhidden and should only be used by internal
      * classes.
-     *
-     * @exportToFramework:hide
      */
+    @HideInPlatform
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public @NonNull Map<String, Set<PackageIdentifier>> getSchemasVisibleToPackagesInternal() {
         return mSchemasVisibleToPackages;
@@ -700,8 +714,13 @@ public final class SetSchemaRequest {
                         "The set of required permissions cannot be empty");
             }
             for (int permission : permissions) {
-                Preconditions.checkArgumentInRange(permission, READ_SMS,
-                        PRIVATE_COMPUTE_CORE_UID_ACCESS, "permission");
+                if (androidx.appsearch.flags.appfunctions.Flags.enableAppFunctionPermissionV2()) {
+                    Preconditions.checkArgumentInRange(
+                            permission, READ_SMS, EXECUTE_APP_FUNCTIONS_SYSTEM, "permission");
+                } else {
+                    Preconditions.checkArgumentInRange(
+                            permission, READ_SMS, PRIVATE_COMPUTE_CORE_UID_ACCESS, "permission");
+                }
             }
             resetIfBuilt();
             Set<Set<Integer>> visibleToPermissions = mSchemasVisibleToPermissions.get(schemaType);

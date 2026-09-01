@@ -18,7 +18,8 @@ package androidx.compose.remote.creation.compose.capture
 
 import androidx.compose.remote.core.RemotePathBase
 import androidx.compose.remote.core.operations.Utils
-import androidx.compose.ui.graphics.vector.PathNode
+import androidx.compose.remote.creation.compose.state.rf
+import androidx.compose.remote.creation.compose.vector.RemotePathNode
 import java.util.ArrayList
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -28,6 +29,8 @@ import org.junit.runners.JUnit4
 @RunWith(JUnit4::class)
 class RemotePathParserTest {
 
+    val testRemoteStateScope = NoRemoteCompose()
+
     @Test
     fun testRelativeReflectiveQuadTo() {
         // M 100 100
@@ -36,12 +39,12 @@ class RemotePathParserTest {
 
         val nodes =
             listOf(
-                PathNode.MoveTo(100f, 100f),
-                PathNode.RelativeQuadTo(-10f, 0f, -20f, 0f),
-                PathNode.RelativeReflectiveQuadTo(-20f, 0f),
+                RemotePathNode.MoveTo(100f.rf, 100f.rf),
+                RemotePathNode.RelativeQuadTo((-10f).rf, 0f.rf, (-20f).rf, 0f.rf),
+                RemotePathNode.RelativeReflectiveQuadTo((-20f).rf, 0f.rf),
             )
 
-        val remotePath = nodes.toRemotePath()
+        val remotePath = nodes.toRemotePath(creationState = testRemoteStateScope)
         val pathArray = remotePath.createFloatArray()
 
         // Expected commands:
@@ -78,6 +81,63 @@ class RemotePathParserTest {
         assertEquals(100f, ops[2].points[1], 0.01f)
         assertEquals(60f, ops[2].points[2], 0.01f)
         assertEquals(100f, ops[2].points[3], 0.01f)
+    }
+
+    @Test
+    fun testConicTo() {
+        val nodes =
+            listOf(
+                RemotePathNode.MoveTo(10f.rf, 20f.rf),
+                RemotePathNode.ConicTo(30f.rf, 40f.rf, 50f.rf, 60f.rf, 0.707f.rf),
+                RemotePathNode.Close,
+            )
+
+        val remotePath = nodes.toRemotePath(creationState = testRemoteStateScope)
+        val pathArray = remotePath.createFloatArray()
+
+        val ops = parsePathArray(pathArray)
+        assertEquals(3, ops.size)
+
+        assertEquals("MoveTo", ops[0].type)
+        assertEquals(10f, ops[0].points[0], 0.01f)
+        assertEquals(20f, ops[0].points[1], 0.01f)
+
+        assertEquals("ConicTo", ops[1].type)
+        assertEquals(30f, ops[1].points[0], 0.01f)
+        assertEquals(40f, ops[1].points[1], 0.01f)
+        assertEquals(50f, ops[1].points[2], 0.01f)
+        assertEquals(60f, ops[1].points[3], 0.01f)
+        assertEquals(0.707f, ops[1].points[4], 0.01f)
+
+        assertEquals("Close", ops[2].type)
+    }
+
+    @Test
+    fun testRelativeConicTo() {
+        val nodes =
+            listOf(
+                RemotePathNode.MoveTo(100f.rf, 100f.rf),
+                RemotePathNode.RelativeConicTo(10f.rf, 20f.rf, 30f.rf, 40f.rf, 0.5f.rf),
+            )
+
+        val remotePath = nodes.toRemotePath(creationState = testRemoteStateScope)
+        val pathArray = remotePath.createFloatArray()
+
+        val ops = parsePathArray(pathArray)
+        assertEquals(2, ops.size)
+
+        assertEquals("MoveTo", ops[0].type)
+        assertEquals(100f, ops[0].points[0], 0.01f)
+        assertEquals(100f, ops[0].points[1], 0.01f)
+
+        // Control: 100 + 10 = 110, 100 + 20 = 120
+        // End: 100 + 30 = 130, 100 + 40 = 140
+        assertEquals("ConicTo", ops[1].type)
+        assertEquals(110f, ops[1].points[0], 0.01f)
+        assertEquals(120f, ops[1].points[1], 0.01f)
+        assertEquals(130f, ops[1].points[2], 0.01f)
+        assertEquals(140f, ops[1].points[3], 0.01f)
+        assertEquals(0.5f, ops[1].points[4], 0.01f)
     }
 
     private data class PathOp(val type: String, val points: FloatArray) {
@@ -140,6 +200,22 @@ class RemotePathParserTest {
                         )
                     )
                     i += 7
+                }
+                RemotePathBase.CONIC -> {
+                    // ConicTo: 1 command float + 2 padding floats + 5 coordinate floats (total 8)
+                    ops.add(
+                        PathOp(
+                            "ConicTo",
+                            floatArrayOf(
+                                array[i + 3],
+                                array[i + 4],
+                                array[i + 5],
+                                array[i + 6],
+                                array[i + 7],
+                            ),
+                        )
+                    )
+                    i += 8
                 }
                 RemotePathBase.CUBIC -> {
                     // CubicTo: 1 command float + 2 padding floats + 6 coordinate floats (total 9)

@@ -15,58 +15,63 @@
  */
 package androidx.xr.scenecore.spatial.core
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.os.Binder
-import android.view.Display
+import android.os.Handler
+import android.os.Looper
 import android.view.SurfaceControlViewHost
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.window.OnBackInvokedCallback
 import android.window.OnBackInvokedDispatcher
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.xr.scenecore.runtime.CleanupAction
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.PanelEntity
 import androidx.xr.scenecore.runtime.PixelDimensions
+import androidx.xr.scenecore.runtime.requiresApiLevel
+import androidx.xr.scenecore.spatial.core.RuntimeUtils.getDefaultPixelsPerMeter
 import com.android.extensions.xr.XrExtensions
 import com.android.extensions.xr.node.Node
-import java.util.Objects
+import java.lang.ref.WeakReference
 import java.util.concurrent.ScheduledExecutorService
 
 /**
- * Implementation of PanelEntity.
+ * Displays a [android.view.View] on a spatial panel.
  *
- * (Requires API Level 30)
- *
- * This entity shows 2D view on spatial panel.
+ * Back gesture handling requires API level 33 or higher.
  */
-@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 internal class PanelEntityImpl : BasePanelEntity, PanelEntity {
     private val surfaceControlViewHost: SurfaceControlViewHost
+    private val panelCleanupAction: PanelEntityCleanupAction
 
     constructor(
         context: Context,
         node: Node,
         view: View,
         extensions: XrExtensions,
-        entityManager: EntityManager,
+        sceneNodeRegistry: SceneNodeRegistry,
         surfaceDimensionsPx: PixelDimensions,
         name: String,
         executor: ScheduledExecutorService,
-    ) : super(context, node, extensions, entityManager, executor) {
+    ) : super(context, node, extensions, sceneNodeRegistry, executor) {
         val reparentedView = maybeReparentView(view, context)
         surfaceControlViewHost =
-            SurfaceControlViewHost(
-                context,
-                Objects.requireNonNull<Display>(context.display),
-                Binder(),
-            )
+            requiresApiLevel(30) {
+                SurfaceControlViewHost(
+                    context,
+                    checkNotNull(context.display) { "Context is not associated with a display." },
+                    Binder(),
+                )
+            }
         setupSurfaceControlViewHostAndCornerRadius(reparentedView, surfaceDimensionsPx, name)
-        setDefaultOnBackInvokedCallback(view)
+        panelCleanupAction =
+            initCleanupAction(reparentedView, view, surfaceControlViewHost, executor)
     }
 
     constructor(
@@ -74,101 +79,180 @@ internal class PanelEntityImpl : BasePanelEntity, PanelEntity {
         node: Node,
         view: View,
         extensions: XrExtensions,
-        entityManager: EntityManager,
+        sceneNodeRegistry: SceneNodeRegistry,
         surfaceDimensions: Dimensions,
         name: String,
         executor: ScheduledExecutorService,
-    ) : super(context, node, extensions, entityManager, executor) {
-        val surfaceDimensionsPx =
-            PixelDimensions(
-                (surfaceDimensions.width * defaultPixelDensity).toInt(),
-                (surfaceDimensions.height * defaultPixelDensity).toInt(),
+    ) : this(
+        context,
+        node,
+        view,
+        extensions,
+        sceneNodeRegistry,
+        PixelDimensions(
+            (surfaceDimensions.width * getDefaultPixelsPerMeter(extensions)).toInt(),
+            (surfaceDimensions.height * getDefaultPixelsPerMeter(extensions)).toInt(),
+        ),
+        name,
+        executor,
+    )
+
+    private fun initCleanupAction(
+        reparentedView: View,
+        view: View,
+        surfaceControlViewHost: SurfaceControlViewHost,
+        executor: ScheduledExecutorService,
+    ): PanelEntityCleanupAction {
+        val registration = requiresApiLevel(33) { setDefaultOnBackInvokedCallback(view) }
+        val wrapperRef =
+            if (reparentedView !== view && reparentedView is ViewGroup) {
+                WeakReference(reparentedView)
+            } else {
+                null
+            }
+        val childRef = if (reparentedView !== view) WeakReference(view) else null
+        val cleanupAction =
+            PanelEntityCleanupAction(
+                surfaceControlViewHost,
+                registration.dispatcher,
+                registration.callback,
+                wrapperRef,
+                childRef,
             )
-        val reparentedView = maybeReparentView(view, context)
-        surfaceControlViewHost =
-            SurfaceControlViewHost(
-                context,
-                Objects.requireNonNull<Display>(context.display),
-                Binder(),
-            )
-        setupSurfaceControlViewHostAndCornerRadius(reparentedView, surfaceDimensionsPx, name)
-        setDefaultOnBackInvokedCallback(view)
+        registerCleanup(executor, cleanupAction)
+        return cleanupAction
     }
 
-    // TODO(b/352827267): Enforce minSDK API strategy - go/androidx-api-guidelines#compat-newapi
+    internal class PanelEntityCleanupAction(
+        private val surfaceControlViewHost: SurfaceControlViewHost,
+        private val backDispatcher: OnBackInvokedDispatcher?,
+        private val onBackInvokedCallback: OnBackInvokedCallback?,
+        private val wrapperViewGroupRef: WeakReference<ViewGroup>? = null,
+        private val childViewRef: WeakReference<View>? = null,
+    ) :
+        CleanupAction({
+            requiresApiLevel(33) {
+                if (backDispatcher != null && onBackInvokedCallback != null) {
+                    backDispatcher.unregisterOnBackInvokedCallback(onBackInvokedCallback)
+                }
+            }
+            requiresApiLevel(30) { surfaceControlViewHost.release() }
+            val wrapper = wrapperViewGroupRef?.get()
+            val child = childViewRef?.get()
+            if (wrapper != null && child != null) {
+                if (Looper.myLooper() == Looper.getMainLooper()) {
+                    wrapper.removeView(child)
+                } else {
+                    Handler(Looper.getMainLooper()).post { wrapper.removeView(child) }
+                }
+            }
+        })
+
     private fun setupSurfaceControlViewHostAndCornerRadius(
         view: View,
         surfaceDimensionsPx: PixelDimensions,
         name: String,
     ) {
-        surfaceControlViewHost.setView(view, surfaceDimensionsPx.width, surfaceDimensionsPx.height)
+        requiresApiLevel(30) {
+            surfaceControlViewHost.setView(
+                view,
+                surfaceDimensionsPx.width,
+                surfaceDimensionsPx.height,
+            )
+        }
 
         val surfacePackage =
-            Objects.requireNonNull<SurfaceControlViewHost.SurfacePackage>(
-                surfaceControlViewHost.surfacePackage
-            )
+            checkNotNull(requiresApiLevel(30) { surfaceControlViewHost.surfacePackage }) {
+                "SurfaceControlViewHost has no active SurfacePackage."
+            }
 
         // We need to manually inform our base class of the pixelDimensions, even though the
         // extensions are initialized in the factory method. (ext.setWindowBounds, etc.)
         super.sizeInPixels = surfaceDimensionsPx
         try {
-            mExtensions.createNodeTransaction().use { transaction ->
+            extensions.createNodeTransaction().use { transaction ->
                 transaction
-                    .setName(mNode, name)
-                    .setSurfacePackage(mNode, surfacePackage)
+                    .setName(node, name)
+                    .setSurfacePackage(node, surfacePackage)
                     .setWindowBounds(
                         surfacePackage,
                         surfaceDimensionsPx.width,
                         surfaceDimensionsPx.height,
                     )
-                    .setVisibility(mNode, true)
-                    .setCornerRadius(mNode, defaultCornerRadiusInMeters)
+                    .setVisibility(node, true)
+                    .setCornerRadius(node, defaultCornerRadiusInMeters)
                     .apply()
             }
         } finally {
-            surfacePackage.release()
+            requiresApiLevel(30) { surfacePackage.release() }
         }
         super.cornerRadiusValue = defaultCornerRadiusInMeters
     }
 
-    @Suppress("deprecation") // TODO: b/398052385 - Replace deprecate onBackPressed.
-    private fun setDefaultOnBackInvokedCallback(view: View) {
-        val onBackInvokedCallback = OnBackInvokedCallback {
-            var context = view.context
-            // The context is not necessarily an activity, we need to find the activity to forward
-            // the onBackPressed()
-            while (context is ContextWrapper) {
-                if (context is Activity) {
-                    context.onBackPressed()
+    @RequiresApi(33)
+    private data class BackInvokedRegistration(
+        val dispatcher: OnBackInvokedDispatcher?,
+        val callback: OnBackInvokedCallback?,
+    )
+
+    @RequiresApi(33)
+    @Suppress("DEPRECATION") // TODO: b/398052385 - Replace deprecate onBackPressed.
+    private fun setDefaultOnBackInvokedCallback(view: View): BackInvokedRegistration {
+        val viewRef = WeakReference(view)
+        val callback = OnBackInvokedCallback {
+            val currentView = viewRef.get() ?: return@OnBackInvokedCallback
+            var currentContext = currentView.context
+            // The context is not necessarily an activity, we need to forward the
+            // onBackPressed()
+            while (currentContext is ContextWrapper) {
+                if (currentContext is Activity) {
+                    currentContext.onBackPressed()
                     return@OnBackInvokedCallback
                 }
-                context = context.baseContext
+                currentContext = currentContext.baseContext
             }
         }
-        val backDispatcher = view.findOnBackInvokedDispatcher()
-        backDispatcher?.registerOnBackInvokedCallback(
+        val dispatcher = view.findOnBackInvokedDispatcher()
+        dispatcher?.registerOnBackInvokedCallback(
             OnBackInvokedDispatcher.PRIORITY_DEFAULT,
-            onBackInvokedCallback,
+            callback,
         )
+        return BackInvokedRegistration(dispatcher, callback)
     }
 
     override var sizeInPixels: PixelDimensions
         get() = super.sizeInPixels
         set(value) {
-            if (super.sizeInPixels == value) return
-            surfaceControlViewHost.relayout(value.width, value.height)
-            val surfacePackage = surfaceControlViewHost.surfacePackage!!
-            mExtensions.createNodeTransaction().use { transaction ->
-                transaction.setWindowBounds(surfacePackage, value.width, value.height).apply()
+            requiresApiLevel(30) {
+                if (super.sizeInPixels == value) return
+                surfaceControlViewHost.relayout(value.width, value.height)
+                val surfacePackage = surfaceControlViewHost.surfacePackage ?: return
+                try {
+                    extensions.createNodeTransaction().use { transaction ->
+                        transaction
+                            .setWindowBounds(surfacePackage, value.width, value.height)
+                            .apply()
+                    }
+                } finally {
+                    surfacePackage.release()
+                }
+                super.sizeInPixels = value
             }
-            surfacePackage.release()
-            super.sizeInPixels = value
         }
 
-    override fun dispose() {
-        surfaceControlViewHost.release()
-        super.dispose()
-    }
+    override var contentDescription: CharSequence = ""
+        set(text) {
+            field = text
+            requiresApiLevel(30) {
+                val view: View? = surfaceControlViewHost.view
+                if (view != null) {
+                    if (text.isNotEmpty()) {
+                        view.isFocusable = true
+                    }
+                    view.contentDescription = text
+                }
+            }
+        }
 
     companion object {
         // Adds a FrameLayout as a parent of the contentView if it doesn't already have one. Adding

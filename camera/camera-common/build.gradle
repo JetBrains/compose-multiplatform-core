@@ -37,20 +37,26 @@ dependencies {
     testImplementation(libs.testRunner)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
+    testImplementation(libs.robolectric)
+    testImplementation(project(":camera:camera-common-testing"))
 
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.truth)
 }
 
 android {
+    compileSdk { version = release(36) }
     namespace = "androidx.camera.common"
 }
 
 androidx {
     name = "androidx.camera:camera-common"
     type = SoftwareType.PUBLISHED_LIBRARY
+    samples(project(":camera:camera-common:camera-common-samples"))
     inceptionYear = "2026"
+    enableRobolectric()
     description = "CameraX Common is a collection of well documented common types, interfaces, " +
             "wrappers, math and utilities designed to enable library and application developers " +
             "to build on a shared set of types regardless of CameraX or Camera2 usage."

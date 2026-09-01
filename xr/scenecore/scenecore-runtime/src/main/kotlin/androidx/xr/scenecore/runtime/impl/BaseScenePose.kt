@@ -27,19 +27,12 @@ import androidx.xr.scenecore.runtime.ScenePose
  *
  * <p>A ScenePose is an object that has a pose in the world space.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class BaseScenePose : ScenePose {
     override val activitySpacePose: Pose
         get() =
             throw UnsupportedOperationException(
                 "getActivitySpacePose is not implemented for this ScenePose."
-            )
-
-    /** Returns the pose for this entity, relative to the activity space root. */
-    public open val poseInActivitySpace: Pose
-        get() =
-            throw UnsupportedOperationException(
-                "getPoseInActivitySpace is not implemented for this ScenePose."
             )
 
     override val worldSpaceScale: Vector3
@@ -70,8 +63,8 @@ public abstract class BaseScenePose : ScenePose {
             Vector3(1f / destinationScale.x, 1f / destinationScale.y, 1f / destinationScale.z)
 
         // Compute the transformation to the destination entity from this local entity.
-        val activityToLocal = this.poseInActivitySpace
-        val activityToDestination = baseDestination.poseInActivitySpace
+        val activityToLocal = this.activitySpacePose
+        val activityToDestination = baseDestination.activitySpacePose
         val destinationToActivity =
             Pose(
                     activityToDestination.translation.scale(inverseDestinationScale),

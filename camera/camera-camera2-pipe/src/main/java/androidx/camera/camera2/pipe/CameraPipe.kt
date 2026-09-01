@@ -31,11 +31,11 @@ import androidx.camera.camera2.pipe.config.DaggerCameraPipeComponent
 import androidx.camera.camera2.pipe.config.FrameGraphConfigModule
 import androidx.camera.camera2.pipe.config.ThreadConfigModule
 import androidx.camera.camera2.pipe.core.Debug
-import androidx.camera.camera2.pipe.core.DurationNs
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.media.ImageSources
 import androidx.camera.featurecombinationquery.CameraDeviceSetupCompat
 import java.util.concurrent.Executor
+import kotlin.time.Duration
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.locks.synchronized
 import kotlinx.coroutines.CoroutineScope
@@ -74,7 +74,7 @@ public interface CameraPipe {
     public fun createCameraGraphs(config: CameraGraph.ConcurrentConfig): List<CameraGraph>
 
     /**
-     * [FrameGraph] extends [CameraGraph] and provides tools to more easily interact with [Frame]'s,
+     * [FrameGraph] extends [CameraGraph] and provides tools to more easily interact with [Frame]s,
      * images, and metadata from the camera, while maintaining the capabilities of [CameraGraph].
      *
      * This creates a new [FrameGraph] that can be used to interact with a single Camera on the
@@ -144,12 +144,12 @@ public interface CameraPipe {
     public data class Config(
         val appContext: Context,
         val threadConfig: ThreadConfig = ThreadConfig(),
-        val cameraMetadataConfig: CameraMetadataConfig = CameraMetadataConfig(),
         val cameraBackendConfig: CameraBackendConfig = CameraBackendConfig(),
         val cameraInteropConfig: CameraInteropConfig = CameraInteropConfig(),
         val imageSources: ImageSources? = null,
         val flags: Flags = Flags(),
         val platformApiCompat: PlatformApiCompat? = null,
+        val memoryEstimator: MemoryEstimator = MemoryEstimator.create(),
     )
 
     /**
@@ -168,7 +168,7 @@ public interface CameraPipe {
     public data class CameraInteropConfig(
         val cameraDeviceStateCallback: CameraDevice.StateCallback? = null,
         val cameraCaptureSessionListener: CameraInterop.CaptureSessionListener? = null,
-        val cameraOpenRetryMaxTimeoutNs: DurationNs? = null,
+        val cameraOpenRetryMaxTimeout: Duration? = null,
         val cameraSystemCallbacks: CameraInterop.CameraSystemCallbacks? = null,
     )
 
@@ -177,6 +177,7 @@ public interface CameraPipe {
      * will be used to run asynchronous background work across [CameraPipe].
      * - [defaultLightweightExecutor] is used to run fast, non-blocking, lightweight tasks.
      * - [defaultBackgroundExecutor] is used to run blocking and/or io bound tasks.
+     * - [defaultBlockingExecutor] is used for tasks that may block threads, such as disk or I/O.
      * - [defaultCameraExecutor] is used on newer API versions to interact with CameraAPIs. This is
      *   split into a separate field since many camera operations are extremely latency sensitive.
      * - [defaultCameraHandler] is used on older API versions to interact with CameraAPIs. This is
@@ -192,20 +193,6 @@ public interface CameraPipe {
         val defaultCameraHandler: Handler? = null,
         val defaultCameraHandlerFn: (() -> Handler)? = null,
         val testOnlyScope: CoroutineScope? = null,
-    )
-
-    /**
-     * Application level configuration options for [CameraMetadata] provider(s).
-     *
-     * @param cacheBlocklist is used to prevent the metadata backend from caching the results of
-     *   specific keys.
-     * @param cameraCacheBlocklist is used to prevent the metadata backend from caching the results
-     *   of specific keys for specific cameraIds.
-     */
-    public class CameraMetadataConfig(
-        public val cacheBlocklist: Set<CameraCharacteristics.Key<*>> = emptySet(),
-        public val cameraCacheBlocklist: Map<CameraId, Set<CameraCharacteristics.Key<*>>> =
-            emptyMap(),
     )
 
     /**
@@ -301,7 +288,7 @@ internal class CameraPipeImpl(private val component: CameraPipeComponent) : Came
     override fun createFrameGraph(frameGraphConfig: FrameGraph.Config): FrameGraph =
         synchronized(lock) {
             check(!shutdown)
-            createFrameGraphLocked(frameGraphConfig, CameraGraphId.nextId())
+            createFrameGraphLocked(frameGraphConfig, CameraGraphId.nextId(isFrameGraph = true))
         }
 
     override fun createFrameGraphs(
@@ -311,7 +298,7 @@ internal class CameraPipeImpl(private val component: CameraPipeComponent) : Came
             check(!shutdown)
             val cameraGraphIdMap = buildMap {
                 for (graphConfig in frameGraphConfigs.frameGraphConfigs) {
-                    put(graphConfig, CameraGraphId.nextId())
+                    put(graphConfig, CameraGraphId.nextId(isFrameGraph = true))
                 }
             }
             val cameraIds =

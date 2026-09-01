@@ -20,7 +20,7 @@ package androidx.compose.material3.adaptive.navigation3
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.adaptive.layout.AdaptStrategy
 import androidx.compose.material3.adaptive.layout.PaneScaffoldDirective
 import androidx.compose.material3.adaptive.layout.SupportingPaneScaffoldDefaults
@@ -45,7 +45,6 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -53,7 +52,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class SupportingPaneSceneStrategyTest {
-    @get:Rule val composeRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeRule = createComposeRule()
 
     val HomeScreenTestTag = "HomeScreen"
     val MainScreenTestTag = "MainScreen"
@@ -285,7 +284,7 @@ class SupportingPaneSceneStrategyTest {
         backNavigationBehavior: BackNavigationBehavior =
             BackNavigationBehavior.PopUntilScaffoldValueChange,
         directive: PaneScaffoldDirective =
-            calculatePaneScaffoldDirective(currentWindowAdaptiveInfo()),
+            calculatePaneScaffoldDirective(currentWindowAdaptiveInfoV2()),
         adaptStrategies: ThreePaneScaffoldAdaptStrategies =
             SupportingPaneScaffoldDefaults.adaptStrategies(),
         additionalMainMetadata: Map<String, Any> = emptyMap(),

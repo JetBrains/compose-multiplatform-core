@@ -16,11 +16,13 @@
 package androidx.health.connect.client.records
 
 import android.os.Build
+import androidx.annotation.FloatRange
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 import androidx.health.connect.client.aggregate.AggregateMetric
 import androidx.health.connect.client.impl.platform.records.toPlatformRecord
 import androidx.health.connect.client.records.ExerciseSegment.Companion.isSegmentTypeCompatibleWithSessionType
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_OTHER_WORKOUT
 import androidx.health.connect.client.records.metadata.Metadata
 import java.time.Duration
 import java.time.Instant
@@ -38,7 +40,6 @@ import java.time.ZoneOffset
  * @sample androidx.health.connect.client.samples.ReadExerciseSessions
  */
 class ExerciseSessionRecord
-@RestrictTo(RestrictTo.Scope.LIBRARY)
 internal constructor(
     override val startTime: Instant,
     override val startZoneOffset: ZoneOffset?,
@@ -76,6 +77,8 @@ internal constructor(
      *
      * See [ExerciseSegment.rateOfPerceivedExertion]
      */
+    @FloatRange(from = 0.0, to = 10.0)
+    @get:FloatRange(from = 0.0, to = 10.0)
     val rateOfPerceivedExertion: Float? = null,
 ) : IntervalRecord {
 
@@ -102,6 +105,7 @@ internal constructor(
         plannedExerciseSessionId: String? = null,
         @Suppress("AutoBoxing")
         /** Rate of perceived exertion (RPE) for the session. Must be between 0 and 10. */
+        @FloatRange(from = 0.0, to = 10.0)
         rateOfPerceivedExertion: Float? = null,
     ) : this(
         startTime,
@@ -124,11 +128,11 @@ internal constructor(
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
                 isAtLeastSdkExtension21()
         ) {
-            val unused = this.toPlatformRecord()
+            @Suppress("UNUSED_VARIABLE") val unused = this.toPlatformRecord()
         } else {
             require(startTime.isBefore(endTime)) { "startTime must be before endTime." }
             if (segments.isNotEmpty()) {
-                var sortedSegments =
+                val sortedSegments =
                     segments.sortedWith { a, b -> a.startTime.compareTo(b.startTime) }
                 for (i in 0 until sortedSegments.lastIndex) {
                     require(!sortedSegments[i].endTime.isAfter(sortedSegments[i + 1].startTime)) {

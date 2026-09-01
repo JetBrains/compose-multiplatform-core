@@ -31,7 +31,6 @@ import androidx.room3.ext.LambdaSpec
 import androidx.room3.ext.MapKeySetExprCode
 import androidx.room3.ext.RoomTypeNames
 import androidx.room3.ext.RoomTypeNames.RELATION_UTIL
-import androidx.room3.ext.SQLiteDriverMemberNames
 import androidx.room3.ext.SQLiteDriverTypeNames
 import androidx.room3.ext.stripNonJava
 import androidx.room3.solver.CodeGenScope
@@ -42,7 +41,9 @@ class RelationCollectorFunctionWriter(private val collector: RelationCollector) 
     TypeWriter.SharedFunctionSpec(
         baseName =
             "fetchRelationship${collector.relation.entity.tableName.stripNonJava()}" +
-                "As${collector.relation.dataClassTypeName.toString(CodeLanguage.JAVA).stripNonJava()}"
+                "As${collector.relation.dataClassTypeName.toString(CodeLanguage.JAVA).stripNonJava()}" +
+                (collector.relation.junction?.let { "With${it.entity.tableName.stripNonJava()}" }
+                    ?: "")
     ) {
     companion object {
         const val PARAM_MAP_VARIABLE = "_map"
@@ -59,9 +60,8 @@ class RelationCollectorFunctionWriter(private val collector: RelationCollector) 
         return "RelationCollectorFunctionWriter" +
             "-${collector.mapTypeName}" +
             "-${relation.entity.typeName.toString(CodeLanguage.JAVA)}" +
-            "-${relation.entityProperty.columnName}" +
             "-${relation.dataClassTypeName}" +
-            "-${relation.createLoadAllSql()}"
+            "-${collector.relationQueryWriter.createLoadAllSql()}"
     }
 
     override fun isSuspendFun() = true
@@ -103,89 +103,94 @@ class RelationCollectorFunctionWriter(private val collector: RelationCollector) 
         val stmtVar = scope.getTmpVar("_stmt")
         val sqlQueryVar = scope.getTmpVar("_sql")
         val connectionVar = scope.getTmpVar(PARAM_CONNECTION_VARIABLE)
-        val listSizeVars = collector.queryWriter.prepareQuery(sqlQueryVar, scope)
-
-        addLocalVal(
-            stmtVar,
-            SQLiteDriverTypeNames.STATEMENT,
-            "%L.%M(%L)",
-            connectionVar,
-            SQLiteDriverMemberNames.CONNECTION_PREPARE,
-            sqlQueryVar,
+        collector.relationQueryWriter.prepareStatementAndBindArgs(
+            connectionVarName = connectionVar,
+            outSqlQueryName = sqlQueryVar,
+            outStmtName = stmtVar,
+            scope = scope,
         )
-        collector.queryWriter.bindArgs(stmtVar, listSizeVars, scope)
         addRelationCollectorCode(scope, stmtVar)
     }
 
     private fun XCodeBlock.Builder.addRelationCollectorCode(scope: CodeGenScope, stmtVar: String) {
         val relation = collector.relation
         beginControlFlow("try").apply {
-            // Gets index of the column to be used as key
-            val itemKeyIndexVar = "_itemKeyIndex"
-            if (relation.junction != null) {
-                // When using a junction table the relationship map is keyed on the parent
-                // reference column of the junction table, the same column used in the WHERE IN
-                // clause, this column is the rightmost column in the generated SELECT
-                // clause.
-                val junctionParentColumnIndex = relation.projection.size
-                addStatement("// _junction.%L", relation.junction.parentProperty.columnName)
-                addLocalVal(
-                    itemKeyIndexVar,
-                    XTypeName.PRIMITIVE_INT,
-                    "%L",
-                    junctionParentColumnIndex,
-                )
-            } else {
-                addLocalVal(
-                    name = itemKeyIndexVar,
-                    typeName = XTypeName.PRIMITIVE_INT,
-                    assignExprFormat = "%M(%L, %S)",
-                    RoomTypeNames.STATEMENT_UTIL.packageMember("getColumnIndex"),
-                    stmtVar,
-                    relation.entityProperty.columnName,
-                )
-            }
+            // Gets indices of the columns to be used as key
+            val itemKeyIndexVars =
+                if (relation.junction != null) {
+                    // When using a junction table the relationship map is keyed on the parent
+                    // reference columns of the junction table, the same columns used in the WHERE
+                    // IN clause, these columns are the rightmost columns in the generated SELECT
+                    // clause.
+                    List(relation.junction.parentProperties.size) { index ->
+                        val idx = relation.projection.size + index
+                        val varName = scope.getTmpVar("_itemKeyIndex_$index")
+                        addLocalVal(varName, XTypeName.PRIMITIVE_INT, "%L", idx)
+                        varName
+                    }
+                } else {
+                    relation.entityProperties.mapIndexed { index, prop ->
+                        val varName = scope.getTmpVar("_itemKeyIndex_$index")
+                        addLocalVal(
+                            name = varName,
+                            typeName = XTypeName.PRIMITIVE_INT,
+                            assignExprFormat = "%M(%L, %S)",
+                            RoomTypeNames.STATEMENT_UTIL.packageMember("getColumnIndex"),
+                            stmtVar,
+                            prop.columnName,
+                        )
+                        varName
+                    }
+                }
 
-            // Check if index of column is not -1, indicating the column for the key is not in
-            // the result, can happen if the user specified a bad projection in @Relation.
-            beginControlFlow("if (%L == -1)", itemKeyIndexVar).apply { addStatement("return") }
+            // Check if index of column is not -1, indicating that one of the columns for the key is
+            // not in the result, can happen if the user specified a bad projection in @Relation.
+            beginControlFlow(
+                "if (${itemKeyIndexVars.joinToString(" || ") { "%L == -1" }})",
+                *itemKeyIndexVars.toTypedArray(),
+            )
+            addStatement("return")
             endControlFlow()
 
             // Prepare item column indices
             collector.rowAdapter.onStatementReady(stmtVarName = stmtVar, scope = scope)
             val tmpVarName = scope.getTmpVar("_item")
-            beginControlFlow("while (%L.%M())", stmtVar, SQLiteDriverMemberNames.STATEMENT_STEP)
-                .apply {
-                    // Read key from the statement, convert row to item and place it on map
-                    collector.readKey(
-                        stmtVarName = stmtVar,
-                        indexVar = itemKeyIndexVar,
-                        keyReader = collector.entityKeyColumnReader,
-                        scope = scope,
-                    ) { keyVar ->
-                        if (collector.relationTypeIsCollection) {
-                            val relationVar = scope.getTmpVar("_tmpRelation")
-                            addLocalVal(
-                                relationVar,
-                                collector.relationTypeName.copy(nullable = true),
-                                "%L.get(%L)",
-                                PARAM_MAP_VARIABLE,
-                                keyVar,
-                            )
-                            beginControlFlow("if (%L != null)", relationVar)
-                            addLocalVariable(tmpVarName, relation.dataClassTypeName)
-                            collector.rowAdapter.convert(tmpVarName, stmtVar, scope)
-                            addStatement("%L.add(%L)", relationVar, tmpVarName)
-                            endControlFlow()
+            beginControlFlow("while (%L.step())", stmtVar).apply {
+                // Read key from the statement, convert row to item and place it on map
+                collector.readKey(
+                    stmtVarName = stmtVar,
+                    indexVars = itemKeyIndexVars,
+                    keyReaders =
+                        if (relation.junction != null) {
+                            collector.parentKeyColumnReaders
                         } else {
-                            beginControlFlow("if (%N.containsKey(%L))", PARAM_MAP_VARIABLE, keyVar)
-                            addLocalVariable(tmpVarName, relation.dataClassTypeName)
-                            collector.rowAdapter.convert(tmpVarName, stmtVar, scope)
-                            addStatement("%N.put(%L, %L)", PARAM_MAP_VARIABLE, keyVar, tmpVarName)
-                            endControlFlow()
-                        }
+                            collector.entityKeyColumnReaders
+                        },
+                    scope = scope,
+                ) { keyVar ->
+                    if (collector.relationTypeIsCollection) {
+                        val relationVar = scope.getTmpVar("_tmpRelation")
+                        addLocalVal(
+                            relationVar,
+                            collector.relationTypeName.copy(nullable = true),
+                            "%L.get(%L)",
+                            PARAM_MAP_VARIABLE,
+                            keyVar,
+                        )
+                        beginControlFlow("if (%L != null)", relationVar)
+                        addLocalVariable(tmpVarName, relation.dataClassTypeName)
+                        collector.rowAdapter.convert(tmpVarName, stmtVar, scope)
+                        addStatement("%L.add(%L)", relationVar, tmpVarName)
+                        endControlFlow()
+                    } else {
+                        beginControlFlow("if (%N.containsKey(%L))", PARAM_MAP_VARIABLE, keyVar)
+                        addLocalVariable(tmpVarName, relation.dataClassTypeName)
+                        collector.rowAdapter.convert(tmpVarName, stmtVar, scope)
+                        addStatement("%N.put(%L, %L)", PARAM_MAP_VARIABLE, keyVar, tmpVarName)
+                        endControlFlow()
                     }
                 }
+            }
             endControlFlow()
         }
         nextControlFlow("finally").apply { addStatement("%L.close()", stmtVar) }

@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Encapsulates the constraints to apply when creating {@link TabTemplate}.
+ * Encapsulates the constraints to apply when creating {@link androidx.car.app.model.TabTemplate}.
  *
  */
 @RequiresCarApi(6)
@@ -46,7 +46,7 @@ public class TabsConstraints {
     private final int mMinTabs;
 
     /**
-     * Validates that the {@link Tab}s satisfies this {@link TabConstraints} instance.
+     * Validates that the {@link Tab}s satisfies this {@link TabsConstraints} instance.
      *
      * @throws IllegalArgumentException if the constraints are not met
      */

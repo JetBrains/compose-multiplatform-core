@@ -44,20 +44,21 @@ import androidx.compose.ui.unit.dp
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.requestFullSpace
 import androidx.xr.compose.platform.requestHomeSpace
-import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
-import androidx.xr.compose.spatial.OrbiterOffsetType
+import androidx.xr.compose.spatial.OrbiterPosition
+import androidx.xr.compose.spatial.OrbiterPosition.EdgeAlignment
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
+import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
 import androidx.xr.compose.testapp.ui.components.TestDialog
+import androidx.xr.compose.unit.DpVolumeOffset
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -80,15 +81,9 @@ class SpatialComposeStateTest : ComponentActivity() {
             Subspace {
                 SpatialRow {
                     if (useMainPanel) {
-                        SpatialMainPanel(
-                            modifier = SubspaceModifier.size(600.dp),
-                            dragPolicy = MovePolicy(),
-                        )
+                        SpatialMainPanel(modifier = SubspaceModifier.size(600.dp).movable())
                     } else {
-                        SpatialPanel(
-                            modifier = SubspaceModifier.size(600.dp),
-                            dragPolicy = MovePolicy(),
-                        ) {
+                        SpatialPanel(modifier = SubspaceModifier.size(600.dp).movable()) {
                             MainPanelContent("Spatial Panel")
                         }
                     }
@@ -112,8 +107,7 @@ class SpatialComposeStateTest : ComponentActivity() {
             }
             Subspace {
                 SpatialPanel(
-                    modifier = SubspaceModifier.size(200.dp).offset(x = 500.dp),
-                    dragPolicy = MovePolicy(),
+                    modifier = SubspaceModifier.size(200.dp).offset(x = 500.dp).movable()
                 ) {
                     Surface {
                         CommonTestScaffold(title = "Second\nSubspace", showBottomBar = false) {
@@ -190,9 +184,11 @@ class SpatialComposeStateTest : ComponentActivity() {
 @Composable
 fun CounterOrbiter() {
     Orbiter(
-        position = ContentEdge.Bottom,
-        offset = 8.dp,
-        offsetType = OrbiterOffsetType.InnerEdge,
+        position =
+            OrbiterPosition.BottomCenter(
+                EdgeAlignment.Inside,
+                offset = DpVolumeOffset(x = 0.dp, y = 8.dp, z = 0.dp),
+            ),
         shape = SpatialRoundedCornerShape(CornerSize(percent = 50)),
     ) {
         Surface {

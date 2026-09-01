@@ -16,7 +16,10 @@
 
 package androidx.core.view.accessibility;
 
+import static androidx.core.view.accessibility.AccessibilityNodeInfoCompat.ACTION_ARGUMENT_SELECTION_PARCELABLE;
 import static androidx.core.view.accessibility.AccessibilityNodeInfoCompat.CollectionInfoCompat.UNDEFINED;
+import static androidx.core.view.accessibility.AccessibilityNodeInfoCompat.EXTRA_SELECTION_END_OFFSET_TYPE;
+import static androidx.core.view.accessibility.AccessibilityNodeInfoCompat.EXTRA_SELECTION_START_OFFSET_TYPE;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -27,17 +30,23 @@ import static org.mockito.Mockito.verify;
 import android.app.Activity;
 import android.app.Instrumentation;
 import android.app.UiAutomation;
+import android.content.Context;
 import android.graphics.Rect;
 import android.graphics.Region;
 import android.os.Build;
+import android.os.Bundle;
 import android.support.v4.BaseInstrumentationTestCase;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityNodeProvider;
+import android.widget.TextView;
 
+import androidx.annotation.OptIn;
+import androidx.core.os.BuildCompat;
 import androidx.core.view.ViewCompatActivity;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat;
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.MathInfoCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionPositionCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.TouchDelegateInfoCompat;
@@ -165,6 +174,50 @@ public class AccessibilityNodeInfoCompatTest extends
         assertThat(collectionItemInfoCompat.getRowIndex()).isEqualTo(1);
         assertThat(collectionItemInfoCompat.getRowSpan()).isEqualTo(2);
         assertThat(collectionItemInfoCompat.isHeading()).isTrue();
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.CINNAMON_BUN)
+    @Test
+    public void testStructuredDataInfoCompatEquals() {
+        MathInfoCompat division = new MathInfoCompat(MathInfoCompat.MATH_TAG_FRACTION);
+        division.putAttribute(MathInfoCompat.MATH_ATTRIBUTE_INTENT, "divide($a, $b)");
+
+        MathInfoCompat anotherDivision = new MathInfoCompat(MathInfoCompat.MATH_TAG_FRACTION);
+        anotherDivision.putAttribute(MathInfoCompat.MATH_ATTRIBUTE_INTENT, "divide($b, $c)");
+
+        MathInfoCompat sqrt = new MathInfoCompat(MathInfoCompat.MATH_TAG_SQUARE_ROOT);
+        sqrt.putAttribute(MathInfoCompat.MATH_ATTRIBUTE_INTENT, "square-root($x)");
+
+        MathInfoCompat anotherSqrt = new MathInfoCompat(MathInfoCompat.MATH_TAG_SQUARE_ROOT);
+        anotherSqrt.putAttribute(MathInfoCompat.MATH_ATTRIBUTE_INTENT, "square-root($x)");
+
+        assertThat(division).isEqualTo(division);
+        assertThat(division).isNotEqualTo(anotherDivision);
+        assertThat(division).isNotEqualTo(sqrt);
+        assertThat(division).isNotEqualTo(anotherSqrt);
+        assertThat(sqrt).isEqualTo(anotherSqrt);
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.CINNAMON_BUN)
+    @Test
+    public void testGetSetMathInfo() {
+        AccessibilityNodeInfoCompat nodeCompat = obtainedWrappedNodeCompat();
+
+        // Verify the values are correct for a node with valid math info.
+        MathInfoCompat mathInfoCompat = new MathInfoCompat(MathInfoCompat.MATH_TAG_FRACTION);
+        mathInfoCompat.putAttribute(MathInfoCompat.MATH_ATTRIBUTE_INTENT, "division");
+        nodeCompat.setStructuredDataInfo(mathInfoCompat);
+        MathInfoCompat retrievedMathInfoCompat =
+                (MathInfoCompat) nodeCompat.getStructuredDataInfo();
+        assertThat(retrievedMathInfoCompat).isNotNull();
+        assertThat(retrievedMathInfoCompat.getTag()).isEqualTo(MathInfoCompat.MATH_TAG_FRACTION);
+        assertThat(retrievedMathInfoCompat.getAttributes().size()).isEqualTo(1);
+        assertThat(retrievedMathInfoCompat.getAttribute(MathInfoCompat.MATH_ATTRIBUTE_INTENT))
+                .isEqualTo("division");
+
+        // Verify the behavior for a node without math info.
+        nodeCompat.setStructuredDataInfo(null);
+        assertThat(nodeCompat.getStructuredDataInfo()).isNull();
     }
 
     @Test
@@ -664,6 +717,276 @@ public class AccessibilityNodeInfoCompatTest extends
         assertThat(containerNodeCompat.getSelection()).isNull();
     }
 
+    @Test
+    public void testSelectionPositionCompat_equals() {
+        Context context = InstrumentationRegistry.getInstrumentation().getContext();
+        TextView textView = new TextView(context);
+        SelectionPositionCompat position1 = new SelectionPositionCompat(textView, 0);
+        SelectionPositionCompat position2 = new SelectionPositionCompat(textView, 0);
+        SelectionPositionCompat position3 = new SelectionPositionCompat(textView, 1);
+
+        assertThat(position1).isEqualTo(position1);
+        assertThat(position1).isNotEqualTo(position3);
+
+        if (BuildCompat.isAtLeastB_1()) {
+            // Relies on the platform's underlying implementation of equals.
+            assertThat(position1).isEqualTo(position2);
+        } else {
+            assertThat(position1).isNotEqualTo(position2);
+        }
+    }
+
+    @Test
+    public void testSelectionCompat_equals() {
+        Context context = InstrumentationRegistry.getInstrumentation().getContext();
+        TextView textView = new TextView(context);
+        SelectionPositionCompat start = new SelectionPositionCompat(textView, 0);
+        SelectionPositionCompat end1 = new SelectionPositionCompat(textView, 1);
+        SelectionPositionCompat end2 = new SelectionPositionCompat(textView, 2);
+
+        SelectionCompat selection1 = new SelectionCompat(start, end1);
+        SelectionCompat selection2 = new SelectionCompat(start, end1);
+        SelectionCompat selection3 = new SelectionCompat(start, end2);
+
+        assertThat(selection1).isEqualTo(selection1);
+        assertThat(selection1).isNotEqualTo(selection3);
+
+        if (BuildCompat.isAtLeastB_1()) {
+            // Relies on the platform's underlying implementation of equals.
+            assertThat(selection1).isEqualTo(selection2);
+        } else {
+            assertThat(selection1).isNotEqualTo(selection2);
+        }
+    }
+
+    @SmallTest
+    @Test
+    @SdkSuppress(minSdkVersion = 30)
+    public void testSelectionCompat_unwrap() {
+        final Activity activity = mActivityTestRule.getActivity();
+        final View root = activity.findViewById(androidx.core.test.R.id.view);
+        assertThat(root).isNotNull();
+        AccessibilityNodeInfoCompat nodeCompat =
+                AccessibilityNodeInfoCompat.wrap(new AccessibilityNodeInfo(root, 1));
+        SelectionPositionCompat start = new SelectionPositionCompat(nodeCompat, 0);
+        SelectionPositionCompat end = new SelectionPositionCompat(nodeCompat, 5);
+        SelectionCompat selectionCompat = new SelectionCompat(start, end);
+
+        if (BuildCompat.isAtLeastB_1()) {
+            assertThat(selectionCompat.unwrap()).isNotNull();
+            assertThat(selectionCompat.unwrap()).isInstanceOf(
+                    AccessibilityNodeInfo.Selection.class);
+        } else {
+            assertThat(selectionCompat.unwrap()).isNull();
+        }
+    }
+
+    @OptIn(markerClass = PreviewAccessibilityApi.class)
+    @Test
+    public void testSelectionPositionCompat_builder_offsetType() {
+        Context context = InstrumentationRegistry.getInstrumentation().getContext();
+        TextView textView = new TextView(context);
+        SelectionPositionCompat position = new SelectionPositionCompat.Builder(textView, 5)
+                .setOffsetType(SelectionPositionCompat.OFFSET_TYPE_CHILD)
+                .build();
+
+        assertThat(position.getOffset()).isEqualTo(BuildCompat.isAtLeastB_1() ? 5 : -1);
+        assertThat(position.getOffsetType()).isEqualTo(SelectionPositionCompat.OFFSET_TYPE_CHILD);
+    }
+
+    @OptIn(markerClass = PreviewAccessibilityApi.class)
+    @SdkSuppress(minSdkVersion = 30)
+    @Test
+    public void testSelectionCompat_setGetSelection() {
+        final Activity activity = mActivityTestRule.getActivity();
+        final View root = activity.findViewById(androidx.core.test.R.id.view);
+        assertThat(root).isNotNull();
+
+        AccessibilityNodeInfoCompat nodeCompat =
+                AccessibilityNodeInfoCompat.wrap(new AccessibilityNodeInfo(root, 1));
+
+        SelectionPositionCompat start = new SelectionPositionCompat.Builder(root, 0)
+                .setOffsetType(SelectionPositionCompat.OFFSET_TYPE_CHILD)
+                .build();
+        SelectionPositionCompat end = new SelectionPositionCompat.Builder(root, 5)
+                .setOffsetType(SelectionPositionCompat.OFFSET_TYPE_TEXT)
+                .build();
+
+        SelectionCompat selection = new SelectionCompat(start, end);
+        nodeCompat.setSelection(selection);
+
+        if (BuildCompat.isAtLeastB_1()) {
+            SelectionCompat retrieved = nodeCompat.getSelection();
+            assertThat(retrieved).isNotNull();
+            // Offset types should be preserved.
+            assertThat(retrieved.getStart().getOffsetType())
+                    .isEqualTo(SelectionPositionCompat.OFFSET_TYPE_CHILD);
+            assertThat(retrieved.getEnd().getOffsetType())
+                    .isEqualTo(SelectionPositionCompat.OFFSET_TYPE_TEXT);
+            // Positions should be preserved.
+            assertThat(retrieved.getStart().getOffset())
+                    .isEqualTo(start.getOffset());
+            assertThat(retrieved.getEnd().getOffset())
+                    .isEqualTo(end.getOffset());
+
+            // Verify clearing selection also clears offset types from extras.
+            nodeCompat.setSelection(null);
+            assertThat(nodeCompat.getSelection()).isNull();
+            Bundle extras = nodeCompat.getExtras();
+            assertThat(extras.containsKey(EXTRA_SELECTION_START_OFFSET_TYPE))
+                    .isFalse();
+            assertThat(extras.containsKey(EXTRA_SELECTION_END_OFFSET_TYPE))
+                    .isFalse();
+
+            // Re-set selection
+            nodeCompat.setSelection(selection);
+            assertThat(nodeCompat.getSelection()).isNotNull();
+
+            // Verify clearing with SelectionCompat(null) also clears offset types.
+            nodeCompat.setSelection(new SelectionCompat((AccessibilityNodeInfo.Selection) null));
+            assertThat(nodeCompat.getSelection()).isNull();
+            extras = nodeCompat.getExtras();
+            assertThat(extras.containsKey(EXTRA_SELECTION_START_OFFSET_TYPE))
+                    .isFalse();
+            assertThat(extras.containsKey(EXTRA_SELECTION_END_OFFSET_TYPE))
+                    .isFalse();
+        } else {
+            assertThat(nodeCompat.getSelection()).isNull();
+        }
+    }
+
+    @OptIn(markerClass = PreviewAccessibilityApi.class)
+    @SdkSuppress(minSdkVersion = 30)
+    @Test
+    public void testSelectionCompat_toFromActionArguments() {
+        final Activity activity = mActivityTestRule.getActivity();
+        final View root = activity.findViewById(androidx.core.test.R.id.view);
+        assertThat(root).isNotNull();
+
+        SelectionPositionCompat start = new SelectionPositionCompat.Builder(root, 0)
+                .setOffsetType(SelectionPositionCompat.OFFSET_TYPE_CHILD)
+                .build();
+        SelectionPositionCompat end = new SelectionPositionCompat.Builder(root, 5)
+                .setOffsetType(SelectionPositionCompat.OFFSET_TYPE_TEXT)
+                .build();
+
+        SelectionCompat selection = new SelectionCompat(start, end);
+
+        Bundle bundle = selection.toActionArguments();
+
+        // Verify round-trip.
+        SelectionCompat restored = new SelectionCompat(bundle);
+        if (BuildCompat.isAtLeastB_1()) {
+            assertThat(restored).isEqualTo(selection);
+        } else {
+            // On pre-B_1, both restored and selection will have null mSelection and
+            // default offset types, but they are different instances and equals()
+            // returns false for different instances on pre-B_1.
+            assertThat(restored.unwrap()).isNull();
+            assertThat(restored.getStart()).isNull();
+            assertThat(restored.getEnd()).isNull();
+        }
+    }
+
+    @OptIn(markerClass = PreviewAccessibilityApi.class)
+    @Test
+    public void testSelectionPositionCompat_invalidOffsetType() {
+        final Activity activity = mActivityTestRule.getActivity();
+        final View root = activity.findViewById(androidx.core.test.R.id.view);
+        assertThat(root).isNotNull();
+
+        try {
+            new SelectionPositionCompat.Builder(root, 0)
+                    .setOffsetType(-1) // Invalid
+                    .build();
+            Assert.fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // Expected
+        }
+
+        try {
+            new SelectionPositionCompat.Builder(root, 0)
+                    .setOffsetType(2) // Invalid
+                    .build();
+            Assert.fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // Expected
+        }
+    }
+
+    @OptIn(markerClass = PreviewAccessibilityApi.class)
+    @SdkSuppress(minSdkVersion = 30)
+    @Test
+    public void testSelectionCompat_invalidBundle() {
+        final Activity activity = mActivityTestRule.getActivity();
+        final View root = activity.findViewById(androidx.core.test.R.id.view);
+        assertThat(root).isNotNull();
+
+        SelectionPositionCompat start = new SelectionPositionCompat.Builder(root, 0)
+                .setOffsetType(SelectionPositionCompat.OFFSET_TYPE_TEXT)
+                .build();
+        SelectionPositionCompat end = new SelectionPositionCompat.Builder(root, 5)
+                .setOffsetType(SelectionPositionCompat.OFFSET_TYPE_TEXT)
+                .build();
+        SelectionCompat validSelection = new SelectionCompat(start, end);
+        android.os.Parcelable platformSelection = validSelection.unwrap();
+
+        // Missing ACTION_ARGUMENT_SELECTION_PARCELABLE
+        Bundle bundle1 = new Bundle();
+        bundle1.putInt(EXTRA_SELECTION_START_OFFSET_TYPE,
+                SelectionPositionCompat.OFFSET_TYPE_TEXT);
+        bundle1.putInt(EXTRA_SELECTION_END_OFFSET_TYPE,
+                SelectionPositionCompat.OFFSET_TYPE_TEXT);
+        try {
+            new SelectionCompat(bundle1);
+            if (BuildCompat.isAtLeastB_1()) {
+                Assert.fail("Expected IllegalArgumentException due to "
+                        + "missing selection parcelable");
+            }
+        } catch (IllegalArgumentException e) {
+            // Expected on B_1+
+        }
+
+        // Invalid start offset type
+        Bundle bundle2 = new Bundle();
+        if (platformSelection != null) {
+            bundle2.putParcelable(ACTION_ARGUMENT_SELECTION_PARCELABLE,
+                    platformSelection);
+        }
+        bundle2.putInt(EXTRA_SELECTION_START_OFFSET_TYPE, -1); // Invalid
+        bundle2.putInt(EXTRA_SELECTION_END_OFFSET_TYPE,
+                SelectionPositionCompat.OFFSET_TYPE_TEXT);
+        try {
+            new SelectionCompat(bundle2);
+            if (BuildCompat.isAtLeastB_1()) {
+                Assert.fail("Expected IllegalArgumentException due to "
+                        + "invalid start offset type");
+            }
+        } catch (IllegalArgumentException e) {
+            // Expected on B_1+
+        }
+
+        // Invalid end offset type
+        Bundle bundle3 = new Bundle();
+        if (platformSelection != null) {
+            bundle3.putParcelable(ACTION_ARGUMENT_SELECTION_PARCELABLE,
+                    platformSelection);
+        }
+        bundle3.putInt(EXTRA_SELECTION_START_OFFSET_TYPE,
+                SelectionPositionCompat.OFFSET_TYPE_TEXT);
+        bundle3.putInt(EXTRA_SELECTION_END_OFFSET_TYPE, 2); // Invalid
+        try {
+            new SelectionCompat(bundle3);
+            if (BuildCompat.isAtLeastB_1()) {
+                Assert.fail("Expected IllegalArgumentException due to "
+                        + "invalid end offset type");
+            }
+        } catch (IllegalArgumentException e) {
+            // Expected on B_1+
+        }
+    }
+
+
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES_FULL.BAKLAVA_1)
     @SmallTest
     @Test
@@ -674,6 +997,40 @@ public class AccessibilityNodeInfoCompatTest extends
                 android.R.id.accessibilityActionSetExtendedSelection);
         assertThat(actionCompat.toString()).isEqualTo("AccessibilityActionCompat: "
                 + "ACTION_SET_EXTENDED_SELECTION");
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES_FULL.BAKLAVA_1)
+    @SmallTest
+    @Test
+    public void testActionArgumentSelectionParcelableValue() {
+        assertThat(AccessibilityNodeInfoCompat.ACTION_ARGUMENT_SELECTION_PARCELABLE)
+                .isEqualTo(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_PARCELABLE);
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES_FULL.BAKLAVA_1)
+    @Test
+    public void testSelectionPositionCompat_getViewAndVirtualDescendantId() {
+        Context context = InstrumentationRegistry.getInstrumentation().getContext();
+        TextView textView = new TextView(context);
+        AccessibilityNodeInfoCompat.SelectionPositionCompat selectionPositionCompat =
+                new AccessibilityNodeInfoCompat.SelectionPositionCompat(textView, 0);
+
+        assertThat(selectionPositionCompat.getView()).isEqualTo(textView);
+        assertThat(selectionPositionCompat.getVirtualDescendantId()).isEqualTo(
+                AccessibilityNodeProviderCompat.HOST_VIEW_ID);
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES_FULL.BAKLAVA_1)
+    @Test
+    public void testSelectionPositionCompat_getViewAndVirtualDescendantId_withVirtualId() {
+        Context context = InstrumentationRegistry.getInstrumentation().getContext();
+        TextView textView = new TextView(context);
+        int virtualId = 1;
+        AccessibilityNodeInfoCompat.SelectionPositionCompat selectionPositionCompat =
+                new AccessibilityNodeInfoCompat.SelectionPositionCompat(textView, virtualId, 0);
+
+        assertThat(selectionPositionCompat.getView()).isEqualTo(textView);
+        assertThat(selectionPositionCompat.getVirtualDescendantId()).isEqualTo(virtualId);
     }
 
     private static class LabelNodeProviderTest extends AccessibilityNodeProvider {

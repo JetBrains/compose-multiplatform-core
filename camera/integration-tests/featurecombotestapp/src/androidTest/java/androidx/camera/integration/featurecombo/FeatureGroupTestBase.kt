@@ -18,12 +18,12 @@ package androidx.camera.integration.featurecombo
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.SurfaceTexture
 import android.hardware.DataSpace
 import android.hardware.DataSpace.TRANSFER_HLG
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
 import android.os.Build
+import android.os.SystemClock
 import android.util.Log
 import android.util.Range
 import android.util.Size
@@ -60,15 +60,14 @@ import androidx.camera.integration.featurecombo.AppUseCase.VIDEO_CAPTURE
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.Camera2CaptureCallbackImpl
 import androidx.camera.testing.impl.CameraUtil
-import androidx.camera.testing.impl.GLUtil
-import androidx.camera.testing.impl.SurfaceTextureProvider
-import androidx.camera.testing.impl.SurfaceTextureProvider.createSurfaceTextureProvider
+import androidx.camera.testing.impl.SurfaceTextureProvider.createAutoDrainingSurfaceTextureProvider
 import androidx.camera.testing.impl.UltraHdrImageVerification.assertJpegUltraHdr
 import androidx.camera.testing.impl.WakelockEmptyActivityRule
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.testing.impl.util.Camera2InteropUtil
 import androidx.camera.video.GroupableFeatures.FHD_RECORDING
 import androidx.camera.video.GroupableFeatures.HD_RECORDING
+import androidx.camera.video.GroupableFeatures.QHD_RECORDING
 import androidx.camera.video.GroupableFeatures.SD_RECORDING
 import androidx.camera.video.GroupableFeatures.UHD_RECORDING
 import androidx.camera.video.GroupableFeatures.VIDEO_STABILIZATION
@@ -79,10 +78,15 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import kotlin.math.min
-import kotlinx.coroutines.CompletableDeferred
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.junit.After
@@ -109,7 +113,8 @@ open class FeatureGroupTestBase(
 
     private val sessionCaptureCallback = Camera2CaptureCallbackImpl()
 
-    protected val surfaceTextureDeferred = CompletableDeferred<SurfaceTexture>()
+    protected val previewDataSpace = AtomicInteger(DataSpace.DATASPACE_UNKNOWN)
+    protected val previewFrameCountDownLatch = AtomicReference(CountDownLatch(5))
 
     private fun createPreview(aspectRatio: Int) =
         Preview.Builder()
@@ -123,23 +128,21 @@ open class FeatureGroupTestBase(
             }
             .build()
             .apply {
+                val latch = CountDownLatch(5)
+                previewFrameCountDownLatch.set(latch)
+                previewDataSpace.set(DataSpace.DATASPACE_UNKNOWN)
                 runBlocking {
                     withContext(Dispatchers.Main) {
                         surfaceProvider =
-                            createSurfaceTextureProvider(
-                                object : SurfaceTextureProvider.SurfaceTextureCallback {
-                                    override fun onSurfaceTextureReady(
-                                        surfaceTexture: SurfaceTexture,
-                                        resolution: Size,
-                                    ) {
-                                        surfaceTextureDeferred.complete(surfaceTexture)
-                                    }
-
-                                    override fun onSafeToRelease(surfaceTexture: SurfaceTexture) {
-                                        surfaceTexture.release()
+                            createAutoDrainingSurfaceTextureProvider { surfaceTexture ->
+                                if (Build.VERSION.SDK_INT >= 33) {
+                                    val ds = surfaceTexture.dataSpace
+                                    if (ds != DataSpace.DATASPACE_UNKNOWN) {
+                                        previewDataSpace.set(ds)
                                     }
                                 }
-                            )
+                                latch.countDown()
+                            }
                     }
                 }
             }
@@ -231,24 +234,31 @@ open class FeatureGroupTestBase(
     ) {
         Log.d(TAG, "verifyFeatures: $this, useCases = $useCases")
 
-        forEach {
-            when {
-                it == HDR_HLG10 -> {
-                    // Reaching this stage before API 33 means query API didn't work correctly
-                    require(Build.VERSION.SDK_INT >= 33)
-                    verifyHlg10Hdr(useCases, cameraInfo)
+        coroutineScope {
+            map {
+                    async {
+                        when {
+                            it == HDR_HLG10 -> {
+                                // Reaching this stage before API 33 means query API didn't work
+                                // correctly
+                                require(Build.VERSION.SDK_INT >= 33)
+                                verifyHlg10Hdr(useCases, cameraInfo)
+                            }
+                            it == FPS_60 -> verify60Fps(cameraInfo)
+                            it == PREVIEW_STABILIZATION ->
+                                verifyPreviewStabilization(cameraInfo as CameraInfoInternal)
+                            it == IMAGE_ULTRA_HDR -> {
+                                // Reaching this stage before API 34 means query API didn't work
+                                // correctly
+                                require(Build.VERSION.SDK_INT >= 34)
+                                verifyUltraHdr(useCases, cameraInfo)
+                            }
+                            it.featureTypeInternal == FeatureTypeInternal.RECORDING_QUALITY ->
+                                verifyRecordingQuality(useCases, it, aspectRatio)
+                        }
+                    }
                 }
-                it == FPS_60 -> verify60Fps(cameraInfo)
-                it == PREVIEW_STABILIZATION ->
-                    verifyPreviewStabilization(cameraInfo as CameraInfoInternal)
-                it == IMAGE_ULTRA_HDR -> {
-                    // Reaching this stage before API 34 means query API didn't work correctly
-                    require(Build.VERSION.SDK_INT >= 34)
-                    verifyUltraHdr(useCases, cameraInfo)
-                }
-                it.featureTypeInternal == FeatureTypeInternal.RECORDING_QUALITY ->
-                    verifyRecordingQuality(useCases, it, aspectRatio)
-            }
+                .awaitAll()
         }
     }
 
@@ -262,7 +272,15 @@ open class FeatureGroupTestBase(
                 is Preview -> {
                     assertThat(it.dynamicRange).isEqualTo(DynamicRange.HLG_10_BIT)
 
-                    surfaceTextureDeferred.await().verifyHlg10Hdr()
+                    assertWithMessage("Timed out waiting for preview frames")
+                        .that(previewFrameCountDownLatch.get().await(5, TimeUnit.SECONDS))
+                        .isTrue()
+
+                    val dataspace = previewDataSpace.get()
+                    if (dataspace != DataSpace.DATASPACE_UNKNOWN) {
+                        val dataspaceTransfer = DataSpace.getTransfer(dataspace)
+                        assertThat(dataspaceTransfer).isEqualTo(TRANSFER_HLG)
+                    }
                 }
                 is VideoCapture<*> -> {
                     assertThat(it.dynamicRange).isEqualTo(DynamicRange.HLG_10_BIT)
@@ -273,26 +291,49 @@ open class FeatureGroupTestBase(
         }
     }
 
-    @RequiresApi(33)
-    private fun SurfaceTexture.verifyHlg10Hdr() {
-        // Wait for a few frames in order to ensure the surface texture is updated
-        val countDownLatch = CountDownLatch(5)
-        setOnFrameAvailableListener { countDownLatch.countDown() }
-        countDownLatch.await(1, TimeUnit.SECONDS)
-
-        // Ensure latest frame is updated to the texture image
-        attachToGLContext(GLUtil.getTexIdFromGLContext())
-        updateTexImage()
-
-        val dataspaceTransfer = DataSpace.getTransfer(dataSpace)
-
-        assertThat(dataspaceTransfer).isEqualTo(TRANSFER_HLG)
-    }
-
     private suspend fun verify60Fps(cameraInfo: CameraInfo) {
         assertThat(cameraInfo.supportedFrameRateRanges).contains(Range(60, 60))
 
         verifyCaptureResult(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, Range(60, 60))
+
+        // Wait a little bit for the frame rate to settle
+        delay(500)
+
+        val lastFrameNumber = AtomicLong(-1)
+        val frameCount = AtomicInteger(0)
+        val startTime = AtomicLong(0L)
+        val currentFps = AtomicReference(0.0)
+
+        val result =
+            sessionCaptureCallback.verify { _, captureResult ->
+                val currentFrame = captureResult.frameNumber
+                if (lastFrameNumber.getAndSet(currentFrame) != currentFrame) {
+                    frameCount.incrementAndGet()
+                }
+
+                val currentTime = SystemClock.elapsedRealtime()
+                if (startTime.compareAndSet(0L, currentTime)) {
+                    // Start counting from the first observed frame in the window
+                    frameCount.set(0)
+                }
+
+                val timeDiff = currentTime - startTime.get()
+                if (timeDiff >= 3000) { // Calculate over a 3-second window
+                    currentFps.set((frameCount.get() * 1000.0) / timeDiff)
+                    true // Complete verification
+                } else {
+                    false
+                }
+            }
+
+        val isCompleted = result.awaitUntil(timeoutMillis = 5000)
+        assertWithMessage("Test failed to complete FPS verification in time")
+            .that(isCompleted)
+            .isTrue()
+
+        assertWithMessage("Actual capture result FPS was too low: ${currentFps.get()}")
+            .that(currentFps.get())
+            .isGreaterThan(40.0)
     }
 
     private suspend fun verifyPreviewStabilization(cameraInfo: CameraInfo) {
@@ -324,32 +365,45 @@ open class FeatureGroupTestBase(
         val expectedHeightRange =
             when (feature) {
                 UHD_RECORDING -> Range(2160, 4319)
+                QHD_RECORDING -> Range(1440, 2159)
                 FHD_RECORDING -> Range(1080, 1439)
                 HD_RECORDING -> Range(720, 1079)
                 SD_RECORDING -> Range(241, 719)
                 else -> throw IllegalStateException("Unknown recording quality feature: $feature")
             }
 
-        checkNotNull(videoCapture.attachedStreamSpec?.resolution).apply {
-            if (aspectRatio != AspectRatio.RATIO_DEFAULT) {
-                assertThat(
-                        AspectRatioUtil.hasMatchingAspectRatio(
-                            this,
-                            when (aspectRatio) {
-                                AspectRatio.RATIO_16_9 -> AspectRatioUtil.ASPECT_RATIO_16_9
-                                AspectRatio.RATIO_4_3 -> AspectRatioUtil.ASPECT_RATIO_4_3
-                                else ->
-                                    throw IllegalStateException(
-                                        "Unknown aspect ratio: $aspectRatio"
-                                    )
-                            },
-                        )
-                    )
-                    .isTrue()
+        val resolution =
+            checkNotNull(videoCapture.attachedStreamSpec?.resolution).run {
+                if (width >= height) this else Size(height, width)
             }
 
-            assertThat(expectedHeightRange.contains(min(this.width, this.height))).isTrue()
+        if (aspectRatio != AspectRatio.RATIO_DEFAULT) {
+            assertWithMessage(
+                    "AspectRatio matching failed for VideoCapture resolution = $resolution" +
+                        ", feature = $feature, aspectRatio = $aspectRatio" +
+                        ", expectedHeightRange = $expectedHeightRange"
+                )
+                .that(
+                    AspectRatioUtil.hasMatchingAspectRatio(
+                        resolution,
+                        when (aspectRatio) {
+                            AspectRatio.RATIO_16_9 -> AspectRatioUtil.ASPECT_RATIO_16_9
+                            AspectRatio.RATIO_4_3 -> AspectRatioUtil.ASPECT_RATIO_4_3
+                            else ->
+                                throw IllegalStateException("Unknown aspect ratio: $aspectRatio")
+                        },
+                    )
+                )
+                .isTrue()
         }
+
+        assertWithMessage(
+                "Height range matching failed for VideoCapture resolution = $resolution" +
+                    ", feature = $feature, aspectRatio = $aspectRatio" +
+                    ", expectedHeightRange = $expectedHeightRange"
+            )
+            .that(expectedHeightRange.contains(resolution.height))
+            .isTrue()
     }
 
     private suspend fun <T> verifyCaptureResult(
@@ -404,6 +458,7 @@ open class FeatureGroupTestBase(
                 VIDEO_STABILIZATION,
                 IMAGE_ULTRA_HDR,
                 UHD_RECORDING,
+                QHD_RECORDING,
                 FHD_RECORDING,
                 HD_RECORDING,
                 SD_RECORDING,

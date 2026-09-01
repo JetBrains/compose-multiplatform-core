@@ -16,13 +16,13 @@
 
 package androidx.xr.scenecore
 
-import android.annotation.SuppressLint
 import android.net.Uri
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.runtime.GltfModelResource as RtGltfModel
 import androidx.xr.scenecore.runtime.RenderingRuntime
+import androidx.xr.scenecore.runtime.requiresApiLevel
 import java.nio.file.Path
 
 /**
@@ -40,8 +40,8 @@ import java.nio.file.Path
 public class GltfModel
 internal constructor(
     internal val renderingRuntime: RenderingRuntime?,
-    internal val model: RtGltfModel,
-) {
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val model: RtGltfModel,
+) : AutoCloseable {
 
     /**
      * Closes the given [GltfModel].
@@ -53,8 +53,7 @@ internal constructor(
      * @throws IllegalStateException if the resource has already been closed.
      */
     @MainThread
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun close() {
+    override public fun close() {
         renderingRuntime?.destroyGltfModel(model)
     }
 
@@ -90,9 +89,8 @@ internal constructor(
          */
         @MainThread
         @JvmStatic
-        @SuppressLint("NewApi")
         public suspend fun create(session: Session, path: Path): GltfModel {
-            require(!path.isAbsolute) {
+            require(requiresApiLevel(26) { !path.isAbsolute }) {
                 "GltfModel.create() expects a path relative to `assets/`, received absolute path $path."
             }
             return create(session.renderingRuntime, path.toString())
@@ -125,7 +123,7 @@ internal constructor(
          */
         @MainThread
         @JvmStatic
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // Hasn't passed API review
         public suspend fun create(
             session: Session,
             assetData: ByteArray,

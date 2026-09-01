@@ -16,12 +16,15 @@
 
 package androidx.core.telecom.test
 
+import android.media.ToneGenerator
+import android.os.Build
 import android.os.Build.VERSION_CODES
 import android.os.ParcelUuid
 import android.telecom.CallAudioState
 import android.telecom.CallAudioState.ROUTE_EARPIECE
 import android.telecom.CallAudioState.ROUTE_WIRED_HEADSET
 import android.telecom.CallEndpoint
+import android.telecom.DisconnectCause
 import androidx.core.telecom.CallEndpointCompat
 import androidx.core.telecom.internal.CallChannels
 import androidx.core.telecom.internal.CallEndpointUuidTracker
@@ -225,5 +228,98 @@ class CallSessionLegacyTest : BaseTelecomTest() {
 
     private fun getRandomParcelUuid(): ParcelUuid {
         return ParcelUuid.fromString(UUID.randomUUID().toString())
+    }
+
+    /**
+     * Test that if a call is upgraded to a video call mid-session, disconnecting the headset will
+     * fall back to the speakerphone instead of the earpiece.
+     */
+    @SmallTest
+    @Test
+    fun testHeadsetDisconnectDefaultsToSpeakerWhenUpgradedToVideoCall() {
+        runBlocking {
+            val callSession = initCallSessionLegacy(coroutineContext, null)
+
+            // Setup the available endpoints
+            val supportedRouteMask =
+                CallAudioState.ROUTE_EARPIECE or
+                    CallAudioState.ROUTE_SPEAKER or
+                    CallAudioState.ROUTE_WIRED_HEADSET
+            val endpoints =
+                EndpointUtils.toCallEndpointsCompat(
+                    CallAudioState(false, CallAudioState.ROUTE_EARPIECE, supportedRouteMask),
+                    mSessionId,
+                )
+
+            // Assume the previous endpoint was the wired headset
+            val previousEndpoint =
+                endpoints.first { it.type == CallEndpointCompat.TYPE_WIRED_HEADSET }
+            // Assume the new endpoint is the earpiece
+            val newEndpoint = endpoints.first { it.type == CallEndpointCompat.TYPE_EARPIECE }
+
+            callSession.mLastClientRequestedEndpoint = null
+
+            // Simulate call upgrade to video
+            callSession.requestVideoState(
+                androidx.core.telecom.CallAttributesCompat.CALL_TYPE_VIDEO_CALL
+            )
+
+            // Trigger the headset disconnect logic natively by calling
+            // maybeSwitchToSpeakerOnHeadsetDisconnect
+            callSession.maybeSwitchToSpeakerOnHeadsetDisconnect(
+                newEndpoint,
+                previousEndpoint,
+                endpoints,
+            )
+
+            kotlinx.coroutines.yield()
+
+            // Verify a change to speaker endpoint was requested
+            assertEquals(
+                CallEndpointCompat.TYPE_SPEAKER,
+                callSession.mLastClientRequestedEndpoint?.type,
+            )
+        }
+    }
+
+    /**
+     * Verify that on SDK < 38, calling setConnectionDisconnect with DisconnectCause.ERROR maps the
+     * cause to DisconnectCause.LOCAL while preserving metadata, and on SDK >= 38 retains
+     * DisconnectCause.ERROR.
+     */
+    @SmallTest
+    @Test
+    fun testDisconnect_remapsErrorToLocal() {
+        runBlocking {
+            val callSession = initCallSessionLegacy(coroutineContext, null)
+            val errorCause =
+                DisconnectCause(
+                    DisconnectCause.ERROR,
+                    "label",
+                    "description",
+                    "reason",
+                    ToneGenerator.TONE_PROP_BEEP,
+                )
+            callSession.setConnectionDisconnect(errorCause)
+            val disconnectCause = callSession.disconnectCause
+            assertNotNull("DisconnectCause on Connection should not be null", disconnectCause)
+            if (Build.VERSION.SDK_INT < 38) {
+                assertEquals(
+                    "DisconnectCause should be remapped to LOCAL",
+                    DisconnectCause.LOCAL,
+                    disconnectCause.code,
+                )
+            } else {
+                assertEquals(
+                    "DisconnectCause should remain ERROR",
+                    DisconnectCause.ERROR,
+                    disconnectCause.code,
+                )
+            }
+            assertEquals("label", disconnectCause.label)
+            assertEquals("description", disconnectCause.description)
+            assertEquals("reason", disconnectCause.reason)
+            assertEquals(ToneGenerator.TONE_PROP_BEEP, disconnectCause.tone)
+        }
     }
 }

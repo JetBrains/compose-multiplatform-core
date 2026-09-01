@@ -16,11 +16,14 @@
 package androidx.compose.remote.creation.compose.state
 
 import androidx.compose.remote.core.RemoteContext
+import androidx.compose.remote.creation.compose.text.RemoteTypeface
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.asAndroidPathEffect
+import androidx.compose.ui.graphics.toArgb
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -168,5 +171,128 @@ class RemotePaintTest {
         assertThat(defaultPaint.style).isEqualTo(PaintingStyle.Fill)
         assertThat(defaultPaint.strokeCap).isEqualTo(StrokeCap.Round)
         assertThat(defaultPaint.strokeJoin).isEqualTo(StrokeJoin.Bevel)
+    }
+
+    @Test
+    fun compatAndroidRemotePaintColorTest() {
+        val paint = CompatAndroidRemotePaint()
+        val color = Color.Red
+        paint.remoteColor = color.rc
+        assertThat(paint.color).isEqualTo(color.toArgb())
+        assertThat(paint.remoteColor?.constantValue).isEqualTo(color)
+
+        paint.setColor(android.graphics.Color.BLUE)
+        assertThat(paint.remoteColor).isNull()
+        assertThat(paint.color).isEqualTo(android.graphics.Color.BLUE)
+    }
+
+    @Test
+    fun compatAndroidRemotePaintNonConstantColorTest() {
+        val paint = CompatAndroidRemotePaint()
+        val remoteColor =
+            RemoteColor.rgb(
+                red = RemoteFloat(1f),
+                green = RemoteFloat(1f),
+                blue = RemoteFloat(1f),
+                alpha = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC),
+            )
+        paint.remoteColor = remoteColor
+        assertThat(paint.color).isEqualTo(android.graphics.Color.TRANSPARENT)
+        assertThat(paint.remoteColor).isEqualTo(remoteColor)
+    }
+
+    @Test
+    fun compatAndroidRemotePaintColorFilterTest() {
+        val paint = CompatAndroidRemotePaint()
+        val color = Color.Red
+        val filter = RemoteBlendModeColorFilter(color.rc, BlendMode.SrcIn)
+        paint.remoteColorFilter = filter
+        assertThat(paint.remoteColorFilter).isEqualTo(filter)
+        assertThat(paint.colorFilter).isNotNull()
+
+        paint.setColorFilter(null)
+        assertThat(paint.remoteColorFilter).isNull()
+        assertThat(paint.colorFilter).isNull()
+    }
+
+    @Test
+    fun compatAndroidRemotePaintBasicPropertiesTest() {
+        val compatPaint =
+            CompatAndroidRemotePaint().apply {
+                isAntiAlias = false
+                style = android.graphics.Paint.Style.STROKE
+                blendMode = android.graphics.BlendMode.CLEAR
+                isFilterBitmap = false
+            }
+        val remotePaint = compatPaint.remotePaint
+
+        assertThat(remotePaint.isAntiAlias).isFalse()
+        assertThat(remotePaint.style).isEqualTo(PaintingStyle.Stroke)
+        assertThat(remotePaint.blendMode).isEqualTo(BlendMode.Clear)
+        assertThat(remotePaint.filterQuality)
+            .isEqualTo(androidx.compose.ui.graphics.FilterQuality.None)
+    }
+
+    @Test
+    fun compatAndroidRemotePaintStrokePropertiesTest() {
+        val compatPaint =
+            CompatAndroidRemotePaint().apply {
+                strokeWidth = 15f
+                strokeCap = android.graphics.Paint.Cap.ROUND
+                strokeJoin = android.graphics.Paint.Join.BEVEL
+            }
+        val remotePaint = compatPaint.remotePaint
+
+        assertThat(remotePaint.strokeWidth.constantValue).isEqualTo(15f)
+        assertThat(remotePaint.strokeCap).isEqualTo(StrokeCap.Round)
+        assertThat(remotePaint.strokeJoin).isEqualTo(StrokeJoin.Bevel)
+    }
+
+    @Test
+    fun compatAndroidRemotePaintColorPropertiesTest() {
+        val compatPaint =
+            CompatAndroidRemotePaint().apply {
+                remoteColor = Color.Green.rc
+                remoteColorFilter = RemoteBlendModeColorFilter(Color.Red.rc, BlendMode.SrcIn)
+            }
+        val remotePaint = compatPaint.remotePaint
+
+        assertThat(remotePaint.color.constantValue).isEqualTo(Color.Green)
+        val colorFilter = remotePaint.colorFilter as RemoteBlendModeColorFilter
+        assertThat(colorFilter.color.constantValue).isEqualTo(Color.Red)
+        assertThat(colorFilter.blendMode).isEqualTo(BlendMode.SrcIn)
+    }
+
+    @Test
+    fun compatAndroidRemotePaintEffectPropertiesTest() {
+        val shader =
+            androidx.compose.ui.graphics.LinearGradientShader(
+                from = androidx.compose.ui.geometry.Offset.Zero,
+                to = androidx.compose.ui.geometry.Offset(10f, 10f),
+                colors = listOf(Color.Red, Color.Blue),
+            )
+        val pathEffect = androidx.compose.ui.graphics.PathEffect.cornerPathEffect(5f)
+        val compatPaint =
+            CompatAndroidRemotePaint().apply {
+                this.shader = shader
+                this.pathEffect = pathEffect.asAndroidPathEffect()
+            }
+        val remotePaint = compatPaint.remotePaint
+
+        assertThat(remotePaint.shader).isEqualTo(shader)
+        assertThat(remotePaint.pathEffect).isNotNull()
+    }
+
+    @Test
+    fun compatAndroidRemotePaintTextPropertiesTest() {
+        val compatPaint =
+            CompatAndroidRemotePaint().apply {
+                textSize = 22f
+                typeface = android.graphics.Typeface.SERIF
+            }
+        val remotePaint = compatPaint.remotePaint
+
+        assertThat(remotePaint.textSize.constantValue).isEqualTo(22f)
+        assertThat(remotePaint.typeface).isEqualTo(RemoteTypeface.Serif)
     }
 }

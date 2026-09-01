@@ -735,6 +735,33 @@ package androidx.compose.ui.graphics {
     method public operator void plusAssign(androidx.compose.ui.graphics.Interval<T> interval);
   }
 
+  @androidx.compose.runtime.Immutable public final class LayerOutsets {
+    ctor @KotlinOnly public LayerOutsets(optional androidx.compose.ui.unit.Dp left, optional androidx.compose.ui.unit.Dp top, optional androidx.compose.ui.unit.Dp right, optional androidx.compose.ui.unit.Dp bottom);
+    ctor @BytecodeOnly public LayerOutsets(float, float, float, float, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public LayerOutsets(float, float, float, float, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method @BytecodeOnly public float getBottom-D9Ej5fM();
+    method @BytecodeOnly public float getLeft-D9Ej5fM();
+    method @BytecodeOnly public float getRight-D9Ej5fM();
+    method @BytecodeOnly public float getTop-D9Ej5fM();
+    property public androidx.compose.ui.unit.Dp bottom;
+    property public androidx.compose.ui.unit.Dp left;
+    property public androidx.compose.ui.unit.Dp right;
+    property public androidx.compose.ui.unit.Dp top;
+    field public static final androidx.compose.ui.graphics.LayerOutsets.Companion Companion;
+  }
+
+  public static final class LayerOutsets.Companion {
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.LayerOutsets getZero();
+    property public androidx.compose.ui.graphics.LayerOutsets Zero;
+  }
+
+  public final class LayerOutsetsKt {
+    method @KotlinOnly public static androidx.compose.ui.graphics.LayerOutsets LayerOutsets(androidx.compose.ui.unit.Dp all);
+    method @KotlinOnly public static androidx.compose.ui.graphics.LayerOutsets LayerOutsets(androidx.compose.ui.unit.Dp vertical, androidx.compose.ui.unit.Dp horizontal);
+    method @BytecodeOnly public static androidx.compose.ui.graphics.LayerOutsets LayerOutsets-0680j_4(float);
+    method @BytecodeOnly public static androidx.compose.ui.graphics.LayerOutsets LayerOutsets-YgX7TsA(float, float);
+  }
+
   @androidx.compose.runtime.Immutable public final class LightingColorFilter extends androidx.compose.ui.graphics.ColorFilter {
     ctor @KotlinOnly public LightingColorFilter(androidx.compose.ui.graphics.Color multiply, androidx.compose.ui.graphics.Color add);
     ctor @BytecodeOnly public LightingColorFilter(long, long, kotlin.jvm.internal.DefaultConstructorMarker!);
@@ -824,6 +851,24 @@ package androidx.compose.ui.graphics {
   public final class MatrixKt {
     method @KotlinOnly public static boolean isIdentity(androidx.compose.ui.graphics.Matrix);
     method @BytecodeOnly public static boolean isIdentity-58bKbWc(float[]);
+  }
+
+  public final class MeshGradientPainter extends androidx.compose.ui.graphics.painter.Painter {
+    ctor @BytecodeOnly @androidx.compose.runtime.annotation.RememberInComposition public MeshGradientPainter(int, int, boolean, kotlin.jvm.functions.Function1!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @androidx.compose.runtime.annotation.RememberInComposition public MeshGradientPainter(@IntRange(from=1L) int rows, @IntRange(from=1L) int columns, optional boolean hasBicubicColor, kotlin.jvm.functions.Function1<? super androidx.compose.ui.graphics.MeshGradientScope,kotlin.Unit> block);
+    method @BytecodeOnly public long getIntrinsicSize-NH-jbRc();
+    method protected void onDraw(androidx.compose.ui.graphics.drawscope.DrawScope);
+    property public androidx.compose.ui.geometry.Size intrinsicSize;
+  }
+
+  public sealed nonexhaustive interface MeshGradientScope {
+    method @InaccessibleFromKotlin public int getColumns();
+    method @InaccessibleFromKotlin public int getRows();
+    method @KotlinOnly public void setVertex(int row, int column, androidx.compose.ui.geometry.Offset position, androidx.compose.ui.graphics.Color color, optional androidx.compose.ui.geometry.Offset leftControlPoint, optional androidx.compose.ui.geometry.Offset topControlPoint, optional androidx.compose.ui.geometry.Offset rightControlPoint, optional androidx.compose.ui.geometry.Offset bottomControlPoint);
+    method @BytecodeOnly public void setVertex-6uS4IUQ(int, int, long, long, long, long, long, long);
+    method @BytecodeOnly public static void setVertex-6uS4IUQ$default(androidx.compose.ui.graphics.MeshGradientScope!, int, int, long, long, long, long, long, long, int, Object!);
+    property public abstract int columns;
+    property public abstract int rows;
   }
 
   @androidx.compose.runtime.Immutable public final class OffsetEffect extends androidx.compose.ui.graphics.RenderEffect {
@@ -1113,6 +1158,7 @@ package androidx.compose.ui.graphics {
   }
 
   public final class PathSegment {
+    ctor public PathSegment(androidx.compose.ui.graphics.PathSegment.Type type, float[] points, float weight);
     method @InaccessibleFromKotlin public float[] getPoints();
     method @InaccessibleFromKotlin public androidx.compose.ui.graphics.PathSegment.Type getType();
     method @InaccessibleFromKotlin public float getWeight();
@@ -1363,7 +1409,9 @@ package androidx.compose.ui.graphics {
   }
 
   public final class Vertices {
+    ctor @KotlinOnly public Vertices(androidx.compose.ui.graphics.VertexMode vertexMode, float[] positions, float[] textureCoordinates, int[] colors, short[] indices);
     ctor @KotlinOnly public Vertices(androidx.compose.ui.graphics.VertexMode vertexMode, java.util.List<androidx.compose.ui.geometry.Offset> positions, java.util.List<androidx.compose.ui.geometry.Offset> textureCoordinates, java.util.List<androidx.compose.ui.graphics.Color> colors, java.util.List<java.lang.Integer> indices);
+    ctor @BytecodeOnly public Vertices(int, float[]!, float[]!, int[]!, short[]!, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @BytecodeOnly public Vertices(int, java.util.List!, java.util.List!, java.util.List!, java.util.List!, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @InaccessibleFromKotlin public int[] getColors();
     method @InaccessibleFromKotlin public short[] getIndices();
@@ -1382,6 +1430,50 @@ package androidx.compose.ui.graphics {
   @Deprecated public typealias NativePaint = android.graphics.Paint;
 
   public typealias Shader = android.graphics.Shader;
+
+}
+
+package androidx.compose.ui.graphics.blur {
+
+  @androidx.compose.runtime.Immutable public sealed nonexhaustive interface BlurRadiusSpec {
+    method @KotlinOnly public androidx.compose.ui.graphics.RenderEffect createRenderEffect(androidx.compose.ui.geometry.Size size, androidx.compose.ui.unit.Density density, optional androidx.compose.ui.graphics.TileMode edgeTreatment);
+    method @BytecodeOnly public androidx.compose.ui.graphics.RenderEffect createRenderEffect-aIZFzLM(long, androidx.compose.ui.unit.Density, int);
+    method @BytecodeOnly public static androidx.compose.ui.graphics.RenderEffect! createRenderEffect-aIZFzLM$default(androidx.compose.ui.graphics.blur.BlurRadiusSpec!, long, androidx.compose.ui.unit.Density!, int, int, Object!);
+    field public static final androidx.compose.ui.graphics.blur.BlurRadiusSpec.Companion Companion;
+  }
+
+  public static final class BlurRadiusSpec.Companion {
+    method @KotlinOnly public androidx.compose.ui.graphics.blur.BlurRadiusSpec horizontalGradient(androidx.compose.ui.unit.Dp startRadius, androidx.compose.ui.unit.Dp endRadius);
+    method public androidx.compose.ui.graphics.blur.BlurRadiusSpec horizontalGradient(java.util.List<androidx.compose.ui.graphics.blur.BlurStop> stops);
+    method @BytecodeOnly public androidx.compose.ui.graphics.blur.BlurRadiusSpec horizontalGradient-YgX7TsA(float, float);
+    method @KotlinOnly public androidx.compose.ui.graphics.blur.BlurRadiusSpec linearGradient(androidx.compose.ui.unit.DpOffset start, androidx.compose.ui.unit.DpOffset end, androidx.compose.ui.unit.Dp startRadius, androidx.compose.ui.unit.Dp endRadius);
+    method @KotlinOnly public androidx.compose.ui.graphics.blur.BlurRadiusSpec linearGradient(androidx.compose.ui.unit.DpOffset start, androidx.compose.ui.unit.DpOffset end, java.util.List<androidx.compose.ui.graphics.blur.BlurStop> stops);
+    method @BytecodeOnly public androidx.compose.ui.graphics.blur.BlurRadiusSpec linearGradient-W9idHKA(long, long, float, float);
+    method @BytecodeOnly public androidx.compose.ui.graphics.blur.BlurRadiusSpec linearGradient-xhh869w(long, long, java.util.List<androidx.compose.ui.graphics.blur.BlurStop!>);
+    method @KotlinOnly public androidx.compose.ui.graphics.blur.BlurRadiusSpec radialGradient(androidx.compose.ui.unit.Dp startRadius, androidx.compose.ui.unit.Dp endRadius, optional androidx.compose.ui.unit.DpOffset center, optional androidx.compose.ui.unit.Dp fallOffRadius);
+    method @KotlinOnly public androidx.compose.ui.graphics.blur.BlurRadiusSpec radialGradient(java.util.List<androidx.compose.ui.graphics.blur.BlurStop> stops, optional androidx.compose.ui.unit.DpOffset center, optional androidx.compose.ui.unit.Dp fallOffRadius);
+    method @BytecodeOnly public androidx.compose.ui.graphics.blur.BlurRadiusSpec radialGradient-3s42-ZE(java.util.List<androidx.compose.ui.graphics.blur.BlurStop!>, long, float);
+    method @BytecodeOnly public static androidx.compose.ui.graphics.blur.BlurRadiusSpec! radialGradient-3s42-ZE$default(androidx.compose.ui.graphics.blur.BlurRadiusSpec.Companion!, java.util.List!, long, float, int, Object!);
+    method @BytecodeOnly public androidx.compose.ui.graphics.blur.BlurRadiusSpec radialGradient-xnJUiNE(float, float, long, float);
+    method @BytecodeOnly public static androidx.compose.ui.graphics.blur.BlurRadiusSpec! radialGradient-xnJUiNE$default(androidx.compose.ui.graphics.blur.BlurRadiusSpec.Companion!, float, float, long, float, int, Object!);
+    method @KotlinOnly public androidx.compose.ui.graphics.blur.BlurRadiusSpec shader(androidx.compose.ui.unit.Dp maxRadius, kotlin.jvm.functions.Function2<androidx.compose.ui.unit.Density,androidx.compose.ui.geometry.Size,android.graphics.Shader> block);
+    method @BytecodeOnly public androidx.compose.ui.graphics.blur.BlurRadiusSpec shader-D5KLDUw(float, kotlin.jvm.functions.Function2<? super androidx.compose.ui.unit.Density!,? super androidx.compose.ui.geometry.Size!,? extends android.graphics.Shader!>);
+    method @KotlinOnly public androidx.compose.ui.graphics.blur.BlurRadiusSpec uniform(androidx.compose.ui.unit.Dp radius);
+    method @BytecodeOnly public androidx.compose.ui.graphics.blur.BlurRadiusSpec uniform-0680j_4(float);
+    method @KotlinOnly public androidx.compose.ui.graphics.blur.BlurRadiusSpec verticalGradient(androidx.compose.ui.unit.Dp startRadius, androidx.compose.ui.unit.Dp endRadius);
+    method public androidx.compose.ui.graphics.blur.BlurRadiusSpec verticalGradient(java.util.List<androidx.compose.ui.graphics.blur.BlurStop> stops);
+    method @BytecodeOnly public androidx.compose.ui.graphics.blur.BlurRadiusSpec verticalGradient-YgX7TsA(float, float);
+  }
+
+  @androidx.compose.runtime.Immutable public final class BlurStop {
+    ctor @KotlinOnly public BlurStop(float fraction, androidx.compose.ui.unit.Dp radius);
+    ctor @BytecodeOnly public BlurStop(float, float, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method @InaccessibleFromKotlin public float getFraction();
+    method @BytecodeOnly public float getRadius-D9Ej5fM();
+    property public float fraction;
+    property public androidx.compose.ui.unit.Dp radius;
+    field public static final int MaxStops = 16; // 0x10
+  }
 
 }
 
@@ -1404,7 +1496,7 @@ package androidx.compose.ui.graphics.colorspace {
     method @BytecodeOnly public static androidx.compose.ui.graphics.colorspace.ColorModel! box-impl(long);
     method @BytecodeOnly @IntRange(from=1L, to=4L) public static int getComponentCount-impl(long);
     method @BytecodeOnly public long unbox-impl();
-    property @androidx.compose.runtime.Stable public int componentCount;
+    property @IntRange(from=1L, to=4L) @androidx.compose.runtime.Stable public int componentCount;
     field public static final androidx.compose.ui.graphics.colorspace.ColorModel.Companion Companion;
   }
 
@@ -1963,6 +2055,7 @@ package androidx.compose.ui.graphics.layer {
     method @InaccessibleFromKotlin public void setClip(boolean);
     method @InaccessibleFromKotlin public void setColorFilter(androidx.compose.ui.graphics.ColorFilter?);
     method @BytecodeOnly public void setCompositingStrategy-Wpw9cng(int);
+    method public void setOutsets(@IntRange(from=0L) int left, @IntRange(from=0L) int top, @IntRange(from=0L) int right, @IntRange(from=0L) int bottom);
     method public void setPathOutline(androidx.compose.ui.graphics.Path path);
     method @BytecodeOnly public void setPivotOffset-k-4lQ0M(long);
     method @KotlinOnly public void setRectOutline(optional androidx.compose.ui.geometry.Offset topLeft, optional androidx.compose.ui.geometry.Size size);

@@ -27,12 +27,18 @@ val Material3Demos =
             DemoCategory(
                 "Carousel",
                 listOf(
-                    ComposableDemo("LazyColumn") { MultiAspectCarouselLazyColumnDemo() },
-                    ComposableDemo("Fading LazyRow") { FadingMultiAspectCarouselLazyRowDemo() },
-                    ComposableDemo("LazyHorizontalGrid") {
-                        MultiAspectCarouselLazyHorizontalGridDemo()
+                    ComposableDemo("CarouselParallaxScrollEffectColumn") {
+                        CarouselParallaxScrollEffectColumnDemo()
                     },
-                    ComposableDemo("LazyVerticalGrid") { MultiAspectCarouselLazyVerticalGridDemo() },
+                    ComposableDemo("FadingCarouselParallaxScrollEffectRow") {
+                        FadingCarouselParallaxScrollEffectRowDemo()
+                    },
+                    ComposableDemo("CarouselParallaxScrollEffectHorizontalGrid") {
+                        CarouselParallaxScrollEffectHorizontalGridDemo()
+                    },
+                    ComposableDemo("CarouselParallaxScrollEffectVerticalGrid") {
+                        CarouselParallaxScrollEffectVerticalGridDemo()
+                    },
                 ),
             ),
             ComposableDemo("Color Scheme") { ColorSchemeDemo() },
@@ -41,6 +47,10 @@ val Material3Demos =
             ComposableDemo("Swipe To Dismiss") { SwipeToDismissDemo() },
             ComposableDemo("Tooltip") { TooltipDemo() },
             ComposableDemo("Toggle Buttons") { ToggleButtonDemos() },
+            DemoCategory(
+                "Sliders",
+                listOf(ComposableDemo("Volume Slider") { SysUiVolumeSliderDemo() }),
+            ),
             ComposableDemo("Text fields") { MaterialTextFieldDemo() },
             DemoCategory(
                 "Icon Buttons",

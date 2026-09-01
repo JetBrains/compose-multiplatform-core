@@ -37,6 +37,7 @@ import androidx.appsearch.app.Features;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.GetByDocumentIdRequest;
 import androidx.appsearch.app.GetSchemaResponse;
+import androidx.appsearch.app.InternalPutDocumentResponse;
 import androidx.appsearch.app.InternalSetSchemaResponse;
 import androidx.appsearch.app.InternalVisibilityConfig;
 import androidx.appsearch.app.Migrator;
@@ -230,8 +231,10 @@ class SearchSessionImpl implements AppSearchSession {
             // If some aren't we must throw an error, rather than proceeding and deleting those
             // types.
             long queryAndTransformLatencyStartMillis = SystemClock.elapsedRealtime();
-            SchemaMigrationUtil.checkDeletedAndIncompatibleAfterMigration(
-                    internalSetSchemaResponse, activeMigrators.keySet());
+            if (!request.isForceOverride()) {
+                SchemaMigrationUtil.checkDeletedAndIncompatibleAfterMigration(
+                        internalSetSchemaResponse, activeMigrators.keySet());
+            }
 
             try (AppSearchMigrationHelper migrationHelper = new AppSearchMigrationHelper(
                     mAppSearchImpl, mPackageName, mDatabaseName, request.getSchemas(), mLogger)) {
@@ -379,7 +382,7 @@ class SearchSessionImpl implements AppSearchSession {
         List<GenericDocument> takenActions = request.getTakenActionGenericDocuments();
 
         ListenableFuture<AppSearchBatchResult<String, Void>> future = execute(() -> {
-            AppSearchBatchResult.Builder<String, Void> resultBuilder =
+            AppSearchBatchResult.Builder<String, InternalPutDocumentResponse> resultBuilder =
                     new AppSearchBatchResult.Builder<>();
 
             // Normal documents.
@@ -413,7 +416,7 @@ class SearchSessionImpl implements AppSearchSession {
             // method is called documented in the method description.
             dispatchChangeNotifications();
 
-            return resultBuilder.build();
+            return resultBuilder.build().toVoidBatchResult();
         });
 
         // The existing documents with same ID will be deleted, so there may be some resources that

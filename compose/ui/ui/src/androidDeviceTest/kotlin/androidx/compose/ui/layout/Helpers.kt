@@ -40,7 +40,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.pointer.PointerIconService
 import androidx.compose.ui.modifier.ModifierLocalManager
-import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.LayoutNodeDrawScope
 import androidx.compose.ui.node.MeasureAndLayoutDelegate
@@ -53,6 +52,7 @@ import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.SoftwareKeyboardController
+import androidx.compose.ui.platform.TaskDispatchers
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
@@ -165,7 +165,7 @@ private class FakeOwner(
 
     override fun onInteropViewLayoutChange(view: InteropView) {}
 
-    @OptIn(InternalCoreApi::class) override var showLayoutBounds: Boolean = false
+    override var showLayoutBounds: Boolean = false
 
     override fun onPreAttach(node: LayoutNode) {}
 
@@ -241,6 +241,9 @@ private class FakeOwner(
         get() = TODO("Not yet implemented")
 
     override val windowInfo: WindowInfo
+        get() = TODO("Not yet implemented")
+
+    override val taskDispatchers: TaskDispatchers
         get() = TODO("Not yet implemented")
 
     override val rectManager: RectManager = RectManager()

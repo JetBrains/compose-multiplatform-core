@@ -17,7 +17,6 @@
 package androidx.camera.camera2.pipe.compat
 
 import android.annotation.SuppressLint
-import android.hardware.camera2.params.InputConfiguration
 import android.hardware.camera2.params.OutputConfiguration
 import android.os.Build
 import android.view.Surface
@@ -34,6 +33,7 @@ import androidx.camera.camera2.pipe.core.Threads
 import androidx.camera.camera2.pipe.graph.StreamGraphImpl
 import androidx.camera.camera2.pipe.graph.StreamGraphImpl.OutputConfig
 import androidx.camera.camera2.pipe.media.AndroidMultiResolutionImageReader
+import androidx.camera.common.unwrapAs
 import dagger.Module
 import dagger.Provides
 import javax.inject.Inject
@@ -67,8 +67,7 @@ internal object Camera2CaptureSessionsModule {
     @Camera2ControllerScope
     @Provides
     fun provideSessionFactory(
-        androidMProvider: Provider<AndroidMSessionFactory>,
-        androidMHighSpeedProvider: Provider<AndroidMHighSpeedSessionFactory>,
+        highSpeedProvider: Provider<AndroidHighSpeedSessionFactory>,
         androidNProvider: Provider<AndroidNSessionFactory>,
         androidPProvider: Provider<AndroidPSessionFactory>,
         androidExtensionProvider: Provider<AndroidExtensionSessionFactory>,
@@ -86,67 +85,14 @@ internal object Camera2CaptureSessionsModule {
         }
 
         if (graphConfig.sessionMode == CameraGraph.OperatingMode.HIGH_SPEED) {
-            return androidMHighSpeedProvider.get()
+            return highSpeedProvider.get()
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            return androidNProvider.get()
-        }
-
-        check(graphConfig.input == null) { "Reprocessing is not supported on Android M" }
-        return androidMProvider.get()
+        return androidNProvider.get()
     }
 }
 
-internal class AndroidMSessionFactory
-@Inject
-constructor(
-    private val threads: Threads,
-    private val streamGraph: StreamGraphImpl,
-    private val graphConfig: CameraGraph.Config,
-) : CaptureSessionFactory {
-    override fun create(
-        cameraDevice: CameraDeviceWrapper,
-        surfaces: Map<StreamId, Surface>,
-        captureSessionState: CaptureSessionState,
-    ): CaptureSessionFactory.Result {
-        if (graphConfig.input != null) {
-            val outputConfig = graphConfig.input.single().stream.outputs.single()
-            if (
-                !cameraDevice.createReprocessableCaptureSession(
-                    InputConfiguration(
-                        outputConfig.size.width,
-                        outputConfig.size.height,
-                        outputConfig.format.value,
-                    ),
-                    surfaces.map { it.value },
-                    captureSessionState,
-                )
-            ) {
-                Log.warn {
-                    "Failed to create reprocessable captures session from $cameraDevice for" +
-                        " $captureSessionState!"
-                }
-                captureSessionState.onSessionFinalized()
-                return CaptureSessionFactory.Result.Failed
-            }
-        } else {
-            if (
-                !cameraDevice.createCaptureSession(surfaces.map { it.value }, captureSessionState)
-            ) {
-                Log.warn {
-                    "Failed to create captures session from $cameraDevice for $captureSessionState!"
-                }
-                captureSessionState.onSessionFinalized()
-                return CaptureSessionFactory.Result.Failed
-            }
-        }
-        val outputSurfaceMap = buildSimpleOutputSurfaceMap(surfaces, streamGraph)
-        return CaptureSessionFactory.Result.Success(emptyMap(), outputSurfaceMap)
-    }
-}
-
-internal class AndroidMHighSpeedSessionFactory
+internal class AndroidHighSpeedSessionFactory
 @Inject
 constructor(private val streamGraph: StreamGraphImpl, private val threads: Threads) :
     CaptureSessionFactory {
@@ -173,7 +119,6 @@ constructor(private val streamGraph: StreamGraphImpl, private val threads: Threa
     }
 }
 
-@RequiresApi(24)
 internal class AndroidNSessionFactory
 @Inject
 constructor(
@@ -386,7 +331,6 @@ constructor(
     }
 }
 
-@RequiresApi(24)
 internal fun buildOutputConfigurations(
     graphConfig: CameraGraph.Config,
     streamGraph: StreamGraphImpl,
@@ -414,14 +358,14 @@ internal fun buildOutputConfigurations(
             // used to create the MultiResolutionImageReader. As such, we can line up our
             // OutputStreams with the returned OutputConfigurations one-by-one.
             val multiResImageReader =
-                checkNotNull(imageSource.unwrapAs(AndroidMultiResolutionImageReader::class))
+                checkNotNull(imageSource.unwrapAs<AndroidMultiResolutionImageReader>())
             val outputConfigurations = multiResImageReader.outputConfigurations
             check(outputConfigurations.size == outputs.size)
 
             for (outputIdx in outputs.indices) {
                 val outputStream = outputs[outputIdx]
                 val outputConfiguration = outputConfigurations[outputIdx]
-                // TODO: b/470146651 - Validate the paired OutputConfiguration on newer API levels.
+                // TODO(b/470146651): Validate the paired OutputConfiguration on newer API levels.
 
                 val outputConfig = checkNotNull(streamGraph.outputConfigMap[outputStream])
                 check(outputConfig.externalOutputConfig == null) {
@@ -546,8 +490,13 @@ internal fun buildOutputConfigurations(
             Log.warn { "Failed to create AndroidOutputConfiguration for $outputConfig" }
             continue
         }
-        for (surface in outputSurfaces.drop(1)) {
-            output.addSurface(surface)
+        try {
+            for (surface in outputSurfaces.drop(1)) {
+                output.addSurface(surface)
+            }
+        } catch (e: IllegalArgumentException) {
+            Log.error(e) { "Failed to add Surfaces to $output" }
+            continue
         }
         if (graphConfig.postviewStream != null) {
             val postviewStream = streamGraph[graphConfig.postviewStream]

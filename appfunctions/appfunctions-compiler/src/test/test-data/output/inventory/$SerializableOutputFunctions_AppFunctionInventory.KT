@@ -18,7 +18,7 @@ import kotlin.collections.Map
 
 /**
  * Source Files:
- * SerializableOutputFunctions.....kt
+ * SerializableOutputFunctions.kt
  */
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$SerializableOutputFunctions_AppFunctionInventory` : AppFunctionInventory {
@@ -34,6 +34,8 @@ public class `$SerializableOutputFunctions_AppFunctionInventory` : AppFunctionIn
           isNullable = false,
           description = "",
           enumValues = null,
+          pattern = null,
+          format = null,
       )
 
   private val COM_TESTDATA_SAMPLESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LISTVALUE:
@@ -48,6 +50,8 @@ public class `$SerializableOutputFunctions_AppFunctionInventory` : AppFunctionIn
           isNullable = false,
           description = "",
           enumValues = null,
+          pattern = null,
+          format = null,
       )
 
   private val COM_TESTDATA_SAMPLESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP:

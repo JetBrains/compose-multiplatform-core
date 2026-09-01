@@ -24,7 +24,8 @@ import androidx.xr.runtime.math.Pose
  *
  * @property devicePose the current [Pose] of the device
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface ArDevice {
     public val devicePose: Pose
+    public val trackingState: TrackingState
 }

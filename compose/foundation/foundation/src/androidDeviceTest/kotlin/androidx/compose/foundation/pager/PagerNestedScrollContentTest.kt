@@ -18,6 +18,7 @@ package androidx.compose.foundation.pager
 
 import androidx.compose.animation.splineBasedDecay
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.DefaultFlingBehavior
 import androidx.compose.foundation.gestures.FlingBehavior
@@ -26,6 +27,7 @@ import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.rememberScrollableState
 import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,8 +42,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -51,8 +56,11 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.onNodeWithTag
@@ -61,6 +69,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.LargeTest
@@ -78,7 +87,8 @@ import org.junit.runners.Parameterized
 @OptIn(ExperimentalFoundationApi::class)
 @LargeTest
 @RunWith(Parameterized::class)
-class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config = config) {
+class PagerNestedScrollContentTest(private val config: ParamConfig) :
+    BasePagerTest(config = config) {
 
     @Test
     fun nestedScrollContent_shouldNotPropagateUnconsumedFlings() {
@@ -345,6 +355,78 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
     }
 
     @Test
+    fun nestedScrollContent_shouldAllowPageMove_textLayoutDirection() {
+        val combinations =
+            listOf(
+                LayoutDirection.Ltr to false,
+                LayoutDirection.Ltr to true,
+                LayoutDirection.Rtl to false,
+                LayoutDirection.Rtl to true,
+            )
+
+        var currentLayoutDirection by mutableStateOf(LayoutDirection.Ltr)
+        var currentReverseLayout by mutableStateOf(false)
+
+        rule.setContent {
+            ConfigurableLookaheadScope(config.useLookahead) {
+                CompositionLocalProvider(LocalLayoutDirection provides currentLayoutDirection) {
+                    key(currentLayoutDirection, currentReverseLayout) {
+                        val state = rememberPagerState(pageCount = { 2 })
+                        pagerState = state
+                        HorizontalOrVerticalPager(
+                            state = state,
+                            reverseLayout = currentReverseLayout,
+                            modifier =
+                                Modifier.testTag(PagerTestTag).onSizeChanged {
+                                    pagerSize = if (vertical) it.height else it.width
+                                },
+                            pageContent = { page ->
+                                BasicText(
+                                    text =
+                                        "nested scroll, text layout direction $currentLayoutDirection",
+                                    modifier =
+                                        Modifier.fillMaxSize()
+                                            .horizontalScroll(rememberScrollState())
+                                            .background(
+                                                if (page == 0) Color.LightGray else Color.White
+                                            ),
+                                )
+                            },
+                        )
+                    }
+                }
+            }
+        }
+
+        for ((dir, rev) in combinations) {
+            rule.runOnIdle {
+                currentLayoutDirection = dir
+                currentReverseLayout = rev
+            }
+            rule.waitForIdle()
+
+            val forwardDelta = pagerSize * 0.6f * scrollForwardSign
+
+            val swipeDelta =
+                when (Triple(config.orientation, dir, rev)) {
+                    Triple(Orientation.Horizontal, LayoutDirection.Rtl, false) -> -forwardDelta
+                    Triple(Orientation.Horizontal, LayoutDirection.Ltr, true) -> -forwardDelta
+
+                    Triple(Orientation.Horizontal, LayoutDirection.Rtl, true) -> forwardDelta
+                    Triple(Orientation.Horizontal, LayoutDirection.Ltr, false) -> forwardDelta
+
+                    else -> if (rev) -forwardDelta else forwardDelta
+                }
+
+            onPager().performTouchInput { swipeWithVelocityAcrossMainAxis(100f, swipeDelta) }
+
+            rule.mainClock.advanceTimeByFrame()
+
+            assertThat(pagerState.currentPageOffsetFraction.absoluteValue).isGreaterThan(0.25f)
+        }
+    }
+
+    @Test
     fun nestedScrollContent_shouldEnsurePagerIsSettled_WhenCrossDirectionScrolls() {
         // Arrange
         val lazyListState = LazyListState(9)
@@ -378,6 +460,7 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
             down(center)
             val toMove = forwardDelta + touchSlop * scrollForwardSign.toFloat()
             moveBy(if (vertical) Offset(x = 0f, y = toMove) else Offset(x = toMove, y = 0f))
+            advanceEventTime(3000L) // Prevent fling gesture.
             up()
         }
 
@@ -396,6 +479,7 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
                 if (vertical) Offset(x = -forwardDelta / 2, y = 0f)
                 else Offset(x = 0f, y = -forwardDelta / 2)
             )
+            advanceEventTime(3000L) // Prevent fling gesture.
             up()
         }
 

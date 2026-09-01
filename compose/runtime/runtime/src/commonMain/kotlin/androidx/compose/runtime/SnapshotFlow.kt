@@ -44,14 +44,75 @@ import kotlinx.coroutines.withContext
  * the [StateFlow] the returned [State] will be updated causing recomposition of every [State.value]
  * usage.
  *
+ * Optionally, the [context] that the flow is collected in and the [mutationPolicy] that is used to
+ * report and merge changes in the returned state can be customized. If the [context] or `StateFlow`
+ * changes, the same state will be returned, the previous collection will be canceled, and the
+ * provided Flow will start collection in the new context. Changes to the [mutationPolicy] after the
+ * state has been created are ignored.
+ *
  * @sample androidx.compose.runtime.samples.StateFlowSample
  * @param context [CoroutineContext] to use for collecting.
+ * @param mutationPolicy A policy used to control how changes are handled in the returned state.
  */
 @Suppress("StateFlowValueCalledInComposition")
 @Composable
 public fun <T> StateFlow<T>.collectAsState(
+    context: CoroutineContext = EmptyCoroutineContext,
+    mutationPolicy: SnapshotMutationPolicy<T> = structuralEqualityPolicy(),
+): State<T> = collectAsState(value, context, mutationPolicy)
+
+/**
+ * Collects values from this [Flow] and represents its latest value via [State]. Every time there
+ * would be new value posted into the [Flow] the returned [State] will be updated causing
+ * recomposition of every [State.value] usage.
+ *
+ * Optionally, the [context] that the flow is collected in and the [mutationPolicy] that is used to
+ * report and merge changes in the returned state can be customized. If the [context] or `Flow`
+ * changes, the same state will be returned, the previous collection will be canceled, and the
+ * provided Flow will start collection in the new context. Changes to the [mutationPolicy] after the
+ * state has been created are ignored.
+ *
+ * @sample androidx.compose.runtime.samples.FlowWithInitialSample
+ * @param initial the value of the state will have until the first flow value is emitted.
+ * @param context [CoroutineContext] to use for collecting.
+ * @param mutationPolicy A policy used to control how changes are handled in the returned state.
+ */
+@Composable
+public fun <T : R, R> Flow<T>.collectAsState(
+    initial: R,
+    context: CoroutineContext = EmptyCoroutineContext,
+    mutationPolicy: SnapshotMutationPolicy<R> = structuralEqualityPolicy(),
+): State<R> =
+    @Suppress("UNCHECKED_CAST")
+    produceState(
+        initialValue = initial,
+        key1 = this,
+        key2 = context,
+        mutationPolicy = mutationPolicy,
+        producer = {
+            if (context == EmptyCoroutineContext) {
+                collect { value = it }
+            } else withContext(context) { collect { value = it } }
+        },
+    )
+
+/**
+ * Collects values from this [StateFlow] and represents its latest value via [State]. The
+ * [StateFlow.value] is used as an initial value. Every time there would be new value posted into
+ * the [StateFlow] the returned [State] will be updated causing recomposition of every [State.value]
+ * usage.
+ *
+ * @sample androidx.compose.runtime.samples.StateFlowSample
+ * @param context [CoroutineContext] to use for collecting.
+ */
+@Deprecated(
+    "Use the overload with a SnapshotMutationPolicy parameter",
+    level = DeprecationLevel.HIDDEN,
+)
+@Composable
+public fun <T> StateFlow<T>.collectAsState(
     context: CoroutineContext = EmptyCoroutineContext
-): State<T> = collectAsState(value, context)
+): State<T> = collectAsState(context, structuralEqualityPolicy())
 
 /**
  * Collects values from this [Flow] and represents its latest value via [State]. Every time there
@@ -62,16 +123,15 @@ public fun <T> StateFlow<T>.collectAsState(
  * @param initial the value of the state will have until the first flow value is emitted.
  * @param context [CoroutineContext] to use for collecting.
  */
+@Deprecated(
+    "Use the overload with a SnapshotMutationPolicy parameter",
+    level = DeprecationLevel.HIDDEN,
+)
 @Composable
 public fun <T : R, R> Flow<T>.collectAsState(
     initial: R,
     context: CoroutineContext = EmptyCoroutineContext,
-): State<R> =
-    produceState(initial, this, context) {
-        if (context == EmptyCoroutineContext) {
-            collect { value = it }
-        } else withContext(context) { collect { value = it } }
-    }
+): State<R> = collectAsState(initial, context, structuralEqualityPolicy())
 
 /**
  * Orchestrates the observation of [Snapshot] state for [snapshotFlow]s that are collected on the
@@ -206,10 +266,7 @@ internal abstract class SnapshotFlowManagerImpl internal constructor() {
      * This must be called by a [snapshotFlow] when it is in the process of exiting to dispose of
      * all subscriptions associated with it.
      */
-    internal fun reportSnapshotFlowCancellation(channel: SendChannel<Unit>) {
-        clearWatchSet(channel)
-        commitSubscriptionChanges()
-    }
+    internal abstract fun reportSnapshotFlowCancellation(channel: SendChannel<Unit>)
 
     /**
      * Disposes of this manager. Disposing of a manager disconnects it from the [Snapshot] system,
@@ -335,6 +392,12 @@ private class SingleSubscriptionSnapshotFlowManager : SnapshotFlowManagerImpl() 
         }
     }
 
+    override fun reportSnapshotFlowCancellation(channel: SendChannel<Unit>) {
+        subscribedChannel = null
+        clearWatchSet(channel)
+        commitSubscriptionChanges()
+    }
+
     override fun dispose() {
         unregisterApplyObserver.dispose()
         clearWatchSetImpl()
@@ -396,25 +459,28 @@ private class MultiSubscriptionSnapshotFlowManager : SnapshotFlowManagerImpl() {
      */
     private val pendingChanges = mutableListOf<SubscriptionChange>()
 
-    /** Used by the apply observer to keep track of the channels that it needs to notify. */
-    private val toNotify = mutableScatterSetOf<SendChannel<Unit>>()
-
     // Used by [readObserverFor] to cache partially applied functions.
     private val readObserverCache = mutableScatterMapOf<SendChannel<Unit>, (Any) -> Unit>()
 
     private val unregisterApplyObserver =
         Snapshot.registerApplyObserver { changed, _ ->
+            var toNotify: MutableList<SendChannel<Unit>>? = null
+
             synchronized(lock) {
                 // Assumption: there will typically be fewer keys in [subscriptions] than elements
                 // in [changed].
                 subscriptions.forEachKey { key ->
                     if (changed.contains(key)) {
-                        subscriptions.forEachScopeOf(key) { toNotify.add(it) }
+                        subscriptions.forEachScopeOf(key) {
+                            if (toNotify == null) {
+                                toNotify = mutableListOf()
+                            }
+                            toNotify.add(it)
+                        }
                     }
                 }
 
-                toNotify.forEach { it.trySend(Unit) }
-                toNotify.clear()
+                toNotify?.fastForEach { it.trySend(Unit) }
             }
         }
 
@@ -445,6 +511,12 @@ private class MultiSubscriptionSnapshotFlowManager : SnapshotFlowManagerImpl() {
             }
         }
         pendingChanges.clear()
+    }
+
+    override fun reportSnapshotFlowCancellation(channel: SendChannel<Unit>) {
+        readObserverCache.remove(channel)
+        clearWatchSet(channel)
+        commitSubscriptionChanges()
     }
 
     override fun dispose() {

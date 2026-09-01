@@ -23,6 +23,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.Hyphens
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.TextUnitType
@@ -51,11 +53,15 @@ class RemoteTextStyleTest {
         assertThat(defaultRemoteStyle.fontFamily).isNull()
         assertThat(defaultRemoteStyle.textAlign).isEqualTo(TextAlign.Unspecified)
         assertThat(defaultRemoteStyle.textDecoration).isNull()
+        assertThat(defaultRemoteStyle.lineBreak).isEqualTo(LineBreak.Unspecified)
+        assertThat(defaultRemoteStyle.hyphens).isEqualTo(Hyphens.Unspecified)
+        assertThat(defaultRemoteStyle.fontFeatureSettings).isNull()
+        assertThat(defaultRemoteStyle.fontVariationSettings).isNull()
 
         // Explicit values
         val remoteStyle =
             RemoteTextStyle.fromTextStyle(
-                TextStyle.Default.copy(
+                TextStyle(
                     fontSize = 16.sp,
                     color = Color.Red,
                     letterSpacing = 1.2f.sp,
@@ -66,6 +72,9 @@ class RemoteTextStyleTest {
                     fontFamily = FontFamily.Serif,
                     textAlign = TextAlign.Center,
                     textDecoration = TextDecoration.Underline,
+                    lineBreak = LineBreak.Heading,
+                    hyphens = Hyphens.Auto,
+                    fontFeatureSettings = "tnum",
                 )
             )
 
@@ -77,9 +86,107 @@ class RemoteTextStyleTest {
         assertThat(remoteStyle.background?.constantValueOrNull).isEqualTo(Color.Blue)
         assertThat(remoteStyle.fontWeight).isEqualTo(FontWeight.Bold)
         assertThat(remoteStyle.fontStyle).isEqualTo(FontStyle.Italic)
-        assertThat(remoteStyle.fontFamily).isEqualTo(FontFamily.Serif)
+        assertThat(remoteStyle.fontFamily).isEqualTo(RemoteFontFamily.Serif)
         assertThat(remoteStyle.textAlign).isEqualTo(TextAlign.Center)
         assertThat(remoteStyle.textDecoration).isEqualTo(TextDecoration.Underline)
+        assertThat(remoteStyle.lineBreak).isEqualTo(LineBreak.Heading)
+        assertThat(remoteStyle.hyphens).isEqualTo(Hyphens.Auto)
+        assertThat(remoteStyle.fontFeatureSettings).isEqualTo("tnum")
+        assertThat(remoteStyle.fontVariationSettings).isNotNull()
+        assertThat(remoteStyle.fontVariationSettings!!.settings).hasSize(1)
+        assertThat(remoteStyle.fontVariationSettings!!.settings[0].axisName).isEqualTo("tnum")
+        assertThat(remoteStyle.fontVariationSettings!!.settings[0].toVariationValue(null))
+            .isEqualTo(1f)
+    }
+
+    @Test
+    fun fromTextStyle_withFontFeatureSettings_usesParsedFeatures() {
+        val textStyle =
+            TextStyle(
+                fontFeatureSettings = "smcp 1, tnum 1",
+                fontFamily =
+                    FontFamily(
+                        androidx.compose.ui.text.font.Font(
+                            androidx.compose.ui.text.font.DeviceFontFamilyName("roboto-flex"),
+                            variationSettings =
+                                androidx.compose.ui.text.font.FontVariation.Settings(
+                                    androidx.compose.ui.text.font.FontVariation.Setting(
+                                        "wdth",
+                                        110f,
+                                    )
+                                ),
+                        )
+                    ),
+            )
+        val remoteStyle = RemoteTextStyle.fromTextStyle(textStyle)
+
+        // fontFeatureSettings takes precedence over Font.variationSettings
+        assertThat(remoteStyle.fontVariationSettings).isNotNull()
+        assertThat(remoteStyle.fontVariationSettings!!.settings).hasSize(2)
+        assertThat(remoteStyle.fontVariationSettings!!.settings[0].axisName).isEqualTo("smcp")
+        assertThat(remoteStyle.fontVariationSettings!!.settings[1].axisName).isEqualTo("tnum")
+    }
+
+    @Test
+    fun fromTextStyle_withFontListFontFamily_extractsFirstFontVariationSettings() {
+        val fontWithoutSettings =
+            androidx.compose.ui.text.font.Font(
+                androidx.compose.ui.text.font.DeviceFontFamilyName("google-sans")
+            )
+        val fontWithSettings =
+            androidx.compose.ui.text.font.Font(
+                androidx.compose.ui.text.font.DeviceFontFamilyName("roboto-flex"),
+                weight = FontWeight(450),
+                variationSettings =
+                    androidx.compose.ui.text.font.FontVariation.Settings(
+                        androidx.compose.ui.text.font.FontVariation.Setting("wdth", 110f),
+                        androidx.compose.ui.text.font.FontVariation.Setting("wght", 450f),
+                    ),
+            )
+        val fontFamily = FontFamily(fontWithoutSettings, fontWithSettings)
+
+        val textStyle = TextStyle(fontFamily = fontFamily)
+        val remoteStyle = RemoteTextStyle.fromTextStyle(textStyle)
+
+        assertThat(remoteStyle.fontFamily).isNull()
+        assertThat(remoteStyle.fontVariationSettings).isNotNull()
+        assertThat(remoteStyle.fontVariationSettings!!.settings).hasSize(2)
+        assertThat(remoteStyle.fontVariationSettings!!.settings[0].axisName).isEqualTo("wdth")
+        assertThat(remoteStyle.fontVariationSettings!!.settings[0].toVariationValue(null))
+            .isEqualTo(110f)
+        assertThat(remoteStyle.fontVariationSettings!!.settings[1].axisName).isEqualTo("wght")
+        assertThat(remoteStyle.fontVariationSettings!!.settings[1].toVariationValue(null))
+            .isEqualTo(450f)
+    }
+
+    @Test
+    fun fromTextStyle_withFontListFontFamily_noVariationSettings_returnsNull() {
+        val fontFamily =
+            FontFamily(
+                androidx.compose.ui.text.font.Font(
+                    androidx.compose.ui.text.font.DeviceFontFamilyName("google-sans")
+                )
+            )
+        val textStyle = TextStyle(fontFamily = fontFamily)
+        val remoteStyle = RemoteTextStyle.fromTextStyle(textStyle)
+
+        assertThat(remoteStyle.fontVariationSettings).isNull()
+    }
+
+    @Test
+    fun fromTextStyle_withNonFontListFontFamily_returnsNullVariationSettings() {
+        val textStyle = TextStyle(fontFamily = FontFamily.SansSerif)
+        val remoteStyle = RemoteTextStyle.fromTextStyle(textStyle)
+
+        assertThat(remoteStyle.fontVariationSettings).isNull()
+    }
+
+    @Test
+    fun fromTextStyle_withNullFontFamily_returnsNullVariationSettings() {
+        val textStyle = TextStyle(fontFamily = null)
+        val remoteStyle = RemoteTextStyle.fromTextStyle(textStyle)
+
+        assertThat(remoteStyle.fontVariationSettings).isNull()
     }
 
     @Test
@@ -91,6 +198,8 @@ class RemoteTextStyleTest {
                 fontWeight = FontWeight.Bold,
                 lineHeight = 10.rsp,
                 textDecoration = TextDecoration.Underline,
+                lineBreak = LineBreak.Heading,
+                hyphens = Hyphens.None,
             )
 
         val newStyle =
@@ -99,6 +208,8 @@ class RemoteTextStyleTest {
                 fontSize = 24.rsp,
                 lineHeight = 20.rsp,
                 textDecoration = TextDecoration.LineThrough,
+                lineBreak = LineBreak.Paragraph,
+                hyphens = Hyphens.Auto,
             )
 
         assertThat(newStyle.color?.constantValueOrNull).isEqualTo(Color.Blue.rc.constantValueOrNull)
@@ -106,27 +217,82 @@ class RemoteTextStyleTest {
         assertThat(newStyle.fontWeight).isEqualTo(FontWeight.Bold)
         assertThat(newStyle.lineHeight?.constantValueOrNull).isEqualTo(20.rsp.constantValueOrNull)
         assertThat(newStyle.textDecoration).isEqualTo(TextDecoration.LineThrough)
+        assertThat(newStyle.lineBreak).isEqualTo(LineBreak.Paragraph)
+        assertThat(newStyle.hyphens).isEqualTo(Hyphens.Auto)
     }
 
     @Test
     fun noarg_copy_does_not_overrides_properties() {
-        val style = RemoteTextStyle(color = Color.Red.rc, fontSize = 12.rsp)
+        val style =
+            RemoteTextStyle(
+                color = Color.Red.rc,
+                fontSize = 12.rsp,
+                lineBreak = LineBreak.Heading,
+                hyphens = Hyphens.Auto,
+            )
 
         val newStyle = style.copy()
 
         assertThat(newStyle.color).isEqualTo(style.color)
         assertThat(newStyle.fontSize).isEqualTo(style.fontSize)
+        assertThat(newStyle.lineBreak).isEqualTo(style.lineBreak)
+        assertThat(newStyle.hyphens).isEqualTo(style.hyphens)
     }
 
     @Test
     fun merge_overrides_properties() {
         val style =
-            RemoteTextStyle(color = Color.Red.rc, fontSize = 12.rsp, fontWeight = FontWeight.Normal)
+            RemoteTextStyle(
+                color = Color.Red.rc,
+                fontSize = 12.rsp,
+                fontWeight = FontWeight.Normal,
+                lineBreak = LineBreak.Heading,
+                hyphens = Hyphens.None,
+            )
 
-        val newStyle = style.merge(color = Color.Blue.rc, fontWeight = FontWeight.Bold)
+        val newStyle =
+            style.merge(
+                color = Color.Blue.rc,
+                fontWeight = FontWeight.Bold,
+                lineBreak = LineBreak.Paragraph,
+                hyphens = Hyphens.Auto,
+            )
 
         assertThat(newStyle.color?.constantValueOrNull).isEqualTo(Color.Blue.rc.constantValueOrNull)
         assertThat(newStyle.fontSize?.constantValueOrNull).isEqualTo(12.rsp.constantValueOrNull)
         assertThat(newStyle.fontWeight).isEqualTo(FontWeight.Bold)
+        assertThat(newStyle.lineBreak).isEqualTo(LineBreak.Paragraph)
+        assertThat(newStyle.hyphens).isEqualTo(Hyphens.Auto)
+    }
+
+    @Test
+    fun fontFeatureSettings_combinesCorrectly() {
+        val style = RemoteTextStyle(fontFeatureSettings = "tnum, zero")
+        val combined = style.combinedFontVariationSettings
+
+        assertThat(combined).isNotNull()
+        assertThat(combined!!.settings).hasSize(2)
+        assertThat(combined.settings[0].axisName).isEqualTo("tnum")
+        assertThat(combined.settings[0].toVariationValue(null)).isEqualTo(1f)
+        assertThat(combined.settings[1].axisName).isEqualTo("zero")
+        assertThat(combined.settings[1].toVariationValue(null)).isEqualTo(1f)
+    }
+
+    @Test
+    fun fontFeatureSettings_and_fontVariationSettings_merge() {
+        val style =
+            RemoteTextStyle(
+                fontFeatureSettings = "tnum",
+                fontVariationSettings =
+                    androidx.compose.ui.text.font.FontVariation.Settings(
+                        androidx.compose.ui.text.font.FontVariation.weight(700)
+                    ),
+            )
+        val combined = style.combinedFontVariationSettings
+
+        assertThat(combined).isNotNull()
+        assertThat(combined!!.settings).hasSize(2)
+        assertThat(combined.settings[0].axisName).isEqualTo("wght")
+        assertThat(combined.settings[1].axisName).isEqualTo("tnum")
     }
 }

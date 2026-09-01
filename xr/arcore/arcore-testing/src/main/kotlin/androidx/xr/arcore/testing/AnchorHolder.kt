@@ -16,19 +16,19 @@
 
 package androidx.xr.arcore.testing
 
-import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor
 
-/** Interface that holds [Anchors][Anchor]. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public interface AnchorHolder {
+@Deprecated(
+    "arcore-testing fakes have been moved internal and should no longer be used by unit tests."
+)
+internal interface AnchorHolder {
 
     /**
      * Notifies the [AnchorHolder] that the given [Anchor] has been persisted.
      *
      * @param anchor the [Anchor] that has been persisted
      */
-    public fun onAnchorPersisted(anchor: Anchor)
+    fun onAnchorPersisted(anchor: Anchor)
 
     /**
      * Detaches the given [Anchor] from this trackable.
@@ -37,5 +37,5 @@ public interface AnchorHolder {
      *
      * @param anchor the [Anchor] to detach
      */
-    public fun detachAnchor(anchor: Anchor)
+    fun detachAnchor(anchor: Anchor)
 }

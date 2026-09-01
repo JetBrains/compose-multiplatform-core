@@ -24,8 +24,6 @@ import androidx.annotation.RestrictTo
  * [TraceEvent]s can additionally contain callstack information. This can help capture the program
  * stack in case of an exceptional event during a trace.
  */
-// False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
-@Suppress("OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
 @DelicateTracingApi
 public class Frame
 internal constructor(

@@ -20,6 +20,9 @@ import android.app.Activity
 import android.content.Context
 import android.os.Bundle
 import android.view.View
+import androidx.lifecycle.LifecycleOwner
+import androidx.xr.arcore.Trackable
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.ActivityPanelEntity
 import androidx.xr.scenecore.runtime.ActivitySpace
@@ -31,36 +34,47 @@ import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.Entity
 import androidx.xr.scenecore.runtime.InputEventListener
 import androidx.xr.scenecore.runtime.InteractableComponent
-import androidx.xr.scenecore.runtime.LoggingEntity
 import androidx.xr.scenecore.runtime.MediaPlayerExtensionsWrapper
 import androidx.xr.scenecore.runtime.MovableComponent
+import androidx.xr.scenecore.runtime.NodeHolder
 import androidx.xr.scenecore.runtime.PanelEntity
 import androidx.xr.scenecore.runtime.PerceptionSpaceScenePose
 import androidx.xr.scenecore.runtime.PixelDimensions
 import androidx.xr.scenecore.runtime.PlaneSemantic
 import androidx.xr.scenecore.runtime.PlaneType
+import androidx.xr.scenecore.runtime.PointSourceParams
 import androidx.xr.scenecore.runtime.PointerCaptureComponent
+import androidx.xr.scenecore.runtime.PositionalAudioComponent
 import androidx.xr.scenecore.runtime.ResizableComponent
 import androidx.xr.scenecore.runtime.ScenePose
 import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.runtime.SoundEffectPool
+import androidx.xr.scenecore.runtime.SoundEffectPoolComponent
+import androidx.xr.scenecore.runtime.SoundFieldAttributes
+import androidx.xr.scenecore.runtime.SoundFieldAudioComponent
 import androidx.xr.scenecore.runtime.SoundPoolExtensionsWrapper
 import androidx.xr.scenecore.runtime.SpatialCapabilities
 import androidx.xr.scenecore.runtime.SpatialEnvironment
 import androidx.xr.scenecore.runtime.SpatialModeChangeListener
 import androidx.xr.scenecore.runtime.SpatialPointerComponent
 import androidx.xr.scenecore.runtime.SpatialVisibility
+import androidx.xr.scenecore.runtime.SubspaceNodeEntity
+import androidx.xr.scenecore.runtime.TrackableComponent
 import java.util.concurrent.Executor
 import java.util.concurrent.ScheduledExecutorService
 import java.util.function.Consumer
 
 internal class ProjectedSceneRuntime
 internal constructor(
-    private val activity: Activity,
+    private var activity: Activity?,
     private val mServiceClient: ProjectedSceneCoreServiceClient,
     private val executor: ScheduledExecutorService,
 ) : SceneRuntime {
 
     private var mIsDestroyed = false
+
+    override var config: Config = Config.Builder().build()
+        private set
 
     override val spatialCapabilities: SpatialCapabilities
         get() = TODO("Not yet implemented")
@@ -139,12 +153,10 @@ internal constructor(
         TODO("Not yet implemented")
     }
 
-    @Deprecated(message = "Use createEntity instead.")
-    override fun createGroupEntity(pose: Pose, name: String, parent: Entity?): Entity {
-        return createEntity(pose, name, parent)
-    }
-
-    override fun createLoggingEntity(pose: Pose): LoggingEntity {
+    override fun createSubspaceNodeEntity(
+        nodeHolder: NodeHolder<*>,
+        size: Dimensions,
+    ): SubspaceNodeEntity {
         TODO("Not yet implemented")
     }
 
@@ -227,6 +239,14 @@ internal constructor(
         TODO("Not yet implemented")
     }
 
+    override fun createTrackableComponent(
+        lifecycleOwner: LifecycleOwner,
+        trackable: Trackable<Trackable.State>,
+        poseExtractor: ((Any?) -> Pose?),
+    ): TrackableComponent {
+        TODO("Not yet implemented")
+    }
+
     override fun createResizableComponent(
         minimumSize: Dimensions,
         maximumSize: Dimensions,
@@ -257,6 +277,30 @@ internal constructor(
         TODO("Not yet implemented")
     }
 
+    override fun createPositionalAudioComponent(
+        context: Context,
+        params: PointSourceParams,
+    ): PositionalAudioComponent {
+        TODO("Not yet implemented")
+    }
+
+    override fun createSoundFieldAudioComponent(
+        context: Context,
+        rtSoundFieldAttributes: SoundFieldAttributes,
+    ): SoundFieldAudioComponent {
+        TODO("Not yet implemented")
+    }
+
+    override fun createSoundEffectPool(maxStreams: Int): SoundEffectPool {
+        TODO("Not yet implemented")
+    }
+
+    override fun createSoundEffectPoolComponent(
+        soundEffectPool: SoundEffectPool
+    ): SoundEffectPoolComponent {
+        TODO("Not yet implemented")
+    }
+
     override fun createBoundsComponent(): BoundsComponent {
         TODO("Not yet implemented")
     }
@@ -265,6 +309,7 @@ internal constructor(
         super.destroy()
         mServiceClient.unbindService()
         mIsDestroyed = true
+        activity = null
     }
 
     public companion object {
@@ -276,4 +321,9 @@ internal constructor(
             return ProjectedSceneRuntime(activity, serviceClient, executor)
         }
     }
+
+    override val virtualPixelDensity: Float
+        get() {
+            TODO("Not yet implemented")
+        }
 }

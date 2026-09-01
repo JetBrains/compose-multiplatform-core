@@ -57,7 +57,6 @@ dependencies {
 android {
     defaultConfig {
         minSdk { version = release(29) }
-        consumerProguardFiles("proguard-rules.pro")
     }
     buildFeatures {
         aidl = true
@@ -67,7 +66,7 @@ android {
             version = 1
         }
     }
-    useLibrary 'android.car'
+    useLibrary "android.car"
     namespace = "androidx.car.app.automotive"
 }
 

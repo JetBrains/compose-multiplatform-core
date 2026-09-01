@@ -16,9 +16,9 @@
 
 package androidx.room3.solver
 
-import androidx.room3.BuiltInTypeConverters
-import androidx.room3.BuiltInTypeConverters.State.DISABLED
-import androidx.room3.BuiltInTypeConverters.State.ENABLED
+import androidx.room3.BuiltInColumnTypeConverters
+import androidx.room3.BuiltInColumnTypeConverters.State.DISABLED
+import androidx.room3.BuiltInColumnTypeConverters.State.ENABLED
 import androidx.room3.Database
 import androidx.room3.DatabaseProcessingStep
 import androidx.room3.compiler.processing.util.Source
@@ -47,7 +47,9 @@ class BuiltInConverterFlagsTest {
         compile(dbAnnotation = createTypeConvertersCode(uuid = DISABLED)) {
             hasError(CANNOT_FIND_COLUMN_TYPE_ADAPTER, "val uuid: UUID")
             hasError(CANNOT_FIND_STMT_READER, "val uuid: UUID")
-            hasErrorCount(2)
+            hasError(CANNOT_FIND_COLUMN_TYPE_ADAPTER, "val uuidKt: Uuid")
+            hasError(CANNOT_FIND_STMT_READER, "val uuidKt: Uuid")
+            hasErrorCount(4)
         }
     }
 
@@ -78,14 +80,16 @@ class BuiltInConverterFlagsTest {
                 createTypeConvertersCode(enums = DISABLED, uuid = DISABLED, byteBuffer = DISABLED)
         ) {
             hasError(CANNOT_FIND_COLUMN_TYPE_ADAPTER, "val uuid: UUID")
+            hasError(CANNOT_FIND_COLUMN_TYPE_ADAPTER, "val uuidKt: Uuid")
             hasError(CANNOT_FIND_COLUMN_TYPE_ADAPTER, "val myEnum: MyEnum")
             hasError(CANNOT_FIND_COLUMN_TYPE_ADAPTER, "val blob: ByteBuffer")
             // even though it is enabled in dao or db, since data class processing will visit the
             // data class, we'll still get errors for these because entity disabled them
             hasError(CANNOT_FIND_STMT_READER, "val uuid: UUID")
+            hasError(CANNOT_FIND_STMT_READER, "val uuidKt: Uuid")
             hasError(CANNOT_FIND_STMT_READER, "val myEnum: MyEnum")
             hasError(CANNOT_FIND_STMT_READER, "val blob: ByteBuffer")
-            hasErrorCount(6)
+            hasErrorCount(8)
         }
     }
 
@@ -161,8 +165,12 @@ class BuiltInConverterFlagsTest {
         return Source.kotlin(
             "Foo.kt",
             """
+            @file:OptIn(kotlin.uuid.ExperimentalUuidApi::class)
+
             import androidx.room3.*import java.nio.ByteBuffer
             import java.util.UUID
+            import kotlin.uuid.Uuid
+
             enum class MyEnum {
                 VAL_1,
                 VAL_2
@@ -174,6 +182,7 @@ class BuiltInConverterFlagsTest {
                 @PrimaryKey
                 val id:Int,
                 val uuid: UUID,
+                val uuidKt: Uuid,
                 val myEnum: MyEnum,
                 val blob: ByteBuffer
             )
@@ -196,23 +205,25 @@ class BuiltInConverterFlagsTest {
     }
 
     private fun createTypeConvertersCode(
-        enums: BuiltInTypeConverters.State? = null,
-        uuid: BuiltInTypeConverters.State? = null,
-        byteBuffer: BuiltInTypeConverters.State? = null,
+        enums: BuiltInColumnTypeConverters.State? = null,
+        uuid: BuiltInColumnTypeConverters.State? = null,
+        byteBuffer: BuiltInColumnTypeConverters.State? = null,
     ): String {
         val builtIns =
             listOfNotNull(
-                    enums?.let { "enums = BuiltInTypeConverters.State.${enums.name}" },
-                    uuid?.let { "uuid = BuiltInTypeConverters.State.${uuid.name}" },
+                    enums?.let { "enums = BuiltInColumnTypeConverters.State.${enums.name}" },
+                    uuid?.let { "uuid = BuiltInColumnTypeConverters.State.${uuid.name}" },
                     byteBuffer?.let {
-                        "byteBuffer = BuiltInTypeConverters.State.${byteBuffer.name}"
+                        "byteBuffer = BuiltInColumnTypeConverters.State.${byteBuffer.name}"
                     },
                 )
                 .joinToString(",")
         return if (builtIns.isBlank()) {
             ""
         } else {
-            "@TypeConverters(" + "builtInTypeConverters = BuiltInTypeConverters($builtIns)" + ")"
+            "@ColumnTypeConverters(" +
+                "builtInColumnTypeConverters = BuiltInColumnTypeConverters($builtIns)" +
+                ")"
         }
     }
 }

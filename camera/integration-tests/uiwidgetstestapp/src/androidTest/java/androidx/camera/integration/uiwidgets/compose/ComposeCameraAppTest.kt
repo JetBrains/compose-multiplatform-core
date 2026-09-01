@@ -19,6 +19,7 @@ package androidx.camera.integration.uiwidgets.compose
 import android.os.Build
 import androidx.camera.integration.uiwidgets.compose.ui.navigation.ComposeCameraScreen
 import androidx.camera.integration.uiwidgets.compose.ui.screen.imagecapture.DEFAULT_LENS_FACING
+import androidx.camera.testing.impl.AndroidUtil
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.LabTestRule
 import androidx.camera.view.PreviewView
@@ -32,8 +33,6 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.filters.LargeTest
 import androidx.test.rule.GrantPermissionRule
 import androidx.testutils.RepeatRule
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
@@ -46,10 +45,7 @@ class ComposeCameraAppTest {
     val permissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(*ComposeCameraActivity.REQUIRED_PERMISSIONS)
 
-    @OptIn(ExperimentalCoroutinesApi::class) // b/457970052
-    @get:Rule
-    val androidComposeTestRule =
-        createAndroidComposeRule<ComposeCameraActivity>(StandardTestDispatcher())
+    @get:Rule val androidComposeTestRule = createAndroidComposeRule<ComposeCameraActivity>()
 
     @get:Rule val labTest: LabTestRule = LabTestRule()
 
@@ -57,6 +53,11 @@ class ComposeCameraAppTest {
 
     @Before
     fun setup() {
+        // Skip test for b/539514196
+        Assume.assumeFalse(
+            "API 24 emulators crash due to SwiftShader driver defects. Unable to test.",
+            AndroidUtil.isEmulator(24),
+        )
         // Skip test for b/168175357
         Assume.assumeFalse(
             "Cuttlefish has MediaCodec dequeInput/Output buffer fails issue. Unable to test.",

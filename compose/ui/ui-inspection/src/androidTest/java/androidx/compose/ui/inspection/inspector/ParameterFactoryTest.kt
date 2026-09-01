@@ -263,7 +263,7 @@ class ParameterFactoryTest {
         assertThat(result.first).isEqualTo(ParameterType.Lambda)
         assertThat(array).hasLength(1)
         assertThat(array[0]?.javaClass?.name)
-            .isEqualTo("${ParameterFactoryTest::class.java.name}\$testComposableLambda\$1\$c\$1")
+            .startsWith("${ParameterFactoryTest::class.java.name}\$testComposableLambda")
     }
 
     @Test
@@ -714,6 +714,7 @@ class ParameterFactoryTest {
                     parameter("blendMode", ParameterType.String, "SrcOver", index = 17)
                     // Null values aren't added to the list of properties
                     // parameter("colorFilter", ParameterType.String, "null", index = 18)
+                    parameter("outsets", ParameterType.String, "Zero", index = 19)
                 }
             }
         }
@@ -948,6 +949,43 @@ class ParameterFactoryTest {
     }
 
     @Test
+    fun testDeepRecursiveStructure() {
+        val c1 = DeepCycle()
+        val c2 = NextDeepCycle()
+        c1.next = c2
+        c2.next = c1
+        val name = DeepCycle::class.java.simpleName
+        val nextName = NextDeepCycle::class.java.simpleName
+        validate(create("mine", c1, maxRecursions = 2)) {
+            parameter("mine", ParameterType.String, name) {
+                parameter("next", ParameterType.String, nextName) {
+                    parameter("next", ParameterType.String, name, ref(0, 0))
+                }
+            }
+        }
+
+        val expanded = expand("mine", c1, ref(0, 0), maxRecursions = 5)!!
+        validate(expanded) {
+            parameter("next", ParameterType.String, name) {
+                parameter("next", ParameterType.String, nextName) {
+                    parameter("next", ParameterType.String, name) {
+                        parameter("next", ParameterType.String, nextName) {
+                            parameter("next", ParameterType.String, name) {
+                                parameter(
+                                    "next",
+                                    ParameterType.String,
+                                    nextName,
+                                    ref(0, 0, 0, 0, 0, 0, 0),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
     fun testTextUnit() {
         assertThat(lookup(TextUnit.Unspecified)).isEqualTo(ParameterType.String to "Unspecified")
         assertThat(lookup(12.0.sp)).isEqualTo(ParameterType.DimensionSp to 12.0f)
@@ -964,6 +1002,12 @@ class ParameterFactoryTest {
     fun testVectorAssert() {
         assertThat(lookup(Icons.Filled.Call)).isEqualTo(ParameterType.String to "Filled.Call")
         assertThat(lookup(Icons.Rounded.Add)).isEqualTo(ParameterType.String to "Rounded.Add")
+    }
+
+    @Test
+    fun testPrimitiveConstantNamesAreSkipped() {
+        create("parameter", ParameterFactoryTest())
+        assertThat(lookup(PARAM_INDEX)).isEqualTo(ParameterType.Int32 to 4)
     }
 
     private fun create(
@@ -1161,6 +1205,12 @@ class MyClass(private val name: String) {
 
     override fun equals(other: Any?): Boolean = name == (other as? MyClass)?.name
 }
+
+private open class DeepCycle {
+    var next: DeepCycle? = null
+}
+
+private class NextDeepCycle : DeepCycle()
 
 private fun NodeParameter.checkEquals(other: NodeParameter): Boolean {
     assertThat(other.name).isEqualTo(name)

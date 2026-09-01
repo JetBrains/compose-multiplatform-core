@@ -21,14 +21,14 @@ plugins {
 }
 
 android {
-    compileSdk { version = release(35) }
+    compileSdk { version = release(37) { minorApiLevel = 1 } }
     namespace = "androidx.compose.integration.hero.jetsnack.macrobenchmark.target"
 
     buildTypes {
         release {
-            minifyEnabled = true
-            shrinkResources = true
-            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt")
+            optimization {
+                enable = true
+            }
         }
     }
 }
@@ -46,7 +46,6 @@ dependencies {
     implementation(project(":compose:material:material"))
     implementation(project(":compose:material3:material3"))
     implementation(project(":compose:runtime:runtime"))
-    implementation(project(":compose:runtime:runtime-tracing"))
     implementation(project(":compose:ui:ui"))
     implementation(project(":compose:ui:ui-tooling"))
     implementation(project(":profileinstaller:profileinstaller"))

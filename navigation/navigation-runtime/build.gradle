@@ -34,10 +34,13 @@ androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.navigation"
         androidResources.enable = true
+        withJava()
     }
     desktop()
     linux()
     mac()
+    watchos()
+    tvos()
     ios()
     js()
     wasmJs()

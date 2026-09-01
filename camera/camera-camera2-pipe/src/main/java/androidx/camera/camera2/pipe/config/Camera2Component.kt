@@ -32,15 +32,16 @@ import androidx.camera.camera2.pipe.compat.Camera2CameraOpener
 import androidx.camera.camera2.pipe.compat.Camera2CameraStatusMonitor
 import androidx.camera.camera2.pipe.compat.Camera2CaptureSequenceProcessorFactory
 import androidx.camera.camera2.pipe.compat.Camera2CaptureSessionsModule
+import androidx.camera.camera2.pipe.compat.Camera2DeviceCache
 import androidx.camera.camera2.pipe.compat.Camera2DeviceCloser
 import androidx.camera.camera2.pipe.compat.Camera2DeviceCloserImpl
 import androidx.camera.camera2.pipe.compat.Camera2DeviceManager
+import androidx.camera.camera2.pipe.compat.Camera2DeviceManagerImpl
 import androidx.camera.camera2.pipe.compat.Camera2ErrorProcessor
 import androidx.camera.camera2.pipe.compat.Camera2MetadataCache
 import androidx.camera.camera2.pipe.compat.Camera2MetadataProvider
 import androidx.camera.camera2.pipe.compat.CameraAvailabilityMonitor
 import androidx.camera.camera2.pipe.compat.CameraOpener
-import androidx.camera.camera2.pipe.compat.PruningCamera2DeviceManager
 import androidx.camera.camera2.pipe.compat.RetryingCameraStateOpener
 import androidx.camera.camera2.pipe.compat.RetryingCameraStateOpenerImpl
 import androidx.camera.camera2.pipe.compat.StandardCamera2CaptureSequenceProcessorFactory
@@ -49,6 +50,7 @@ import androidx.camera.camera2.pipe.graph.GraphListener
 import androidx.camera.camera2.pipe.graph.StreamGraphImpl
 import androidx.camera.camera2.pipe.internal.CameraErrorListener
 import androidx.camera.camera2.pipe.internal.CameraStatusMonitor
+import androidx.camera.camera2.pipe.internal.CriticalCameraErrorListener
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -68,7 +70,7 @@ internal abstract class Camera2Module {
 
     @Binds
     abstract fun bindCamera2DeviceManager(
-        camera2DeviceManager: PruningCamera2DeviceManager
+        camera2DeviceManager: Camera2DeviceManagerImpl
     ): Camera2DeviceManager
 
     @Binds abstract fun bindCameraOpener(camera2CameraOpener: Camera2CameraOpener): CameraOpener
@@ -87,6 +89,11 @@ internal abstract class Camera2Module {
     abstract fun bindCameraErrorListener(
         camera2ErrorProcessor: Camera2ErrorProcessor
     ): CameraErrorListener
+
+    @Binds
+    abstract fun bindCriticalCameraErrorListener(
+        camera2DeviceCache: Camera2DeviceCache
+    ): CriticalCameraErrorListener
 
     @Binds
     abstract fun bindCameraAvailabilityMonitor(

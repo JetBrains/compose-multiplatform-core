@@ -16,6 +16,7 @@
 
 package androidx.appfunctions
 
+import android.app.AppInteractionAttribution
 import android.os.Build
 import android.os.Bundle
 import androidx.appfunctions.ExecuteAppFunctionRequest.Companion.EXTRA_PARAMETERS
@@ -23,6 +24,8 @@ import androidx.appfunctions.ExecuteAppFunctionRequest.Companion.EXTRA_USE_JETPA
 import androidx.appfunctions.ExecuteAppFunctionRequest.Companion.toCompatExecuteAppFunctionRequest
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionMetadata
+import androidx.appfunctions.metadata.AppFunctionName
+import androidx.appfunctions.metadata.AppFunctionPackageMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
@@ -91,6 +94,49 @@ class ExecuteAppFunctionRequestTest {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.CINNAMON_BUN)
+    fun toPlatformExecuteAppFunctionRequestWithAttribution_success() {
+        val request = ExecuteAppFunctionRequest("pkg", "method", TEST_APP_FUNCTION_DATA)
+        val platformRequest = request.toPlatformExecuteAppFunctionRequest()
+
+        assertThat(platformRequest.targetPackageName).isEqualTo("pkg")
+        assertThat(platformRequest.functionIdentifier).isEqualTo("method")
+        assertThat(platformRequest.parameters).isEqualTo(TEST_APP_FUNCTION_DATA.genericDocument)
+        assertThat(platformRequest.extras.getBundle(EXTRA_PARAMETERS)?.isEmpty()).isTrue()
+        assertThat(platformRequest.extras.getBoolean(EXTRA_USE_JETPACK_SCHEMA)).isTrue()
+        assertThat(platformRequest.attribution).isNull()
+        assertThat(platformRequest.activityId).isNull()
+
+        // Test with attribution set
+        val attribution =
+            AppInteractionAttribution.Builder(AppInteractionAttribution.INTERACTION_TYPE_USER_QUERY)
+                .build()
+        val binder = android.os.Binder()
+        val activityId = Api37Impl.createAppFunctionActivityId(binder)
+        val requestWithAttribution =
+            ExecuteAppFunctionRequest(
+                "pkg2",
+                "method2",
+                TEST_APP_FUNCTION_DATA,
+                attribution,
+                activityId,
+            )
+        val platformRequestWithAttribution =
+            requestWithAttribution.toPlatformExecuteAppFunctionRequest()
+
+        assertThat(platformRequestWithAttribution.targetPackageName).isEqualTo("pkg2")
+        assertThat(platformRequestWithAttribution.functionIdentifier).isEqualTo("method2")
+        assertThat(platformRequestWithAttribution.parameters)
+            .isEqualTo(TEST_APP_FUNCTION_DATA.genericDocument)
+        assertThat(platformRequestWithAttribution.extras.getBundle(EXTRA_PARAMETERS)?.isEmpty())
+            .isTrue()
+        assertThat(platformRequestWithAttribution.extras.getBoolean(EXTRA_USE_JETPACK_SCHEMA))
+            .isTrue()
+        assertThat(platformRequestWithAttribution.attribution).isEqualTo(attribution)
+        assertThat(platformRequestWithAttribution.activityId).isEqualTo(activityId)
+    }
+
+    @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
     fun fromPlatformExtensionClass_success() {
         assumeAppFunctionExtensionLibraryAvailable()
@@ -129,6 +175,33 @@ class ExecuteAppFunctionRequestTest {
             .isEqualTo(TEST_APP_FUNCTION_DATA.genericDocument)
         assertThat(request.functionParameters.extras.isEmpty).isTrue()
         assertThat(request.useJetpackSchema).isFalse()
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.CINNAMON_BUN)
+    fun toCompatExecuteAppFunctionRequestWithAttribution_success() {
+        val attribution =
+            AppInteractionAttribution.Builder(AppInteractionAttribution.INTERACTION_TYPE_USER_QUERY)
+                .build()
+        val binder = android.os.Binder()
+        val activityId = Api37Impl.createAppFunctionActivityId(binder)
+        val platformRequest =
+            android.app.appfunctions.ExecuteAppFunctionRequest.Builder("pkg", "method")
+                .setParameters(TEST_APP_FUNCTION_DATA.genericDocument)
+                .setAttribution(attribution)
+                .setActivityId(activityId)
+                .build()
+
+        val request = platformRequest.toCompatExecuteAppFunctionRequest(TEST_APP_FUNCTION_METADATA)
+
+        assertThat(request.targetPackageName).isEqualTo("pkg")
+        assertThat(request.functionIdentifier).isEqualTo("method")
+        assertThat(request.functionParameters.genericDocument)
+            .isEqualTo(TEST_APP_FUNCTION_DATA.genericDocument)
+        assertThat(request.functionParameters.extras.isEmpty).isTrue()
+        assertThat(request.useJetpackSchema).isFalse()
+        assertThat(request.attribution).isEqualTo(attribution)
+        assertThat(request.activityId).isEqualTo(activityId)
     }
 
     @Test
@@ -173,6 +246,24 @@ class ExecuteAppFunctionRequestTest {
         }
     }
 
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.CINNAMON_BUN)
+    private object Api37Impl {
+        fun createAppFunctionActivityId(
+            binder: android.os.IBinder
+        ): android.app.appfunctions.AppFunctionActivityId {
+            val parcel = android.os.Parcel.obtain()
+            try {
+                parcel.writeStrongBinder(binder)
+                parcel.setDataPosition(0)
+                return android.app.appfunctions.AppFunctionActivityId.CREATOR.createFromParcel(
+                    parcel
+                )
+            } finally {
+                parcel.recycle()
+            }
+        }
+    }
+
     companion object {
         val TEST_PARAMETERS =
             listOf(
@@ -190,13 +281,16 @@ class ExecuteAppFunctionRequestTest {
 
         val TEST_APP_FUNCTION_METADATA =
             AppFunctionMetadata(
-                id = "method",
-                packageName = "pkg",
-                isEnabled = true,
+                name = AppFunctionName(packageName = "pkg", functionIdentifier = "method"),
                 schema = null,
                 parameters = TEST_PARAMETERS,
                 response = AppFunctionResponseMetadata(valueType = AppFunctionUnitTypeMetadata()),
-                components = AppFunctionComponentsMetadata(),
+                packageMetadata =
+                    AppFunctionPackageMetadata(
+                        packageName = "pkg",
+                        components = AppFunctionComponentsMetadata(),
+                    ),
+                scope = AppFunctionMetadata.SCOPE_GLOBAL,
             )
     }
 }

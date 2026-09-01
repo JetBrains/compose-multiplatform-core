@@ -28,14 +28,15 @@ import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.SQLiteException
 import androidx.sqlite.SQLiteStatement
-import androidx.sqlite.executeSQL
-import androidx.sqlite.prepare
+import androidx.sqlite.async.executeSQL
+import androidx.sqlite.async.prepare
 import androidx.sqlite.throwSQLiteException
 import kotlin.concurrent.Volatile
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
@@ -57,6 +58,7 @@ internal class PassthroughConnectionPool(
 
     private val lock = ReentrantLock()
     private val mutex = Mutex()
+    private val connectionElementKey = ConnectionElementKey()
     private lateinit var connection: SQLiteConnection
 
     @Volatile private var isClosed = false
@@ -68,7 +70,7 @@ internal class PassthroughConnectionPool(
         if (isClosed) {
             throwSQLiteException(SQLITE_MISUSE, "Connection pool is closed")
         }
-        val confinedConnection = currentCoroutineContext()[ConnectionElement]?.connectionWrapper
+        val confinedConnection = currentCoroutineContext()[connectionElementKey]?.connectionWrapper
         if (confinedConnection != null) {
             return block.invoke(confinedConnection)
         }
@@ -85,7 +87,9 @@ internal class PassthroughConnectionPool(
             }
         }
         val connectionWrapper = PassthroughConnection(transactionWrapper, connection)
-        return withContext(ConnectionElement(connectionWrapper)) { block.invoke(connectionWrapper) }
+        return withContext(ConnectionElement(connectionElementKey, connectionWrapper)) {
+            block.invoke(connectionWrapper)
+        }
     }
 
     /**
@@ -129,13 +133,12 @@ internal class PassthroughConnectionPool(
         }
     }
 
-    private class ConnectionElement(val connectionWrapper: PassthroughConnection) :
-        CoroutineContext.Element {
-        companion object Key : CoroutineContext.Key<ConnectionElement>
+    private class ConnectionElement(
+        override val key: CoroutineContext.Key<ConnectionElement>,
+        val connectionWrapper: PassthroughConnection,
+    ) : CoroutineContext.Element
 
-        override val key: CoroutineContext.Key<ConnectionElement>
-            get() = ConnectionElement
-    }
+    private class ConnectionElementKey : CoroutineContext.Key<ConnectionElement>
 
     private companion object {
         const val BUG_LINK =
@@ -180,13 +183,15 @@ private class PassthroughConnection(
         type: Transactor.SQLiteTransactionType,
         block: suspend TransactionScope<R>.() -> R,
     ): R {
-        when (type) {
-            Transactor.SQLiteTransactionType.DEFERRED ->
-                delegate.executeSQL("BEGIN DEFERRED TRANSACTION")
-            Transactor.SQLiteTransactionType.IMMEDIATE ->
-                delegate.executeSQL("BEGIN IMMEDIATE TRANSACTION")
-            Transactor.SQLiteTransactionType.EXCLUSIVE ->
-                delegate.executeSQL("BEGIN EXCLUSIVE TRANSACTION")
+        withContext(NonCancellable) {
+            when (type) {
+                Transactor.SQLiteTransactionType.DEFERRED ->
+                    delegate.executeSQL("BEGIN DEFERRED TRANSACTION")
+                Transactor.SQLiteTransactionType.IMMEDIATE ->
+                    delegate.executeSQL("BEGIN IMMEDIATE TRANSACTION")
+                Transactor.SQLiteTransactionType.EXCLUSIVE ->
+                    delegate.executeSQL("BEGIN EXCLUSIVE TRANSACTION")
+            }
         }
         if (nestedTransactionCount.incrementAndGet() > 0) {
             currentTransactionType = type
@@ -205,17 +210,19 @@ private class PassthroughConnection(
                 throw ex
             }
         } finally {
-            try {
-                if (nestedTransactionCount.decrementAndGet() == 0) {
-                    currentTransactionType = null
+            withContext(NonCancellable) {
+                try {
+                    if (nestedTransactionCount.decrementAndGet() == 0) {
+                        currentTransactionType = null
+                    }
+                    if (success) {
+                        delegate.executeSQL("END TRANSACTION")
+                    } else {
+                        delegate.executeSQL("ROLLBACK TRANSACTION")
+                    }
+                } catch (ex: SQLiteException) {
+                    exception?.addSuppressed(ex) ?: throw ex
                 }
-                if (success) {
-                    delegate.executeSQL("END TRANSACTION")
-                } else {
-                    delegate.executeSQL("ROLLBACK TRANSACTION")
-                }
-            } catch (ex: SQLiteException) {
-                exception?.addSuppressed(ex) ?: throw ex
             }
         }
     }

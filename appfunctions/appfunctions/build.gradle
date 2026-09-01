@@ -67,6 +67,8 @@ dependencies {
     androidTestCompileOnly(project(":appfunctions:appfunctions-stubs"))
     androidTestImplementation(libs.kotlinTest)
     androidTestImplementation(libs.testMonitor)
+    androidTestImplementation(libs.kotlinCoroutinesTest)
+    androidTestImplementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
 }
 
 // Restricts AppSearch generated code to library to avoid it surfacing in public API.
@@ -77,8 +79,7 @@ kapt {
 }
 
 android {
-    compileSdk { version = release(36) }
-    defaultConfig.consumerProguardFiles("proguard-rules.pro")
+    compileSdk { version = release(37) }
     namespace = "androidx.appfunctions"
 }
 

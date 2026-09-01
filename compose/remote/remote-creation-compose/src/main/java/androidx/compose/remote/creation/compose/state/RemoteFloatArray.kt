@@ -25,18 +25,47 @@ import androidx.compose.ui.util.fastMap
 
 /** Represents an array of floats. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class RemoteFloatArray(public override val constantValueOrNull: List<RemoteFloat>?) :
-    BaseRemoteState<List<RemoteFloat>>() {
+public class RemoteFloatArray
+internal constructor(
+    public override val constantValueOrNull: List<RemoteFloat>?,
+    internal override val cacheKey: RemoteStateCacheKey,
+) : BaseRemoteState<List<RemoteFloat>>(cacheKey) {
 
-    internal enum class OperationKey {
-        Create,
-        Get,
-    }
-
-    internal override val cacheKey: RemoteStateCacheKey =
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public constructor(
+        constantValueOrNull: List<RemoteFloat>?
+    ) : this(
+        constantValueOrNull,
         constantValueOrNull?.let { values ->
             RemoteOperationCacheKey.create(OperationKey.Create, *values.toTypedArray())
-        } ?: RemoteStateInstanceKey()
+        } ?: RemoteStateInstanceKey(),
+    )
+
+    internal enum class OperationKey : RemoteOperation {
+        Create {
+            override fun toDebugString(args: List<RemoteStateCacheKey>) =
+                "arrayOf(${args.joinToDebugString()})"
+
+            override fun reconstruct(args: List<BaseRemoteState<*>>): BaseRemoteState<*> =
+                RemoteFloatArray(args.fastMap { it as RemoteFloat })
+        },
+        Get {
+            override val precedence: Int
+                get() = 100
+
+            override fun toDebugString(args: List<RemoteStateCacheKey>) =
+                args.formatArrayAccess(precedence)
+
+            override fun reconstruct(args: List<BaseRemoteState<*>>): BaseRemoteState<*> {
+                val array = args[0] as RemoteFloatArray
+                return when (val index = args[1]) {
+                    is RemoteFloat -> array[index]
+                    is RemoteInt -> array[index]
+                    else -> throw IllegalArgumentException("Unsupported index type: $index")
+                }
+            }
+        },
+    }
 
     override fun writeToDocument(creationState: RemoteComposeCreationState): Int {
         val asFloat =

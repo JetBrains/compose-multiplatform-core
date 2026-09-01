@@ -20,6 +20,7 @@
  * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
 plugins {
@@ -29,6 +30,9 @@ plugins {
 
 dependencies {
     api("androidx.annotation:annotation:1.6.0")
+
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
 
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)

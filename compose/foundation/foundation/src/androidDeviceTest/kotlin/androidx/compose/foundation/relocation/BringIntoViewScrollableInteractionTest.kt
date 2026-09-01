@@ -73,7 +73,6 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -83,7 +82,7 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class BringIntoViewScrollableInteractionTest(private val orientation: Orientation) {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val parentBox = "parent box"
     private val childBox = "child box"
@@ -1086,7 +1085,6 @@ class BringIntoViewScrollableInteractionTest(private val orientation: Orientatio
         val customBringIntoViewSpec =
             object : BringIntoViewSpec {
                 @Deprecated("override")
-                @Suppress("OVERRIDE_DEPRECATION") // b/446706247
                 override val scrollAnimationSpec: AnimationSpec<Float>
                     get() = animationSpec
 
@@ -1184,7 +1182,6 @@ class BringIntoViewScrollableInteractionTest(private val orientation: Orientatio
                 var index = 0
 
                 @Deprecated("override")
-                @Suppress("OVERRIDE_DEPRECATION") // b/446706247
                 override val scrollAnimationSpec: AnimationSpec<Float>
                     get() = inspectSpringAnimationSpec
 

@@ -17,8 +17,6 @@
 package androidx.camera.camera2.pipe.graph
 
 import android.content.Context
-import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
-import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL
 import android.os.Build
 import android.util.Size
 import androidx.camera.camera2.pipe.CameraBackendFactory
@@ -32,6 +30,7 @@ import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelLega
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelLimited
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.ImageSourceConfig
+import androidx.camera.camera2.pipe.MemoryEstimator
 import androidx.camera.camera2.pipe.OutputStream
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.internal.CameraBackendsImpl
@@ -46,6 +45,7 @@ import androidx.camera.camera2.pipe.testing.FakeImageReaders
 import androidx.camera.camera2.pipe.testing.FakeImageSources
 import androidx.camera.camera2.pipe.testing.FakeSurfaces
 import androidx.camera.camera2.pipe.testing.FakeThreads
+import androidx.camera.camera2.pipe.testing.HighEndDeviceTemplate
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
@@ -65,10 +65,7 @@ internal class StreamGraphImplTest {
     private val testScope = TestScope()
 
     private val context = ApplicationProvider.getApplicationContext() as Context
-    private val metadata =
-        FakeCameraMetadata(
-            mapOf(INFO_SUPPORTED_HARDWARE_LEVEL to INFO_SUPPORTED_HARDWARE_LEVEL_FULL)
-        )
+    private val metadata = FakeCameraMetadata.fromTemplate(HighEndDeviceTemplate)
     private val config = FakeGraphConfigs
     private val fakeGraphProcessor = FakeGraphProcessor()
 
@@ -115,9 +112,14 @@ internal class StreamGraphImplTest {
         imageSources: ImageSources,
         cameraControllerProvider: Provider<CameraController>,
     ): StreamGraphImpl =
-        StreamGraphImpl(cameraMetadata, graphConfig, imageSources, cameraControllerProvider).also {
-            streamGraphs.add(it)
-        }
+        StreamGraphImpl(
+                cameraMetadata,
+                graphConfig,
+                imageSources,
+                cameraControllerProvider,
+                MemoryEstimator.create(),
+            )
+            .also { streamGraphs.add(it) }
 
     @After
     fun tearDown() {

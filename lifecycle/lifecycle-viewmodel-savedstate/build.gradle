@@ -34,10 +34,6 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.lifecycle.viewmodel.savedstate"
-        optimization {
-            it.consumerKeepRules.publish = true
-            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
-        }
     }
     desktop()
     mac()
@@ -54,7 +50,7 @@ androidXMultiplatform {
     sourceSets {
         commonMain.dependencies {
             api("androidx.annotation:annotation:1.9.1")
-            api("androidx.savedstate:savedstate:1.4.0")
+            api(project(":savedstate:savedstate"))
             api(project(":lifecycle:lifecycle-viewmodel"))
             implementation(project(":lifecycle:lifecycle-common"))
             implementation("androidx.collection:collection:1.5.0")
@@ -77,6 +73,7 @@ androidXMultiplatform {
 
         androidDeviceTest.dependencies {
             implementation(project(":lifecycle:lifecycle-livedata-core"))
+            implementation("androidx.activity:activity:1.13.0")
             implementation ("androidx.fragment:fragment:1.3.0")
             implementation(project(":internal-testutils-runtime"))
             implementation(project(":lifecycle:lifecycle-viewmodel"))
@@ -100,6 +97,12 @@ dependencies {
         // to this androidx module.
         commonMainImplementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-savedstate:2.9.5") {
             because "prevents symbols duplication"
+        }
+
+        // Fragment 1.2.0+ is the first version to use `SavedStateViewModelFactory` to handle
+        // saving and restoring state. This makes `LegacySavedStateHandleController` obsolete.
+        androidMainImplementation("androidx.fragment:fragment:1.2.0") {
+            because "SavedStateViewModelFactory replaces LegacySavedStateHandleController by default"
         }
     }
 }

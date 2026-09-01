@@ -143,7 +143,7 @@ dependencies {
 
 Documentation dependencies **must** use the `stubs` configuration:
 
-`docs-public/build.gradle`:
+`docs-tip-of-tree/build.gradle` and `docs-public/build.gradle`:
 
 ```
 dependencies {

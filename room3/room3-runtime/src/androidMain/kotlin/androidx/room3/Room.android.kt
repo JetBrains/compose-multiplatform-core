@@ -50,6 +50,23 @@ public actual object Room {
      * memory database disappears when the process is killed. Once a database is built, you should
      * keep a reference to it and re-use it.
      *
+     * @param factory An optional lambda calling [RoomDatabaseConstructor.initialize] corresponding
+     *   to the database class of this builder. If not provided then reflection is used to find and
+     *   instantiate the database implementation class.
+     * @param T The type of the database class.
+     * @return A `RoomDatabaseBuilder<T>` which you can use to create the database.
+     */
+    public inline fun <reified T : RoomDatabase> inMemoryDatabaseBuilder(
+        noinline factory: () -> T = { findAndInstantiateDatabaseImpl(T::class.java) }
+    ): RoomDatabase.Builder<T> {
+        return RoomDatabase.Builder(T::class, null, factory, null)
+    }
+
+    /**
+     * Creates a [RoomDatabase.Builder] for an in memory database. Information stored in an in
+     * memory database disappears when the process is killed. Once a database is built, you should
+     * keep a reference to it and re-use it.
+     *
      * @param context The context for the database. This is usually the Application context.
      * @param factory An optional lambda calling [RoomDatabaseConstructor.initialize] corresponding
      *   to the database class of this builder. If not provided then reflection is used to find and
@@ -98,8 +115,38 @@ public actual object Room {
      * Creates a RoomDatabase.Builder for a persistent database. Once a database is built, you
      * should keep a reference to it and re-use it.
      *
-     * @param context The context for the database. This is usually the Application context.
      * @param name The name of the database file.
+     * @param factory An optional lambda calling [RoomDatabaseConstructor.initialize] corresponding
+     *   to the database class of this builder. If not provided then reflection is used to find and
+     *   instantiate the database implementation class.
+     * @param T The type of the database class.
+     * @return A `RoomDatabaseBuilder<T>` which you can use to create the database.
+     */
+    public inline fun <reified T : RoomDatabase> databaseBuilder(
+        name: String,
+        noinline factory: () -> T = { findAndInstantiateDatabaseImpl(T::class.java) },
+    ): RoomDatabase.Builder<T> {
+        require(name.isNotBlank()) {
+            "Cannot build a database with empty name." +
+                " If you are trying to create an in memory database, use Room" +
+                ".inMemoryDatabaseBuilder()."
+        }
+        require(name != ":memory:") {
+            "Cannot build a database with the special name ':memory:'." +
+                " If you are trying to create an in memory database, use Room" +
+                ".inMemoryDatabaseBuilder()."
+        }
+        return RoomDatabase.Builder(T::class, name, factory, null)
+    }
+
+    /**
+     * Creates a RoomDatabase.Builder for a persistent database. Once a database is built, you
+     * should keep a reference to it and re-use it.
+     *
+     * @param context The context for the database. This is usually the Application context.
+     * @param name The name of the database file. If this name is an absolute path it is used as is,
+     *   otherwise the path to the database will be based on [Context.getDatabasePath] from the
+     *   given [context].
      * @param factory An optional lambda calling [RoomDatabaseConstructor.initialize] corresponding
      *   to the database class of this builder. If not provided then reflection is used to find and
      *   instantiate the database implementation class.

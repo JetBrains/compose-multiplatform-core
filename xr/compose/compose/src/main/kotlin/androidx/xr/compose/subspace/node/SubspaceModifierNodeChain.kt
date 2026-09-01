@@ -299,6 +299,20 @@ internal class SubspaceModifierNodeChain(private val subspaceLayoutNode: Subspac
                 subspaceLayoutNode.requestLayout()
             }
         }
+
+        // MeasuredSizeAware isn't causing remeasures. We simply ensure that the
+        // callback is invoked. If it's already measured, we can just invoke it.
+        if (SubspaceNodes.MeasuredSizeAware in selfKindSet) {
+            if (phase != Remove) {
+                subspaceLayoutNode.dispatchMeasuredSizeTo(
+                    node as SubspaceMeasuredSizeAwareModifierNode
+                )
+            }
+        }
+
+        if (SubspaceNodes.Semantics in selfKindSet) {
+            subspaceLayoutNode.measurableLayout.invalidateSemantics()
+        }
     }
 
     private fun syncAggregateChildKindSet() {

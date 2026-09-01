@@ -48,6 +48,7 @@ import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import kotlin.test.fail
+import kotlinx.coroutines.test.runTest
 
 class SnapshotTests {
     @Test
@@ -1395,9 +1396,9 @@ class SnapshotTests {
     @Test // b/442791065 -- test adapted from the report.
     fun testMergePolicy() {
         var mergeCalled = false
-        var lastSeenPrevious = -1
-        var lastSeenCurrent = -1
-        var lastSeenApplied = -1
+        var lastSeenPrevious: Int
+        var lastSeenCurrent: Int
+        var lastSeenApplied: Int
 
         fun myPolicy(): SnapshotMutationPolicy<Int> =
             object : SnapshotMutationPolicy<Int> {
@@ -1470,6 +1471,44 @@ class SnapshotTests {
             expectedApplied = snapshot4Value,
             snapshot4,
         )
+    }
+
+    // regression test for b/451479063
+    @Test
+    fun stateWrittenToBeforeSnapshotApplied() = runTest {
+        var state: MutableState<Int>? = null
+
+        val snapshot1 = takeMutableSnapshot()
+        snapshot1.enter { state = mutableIntStateOf(0) }
+
+        val snapshot2 = takeMutableSnapshot()
+        var stateObserved = false
+        val handle =
+            Snapshot.registerApplyObserver { changed, _ ->
+                if (state!! in changed) {
+                    stateObserved = true
+                }
+            }
+
+        try {
+            snapshot2.enter {
+                if (state != null) {
+                    state.value = 1
+                }
+            }
+
+            snapshot1.apply().check()
+            snapshot2.apply().check()
+
+            Snapshot.sendApplyNotifications()
+
+            assertEquals(1, state?.value)
+            assertTrue(stateObserved, "Apply observer should have been triggered")
+        } finally {
+            snapshot1.dispose()
+            snapshot2.dispose()
+            handle.dispose()
+        }
     }
 
     private fun usedRecords(state: StateObject): Int {

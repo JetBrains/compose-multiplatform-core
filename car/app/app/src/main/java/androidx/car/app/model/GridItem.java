@@ -17,13 +17,11 @@
 package androidx.car.app.model;
 
 import static androidx.annotation.RestrictTo.Scope.LIBRARY;
-import static androidx.car.app.utils.LogTags.TAG;
 
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.SuppressLint;
 import android.os.Looper;
-import android.util.Log;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.OptIn;
@@ -52,12 +50,16 @@ import java.util.Objects;
 public final class GridItem implements Item {
     /**
      * The type of images supported within grid items.
+     *
+     * @deprecated Use {@link Builder#setImage(CarIcon)} instead. Tint is controlled directly by
+     *     {@link CarIcon}, and image size is controlled by the parent template or section (e.g.
+     *     {@link GridSection.Builder#setItemSize(int)}).
      */
+    @Deprecated
     @RestrictTo(LIBRARY)
     @IntDef(value = {IMAGE_TYPE_ICON, IMAGE_TYPE_LARGE})
     @Retention(RetentionPolicy.SOURCE)
-    public @interface GridItemImageType {
-    }
+    public @interface GridItemImageType {}
 
     /**
      * Represents an icon to be displayed in the grid item.
@@ -66,9 +68,15 @@ public final class GridItem implements Item {
      * icons targeting a 128 x 128 dp bounding box. If necessary, the icon will be scaled down while
      * preserving its aspect ratio.
      *
-     * <p>A tint color is expected to be provided via {@link CarIcon.Builder#setTint}. Otherwise, a
-     * default tint color as determined by the host will be applied.
+     * <p>A tint color is expected to be provided via {@link CarIconStyle.Builder#setTint} provided
+     * to the icon with {@link CarIcon.Builder#setStyle}. Otherwise, a default tint color as
+     * determined by the host will be applied.
+     *
+     * @deprecated Use {@link Builder#setImage(CarIcon)} instead. Tint is controlled directly by
+     *     {@link CarIcon}, and image size is controlled by the parent template or section (e.g.
+     *     {@link GridSection.Builder#setItemSize(int)}).
      */
+    @Deprecated
     public static final int IMAGE_TYPE_ICON = (1 << 0);
 
     /**
@@ -77,7 +85,12 @@ public final class GridItem implements Item {
      * <p>To minimize scaling artifacts across a wide range of car screens, apps should provide
      * images targeting a 128 x 128 dp bounding box. If necessary, the image will be scaled down
      * while preserving its aspect ratio.
+     *
+     * @deprecated Use {@link Builder#setImage(CarIcon)} instead. Image size is controlled by the
+     *     parent template or section (e.g. {@link GridSection.Builder#setItemSize(int)}), and tint
+     *     is controlled directly by {@link CarIcon}.
      */
+    @Deprecated
     public static final int IMAGE_TYPE_LARGE = (1 << 1);
 
     private final boolean mIsLoading;
@@ -148,7 +161,7 @@ public final class GridItem implements Item {
      *
      * @see Builder#setBadge(Badge)
      */
-    @ExperimentalCarApi
+    @RequiresCarApi(8)
     public @Nullable Badge getBadge() {
         return mBadge;
     }
@@ -158,7 +171,7 @@ public final class GridItem implements Item {
      *
      * @see Builder#setIndexable(boolean)
      */
-    @ExperimentalCarApi
+    @RequiresCarApi(8)
     public boolean isIndexable() {
         return mIndexable;
     }
@@ -168,7 +181,7 @@ public final class GridItem implements Item {
      *
      * @see Builder#setProgressBar(CarProgressBar)
      */
-    @RequiresCarApi(8)
+    @RequiresCarApi(9)
     @ExperimentalCarApi
     public @Nullable CarProgressBar getProgressBar() {
         return mProgressBar;
@@ -280,8 +293,8 @@ public final class GridItem implements Item {
         /**
          * Sets the title of the {@link GridItem}.
          *
-         * <p>{@code title} must conform to {@link CarTextConstraints.TEXT_ONLY} in Car API 7 and
-         * below, and {@link CarTextConstraints.TEXT_AND_ICON} in Car API 8 and above.
+         * <p>{@code title} must conform to {@link CarTextConstraints#TEXT_ONLY} in Car API 7 and
+         * below, and {@link CarTextConstraints#TEXT_AND_ICON} in Car API 8 and above.
          *
          * @throws IllegalArgumentException if {@code title} contains unsupported spans
          */
@@ -299,8 +312,8 @@ public final class GridItem implements Item {
         /**
          * Sets the title of the {@link GridItem}, with support for multiple length variants.
          *
-         * <p>{@code title} must conform to {@link CarTextConstraints.TEXT_ONLY} in Car API 7 and
-         * below, and {@link CarTextConstraints.TEXT_AND_ICON} in Car API 8 and above.
+         * <p>{@code title} must conform to {@link CarTextConstraints#TEXT_ONLY} in Car API 7 and
+         * below, and {@link CarTextConstraints#TEXT_AND_ICON} in Car API 8 and above.
          *
          * @throws IllegalArgumentException if {@code title} contains unsupported spans
          */
@@ -317,8 +330,8 @@ public final class GridItem implements Item {
         /**
          * Sets a secondary text string to the grid item that is displayed below the title.
          *
-         * <p>{@code text} must conform to {@link CarTextConstraints.TEXT_WITH_COLORS} in Car API
-         * 7 and below, and {@link CarTextConstraints.TEXT_WITH_COLORS_AND_ICON} in Car API 8 and
+         * <p>{@code text} must conform to {@link CarTextConstraints#TEXT_WITH_COLORS} in Car API
+         * 7 and below, and {@link CarTextConstraints#TEXT_WITH_COLORS_AND_ICON} in Car API 8 and
          * above.
          *
          * <h2>Text Wrapping</h2>
@@ -326,14 +339,13 @@ public final class GridItem implements Item {
          * This text is truncated at the end to fit in a single line below the title
          *
          * <p><strong>Note:</strong> This field is mutually exclusive with {@link #setProgressBar}.
-         * If both are set, the progress bar will take precedence and this text will be ignored.
+         * If both are set, {@link #build()} will throw an {@link IllegalStateException}.
          *
          * @throws NullPointerException     if {@code text} is {@code null}
          * @throws IllegalArgumentException if {@code text} contains unsupported spans
          */
         public @NonNull Builder setText(@NonNull CharSequence text) {
-            mText = CarText.create(requireNonNull(text));
-            CarTextConstraints.TEXT_WITH_COLORS_AND_ICON.validateOrThrow(mText);
+            setText(CarText.create(requireNonNull(text)));
             return this;
         }
 
@@ -341,8 +353,8 @@ public final class GridItem implements Item {
          * Sets a secondary text string to the grid item that is displayed below the title, with
          * support for multiple length variants.
          *
-         * <p>{@code text} must conform to {@link CarTextConstraints.TEXT_WITH_COLORS} in Car API
-         * 7 and below, and {@link CarTextConstraints.TEXT_WITH_COLORS_AND_ICON} in Car API 8 and
+         * <p>{@code text} must conform to {@link CarTextConstraints#TEXT_WITH_COLORS} in Car API
+         * 7 and below, and {@link CarTextConstraints#TEXT_WITH_COLORS_AND_ICON} in Car API 8 and
          * above.
          *
          * <h2>Text Wrapping</h2>
@@ -350,7 +362,7 @@ public final class GridItem implements Item {
          * This text is truncated at the end to fit in a single line below the title
          *
          * <p><strong>Note:</strong> This field is mutually exclusive with {@link #setProgressBar}.
-         * If both are set, the progress bar will take precedence and this text will be ignored.
+         * If both are set, {@link #build()} will throw an {@link IllegalStateException}.
          *
          * @throws NullPointerException     if {@code text} is {@code null}
          * @throws IllegalArgumentException if {@code text} contains unsupported spans
@@ -382,7 +394,7 @@ public final class GridItem implements Item {
          * @throws NullPointerException if {@code image} or {@code badge} is {@code null}
          * @see #setImage(CarIcon, int)
          */
-        @ExperimentalCarApi
+        @RequiresCarApi(8)
         public @NonNull Builder setImage(@NonNull CarIcon image, @NonNull Badge badge) {
             requireNonNull(badge);
             mBadge = badge;
@@ -390,19 +402,22 @@ public final class GridItem implements Item {
         }
 
         /**
-         * Sets an image to show in the grid item with the given {@code imageType} and given
-         * {@link Badge} to be displayed over the image.
+         * Sets an image to show in the grid item with the given {@code imageType} and given {@link
+         * Badge} to be displayed over the image.
          *
-         * <p>A dot badge denotes a call to action or notification and is
-         * displayed in the upper right corner of the image. An icon badge gives additional
-         * context about the image and is displayed in the lower right corner.
+         * <p>A dot badge denotes a call to action or notification and is displayed in the upper
+         * right corner of the image. An icon badge gives additional context about the image and is
+         * displayed in the lower right corner.
          *
          * @throws NullPointerException if {@code image} or {@code badge} is {@code null}
-         * @see #setImage(CarIcon, int)
+         * @deprecated Use {@link #setImage(CarIcon, Badge)} instead. Tint is controlled directly by
+         *     {@link CarIcon}, and image size is controlled by the parent template or section (e.g.
+         *     {@link GridSection.Builder#setItemSize(int)}).
          */
-        @ExperimentalCarApi
-        public @NonNull Builder setImage(@NonNull CarIcon image, @GridItemImageType int imageType,
-                @NonNull Badge badge) {
+        @Deprecated
+        @RequiresCarApi(8)
+        public @NonNull Builder setImage(
+                @NonNull CarIcon image, @GridItemImageType int imageType, @NonNull Badge badge) {
             requireNonNull(badge);
             mBadge = badge;
             return setImage(requireNonNull(image), imageType);
@@ -412,23 +427,27 @@ public final class GridItem implements Item {
          * Sets an image to show in the grid item with the given {@code imageType}.
          *
          * <p>For a custom {@link CarIcon}, its {@link androidx.core.graphics.drawable.IconCompat}
-         * instance can be of {@link androidx.core.graphics.drawable.IconCompat#TYPE_BITMAP},
-         * {@link androidx.core.graphics.drawable.IconCompat#TYPE_RESOURCE}, or
-         * {@link androidx.core.graphics.drawable.IconCompat#TYPE_URI}.
+         * instance can be of {@link androidx.core.graphics.drawable.IconCompat#TYPE_BITMAP}, {@link
+         * androidx.core.graphics.drawable.IconCompat#TYPE_RESOURCE}, or {@link
+         * androidx.core.graphics.drawable.IconCompat#TYPE_URI}.
          *
          * <h4>Image Sizing Guidance</h4>
          *
          * <p>If the input image's size exceeds the sizing requirements for the given image type in
-         * either one of the dimensions, it will be scaled down to be centered inside the
-         * bounding box while preserving its aspect ratio.
+         * either one of the dimensions, it will be scaled down to be centered inside the bounding
+         * box while preserving its aspect ratio.
          *
          * <p>See {@link CarIcon} for more details related to providing icon and image resources
          * that work with different car screen pixel densities.
          *
-         * @param image     the {@link CarIcon} to display
+         * @param image the {@link CarIcon} to display
          * @param imageType one of {@link #IMAGE_TYPE_ICON} or {@link #IMAGE_TYPE_LARGE}
          * @throws NullPointerException if {@code image} is {@code null}
+         * @deprecated Use {@link #setImage(CarIcon)} instead. Tint is controlled directly by
+         *     {@link CarIcon}, and image size is controlled by the parent template or section (e.g.
+         *     {@link GridSection.Builder#setItemSize(int)}).
          */
+        @Deprecated
         public @NonNull Builder setImage(@NonNull CarIcon image, @GridItemImageType int imageType) {
             CarIconConstraints.UNCONSTRAINED.validateOrThrow(requireNonNull(image));
             mImage = image;
@@ -472,7 +491,7 @@ public final class GridItem implements Item {
          * template's API (eg. {@code SectionedItemTemplate
          * .Builder#setAlphabeticalIndexingStrategy(int)}).
          */
-        @ExperimentalCarApi
+        @RequiresCarApi(8)
         public @NonNull Builder setIndexable(boolean indexable) {
             mIndexable = indexable;
             return this;
@@ -482,11 +501,11 @@ public final class GridItem implements Item {
          * Sets the progress bar to display in the grid item.
          *
          * <p><strong>Note:</strong> This field is mutually exclusive with {@link #setText}.
-         * If both are set, the progress bar will take precedence and the text will be ignored.
+         * If both are set, {@link #build()} will throw an {@link IllegalStateException}.
          *
          * @throws NullPointerException if {@code progressBar} is {@code null}
          */
-        @RequiresCarApi(8)
+        @RequiresCarApi(9)
         @ExperimentalCarApi
         public @NonNull Builder setProgressBar(@NonNull CarProgressBar progressBar) {
             mProgressBar = requireNonNull(progressBar);
@@ -499,6 +518,7 @@ public final class GridItem implements Item {
          * @throws IllegalStateException if the grid item's image is set when it is loading or vice
          *                               versa, if the grid item is loading but the click listener
          *                               is set, or if a badge is set and an image is not set
+         * @throws IllegalStateException if both {@code mText} and {@code mProgressBar} are set
          */
         public @NonNull GridItem build() {
             if (mIsLoading == (mImage != null)) {
@@ -517,9 +537,8 @@ public final class GridItem implements Item {
             }
 
             if (mText != null && mProgressBar != null) {
-                Log.w(TAG, "Both text and progress bar were set on GridItem. The text will be "
-                        + "ignored.");
-                mText = null;
+                throw new IllegalStateException(
+                        "Both text and progress bar cannot be set on GridItem");
             }
 
             return new GridItem(this);

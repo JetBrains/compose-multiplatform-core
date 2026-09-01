@@ -57,6 +57,8 @@ import java.util.Objects;
 class FontProvider {
     private FontProvider() {}
 
+    private static final String VARIABLE_FONT_QUERY_PARAM = "VF";
+
     static @NonNull FontFamilyResult getFontFamilyResult(@NonNull Context context,
             @NonNull List<FontRequest> requests, @Nullable CancellationSignal cancellationSignal)
             throws PackageManager.NameNotFoundException {
@@ -243,7 +245,7 @@ class FontProvider {
                 }
                 try {
                     cursor = queryWrapper.query(uri, projection, "query = ?",
-                            new String[]{request.getQuery()}, null, cancellationSignal);
+                            getSelectionArgs(request), null, cancellationSignal);
                 } finally {
                     if (TypefaceCompat.DOWNLOADABLE_FONT_TRACING) {
                         Trace.endSection();
@@ -309,6 +311,17 @@ class FontProvider {
         }
     }
 
+    protected static String[] getSelectionArgs(FontRequest fontRequest) {
+        String variationSettings = fontRequest.getVariationSettings();
+        if (variationSettings != null && !variationSettings.isBlank()) {
+            // If variation settings are present, send the "VF" in the selectionArgs[1]. This
+            // enables font provider to return a variable font.
+            return new String[]{fontRequest.getQuery(), VARIABLE_FONT_QUERY_PARAM};
+        } else {
+            return new String[]{fontRequest.getQuery()};
+        }
+    }
+
     private static List<List<byte[]>> getCertificates(FontRequest request, Resources resources) {
         if (request.getCertificates() != null) {
             return request.getCertificates();
@@ -361,6 +374,7 @@ class FontProvider {
                 String[] selectionArgs,
                 String sortOrder,
                 CancellationSignal cancellationSignal);
+
         void close();
 
         static ContentQueryWrapper make(Context context, Uri uri) {
@@ -374,6 +388,7 @@ class FontProvider {
 
     private static class ContentQueryWrapperApi16Impl implements ContentQueryWrapper {
         private final ContentProviderClient mClient;
+
         ContentQueryWrapperApi16Impl(Context context, Uri uri) {
             mClient = context.getContentResolver().acquireUnstableContentProviderClient(uri);
         }
@@ -404,6 +419,7 @@ class FontProvider {
     @RequiresApi(24)
     private static class ContentQueryWrapperApi24Impl implements ContentQueryWrapper {
         private final ContentProviderClient mClient;
+
         ContentQueryWrapperApi24Impl(Context context, Uri uri) {
             mClient = context.getContentResolver().acquireUnstableContentProviderClient(uri);
         }

@@ -68,7 +68,6 @@ public final class Row implements Item {
     @IntDef(value = {IMAGE_TYPE_SMALL, IMAGE_TYPE_MEDIUM, IMAGE_TYPE_ICON, IMAGE_TYPE_LARGE,
             IMAGE_TYPE_EXTRA_SMALL})
     @Retention(RetentionPolicy.SOURCE)
-    @OptIn(markerClass = ExperimentalCarApi.class)
     public @interface RowImageType {
     }
 
@@ -97,9 +96,14 @@ public final class Row implements Item {
      * images targeting a 88 x 88 dp bounding box. If necessary, the icon will be scaled down while
      * preserving its aspect ratio.
      *
-     * <p>A tint color is expected to be provided via {@link CarIcon.Builder#setTint}. Otherwise, a
-     * default tint color as determined by the host will be applied.
+     * <p>A tint color is expected to be provided via {@link CarIconStyle.Builder#setTint}
+     * provided to the icon with {@link CarIcon.Builder#setStyle}.
+     * Otherwise, a default tint color as determined by the host will be applied.
+     *
+     * @deprecated Use {@link #IMAGE_TYPE_SMALL} instead and set explicit tint via {@link
+     *     CarIcon.Builder#setTint} if needed.
      */
+    @Deprecated
     public static final int IMAGE_TYPE_ICON = (1 << 2);
 
     /**
@@ -109,7 +113,7 @@ public final class Row implements Item {
      * images targeting a 48 x 48 dp bounding box. If necessary, the image will be scaled down while
      * preserving its aspect ratio.
      */
-    @ExperimentalCarApi
+    @RequiresCarApi(8)
     public static final int IMAGE_TYPE_EXTRA_SMALL = (1 << 3);
 
     /**
@@ -276,7 +280,7 @@ public final class Row implements Item {
      *
      * @see Builder#setIndexable(boolean)
      */
-    @ExperimentalCarApi
+    @RequiresCarApi(8)
     public boolean isIndexable() {
         return mIndexable;
     }
@@ -286,7 +290,7 @@ public final class Row implements Item {
      *
      * @see Builder#setProgressBar(CarProgressBar)
      */
-    @RequiresCarApi(8)
+    @RequiresCarApi(9)
     @ExperimentalCarApi
     public @Nullable CarProgressBar getProgressBar() {
         return mProgressBar;
@@ -617,8 +621,9 @@ public final class Row implements Item {
          * <li>The row is part of a selectable itemlist </li>
          * </ul>
          *
-         * @param endImage The {@link CarIcon} to display at the end of the row, or {@code null} to
-         * not display one.
+         * @param endImage        The {@link CarIcon} to display at the end of the row, or
+         * {@code null} to
+         *                        not display one.
          * @param rowEndImageType one of {@link #IMAGE_TYPE_SMALL}, {@link #IMAGE_TYPE_ICON},
          *                        {@link #IMAGE_TYPE_LARGE}, {@link #IMAGE_TYPE_EXTRA_SMALL},
          *                        {@link #IMAGE_TYPE_MEDIUM}
@@ -626,7 +631,7 @@ public final class Row implements Item {
          */
         @RequiresCarApi(8)
         public @NonNull Builder setEndImage(@NonNull CarIcon endImage,
-        @RowImageType int rowEndImageType) {
+                @RowImageType int rowEndImageType) {
             CarIconConstraints.UNCONSTRAINED.validateOrThrow(requireNonNull(endImage));
             mEndImage = endImage;
             mRowEndImageType = rowEndImageType;
@@ -785,7 +790,7 @@ public final class Row implements Item {
          * template's API (eg. {@code SectionedItemTemplate
          * .Builder#setAlphabeticalIndexingStrategy(int)}).
          */
-        @ExperimentalCarApi
+        @RequiresCarApi(8)
         public @NonNull Builder setIndexable(boolean indexable) {
             mIndexable = indexable;
             return this;
@@ -796,7 +801,7 @@ public final class Row implements Item {
          *
          * @throws NullPointerException if {@code progressBar} is {@code null}
          */
-        @RequiresCarApi(8)
+        @RequiresCarApi(9)
         @ExperimentalCarApi
         public @NonNull Builder setProgressBar(@NonNull CarProgressBar progressBar) {
             mProgressBar = requireNonNull(progressBar);

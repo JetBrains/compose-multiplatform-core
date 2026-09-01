@@ -21,6 +21,7 @@ package androidx.compose.foundation.text.input
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.internal.checkPrecondition
+import androidx.compose.foundation.text.input.internal.TextStyleBuffer
 import androidx.compose.foundation.text.input.internal.undo.TextFieldEditUndoBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
@@ -41,34 +42,31 @@ import androidx.compose.ui.text.coerceIn
 import androidx.compose.ui.text.style.TextDecoration
 
 /**
- * The editable text state of a text field, including both the [text] itself and position of the
- * cursor or selection.
+ * Manages editable text, selection, and cursor state for a text field.
  *
- * To change the text field contents programmatically, call [edit], [setTextAndSelectAll],
- * [setTextAndPlaceCursorAtEnd], or [clearText]. Individual parts of the state like [text],
- * [selection], or [composition] can be read from any snapshot restart scope like Composable
- * functions. To observe these members from outside a restart scope, use `snapshotFlow {
- * textFieldState.text }` or `snapshotFlow { textFieldState.selection }`.
+ * Modify state programmatically using [edit], [setTextAndSelectAll], [setTextAndPlaceCursorAtEnd],
+ * or [clearText]. Read state ([text], [selection], [composition]) directly inside Composable
+ * functions, or use [snapshotFlow] to observe changes from outside composition.
  *
- * When instantiating this class from a composable, use [rememberTextFieldState] to automatically
- * save and restore the field state. For more advanced use cases, pass [TextFieldState.Saver] to
- * [rememberSaveable].
+ * Use [rememberTextFieldState] in composables to automatically save and restore state. For more
+ * control over state restoration, use [Saver].
  *
  * @sample androidx.compose.foundation.samples.BasicTextFieldStateCompleteSample
  */
 @Stable
-class TextFieldState
+public class TextFieldState
 internal constructor(
     initialText: String,
     initialSelection: TextRange,
     initialTextUndoManager: TextUndoManager,
+    initialTextStyles: TextFieldTextStylesImpl?,
 ) {
 
     @RememberInComposition
-    constructor(
+    public constructor(
         initialText: String = "",
         initialSelection: TextRange = TextRange(initialText.length),
-    ) : this(initialText, initialSelection, TextUndoManager())
+    ) : this(initialText, initialSelection, TextUndoManager(), null)
 
     /** Manages the history of edit operations that happen in this [TextFieldState]. */
     internal val textUndoManager: TextUndoManager = initialTextUndoManager
@@ -84,6 +82,7 @@ internal constructor(
                 TextFieldCharSequence(
                     text = initialText,
                     selection = initialSelection.coerceIn(0, initialText.length),
+                    textFieldTextStyles = initialTextStyles,
                 )
         )
 
@@ -98,9 +97,9 @@ internal constructor(
     private var isEditing: Boolean by mutableStateOf(false)
 
     /**
-     * The current text, selection, and composing region. This value will automatically update when
-     * the user enters text or otherwise changes the text field contents. To change it
-     * programmatically, call [edit].
+     * The current text, selection, composing region and style information. This value will
+     * automatically update when the user enters text or otherwise changes the text field contents.
+     * To change it programmatically, call [edit].
      *
      * This is backed by snapshot state, so reading this property in a restartable function (e.g. a
      * composable function) will cause the function to restart when the text field's value changes.
@@ -109,7 +108,13 @@ internal constructor(
      * @see edit
      */
     internal var value: TextFieldCharSequence by
-        mutableStateOf(TextFieldCharSequence(initialText, initialSelection))
+        mutableStateOf(
+            TextFieldCharSequence(
+                text = initialText,
+                selection = initialSelection,
+                textFieldTextStyles = initialTextStyles,
+            )
+        )
         /** Do not set directly. Always go through [updateValueAndNotifyListeners]. */
         private set
 
@@ -119,6 +124,16 @@ internal constructor(
      * also be false.
      */
     internal var userCommit: Boolean by mutableStateOf(false)
+        private set
+
+    /**
+     * True if a text suggestion is currently selected via hover or highlight focus, indicating that
+     * the transliterated text will be replaced by the selection. This is primarily used for
+     * transliteration languages that can have one or multiple suggestion text replacements and is
+     * used to inform accessibility services of whether a replacement text suggestion is selected.
+     * It does not indicate whether if the selected replacement text has been committed.
+     */
+    internal var suggestionSelected: Boolean by mutableStateOf(false)
         private set
 
     /**
@@ -132,7 +147,7 @@ internal constructor(
      * @see edit
      * @see snapshotFlow
      */
-    val text: CharSequence
+    public val text: CharSequence
         get() = value.text
 
     /**
@@ -147,7 +162,7 @@ internal constructor(
      * @see snapshotFlow
      * @see TextFieldCharSequence.selection
      */
-    val selection: TextRange
+    public val selection: TextRange
         get() = value.selection
 
     /**
@@ -160,23 +175,39 @@ internal constructor(
      * @see snapshotFlow
      * @see TextFieldCharSequence.composition
      */
-    val composition: TextRange?
+    public val composition: TextRange?
         get() = value.composition
 
     /**
-     * Runs [block] with a mutable version of the current state. The block can make changes to the
-     * text and cursor/selection. See the documentation on [TextFieldBuffer] for a more detailed
-     * description of the available operations.
+     * Provides access to the styles applied to the text within this [TextFieldState].
      *
-     * Make sure that you do not make concurrent calls to this function or call it again inside
-     * [block]'s scope. Doing either of these actions will result in triggering an
-     * [IllegalStateException].
+     * Use this property when you only need to read or observe the current text styles, such as
+     * updating a formatting toolbar based on the style of the currently selected text. If you need
+     * to modify the text or its styles, use the [edit] method instead, which provides both read and
+     * write access via [TextFieldBuffer].
+     *
+     * To observe changes to this property outside a restartable function, use `snapshotFlow {
+     * textStyles }`.
+     *
+     * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangeToggleBoldSample
+     * @see edit
+     * @see snapshotFlow
+     * @see TextFieldTextStyles
+     */
+    public val textStyles: TextFieldTextStyles
+        get() = value.textFieldTextStyles ?: EmptyTextFieldTextStyles
+
+    /**
+     * Runs [block] to edit text, selection, and cursor state.
+     *
+     * Use [TextFieldBuffer] operations inside the block to modify content. Avoid calling [edit]
+     * concurrently or recursively to prevent [IllegalStateException].
      *
      * @sample androidx.compose.foundation.samples.BasicTextFieldStateEditSample
      * @see setTextAndPlaceCursorAtEnd
      * @see setTextAndSelectAll
      */
-    inline fun edit(block: TextFieldBuffer.() -> Unit) {
+    public inline fun edit(block: TextFieldBuffer.() -> Unit) {
         val mutableValue = startEdit()
         try {
             mutableValue.block()
@@ -190,13 +221,13 @@ internal constructor(
         Snapshot.withoutReadObservation { "TextFieldState(selection=$selection, text=\"$text\")" }
 
     /**
-     * Undo history controller for this TextFieldState.
+     * Manages undo and redo history for this state.
      *
      * @sample androidx.compose.foundation.samples.BasicTextFieldUndoSample
      */
     // TextField does not implement UndoState because Undo related APIs should be able to remain
     // separately experimental than TextFieldState
-    @ExperimentalFoundationApi val undoState: UndoState = UndoState(this)
+    @ExperimentalFoundationApi public val undoState: UndoState = UndoState(this)
 
     @Suppress("ShowingMemberInHiddenClass")
     @PublishedApi
@@ -221,6 +252,7 @@ internal constructor(
     internal fun commitEdit(newValue: TextFieldBuffer) {
         val textChanged = newValue.changes.changeCount > 0
         val selectionChanged = newValue.selection != mainBuffer.selection
+        val styleChanged = newValue.textStyleBuffer != mainBuffer.textStyleBuffer
 
         // TODO(135556699): Remove this when [TextFieldBuffer.addStyle] is supported by all
         //  TextFieldBuffer instances when multi styled editing is implemented.
@@ -246,6 +278,7 @@ internal constructor(
             temporaryBuffer = newValue,
             textChanged = textChanged,
             selectionChanged = selectionChanged,
+            styleChanged = styleChanged,
         )
     }
 
@@ -292,6 +325,7 @@ internal constructor(
             undoBehavior = undoBehavior,
         )
         userCommit = true
+        suggestionSelected = mainBuffer.suggestionSelected
     }
 
     /**
@@ -355,6 +389,7 @@ internal constructor(
                                     composition = mainBuffer.composition,
                                     annotationList = mainBuffer.composingAnnotations,
                                 ),
+                            textFieldTextStyles = beforeEditValue.textFieldTextStyles,
                         ),
                     restartImeIfContentChanges = restartImeIfContentChanges,
                 )
@@ -384,6 +419,7 @@ internal constructor(
                         composition = mainBuffer.composition,
                         annotationList = mainBuffer.composingAnnotations,
                     ),
+                textFieldTextStyles = mainBuffer.getTextFieldTextStyles(),
             )
 
         // if there's no filter; just record the undo, update the snapshot value, end.
@@ -421,11 +457,14 @@ internal constructor(
 
         val textChangedByFilter = !textFieldBuffer.asCharSequence().contentEquals(afterEditValue)
         val selectionChangedByFilter = textFieldBuffer.selection != afterEditValue.selection
-        if (textChangedByFilter || selectionChangedByFilter) {
+        val styleChangedByFilter =
+            textFieldBuffer.textStyleBuffer != afterEditValue.textFieldTextStyles?.textStyleBuffer
+        if (textChangedByFilter || selectionChangedByFilter || styleChangedByFilter) {
             syncMainBufferToTemporaryBuffer(
                 temporaryBuffer = textFieldBuffer,
                 textChanged = textChangedByFilter,
                 selectionChanged = selectionChangedByFilter,
+                styleChanged = styleChangedByFilter,
             )
         } else {
             updateValueAndNotifyListeners(
@@ -580,10 +619,11 @@ internal constructor(
         temporaryBuffer: TextFieldBuffer,
         textChanged: Boolean,
         selectionChanged: Boolean,
+        styleChanged: Boolean,
     ) {
         val oldValue = mainBuffer.toTextFieldCharSequence()
 
-        if (textChanged) {
+        if (textChanged || styleChanged) {
             // reset the buffer in its entirety
             mainBuffer =
                 TextFieldBuffer(
@@ -591,6 +631,7 @@ internal constructor(
                         TextFieldCharSequence(
                             text = temporaryBuffer.toString(),
                             selection = temporaryBuffer.selection,
+                            textFieldTextStyles = temporaryBuffer.getTextFieldTextStyles(),
                         )
                 )
         } else if (selectionChanged) {
@@ -628,25 +669,43 @@ internal constructor(
      */
     // Preserve nullability since this is public API.
     @Suppress("RedundantNullableReturnType")
-    object Saver : androidx.compose.runtime.saveable.Saver<TextFieldState, Any> {
+    public object Saver : androidx.compose.runtime.saveable.Saver<TextFieldState, Any> {
 
         override fun SaverScope.save(value: TextFieldState): Any? {
+            val textStylesImpl = value.value.textFieldTextStyles
+            val savedStyles =
+                textStylesImpl?.textStyleBuffer?.let { buffer ->
+                    with(TextStyleBuffer.Saver) { save(buffer) }
+                }
             return listOf(
                 value.text.toString(),
                 value.selection.start,
                 value.selection.end,
                 with(TextUndoManager.Companion.Saver) { save(value.textUndoManager) },
+                savedStyles,
             )
         }
 
         override fun restore(value: Any): TextFieldState? {
-            val (text, selectionStart, selectionEnd, savedTextUndoManager) = value as List<*>
+            val list = value as List<*>
+            val text = list[0] as String
+            val selectionStart = list[1] as Int
+            val selectionEnd = list[2] as Int
+            val savedTextUndoManager = list[3]
+            val savedStyles = list[4]
+
+            val textStyles =
+                savedStyles?.let {
+                    val styleBuffer = with(TextStyleBuffer.Saver) { restore(it)!! }
+                    TextFieldTextStylesImpl(styleBuffer, text.length)
+                }
+
             return TextFieldState(
-                initialText = text as String,
-                initialSelection =
-                    TextRange(start = selectionStart as Int, end = selectionEnd as Int),
+                initialText = text,
+                initialSelection = TextRange(start = selectionStart, end = selectionEnd),
                 initialTextUndoManager =
                     with(TextUndoManager.Companion.Saver) { restore(savedTextUndoManager!!) }!!,
+                initialTextStyles = textStyles,
             )
         }
     }
@@ -667,7 +726,7 @@ internal constructor(
  *   after it's initialized, call methods on [TextFieldState].
  */
 @Composable
-fun rememberTextFieldState(
+public fun rememberTextFieldState(
     initialText: String = "",
     initialSelection: TextRange = TextRange(initialText.length),
 ): TextFieldState =
@@ -690,7 +749,7 @@ fun rememberTextFieldState(
  * @see clearText
  * @see TextFieldBuffer.placeCursorAtEnd
  */
-fun TextFieldState.setTextAndPlaceCursorAtEnd(text: String) {
+public fun TextFieldState.setTextAndPlaceCursorAtEnd(text: String) {
     edit {
         replace(0, length, text)
         placeCursorAtEnd()
@@ -714,7 +773,7 @@ fun TextFieldState.setTextAndPlaceCursorAtEnd(text: String) {
  * @see clearText
  * @see TextFieldBuffer.selectAll
  */
-fun TextFieldState.setTextAndSelectAll(text: String) {
+public fun TextFieldState.setTextAndSelectAll(text: String) {
     edit {
         replace(0, length, text)
         selectAll()
@@ -736,7 +795,7 @@ fun TextFieldState.setTextAndSelectAll(text: String) {
  * @see setTextAndPlaceCursorAtEnd
  * @see setTextAndSelectAll
  */
-fun TextFieldState.clearText() {
+public fun TextFieldState.clearText() {
     edit {
         delete(0, length)
         placeCursorAtEnd()
@@ -788,6 +847,10 @@ private fun finalizeComposingAnnotations(
  *
  * @sample androidx.compose.foundation.samples.TextFieldStateApplyOutputTransformation
  */
-fun TextFieldState.toTextFieldBuffer(): TextFieldBuffer {
+public fun TextFieldState.toTextFieldBuffer(): TextFieldBuffer {
     return TextFieldBuffer(value).apply { canCallAddStyle = true }
+}
+
+internal fun TextFieldBuffer.getTextFieldTextStyles(): TextFieldTextStylesImpl? {
+    return textStyleBuffer?.toImmutable()?.let { TextFieldTextStylesImpl(it, length) }
 }

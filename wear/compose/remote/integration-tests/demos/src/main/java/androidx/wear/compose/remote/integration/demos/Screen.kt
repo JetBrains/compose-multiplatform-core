@@ -21,6 +21,10 @@ sealed class Screen(val route: String) {
 
     object RemoteButtonDemosScreen : Screen("remoteButtonDemosScreen")
 
+    object RemoteCompactButtonDemosScreen : Screen("remoteCompactButtonDemosScreen")
+
+    object RemoteEdgeButtonDemosScreen : Screen("remoteEdgeButtonDemosScreen")
+
     object RemoteIconButtonDemosScreen : Screen("remoteIconButtonDemosScreen")
 
     object RemoteTextButtonDemosScreen : Screen("remoteTextButtonDemosScreen")
@@ -31,4 +35,29 @@ sealed class Screen(val route: String) {
 
     object RemoteCircularProgressIndicatorDemosScreen :
         Screen("remoteCircularProgressIndicatorDemosScreen")
+
+    object RemoteCurvedProgressIndicatorDemosScreen :
+        Screen("remoteCurvedProgressIndicatorDemosScreen")
+
+    object RemoteLinearProgressIndicatorDemosScreen :
+        Screen("remoteLinearProgressIndicatorDemosScreen")
+
+    object RemoteAppCardDemosScreen : Screen("remoteAppCardDemosScreen")
+
+    object RemoteCardDemosScreen : Screen("remoteCardDemosScreen")
+
+    object RemoteTitleCardDemosScreen : Screen("remoteTitleCardDemosScreen")
+
+    object RemoteTextDemosScreen : Screen("remoteTextDemosScreen")
+
+    object RemoteHorizontalPageIndicator3DemoScreen :
+        Screen("remoteHorizontalPageIndicator3DemoScreen")
+
+    object RemoteHorizontalPageIndicator10DemoScreen :
+        Screen("remoteHorizontalPageIndicator10DemoScreen")
+
+    object RemoteVerticalPageIndicator3DemoScreen : Screen("remoteVerticalPageIndicator3DemoScreen")
+
+    object RemoteVerticalPageIndicator10DemoScreen :
+        Screen("remoteVerticalPageIndicator10DemoScreen")
 }

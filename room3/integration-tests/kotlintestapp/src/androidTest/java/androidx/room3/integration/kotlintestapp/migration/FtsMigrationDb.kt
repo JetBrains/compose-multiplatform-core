@@ -28,6 +28,7 @@ import androidx.room3.PrimaryKey
 import androidx.room3.Query
 import androidx.room3.RoomDatabase
 
+/** FTS4 test database for [Fts4MigrationTest] */
 @Database(
     entities =
         [

@@ -23,8 +23,7 @@ import androidx.xr.runtime.math.Vector3
 /**
  * Defines an intersection between a ray and the scene.
  *
- * This can be obtained by running [ScenePose.hitTest] or [androidx.xr.scenecore.guava.hitTestAsync]
- * on a [ScenePose].
+ * This can be obtained by running [ScenePose.hitTest] on a [ScenePose].
  *
  * @property hitPosition the [androidx.xr.runtime.math.Vector3] position of the intersection between
  *   a ray and the Scene. This will be null if nothing was hit
@@ -34,7 +33,7 @@ import androidx.xr.runtime.math.Vector3
  * @property distance the distance from the origin to the hit location. If nothing was hit the
  *   distance will be POSITIVE_INFINITY.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class HitTestResult(
     public val hitPosition: Vector3?,
     public val surfaceNormal: Vector3?,
@@ -67,7 +66,6 @@ public class HitTestResult(
         HitTestSurfaceType.HIT_TEST_RESULT_SURFACE_TYPE_OBJECT,
     )
     @Retention(AnnotationRetention.SOURCE)
-    @Suppress("PublicTypedef")
     public annotation class HitTestSurfaceTypeValue
 
     /** The type of the surface that was hit. */

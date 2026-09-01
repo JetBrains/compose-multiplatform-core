@@ -158,6 +158,7 @@ import androidx.wear.protolayout.proto.LayoutElementProto.Box;
 import androidx.wear.protolayout.proto.LayoutElementProto.ColorFilter;
 import androidx.wear.protolayout.proto.LayoutElementProto.Column;
 import androidx.wear.protolayout.proto.LayoutElementProto.DashedArcLine;
+import androidx.wear.protolayout.proto.LayoutElementProto.DashedLinePattern;
 import androidx.wear.protolayout.proto.LayoutElementProto.ExtensionLayoutElement;
 import androidx.wear.protolayout.proto.LayoutElementProto.FontFeatureSetting;
 import androidx.wear.protolayout.proto.LayoutElementProto.FontSetting;
@@ -5640,6 +5641,42 @@ public class ProtoLayoutInflaterTest {
     }
 
     @Test
+    public void inflate_box_withTransformationModifier_NaN_scale_doesNotCrash() {
+        FloatProp scaleX = FloatProp.newBuilder().setValue(Float.NaN).build();
+        FloatProp scaleY = FloatProp.newBuilder().setValue(Float.NaN).build();
+        ModifiersProto.Transformation transformation =
+                ModifiersProto.Transformation.newBuilder()
+                        .setScaleX(scaleX)
+                        .setScaleY(scaleY)
+                        .build();
+
+        ContainerDimension boxWidth =
+                ContainerDimension.newBuilder().setLinearDimension(dp(100.f).build()).build();
+        ContainerDimension boxHeight =
+                ContainerDimension.newBuilder().setLinearDimension(dp(120.f).build()).build();
+        LayoutElement root =
+                LayoutElement.newBuilder()
+                        .setBox(
+                                Box.newBuilder()
+                                        .setWidth(boxWidth)
+                                        .setHeight(boxHeight)
+                                        .setModifiers(
+                                                Modifiers.newBuilder()
+                                                        .setTransformation(transformation)
+                                                        .build()))
+                        .build();
+
+        FrameLayout rootLayout = renderer(fingerprintedLayout(root)).inflate();
+        assertThat(rootLayout.getChildCount()).isEqualTo(1);
+        View box = rootLayout.getChildAt(0);
+
+        // NaN should fall back to 1.0f
+        assertThat(box.getScaleX()).isEqualTo(1.0f);
+        assertThat(box.getScaleY()).isEqualTo(1.0f);
+    }
+
+
+    @Test
     public void inflate_box_wrapAndExpandSize_withPivotTransformationModifier() {
         PivotDimension pivotX = PivotDimension.newBuilder().setOffsetDp(dp(30.f)).build();
         PivotDimension pivotY =
@@ -5996,11 +6033,8 @@ public class ProtoLayoutInflaterTest {
                                         .build()));
         renderer.mRenderer.applyMutation(inflatedViewParent, mutation).get();
 
-        // First content transition animation Idle for running code for starting animations.
-        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500));
-        ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
-        // Idle for calling the onStart listener so that animation has started status.
-        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100));
+        // Idle to 600ms so animation 1 starts and animation 2 attempts to run but is quota-capped.
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(600));
 
         // Since we've run delayed tasks, second animation also got a chance to be run, but quota
         // prevented it.
@@ -6495,6 +6529,28 @@ public class ProtoLayoutInflaterTest {
                                 .build()));
 
         assertThat(lineView.getColor()).isEqualTo(Color.MAGENTA);
+    }
+
+    @Test
+    public void inflate_dashedArcLine_withLargeGapSize_noCrash() {
+        // Large gap size that results in an empty segments list.
+        DashedArcLine dashedArcLine =
+                DashedArcLine.newBuilder()
+                        .setLength(degrees(10))
+                        .setThickness(dp(5))
+                        .setLinePattern(
+                                DashedLinePattern.newBuilder()
+                                        .setGapSize(dp(100000f))
+                                        .addGapLocations(degrees(0))
+                                        .build())
+                        .build();
+
+        // The inflateDashedArcLine helper triggers a full inflation and layout pass.
+        // This call should completes without crashing.
+        WearDashedArcLineView dashedLineView = inflateDashedArcLine(dashedArcLine);
+
+        assertThat(dashedLineView).isNotNull();
+        assertThat(dashedLineView.getGapSize()).isEqualTo(100000);
     }
 
     private WearDashedArcLineView inflateDashedArcLine(DashedArcLine dashedArcLine) {

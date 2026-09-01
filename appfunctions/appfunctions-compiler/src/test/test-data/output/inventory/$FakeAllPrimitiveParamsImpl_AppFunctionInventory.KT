@@ -21,8 +21,8 @@ import kotlin.collections.Map
 
 /**
  * Source Files:
- * FakeAllPrimitiveParamsImpl.....kt
- * FakeSchemas.....kt
+ * FakeAllPrimitiveParamsImpl.kt
+ * FakeSchemas.kt
  */
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$FakeAllPrimitiveParamsImpl_AppFunctionInventory` : AppFunctionInventory {
@@ -103,6 +103,8 @@ public class `$FakeAllPrimitiveParamsImpl_AppFunctionInventory` : AppFunctionInv
             isNullable = false,
             description = "",
             enumValues = null,
+            pattern = null,
+            format = null,
         )
 
     private val ARG5_PARAMETER_METADATA: AppFunctionParameterMetadata =

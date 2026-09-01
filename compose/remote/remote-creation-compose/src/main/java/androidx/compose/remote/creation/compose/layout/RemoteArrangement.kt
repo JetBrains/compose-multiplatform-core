@@ -20,12 +20,11 @@ import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.operations.layout.managers.ColumnLayout
 import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemoteFloat
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.dp
 
 private const val LEFT = 101
-private const val RIGHT = 102
+private const val CENTER = 102
+private const val RIGHT = 103
 
 /**
  * In remote-compose, an arrangement is a contract for how to lay out children in a container that
@@ -37,26 +36,16 @@ public object RemoteArrangement {
     /** A contract for laying out children horizontally. */
     public sealed interface Horizontal {
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public fun toComposeUi(): androidx.compose.foundation.layout.Arrangement.Horizontal
-
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public fun toRemote(layoutDirection: LayoutDirection): Int
     }
 
     /** A contract for laying out children vertically. */
     public sealed interface Vertical {
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public fun toComposeUi(): androidx.compose.foundation.layout.Arrangement.Vertical
-
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public fun toRemote(): Int
     }
 
     /** A contract for laying out children horizontally or vertically. */
     public sealed interface HorizontalOrVertical : Horizontal, Vertical {
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        override fun toComposeUi():
-            androidx.compose.foundation.layout.Arrangement.HorizontalOrVertical
-
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         override fun toRemote(layoutDirection: LayoutDirection): Int
 
@@ -104,7 +93,6 @@ public object RemoteArrangement {
      *
      * @param space The space between adjacent children.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun spacedBy(space: RemoteDp): RemoteArrangement.HorizontalOrVertical =
         RemoteSpacedArrangement(space.toPx())
 
@@ -115,7 +103,6 @@ public object RemoteArrangement {
      *
      * @param space The space between adjacent children.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun spacedBy(space: RemoteFloat): RemoteArrangement.HorizontalOrVertical =
         RemoteSpacedArrangement(space)
 
@@ -128,7 +115,6 @@ public object RemoteArrangement {
      * @param space The space between adjacent children.
      * @param alignment The alignment of the spaced children inside the parent.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun spacedBy(
         space: RemoteDp,
         alignment: RemoteAlignment.Horizontal,
@@ -143,7 +129,6 @@ public object RemoteArrangement {
      * @param space The space between adjacent children.
      * @param alignment The alignment of the spaced children inside the parent.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun spacedBy(
         space: RemoteFloat,
         alignment: RemoteAlignment.Horizontal,
@@ -158,7 +143,6 @@ public object RemoteArrangement {
      * @param space The space between adjacent children.
      * @param alignment The alignment of the spaced children inside the parent.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun spacedBy(
         space: RemoteDp,
         alignment: RemoteAlignment.Vertical,
@@ -173,7 +157,6 @@ public object RemoteArrangement {
      * @param space The space between adjacent children.
      * @param alignment The alignment of the spaced children inside the parent.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun spacedBy(
         space: RemoteFloat,
         alignment: RemoteAlignment.Vertical,
@@ -190,7 +173,7 @@ public object RemoteArrangement {
         /**
          * Place children such that they are as close as possible to the middle of the [RemoteRow].
          */
-        public val Center: RemoteArrangement.Horizontal = HorizontalArrangement(ColumnLayout.CENTER)
+        public val Center: RemoteArrangement.Horizontal = HorizontalArrangement(CENTER)
 
         /**
          * Place children horizontally such that they are as close as possible to the right edge of
@@ -306,22 +289,7 @@ public object RemoteArrangement {
     }
 }
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public data class HorizontalArrangement(var type: Int) : RemoteArrangement.Horizontal {
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    override fun toComposeUi(): androidx.compose.foundation.layout.Arrangement.Horizontal =
-        when (type) {
-            ColumnLayout.START -> androidx.compose.foundation.layout.Arrangement.Start
-            ColumnLayout.CENTER -> androidx.compose.foundation.layout.Arrangement.Center
-            ColumnLayout.END -> androidx.compose.foundation.layout.Arrangement.End
-            ColumnLayout.SPACE_BETWEEN ->
-                androidx.compose.foundation.layout.Arrangement.SpaceBetween
-            ColumnLayout.SPACE_EVENLY -> androidx.compose.foundation.layout.Arrangement.SpaceEvenly
-            ColumnLayout.SPACE_AROUND -> androidx.compose.foundation.layout.Arrangement.SpaceAround
-            LEFT -> androidx.compose.foundation.layout.Arrangement.Absolute.Left
-            RIGHT -> androidx.compose.foundation.layout.Arrangement.Absolute.Right
-            else -> androidx.compose.foundation.layout.Arrangement.Start
-        }
+internal data class HorizontalArrangement(var type: Int) : RemoteArrangement.Horizontal {
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun toRemote(layoutDirection: LayoutDirection): Int =
@@ -335,40 +303,22 @@ public data class HorizontalArrangement(var type: Int) : RemoteArrangement.Horiz
             ColumnLayout.SPACE_EVENLY -> ColumnLayout.SPACE_EVENLY
             ColumnLayout.SPACE_AROUND -> ColumnLayout.SPACE_AROUND
             LEFT -> ColumnLayout.START
+            CENTER -> ColumnLayout.CENTER
             RIGHT -> ColumnLayout.END
             else ->
                 if (layoutDirection == LayoutDirection.Ltr) ColumnLayout.START else ColumnLayout.END
         }
+
+    internal fun isAbsolute() = type == LEFT || type == CENTER || type == RIGHT
 }
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public data class VerticalArrangement(var type: Int) : RemoteArrangement.Vertical {
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    override fun toComposeUi(): androidx.compose.foundation.layout.Arrangement.Vertical =
-        when (type) {
-            ColumnLayout.TOP -> androidx.compose.foundation.layout.Arrangement.Top
-            ColumnLayout.CENTER -> androidx.compose.foundation.layout.Arrangement.Center
-            ColumnLayout.BOTTOM -> androidx.compose.foundation.layout.Arrangement.Bottom
-            else -> androidx.compose.foundation.layout.Arrangement.Top
-        }
+internal data class VerticalArrangement(var type: Int) : RemoteArrangement.Vertical {
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override fun toRemote(): Int = type
 }
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public data class HorizontalOrVerticalArrangement(var type: Int) :
+internal data class HorizontalOrVerticalArrangement(var type: Int) :
     RemoteArrangement.HorizontalOrVertical {
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    override fun toComposeUi():
-        androidx.compose.foundation.layout.Arrangement.HorizontalOrVertical =
-        when (type) {
-            ColumnLayout.CENTER -> androidx.compose.foundation.layout.Arrangement.Center
-            ColumnLayout.SPACE_BETWEEN ->
-                androidx.compose.foundation.layout.Arrangement.SpaceBetween
-            ColumnLayout.SPACE_EVENLY -> androidx.compose.foundation.layout.Arrangement.SpaceEvenly
-            ColumnLayout.SPACE_AROUND -> androidx.compose.foundation.layout.Arrangement.SpaceAround
-            else -> androidx.compose.foundation.layout.Arrangement.spacedBy(0.dp)
-        }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun toRemote(layoutDirection: LayoutDirection): Int =
@@ -398,9 +348,6 @@ internal interface RemoteSpaced {
 
 internal data class RemoteSpacedArrangement(override val space: RemoteFloat) :
     RemoteArrangement.HorizontalOrVertical, RemoteSpaced {
-    override fun toComposeUi():
-        androidx.compose.foundation.layout.Arrangement.HorizontalOrVertical =
-        androidx.compose.foundation.layout.Arrangement.spacedBy(space.toDp())
 
     override fun toRemote(layoutDirection: LayoutDirection): Int = ColumnLayout.START
 
@@ -411,33 +358,15 @@ internal data class RemoteSpacedHorizontalArrangement(
     override val space: RemoteFloat,
     val alignment: RemoteAlignment.Horizontal,
 ) : RemoteArrangement.Horizontal, RemoteSpaced {
-    override fun toComposeUi(): androidx.compose.foundation.layout.Arrangement.Horizontal =
-        androidx.compose.foundation.layout.Arrangement.spacedBy(
-            space.toDp(),
-            alignment.toComposeUi(),
-        )
 
     override fun toRemote(layoutDirection: LayoutDirection): Int =
         alignment.toRemote(layoutDirection)
 }
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public data class RemoteSpacedAbsoluteHorizontalArrangement(
+internal data class RemoteSpacedAbsoluteHorizontalArrangement(
     override val space: RemoteFloat,
     val alignment: RemoteAlignment.Horizontal,
 ) : RemoteArrangement.Horizontal, RemoteSpaced {
-    override fun toComposeUi(): androidx.compose.foundation.layout.Arrangement.Horizontal =
-        if (alignment is RemoteBiasAbsoluteAlignment.Horizontal) {
-            androidx.compose.foundation.layout.Arrangement.Absolute.spacedBy(
-                space.toDp(),
-                alignment.toComposeUi(),
-            )
-        } else {
-            androidx.compose.foundation.layout.Arrangement.spacedBy(
-                space.toDp(),
-                alignment.toComposeUi(),
-            )
-        }
 
     override fun toRemote(layoutDirection: LayoutDirection): Int =
         alignment.toRemote(layoutDirection)
@@ -447,15 +376,6 @@ internal data class RemoteSpacedVerticalArrangement(
     override val space: RemoteFloat,
     val alignment: RemoteAlignment.Vertical,
 ) : RemoteArrangement.Vertical, RemoteSpaced {
-    override fun toComposeUi(): androidx.compose.foundation.layout.Arrangement.Vertical =
-        androidx.compose.foundation.layout.Arrangement.spacedBy(
-            space.toDp(),
-            alignment.toComposeUi(),
-        )
 
     override fun toRemote(): Int = alignment.toRemote()
-}
-
-private fun RemoteFloat.toDp(): Dp {
-    return this.constantValueOrNull?.dp ?: 0.dp
 }

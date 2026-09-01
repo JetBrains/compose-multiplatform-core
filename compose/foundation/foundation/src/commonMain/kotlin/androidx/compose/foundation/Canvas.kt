@@ -39,7 +39,8 @@ import androidx.compose.ui.semantics.semantics
  *   invocation inside it will result to runtime exception
  */
 @Composable
-fun Canvas(modifier: Modifier, onDraw: DrawScope.() -> Unit) = Spacer(modifier.drawBehind(onDraw))
+public fun Canvas(modifier: Modifier, onDraw: DrawScope.() -> Unit): Unit =
+    Spacer(modifier.drawBehind(onDraw))
 
 /**
  * Component that allow you to specify an area on the screen and perform canvas drawing on this
@@ -53,11 +54,15 @@ fun Canvas(modifier: Modifier, onDraw: DrawScope.() -> Unit) = Spacer(modifier.d
  * @param contentDescription text used by accessibility services to describe what this canvas
  *   represents. This should be provided unless the canvas is used for decorative purposes or as
  *   part of a larger entity already described in some other way. This text should be localized,
- *   such as by using [androidx.compose.ui.res.stringResource]
+ *   such as by using `androidx.compose.ui.res.stringResource`
  * @param onDraw lambda that will be called to perform drawing. Note that this lambda will be called
  *   during draw stage, you have no access to composition scope, meaning that [Composable] function
  *   invocation inside it will result to runtime exception
  */
 @Composable
-fun Canvas(modifier: Modifier, contentDescription: String, onDraw: DrawScope.() -> Unit) =
+public fun Canvas(
+    modifier: Modifier,
+    contentDescription: String,
+    onDraw: DrawScope.() -> Unit,
+): Unit =
     Spacer(modifier.drawBehind(onDraw).semantics { this.contentDescription = contentDescription })

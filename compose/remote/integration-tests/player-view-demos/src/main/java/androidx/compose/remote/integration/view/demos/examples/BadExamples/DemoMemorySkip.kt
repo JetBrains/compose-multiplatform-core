@@ -25,7 +25,9 @@ import androidx.compose.remote.creation.RemoteComposeContextAndroid
 import androidx.compose.remote.creation.RemoteComposeWriter
 import androidx.compose.remote.creation.min
 import androidx.compose.remote.creation.modifiers.RecordingModifier
+import androidx.compose.remote.creation.pingPong
 import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
+import androidx.compose.remote.creation.plus
 
 @Suppress("RestrictedApiAndroidX")
 fun skip1(): RemoteComposeWriter {
@@ -79,13 +81,17 @@ fun skip1(): RemoteComposeWriter {
                         skip(Skip.SKIP_IF_API_EQUAL_TO, 7) {
                             painter.setColor(Color.LTGRAY).commit()
                             save() {
+                                val center = cy - scale * 13f
                                 rotate(ContinuousSec() * 6f, cx, cy)
-                                scale(0.3, 1, cx, 0)
-                                drawCircle(
-                                    cx.toFloat(),
-                                    (cy - scale * 13f).toFloat(),
-                                    sec.toFloat(),
+                                rotate(ContinuousSec() * -180f, cx, center)
+
+                                scale(
+                                    sx = 0.1f + pingPong(0.1f, ContinuousSec() / 2f),
+                                    sy = 1,
+                                    centerX = cx,
+                                    centerY = 0,
                                 )
+                                drawCircle(cx.toFloat(), (center).toFloat(), sec.toFloat())
                             }
                         }
                         skip(Skip.SKIP_IF_API_EQUAL_TO, 8) {

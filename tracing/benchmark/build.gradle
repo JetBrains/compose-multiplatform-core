@@ -43,11 +43,13 @@ dependencies {
 }
 
 android {
+    defaultConfig {
+        minSdk { version = release(24) }
+    }
     namespace = "androidx.tracing.benchmark"
     buildTypes.release {
         androidTest {
-            enableMinification = false
-            testProguardFiles "proguard-rules.pro"
+            enableMinification = true
         }
     }
 }

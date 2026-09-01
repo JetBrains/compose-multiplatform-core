@@ -17,8 +17,6 @@
 package androidx.xr.glimmer
 
 import android.os.Build
-import android.os.SystemClock
-import android.view.MotionEvent
 import androidx.compose.foundation.interaction.FocusInteraction
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -32,10 +30,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.requiredHeightIn
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.testutils.assertIsEqualTo
-import androidx.compose.testutils.assertShape
-import androidx.compose.ui.ExperimentalIndirectPointerApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.FocusRequester.Companion.FocusRequesterFactory.component1
@@ -44,34 +41,39 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.input.indirect.IndirectPointerEvent
-import androidx.compose.ui.input.indirect.IndirectPointerEventPrimaryDirectionalMotionAxis
+import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.ComposeUiTestConfig
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.inputDeviceCenter
 import androidx.compose.ui.test.isFocusable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
-import androidx.core.view.InputDeviceCompat.SOURCE_TOUCH_NAVIGATION
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import androidx.test.screenshot.matchers.MSSIMMatcher
+import androidx.xr.glimmer.testutils.assertGlimmerSurfaceShape
 import androidx.xr.glimmer.testutils.captureToImage
 import androidx.xr.glimmer.testutils.createGlimmerRule
+import androidx.xr.glimmer.testutils.toIntArray
 import com.google.common.truth.Truth.assertThat
+import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -81,9 +83,8 @@ import org.junit.runner.RunWith
 // The expected min sdk is 35, but we test on 33 for wider device coverage (some APIs are not
 // available below 33)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
-@OptIn(ExperimentalIndirectPointerApi::class)
 class ListItemTest {
-    @get:Rule(0) val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule(0) val rule = createComposeRule(ComposeUiTestConfig(inputMode = InputMode.Keyboard))
 
     @get:Rule(1) val glimmerRule = createGlimmerRule()
 
@@ -121,25 +122,49 @@ class ListItemTest {
     fun shapeAndColorFromThemeIsUsed() {
         lateinit var expectedShape: Shape
         val surfaceColor = Color.Blue
-        rule.setGlimmerThemeContent {
-            GlimmerTheme(Colors(surface = surfaceColor)) {
-                expectedShape = GlimmerTheme.shapes.medium
-                ListItem(modifier = Modifier.testTag("listItem"), border = null) {
-                    Box(Modifier.size(100.dp, 100.dp))
-                }
-            }
+        val backgroundColor = Color.Black
+        rule.setGlimmerThemeContent(
+            addInitialFocusInterceptor = true,
+            colors = Colors(surface = surfaceColor, background = backgroundColor),
+        ) {
+            expectedShape = GlimmerTheme.shapes.medium
+            ListItem(modifier = Modifier.testTag("listItem")) { Box(Modifier.size(100.dp, 100.dp)) }
         }
 
-        rule
-            .onNodeWithTag("listItem")
-            .captureToImage()
-            .assertShape(
-                density = rule.density,
-                shape = expectedShape,
-                shapeColor = surfaceColor,
-                backgroundColor = Color.Black,
-                antiAliasingGap = with(rule.density) { 1.dp.toPx() },
-            )
+        val image = rule.onNodeWithTag("listItem").captureToImage()
+        image.assertGlimmerSurfaceShape(
+            density = rule.density,
+            shape = expectedShape,
+            backgroundColor = backgroundColor,
+        )
+        val centerColor = image.toPixelMap().run { get(width / 2, height / 2) }
+        assertThat(centerColor).isEqualTo(Color.Blue)
+    }
+
+    @Test
+    fun shapeAndColorFromThemeIsUsedWhenFocused() {
+        lateinit var expectedShape: Shape
+        var expectedFocusedSurfaceColor: Color? = null
+        val surfaceColor = Color.Blue
+        val backgroundColor = Color.Black
+        rule.setGlimmerThemeContent(
+            addInitialFocusInterceptor = false,
+            colors = Colors(surface = surfaceColor, background = backgroundColor),
+        ) {
+            expectedShape = GlimmerTheme.shapes.medium
+            expectedFocusedSurfaceColor = SurfaceDefaults.focusedColor(surfaceColor)
+            ListItem(modifier = Modifier.testTag("listItem")) { Box(Modifier.size(100.dp, 100.dp)) }
+        }
+        rule.waitForIdle()
+
+        val image = rule.onNodeWithTag("listItem").captureToImage()
+        image.assertGlimmerSurfaceShape(
+            density = rule.density,
+            shape = expectedShape,
+            backgroundColor = backgroundColor,
+        )
+        val centerColor = image.toPixelMap().run { get(width / 2, height / 2) }
+        assertThat(centerColor).isEqualTo(expectedFocusedSurfaceColor!!)
     }
 
     @Test
@@ -180,13 +205,11 @@ class ListItemTest {
 
     @Test
     fun setsContentColor() {
-        var primary = Color.Unspecified
         var leadingIconContentColor = Color.Unspecified
         var trailingIconContentColor = Color.Unspecified
         var primaryLabelContentColor = Color.Unspecified
         var supportingLabelContentColor = Color.Unspecified
         rule.setGlimmerThemeContent {
-            primary = GlimmerTheme.colors.primary
             ListItem(
                 supportingLabel = {
                     Box(
@@ -221,8 +244,8 @@ class ListItemTest {
         }
 
         rule.runOnIdle {
-            assertThat(leadingIconContentColor).isEqualTo(primary)
-            assertThat(trailingIconContentColor).isEqualTo(primary)
+            assertThat(leadingIconContentColor).isEqualTo(Color.White)
+            assertThat(trailingIconContentColor).isEqualTo(Color.White)
             assertThat(primaryLabelContentColor).isEqualTo(Color.White)
             assertThat(supportingLabelContentColor).isEqualTo(Color.White)
         }
@@ -302,7 +325,7 @@ class ListItemTest {
             scope = rememberCoroutineScope()
             Box {
                 ListItem(
-                    modifier = Modifier.testTag("listItem").focusRequester(focusRequester),
+                    modifier = Modifier.focusRequester(focusRequester),
                     interactionSource = interactionSource,
                     onClick = {},
                 ) {
@@ -319,55 +342,16 @@ class ListItemTest {
 
         rule.runOnIdle { interactions.clear() }
 
-        val currentTime = SystemClock.uptimeMillis()
-
-        val down =
-            MotionEvent.obtain(
-                currentTime, // downTime,
-                currentTime, // eventTime,
-                MotionEvent.ACTION_DOWN,
-                0f,
-                0f,
-                0,
-            )
-        down.source = SOURCE_TOUCH_NAVIGATION
-        rule
-            .onNodeWithTag("listItem")
-            .performIndirectPointerEvent(
-                rule,
-                IndirectPointerEvent(
-                    down,
-                    primaryDirectionalMotionAxis =
-                        IndirectPointerEventPrimaryDirectionalMotionAxis.X,
-                ),
-            )
+        rule.sendGlimmerIndirectPointerInput { down(inputDeviceCenter) }
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(1)
             assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
         }
-
-        val up =
-            MotionEvent.obtain(
-                currentTime + 200L, // downTime,
-                currentTime + 200L, // eventTime,
-                MotionEvent.ACTION_UP,
-                0f,
-                0f,
-                0,
-            )
-        up.source = SOURCE_TOUCH_NAVIGATION
-        rule
-            .onNodeWithTag("listItem")
-            .performIndirectPointerEvent(
-                rule,
-                IndirectPointerEvent(
-                    up,
-                    primaryDirectionalMotionAxis =
-                        IndirectPointerEventPrimaryDirectionalMotionAxis.X,
-                    down,
-                ),
-            )
+        rule.sendGlimmerIndirectPointerInput {
+            advanceEventTime(200L)
+            up()
+        }
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(2)
@@ -379,8 +363,70 @@ class ListItemTest {
     }
 
     @Test
+    fun defaultInteractionSource_isShared_betweenSurfaceAndFocusable() {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
+            Box(Modifier.width(150.dp)) {
+                ListItem(modifier = Modifier.testTag("list_item")) { Text("Focusable item") }
+            }
+        }
+
+        val imageBefore = rule.onNodeWithTag("list_item").captureToImage()
+
+        rule.onNodeWithTag("list_item").requestFocus()
+        rule.waitForIdle()
+
+        val imageAfter = rule.onNodeWithTag("list_item").captureToImage()
+
+        val result =
+            // Expect similarity < 85% due to focused border.
+            MSSIMMatcher(threshold = 0.85)
+                .compareBitmaps(
+                    imageBefore.toIntArray(),
+                    imageAfter.toIntArray(),
+                    imageBefore.width,
+                    imageBefore.height,
+                )
+
+        assertThat(result.matches).isFalse()
+    }
+
+    @Test
+    fun defaultInteractionSource_isShared_betweenSurfaceAndClickable() {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
+            Box(Modifier.width(150.dp)) {
+                ListItem(onClick = {}, modifier = Modifier.testTag("list_item")) {
+                    Text("Clickable item")
+                }
+            }
+        }
+
+        val imageBefore = rule.onNodeWithTag("list_item").captureToImage()
+
+        rule.onNodeWithTag("list_item").requestFocus()
+        rule.waitForIdle()
+
+        val imageAfter = rule.onNodeWithTag("list_item").captureToImage()
+
+        val result =
+            // Expect similarity < 85% due to focused border.
+            MSSIMMatcher(threshold = 0.85)
+                .compareBitmaps(
+                    imageBefore.toIntArray(),
+                    imageAfter.toIntArray(),
+                    imageBefore.width,
+                    imageBefore.height,
+                )
+
+        assertThat(result.matches).isFalse()
+    }
+
+    @Test
     fun positioning() {
+        var smallSpacing: Dp by Delegates.notNull()
+        var largeSpacing: Dp by Delegates.notNull()
         rule.setGlimmerThemeContent {
+            smallSpacing = GlimmerTheme.componentSpacingValues.small
+            largeSpacing = GlimmerTheme.componentSpacingValues.large
             Column {
                 Spacer(Modifier.height(10.dp).fillMaxWidth().testTag("spacer"))
                 ListItem(modifier = Modifier.testTag("listItem")) {
@@ -405,18 +451,22 @@ class ListItemTest {
             )
 
         (primaryLabelBounds.left - listItemBounds.left).assertIsEqualTo(
-            24.dp,
+            largeSpacing + smallSpacing,
             "Padding between the start of the list item and the start of the primary label.",
         )
 
         // The width should fill the max width, like with the spacer
         listItemBounds.width.assertIsEqualTo(spacerBounds.width, "width of list item.")
-        listItemBounds.height.assertIsEqualTo(72.dp, "height of list item.")
+        listItemBounds.height.assertIsEqualTo(80.dp, "height of list item.")
     }
 
     @Test
     fun positioning_supportingLabel() {
+        var smallSpacing: Dp by Delegates.notNull()
+        var largeSpacing: Dp by Delegates.notNull()
         rule.setGlimmerThemeContent {
+            smallSpacing = GlimmerTheme.componentSpacingValues.small
+            largeSpacing = GlimmerTheme.componentSpacingValues.large
             Column {
                 Spacer(Modifier.height(10.dp).fillMaxWidth().testTag("spacer"))
                 ListItem(
@@ -442,17 +492,17 @@ class ListItemTest {
         // Label should be top aligned when the height of the primary and supporting labels is
         // greater than minimum list item height
         (primaryLabelBounds.top - listItemBounds.top).assertIsEqualTo(
-            20.dp,
+            largeSpacing,
             "Padding between top of list item and top of primary label.",
         )
 
         (primaryLabelBounds.left - listItemBounds.left).assertIsEqualTo(
-            24.dp,
+            largeSpacing + smallSpacing,
             "Padding between the start of the list item and the start of the primary label.",
         )
 
         (supportingLabelBounds.left - listItemBounds.left).assertIsEqualTo(
-            24.dp,
+            largeSpacing + smallSpacing,
             "Padding between the start of the list item and the start of the supporting label.",
         )
 
@@ -462,7 +512,7 @@ class ListItemTest {
         )
 
         (listItemBounds.bottom - supportingLabelBounds.bottom).assertIsEqualTo(
-            20.dp,
+            largeSpacing,
             "Padding between bottom of list item and bottom of supporting label.",
         )
 
@@ -475,7 +525,11 @@ class ListItemTest {
 
     @Test
     fun positioning_withIcons() {
+        var smallSpacing: Dp by Delegates.notNull()
+        var largeSpacing: Dp by Delegates.notNull()
         rule.setGlimmerThemeContent {
+            smallSpacing = GlimmerTheme.componentSpacingValues.small
+            largeSpacing = GlimmerTheme.componentSpacingValues.large
             Column {
                 Spacer(Modifier.height(10.dp).fillMaxWidth().testTag("spacer"))
                 ListItem(
@@ -512,12 +566,12 @@ class ListItemTest {
             rule.onNodeWithTag("listItem", useUnmergedTree = true).getUnclippedBoundsInRoot()
 
         (leadingIconBounds.top - listItemBounds.top).assertIsEqualTo(
-            20.dp,
+            largeSpacing,
             "Padding between top of list item and top of leading icon.",
         )
 
         (leadingIconBounds.left - listItemBounds.left).assertIsEqualTo(
-            24.dp,
+            largeSpacing,
             "Padding between start of list item and start of leading icon.",
         )
 
@@ -530,31 +584,35 @@ class ListItemTest {
             )
 
         (primaryLabelBounds.left - leadingIconBounds.right).assertIsEqualTo(
-            12.dp,
+            smallSpacing,
             "Padding between end of leading icon and start of primary label.",
         )
 
         (trailingIconBounds.top - listItemBounds.top).assertIsEqualTo(
-            20.dp,
+            largeSpacing,
             "Padding between top of list item and top of trailing icon.",
         )
 
         (listItemBounds.right - trailingIconBounds.right).assertIsEqualTo(
-            24.dp,
+            largeSpacing,
             "Padding between end of trailing icon and end of list item.",
         )
 
         // The width should fill the max width, like with the spacer
         listItemBounds.width.assertIsEqualTo(spacerBounds.width, "width of list item.")
         listItemBounds.height.assertIsEqualTo(
-            /* vertical padding * 2 + icon height*/ (20 + 20 + 48).dp,
+            /* vertical padding * 2 + icon height*/ largeSpacing * 2 + 48.dp,
             "height of list item.",
         )
     }
 
     @Test
     fun positioning_supportingLabel_withIcons() {
+        var smallSpacing: Dp by Delegates.notNull()
+        var largeSpacing: Dp by Delegates.notNull()
         rule.setGlimmerThemeContent {
+            smallSpacing = GlimmerTheme.componentSpacingValues.small
+            largeSpacing = GlimmerTheme.componentSpacingValues.large
             Column {
                 Spacer(Modifier.height(10.dp).fillMaxWidth().testTag("spacer"))
                 ListItem(
@@ -596,29 +654,29 @@ class ListItemTest {
             rule.onNodeWithTag("listItem", useUnmergedTree = true).getUnclippedBoundsInRoot()
 
         (leadingIconBounds.top - listItemBounds.top).assertIsEqualTo(
-            20.dp,
+            largeSpacing,
             "Padding between top of list item and top of leading icon.",
         )
 
         (leadingIconBounds.left - listItemBounds.left).assertIsEqualTo(
-            24.dp,
+            largeSpacing,
             "Padding between start of list item and start of leading icon.",
         )
 
         // Label should be top aligned when the height of the primary and supporting labels is
         // greater than minimum list item height
         (primaryLabelBounds.top - listItemBounds.top).assertIsEqualTo(
-            20.dp,
+            largeSpacing,
             "Padding between top of list item and top of primary label.",
         )
 
         (primaryLabelBounds.left - leadingIconBounds.right).assertIsEqualTo(
-            12.dp,
+            smallSpacing,
             "Padding between end of leading icon and start of primary label.",
         )
 
         (supportingLabelBounds.left - leadingIconBounds.right).assertIsEqualTo(
-            12.dp,
+            smallSpacing,
             "Padding between end of leading icon and start of supporting label.",
         )
 
@@ -628,17 +686,17 @@ class ListItemTest {
         )
 
         (listItemBounds.bottom - supportingLabelBounds.bottom).assertIsEqualTo(
-            20.dp,
+            largeSpacing,
             "Padding between bottom of list item and bottom of supporting label.",
         )
 
         (trailingIconBounds.top - listItemBounds.top).assertIsEqualTo(
-            20.dp,
+            largeSpacing,
             "Padding between top of list item and top of trailing icon.",
         )
 
         (listItemBounds.right - trailingIconBounds.right).assertIsEqualTo(
-            24.dp,
+            largeSpacing,
             "Padding between end of trailing icon and end of list item.",
         )
 
@@ -651,7 +709,11 @@ class ListItemTest {
 
     @Test
     fun positioning_supportingLabel_withIcons_longText() {
+        var smallSpacing: Dp by Delegates.notNull()
+        var largeSpacing: Dp by Delegates.notNull()
         rule.setGlimmerThemeContent {
+            smallSpacing = GlimmerTheme.componentSpacingValues.small
+            largeSpacing = GlimmerTheme.componentSpacingValues.large
             Column {
                 Spacer(Modifier.height(10.dp).fillMaxWidth().testTag("spacer"))
                 ListItem(
@@ -696,29 +758,29 @@ class ListItemTest {
             rule.onNodeWithTag("listItem", useUnmergedTree = true).getUnclippedBoundsInRoot()
 
         (leadingIconBounds.top - listItemBounds.top).assertIsEqualTo(
-            20.dp,
+            largeSpacing,
             "Padding between top of list item and top of leading icon.",
         )
 
         (leadingIconBounds.left - listItemBounds.left).assertIsEqualTo(
-            24.dp,
+            largeSpacing,
             "Padding between start of list item and start of leading icon.",
         )
 
         // Label should be top aligned when the height of the primary and supporting labels is
         // greater than minimum list item height
         (primaryLabelBounds.top - listItemBounds.top).assertIsEqualTo(
-            20.dp,
+            largeSpacing,
             "Padding between top of list item and top of primary label.",
         )
 
         (primaryLabelBounds.left - leadingIconBounds.right).assertIsEqualTo(
-            12.dp,
+            smallSpacing,
             "Padding between end of leading icon and start of primary label.",
         )
 
         (supportingLabelBounds.left - leadingIconBounds.right).assertIsEqualTo(
-            12.dp,
+            smallSpacing,
             "Padding between end of leading icon and start of supporting label.",
         )
 
@@ -728,17 +790,17 @@ class ListItemTest {
         )
 
         (listItemBounds.bottom - supportingLabelBounds.bottom).assertIsEqualTo(
-            20.dp,
+            largeSpacing,
             "Padding between bottom of list item and bottom of supporting label.",
         )
 
         (trailingIconBounds.top - listItemBounds.top).assertIsEqualTo(
-            20.dp,
+            largeSpacing,
             "Padding between top of list item and top of trailing icon.",
         )
 
         (listItemBounds.right - trailingIconBounds.right).assertIsEqualTo(
-            24.dp,
+            largeSpacing,
             "Padding between end of trailing icon and end of list item.",
         )
 

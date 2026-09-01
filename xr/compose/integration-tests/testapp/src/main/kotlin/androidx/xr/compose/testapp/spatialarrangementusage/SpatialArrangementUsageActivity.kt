@@ -36,6 +36,7 @@ import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenu
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
@@ -171,7 +172,7 @@ class SpatialArrangementUsageActivity : ComponentActivity() {
             onClickBackArrow = { this@SpatialArrangementUsageActivity.finish() },
             onClickRecreate = { this@SpatialArrangementUsageActivity.recreate() },
         ) { padding ->
-            @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+            @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
             Column(
                 modifier =
                     Modifier.fillMaxSize().background(Color.White).padding(padding).padding(20.dp)

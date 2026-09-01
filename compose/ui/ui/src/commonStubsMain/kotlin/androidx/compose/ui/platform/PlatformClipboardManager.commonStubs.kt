@@ -18,11 +18,12 @@ package androidx.compose.ui.platform
 
 import androidx.compose.ui.implementedInJetBrainsFork
 
-actual class ClipEntry {
-    actual val clipMetadata: ClipMetadata
+public actual class ClipEntry {
+    public actual val clipMetadata: ClipMetadata
         get() = implementedInJetBrainsFork()
 }
 
-actual class ClipMetadata
+public actual class ClipMetadata
 
-actual class NativeClipboard
+@Deprecated("Use direct reference to platform type instead of typealias")
+public actual class NativeClipboard

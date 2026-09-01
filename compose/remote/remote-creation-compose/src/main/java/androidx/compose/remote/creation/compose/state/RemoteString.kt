@@ -34,21 +34,119 @@ import androidx.compose.runtime.remember
  * expression (e.g., a concatenation).
  */
 @Stable
-public abstract class RemoteString internal constructor() : BaseRemoteState<String>() {
+public abstract class RemoteString internal constructor(cacheKey: RemoteStateCacheKey) :
+    BaseRemoteState<String>(cacheKey) {
 
-    internal enum class OperationKey {
-        Concat,
+    internal enum class OperationKey(override val precedence: Int = 100) : RemoteOperation {
+        Concat(3),
         Substring,
         Uppercase,
         Lowercase,
         Trim,
-        SelectIfLT,
-        SelectIfLE,
-        SelectIfGT,
-        SelectIfGE,
+        SelectIfLT(0),
+        SelectIfLE(0),
+        SelectIfGT(0),
+        SelectIfGE(0),
         Length,
         IsEmpty,
-        IsNotEmpty,
+        IsNotEmpty;
+
+        override fun toDebugString(args: List<RemoteStateCacheKey>): String {
+            return when (this) {
+                Concat -> args.formatOp("+", precedence)
+                Substring -> {
+                    val obj = args[0].toOperandString(precedence)
+                    val params = args.joinToDebugString(startIndex = 1)
+                    "$obj.substring($params)"
+                }
+                Uppercase -> "${args[0].toOperandString(precedence)}.uppercase()"
+                Lowercase -> "${args[0].toOperandString(precedence)}.lowercase()"
+                Trim -> "${args[0].toOperandString(precedence)}.trim()"
+                Length -> "${args[0].toOperandString(precedence)}.length"
+                IsEmpty -> "${args[0].toOperandString(precedence)}.isEmpty"
+                IsNotEmpty -> "${args[0].toOperandString(precedence)}.isNotEmpty"
+                SelectIfLT -> args.formatSelect("<")
+                SelectIfLE -> args.formatSelect("<=")
+                SelectIfGT -> args.formatSelect(">")
+                SelectIfGE -> args.formatSelect(">=")
+            }
+        }
+
+        override fun reconstruct(args: List<BaseRemoteState<*>>): BaseRemoteState<*> {
+            return when (this) {
+                Concat -> (args[0] as RemoteString) + (args[1] as RemoteString)
+                Substring -> {
+                    val str = args[0] as RemoteString
+                    if (args.size == 3) {
+                        str.substring(args[1] as RemoteInt, args[2] as RemoteInt)
+                    } else {
+                        str.substring(args[1] as RemoteInt)
+                    }
+                }
+                Uppercase -> (args[0] as RemoteString).uppercase()
+                Lowercase -> (args[0] as RemoteString).lowercase()
+                Trim -> (args[0] as RemoteString).trim()
+                Length -> (args[0] as RemoteString).length
+                IsEmpty -> (args[0] as RemoteString).isEmpty
+                IsNotEmpty -> (args[0] as RemoteString).isNotEmpty
+                SelectIfLT -> {
+                    val a = args[0]
+                    val b = args[1]
+                    if (a is RemoteInt && b is RemoteInt) {
+                        selectIfLt(a, b, args[2] as RemoteString, args[3] as RemoteString)
+                    } else {
+                        selectIfLt(
+                            a as RemoteFloat,
+                            b as RemoteFloat,
+                            args[2] as RemoteString,
+                            args[3] as RemoteString,
+                        )
+                    }
+                }
+                SelectIfLE -> {
+                    val a = args[0]
+                    val b = args[1]
+                    if (a is RemoteInt && b is RemoteInt) {
+                        selectIfLe(a, b, args[2] as RemoteString, args[3] as RemoteString)
+                    } else {
+                        selectIfLe(
+                            a as RemoteFloat,
+                            b as RemoteFloat,
+                            args[2] as RemoteString,
+                            args[3] as RemoteString,
+                        )
+                    }
+                }
+                SelectIfGT -> {
+                    val a = args[0]
+                    val b = args[1]
+                    if (a is RemoteInt && b is RemoteInt) {
+                        selectIfGt(a, b, args[2] as RemoteString, args[3] as RemoteString)
+                    } else {
+                        selectIfGt(
+                            a as RemoteFloat,
+                            b as RemoteFloat,
+                            args[2] as RemoteString,
+                            args[3] as RemoteString,
+                        )
+                    }
+                }
+                SelectIfGE -> {
+                    val a = args[0]
+                    val b = args[1]
+                    if (a is RemoteInt && b is RemoteInt) {
+                        selectIfGe(a, b, args[2] as RemoteString, args[3] as RemoteString)
+                    } else {
+                        selectIfGe(
+                            a as RemoteFloat,
+                            b as RemoteFloat,
+                            args[2] as RemoteString,
+                            args[3] as RemoteString,
+                        )
+                    }
+                }
+            }
+        }
     }
 
     public val length: RemoteInt
@@ -217,13 +315,21 @@ public abstract class RemoteString internal constructor() : BaseRemoteState<Stri
             constantValueOrNull = null,
             cacheKey = RemoteOperationCacheKey.create(OperationKey.Uppercase, this),
             object : LazyRemoteString {
-                override fun reserveTextId(creationState: RemoteComposeCreationState) =
-                    creationState.document.textTransform(
+                override fun reserveTextId(creationState: RemoteComposeCreationState): Int {
+                    // If the computed code points for this string are already invariant under
+                    // uppercase (e.g. digits, symbols, or uppercase characters), then the
+                    // transform is a NOP and can be safely elided.
+                    val codePoints = this@RemoteString.computeRequiredCodePointSet(creationState)
+                    if (codePoints != null && codePoints.all { it.uppercase() == it }) {
+                        return this@RemoteString.getIdForCreationState(creationState)
+                    }
+                    return creationState.document.textTransform(
                         getIdForCreationState(creationState),
                         0f,
                         -1f,
                         TextTransform.TEXT_TO_UPPERCASE,
                     )
+                }
 
                 // Is this correct in all locales?
                 override fun computeRequiredCodePointSet(
@@ -251,13 +357,21 @@ public abstract class RemoteString internal constructor() : BaseRemoteState<Stri
             constantValueOrNull = null,
             cacheKey = RemoteOperationCacheKey.create(OperationKey.Lowercase, this),
             object : LazyRemoteString {
-                override fun reserveTextId(creationState: RemoteComposeCreationState) =
-                    creationState.document.textTransform(
+                override fun reserveTextId(creationState: RemoteComposeCreationState): Int {
+                    // If the computed code points for this string are already invariant under
+                    // lowercase (e.g. digits, symbols, or lowercase characters), then the
+                    // transform is a NOP and can be safely elided.
+                    val codePoints = this@RemoteString.computeRequiredCodePointSet(creationState)
+                    if (codePoints != null && codePoints.all { it.lowercase() == it }) {
+                        return this@RemoteString.getIdForCreationState(creationState)
+                    }
+                    return creationState.document.textTransform(
                         getIdForCreationState(creationState),
                         0f,
                         -1f,
                         TextTransform.TEXT_TO_LOWERCASE,
                     )
+                }
 
                 // Is this correct in all locales?
                 override fun computeRequiredCodePointSet(
@@ -468,21 +582,21 @@ public abstract class RemoteString internal constructor() : BaseRemoteState<Stri
         /**
          * Creates a [RemoteString] instance from a constant [String] literal.
          *
-         * @param v The constant [String] value.
+         * @param value The constant [String] value.
          * @return A [MutableRemoteString] representing the constant string.
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public operator fun invoke(v: String): RemoteString {
+        public operator fun invoke(value: String): RemoteString {
             return MutableRemoteString(
-                constantValueOrNull = v,
-                cacheKey = RemoteConstantCacheKey(v),
+                constantValueOrNull = value,
+                cacheKey = RemoteConstantCacheKey(value),
                 object : LazyRemoteString {
                     override fun reserveTextId(creationState: RemoteComposeCreationState) =
-                        creationState.document.textCreateId(v)
+                        creationState.document.textCreateId(value)
 
                     override fun computeRequiredCodePointSet(
                         creationState: RemoteComposeCreationState
-                    ) = v.toCodePointSet()
+                    ) = value.toCodePointSet()
                 },
             )
         }
@@ -493,7 +607,9 @@ public abstract class RemoteString internal constructor() : BaseRemoteState<Stri
          * @param id The remote ID.
          * @return A [RemoteString] referencing the ID.
          */
-        internal fun createForId(id: Int): RemoteString = MutableRemoteString(id)
+        @JvmStatic
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public fun createForId(id: Int): RemoteString = MutableRemoteString(id)
 
         /**
          * Creates a named [RemoteString] with an initial value.
@@ -504,7 +620,6 @@ public abstract class RemoteString internal constructor() : BaseRemoteState<Stri
          * @return A [RemoteString] representing the named string.
          */
         @JvmStatic
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public fun createNamedRemoteString(
             name: String,
             defaultValue: String,
@@ -557,11 +672,18 @@ private class SelectFloatImpl(
         )
     }
 
-    override fun computeRequiredCodePointSet(creationState: RemoteComposeCreationState) =
-        mergeSets(
+    override fun computeRequiredCodePointSet(
+        creationState: RemoteComposeCreationState
+    ): Set<String>? {
+        if (a.hasConstantValue && b.hasConstantValue) {
+            val selected = if (a.constantValue < b.constantValue) ifTrue else ifFalse
+            return selected.computeRequiredCodePointSet(creationState)
+        }
+        return mergeSets(
             ifTrue.computeRequiredCodePointSet(creationState),
             ifFalse.computeRequiredCodePointSet(creationState),
         )
+    }
 }
 
 private class SelectIntImpl(
@@ -594,11 +716,18 @@ private class SelectIntImpl(
         )
     }
 
-    override fun computeRequiredCodePointSet(creationState: RemoteComposeCreationState) =
-        mergeSets(
+    override fun computeRequiredCodePointSet(
+        creationState: RemoteComposeCreationState
+    ): Set<String>? {
+        if (a.hasConstantValue && b.hasConstantValue) {
+            val selected = if (a.constantValue < b.constantValue) ifTrue else ifFalse
+            return selected.computeRequiredCodePointSet(creationState)
+        }
+        return mergeSets(
             ifTrue.computeRequiredCodePointSet(creationState),
             ifFalse.computeRequiredCodePointSet(creationState),
         )
+    }
 }
 
 /**
@@ -873,7 +1002,6 @@ public fun selectIfGe(
     )
 }
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal interface LazyRemoteString {
     /**
      * @return The text ID for the RemoteString within the provided [RemoteComposeCreationState].
@@ -907,9 +1035,9 @@ internal fun mergeSets(a: Set<String>?, b: Set<String>?): Set<String>? {
 public class MutableRemoteString
 internal constructor(
     @get:Suppress("AutoBoxing") public override val constantValueOrNull: String?,
-    internal override val cacheKey: RemoteStateCacheKey,
+    cacheKey: RemoteStateCacheKey,
     private val lazyRemoteString: LazyRemoteString,
-) : RemoteString(), MutableRemoteState<String> {
+) : RemoteString(cacheKey), MutableRemoteState<String> {
 
     /** Create a MutableRemoteString from an existing id. */
     internal constructor(
@@ -928,7 +1056,7 @@ internal constructor(
     )
 
     /** Create a MutableRemoteString for a default value. */
-    internal constructor(
+    private constructor(
         value: String
     ) : this(
         constantValueOrNull = null,
@@ -960,7 +1088,7 @@ internal constructor(
          * @param initialValue The initial value for the state.
          * @return A new [MutableRemoteString] instance.
          */
-        public fun createMutable(initialValue: String): MutableRemoteString =
+        public operator fun invoke(initialValue: String): MutableRemoteString =
             MutableRemoteString(initialValue)
 
         /**
@@ -982,17 +1110,6 @@ internal constructor(
 @Composable
 public fun rememberMutableRemoteString(initialValue: String): MutableRemoteString {
     return remember { MutableRemoteString(initialValue) }
-}
-
-/** Factory composable for mutable remote string state. */
-@Composable
-@Deprecated("Use rememberMutableRemoteString(content())")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public fun rememberRemoteString(content: () -> String): MutableRemoteString {
-    return remember {
-        val string = content()
-        MutableRemoteString(string)
-    }
 }
 
 /**
@@ -1031,43 +1148,6 @@ public fun rememberNamedRemoteString(
         )
     }
 }
-
-/**
- * A Composable function to remember and provide an anonymous (unnamed) mutable remote string.
- *
- * @param content A lambda that provides the initial [String] value for this remote string.
- * @return A [MutableRemoteString] instance that will be remembered across recompositions.
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Composable
-@Deprecated("Use rememberNamedRemoteString(name, domain, defaultValue = content())")
-public fun rememberRemoteString(
-    name: String,
-    domain: RemoteState.Domain = RemoteState.Domain.User,
-    content: () -> String,
-): RemoteString {
-    return rememberNamedRemoteString(name = name, defaultValue = content(), domain = domain)
-}
-
-/**
- * A convenience Composable function to remember a **system-level** named remote string.
- *
- * This is a specialized version of [rememberRemoteString] where the `domain` is fixed to
- * [RemoteState.Domain.System].
- *
- * @param name The unique name for this system remote string.
- * @param content A lambda that provides the initial [String] value for this remote string.
- * @return A [MutableRemoteString] instance with a system domain, remembered across recompositions.
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Composable
-@Deprecated("Use rememberRemoteString with SYSTEM domain")
-public fun rememberSystemRemoteString(name: String, content: () -> String): RemoteString =
-    rememberNamedRemoteString(
-        name = name,
-        domain = RemoteState.Domain.System,
-        defaultValue = content(),
-    )
 
 /** Extension property to convert a [String] to a [RemoteString]. */
 public val String.rs: RemoteString

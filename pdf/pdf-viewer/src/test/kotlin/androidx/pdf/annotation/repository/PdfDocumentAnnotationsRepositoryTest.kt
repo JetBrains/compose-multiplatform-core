@@ -17,9 +17,11 @@
 package androidx.pdf.annotation.repository
 
 import android.graphics.Point
+import android.os.DeadObjectException
+import android.os.RemoteException
 import androidx.pdf.FakePdfDocument
-import androidx.pdf.annotation.KeyedPdfAnnotation
-import androidx.pdf.annotation.models.TestPdfAnnotation
+import androidx.pdf.annotation.content.KeyedPdfAnnotation
+import androidx.pdf.annotation.content.TestPdfAnnotation
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -86,7 +88,7 @@ class PdfDocumentAnnotationsRepositoryTest {
 
         val result1 = repository.getAnnotationsForPage(0)
         val result2 = repository.getAnnotationsForPage(0)
-        val result3 = repository.getAnnotationsForPage(0)
+        repository.getAnnotationsForPage(0)
 
         assertThat(result1).isEqualTo(page0Annotations)
         assertThat(result2).isEqualTo(page0Annotations)
@@ -175,5 +177,44 @@ class PdfDocumentAnnotationsRepositoryTest {
         repository.clear()
 
         assertThat(repository.isCacheEmpty()).isTrue()
+    }
+
+    @Test
+    fun getAnnotationsForPage_onHandledRemoteException_returnsEmptyList() = runTest {
+        val remoteException =
+            RemoteException(
+                "android.os.RemoteException: Method getAnnotationsForPage is unimplemented."
+            )
+        val fakeDoc =
+            FakePdfDocument(pages = listOf(Point(100, 100)), exceptionToThrow = remoteException)
+        val repository = PdfDocumentAnnotationsRepository(fakeDoc)
+
+        val result = repository.getAnnotationsForPage(0)
+        assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun getAnnotationsForPage_onDeadObjectException_returnsEmptyList() = runTest {
+        val fakeDoc =
+            FakePdfDocument(
+                pages = listOf(Point(100, 100)),
+                exceptionToThrow = DeadObjectException(),
+            )
+        val repository = PdfDocumentAnnotationsRepository(fakeDoc)
+
+        val result = repository.getAnnotationsForPage(0)
+        assertThat(result).isEmpty()
+    }
+
+    @Test(expected = RemoteException::class)
+    fun getAnnotationsForPage_onUnhandledRemoteException_throws() = runTest {
+        val fakeDoc =
+            FakePdfDocument(
+                pages = listOf(Point(100, 100)),
+                exceptionToThrow = RemoteException("Unhandled"),
+            )
+        val repository = PdfDocumentAnnotationsRepository(fakeDoc)
+
+        repository.getAnnotationsForPage(0)
     }
 }

@@ -37,7 +37,9 @@ import java.util.concurrent.Executor
 import javax.inject.Inject
 
 @CameraScope
-public class CameraStateAdapter @Inject constructor() {
+public class CameraStateAdapter
+@Inject
+constructor(private val sessionLifecycleAdapter: CameraSessionLifecycleAdapter) {
     private val lock = Any()
 
     internal val cameraInternalState = LiveDataObservable<CameraInternal.State>()
@@ -115,7 +117,7 @@ public class CameraStateAdapter @Inject constructor() {
             }
         }
 
-    public fun onGraphStateUpdated(cameraGraph: CameraGraph, graphState: GraphState): Unit =
+    public fun onGraphStateUpdated(cameraGraph: CameraGraph, graphState: GraphState) {
         synchronized(lock) {
             // Ignore any events if the camera has been marked as removed.
             if (isRemoved) {
@@ -125,7 +127,11 @@ public class CameraStateAdapter @Inject constructor() {
 
             Camera2Logger.debug { "$cameraGraph state updated to $graphState" }
             handleStateTransition(cameraGraph, graphState)
+            if (cameraGraph == currentGraph) {
+                sessionLifecycleAdapter.dispatchSessionLifecycle(graphState)
+            }
         }
+    }
 
     @GuardedBy("lock")
     private fun handleStateTransition(cameraGraph: CameraGraph, graphState: GraphState) {
@@ -196,8 +202,20 @@ public class CameraStateAdapter @Inject constructor() {
         graphState: GraphState,
         currentError: CameraState.StateError?,
         isGraphActive: Boolean,
-    ): CombinedCameraState? =
-        when (currentState) {
+    ): CombinedCameraState? {
+        if (
+            !isGraphActive &&
+                graphState is GraphStateError &&
+                graphState.cameraError == CameraError.ERROR_CAMERA_OPEN_TIMEOUT
+        ) {
+            // Swallow the timeout error if the graph is inactive (intentional abort).
+            // This prevents a benign cancellation from surfacing as a FATAL error to the app,
+            // while allowing the normal shutdown sequence (Stopping -> Stopped) to transition the
+            // state.
+            return CombinedCameraState(currentState, currentError)
+        }
+
+        return when (currentState) {
             CameraInternal.State.CLOSED ->
                 when (graphState) {
                     GraphStateStarting -> CombinedCameraState(CameraInternal.State.OPENING)
@@ -226,10 +244,14 @@ public class CameraStateAdapter @Inject constructor() {
                     GraphStateStopped -> graphState.handleStateStop(isGraphActive, currentError)
                     GraphStateStarting -> CombinedCameraState(CameraInternal.State.OPENING)
                     is GraphStateError ->
-                        CombinedCameraState(
-                            CameraInternal.State.CLOSING,
-                            graphState.cameraError.toCameraStateError(),
-                        )
+                        if (isGraphActive && graphState.willAttemptRetry) {
+                            resolveErrorEvent(graphState, CameraInternal.State.OPENING)
+                        } else {
+                            CombinedCameraState(
+                                CameraInternal.State.CLOSING,
+                                graphState.cameraError.toCameraStateError(),
+                            )
+                        }
                     else -> null
                 }
             CameraInternal.State.PENDING_OPEN ->
@@ -249,6 +271,7 @@ public class CameraStateAdapter @Inject constructor() {
                 }
             else -> null
         }
+    }
 
     internal fun addCameraStateListener(executor: Executor, listener: Consumer<CameraState>) {
         synchronized(lock) { cameraStateListeners[listener] = executor }

@@ -16,6 +16,7 @@
 
 package androidx.camera.camera2.pipe.testing
 
+import android.hardware.HardwareBuffer
 import android.util.Size
 import android.view.Surface
 import androidx.camera.camera2.pipe.OutputId
@@ -23,7 +24,7 @@ import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.media.ImageReaderWrapper
 import androidx.camera.camera2.pipe.media.ImageWrapper
-import kotlin.reflect.KClass
+import java.lang.Class
 import kotlinx.atomicfu.atomic
 
 /** Utility class for simulating [FakeImage] and testing code that uses an [ImageReaderWrapper]. */
@@ -31,6 +32,7 @@ public class FakeImageReader
 private constructor(
     private val format: StreamFormat,
     override val capacity: Int,
+    override val usageFlags: Long?,
     override val surface: Surface,
     public val streamId: StreamId,
     private val outputs: Map<OutputId, Size>,
@@ -52,11 +54,15 @@ private constructor(
      * Simulate an image at a specific [imageTimestamp] for a particular (optional) [OutputId]. The
      * timebase for an imageReader is left undefined.
      */
-    public fun simulateImage(imageTimestamp: Long, outputId: OutputId? = null): FakeImage {
+    public fun simulateImage(
+        imageTimestamp: Long,
+        outputId: OutputId? = null,
+        hardwareBuffer: HardwareBuffer? = null,
+    ): FakeImage {
         val output = outputId ?: outputs.keys.single()
         val size =
             checkNotNull(outputs[output]) { "Unexpected $output! Available outputs are $outputs" }
-        val image = FakeImage(size.width, size.height, format.value, imageTimestamp)
+        val image = FakeImage(size.width, size.height, format.value, imageTimestamp, hardwareBuffer)
         simulateImage(image, output)
         return image
     }
@@ -77,6 +83,7 @@ private constructor(
             if (image is FakeImage) {
                 _images.add(image)
             }
+            _isFlushed.value = false
         }
         onImageListener?.onImage(streamId, outputId, image)
     }
@@ -90,11 +97,20 @@ private constructor(
     override var onExpectedOutputsListener: ImageReaderWrapper.OnExpectedOutputsListener? by
         atomic(null)
 
+    private val _isFlushed = atomic(false)
+
+    public val isFlushed: Boolean
+        get() = _isFlushed.value
+
     override fun flush() {
+        _isFlushed.value = true
+    }
+
+    override fun discardFreeBuffers() {
         // NoOp
     }
 
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? {
+    override fun <T : Any> unwrapAs(type: Class<T>): T? {
         // Fake objects cannot be unwrapped.
         return null
     }
@@ -126,9 +142,10 @@ private constructor(
             outputId: OutputId,
             size: Size,
             capacity: Int,
+            usageFlags: Long?,
             fakeSurfaces: FakeSurfaces? = null,
         ): FakeImageReader =
-            create(format, streamId, mapOf(outputId to size), capacity, fakeSurfaces)
+            create(format, streamId, mapOf(outputId to size), capacity, usageFlags, fakeSurfaces)
 
         /** Create a [FakeImageReader] that can simulate different sized images. */
         public fun create(
@@ -136,6 +153,7 @@ private constructor(
             streamId: StreamId,
             outputIdMap: Map<OutputId, Size>,
             capacity: Int,
+            usageFlags: Long?,
             fakeSurfaces: FakeSurfaces? = null,
         ): FakeImageReader {
 
@@ -145,7 +163,7 @@ private constructor(
             val surface =
                 fakeSurfaces?.createFakeSurface(smallestOutput)
                     ?: FakeSurfaces.create(smallestOutput)
-            return FakeImageReader(format, capacity, surface, streamId, outputIdMap)
+            return FakeImageReader(format, capacity, usageFlags, surface, streamId, outputIdMap)
         }
     }
 }

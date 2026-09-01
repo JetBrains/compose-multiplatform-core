@@ -110,7 +110,6 @@ class WindowStateCallbackActivity : ComponentActivity() {
                 "Since API level 34 this is never called. Apps targeting API level 34 " +
                     "and above may provide an empty implementation."
             )
-            @Suppress("OVERRIDE_DEPRECATION") // b/446706247
             override fun onLowMemory() {}
         }
 
@@ -144,6 +143,14 @@ class WindowStateCallbackActivity : ComponentActivity() {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 tracker.windowLayoutInfo(this@WindowStateCallbackActivity).collect { info ->
                     onWindowStateCallbackInvoked(R.string.window_layout_info_flow_title, info)
+                }
+            }
+        }
+
+        lifecycleScope.launch(Dispatchers.Main) {
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                tracker.windowEngagementInfo(this@WindowStateCallbackActivity).collect { info ->
+                    onWindowStateCallbackInvoked(R.string.window_engagement_info_flow_title, info)
                 }
             }
         }

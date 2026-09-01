@@ -23,7 +23,6 @@ import static android.text.TextUtils.isEmpty;
 import static androidx.work.ListenableFutureKt.executeAsync;
 import static androidx.work.impl.UnfinishedWorkListenerKt.maybeLaunchUnfinishedWorkListener;
 import static androidx.work.impl.WorkManagerImplExtKt.createWorkManager;
-import static androidx.work.impl.WorkManagerImplExtKt.createWorkManagerScope;
 import static androidx.work.impl.WorkerUpdater.enqueueUniquelyNamedPeriodic;
 import static androidx.work.impl.foreground.SystemForegroundDispatcher.createCancelWorkIntent;
 import static androidx.work.impl.model.RawWorkInfoDaoKt.getWorkInfoPojosFlow;
@@ -253,10 +252,15 @@ public class WorkManagerImpl extends WorkManager {
         mTrackers = trackers;
         mConfiguration = configuration;
         mSchedulers = schedulers;
-        mWorkManagerScope = createWorkManagerScope(mWorkTaskExecutor);
+        mWorkManagerScope = mWorkTaskExecutor.getCoroutineScope();
         mPreferenceUtils = new PreferenceUtils(mWorkDatabase);
         Schedulers.registerRescheduling(schedulers, mProcessor,
                 workTaskExecutor.getSerialTaskExecutor(), mWorkDatabase, configuration);
+        for (Scheduler scheduler : schedulers) {
+            if (scheduler instanceof ForegroundListener) {
+                mProcessor.addForegroundListener((ForegroundListener) scheduler);
+            }
+        }
         // Checks for app force stops.
         mWorkTaskExecutor.executeOnTaskThread(new ForceStopRunnable(context, this));
         maybeLaunchUnfinishedWorkListener(mWorkManagerScope, mContext, configuration, workDatabase);

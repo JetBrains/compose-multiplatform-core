@@ -160,6 +160,21 @@ public interface Features {
 
     /**
      * Feature for {@link #isFeatureSupported(String)}. This feature covers
+     * supporting ANN indexing type in {@link AppSearchSchema.EmbeddingPropertyConfig}.
+     */
+    @ExperimentalAppSearchApi
+    String SCHEMA_EMBEDDING_APPROXIMATE_NEAREST_NEIGHBOR =
+            "SCHEMA_EMBEDDING_APPROXIMATE_NEAREST_NEIGHBOR";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}. This feature covers
+     * passing pre-quantized embedding data directly in {@link GenericDocument}.
+     */
+    @ExperimentalAppSearchApi
+    String SCHEMA_EMBEDDING_PRE_QUANTIZED_DATA = "SCHEMA_EMBEDDING_PRE_QUANTIZED_DATA";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}. This feature covers
      * {@link SearchSpec#GROUPING_TYPE_PER_SCHEMA}
      */
     String SEARCH_SPEC_GROUPING_TYPE_PER_SCHEMA = "SEARCH_SPEC_GROUPING_TYPE_PER_SCHEMA";
@@ -194,7 +209,6 @@ public interface Features {
      * Feature for {@link #isFeatureSupported(String)}. This feature covers
      * {@link SearchSpec.Builder#addFilterDocumentIds}.
      */
-    @ExperimentalAppSearchApi
     String SEARCH_SPEC_ADD_FILTER_DOCUMENT_IDS = "SEARCH_SPEC_ADD_FILTER_DOCUMENT_IDS";
 
     /**
@@ -336,6 +350,8 @@ public interface Features {
      * {@link AppSearchSchema.StringPropertyConfig#DELETE_PROPAGATION_TYPE_PROPAGATE_FROM} and
      * {@link AppSearchSchema.StringPropertyConfig.Builder#setDeletePropagationType}.
      */
+    // TODO(b/384947619) unhide the API once it is ready.
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @ExperimentalAppSearchApi
     String SCHEMA_STRING_PROPERTY_CONFIG_DELETE_PROPAGATION_TYPE_PROPAGATE_FROM =
             "SCHEMA_STRING_PROPERTY_CONFIG_DELETE_PROPAGATION_TYPE_PROPAGATE_FROM";

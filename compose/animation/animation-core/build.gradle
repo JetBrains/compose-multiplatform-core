@@ -32,12 +32,8 @@ plugins {
 
 androidXMultiplatform {
     androidLibrary {
-        compileSdk { version = release(35) }
+        compileSdk { version = release(37) }
         namespace = "androidx.compose.animation.core"
-        optimization {
-            it.consumerKeepRules.publish = true
-            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
-        }
     }
     jvmStubs()
     linuxX64Stubs()
@@ -51,7 +47,7 @@ androidXMultiplatform {
             implementation("androidx.compose.ui:ui-unit:1.10.0")
             implementation("androidx.compose.ui:ui-graphics:1.10.0")
             implementation("androidx.compose.ui:ui-util:1.10.0")
-            implementation("androidx.collection:collection:1.5.0")
+            implementation("androidx.collection:collection:1.6.0")
             api(libs.kotlinCoroutinesCore)
         }
 

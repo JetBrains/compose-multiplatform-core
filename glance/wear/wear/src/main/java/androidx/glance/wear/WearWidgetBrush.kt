@@ -16,7 +16,15 @@
 
 package androidx.glance.wear
 
+import androidx.compose.remote.creation.compose.shaders.RemoteBrush
+import androidx.compose.remote.creation.compose.shaders.horizontalGradient
+import androidx.compose.remote.creation.compose.shaders.image
+import androidx.compose.remote.creation.compose.shaders.solidColor
+import androidx.compose.remote.creation.compose.shaders.verticalGradient
 import androidx.compose.remote.creation.compose.state.RemoteColor
+import androidx.compose.remote.creation.compose.state.RemoteImageBitmap
+import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.layout.ContentScale
 
 /**
  * Defines a brush for a Wear Widget surface.
@@ -44,14 +52,10 @@ public sealed class WearWidgetBrush {
      * Returns a [WearWidgetBrush] representing this brush followed by [other] in sequence.
      */
     internal open infix fun then(other: WearWidgetBrush): WearWidgetBrush =
-        if (other === WearWidgetBrush) this else Combined(this, other)
+        if (other.isEmpty()) this else Combined(this, other)
 
     /** A single element contained within a [WearWidgetBrush] chain. */
-    internal data class Element(
-        // TODO: b/470080675 - Change it to
-        // [androidx.compose.remote.creation.compose.shaders.RemoteBrush] when public.
-        internal val color: RemoteColor
-    ) : WearWidgetBrush() {
+    internal data class Element(internal val brush: RemoteBrush) : WearWidgetBrush() {
         override fun <R> foldIn(initial: R, operation: (R, Element) -> R): R =
             operation(initial, this)
     }
@@ -89,4 +93,84 @@ public sealed class WearWidgetBrush {
  * @param color The [RemoteColor] to use for the brush.
  */
 public fun WearWidgetBrush.color(color: RemoteColor): WearWidgetBrush =
-    then(WearWidgetBrush.Element(color))
+    then(WearWidgetBrush.Element(RemoteBrush.solidColor(color)))
+
+/**
+ * Creates a [WearWidgetBrush] with a vertical gradient and the given colors evenly dispersed within
+ * the gradient.
+ *
+ * Because the gradient is drawn across the entire surface, tiling is not required. Therefore,
+ * [TileMode] defaults to [TileMode.Clamp].
+ *
+ * Example:
+ * ```
+ *  WearWidgetBrush.verticalGradient(listOf(Color.Red.rc, Color.Green.rc, Color.Blue.rc))
+ * ```
+ *
+ * @param colors The list of [RemoteColor]s to be rendered as part of the gradient
+ */
+public fun WearWidgetBrush.verticalGradient(colors: List<RemoteColor>): WearWidgetBrush =
+    then(
+        WearWidgetBrush.Element(
+            RemoteBrush.verticalGradient(
+                colors = colors,
+                startY = null,
+                endY = null,
+                tileMode = TileMode.Clamp,
+            )
+        )
+    )
+
+/**
+ * Creates a [WearWidgetBrush] with a horizontal gradient and the given colors evenly dispersed
+ * within the gradient.
+ *
+ * Because the gradient is drawn across the entire surface, tiling is not required. Therefore,
+ * [TileMode] defaults to [TileMode.Clamp].
+ *
+ * Example:
+ * ```
+ *  WearWidgetBrush.horizontalGradient(listOf(Color.Red.rc, Color.Green.rc, Color.Blue.rc))
+ * ```
+ *
+ * @param colors The list of [RemoteColor]s to be rendered as part of the gradient
+ */
+public fun WearWidgetBrush.horizontalGradient(colors: List<RemoteColor>): WearWidgetBrush =
+    then(
+        WearWidgetBrush.Element(
+            RemoteBrush.horizontalGradient(
+                colors = colors,
+                startX = null,
+                endX = null,
+                tileMode = TileMode.Clamp,
+            )
+        )
+    )
+
+/**
+ * Creates a [WearWidgetBrush] with a bitmap.
+ *
+ * Because the image is drawn using [TileMode.Decal], it does not repeat if the surface is larger
+ * than the scaled [bitmap].
+ *
+ * Example:
+ * ```
+ *  WearWidgetBrush.image(bitmap, ContentScale.Crop)
+ * ```
+ *
+ * @param bitmap The [RemoteImageBitmap] to draw.
+ * @param contentScale The [ContentScale] to apply to the bitmap when fitting it to the surface, by
+ *   default [ContentScale.Fit].
+ */
+public fun WearWidgetBrush.image(
+    bitmap: RemoteImageBitmap,
+    contentScale: ContentScale = ContentScale.Fit,
+): WearWidgetBrush =
+    then(
+        WearWidgetBrush.Element(
+            RemoteBrush.image(bitmap, TileMode.Decal, TileMode.Decal, contentScale)
+        )
+    )
+
+/** Returns `true` if this [WearWidgetBrush] is empty (contains no elements), false otherwise. */
+internal fun WearWidgetBrush.isEmpty(): Boolean = this === WearWidgetBrush

@@ -27,6 +27,7 @@ import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraControl;
 import androidx.camera.core.CameraInfo;
+import androidx.camera.core.CompositionSettings;
 import androidx.camera.core.LegacySessionConfig;
 import androidx.camera.core.RotationProvider;
 import androidx.camera.core.SessionConfig;
@@ -283,6 +284,7 @@ public final class LifecycleCamera implements LifecycleObserver, Camera {
             mCameraUseCaseAdapter.setEffects(sessionConfig.getEffects());
             mCameraUseCaseAdapter.setSessionType(sessionConfig.getSessionType());
             mCameraUseCaseAdapter.setFrameRate(sessionConfig.getFrameRateRange());
+            mCameraUseCaseAdapter.setSessionInteropConfig(sessionConfig.getInteropConfig());
 
             // Sets RotationProvider to ImageCapture, ImageAnalysis and VideoCapture when
             // auto-rotation is enabled.
@@ -350,6 +352,7 @@ public final class LifecycleCamera implements LifecycleObserver, Camera {
                 if (mBoundSessionConfig == sessionConfig) {
                     // Unbind the bound SessionConfig successfully only when they are identical.
                     mBoundSessionConfig = null;
+                    mCameraUseCaseAdapter.setSessionInteropConfig(null);
                 } else {
                     // If the unbinding SessionConfig is different than the bound one. we do nothing
                     // Returning here is necessary to avoid removing the use cases.
@@ -390,6 +393,7 @@ public final class LifecycleCamera implements LifecycleObserver, Camera {
             // UseCase is unbound.
             updateUseCasesRotationProvider(useCases, null);
             mBoundSessionConfig = null;
+            mCameraUseCaseAdapter.setSessionInteropConfig(null);
         }
     }
 
@@ -436,5 +440,10 @@ public final class LifecycleCamera implements LifecycleObserver, Camera {
     public boolean isUseCasesCombinationSupported(boolean withStreamSharing,
             UseCase @NonNull ... useCases) {
         return mCameraUseCaseAdapter.isUseCasesCombinationSupported(withStreamSharing, useCases);
+    }
+
+    @Override
+    public void setCompositionSettings(@NonNull List<CompositionSettings> compositionSettings) {
+        mCameraUseCaseAdapter.setCompositionSettings(compositionSettings);
     }
 }

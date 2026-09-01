@@ -62,7 +62,7 @@ class RemoteMatrix3x3Test {
     @Test
     fun matrix_concatenation() {
         val m =
-            RemoteMatrix3x3.createTranslateXY(RemoteFloat(10f), RemoteFloat(20f)) *
+            RemoteMatrix3x3.createTranslateXy(RemoteFloat(10f), RemoteFloat(20f)) *
                 RemoteMatrix3x3.createScaleX(RemoteFloat(1.5f)) *
                 RemoteMatrix3x3.createScaleY(RemoteFloat(2f))
         val mId = m.getIdForCreationState(creationState)
@@ -96,9 +96,9 @@ class RemoteMatrix3x3Test {
     @Test
     fun matrix_concatenation2() {
         val m =
-            RemoteMatrix3x3.createTranslateXY(RemoteFloat(10f), RemoteFloat(20f)) *
-                RemoteMatrix3x3.createTranslateXY(RemoteFloat(10f), RemoteFloat(20f)) *
-                RemoteMatrix3x3.createTranslateXY(RemoteFloat(10f), RemoteFloat(20f))
+            RemoteMatrix3x3.createTranslateXy(RemoteFloat(10f), RemoteFloat(20f)) *
+                RemoteMatrix3x3.createTranslateXy(RemoteFloat(10f), RemoteFloat(20f)) *
+                RemoteMatrix3x3.createTranslateXy(RemoteFloat(10f), RemoteFloat(20f))
         val mId = m.getIdForCreationState(creationState)
 
         makeAndPaintCoreDocument()
@@ -130,7 +130,7 @@ class RemoteMatrix3x3Test {
     @Test
     fun matrix_concatenation_with_identity() {
         val m =
-            RemoteMatrix3x3.createTranslateXY(RemoteFloat(10f), RemoteFloat(20f)) *
+            RemoteMatrix3x3.createTranslateXy(RemoteFloat(10f), RemoteFloat(20f)) *
                 RemoteMatrix3x3.createIdentity()
         val mId = m.getIdForCreationState(creationState)
 
@@ -164,7 +164,7 @@ class RemoteMatrix3x3Test {
     fun matrix_concatenation_with_identity2() {
         val m =
             RemoteMatrix3x3.createIdentity() *
-                RemoteMatrix3x3.createTranslateXY(RemoteFloat(10f), RemoteFloat(20f))
+                RemoteMatrix3x3.createTranslateXy(RemoteFloat(10f), RemoteFloat(20f))
         val mId = m.getIdForCreationState(creationState)
 
         makeAndPaintCoreDocument()
@@ -191,6 +191,37 @@ class RemoteMatrix3x3Test {
                     1.0f,
                 )
             )
+    }
+
+    @Test
+    fun toDebugString_identity() {
+        val identity = RemoteMatrix3x3.createIdentity()
+        assertThat(identity.toDebugString()).isEqualTo("identity()")
+    }
+
+    @Test
+    fun toDebugString_transformations() {
+        val x = RemoteFloat.createNamedRemoteFloat("x", 10f)
+        val y = RemoteFloat.createNamedRemoteFloat("y", 20f)
+        val translate = RemoteMatrix3x3.createTranslateXy(x, y)
+        assertThat(translate.toDebugString()).isEqualTo("translate(user:x, user:y)")
+
+        val rotate = RemoteMatrix3x3.createRotate(x)
+        assertThat(rotate.toDebugString()).isEqualTo("rotate(user:x)")
+    }
+
+    @Test
+    fun toDebugString_multiplication() {
+        val identity = RemoteMatrix3x3.createIdentity()
+        val x = RemoteFloat.createNamedRemoteFloat("x", 10f)
+        val y = RemoteFloat.createNamedRemoteFloat("y", 20f)
+        val translate = RemoteMatrix3x3.createTranslateXy(x, y)
+        val rotate = RemoteMatrix3x3.createRotate(x)
+
+        val combined = translate * rotate
+        assertThat(combined.toDebugString()).isEqualTo("translate(user:x, user:y) * rotate(user:x)")
+        assertThat((combined * identity).toDebugString())
+            .isEqualTo("translate(user:x, user:y) * rotate(user:x) * identity()")
     }
 
     private fun makeAndPaintCoreDocument() =

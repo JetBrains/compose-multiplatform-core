@@ -30,6 +30,7 @@ import androidx.xr.scenecore.runtime.RenderingEntityFactory
 import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.scene
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
@@ -67,16 +68,20 @@ class ActivityExtKtTest {
 
     @Test
     fun requestHomeSpace_completes_doesNotHangOrThrow() = runTest {
-        withTimeout(TIMEOUT) { composeTestRule.activity.requestHomeSpace() }
+        val result: SpaceRequestResult =
+            withTimeout(TIMEOUT) { composeTestRule.activity.requestHomeSpace() }
 
+        assertThat(result).isEqualTo(SpaceRequestResult.Success)
         assertThat(composeTestRule.session?.scene?.activitySpace?.bounds)
             .isNotEqualTo(INFINITE_BOUNDS)
     }
 
     @Test
     fun requestFullSpace_completes_doesNotHangOrThrow() = runTest {
-        withTimeout(TIMEOUT) { composeTestRule.activity.requestFullSpace() }
+        val result: SpaceRequestResult =
+            withTimeout(TIMEOUT) { composeTestRule.activity.requestFullSpace() }
 
+        assertThat(result).isEqualTo(SpaceRequestResult.Success)
         assertThat(composeTestRule.session?.scene?.activitySpace?.bounds).isEqualTo(INFINITE_BOUNDS)
     }
 
@@ -84,12 +89,12 @@ class ActivityExtKtTest {
     fun requestSpace_sessionNotAvailable_returnsImmediately() = runTest {
         composeTestRule.activity.disableXr()
 
-        val homeJob = launch { composeTestRule.activity.requestHomeSpace() }
-        val fullJob = launch { composeTestRule.activity.requestFullSpace() }
+        val homeResult: SpaceRequestResult = composeTestRule.activity.requestHomeSpace()
+        val fullResult: SpaceRequestResult = composeTestRule.activity.requestFullSpace()
         advanceUntilIdle()
 
-        assertThat(homeJob.isCompleted).isTrue()
-        assertThat(fullJob.isCompleted).isTrue()
+        assertThat(homeResult).isEqualTo(SpaceRequestResult.Unsupported)
+        assertThat(fullResult).isEqualTo(SpaceRequestResult.Unsupported)
     }
 
     @Test
@@ -124,7 +129,7 @@ class ActivityExtKtTest {
         val listeners = testRuntime.activitySpace.onBoundsChangedListeners
         assertThat(listeners).isEmpty()
 
-        composeTestRule.session?.scene?.requestHomeSpaceMode()
+        composeTestRule.session?.scene?.requestHomeSpace()
 
         val job = launch { composeTestRule.activity.requestFullSpace() }
         advanceUntilIdle() // wait for the coroutine to start and register the listeners
@@ -151,7 +156,7 @@ class ActivityExtKtTest {
                     }
                 )
 
-            session.scene.requestFullSpaceMode() // start in full space
+            session.scene.requestFullSpace() // start in full space
             assertThat(session.scene.activitySpace.bounds).isEqualTo(INFINITE_BOUNDS)
 
             job = launch { activity.requestHomeSpace() }
@@ -184,7 +189,7 @@ class ActivityExtKtTest {
                     }
                 )
 
-            session.scene.requestHomeSpaceMode() // start in home space
+            session.scene.requestHomeSpace() // start in home space
             assertThat(session.scene.activitySpace.bounds).isNotEqualTo(INFINITE_BOUNDS)
 
             job = launch { activity.requestFullSpace() }
@@ -212,7 +217,16 @@ class ActivityExtKtTest {
 
         assertThat(testRuntime.activitySpace.onBoundsChangedListeners).isEmpty()
         testRuntime.requestFullSpaceMode()
-        val job = launch { composeTestRule.activity.requestHomeSpace() }
+
+        var thrownException: Throwable? = null
+        val job = launch {
+            try {
+                composeTestRule.activity.requestHomeSpace()
+            } catch (t: Throwable) {
+                thrownException = t
+                throw t
+            }
+        }
 
         advanceUntilIdle()
         assertThat(testRuntime.activitySpace.onBoundsChangedListeners).hasSize(1)
@@ -222,6 +236,7 @@ class ActivityExtKtTest {
         advanceUntilIdle()
         assertThat(testRuntime.activitySpace.onBoundsChangedListeners).hasSize(1)
         assertThat(job).isCancelled()
+        assertThat(thrownException).isInstanceOf(CancellationException::class.java)
         assertThat(job2).isActive()
 
         job2.cancelAndJoin()
@@ -233,12 +248,18 @@ class ActivityExtKtTest {
     @Test
     fun requestHomeSpace_alreadyInHomeSpace_completes() = runTest {
         // First, get into home space.
-        withTimeout(TIMEOUT) { composeTestRule.activity.requestHomeSpace() }
+        val result1: SpaceRequestResult =
+            withTimeout(TIMEOUT) { composeTestRule.activity.requestHomeSpace() }
+
+        assertThat(result1).isEqualTo(SpaceRequestResult.Success)
         assertThat(composeTestRule.session?.scene?.activitySpace?.bounds)
             .isNotEqualTo(INFINITE_BOUNDS)
 
         // Now, request it again and ensure it completes without issues.
-        withTimeout(TIMEOUT) { composeTestRule.activity.requestHomeSpace() }
+        val result2: SpaceRequestResult =
+            withTimeout(TIMEOUT) { composeTestRule.activity.requestHomeSpace() }
+
+        assertThat(result2).isEqualTo(SpaceRequestResult.Success)
         assertThat(composeTestRule.session?.scene?.activitySpace?.bounds)
             .isNotEqualTo(INFINITE_BOUNDS)
     }
@@ -246,11 +267,17 @@ class ActivityExtKtTest {
     @Test
     fun requestFullSpace_alreadyInFullSpace_completes() = runTest {
         // First, get into full space.
-        withTimeout(TIMEOUT) { composeTestRule.activity.requestFullSpace() }
+        val result1: SpaceRequestResult =
+            withTimeout(TIMEOUT) { composeTestRule.activity.requestFullSpace() }
+
+        assertThat(result1).isEqualTo(SpaceRequestResult.Success)
         assertThat(composeTestRule.session?.scene?.activitySpace?.bounds).isEqualTo(INFINITE_BOUNDS)
 
         // Now, request it again and ensure it completes without issues.
-        withTimeout(TIMEOUT) { composeTestRule.activity.requestFullSpace() }
+        val result2: SpaceRequestResult =
+            withTimeout(TIMEOUT) { composeTestRule.activity.requestFullSpace() }
+
+        assertThat(result2).isEqualTo(SpaceRequestResult.Success)
         assertThat(composeTestRule.session?.scene?.activitySpace?.bounds).isEqualTo(INFINITE_BOUNDS)
     }
 
@@ -327,7 +354,7 @@ class ActivityExtKtTest {
     }
 
     @Test
-    fun requestSpace_underlyingApiThrows_exceptionPropagated() = runTest {
+    fun requestSpace_underlyingApiThrows_returnsError() = runTest {
         val exception = RuntimeException("Test Exception")
         composeTestRule.configureFakeSession(
             sceneRuntime = { runtime ->
@@ -343,11 +370,13 @@ class ActivityExtKtTest {
             }
         )
 
-        val homeResult = runCatching { composeTestRule.activity.requestHomeSpace() }
-        assertThat(homeResult.exceptionOrNull()?.cause).isSameInstanceAs(exception)
+        val homeResult: SpaceRequestResult = composeTestRule.activity.requestHomeSpace()
 
-        val fullResult = runCatching { composeTestRule.activity.requestFullSpace() }
-        assertThat(fullResult.exceptionOrNull()?.cause).isSameInstanceAs(exception)
+        assertThat(homeResult).isEqualTo(SpaceRequestResult.Error(exception))
+
+        val fullResult: SpaceRequestResult = composeTestRule.activity.requestFullSpace()
+
+        assertThat(fullResult).isEqualTo(SpaceRequestResult.Error(exception))
     }
 }
 

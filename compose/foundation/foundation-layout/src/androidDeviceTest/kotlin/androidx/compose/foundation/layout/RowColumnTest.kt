@@ -904,7 +904,6 @@ class RowColumnTest : LayoutTest() {
     fun testRow_withCustomVerticalAlignModifier() {
         with(density) {
             val rowHeight = 200.dp
-            val centerAt = 50.dp.roundToPx()
             val boxSize = 20.dp
             var boxOffset = 0f
             val drawLatch = CountDownLatch(1)
@@ -3203,6 +3202,60 @@ class RowColumnTest : LayoutTest() {
                             Box(
                                 Modifier.requiredSize(size).onGloballyPositioned {
                                     assertEquals(bufferPx, it.positionInParent().x)
+                                    latch.countDown()
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+            assertTrue(latch.await(1, TimeUnit.SECONDS))
+        }
+
+    @Test
+    fun testRow_withSpacedByArrangement_insufficientSpace_rtl() =
+        with(density) {
+            val spacePx = 15f
+            val space = spacePx.toDp()
+            val sizePx = 20f
+            val size = sizePx.toDp()
+            val rowSizePx = 50f
+            val rowSize = rowSizePx.toDp()
+            val latch = CountDownLatch(4)
+            show {
+                DeviceConfigurationOverride(
+                    DeviceConfigurationOverride.LayoutDirection(LayoutDirection.Rtl)
+                ) {
+                    Column {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(space),
+                            modifier =
+                                Modifier.requiredSize(rowSize).onGloballyPositioned {
+                                    assertEquals(rowSizePx.roundToInt(), it.size.width)
+                                    latch.countDown()
+                                },
+                        ) {
+                            Box(
+                                Modifier.size(size).onGloballyPositioned {
+                                    assertEquals(rowSizePx - sizePx, it.positionInParent().x)
+                                    assertEquals(sizePx.roundToInt(), it.size.width)
+                                    latch.countDown()
+                                }
+                            )
+                            Box(
+                                Modifier.size(size).onGloballyPositioned {
+                                    assertEquals(0f, it.positionInParent().x)
+                                    assertEquals(
+                                        (rowSizePx - spacePx - sizePx).roundToInt(),
+                                        it.size.width,
+                                    )
+                                    latch.countDown()
+                                }
+                            )
+                            Box(
+                                Modifier.size(size).onGloballyPositioned {
+                                    assertEquals(0f, it.positionInParent().x)
+                                    assertEquals(0, it.size.width)
                                     latch.countDown()
                                 }
                             )

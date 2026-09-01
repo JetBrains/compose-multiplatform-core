@@ -28,6 +28,9 @@ import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraph.Session
 import androidx.camera.camera2.pipe.CameraGraphId
 import androidx.camera.camera2.pipe.CameraMetadata
+import androidx.camera.camera2.pipe.ControlMode
+import androidx.camera.camera2.pipe.Converge3ABehavior
+import androidx.camera.camera2.pipe.FlashMode
 import androidx.camera.camera2.pipe.FrameInfo
 import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.FrameNumber
@@ -225,17 +228,23 @@ constructor(
         aeMode: AeMode?,
         afMode: AfMode?,
         awbMode: AwbMode?,
+        controlMode: ControlMode?,
+        flashMode: FlashMode?,
         aeRegions: List<MeteringRectangle>?,
         afRegions: List<MeteringRectangle>?,
         awbRegions: List<MeteringRectangle>?,
+        retainLocks: Boolean,
     ): Deferred<Result3A> = withSessionLockAsync {
         controller3A.update3A(
             aeMode = aeMode,
             afMode = afMode,
-            awbMode,
+            awbMode = awbMode,
+            controlMode = controlMode,
+            flashMode = flashMode,
             aeRegions = aeRegions,
             afRegions = afRegions,
             awbRegions = awbRegions,
+            retainLocks = retainLocks,
         )
     }
 
@@ -258,6 +267,30 @@ constructor(
         controller3A.setTorchOff(aeMode)
     }
 
+    override fun converge3A(
+        aeRegions: List<MeteringRectangle>?,
+        afRegions: List<MeteringRectangle>?,
+        awbRegions: List<MeteringRectangle>?,
+        aeBehavior: Converge3ABehavior?,
+        afBehavior: Converge3ABehavior?,
+        awbBehavior: Converge3ABehavior?,
+        convergedCondition: ((FrameMetadata) -> Boolean)?,
+        frameLimit: Int?,
+        timeLimitNs: Long?,
+    ): Deferred<Result3A> {
+        return controller3A.converge3A(
+            aeRegions,
+            afRegions,
+            awbRegions,
+            aeBehavior,
+            afBehavior,
+            awbBehavior,
+            convergedCondition,
+            frameLimit,
+            timeLimitNs,
+        )
+    }
+
     override fun lock3A(
         aeMode: AeMode?,
         afMode: AfMode?,
@@ -276,18 +309,21 @@ constructor(
         lockedTimeLimitNs: Long,
     ): Deferred<Result3A> = withSessionLockAsync {
         controller3A.lock3A(
-            aeRegions,
-            afRegions,
-            awbRegions,
-            aeLockBehavior,
-            afLockBehavior,
-            awbLockBehavior,
-            afTriggerStartAeMode,
-            convergedCondition,
-            lockedCondition,
-            frameLimit,
-            convergedTimeLimitNs,
-            lockedTimeLimitNs,
+            aeMode = aeMode,
+            afMode = afMode,
+            awbMode = awbMode,
+            aeRegions = aeRegions,
+            afRegions = afRegions,
+            awbRegions = awbRegions,
+            aeLockBehavior = aeLockBehavior,
+            afLockBehavior = afLockBehavior,
+            awbLockBehavior = awbLockBehavior,
+            afTriggerStartAeMode = afTriggerStartAeMode,
+            convergedCondition = convergedCondition,
+            lockedCondition = lockedCondition,
+            frameLimit = frameLimit,
+            convergedTimeLimitNs = convergedTimeLimitNs,
+            lockedTimeLimitNs = lockedTimeLimitNs,
         )
     }
 
@@ -321,14 +357,7 @@ constructor(
     override fun toString(): String = id.toString()
 
     private fun createSessionFromToken(token: Token) =
-        CameraGraphSessionImpl(
-            token,
-            graphProcessor,
-            controller3A,
-            frameCaptureQueue,
-            parameters,
-            listeners,
-        )
+        CameraGraphSessionImpl(token, graphProcessor, controller3A, parameters, listeners)
 
     /**
      * Acquires a [GraphSessionLock] token and executes the given code block. The code block(s) will

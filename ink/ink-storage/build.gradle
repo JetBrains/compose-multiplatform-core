@@ -22,43 +22,43 @@ plugins {
 }
 
 androidXMultiplatform {
+    // Only supported on non-Android JVM for Linux on x86_64 and Mac on arm64
     jvm()
+
+    ios()
+
     androidLibrary {
         namespace = "androidx.ink.storage"
-        compileSdk { version = release(35) }
     }
 
     defaultPlatform(PlatformIdentifier.JVM)
 
     sourceSets {
-        jvmAndAndroidMain.dependencies {
+        commonMain.dependencies {
             implementation(project(":ink:ink-brush"))
-            implementation(project(":ink:ink-strokes"))
             implementation(project(":ink:ink-nativeloader"))
+            implementation(project(":ink:ink-strokes"))
         }
 
-        androidMain.dependencies {
-            implementation(project(":ink:ink-rendering"))
+        nativeMain.dependencies {
+            implementation(libs.okio)
         }
 
-        // JVM tests use java.util.Base64 API which is only available on
-        // Android API 26+, so just run those tests in the JVM environment.
+        commonTest.dependencies {
+            implementation(libs.kotlinTest)
+            implementation(libs.okio)
+            implementation(project(":kruth:kruth"))
+        }
+
+        jvmAndAndroidTest.dependencies {
+            implementation(libs.junit)
+            implementation(libs.truth)
+        }
+
         androidDeviceTest.dependencies {
             implementation(libs.testExtJunit)
             implementation(libs.testRules)
             implementation(libs.testRunner)
-            implementation(libs.espressoCore)
-            implementation(libs.junit)
-            implementation(libs.kotlinTest)
-            implementation(libs.truth)
-        }
-
-        jvmTest.dependencies {
-            implementation(libs.junit)
-            implementation(libs.kotlinTest)
-            implementation(libs.truth)
-            implementation(project(":ink:ink-brush"))
-            implementation(project(":ink:ink-strokes"))
         }
     }
 }
@@ -68,4 +68,12 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2025"
     description = "Efficiently store and retrieve Ink strokes"
+    usePlatformSpecificCacheForJvmTests = true
+}
+
+// TODO: b/374774638 - Run tests on host as well as device.
+afterEvaluate {
+    project.tasks.named("testAndroidHostTest").configure {
+        it.enabled = false
+    }
 }

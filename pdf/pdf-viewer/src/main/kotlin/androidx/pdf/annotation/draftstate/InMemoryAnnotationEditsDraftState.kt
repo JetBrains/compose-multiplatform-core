@@ -18,11 +18,12 @@ package androidx.pdf.annotation.draftstate
 
 import androidx.annotation.RestrictTo
 import androidx.pdf.EditsDraft
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.MutableEditsDraft
 import androidx.pdf.annotation.AnnotationHandleIdGenerator
 import androidx.pdf.annotation.AnnotationHandleIdGenerator.composeAnnotationId
-import androidx.pdf.annotation.KeyedPdfAnnotation
-import androidx.pdf.annotation.models.PdfAnnotation
+import androidx.pdf.annotation.content.KeyedPdfAnnotation
+import androidx.pdf.annotation.content.PdfAnnotation
 import java.util.Collections
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -67,6 +68,7 @@ public class InMemoryAnnotationEditsDraftState() : AnnotationEditsDraftState {
         return draftAnnotationsPerPage[pageNum]?.values?.toList() ?: emptyList()
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     override fun getModificationsSnapshot(): EditsDraft {
         val mutableEditsDraft = MutableEditsDraft()
         draftAnnotationsPerPage.forEach { (_, pageAnnotationsMap) ->

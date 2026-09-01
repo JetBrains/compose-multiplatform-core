@@ -16,22 +16,29 @@
 
 package androidx.appfunctions.testing.internal
 
+import android.app.appfunctions.AppFunctionActivityId
+import android.app.appfunctions.AppFunctionRegistration
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.appfunctions.AppFunctionActivityState
 import androidx.appfunctions.AppFunctionFunctionNotFoundException
+import androidx.appfunctions.AppFunctionServiceDelegate
 import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
+import androidx.appfunctions.ExperimentalAppFunctionsApi
+import androidx.appfunctions.RegisterAppFunctionRequest
 import androidx.appfunctions.internal.AggregatedAppFunctionInventory
+import androidx.appfunctions.internal.AggregatedAppFunctionInvoker
 import androidx.appfunctions.internal.AppFunctionManagerApi
 import androidx.appfunctions.internal.NullTranslatorSelector
 import androidx.appfunctions.internal.findImpl
 import androidx.appfunctions.metadata.AppFunctionMetadata
-import androidx.appfunctions.service.AppFunctionServiceDelegate
-import androidx.appfunctions.service.internal.AggregatedAppFunctionInvoker
+import androidx.appfunctions.metadata.AppFunctionName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
+@OptIn(ExperimentalAppFunctionsApi::class)
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 internal class FakeAppFunctionManagerApi(
     private val context: Context,
@@ -52,7 +59,10 @@ internal class FakeAppFunctionManagerApi(
             .executeFunction(request)
 
     override suspend fun isAppFunctionEnabled(packageName: String, functionId: String): Boolean =
-        appFunctionReader.getAppFunctionMetadata(functionId, packageName)?.isEnabled
+        appFunctionReader
+            .getAppFunctionStates(listOf(AppFunctionName(packageName, functionId)))
+            .singleOrNull()
+            ?.isEnabled
             ?: throw AppFunctionFunctionNotFoundException(
                 "No function found with id: $functionId under package: $packageName"
             )
@@ -75,6 +85,24 @@ internal class FakeAppFunctionManagerApi(
                         enabled = newEnabledState
                     )
             ),
+        )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.CINNAMON_BUN)
+    override suspend fun getAppFunctionActivityStates(
+        activityIds: Set<AppFunctionActivityId>
+    ): List<AppFunctionActivityState> {
+        throw UnsupportedOperationException(
+            "Dynamic registration is not supported in testing fake yet"
+        )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.CINNAMON_BUN)
+    override fun registerAppFunctions(
+        requests: List<RegisterAppFunctionRequest>
+    ): AppFunctionRegistration {
+        throw UnsupportedOperationException(
+            "Dynamic registration is not supported in testing fake yet"
         )
     }
 }

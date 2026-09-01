@@ -366,7 +366,7 @@ public enum class IconButtonShape(
 }
 
 /**
- * This is a placeholder emittable. If [androidx.glance.Backend] is RemoteViews, it will be turned
+ * This is a placeholder emittable. If [androidx.glance.Backend] is RemoteVi`ews, it will be turned
  * into a tree of emittables during the normalize step.
  */
 @Composable
@@ -411,7 +411,6 @@ private fun M3IconButtonElement(
 }
 
 @Composable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 private fun M3TextButtonElement(
     text: String,
     onClick: Action,

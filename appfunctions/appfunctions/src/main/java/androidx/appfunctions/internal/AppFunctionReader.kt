@@ -18,7 +18,10 @@ package androidx.appfunctions.internal
 
 import androidx.annotation.RestrictTo
 import androidx.appfunctions.AppFunctionSearchSpec
+import androidx.appfunctions.AppFunctionState
+import androidx.appfunctions.ObserveAppFunctionsEvent
 import androidx.appfunctions.metadata.AppFunctionMetadata
+import androidx.appfunctions.metadata.AppFunctionName
 import androidx.appfunctions.metadata.AppFunctionPackageMetadata
 import kotlinx.coroutines.flow.Flow
 
@@ -27,16 +30,28 @@ import kotlinx.coroutines.flow.Flow
 public interface AppFunctionReader {
 
     /**
-     * Searches for app functions based on the provided search specification.
+     * Searches for app function packages based on the provided search specification.
      *
      * @param searchFunctionSpec The search specification, which includes filters for searching
      *   matching documents.
      * @return A flow emitting a list of app function package metadata matching the search criteria.
      * @see androidx.appfunctions.AppFunctionSearchSpec
      */
-    public fun searchAppFunctions(
+    // TODO(b/508188326): Remove this once legacy observeAppFunctions API is migrated.
+    public fun searchAppFunctionsPackageMetadata(
         searchFunctionSpec: AppFunctionSearchSpec
     ): Flow<List<AppFunctionPackageMetadata>>
+
+    /**
+     * Searches for app functions based on the provided search specification.
+     *
+     * @param searchFunctionSpec The search specification, which includes filters for searching
+     *   matching documents.
+     * @return A list of app function metadata matching the search criteria.
+     */
+    public suspend fun searchAppFunctionsMetadata(
+        searchFunctionSpec: AppFunctionSearchSpec
+    ): List<AppFunctionMetadata>
 
     /**
      * Returns the [AppFunctionMetadata] of the given app function.
@@ -48,4 +63,22 @@ public interface AppFunctionReader {
         functionId: String,
         packageName: String,
     ): AppFunctionMetadata?
+
+    /**
+     * Returns the [AppFunctionState]s of the given app functions.
+     *
+     * Functions that do not exist or are not visible to the calling application will be silently
+     * omitted from the result list.
+     */
+    public suspend fun getAppFunctionStates(
+        appFunctionNames: List<AppFunctionName>
+    ): List<AppFunctionState>
+
+    /**
+     * Observes app functions for changes to their [AppFunctionMetadata] or
+     * [androidx.appfunctions.AppFunctionState].
+     *
+     * @return A flow emitting change events when packages or function states are updated.
+     */
+    public fun observeAppFunctions(): Flow<ObserveAppFunctionsEvent>
 }

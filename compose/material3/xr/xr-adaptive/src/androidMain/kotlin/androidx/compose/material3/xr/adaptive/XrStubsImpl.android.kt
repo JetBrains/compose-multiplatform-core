@@ -41,13 +41,14 @@ private object XrHorizontalOrbiterStubImpl : XrHorizontalOrbiterStub {
         content: @Composable (() -> Unit),
     ) {
         androidx.xr.compose.spatial.Orbiter(
-            position = properties.position.toXrPositionHorizontal(),
-            offset = properties.offset,
-            offsetType = properties.offsetType.toXrOrbiterOffsetType(),
-            alignment = properties.alignment,
+            position =
+                properties.position.toXrOrbiterAlignment(
+                    offset = properties.offset,
+                    offsetType = properties.offsetType,
+                    alignment = properties.alignment,
+                    elevation = properties.elevation,
+                ),
             shape = properties.shape.toXrSpatialShape(),
-            elevation = properties.elevation,
-            shouldRenderInNonSpatial = false,
             content = content,
         )
     }
@@ -57,13 +58,14 @@ private object XrVerticalOrbiterStubImpl : XrVerticalOrbiterStub {
     @Composable
     override fun Orbiter(properties: VerticalOrbiterProperties, content: @Composable () -> Unit) {
         androidx.xr.compose.spatial.Orbiter(
-            position = properties.position.toXrPositionVertical(),
-            offset = properties.offset,
-            offsetType = properties.offsetType.toXrOrbiterOffsetType(),
-            alignment = properties.alignment,
+            position =
+                properties.position.toXrOrbiterAlignment(
+                    offset = properties.offset,
+                    offsetType = properties.offsetType,
+                    alignment = properties.alignment,
+                    elevation = properties.elevation,
+                ),
             shape = properties.shape.toXrSpatialShape(),
-            elevation = properties.elevation,
-            shouldRenderInNonSpatial = false,
             content = content,
         )
     }

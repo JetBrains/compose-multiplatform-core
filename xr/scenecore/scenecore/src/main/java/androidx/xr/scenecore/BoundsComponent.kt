@@ -18,8 +18,11 @@
 
 package androidx.xr.scenecore
 
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.BoundingBox
+import androidx.xr.scenecore.runtime.BoundsComponent as RtBoundsComponent
+import androidx.xr.scenecore.runtime.HandlerExecutor
 import androidx.xr.scenecore.runtime.SceneRuntime
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
@@ -38,11 +41,11 @@ import java.util.function.Consumer
  * other entity types will fail.
  *
  * To receive updates, register a `BiConsumer<Entity, BoundingBox>` listener using the
- * [addOnBoundsUpdateListener] method. The listener will be invoked on the provided [Executor],
- * which defaults to the main thread. Listeners should be unregistered using
- * [removeOnBoundsUpdateListener] when no longer needed to prevent resource leaks.
+ * [addBoundsUpdateListener] method. The listener will be invoked on the provided [Executor], which
+ * defaults to the main thread. Listeners should be unregistered using [removeBoundsUpdateListener]
+ * when no longer needed to prevent resource leaks.
  *
- * Create instances of this component using the [BoundsComponent.create] factory method.
+ * Create instances of this component using the [create] factory method.
  *
  * @see GltfModelEntity
  * @see BoundingBox
@@ -50,13 +53,24 @@ import java.util.function.Consumer
 public class BoundsComponent
 private constructor(
     private val sceneRuntime: SceneRuntime,
-    private val initialListenerExecutor: Executor? = null,
-    private val initialListener: BiConsumer<Entity, BoundingBox>? = null,
-) : Component {
+    initialListenerExecutor: Executor? = null,
+    initialListener: BiConsumer<Entity, BoundingBox>? = null,
+) : Component() {
 
-    internal val rtBoundsComponent by lazy { sceneRuntime.createBoundsComponent() }
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public val rtBoundsComponent: RtBoundsComponent by lazy { sceneRuntime.createBoundsComponent() }
     internal val boundsUpdateListenerMap =
-        ConcurrentHashMap<BiConsumer<Entity, BoundingBox>, Consumer<BoundingBox>>()
+        ConcurrentHashMap<BiConsumer<Entity, BoundingBox>, Pair<Executor, Consumer<BoundingBox>>>()
+
+    init {
+        initialListener?.let {
+            if (initialListenerExecutor != null) {
+                addBoundsUpdateListener(initialListenerExecutor, it)
+            } else {
+                addBoundsUpdateListener(it)
+            }
+        }
+    }
 
     private var entity: Entity? = null
 
@@ -65,20 +79,24 @@ private constructor(
             return false
         }
         this.entity = entity
-        val attached = (entity as BaseEntity<*>).rtEntity!!.addComponent(rtBoundsComponent)
-        if (attached && initialListener != null) {
-            if (initialListenerExecutor != null) {
-                addOnBoundsUpdateListener(initialListenerExecutor, initialListener)
-            } else {
-                addOnBoundsUpdateListener(initialListener)
-            }
+        val attached = entity.rtEntity.addComponent(rtBoundsComponent)
+        if (!attached) {
+            this.entity = null
+            return false
         }
 
-        return attached
+        for (entry in boundsUpdateListenerMap.values) {
+            rtBoundsComponent.addOnBoundsUpdateListener(entry.first, entry.second)
+        }
+
+        return true
     }
 
     override fun onDetach(entity: Entity) {
-        (entity as BaseEntity<*>).rtEntity!!.removeComponent(rtBoundsComponent)
+        for (entry in boundsUpdateListenerMap.values) {
+            rtBoundsComponent.removeOnBoundsUpdateListener(entry.second)
+        }
+        entity.rtEntity.removeComponent(rtBoundsComponent)
         this.entity = null
     }
 
@@ -94,9 +112,9 @@ private constructor(
      *
      * @param listener The `BiConsumer` to be invoked with the entity and its updated bounds.
      * @param executor The executor on which the listener callbacks will be invoked.
-     * @see removeOnBoundsUpdateListener
+     * @see removeBoundsUpdateListener
      */
-    public fun addOnBoundsUpdateListener(
+    public fun addBoundsUpdateListener(
         executor: Executor,
         listener: BiConsumer<Entity, BoundingBox>,
     ) {
@@ -109,20 +127,19 @@ private constructor(
                 entity?.let { listener.accept(it, boundingBox) }
             }
         rtBoundsComponent.addOnBoundsUpdateListener(executor, rtListener)
-        boundsUpdateListenerMap[listener] = rtListener
+        boundsUpdateListenerMap[listener] = executor to rtListener
     }
 
     /**
      * Registers a listener that will be invoked on the main application thread for bounds updates.
      *
-     * This is a convenience overload of [addOnBoundsUpdateListener] that defaults to using the main
+     * This is a convenience overload of [addBoundsUpdateListener] that defaults to using the main
      * thread executor, which is useful for performing UI updates in response to bounds changes.
      *
      * @param listener The `BiConsumer` to be invoked with bounds updates on the main thread.
      */
-    public fun addOnBoundsUpdateListener(listener: BiConsumer<Entity, BoundingBox>) {
-        addOnBoundsUpdateListener(HandlerExecutor.mainThreadExecutor, listener)
-    }
+    public fun addBoundsUpdateListener(listener: BiConsumer<Entity, BoundingBox>): Unit =
+        addBoundsUpdateListener(HandlerExecutor.mainThreadExecutor, listener)
 
     /**
      * Unregisters a previously registered bounds update listener.
@@ -133,12 +150,11 @@ private constructor(
      * If the listener was not previously registered, this method has no effect.
      *
      * @param listener The `BiConsumer` instance to unregister. This must be the same object
-     *   instance that was passed to [addOnBoundsUpdateListener].
+     *   instance that was passed to [addBoundsUpdateListener].
      */
-    public fun removeOnBoundsUpdateListener(listener: BiConsumer<Entity, BoundingBox>) {
-        val rtListener = boundsUpdateListenerMap.remove(listener)
-        if (rtListener != null) {
-            rtBoundsComponent.removeOnBoundsUpdateListener(rtListener)
+    public fun removeBoundsUpdateListener(listener: BiConsumer<Entity, BoundingBox>) {
+        boundsUpdateListenerMap.remove(listener)?.let {
+            rtBoundsComponent.removeOnBoundsUpdateListener(it.second)
         }
     }
 

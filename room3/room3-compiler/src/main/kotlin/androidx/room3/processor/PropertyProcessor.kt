@@ -18,8 +18,9 @@ package androidx.room3.processor
 
 import androidx.room3.ColumnInfo
 import androidx.room3.compiler.codegen.CodeLanguage
-import androidx.room3.compiler.processing.XFieldElement
+import androidx.room3.compiler.processing.XPropertyElement
 import androidx.room3.compiler.processing.XType
+import androidx.room3.ext.getAnnotationOnPropertyOrField
 import androidx.room3.parser.Collate
 import androidx.room3.parser.SQLTypeAffinity
 import androidx.room3.vo.EmbeddedProperty
@@ -29,7 +30,7 @@ import java.util.Locale
 class PropertyProcessor(
     baseContext: Context,
     val containing: XType,
-    val element: XFieldElement,
+    val element: XPropertyElement,
     val bindingScope: BindingScope,
     val propertyParent:
         EmbeddedProperty?, // pass only if this is processed as a child of Embedded property
@@ -39,7 +40,7 @@ class PropertyProcessor(
 
     fun process(): Property {
         val member = element.asMemberOf(containing)
-        val columnInfoAnnotation = element.getAnnotation(ColumnInfo::class)
+        val columnInfoAnnotation = element.getAnnotationOnPropertyOrField(ColumnInfo::class)
         val elementName = element.name
         val annotationColumnName = columnInfoAnnotation?.get("name")?.asString()
         val rawCName =

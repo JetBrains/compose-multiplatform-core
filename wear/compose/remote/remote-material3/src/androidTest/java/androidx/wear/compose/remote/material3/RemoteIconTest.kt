@@ -18,18 +18,25 @@ package androidx.wear.compose.remote.material3
 import android.content.Context
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.remote.creation.CreationDisplayInfo
+import androidx.compose.remote.creation.compose.capture.createCreationDisplayInfo
+import androidx.compose.remote.creation.compose.layout.RemoteRow
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
+import androidx.compose.remote.creation.compose.modifier.border
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.RemoteColor
+import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.ComposableWrappers
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.toSize
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import androidx.wear.compose.remote.material3.util.SCREENSHOT_GOLDEN_DIRECTORY
+import androidx.wear.compose.remote.material3.util.TestImageVectors
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,19 +48,17 @@ import org.junit.runners.JUnit4
 class RemoteIconTest {
     @get:Rule
     val remoteComposeTestRule =
-        RemoteComposeScreenshotTestRule(moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY)
+        RemoteScreenshotTestRule(
+            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
+            context = ApplicationProvider.getApplicationContext(),
+        )
     private val context: Context = ApplicationProvider.getApplicationContext()
 
     @Test
     fun volumeUpRemoteIcon() {
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo =
-                CreationDisplayInfo(
-                    size.width,
-                    size.height,
-                    context.resources.displayMetrics.densityDpi,
-                ),
-            backgroundColor = Color.Black,
+            remoteCreationDisplayInfo = createCreationDisplayInfo(context, size.toSize()),
+            playComposableWrapper = ComposableWrappers.blackBackground,
         ) {
             RemoteIcon(imageVector = TestImageVectors.VolumeUp, contentDescription = null)
         }
@@ -62,13 +67,8 @@ class RemoteIconTest {
     @Test
     fun volumeUpRemoteIcon_tintedRed() {
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo =
-                CreationDisplayInfo(
-                    size.width,
-                    size.height,
-                    context.resources.displayMetrics.densityDpi,
-                ),
-            backgroundColor = Color.Black,
+            remoteCreationDisplayInfo = createCreationDisplayInfo(context, size.toSize()),
+            playComposableWrapper = ComposableWrappers.blackBackground,
         ) {
             RemoteIcon(
                 imageVector = TestImageVectors.VolumeUp,
@@ -81,14 +81,9 @@ class RemoteIconTest {
     @Test
     fun volumeUpRemoteIcon_rtl() {
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo =
-                CreationDisplayInfo(
-                    size.width,
-                    size.height,
-                    context.resources.displayMetrics.densityDpi,
-                ),
-            backgroundColor = Color.Black,
-            layoutDirection = LayoutDirection.Rtl,
+            remoteCreationDisplayInfo = createCreationDisplayInfo(context, size.toSize()),
+            creationComposableWrapper = ComposableWrappers.rtl,
+            playComposableWrapper = ComposableWrappers.blackBackground,
         ) {
             RemoteIcon(imageVector = TestImageVectors.VolumeUp, contentDescription = null)
         }
@@ -97,9 +92,8 @@ class RemoteIconTest {
     @Test
     fun volumeUpRemoteIcon_scaledUp() {
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo =
-                CreationDisplayInfo(48, 48, context.resources.displayMetrics.densityDpi),
-            backgroundColor = Color.Black,
+            remoteCreationDisplayInfo = createCreationDisplayInfo(context, Size(48f, 48f)),
+            playComposableWrapper = ComposableWrappers.blackBackground,
         ) {
             RemoteIcon(
                 imageVector = TestImageVectors.VolumeUp,
@@ -112,15 +106,31 @@ class RemoteIconTest {
     @Test
     fun remoteIcon_fromImageVector() {
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo =
-                CreationDisplayInfo(48, 48, context.resources.displayMetrics.densityDpi),
-            backgroundColor = Color.Black,
+            remoteCreationDisplayInfo = createCreationDisplayInfo(context, Size(48f, 48f)),
+            playComposableWrapper = ComposableWrappers.blackBackground,
         ) {
             RemoteIcon(
                 imageVector = Icons.Filled.Favorite,
                 contentDescription = null,
                 modifier = RemoteModifier.size(48.rdp),
             )
+        }
+    }
+
+    @Test
+    fun remoteIcon_setBorderSizeUnchanged() {
+        remoteComposeTestRule.runScreenshotTest(
+            remoteCreationDisplayInfo = createCreationDisplayInfo(context, Size(200f, 100f)),
+            playComposableWrapper = ComposableWrappers.blackBackground,
+        ) {
+            RemoteRow {
+                RemoteIcon(imageVector = TestImageVectors.VolumeUp, contentDescription = null)
+                RemoteIcon(
+                    imageVector = TestImageVectors.VolumeUp,
+                    contentDescription = null,
+                    modifier = RemoteModifier.border(1.rdp, Color.Yellow.rc),
+                )
+            }
         }
     }
 

@@ -16,13 +16,15 @@
 
 package androidx.xr.runtime
 
+import androidx.annotation.RestrictTo
+
 /** Result of a [Session.create] call. */
 public sealed class SessionCreateResult
 
 /**
  * Result of a successful [Session.create] call.
  *
- * @property session the [Session] that was created.
+ * @property session the [Session] that was created
  */
 public class SessionCreateSuccess(public val session: Session) : SessionCreateResult()
 
@@ -31,7 +33,7 @@ public class SessionCreateSuccess(public val session: Session) : SessionCreateRe
  * was unable to confirm availability, or is not installed.
  *
  * @property requiredApk the fully qualified name of the package that is missing or needs to be
- *   updated.
+ *   updated
  */
 public class SessionCreateApkRequired(public val requiredApk: String) : SessionCreateResult()
 
@@ -53,13 +55,16 @@ public class SessionCreateUnknownError(public val errorMessage: String) : Sessio
  * Result of an unsuccessful [Session.create] call. The session was not created because the request
  * timed out.
  */
-public class SessionCreateTimedOut() : SessionCreateResult()
+public class SessionCreateTimedOut : SessionCreateResult()
+
+/** Placeholder result to force an 'else' branch in exhaustive when clauses. */
+private class SessionCreateUnusedResult : SessionCreateResult()
 
 /** Result of a [Session.configure] call. */
 public sealed class SessionConfigureResult
 
 /** Result of a successful [Session.configure] call. */
-public class SessionConfigureSuccess() : SessionConfigureResult()
+public class SessionConfigureSuccess : SessionConfigureResult()
 
 /**
  * Result of an unsuccessful [Session.configure] call. The Google Play Service Location Library is
@@ -72,6 +77,7 @@ public class SessionConfigureSuccess() : SessionConfigureResult()
         "SessionConfigureLibraryNotLinked(\"com.google.android.gms:play-services-location\")"
     ),
 )
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class SessionConfigureGooglePlayServicesLocationLibraryNotLinked() : SessionConfigureResult()
 
 /**
@@ -99,3 +105,6 @@ public class SessionConfigureUnknownError(public val errorMessage: String) :
 public class SessionConfigureCalibrationRequired(
     public val calibrationType: RequiredCalibrationType
 ) : SessionConfigureResult()
+
+/** Placeholder configure result to force an 'else' branch in exhaustive when clauses. */
+private class SessionConfigureUnusedResult : SessionConfigureResult()

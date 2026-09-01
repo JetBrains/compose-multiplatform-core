@@ -15,13 +15,14 @@
  */
 package androidx.appfunctions.metadata
 
+import android.app.appfunctions.AppFunctionMetadata.PROPERTY_VALUE_SCOPE_GLOBAL
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class AppFunctionMetadataTest {
 
     @Test
-    fun appFunctionMetadata_equalsAndHashCode() {
+    fun appFunctionMetadata_legacyConstructor_equalsAndHashCode() {
         val schema =
             AppFunctionSchemaMetadata(category = "testCategory", name = "testName", version = 1L)
         val parameters = emptyList<AppFunctionParameterMetadata>()
@@ -32,10 +33,15 @@ class AppFunctionMetadataTest {
             )
         val description = "The function's description"
         val deprecation = AppFunctionDeprecationMetadata(message = "Function is deprecated")
+        val packageMetadata =
+            AppFunctionPackageMetadata(
+                packageName = "testPackage",
+                components = AppFunctionComponentsMetadata(),
+            )
 
         val metadata1 =
             AppFunctionMetadata(
-                id = " id",
+                id = "id",
                 packageName = "testPackage",
                 isEnabled = true,
                 schema = schema,
@@ -43,10 +49,12 @@ class AppFunctionMetadataTest {
                 response = response,
                 description = description,
                 deprecation = deprecation,
+                packageMetadata = packageMetadata,
+                name = AppFunctionName("testPackage", "id"),
             )
         val metadata2 =
             AppFunctionMetadata(
-                id = " id",
+                id = "id",
                 packageName = "testPackage",
                 isEnabled = true,
                 schema = schema,
@@ -54,10 +62,12 @@ class AppFunctionMetadataTest {
                 response = response,
                 description = description,
                 deprecation = deprecation,
+                packageMetadata = packageMetadata,
+                name = AppFunctionName("testPackage", "id"),
             )
         val metadata3 =
             AppFunctionMetadata(
-                id = " id",
+                id = "id",
                 packageName = "testPackage",
                 isEnabled = false,
                 schema = schema,
@@ -65,12 +75,77 @@ class AppFunctionMetadataTest {
                 response = response,
                 description = description,
                 deprecation = deprecation,
+                packageMetadata = packageMetadata,
+                name = AppFunctionName("testPackage", "id"),
             )
 
         assertThat(metadata1).isEqualTo(metadata2)
         assertThat(metadata1.hashCode()).isEqualTo(metadata2.hashCode())
         assertThat(metadata1).isNotEqualTo(metadata3)
         assertThat(metadata1.hashCode()).isNotEqualTo(metadata3.hashCode())
+    }
+
+    @Test
+    fun appFunctionMetadata_newConstructor_equalsAndHashCode() {
+        val schema =
+            AppFunctionSchemaMetadata(category = "testCategory", name = "testName", version = 1L)
+        val parameters = emptyList<AppFunctionParameterMetadata>()
+        val response =
+            AppFunctionResponseMetadata(
+                valueType = AppFunctionStringTypeMetadata(false),
+                description = "The response description",
+            )
+        val description = "The function's description"
+        val deprecation = AppFunctionDeprecationMetadata(message = "Function is deprecated")
+        val name = AppFunctionName(packageName = "testPackage", functionIdentifier = "id")
+        val packageMetadata =
+            AppFunctionPackageMetadata(
+                packageName = "testPackage",
+                components = AppFunctionComponentsMetadata(),
+            )
+
+        val metadata1 =
+            AppFunctionMetadata(
+                name = name,
+                schema = schema,
+                parameters = parameters,
+                response = response,
+                description = description,
+                deprecation = deprecation,
+                packageMetadata = packageMetadata,
+                scope = AppFunctionMetadata.SCOPE_ACTIVITY,
+            )
+        val metadata2 =
+            AppFunctionMetadata(
+                name = name,
+                schema = schema,
+                parameters = parameters,
+                response = response,
+                description = description,
+                deprecation = deprecation,
+                packageMetadata = packageMetadata,
+                scope = AppFunctionMetadata.SCOPE_ACTIVITY,
+            )
+        val metadata3 =
+            AppFunctionMetadata(
+                name = name,
+                schema = schema,
+                parameters = parameters,
+                response = response,
+                description = "different description",
+                deprecation = deprecation,
+                packageMetadata = packageMetadata,
+                scope = AppFunctionMetadata.SCOPE_ACTIVITY,
+            )
+
+        assertThat(metadata1).isEqualTo(metadata2)
+        assertThat(metadata1.hashCode()).isEqualTo(metadata2.hashCode())
+        assertThat(metadata1).isNotEqualTo(metadata3)
+        assertThat(metadata1.hashCode()).isNotEqualTo(metadata3.hashCode())
+
+        // Verify legacy properties are populated as expected.
+        assertThat(metadata1.id).isEqualTo(name.functionIdentifier)
+        assertThat(metadata1.packageName).isEqualTo(name.packageName)
     }
 
     @Test
@@ -127,6 +202,7 @@ class AppFunctionMetadataTest {
                 response = response.toAppFunctionResponseMetadataDocument(),
                 description = description,
                 deprecation = deprecation.toAppFunctionDeprecationMetadataDocument(),
+                scope = PROPERTY_VALUE_SCOPE_GLOBAL,
             )
         assertThat(actualAppFunctionMetadataDocument).isEqualTo(expectedAppFunctionMetadataDocument)
     }

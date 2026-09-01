@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.testing
 
 import android.media.AudioTrack
@@ -42,9 +44,10 @@ class FakeAudioTrackExtensionsWrapperTest {
         val track = AudioTrack.Builder().build()
         check(fakeWrapper.getPointSourceParams(track) == null)
 
-        val params = PointSourceParams(FakeEntity())
+        val entity = FakeEntity()
+        val params = PointSourceParams()
         // Uses default spatial source type SOURCE_TYPE_BYPASS.
-        fakeWrapper.setPointSourceParams(track, params)
+        fakeWrapper.setPointSourceParams(track, params, entity)
 
         assertThat(fakeWrapper.getPointSourceParams(track)).isEqualTo(params)
     }
@@ -56,25 +59,25 @@ class FakeAudioTrackExtensionsWrapperTest {
 
         fakeWrapper.spatialSourceTypeMap =
             mutableMapOf(track to SpatializerConstants.SOURCE_TYPE_POINT_SOURCE)
-        val params = PointSourceParams(FakeEntity())
+        val entity = FakeEntity()
+        val params = PointSourceParams()
         // Uses spatial source type SOURCE_TYPE_POINT_SOURCE.
-        fakeWrapper.setPointSourceParams(track, params)
+        fakeWrapper.setPointSourceParams(track, params, entity)
 
         assertThat(fakeWrapper.getPointSourceParams(track)).isEqualTo(params)
     }
 
     @Test
-    fun setPointSourceParams_doesNotSetIfSoundFieldType() {
+    fun setPointSourceParams_throwExceptionIfSoundFieldType() {
         val track = AudioTrack.Builder().build()
         check(fakeWrapper.getPointSourceParams(track) == null)
 
         fakeWrapper.spatialSourceTypeMap =
             mutableMapOf(track to SpatializerConstants.SOURCE_TYPE_SOUND_FIELD)
-        val params = PointSourceParams(FakeEntity())
-        // Uses spatial source type SOURCE_TYPE_SOUND_FIELD.
-        fakeWrapper.setPointSourceParams(track, params)
 
-        assertThat(fakeWrapper.getPointSourceParams(track)).isNull()
+        kotlin.test.assertFailsWith<IllegalStateException> {
+            fakeWrapper.setPointSourceParams(track, PointSourceParams(), null)
+        }
     }
 
     @Test

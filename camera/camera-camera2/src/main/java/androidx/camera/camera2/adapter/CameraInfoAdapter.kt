@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.camera.camera2.adapter
 
 import android.annotation.SuppressLint
@@ -24,12 +26,14 @@ import android.os.Build
 import android.util.Range
 import android.util.Size
 import android.view.Surface
+import androidx.annotation.GuardedBy
 import androidx.annotation.OptIn
 import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.compat.DynamicRangeProfilesCompat
 import androidx.camera.camera2.compat.StreamConfigurationMapCompat
 import androidx.camera.camera2.compat.quirk.CameraQuirks
 import androidx.camera.camera2.compat.quirk.DeviceQuirks
+import androidx.camera.camera2.compat.quirk.ExcludePhysicalCameraIdQuirk
 import androidx.camera.camera2.compat.quirk.ZslDisablerQuirk
 import androidx.camera.camera2.compat.workaround.isFlashAvailable
 import androidx.camera.camera2.config.CameraConfig
@@ -41,6 +45,8 @@ import androidx.camera.camera2.impl.CameraPipeCameraProperties
 import androidx.camera.camera2.impl.CameraProperties
 import androidx.camera.camera2.impl.DeviceInfoLogger
 import androidx.camera.camera2.impl.FocusMeteringControl
+import androidx.camera.camera2.impl.NightModeIndicatorMonitor
+import androidx.camera.camera2.internal.CameraCompatibilityFilter
 import androidx.camera.camera2.internal.IntrinsicZoomCalculator
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
@@ -55,7 +61,8 @@ import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsPreviewStab
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsPrivateReprocessing
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsTorchStrength
 import androidx.camera.camera2.pipe.CameraPipe
-import androidx.camera.camera2.pipe.UnsafeWrapper
+import androidx.camera.common.UnsafeWrapper
+import androidx.camera.common.unwrapAs
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraState
@@ -67,7 +74,9 @@ import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.UseCase
 import androidx.camera.core.ZoomState
 import androidx.camera.core.impl.CameraCaptureCallback
+import androidx.camera.core.impl.CameraExtensionCapabilities
 import androidx.camera.core.impl.CameraInfoInternal
+import androidx.camera.core.impl.CameraSessionLifecycleCallback
 import androidx.camera.core.impl.DynamicRanges
 import androidx.camera.core.impl.EncoderProfilesProvider
 import androidx.camera.core.impl.Quirks
@@ -77,9 +86,9 @@ import androidx.camera.core.internal.StreamSpecsCalculator
 import androidx.core.util.Consumer
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import java.lang.Class
 import java.util.concurrent.Executor
 import javax.inject.Inject
-import kotlin.reflect.KClass
 
 /** Adapt the [CameraInfoInternal] interface to [CameraPipe]. */
 @CameraScope
@@ -90,6 +99,7 @@ constructor(
     private val cameraConfig: CameraConfig,
     private val cameraStateAdapter: CameraStateAdapter,
     private val cameraControlStateAdapter: CameraControlStateAdapter,
+    private val nightModeIndicatorMonitor: NightModeIndicatorMonitor,
     private val cameraCallbackMap: CameraCallbackMap,
     private val focusMeteringControl: FocusMeteringControl,
     private val cameraQuirks: CameraQuirks,
@@ -97,21 +107,46 @@ constructor(
     private val streamConfigurationMapCompat: StreamConfigurationMapCompat,
     private val intrinsicZoomCalculator: IntrinsicZoomCalculator,
     private val streamSpecsCalculator: StreamSpecsCalculator,
+    private val cameraSessionLifecycleAdapter: CameraSessionLifecycleAdapter,
 ) : CameraInfoInternal, UnsafeWrapper {
+    private val lock = Any()
+
+    @GuardedBy("lock")
+    private val extensionCapabilitiesCache = mutableMapOf<Int, CameraExtensionCapabilities>()
+
     init {
         DeviceInfoLogger.logDeviceInfo(cameraProperties)
     }
 
-    private val _physicalCameraInfos by lazy {
-        cameraProperties.metadata.physicalCameraIds.mapTo(mutableSetOf<CameraInfo>()) {
-            physicalCameraId ->
-            val cameraProperties =
-                CameraPipeCameraProperties(
-                    CameraConfig(physicalCameraId),
-                    cameraProperties.metadata.awaitPhysicalMetadata(physicalCameraId),
-                )
-            PhysicalCameraInfoAdapter(cameraProperties)
-        }
+    // CameraInfoAdapter is initialized on a background thread during CameraX initialization,
+    // so loading and awaiting physical camera metadata during construction is safe.
+    private val _physicalCameraInfos: Set<CameraInfo> = loadPhysicalCameraInfos()
+
+    private fun loadPhysicalCameraInfos(): Set<CameraInfo> {
+        val quirk = DeviceQuirks[ExcludePhysicalCameraIdQuirk::class.java]
+        val excludedIds = quirk?.excludedPhysicalCameraIds ?: emptySet()
+        return cameraProperties.metadata.physicalCameraIds
+            .filter { it.value !in excludedIds }
+            .mapNotNull { physicalCameraId ->
+                val physicalMetadata =
+                    cameraProperties.metadata.awaitPhysicalMetadata(physicalCameraId)
+                if (!CameraCompatibilityFilter.isBackwardCompatible(physicalMetadata)) {
+                    Camera2Logger.debug {
+                        "Physical camera $physicalCameraId is filtered out because its " +
+                            "capabilities do not contain REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE."
+                    }
+                    null
+                } else {
+                    val cameraProperties =
+                        CameraPipeCameraProperties(CameraConfig(physicalCameraId), physicalMetadata)
+                    PhysicalCameraInfoAdapter(
+                        cameraProperties,
+                        intrinsicZoomCalculator,
+                        parentCameraInfo = this,
+                    )
+                }
+            }
+            .toSet()
     }
 
     private val isLegacyDevice by lazy { cameraProperties.metadata.isHardwareLevelLegacy }
@@ -122,7 +157,8 @@ constructor(
     }
 
     override fun isLogicalMultiCameraSupported(): Boolean {
-        return cameraProperties.metadata.supportsLogicalMultiCamera
+        return cameraProperties.metadata.supportsLogicalMultiCamera &&
+            _physicalCameraInfos.isNotEmpty()
     }
 
     override fun getPhysicalCameraInfos(): Set<CameraInfo> = _physicalCameraInfos
@@ -132,7 +168,7 @@ constructor(
     override fun getLensFacing(): @CameraSelector.LensFacing Int =
         getCameraSelectorLensFacing(cameraProperties.metadata[CameraCharacteristics.LENS_FACING]!!)
 
-    @androidx.annotation.OptIn(ExperimentalLensFacing::class)
+    @OptIn(ExperimentalLensFacing::class)
     override fun isExternalCamera(): Boolean {
         return lensFacing == CameraSelector.LENS_FACING_EXTERNAL ||
             cameraProperties.metadata[CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL] ==
@@ -140,7 +176,7 @@ constructor(
     }
 
     override fun getCameraCharacteristics(): CameraCharacteristics =
-        cameraProperties.metadata.unwrapAs(CameraCharacteristics::class)!!
+        cameraProperties.metadata.unwrapAs<CameraCharacteristics>()!!
 
     override fun getPhysicalCameraCharacteristics(physicalCameraId: String): Any? {
         val cameraId = CameraId.fromCamera2Id(physicalCameraId)
@@ -149,10 +185,10 @@ constructor(
         }
         return cameraProperties.metadata
             .awaitPhysicalMetadata(cameraId)
-            .unwrapAs(CameraCharacteristics::class)
+            .unwrapAs<CameraCharacteristics>()
     }
 
-    @androidx.annotation.OptIn(ExperimentalLensFacing::class)
+    @OptIn(ExperimentalLensFacing::class)
     private fun getCameraSelectorLensFacing(lensFacingInt: Int): @CameraSelector.LensFacing Int {
         return when (lensFacingInt) {
             CameraCharacteristics.LENS_FACING_FRONT -> CameraSelector.LENS_FACING_FRONT
@@ -207,6 +243,11 @@ constructor(
     override fun getLowLightBoostState(): LiveData<Int> =
         cameraControlStateAdapter.lowLightBoostState
 
+    override fun isNightModeIndicatorSupported(): Boolean = nightModeIndicatorMonitor.isSupported
+
+    override fun getNightModeIndicator(): LiveData<Int> =
+        nightModeIndicatorMonitor.nightModeIndicatorLiveData
+
     @SuppressLint("UnsafeOptInUsageError")
     override fun getExposureState(): ExposureState = cameraControlStateAdapter.exposureState
 
@@ -229,6 +270,17 @@ constructor(
 
     override fun removeSessionCaptureCallback(callback: CameraCaptureCallback): Unit =
         cameraCallbackMap.removeCaptureCallback(callback)
+
+    override fun addSessionLifecycleCallback(
+        executor: Executor,
+        callback: CameraSessionLifecycleCallback,
+    ) {
+        cameraSessionLifecycleAdapter.addSessionLifecycleCallback(executor, callback)
+    }
+
+    override fun removeSessionLifecycleCallback(callback: CameraSessionLifecycleCallback) {
+        cameraSessionLifecycleAdapter.removeSessionLifecycleCallback(callback)
+    }
 
     override fun getImplementationType(): String =
         if (isLegacyDevice) CameraInfo.IMPLEMENTATION_TYPE_CAMERA2_LEGACY
@@ -263,11 +315,11 @@ constructor(
 
     @Suppress("UNCHECKED_CAST")
     @OptIn(ExperimentalCamera2Interop::class)
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+    override fun <T : Any> unwrapAs(type: Class<T>): T? =
         when (type) {
-            Camera2CameraInfo::class -> camera2CameraInfo as T
-            CameraProperties::class -> cameraProperties as T
-            CameraMetadata::class -> cameraProperties.metadata as T
+            Camera2CameraInfo::class.java -> camera2CameraInfo as T
+            CameraProperties::class.java -> cameraProperties as T
+            CameraMetadata::class.java -> cameraProperties.metadata as T
             else -> cameraProperties.metadata.unwrapAs(type)
         }
 
@@ -284,9 +336,22 @@ constructor(
         cameraProperties.metadata[CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES]
             ?.toSet() ?: emptySet()
 
-    @androidx.annotation.OptIn(ExperimentalZeroShutterLag::class)
+    private val zslIntersectionSizes: List<Size> =
+        ZslUtil.computeZslIntersectionSizes(
+            cameraProperties.metadata,
+            android.graphics.ImageFormat.PRIVATE,
+        )
+
+    @OptIn(ExperimentalZeroShutterLag::class)
     override fun isZslSupported(): Boolean {
         return isPrivateReprocessingSupported && DeviceQuirks[ZslDisablerQuirk::class.java] == null
+    }
+
+    override fun canSupportZsl(sizes: List<Size>): Boolean {
+        if (!isZslSupported) {
+            return false
+        }
+        return sizes.any { it in zslIntersectionSizes }
     }
 
     override fun isPrivateReprocessingSupported(): Boolean {
@@ -386,8 +451,25 @@ constructor(
             ?.toSet() ?: emptySet()
     }
 
+    override fun getSupportedExtensions(): Set<Int> = cameraProperties.metadata.supportedExtensions
+
+    override fun getCameraExtensionCapabilities(extensionMode: Int): CameraExtensionCapabilities? {
+        if (Build.VERSION.SDK_INT < 31 || !supportedExtensions.contains(extensionMode)) {
+            return null
+        }
+        synchronized(lock) {
+            return extensionCapabilitiesCache.getOrPut(extensionMode) {
+                CameraExtensionCapabilitiesAdapter(
+                    cameraProperties.metadata.awaitExtensionMetadata(extensionMode)
+                )
+            }
+        }
+    }
+
     public companion object {
-        public fun <T : Any> CameraInfo.unwrapAs(type: KClass<T>): T? =
+        public inline fun <reified T : Any> CameraInfo.unwrapAs(): T? = unwrapAs(T::class.java)
+
+        public fun <T : Any> CameraInfo.unwrapAs(type: Class<T>): T? =
             when (this) {
                 is UnsafeWrapper -> this.unwrapAs(type)
                 is CameraInfoInternal -> {
@@ -401,6 +483,6 @@ constructor(
             }
 
         public val CameraInfo.cameraId: CameraId?
-            get() = this.unwrapAs(CameraMetadata::class)?.camera
+            get() = this.unwrapAs<CameraMetadata>()?.camera
     }
 }

@@ -38,6 +38,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -104,9 +105,6 @@ import kotlinx.coroutines.launch
  * For more information, see the
  * [Scroll indicators](https://developer.android.com/training/wearables/components/scroll) guide.
  *
- * Example of a sample ScrollIndicator with Column:
- *
- * @sample androidx.wear.compose.material3.samples.ScrollIndicatorWithColumnSample
  * @param state The scrollState to use as the basis for the ScrollIndicatorState.
  * @param modifier The modifier to be applied to the component - usually set to
  *   `Modifier.align(Alignment.CenterEnd)`.
@@ -161,9 +159,6 @@ public fun ScrollIndicator(
  * For more information, see the
  * [Scroll indicators](https://developer.android.com/training/wearables/components/scroll) guide.
  *
- * Example of a sample ScrollIndicator with ScalingLazyColumn:
- *
- * @sample androidx.wear.compose.material3.samples.ScrollIndicatorWithSLCSample
  * @param state the [ScalingLazyListState] to use as the basis for the ScrollIndicatorState.
  * @param modifier The modifier to be applied to the component
  * @param colors [ScrollIndicatorColors] that will be used to resolve the indicator and track colors
@@ -223,6 +218,10 @@ public fun ScrollIndicator(
  * Example of a sample ScrollIndicator with TransformingLazyColumn:
  *
  * @sample androidx.wear.compose.material3.samples.ScrollIndicatorWithTLCSample
+ *
+ * ![ScrollIndicatorWithTLCSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_ScrollIndicatorWithTLCSample_CompositeImage.png)
+ *
  * @param state the [TransformingLazyColumnState] to use as the basis for the ScrollIndicatorState.
  * @param modifier The modifier to be applied to the component
  * @param colors [ScrollIndicatorColors] that will be used to resolve the indicator and track colors
@@ -278,9 +277,6 @@ public fun ScrollIndicator(
  * For more information, see the
  * [Scroll indicators](https://developer.android.com/training/wearables/components/scroll) guide.
  *
- * Example of a sample ScrollIndicator with LazyColumn:
- *
- * @sample androidx.wear.compose.material3.samples.ScrollIndicatorWithLCSample
  * @param state the [LazyListState] to use as the basis for the ScrollIndicatorState.
  * @param modifier The modifier to be applied to the component
  * @param colors [ScrollIndicatorColors] that will be used to resolve the indicator and track colors
@@ -440,6 +436,9 @@ internal interface IndicatorState {
 
     /** Size of the indicator in the range [0f,1f]. 1f means it takes the whole space. */
     @get:FloatRange(from = 0.0, to = 1.0) val sizeFraction: Float
+
+    /** Jiggle amount of the indicator in the range [0f, 1f]. */
+    @get:FloatRange(from = 0.0, to = 1.0) var jiggleAmount: Float
 }
 
 /**
@@ -542,7 +541,14 @@ internal fun IndicatorImpl(
         launch {
             // This snapshotFlow listens to changes in position, size and visibility
             // of ScrollIndicatorState and starts necessary animations if needed
-            snapshotFlow { DisplayState(state.positionFraction, state.sizeFraction, arcLengthPx) }
+            snapshotFlow {
+                    DisplayState(
+                        state.positionFraction,
+                        state.sizeFraction,
+                        arcLengthPx,
+                        state.jiggleAmount,
+                    )
+                }
                 .collectLatest {
                     // Workaround for b/315149417. When position and height are equal to 0,
                     // we consider that as non-initialized state.
@@ -564,7 +570,7 @@ internal fun IndicatorImpl(
                         }
                         launch {
                             positionFractionAnimatable.animateTo(
-                                it.position,
+                                it.position + it.jiggleAmount,
                                 animationSpec = updatedPositionAnimationSpec,
                             )
                         }
@@ -616,7 +622,12 @@ internal fun IndicatorImpl(
 }
 
 @Immutable
-internal class DisplayState(val position: Float, val size: Float, arcLengthPx: Float) {
+internal class DisplayState(
+    val position: Float,
+    val size: Float,
+    arcLengthPx: Float,
+    val jiggleAmount: Float,
+) {
     // throttled position is used in equals() to reduce amount of redraws while position is
     // used for the actual draw to get better visual result
     val throttledPosition = (position * arcLengthPx).toInt() / arcLengthPx
@@ -624,6 +635,7 @@ internal class DisplayState(val position: Float, val size: Float, arcLengthPx: F
     override fun hashCode(): Int {
         var result = throttledPosition.hashCode()
         result = 31 * result + size.hashCode()
+        result = 31 * result + jiggleAmount.hashCode()
         return result
     }
 
@@ -636,6 +648,7 @@ internal class DisplayState(val position: Float, val size: Float, arcLengthPx: F
 
         if (throttledPosition != other.throttledPosition) return false
         if (size != other.size) return false
+        if (jiggleAmount != other.jiggleAmount) return false
 
         return true
     }
@@ -664,6 +677,8 @@ internal class ScrollStateAdapter(
                 scrollState.value.toFloat() / scrollState.maxValue
             }
         }
+
+    override var jiggleAmount: Float by mutableFloatStateOf(0.0f)
 
     override val sizeFraction: Float
         get() {
@@ -710,6 +725,8 @@ internal class ScalingLazyColumnStateAdapter(
 
     private var currentSizeFraction: Float = 0f
     private var previousItemsCount: Int = 0
+
+    override var jiggleAmount: Float by mutableFloatStateOf(0.0f)
 
     // TODO: b/368270238 - Fix calculation on a small content size.
     override val positionFraction: Float
@@ -900,6 +917,8 @@ internal class TransformingLazyColumnStateAdapter(
                 )
             }
 
+    override var jiggleAmount: Float by mutableFloatStateOf(0.0f)
+
     override fun hashCode(): Int {
         return state.hashCode()
     }
@@ -960,6 +979,8 @@ internal class LazyColumnStateAdapter(
 ) : IndicatorState {
     private var latestSizeFraction: Float = 0f
     private var previousItemsCount: Int = 0
+
+    override var jiggleAmount: Float by mutableFloatStateOf(0.0f)
 
     // TODO: b/368270238 - Fix calculation on a small content size.
     override val positionFraction: Float

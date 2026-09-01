@@ -130,7 +130,7 @@ internal class AndroidComposeSpatialElement(
 
     override fun onResume(owner: LifecycleOwner) {
         super.onResume(owner)
-        // TODO: "Refresh the layout hierarchy." <- Can we just call scheduleMeasureAndLayout()?
+        scheduleMeasureAndLayout()
     }
 
     override fun onDestroy(owner: LifecycleOwner) {

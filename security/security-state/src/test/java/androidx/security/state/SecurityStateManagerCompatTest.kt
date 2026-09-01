@@ -58,6 +58,16 @@ class SecurityStateManagerCompatTest {
         </security-patches>
         """
             .trimIndent()
+    private val PRODUCT_FILE_CONTENT =
+        """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <security-patches xmlns="http://schemas.android.com/security/patches/1.0">
+            <patch>
+                <id>CVE-2025-22222</id>
+            </patch>
+        </security-patches>
+        """
+            .trimIndent()
     private val VENDOR_FILE_CONTENT =
         """
         <?xml version="1.0" encoding="UTF-8"?>
@@ -79,6 +89,7 @@ class SecurityStateManagerCompatTest {
         """
             .trimIndent()
     private lateinit var systemFile: File
+    private lateinit var productFile: File
     private lateinit var vendorFile: File
     private lateinit var emptyXmlFile: File
     private lateinit var malformedXmlFile: File
@@ -87,6 +98,7 @@ class SecurityStateManagerCompatTest {
     @Before
     fun setUp() {
         systemFile = File.createTempFile("test_system_supplemental_security_patches", ".xml")
+        productFile = File.createTempFile("test_product_supplemental_security_patches", ".xml")
         vendorFile = File.createTempFile("test_vendor_supplemental_security_patches", ".xml")
         emptyXmlFile = File.createTempFile("test_empty_supplemental_security_patches", ".xml")
         malformedXmlFile =
@@ -98,6 +110,7 @@ class SecurityStateManagerCompatTest {
             }
 
         systemFile.writeText(SYSTEM_FILE_CONTENT)
+        productFile.writeText(PRODUCT_FILE_CONTENT)
         vendorFile.writeText(VENDOR_FILE_CONTENT)
         emptyXmlFile.writeText(EMPTY_FILE_CONTENT)
         malformedXmlFile.writeText("malformed xml")
@@ -108,6 +121,7 @@ class SecurityStateManagerCompatTest {
     @After
     fun tearDown() {
         systemFile.delete()
+        productFile.delete()
         vendorFile.delete()
         emptyXmlFile.delete()
         malformedXmlFile.delete()
@@ -170,15 +184,17 @@ class SecurityStateManagerCompatTest {
     @Test
     @Config(sdk = [Build.VERSION_CODES.O])
     fun testGetGlobalSecurityState_withSupplementalPatches_success() {
+        val systemPartitionFiles = arrayOf(systemFile.absolutePath, productFile.absolutePath)
+        val vendorPartitionFiles = arrayOf(vendorFile.absolutePath)
         securityStateManagerCompat =
-            SecurityStateManagerCompat(context, systemFile.absolutePath, vendorFile.absolutePath)
+            SecurityStateManagerCompat(context, systemPartitionFiles, vendorPartitionFiles)
         val result = securityStateManagerCompat.getGlobalSecurityState()
 
         val expectedBundle = Bundle()
 
         expectedBundle.putStringArray(
             KEY_SYSTEM_SUPPLEMENTAL_PATCHES,
-            arrayOf("CVE-2022-00000", "CVE-2023-11111"),
+            arrayOf("CVE-2022-00000", "CVE-2023-11111", "CVE-2025-22222"),
         )
         assertArrayEquals(
             expectedBundle.getStringArray(KEY_SYSTEM_SUPPLEMENTAL_PATCHES),
@@ -201,8 +217,8 @@ class SecurityStateManagerCompatTest {
         securityStateManagerCompat =
             SecurityStateManagerCompat(
                 context,
-                "nonexistent_system_file.xml",
-                "nonexistent_vendor_file.xml",
+                arrayOf("nonexistent_system_file.xml"),
+                arrayOf("nonexistent_vendor_file.xml"),
             )
 
         val result = securityStateManagerCompat.getGlobalSecurityState()
@@ -230,8 +246,8 @@ class SecurityStateManagerCompatTest {
         securityStateManagerCompat =
             SecurityStateManagerCompat(
                 context,
-                emptyXmlFile.absolutePath,
-                emptyXmlFile.absolutePath,
+                arrayOf(emptyXmlFile.absolutePath),
+                arrayOf(emptyXmlFile.absolutePath),
             )
 
         val result = securityStateManagerCompat.getGlobalSecurityState()
@@ -256,8 +272,10 @@ class SecurityStateManagerCompatTest {
     fun testGetGlobalSecurityState_withSupplementalPatches_skipOnSdk36AndAbove() {
         // On SDK > 36, the SecurityStateManager service is used.
         // We verify that our compat code path for manual file loading is skipped.
+        val systemPartitionFiles = arrayOf(systemFile.absolutePath, productFile.absolutePath)
+        val vendorPartitionFiles = arrayOf(vendorFile.absolutePath)
         securityStateManagerCompat =
-            SecurityStateManagerCompat(context, systemFile.absolutePath, vendorFile.absolutePath)
+            SecurityStateManagerCompat(context, systemPartitionFiles, vendorPartitionFiles)
 
         val result = securityStateManagerCompat.getGlobalSecurityState()
 
@@ -268,10 +286,12 @@ class SecurityStateManagerCompatTest {
     }
 
     @Test
-    fun testLoadSupplementalPatchesFromFile_handlesExceptions() {
+    fun testLoadSupplementalPatchesFromFiles_handlesExceptions() {
         // IOException should be caught and handled gracefully (e.g., trying to read a directory).
         val resultFromDir =
-            securityStateManagerCompat.loadSupplementalPatchesFromFile(testDir.absolutePath)
+            securityStateManagerCompat.loadSupplementalPatchesFromFiles(
+                arrayOf(testDir.absolutePath)
+            )
         assertArrayEquals(
             "Should return empty array when an IOException occurs.",
             emptyArray<String>(),
@@ -280,8 +300,8 @@ class SecurityStateManagerCompatTest {
 
         // A generic Exception should be caught (e.g., malformed XML file).
         val resultFromMalformedFile =
-            securityStateManagerCompat.loadSupplementalPatchesFromFile(
-                malformedXmlFile.absolutePath
+            securityStateManagerCompat.loadSupplementalPatchesFromFiles(
+                arrayOf(malformedXmlFile.absolutePath)
             )
         assertArrayEquals(
             "Should return empty array for a malformed XML file",

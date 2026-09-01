@@ -30,7 +30,7 @@ plugins {
 }
 
 android {
-    compileSdk { version = release(35) }
+    compileSdk { version = release(37) { minorApiLevel = 1 } }
     defaultConfig {
         applicationId = "androidx.window.demo"
     }
@@ -40,10 +40,10 @@ android {
     namespace = "androidx.window.demo"
     signingConfigs {
         config {
-            keyAlias 'key'
-            keyPassword 'password'
-            storeFile file('keystore.jks')
-            storePassword 'password'
+            keyAlias "key"
+            keyPassword "password"
+            storeFile file("keystore.jks")
+            storePassword "password"
         }
     }
     buildTypes {
@@ -105,8 +105,8 @@ dependencies {
 }
 
 // Allow usage of Kotlin's @OptIn.
-tasks.withType(KotlinCompile).configureEach {
-    kotlinOptions {
-        freeCompilerArgs += ["-opt-in=kotlin.RequiresOptIn"]
+tasks.withType(KotlinCompile).configureEach { task ->
+    task.compilerOptions {
+        it.freeCompilerArgs.add("-opt-in=kotlin.RequiresOptIn")
     }
 }

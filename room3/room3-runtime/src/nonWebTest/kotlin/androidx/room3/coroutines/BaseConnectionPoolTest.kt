@@ -31,12 +31,13 @@ import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.SQLiteException
 import androidx.sqlite.SQLiteStatement
+import androidx.sqlite.async.executeSQL
 import androidx.sqlite.execSQL
-import androidx.sqlite.executeSQL
 import kotlin.coroutines.CoroutineContext
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.fail
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineName
@@ -634,6 +635,45 @@ abstract class BaseConnectionPoolTest {
     }
 
     @Test
+    fun cancelCoroutineDuringTransaction() = runTest {
+        val multiThreadContext = newFixedThreadPoolContext(2, "Test-Threads")
+        val driver = setupDriver()
+        val pool =
+            newConnectionPool(
+                driver = driver,
+                fileName = fileName,
+                maxNumOfReaders = 1,
+                maxNumOfWriters = 1,
+            )
+        pool.useWriterConnection { connection -> connection.executeSQL("CREATE TABLE t (id INT)") }
+        val insideTransaction = CompletableDeferred<Unit>()
+        val holdTransaction = CompletableDeferred<Unit>()
+        val job =
+            launch(multiThreadContext) {
+                pool.useWriterConnection { connection ->
+                    connection.withTransaction(Transactor.SQLiteTransactionType.DEFERRED) {
+                        executeSQL("INSERT INTO t VALUES (1)")
+                        insideTransaction.complete(Unit)
+                        holdTransaction.await()
+                    }
+                }
+            }
+        insideTransaction.await()
+        job.cancelAndJoin()
+
+        // Verify that after cancelling an in-flight transaction the connection can immediately be
+        // acquired again and the previous transaction was rolled back
+        pool.useWriterConnection { connection ->
+            connection.usePrepared("SELECT COUNT(*) FROM t") { stmt ->
+                assertThat(stmt.step()).isTrue()
+                assertThat(stmt.getLong(0)).isEqualTo(0)
+            }
+        }
+        pool.close()
+        multiThreadContext.close()
+    }
+
+    @Test
     fun stressCancelCoroutineAcquiringConnection() = runTest {
         val multiThreadContext = newFixedThreadPoolContext(3, "Test-Threads")
         val driver = setupDriver()
@@ -723,10 +763,10 @@ abstract class BaseConnectionPoolTest {
                 fileName = fileName,
                 maxNumOfReaders = 1,
                 maxNumOfWriters = 1,
+                timeout = 100.milliseconds,
             )
         check(pool is ConnectionPoolImpl)
         pool.onTimeout = THROW_TIMEOUT_EXCEPTION
-        pool.timeout = 100.milliseconds
 
         val firstBarrier = CompletableDeferred<Unit>()
         val secondBarrier = CompletableDeferred<Unit>()
@@ -772,10 +812,10 @@ abstract class BaseConnectionPoolTest {
                 fileName = fileName,
                 maxNumOfReaders = 1,
                 maxNumOfWriters = 1,
+                timeout = 100.milliseconds,
             )
         check(pool is ConnectionPoolImpl)
         pool.onTimeout = 0 // do nothing
-        pool.timeout = 100.milliseconds
 
         val items = mutableListOf<String>()
         coroutineScope {
@@ -1495,11 +1535,13 @@ abstract class BaseConnectionPoolTest {
         fileName: String,
         maxNumOfReaders: Int,
         maxNumOfWriters: Int,
+        timeout: Duration = DEFAULT_CONNECTION_POOL_TIMEOUT,
     ): ConnectionPool =
         newConnectionPool(
             connectionFactory = { driver.open(fileName) },
             maxNumOfReaders,
             maxNumOfWriters,
+            timeout = timeout,
         )
 
     private class TestingRollbackException : Throwable()

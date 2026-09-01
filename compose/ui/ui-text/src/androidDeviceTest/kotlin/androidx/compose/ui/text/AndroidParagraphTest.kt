@@ -711,6 +711,81 @@ class AndroidParagraphTest {
     }
 
     @Test
+    fun testAnnotatedString_setBaselineShiftNone_doesNotAddSpan() {
+        val text = "abcde"
+        val spanStyle = SpanStyle(baselineShift = BaselineShift.None)
+
+        val paragraph =
+            simpleParagraph(
+                text = text,
+                spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, text.length)),
+                width = 100.0f,
+            )
+
+        assertThat(paragraph.charSequence).doesNotHaveSpan(BaselineShiftSpan::class)
+    }
+
+    @Test
+    fun testAnnotatedString_setBaselineShiftUnspecified_doesNotAddSpan() {
+        val text = "abcde"
+        val spanStyle = SpanStyle(baselineShift = BaselineShift.Unspecified)
+
+        val paragraph =
+            simpleParagraph(
+                text = text,
+                spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, text.length)),
+                width = 100.0f,
+            )
+
+        assertThat(paragraph.charSequence).doesNotHaveSpan(BaselineShiftSpan::class)
+    }
+
+    @Test
+    fun testAnnotatedString_setBaselineShiftPositiveInfinity_doesNotAddSpan() {
+        val text = "abcde"
+        val spanStyle = SpanStyle(baselineShift = BaselineShift(Float.POSITIVE_INFINITY))
+
+        val paragraph =
+            simpleParagraph(
+                text = text,
+                spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, text.length)),
+                width = 100.0f,
+            )
+
+        assertThat(paragraph.charSequence).doesNotHaveSpan(BaselineShiftSpan::class)
+    }
+
+    @Test
+    fun testAnnotatedString_setBaselineShiftNegativeInfinity_doesNotAddSpan() {
+        val text = "abcde"
+        val spanStyle = SpanStyle(baselineShift = BaselineShift(Float.NEGATIVE_INFINITY))
+
+        val paragraph =
+            simpleParagraph(
+                text = text,
+                spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, text.length)),
+                width = 100.0f,
+            )
+
+        assertThat(paragraph.charSequence).doesNotHaveSpan(BaselineShiftSpan::class)
+    }
+
+    @Test
+    fun testAnnotatedString_setBaselineShiftCustomZeroMultiplier_doesNotAddSpan() {
+        val text = "abcde"
+        val spanStyle = SpanStyle(baselineShift = BaselineShift(multiplier = 0.0f))
+
+        val paragraph =
+            simpleParagraph(
+                text = text,
+                spanStyles = listOf(AnnotatedString.Range(spanStyle, 0, text.length)),
+                width = 100.0f,
+            )
+
+        assertThat(paragraph.charSequence).doesNotHaveSpan(BaselineShiftSpan::class)
+    }
+
+    @Test
     fun testAnnotatedString_setDefaultTextGeometricTransform() {
         val text = "abcde"
         val spanStyle = SpanStyle(textGeometricTransform = TextGeometricTransform())
@@ -2266,6 +2341,80 @@ class AndroidParagraphTest {
             assertThat(paragraph.placeholderRects[0]?.top).isEqualTo(10f)
             assertThat(paragraph.placeholderRects[0]?.right).isEqualTo(10f)
             assertThat(paragraph.placeholderRects[0]?.bottom).isEqualTo(20)
+        }
+    }
+
+    @Test
+    fun getLineForOffset_singleLine_longText() {
+        with(defaultDensity) {
+            val text = "A".repeat(100_000)
+            val fontSize = 10.sp
+            val paragraph =
+                simpleParagraph(
+                    text = text,
+                    style = TextStyle(fontFamily = basicFontFamily, fontSize = fontSize),
+                    width = 100 * fontSize.toPx(),
+                    maxLines = 1,
+                )
+
+            assertThat(paragraph.lineCount).isEqualTo(1)
+            assertThat(paragraph.getLineForOffset(100_000)).isEqualTo(0)
+        }
+    }
+
+    @Test
+    fun getLineForVerticalPosition_singleLine_longText() {
+        with(defaultDensity) {
+            val text = "A".repeat(100_000)
+            val fontSize = 10.sp
+            val paragraph =
+                simpleParagraph(
+                    text = text,
+                    style = TextStyle(fontFamily = basicFontFamily, fontSize = fontSize),
+                    width = 100 * fontSize.toPx(),
+                    maxLines = 1,
+                )
+
+            assertThat(paragraph.lineCount).isEqualTo(1)
+            assertThat(paragraph.getLineForVerticalPosition(100f)).isEqualTo(0)
+        }
+    }
+
+    @SdkSuppress(minSdkVersion = 26)
+    @Test
+    fun getOffsetForPosition_singleLine_longText() {
+        with(defaultDensity) {
+            val text = "A".repeat(100_000)
+            val fontSize = 10.sp
+            val paragraph =
+                simpleParagraph(
+                    text = text,
+                    style = TextStyle(fontFamily = basicFontFamily, fontSize = fontSize),
+                    width = 100 * fontSize.toPx(),
+                    maxLines = 1,
+                )
+
+            assertThat(paragraph.lineCount).isEqualTo(1)
+            assertThat(paragraph.getOffsetForPosition(Offset(10f, 100f))).isEqualTo(100_000)
+        }
+    }
+
+    @SdkSuppress(maxSdkVersion = 25)
+    @Test
+    fun getOffsetForPosition_singleLine_longText_beforeAPI26() {
+        with(defaultDensity) {
+            val text = "A".repeat(100_000)
+            val fontSize = 10.sp
+            val paragraph =
+                simpleParagraph(
+                    text = text,
+                    style = TextStyle(fontFamily = basicFontFamily, fontSize = fontSize),
+                    width = 100 * fontSize.toPx(),
+                    maxLines = 1,
+                )
+
+            assertThat(paragraph.lineCount).isEqualTo(1)
+            assertThat(paragraph.getOffsetForPosition(Offset(10f, 100f))).isEqualTo(1)
         }
     }
 

@@ -22,11 +22,8 @@ import static androidx.appsearch.app.AppSearchSchema.StringPropertyConfig.TOKENI
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assume.assumeTrue;
 
 import androidx.appsearch.annotation.Document;
-import androidx.appsearch.app.AppSearchEnvironment;
-import androidx.appsearch.app.AppSearchEnvironmentFactory;
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.DocumentClassFactoryRegistry;
 import androidx.appsearch.app.GenericDocument;
@@ -103,7 +100,6 @@ public class SetSchemaRequestCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_PRIVATE_COMPUTE_CORE_UID_ACCESS)
     public void testSetSchema_privateComputeCoreUidAccess() {
         SetSchemaRequest request = new SetSchemaRequest.Builder()
                 .addSchemas(AppSearchEmail.SCHEMA)
@@ -301,22 +297,6 @@ public class SetSchemaRequestCtsTest {
                                 ImmutableSet.of(SetSchemaRequest.READ_EXTERNAL_STORAGE)
                         )
                 );
-    }
-
-    @Test
-    public void testAddRequiredPermissionsForSchemaTypeVisibility_emptyPermissions() {
-        assumeTrue(AppSearchEnvironmentFactory.getEnvironmentInstance()
-                .getEnvironment()
-                != AppSearchEnvironment.FRAMEWORK_ENVIRONMENT);
-        AppSearchSchema schema = new AppSearchSchema.Builder("Schema").build();
-        SetSchemaRequest.Builder setSchemaRequestBuilder = new SetSchemaRequest.Builder()
-                .addSchemas(schema);
-
-        IllegalArgumentException expected = assertThrows(IllegalArgumentException.class,
-                () -> setSchemaRequestBuilder.addRequiredPermissionsForSchemaTypeVisibility(
-                        "Schema", ImmutableSet.of()));
-        assertThat(expected).hasMessageThat().contains(
-                "The set of required permissions cannot be empty");
     }
 
     @Test
@@ -1530,6 +1510,48 @@ public class SetSchemaRequestCtsTest {
                 .containsExactly("type1", ImmutableSet.of("account1"));
         assertThat(copy.getSchemasWipeoutAccountPropertyPaths())
                 .containsExactly("type1", ImmutableSet.of("account1", "account2"));
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_PACKAGE_IDENTIFIER_MULTI_CERT)
+    public void testSetPubliclyVisibleSchema_multiCert() {
+        byte[] cert1 = new byte[32];
+        byte[] cert2 = new byte[32];
+        Arrays.fill(cert1, (byte) 1);
+        Arrays.fill(cert2, (byte) 2);
+
+        PackageIdentifier multiCertPkg =
+                new PackageIdentifier("com.package.foo", List.of(cert1, cert2));
+
+        SetSchemaRequest request =
+                new SetSchemaRequest.Builder()
+                        .addSchemas(new AppSearchSchema.Builder("type1").build())
+                        .setPubliclyVisibleSchema("type1", multiCertPkg)
+                        .build();
+
+        assertThat(request.getPubliclyVisibleSchemas()).containsExactly("type1", multiCertPkg);
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_PACKAGE_IDENTIFIER_MULTI_CERT)
+    public void testSetSchemaTypeVisibilityForPackage_multiCert() {
+        byte[] cert1 = new byte[32];
+        byte[] cert2 = new byte[32];
+        Arrays.fill(cert1, (byte) 1);
+        Arrays.fill(cert2, (byte) 2);
+
+        PackageIdentifier multiCertPkg =
+                new PackageIdentifier("com.package.foo", List.of(cert1, cert2));
+
+        SetSchemaRequest request =
+                new SetSchemaRequest.Builder()
+                        .addSchemas(new AppSearchSchema.Builder("type1").build())
+                        .setSchemaTypeVisibilityForPackage(
+                                "type1", /* visible= */ true, multiCertPkg)
+                        .build();
+
+        assertThat(request.getSchemasVisibleToPackages())
+                .containsExactly("type1", Set.of(multiCertPkg));
     }
 
     // @exportToFramework:startStrip()

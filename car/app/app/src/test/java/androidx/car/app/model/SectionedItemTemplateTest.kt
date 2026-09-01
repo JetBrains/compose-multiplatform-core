@@ -18,6 +18,7 @@ package androidx.car.app.model
 
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -169,11 +170,23 @@ class SectionedItemTemplateTest {
     }
 
     @Test
-    fun build_throwsException_whenFilterChipSectionIsNotFirst() {
+    fun build_allowsSpotlightSection() {
+        val section =
+            SpotlightSection.Builder(CarIcon.APP_ICON)
+                .setTitle("Spotlight")
+                .addItem(CondensedItem.Builder().setTitle("Item").build())
+                .build()
+        val template = SectionedItemTemplate.Builder().addSection(section).build()
+
+        assertThat(template.sections).containsExactly(section)
+    }
+
+    @Test
+    fun build_throwsException_whenChipSectionIsNotFirst() {
         try {
             SectionedItemTemplate.Builder()
                 .addSection(RowSection.Builder().build())
-                .addSection(buildFilterChipSection())
+                .addSection(buildChipSection())
                 .build()
             assertWithMessage("Expected builder to throw exception, but it didn't").fail()
         } catch (e: IllegalArgumentException) {
@@ -182,21 +195,39 @@ class SectionedItemTemplateTest {
     }
 
     @Test
-    fun build_throwsException_whenMultipleFilterChipSections() {
+    fun build_throwsException_whenMultipleChipSections() {
         try {
             SectionedItemTemplate.Builder()
-                .addSection(buildFilterChipSection())
-                .addSection(buildFilterChipSection())
+                .addSection(buildChipSection())
+                .addSection(buildChipSection())
                 .build()
             assertWithMessage("Expected builder to throw exception, but it didn't").fail()
         } catch (e: IllegalArgumentException) {
-            assertThat(e.message).contains("Only one FilterChipSection is allowed")
+            assertThat(e.message).contains("Only one ChipSection is allowed")
         }
     }
 
     @Test
-    fun build_allowsFilterChipSectionAsFirstSection() {
-        val section = buildFilterChipSection()
+    fun build_allowsChipSectionAsFirstSection() {
+        val section = buildChipSection()
+        val template = SectionedItemTemplate.Builder().addSection(section).build()
+
+        assertThat(template.sections).containsExactly(section)
+    }
+
+    @Test
+    fun build_withCondensedSection_containsCondensedSection() {
+        val item = CondensedItem.Builder().setTitle("Title").build()
+        val section = CondensedSection.Builder().addItem(item).build()
+        val template = SectionedItemTemplate.Builder().addSection(section).build()
+
+        assertThat(template.sections).containsExactly(section)
+    }
+
+    @Test
+    fun build_allowsBannerSection() {
+        val banner = Banner.Builder().setTitle("Primary").build()
+        val section = BannerSection.Builder().addItem(banner).build()
         val template = SectionedItemTemplate.Builder().addSection(section).build()
 
         assertThat(template.sections).containsExactly(section)
@@ -268,6 +299,32 @@ class SectionedItemTemplateTest {
     }
 
     @Test
+    fun getSearchHeader() {
+        val searchHeader =
+            SearchHeader.Builder(object : SearchCallback {})
+                .setInitialSearchText("initial")
+                .setSearchHint("hint")
+                .setShowKeyboardByDefault(false)
+                .setStartHeaderAction(Action.BACK)
+                .build()
+
+        val template = SectionedItemTemplate.Builder().setSearchHeader(searchHeader).build()
+
+        assertThat(template.searchHeader).isEqualTo(searchHeader)
+        assertThat(template.header).isNull()
+    }
+
+    @Test
+    fun build_withBothHeaderAndSearchHeader_throwsException() {
+        val searchHeader = SearchHeader.Builder(object : SearchCallback {}).build()
+        val builder = SectionedItemTemplate.Builder()
+        builder.setHeader(testHeader)
+        builder.setSearchHeader(searchHeader)
+
+        assertThrows(IllegalArgumentException::class.java) { builder.build() }
+    }
+
+    @Test
     fun toBuilder_build_returnsEquivalentObject() {
         val template = createFullyPopulatedTemplate()
 
@@ -301,9 +358,9 @@ class SectionedItemTemplateTest {
     private fun createRowWithMediaAction(): Row =
         Row.Builder().setTitle("Bananas").addAction(Action.MEDIA_PLAYBACK).build()
 
-    private fun buildFilterChipSection(): FilterChipSection {
-        return FilterChipSection.Builder()
-            .addItem(FilterChip.Builder().setTitle("Chip").setOnClickListener {}.build())
+    private fun buildChipSection(): ChipSection {
+        return ChipSection.Builder()
+            .addItem(Chip.Builder().setTitle("Chip").setOnClickListener {}.build())
             .build()
     }
 }

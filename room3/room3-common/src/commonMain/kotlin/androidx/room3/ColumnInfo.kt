@@ -23,7 +23,7 @@ import androidx.annotation.IntDef
  *
  * For example, you can specify a column name for the property or change the column's type affinity.
  */
-@Target(AnnotationTarget.FIELD, AnnotationTarget.FUNCTION)
+@Target(AnnotationTarget.PROPERTY, AnnotationTarget.FIELD, AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 public annotation class ColumnInfo(
     /**
@@ -37,7 +37,7 @@ public annotation class ColumnInfo(
      * The type affinity for the column, which will be used when constructing the database.
      *
      * If it is not specified, the value defaults to [UNDEFINED] and Room resolves it based on the
-     * property's type and available [TypeConverters].
+     * property's type and available [ColumnTypeConverters].
      *
      * See [SQLite types documentation](https://www.sqlite.org/datatype3.html) for details.
      *

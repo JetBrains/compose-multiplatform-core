@@ -29,6 +29,10 @@ jacoco.exec
 /studio
 /ui/studio
 
+/intellij
+/vscode
+**/.vscode/**
+
 # When Gradle configuration fails with the --profile option enabled it creates this folder.
 /reports
 
@@ -41,3 +45,5 @@ __pycache__
 
 # Don't ignore src files under build package
 !**/src/**/build
+
+.jetskicli/

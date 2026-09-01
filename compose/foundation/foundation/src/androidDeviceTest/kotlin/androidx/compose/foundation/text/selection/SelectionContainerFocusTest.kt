@@ -55,7 +55,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -66,13 +65,15 @@ import org.mockito.kotlin.verify
 @LargeTest
 @RunWith(ContextMenuFlagFlipperRunner::class)
 class SelectionContainerFocusTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val textContent = "Text Demo Text"
     private val fontFamily = TEST_FONT_FAMILY
 
-    private val selection1 = mutableStateOf<Selection?>(null)
-    private val selection2 = mutableStateOf<Selection?>(null)
+    val state1 = SelectionState()
+
+    val state2 = SelectionState()
+
     private val fontSize = 20.sp
     private val boxSize = 40.dp
 
@@ -88,15 +89,15 @@ class SelectionContainerFocusTest {
         rule.onNodeWithTag("selectionContainer1").performTouchInput {
             longClick(Offset(x = positionInText, y = positionInText))
         }
-        rule.runOnIdle { assertThat(selection1.value).isNotNull() }
+        rule.runOnIdle { assertThat(state1.selection).isNotNull() }
 
         // Act.
         rule.onNodeWithTag("box").performTouchInput { click() }
 
         // Assert.
         rule.runOnIdle {
-            assertThat(selection1.value).isNull()
-            assertThat(selection2.value).isNull()
+            assertThat(state1.selection).isNull()
+            assertThat(state2.selection).isNull()
             verify(hapticFeedback, times(2))
                 .performHapticFeedback(HapticFeedbackType.TextHandleMove)
         }
@@ -112,7 +113,7 @@ class SelectionContainerFocusTest {
         rule.onNodeWithTag("selectionContainer1").performTouchInput {
             longClick(Offset(x = positionInText, y = positionInText))
         }
-        rule.runOnIdle { assertThat(selection1.value).isNotNull() }
+        rule.runOnIdle { assertThat(state1.selection).isNotNull() }
 
         // Act.
         rule.onNodeWithTag("selectionContainer2").performTouchInput {
@@ -121,8 +122,8 @@ class SelectionContainerFocusTest {
 
         // Assert.
         rule.runOnIdle {
-            assertThat(selection1.value).isNull()
-            assertThat(selection2.value).isNotNull()
+            assertThat(state1.selection).isNull()
+            assertThat(state2.selection).isNotNull()
             // There will be 2 times from the first SelectionContainer and 1 time from the second
             // SelectionContainer.
             verify(hapticFeedback, times(3))
@@ -222,8 +223,7 @@ class SelectionContainerFocusTest {
                 Column {
                     SelectionContainer(
                         modifier = Modifier.testTag("selectionContainer1"),
-                        selection = selection1.value,
-                        onSelectionChange = { selection1.value = it },
+                        state = state1,
                     ) {
                         Column {
                             BasicText(
@@ -237,8 +237,7 @@ class SelectionContainerFocusTest {
 
                     SelectionContainer(
                         modifier = Modifier.testTag("selectionContainer2"),
-                        selection = selection2.value,
-                        onSelectionChange = { selection2.value = it },
+                        state = state2,
                     ) {
                         BasicText(
                             text = AnnotatedString(textContent),

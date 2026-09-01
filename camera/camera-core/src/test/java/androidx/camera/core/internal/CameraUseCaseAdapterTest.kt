@@ -177,12 +177,31 @@ class CameraUseCaseAdapterTest {
         shadowOf(getMainLooper()).idle()
     }
 
-    @Test(expected = CameraException::class)
-    fun attachTwoPreviews_streamSharingNotEnabled() {
-        // Arrange: bind 2 previews with an ImageCapture. Request fails without enabling
-        // StreamSharing because StreamSharing only allows one use case per type.
+    @Test
+    fun attachTwoPreviews_streamSharingEnabled() {
+        // Arrange: bind 2 previews with an ImageCapture. StreamSharing wraps the two previews.
         val preview2 = Preview.Builder().build()
         adapter.addUseCases(setOf(preview, preview2, image))
+        // Assert: StreamSharing is used for the two Previews.
+        adapter.cameraUseCases.hasExactTypes(StreamSharing::class.java, ImageCapture::class.java)
+    }
+
+    @Test
+    fun attachTwoPreviewsWithOverlayEffect_streamSharingEnabled() {
+        // Arrange: assign an effect with PREVIEW target and OUTPUT_OPTION_ONE_FOR_ALL_TARGETS (like
+        // OverlayEffect).
+        adapter.effects = listOf(previewEffect)
+
+        // Act: bind 2 previews.
+        val preview2 = Preview.Builder().build()
+        adapter.addUseCases(setOf(preview, preview2))
+
+        // Assert: StreamSharing is created to share the effect across both Previews.
+        val streamSharing = adapter.getStreamSharing()
+        assertThat(streamSharing.children).containsExactly(preview, preview2)
+        assertThat(streamSharing.effect).isEqualTo(previewEffect)
+        assertThat(preview.effect).isNull()
+        assertThat(preview2.effect).isNull()
     }
 
     @Test
@@ -590,10 +609,9 @@ class CameraUseCaseAdapterTest {
     @Test
     fun isUseCasesCombinationSupported_returnFalseWhenNotSupported() {
         // Arrange
-        val preview2 = Preview.Builder().build()
-        // Assert: double preview use cases should not be supported even with stream sharing.
-        assertThat(adapter.isUseCasesCombinationSupported(preview, preview2, video, image))
-            .isFalse()
+        val video2 = createFakeVideoCaptureUseCase()
+        // Assert: double video capture use cases should not be supported even with stream sharing.
+        assertThat(adapter.isUseCasesCombinationSupported(preview, video, video2, image)).isFalse()
     }
 
     @Test
@@ -1667,5 +1685,80 @@ class CameraUseCaseAdapterTest {
             )
         adaptersToDetach.add(adapter)
         return adapter
+    }
+
+    @Test
+    fun sessionInteropConfig_callbacksNotDuplicatedAcrossMultipleUseCases() {
+        // Arrange
+        val captureCallback =
+            object : android.hardware.camera2.CameraCaptureSession.CaptureCallback() {}
+        val sessionStateCallback =
+            object : android.hardware.camera2.CameraCaptureSession.StateCallback() {
+                override fun onConfigured(session: android.hardware.camera2.CameraCaptureSession) {}
+
+                override fun onConfigureFailed(
+                    session: android.hardware.camera2.CameraCaptureSession
+                ) {}
+            }
+        val deviceStateCallback =
+            object : android.hardware.camera2.CameraDevice.StateCallback() {
+                override fun onOpened(camera: android.hardware.camera2.CameraDevice) {}
+
+                override fun onDisconnected(camera: android.hardware.camera2.CameraDevice) {}
+
+                override fun onError(camera: android.hardware.camera2.CameraDevice, error: Int) {}
+            }
+
+        val interopConfig =
+            androidx.camera.core.impl.MutableOptionsBundle.create().apply {
+                insertOption(Camera2ImplConfig.SESSION_CAPTURE_CALLBACK_OPTION, captureCallback)
+                insertOption(Camera2ImplConfig.SESSION_STATE_CALLBACK_OPTION, sessionStateCallback)
+                insertOption(Camera2ImplConfig.DEVICE_STATE_CALLBACK_OPTION, deviceStateCallback)
+            }
+
+        // Act: call getConfigs for preview and analysis
+        val configs =
+            CameraUseCaseAdapter.getConfigs(
+                setOf(preview, analysis),
+                useCaseConfigFactory,
+                useCaseConfigFactory,
+                androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR,
+                Range(30, 30),
+                interopConfig,
+            )
+
+        // Assert: Only preview's cameraConfig contains the interop callback options
+        val previewCameraConfig = configs[preview]!!.mCameraConfig
+        val analysisCameraConfig = configs[analysis]!!.mCameraConfig
+
+        assertThat(
+                previewCameraConfig.containsOption(
+                    Camera2ImplConfig.SESSION_CAPTURE_CALLBACK_OPTION
+                )
+            )
+            .isEqualTo(true)
+        assertThat(
+                previewCameraConfig.containsOption(Camera2ImplConfig.SESSION_STATE_CALLBACK_OPTION)
+            )
+            .isEqualTo(true)
+        assertThat(
+                previewCameraConfig.containsOption(Camera2ImplConfig.DEVICE_STATE_CALLBACK_OPTION)
+            )
+            .isEqualTo(true)
+
+        assertThat(
+                analysisCameraConfig.containsOption(
+                    Camera2ImplConfig.SESSION_CAPTURE_CALLBACK_OPTION
+                )
+            )
+            .isEqualTo(false)
+        assertThat(
+                analysisCameraConfig.containsOption(Camera2ImplConfig.SESSION_STATE_CALLBACK_OPTION)
+            )
+            .isEqualTo(false)
+        assertThat(
+                analysisCameraConfig.containsOption(Camera2ImplConfig.DEVICE_STATE_CALLBACK_OPTION)
+            )
+            .isEqualTo(false)
     }
 }

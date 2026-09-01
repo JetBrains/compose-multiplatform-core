@@ -63,7 +63,6 @@ public class ProjectedServiceConnection(
      * This method binds to the projected service and waits for the connection to be established. A
      * new connection can be established after a successful call to [disconnect].
      *
-     * @param context The context to use for binding to the service.
      * @return An [IProjectedService] instance.
      * @throws IllegalStateException if the projected service is not found or binding is not
      *   permitted, or if [connect] is called while a connection is already active.
@@ -107,16 +106,15 @@ public class ProjectedServiceConnection(
         return withTimeout(SERVICE_CONNECTION_TIMEOUT_MS) { serviceDeferred.await() }
     }
 
-    /**
-     * Disconnects from the [IProjectedService] by unbinding it.
-     *
-     * @throws IllegalStateException if the service connection is null.
-     */
+    /** Disconnects from the [IProjectedService] by unbinding it. */
     public fun disconnect() {
+        val connection = projectedServiceConnection ?: return
         _isServiceConnected.tryEmit(false)
-        context.unbindService(
-            checkNotNull(projectedServiceConnection, { "Service connection is null" })
-        )
+        try {
+            context.unbindService(connection)
+        } catch (_: IllegalArgumentException) {
+            // Service may have already been unbound by the OS or disconnected during standby.
+        }
         projectedServiceBinder?.unlinkToDeath(projectedServiceDeathRecipient, /* flags= */ 0)
         projectedServiceBinder = null
         projectedServiceConnection = null

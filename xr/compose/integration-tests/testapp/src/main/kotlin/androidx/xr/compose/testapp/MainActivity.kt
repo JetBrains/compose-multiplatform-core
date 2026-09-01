@@ -66,20 +66,21 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.MovePolicy
-import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
+import androidx.xr.compose.subspace.layout.movable
+import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testapp.accessibility.AccessibilityActivity
+import androidx.xr.compose.testapp.anchorable.AnchorableActivity
 import androidx.xr.compose.testapp.animation.Animation
 import androidx.xr.compose.testapp.curvedlayout.CurvedLayout
 import androidx.xr.compose.testapp.depthstacking.DepthStacking
 import androidx.xr.compose.testapp.focuschange.FSMFocusChangeActivity
 import androidx.xr.compose.testapp.focuschange.HSMFocusChangeActivity
 import androidx.xr.compose.testapp.followingsubspace.AnchorFollowingSubspaceActivity
-import androidx.xr.compose.testapp.followingsubspace.FollowingSubspaceActivity
+import androidx.xr.compose.testapp.followingsubspace.ViewFollowingSubspaceActivity
 import androidx.xr.compose.testapp.fragments.FragmentCompatibilityActivity
 import androidx.xr.compose.testapp.gravityaligned.GravityAlignedActivity
 import androidx.xr.compose.testapp.lifecycle.LifecycleDataStore
@@ -89,6 +90,7 @@ import androidx.xr.compose.testapp.lifecycle.RuntimeSessionActivity
 import androidx.xr.compose.testapp.modechange.ModeChange
 import androidx.xr.compose.testapp.movable.MovableActivity
 import androidx.xr.compose.testapp.movablescalable.MovableScalable
+import androidx.xr.compose.testapp.navigation.SpatialNavigationActivity
 import androidx.xr.compose.testapp.panelembeddedsubspace.PanelEmbeddedSubspace
 import androidx.xr.compose.testapp.panelvolume.PanelVolume
 import androidx.xr.compose.testapp.performance.LayoutPerformance
@@ -101,6 +103,7 @@ import androidx.xr.compose.testapp.rtlawareness.RtlAwareSubspaceModifierActivity
 import androidx.xr.compose.testapp.spacemodechange.SpaceModeActivity
 import androidx.xr.compose.testapp.spatialalignmentusage.SpatialAlignmentUsageActivity
 import androidx.xr.compose.testapp.spatialarrangementusage.SpatialArrangementUsageActivity
+import androidx.xr.compose.testapp.spatialaudio.SpatialAudioActivity
 import androidx.xr.compose.testapp.spatialcompose.SpatialCompose
 import androidx.xr.compose.testapp.spatialelevation.SpatialElevation
 import androidx.xr.compose.testapp.spatialgltfmodel.SpatialGltfModelActivity
@@ -124,9 +127,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             Subspace {
                 SpatialPanel(
-                    modifier = SubspaceModifier.width(800.dp).height(1000.dp),
-                    dragPolicy = MovePolicy(),
-                    resizePolicy = ResizePolicy(),
+                    modifier = SubspaceModifier.width(800.dp).height(1000.dp).movable().resizable()
                 ) {
                     IntegrationTestsAppTheme {
                         val scrollBehavior =
@@ -163,6 +164,7 @@ class MainActivity : ComponentActivity() {
                 SCENE_UNDERSTANDING_PERMISSION,
                 HAND_TRACKING_PERMISSION,
                 READ_MEDIA_VIDEO_PERMISSION,
+                READ_MEDIA_AUDIO_PERMISSION,
                 POST_NOTIFICATIONS_PERMISSION,
             )
         )
@@ -172,6 +174,7 @@ class MainActivity : ComponentActivity() {
         const val HAND_TRACKING_PERMISSION = "android.permission.HAND_TRACKING"
         const val SCENE_UNDERSTANDING_PERMISSION = "android.permission.SCENE_UNDERSTANDING_COARSE"
         const val READ_MEDIA_VIDEO_PERMISSION = "android.permission.READ_MEDIA_VIDEO"
+        const val READ_MEDIA_AUDIO_PERMISSION = "android.permission.READ_MEDIA_AUDIO"
         const val POST_NOTIFICATIONS_PERMISSION = "android.permission.POST_NOTIFICATIONS"
     }
 
@@ -276,6 +279,9 @@ class MainActivity : ComponentActivity() {
                             TestCase(getString(R.string.video_in_panel_test)) {
                                 startTest<SpatialCompose>(getString(R.string.video_in_panel_test))
                             },
+                            TestCase(getString(R.string.spatial_audio_test)) {
+                                startTest<SpatialAudioActivity>()
+                            },
                         ),
                     "Spatial Entities & Models" to
                         listOf(
@@ -298,11 +304,14 @@ class MainActivity : ComponentActivity() {
                             TestCase(getString(R.string.anchor_subspace_app_test)) {
                                 startTest<AnchorFollowingSubspaceActivity>()
                             },
-                            TestCase(getString(R.string.ardevice_subspace_test_case)) {
-                                startTest<FollowingSubspaceActivity>()
+                            TestCase(getString(R.string.view_subspace_test_case)) {
+                                startTest<ViewFollowingSubspaceActivity>()
                             },
                             TestCase(getString(R.string.rotatetolookatuser_test_case)) {
                                 startTest<RotateToLookAtUserActivity>()
+                            },
+                            TestCase(getString(R.string.anchorable_test_case)) {
+                                startTest<AnchorableActivity>()
                             },
                         ),
                     "Layout" to
@@ -333,6 +342,9 @@ class MainActivity : ComponentActivity() {
                             TestCase(getString(R.string.pose_test)) { startTest<Pose>() },
                             TestCase(getString(R.string.gravity_aligned_test_case)) {
                                 startTest<GravityAlignedActivity>()
+                            },
+                            TestCase(getString(R.string.spatial_navigation_test)) {
+                                startTest<SpatialNavigationActivity>()
                             },
                         ),
                     "Interaction" to

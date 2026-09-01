@@ -23,7 +23,7 @@ dependencies {
     api(libs.jspecify)
     implementation(project(":wear:wear"))
     implementation(project(":recyclerview:recyclerview"))
-    implementation(project(":core:core"))
+    implementation("androidx.core:core:1.17.0")
     implementation(project(":appcompat:appcompat"))
 }
 

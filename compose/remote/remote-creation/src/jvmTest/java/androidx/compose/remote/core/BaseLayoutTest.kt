@@ -19,7 +19,13 @@ package androidx.compose.remote.core
 import androidx.compose.remote.core.layout.LayoutTestPlayer
 import androidx.compose.remote.core.layout.TestOperation
 import androidx.compose.remote.core.layout.TestParameters
+import androidx.compose.remote.core.operations.layout.Component
 import androidx.compose.remote.creation.RemoteComposeContext
+import androidx.compose.remote.creation.RemoteComposeWriter
+import androidx.compose.remote.creation.dsl.RcProfile
+import androidx.compose.remote.creation.dsl.RcScope
+import androidx.compose.remote.creation.dsl.createRcBuffer
+import androidx.compose.remote.creation.profile.Profile
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
@@ -139,12 +145,91 @@ open class BaseLayoutTest : LayoutTestPlayer() {
         }
     }
 
+    class ValidateBounds(
+        val id: Int,
+        val expectedX: Float,
+        val expectedY: Float,
+        val expectedW: Float,
+        val expectedH: Float,
+    ) : TestOperation() {
+        override fun apply(
+            context: RemoteContext,
+            document: CoreDocument,
+            testParameters: TestParameters,
+            commands: MutableList<Map<String, Any>>?,
+        ): Boolean {
+            val component =
+                document.getComponent(id) ?: throw AssertionError("Component with id $id not found")
+            if (
+                component.getX() != expectedX ||
+                    component.getY() != expectedY ||
+                    component.getWidth() != expectedW ||
+                    component.getHeight() != expectedH
+            ) {
+                throw AssertionError(
+                    "Component $id: Expected bounds ($expectedX, $expectedY, $expectedW, $expectedH), " +
+                        "actual (${component.getX()}, ${component.getY()}, ${component.getWidth()}, ${component.getHeight()})"
+                )
+            }
+            return false
+        }
+    }
+
+    class ValidateChildCount(val id: Int, val expectedCount: Int) : TestOperation() {
+        override fun apply(
+            context: RemoteContext,
+            document: CoreDocument,
+            testParameters: TestParameters,
+            commands: MutableList<Map<String, Any>>?,
+        ): Boolean {
+            val component =
+                document.getComponent(id) ?: throw AssertionError("Component with id $id not found")
+            val children = ArrayList<Component>()
+            component.getComponents(children)
+            val visibleCount = children.count { it.isVisible }
+            if (visibleCount != expectedCount) {
+                throw AssertionError(
+                    "Component $id: Expected $expectedCount visible children, " +
+                        "actual $visibleCount"
+                )
+            }
+            return false
+        }
+    }
+
+    class ValidateSize(val id: Int, val expectedW: Float, val expectedH: Float) : TestOperation() {
+        override fun apply(
+            context: RemoteContext,
+            document: CoreDocument,
+            testParameters: TestParameters,
+            commands: MutableList<Map<String, Any>>?,
+        ): Boolean {
+            val component =
+                document.getComponent(id) ?: throw AssertionError("Component with id $id not found")
+            if (component.getWidth() != expectedW || component.getHeight() != expectedH) {
+                throw AssertionError(
+                    "Component $id: Expected size ($expectedW, $expectedH), " +
+                        "actual (${component.getWidth()}, ${component.getHeight()})"
+                )
+            }
+            return false
+        }
+    }
+
     fun validateX(expectedX: Float): TestOperation = ValidateX(expectedX)
 
     fun validateY(expectedY: Float): TestOperation = ValidateY(expectedY)
 
     fun validatePosition(expectedX: Float, expectedY: Float): TestOperation =
         ValidatePosition(expectedX, expectedY)
+
+    fun validateBounds(id: Int, x: Float, y: Float, w: Float, h: Float): TestOperation =
+        ValidateBounds(id, x, y, w, h)
+
+    fun validateSize(id: Int, w: Float, h: Float): TestOperation = ValidateSize(id, w, h)
+
+    fun validateChildCount(id: Int, expectedCount: Int): TestOperation =
+        ValidateChildCount(id, expectedCount)
 
     class ValidateNoAnimation() : TestOperation() {
         override fun apply(
@@ -165,5 +250,43 @@ open class BaseLayoutTest : LayoutTestPlayer() {
 
     internal fun TestClock(time: Int): RemoteClock {
         return SystemClock(Clock.fixed(Instant.ofEpochMilli(time.toLong()), ZoneId.of("UTC")))
+    }
+
+    fun checkDslLayout(
+        w: Int,
+        h: Int,
+        ops: ArrayList<TestOperation> = arrayListOf(),
+        testClock: RemoteClock = TestClock(1234),
+        overridePlayerSize: Boolean = true,
+        content: RcScope.() -> Unit,
+    ) {
+        val testParameters = TestParameters(name.getMethodName(), GENERATE_GOLD_FILES, testClock)
+        val profile =
+            RcProfile(
+                Profile(
+                    CoreDocument.DOCUMENT_API_LEVEL,
+                    RcProfiles.PROFILE_ANDROIDX,
+                    RcPlatformServices.None,
+                ) { _, p, _ ->
+                    RemoteComposeWriter(p)
+                }
+            )
+        val tags =
+            arrayOf(
+                RemoteComposeWriter.HTag(
+                    androidx.compose.remote.core.operations.Header.DOC_WIDTH,
+                    w,
+                ),
+                RemoteComposeWriter.HTag(
+                    androidx.compose.remote.core.operations.Header.DOC_HEIGHT,
+                    h,
+                ),
+            )
+        val byteBuffer = createRcBuffer(profile, *tags, experimental = true, content = content)
+        if (overridePlayerSize) {
+            play(byteBuffer, byteBuffer.size, ops, testParameters, w, h, true)
+        } else {
+            play(byteBuffer, byteBuffer.size, ops, testParameters)
+        }
     }
 }

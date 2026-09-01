@@ -1,0 +1,230 @@
+/*
+ * Copyright (C) 2024 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.ink.rendering.android.canvas.internal
+
+import android.graphics.Canvas
+import android.graphics.Matrix
+import android.os.Build
+import android.util.Log
+import androidx.annotation.VisibleForTesting
+import androidx.ink.brush.Brush
+import androidx.ink.brush.ExperimentalInkAnimationApi
+import androidx.ink.brush.TextureAnimationProgressHelper
+import androidx.ink.brush.TextureBitmapStore
+import androidx.ink.geometry.AffineTransform
+import androidx.ink.geometry.populateMatrix
+import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
+import androidx.ink.rendering.android.canvas.StrokePaintAnimationClock
+import androidx.ink.strokes.InProgressStroke
+import androidx.ink.strokes.Stroke
+
+/**
+ * Renders Ink objects using [CanvasMeshRenderer], but falls back to using [CanvasPathRenderer] when
+ * mesh rendering is not possible. This may happen if the mesh contents were modified (e.g. while in
+ * a serialized form then deserialized) to a mesh format that the mesh renderer doesn't recognize.
+ *
+ * TODO: b/346530293 - Delete [forcePathRendering], use
+ *   [androidx.ink.brush.BrushCoat.paintPreferences] and [androidx.ink.brush.BrushPaint.selfOverlap]
+ *   instead.
+ */
+@OptIn(ExperimentalInkAnimationApi::class)
+internal class CanvasStrokeUnifiedRenderer(
+    private val textureStore: TextureBitmapStore = TextureBitmapStore { null },
+    forcePathRendering: Boolean,
+) : CanvasStrokeRenderer {
+
+    private val scratchAffineTransformMatrix = Matrix()
+
+    private val scratchMatrixValuesArray = FloatArray(9)
+
+    /**
+     * When the brush settings allow for it, we always prefer to draw with the mesh renderer than
+     * the path renderer, as it is both more performant and more fully featured.
+     */
+    private val rendererPreferences: List<Lazy<CanvasStrokeCoatRenderer>> = buildList {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && !forcePathRendering) {
+            add(lazy { CanvasMeshRenderer(textureStore) })
+        }
+        add(lazy { CanvasPathRenderer(textureStore) })
+    }
+
+    override fun draw(
+        canvas: Canvas,
+        stroke: Stroke,
+        strokeToScreenTransform: AffineTransform,
+        animatorClockStateMillis: Long,
+    ) {
+        strokeToScreenTransform.populateMatrix(scratchAffineTransformMatrix)
+        draw(canvas, stroke, scratchAffineTransformMatrix, animatorClockStateMillis)
+    }
+
+    override fun draw(
+        canvas: Canvas,
+        stroke: Stroke,
+        strokeToScreenTransform: Matrix,
+        animatorClockStateMillis: Long,
+    ) {
+        assertIsAffine(strokeToScreenTransform)
+        for (coatIndex in 0 until stroke.shape.getRenderGroupCount()) {
+            drawCoat(canvas, stroke, coatIndex, strokeToScreenTransform, animatorClockStateMillis)
+        }
+    }
+
+    private fun drawCoat(
+        canvas: Canvas,
+        stroke: Stroke,
+        coatIndex: Int,
+        strokeToScreenTransform: Matrix,
+        animatorClockStateMillis: Long,
+    ) {
+        // Try to render each paint option on each renderer until there's a match.
+        val coat = stroke.brush.family.coats[coatIndex]
+        for (paintPreferenceIndex in 0 until coat.paintPreferences.size) {
+            for (lazyRenderer in rendererPreferences) {
+                if (
+                    lazyRenderer.value.canDraw(
+                        canvas = canvas,
+                        stroke = stroke,
+                        coatIndex = coatIndex,
+                        paintPreferenceIndex = paintPreferenceIndex,
+                    )
+                ) {
+                    val paint = coat.paintPreferences[paintPreferenceIndex]
+                    val textureAnimationProgress =
+                        StrokePaintAnimationClock.calculateCurrentPhaseForPaint(
+                            clockStateMillis = animatorClockStateMillis,
+                            strokeAnimationLoopDurationMillis =
+                                stroke.brush.family.textureAnimationLoopDurationMillis,
+                            paintAnimationLoopDurationMillis =
+                                TextureAnimationProgressHelper.getAnimationDurationMillis(paint),
+                            strokeBasePhase = stroke.inputs.getBaseAnimationPhase(),
+                        )
+                    lazyRenderer.value.draw(
+                        canvas = canvas,
+                        stroke = stroke,
+                        coatIndex = coatIndex,
+                        paintPreferenceIndex = paintPreferenceIndex,
+                        strokeToScreenTransform = strokeToScreenTransform,
+                        textureAnimationProgress = textureAnimationProgress,
+                    )
+                    return
+                }
+            }
+        }
+        Log.i(
+            "CanvasStrokeRenderer",
+            "Coat $coatIndex of a Stroke with the following brush cannot be rendered: ${stroke.brush}",
+        )
+    }
+
+    override fun draw(
+        canvas: Canvas,
+        inProgressStroke: InProgressStroke,
+        strokeToScreenTransform: AffineTransform,
+        animatorClockStateMillis: Long,
+    ) {
+        strokeToScreenTransform.populateMatrix(scratchAffineTransformMatrix)
+        draw(canvas, inProgressStroke, scratchAffineTransformMatrix, animatorClockStateMillis)
+    }
+
+    override fun draw(
+        canvas: Canvas,
+        inProgressStroke: InProgressStroke,
+        strokeToScreenTransform: Matrix,
+        animatorClockStateMillis: Long,
+    ) {
+        assertIsAffine(strokeToScreenTransform)
+        val brush = checkNotNull(inProgressStroke.brush)
+        for (coatIndex in 0 until inProgressStroke.getBrushCoatCount()) {
+            drawCoat(
+                canvas,
+                inProgressStroke,
+                brush,
+                coatIndex,
+                strokeToScreenTransform,
+                animatorClockStateMillis,
+            )
+        }
+    }
+
+    private fun drawCoat(
+        canvas: Canvas,
+        inProgressStroke: InProgressStroke,
+        brush: Brush,
+        coatIndex: Int,
+        strokeToScreenTransform: Matrix,
+        animatorClockStateMillis: Long,
+    ) {
+        // Try to render each paint option on each renderer until it's successful.
+        val coat = brush.family.coats[coatIndex]
+        for (paintPreferenceIndex in 0 until coat.paintPreferences.size) {
+            for (lazyRenderer in rendererPreferences) {
+                if (
+                    lazyRenderer.value.canDraw(
+                        canvas = canvas,
+                        inProgressStroke = inProgressStroke,
+                        coatIndex = coatIndex,
+                        paintPreferenceIndex = paintPreferenceIndex,
+                    )
+                ) {
+                    val paint = coat.paintPreferences[paintPreferenceIndex]
+                    val textureAnimationProgress =
+                        StrokePaintAnimationClock.calculateCurrentPhaseForPaint(
+                            clockStateMillis = animatorClockStateMillis,
+                            strokeAnimationLoopDurationMillis =
+                                brush.family.textureAnimationLoopDurationMillis,
+                            paintAnimationLoopDurationMillis =
+                                TextureAnimationProgressHelper.getAnimationDurationMillis(paint),
+                            strokeBasePhase = inProgressStroke.getBaseAnimationPhase(),
+                        )
+                    lazyRenderer.value.draw(
+                        canvas = canvas,
+                        inProgressStroke = inProgressStroke,
+                        coatIndex = coatIndex,
+                        paintPreferenceIndex = paintPreferenceIndex,
+                        strokeToScreenTransform = strokeToScreenTransform,
+                        textureAnimationProgress = textureAnimationProgress,
+                    )
+                    return
+                }
+            }
+        }
+        Log.i(
+            "CanvasStrokeRenderer",
+            "Coat $coatIndex of an InProgressStroke with the following brush cannot be rendered: $brush",
+        )
+    }
+
+    /** Assert that the given [Matrix] is affine. */
+    @VisibleForTesting
+    internal fun assertIsAffine(transform: Matrix) {
+        if (transform.isAffine) return
+        // Don't throw yet - there seem to be cases where Matrix.isAffine returns false, but the
+        // Matrix
+        // is actually affine when examined directly. The above check is fast for the normal case.
+        // See b/418261442 for more context.
+        val vals = scratchMatrixValuesArray
+        transform.getValues(vals)
+        require(
+            vals[Matrix.MPERSP_0] == 0F &&
+                vals[Matrix.MPERSP_1] == 0F &&
+                vals[Matrix.MPERSP_2] == 1F
+        ) {
+            "The matrix must be affine."
+        }
+    }
+}

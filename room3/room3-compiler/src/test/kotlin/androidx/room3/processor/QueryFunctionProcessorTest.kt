@@ -43,6 +43,7 @@ import androidx.room3.processor.ProcessorErrors.cannotFindQueryResultAdapter
 import androidx.room3.processor.ProcessorErrors.mayNeedMapColumn
 import androidx.room3.solver.query.result.DataClassRowAdapter
 import androidx.room3.solver.query.result.ListQueryResultAdapter
+import androidx.room3.solver.query.result.PairTripleRowAdapter
 import androidx.room3.solver.query.result.SingleColumnRowAdapter
 import androidx.room3.solver.query.result.SingleItemQueryResultAdapter
 import androidx.room3.testing.context
@@ -704,7 +705,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
         singleQueryMethod<ReadQueryFunction>(
             """
                 static class Merged extends User {
-                   @Relation(parentColumn = "name", entityColumn = "lastName",
+                   @Relation(parentColumns = {"name"}, entityColumns = {"lastName"},
                              entity = User.class)
                    java.util.List<? extends User> users;
                 }
@@ -734,7 +735,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             listOf("name", "lastName as lName"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).isEmpty()
-            assertThat(adapter?.mapping?.unusedFields).isEmpty()
+            assertThat(adapter?.mapping?.unusedProperties).isEmpty()
             invocation.assertCompilationResult { hasNoWarnings() }
         }
     }
@@ -749,7 +750,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             listOf("name", "lastName"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).isEmpty()
-            assertThat(adapter?.mapping?.unusedFields).isEmpty()
+            assertThat(adapter?.mapping?.unusedProperties).isEmpty()
             invocation.assertCompilationResult { hasNoWarnings() }
         }
     }
@@ -767,7 +768,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             listOf("*"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).isEmpty()
-            assertThat(adapter?.mapping?.unusedFields).isEmpty()
+            assertThat(adapter?.mapping?.unusedProperties).isEmpty()
             invocation.assertCompilationResult { hasNoWarnings() }
         }
     }
@@ -903,7 +904,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             listOf("MAX(ageColumn)", "name"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).isEmpty()
-            assertThat(adapter?.mapping?.unusedFields).isEmpty()
+            assertThat(adapter?.mapping?.unusedProperties).isEmpty()
             invocation.assertCompilationResult { hasNoWarnings() }
         }
     }
@@ -918,7 +919,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             listOf("name", "lastName"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).containsExactly("name", "lastName")
-            assertThat(adapter?.mapping?.unusedFields)
+            assertThat(adapter?.mapping?.unusedProperties)
                 .containsExactlyElementsIn(adapter?.dataClass?.properties)
             invocation.assertCompilationResult {
                 hasErrorContaining(cannotFindQueryResultAdapter("foo.bar.MyClass.DataClass?"))
@@ -968,7 +969,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             listOf("uid", "name", "lastName"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).containsExactly("uid")
-            assertThat(adapter?.mapping?.unusedFields).isEmpty()
+            assertThat(adapter?.mapping?.unusedProperties).isEmpty()
             invocation.assertCompilationResult {
                 hasWarningContaining(
                     ProcessorErrors.queryPropertyDataClassMismatch(
@@ -992,7 +993,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             listOf("lastName"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).isEmpty()
-            assertThat(adapter?.mapping?.unusedFields)
+            assertThat(adapter?.mapping?.unusedProperties)
                 .containsExactlyElementsIn(
                     adapter?.dataClass?.properties?.filter { it.name == "name" }
                 )
@@ -1022,7 +1023,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             listOf("lastName"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).isEmpty()
-            assertThat(adapter?.mapping?.unusedFields)
+            assertThat(adapter?.mapping?.unusedProperties)
                 .containsExactlyElementsIn(
                     adapter?.dataClass?.properties?.filter { it.name == "name" }
                 )
@@ -1038,7 +1039,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                     )
                 )
                 hasErrorContaining(
-                    ProcessorErrors.dataClassMissingNonNull(
+                    ProcessorErrors.dataClassMissingRequiredColumns(
                         dataClassTypeName = "foo.bar.MyClass.DataClass",
                         missingDataClassProperties = listOf("name"),
                         allQueryColumns = listOf("lastName"),
@@ -1058,7 +1059,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             listOf("uid", "name"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).containsExactly("uid")
-            assertThat(adapter?.mapping?.unusedFields)
+            assertThat(adapter?.mapping?.unusedProperties)
                 .containsExactlyElementsIn(
                     adapter?.dataClass?.properties?.filter { it.name == "lastName" }
                 )
@@ -1175,6 +1176,36 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 )
             val parsedQuery = parser.process()
             @Suppress("UNCHECKED_CAST") handler(parsedQuery as T, invocation)
+        }
+    }
+
+    @Test
+    fun testPairRowAdapter() {
+        singleQueryFunction<ReadQueryFunction>(
+            """
+                @Query("SELECT name, uid from User LIMIT 1")
+                abstract fun getNameAndUid(): Pair<String, Int>
+            """
+        ) { parsedQuery, _ ->
+            val adapter = parsedQuery.queryResultBinder.adapter
+            assertThat(adapter).isInstanceOf<SingleItemQueryResultAdapter>()
+            val rowAdapter = adapter!!.rowAdapters.single()
+            assertThat(rowAdapter).isInstanceOf<PairTripleRowAdapter>()
+        }
+    }
+
+    @Test
+    fun testTripleRowAdapter() {
+        singleQueryFunction<ReadQueryFunction>(
+            """
+                @Query("SELECT name, uid, ageColumn from User LIMIT 1")
+                abstract fun getNameUidAge(): Triple<String, Int, Int>
+            """
+        ) { parsedQuery, _ ->
+            val adapter = parsedQuery.queryResultBinder.adapter
+            assertThat(adapter).isInstanceOf<SingleItemQueryResultAdapter>()
+            val rowAdapter = adapter!!.rowAdapters.single()
+            assertThat(rowAdapter).isInstanceOf<PairTripleRowAdapter>()
         }
     }
 
@@ -1484,7 +1515,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(mayNeedMapColumn("kotlin.String?"))
+                hasErrorContaining(mayNeedMapColumn("kotlin.String"))
             }
         }
     }
@@ -1526,7 +1557,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(mayNeedMapColumn("kotlin.Long?"))
+                hasErrorContaining(mayNeedMapColumn("kotlin.Long"))
             }
         }
     }
@@ -1535,7 +1566,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
     fun testMissingMapColumnImmutableListMultimapOneToOneTypeConverterKey() {
         singleQueryMethod<ReadQueryFunction>(
             """
-                @TypeConverters(DateConverter.class)
+                @ColumnTypeConverters(DateConverter.class)
                 @Query("SELECT * FROM Image JOIN Artist ON Artist.mArtistName = Image.mArtistInImage")
                 ImmutableMap<java.util.Date, Artist> getAlbumDateWithBandActivity();
             """
@@ -1550,7 +1581,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
     fun testMissingMapColumnImmutableListMultimapOneToOneTypeConverterValue() {
         singleQueryMethod<ReadQueryFunction>(
             """
-                @TypeConverters(DateConverter.class)
+                @ColumnTypeConverters(DateConverter.class)
                 @Query("SELECT * FROM Artist JOIN Image ON Artist.mArtistName = Image.mArtistInImage")
                 ImmutableMap<Artist, java.util.Date> getAlbumDateWithBandActivity();
             """
@@ -1669,7 +1700,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 "${RxJava3TypeNames.OBSERVABLE.canonicalName}<Int>",
                 "${RxJava3TypeNames.MAYBE.canonicalName}<Int>",
                 "${RxJava3TypeNames.SINGLE.canonicalName}<Int>",
-                "${RxJava3TypeNames.COMPLETABLE.canonicalName}",
+                RxJava3TypeNames.COMPLETABLE.canonicalName,
                 "${LifecyclesTypeNames.LIVE_DATA.canonicalName}<Int>",
                 "${LifecyclesTypeNames.COMPUTABLE_LIVE_DATA.canonicalName}<Int>",
                 "${GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE.canonicalName}<Int>",
@@ -1763,6 +1794,25 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 hasErrorContaining(
                     ProcessorErrors.invalidQueryForSingleColumnArray("kotlin.LongArray?")
                 )
+            }
+        }
+    }
+
+    @Test
+    fun testAmbiguousDuplicateColumn() {
+        if (!enableVerification) {
+            // No warning without verification, avoiding false positives
+            return
+        }
+        singleQueryMethod<ReadQueryFunction>(
+            """
+                @Query("SELECT User.*, User.uid FROM User")
+                abstract User getUser();
+            """
+        ) { _, invocation ->
+            invocation.assertCompilationResult {
+                hasWarningCount(1)
+                hasWarning(ProcessorErrors.ambiguousDuplicateColumn(listOf("foo.bar.User"), "uid"))
             }
         }
     }

@@ -139,10 +139,11 @@ private class DraggableAnchorsNode<T>(
         // update the anchors in the main pass.
         if (!isLookingAhead || !didInitializeAnchors) {
             val size = IntSize(placeable.width, placeable.height)
-            val newAnchorResult = anchors(size, constraints)
-            state.updateAnchors(newAnchorResult.first, newAnchorResult.second)
+            val (newAnchors, suggestedTarget) = anchors(size, constraints)
+            state.updateAnchors(newAnchors, suggestedTarget)
             didInitializeAnchors = true
         }
+
         didInitializeAnchors = isLookingAhead || didInitializeAnchors
         return layout(placeable.width, placeable.height) {
             // In a lookahead pass, we use the position of the current target as this is where any
@@ -195,7 +196,7 @@ private class DraggableAnchorsNode<T>(
     }
 }
 
-private class AnchoredDraggableUninitializedException(
+internal class AnchoredDraggableUninitializedException(
     isLookingAhead: Boolean,
     didLookahead: Boolean,
     anchors: DraggableAnchors<*>,

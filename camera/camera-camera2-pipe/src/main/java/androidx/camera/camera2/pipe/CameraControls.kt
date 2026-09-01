@@ -20,8 +20,36 @@ import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
 import androidx.annotation.RestrictTo
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
 
 // Public controls and enums used to interact with a CameraGraph.
+
+/**
+ * An enum to match the CameraMetadata.CONTROL_MODE_* constants. See
+ * [CameraMetadata.CONTROL_MODE](https://developer.android.com/reference/android/hardware/camera2/CaptureRequest#CONTROL_MODE).
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@JvmInline
+public value class ControlMode(public val value: Int) {
+    public companion object {
+        public val OFF: ControlMode = ControlMode(CameraMetadata.CONTROL_MODE_OFF)
+        public val AUTO: ControlMode = ControlMode(CameraMetadata.CONTROL_MODE_AUTO)
+        public val USE_SCENE_MODE: ControlMode =
+            ControlMode(CameraMetadata.CONTROL_MODE_USE_SCENE_MODE)
+        public val OFF_KEEP_STATE: ControlMode =
+            ControlMode(CameraMetadata.CONTROL_MODE_OFF_KEEP_STATE)
+        public val USE_EXTENDED_SCENE_MODE: ControlMode =
+            ControlMode(CameraMetadata.CONTROL_MODE_USE_EXTENDED_SCENE_MODE)
+
+        public val values: List<ControlMode> =
+            listOf(OFF, AUTO, USE_SCENE_MODE, OFF_KEEP_STATE, USE_EXTENDED_SCENE_MODE)
+
+        @JvmStatic
+        public fun fromIntOrNull(value: Int): ControlMode? =
+            values.firstOrNull { it.value == value }
+    }
+}
 
 /** An enum to match the CameraMetadata.CONTROL_AF_MODE_* constants. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -149,12 +177,8 @@ public value class FlashMode(public val value: Int) {
 /**
  * Enum to turn the torch on/off.
  *
- * <https://developer.android.com/reference/android/hardware/camera2/CameraMetadata
- *
- * #CONTROL_AE_MODE_OFF
- * https://developer.android.com/reference/android/hardware/camera2/CameraMetadata
- *
- * #CONTROL_AE_MODE_ON
+ * https://developer.android.com/reference/android/hardware/camera2/CameraMetadata#CONTROL_AE_MODE_OFF
+ * https://developer.android.com/reference/android/hardware/camera2/CameraMetadata#CONTROL_AE_MODE_ON
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class TorchState private constructor() {
@@ -164,7 +188,7 @@ public class TorchState private constructor() {
     }
 }
 
-/** Requirement to consider prior to locking auto-exposure, auto-focus and auto-whitebalance. */
+/** Requirement to consider prior to locking auto exposure, autofocus and auto white balance. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @JvmInline
 public value class Lock3ABehavior private constructor(public val value: Int) {
@@ -193,6 +217,19 @@ public value class Lock3ABehavior private constructor(public val value: Int) {
     }
 }
 
+/** Requirement to converging auto exposure, autofocus and auto white balance. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@JvmInline
+public value class Converge3ABehavior private constructor(public val value: Int) {
+    public companion object {
+        /** Reuse the ongoing scan. */
+        public val AFTER_CURRENT_SCAN: Converge3ABehavior = Converge3ABehavior(1)
+
+        /** Initiate a new scan. */
+        public val AFTER_NEW_SCAN: Converge3ABehavior = Converge3ABehavior(2)
+    }
+}
+
 /**
  * Return type for a 3A method.
  *
@@ -200,14 +237,22 @@ public value class Lock3ABehavior private constructor(public val value: Int) {
  * @param frameMetadata [FrameMetadata] of the latest frame at which the method succeeded or was
  *   aborted. The metadata reflects CaptureResult or TotalCaptureResult for that frame. It can so
  *   happen that the [CaptureResult] itself has all the key-value pairs needed to determine the
- *   completion of the method, in that case this frameMetadata may not contain all the kay value
+ *   completion of the method, in that case this frameMetadata may not contain all the key-value
  *   pairs associated with the final result i.e. [TotalCaptureResult] of this frame.
+ * @param frameInfo [FrameInfo] i.e. the TotalCaptureResult for the frame at which the method
+ *   succeeded or was aborted. Note that to optimize for latency we complete the [status] and
+ *   [frameMetadata] as early as possible, and if the total result is desired then it can be
+ *   retrieved by calling await() on the frameInfo.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public data class Result3A(val status: Status, val frameMetadata: FrameMetadata? = null) {
+public data class Result3A(
+    val status: Status,
+    val frameMetadata: FrameMetadata? = null,
+    val frameInfo: Deferred<FrameInfo> = defaultFrameInfoDeferred,
+) {
     /**
      * Enum to know the status of 3A operation in case the method returns before the desired
-     * operation is complete. The reason could be that the operation was talking a lot longer and an
+     * operation is complete. The reason could be that the operation was taking a lot longer and an
      * enforced frame or time limit was reached, submitting the desired request to camera failed
      * etc.
      */
@@ -220,5 +265,10 @@ public data class Result3A(val status: Status, val frameMetadata: FrameMetadata?
             public val SUBMIT_CANCELLED: Status = Status(3)
             public val SUBMIT_FAILED: Status = Status(4)
         }
+    }
+
+    public companion object {
+        private val defaultFrameInfoDeferred: CompletableDeferred<FrameInfo> =
+            CompletableDeferred<FrameInfo>().apply { cancel() }
     }
 }

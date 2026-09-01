@@ -26,7 +26,7 @@ import androidx.annotation.RequiresExtension
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.pdf.annotation.KeyedPdfAnnotation
+import androidx.pdf.annotation.content.KeyedPdfAnnotation
 import androidx.pdf.idlingresource.PdfIdlingResource
 import androidx.pdf.ink.EditablePdfViewerFragment
 import androidx.pdf.models.FormEditInfo
@@ -40,6 +40,7 @@ import java.util.UUID
  * A subclass fragment from [EditablePdfViewerFragment] to include
  * [androidx.test.espresso.IdlingResource] while loading pdf document.
  */
+@OptIn(ExperimentalPdfApi::class)
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
 internal class TestEditablePdfViewerFragment : EditablePdfViewerFragment {
 

@@ -16,9 +16,12 @@
 
 package androidx.xr.arcore.projected.testapp
 
+import android.app.Activity
+import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -39,15 +42,48 @@ import androidx.compose.ui.unit.sp
 import androidx.xr.arcore.projected.testapp.tiltgesture.TiltGestureTrackingActivity
 import androidx.xr.projected.ProjectedContext
 import androidx.xr.projected.experimental.ExperimentalProjectedApi
-import androidx.xr.runtime.XrLog
 
+/**
+ * Main entry point for launching projected and geospatial test activities.
+ *
+ * This activity accepts optional intent extras that are forwarded to target test activities:
+ * - "debug.jxr.geo.bg_thread" (boolean): Controls whether session creation and updates run on a
+ *   background thread.
+ * - "debug.jxr.geo.delay_ms" (int): Delay in milliseconds before attempting to create the session.
+ */
 @OptIn(ExperimentalProjectedApi::class)
 class MainActivity : ComponentActivity() {
+    private val activeProjectedActivities = mutableListOf<Activity>()
+
+    private val lifecycleCallbacks =
+        object : Application.ActivityLifecycleCallbacks {
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+                if (activity != this@MainActivity) {
+                    activeProjectedActivities.add(activity)
+                }
+            }
+
+            override fun onActivityDestroyed(activity: Activity) {
+                if (activity != this@MainActivity) {
+                    activeProjectedActivities.remove(activity)
+                }
+            }
+
+            override fun onActivityStarted(activity: Activity) {}
+
+            override fun onActivityResumed(activity: Activity) {}
+
+            override fun onActivityPaused(activity: Activity) {}
+
+            override fun onActivityStopped(activity: Activity) {}
+
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        XrLog.isEnabled = true
-        XrLog.level = XrLog.Level.VERBOSE
+        application.registerActivityLifecycleCallbacks(lifecycleCallbacks)
 
         setContent {
             Column(
@@ -58,48 +94,166 @@ class MainActivity : ComponentActivity() {
                 Column(modifier = Modifier.fillMaxWidth(0.8f)) {
                     HorizontalDivider(color = Color.Gray)
                     TestActivityRow(
-                        "TiltGesture test",
-                        TiltGestureTrackingActivity::class.java,
+                        "Inertial Tracking test",
+                        InertialTrackingActivity::class.java,
+                        isProjected = true,
                         this@MainActivity,
                     )
                     TestActivityRow(
-                        "Geospatial/Tracking test",
-                        ProjectedTestAppActivity::class.java,
+                        "TiltGesture test",
+                        TiltGestureTrackingActivity::class.java,
+                        isProjected = true,
                         this@MainActivity,
                     )
+                    TestActivityRow(
+                        "Geospatial/Tracking Test",
+                        GeospatialProjectedActivity::class.java,
+                        isProjected = true,
+                        this@MainActivity,
+                    )
+                    TestActivityRow(
+                        "Geospatial/Tracking Remote",
+                        GeospatialRemoteSensorActivity::class.java,
+                        isProjected = false,
+                        this@MainActivity,
+                    )
+                    TestActivityRow(
+                        "Low Power Geospatial Test",
+                        LowPowerGeospatialActivity::class.java,
+                        isProjected = true,
+                        this@MainActivity,
+                    )
+                    TestActivityRow(
+                        "Low Power Geospatial Remote",
+                        LowPowerRemoteSensorGeospatialActivity::class.java,
+                        isProjected = false,
+                        this@MainActivity,
+                    )
+                    TestActivityRow(
+                        "Threading Stress Test",
+                        ThreadingStressTestActivity::class.java,
+                        isProjected = true,
+                        this@MainActivity,
+                    )
+                    TestActivityRow(
+                        "Threading Stress Remote",
+                        ThreadingRemoteSensorStressTestActivity::class.java,
+                        isProjected = false,
+                        this@MainActivity,
+                    )
+                    GeospatialActivityRow(
+                        "Config Projected: INERTIAL",
+                        "INERTIAL",
+                        this@MainActivity,
+                    )
+                    GeospatialActivityRow("Config Projected: SPATIAL", "SPATIAL", this@MainActivity)
                 }
             }
         }
     }
 
+    override fun onStop() {
+        super.onStop()
+        activeProjectedActivities.forEach { activity ->
+            if (ProjectedContext.isProjectedDeviceContext(activity)) {
+                activity.moveTaskToBack(true)
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        application.unregisterActivityLifecycleCallbacks(lifecycleCallbacks)
+        activeProjectedActivities.forEach { it.finish() }
+        activeProjectedActivities.clear()
+    }
+
     @Composable
-    private fun TestActivityRow(name: String, activityClass: Class<*>, context: Context) {
+    private fun TestActivityRow(
+        name: String,
+        activityClass: Class<*>,
+        isProjected: Boolean,
+        context: Context,
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(name, fontSize = 18.sp)
-            Button(onClick = { launchProjectedActivity(activityClass, context) }) {
-                Text("Run Test", fontSize = 18.sp)
+            Button(
+                onClick = {
+                    activeProjectedActivities.toList().forEach { it.finish() }
+                    val intent = createIntentWithExtras(context, activityClass)
+                    if (isProjected) {
+                        launchProjectedActivity(intent, context)
+                    } else {
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        startActivity(intent)
+                    }
+                }
+            ) {
+                Text("Run", fontSize = 18.sp)
             }
         }
         HorizontalDivider(color = Color.Gray)
     }
 
-    private fun launchProjectedActivity(activityClass: Class<*>, context: Context) {
+    private fun createIntentWithExtras(context: Context, targetClass: Class<*>): Intent {
+        return Intent(context, targetClass).apply {
+            this@MainActivity.intent.extras?.let { putExtras(it) }
+        }
+    }
+
+    private fun launchProjectedActivity(intent: Intent, context: Context) {
         val projectedContext =
             try {
                 ProjectedContext.createProjectedDeviceContext(context)
             } catch (e: IllegalStateException) {
-                XrLog.warn(e) { "Error creating projected device" }
+                Log.w("JetpackXR", "Error creating projected device", e)
                 return
             }
-        val intent = Intent(context, activityClass)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         startActivity(
             intent,
             ProjectedContext.createProjectedActivityOptions(projectedContext).toBundle(),
         )
+    }
+
+    @Composable
+    private fun GeospatialActivityRow(name: String, mode: String, context: Context) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(name, fontSize = 18.sp)
+            Button(
+                onClick = {
+                    activeProjectedActivities.toList().forEach { it.finish() }
+                    val targetClass = ConfigProjectedGeospatialActivity::class.java
+                    val intent = createIntentWithExtras(context, targetClass)
+                    intent.putExtra("GEOSPATIAL_MODE", mode)
+                    intent.addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    )
+
+                    val projectedContext =
+                        try {
+                            ProjectedContext.createProjectedDeviceContext(context)
+                        } catch (e: IllegalStateException) {
+                            return@Button
+                        }
+
+                    startActivity(
+                        intent,
+                        ProjectedContext.createProjectedActivityOptions(projectedContext).toBundle(),
+                    )
+                }
+            ) {
+                Text("Run", fontSize = 18.sp)
+            }
+        }
+        HorizontalDivider(color = Color.Gray)
     }
 }

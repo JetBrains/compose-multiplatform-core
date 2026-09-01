@@ -21,13 +21,15 @@ import static android.media.EncoderProfiles.VideoProfile.HDR_HDR10;
 import static android.media.EncoderProfiles.VideoProfile.HDR_HDR10PLUS;
 import static android.media.EncoderProfiles.VideoProfile.HDR_HLG;
 import static android.media.EncoderProfiles.VideoProfile.HDR_NONE;
+import static android.media.MediaCodecInfo.CodecProfileLevel.APVProfile422_10;
+import static android.media.MediaCodecInfo.CodecProfileLevel.APVProfile422_10HDR10;
+import static android.media.MediaCodecInfo.CodecProfileLevel.APVProfile422_10HDR10Plus;
 import static android.media.MediaCodecInfo.CodecProfileLevel.AV1ProfileMain10;
 import static android.media.MediaCodecInfo.CodecProfileLevel.AV1ProfileMain10HDR10;
 import static android.media.MediaCodecInfo.CodecProfileLevel.AV1ProfileMain10HDR10Plus;
 import static android.media.MediaCodecInfo.CodecProfileLevel.AV1ProfileMain8;
 import static android.media.MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvavSe;
 import static android.media.MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheSt;
-import static android.media.MediaCodecInfo.CodecProfileLevel.HEVCProfileMain;
 import static android.media.MediaCodecInfo.CodecProfileLevel.HEVCProfileMain10;
 import static android.media.MediaCodecInfo.CodecProfileLevel.HEVCProfileMain10HDR10;
 import static android.media.MediaCodecInfo.CodecProfileLevel.HEVCProfileMain10HDR10Plus;
@@ -123,7 +125,8 @@ public class DynamicRangeUtil {
         //--------------------------------------------------------------------------------------//
         // DynamicRange encodings to HEVC profiles
         Map<DynamicRange, Integer> hevcMap = new HashMap<>();
-        hevcMap.put(SDR, HEVCProfileMain);
+        // Do not set SDR to HEVCProfileMain, as it causes codec configuration errors on several
+        // devices (b/489316153).
         hevcMap.put(HLG_10_BIT, HEVCProfileMain10);
         hevcMap.put(HDR10_10_BIT, HEVCProfileMain10HDR10);
         hevcMap.put(HDR10_PLUS_10_BIT, HEVCProfileMain10HDR10Plus);
@@ -150,11 +153,18 @@ public class DynamicRangeUtil {
         // DV Profile 9 (8-bit AVC)
         dvMap.put(DOLBY_VISION_8_BIT, DolbyVisionProfileDvavSe);
 
+        // APV encodings to APV profiles for YUV 4:2:2 chroma subsampling
+        Map<DynamicRange, Integer> apv422Map = new HashMap<>();
+        apv422Map.put(HLG_10_BIT, APVProfile422_10);
+        apv422Map.put(HDR10_10_BIT, APVProfile422_10HDR10);
+        apv422Map.put(HDR10_PLUS_10_BIT, APVProfile422_10HDR10Plus);
+
         // Combine all mime type maps
         MIME_TO_DEFAULT_PROFILE_LEVEL_MAP.put(MediaFormat.MIMETYPE_VIDEO_HEVC, hevcMap);
         MIME_TO_DEFAULT_PROFILE_LEVEL_MAP.put(MediaFormat.MIMETYPE_VIDEO_AV1, av1420Map);
         MIME_TO_DEFAULT_PROFILE_LEVEL_MAP.put(MediaFormat.MIMETYPE_VIDEO_VP9, vp9420Map);
         MIME_TO_DEFAULT_PROFILE_LEVEL_MAP.put(MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION, dvMap);
+        MIME_TO_DEFAULT_PROFILE_LEVEL_MAP.put(MediaFormat.MIMETYPE_VIDEO_APV, apv422Map);
         //--------------------------------------------------------------------------------------//
     }
 

@@ -23,16 +23,16 @@ package androidx.glance.wear.core {
     property public String? label;
     property public int previewImage;
     property public int type;
-    field public static final int CONTAINER_TYPE_FULLSCREEN = 0; // 0x0
     field public static final int CONTAINER_TYPE_LARGE = 1; // 0x1
     field public static final int CONTAINER_TYPE_SMALL = 2; // 0x2
+    field public static final int CONTAINER_TYPE_TILE_COMPAT = 0; // 0x0
     field public static final androidx.glance.wear.core.ContainerInfo.Companion Companion;
   }
 
   public static final class ContainerInfo.Companion {
-    property public static int CONTAINER_TYPE_FULLSCREEN;
     property public static int CONTAINER_TYPE_LARGE;
     property public static int CONTAINER_TYPE_SMALL;
+    property public static int CONTAINER_TYPE_TILE_COMPAT;
   }
 
   public interface WearWidgetEvent {

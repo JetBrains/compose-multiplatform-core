@@ -81,6 +81,7 @@ class PanWithVelocityTest(private val config: TestConfig) {
     private val recorder = TrackpadPanInputRecorder()
 
     @Test
+    @OptIn(ExperimentalComposeUiApi::class)
     fun panWithVelocity() {
         rule.setContent {
             Box(Modifier.fillMaxSize().wrapContentSize(Alignment.TopStart)) {
@@ -108,15 +109,23 @@ class PanWithVelocityTest(private val config: TestConfig) {
 
                 val computedVelocity: Velocity
 
-                @OptIn(ExperimentalComposeUiApi::class)
-                if (
-                    ComposeUiFlags.isTrackpadGestureHandlingEnabled && Build.VERSION.SDK_INT >= 34
-                ) {
+                if (Build.VERSION.SDK_INT >= 34) {
+                    val hasExtraMove =
+                        ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled
                     assertThat(events.map { it.position }.toSet()).containsExactly(boxCenter)
                     assertThat(events[1].eventType).isEqualTo(PointerEventType.PanStart)
-                    assertThat(events.subList(2, events.size - 1).map { it.eventType }.toSet())
-                        .containsExactly(PointerEventType.PanMove)
-                    assertThat(events.last().eventType).isEqualTo(PointerEventType.PanEnd)
+
+                    if (hasExtraMove) {
+                        assertThat(events.subList(2, events.size - 2).map { it.eventType }.toSet())
+                            .containsExactly(PointerEventType.PanMove)
+                        assertThat(events[events.size - 2].eventType)
+                            .isEqualTo(PointerEventType.PanEnd)
+                        assertThat(events.last().eventType).isEqualTo(PointerEventType.Move)
+                    } else {
+                        assertThat(events.subList(2, events.size - 1).map { it.eventType }.toSet())
+                            .containsExactly(PointerEventType.PanMove)
+                        assertThat(events.last().eventType).isEqualTo(PointerEventType.PanEnd)
+                    }
 
                     computedVelocity = -panVelocityTracker.calculateVelocity()
                 } else {

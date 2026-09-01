@@ -244,7 +244,8 @@ public class WriterBase implements AutoCloseable {
      * starting with "Exif\0\0" followed by the TIFF header (See JEITA CP-3451C Section 4.5.2.)
      *
      * @param imageIndex index of the image, must be a valid index for the max number of image
-     *                   specified by {@link Builder#setMaxImages(int)}.
+     *                   specified by {@link HeifWriter.Builder#setMaxImages(int)} or
+     *                   {@link AvifWriter.Builder#setMaxImages(int)}.
      * @param exifData byte buffer containing a Exif data block.
      * @param offset offset of the Exif data block within exifData.
      * @param length length of the Exif data block.
@@ -252,11 +253,22 @@ public class WriterBase implements AutoCloseable {
     void addExifData(int imageIndex, byte @NonNull [] exifData, int offset, int length) {
         checkStarted(true);
 
+        // Validate parameters to prevent out-of-bounds access
+        if (imageIndex < 0 || imageIndex >= mMaxImages) {
+            throw new IllegalArgumentException("Invalid imageIndex: " + imageIndex);
+        }
+        if (length < 0) {
+            throw new IllegalArgumentException("Invalid EXIF data length: " + length);
+        }
+
         ByteBuffer buffer = ByteBuffer.allocateDirect(length);
         buffer.put(exifData, offset, length);
         buffer.flip();
         // Put it in a queue, as we might not be able to process it at this time.
         synchronized (mExifList) {
+            if (mExifList.size() >= mMaxImages) {
+                throw new IllegalStateException("Exceeded maximum pending EXIF data blocks");
+            }
             mExifList.add(new Pair<Integer, ByteBuffer>(imageIndex, buffer));
         }
         processExifData();
@@ -315,7 +327,7 @@ public class WriterBase implements AutoCloseable {
 
     private void checkStarted(boolean requiredStarted) {
         if (mStarted != requiredStarted) {
-            throw new IllegalStateException("Already started");
+            throw new IllegalStateException(requiredStarted ? "Not started" : "Already started");
         }
     }
 

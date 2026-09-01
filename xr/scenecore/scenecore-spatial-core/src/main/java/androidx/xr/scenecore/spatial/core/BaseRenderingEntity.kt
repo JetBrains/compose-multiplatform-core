@@ -17,8 +17,9 @@
 package androidx.xr.scenecore.spatial.core
 
 import android.content.Context
-import androidx.xr.runtime.TypeHolder.Companion.assertGetValue
+import androidx.xr.scenecore.runtime.CleanupAction
 import androidx.xr.scenecore.runtime.RenderingFeature
+import androidx.xr.scenecore.runtime.TypeHolder.Companion.assertGetValue
 import com.android.extensions.xr.XrExtensions
 import com.android.extensions.xr.node.Node
 import java.util.concurrent.ScheduledExecutorService
@@ -33,14 +34,14 @@ internal abstract class BaseRenderingEntity(
     context: Context?,
     private val renderingFeature: RenderingFeature,
     xrExtensions: XrExtensions,
-    entityManager: EntityManager,
+    sceneNodeRegistry: SceneNodeRegistry,
     executor: ScheduledExecutorService,
 ) :
     AndroidXrEntity(
         context,
         assertGetValue(renderingFeature.getNodeHolder(), Node::class.java),
         xrExtensions,
-        entityManager,
+        sceneNodeRegistry,
         executor,
     ) {
     private val subspaceNode: Node? =
@@ -50,13 +51,24 @@ internal abstract class BaseRenderingEntity(
             // subspace node, can be correctly resolved back to this entity. Without this alias,
             // getEntityForNode(subspaceNode) would fail.
             assertGetValue(subspaceNodeHolder, Node::class.java).also {
-                entityManager.setEntityForNode(it, this)
+                sceneNodeRegistry.setEntityForNode(it, this)
             }
         }
 
-    override fun dispose() {
-        subspaceNode?.let { mEntityManager.removeEntityForNode(it) }
-        renderingFeature.dispose()
-        super.dispose()
+    private val baseRenderingCleanupAction: BaseRenderingEntityCleanupAction =
+        BaseRenderingEntityCleanupAction(subspaceNode, sceneNodeRegistry, renderingFeature)
+
+    init {
+        registerCleanup(executor, baseRenderingCleanupAction)
     }
+
+    private class BaseRenderingEntityCleanupAction(
+        subspaceNode: Node?,
+        sceneNodeRegistry: SceneNodeRegistry,
+        renderingFeature: RenderingFeature,
+    ) :
+        CleanupAction({
+            subspaceNode?.let { sceneNodeRegistry.removeEntityForNode(it) }
+            renderingFeature.dispose()
+        })
 }

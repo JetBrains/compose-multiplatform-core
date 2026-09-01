@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,8 +36,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -46,7 +46,7 @@ import org.junit.runner.RunWith
 @MediumTest
 class SingleValueAnimationTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun animate1DTest() {
@@ -451,6 +451,108 @@ class SingleValueAnimationTest {
     }
 
     @Test
+    fun customSpringSpecVisibilityThresholdTest() {
+        rule.mainClock.autoAdvance = false
+        val threshold = 0.1f
+        // Use a very low stiffness to make the animation slow and easy to track
+        val customSpec =
+            spring<Float>(stiffness = Spring.StiffnessVeryLow, visibilityThreshold = threshold)
+        var enabled by mutableStateOf(false)
+        var latestValue = 0f
+        var isFinished = false
+        rule.setContent {
+            val floatValue by
+                animateFloatAsState(
+                    if (enabled) 1f else 0f,
+                    customSpec,
+                    finishedListener = { isFinished = true },
+                )
+            latestValue = floatValue
+        }
+
+        rule.runOnIdle { enabled = true }
+
+        // Advance the clock frame by frame and record values
+        val values = mutableListOf<Float>()
+        while (!isFinished) {
+            values.add(latestValue)
+            rule.mainClock.advanceTimeByFrame()
+            rule.waitForIdle()
+        }
+        values.add(latestValue)
+
+        assertTrue("Animation should be finished", isFinished)
+        // Ensure it reached 1f
+        assertEquals(1f, values.last())
+
+        // Target value is 1f. Threshold is 0.1f.
+        // Once the value is within threshold of target (i.e. > 0.9f), it should snap to 1f.
+        // So no value should be in the range (0.9, 1.0)
+        for (v in values) {
+            if (v != 1f) {
+                assertTrue(
+                    "Value $v should not be in the range (0.9, 1.0) given threshold $threshold",
+                    v <= 1f - threshold,
+                )
+            }
+        }
+
+        // Ensure we actually animated and didn't just snap immediately from 0 to 1
+        assertTrue("Should have multiple values", values.size > 2)
+    }
+
+    @Test
+    fun customSpringSpecLargeVisibilityThresholdTest() {
+        rule.mainClock.autoAdvance = false
+        val threshold = 5f
+        val startValue = 200f
+        val targetValue = 1000f
+        // Use a very low stiffness to make the animation slow and easy to track
+        val customSpec =
+            spring<Float>(stiffness = Spring.StiffnessVeryLow, visibilityThreshold = threshold)
+        var target by mutableStateOf(startValue)
+        var latestValue = startValue
+        var isFinished = false
+        rule.setContent {
+            val floatValue by
+                animateFloatAsState(target, customSpec, finishedListener = { isFinished = true })
+            latestValue = floatValue
+        }
+
+        rule.runOnIdle { target = targetValue }
+
+        // Advance the clock frame by frame and record values
+        val values = mutableListOf<Float>()
+        while (!isFinished) {
+            values.add(latestValue)
+            rule.mainClock.advanceTimeByFrame()
+            rule.waitForIdle()
+            // Safety break to avoid infinite loop
+            if (values.size > 2000) break
+        }
+        values.add(latestValue)
+
+        assertTrue("Animation should be finished", isFinished)
+        // Ensure it reached 1000f
+        assertEquals(targetValue, values.last())
+
+        // Target value is 1000f. Threshold is 5f.
+        // Once the value is within threshold of target (i.e. > 995f), it should snap to 1000f.
+        // So no value should be in the range (995, 1000)
+        for (v in values) {
+            if (v != targetValue) {
+                assertTrue(
+                    "Error: Value = $v, when values in the range (995, 1000) should be snapped to 1000 given threshold $threshold",
+                    v <= targetValue - threshold,
+                )
+            }
+        }
+
+        // Ensure we actually animated
+        assertTrue("Should have multiple values", values.size > 2)
+    }
+
+    @Test
     fun updateAnimationSpecTest() {
         var duration by mutableStateOf(100)
         var firstRun by mutableStateOf(true)
@@ -510,5 +612,76 @@ class SingleValueAnimationTest {
         rule.waitForIdle()
         // Animation is finished at this point
         assertEquals(250f, expected)
+    }
+
+    @Test
+    fun updateVisibilityThresholdTest() {
+        var duration by mutableStateOf(100)
+        var firstRun by mutableStateOf(true)
+        var visibilityThreshold by mutableStateOf(0.dp)
+        var enabled by mutableStateOf(false)
+        var expected by mutableStateOf(250.dp)
+
+        var finished = false
+        var midpoint = false
+
+        rule.mainClock.autoAdvance = false
+        rule.setContent {
+            Box {
+                val animationValue by
+                    animateValueAsState(
+                        if (enabled) 50.dp else 250.dp,
+                        Dp.VectorConverter,
+                        visibilityThreshold = visibilityThreshold,
+                        animationSpec = TweenSpec(duration, easing = FastOutSlowInEasing),
+                        finishedListener = { finished = true },
+                    )
+                assertEquals(expected, animationValue)
+                if (!firstRun) {
+                    LaunchedEffect(enabled) {
+                        if (enabled) {
+                            assertEquals(100, duration)
+                        } else {
+                            assertEquals(200, duration)
+                        }
+                        val startTime = withFrameNanos { it }
+                        var frameTime = startTime
+                        do {
+                            withFrameNanos {
+                                frameTime = it
+                                val playTime =
+                                    ((frameTime - startTime) / 1_000_000L).coerceIn(
+                                        0,
+                                        duration.toLong(),
+                                    )
+                                val fraction =
+                                    FastOutSlowInEasing.transform(playTime / duration.toFloat())
+                                expected =
+                                    if (enabled) {
+                                            lerp(250f, 50f, fraction)
+                                        } else {
+                                            lerp(50f, 250f, fraction)
+                                        }
+                                        .dp
+                                if (fraction > .5f) {
+                                    midpoint = true
+                                }
+                            }
+                        } while (frameTime - startTime <= duration * 1_000_000L)
+                        expected = if (enabled) 50.dp else 250.dp
+                    }
+                }
+            }
+        }
+        rule.runOnUiThread {
+            finished = false
+            enabled = true
+            firstRun = false
+        }
+        rule.mainClock.advanceTimeUntil { midpoint }
+        rule.runOnUiThread { visibilityThreshold = 10.dp }
+        rule.mainClock.advanceTimeUntil { finished }
+        // Animation is finished at this point
+        assertEquals(50.dp, expected)
     }
 }

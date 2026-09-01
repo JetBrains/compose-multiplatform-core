@@ -21,9 +21,9 @@ package androidx.lifecycle.viewmodel
 import androidx.lifecycle.DEFAULT_ARGS_KEY
 import androidx.lifecycle.HasDefaultViewModelProviderFactory
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.SAVED_STATE_KEY
 import androidx.lifecycle.SAVED_STATE_REGISTRY_OWNER_KEY
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.SavedStateHandleController
 import androidx.lifecycle.SavedStateViewModelFactory
 import androidx.lifecycle.VIEW_MODEL_STORE_OWNER_KEY
 import androidx.lifecycle.ViewModelProvider.Factory
@@ -56,7 +56,14 @@ public fun ViewModelStoreOwner(
         public override val defaultViewModelCreationExtras: CreationExtras
             get() =
                 MutableCreationExtras(defaultCreationExtras).also { extras ->
-                    extras[DEFAULT_ARGS_KEY] = defaultArgs
+                    extras[DEFAULT_ARGS_KEY] = savedState {
+                        // Merge with existing arguments so upstream defaults are not overwritten
+                        val existingArgs = extras[DEFAULT_ARGS_KEY]
+                        if (existingArgs != null) {
+                            putAll(existingArgs)
+                        }
+                        putAll(defaultArgs)
+                    }
                     extras[VIEW_MODEL_STORE_OWNER_KEY] = this
                 }
     }
@@ -127,7 +134,14 @@ public fun ViewModelStoreOwner(
         override val defaultViewModelCreationExtras: CreationExtras
             get() =
                 MutableCreationExtras(defaultCreationExtras).also { extras ->
-                    extras[DEFAULT_ARGS_KEY] = defaultArgs
+                    extras[DEFAULT_ARGS_KEY] = savedState {
+                        // Merge with existing arguments so upstream defaults are not overwritten.
+                        val existingArgs = extras[DEFAULT_ARGS_KEY]
+                        if (existingArgs != null) {
+                            putAll(existingArgs)
+                        }
+                        putAll(defaultArgs)
+                    }
                     extras[SAVED_STATE_REGISTRY_OWNER_KEY] = this
                     extras[VIEW_MODEL_STORE_OWNER_KEY] = this
                 }
@@ -136,7 +150,7 @@ public fun ViewModelStoreOwner(
             // The parent SavedStateRegistry may be reused across multiple child scopes.
             // If the provider is already registered, saved state is already enabled for
             // this registry, and we can safely skip the Lifecycle preconditions.
-            if (savedStateRegistry.getSavedStateProvider(SAVED_STATE_KEY) == null) {
+            if (SavedStateHandleController.getOrNull(this) == null) {
                 enableSavedStateHandles()
             }
         }

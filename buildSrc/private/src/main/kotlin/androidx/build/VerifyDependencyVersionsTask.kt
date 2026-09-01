@@ -28,7 +28,6 @@ import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
-import org.gradle.kotlin.dsl.setProperty
 
 /**
  * Task for verifying the androidx dependency-stability-suffix rule (A library is only as stable as
@@ -44,8 +43,7 @@ abstract class VerifyDependencyVersionsTask : DefaultTask() {
 
     @get:Input abstract val version: Property<String>
 
-    @get:Input
-    val androidXDependencySet: SetProperty<AndroidXDependency> = project.objects.setProperty()
+    @get:Input abstract val androidXDependencySet: SetProperty<AndroidXDependency>
 
     /**
      * Iterate through the dependencies of the project and ensure none of them are of an inferior
@@ -124,22 +122,18 @@ internal fun Project.createVerifyDependencyVersionsTask():
             task.version.set(project.version.toString())
             task.androidXDependencySet.set(
                 project.provider {
-                    val dependencies = mutableSetOf<AndroidXDependency>()
-                    project.configurations.filter(project::shouldVerifyConfiguration).forEach {
+                    project.configurations.matching(project::shouldVerifyConfiguration).flatMap {
                         configuration ->
-                        configuration.allDependencies.filter(::shouldVerifyDependency).forEach {
+                        configuration.allDependencies.filter(::shouldVerifyDependency).map {
                             dependency ->
-                            dependencies.add(
-                                AndroidXDependency(
-                                    dependency.group!!,
-                                    dependency.name,
-                                    dependency.version!!,
-                                    configuration.name,
-                                )
+                            AndroidXDependency(
+                                dependency.group!!,
+                                dependency.name,
+                                dependency.version!!,
+                                configuration.name,
                             )
                         }
                     }
-                    dependencies
                 }
             )
             task.onlyIf {
@@ -229,6 +223,16 @@ internal fun Project.shouldVerifyConfiguration(configuration: Configuration): Bo
 
     // Don't check KGP internal configuration used for tooling
     if (name == "kotlinInternalAbiValidation") return false
+
+    // don't verify these configurations of KMP projects since we don't publish them anyway
+    if (name.endsWith("CompileKlibraries")) return false
+    if (name.endsWith("CompilationApi")) return false
+    if (name == "jsCompileClasspath") return false
+    if (name == "jsNpmAggregated") return false
+    if (name == "jsRuntimeClasspath") return false
+    if (name == "wasmJsCompileClasspath") return false
+    if (name == "wasmJsNpmAggregated") return false
+    if (name == "wasmJsRuntimeClasspath") return false
 
     // don't verify test configurations of KMP projects
     if (name.contains("TestCompilation")) return false

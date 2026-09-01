@@ -29,13 +29,23 @@ import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.os.RemoteException
+import androidx.security.state.SecurityPatchState.Companion.UPDATE_INFO_SERVICE_MAX_IPC_THREADS
 import androidx.security.state.SecurityPatchState.Companion.getComponentSecurityPatchLevel
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.yield
 import org.junit.After
+import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -53,6 +63,7 @@ import org.mockito.Mockito.timeout
 import org.mockito.Mockito.times
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.robolectric.annotation.Config
@@ -63,7 +74,8 @@ class SecurityPatchStateTest {
     private val mockContext: Context = mock<Context>()
     private val mockPackageManager: PackageManager = mock(PackageManager::class.java)
     private val mockBinder: IBinder = mock(IBinder::class.java)
-    private val mockService: IUpdateInfoService = mock(IUpdateInfoService::class.java)
+    private val mockFactory: IUpdateInfoService = mock(IUpdateInfoService::class.java)
+    private val mockSession: IUpdateInfoSession = mock(IUpdateInfoSession::class.java)
 
     private val mockSecurityStateManagerCompat: SecurityStateManagerCompat =
         mock<SecurityStateManagerCompat> {}
@@ -73,7 +85,16 @@ class SecurityPatchStateTest {
     fun setup() {
         `when`(mockContext.packageName).thenReturn("com.example.test")
         `when`(mockContext.packageManager).thenReturn(mockPackageManager)
-        `when`(mockBinder.queryLocalInterface(anyString())).thenReturn(mockService)
+        `when`(mockBinder.queryLocalInterface(anyString())).thenReturn(mockFactory)
+        `when`(mockFactory.openSession(anyString(), any(IBinder::class.java)))
+            .thenReturn(mockSession)
+        `when`(
+                mockPackageManager.checkPermission(
+                    eq("android.permission.READ_PRIVILEGED_PHONE_STATE"),
+                    anyString(),
+                )
+            )
+            .thenReturn(PackageManager.PERMISSION_GRANTED)
         securityState = SecurityPatchState(mockContext, listOf(), mockSecurityStateManagerCompat)
     }
 
@@ -86,6 +107,43 @@ class SecurityPatchStateTest {
     @Test
     fun testGetSystemModules_whenSystemModulesIsEmpty_usesDefaultSystemModules() {
         assert(securityState.getSystemModules() == SecurityPatchState.DEFAULT_SYSTEM_MODULES)
+    }
+
+    @Test
+    fun testGetSystemModulesSecurityPatchLevel_whenReportIsNullAndSomeModulesMissing_returnsMinOfPresent() {
+        // GIVEN: vulnerabilityReport is null (not loaded)
+        // AND: getSystemModules returns [ModuleA, ModuleB]
+        // AND: ModuleA is installed with version 2024-05-01
+        // AND: ModuleB is NOT installed (returns "")
+        val systemModules = listOf("ModuleA", "ModuleB")
+        securityState =
+            SecurityPatchState(mockContext, systemModules, mockSecurityStateManagerCompat)
+
+        `when`(mockSecurityStateManagerCompat.getPackageVersion("ModuleA")).thenReturn("2024-05-01")
+        `when`(mockSecurityStateManagerCompat.getPackageVersion("ModuleB")).thenReturn("")
+
+        val spl =
+            securityState.getDeviceSecurityPatchLevel(SecurityPatchState.COMPONENT_SYSTEM_MODULES)
+
+        // EXPECTED BEHAVIOR: should return 2024-05-01 (ignoring missing ModuleB)
+        assertEquals("2024-05-01", spl.toString())
+    }
+
+    @Test
+    fun testGetSystemModulesSecurityPatchLevel_whenReportIsNullAndAllModulesInstalled_returnsMin() {
+        // GIVEN: vulnerabilityReport is null
+        // AND: ModuleA is 2024-05-01, ModuleB is 2024-04-01
+        val systemModules = listOf("ModuleA", "ModuleB")
+        securityState =
+            SecurityPatchState(mockContext, systemModules, mockSecurityStateManagerCompat)
+
+        `when`(mockSecurityStateManagerCompat.getPackageVersion("ModuleA")).thenReturn("2024-05-01")
+        `when`(mockSecurityStateManagerCompat.getPackageVersion("ModuleB")).thenReturn("2024-04-01")
+
+        val spl =
+            securityState.getDeviceSecurityPatchLevel(SecurityPatchState.COMPONENT_SYSTEM_MODULES)
+
+        assertEquals("2024-04-01", spl.toString())
     }
 
     @Test
@@ -194,15 +252,45 @@ class SecurityPatchStateTest {
         securityState.loadVulnerabilityReport(invalidJson)
     }
 
+    @Suppress("DEPRECATION")
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Config(sdk = [Build.VERSION_CODES.UPSIDE_DOWN_CAKE])
     @Test
-    fun testGetVulnerabilityReportUrl_validSdkVersion_returnsCorrectUrl() {
+    fun testCreateVulnerabilityReportUrl_validSdkVersion_returnsCorrectUrl() {
         val sdkVersion = 34 // Android 14
-        val baseUrl = SecurityPatchState.DEFAULT_VULNERABILITY_REPORTS_URL
-        val expectedUrl = "$baseUrl/v1/android_sdk_$sdkVersion.json"
+        val expectedUrl = "https://android-api.osv.dev/v1/android_sdk_$sdkVersion.json"
 
-        val actualUrl = SecurityPatchState.getVulnerabilityReportUrl(Uri.parse(baseUrl)).toString()
+        val actualUrl = SecurityPatchState.createVulnerabilityReportUrl().toString()
+        assertEquals(
+            "https://storage.googleapis.com/osv-android-api",
+            SecurityPatchState.DEFAULT_VULNERABILITY_REPORTS_URL,
+        )
+        assertEquals(expectedUrl, actualUrl)
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Config(sdk = [Build.VERSION_CODES.UPSIDE_DOWN_CAKE])
+    @Test
+    fun testCreateVulnerabilityReportUrl_customServerUrlOverride_returnsOverriddenUrl() {
+        val sdkVersion = 34 // Android 14
+        val customUrl = "https://custom.example.com"
+        val expectedUrl = "$customUrl/v1/android_sdk_$sdkVersion.json"
+
+        val actualUrl =
+            SecurityPatchState.createVulnerabilityReportUrl(Uri.parse(customUrl)).toString()
+        assertEquals(expectedUrl, actualUrl)
+    }
+
+    @Suppress("DEPRECATION")
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Config(sdk = [Build.VERSION_CODES.UPSIDE_DOWN_CAKE])
+    @Test
+    fun testGetVulnerabilityReportUrl_deprecatedServerUrl_returnsLegacyUrl() {
+        val sdkVersion = 34 // Android 14
+        val expectedUrl =
+            "https://storage.googleapis.com/osv-android-api/v1/android_sdk_$sdkVersion.json"
+
+        val actualUrl = SecurityPatchState.getVulnerabilityReportUrl().toString()
         assertEquals(expectedUrl, actualUrl)
     }
 
@@ -251,11 +339,12 @@ class SecurityPatchStateTest {
     }
 
     @Test
-    fun testGetDeviceSpl_ReturnsCorrectSplForUnpatchedSystemModules() {
+    fun testGetDeviceSpl_ReturnsCorrectAggregateSplForUnpatchedSystemModules() {
         val jsonInput =
             """
             {
                 "vulnerabilities": {
+                    "2021-01-01": [],
                     "2023-01-01": [{
                         "cve_identifiers": ["CVE-1234-4321"],
                         "asb_identifiers": ["ASB-A-2023111"],
@@ -302,6 +391,113 @@ class SecurityPatchStateTest {
                 as SecurityPatchState.DateBasedSecurityPatchLevel
 
         assertEquals(2022, spl.getYear())
+        assertEquals(5, spl.getMonth())
+        assertEquals(1, spl.getDay())
+    }
+
+    @Test
+    fun testGetDeviceSpl_ReturnsCorrectAdvancedSplForUnpatchedSystemModules() {
+        val jsonInput =
+            """
+            {
+                "vulnerabilities": {
+                    "2021-01-01": [],
+                    "2023-01-01": [{
+                        "cve_identifiers": ["CVE-1234-4321"],
+                        "asb_identifiers": ["ASB-A-2023111"],
+                        "severity": "high",
+                        "components": ["com.google.android.modulemetadata"]
+                    }],
+                    "2023-05-01": [{
+                        "cve_identifiers": ["CVE-1235-4321"],
+                        "asb_identifiers": ["ASB-A-2025111"],
+                        "severity": "high",
+                        "components": ["com.google.mainline.telemetry"]
+                    }],
+                    "2022-07-01": [],
+                    "2022-08-01": [],
+                    "2022-09-01": [{
+                        "cve_identifiers": ["CVE-1236-4321"],
+                        "asb_identifiers": ["ASB-A-2026111"],
+                        "severity": "high",
+                        "components": ["com.google.mainline.adservices"]
+                    }]
+                },
+                "kernel_lts_versions": {}
+            }
+            """
+                .trimIndent()
+
+        securityState.loadVulnerabilityReport(jsonInput)
+
+        `when`(
+                mockSecurityStateManagerCompat.getPackageVersion(
+                    "com.google.android.modulemetadata"
+                )
+            )
+            .thenReturn("2022-01-01")
+        `when`(mockSecurityStateManagerCompat.getPackageVersion("com.google.mainline.telemetry"))
+            .thenReturn("2023-05-01")
+        `when`(mockSecurityStateManagerCompat.getPackageVersion("com.google.mainline.adservices"))
+            .thenReturn("2022-05-01")
+        `when`(mockSecurityStateManagerCompat.getPackageVersion("com.google.mainline.go.primary"))
+            .thenReturn("2021-05-01")
+        `when`(mockSecurityStateManagerCompat.getPackageVersion("com.google.mainline.go.telemetry"))
+            .thenReturn("2024-05-01")
+
+        val spl =
+            securityState.getDeviceSecurityPatchLevel(SecurityPatchState.COMPONENT_SYSTEM_MODULES)
+                as SecurityPatchState.DateBasedSecurityPatchLevel
+
+        assertEquals(2022, spl.getYear())
+        assertEquals(8, spl.getMonth())
+        assertEquals(1, spl.getDay())
+    }
+
+    @Test
+    fun testGetDeviceSpl_UpgradesToGlobalMax_WhenSystemIsCompliant() {
+        val jsonInput =
+            """
+            {
+                "vulnerabilities": {
+                    "2025-09-01": [{
+                        "cve_identifiers": ["CVE-2025-1000"],
+                        "asb_identifiers": ["ASB-A-1000"],
+                        "severity": "high",
+                        "components": ["system"]
+                    }],
+                    "2025-10-01": [],
+                    "2025-11-01": [],
+                    "2025-12-01": [],
+                    "2026-01-01": [],
+                    "2026-01-05": [{
+                        "cve_identifiers": ["CVE-2026-5000"],
+                        "asb_identifiers": ["ASB-A-5000"],
+                        "severity": "critical",
+                        "components": ["vendor", "system"]
+                    }]
+                },
+                "kernel_lts_versions": {}
+            }
+            """
+                .trimIndent()
+        securityState.loadVulnerabilityReport(jsonInput)
+
+        // GIVEN: Device has the Sept 2025 version installed (Compliant with JSON)
+        val bundle = Bundle()
+        bundle.putString("system_spl", "2025-09-01")
+        `when`(mockSecurityStateManagerCompat.getGlobalSecurityState(anyString()))
+            .thenReturn(bundle)
+
+        // WHEN: We get the Device SPL for System
+        val spl =
+            securityState.getDeviceSecurityPatchLevel(SecurityPatchState.COMPONENT_SYSTEM)
+                as SecurityPatchState.DateBasedSecurityPatchLevel
+
+        // THEN: It should advance to the latest date the device is fully patched, which is
+        // 2026-01-01. It stops before 2026-01-05 because that bulletin includes a system patch
+        // that the device doesn't have.
+        assertEquals(2026, spl.getYear())
         assertEquals(1, spl.getMonth())
         assertEquals(1, spl.getDay())
     }
@@ -425,6 +621,82 @@ class SecurityPatchStateTest {
         assertEquals(2026, spl.getYear())
         assertEquals(1, spl.getMonth())
         assertEquals(5, spl.getDay())
+    }
+
+    @Test
+    fun testGetDeviceSpl_ReturnsDeclaredSpl_WhenDeviceIsOlderThanOldestReport() {
+        val jsonInput =
+            """
+            {
+                "vulnerabilities": {
+                    "2023-01-01": [{
+                        "cve_identifiers": ["CVE-2023-0001"],
+                        "asb_identifiers": ["ASB-A-0001"],
+                        "severity": "high",
+                        "components": ["some-other-component"]
+                    }]
+                },
+                "kernel_lts_versions": {}
+            }
+            """
+                .trimIndent()
+        securityState.loadVulnerabilityReport(jsonInput)
+
+        // GIVEN: Device is on 2022-12-01 (older than the oldest report entry 2023-01-01)
+        val bundle = Bundle()
+        bundle.putString(SecurityStateManagerCompat.KEY_SYSTEM_SPL, "2022-12-01")
+        `when`(mockSecurityStateManagerCompat.getGlobalSecurityState(anyString()))
+            .thenReturn(bundle)
+
+        // WHEN: We get the Device SPL
+        val spl =
+            securityState.getDeviceSecurityPatchLevel(SecurityPatchState.COMPONENT_SYSTEM)
+                as SecurityPatchState.DateBasedSecurityPatchLevel
+
+        // THEN: It should return the declared SPL (2022-12-01) because it's out of bounds.
+        // Even if there are no vulnerabilities for "system" in 2023-01-01, it cannot upgrade.
+        assertEquals("2022-12-01", spl.toString())
+    }
+
+    @Test
+    fun testGetDeviceSpl_AllowsUpgrade_WhenDeviceIsExactlyOldestReport() {
+        val jsonInput =
+            """
+            {
+                "vulnerabilities": {
+                    "2023-01-01": [{
+                        "cve_identifiers": ["CVE-2023-0001"],
+                        "asb_identifiers": ["ASB-A-0001"],
+                        "severity": "high",
+                        "components": ["some-other-component"]
+                    }],
+                    "2023-02-01": [{
+                        "cve_identifiers": ["CVE-2023-0002"],
+                        "asb_identifiers": ["ASB-A-0002"],
+                        "severity": "high",
+                        "components": ["some-other-component"]
+                    }]
+                },
+                "kernel_lts_versions": {}
+            }
+            """
+                .trimIndent()
+        securityState.loadVulnerabilityReport(jsonInput)
+
+        // GIVEN: Device is on 2023-01-01 (exactly the same as the oldest report entry)
+        val bundle = Bundle()
+        bundle.putString(SecurityStateManagerCompat.KEY_SYSTEM_SPL, "2023-01-01")
+        `when`(mockSecurityStateManagerCompat.getGlobalSecurityState(anyString()))
+            .thenReturn(bundle)
+
+        // WHEN: We get the Device SPL
+        val spl =
+            securityState.getDeviceSecurityPatchLevel(SecurityPatchState.COMPONENT_SYSTEM)
+                as SecurityPatchState.DateBasedSecurityPatchLevel
+
+        // THEN: It should be allowed to upgrade to 2023-02-01 because 2023-02-01 is clean for
+        // "system"
+        assertEquals("2023-02-01", spl.toString())
     }
 
     @Test
@@ -949,7 +1221,9 @@ class SecurityPatchStateTest {
             val update =
                 UpdateInfo.Builder()
                     .setComponent(SecurityPatchState.COMPONENT_SYSTEM)
-                    .setSecurityPatchLevel("2025-05-01")
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.DateBasedSecurityPatchLevel.fromString("2025-05-01")
+                    )
                     .build()
 
             setupTrustedUpdateInfoServiceWithUpdates(update)
@@ -1020,7 +1294,9 @@ class SecurityPatchStateTest {
             val oldUpdate =
                 UpdateInfo.Builder()
                     .setComponent(SecurityPatchState.COMPONENT_SYSTEM)
-                    .setSecurityPatchLevel("2025-01-01")
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.DateBasedSecurityPatchLevel.fromString("2025-01-01")
+                    )
                     .build()
 
             setupTrustedUpdateInfoServiceWithUpdates(oldUpdate)
@@ -1044,7 +1320,9 @@ class SecurityPatchStateTest {
             val sameUpdate =
                 UpdateInfo.Builder()
                     .setComponent(SecurityPatchState.COMPONENT_SYSTEM)
-                    .setSecurityPatchLevel("2025-01-01")
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.DateBasedSecurityPatchLevel.fromString("2025-01-01")
+                    )
                     .build()
 
             setupTrustedUpdateInfoServiceWithUpdates(sameUpdate)
@@ -1079,7 +1357,9 @@ class SecurityPatchStateTest {
             val update1 =
                 UpdateInfo.Builder()
                     .setComponent(SecurityPatchState.COMPONENT_SYSTEM)
-                    .setSecurityPatchLevel("2025-03-01")
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.DateBasedSecurityPatchLevel.fromString("2025-03-01")
+                    )
                     .build()
             val result1 =
                 UpdateCheckResult(
@@ -1092,7 +1372,9 @@ class SecurityPatchStateTest {
             val update2 =
                 UpdateInfo.Builder()
                     .setComponent(SecurityPatchState.COMPONENT_SYSTEM)
-                    .setSecurityPatchLevel("2025-06-01")
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.DateBasedSecurityPatchLevel.fromString("2025-06-01")
+                    )
                     .build()
             val result2 =
                 UpdateCheckResult(
@@ -1102,7 +1384,7 @@ class SecurityPatchStateTest {
                 )
 
             // Mock the service to return both results
-            `when`(mockService.listAvailableUpdates()).thenReturn(result1).thenReturn(result2)
+            `when`(mockSession.listAvailableUpdates()).thenReturn(result1).thenReturn(result2)
 
             // WHEN we request the Available SPL for SYSTEM
             val result =
@@ -1123,19 +1405,25 @@ class SecurityPatchStateTest {
             val olderUpdate =
                 UpdateInfo.Builder()
                     .setComponent(SecurityPatchState.COMPONENT_SYSTEM)
-                    .setSecurityPatchLevel("2025-02-01")
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.DateBasedSecurityPatchLevel.fromString("2025-02-01")
+                    )
                     .build()
 
             val newestUpdate =
                 UpdateInfo.Builder()
                     .setComponent(SecurityPatchState.COMPONENT_SYSTEM)
-                    .setSecurityPatchLevel("2025-06-01") // The winner
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.DateBasedSecurityPatchLevel.fromString("2025-06-01")
+                    ) // The winner
                     .build()
 
             val middleUpdate =
                 UpdateInfo.Builder()
                     .setComponent(SecurityPatchState.COMPONENT_SYSTEM)
-                    .setSecurityPatchLevel("2025-04-01")
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.DateBasedSecurityPatchLevel.fromString("2025-04-01")
+                    )
                     .build()
 
             // Setup the service to return this list
@@ -1180,7 +1468,11 @@ class SecurityPatchStateTest {
                         val update =
                             UpdateInfo.Builder()
                                 .setComponent(SecurityPatchState.COMPONENT_SYSTEM)
-                                .setSecurityPatchLevel("2025-06-01")
+                                .setSecurityPatchLevel(
+                                    SecurityPatchState.DateBasedSecurityPatchLevel.fromString(
+                                        "2025-06-01"
+                                    )
+                                )
                                 .build()
                         val result =
                             UpdateCheckResult(
@@ -1190,7 +1482,7 @@ class SecurityPatchStateTest {
                             )
 
                         // Mock the service call for the successful bind
-                        `when`(mockService.listAvailableUpdates()).thenReturn(result)
+                        `when`(mockSession.listAvailableUpdates()).thenReturn(result)
 
                         connection.onServiceConnected(intent.component, mockBinder)
                         true
@@ -1261,7 +1553,9 @@ class SecurityPatchStateTest {
             val systemUpdate =
                 UpdateInfo.Builder()
                     .setComponent(SecurityPatchState.COMPONENT_SYSTEM)
-                    .setSecurityPatchLevel("2025-06-01")
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.DateBasedSecurityPatchLevel.fromString("2025-06-01")
+                    )
                     .build()
             val systemResult =
                 UpdateCheckResult(
@@ -1273,7 +1567,9 @@ class SecurityPatchStateTest {
             val kernelUpdate =
                 UpdateInfo.Builder()
                     .setComponent(SecurityPatchState.COMPONENT_KERNEL)
-                    .setSecurityPatchLevel("5.15.1")
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.VersionedSecurityPatchLevel.fromString("5.15.1")
+                    )
                     .build()
             val kernelResult =
                 UpdateCheckResult(
@@ -1283,7 +1579,7 @@ class SecurityPatchStateTest {
                 )
 
             // Configure the mock service to return different results for the sequential calls.
-            `when`(mockService.listAvailableUpdates())
+            `when`(mockSession.listAvailableUpdates())
                 .thenReturn(systemResult)
                 .thenReturn(kernelResult)
 
@@ -1307,13 +1603,17 @@ class SecurityPatchStateTest {
             val goodUpdate =
                 UpdateInfo.Builder()
                     .setComponent(SecurityPatchState.COMPONENT_SYSTEM)
-                    .setSecurityPatchLevel("2025-05-01")
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.DateBasedSecurityPatchLevel.fromString("2025-05-01")
+                    )
                     .build()
 
             val badUpdate =
                 UpdateInfo.Builder()
                     .setComponent(SecurityPatchState.COMPONENT_SYSTEM)
-                    .setSecurityPatchLevel("INVALID_SPL_STRING")
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.GenericStringSecurityPatchLevel("INVALID_SPL_STRING")
+                    )
                     .build()
 
             setupTrustedUpdateInfoServiceWithUpdates(goodUpdate, badUpdate)
@@ -1337,7 +1637,9 @@ class SecurityPatchStateTest {
             val kernelUpdate =
                 UpdateInfo.Builder()
                     .setComponent(SecurityPatchState.COMPONENT_KERNEL)
-                    .setSecurityPatchLevel("5.15.1")
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.VersionedSecurityPatchLevel.fromString("5.15.1")
+                    )
                     .build()
 
             setupTrustedUpdateInfoServiceWithUpdates(kernelUpdate)
@@ -1359,14 +1661,26 @@ class SecurityPatchStateTest {
 
             // AND a provider reports multiple kernel updates
             val vSame =
-                UpdateInfo.Builder().setComponent("KERNEL").setSecurityPatchLevel("5.10.99").build()
+                UpdateInfo.Builder()
+                    .setComponent("KERNEL")
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.VersionedSecurityPatchLevel.fromString("5.10.99")
+                    )
+                    .build()
             val vNewerPatch =
                 UpdateInfo.Builder()
                     .setComponent("KERNEL")
-                    .setSecurityPatchLevel("5.10.105")
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.VersionedSecurityPatchLevel.fromString("5.10.105")
+                    )
                     .build()
             val vNewestMajor =
-                UpdateInfo.Builder().setComponent("KERNEL").setSecurityPatchLevel("5.15.1").build()
+                UpdateInfo.Builder()
+                    .setComponent("KERNEL")
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.VersionedSecurityPatchLevel.fromString("5.15.1")
+                    )
+                    .build()
 
             setupTrustedUpdateInfoServiceWithUpdates(vSame, vNewerPatch, vNewestMajor)
 
@@ -1424,7 +1738,9 @@ class SecurityPatchStateTest {
             val update =
                 UpdateInfo.Builder()
                     .setComponent(SecurityPatchState.COMPONENT_SYSTEM_MODULES)
-                    .setSecurityPatchLevel("2025-06-01")
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.DateBasedSecurityPatchLevel.fromString("2025-06-01")
+                    )
                     .build()
 
             setupTrustedUpdateInfoServiceWithUpdates(update)
@@ -1451,7 +1767,9 @@ class SecurityPatchStateTest {
             val modulesUpdate =
                 UpdateInfo.Builder()
                     .setComponent(SecurityPatchState.COMPONENT_SYSTEM_MODULES)
-                    .setSecurityPatchLevel("2025-05-01")
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.DateBasedSecurityPatchLevel.fromString("2025-05-01")
+                    )
                     .build()
 
             setupTrustedUpdateInfoServiceWithUpdates(modulesUpdate)
@@ -1499,7 +1817,9 @@ class SecurityPatchStateTest {
             val packageUpdate =
                 UpdateInfo.Builder()
                     .setComponent("com.google.android.modulemetadata")
-                    .setSecurityPatchLevel("2025-06-01")
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.DateBasedSecurityPatchLevel.fromString("2025-06-01")
+                    )
                     .build()
 
             setupTrustedUpdateInfoServiceWithUpdates(packageUpdate)
@@ -1525,7 +1845,9 @@ class SecurityPatchStateTest {
             val weirdUpdate =
                 UpdateInfo.Builder()
                     .setComponent("UNKNOWN_COMPONENT_XYZ")
-                    .setSecurityPatchLevel("2025-05-01")
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.DateBasedSecurityPatchLevel.fromString("2025-05-01")
+                    )
                     .build()
 
             setupTrustedUpdateInfoServiceWithUpdates(weirdUpdate)
@@ -1550,7 +1872,9 @@ class SecurityPatchStateTest {
             val update =
                 UpdateInfo.Builder()
                     .setComponent("system") // Lowercase
-                    .setSecurityPatchLevel("2025-06-01")
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.DateBasedSecurityPatchLevel.fromString("2025-06-01")
+                    )
                     .build()
 
             setupTrustedUpdateInfoServiceWithUpdates(update)
@@ -1567,15 +1891,18 @@ class SecurityPatchStateTest {
     @Test
     fun testFetchAvailableSecurityPatchLevel_ignoresUpdatesWithWrongFormatForComponent() {
         runBlocking {
-            // GIVEN the Device SPL for SYSTEM is 2025-01-01
+            // GIVEN the Device SPL for SYSTEM is a DateBasedSecurityPatchLevel
             mockDeviceSpl(SecurityPatchState.COMPONENT_SYSTEM, "2025-01-01")
 
-            // AND a provider reports a "SYSTEM" update but uses a Kernel Version format
-            // (This simulates a provider sending valid-looking but wrong-type data)
+            // AND a provider reports a "SYSTEM" update but explicitly uses a Versioned object
+            // (This simulates a provider sending valid but incorrectly-typed data for this
+            // component)
             val badTypeUpdate =
                 UpdateInfo.Builder()
-                    .setComponent(SecurityPatchState.COMPONENT_SYSTEM) // Says SYSTEM
-                    .setSecurityPatchLevel("5.10.199") // But provides Version data (Not a Date)
+                    .setComponent(SecurityPatchState.COMPONENT_SYSTEM)
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.VersionedSecurityPatchLevel.fromString("5.10.199")
+                    )
                     .build()
 
             setupTrustedUpdateInfoServiceWithUpdates(badTypeUpdate)
@@ -1584,8 +1911,8 @@ class SecurityPatchStateTest {
             val result =
                 securityState.fetchAvailableSecurityPatchLevel(SecurityPatchState.COMPONENT_SYSTEM)
 
-            // THEN the update is ignored (parsing failed for Date type), returning Device SPL
-            // (It does not crash or try to compare "5.10.199" with a Date)
+            // THEN the update is safely ignored because the class types do not match, returning
+            // Device SPL
             assertEquals("2025-01-01", result.toString())
         }
     }
@@ -1593,14 +1920,18 @@ class SecurityPatchStateTest {
     @Test
     fun testFetchAvailableSecurityPatchLevel_ignoresUpdatesWithMalformedSpl() {
         runBlocking {
-            // GIVEN the Device SPL for SYSTEM is 2025-01-01
+            // GIVEN the Device SPL for SYSTEM is a DateBasedSecurityPatchLevel
             mockDeviceSpl(SecurityPatchState.COMPONENT_SYSTEM, "2025-01-01")
 
-            // AND a provider reports an update with a completely malformed string
+            // AND a provider reports an update with a completely malformed string,
+            // resulting in a generic fallback object
             val badUpdate =
                 UpdateInfo.Builder()
                     .setComponent(SecurityPatchState.COMPONENT_SYSTEM)
-                    .setSecurityPatchLevel("NOT_A_DATE")
+                    // Simulating what createFromParcel does when it can't parse the string
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.GenericStringSecurityPatchLevel("NOT_A_DATE")
+                    )
                     .build()
 
             setupTrustedUpdateInfoServiceWithUpdates(badUpdate)
@@ -1609,8 +1940,7 @@ class SecurityPatchStateTest {
             val result =
                 securityState.fetchAvailableSecurityPatchLevel(SecurityPatchState.COMPONENT_SYSTEM)
 
-            // THEN the update is ignored (parsing fails), returning Device SPL
-            // (Verifies that IllegalArgumentException is caught and logged)
+            // THEN the generic object fails the type check and is ignored, returning Device SPL
             assertEquals("2025-01-01", result.toString())
         }
     }
@@ -1626,14 +1956,18 @@ class SecurityPatchStateTest {
             val invalidDateUpdate =
                 UpdateInfo.Builder()
                     .setComponent(SecurityPatchState.COMPONENT_SYSTEM)
-                    .setSecurityPatchLevel("2025-02-30")
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.DateBasedSecurityPatchLevel.fromString("2025-02-30")
+                    )
                     .build()
 
             // AND a valid newer update exists
             val validUpdate =
                 UpdateInfo.Builder()
                     .setComponent(SecurityPatchState.COMPONENT_SYSTEM)
-                    .setSecurityPatchLevel("2025-03-01")
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.DateBasedSecurityPatchLevel.fromString("2025-03-01")
+                    )
                     .build()
 
             setupTrustedUpdateInfoServiceWithUpdates(invalidDateUpdate, validUpdate)
@@ -2173,7 +2507,7 @@ class SecurityPatchStateTest {
                         "cve_identifiers": ["CVE-2026-5000"],
                         "asb_identifiers": ["ASB-A-5000"],
                         "severity": "critical",
-                        "components": ["vendor"]
+                        "components": ["vendor", "system"]
                     }]
                 },
                 "kernel_lts_versions": {}
@@ -2298,6 +2632,223 @@ class SecurityPatchStateTest {
 
         // False: Device (Sept) < Published (March). Upgrade was blocked.
         assertFalse(securityState.isDeviceFullyUpdated())
+    }
+
+    @Test
+    fun testIsDeviceFullyUpdated_withDifferentMinorKernelVersions_returnsTrue() {
+        // GIVEN a device running an older minor kernel branch (e.g., 6.6.118)
+        val bundle = Bundle()
+        bundle.putString("system_spl", "2023-05-01")
+        bundle.putString("vendor_spl", "2023-02-01")
+        bundle.putString("kernel_version", "6.6.118")
+        bundle.putString("com.google.android.modulemetadata", "2023-10-05")
+
+        `when`(mockSecurityStateManagerCompat.getGlobalSecurityState(anyString()))
+            .thenReturn(bundle)
+        doReturn("2023-10-05").`when`(mockSecurityStateManagerCompat).getPackageVersion(anyString())
+
+        // AND the published vulnerability report contains updates for multiple minor branches
+        // within the same major version (e.g., both 6.6.x and 6.12.x)
+        val jsonInput =
+            """
+            {
+              "vulnerabilities": {
+                "2023-05-01": [{
+                  "cve_identifiers": ["CVE-1234-4321"],
+                  "asb_identifiers": ["ASB-A-2023111"],
+                  "severity": "high",
+                  "components": ["com.google.android.modulemetadata"]
+                }],
+                "2023-01-01": [{
+                  "cve_identifiers": ["CVE-1234-1321"],
+                  "asb_identifiers": ["ASB-A-2023121"],
+                  "severity": "critical",
+                  "components": ["system"]
+                }],
+                "2023-02-01": [{
+                  "cve_identifiers": ["CVE-1234-3321"],
+                  "asb_identifiers": ["ASB-A-2023151"],
+                  "severity": "moderate",
+                  "components": ["vendor"]
+                }]
+              },
+              "kernel_lts_versions": {
+                  "2023-05-01": [ "6.6.118", "6.12.58" ]
+              }
+            }
+            """
+                .trimIndent()
+
+        securityState.loadVulnerabilityReport(jsonInput)
+
+        // WHEN we check if the device is fully updated
+        // THEN it should return true, because the device is up-to-date on its specific minor branch
+        // (6.6),
+        // and should not be incorrectly compared against the newer 6.12 branch.
+        assertTrue(securityState.isDeviceFullyUpdated())
+    }
+
+    @Test
+    fun testIsDeviceFullyUpdated_withOutdatedMinorKernelVersion_returnsFalse() {
+        // GIVEN a device running an outdated kernel version on its specific minor branch (e.g.,
+        // 6.6.102)
+        val bundle = Bundle()
+        bundle.putString("system_spl", "2023-05-01")
+        bundle.putString("vendor_spl", "2023-02-01")
+        bundle.putString("kernel_version", "6.6.102")
+        bundle.putString("com.google.android.modulemetadata", "2023-10-05")
+
+        `when`(mockSecurityStateManagerCompat.getGlobalSecurityState(anyString()))
+            .thenReturn(bundle)
+        doReturn("2023-10-05").`when`(mockSecurityStateManagerCompat).getPackageVersion(anyString())
+
+        // AND the published vulnerability report contains a newer update for that exact branch
+        // (6.6.118)
+        val jsonInput =
+            """
+            {
+              "vulnerabilities": {
+                "2023-05-01": [{
+                  "cve_identifiers": ["CVE-1234-4321"],
+                  "asb_identifiers": ["ASB-A-2023111"],
+                  "severity": "high",
+                  "components": ["com.google.android.modulemetadata"]
+                }],
+                "2023-01-01": [{
+                  "cve_identifiers": ["CVE-1234-1321"],
+                  "asb_identifiers": ["ASB-A-2023121"],
+                  "severity": "critical",
+                  "components": ["system"]
+                }],
+                "2023-02-01": [{
+                  "cve_identifiers": ["CVE-1234-3321"],
+                  "asb_identifiers": ["ASB-A-2023151"],
+                  "severity": "moderate",
+                  "components": ["vendor"]
+                }]
+              },
+              "kernel_lts_versions": {
+                  "2023-05-01": [ "6.6.118", "6.12.58" ]
+              }
+            }
+            """
+                .trimIndent()
+
+        securityState.loadVulnerabilityReport(jsonInput)
+
+        // WHEN we check if the device is fully updated
+        // THEN it should return false, because the device is missing patches on its active branch
+        // (6.6.102 < 6.6.118).
+        assertFalse(securityState.isDeviceFullyUpdated())
+    }
+
+    @Test
+    fun testIsDeviceFullyUpdated_withUntrackedKernelBranch_returnsTrue() {
+        // GIVEN a device running an older kernel branch that is no longer tracked in the bulletin
+        // (e.g., 5.10.100)
+        val bundle = Bundle()
+        bundle.putString("system_spl", "2023-05-01")
+        bundle.putString("vendor_spl", "2023-02-01")
+        bundle.putString("kernel_version", "5.10.100")
+        bundle.putString("com.google.android.modulemetadata", "2023-10-05")
+
+        `when`(mockSecurityStateManagerCompat.getGlobalSecurityState(anyString()))
+            .thenReturn(bundle)
+        doReturn("2023-10-05").`when`(mockSecurityStateManagerCompat).getPackageVersion(anyString())
+
+        // AND the published vulnerability report only lists newer, supported branches (e.g., 5.15,
+        // 6.1)
+        val jsonInput =
+            """
+            {
+              "vulnerabilities": {
+                "2023-05-01": [{
+                  "cve_identifiers": ["CVE-1234-4321"],
+                  "asb_identifiers": ["ASB-A-2023111"],
+                  "severity": "high",
+                  "components": ["com.google.android.modulemetadata"]
+                }],
+                "2023-01-01": [{
+                  "cve_identifiers": ["CVE-1234-1321"],
+                  "asb_identifiers": ["ASB-A-2023121"],
+                  "severity": "critical",
+                  "components": ["system"]
+                }],
+                "2023-02-01": [{
+                  "cve_identifiers": ["CVE-1234-3321"],
+                  "asb_identifiers": ["ASB-A-2023151"],
+                  "severity": "moderate",
+                  "components": ["vendor"]
+                }]
+              },
+              "kernel_lts_versions": {
+                  "2023-05-01": [ "5.15.100", "6.1.50" ]
+              }
+            }
+            """
+                .trimIndent()
+
+        securityState.loadVulnerabilityReport(jsonInput)
+
+        // WHEN we check if the device is fully updated
+        // THEN it should return true. The API evaluates patch availability on the current branch.
+        // Since the 5.10 branch is absent, it is not flagged as having pending updates.
+        assertTrue(securityState.isDeviceFullyUpdated())
+    }
+
+    @Test
+    fun testIsDeviceFullyUpdated_withNewerKernelVersionThanPublished_returnsTrue() {
+        // GIVEN a device running a kernel version that is strictly newer than the published
+        // bulletin (e.g., 6.6.120)
+        // This often happens when OEMs pull patches upstream before they are officially indexed by
+        // Android.
+        val bundle = Bundle()
+        bundle.putString("system_spl", "2023-05-01")
+        bundle.putString("vendor_spl", "2023-02-01")
+        bundle.putString("kernel_version", "6.6.120")
+        bundle.putString("com.google.android.modulemetadata", "2023-10-05")
+
+        `when`(mockSecurityStateManagerCompat.getGlobalSecurityState(anyString()))
+            .thenReturn(bundle)
+        doReturn("2023-10-05").`when`(mockSecurityStateManagerCompat).getPackageVersion(anyString())
+
+        // AND the published vulnerability report lists an older patch level for that branch (e.g.,
+        // 6.6.118)
+        val jsonInput =
+            """
+            {
+              "vulnerabilities": {
+                "2023-05-01": [{
+                  "cve_identifiers": ["CVE-1234-4321"],
+                  "asb_identifiers": ["ASB-A-2023111"],
+                  "severity": "high",
+                  "components": ["com.google.android.modulemetadata"]
+                }],
+                "2023-01-01": [{
+                  "cve_identifiers": ["CVE-1234-1321"],
+                  "asb_identifiers": ["ASB-A-2023121"],
+                  "severity": "critical",
+                  "components": ["system"]
+                }],
+                "2023-02-01": [{
+                  "cve_identifiers": ["CVE-1234-3321"],
+                  "asb_identifiers": ["ASB-A-2023151"],
+                  "severity": "moderate",
+                  "components": ["vendor"]
+                }]
+              },
+              "kernel_lts_versions": {
+                  "2023-05-01": [ "6.6.118", "6.12.58" ]
+              }
+            }
+            """
+                .trimIndent()
+
+        securityState.loadVulnerabilityReport(jsonInput)
+
+        // WHEN we check if the device is fully updated
+        // THEN it should return true. A device ahead of the bulletin is fully compliant.
+        assertTrue(securityState.isDeviceFullyUpdated())
     }
 
     @Test
@@ -2586,21 +3137,35 @@ class SecurityPatchStateTest {
     }
 
     @Test
-    fun testQueryAllAvailableUpdates_ignoresNonSystemApps() {
+    fun testListAvailableUpdates_ignoresProvidersWithoutPrivilegedPermission() {
         runBlocking {
-            // GIVEN a third-party app exposes the service
-            val untrustedInfo =
-                createUpdateInfoServiceResolveInfo("com.thirdparty", isSystem = false)
+            // GIVEN a system app that DOES NOT have the required permission
+            // (e.g., a pre-installed flashlight app or carrier bloatware)
+            val untrustedSystemApp =
+                createUpdateInfoServiceResolveInfo("com.oem.bloatware", isSystem = true)
 
             `when`(mockPackageManager.queryIntentServices(any(Intent::class.java), anyInt()))
-                .thenReturn(listOf(untrustedInfo))
+                .thenReturn(listOf(untrustedSystemApp))
+
+            // Force the permission check to fail
+            `when`(
+                    mockPackageManager.checkPermission(
+                        eq("android.permission.READ_PRIVILEGED_PHONE_STATE"),
+                        eq("com.oem.bloatware"),
+                    )
+                )
+                .thenReturn(PackageManager.PERMISSION_DENIED)
 
             // WHEN we query for all available updates
             val results = securityState.queryAllAvailableUpdates()
 
-            // THEN it is ignored (result list is empty)
-            assertTrue(results.isEmpty())
-            // AND we never attempted to bind
+            // THEN the untrusted app is filtered out, resulting in an empty list
+            assertTrue(
+                "Should ignore system apps lacking the required permission",
+                results.isEmpty(),
+            )
+
+            // AND we never attempted to bind to it
             verify(mockContext, times(0)).bindService(any(), any(), anyInt())
         }
     }
@@ -2630,7 +3195,7 @@ class SecurityPatchStateTest {
     }
 
     @Test
-    fun testQueryAllAvailableUpdates_sendsPackageNameInIntentData() {
+    fun testQueryAllAvailableUpdates_opensSessionWithCorrectPackageName() {
         runBlocking {
             // GIVEN the client app has a specific package name
             val clientPackageName = "com.example.myclient"
@@ -2643,32 +3208,42 @@ class SecurityPatchStateTest {
                 .thenReturn(listOf(trustedInfo))
 
             setupUpdateInfoServiceResponse(emptyList(), "com.google.android.gms")
-
-            // CAPTURE the Intent passed to bindService
-            val intentCaptor = ArgumentCaptor.forClass(Intent::class.java)
-            `when`(
-                    mockContext.bindService(
-                        intentCaptor.capture(),
-                        any(ServiceConnection::class.java),
-                        anyInt(),
-                    )
-                )
-                .thenReturn(true)
+            setupUpdateInfoServiceBinding()
 
             // WHEN we query for all available updates
             securityState.queryAllAvailableUpdates()
 
-            // THEN the Intent contains the correct Data URI
-            val capturedIntent = intentCaptor.value
-            val data = capturedIntent.data
+            // THEN it creates a session using the client's package name for validation
+            verify(mockFactory).openSession(eq(clientPackageName), any(IBinder::class.java))
 
-            assertNotNull("Intent data should not be null", data)
-            assertEquals("scheme should be 'package'", "package", data?.scheme)
-            assertEquals(
-                "schemeSpecificPart should be package name",
-                clientPackageName,
-                data?.schemeSpecificPart,
-            )
+            // AND it correctly closes the session to prevent leaks
+            verify(mockSession).close()
+        }
+    }
+
+    @Test
+    fun testQueryAllAvailableUpdates_handlesSecurityExceptionOnOpenSession() {
+        runBlocking {
+            // GIVEN a trusted provider is found and binds successfully
+            val trustedInfo =
+                createUpdateInfoServiceResolveInfo("com.google.android.gms", isSystem = true)
+            `when`(mockPackageManager.queryIntentServices(any(Intent::class.java), anyInt()))
+                .thenReturn(listOf(trustedInfo))
+
+            setupUpdateInfoServiceBinding()
+
+            // BUT the provider's factory rejects the package name, throwing a SecurityException
+            `when`(mockFactory.openSession(anyString(), any(IBinder::class.java)))
+                .thenThrow(SecurityException("Spoofing detected"))
+
+            // WHEN we query for all available updates
+            val results = securityState.queryAllAvailableUpdates()
+
+            // THEN the client gracefully catches the exception and returns an empty result
+            // (Ensuring the crash doesn't bubble up and break the app)
+            assertEquals(1, results.size)
+            assertTrue(results[0].updates.isEmpty())
+            assertEquals("com.google.android.gms", results[0].providerPackageName)
         }
     }
 
@@ -2716,7 +3291,9 @@ class SecurityPatchStateTest {
                 listOf(
                     UpdateInfo.Builder()
                         .setComponent("SYSTEM")
-                        .setSecurityPatchLevel("2025-01-01")
+                        .setSecurityPatchLevel(
+                            SecurityPatchState.DateBasedSecurityPatchLevel.fromString("2025-01-01")
+                        )
                         .build()
                 )
             val expectedTime = 123456789L
@@ -2865,7 +3442,7 @@ class SecurityPatchStateTest {
             // Mock a valid response for the working service
             val updates = listOf(UpdateInfo.Builder().setComponent("SYSTEM").build())
             val validResult = UpdateCheckResult("com.working", updates, 0L)
-            `when`(mockService.listAvailableUpdates()).thenReturn(validResult)
+            `when`(mockSession.listAvailableUpdates()).thenReturn(validResult)
 
             // WHEN we query for all available updates
             val results = securityState.queryAllAvailableUpdates()
@@ -2937,7 +3514,7 @@ class SecurityPatchStateTest {
                 .thenReturn(listOf(trustedInfo))
 
             // AND the service will throw a RemoteException during IPC
-            `when`(mockService.listAvailableUpdates()).thenThrow(RemoteException("Test Exception"))
+            `when`(mockSession.listAvailableUpdates()).thenThrow(RemoteException("Test Exception"))
             setupUpdateInfoServiceBinding()
 
             // WHEN we query for all available updates
@@ -2965,7 +3542,7 @@ class SecurityPatchStateTest {
 
             // AND the remote service throws an unexpected RuntimeException during the IPC call.
             // This simulates a crash or logic error within the background thread execution.
-            `when`(mockService.listAvailableUpdates())
+            `when`(mockSession.listAvailableUpdates())
                 .thenThrow(RuntimeException("Unexpected Crash"))
 
             // Trigger the service connection. This simulates the immediate success of bindService,
@@ -2987,6 +3564,106 @@ class SecurityPatchStateTest {
             verifyUpdateInfoServiceUnbound()
         }
     }
+
+    @Test
+    fun testQueryAllAvailableUpdates_handlesNullSessionGracefully() = runBlocking {
+        // GIVEN a trusted provider is found and binds successfully
+        val trustedInfo =
+            createUpdateInfoServiceResolveInfo("com.google.android.gms", isSystem = true)
+        `when`(mockPackageManager.queryIntentServices(any(Intent::class.java), anyInt()))
+            .thenReturn(listOf(trustedInfo))
+
+        setupUpdateInfoServiceBinding()
+
+        // AND the provider's factory unexpectedly returns a null session
+        // (e.g., custom logic on the OEM side silently refusing to establish a session)
+        `when`(mockFactory.openSession(anyString(), any(IBinder::class.java))).thenReturn(null)
+
+        // WHEN we query for all available updates
+        val results = securityState.queryAllAvailableUpdates()
+
+        // THEN the client degrades gracefully without throwing a NullPointerException
+        assertEquals(1, results.size)
+        assertTrue("Results should be empty due to null session", results[0].updates.isEmpty())
+        assertEquals("com.google.android.gms", results[0].providerPackageName)
+    }
+
+    @Test
+    fun testQueryAllAvailableUpdates_closesSessionEvenIfQueryFails() = runBlocking {
+        // GIVEN a trusted provider is found and bound
+        val trustedInfo =
+            createUpdateInfoServiceResolveInfo("com.google.android.gms", isSystem = true)
+        `when`(mockPackageManager.queryIntentServices(any(Intent::class.java), anyInt()))
+            .thenReturn(listOf(trustedInfo))
+
+        setupUpdateInfoServiceBinding()
+
+        // AND the actual data query throws an exception
+        // (Simulating a crash on the server or a transaction too large error)
+        `when`(mockSession.listAvailableUpdates()).thenThrow(RemoteException("Transaction failed"))
+
+        // WHEN we query for all available updates
+        val results = securityState.queryAllAvailableUpdates()
+
+        // THEN it degrades gracefully (returns an empty list for that provider)
+        assertEquals(1, results.size)
+        assertTrue("Results should be empty due to failure", results[0].updates.isEmpty())
+
+        // AND crucially, it still closes the session to free server resources
+        // This verifies the 'finally' block in fetchFromUpdateInfoService
+        verify(mockSession).close()
+    }
+
+    @Test
+    fun testQueryAllAvailableUpdates_preventsContinuationRace_onSimultaneousDisconnectAndError() =
+        runBlocking {
+            // GIVEN a trusted provider exists
+            val trustedInfo =
+                createUpdateInfoServiceResolveInfo("com.google.android.gms", isSystem = true)
+            `when`(mockPackageManager.queryIntentServices(any(Intent::class.java), anyInt()))
+                .thenReturn(listOf(trustedInfo))
+
+            // SETUP: Capture the connection so we can trigger callbacks manually
+            val connectionCaptor = ArgumentCaptor.forClass(ServiceConnection::class.java)
+            `when`(
+                    mockContext.bindService(
+                        any(Intent::class.java),
+                        connectionCaptor.capture(),
+                        anyInt(),
+                    )
+                )
+                .thenAnswer {
+                    val connection = connectionCaptor.value
+                    connection.onServiceConnected(
+                        ComponentName("com.test", "MockUpdateInfoService"),
+                        mockBinder,
+                    )
+                    true
+                }
+
+            // SIMULATE THE RACE CONDITION:
+            // We mock the session call to trigger a disconnect AND throw an error at the exact same
+            // time.
+            `when`(mockSession.listAvailableUpdates()).thenAnswer {
+                // 1. The OS notifies the main thread that the service died
+                connectionCaptor.value.onServiceDisconnected(
+                    ComponentName("com.test", "MockUpdateInfoService")
+                )
+
+                // 2. The background thread simultaneously throws a RemoteException due to the dead
+                // binder
+                throw RemoteException("Binder died during transaction")
+            }
+
+            // WHEN we query for all available updates
+            // IF the atomic guard is missing, this will crash the test with:
+            // java.lang.IllegalStateException: Already resumed
+            val results = securityState.queryAllAvailableUpdates()
+
+            // THEN it degrades gracefully without crashing
+            assertEquals(1, results.size)
+            assertTrue("Results should be empty due to failure", results[0].updates.isEmpty())
+        }
 
     // --------------------------------------------------------------------------------------------
     // Phase 5: Safety & Lifecycle (Timeouts & Cancellation)
@@ -3019,6 +3696,205 @@ class SecurityPatchStateTest {
             assertEquals(1, results.size)
             assertEquals("com.google.android.gms", results[0].providerPackageName)
             assertTrue(results[0].updates.isEmpty())
+        }
+    }
+
+    @Test
+    fun testQueryAllAvailableUpdates_doesNotHang_whenRemoteServiceDeadlocks() = runBlocking {
+        // GIVEN a trusted provider
+        val trustedInfo =
+            createUpdateInfoServiceResolveInfo("com.google.android.gms", isSystem = true)
+        `when`(mockPackageManager.queryIntentServices(any(Intent::class.java), anyInt()))
+            .thenReturn(listOf(trustedInfo))
+
+        setupUpdateInfoServiceBinding()
+
+        // AND the remote service completely deadlocks during the IPC call
+        val hangLatch = CountDownLatch(1)
+        `when`(mockSession.listAvailableUpdates()).thenAnswer {
+            // Block the background IO thread indefinitely to simulate a hung remote process.
+            // If structured concurrency were still trapping the timeout, this would freeze the
+            // test.
+            hangLatch.await()
+            UpdateCheckResult("com.google.android.gms", emptyList(), 0L)
+        }
+
+        try {
+            // WHEN we query for updates with a short strict timeout
+            // (Using 100ms to ensure the test runs quickly and proves the timeout works)
+            val results = securityState.queryAllAvailableUpdates(timeoutMillis = 100L)
+
+            // THEN the client does not hang. It successfully times out and degrades gracefully.
+            assertEquals(1, results.size)
+            assertTrue("Results should be empty due to timeout", results[0].updates.isEmpty())
+        } finally {
+            // CRITICAL: Since UpdateIpcDispatcher is a bounded thread pool shared across the
+            // test suite, we MUST release the latch in a finally block. Otherwise, this test
+            // will permanently deadlock all subsequent tests in the file.
+            hangLatch.countDown()
+        }
+    }
+
+    @Test
+    fun testQueryAllAvailableUpdates_subsequentRequestsSucceed_whenOneProviderHangs() =
+        runBlocking {
+            // GIVEN a trusted provider
+            val trustedInfo =
+                createUpdateInfoServiceResolveInfo("com.google.android.gms", isSystem = true)
+            `when`(mockPackageManager.queryIntentServices(any(Intent::class.java), anyInt()))
+                .thenReturn(listOf(trustedInfo))
+
+            setupUpdateInfoServiceBinding()
+
+            val firstRequestEntered = CompletableDeferred<Unit>()
+            val hangLatch = CountDownLatch(1)
+            val callCount = AtomicInteger(0)
+
+            `when`(mockSession.listAvailableUpdates()).thenAnswer {
+                val currentCall = callCount.incrementAndGet()
+                if (currentCall == 1) {
+                    // 1. Signal the test thread that the first request has securely captured the
+                    // hang block
+                    firstRequestEntered.complete(Unit)
+
+                    // 2. Block the FIRST thread indefinitely
+                    hangLatch.await()
+                    UpdateCheckResult("com.google.android.gms", emptyList(), 0L)
+                } else {
+                    // Return successfully for SUBSEQUENT calls
+                    val update =
+                        UpdateInfo.Builder()
+                            .setComponent(SecurityPatchState.COMPONENT_SYSTEM)
+                            .setSecurityPatchLevel(
+                                SecurityPatchState.DateBasedSecurityPatchLevel.fromString(
+                                    "2025-01-01"
+                                )
+                            )
+                            .build()
+                    UpdateCheckResult("com.google.android.gms", listOf(update), 1000L)
+                }
+            }
+
+            try {
+                // WHEN we launch a request that hangs (using async so it doesn't block the test
+                // runner)
+                // We use a generous timeout (5000ms) here so it doesn't accidentally cancel itself
+                // before we have a chance to fire the second request.
+                val deferredFirst = async {
+                    securityState.queryAllAvailableUpdates(timeoutMillis = 5000L)
+                }
+
+                // Suspend the main test thread until we are absolutely sure the background thread
+                // has entered listAvailableUpdates() and is waiting on the hangLatch
+                withTimeout(2000L) { firstRequestEntered.await() }
+
+                // AND WHEN we make a SECOND request
+                // Because our dispatcher uses a thread pool (4 threads), this second request
+                // will get a fresh thread and succeed immediately, bypassing the hung first
+                // request.
+                val secondResults = securityState.queryAllAvailableUpdates(timeoutMillis = 1000L)
+
+                // THEN the second request succeeds and returns data
+                assertEquals(1, secondResults.size)
+                assertEquals(1, secondResults[0].updates.size)
+                assertEquals(
+                    "2025-01-01",
+                    secondResults[0].updates[0].securityPatchLevel.toString(),
+                )
+
+                // Clean up the first request manually since we extended its timeout
+                deferredFirst.cancel()
+                deferredFirst.join()
+            } finally {
+                // CRITICAL: Release the hung thread back to the pool so it doesn't break other
+                // tests
+                hangLatch.countDown()
+            }
+        }
+
+    @Test
+    fun testQueryAllAvailableUpdates_cancelsQueuedJob_whenThreadPoolExhausted() = runBlocking {
+        // GIVEN a trusted provider
+        val trustedInfo =
+            createUpdateInfoServiceResolveInfo("com.google.android.gms", isSystem = true)
+        `when`(mockPackageManager.queryIntentServices(any(Intent::class.java), anyInt()))
+            .thenReturn(listOf(trustedInfo))
+
+        setupUpdateInfoServiceBinding()
+
+        val hangLatch = CountDownLatch(1)
+        val poolSize = UPDATE_INFO_SERVICE_MAX_IPC_THREADS
+        val threadsEnteredLatch = CountDownLatch(poolSize)
+        val callCount = AtomicInteger(0)
+
+        // TRACK openSession to prove the coroutine never even started
+        `when`(mockFactory.openSession(anyString(), any(IBinder::class.java))).thenAnswer {
+            val currentCall = callCount.incrementAndGet()
+            if (currentCall <= poolSize) {
+                // 1. Signal that a thread has successfully entered the blocking state
+                threadsEnteredLatch.countDown()
+
+                // 2. Block the threads indefinitely to exhaust the bounded pool
+                hangLatch.await()
+            } else {
+                // 3. This is the N+1 call. Because `jobRef.get()?.cancel()` correctly
+                // marks the job as canceled, the coroutine dispatcher will abort it before
+                // it ever reaches this line.
+                Assert.fail("The queued call should have been cancelled and never executed.")
+            }
+            mockSession // return the mock session
+        }
+
+        // Return an empty result if the threads are ever released to finish their work
+        `when`(mockSession.listAvailableUpdates())
+            .thenReturn(UpdateCheckResult("com.google.android.gms", emptyList(), 0L))
+
+        try {
+            // WHEN we exhaust the thread pool with long-running requests
+            // Explicitly launch on Dispatchers.IO to avoid blocking the test's event loop
+            val exhaustingJobs =
+                (1..poolSize).map {
+                    async(Dispatchers.IO) {
+                        securityState.queryAllAvailableUpdates(timeoutMillis = 10000L)
+                    }
+                }
+
+            // Yield the test thread momentarily to ensure the coroutines are dispatched
+            yield()
+
+            // Wait until we are absolutely sure all threads are occupied and blocked
+            assertTrue(
+                "Threads did not exhaust in time",
+                threadsEnteredLatch.await(2, TimeUnit.SECONDS),
+            )
+
+            // AND we make a subsequent request with a very short timeout.
+            // Because the pool is exhausted, this request's launch block goes into the queue.
+            // It will quickly time out and hit the `invokeOnCancellation` block.
+            val results = securityState.queryAllAvailableUpdates(timeoutMillis = 100L)
+
+            // THEN the queued request fails gracefully due to the timeout
+            assertEquals(1, results.size)
+            assertTrue("Results should be empty due to timeout", results[0].updates.isEmpty())
+
+            // AND when we finally release the hanging threads
+            hangLatch.countDown()
+            exhaustingJobs.awaitAll()
+
+            // The queued job was successfully canceled and ignored by the dispatcher
+            // when the threads were released, proving that orphaned jobs do not execute.
+            assertEquals(
+                "Only the exhausting calls should have executed",
+                poolSize,
+                callCount.get(),
+            )
+            // Verify that all ServiceConnections were safely unbound.
+            // This proves the leak-prevention logic in the cancellation handler works.
+            // (poolSize successful jobs + 1 canceled job)
+            verifyUpdateInfoServiceUnbound(times = poolSize + 1)
+        } finally {
+            // CRITICAL: Release the shared dispatcher threads so we don't break subsequent tests
+            hangLatch.countDown()
         }
     }
 
@@ -3100,6 +3976,173 @@ class SecurityPatchStateTest {
         }
     }
 
+    @Test
+    fun testQueryAllAvailableUpdates_closesSessionOnCancellation_duringActiveQuery() = runBlocking {
+        // GIVEN a trusted provider exists
+        val trustedInfo =
+            createUpdateInfoServiceResolveInfo("com.google.android.gms", isSystem = true)
+        `when`(mockPackageManager.queryIntentServices(any(Intent::class.java), anyInt()))
+            .thenReturn(listOf(trustedInfo))
+
+        setupUpdateInfoServiceBinding()
+
+        // SETUP: Use a CompletableDeferred to cooperatively suspend the test coroutine,
+        // and a CountDownLatch to physically block the detached IO thread.
+        val queryStarted = CompletableDeferred<Unit>()
+        val releaseQueryLatch = CountDownLatch(1)
+
+        `when`(mockSession.listAvailableUpdates()).thenAnswer {
+            // 1. Signal to the main test thread that the detached IO thread has started the query.
+            queryStarted.complete(Unit)
+
+            // 2. Block the detached IO thread indefinitely until the test explicitly releases it.
+            // This perfectly simulates a stalled IPC transaction.
+            releaseQueryLatch.await()
+
+            UpdateCheckResult("com.google.android.gms", emptyList(), 0L)
+        }
+
+        try {
+            // WHEN we launch the update check in a separate coroutine
+            val job = launch { securityState.queryAllAvailableUpdates() }
+
+            // Wait until the detached IO thread is actively blocked inside listAvailableUpdates().
+            // Using a suspending wait instead of thread-blocking CountDownLatch.await() prevents
+            // deadlocking the test runner's event loop.
+            try {
+                withTimeout(2000) { queryStarted.await() }
+            } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+                Assert.fail("Query did not start in time")
+            }
+
+            // THEN cancel the parent coroutine mid-flight (e.g., simulating a user exit).
+            job.cancel()
+
+            // CRITICAL: Unblock the mock so the detached IO thread can finish its execution
+            // and proceed to the 'finally' cleanup block.
+            releaseQueryLatch.countDown()
+
+            // Wait for the coroutine to fully process the cancellation and teardown logic.
+            job.join()
+
+            // AND verify the cancellation handler successfully closed the session before unbinding.
+            // Because close() is oneway, it won't hang the cancellation block.
+            verify(mockSession).close()
+            verify(mockContext).unbindService(any(ServiceConnection::class.java))
+        } finally {
+            // CRITICAL: Ensure the mock's blocking thread is always released to prevent
+            // it from leaking and breaking subsequent tests.
+            releaseQueryLatch.countDown()
+        }
+    }
+
+    @Test
+    fun testQueryAllAvailableUpdates_preventsAlreadyResumedCrash_onLateConnection() = runBlocking {
+        // GIVEN a trusted provider
+        val trustedInfo =
+            createUpdateInfoServiceResolveInfo("com.google.android.gms", isSystem = true)
+        `when`(mockPackageManager.queryIntentServices(any(Intent::class.java), anyInt()))
+            .thenReturn(listOf(trustedInfo))
+
+        // SETUP: Capture the ServiceConnection, but DO NOT call onServiceConnected immediately.
+        // This simulates a slow system response.
+        val connectionCaptor = ArgumentCaptor.forClass(ServiceConnection::class.java)
+        `when`(
+                mockContext.bindService(
+                    any(Intent::class.java),
+                    connectionCaptor.capture(),
+                    anyInt(),
+                )
+            )
+            .thenReturn(true)
+
+        // WHEN we launch the update check
+        val job = launch { securityState.queryAllAvailableUpdates() }
+
+        // Yield to allow bindService to be executed
+        yield()
+        verify(mockContext, timeout(2000))
+            .bindService(any(Intent::class.java), any(ServiceConnection::class.java), anyInt())
+
+        // AND the coroutine is canceled (e.g., the withTimeout block expires)
+        job.cancel()
+        job.join()
+
+        // THEN the OS belatedly delivers the connection callback
+        try {
+            connectionCaptor.value.onServiceConnected(
+                ComponentName("com.test", "MockUpdateInfoService"),
+                mockBinder,
+            )
+            // If the atomic guard works, the callback does nothing and we reach this line.
+        } catch (e: IllegalStateException) {
+            Assert.fail(
+                "Crashed with IllegalStateException: Already resumed. The atomic guard is missing or broken."
+            )
+        }
+    }
+
+    @Test
+    fun testFetchAvailableSecurityPatchLevelAsync_returnsFutureWithResult() {
+        // GIVEN the Device SPL for SYSTEM is 2025-01-01
+        mockDeviceSpl(SecurityPatchState.COMPONENT_SYSTEM, "2025-01-01")
+
+        // AND a provider reports a newer SYSTEM update (2025-05-01)
+        val update =
+            UpdateInfo.Builder()
+                .setComponent(SecurityPatchState.COMPONENT_SYSTEM)
+                .setSecurityPatchLevel(
+                    SecurityPatchState.DateBasedSecurityPatchLevel.fromString("2025-05-01")
+                )
+                .build()
+
+        setupTrustedUpdateInfoServiceWithUpdates(update)
+
+        // WHEN we request the Available SPL for SYSTEM asynchronously
+        val future =
+            securityState.fetchAvailableSecurityPatchLevelAsync(SecurityPatchState.COMPONENT_SYSTEM)
+
+        // THEN it returns the newer update SPL when the future completes
+        assertEquals("2025-05-01", future.get().toString())
+    }
+
+    @Test
+    fun testQueryAllAvailableUpdatesAsync_returnsFutureWithResult() {
+        // GIVEN a trusted provider returns specific updates
+        val trustedInfo =
+            createUpdateInfoServiceResolveInfo("com.google.android.gms", isSystem = true)
+        val expectedUpdates =
+            listOf(
+                UpdateInfo.Builder()
+                    .setComponent("SYSTEM")
+                    .setSecurityPatchLevel(
+                        SecurityPatchState.DateBasedSecurityPatchLevel.fromString("2025-01-01")
+                    )
+                    .build()
+            )
+        val expectedTime = 123456789L
+
+        val mockResult = UpdateCheckResult("com.google.android.gms", expectedUpdates, expectedTime)
+        setupUpdateInfoServiceResponse(mockResult)
+        setupUpdateInfoServiceBinding()
+
+        `when`(mockPackageManager.queryIntentServices(any(Intent::class.java), anyInt()))
+            .thenReturn(listOf(trustedInfo))
+
+        // WHEN we query for all available updates asynchronously
+        val future = securityState.queryAllAvailableUpdatesAsync()
+        val results = future.get()
+
+        // THEN the data is correctly marshalled back
+        assertEquals(1, results.size)
+        assertEquals("com.google.android.gms", results[0].providerPackageName)
+        assertEquals(expectedUpdates, results[0].updates)
+        assertEquals(expectedTime, results[0].lastCheckTimeMillis)
+
+        // AND verify we unbound from the service
+        verifyUpdateInfoServiceUnbound()
+    }
+
     /** Helper to mock the current Device Security Patch Level. */
     private fun mockDeviceSpl(component: String, spl: String) {
         val bundle = Bundle()
@@ -3168,7 +4211,7 @@ class SecurityPatchStateTest {
 
     /** Configures the mock [IUpdateInfoService] to return a pre-constructed result object. */
     private fun setupUpdateInfoServiceResponse(result: UpdateCheckResult) {
-        `when`(mockService.listAvailableUpdates()).thenReturn(result)
+        `when`(mockSession.listAvailableUpdates()).thenReturn(result)
     }
 
     /** Configures the mock [IUpdateInfoService] to return a result based on a list of updates. */

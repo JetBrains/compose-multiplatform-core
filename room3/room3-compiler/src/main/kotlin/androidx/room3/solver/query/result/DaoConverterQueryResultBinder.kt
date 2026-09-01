@@ -20,18 +20,17 @@ import androidx.room3.compiler.codegen.XCodeBlock
 import androidx.room3.compiler.codegen.XPropertySpec
 import androidx.room3.compiler.codegen.XTypeName
 import androidx.room3.compiler.processing.XType
-import androidx.room3.compiler.processing.isArray
-import androidx.room3.compiler.processing.isBoolean
 import androidx.room3.ext.ArrayLiteral
 import androidx.room3.ext.CommonTypeNames
 import androidx.room3.ext.InvokeWithLambdaParameter
 import androidx.room3.ext.LambdaSpec
+import androidx.room3.ext.ListOfString
 import androidx.room3.ext.RoomMemberNames.DB_UTIL_PERFORM_SUSPENDING
 import androidx.room3.ext.RoomTypeNames.RAW_QUERY
-import androidx.room3.ext.RoomTypeNames.ROOM_DB
 import androidx.room3.ext.SQLiteDriverTypeNames
 import androidx.room3.solver.CodeGenScope
 import androidx.room3.solver.types.DaoReturnTypeConverter
+import androidx.room3.solver.types.DaoReturnTypeConverter.OptionalParam
 
 class DaoConverterQueryResultBinder(
     val typeArg: XType,
@@ -48,53 +47,54 @@ class DaoConverterQueryResultBinder(
         inTransaction: Boolean,
         scope: CodeGenScope,
     ) {
-        val arrayOfTableNamesLiteral =
-            ArrayLiteral(CommonTypeNames.STRING, *tableNames.toTypedArray())
-
         val rawQueryVar = scope.getTmpVar("_rawQuery")
         val statementVar = scope.getTmpVar("_stmt")
-        val executeAndReturnLambda = converter.executeAndReturnLambda
-        if (executeAndReturnLambda.hasRawQueryParam) {
-            scope.builder.apply {
-                if (bindStatement != null) {
-                    // TODO(b/487009207): Remove hard coded value
-                    beginControlFlow(
-                        "val %L: %T = %T(%N) { %L ->",
-                        rawQueryVar,
-                        RAW_QUERY,
-                        RAW_QUERY,
-                        sqlQueryVar,
-                        statementVar,
+        if (converter.hasRawQueryParam()) {
+            if (bindStatement != null) {
+                val rawQueryAssignExprBlock =
+                    InvokeWithLambdaParameter(
+                        scope = scope,
+                        functionCall = XCodeBlock.of("%T", RAW_QUERY),
+                        argFormat = listOf("%N"),
+                        args = listOf(sqlQueryVar),
+                        lambdaSpec =
+                            object :
+                                LambdaSpec(
+                                    parameterTypeName = SQLiteDriverTypeNames.STATEMENT,
+                                    parameterName = statementVar,
+                                    returnTypeName = XTypeName.UNIT_VOID,
+                                    javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable,
+                                ) {
+                                override fun XCodeBlock.Builder.body(scope: CodeGenScope) {
+                                    bindStatement(scope, statementVar)
+                                }
+                            },
                     )
-                    bindStatement(scope, statementVar)
-                    endControlFlow()
-                } else {
-                    addLocalVal(rawQueryVar, RAW_QUERY, "%T(%L)", RAW_QUERY, sqlQueryVar)
-                }
+                scope.builder.addLocalVariable(
+                    name = rawQueryVar,
+                    typeName = RAW_QUERY,
+                    isAssignExprStmt = false,
+                    assignExpr = rawQueryAssignExprBlock,
+                )
+            } else {
+                scope.builder.addLocalVal(rawQueryVar, RAW_QUERY, "%T(%L)", RAW_QUERY, sqlQueryVar)
             }
         }
 
-        val args = buildList {
-            // We always have a RoomDatabase param and the lambda parameter in DAO return type
-            // converters. All other params are optional, but are limited to a Boolean representing
-            // `inTransaction`, an Array<String> representing `tableNames` and a RoomRawQuery
-            // representing `rawQuery`. We need to have a way to check if [1] any/which of these
-            // parameters have been defined in the convert function we have, [2] the order in
-            // which they have been supplied.
-            converter.requiredFunctionParamTypes.forEach { paramType ->
-                val typeName = paramType.asTypeName()
-                when {
-                    typeName == ROOM_DB -> add(dbProperty.name)
-                    paramType.isArray() -> add(arrayOfTableNamesLiteral)
-                    paramType.isBoolean() -> add(inTransaction)
-                    typeName == RAW_QUERY -> add(rawQueryVar)
+        val lambdaHasRawQuery = converter.executeAndReturnLambda.hasRawQueryParam
+        val converterRawQuery = scope.getTmpVar("_converterQuery")
+        val args =
+            converter.requiredParameters.map {
+                when (it) {
+                    OptionalParam.ROOM_DB -> dbProperty.name
+                    OptionalParam.TABLE_NAMES_ARRAY ->
+                        ArrayLiteral(CommonTypeNames.STRING, *tableNames.toTypedArray())
+                    OptionalParam.TABLE_NAMES_LIST -> ListOfString(*tableNames.toTypedArray())
+                    OptionalParam.IN_TRANSACTION -> inTransaction
+                    OptionalParam.RAW_QUERY -> rawQueryVar
                 }
             }
-        }
 
-        val lambdaType = converter.requiredFunctionParamTypes.last()
-        val isParameterizedLambda = lambdaType.typeArguments.size > 1
-        val limitQuery = scope.getTmpVar("_converterQuery")
         val convertBlock =
             InvokeWithLambdaParameter(
                 scope = scope,
@@ -104,13 +104,14 @@ class DaoConverterQueryResultBinder(
                 lambdaSpec =
                     object :
                         LambdaSpec(
-                            parameterTypeName = if (isParameterizedLambda) RAW_QUERY else null,
-                            parameterName = if (isParameterizedLambda) limitQuery else null,
+                            parameterTypeName = if (lambdaHasRawQuery) RAW_QUERY else null,
+                            parameterName = if (lambdaHasRawQuery) converterRawQuery else null,
                             returnTypeName = converter.to.asTypeName(),
                             javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable,
                         ) {
                         override fun XCodeBlock.Builder.body(scope: CodeGenScope) {
-                            val converterQueryVar = if (isParameterizedLambda) limitQuery else null
+                            val converterQueryVar =
+                                if (lambdaHasRawQuery) converterRawQuery else null
                             scope.builder.add(
                                 "%L",
                                 setUpPerformBlock(
@@ -144,6 +145,7 @@ class DaoConverterQueryResultBinder(
         return InvokeWithLambdaParameter(
             scope = scope,
             functionName = DB_UTIL_PERFORM_SUSPENDING,
+            functionTypeArg = typeArg.asTypeName(),
             argFormat = listOf("%N", "%L", "%L"),
             args = listOf(dbProperty, true, inTransaction),
             lambdaSpec =

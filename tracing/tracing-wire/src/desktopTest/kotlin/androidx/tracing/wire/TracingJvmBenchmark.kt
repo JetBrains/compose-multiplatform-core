@@ -16,6 +16,9 @@
 
 package androidx.tracing.wire
 
+import androidx.tracing.AbstractTraceSink
+import androidx.tracing.EmptyTraceContext
+import androidx.tracing.PerfettoTracer
 import androidx.tracing.TraceContext
 import kotlin.coroutines.CoroutineContext
 import kotlinx.benchmark.Benchmark
@@ -36,20 +39,22 @@ import okio.buffer
 @State(Scope.Benchmark)
 open class TracingJvmBenchmark {
     private val disabledTraceContext =
-        buildTraceContext(sink = buildInMemorySink(), isEnabled = false)
-    private val disabledRingBufferTraceContext =
-        buildTraceContext(sink = buildInMemoryRingBufferSink(), isEnabled = false)
+        buildTraceContext(sink = buildInMemorySink(), isGloballyEnabled = false)
 
-    private val disabledTracer = disabledTraceContext.createTracer()
-    private val disabledRingBufferTracer = disabledRingBufferTraceContext.createTracer()
+    private val disabledTracer =
+        PerfettoTracer(context = disabledTraceContext, categoryEnabled = { false })
 
     private val enabledTraceContext =
-        buildTraceContext(sink = buildInMemorySink(), isEnabled = true)
-    private val enabledRingBufferTraceContext =
-        buildTraceContext(sink = buildInMemoryRingBufferSink(), isEnabled = true)
+        buildTraceContext(sink = buildInMemorySink(), isGloballyEnabled = true)
 
-    private val enabledTracer = enabledTraceContext.createTracer()
-    private val enabledRingBufferTracer = enabledRingBufferTraceContext.createTracer()
+    private val enabledRingBufferTraceContext =
+        buildTraceContext(sink = buildInMemoryRingBufferSink(), isGloballyEnabled = true)
+
+    private val enabledTracer =
+        PerfettoTracer(context = enabledTraceContext, categoryEnabled = { true })
+
+    private val enabledRingBufferTracer =
+        PerfettoTracer(context = enabledRingBufferTraceContext, categoryEnabled = { true })
 
     private val category = "Tests"
 
@@ -64,38 +69,43 @@ open class TracingJvmBenchmark {
     }
 
     @Benchmark
-    open fun traceSectionDisabled() {
+    open fun beginEnd_withTracingGloballyDisabled() {
         disabledTracer.trace(category = category, name = "benchmark") {
             // Do nothing
         }
     }
 
+    // Note: There is no runWithMeasurementDisabled equivalent in JMH benchmarks.
+    // Therefore, we can't guarantee that all trace events are serialized.
     @Benchmark
-    open fun traceSectionEnabled() {
-        enabledTracer.trace(category = category, name = "benchmark") {
-            // Do nothing
+    open fun beginEnd32_withSerialization() {
+        repeat(32) {
+            enabledTracer.trace(category = category, name = "benchmark") {
+                // Do nothing
+            }
         }
     }
 
+    // Note: There is no runWithMeasurementDisabled equivalent in JMH benchmarks.
+    // Therefore, we can't guarantee that all trace events are serialized.
     @Benchmark
-    open fun traceSectionRingBufferDisabled() {
-        disabledRingBufferTracer.trace(category = category, name = "benchmark") {
-            // Do nothing
-        }
-    }
-
-    @Benchmark
-    open fun traceSectionRingBufferEnabled() {
-        enabledRingBufferTracer.trace(category = category, name = "benchmark") {
-            // Do nothing
+    open fun beginEnd32_withSerialization_ringBuffer() {
+        repeat(32) {
+            enabledRingBufferTracer.trace(category = category, name = "benchmark") {
+                // Do nothing
+            }
         }
     }
 
     private fun buildTraceContext(
-        sink: androidx.tracing.TraceSink,
-        @Suppress("SameParameterValue") isEnabled: Boolean,
+        sink: AbstractTraceSink,
+        @Suppress("SameParameterValue") isGloballyEnabled: Boolean,
     ): TraceContext {
-        return TraceContext(sink = sink, isEnabled = isEnabled)
+        return if (isGloballyEnabled) {
+            TraceContext(sink = sink, isGloballyEnabled = true, isCategoryEnabled = { true })
+        } else {
+            EmptyTraceContext
+        }
     }
 
     fun buildInMemorySink(coroutineContext: CoroutineContext = Dispatchers.IO): TraceSink {
@@ -106,7 +116,7 @@ open class TracingJvmBenchmark {
         )
     }
 
-    fun buildInMemoryRingBufferSink(): androidx.tracing.TraceSink {
+    fun buildInMemoryRingBufferSink(): AbstractTraceSink {
         return InMemoryRingBufferTraceSink(capacityInBytes = 5_000_000, sequenceId = 1)
     }
 }

@@ -16,11 +16,10 @@
 
 package androidx.room3.compiler.processing.ksp
 
+import androidx.room3.compiler.codegen.XTypeName
 import androidx.room3.compiler.processing.tryUnbox
-import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.javapoet.JTypeName
-import com.squareup.kotlinpoet.javapoet.KTypeName
 
 /**
  * This tries to mimic primitive types in Kotlin.
@@ -32,15 +31,10 @@ import com.squareup.kotlinpoet.javapoet.KTypeName
 internal class KspPrimitiveType(
     env: KspProcessingEnv,
     ksType: KSType,
-    originalKSAnnotations: Sequence<KSAnnotation> = ksType.annotations,
-    typeAlias: KSType? = null,
-) : KspType(env, ksType, originalKSAnnotations, null, typeAlias) {
+    knownTypeName: Lazy<XTypeName>? = null,
+) : KspType(env, ksType, null, knownTypeName) {
     override fun resolveJTypeName(): JTypeName {
-        return ksType.asJTypeName(env.resolver).tryUnbox()
-    }
-
-    override fun resolveKTypeName(): KTypeName {
-        return ksType.asKTypeName(env.resolver)
+        return super.resolveJTypeName().tryUnbox()
     }
 
     override fun boxed(): KspType {
@@ -50,8 +44,7 @@ internal class KspPrimitiveType(
     override fun copy(
         env: KspProcessingEnv,
         ksType: KSType,
-        originalKSAnnotations: Sequence<KSAnnotation>,
         scope: KSTypeVarianceResolverScope?,
-        typeAlias: KSType?,
-    ) = KspPrimitiveType(env, ksType, originalKSAnnotations, typeAlias)
+        knownTypeName: Lazy<XTypeName>?,
+    ) = KspPrimitiveType(env, ksType, knownTypeName)
 }

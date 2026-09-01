@@ -26,6 +26,7 @@ dependencies {
     api("androidx.compose.ui:ui:1.10.0")
     api("androidx.compose.ui:ui-test:1.10.0")
     api("androidx.compose.foundation:foundation:1.10.0")
+    api(project(":compose:test-utils"))
     api(libs.junit)
     implementation(libs.testCore)
     implementation(libs.testRules)
@@ -33,7 +34,7 @@ dependencies {
 }
 
 android {
-    compileSdk { version = release(35) }
+    compileSdk { version = release(37) { minorApiLevel = 1 } }
     namespace = "androidx.xr.glimmer.testutils"
     defaultConfig {
         minSdk { version = release(33) }

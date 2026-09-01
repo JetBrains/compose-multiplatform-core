@@ -18,8 +18,11 @@ package androidx.pdf.service
 
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.Matrix
 import android.graphics.PointF
 import android.graphics.Rect
+import android.graphics.RectF
+import android.graphics.pdf.component.PdfPageImageObject
 import android.graphics.pdf.content.PdfPageGotoLinkContent
 import android.graphics.pdf.content.PdfPageImageContent
 import android.graphics.pdf.content.PdfPageLinkContent
@@ -31,8 +34,8 @@ import android.graphics.pdf.models.selection.PageSelection
 import android.graphics.pdf.models.selection.SelectionBoundary
 import android.os.Build
 import android.os.ParcelFileDescriptor
+import android.os.ext.SdkExtensions
 import androidx.annotation.RequiresExtension
-import androidx.annotation.RestrictTo
 import androidx.pdf.DraftEditOperation
 import androidx.pdf.DraftEditResult
 import androidx.pdf.PdfDocumentRemote
@@ -42,14 +45,18 @@ import androidx.pdf.adapter.PdfDocumentRenderer
 import androidx.pdf.adapter.PdfDocumentRendererFactory
 import androidx.pdf.adapter.PdfDocumentRendererFactoryImpl
 import androidx.pdf.annotation.PageAnnotationsProviderImpl
+import androidx.pdf.annotation.models.ImagePdfObject
 import androidx.pdf.annotation.models.PaginatedAnnotations
 import androidx.pdf.annotation.models.PdfObject
 import androidx.pdf.annotation.processor.PageAnnotationsPaginator
+import androidx.pdf.annotation.processor.PageObjectsPaginator
 import androidx.pdf.annotation.processor.PdfRendererAnnotationsProcessor
 import androidx.pdf.models.Dimensions
+import androidx.pdf.models.PageObjectsProviderImpl
+import androidx.pdf.models.PaginatedObjects
+import androidx.pdf.utils.isAnnotationsFeatureAvailable
 import androidx.pdf.utils.toPdfObject
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class PdfDocumentRemoteImpl(
     private val adapterFactory: PdfDocumentRendererFactory = PdfDocumentRendererFactoryImpl()
 ) : PdfDocumentRemote.Stub() {
@@ -57,12 +64,14 @@ internal class PdfDocumentRemoteImpl(
     private lateinit var rendererAdapter: PdfDocumentRenderer
     private lateinit var rendererAnnotationsProcessor: PdfRendererAnnotationsProcessor
     private var pageAnnotationsPaginator: PageAnnotationsPaginator? = null
+    private var pageObjectsPaginator: PageObjectsPaginator? = null
 
-    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
     override fun openPdfDocument(pfd: ParcelFileDescriptor, password: String?): Int {
         try {
             rendererAdapter = adapterFactory.create(pfd, password)
-            rendererAnnotationsProcessor = PdfRendererAnnotationsProcessor(rendererAdapter)
+            if (isAnnotationsFeatureAvailable()) {
+                rendererAnnotationsProcessor = PdfRendererAnnotationsProcessor(rendererAdapter)
+            }
             return PdfLoadingStatus.SUCCESS.ordinal
         } catch (exception: SecurityException) {
             return PdfLoadingStatus.WRONG_PASSWORD.ordinal
@@ -78,7 +87,14 @@ internal class PdfDocumentRemoteImpl(
     }
 
     override fun getPageDimensions(pageNum: Int): Dimensions? {
-        return rendererAdapter.withPage(pageNum) { page -> Dimensions(page.width, page.height) }
+        return try {
+            rendererAdapter.withPage(pageNum) { page -> Dimensions(page.width, page.height) }
+        } catch (_: IllegalStateException) {
+            // Pre-S devices throw IllegalStateException for corrupted pages via
+            // PdfRenderer.openPage().
+            // Catching it here prevents crashes and lets getPageInfo() fall back to DEFAULT_PAGE.
+            null
+        }
     }
 
     override fun getPageBitmap(
@@ -92,7 +108,16 @@ internal class PdfDocumentRemoteImpl(
         // guarantee a specific background color by default.
         output.eraseColor(Color.WHITE)
         // TODO (b/464133165): Update renderPage to use renderParams
-        rendererAdapter.openPage(pageNum, useCache = true).renderPage(output, renderParams)
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+                SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 13
+        ) {
+            rendererAdapter.openPage(pageNum, useCache = true).renderPage(output, renderParams)
+        } else {
+            // Pre-S or devices with ext-13 or lower throw IllegalStateException "Current page not
+            // closed" when keeping page open in cache using rendererAdapter.openPage
+            rendererAdapter.withPage(pageNum) { page -> page.renderPage(output, renderParams) }
+        }
         return output
     }
 
@@ -114,9 +139,20 @@ internal class PdfDocumentRemoteImpl(
         // Latency optimization: Keep pages open to avoid re-initializing native objects
         // for subsequent rendering calls within the same user-visible portion.
         // TODO (b/464133165): Update renderTile to use renderParams
-        rendererAdapter
-            .openPage(pageNum, useCache = true)
-            .renderTile(output, offsetX, offsetY, pageWidth, pageHeight, renderParams)
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+                SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 13
+        ) {
+            rendererAdapter
+                .openPage(pageNum, useCache = true)
+                .renderTile(output, offsetX, offsetY, pageWidth, pageHeight, renderParams)
+        } else {
+            // Pre-S or devices with ext-13 or lower throw IllegalStateException "Current page not
+            // closed" when keeping page open in cache using rendererAdapter.openPage
+            rendererAdapter.withPage(pageNum) { page ->
+                page.renderTile(output, offsetX, offsetY, pageWidth, pageHeight, renderParams)
+            }
+        }
         return output
     }
 
@@ -171,8 +207,8 @@ internal class PdfDocumentRemoteImpl(
         }
     }
 
-    override fun applyEdit(pageNum: Int, editRecord: FormEditRecord): List<Rect>? {
-        return rendererAdapter.withPage(pageNum) { page -> page.applyEdit(editRecord) }
+    override fun applyEdit(pageNum: Int, editRecord: FormEditRecord): List<Rect> {
+        return rendererAdapter.withPage(pageNum) { page -> page.applyEdit(editRecord) } ?: listOf()
     }
 
     override fun write(destination: ParcelFileDescriptor, removePasswordProtection: Boolean) {
@@ -216,6 +252,47 @@ internal class PdfDocumentRemoteImpl(
         return rendererAnnotationsProcessor.process(operations)
     }
 
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+    override fun addPageObject(pageNum: Int, newObject: PdfObject): String {
+        return rendererAdapter.withPage(pageNum) { page ->
+            when (newObject) {
+                is ImagePdfObject -> {
+                    val nativeImageObject = PdfPageImageObject(newObject.bitmap)
+
+                    // TODO(b/537744884): Create matrix in EditableDocumentViewModel
+                    val matrix =
+                        Matrix().apply {
+                            val pdfUnitSquare = RectF(0f, 0f, 1f, 1f)
+                            setRectToRect(pdfUnitSquare, newObject.bounds, Matrix.ScaleToFit.FILL)
+                        }
+
+                    nativeImageObject.setMatrix(matrix)
+
+                    page.addPageObject(nativeImageObject).toString()
+                }
+
+                else ->
+                    throw UnsupportedOperationException(
+                        "PdfObject of type ${newObject::class.java.simpleName} is not currently supported"
+                    )
+            }
+        } ?: throw IllegalStateException("Failed to load page $pageNum to embed the PdfObject")
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+    override fun getPageObjects(pageNum: Int, types: Long): PaginatedObjects? {
+        return getOrCreatePageObjectsPaginator(pageNum, types).getPageObjects()
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+    override fun getBatchedPageObjects(
+        pageNum: Int,
+        batchIndex: Int,
+        types: Long,
+    ): PaginatedObjects? {
+        return getOrCreatePageObjectsPaginator(pageNum, types).getPageObjects(batchIndex)
+    }
+
     override fun getLinearizationStatus(): Int {
         return rendererAdapter.linearizationStatus
     }
@@ -233,4 +310,15 @@ internal class PdfDocumentRemoteImpl(
     }
 
     override fun getInterfaceVersion(): Int = VERSION
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+    private fun getOrCreatePageObjectsPaginator(pageNum: Int, types: Long): PageObjectsPaginator {
+        return pageObjectsPaginator?.takeIf { it.pageNum == pageNum && it.types == types }
+            ?: PageObjectsPaginator(
+                    pageNum,
+                    objectsProvider = PageObjectsProviderImpl(documentRenderer = rendererAdapter),
+                    types = types,
+                )
+                .also { pageObjectsPaginator = it }
+    }
 }

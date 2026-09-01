@@ -19,9 +19,11 @@ package androidx.compose.material3
 import androidx.compose.material3.tokens.ColorDarkTokens
 import androidx.compose.material3.tokens.ColorLightTokens
 import androidx.compose.material3.tokens.ColorSchemeKeyTokens
+import androidx.compose.material3.tokens.ColorToken
 import androidx.compose.material3.tokens.PaletteTokens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -145,55 +147,55 @@ import kotlin.math.ln
  *   Useful when a strong contrast is not required.
  */
 @Immutable
-class ColorScheme(
-    val primary: Color,
-    val onPrimary: Color,
-    val primaryContainer: Color,
-    val onPrimaryContainer: Color,
-    val inversePrimary: Color,
-    val secondary: Color,
-    val onSecondary: Color,
-    val secondaryContainer: Color,
-    val onSecondaryContainer: Color,
-    val tertiary: Color,
-    val onTertiary: Color,
-    val tertiaryContainer: Color,
-    val onTertiaryContainer: Color,
-    val background: Color,
-    val onBackground: Color,
-    val surface: Color,
-    val onSurface: Color,
-    val surfaceVariant: Color,
-    val onSurfaceVariant: Color,
-    val surfaceTint: Color,
-    val inverseSurface: Color,
-    val inverseOnSurface: Color,
-    val error: Color,
-    val onError: Color,
-    val errorContainer: Color,
-    val onErrorContainer: Color,
-    val outline: Color,
-    val outlineVariant: Color,
-    val scrim: Color,
-    val surfaceBright: Color,
-    val surfaceDim: Color,
-    val surfaceContainer: Color,
-    val surfaceContainerHigh: Color,
-    val surfaceContainerHighest: Color,
-    val surfaceContainerLow: Color,
-    val surfaceContainerLowest: Color,
-    val primaryFixed: Color,
-    val primaryFixedDim: Color,
-    val onPrimaryFixed: Color,
-    val onPrimaryFixedVariant: Color,
-    val secondaryFixed: Color,
-    val secondaryFixedDim: Color,
-    val onSecondaryFixed: Color,
-    val onSecondaryFixedVariant: Color,
-    val tertiaryFixed: Color,
-    val tertiaryFixedDim: Color,
-    val onTertiaryFixed: Color,
-    val onTertiaryFixedVariant: Color,
+public class ColorScheme(
+    public val primary: Color,
+    public val onPrimary: Color,
+    public val primaryContainer: Color,
+    public val onPrimaryContainer: Color,
+    public val inversePrimary: Color,
+    public val secondary: Color,
+    public val onSecondary: Color,
+    public val secondaryContainer: Color,
+    public val onSecondaryContainer: Color,
+    public val tertiary: Color,
+    public val onTertiary: Color,
+    public val tertiaryContainer: Color,
+    public val onTertiaryContainer: Color,
+    public val background: Color,
+    public val onBackground: Color,
+    public val surface: Color,
+    public val onSurface: Color,
+    public val surfaceVariant: Color,
+    public val onSurfaceVariant: Color,
+    public val surfaceTint: Color,
+    public val inverseSurface: Color,
+    public val inverseOnSurface: Color,
+    public val error: Color,
+    public val onError: Color,
+    public val errorContainer: Color,
+    public val onErrorContainer: Color,
+    public val outline: Color,
+    public val outlineVariant: Color,
+    public val scrim: Color,
+    public val surfaceBright: Color,
+    public val surfaceDim: Color,
+    public val surfaceContainer: Color,
+    public val surfaceContainerHigh: Color,
+    public val surfaceContainerHighest: Color,
+    public val surfaceContainerLow: Color,
+    public val surfaceContainerLowest: Color,
+    public val primaryFixed: Color,
+    public val primaryFixedDim: Color,
+    public val onPrimaryFixed: Color,
+    public val onPrimaryFixedVariant: Color,
+    public val secondaryFixed: Color,
+    public val secondaryFixedDim: Color,
+    public val onSecondaryFixed: Color,
+    public val onSecondaryFixedVariant: Color,
+    public val tertiaryFixed: Color,
+    public val tertiaryFixedDim: Color,
+    public val onTertiaryFixed: Color,
+    public val onTertiaryFixedVariant: Color,
 ) {
     @Deprecated(
         level = DeprecationLevel.WARNING,
@@ -238,7 +240,7 @@ class ColorScheme(
                     "surfaceContainerLowest,)"
             ),
     )
-    constructor(
+    public constructor(
         primary: Color,
         onPrimary: Color,
         primaryContainer: Color,
@@ -327,7 +329,7 @@ class ColorScheme(
     )
 
     /** Returns a copy of this ColorScheme, optionally overriding some of the values. */
-    fun copy(
+    public fun copy(
         primary: Color = this.primary,
         onPrimary: Color = this.onPrimary,
         primaryContainer: Color = this.primaryContainer,
@@ -434,7 +436,7 @@ class ColorScheme(
                 "instead",
         level = DeprecationLevel.HIDDEN,
     )
-    fun copy(
+    public fun copy(
         primary: Color = this.primary,
         onPrimary: Color = this.onPrimary,
         primaryContainer: Color = this.primaryContainer,
@@ -503,7 +505,7 @@ class ColorScheme(
                 "instead",
         level = DeprecationLevel.HIDDEN,
     )
-    fun copy(
+    public fun copy(
         primary: Color = this.primary,
         onPrimary: Color = this.onPrimary,
         primaryContainer: Color = this.primaryContainer,
@@ -648,8 +650,11 @@ class ColorScheme(
     internal var defaultSuggestionChipColorsCached: ChipColors? = null
     internal var defaultElevatedSuggestionChipColorsCached: ChipColors? = null
     internal var defaultFilterChipColorsCached: SelectableChipColors? = null
+    internal var defaultTonalFilterChipColorsCached: SelectableChipColors? = null
     internal var defaultElevatedFilterChipColorsCached: SelectableChipColors? = null
+    internal var defaultTonalElevatedFilterChipColorsCached: SelectableChipColors? = null
     internal var defaultInputChipColorsCached: SelectableChipColors? = null
+    internal var defaultTonalInputChipColorsCached: SelectableChipColors? = null
 
     internal var defaultVerticalDragHandleColorsCached: DragHandleColors? = null
 
@@ -676,15 +681,16 @@ class ColorScheme(
 
     internal var defaultToggleButtonColorsCached: ToggleButtonColors? = null
     internal var defaultElevatedToggleButtonColorsCached: ToggleButtonColors? = null
-    internal var defaultTonalToggleButtonColorsCached: ToggleButtonColors? = null
+    internal var defaultFilledTonalToggleButtonColorsCached: ToggleButtonColors? = null
     internal var defaultOutlinedToggleButtonColorsCached: ToggleButtonColors? = null
 
     internal var defaultListItemColorsCached: ListItemColors? = null
     internal var defaultSegmentedListItemColorsCached: ListItemColors? = null
 
     internal var defaultMenuItemColorsCached: MenuItemColors? = null
-    internal var defaultMenuSelectableItemColorsCached: MenuItemColors? = null
-    internal var defaultMenuSelectableItemVibrantColorsCached: MenuItemColors? = null
+    internal var defaultMenuItemVibrantColorsCached: MenuItemColors? = null
+    internal var defaultMenuSelectableItemColorsCached: SelectableMenuItemColors? = null
+    internal var defaultMenuSelectableItemVibrantColorsCached: SelectableMenuItemColors? = null
 
     internal var defaultNavigationBarItemColorsCached: NavigationBarItemColors? = null
     internal var defaultShortNavigationBarItemColorsCached: NavigationItemColors? = null
@@ -704,8 +710,21 @@ class ColorScheme(
     internal var defaultOutlinedTextFieldColorsCached: TextFieldColors? = null
     internal var defaultTextFieldColorsCached: TextFieldColors? = null
 
+    internal var tonalTextFieldColorsCached: TextFieldColors? = null
+    internal var tonalOutlinedTextFieldColorsCached: TextFieldColors? = null
+
     @OptIn(ExperimentalMaterial3Api::class)
     internal var defaultTimePickerColorsCached: TimePickerColors? = null
+
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultVibrantTimePickerColorsCached: TimePickerColors? = null
+
+    internal var defaultTimeInputColorsCached: TimeInputColors? = null
+
+    internal var defaultVibrantTimeInputColorsCached: TimeInputColors? = null
+
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultScrollFieldColorsCached: ScrollFieldColors? = null
 
     @OptIn(ExperimentalMaterial3Api::class)
     internal var defaultRichTooltipColorsCached: RichTooltipColors? = null
@@ -771,7 +790,7 @@ class ColorScheme(
                     ")"
             ),
     )
-    constructor(
+    public constructor(
         primary: Color,
         onPrimary: Color,
         primaryContainer: Color,
@@ -854,7 +873,7 @@ class ColorScheme(
 }
 
 /** Returns a light Material color scheme. */
-fun lightColorScheme(
+public fun lightColorScheme(
     primary: Color = ColorLightTokens.Primary,
     onPrimary: Color = ColorLightTokens.OnPrimary,
     primaryContainer: Color = ColorLightTokens.PrimaryContainer,
@@ -956,7 +975,7 @@ fun lightColorScheme(
     )
 
 /** Returns a dark Material color scheme. */
-fun darkColorScheme(
+public fun darkColorScheme(
     primary: Color = ColorDarkTokens.Primary,
     onPrimary: Color = ColorDarkTokens.OnPrimary,
     primaryContainer: Color = ColorDarkTokens.PrimaryContainer,
@@ -1074,7 +1093,7 @@ fun darkColorScheme(
  * @see contentColorFor
  */
 @Stable
-fun ColorScheme.contentColorFor(backgroundColor: Color): Color =
+public fun ColorScheme.contentColorFor(backgroundColor: Color): Color =
     when (backgroundColor) {
         primary -> onPrimary
         secondary -> onSecondary
@@ -1122,7 +1141,7 @@ fun ColorScheme.contentColorFor(backgroundColor: Color): Color =
  */
 @Composable
 @ReadOnlyComposable
-fun contentColorFor(backgroundColor: Color) =
+public fun contentColorFor(backgroundColor: Color): Color =
     MaterialTheme.colorScheme.contentColorFor(backgroundColor).takeOrElse {
         LocalContentColor.current
     }
@@ -1135,7 +1154,7 @@ fun contentColorFor(backgroundColor: Color) =
  *   overlaid on top of it.
  */
 @Stable
-fun ColorScheme.surfaceColorAtElevation(elevation: Dp): Color {
+public fun ColorScheme.surfaceColorAtElevation(elevation: Dp): Color {
     if (elevation == 0.dp) return surface
     val alpha = ((4.5f * ln(elevation.value + 1)) + 2f) / 100f
     return surfaceTint.copy(alpha = alpha).compositeOver(surface)
@@ -1150,8 +1169,7 @@ fun ColorScheme.surfaceColorAtElevation(elevation: Dp): Color {
  *
  * @sample androidx.compose.material3.samples.MaterialExpressiveThemeColorSchemeSample
  */
-@ExperimentalMaterial3ExpressiveApi
-fun expressiveLightColorScheme() =
+public fun expressiveLightColorScheme(): ColorScheme =
     lightColorScheme(
         // TODO: Replace palette references with color token references when available.
         onPrimaryContainer = PaletteTokens.Primary30,
@@ -1166,7 +1184,7 @@ fun expressiveLightColorScheme() =
     level = DeprecationLevel.HIDDEN,
 )
 /** Returns a light Material color scheme. */
-fun lightColorScheme(
+public fun lightColorScheme(
     primary: Color = ColorLightTokens.Primary,
     onPrimary: Color = ColorLightTokens.OnPrimary,
     primaryContainer: Color = ColorLightTokens.PrimaryContainer,
@@ -1248,7 +1266,7 @@ fun lightColorScheme(
         "Maintained for binary compatibility. Use overload with additional surface roles instead",
     level = DeprecationLevel.HIDDEN,
 )
-fun lightColorScheme(
+public fun lightColorScheme(
     primary: Color = ColorLightTokens.Primary,
     onPrimary: Color = ColorLightTokens.OnPrimary,
     primaryContainer: Color = ColorLightTokens.PrimaryContainer,
@@ -1317,7 +1335,7 @@ fun lightColorScheme(
         "Maintained for binary compatibility. Use overload with additional surface roles instead",
     level = DeprecationLevel.HIDDEN,
 )
-fun darkColorScheme(
+public fun darkColorScheme(
     primary: Color = ColorDarkTokens.Primary,
     onPrimary: Color = ColorDarkTokens.OnPrimary,
     primaryContainer: Color = ColorDarkTokens.PrimaryContainer,
@@ -1399,7 +1417,7 @@ fun darkColorScheme(
         "Maintained for binary compatibility. Use overload with additional surface roles instead",
     level = DeprecationLevel.HIDDEN,
 )
-fun darkColorScheme(
+public fun darkColorScheme(
     primary: Color = ColorDarkTokens.Primary,
     onPrimary: Color = ColorDarkTokens.OnPrimary,
     primaryContainer: Color = ColorDarkTokens.PrimaryContainer,
@@ -1466,8 +1484,7 @@ fun darkColorScheme(
  * Helper function for component color tokens. Here is an example on how to use component color
  * tokens: ``MaterialTheme.colorScheme.fromToken(ExtendedFabBranded.BrandedContainerColor)``
  */
-@Stable
-internal fun ColorScheme.fromToken(value: ColorSchemeKeyTokens): Color {
+internal fun ColorScheme.fromToken(value: ColorToken): Color {
     return when (value) {
         ColorSchemeKeyTokens.Background -> background
         ColorSchemeKeyTokens.Error -> error
@@ -1517,6 +1534,7 @@ internal fun ColorScheme.fromToken(value: ColorSchemeKeyTokens): Color {
         ColorSchemeKeyTokens.TertiaryFixedDim -> tertiaryFixedDim
         ColorSchemeKeyTokens.OnTertiaryFixed -> onTertiaryFixed
         ColorSchemeKeyTokens.OnTertiaryFixedVariant -> onTertiaryFixedVariant
+        else -> Color.Unspecified
     }
 }
 
@@ -1529,8 +1547,8 @@ internal const val DisabledAlpha = 0.38f
  * Converts a color token key to the local color scheme provided by the theme The color is
  * subscribed to [MaterialTheme.colorScheme] changes.
  */
-internal val ColorSchemeKeyTokens.value: Color
-    @ReadOnlyComposable @Composable get() = MaterialTheme.colorScheme.fromToken(this)
+internal val ColorToken.value: Color
+    @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.fromToken(this)
 
 /**
  * Returns [ColorScheme.surfaceColorAtElevation] with the provided elevation if
@@ -1561,4 +1579,7 @@ internal fun ColorScheme.applyTonalElevation(backgroundColor: Color, elevation: 
  * Setting this value to false will cause all subsequent surfaces down the tree to not apply
  * tonalElevation.
  */
-val LocalTonalElevationEnabled = staticCompositionLocalOf { true }
+public val LocalTonalElevationEnabled: ProvidableCompositionLocal<Boolean> =
+    staticCompositionLocalOf {
+        true
+    }

@@ -16,8 +16,10 @@
 
 package androidx.room3.processor
 
+import androidx.room3.PrimaryKey.Algorithm as PrimaryKeyAlgorithm
 import androidx.room3.compiler.processing.XType
 import androidx.room3.compiler.processing.XTypeElement
+import androidx.room3.ext.getAnnotationOnPropertyOrField
 import androidx.room3.ext.isNotError
 import androidx.room3.ext.isNotNone
 import androidx.room3.parser.SQLTypeAffinity
@@ -68,6 +70,7 @@ internal constructor(
                 foreignKeys = emptyList(),
                 constructor = null,
                 shadowTableName = null,
+                withoutRowId = false,
             )
         }
         context.checker.hasAnnotation(
@@ -80,16 +83,19 @@ internal constructor(
         val entityIndices: List<IndexInput>
         val foreignKeyInputs: List<ForeignKeyInput>
         val inheritSuperIndices: Boolean
+        val withoutRowId: Boolean
         if (annotation != null) {
             tableName = extractTableName(element, annotation)
             entityIndices = extractIndices(annotation, tableName)
             inheritSuperIndices = annotation["inheritSuperIndices"]?.asBoolean() ?: false
             foreignKeyInputs = extractForeignKeys(annotation)
+            withoutRowId = annotation["withoutRowId"]?.asBoolean() ?: false
         } else {
             tableName = element.name
             foreignKeyInputs = emptyList()
             entityIndices = emptyList()
             inheritSuperIndices = false
+            withoutRowId = false
         }
         context.checker.notBlank(
             tableName,
@@ -102,7 +108,7 @@ internal constructor(
             ProcessorErrors.ENTITY_TABLE_NAME_CANNOT_START_WITH_SQLITE,
         )
 
-        val pojo =
+        val dataClass =
             DataClassProcessor.createFor(
                     context = context,
                     element = element,
@@ -111,10 +117,10 @@ internal constructor(
                     referenceStack = referenceStack,
                 )
                 .process()
-        context.checker.check(pojo.relations.isEmpty(), element, RELATION_IN_ENTITY)
+        context.checker.check(dataClass.relations.isEmpty(), element, RELATION_IN_ENTITY)
 
         val propertyIndices =
-            pojo.properties
+            dataClass.properties
                 .filter { it.indexed }
                 .mapNotNull {
                     if (it.parent != null) {
@@ -152,17 +158,25 @@ internal constructor(
                 }
         val superIndices = loadSuperIndices(element.superClass, tableName, inheritSuperIndices)
         val indexInputs = entityIndices + propertyIndices + superIndices
-        val indices = validateAndCreateIndices(indexInputs, pojo)
+        val indices = validateAndCreateIndices(indexInputs, dataClass)
 
-        val primaryKey = findAndValidatePrimaryKey(pojo.properties, pojo.embeddedProperties)
+        val primaryKey =
+            findAndValidatePrimaryKey(dataClass.properties, dataClass.embeddedProperties)
         val affinity = primaryKey.properties.firstOrNull()?.affinity ?: SQLTypeAffinity.TEXT
         context.checker.check(
             !primaryKey.autoGenerateId || affinity == SQLTypeAffinity.INTEGER,
             primaryKey.properties.firstOrNull()?.element ?: element,
             ProcessorErrors.AUTO_INCREMENTED_PRIMARY_KEY_IS_NOT_INT,
         )
+        if (withoutRowId) {
+            context.checker.check(
+                !primaryKey.autoGenerateId,
+                element,
+                ProcessorErrors.WITHOUT_ROWID_CANNOT_USE_AUTOINCREMENT,
+            )
+        }
 
-        val entityForeignKeys = validateAndCreateForeignKeyReferences(foreignKeyInputs, pojo)
+        val entityForeignKeys = validateAndCreateForeignKeyReferences(foreignKeyInputs, dataClass)
         checkIndicesForForeignKeys(entityForeignKeys, primaryKey, indices)
 
         context.checker.check(
@@ -170,7 +184,7 @@ internal constructor(
             element,
             ProcessorErrors.INVALID_TABLE_NAME,
         )
-        pojo.properties.forEach {
+        dataClass.properties.forEach {
             context.checker.check(
                 SqlParser.isValidIdentifier(it.columnName),
                 it.element,
@@ -182,14 +196,15 @@ internal constructor(
             Entity(
                 element = element,
                 tableName = tableName,
-                type = pojo.type,
-                properties = pojo.properties,
-                embeddedProperties = pojo.embeddedProperties,
+                type = dataClass.type,
+                properties = dataClass.properties,
+                embeddedProperties = dataClass.embeddedProperties,
                 indices = indices,
                 primaryKey = primaryKey,
                 foreignKeys = entityForeignKeys,
-                constructor = pojo.constructor,
+                constructor = dataClass.constructor,
                 shadowTableName = null,
+                withoutRowId = withoutRowId,
             )
 
         return entity
@@ -364,35 +379,39 @@ internal constructor(
         return choosePrimaryKey(candidates, element)
     }
 
-    /** Check fields for @PrimaryKey. */
+    /** Check properties for @PrimaryKey. */
     private fun collectPrimaryKeysFromPrimaryKeyAnnotations(
-        fields: List<Property>
+        properties: List<Property>
     ): List<PrimaryKey> {
-        return fields.mapNotNull { field ->
+        return properties.mapNotNull { property ->
             val primaryKeyAnnotation =
-                field.element.getAnnotation(androidx.room3.PrimaryKey::class)
+                property.element.getAnnotationOnPropertyOrField(androidx.room3.PrimaryKey::class)
                     ?: return@mapNotNull null
-            if (field.parent != null) {
-                // the field in the entity that contains this error.
-                val grandParentField = field.parent.mRootParent.property.element
+            if (property.parent != null) {
+                // the property in the entity that contains this error.
+                val grandParentProperty = property.parent.mRootParent.property.element
                 // bound for entity.
                 context
-                    .fork(grandParentField)
+                    .fork(grandParentProperty)
                     .logger
                     .w(
                         Warning.PRIMARY_KEY_FROM_EMBEDDED_IS_DROPPED,
-                        grandParentField,
+                        grandParentProperty,
                         ProcessorErrors.embeddedPrimaryKeyIsDropped(
                             element.qualifiedName,
-                            field.name,
+                            property.name,
                         ),
                     )
                 null
             } else {
                 PrimaryKey(
-                    declaredIn = field.element.enclosingElement,
-                    properties = Properties(field),
+                    declaredIn = property.element.enclosingElement,
+                    properties = Properties(property),
                     autoGenerateId = primaryKeyAnnotation["autoGenerate"]?.asBoolean() ?: false,
+                    algorithm =
+                        primaryKeyAnnotation["algorithm"]?.asEnum()?.let {
+                            PrimaryKeyAlgorithm.valueOf(it.name)
+                        } ?: PrimaryKeyAlgorithm.AUTOINCREMENT,
                 )
             }
         }
@@ -428,6 +447,7 @@ internal constructor(
                             declaredIn = typeElement,
                             properties = Properties(properties),
                             autoGenerateId = false,
+                            algorithm = PrimaryKeyAlgorithm.AUTOINCREMENT,
                         )
                     )
                 }
@@ -450,19 +470,26 @@ internal constructor(
         embeddedProperties: List<EmbeddedProperty>
     ): List<PrimaryKey> {
         return embeddedProperties.mapNotNull { embeddedProperty ->
-            embeddedProperty.property.element.getAnnotation(androidx.room3.PrimaryKey::class)?.let {
-                val autoGenerate = it["autoGenerate"]?.asBoolean() ?: false
-                context.checker.check(
-                    !autoGenerate || embeddedProperty.dataClass.properties.size == 1,
-                    embeddedProperty.property.element,
-                    ProcessorErrors.AUTO_INCREMENT_EMBEDDED_HAS_MULTIPLE_PROPERTIES,
-                )
-                PrimaryKey(
-                    declaredIn = embeddedProperty.property.element.enclosingElement,
-                    properties = embeddedProperty.dataClass.properties,
-                    autoGenerateId = autoGenerate,
-                )
-            }
+            val primaryKeyAnnotation =
+                embeddedProperty.property.element.getAnnotationOnPropertyOrField(
+                    androidx.room3.PrimaryKey::class
+                ) ?: return@mapNotNull null
+            val autoGenerate = primaryKeyAnnotation["autoGenerate"]?.asBoolean() ?: false
+            val algorithm =
+                primaryKeyAnnotation["algorithm"]?.asEnum()?.let { enumEntry ->
+                    PrimaryKeyAlgorithm.valueOf(enumEntry.name)
+                } ?: PrimaryKeyAlgorithm.AUTOINCREMENT
+            context.checker.check(
+                !autoGenerate || embeddedProperty.dataClass.properties.size == 1,
+                embeddedProperty.property.element,
+                ProcessorErrors.AUTO_INCREMENT_EMBEDDED_HAS_MULTIPLE_PROPERTIES,
+            )
+            PrimaryKey(
+                declaredIn = embeddedProperty.property.element.enclosingElement,
+                properties = embeddedProperty.dataClass.properties,
+                autoGenerateId = autoGenerate,
+                algorithm = algorithm,
+            )
         }
     }
 

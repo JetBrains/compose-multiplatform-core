@@ -57,7 +57,6 @@ import com.google.common.base.Joiner.on
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.withTimeout
 import org.junit.Rule
 import org.junit.Test
@@ -70,7 +69,7 @@ import org.mockito.kotlin.mock
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
 class AlertDialogTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun customStyleProperties_shouldApply() {
@@ -566,8 +565,8 @@ class AlertDialogTest {
 
         rule
             .onNodeWithTag(IconTestTag)
-            // Dialog's icon should be centered (icon size is 28dp)
-            .assertLeftPositionInRootIsEqualTo((dialogBounds.width - 28.dp) / 2)
+            // Dialog's icon should be centered (icon size is 24dp)
+            .assertLeftPositionInRootIsEqualTo((dialogBounds.width - 24.dp) / 2)
             // Dialog's icon should be 20dp from the top
             .assertTopPositionInRootIsEqualTo(20.dp)
 

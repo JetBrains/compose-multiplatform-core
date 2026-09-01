@@ -19,10 +19,13 @@ package androidx.appfunctions.testing
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.appfunctions.AppFunction
 import androidx.appfunctions.AppFunctionContext
 import androidx.appfunctions.AppFunctionInvalidArgumentException
 import androidx.appfunctions.AppFunctionSerializable
-import androidx.appfunctions.service.AppFunction
+import androidx.appfunctions.AppFunctionSignature
+import androidx.appfunctions.ExperimentalAppFunctionsApi
+import androidx.appfunctions.metadata.AppFunctionMetadata
 import java.time.LocalDateTime
 
 @AppFunctionSerializable data class DateTime(val localDateTime: LocalDateTime)
@@ -72,4 +75,13 @@ class NotesFunctions : CreateNoteAppFunction<NotesFunctions.Parameters, NotesFun
 
     @AppFunctionSerializable
     class Response(override val createdNote: MyNote) : CreateNoteAppFunction.Response
+}
+
+@OptIn(ExperimentalAppFunctionsApi::class)
+@AppFunctionSignature(
+    scope = AppFunctionMetadata.SCOPE_ACTIVITY,
+    appFunctionXmlFileName = "activity_scope_functions",
+)
+fun interface ActivityScopeFunction {
+    suspend fun activityScopeFunction()
 }

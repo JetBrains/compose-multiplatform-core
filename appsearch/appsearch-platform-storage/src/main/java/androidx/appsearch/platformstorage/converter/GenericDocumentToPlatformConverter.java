@@ -23,23 +23,24 @@ import androidx.annotation.DoNotInline;
 import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.app.AppSearchBlobHandle;
 import androidx.appsearch.app.EmbeddingVector;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.Features;
 import androidx.appsearch.app.GenericDocument;
-import androidx.appsearch.platformstorage.util.AppSearchVersionUtil;
+import androidx.appsearch.platformstorage.PlatformConversionAdapter;
 import androidx.core.util.Preconditions;
 
 import org.jspecify.annotations.NonNull;
+
 
 import java.util.Arrays;
 
 /**
  * Translates between Platform and Jetpack versions of {@link GenericDocument}.
- *
- * @exportToFramework:hide
  */
+@HideInPlatform
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RequiresApi(Build.VERSION_CODES.S)
 public final class GenericDocumentToPlatformConverter {
@@ -49,7 +50,8 @@ public final class GenericDocumentToPlatformConverter {
      */
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public static android.app.appsearch.@NonNull GenericDocument toPlatformGenericDocument(
-            @NonNull GenericDocument jetpackDocument) {
+            @NonNull GenericDocument jetpackDocument,
+            @NonNull PlatformConversionAdapter adapter) {
         Preconditions.checkNotNull(jetpackDocument);
         android.app.appsearch.GenericDocument.Builder<
                 android.app.appsearch.GenericDocument.Builder<?>> platformBuilder =
@@ -93,7 +95,7 @@ public final class GenericDocumentToPlatformConverter {
                 android.app.appsearch.GenericDocument[] platformSubDocuments =
                         new android.app.appsearch.GenericDocument[documentValues.length];
                 for (int j = 0; j < documentValues.length; j++) {
-                    platformSubDocuments[j] = toPlatformGenericDocument(documentValues[j]);
+                    platformSubDocuments[j] = toPlatformGenericDocument(documentValues[j], adapter);
                 }
                 platformBuilder.setPropertyDocument(propertyName, platformSubDocuments);
             } else if (property instanceof EmbeddingVector[]) {
@@ -104,13 +106,12 @@ public final class GenericDocumentToPlatformConverter {
                 }
                 EmbeddingVector[] embeddingVectors = (EmbeddingVector[]) property;
                 ApiHelperForB.setPlatformPropertyEmbedding(platformBuilder, propertyName,
-                        embeddingVectors);
+                        embeddingVectors, adapter);
             } else if (property instanceof AppSearchBlobHandle[]) {
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
                     throw new UnsupportedOperationException(Features.SCHEMA_BLOB_HANDLE
                             + " is not available on this AppSearch implementation.");
                 }
-
                 AppSearchBlobHandle[] blobHandles = (AppSearchBlobHandle[]) property;
                 ApiHelperForB.setPlatformPropertyBlobHandle(platformBuilder, propertyName,
                         blobHandles);
@@ -128,9 +129,12 @@ public final class GenericDocumentToPlatformConverter {
      * {@link androidx.appsearch.app.GenericDocument}.
      */
     @SuppressWarnings("deprecation")
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public static @NonNull GenericDocument toJetpackGenericDocument(
-            android.app.appsearch.@NonNull GenericDocument platformDocument) {
+            android.app.appsearch.@NonNull GenericDocument platformDocument,
+            @NonNull PlatformConversionAdapter adapter) {
         Preconditions.checkNotNull(platformDocument);
+        Preconditions.checkNotNull(adapter);
         GenericDocument.Builder<GenericDocument.Builder<?>> jetpackBuilder =
                 new GenericDocument.Builder<>(
                         platformDocument.getNamespace(),
@@ -166,7 +170,7 @@ public final class GenericDocumentToPlatformConverter {
                         (android.app.appsearch.GenericDocument[]) property;
                 GenericDocument[] jetpackSubDocuments = new GenericDocument[documentValues.length];
                 for (int j = 0; j < documentValues.length; j++) {
-                    jetpackSubDocuments[j] = toJetpackGenericDocument(documentValues[j]);
+                    jetpackSubDocuments[j] = toJetpackGenericDocument(documentValues[j], adapter);
                 }
                 jetpackBuilder.setPropertyDocument(propertyName, jetpackSubDocuments);
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
@@ -174,7 +178,7 @@ public final class GenericDocumentToPlatformConverter {
                 android.app.appsearch.EmbeddingVector[] embeddingVectors =
                         (android.app.appsearch.EmbeddingVector[]) property;
                 ApiHelperForB.setJetpackPropertyEmbedding(jetpackBuilder, propertyName,
-                        embeddingVectors);
+                        embeddingVectors, adapter);
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
                     && property instanceof android.app.appsearch.AppSearchBlobHandle[]) {
                 android.app.appsearch.AppSearchBlobHandle[] blobHandles =
@@ -199,17 +203,27 @@ public final class GenericDocumentToPlatformConverter {
 
         @SuppressLint("NewApi") // EmbeddingVector is incorrectly flagged as needing 34-ext16
         @DoNotInline
+        @OptIn(markerClass = ExperimentalAppSearchApi.class)
         static void setPlatformPropertyEmbedding(
                 android.app.appsearch.GenericDocument.@NonNull Builder<
                         android.app.appsearch.GenericDocument.Builder<?>> platformBuilder,
                 @NonNull String propertyName,
-                EmbeddingVector @NonNull [] jetpackEmbeddingVectors) {
+                EmbeddingVector @NonNull [] jetpackEmbeddingVectors,
+                @NonNull PlatformConversionAdapter adapter) {
+            Preconditions.checkNotNull(adapter);
             android.app.appsearch.EmbeddingVector[] platformEmbeddingVectors =
                     new android.app.appsearch.EmbeddingVector[jetpackEmbeddingVectors.length];
             for (int i = 0; i < jetpackEmbeddingVectors.length; i++) {
-                platformEmbeddingVectors[i] = new android.app.appsearch.EmbeddingVector(
-                        jetpackEmbeddingVectors[i].getValues(),
-                        jetpackEmbeddingVectors[i].getModelSignature());
+                // TODO(b/390450012): Update this once pre-quantized embedding vectors are
+                //  supported.
+                if (jetpackEmbeddingVectors[i].getQuantizedData() != null) {
+                    platformEmbeddingVectors[i] =
+                            adapter.convertQuantizedEmbeddingVector(jetpackEmbeddingVectors[i]);
+                } else {
+                    platformEmbeddingVectors[i] = new android.app.appsearch.EmbeddingVector(
+                            jetpackEmbeddingVectors[i].getValues(),
+                            jetpackEmbeddingVectors[i].getModelSignature());
+                }
             }
             platformBuilder.setPropertyEmbedding(propertyName, platformEmbeddingVectors);
         }
@@ -229,18 +243,19 @@ public final class GenericDocumentToPlatformConverter {
             platformBuilder.setPropertyBlobHandle(propertyName, platformBlobHandles);
         }
 
-        @SuppressLint("NewApi") // getValues() is incorrectly flagged as needing 34-ext16
         @DoNotInline
+        @OptIn(markerClass = ExperimentalAppSearchApi.class)
         static void setJetpackPropertyEmbedding(
                 GenericDocument.@NonNull Builder<GenericDocument.Builder<?>> jetpackBuilder,
                 @NonNull String propertyName,
-                android.app.appsearch.EmbeddingVector @NonNull [] platformEmbeddingVectors) {
+                android.app.appsearch.EmbeddingVector @NonNull [] platformEmbeddingVectors,
+                @NonNull PlatformConversionAdapter adapter) {
+            Preconditions.checkNotNull(adapter);
             EmbeddingVector[] jetpackEmbeddingVectors =
                     new EmbeddingVector[platformEmbeddingVectors.length];
             for (int i = 0; i < platformEmbeddingVectors.length; i++) {
-                jetpackEmbeddingVectors[i] = new EmbeddingVector(
-                        platformEmbeddingVectors[i].getValues(),
-                        platformEmbeddingVectors[i].getModelSignature());
+                jetpackEmbeddingVectors[i] =
+                        adapter.toJetpackEmbeddingVector(platformEmbeddingVectors[i]);
             }
             jetpackBuilder.setPropertyEmbedding(propertyName, jetpackEmbeddingVectors);
         }

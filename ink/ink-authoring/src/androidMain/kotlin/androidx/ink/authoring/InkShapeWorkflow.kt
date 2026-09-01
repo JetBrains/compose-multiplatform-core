@@ -17,28 +17,36 @@ package androidx.ink.authoring
 
 import androidx.annotation.RestrictTo
 import androidx.ink.brush.Brush
+import androidx.ink.brush.ExperimentalInkAnimationApi
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
+import androidx.ink.rendering.android.canvas.StrokePaintAnimationClock
 import androidx.ink.strokes.Stroke
 
-/**
- * If [InProgressStrokesView.rendererFactory] can be fully removed someday, then we can just pass in
- * a [androidx.ink.brush.TextureBitmapStore] here.
- */
-@ExperimentalCustomShapeWorkflowApi
+/** Internal implementation of [ShapeWorkflow] for constructing Ink's standard [Stroke]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
-public class InkShapeWorkflow(customRendererFactory: () -> CanvasStrokeRenderer) :
-    ShapeWorkflow<Brush, InkInProgressShape, Stroke> {
+@ExperimentalInkCustomShapeWorkflowApi
+@OptIn(ExperimentalInkAnimationApi::class)
+public class InkShapeWorkflow
+@ExperimentalInkAnimationApi
+public constructor(
+    private val animationClock: StrokePaintAnimationClock,
+    customRendererFactory: () -> CanvasStrokeRenderer,
+) : ShapeWorkflow<Brush, InkInProgressShape, Stroke> {
+
+    public constructor(
+        customRendererFactory: () -> CanvasStrokeRenderer
+    ) : this(StrokePaintAnimationClock.STOPPED_CLOCK, customRendererFactory)
 
     // Only one shape type for now, backed by InProgressStroke. But theoretically, if the underlying
     // resources of InProgressShape are tailored to specific brush types (e.g. particles vs.
     // continuous), then that could be differentiated here for further optimization.
     override fun getShapeType(shapeSpec: Brush): Int = 9_14_11 // INK
 
-    override fun create(shapeType: Int): InkInProgressShape = InkInProgressShape()
+    override fun create(shapeType: Int): InkInProgressShape = InkInProgressShape(animationClock)
 
     // Creates its own instance of CanvasStrokeRenderer to be used on the render thread.
     override val inProgressShapeRenderer: InProgressShapeRenderer<InkInProgressShape> =
-        InkInProgressShapeRenderer(customRendererFactory())
+        InkInProgressShapeRenderer(animationClock, customRendererFactory())
 
     // Creates its own instance of CanvasStrokeRenderer to be used on the UI thread.
     override val completedShapeRenderer: CompletedShapeRenderer<Stroke> =

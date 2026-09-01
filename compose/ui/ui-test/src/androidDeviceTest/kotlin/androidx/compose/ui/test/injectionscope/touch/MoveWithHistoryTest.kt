@@ -29,7 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.pointer.util.VelocityTrackerAddPointsFix
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -42,7 +41,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth
 import kotlin.math.roundToInt
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -55,7 +53,7 @@ class MoveWithHistoryTest {
         private const val tag = "widget"
     }
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val recorder = SinglePointerInputRecorder()
 
@@ -118,18 +116,9 @@ class MoveWithHistoryTest {
             val from = topCenter + Offset(0f, 120f)
             val to = topCenter + Offset(0f, 100f)
 
-            val historicalTimes =
-                if (VelocityTrackerAddPointsFix) {
-                    listOf(-16L, -12L, -8L)
-                } else {
-                    listOf(-16L, -8L)
-                }
+            val historicalTimes = listOf(-16L, -12L, -8L)
             val historicalCoordinates =
-                if (VelocityTrackerAddPointsFix) {
-                    listOf(to + Offset(0f, 70f), to + Offset(0f, 55f), to + Offset(0f, 35f))
-                } else {
-                    listOf(to + Offset(0f, 70f), to + Offset(0f, 35f))
-                }
+                listOf(to + Offset(0f, 70f), to + Offset(0f, 55f), to + Offset(0f, 35f))
             val delayMillis = 100L
 
             down(from)
