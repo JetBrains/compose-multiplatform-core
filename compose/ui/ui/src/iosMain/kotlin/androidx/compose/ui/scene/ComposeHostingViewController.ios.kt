@@ -18,7 +18,9 @@ package androidx.compose.ui.scene
 
 import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.animation.withAnimationProgress
+import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
 import androidx.compose.ui.uikit.utils.CMPViewController
@@ -56,6 +58,12 @@ internal class ComposeHostingViewController(
 
     @VisibleForTesting
     fun hasInvalidations(): Boolean = container.hasInvalidations()
+
+    @VisibleForTesting
+    @OptIn(InternalComposeUiApi::class)
+    var rootForTestListener: PlatformContext.RootForTestListener?
+        get() = container.rootForTestListener
+        set(value) { container.rootForTestListener = value }
 
     @VisibleForTesting
     val lifecycleState: Lifecycle.State get() = container.currentLifecycleState

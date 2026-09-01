@@ -40,6 +40,7 @@ import kotlin.test.assertSame
 @OptIn(ExperimentalTestApi::class)
 class PointerTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun customPointerChanges() = runComposeUiTest {
         val toolkit = Toolkit.getDefaultToolkit()

@@ -29,6 +29,7 @@ import kotlin.test.Test
 @OptIn(ExperimentalTestApi::class)
 class BasicTextSemanticsTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun semanticsTextChanges_String() = runSkikoComposeUiTest {
         var text by mutableStateOf("before")
@@ -41,6 +42,7 @@ class BasicTextSemanticsTest {
         onNodeWithText("after").assertExists()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun semanticsTextChanges_AnnotatedString() = runSkikoComposeUiTest {
         var text by mutableStateOf("before")

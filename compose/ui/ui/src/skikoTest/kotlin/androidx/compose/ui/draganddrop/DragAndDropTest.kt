@@ -36,6 +36,7 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
 class DragAndDropTest {
+    @Suppress("DEPRECATION")
     @Test
     fun mouseDragTriggersDragStart() = runComposeUiTest {
         var transferDataCreated = false
@@ -64,6 +65,7 @@ class DragAndDropTest {
         assertTrue(transferDataCreated)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun mouseLongPressDoesNotTriggerDragStart() = runComposeUiTest {
         var transferDataCreated = false
@@ -91,6 +93,7 @@ class DragAndDropTest {
         assertFalse(transferDataCreated)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun touchLongPressTriggersDragStart() = runComposeUiTest {
         var transferDataCreated = false
@@ -116,6 +119,7 @@ class DragAndDropTest {
         assertTrue(transferDataCreated)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun touchDragDoesNotTriggerDragStart() = runComposeUiTest {
         var transferDataCreated = false

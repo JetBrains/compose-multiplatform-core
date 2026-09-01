@@ -95,11 +95,11 @@ import androidx.compose.ui.text.style.TextOverflow.Companion.StartEllipsis
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.sp
 import java.util.Locale as JavaLocale
 import kotlin.math.abs
 import kotlin.math.ceil
-import kotlin.math.max
 
 /** Android specific implementation for [Paragraph] */
 // NOTE(text-perf-review): I see most of the APIs in this class just delegate to TextLayout or to
@@ -167,12 +167,7 @@ internal class AndroidParagraph(
      * 3. No baseline shift is applied (which would force `StaticLayout` anyway).
      * 4. The global optimization flag is enabled.
      */
-    private val applyLineHeightOptimization: Boolean
-        get() =
-            !paragraphIntrinsics.softWrap &&
-                !paragraphIntrinsics.mayHaveNewLine &&
-                paragraphIntrinsics.style.baselineShift == null &&
-                AndroidComposeUiTextFlags.isSingleLineLineHeightOptimizationEnabled
+    private var applyLineHeightOptimization: Boolean = false
 
     /**
      * The downward canvas translation shift applied to the paragraph when rendering. When the
@@ -188,6 +183,17 @@ internal class AndroidParagraph(
                 "these should be the default zero values instead."
         }
         requirePrecondition(maxLines >= 1) { "maxLines should be greater than 0" }
+
+        // Earlier we check all preconditions to determine if single line optimization can be
+        // applied. Here we simply check if the line height is set and the span is not attached
+        val hasLineHeightStyleSpan =
+            (paragraphIntrinsics.charSequence as? Spanned)?.hasSpan(
+                android.text.style.LineHeightSpan::class.java
+            ) == true
+        applyLineHeightOptimization =
+            AndroidComposeUiTextFlags.isSingleLineLineHeightOptimizationEnabled &&
+                paragraphIntrinsics.style.lineHeight.isSpecified &&
+                !hasLineHeightStyleSpan
 
         val style = paragraphIntrinsics.style
 
@@ -398,24 +404,22 @@ internal class AndroidParagraph(
                 }
 
                 val top =
-                    with(layout) {
-                        when (span.verticalAlign) {
-                            PlaceholderSpan.ALIGN_ABOVE_BASELINE ->
-                                getLineBaseline(line) - span.heightPx
-                            PlaceholderSpan.ALIGN_TOP -> getLineTop(line)
-                            PlaceholderSpan.ALIGN_BOTTOM -> getLineBottom(line) - span.heightPx
-                            PlaceholderSpan.ALIGN_CENTER ->
-                                (getLineTop(line) + getLineBottom(line) - span.heightPx) / 2
-                            PlaceholderSpan.ALIGN_TEXT_TOP ->
-                                span.fontMetrics.ascent + getLineBaseline(line)
-                            PlaceholderSpan.ALIGN_TEXT_BOTTOM ->
-                                span.fontMetrics.descent + getLineBaseline(line) - span.heightPx
-                            PlaceholderSpan.ALIGN_TEXT_CENTER ->
-                                with(span.fontMetrics) {
-                                    (ascent + descent - span.heightPx) / 2 + getLineBaseline(line)
-                                }
-                            else -> throw IllegalStateException("unexpected verticalAlignment")
-                        }
+                    when (span.verticalAlign) {
+                        PlaceholderSpan.ALIGN_ABOVE_BASELINE ->
+                            getLineBaseline(line) - span.heightPx
+                        PlaceholderSpan.ALIGN_TOP -> getLineTop(line)
+                        PlaceholderSpan.ALIGN_BOTTOM -> getLineBottom(line) - span.heightPx
+                        PlaceholderSpan.ALIGN_CENTER ->
+                            (getLineTop(line) + getLineBottom(line) - span.heightPx) / 2
+                        PlaceholderSpan.ALIGN_TEXT_TOP ->
+                            span.fontMetrics.ascent + getLineBaseline(line)
+                        PlaceholderSpan.ALIGN_TEXT_BOTTOM ->
+                            span.fontMetrics.descent + getLineBaseline(line) - span.heightPx
+                        PlaceholderSpan.ALIGN_TEXT_CENTER ->
+                            with(span.fontMetrics) {
+                                (ascent + descent - span.heightPx) / 2 + getLineBaseline(line)
+                            }
+                        else -> throw IllegalStateException("unexpected verticalAlignment")
                     }
 
                 val bottom = top + span.heightPx
@@ -467,7 +471,11 @@ internal class AndroidParagraph(
         }
         val rectF = layout.getBoundingBox(offset)
         return with(rectF) {
-            Rect(left = left, top = top + topOffset, right = right, bottom = bottom + topOffset)
+            if (applyLineHeightOptimization) {
+                Rect(left = left, top = 0f, right = right, bottom = resolvedLineHeight)
+            } else {
+                Rect(left = left, top = top, right = right, bottom = bottom)
+            }
         }
     }
 
@@ -502,10 +510,10 @@ internal class AndroidParagraph(
         @IntRange(from = 0) arrayStart: Int,
     ) {
         layout.fillBoundingBoxes(range.min, range.max, array, arrayStart)
-        if (topOffset != 0f) {
+        if (applyLineHeightOptimization) {
             for (i in 0 until range.length) {
-                array[arrayStart + i * 4 + 1] += topOffset // top
-                array[arrayStart + i * 4 + 3] += topOffset // bottom
+                array[arrayStart + i * 4 + 1] = 0f // top
+                array[arrayStart + i * 4 + 3] = resolvedLineHeight // bottom
             }
         }
     }
@@ -516,7 +524,20 @@ internal class AndroidParagraph(
                 " or start > end!"
         }
         val path = android.graphics.Path()
-        layout.getSelectionPath(start, end, path)
+
+        if (applyLineHeightOptimization) {
+            val h1 = layout.getPrimaryHorizontal(start)
+            val h2 = layout.getPrimaryHorizontal(end)
+            path.addRect(
+                minOf(h1, h2),
+                getLineTop(0),
+                maxOf(h1, h2),
+                getLineBottom(0),
+                android.graphics.Path.Direction.CW,
+            )
+        } else {
+            layout.getSelectionPath(start, end, path)
+        }
         return path.asComposePath()
     }
 
@@ -529,12 +550,7 @@ internal class AndroidParagraph(
 
         // The width of the cursor is not taken into account. The callers of this API should use
         // rect.left to get the start X position and then adjust it according to the width if needed
-        return Rect(
-            horizontal,
-            layout.getLineTop(line) + topOffset,
-            horizontal,
-            layout.getLineBottom(line) + topOffset,
-        )
+        return Rect(horizontal, getLineTop(line), horizontal, getLineBottom(line))
     }
 
     override fun getWordBoundary(offset: Int): TextRange {
@@ -638,7 +654,7 @@ internal class AndroidParagraph(
             setTextDecoration(textDecoration)
         }
 
-        canvas.withTranslationRun(topOffset, ::paint)
+        paint(topOffset, canvas)
     }
 
     override fun paint(
@@ -658,7 +674,7 @@ internal class AndroidParagraph(
             this.blendMode = blendMode
         }
 
-        canvas.withTranslationRun(topOffset, ::paint)
+        paint(topOffset, canvas)
 
         textPaint.blendMode = currBlendMode
     }
@@ -681,33 +697,27 @@ internal class AndroidParagraph(
             this.blendMode = blendMode
         }
 
-        canvas.withTranslationRun(topOffset, ::paint)
+        paint(topOffset, canvas)
 
         textPaint.blendMode = currBlendMode
     }
 
-    private fun Canvas.withTranslationRun(topOffset: Float, block: (Canvas) -> Unit) {
-        if (topOffset != 0f) {
-            save()
-            translate(0f, topOffset)
-            block(this)
-            restore()
-        } else {
-            block(this)
+    private fun paint(topOffset: Float, canvas: Canvas) =
+        with(canvas) {
+            if (didExceedMaxLines || topOffset != 0f) {
+                save()
+                if (didExceedMaxLines) {
+                    clipRect(0f, 0f, width, height)
+                }
+                if (topOffset != 0f) {
+                    translate(0f, topOffset)
+                }
+                layout.paint(this.nativeCanvas)
+                restore()
+            } else {
+                layout.paint(this.nativeCanvas)
+            }
         }
-    }
-
-    private fun paint(canvas: Canvas) {
-        val nativeCanvas = canvas.nativeCanvas
-        if (didExceedMaxLines) {
-            nativeCanvas.save()
-            nativeCanvas.clipRect(0f, 0f, width, height)
-        }
-        layout.paint(nativeCanvas)
-        if (didExceedMaxLines) {
-            nativeCanvas.restore()
-        }
-    }
 
     private fun constructTextLayout(
         alignment: Int,
@@ -770,44 +780,36 @@ internal class AndroidParagraph(
             val ceiledDiff = ceil(diff)
 
             // Mirroring `descentDiff` calculation from LineHeightStyleSpan.calculateTargetMetrics
-            val descentDiff = ceil(ceiledDiff * ascentRatio)
+            val descentDiff =
+                if (diff <= 0) {
+                    ceil(ceiledDiff * ascentRatio)
+                } else {
+                    ceil(ceiledDiff * (1f - ascentRatio))
+                }
 
             if (
-                diff <= 0 &&
-                    (mode == LineHeightStyle.Mode.Minimum ||
-                        (trimTop && trimBottom && mode == LineHeightStyle.Mode.Fixed))
+                (trimTop && trimBottom && mode != LineHeightStyle.Mode.Tight) ||
+                    (mode == LineHeightStyle.Mode.Minimum && diff <= 0) ||
+                    (mode != LineHeightStyle.Mode.Tight && diff < 0)
             ) {
-                // 1. Mirroring LineHeightStyleSpan Mode.Minimum early return and legacy early-outs
+                // 1. Mirroring LineHeightStyleSpan early return for single line Trim.Both and
+                // Mode.Minimum, and 1:1 legacy parity where LineHeightStyleSpan's internal negative
+                // diffs are canceled out exactly by TextLayout.getLineHeightPaddings() abs() when
+                // diff < 0 in Mode.Fixed/Default.
                 resolvedLineHeight = layout.height.toFloat()
                 topOffset = 0f
             } else if (diff < 0 && mode == LineHeightStyle.Mode.Tight) {
                 // 2. Mirroring LineHeightStyleSpan Mode.Tight when shrinking
                 val appliedTopSpace = if (trimTop) ceiledDiff - descentDiff else 0f
-                val appliedBottomSpace = if (trimBottom) descentDiff else 0f
-
-                topOffset = appliedTopSpace
-                resolvedLineHeight = layout.height + appliedTopSpace + appliedBottomSpace
-            } else if (diff < 0) {
-                // 3. Mirroring LineHeightStyleSpan Mode.Fixed legacy alignment shifts and padding.
-                // It should have been an early return but we are canceling out the TextLayout's
-                // calculations error inside `getLineHeightPaddings` lastDescentDiff calculation
-                val appliedTopSpace = 0f
                 val appliedBottomSpace =
-                    if (!trimTop && !trimBottom) {
-                        if (descentDiff < 0) {
-                            descentDiff + max(descentDiff - ceiledDiff, -descentDiff)
-                        } else {
-                            0f
-                        }
-                    } else {
-                        0f
-                    }
+                    if (!layout.didExceedMaxLines && !trim.isTrimLastLineBottom()) 0f
+                    else descentDiff
 
                 topOffset = appliedTopSpace
                 resolvedLineHeight = layout.height + appliedTopSpace + appliedBottomSpace
             } else {
                 // 4. Mirroring LineHeightStyleSpan expanding (diff > 0) and non-legacy distribution
-                val rawBottomSpace = ceil((ceiledDiff * (1f - ascentRatio)))
+                val rawBottomSpace = descentDiff
                 val rawTopSpace = ceiledDiff - rawBottomSpace
 
                 val appliedTopSpace = if (trimTop) 0f else rawTopSpace

@@ -24,7 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ComposeUiTest
@@ -35,18 +34,17 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.test.v2.runInternalSkikoComposeUiTest
-import androidx.compose.ui.test.runSkikoComposeUiTest
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import kotlin.test.assertFalse
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Test
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalTestApi::class)
 internal class TooltipAreaTest {
 
     // https://youtrack.jetbrains.com/issue/CMP-2821
+    @Suppress("DEPRECATION")
     @Test
     fun simpleTooltipIsShown() = runComposeUiTest {
         setContent {
@@ -65,6 +63,7 @@ internal class TooltipAreaTest {
     /**
      * Verify that the tooltip is hidden when the tooltip area is pressed.
      */
+    @Suppress("DEPRECATION")
     @Test
     fun tooltipHiddenOnPress() = runComposeUiTest {
         setContent {
@@ -86,6 +85,7 @@ internal class TooltipAreaTest {
     /**
      * Verify that the tooltip is hidden when the mouse leaves the tooltip area.
      */
+    @Suppress("DEPRECATION")
     @Test
     fun tooltipHiddenOnExit() = runComposeUiTest {
         setContent {
@@ -161,6 +161,7 @@ internal class TooltipAreaTest {
     /**
      * Verify that the tooltip is shown after the given delay and not beforehand.
      */
+    @Suppress("DEPRECATION")
     @Test
     fun tooltipShownAfterDelay() = runComposeUiTest {
         mainClock.autoAdvance = false
@@ -181,6 +182,7 @@ internal class TooltipAreaTest {
     /**
      * Verify that the tooltip is re-shown after press -> release -> move
      */
+    @Suppress("DEPRECATION")
     @Test
     fun tooltipReshownOnMove() = runComposeUiTest {
         setContent {
@@ -209,6 +211,7 @@ internal class TooltipAreaTest {
     /**
      * Verify that the tooltip is hidden on exit, even if the pointer is "inside" the tooltip area.
      */
+    @Suppress("DEPRECATION")
     @Test
     fun tooltipHiddenOnExitEvenIfPointerInside() = runComposeUiTest {
         setContent {
@@ -230,6 +233,7 @@ internal class TooltipAreaTest {
     /**
      * Verify that the tooltip is hidden when the pointer exits into an overlapping element.
      */
+    @Suppress("DEPRECATION")
     @Test
     fun tooltipHiddenOnExitIntoOverlappingElement() = runComposeUiTest {
         setContent {

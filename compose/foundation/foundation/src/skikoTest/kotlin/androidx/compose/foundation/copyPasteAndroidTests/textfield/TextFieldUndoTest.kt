@@ -21,7 +21,6 @@ import androidx.compose.foundation.isEqualTo
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -38,13 +37,15 @@ import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.PlatformTextInputService
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TextInputService
-import kotlin.test.*
+import kotlin.test.Ignore
+import kotlin.test.Test
 
 @OptIn(ExperimentalTestApi::class)
 class TextFieldUndoTest {
 
-    @OptIn(ExperimentalComposeUiApi::class)
-    @Test @Ignore // TODO: figure out how to make target-specific tweaks (Key.Ctrl vs Key.Command)
+    @Suppress("DEPRECATION")
+    @Test
+    @Ignore // TODO: figure out how to make target-specific tweaks (Key.Ctrl vs Key.Command)
     fun undo_redo() = runSkikoComposeUiTest {
         val textInputService = TextInputService(mock)
         val state = mutableStateOf("hi")

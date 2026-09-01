@@ -19,7 +19,6 @@ package androidx.compose.foundation.copyPasteAndroidTests.lazy.list
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.assertThat
 import androidx.compose.foundation.assertWithMessage
 import androidx.compose.foundation.gestures.scrollBy
@@ -77,7 +76,7 @@ import kotlin.test.Test
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalTestApi::class)
+@OptIn(ExperimentalTestApi::class)
 @Ignore // TODO: the tests fail on desktop
 class LazyListAnimateItemPlacementTest {
 
@@ -102,6 +101,7 @@ class LazyListAnimateItemPlacementTest {
     
     private val density = Density(1f)
 
+    @Suppress("DEPRECATION")
     private fun runParametrizedTest(test: SkikoComposeUiTest.() -> Unit) = runSkikoComposeUiTest {
         params().forEach {
             config = it
