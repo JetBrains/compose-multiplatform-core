@@ -126,7 +126,7 @@ internal open class ComposeTextInputConnection(
         }
         val offset = textOffsetInRoot - viewOriginInRoot
         val rect = currentTextLayoutResult.getCursorRect(position).translate(offset)
-        return rect.toDpRect(rootView.density).let {
+        return rect.toDpRect(view.density).let {
             val halfWidth = CURSOR_THICKNESS / 2
             val center = (it.left + it.right) / 2
             it.copy(left = center - halfWidth, right = center + halfWidth)
