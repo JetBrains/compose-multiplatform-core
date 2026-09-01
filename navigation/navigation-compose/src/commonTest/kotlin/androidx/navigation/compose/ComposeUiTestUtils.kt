@@ -17,8 +17,10 @@
 package androidx.navigation.compose
 
 import androidx.compose.ui.test.ComposeUiTest
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.v2.runComposeUiTest
 
+@OptIn(ExperimentalTestApi::class)
 @Suppress("DEPRECATION")
 internal fun runComposeUiTestOnUiThread(block: ComposeUiTest.() -> Unit) {
     runComposeUiTest {

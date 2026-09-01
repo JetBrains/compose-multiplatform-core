@@ -84,10 +84,12 @@ internal class AwtPlatformClipboard internal constructor() : Clipboard {
 
     override suspend fun setClipEntry(clipEntry: ClipEntry?) {
         val transferable = clipEntry?.asAwtTransferable
-        systemClipboard?.setContents(
-            /* contents = */ transferable ?: EmptyTransferable,
-            /* owner = */ transferable as? ClipboardOwner,
-        )
+        try {
+            systemClipboard?.setContents(
+                /* contents = */ transferable ?: EmptyTransferable,
+                /* owner = */ transferable as? ClipboardOwner,
+            )
+        } catch (_: IllegalStateException) { }  // thrown when clipboard is unavailable
     }
 
     /**
@@ -100,19 +102,20 @@ internal class AwtPlatformClipboard internal constructor() : Clipboard {
 }
 
 /**
- * The object returned as the [NativeClipboard] when [AwtPlatformClipboard.systemClipboard] is null.
+ * The object returned as the [NativeClipboard] when [AwtPlatformClipboard.nativeClipboard] is null.
  */
 private data object NoClipboard
 
 /**
  * Returns [java.awt.datatransfer.Clipboard] instance if it's available, or null otherwise.
  */
+@Suppress("DEPRECATION")
 @ExperimentalComposeUiApi
 val Clipboard.awtClipboard: java.awt.datatransfer.Clipboard?
     get() = nativeClipboard as? java.awt.datatransfer.Clipboard
 
 /**
- * A wrapper for platform clip entry instance which can be used to access
+ * A wrapper for a platform clip entry instance which can be used to access
  * or set the Clipboard content. The actual implementation may vary
  * depending on the underlying GUI toolkit and on the actual implementation
  * of Clipboard.nativeClipboard.
