@@ -31,7 +31,6 @@ import androidx.savedstate.write
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,7 +39,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class RememberSaveableWithMutableStateTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val restorationTester = StateRestorationTester(rule)
 
@@ -210,5 +209,45 @@ class RememberSaveableWithMutableStateTest {
         restorationTester.emulateSavedInstanceStateRestore()
 
         rule.runOnUiThread { assertThat(state!!.value).isEqualTo("value") }
+    }
+
+    @Test
+    fun nullableSerializableStateRestoresNonNullValue() {
+        var state: MutableState<String?>? = null
+        restorationTester.setContent {
+            state = rememberSerializable { mutableStateOf<String?>(null) }
+        }
+
+        rule.runOnUiThread {
+            assertThat(state!!.value).isNull()
+
+            state!!.value = "value"
+            // we null it to ensure recomposition happened
+            state = null
+        }
+
+        restorationTester.emulateSavedInstanceStateRestore()
+
+        rule.runOnUiThread { assertThat(state!!.value).isEqualTo("value") }
+    }
+
+    @Test
+    fun nullableSerializableStateRestoresNullValue() {
+        var state: MutableState<String?>? = null
+        restorationTester.setContent {
+            state = rememberSerializable { mutableStateOf<String?>("initial") }
+        }
+
+        rule.runOnUiThread {
+            assertThat(state!!.value).isEqualTo("initial")
+
+            state!!.value = null
+            // we null it to ensure recomposition happened
+            state = null
+        }
+
+        restorationTester.emulateSavedInstanceStateRestore()
+
+        rule.runOnUiThread { assertThat(state!!.value).isNull() }
     }
 }

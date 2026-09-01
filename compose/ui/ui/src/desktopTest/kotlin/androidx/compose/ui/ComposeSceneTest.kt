@@ -115,6 +115,7 @@ class ComposeSceneTest {
     @get:Rule
     val screenshotRule = DesktopScreenshotTestRule("compose/ui/ui-desktop")
 
+    @Suppress("DEPRECATION")
     @get:Rule
     val composeRule = createComposeRule()
 

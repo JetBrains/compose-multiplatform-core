@@ -59,11 +59,11 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.fail
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.test.StandardTestDispatcher
 
 @OptIn(ExperimentalTestApi::class)
 class DialogTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun dialogIsCenteredInWindow() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -80,6 +80,7 @@ class DialogTest {
         onNodeWithTag(dialog.tag).assertPositionInRootIsEqualTo(30.dp, 30.dp)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun openDialog() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -118,6 +119,7 @@ class DialogTest {
         background.events.assertReceivedLast(PointerEventType.Exit, Offset(10f, 10f))
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun closeDialog() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -163,6 +165,7 @@ class DialogTest {
         background.events.assertReceivedLast(PointerEventType.Enter, Offset(11f, 11f))
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun secondTouchDoesNotDismissPopup() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -208,6 +211,7 @@ class DialogTest {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun secondaryButtonClickDoesNotDismissDialog() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -271,6 +275,7 @@ class DialogTest {
         assertEquals(2, lastValueInComposition)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun checkUpdatedDismissCallbackInDialog() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -316,6 +321,7 @@ class DialogTest {
         assertContentEquals(listOf(1, 1, 2, 1), eventList)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testComposeSceneLayerSetContent() = runSkikoComposeUiTest {
         var useContent2 by mutableStateOf(false)
@@ -347,6 +353,7 @@ class DialogTest {
         onNodeWithTag("content2").assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testDialogScrimColorChange() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -367,12 +374,13 @@ class DialogTest {
         captureToImage().assertPixels { Color.Blue }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testMovableContentWithDialogAnimation_noCrash() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
     ) {
         val text = mutableStateOf("Hello")
-        val content = movableContentOf() { Text(text.value) }
+        val content = movableContentOf { Text(text.value) }
         val showDialog = mutableStateOf(true)
         setContent {
             if (showDialog.value) {

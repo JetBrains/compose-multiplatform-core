@@ -27,17 +27,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -53,10 +56,10 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.math.abs
 import kotlin.math.sign
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -66,7 +69,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class NestedScrollModifierTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val mainLayoutTag = "mainLayout"
 
@@ -1686,6 +1689,107 @@ class NestedScrollModifierTest {
         assertThat(innerDispatcher.calculateNestedScrollScope()?.isActive).isFalse()
         assertThat(innerDispatcher.scope).isNotEqualTo(coroutineScope)
         assertThat(innerDispatcher.scope).isNull()
+    }
+
+    @Test
+    fun unattachedDispatcher_coroutineScopeShouldNotBeActive() {
+        val dispatcher = NestedScrollDispatcher()
+        assertThat(dispatcher.coroutineScope.isActive).isFalse()
+
+        var attachModifier by mutableStateOf(true)
+        rule.setContent {
+            Box(
+                modifier =
+                    if (attachModifier) {
+                        Modifier.nestedScroll(
+                            dispatcher = dispatcher,
+                            connection = object : NestedScrollConnection {},
+                        )
+                    } else {
+                        Modifier
+                    }
+            )
+        }
+
+        rule.waitForIdle()
+        assertThat(dispatcher.coroutineScope.isActive).isTrue()
+
+        attachModifier = false
+        rule.waitForIdle()
+        assertThat(dispatcher.coroutineScope.isActive).isFalse()
+    }
+
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Test
+    fun nestedScroll_coroutineScope_duringParentDetach_doesNotThrow() {
+        val childDispatcher = NestedScrollDispatcher()
+        var parentAttached by mutableStateOf(true)
+        var exceptionDuringDetach: Throwable? = null
+        var scopeDuringDetach: CoroutineScope? = null
+
+        val testNode =
+            object : Modifier.Node() {
+                override fun onDetach() {
+                    try {
+                        scopeDuringDetach = childDispatcher.coroutineScope
+                    } catch (t: Throwable) {
+                        exceptionDuringDetach = t
+                    }
+                }
+            }
+
+        rule.setContent {
+            if (parentAttached) {
+                Box(Modifier.nestedScroll(object : NestedScrollConnection {})) {
+                    Box(
+                        Modifier.nestedScroll(object : NestedScrollConnection {}, childDispatcher)
+                            .then(
+                                object : ModifierNodeElement<Modifier.Node>() {
+                                    override fun create(): Modifier.Node = testNode
+
+                                    override fun update(node: Modifier.Node) {}
+
+                                    override fun hashCode(): Int = 0
+
+                                    override fun equals(other: Any?): Boolean = true
+                                }
+                            )
+                            .size(100.dp)
+                    )
+                }
+            }
+        }
+
+        rule.waitForIdle()
+        rule.runOnIdle { parentAttached = false }
+        rule.runOnIdle {
+            assertThat(exceptionDuringDetach).isNull()
+            assertThat(scopeDuringDetach).isNotNull()
+        }
+    }
+
+    // b/505343254
+    @Test
+    fun nestedScroll_touchInputWithoutUp_doesNotCrash() {
+        val parentConnection = object : NestedScrollConnection {}
+        val listState = LazyListState()
+        rule.setContent {
+            Box(Modifier.nestedScroll(parentConnection)) {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.size(100.dp).testTag(mainLayoutTag),
+                ) {
+                    items(100) { Box(Modifier.size(50.dp)) }
+                }
+            }
+        }
+
+        rule.onNodeWithTag(mainLayoutTag).performTouchInput {
+            down(center)
+            moveBy(Offset(0f, -400f))
+        }
+
+        assertThat(listState.firstVisibleItemIndex).isGreaterThan(0)
     }
 }
 

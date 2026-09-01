@@ -27,9 +27,16 @@ jobs:
       - name: Setup Prerequisites
         uses: ./.github/actions/setup-prerequisites
 
+      - name: Setup Window Manager
+        run: sudo apt-get update && sudo apt-get install -y xvfb openbox x11-utils
+
       - name: Start X Server
         run: |
           sudo Xvfb :1 -screen 0 1920x1080x24 -extension RANDR +extension GLX &
+          export DISPLAY=:1
+          until xdpyinfo >/dev/null 2>&1; do sleep 0.1; done
+          openbox &
+          until xprop -root _NET_SUPPORTING_WM_CHECK >/dev/null 2>&1; do sleep 0.1; done
           echo "DISPLAY=:1.0" >> $GITHUB_ENV
 
       - name: Run Desktop
@@ -163,7 +170,7 @@ jobs:
           simulator-os: ${{ matrix.simulator_os }}
 
       - name: Run iOS Instrumented
-        timeout-minutes: 30
+        timeout-minutes: 40
         shell: bash
         working-directory: compose/ui/ui/src/uikitInstrumentedTest/launcher
         env:

@@ -18,22 +18,32 @@ package androidx.compose.foundation.text.input
 
 import android.content.Context
 import android.graphics.Typeface
+import android.os.Build
 import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.TEST_FONT
+import androidx.compose.foundation.text.TEST_FONT_FAMILY
 import androidx.compose.foundation.text.input.TextFieldLineLimits.MultiLine
 import androidx.compose.foundation.text.input.TextFieldLineLimits.SingleLine
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.testutils.assertContainsColor
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFontFamilyResolver
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.AndroidFont
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontLoadingStrategy
@@ -41,17 +51,19 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.createFontFamilyResolver
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.After
 import org.junit.Before
@@ -64,7 +76,7 @@ import org.junit.runner.RunWith
 class TextFieldSizeModifierTest {
     private val context = InstrumentationRegistry.getInstrumentation().context
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     var flagValue = true
 
@@ -261,5 +273,52 @@ class TextFieldSizeModifierTest {
             assertThat(size.width).isGreaterThan(0)
             assertThat(size.height).isGreaterThan(0)
         }
+    }
+
+    @Test
+    fun btf1_maxLinesOne_softWrapTrue_doesNotForceInfiniteWidth() {
+        var lineCount = 0
+
+        rule.setContent {
+            BasicTextField(
+                value = "a ".repeat(50),
+                onValueChange = {},
+                textStyle = TextStyle(fontFamily = TEST_FONT_FAMILY),
+                maxLines = 1,
+                onTextLayout = { lineCount = it.lineCount },
+                modifier = Modifier.requiredWidth(100.dp),
+            )
+        }
+
+        rule.runOnIdle { assertThat(lineCount).isGreaterThan(1) }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun btf1_maxLinesOne_selectionAtEnd_scrollsToEndOnFirstMeasure() {
+        val longRedText = "a ".repeat(50)
+        val greenText = "b"
+        val annotatedString = buildAnnotatedString {
+            withStyle(SpanStyle(color = Color.Red)) { append(longRedText) }
+            withStyle(SpanStyle(color = Color.Green)) { append(greenText) }
+        }
+        val value =
+            TextFieldValue(
+                annotatedString = annotatedString,
+                selection = TextRange(annotatedString.length),
+            )
+        val tag = "TextField"
+
+        rule.setContent {
+            BasicTextField(
+                value = value,
+                onValueChange = {},
+                textStyle = TextStyle(fontFamily = TEST_FONT_FAMILY),
+                maxLines = 1,
+                modifier = Modifier.requiredWidth(100.dp).testTag(tag),
+            )
+        }
+
+        rule.onNodeWithTag(tag).captureToImage().assertContainsColor(Color.Green)
     }
 }

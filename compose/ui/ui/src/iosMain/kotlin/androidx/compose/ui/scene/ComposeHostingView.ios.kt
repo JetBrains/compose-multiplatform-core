@@ -19,20 +19,19 @@ package androidx.compose.ui.scene
 import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.uikit.ComposeUIViewConfiguration
 import androidx.compose.ui.uikit.utils.CMPView
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dpSize
 import androidx.compose.ui.window.ComposeContainerLifecycleDelegate
 import androidx.compose.ui.window.DisplayLinkListener
-import androidx.compose.ui.window.MetalRedrawer
 import androidx.lifecycle.Lifecycle
-import kotlin.coroutines.CoroutineContext
 import kotlin.math.abs
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExportObjCClass
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -49,14 +48,20 @@ internal class ComposeHostingView(
     private val container = ComposeContainer(
         configuration = configuration,
         content = content,
-        lifecycleDelegate = lifecycleDelegate
-    )
-
-    @VisibleForTesting
-    val rootRedrawer: MetalRedrawer? get() = container.view.redrawer
+        lifecycleDelegate = lifecycleDelegate,
+    ).also {
+        it.view.setIntrinsicContentSizeInvalidationHandler(this) {
+            invalidateIntrinsicContentSize()
+        }
+    }
 
     @VisibleForTesting
     fun hasInvalidations(): Boolean = container.hasInvalidations()
+    @VisibleForTesting
+    @OptIn(InternalComposeUiApi::class)
+    var rootForTestListener: PlatformContext.RootForTestListener?
+        get() = container.rootForTestListener
+        set(value) { container.rootForTestListener = value }
 
     @VisibleForTesting
     val lifecycleState: Lifecycle.State get() = container.currentLifecycleState
@@ -84,13 +89,13 @@ internal class ComposeHostingView(
         if (initialSize == null ||
             initialSize == bounds.dpSize() ||
             container.hasInteropViews) {
-            container.view.setFrame(bounds)
+            synchronizeComposeViewFrame()
             return
         }
 
         val scope = container.nestedCoroutineScope()
         if (!scope.isActive) {
-            container.view.setFrame(bounds)
+            synchronizeComposeViewFrame()
             return
         }
 
@@ -105,7 +110,7 @@ internal class ComposeHostingView(
             if (actualSize != null && actualSize != bounds.dpSize() && !container.hasInteropViews) {
                 animateSizeTransition(initialSize = initialSize)
             } else {
-                container.view.setFrame(bounds)
+                synchronizeComposeViewFrame()
             }
         }
     }
@@ -132,10 +137,15 @@ internal class ComposeHostingView(
         container.disposeComposeScene()
     }
 
+    private fun synchronizeComposeViewFrame() {
+        container.view.setFrame(bounds)
+    }
+
     private var isAnimating = false
+
     private fun animateSizeTransition(initialSize: DpSize) {
         if (isAnimating) {
-            container.view.setFrame(bounds)
+            synchronizeComposeViewFrame()
             return
         }
         isAnimating = true
@@ -162,7 +172,7 @@ internal class ComposeHostingView(
             animations()
         }
         container.view.clipsToBounds = false
-        container.view.setFrame(bounds)
+        synchronizeComposeViewFrame()
     }
 }
 

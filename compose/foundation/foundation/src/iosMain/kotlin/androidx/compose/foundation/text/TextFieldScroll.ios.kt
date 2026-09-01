@@ -59,7 +59,7 @@ internal actual fun Modifier.textFieldScroll(
 
     val layout = when (orientation) {
         Orientation.Vertical ->
-            IOSVerticalScrollLayoutModifier(
+            TextFieldVerticalScrollLayoutModifier(
                 scrollerPosition,
                 cursorOffset,
                 transformedText,
@@ -67,7 +67,7 @@ internal actual fun Modifier.textFieldScroll(
             )
 
         Orientation.Horizontal ->
-            IOSHorizontalScrollLayoutModifier(
+            TextFieldHorizontalScrollLayoutModifier(
                 scrollerPosition,
                 cursorOffset,
                 transformedText,
@@ -77,7 +77,7 @@ internal actual fun Modifier.textFieldScroll(
     return this.overscroll(overscrollEffect).clipToBounds().then(layout)
 }
 
-private data class IOSVerticalScrollLayoutModifier(
+private data class TextFieldVerticalScrollLayoutModifier(
     val scrollerPosition: TextFieldScrollerPosition,
     val cursorOffset: Int,
     val transformedText: TransformedText,
@@ -126,7 +126,7 @@ private data class IOSVerticalScrollLayoutModifier(
 /**
  * Copied from commonMain source set.
  */
-private data class IOSHorizontalScrollLayoutModifier(
+private data class TextFieldHorizontalScrollLayoutModifier(
     val scrollerPosition: TextFieldScrollerPosition,
     val cursorOffset: Int,
     val transformedText: TransformedText,

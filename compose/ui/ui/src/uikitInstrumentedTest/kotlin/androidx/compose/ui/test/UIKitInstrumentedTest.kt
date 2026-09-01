@@ -18,16 +18,26 @@ package androidx.compose.ui.test
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.platform.AccessibilityNotification
 import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.InfiniteAnimationPolicy
+import androidx.compose.ui.platform.PlatformContext
+import androidx.compose.ui.platform.PlatformRootForTest
 import androidx.compose.ui.scene.ComposeHostingView
 import androidx.compose.ui.scene.ComposeHostingViewController
 import androidx.compose.ui.scene.ComposeLayersViewController
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsNode
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getAllSemanticsNodes
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.utils.TestHandle
 import androidx.compose.ui.test.utils.beginKeyPress
 import androidx.compose.ui.test.utils.beginModifierKeyPress
 import androidx.compose.ui.test.utils.beginPress
 import androidx.compose.ui.test.utils.center
+import androidx.compose.ui.test.utils.dragSelectionHandleImpl
 import androidx.compose.ui.test.utils.findFirstDescendant
 import androidx.compose.ui.test.utils.getTouchesEvent
 import androidx.compose.ui.test.utils.hold
@@ -42,6 +52,7 @@ import androidx.compose.ui.test.utils.rightCenter
 import androidx.compose.ui.test.utils.toCGPoint
 import androidx.compose.ui.test.utils.touchDown
 import androidx.compose.ui.test.utils.up
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.uikit.ComposeContainerConfiguration
 import androidx.compose.ui.uikit.ComposeUIViewConfiguration
 import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
@@ -58,7 +69,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.size
 import androidx.compose.ui.window.KeyboardVisibilityListener
-import androidx.compose.ui.window.MetalRedrawer
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.assertNotNull
 import kotlin.time.Duration
@@ -80,6 +90,7 @@ import platform.Foundation.runUntilDate
 import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationDelegateProtocol
 import platform.UIKit.UIColor
+import platform.UIKit.UIContentSizeCategory
 import platform.UIKit.UIDevice
 import platform.UIKit.UIGraphicsBeginImageContextWithOptions
 import platform.UIKit.UIGraphicsEndImageContext
@@ -106,6 +117,7 @@ import platform.UIKit.UITouch
 import platform.UIKit.UITraitCollection
 import platform.UIKit.UITraitEnvironmentLayoutDirection
 import platform.UIKit.UITraitEnvironmentLayoutDirectionLeftToRight
+import platform.UIKit.UITraitPreferredContentSizeCategory
 import platform.UIKit.UIUserInterfaceIdiomPad
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
@@ -200,9 +212,9 @@ internal fun runUIKitInstrumentedTest(
  * Constructor properties are initialized with the attributes of the main screen and a mock delegate to simulate
  * the application setup.
  */
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, InternalComposeUiApi::class)
 internal class UIKitInstrumentedTest(
-    private val useHostingView: Boolean
+    val useHostingView: Boolean
 ) {
     companion object {
         fun delay(timeoutMillis: Long) {
@@ -231,6 +243,8 @@ internal class UIKitInstrumentedTest(
         val isRunningOnIPad: Boolean get() = UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad
     }
 
+    internal val rootForTestRegistry = RootForTestRegistry()
+
     private val screen = UIScreen.mainScreen()
     val density = Density(density = screen.scale.toFloat())
     val appDelegate = MockAppDelegate()
@@ -254,15 +268,21 @@ internal class UIKitInstrumentedTest(
     private var hostingViewController: ComposeHostingViewController? = null
     private var hostingView: ComposeHostingView? = null
 
-    val viewController: UIViewController get() {
-        val rootViewController = appDelegate.window?.rootViewController
-        if (rootViewController != null) { return rootViewController }
-        waitUntil { appDelegate.window?.rootViewController != null }
-        return appDelegate.window?.rootViewController ?: error("Cannot find active UIViewController")
-    }
+    val viewController: UIViewController get() = awaitViewController()
 
-    val rootRedrawer: MetalRedrawer? get() =
-        hostingView?.rootRedrawer ?: hostingViewController?.rootRedrawer
+    private val attachedViewController: UIViewController?
+        get() = appDelegate.window?.rootViewController
+
+    private fun awaitViewController(): UIViewController {
+        val rootViewController = attachedViewController
+        if (rootViewController != null) { return rootViewController }
+
+        waitUntil(
+            conditionDescription = "viewController: timeout waiting for the root view controller.",
+        ) { attachedViewController != null }
+
+        return checkNotNull(attachedViewController)
+    }
 
     val frameChoreographer: FrameChoreographer? get() =
         appDelegate.window()?.windowScene?.let { FrameChoreographer.choreographerForScene(it) }
@@ -337,7 +357,8 @@ internal class UIKitInstrumentedTest(
             configuration = configuration,
             content = content,
         ).also {
-            hostingView = it
+            it.rootForTestListener = rootForTestRegistry
+            this.hostingView = it
         }
     }
 
@@ -357,6 +378,7 @@ internal class UIKitInstrumentedTest(
             configuration = configuration,
             content = content,
         ).also {
+            it.rootForTestListener = rootForTestRegistry
             this.hostingViewController = it
         }
     }
@@ -365,7 +387,7 @@ internal class UIKitInstrumentedTest(
         clearComposeContainerReferencesIfDetached()
 
         // Stop text editing and hide keyboard if any
-        viewController.view.endEditing(force = true)
+        attachedViewController?.view?.endEditing(force = true)
         waitForIdle()
 
         AccessibilityNotification.onNotificationPostedForTests = null
@@ -644,6 +666,75 @@ internal class UIKitInstrumentedTest(
     }
 
     /**
+     * The semantics node this accessibility node was built from, located by its test tag.
+     */
+    val AccessibilityTestNode.semanticsNode: SemanticsNode
+        get() = findSemanticsNode(
+            identifier ?: error("Accessibility node \"$label\" has no testTag to be found by.")
+        )
+
+    /**
+     * The window-space point (in Dp) of the caret for character [offset] in this text node. Use it
+     * to aim touch gestures at a specific character.
+     *
+     * Caveat — a tap on an iOS field (including the focus-gaining tap) does not leave the caret
+     * mid-word: it snaps to a word boundary, so this point is an aim, not a guaranteed landing offset.
+     * On the Compose path the snap splits at the word's midpoint (first half → word start, second half
+     * → word end; see `determineCursorDesiredOffset`). The native UITextInput path follows the same
+     * idea, but its split point is private to iOS and varies with word length, font and more; treat it
+     * as the Compose path, yet only clearly-leading and clearly-trailing taps are deterministic — a tap
+     * in the start-to-middle zone may snap either way.
+     */
+    fun AccessibilityTestNode.characterPosition(offset: Int): DpOffset {
+        val node = semanticsNode
+        val results = mutableListOf<TextLayoutResult>()
+        node.config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.invoke(results)
+        val layout = results.firstOrNull()
+            ?: error("Node with testTag \"$identifier\" has no GetTextLayoutResult action (not a text field?).")
+        val caret = layout.getCursorRect(offset)
+        val origin = node.positionInWindow
+        return with(density) {
+            DpOffset(
+                (origin.x + caret.center.x).toDp(),
+                (origin.y + caret.center.y).toDp(),
+            )
+        }
+    }
+
+    fun AccessibilityTestNode.tapCharacter(offset: Int) {
+        tap(characterPosition(offset))
+    }
+
+    fun AccessibilityTestNode.longPressCharacter(offset: Int) {
+        val touch = touchDown(characterPosition(offset))
+        waitUntil("Selection loupe should appear after long press") {
+            findFirstDescendant { it.isLoupeView } != null
+        }
+        touch.up()
+    }
+
+    /** Taps character [offset] in this text node [count] times in a row: 2 = double tap, 3 = triple. */
+    fun AccessibilityTestNode.multiTapCharacter(offset: Int, count: Int) {
+        require(count >= 1) { "count must be >= 1, was $count" }
+        val point = characterPosition(offset)
+        repeat(count) { i ->
+            if (i > 0) delay(50)
+            tap(point)
+        }
+    }
+
+    /**
+     * Drags the [handle] of the selection in this text node until the edge it holds reaches
+     * character [toOffset]. See [dragSelectionHandleImpl] for which offset the edge actually lands
+     * on.
+     */
+    fun AccessibilityTestNode.dragSelectionHandle(
+        handle: TestHandle,
+        toOffset: Int,
+        duration: Duration = 0.5.seconds,
+    ) = dragSelectionHandleImpl(this, handle, toOffset, duration)
+
+    /**
      * Simulates a drag gesture on the screen, moving the touch from its current location to a specified position
      * over a given duration.
      *
@@ -872,6 +963,45 @@ internal fun UIKitInstrumentedTest.findFocusedUITextInput(): UITextInputProtocol
     } as? UITextInputProtocol
 }
 
+/**
+ * A registry to track roots for testing purposes in the context of the platform UI.
+ * Implements the `PlatformContext.RootForTestListener` interface to manage the lifecycle
+ * of roots being created and disposed.
+ */
+@OptIn(InternalComposeUiApi::class)
+internal class RootForTestRegistry : PlatformContext.RootForTestListener {
+    private val trackedRoots = mutableSetOf<PlatformRootForTest>()
+
+    val roots: Set<PlatformRootForTest> get() = trackedRoots.toSet()
+
+    override fun onRootForTestCreated(root: PlatformRootForTest) {
+        trackedRoots.add(root)
+    }
+
+    override fun onRootForTestDisposed(root: PlatformRootForTest) {
+        trackedRoots.remove(root)
+    }
+}
+
+@OptIn(InternalComposeUiApi::class)
+internal fun UIKitInstrumentedTest.allSemanticsNodes(): List<SemanticsNode> =
+    rootForTestRegistry.roots.flatMap {
+        it.semanticsOwner.getAllSemanticsNodes(mergingEnabled = false)
+    }
+
+private fun UIKitInstrumentedTest.findSemanticsNodeOrNull(tag: String): SemanticsNode? {
+    waitForIdle()
+    return allSemanticsNodes().firstOrNull {
+        it.config.getOrNull(SemanticsProperties.TestTag) == tag
+    }
+}
+
+private fun UIKitInstrumentedTest.findSemanticsNode(tag: String): SemanticsNode =
+    findSemanticsNodeOrNull(tag) ?: run {
+        val knownTags = allSemanticsNodes().mapNotNull { it.config.getOrNull(SemanticsProperties.TestTag) }
+        error("No semantics node with testTag \"$tag\". Known tags: $knownTags")
+    }
+
 internal fun ComposeHostingViewController.waitForIdle() {
     UIKitInstrumentedTest.waitUntil { !this.hasInvalidations() }
 }
@@ -926,6 +1056,21 @@ internal fun UIViewController.setLayoutDirection(
         setOverrideTraitCollection(
             collection = UITraitCollection.traitCollectionWithLayoutDirection(layoutDirection),
             forChildViewController = this
+        )
+    }
+}
+
+internal fun UIViewController.setPreferredContentSizeCategory(
+    preferredContentSizeCategory: UIContentSizeCategory
+) {
+    if (available(OS.Ios to OSVersion(17))) {
+        traitOverrides.setPreferredContentSizeCategory(preferredContentSizeCategory)
+    } else {
+        setOverrideTraitCollection(
+            collection = UITraitCollection.traitCollectionWithPreferredContentSizeCategory(
+                preferredContentSizeCategory
+            ),
+            forChildViewController = this,
         )
     }
 }

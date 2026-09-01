@@ -16,13 +16,10 @@
 
 package androidx.compose.ui.graphics
 
-import kotlin.math.PI
 import org.jetbrains.skia.BlendMode as SkBlendMode
 import org.jetbrains.skia.FilterTileMode
 import org.jetbrains.skia.Matrix33
 import org.jetbrains.skia.VertexMode as SkVertexMode
-
-internal fun degrees(radians: Float): Float = (180f / PI.toFloat()) * radians
 
 internal fun BlendMode.toSkia() = when (this) {
     BlendMode.Clear -> SkBlendMode.CLEAR

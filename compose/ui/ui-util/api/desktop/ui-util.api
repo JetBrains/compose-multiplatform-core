@@ -1,9 +1,6 @@
 public abstract interface annotation class androidx/compose/ui/ExperimentalComposeUiApi : java/lang/annotation/Annotation {
 }
 
-public abstract interface annotation class androidx/compose/ui/ExperimentalIndirectPointerApi : java/lang/annotation/Annotation {
-}
-
 public abstract interface annotation class androidx/compose/ui/ExperimentalMediaQueryApi : java/lang/annotation/Annotation {
 }
 
@@ -63,6 +60,7 @@ public final class androidx/compose/ui/util/ListUtilsKt {
 }
 
 public final class androidx/compose/ui/util/MathHelpersKt {
+	public static final fun equalsIncludingNaN (FF)Z
 	public static final fun fastCbrt (F)F
 	public static final fun fastCoerceAtLeast (DD)D
 	public static final fun fastCoerceAtLeast (FF)F

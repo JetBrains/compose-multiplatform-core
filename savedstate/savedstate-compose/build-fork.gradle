@@ -31,6 +31,7 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
+        // jbVerifyForkDependencies: suppress
         commonMain {
             dependencies {
                 // Keep direct references to fork versions to correctly resolve
