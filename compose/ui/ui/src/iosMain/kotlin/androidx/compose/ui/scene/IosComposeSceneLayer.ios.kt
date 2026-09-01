@@ -19,7 +19,6 @@ package androidx.compose.ui.scene
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.State
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
@@ -28,7 +27,7 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
 import androidx.compose.ui.platform.FrameChoreographer
-import androidx.compose.ui.platform.MediaEnvironment
+import androidx.compose.ui.platform.MediaScope
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.uikit.ComposeContainerConfiguration
@@ -61,7 +60,7 @@ internal class IosComposeSceneLayer(
     consumePointerInputOutside: Boolean = focusedViewsList != null,
     parentCoroutineContext: CoroutineContext,
     private val ownerProvider: PlatformArchitectureComponentsOwner,
-    private val mediaEnvironment: MediaEnvironment,
+    private val mediaScope: MediaScope,
     private var invalidateLayout: () -> Unit,
     private var invalidateDraw: () -> Unit,
 ) : ComposeSceneLayer {
@@ -115,7 +114,7 @@ internal class IosComposeSceneLayer(
         coroutineContext = layerCoroutineContext,
         composeSceneFactory = ::createComposeScene,
         navigationEventInput = navigationEventInput,
-        mediaEnvironment = mediaEnvironment,
+        mediaScope = mediaScope,
         schedulePendingInteropViewUpdates = layersViewController::invalidateDraw,
     ).also {
         interactionView.embedSubview(it.backgroundView)

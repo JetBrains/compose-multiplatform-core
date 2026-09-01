@@ -20,7 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -68,7 +67,7 @@ import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.platform.ApplicationIdleTimer
-import androidx.compose.ui.platform.MediaEnvironment
+import androidx.compose.ui.platform.MediaScope
 import androidx.compose.ui.platform.TaskDispatchers
 import androidx.compose.ui.platform.TextInputService
 import androidx.compose.ui.platform.WindowInsetsManager
@@ -78,7 +77,6 @@ import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.uikit.LocalNativeTextInputContext
 import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.OnFocusBehavior
-import androidx.compose.ui.uikit.density
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
@@ -91,7 +89,6 @@ import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.unit.roundToIntSize
 import androidx.compose.ui.unit.toDpOffset
 import androidx.compose.ui.unit.toDpRect
-import androidx.compose.ui.unit.toDpSize
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.viewinterop.LocalInteropContainer
@@ -203,7 +200,7 @@ internal class ComposeSceneMediator(
     private val architectureComponentsOwner: PlatformArchitectureComponentsOwner,
     val coroutineContext: CoroutineContext,
     private val navigationEventInput: IosBackNavigationEventInput,
-    private val mediaEnvironment: MediaEnvironment,
+    private val mediaScope: MediaScope,
     composeSceneFactory: (platformContext: PlatformContext) -> ComposeScene,
     private val schedulePendingInteropViewUpdates: () -> Unit = {},
 ) {
@@ -398,7 +395,7 @@ internal class ComposeSceneMediator(
             { _overlayView },
             { windowContext.window?.rootViewController?.view },
         ),
-        interfaceOrientation = mediaEnvironment.interfaceOrientationState
+        interfaceOrientation = mediaScope.interfaceOrientationState
     )
 
     /**
@@ -516,7 +513,7 @@ internal class ComposeSceneMediator(
         event: UIEvent?,
         eventKind: TouchesEventKind
     ) {
-        mediaEnvironment.updatePointerPrecision(UiMediaScope.PointerPrecision.Fine)
+        mediaScope.updatePointerPrecision(UiMediaScope.PointerPrecision.Fine)
         when (eventKind) {
             TouchesEventKind.BEGAN -> activitiesHandler.onActivitiesStarted()
             TouchesEventKind.MOVED -> {}
@@ -546,7 +543,7 @@ internal class ComposeSceneMediator(
         event: UIEvent?,
         eventKind: TouchesEventKind
     ) {
-        mediaEnvironment.updatePointerPrecision(UiMediaScope.PointerPrecision.Fine)
+        mediaScope.updatePointerPrecision(UiMediaScope.PointerPrecision.Fine)
         val eventType = when (eventKind) {
             TouchesEventKind.BEGAN -> PointerEventType.Enter
             TouchesEventKind.MOVED -> PointerEventType.Move
@@ -628,9 +625,9 @@ internal class ComposeSceneMediator(
         }
 
         if (anyIsStylus) {
-            mediaEnvironment.updatePointerPrecision(UiMediaScope.PointerPrecision.Fine)
+            mediaScope.updatePointerPrecision(UiMediaScope.PointerPrecision.Fine)
         } else {
-            mediaEnvironment.updatePointerPrecision(UiMediaScope.PointerPrecision.Coarse)
+            mediaScope.updatePointerPrecision(UiMediaScope.PointerPrecision.Coarse)
         }
 
         // UIKit sends buttonMask that was before the release action. It should be empty if no
@@ -925,7 +922,7 @@ internal class ComposeSceneMediator(
     private inner class IosPlatformContext : PlatformContext {
         override val windowInfo: WindowInfo get() = windowContext.windowInfo
         @OptIn(ExperimentalMediaQueryApi::class)
-        override val mediaEnvironment: UiMediaScope get() = this@ComposeSceneMediator.mediaEnvironment
+        override val mediaScope: UiMediaScope get() = this@ComposeSceneMediator.mediaScope
         override val taskDispatchers: TaskDispatchers = object : TaskDispatchers {
             override val Default = Dispatchers.Default
             override val IO = Dispatchers.IO
