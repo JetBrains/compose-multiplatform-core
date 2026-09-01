@@ -42,6 +42,8 @@ class ComposeIssueRegistry : IssueRegistry() {
                 ModifierNodeElementDataClassWithLambdaDetector.ISSUE,
                 ComposableLambdaInMeasurePolicyDetector.ISSUE,
                 FeatureFlagDetector.ISSUE,
+                SnapshotStateListFastIterableDetector.ISSUE,
+                LazyDelegateDetector.ISSUE,
             )
         }
 

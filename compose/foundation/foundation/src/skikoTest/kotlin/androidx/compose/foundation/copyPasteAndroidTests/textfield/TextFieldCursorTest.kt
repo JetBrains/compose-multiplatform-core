@@ -101,6 +101,7 @@ class TextFieldCursorTest {
         cursorRect = Rect.Zero
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textFieldFocused_cursorRendered() = runSkikoComposeUiTest {
         mainClock.autoAdvance = false
@@ -129,6 +130,7 @@ class TextFieldCursorTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textFieldFocused_cursorWithBrush() = runSkikoComposeUiTest {
         mainClock.autoAdvance = false
@@ -174,6 +176,7 @@ class TextFieldCursorTest {
         bitmap.assertPixelColor(Color.Green, x = cursorLeft, y = cursorBottom)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun cursorBlinkingAnimation() = runSkikoComposeUiTest {
         mainClock.autoAdvance = false
@@ -219,6 +222,7 @@ class TextFieldCursorTest {
             )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun cursorUnsetColor_noCursor() = runSkikoComposeUiTest {
         mainClock.autoAdvance = false
@@ -264,6 +268,7 @@ class TextFieldCursorTest {
             )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun cursorNotBlinking_whileTyping() = runSkikoComposeUiTest {
         mainClock.autoAdvance = false
@@ -311,6 +316,7 @@ class TextFieldCursorTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     @IgnoreWasmTarget
     fun selectionChanges_cursorNotBlinking() = runSkikoComposeUiTest {
@@ -355,6 +361,7 @@ class TextFieldCursorTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun brushChanged_doesntResetTimer() = runSkikoComposeUiTest {
         mainClock.autoAdvance = false
@@ -389,12 +396,14 @@ class TextFieldCursorTest {
             )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun cursorBlinkingDoesNotHangTestWithAutoAdvance() = runSkikoComposeUiTest {
         mainClock.autoAdvance = true
         cursorBlinkingDoesNotHangTest()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun cursorBlinkingDoesNotHangTestWithoutAutoAdvance() = runSkikoComposeUiTest {
         mainClock.autoAdvance = false

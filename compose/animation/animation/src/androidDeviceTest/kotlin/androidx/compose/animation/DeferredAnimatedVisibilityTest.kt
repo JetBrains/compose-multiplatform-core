@@ -20,10 +20,11 @@ import androidx.compose.animation.core.DeferredTransitionState
 import androidx.compose.animation.core.ExperimentalDeferredTransitionApi
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.rememberTransition
+import androidx.compose.animation.core.rememberDeferredTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -32,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
@@ -65,7 +67,7 @@ class DeferredAnimatedVisibilityTest {
 
         rule.setContent {
             state = remember { DeferredTransitionState(false) }
-            val transition = rememberTransition(state)
+            val transition = rememberDeferredTransition(state)
             transition.DeferredAnimatedVisibility(
                 visible = { it },
                 enter = fadeIn(tween(100, easing = LinearEasing)),
@@ -107,7 +109,7 @@ class DeferredAnimatedVisibilityTest {
 
         rule.setContent {
             state = remember { DeferredTransitionState(true) }
-            val transition = rememberTransition(state)
+            val transition = rememberDeferredTransition(state)
             transition.DeferredAnimatedVisibility(
                 visible = { it },
                 enter = fadeIn(tween(100)),
@@ -150,7 +152,7 @@ class DeferredAnimatedVisibilityTest {
 
         rule.setContent {
             state = remember { DeferredTransitionState(false) }
-            val transition = rememberTransition(state)
+            val transition = rememberDeferredTransition(state)
             transition.DeferredAnimatedVisibility(
                 visible = { it },
                 enter = fadeIn(tween(1000, easing = LinearEasing)),
@@ -180,7 +182,7 @@ class DeferredAnimatedVisibilityTest {
 
         rule.setContent {
             state = remember { DeferredTransitionState(true) }
-            val transition = rememberTransition(state)
+            val transition = rememberDeferredTransition(state)
             transition.DeferredAnimatedVisibility(visible = { it }, exit = fadeOut(tween(100))) {
                 Box(Modifier.size(100.dp).testTag("content"))
             }
@@ -208,7 +210,7 @@ class DeferredAnimatedVisibilityTest {
 
         rule.setContent {
             state = remember { DeferredTransitionState(false) }
-            val transition = rememberTransition(state)
+            val transition = rememberDeferredTransition(state)
             transition.DeferredAnimatedVisibility(visible = { it }) {
                 currentState = this@DeferredAnimatedVisibility.transition.currentState
                 Box(Modifier.size(100.dp).testTag("content"))
@@ -243,7 +245,7 @@ class DeferredAnimatedVisibilityTest {
 
         rule.setContent {
             state = remember { DeferredTransitionState(false) }
-            val transition = rememberTransition(state)
+            val transition = rememberDeferredTransition(state)
             transition.DeferredAnimatedVisibility(
                 visible = { it },
                 enter = expandIn(tween(100, easing = LinearEasing)) { IntSize.Zero },
@@ -281,7 +283,7 @@ class DeferredAnimatedVisibilityTest {
 
         rule.setContent {
             state = remember { DeferredTransitionState(false) }
-            val transition = rememberTransition(state)
+            val transition = rememberDeferredTransition(state)
             transition.DeferredAnimatedVisibility(
                 visible = { it },
                 enter = expandIn(tween(100, easing = LinearEasing)) { IntSize.Zero },
@@ -339,7 +341,7 @@ class DeferredAnimatedVisibilityTest {
 
         rule.setContent {
             state = remember { DeferredTransitionState(true) }
-            val transition = rememberTransition(state)
+            val transition = rememberDeferredTransition(state)
 
             transition.DeferredAnimatedVisibility(
                 visible = { it },
@@ -409,7 +411,7 @@ class DeferredAnimatedVisibilityTest {
 
         rule.setContent {
             state = remember { DeferredTransitionState(true) }
-            val transition = rememberTransition(state)
+            val transition = rememberDeferredTransition(state)
 
             transition.DeferredAnimatedVisibility(
                 visible = { it },
@@ -475,7 +477,7 @@ class DeferredAnimatedVisibilityTest {
 
         rule.setContent {
             state = remember { DeferredTransitionState(true) }
-            val transition = rememberTransition(state)
+            val transition = rememberDeferredTransition(state)
 
             transition.DeferredAnimatedVisibility(
                 visible = { it },
@@ -536,7 +538,7 @@ class DeferredAnimatedVisibilityTest {
 
         rule.setContent {
             state = remember { DeferredTransitionState(false) }
-            val transition = rememberTransition(state)
+            val transition = rememberDeferredTransition(state)
 
             transition.DeferredAnimatedVisibility(
                 visible = { it },
@@ -568,19 +570,19 @@ class DeferredAnimatedVisibilityTest {
         rule.runOnIdle { previewOffset = 100 }
         rule.mainClock.advanceTimeByFrame()
         rule.waitForIdle()
-        // slideIn starts at 200, preview adds 100, so it's 300
-        assertEquals(300, measuredX)
+        // slideIn starts at 200, preview overrides to 100
+        assertEquals(100, measuredX)
 
         rule.runOnIdle { state.animateTo(state.pendingTargetState ?: state.targetState) }
         rule.mainClock.advanceTimeByFrame()
         rule.mainClock.advanceTimeBy(80L)
         rule.mainClock.advanceTimeByFrame()
 
-        // It should animate from 300 towards 0 (which is the natural resting state of enter
+        // It should animate from 100 towards 0 (which is the natural resting state of enter
         // transitions)
         assertTrue(
-            "Offset should be animating from 300 to 0. Actually: $measuredX",
-            measuredX < 300 && measuredX > 0,
+            "Offset should be animating from 100 to 0. Actually: $measuredX",
+            measuredX < 100 && measuredX > 0,
         )
 
         rule.mainClock.advanceTimeBy(1000L)
@@ -599,7 +601,7 @@ class DeferredAnimatedVisibilityTest {
 
         rule.setContent {
             state = remember { DeferredTransitionState(false) }
-            val transition = rememberTransition(state)
+            val transition = rememberDeferredTransition(state)
 
             transition.DeferredAnimatedVisibility(
                 visible = { it },
@@ -658,8 +660,8 @@ class DeferredAnimatedVisibilityTest {
         // the preview.
         val widthWithPreview1 = measuredWidth
         assertTrue(
-            "Width should be scaled down by 0.5. midAnimationWidth=$midAnimationWidth, widthWithPreview1=$widthWithPreview1",
-            widthWithPreview1 < midAnimationWidth,
+            "Width should animate towards the preview scale of 0.5. midAnimationWidth=$midAnimationWidth, widthWithPreview1=$widthWithPreview1",
+            widthWithPreview1 < expectedFullWidth * 0.55f,
         )
 
         // Advance another frame to prove the underlying transition is still continuing
@@ -667,8 +669,8 @@ class DeferredAnimatedVisibilityTest {
         val widthWithPreview2 = measuredWidth
 
         assertTrue(
-            "Underlying transition should continue, causing width to grow. widthWithPreview1=$widthWithPreview1, widthWithPreview2=$widthWithPreview2",
-            widthWithPreview2 > widthWithPreview1,
+            "Underlying transition continues, but visual width animates to preview target. widthWithPreview1=$widthWithPreview1, widthWithPreview2=$widthWithPreview2",
+            widthWithPreview2 <= widthWithPreview1,
         )
     }
 
@@ -682,7 +684,7 @@ class DeferredAnimatedVisibilityTest {
 
         rule.setContent {
             state = remember { DeferredTransitionState(true) }
-            val transition = rememberTransition(state)
+            val transition = rememberDeferredTransition(state)
 
             transition.DeferredAnimatedVisibility(
                 visible = { it },
@@ -774,7 +776,7 @@ class DeferredAnimatedVisibilityTest {
 
         rule.setContent {
             state = remember { DeferredTransitionState(true) }
-            val transition = rememberTransition(state)
+            val transition = rememberDeferredTransition(state)
 
             transition.DeferredAnimatedVisibility(
                 visible = { it },
@@ -853,6 +855,164 @@ class DeferredAnimatedVisibilityTest {
     }
 
     @Test
+    fun visibility_previewScale_handoff_sustainUnlessSpecified_thenInterrupted_isSeamless() {
+        lateinit var state: DeferredTransitionState<Boolean>
+        var previewScale by mutableStateOf(1f)
+        var measuredWidth = 0f
+
+        rule.setContent {
+            state = remember { DeferredTransitionState(true) }
+            val transition = rememberDeferredTransition(state)
+
+            transition.DeferredAnimatedVisibility(
+                visible = { it },
+                // Use linear easing and long duration to make progress predictable
+                // Note: No scale specified!
+                enter = fadeIn(tween(1000, easing = LinearEasing)),
+                exit = fadeOut(tween(1000, easing = LinearEasing)),
+                mutableTransform = remember { MutableTransform { _ -> scale = previewScale } },
+            ) {
+                Box(
+                    Modifier.size(100.dp).onGloballyPositioned { coords ->
+                        measuredWidth = coords.boundsInRoot().width
+                    }
+                )
+            }
+        }
+
+        rule.waitForIdle()
+        val fullWidth = measuredWidth
+        rule.mainClock.autoAdvance = false
+
+        // 1. Deferred phase (e.g. back gesture)
+        rule.runOnIdle {
+            state.defer(false)
+            previewScale = 0.8f
+        }
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+        assertEquals(fullWidth * 0.8f, measuredWidth, 1f)
+
+        // 2. Handoff to exit transition
+        rule.runOnIdle { state.animateTo(false) }
+        rule.mainClock.advanceTimeByFrame() // Handoff frame
+
+        // 3. Let it animate for a bit
+        // Since scale is NOT specified in ExitTransition, it should sustain at 0.8f
+        rule.mainClock.advanceTimeBy(500)
+        rule.waitForIdle()
+        val widthBeforeInterruption = measuredWidth
+        assertEquals(fullWidth * 0.8f, widthBeforeInterruption, 1f)
+
+        // 4. Interrupt mid-animation (e.g. user cancels back gesture)
+        // This should clear the sustained handoff value and start a new transition from 0.8f.
+        rule.runOnIdle { state.animateTo(true) }
+        rule.mainClock.advanceTimeByFrame() // Interruption frame
+        rule.waitForIdle()
+
+        // 5. Verify it is seamless (no snap jump to 1.0f)
+        val widthAfterInterruption = measuredWidth
+        assertTrue(
+            "Width should not snap back to 1.0f immediately after interruption. " +
+                "Was $widthBeforeInterruption, now $widthAfterInterruption",
+            widthAfterInterruption < fullWidth * 0.95f,
+        )
+
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+        assertEquals(fullWidth, measuredWidth, 1f)
+        testTimeSource = null
+    }
+
+    @Test
+    fun visibility_previewScale_handoffUnspecifiedEnter_animatesToVisibleValue_thenInterrupted_isSeamless() {
+        lateinit var state: DeferredTransitionState<Boolean>
+        var previewScale by mutableStateOf(1f)
+        var measuredWidth = 0f
+
+        rule.setContent {
+            testTimeSource = { rule.mainClock.currentTime }
+            // Start hidden
+            state = remember { DeferredTransitionState(false) }
+            val transition = rememberDeferredTransition(state)
+
+            transition.DeferredAnimatedVisibility(
+                visible = { it },
+                // Note: No scaleIn specified!
+                enter = fadeIn(tween(1000, easing = LinearEasing)),
+                exit = fadeOut(tween(1000, easing = LinearEasing)),
+                mutableTransform = remember { MutableTransform { _ -> scale = previewScale } },
+            ) {
+                Box(
+                    Modifier.size(100.dp).onGloballyPositioned { coords ->
+                        measuredWidth = coords.boundsInRoot().width
+                    }
+                )
+            }
+        }
+
+        rule.waitForIdle()
+        // Let's defer enter.
+        rule.mainClock.autoAdvance = false
+
+        // 1. Deferred phase (e.g. predictive forward gesture)
+        rule.runOnIdle {
+            state.defer(true)
+            previewScale = 0.8f
+        }
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+
+        val fullWidth = 100f * rule.density.density
+        // Since it's composed now and previewScale = 0.8f, measured width should be 0.8 *
+        // fullWidth.
+        assertEquals(fullWidth * 0.8f, measuredWidth, 1f)
+
+        // 2. Handoff to enter transition
+        rule.runOnIdle { state.animateTo(true) }
+        rule.mainClock.advanceTimeByFrame() // Handoff frame
+
+        // 3. Let it animate for a bit
+        rule.mainClock.advanceTimeBy(50)
+        rule.waitForIdle()
+        val widthBeforeInterruption = measuredWidth
+
+        // 4. Interrupt mid-animation
+        rule.runOnIdle { state.animateTo(false) }
+        rule.mainClock.advanceTimeByFrame() // Interruption frame
+        rule.waitForIdle()
+        val widthAfterInterruption = measuredWidth
+
+        // This assertion checks if it snapped to 1.0f (fullWidth) immediately after interruption
+        assertTrue(
+            "Width should not snap back to 1.0f immediately after interruption. " +
+                "Was $widthBeforeInterruption, now $widthAfterInterruption",
+            widthAfterInterruption < fullWidth * 0.95f,
+        )
+
+        // 5. Where does it animate to?
+        // Since Exit doesn't specify scaleOut, and the deferred state was cleared,
+        // the target scale for PostExit is 1f. It should smoothly animate towards 1f.
+        rule.mainClock.advanceTimeBy(100)
+        rule.waitForIdle()
+        val widthLater = measuredWidth
+
+        assertTrue(
+            "Width should be increasing towards fullWidth. " +
+                "Was $widthAfterInterruption, now $widthLater",
+            widthLater > widthAfterInterruption,
+        )
+
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+        // Note: Because the final target state is PostExit, AnimatedVisibility will dispose
+        // the content once the transition finishes. The last measuredWidth is captured right
+        // before disposal, which may be slightly below 1.0f (e.g., 0.99f) due to spring
+        // visibility thresholds.
+        assertEquals(fullWidth, measuredWidth, 5f)
+    }
+
+    @Test
     fun visibility_previewScale_handoffVelocity() {
         testTimeSource = { rule.mainClock.currentTime }
 
@@ -863,7 +1023,7 @@ class DeferredAnimatedVisibilityTest {
 
         rule.setContent {
             state = remember { DeferredTransitionState(true) }
-            val transition = rememberTransition(state)
+            val transition = rememberDeferredTransition(state)
 
             transition.DeferredAnimatedVisibility(
                 visible = { it },
@@ -946,7 +1106,7 @@ class DeferredAnimatedVisibilityTest {
 
         rule.setContent {
             state = remember { DeferredTransitionState(true) }
-            val transition = rememberTransition(state)
+            val transition = rememberDeferredTransition(state)
 
             transition.DeferredAnimatedVisibility(
                 visible = { it },
@@ -1023,7 +1183,7 @@ class DeferredAnimatedVisibilityTest {
 
         rule.setContent {
             state = remember { DeferredTransitionState(true) }
-            val transition = rememberTransition(state)
+            val transition = rememberDeferredTransition(state)
 
             transition.DeferredAnimatedVisibility(
                 visible = { it },
@@ -1086,5 +1246,73 @@ class DeferredAnimatedVisibilityTest {
         rule.mainClock.autoAdvance = true
         rule.waitForIdle()
         assertEquals(fullWidth, measuredWidth, 1f)
+    }
+
+    @OptIn(ExperimentalDeferredTransitionApi::class, ExperimentalAnimationApi::class)
+    @Test
+    fun deferredAnimatedVisibility_interruptedEnter_doesNotFreezeVeil() {
+        lateinit var state: DeferredTransitionState<Boolean>
+        var activeHandoff by mutableStateOf(false)
+        var capturedColor by mutableStateOf(Color.Unspecified)
+        rule.mainClock.autoAdvance = false
+        rule.setContent {
+            state = remember { DeferredTransitionState(false) }
+            val transition = rememberDeferredTransition(state)
+            transition.DeferredAnimatedVisibility(
+                visible = { it },
+                enter =
+                    unveilIn(
+                        initialColor = Color.Black,
+                        animationSpec = tween(500, easing = LinearEasing),
+                    ),
+                exit = ExitTransition.None,
+                mutableTransform =
+                    if (activeHandoff)
+                        MutableTransform {
+                            scale = 0.5f // Mutate scale, but NOT veil
+                        }
+                    else null,
+            ) {
+                // capture the veil color
+                val veilAnim = this.transition.animations.find { it.label.contains("veil") }
+                if (veilAnim != null) {
+                    capturedColor = veilAnim.value as Color
+                }
+                Box(Modifier.fillMaxSize())
+            }
+        }
+
+        // Trigger enter
+        rule.runOnIdle { state.animateTo(true) }
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+
+        // Advance 250ms -> Veil should be 50% transparent
+        rule.mainClock.advanceTimeBy(250)
+        rule.waitForIdle()
+
+        // Simulate predictive back
+        activeHandoff = true
+        rule.runOnIdle { state.defer(false) }
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+
+        // Interrupt with exit
+        activeHandoff = false
+        rule.runOnIdle { state.animateTo(false) }
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+        val handoffVeilAlpha = capturedColor.alpha
+
+        // Advance until end
+        rule.mainClock.advanceTimeBy(100)
+        rule.waitForIdle()
+
+        // Assert that it animates towards Transparent (alpha = 0)
+        assertTrue(
+            "Expected veil alpha to animate towards 0, but it froze or increased " +
+                "(handoff alpha: $handoffVeilAlpha, current alpha: ${capturedColor.alpha})",
+            handoffVeilAlpha > capturedColor.alpha,
+        )
     }
 }

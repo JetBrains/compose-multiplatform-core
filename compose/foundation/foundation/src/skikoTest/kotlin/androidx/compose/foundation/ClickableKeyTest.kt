@@ -36,6 +36,7 @@ import kotlin.test.Test
 
 @OptIn(ExperimentalTestApi::class)
 class ClickableKeyTest {
+    @Suppress("DEPRECATION")
     @Test
     fun trigger_clickable_with_enter_key() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -68,6 +69,7 @@ class ClickableKeyTest {
         assertThat(clicksCount).isEqualTo(1)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun trigger_clickable_with_enter_key_and_shift() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -112,6 +114,7 @@ class ClickableKeyTest {
         assertThat(clicksCount).isEqualTo(2)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun trigger_clickable_with_enter_key_and_alt() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -156,6 +159,7 @@ class ClickableKeyTest {
         assertThat(clicksCount).isEqualTo(2)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun trigger_clickable_with_enter_key_and_ctrl() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -200,6 +204,7 @@ class ClickableKeyTest {
         assertThat(clicksCount).isEqualTo(2)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun trigger_clickable_with_enter_key_and_meta() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -244,6 +249,7 @@ class ClickableKeyTest {
         assertThat(clicksCount).isEqualTo(2)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun trigger_clickable_with_numpad_enter_key() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -276,6 +282,7 @@ class ClickableKeyTest {
         assertThat(clicksCount).isEqualTo(1)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun trigger_clickable_with_numpad_enter_key_and_shift() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -320,6 +327,7 @@ class ClickableKeyTest {
         assertThat(clicksCount).isEqualTo(2)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun trigger_clickable_with_numpad_enter_key_and_alt() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -364,6 +372,7 @@ class ClickableKeyTest {
         assertThat(clicksCount).isEqualTo(2)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun trigger_clickable_with_numpad_enter_key_and_ctrl() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -408,6 +417,7 @@ class ClickableKeyTest {
         assertThat(clicksCount).isEqualTo(2)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun trigger_clickable_with_numpad_enter_key_and_meta() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -452,6 +462,7 @@ class ClickableKeyTest {
         assertThat(clicksCount).isEqualTo(2)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun trigger_clickable_with_spacebar_key() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -484,6 +495,7 @@ class ClickableKeyTest {
         assertThat(clicksCount).isEqualTo(1)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun trigger_clickable_with_spacebar_key_and_shift() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -528,6 +540,7 @@ class ClickableKeyTest {
         assertThat(clicksCount).isEqualTo(2)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun trigger_clickable_with_spacebar_key_and_alt() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -572,6 +585,7 @@ class ClickableKeyTest {
         assertThat(clicksCount).isEqualTo(2)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun trigger_clickable_with_spacebar_key_and_ctrl() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -616,6 +630,7 @@ class ClickableKeyTest {
         assertThat(clicksCount).isEqualTo(2)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun trigger_clickable_with_spacebar_key_and_meta() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -660,6 +675,7 @@ class ClickableKeyTest {
         assertThat(clicksCount).isEqualTo(2)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun trigger_toggleable_with_enter_key_too() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -725,6 +741,7 @@ class ClickableKeyTest {
         assertThat(clicksCount).isEqualTo(9)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun trigger_selectable_with_enter_key_too() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -790,6 +807,7 @@ class ClickableKeyTest {
         assertThat(clicksCount).isEqualTo(9)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun trigger_toggleable_with_numpad_enter_key_too() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -855,6 +873,7 @@ class ClickableKeyTest {
         assertThat(clicksCount).isEqualTo(9)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun trigger_selectable_with_numpad_enter_key_too() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -920,6 +939,7 @@ class ClickableKeyTest {
         assertThat(clicksCount).isEqualTo(9)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun trigger_toggleable_with_spacebar_key_too() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -985,6 +1005,7 @@ class ClickableKeyTest {
         assertThat(clicksCount).isEqualTo(9)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun trigger_selectable_with_spacebar_key_too() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()

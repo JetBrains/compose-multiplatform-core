@@ -68,12 +68,12 @@ import androidx.compose.ui.state.ToggleableState
         "Replaced with new overload that only supports IndicationNodeFactory instances inside LocalIndication, and does not use composed",
     level = DeprecationLevel.HIDDEN,
 )
-fun Modifier.toggleable(
+public fun Modifier.toggleable(
     value: Boolean,
     enabled: Boolean = true,
     role: Role? = null,
     onValueChange: (Boolean) -> Unit,
-) =
+): Modifier =
     composed(
         inspectorInfo =
             debugInspectorInfo {
@@ -135,7 +135,7 @@ fun Modifier.toggleable(
  *   the state in requested.
  * @see [Modifier.triStateToggleable] if you require support for an indeterminate state.
  */
-fun Modifier.toggleable(
+public fun Modifier.toggleable(
     value: Boolean,
     enabled: Boolean = true,
     role: Role? = null,
@@ -187,14 +187,14 @@ fun Modifier.toggleable(
  *   the state in requested.
  * @see [Modifier.triStateToggleable] if you require support for an indeterminate state.
  */
-fun Modifier.toggleable(
+public fun Modifier.toggleable(
     value: Boolean,
     interactionSource: MutableInteractionSource?,
     indication: Indication?,
     enabled: Boolean = true,
     role: Role? = null,
     onValueChange: (Boolean) -> Unit,
-) =
+): Modifier =
     clickableWithIndicationIfNeeded(
         interactionSource = interactionSource,
         indication = indication,
@@ -338,8 +338,9 @@ private class ToggleableNode(
         this.contentDataType = ContentDataType.Toggle
         FillableData.createFromBoolean(value)?.let { this.fillableData = it }
         this.onFillData { fillableData ->
+            if (!enabled) return@onFillData false
             fillableData.booleanValue?.let {
-                this.toggleableState = ToggleableState(it)
+                onValueChange(it)
                 true
             } ?: false
         }
@@ -375,12 +376,12 @@ private class ToggleableNode(
         "Replaced with new overload that only supports IndicationNodeFactory instances inside LocalIndication, and does not use composed",
     level = DeprecationLevel.HIDDEN,
 )
-fun Modifier.triStateToggleable(
+public fun Modifier.triStateToggleable(
     state: ToggleableState,
     enabled: Boolean = true,
     role: Role? = null,
     onClick: () -> Unit,
-) =
+): Modifier =
     composed(
         inspectorInfo =
             debugInspectorInfo {
@@ -445,7 +446,7 @@ fun Modifier.triStateToggleable(
  * @param onClick will be called when user clicks the toggleable.
  * @see [Modifier.toggleable] if you want to support only two states: on and off
  */
-fun Modifier.triStateToggleable(
+public fun Modifier.triStateToggleable(
     state: ToggleableState,
     enabled: Boolean = true,
     role: Role? = null,
@@ -501,14 +502,14 @@ fun Modifier.triStateToggleable(
  * @param onClick will be called when user clicks the toggleable.
  * @see [Modifier.toggleable] if you want to support only two states: on and off
  */
-fun Modifier.triStateToggleable(
+public fun Modifier.triStateToggleable(
     state: ToggleableState,
     interactionSource: MutableInteractionSource?,
     indication: Indication?,
     enabled: Boolean = true,
     role: Role? = null,
     onClick: () -> Unit,
-) =
+): Modifier =
     clickableWithIndicationIfNeeded(
         interactionSource = interactionSource,
         indication = indication,
@@ -644,12 +645,17 @@ private class TriStateToggleableNode(
         this.contentDataType = ContentDataType.Toggle
         // If the toggle state is not indeterminate, set the boolean value on the fillableData
         // semantic property.
-        FillableData.createFromBoolean(state != ToggleableState.Indeterminate)?.let {
-            this.fillableData = it
+        if (state != ToggleableState.Indeterminate) {
+            FillableData.createFromBoolean(state == ToggleableState.On)?.let {
+                this.fillableData = it
+            }
         }
         this.onFillData { fillableData ->
-            fillableData.booleanValue?.let {
-                this.toggleableState = ToggleableState(it)
+            if (!enabled || state == ToggleableState.Indeterminate) return@onFillData false
+            fillableData.booleanValue?.let { target ->
+                if (state != ToggleableState(target)) {
+                    onClick()
+                }
                 true
             } ?: false
         }

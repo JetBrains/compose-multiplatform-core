@@ -50,6 +50,7 @@ class TextOverflowTest {
 
     private val BoxTag = "wrapping box"
 
+    @Suppress("DEPRECATION")
     @Test
     fun paint_singleParagraph_withVisibleOverflow() = runSkikoComposeUiTest {
         val text = "Hello\nHello\nHello\nHello"
@@ -86,6 +87,7 @@ class TextOverflowTest {
         croppedBoxBitmap.asComposeImageBitmap().assertContainsColor(Color.Red)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun paint_multiParagraph_withVisibleOverflow() = runSkikoComposeUiTest {
         val text = buildAnnotatedString {

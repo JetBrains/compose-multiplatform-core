@@ -36,7 +36,6 @@ import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -49,7 +48,7 @@ class ScrollbarScreenshotTest(
     private val orientation: Orientation,
     private val layoutDirection: LayoutDirection,
 ) {
-    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createComposeRule()
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule("compose/material3/material3")
 
     private val Tag = "scrollbar"
@@ -74,7 +73,7 @@ class ScrollbarScreenshotTest(
     }
 
     @Test
-    fun scrollbar_isDrawn() {
+    fun nonInteractiveScrollbar_isDrawn() {
         composeTestRule.setContent {
             ScrollbarTestContainer(
                 state = TestScrollState(0, 200, 100),
@@ -89,7 +88,7 @@ class ScrollbarScreenshotTest(
     }
 
     @Test
-    fun scrollbar_customColorsAndThickness() {
+    fun nonInteractiveScrollbar_customColorsAndThickness() {
         composeTestRule.setContent {
             ScrollbarTestContainer(
                 state = TestScrollState(0, 200, 100),
@@ -107,7 +106,7 @@ class ScrollbarScreenshotTest(
     }
 
     @Test
-    fun scrollbar_customTrackInsets() {
+    fun nonInteractiveScrollbar_customTrackInsets() {
         composeTestRule.setContent {
             ScrollbarTestContainer(
                 state = TestScrollState(0, 200, 100),
@@ -140,7 +139,7 @@ class ScrollbarScreenshotTest(
             Box(
                 Modifier.size(100.dp)
                     .testTag(Tag)
-                    .scrollbar(
+                    .nonInteractiveScrollbar(
                         state = state,
                         orientation = orientation,
                         thumbColor = thumbColor,

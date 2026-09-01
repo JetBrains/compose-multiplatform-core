@@ -23,5 +23,8 @@ internal actual data class PointerInputEvent(
     val buttons: PointerButtons = PointerButtons(0),
     val keyboardModifiers: PointerKeyboardModifiers = PointerKeyboardModifiers(0),
     val nativeEvent: Any? = null,
-    val button: PointerButton? = null
+    val button: PointerButton? = null,
+    val activeGesture: PointerClassification = PointerClassification.None,
+    val isGestureStart: Boolean = false,
+    val isGestureEnd: Boolean = false,
 )

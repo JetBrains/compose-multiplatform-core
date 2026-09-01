@@ -19,7 +19,6 @@ package androidx.compose.foundation.gestures
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.splineBasedDecay
-import androidx.compose.foundation.ComposeFoundationFlags.isClearNestedScrollCoroutineScopeFixEnabled
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.OverscrollEffect
@@ -32,6 +31,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource.Companion.SideEffect
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource.Companion.UserInput
 import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.requireDensity
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Velocity
 import kotlin.math.abs
@@ -54,14 +54,14 @@ import kotlinx.coroutines.launch
  * draggable, consider using [draggable2D]. If you're only interested in a single direction scroll,
  * consider using [scrollable].
  *
- * This overload provides the access to [OverscrollEffect] that defines the behaviour of the over
- * scrolling logic. Use [androidx.compose.foundation.rememberOverscrollEffect] to create an instance
- * of the current provided overscroll implementation.
+ * This overload provides the access to [OverscrollEffect] that defines the behavior of the
+ * over-scrolling logic. Use [androidx.compose.foundation.rememberOverscrollEffect] to create an
+ * instance of the current provided overscroll implementation.
  *
  * @sample androidx.compose.foundation.samples.Scrollable2DSample
  * @param state [Scrollable2DState] state of the scrollable. Defines how scroll events will be
- *   interpreted by the user land logic and contains useful information about on-going events.
- * @param enabled whether or not scrolling is enabled
+ *   interpreted by the user land logic and contains useful information about ongoing events.
+ * @param enabled whether scrolling is enabled
  * @param overscrollEffect effect to which the deltas will be fed when the scrollable have some
  *   scrolling delta left. Pass `null` for no overscroll. If you pass an effect you should also
  *   apply [androidx.compose.foundation.overscroll] modifier.
@@ -71,13 +71,13 @@ import kotlinx.coroutines.launch
  *   this scrollable is being dragged.
  */
 @Stable
-fun Modifier.scrollable2D(
+public fun Modifier.scrollable2D(
     state: Scrollable2DState,
     enabled: Boolean = true,
     overscrollEffect: OverscrollEffect? = null,
     flingBehavior: FlingBehavior? = null,
     interactionSource: MutableInteractionSource? = null,
-) =
+): Modifier =
     this then
         Scrollable2DElement(state, overscrollEffect, enabled, flingBehavior, interactionSource)
 
@@ -160,15 +160,26 @@ internal class Scrollable2DNode(
     override val nestedScrollConnection =
         ScrollableNestedScrollConnection(enabled = enabled, scrollingLogic = scrollLogic)
 
+    override fun createMouseWheelScrollingLogic() =
+        MouseWheel2DScrollingLogic(
+            scrollingLogic = scrollLogic,
+            scrollConfig = platformScrollConfig(),
+            onScrollStopped = ::onMouseWheelScrollStopped,
+            density = requireDensity(),
+        )
+
+    override fun createTrackpadScrollingLogic() =
+        Trackpad2DScrollingLogic(
+            scrollingLogic = scrollLogic,
+            onScrollStopped = ::onTrackpadScrollStopped,
+            density = requireDensity(),
+        )
+
     init {
         // Must be called here because in AbstractScrollableNode.init nestedScrollConnection hasn't
         // been created yet
         initializeNestedScrollingDelegation()
     }
-
-    override fun createMouseWheelScrollingLogic() = null
-
-    override fun createTrackpadScrollingLogic() = null
 
     override suspend fun drag(
         forEachDelta: suspend ((dragDelta: DragEvent.DragDelta) -> Unit) -> Unit
@@ -181,8 +192,22 @@ internal class Scrollable2DNode(
     }
 
     override fun onDragStopped(event: DragEvent.DragStopped) {
-        if (isClearNestedScrollCoroutineScopeFixEnabled && !isAttached) return
-        nestedScrollDispatcher.coroutineScope.launch { scrollLogic.onScrollStopped(event.velocity) }
+        if (!isAttached) return
+        nestedScrollDispatcher.coroutineScope.launch {
+            scrollLogic.onScrollStopped(event.velocity, isMouseWheel = false)
+        }
+    }
+
+    private fun onMouseWheelScrollStopped(velocity: Velocity) {
+        nestedScrollDispatcher.coroutineScope.launch {
+            scrollLogic.onScrollStopped(velocity, isMouseWheel = true)
+        }
+    }
+
+    private fun onTrackpadScrollStopped(velocity: Velocity) {
+        nestedScrollDispatcher.coroutineScope.launch {
+            scrollLogic.onScrollStopped(velocity, isMouseWheel = false)
+        }
     }
 
     fun update(
@@ -298,7 +323,11 @@ internal class ScrollingLogic2D(
         return scrollableState.dispatchRawDelta(scroll)
     }
 
-    suspend fun onScrollStopped(initialVelocity: Velocity) {
+    suspend fun onScrollStopped(initialVelocity: Velocity, isMouseWheel: Boolean) {
+        if (isMouseWheel && !flingBehavior.shouldBeTriggeredByMouseWheel) {
+            return
+        }
+
         val availableVelocity = initialVelocity
 
         val performFling: suspend (Velocity) -> Velocity = { velocity ->

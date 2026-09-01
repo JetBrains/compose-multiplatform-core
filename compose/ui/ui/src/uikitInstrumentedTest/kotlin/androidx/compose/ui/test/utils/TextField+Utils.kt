@@ -17,19 +17,16 @@
 package androidx.compose.ui.test.utils
 
 import androidx.compose.ui.test.UIKitInstrumentedTest
-import kotlinx.cinterop.BetaInteropApi
-import platform.Foundation.NSStringFromClass
 import platform.UIKit.UIView
 import platform.UIKit.UIWindow
+
+internal enum class BasicTextFieldType { V1, V2 }
 
 internal val loupeClassNames = listOf(
     "_UITextMagnifiedLoupeView",
     "_UITextLoupeView",
     "LoupeView"
 )
-
-@OptIn(BetaInteropApi::class)
-private fun objcClassName(view: UIView): String? = view.`class`()?.let { NSStringFromClass(it) }
 
 internal val UIView.isLoupeView: Boolean get() {
     val name = objcClassName(this) ?: return false

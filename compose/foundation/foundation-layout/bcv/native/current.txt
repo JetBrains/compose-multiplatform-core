@@ -6,10 +6,6 @@
 // - Show declarations: true
 
 // Library unique name: <androidx.compose.foundation:foundation-layout>
-open annotation class androidx.compose.foundation.layout/ExperimentalFlexBoxApi : kotlin/Annotation { // androidx.compose.foundation.layout/ExperimentalFlexBoxApi|null[0]
-    constructor <init>() // androidx.compose.foundation.layout/ExperimentalFlexBoxApi.<init>|<init>(){}[0]
-}
-
 open annotation class androidx.compose.foundation.layout/ExperimentalGridApi : kotlin/Annotation { // androidx.compose.foundation.layout/ExperimentalGridApi|null[0]
     constructor <init>() // androidx.compose.foundation.layout/ExperimentalGridApi.<init>|<init>(){}[0]
 }
@@ -35,14 +31,22 @@ final enum class androidx.compose.foundation.layout/IntrinsicSize : kotlin/Enum<
 
 abstract fun interface androidx.compose.foundation.layout/FlexBoxConfig { // androidx.compose.foundation.layout/FlexBoxConfig|null[0]
     abstract fun (androidx.compose.foundation.layout/FlexBoxConfigScope).configure() // androidx.compose.foundation.layout/FlexBoxConfig.configure|configure@androidx.compose.foundation.layout.FlexBoxConfigScope(){}[0]
+    open fun then(androidx.compose.foundation.layout/FlexBoxConfig): androidx.compose.foundation.layout/FlexBoxConfig // androidx.compose.foundation.layout/FlexBoxConfig.then|then(androidx.compose.foundation.layout.FlexBoxConfig){}[0]
 
     final object Companion : androidx.compose.foundation.layout/FlexBoxConfig { // androidx.compose.foundation.layout/FlexBoxConfig.Companion|null[0]
         final fun (androidx.compose.foundation.layout/FlexBoxConfigScope).configure() // androidx.compose.foundation.layout/FlexBoxConfig.Companion.configure|configure@androidx.compose.foundation.layout.FlexBoxConfigScope(){}[0]
+        final fun then(androidx.compose.foundation.layout/FlexBoxConfig): androidx.compose.foundation.layout/FlexBoxConfig // androidx.compose.foundation.layout/FlexBoxConfig.Companion.then|then(androidx.compose.foundation.layout.FlexBoxConfig){}[0]
     }
 }
 
 abstract fun interface androidx.compose.foundation.layout/FlexConfig { // androidx.compose.foundation.layout/FlexConfig|null[0]
     abstract fun (androidx.compose.foundation.layout/FlexConfigScope).configure() // androidx.compose.foundation.layout/FlexConfig.configure|configure@androidx.compose.foundation.layout.FlexConfigScope(){}[0]
+    open fun then(androidx.compose.foundation.layout/FlexConfig): androidx.compose.foundation.layout/FlexConfig // androidx.compose.foundation.layout/FlexConfig.then|then(androidx.compose.foundation.layout.FlexConfig){}[0]
+
+    final object Companion : androidx.compose.foundation.layout/FlexConfig { // androidx.compose.foundation.layout/FlexConfig.Companion|null[0]
+        final fun (androidx.compose.foundation.layout/FlexConfigScope).configure() // androidx.compose.foundation.layout/FlexConfig.Companion.configure|configure@androidx.compose.foundation.layout.FlexConfigScope(){}[0]
+        final fun then(androidx.compose.foundation.layout/FlexConfig): androidx.compose.foundation.layout/FlexConfig // androidx.compose.foundation.layout/FlexConfig.Companion.then|then(androidx.compose.foundation.layout.FlexConfig){}[0]
+    }
 }
 
 abstract interface androidx.compose.foundation.layout/BoxScope { // androidx.compose.foundation.layout/BoxScope|null[0]
@@ -93,6 +97,7 @@ abstract interface androidx.compose.foundation.layout/GridConfigurationScope : a
         abstract fun <get-flow>(): androidx.compose.foundation.layout/GridFlow // androidx.compose.foundation.layout/GridConfigurationScope.flow.<get-flow>|<get-flow>(){}[0]
         abstract fun <set-flow>(androidx.compose.foundation.layout/GridFlow) // androidx.compose.foundation.layout/GridConfigurationScope.flow.<set-flow>|<set-flow>(androidx.compose.foundation.layout.GridFlow){}[0]
 
+    abstract fun area(kotlin/Any, kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...) // androidx.compose.foundation.layout/GridConfigurationScope.area|area(kotlin.Any;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
     abstract fun column(androidx.compose.foundation.layout/Fr) // androidx.compose.foundation.layout/GridConfigurationScope.column|column(androidx.compose.foundation.layout.Fr){}[0]
     abstract fun column(androidx.compose.foundation.layout/GridTrackSize) // androidx.compose.foundation.layout/GridConfigurationScope.column|column(androidx.compose.foundation.layout.GridTrackSize){}[0]
     abstract fun column(androidx.compose.ui.unit/Dp) // androidx.compose.foundation.layout/GridConfigurationScope.column|column(androidx.compose.ui.unit.Dp){}[0]
@@ -105,11 +110,13 @@ abstract interface androidx.compose.foundation.layout/GridConfigurationScope : a
     abstract fun row(androidx.compose.ui.unit/Dp) // androidx.compose.foundation.layout/GridConfigurationScope.row|row(androidx.compose.ui.unit.Dp){}[0]
     abstract fun row(kotlin/Float) // androidx.compose.foundation.layout/GridConfigurationScope.row|row(kotlin.Float){}[0]
     abstract fun rowGap(androidx.compose.ui.unit/Dp) // androidx.compose.foundation.layout/GridConfigurationScope.rowGap|rowGap(androidx.compose.ui.unit.Dp){}[0]
+    open fun area(kotlin/Any, kotlin.ranges/IntRange, kotlin.ranges/IntRange) // androidx.compose.foundation.layout/GridConfigurationScope.area|area(kotlin.Any;kotlin.ranges.IntRange;kotlin.ranges.IntRange){}[0]
     open fun minmax(androidx.compose.ui.unit/Dp, androidx.compose.foundation.layout/Fr): androidx.compose.foundation.layout/GridTrackSize // androidx.compose.foundation.layout/GridConfigurationScope.minmax|minmax(androidx.compose.ui.unit.Dp;androidx.compose.foundation.layout.Fr){}[0]
 }
 
 abstract interface androidx.compose.foundation.layout/GridScope { // androidx.compose.foundation.layout/GridScope|null[0]
     abstract fun (androidx.compose.ui/Modifier).gridItem(kotlin.ranges/IntRange, kotlin.ranges/IntRange, androidx.compose.ui/Alignment = ...): androidx.compose.ui/Modifier // androidx.compose.foundation.layout/GridScope.gridItem|gridItem@androidx.compose.ui.Modifier(kotlin.ranges.IntRange;kotlin.ranges.IntRange;androidx.compose.ui.Alignment){}[0]
+    abstract fun (androidx.compose.ui/Modifier).gridItem(kotlin/Any, androidx.compose.ui/Alignment = ...): androidx.compose.ui/Modifier // androidx.compose.foundation.layout/GridScope.gridItem|gridItem@androidx.compose.ui.Modifier(kotlin.Any;androidx.compose.ui.Alignment){}[0]
     abstract fun (androidx.compose.ui/Modifier).gridItem(kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., androidx.compose.ui/Alignment = ...): androidx.compose.ui/Modifier // androidx.compose.foundation.layout/GridScope.gridItem|gridItem@androidx.compose.ui.Modifier(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;androidx.compose.ui.Alignment){}[0]
 
     final object Companion { // androidx.compose.foundation.layout/GridScope.Companion|null[0]
@@ -174,19 +181,20 @@ sealed interface androidx.compose.foundation.layout/FlexBoxConfigScope : android
     abstract fun gap(androidx.compose.ui.unit/Dp) // androidx.compose.foundation.layout/FlexBoxConfigScope.gap|gap(androidx.compose.ui.unit.Dp){}[0]
     abstract fun gap(androidx.compose.ui.unit/Dp, androidx.compose.ui.unit/Dp) // androidx.compose.foundation.layout/FlexBoxConfigScope.gap|gap(androidx.compose.ui.unit.Dp;androidx.compose.ui.unit.Dp){}[0]
     abstract fun justifyContent(androidx.compose.foundation.layout/FlexJustifyContent) // androidx.compose.foundation.layout/FlexBoxConfigScope.justifyContent|justifyContent(androidx.compose.foundation.layout.FlexJustifyContent){}[0]
+    abstract fun maxItemsInEachLine(kotlin/Int) // androidx.compose.foundation.layout/FlexBoxConfigScope.maxItemsInEachLine|maxItemsInEachLine(kotlin.Int){}[0]
     abstract fun rowGap(androidx.compose.ui.unit/Dp) // androidx.compose.foundation.layout/FlexBoxConfigScope.rowGap|rowGap(androidx.compose.ui.unit.Dp){}[0]
     abstract fun wrap(androidx.compose.foundation.layout/FlexWrap) // androidx.compose.foundation.layout/FlexBoxConfigScope.wrap|wrap(androidx.compose.foundation.layout.FlexWrap){}[0]
 }
 
 sealed interface androidx.compose.foundation.layout/FlexConfigScope : androidx.compose.ui.unit/Density { // androidx.compose.foundation.layout/FlexConfigScope|null[0]
-    abstract val flexBoxCrossAxisMax // androidx.compose.foundation.layout/FlexConfigScope.flexBoxCrossAxisMax|{}flexBoxCrossAxisMax[0]
-        abstract fun <get-flexBoxCrossAxisMax>(): kotlin/Int // androidx.compose.foundation.layout/FlexConfigScope.flexBoxCrossAxisMax.<get-flexBoxCrossAxisMax>|<get-flexBoxCrossAxisMax>(){}[0]
-    abstract val flexBoxCrossAxisMin // androidx.compose.foundation.layout/FlexConfigScope.flexBoxCrossAxisMin|{}flexBoxCrossAxisMin[0]
-        abstract fun <get-flexBoxCrossAxisMin>(): kotlin/Int // androidx.compose.foundation.layout/FlexConfigScope.flexBoxCrossAxisMin.<get-flexBoxCrossAxisMin>|<get-flexBoxCrossAxisMin>(){}[0]
-    abstract val flexBoxMainAxisMax // androidx.compose.foundation.layout/FlexConfigScope.flexBoxMainAxisMax|{}flexBoxMainAxisMax[0]
-        abstract fun <get-flexBoxMainAxisMax>(): kotlin/Int // androidx.compose.foundation.layout/FlexConfigScope.flexBoxMainAxisMax.<get-flexBoxMainAxisMax>|<get-flexBoxMainAxisMax>(){}[0]
-    abstract val flexBoxMainAxisMin // androidx.compose.foundation.layout/FlexConfigScope.flexBoxMainAxisMin|{}flexBoxMainAxisMin[0]
-        abstract fun <get-flexBoxMainAxisMin>(): kotlin/Int // androidx.compose.foundation.layout/FlexConfigScope.flexBoxMainAxisMin.<get-flexBoxMainAxisMin>|<get-flexBoxMainAxisMin>(){}[0]
+    abstract val flexBoxCrossAxisMaxPx // androidx.compose.foundation.layout/FlexConfigScope.flexBoxCrossAxisMaxPx|{}flexBoxCrossAxisMaxPx[0]
+        abstract fun <get-flexBoxCrossAxisMaxPx>(): kotlin/Int // androidx.compose.foundation.layout/FlexConfigScope.flexBoxCrossAxisMaxPx.<get-flexBoxCrossAxisMaxPx>|<get-flexBoxCrossAxisMaxPx>(){}[0]
+    abstract val flexBoxCrossAxisMinPx // androidx.compose.foundation.layout/FlexConfigScope.flexBoxCrossAxisMinPx|{}flexBoxCrossAxisMinPx[0]
+        abstract fun <get-flexBoxCrossAxisMinPx>(): kotlin/Int // androidx.compose.foundation.layout/FlexConfigScope.flexBoxCrossAxisMinPx.<get-flexBoxCrossAxisMinPx>|<get-flexBoxCrossAxisMinPx>(){}[0]
+    abstract val flexBoxMainAxisMaxPx // androidx.compose.foundation.layout/FlexConfigScope.flexBoxMainAxisMaxPx|{}flexBoxMainAxisMaxPx[0]
+        abstract fun <get-flexBoxMainAxisMaxPx>(): kotlin/Int // androidx.compose.foundation.layout/FlexConfigScope.flexBoxMainAxisMaxPx.<get-flexBoxMainAxisMaxPx>|<get-flexBoxMainAxisMaxPx>(){}[0]
+    abstract val flexBoxMainAxisMinPx // androidx.compose.foundation.layout/FlexConfigScope.flexBoxMainAxisMinPx|{}flexBoxMainAxisMinPx[0]
+        abstract fun <get-flexBoxMainAxisMinPx>(): kotlin/Int // androidx.compose.foundation.layout/FlexConfigScope.flexBoxMainAxisMinPx.<get-flexBoxMainAxisMinPx>|<get-flexBoxMainAxisMinPx>(){}[0]
 
     abstract fun alignSelf(androidx.compose.foundation.layout/FlexAlignSelf) // androidx.compose.foundation.layout/FlexConfigScope.alignSelf|alignSelf(androidx.compose.foundation.layout.FlexAlignSelf){}[0]
     abstract fun alignSelf(androidx.compose.ui.layout/AlignmentLine) // androidx.compose.foundation.layout/FlexConfigScope.alignSelf|alignSelf(androidx.compose.ui.layout.AlignmentLine){}[0]
@@ -506,6 +514,7 @@ final object androidx.compose.foundation.layout/FlexBoxScopeInstance : androidx.
 
 final object androidx.compose.foundation.layout/GridScopeInstance : androidx.compose.foundation.layout/GridScope { // androidx.compose.foundation.layout/GridScopeInstance|null[0]
     final fun (androidx.compose.ui/Modifier).gridItem(kotlin.ranges/IntRange, kotlin.ranges/IntRange, androidx.compose.ui/Alignment): androidx.compose.ui/Modifier // androidx.compose.foundation.layout/GridScopeInstance.gridItem|gridItem@androidx.compose.ui.Modifier(kotlin.ranges.IntRange;kotlin.ranges.IntRange;androidx.compose.ui.Alignment){}[0]
+    final fun (androidx.compose.ui/Modifier).gridItem(kotlin/Any, androidx.compose.ui/Alignment): androidx.compose.ui/Modifier // androidx.compose.foundation.layout/GridScopeInstance.gridItem|gridItem@androidx.compose.ui.Modifier(kotlin.Any;androidx.compose.ui.Alignment){}[0]
     final fun (androidx.compose.ui/Modifier).gridItem(kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, androidx.compose.ui/Alignment): androidx.compose.ui/Modifier // androidx.compose.foundation.layout/GridScopeInstance.gridItem|gridItem@androidx.compose.ui.Modifier(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;androidx.compose.ui.Alignment){}[0]
 }
 
@@ -643,6 +652,12 @@ final fun (androidx.compose.ui/Modifier).androidx.compose.foundation.layout/wrap
 final fun (androidx.compose.ui/Modifier).androidx.compose.foundation.layout/wrapContentWidth(androidx.compose.ui/Alignment.Horizontal = ..., kotlin/Boolean = ...): androidx.compose.ui/Modifier // androidx.compose.foundation.layout/wrapContentWidth|wrapContentWidth@androidx.compose.ui.Modifier(androidx.compose.ui.Alignment.Horizontal;kotlin.Boolean){}[0]
 final fun androidx.compose.foundation.layout/Box(androidx.compose.ui/Modifier, androidx.compose.runtime/Composer?, kotlin/Int) // androidx.compose.foundation.layout/Box|Box(androidx.compose.ui.Modifier;androidx.compose.runtime.Composer?;kotlin.Int){}[0]
 final fun androidx.compose.foundation.layout/BoxWithConstraints(androidx.compose.ui/Modifier?, androidx.compose.ui/Alignment?, kotlin/Boolean, kotlin/Function3<androidx.compose.foundation.layout/BoxWithConstraintsScope, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.foundation.layout/BoxWithConstraints|BoxWithConstraints(androidx.compose.ui.Modifier?;androidx.compose.ui.Alignment?;kotlin.Boolean;kotlin.Function3<androidx.compose.foundation.layout.BoxWithConstraintsScope,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
+final fun androidx.compose.foundation.layout/FlexBoxConfig(androidx.compose.foundation.layout/FlexBoxConfig, androidx.compose.foundation.layout/FlexBoxConfig): androidx.compose.foundation.layout/FlexBoxConfig // androidx.compose.foundation.layout/FlexBoxConfig|FlexBoxConfig(androidx.compose.foundation.layout.FlexBoxConfig;androidx.compose.foundation.layout.FlexBoxConfig){}[0]
+final fun androidx.compose.foundation.layout/FlexBoxConfig(androidx.compose.foundation.layout/FlexBoxConfig, androidx.compose.foundation.layout/FlexBoxConfig, androidx.compose.foundation.layout/FlexBoxConfig): androidx.compose.foundation.layout/FlexBoxConfig // androidx.compose.foundation.layout/FlexBoxConfig|FlexBoxConfig(androidx.compose.foundation.layout.FlexBoxConfig;androidx.compose.foundation.layout.FlexBoxConfig;androidx.compose.foundation.layout.FlexBoxConfig){}[0]
+final fun androidx.compose.foundation.layout/FlexBoxConfig(kotlin/Array<out androidx.compose.foundation.layout/FlexBoxConfig>...): androidx.compose.foundation.layout/FlexBoxConfig // androidx.compose.foundation.layout/FlexBoxConfig|FlexBoxConfig(kotlin.Array<out|androidx.compose.foundation.layout.FlexBoxConfig>...){}[0]
+final fun androidx.compose.foundation.layout/FlexConfig(androidx.compose.foundation.layout/FlexConfig, androidx.compose.foundation.layout/FlexConfig): androidx.compose.foundation.layout/FlexConfig // androidx.compose.foundation.layout/FlexConfig|FlexConfig(androidx.compose.foundation.layout.FlexConfig;androidx.compose.foundation.layout.FlexConfig){}[0]
+final fun androidx.compose.foundation.layout/FlexConfig(androidx.compose.foundation.layout/FlexConfig, androidx.compose.foundation.layout/FlexConfig, androidx.compose.foundation.layout/FlexConfig): androidx.compose.foundation.layout/FlexConfig // androidx.compose.foundation.layout/FlexConfig|FlexConfig(androidx.compose.foundation.layout.FlexConfig;androidx.compose.foundation.layout.FlexConfig;androidx.compose.foundation.layout.FlexConfig){}[0]
+final fun androidx.compose.foundation.layout/FlexConfig(kotlin/Array<out androidx.compose.foundation.layout/FlexConfig>...): androidx.compose.foundation.layout/FlexConfig // androidx.compose.foundation.layout/FlexConfig|FlexConfig(kotlin.Array<out|androidx.compose.foundation.layout.FlexConfig>...){}[0]
 final fun androidx.compose.foundation.layout/FlowColumn(androidx.compose.ui/Modifier?, androidx.compose.foundation.layout/Arrangement.Vertical?, androidx.compose.foundation.layout/Arrangement.Horizontal?, androidx.compose.ui/Alignment.Horizontal?, kotlin/Int, kotlin/Int, kotlin/Function3<androidx.compose.foundation.layout/FlowColumnScope, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.foundation.layout/FlowColumn|FlowColumn(androidx.compose.ui.Modifier?;androidx.compose.foundation.layout.Arrangement.Vertical?;androidx.compose.foundation.layout.Arrangement.Horizontal?;androidx.compose.ui.Alignment.Horizontal?;kotlin.Int;kotlin.Int;kotlin.Function3<androidx.compose.foundation.layout.FlowColumnScope,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
 final fun androidx.compose.foundation.layout/FlowRow(androidx.compose.ui/Modifier?, androidx.compose.foundation.layout/Arrangement.Horizontal?, androidx.compose.foundation.layout/Arrangement.Vertical?, androidx.compose.ui/Alignment.Vertical?, kotlin/Int, kotlin/Int, kotlin/Function3<androidx.compose.foundation.layout/FlowRowScope, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.foundation.layout/FlowRow|FlowRow(androidx.compose.ui.Modifier?;androidx.compose.foundation.layout.Arrangement.Horizontal?;androidx.compose.foundation.layout.Arrangement.Vertical?;androidx.compose.ui.Alignment.Vertical?;kotlin.Int;kotlin.Int;kotlin.Function3<androidx.compose.foundation.layout.FlowRowScope,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
 final fun androidx.compose.foundation.layout/PaddingValues(androidx.compose.ui.unit/Dp = ..., androidx.compose.ui.unit/Dp = ...): androidx.compose.foundation.layout/PaddingValues // androidx.compose.foundation.layout/PaddingValues|PaddingValues(androidx.compose.ui.unit.Dp;androidx.compose.ui.unit.Dp){}[0]

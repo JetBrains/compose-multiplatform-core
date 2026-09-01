@@ -74,7 +74,7 @@ public actual class SnapshotStateSet<T> : Parcelable, StateObject, MutableSet<T>
 
     @Suppress("UNCHECKED_CAST")
     override fun toString(): String =
-        (firstStateRecord as StateSetStateRecord<T>).withCurrent {
+        (firstStateRecord as StateSetStateRecord<T>).withCurrent(this) {
             "SnapshotStateSet(value=${it.set})@${hashCode()}"
         }
 
@@ -108,9 +108,9 @@ public actual class SnapshotStateSet<T> : Parcelable, StateObject, MutableSet<T>
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         val set = toSet()
-        parcel.writeInt(size)
+        parcel.writeInt(set.size)
         val iterator = set.iterator()
-        if (iterator.hasNext()) {
+        while (iterator.hasNext()) {
             parcel.writeValue(iterator.next())
         }
     }

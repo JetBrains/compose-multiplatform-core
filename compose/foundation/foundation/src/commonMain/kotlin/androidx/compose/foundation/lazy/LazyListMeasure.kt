@@ -17,7 +17,7 @@
 package androidx.compose.foundation.lazy
 
 import androidx.collection.IntList
-import androidx.compose.foundation.ComposeFoundationFlags.isSkipItemPlacementAnimationFixEnabled
+import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.internal.checkPrecondition
@@ -100,6 +100,7 @@ internal fun measureLazyList(
             layoutMaxOffset = 0,
             coroutineScope = coroutineScope,
             graphicsContext = graphicsContext,
+            shouldRunItemAnimation = true,
         )
 
         if (!isLookingAhead) {
@@ -364,24 +365,30 @@ internal fun measureLazyList(
                 density = density,
             )
 
-        if (!isSkipItemPlacementAnimationFixEnabled || shouldRunItemAnimation) {
-            itemAnimator.onMeasured(
-                consumedScroll = consumedScroll.toInt(),
-                layoutWidth = layoutWidth,
-                layoutHeight = layoutHeight,
-                positionedItems = positionedItems,
-                keyIndexMap = measuredItemProvider.keyIndexMap,
-                itemProvider = measuredItemProvider,
-                isVertical = isVertical,
-                laneCount = 1,
-                isLookingAhead = isLookingAhead,
-                hasLookaheadOccurred = hasLookaheadOccurred,
-                coroutineScope = coroutineScope,
-                layoutMinOffset = currentFirstItemScrollOffset,
-                layoutMaxOffset = currentMainAxisOffset,
-                graphicsContext = graphicsContext,
-            )
-        }
+        var firstVisibleIndex =
+            if (noExtraItems) positionedItems.firstOrNull()?.index ?: 0
+            else visibleItems.firstOrNull()?.index ?: 0
+        var lastVisibleIndex =
+            if (noExtraItems) positionedItems.lastOrNull()?.index ?: 0
+            else visibleItems.lastOrNull()?.index ?: 0
+
+        itemAnimator.onMeasured(
+            consumedScroll = consumedScroll.toInt(),
+            layoutWidth = layoutWidth,
+            layoutHeight = layoutHeight,
+            positionedItems = positionedItems,
+            keyIndexMap = measuredItemProvider.keyIndexMap,
+            itemProvider = measuredItemProvider,
+            isVertical = isVertical,
+            laneCount = 1,
+            isLookingAhead = isLookingAhead,
+            hasLookaheadOccurred = hasLookaheadOccurred,
+            coroutineScope = coroutineScope,
+            layoutMinOffset = currentFirstItemScrollOffset,
+            layoutMaxOffset = currentMainAxisOffset,
+            graphicsContext = graphicsContext,
+            shouldRunItemAnimation = shouldRunItemAnimation,
+        )
 
         if (!isLookingAhead) {
             val disappearingItemsSize = itemAnimator.minSizeToFitDisappearingItems
@@ -414,12 +421,14 @@ internal fun measureLazyList(
                 measuredItemProvider.getAndMeasure(it)
             }
 
-        val firstVisibleIndex =
-            if (noExtraItems) positionedItems.firstOrNull()?.index
-            else visibleItems.firstOrNull()?.index
-        val lastVisibleIndex =
-            if (noExtraItems) positionedItems.lastOrNull()?.index
-            else visibleItems.lastOrNull()?.index
+        if (!ComposeFoundationFlags.isLazyListItemAnimatorVisibleBoundsFixEnabled) {
+            firstVisibleIndex =
+                if (noExtraItems) positionedItems.firstOrNull()?.index ?: 0
+                else visibleItems.firstOrNull()?.index ?: 0
+            lastVisibleIndex =
+                if (noExtraItems) positionedItems.lastOrNull()?.index ?: 0
+                else visibleItems.lastOrNull()?.index ?: 0
+        }
 
         return LazyListMeasureResult(
             firstVisibleItem = firstItem,
@@ -446,8 +455,8 @@ internal fun measureLazyList(
             scrollBackAmount = scrollBackAmount,
             visibleItemsInfo =
                 updatedVisibleItems(
-                    firstVisibleIndex = firstVisibleIndex ?: 0,
-                    lastVisibleIndex = lastVisibleIndex ?: 0,
+                    firstVisibleIndex = firstVisibleIndex,
+                    lastVisibleIndex = lastVisibleIndex,
                     positionedItems = positionedItems,
                     stickingItems = stickingItems,
                 ),

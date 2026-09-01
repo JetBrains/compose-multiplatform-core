@@ -17,7 +17,6 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -50,9 +49,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 // Tests for fixed bugs
-@OptIn(ExperimentalTestApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalTestApi::class)
 class GraphicLayerBugTest {
     // https://github.com/JetBrains/compose-multiplatform/issues/4681
+    @Suppress("DEPRECATION")
     @Test
     fun draw_invalidates_inside_complex_layout() = runComposeUiTest {
         var valueForDraw by mutableStateOf(0f)
@@ -89,6 +89,7 @@ class GraphicLayerBugTest {
     }
 
     // https://youtrack.jetbrains.com/issue/CMP-8491
+    @Suppress("DEPRECATION")
     @Test
     fun draw_invalidates_inside_scroll() = runSkikoComposeUiTest(Size(100f, 200f)) {
         class ItemState(

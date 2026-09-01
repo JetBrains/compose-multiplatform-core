@@ -48,6 +48,7 @@ import org.jetbrains.skia.Image
 @OptIn(ExperimentalTestApi::class)
 class DesktopTestsTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun testNodeInDialogWindow() = runComposeUiTest {
         var show by mutableStateOf(true)
@@ -70,6 +71,7 @@ class DesktopTestsTest {
         onNodeWithTag("tag").assertDoesNotExist()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testNodeInWindow() = runComposeUiTest {
         var show by mutableStateOf(true)
@@ -92,6 +94,7 @@ class DesktopTestsTest {
         onNodeWithTag("tag").assertDoesNotExist()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testIsDialogOnDialogWindow() = runComposeUiTest {
         setContent {
@@ -109,6 +112,7 @@ class DesktopTestsTest {
         onNodeWithTag("tag").assert(hasAnyAncestor(isDialog()))
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testDrawSquare() = runDesktopComposeUiTest(10, 10) {
         setContent {
@@ -131,6 +135,7 @@ class DesktopTestsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testIdlingResource() = runDesktopComposeUiTest {
         var text by mutableStateOf("")

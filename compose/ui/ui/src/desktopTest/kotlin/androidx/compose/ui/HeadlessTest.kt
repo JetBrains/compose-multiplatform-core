@@ -31,7 +31,9 @@ interface HeadlessTest
 /**
  * Runs [runComposeUiTest] but first verifies that the test is executed in headless mode.
  */
+@Suppress("DEPRECATION")
 @OptIn(ExperimentalTestApi::class)
+@Deprecated("runComposeUiTest is deprecated")
 internal fun runHeadlessComposeUiTest(block: suspend ComposeUiTest.() -> Unit) = runComposeUiTest {
     assertTrue(GraphicsEnvironment.isHeadless(), "This is a headless test, but it's run not in headless mode")
     block()

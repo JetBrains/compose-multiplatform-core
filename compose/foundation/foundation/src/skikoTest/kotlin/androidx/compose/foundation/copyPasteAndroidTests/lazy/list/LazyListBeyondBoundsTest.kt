@@ -35,7 +35,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.BeyondBoundsLayout
@@ -63,7 +62,7 @@ import androidx.compose.ui.unit.LayoutDirection.Rtl
 import kotlin.test.Test
 import kotlinx.coroutines.CoroutineScope
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalTestApi::class)
+@OptIn(ExperimentalTestApi::class)
 class LazyListBeyondBoundsTest {
 
     // We need to wrap the inline class parameter in another class because Java can't instantiate
@@ -98,6 +97,7 @@ class LazyListBeyondBoundsTest {
     private lateinit var lazyListState: LazyListState
     private lateinit var scope: CoroutineScope
 
+    @Suppress("DEPRECATION")
     private fun runParametrizedTest(test: suspend ComposeUiTest.() -> Unit) = runComposeUiTest {
         ParamsToTest.forEach {
             param = it

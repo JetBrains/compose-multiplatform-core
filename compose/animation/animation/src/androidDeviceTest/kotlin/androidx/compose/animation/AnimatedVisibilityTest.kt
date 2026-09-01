@@ -60,7 +60,6 @@ import androidx.compose.ui.util.lerp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import leakcanary.DetectLeaksAfterTestSuccess
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -74,14 +73,13 @@ import org.junit.runner.RunWith
 @LargeTest
 @OptIn(InternalAnimationApi::class)
 class AnimatedVisibilityTest {
-    val rule = createComposeRule(StandardTestDispatcher())
+    val rule = createComposeRule()
     // Detect leaks BEFORE and AFTER compose rule work
     @get:Rule
     val ruleChain: RuleChain = RuleChain.outerRule(DetectLeaksAfterTestSuccess()).around(rule)
 
     private val frameDuration = 16
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun animateVisibilityExpandShrinkTest() {
         val testModifier by mutableStateOf(TestModifier())
@@ -186,7 +184,6 @@ class AnimatedVisibilityTest {
         }
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun animateVisibilitySlideTest() {
         val testModifier by mutableStateOf(TestModifier())
@@ -287,7 +284,6 @@ class AnimatedVisibilityTest {
         }
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun animateVisibilityContentSizeChangeTest() {
         val size = mutableStateOf(40.dp)
@@ -323,7 +319,7 @@ class AnimatedVisibilityTest {
     }
 
     // Test different animations for fade in and fade out, in a complete run without interruptions
-    @OptIn(ExperimentalAnimationApi::class, InternalAnimationApi::class)
+    @OptIn(InternalAnimationApi::class)
     @Test
     fun animateVisibilityFadeTest() {
         var visible by mutableStateOf(false)
@@ -392,7 +388,7 @@ class AnimatedVisibilityTest {
     }
 
     // Test different animations for scale in and scale out, in a complete run without interruptions
-    @OptIn(ExperimentalAnimationApi::class, InternalAnimationApi::class)
+    @OptIn(InternalAnimationApi::class)
     @Test
     fun animateVisibilityScaleTest() {
         var visible by mutableStateOf(false)
@@ -461,6 +457,19 @@ class AnimatedVisibilityTest {
     }
 
     @Test
+    fun testScaleInAndScaleOutDefaultVisibilityThreshold() {
+        val enterSpring =
+            scaleIn().config.scale?.animationSpec
+                as? androidx.compose.animation.core.SpringSpec<Float>
+        assertEquals(0.002f, enterSpring?.visibilityThreshold)
+
+        val exitSpring =
+            scaleOut().config.scale?.animationSpec
+                as? androidx.compose.animation.core.SpringSpec<Float>
+        assertEquals(0.002f, exitSpring?.visibilityThreshold)
+    }
+
+    @Test
     fun testEnterTransitionNoneAndExitTransitionNone() {
         val testModifier by mutableStateOf(TestModifier())
         val visible = MutableTransitionState(false)
@@ -505,7 +514,6 @@ class AnimatedVisibilityTest {
         State3,
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun testTransitionExtensionAnimatedVisibility() {
         val testModifier by mutableStateOf(TestModifier())
@@ -558,7 +566,6 @@ class AnimatedVisibilityTest {
         rule.runOnIdle { assertThat(disposed).isTrue() }
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun testSeekingAnimatedVisibility() {
         fun <T> spec() = tween<T>(200, easing = LinearEasing)
@@ -757,7 +764,6 @@ class AnimatedVisibilityTest {
             assertThat(boxPosition.x).isGreaterThan(positionAtInterruption.x)
         }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun animateVisibilitySlideAndVeilTest() {
         val testModifier by mutableStateOf(TestModifier())
@@ -802,7 +808,6 @@ class AnimatedVisibilityTest {
         }
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun animateVisibilityVeilInterruptionEnterToExitTest() {
         var visible by mutableStateOf(false)
@@ -856,7 +861,6 @@ class AnimatedVisibilityTest {
         assertThat(veilColor.alpha).isGreaterThan(interruptedColor.alpha)
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun animateVisibilityVeilInterruptionRemoveVeilTest() {
         var visible by mutableStateOf(false)
@@ -909,7 +913,6 @@ class AnimatedVisibilityTest {
         assertThat(veilColor.alpha).isLessThan(interruptedColor.alpha)
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun animateVisibilityVeilNoInterruptionTest() {
         var visible by mutableStateOf(false)
@@ -961,7 +964,6 @@ class AnimatedVisibilityTest {
         assertTrue(disposed)
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun verifyDirectionChangeResetsAccumulatedTransitions() {
         var visible by mutableStateOf(true)

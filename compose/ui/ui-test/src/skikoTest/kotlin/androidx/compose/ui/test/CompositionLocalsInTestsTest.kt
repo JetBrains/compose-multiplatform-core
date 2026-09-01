@@ -51,6 +51,7 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalTestApi::class)
 class CompositionLocalsInTestsTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun lifecycleInComposeTest() = runComposeUiTest {
         setContent {
@@ -59,6 +60,7 @@ class CompositionLocalsInTestsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun commonCompositionLocalsInComposeTest() = runComposeUiTest {
         setContent {

@@ -57,7 +57,6 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.util.trace
 import kotlin.Byte
-import kotlin.math.ceil
 import kotlinx.coroutines.CoroutineScope
 
 /**
@@ -226,14 +225,8 @@ internal class ResolvedStyle internal constructor() : StyleScope, InspectableVal
 
     // border
     override fun borderWidth(value: Dp) {
-        val width =
-            when (value) {
-                Dp.Unspecified -> 0.0f
-                Dp.Hairline -> 1.0f
-                else -> ceil(value.value * _density)
-            }
         recordWrite(BorderWidthId, defaultToSpec, defaultFromSpec)
-        properties?.borderWidth(width)
+        properties?.borderWidth(value)
     }
 
     override fun borderColor(value: Color) {
@@ -740,6 +733,9 @@ internal class ResolvedStyle internal constructor() : StyleScope, InspectableVal
             // Copy both colors and brushes
             val widenedPrimitivesStarted = widenPrimitivesSet(startedPrimitives, startedObjects)
             val widenedObjectsStarted = widenObjectsSet(startedPrimitives, startedObjects)
+
+            // Clear the properties that have are should no longer be in fromProperties
+            fromProperties.clearProperties(widenedPrimitivesStarted, widenedObjectsStarted)
 
             // Copy the previous values for animations that have been started
             previous.copyInto(fromProperties, widenedPrimitivesStarted, widenedObjectsStarted)

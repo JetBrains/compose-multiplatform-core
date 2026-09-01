@@ -93,3 +93,14 @@ fun createPlatformFontFamilyResolver(
 }
 
 internal expect fun createPlatformResolveInterceptor(): PlatformResolveInterceptor
+
+private val platformResolveInterceptor by lazy { createPlatformResolveInterceptor() }
+
+/**
+ * Returns the [FontWeight] a resolver built by [createPlatformFontFamilyResolver] will resolve with,
+ * after platform interception such as the iOS "Bold Text" setting. Backends use it to keep the Skia
+ * text style in sync with the resolved typeface, so font fallback matches at the same weight.
+ */
+@InternalComposeUiApi
+fun platformInterceptedFontWeight(fontWeight: FontWeight): FontWeight =
+    platformResolveInterceptor.interceptFontWeight(fontWeight)

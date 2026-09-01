@@ -33,6 +33,7 @@ import android.text.style.TypefaceSpan
 import android.text.style.UnderlineSpan
 import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.ExtractedTextRequest
 import android.view.inputmethod.HandwritingGesture
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputContentInfo
@@ -66,7 +67,6 @@ import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -77,9 +77,12 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class StatelessInputConnectionTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private lateinit var ic: StatelessInputConnection
+    private var lastExtractedTextRequestToken = -1
+    private var lastExtractedTextMonitorMode = false
+
     private val activeSession: TextInputSession =
         object : TextInputSession {
             override val text: TextFieldCharSequence
@@ -128,11 +131,16 @@ class StatelessInputConnectionTest {
                 onSendKeyEvent?.invoke(keyEvent)
             }
 
-            override fun updateTouchMode(isInTouchMode: Boolean) {
-                lastTouchModeUpdate = isInTouchMode
+            override fun updateDirectTouchInteraction(isDirectTouchInteraction: Boolean) {
+                lastDirectTouchInteractionUpdate = isDirectTouchInteraction
             }
 
             override fun requestCursorUpdates(cursorUpdateMode: Int) {}
+
+            override fun requestExtractedTextUpdates(token: Int) {
+                lastExtractedTextRequestToken = token
+                lastExtractedTextMonitorMode = true
+            }
 
             override fun onCommitContent(transferableContent: TransferableContent): Boolean {
                 return this@StatelessInputConnectionTest.onCommitContent?.invoke(
@@ -172,11 +180,30 @@ class StatelessInputConnectionTest {
 
     private var batchDepth = 0
 
-    private var lastTouchModeUpdate: Boolean? = null
+    private var lastDirectTouchInteractionUpdate: Boolean? = null
 
     @Before
     fun setup() {
         ic = StatelessInputConnection(activeSession, EditorInfo())
+    }
+
+    @Test
+    fun getExtractedText_updatesMonitorMode() {
+        value = TextFieldCharSequence("Hello", TextRange(1))
+
+        ic.getExtractedText(
+            ExtractedTextRequest().apply { token = 42 },
+            InputConnection.GET_EXTRACTED_TEXT_MONITOR,
+        )
+
+        assertThat(lastExtractedTextRequestToken).isEqualTo(42)
+        assertThat(lastExtractedTextMonitorMode).isTrue()
+
+        // Subsequent requests with 0 flags should not disable monitor mode or update token
+        ic.getExtractedText(ExtractedTextRequest().apply { token = 43 }, 0)
+
+        assertThat(lastExtractedTextRequestToken).isEqualTo(42)
+        assertThat(lastExtractedTextMonitorMode).isTrue()
     }
 
     @Test
@@ -663,19 +690,19 @@ class StatelessInputConnectionTest {
     }
 
     @Test
-    fun setSelection_updatesTouchMode() {
-        assertThat(lastTouchModeUpdate).isNull()
+    fun setSelection_updatesDirectTouchInteraction() {
+        assertThat(lastDirectTouchInteractionUpdate).isNull()
         value = TextFieldCharSequence("Hello, World")
         ic.setSelection(0, 5)
-        assertThat(lastTouchModeUpdate).isFalse()
+        assertThat(lastDirectTouchInteractionUpdate).isFalse()
     }
 
     @Test
-    fun setSelection_collapsed_updatesTouchMode() {
-        assertThat(lastTouchModeUpdate).isNull()
+    fun setSelection_collapsed_updatesDirectTouchInteraction() {
+        assertThat(lastDirectTouchInteractionUpdate).isNull()
         value = TextFieldCharSequence("Hello, World")
         ic.setSelection(0, 0)
-        assertThat(lastTouchModeUpdate).isFalse()
+        assertThat(lastDirectTouchInteractionUpdate).isFalse()
     }
 
     @Test

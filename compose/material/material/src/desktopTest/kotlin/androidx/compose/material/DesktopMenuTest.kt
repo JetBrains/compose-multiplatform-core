@@ -161,6 +161,7 @@ class DesktopMenuTest {
     }
 
     // (RTL) Anchor right is beyond the right of the window, so align popup to the window right
+    @Suppress("DEPRECATION")
     @Test
     fun menu_positioning_rtl_windowRight_belowAnchor() = runComposeUiTest {
         setContent {
@@ -179,6 +180,7 @@ class DesktopMenuTest {
             .assertLeftPositionInRootIsEqualTo(windowSize.width - 50.dp)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun `back event invokes onDismissRequest`() = runComposeUiTest {
         var dismissCount = 0
@@ -201,6 +203,7 @@ class DesktopMenuTest {
         assertEquals(1, dismissCount)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun `navigate DropDownMenu using arrows`() = runComposeUiTest {
         var item1Clicked = 0
@@ -261,6 +264,7 @@ class DesktopMenuTest {
     }
 
     @OptIn(ExperimentalMaterialApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun `right click opens DropdownMenuState`() = runComposeUiTest {
         val state = DropdownMenuState(DropdownMenuState.Status.Closed)
@@ -283,6 +287,7 @@ class DesktopMenuTest {
     }
 
     @OptIn(ExperimentalMaterialApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun `right doesn't open DropdownMenuState when disabled`() = runComposeUiTest {
         val state = DropdownMenuState(DropdownMenuState.Status.Closed)
@@ -305,6 +310,7 @@ class DesktopMenuTest {
         assertThat(state.status == DropdownMenuState.Status.Closed)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun `pass scroll state`() = runComposeUiTest {
         val scrollState = ScrollState(0)

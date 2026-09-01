@@ -20,7 +20,6 @@ import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.rememberSplineBasedDecay
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.assertModifierIsPure
 import androidx.compose.foundation.assertThat
@@ -105,8 +104,6 @@ import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.materialize
-import androidx.compose.ui.node.ModifierNodeElement
-import androidx.compose.ui.node.TraversableNode
 import androidx.compose.ui.platform.InspectableValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -157,8 +154,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.test.IgnoreIosTarget
-import kotlinx.test.IgnoreJsTarget
-import kotlinx.test.IgnoreWasmTarget
 
 @OptIn(ExperimentalTestApi::class)
 class ScrollableTest {
@@ -187,6 +182,7 @@ class ScrollableTest {
         isDebugInspectorInfoEnabled = false
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_horizontalScroll() = runComposeUiTest {
         var total = 0f
@@ -232,6 +228,7 @@ class ScrollableTest {
         runOnIdle { assertThat(total).isLessThan(0.01f) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_horizontalScroll_mouseWheel() = runComposeUiTest {
         var total = 0f
@@ -266,6 +263,7 @@ class ScrollableTest {
         runOnIdle { assertThat(total).isLessThan(0.01f) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_horizontalScroll_2d_mouseWheel() = runComposeUiTest {
         var total = 0f
@@ -300,6 +298,7 @@ class ScrollableTest {
         runOnIdle { assertThat(total).isLessThan(0.01f) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollableHorizontal_diagonalScroll_2d_mouseWheel() = runComposeUiTest {
         var total = 0f
@@ -357,6 +356,7 @@ class ScrollableTest {
         runOnIdle { assertThat(total).isEqualTo(0f) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     @Ignore // TODO https://youtrack.jetbrains.com/issue/CMP-2965
     fun scrollable_horizontalScroll_mouseWheel_badMotionEvent() = runComposeUiTest {
@@ -383,6 +383,7 @@ class ScrollableTest {
      * at least one child within the scrollable must be focusable. (This matches the behavior in
      * Views.)
      */
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_horizontalScroll_keyboardPageUpAndDown() = runComposeUiTest {
         var scrollAmount = 0f
@@ -445,6 +446,7 @@ class ScrollableTest {
         runOnIdle { assertThat(scrollAmount).isGreaterThan(0f) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_horizontalScroll_reverse() = runComposeUiTest {
         var total = 0f
@@ -494,6 +496,7 @@ class ScrollableTest {
         runOnIdle { assertThat(total).isLessThan(0.01f) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_horizontalScroll_reverse_mouseWheel() = runComposeUiTest {
         var total = 0f
@@ -531,6 +534,7 @@ class ScrollableTest {
         runOnIdle { assertThat(total).isLessThan(0.01f) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_verticalScroll() = runComposeUiTest {
         var total = 0f
@@ -576,6 +580,7 @@ class ScrollableTest {
         runOnIdle { assertThat(total).isLessThan(0.01f) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_verticalScroll_mouseWheel() = runComposeUiTest {
         var total = 0f
@@ -609,6 +614,7 @@ class ScrollableTest {
         runOnIdle { assertThat(total).isLessThan(0.01f) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     @Ignore // TODO https://youtrack.jetbrains.com/issue/CMP-2965
     fun scrollable_verticalScroll_mouseWheel_badMotionEvent() = runComposeUiTest {
@@ -637,6 +643,7 @@ class ScrollableTest {
         runOnIdle { assertThat(total).isLessThan(0.01f) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollableVertical_diagonalScroll_2d_mouseWheel() = runComposeUiTest {
         var total = 0f
@@ -703,6 +710,7 @@ class ScrollableTest {
         runOnIdle { assertThat(total).isZero() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_nestedDiagonalScroll_mouseWheel_triggersOnAngle() = runComposeUiTest {
         var totalVerticalScroll = 0f
@@ -801,6 +809,7 @@ class ScrollableTest {
      * at least one child within the scrollable must be focusable. (This matches the behavior in
      * Views.)
      */
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_verticalScroll_keyboardPageUpAndDown() = runComposeUiTest {
         var scrollAmount = 0f
@@ -862,6 +871,7 @@ class ScrollableTest {
         runOnIdle { assertThat(scrollAmount).isGreaterThan(0f) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_verticalScroll_reversed() = runComposeUiTest {
         var total = 0f
@@ -911,6 +921,7 @@ class ScrollableTest {
         runOnIdle { assertThat(total).isLessThan(0.01f) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_verticalScroll_reversed_mouseWheel() = runComposeUiTest {
         var total = 0f
@@ -949,6 +960,7 @@ class ScrollableTest {
         runOnIdle { assertThat(total).isLessThan(0.01f) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_disabledWontCallLambda() = runComposeUiTest {
         val enabled = mutableStateOf(true)
@@ -990,6 +1002,7 @@ class ScrollableTest {
         runOnIdle { assertThat(total).isEqualTo(prevTotal) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     @Ignore // TODO https://youtrack.jetbrains.com/issue/CMP-2965
     fun scrollable_startWithoutSlop_ifFlinging() = runComposeUiTest {
@@ -1030,6 +1043,7 @@ class ScrollableTest {
         assertThat(total).isEqualTo(expected)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     @Ignore // TODO https://youtrack.jetbrains.com/issue/CMP-2965
     fun scrollable_blocksDownEvents_ifFlingingCaught() = runComposeUiTest {
@@ -1082,6 +1096,7 @@ class ScrollableTest {
         // shouldn't assert in clickable lambda
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_snappingScrolling() = runComposeUiTest {
         var total = 0f
@@ -1107,6 +1122,7 @@ class ScrollableTest {
         assertEquals(total, 800f, 0.001f)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_explicitDisposal() = runComposeUiTest {
         mainClock.autoAdvance = false
@@ -1159,6 +1175,7 @@ class ScrollableTest {
         assertThat(total).isEqualTo(prevTotal)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_nestedDrag() = runComposeUiTest {
         var innerDrag = 0f
@@ -1221,6 +1238,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_nestedScroll_childPartialConsumptionForMouseWheel() = runComposeUiTest {
         var innerDrag = 0f
@@ -1280,6 +1298,7 @@ class ScrollableTest {
      * at least one child within the scrollable must be focusable. (This matches the behavior in
      * Views.)
      */
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_nestedScroll_childPartialConsumptionForKeyboardPageUpAndDown() = runComposeUiTest {
         var innerDrag = 0f
@@ -1354,6 +1373,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_nestedScroll_childPartialConsumptionForSemantics_horizontal() = runComposeUiTest {
         var innerDrag = 0f
@@ -1407,6 +1427,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_nestedScroll_childPartialConsumptionForSemantics_vertical() = runComposeUiTest {
         var innerDrag = 0f
@@ -1456,6 +1477,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     @Ignore // TODO https://youtrack.jetbrains.com/issue/CMP-2965
     fun focusScroll_nestedScroll_childPartialConsumptionForSemantics() = runComposeUiTest {
@@ -1491,6 +1513,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_nestedFling() = runComposeUiTest {
         var innerDrag = 0f
@@ -1550,6 +1573,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_nestedScrollAbove_respectsPreConsumption() = runComposeUiTest {
         var value = 0f
@@ -1612,6 +1636,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     @Ignore // TODO https://youtrack.jetbrains.com/issue/CMP-2965
     fun scrollable_nestedScrollAbove_proxiesPostCycles() = runComposeUiTest {
@@ -1682,6 +1707,7 @@ class ScrollableTest {
         waitForIdle()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     @Ignore // TODO https://youtrack.jetbrains.com/issue/CMP-2965
     fun scrollable_nestedScrollAbove_reversed_proxiesPostCycles() = runComposeUiTest {
@@ -1753,6 +1779,7 @@ class ScrollableTest {
         waitForIdle()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_nestedScrollBelow_listensDispatches() = runComposeUiTest {
         var value = 0f
@@ -1818,6 +1845,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_nestedScroll_allowParentWhenDisabled() = runComposeUiTest {
         var childValue = 0f
@@ -1875,6 +1903,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_nestedScroll_disabledConnectionNoOp() = runComposeUiTest {
         var childValue = 0f
@@ -1952,6 +1981,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_nestedFlingCancellation_shouldPreventDeltasFromPropagating() = runComposeUiTest {
         var childDeltas = 0f
@@ -2007,7 +2037,7 @@ class ScrollableTest {
         assertThat(childDeltas).isEqualTo(dragged - touchSlop)
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_nestedFling_shouldCancelWhenHitTheBounds_ifRemoved() = runComposeUiTest {
 
@@ -2051,7 +2081,7 @@ class ScrollableTest {
         runOnIdle { assertThat(latestScroll).isEqualTo(Offset.Zero) }
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_nestedFling_shouldContinueSendingDeltasWhenHitBounds() = runComposeUiTest {
 
@@ -2088,6 +2118,7 @@ class ScrollableTest {
         assertThat(flingDeltas.y).isNonZero()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_nestedFling_parentShouldFlingWithVelocityLeft() = runComposeUiTest {
         var postFlingCalled = false
@@ -2155,6 +2186,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_nestedFling_parentShouldFlingWithVelocityLeft_whenInnerDisappears() = runComposeUiTest {
         var postFlingCalled = false
@@ -2215,6 +2247,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_bothOrientations_proxiesPostFling() = runComposeUiTest {
         val velocityFlung = 5000f
@@ -2274,6 +2307,7 @@ class ScrollableTest {
         waitForIdle()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_interactionSource() = runComposeUiTest {
         val interactionSource = MutableInteractionSource()
@@ -2320,6 +2354,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_interactionSource_resetWhenDisposed() = runComposeUiTest {
         val interactionSource = MutableInteractionSource()
@@ -2377,6 +2412,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_flingBehaviourCalled_whenVelocity0() = runComposeUiTest {
         var total = 0f
@@ -2415,6 +2451,7 @@ class ScrollableTest {
         assertThat(flingVelocity).isGreaterThan(-0.01f)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_flingBehaviourCalled() = runComposeUiTest {
         var total = 0f
@@ -2449,6 +2486,7 @@ class ScrollableTest {
         assertEquals(1000f, flingVelocity, 5f)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_flingBehaviourCalled_reversed() = runComposeUiTest {
         var total = 0f
@@ -2484,6 +2522,7 @@ class ScrollableTest {
         assertEquals(flingVelocity, -1000f, 5f)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_flingBehaviourCalled_correctScope() = runComposeUiTest {
         var total = 0f
@@ -2528,6 +2567,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_flingBehaviourCalled_reversed_correctScope() = runComposeUiTest {
         var total = 0f
@@ -2573,6 +2613,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_scrollByWorksWithRepeatableAnimations() = runComposeUiTest {
         mainClock.autoAdvance = false
@@ -2651,6 +2692,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_cancellingAnimateScrollUpdatesIsScrollInProgress() = runComposeUiTest {
         mainClock.autoAdvance = false
@@ -2686,6 +2728,7 @@ class ScrollableTest {
         runOnIdle { assertThat(controller.isScrollInProgress).isFalse() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_preemptingAnimateScrollUpdatesIsScrollInProgress() = runComposeUiTest {
         mainClock.autoAdvance = false
@@ -2728,6 +2771,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_multiDirectionsShouldPropagateOrthogonalAxisToNextParentWithSameDirection() = runComposeUiTest {
         var innerDelta = 0f
@@ -2785,6 +2829,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun nestedScrollable_noFlingContinuationInCrossAxis_shouldAllowClicksOnCrossAxis_scrollable() = runComposeUiTest {
         var clicked = 0
@@ -2819,6 +2864,7 @@ class ScrollableTest {
 
     // b/179417109 Double checks that in a nested scroll cycle, the parent post scroll
     // consumption is taken into consideration.
+    @Suppress("DEPRECATION")
     @Test
     fun dispatchScroll_shouldReturnConsumedDeltaInNestedScrollChain() = runComposeUiTest {
         var consumedInner = 0f
@@ -2896,6 +2942,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testInspectorValue() = runComposeUiTest {
         val controller = ScrollableState(consumeScrollDelta = { it })
@@ -2918,6 +2965,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun producingEqualMaterializedModifierAfterRecomposition() = runComposeUiTest {
         val state = ScrollableState { it }
@@ -2943,6 +2991,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun focusStaysInScrollableEvenThoughThereIsACloserItemOutside() = runComposeUiTest {
         lateinit var focusManager: FocusManager
@@ -2970,6 +3019,7 @@ class ScrollableTest {
         runOnIdle { assertThat(nextItemIsFocused).isTrue() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun verticalScrollable_assertVelocityCalculationIsSimilarInsideOutsideVelocityTracker() = runComposeUiTest {
         // arrange
@@ -3011,6 +3061,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun horizontalScrollable_assertVelocityCalculationIsSimilarInsideOutsideVelocityTracker() = runComposeUiTest {
         // arrange
@@ -3052,6 +3103,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun disableSystemAnimations_defaultFlingBehaviorShouldContinueToWork() = runComposeUiTest {
 
@@ -3088,6 +3140,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun defaultFlingBehavior_useScrollMotionDurationScale() = runComposeUiTest {
 
@@ -3144,6 +3197,7 @@ class ScrollableTest {
         runOnIdle { assertThat(defaultFlingBehavior?.lastAnimationCycleCount).isEqualTo(1) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollable_noMomentum_shouldChangeScrollStateAfterRelease() = runComposeUiTest {
         val scrollState = ScrollState(0)
@@ -3171,6 +3225,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun defaultScrollableState_scrollByWithNan_shouldFilterOutNan() = runComposeUiTest {
         val controller = ScrollableState {
@@ -3196,6 +3251,7 @@ class ScrollableTest {
         onNodeWithTag(scrollableBoxTag).performTouchInput { swipeLeft() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun equalInputs_shouldResolveToEquals() = runComposeUiTest {
         val state = ScrollableState { 0f }
@@ -3209,6 +3265,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollableState_checkLastScrollDirection() = runComposeUiTest {
         val controller = ScrollableState { it }
@@ -3271,6 +3328,7 @@ class ScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun enabledChange_semanticsShouldBeCleared() = runComposeUiTest {
         var enabled by mutableStateOf(true)
@@ -3307,6 +3365,7 @@ class ScrollableTest {
             .assert(SemanticsMatcher.keyIsDefined(SemanticsActions.ScrollByOffset))
     }
 
+    @Suppress("DEPRECATION")
     @Test
     @IgnoreIosTarget // Fling behavior on iOS does not use screen density
     fun onDensityChange_shouldUpdateFlingBehavior() = runComposeUiTest {
@@ -3343,6 +3402,7 @@ class ScrollableTest {
         runOnIdle { assertThat(flingDelta).isNotEqualTo(previousDelta) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun onNestedFlingCancelled_shouldResetFlingState() = runComposeUiTest {
         mainClock.autoAdvance = false

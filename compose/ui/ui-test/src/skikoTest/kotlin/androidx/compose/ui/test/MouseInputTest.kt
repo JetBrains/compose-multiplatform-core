@@ -40,6 +40,7 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalTestApi::class, ExperimentalFoundationApi::class)
 class MouseInputTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun testPerformClick() = runComposeUiTest {
         var clicked = false
@@ -60,6 +61,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testMouseClick() = runComposeUiTest {
         var clicked = false
@@ -82,6 +84,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testMousePressDragAndRelease() = runComposeUiTest {
         var pressDetected = false
@@ -146,6 +149,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testMouseEnterExit() = runComposeUiTest {
         var mouseEnterDetected = false
@@ -178,6 +182,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun updatePointerToDoesNotSendMoveEvent() = runComposeUiTest {
         var mouseMoveDetected = false
@@ -203,6 +208,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testScroll() = runComposeUiTest {
         var scrollDelta = Offset.Unspecified
@@ -236,6 +242,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testClick() = runComposeUiTest {
         var clickDetected = false
@@ -259,6 +266,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testRightClick() = runComposeUiTest {
         var rightClickDetected = false
@@ -282,6 +290,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testDoubleClick() = runComposeUiTest {
         var doubleClickDetected = false
@@ -309,6 +318,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testTripleClick() = runComposeUiTest {
         var clickCount = 0
@@ -335,6 +345,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testLongClick() = runComposeUiTest {
         var longClickDetected = false
@@ -362,6 +373,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testDragAndDrop() = runComposeUiTest {
         var dragOffset = Offset.Zero
@@ -394,6 +406,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testSmoothScroll() = runComposeUiTest {
         var scrollDelta = Offset.Zero

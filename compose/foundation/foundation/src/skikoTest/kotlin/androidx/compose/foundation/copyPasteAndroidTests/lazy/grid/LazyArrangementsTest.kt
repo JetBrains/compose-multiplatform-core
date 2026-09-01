@@ -84,6 +84,7 @@ class LazyArrangementsTest {
 
     // cases when we have not enough items to fill min constraints:
 
+    @Suppress("DEPRECATION")
     @Test
     fun vertical_defaultArrangementIsTop() = runSkikoComposeUiTest {
         setContent {
@@ -100,18 +101,21 @@ class LazyArrangementsTest {
         assertArrangementForTwoItems(Arrangement.Top)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun vertical_centerArrangement() = runSkikoComposeUiTest {
         composeVerticalGridWith(Arrangement.Center)
         assertArrangementForTwoItems(Arrangement.Center)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun vertical_bottomArrangement() = runSkikoComposeUiTest {
         composeVerticalGridWith(Arrangement.Bottom)
         assertArrangementForTwoItems(Arrangement.Bottom)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun vertical_spacedArrangementNotFillingViewport() = runSkikoComposeUiTest {
         val arrangement = Arrangement.spacedBy(10.dp)
@@ -119,6 +123,7 @@ class LazyArrangementsTest {
         assertArrangementForTwoItems(arrangement)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun horizontal_defaultArrangementIsStart() = runSkikoComposeUiTest {
         setContent {
@@ -135,18 +140,21 @@ class LazyArrangementsTest {
         assertArrangementForTwoItems(Arrangement.Start, LayoutDirection.Ltr)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun horizontal_centerArrangement() = runSkikoComposeUiTest {
         composeHorizontalWith(Arrangement.Center, LayoutDirection.Ltr)
         assertArrangementForTwoItems(Arrangement.Center, LayoutDirection.Ltr)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun horizontal_endArrangement() = runSkikoComposeUiTest {
         composeHorizontalWith(Arrangement.End, LayoutDirection.Ltr)
         assertArrangementForTwoItems(Arrangement.End, LayoutDirection.Ltr)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun horizontal_spacedArrangementNotFillingViewport() = runSkikoComposeUiTest {
         val arrangement = Arrangement.spacedBy(10.dp)
@@ -154,18 +162,21 @@ class LazyArrangementsTest {
         assertArrangementForTwoItems(arrangement, LayoutDirection.Ltr)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun horizontal_rtl_startArrangement() = runSkikoComposeUiTest {
         composeHorizontalWith(Arrangement.Center, LayoutDirection.Rtl)
         assertArrangementForTwoItems(Arrangement.Center, LayoutDirection.Rtl)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun horizontal_rtl_endArrangement() = runSkikoComposeUiTest {
         composeHorizontalWith(Arrangement.End, LayoutDirection.Rtl)
         assertArrangementForTwoItems(Arrangement.End, LayoutDirection.Rtl)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun horizontal_rtl_spacedArrangementNotFillingViewport() = runSkikoComposeUiTest {
         val arrangement = Arrangement.spacedBy(10.dp)
@@ -175,6 +186,7 @@ class LazyArrangementsTest {
 
     // wrap content and spacing
 
+    @Suppress("DEPRECATION")
     @Test
     fun vertical_spacing_affects_wrap_content() = runSkikoComposeUiTest {
         setContent {
@@ -194,6 +206,7 @@ class LazyArrangementsTest {
             .assertHeightIsEqualTo(itemSize * 3)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun horizontal_spacing_affects_wrap_content() = runSkikoComposeUiTest {
         setContent {
@@ -215,6 +228,7 @@ class LazyArrangementsTest {
 
     // spacing added when we have enough items to fill the viewport
 
+    @Suppress("DEPRECATION")
     @Test
     fun vertical_spacing_scrolledToTheTop() = runSkikoComposeUiTest {
         setContent {
@@ -236,6 +250,7 @@ class LazyArrangementsTest {
             .assertTopPositionInRootIsEqualTo(itemSize * 2)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun vertical_spacing_scrolledToTheBottom() = runSkikoComposeUiTest {
         setContent {
@@ -262,6 +277,7 @@ class LazyArrangementsTest {
             .assertTopPositionInRootIsEqualTo(itemSize * 2.5f)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun horizontal_spacing_scrolledToTheStart() = runSkikoComposeUiTest {
         setContent {
@@ -283,6 +299,7 @@ class LazyArrangementsTest {
             .assertLeftPositionInRootIsEqualTo(itemSize * 2)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun horizontal_spacing_scrolledToTheEnd() = runSkikoComposeUiTest {
         setContent {
@@ -309,6 +326,7 @@ class LazyArrangementsTest {
             .assertLeftPositionInRootIsEqualTo(itemSize * 2.5f)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun vertical_scrollingByExactlyTheItemSizePlusSpacer_switchesTheFirstVisibleItem() = runSkikoComposeUiTest {
         val itemSizePx = 30
@@ -348,6 +366,7 @@ class LazyArrangementsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun vertical_scrollingByExactlyTheItemSizePlusHalfTheSpacer_staysOnTheSameItem() = runSkikoComposeUiTest {
         val itemSizePx = 30
@@ -388,6 +407,7 @@ class LazyArrangementsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun horizontal_scrollingByExactlyTheItemSizePlusSpacer_switchesTheFirstVisibleItem() = runSkikoComposeUiTest {
         val itemSizePx = 30
@@ -427,6 +447,7 @@ class LazyArrangementsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun horizontal_scrollingByExactlyTheItemSizePlusHalfTheSpacer_staysOnTheSameItem() = runSkikoComposeUiTest {
         val itemSizePx = 30
@@ -469,6 +490,7 @@ class LazyArrangementsTest {
 
     // with reverseLayout == true
 
+    @Suppress("DEPRECATION")
     @Test
     fun vertical_defaultArrangementIsBottomWithReverseLayout() = runSkikoComposeUiTest {
         setContent {
@@ -486,6 +508,7 @@ class LazyArrangementsTest {
         assertArrangementForTwoItems(Arrangement.Bottom, reverseLayout = true)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun horizontal_defaultArrangementIsEndWithReverseLayout() = runSkikoComposeUiTest {
         setContent {
@@ -505,6 +528,7 @@ class LazyArrangementsTest {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun vertical_whenArrangementChanges() = runSkikoComposeUiTest {
         var arrangement by mutableStateOf(Arrangement.Top)
@@ -529,6 +553,7 @@ class LazyArrangementsTest {
         assertArrangementForTwoItems(Arrangement.Bottom)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun horizontal_whenArrangementChanges() = runSkikoComposeUiTest {
         var arrangement by mutableStateOf(Arrangement.Start)
@@ -553,6 +578,7 @@ class LazyArrangementsTest {
         assertArrangementForTwoItems(Arrangement.End, LayoutDirection.Ltr)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun vertical_negativeSpacing_itemsVisible() = runSkikoComposeUiTest {
         val state = LazyGridState()
@@ -595,6 +621,7 @@ class LazyArrangementsTest {
             .assertTopPositionInRootIsEqualTo(0.dp)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun horizontal_negativeSpacing_negative_itemsVisible() = runSkikoComposeUiTest {
         val state = LazyGridState()
@@ -637,6 +664,7 @@ class LazyArrangementsTest {
             .assertLeftPositionInRootIsEqualTo(0.dp)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun vertical_negativeSpacingLargerThanItem_itemsVisible() = runSkikoComposeUiTest {
         val state = LazyGridState(firstVisibleItemIndex = 2)
@@ -665,6 +693,7 @@ class LazyArrangementsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun horizontal_negativeSpacingLargerThanItem_itemsVisible() = runSkikoComposeUiTest {
         val state = LazyGridState(firstVisibleItemIndex = 2)

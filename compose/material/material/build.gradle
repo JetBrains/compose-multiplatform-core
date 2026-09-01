@@ -32,7 +32,7 @@ plugins {
 
 androidXMultiplatform {
     androidLibrary {
-        compileSdk { version = release(37) }
+        compileSdk { version = release(35) }
         namespace = "androidx.compose.material"
         androidResources.enable = true
     }
@@ -104,7 +104,6 @@ androidx {
     mavenVersion = LibraryVersions.COMPOSE
     inceptionYear = "2018"
     description = "Compose Material Design Components library"
-    legacyDisableKotlinStrictApiMode = true
     samples(project(":compose:material:material:material-samples"))
     addGoldenImageAssets()
 }

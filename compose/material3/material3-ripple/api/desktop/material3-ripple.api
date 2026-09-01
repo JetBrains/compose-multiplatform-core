@@ -1,0 +1,98 @@
+public final class androidx/compose/material3/ripple/RippleKt {
+	public static final fun createRippleModifierNode (Landroidx/compose/foundation/interaction/InteractionSource;Lkotlin/jvm/functions/Function0;)Landroidx/compose/ui/node/DelegatableNode;
+}
+
+public final class androidx/compose/material3/ripple/RippleNodeConfiguration {
+	public static final field $stable I
+	public synthetic fun <init> (ZFLandroidx/compose/ui/graphics/ColorProducer;Landroidx/compose/material3/ripple/RippleNodeConfiguration$PressConfiguration;Landroidx/compose/material3/ripple/RippleNodeConfiguration$FocusConfiguration;Landroidx/compose/material3/ripple/RippleNodeConfiguration$HoverConfiguration;Landroidx/compose/material3/ripple/RippleNodeConfiguration$DragConfiguration;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getColor ()Landroidx/compose/ui/graphics/ColorProducer;
+	public final fun getDragConfiguration ()Landroidx/compose/material3/ripple/RippleNodeConfiguration$DragConfiguration;
+	public final fun getFocusConfiguration ()Landroidx/compose/material3/ripple/RippleNodeConfiguration$FocusConfiguration;
+	public final fun getHoverConfiguration ()Landroidx/compose/material3/ripple/RippleNodeConfiguration$HoverConfiguration;
+	public final fun getPressConfiguration ()Landroidx/compose/material3/ripple/RippleNodeConfiguration$PressConfiguration;
+	public final fun getRadius-D9Ej5fM ()F
+	public fun hashCode ()I
+	public final fun isBounded ()Z
+}
+
+public abstract interface class androidx/compose/material3/ripple/RippleNodeConfiguration$DragConfiguration {
+}
+
+public final class androidx/compose/material3/ripple/RippleNodeConfiguration$DragConfiguration$None : androidx/compose/material3/ripple/RippleNodeConfiguration$DragConfiguration {
+	public static final field $stable I
+	public static final field INSTANCE Landroidx/compose/material3/ripple/RippleNodeConfiguration$DragConfiguration$None;
+}
+
+public final class androidx/compose/material3/ripple/RippleNodeConfiguration$DragConfiguration$Opacity : androidx/compose/material3/ripple/RippleNodeConfiguration$DragConfiguration {
+	public static final field $stable I
+	public fun <init> (F)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAlpha ()F
+	public fun hashCode ()I
+}
+
+public abstract interface class androidx/compose/material3/ripple/RippleNodeConfiguration$FocusConfiguration {
+}
+
+public final class androidx/compose/material3/ripple/RippleNodeConfiguration$FocusConfiguration$InsetRing : androidx/compose/material3/ripple/RippleNodeConfiguration$FocusConfiguration {
+	public static final field $stable I
+	public synthetic fun <init> (Landroidx/compose/ui/graphics/Shape;FFLandroidx/compose/ui/graphics/ColorProducer;FFLandroidx/compose/ui/graphics/ColorProducer;Landroidx/compose/animation/core/FiniteAnimationSpec;Landroidx/compose/animation/core/FiniteAnimationSpec;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFocusingAnimationSpec ()Landroidx/compose/animation/core/FiniteAnimationSpec;
+	public final fun getInnerStrokeColor ()Landroidx/compose/ui/graphics/ColorProducer;
+	public final fun getInnerStrokeInset-D9Ej5fM ()F
+	public final fun getInnerStrokeWidth-D9Ej5fM ()F
+	public final fun getOuterStrokeColor ()Landroidx/compose/ui/graphics/ColorProducer;
+	public final fun getOuterStrokeInset-D9Ej5fM ()F
+	public final fun getOuterStrokeWidth-D9Ej5fM ()F
+	public final fun getShape ()Landroidx/compose/ui/graphics/Shape;
+	public final fun getUnfocusingAnimationSpec ()Landroidx/compose/animation/core/FiniteAnimationSpec;
+	public fun hashCode ()I
+}
+
+public final class androidx/compose/material3/ripple/RippleNodeConfiguration$FocusConfiguration$None : androidx/compose/material3/ripple/RippleNodeConfiguration$FocusConfiguration {
+	public static final field $stable I
+	public static final field INSTANCE Landroidx/compose/material3/ripple/RippleNodeConfiguration$FocusConfiguration$None;
+}
+
+public final class androidx/compose/material3/ripple/RippleNodeConfiguration$FocusConfiguration$Opacity : androidx/compose/material3/ripple/RippleNodeConfiguration$FocusConfiguration {
+	public static final field $stable I
+	public fun <init> (F)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAlpha ()F
+	public fun hashCode ()I
+}
+
+public abstract interface class androidx/compose/material3/ripple/RippleNodeConfiguration$HoverConfiguration {
+}
+
+public final class androidx/compose/material3/ripple/RippleNodeConfiguration$HoverConfiguration$None : androidx/compose/material3/ripple/RippleNodeConfiguration$HoverConfiguration {
+	public static final field $stable I
+	public static final field INSTANCE Landroidx/compose/material3/ripple/RippleNodeConfiguration$HoverConfiguration$None;
+}
+
+public final class androidx/compose/material3/ripple/RippleNodeConfiguration$HoverConfiguration$Opacity : androidx/compose/material3/ripple/RippleNodeConfiguration$HoverConfiguration {
+	public static final field $stable I
+	public fun <init> (F)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAlpha ()F
+	public fun hashCode ()I
+}
+
+public abstract interface class androidx/compose/material3/ripple/RippleNodeConfiguration$PressConfiguration {
+}
+
+public final class androidx/compose/material3/ripple/RippleNodeConfiguration$PressConfiguration$None : androidx/compose/material3/ripple/RippleNodeConfiguration$PressConfiguration {
+	public static final field $stable I
+	public static final field INSTANCE Landroidx/compose/material3/ripple/RippleNodeConfiguration$PressConfiguration$None;
+}
+
+public final class androidx/compose/material3/ripple/RippleNodeConfiguration$PressConfiguration$Opacity : androidx/compose/material3/ripple/RippleNodeConfiguration$PressConfiguration {
+	public static final field $stable I
+	public fun <init> (F)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAlpha ()F
+	public fun hashCode ()I
+}
+

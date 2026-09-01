@@ -91,9 +91,8 @@ import kotlin.math.min
         ),
     level = DeprecationLevel.HIDDEN,
 )
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LinearProgressIndicator(
+public fun LinearProgressIndicator(
     progress: () -> Float,
     modifier: Modifier = Modifier,
     color: Color = ProgressIndicatorDefaults.linearColor,
@@ -136,9 +135,8 @@ fun LinearProgressIndicator(
  * @param drawStopIndicator lambda that will be called to draw the stop indicator. Note that a
  *   custom indicator implementation should also handle RTL layouts.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LinearProgressIndicator(
+public fun LinearProgressIndicator(
     progress: () -> Float,
     modifier: Modifier = Modifier,
     color: Color = ProgressIndicatorDefaults.linearColor,
@@ -212,9 +210,8 @@ fun LinearProgressIndicator(
         ReplaceWith("LinearProgressIndicator(modifier, color, trackColor, strokeCap, gapSize)"),
     level = DeprecationLevel.HIDDEN,
 )
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LinearProgressIndicator(
+public fun LinearProgressIndicator(
     modifier: Modifier = Modifier,
     color: Color = ProgressIndicatorDefaults.linearColor,
     trackColor: Color = ProgressIndicatorDefaults.linearTrackColor,
@@ -246,9 +243,8 @@ fun LinearProgressIndicator(
  * @param strokeCap stroke cap to use for the ends of this progress indicator
  * @param gapSize size of the gap between the progress indicator and the track
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LinearProgressIndicator(
+public fun LinearProgressIndicator(
     modifier: Modifier = Modifier,
     color: Color = ProgressIndicatorDefaults.linearColor,
     trackColor: Color = ProgressIndicatorDefaults.linearTrackColor,
@@ -352,13 +348,13 @@ fun LinearProgressIndicator(
         ),
 )
 @Composable
-fun LinearProgressIndicator(
+public fun LinearProgressIndicator(
     progress: Float,
     modifier: Modifier = Modifier,
     color: Color = ProgressIndicatorDefaults.linearColor,
     trackColor: Color = ProgressIndicatorDefaults.linearTrackColor,
     strokeCap: StrokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
-) =
+): Unit =
     LinearProgressIndicator(
         progress = { progress },
         modifier = modifier,
@@ -370,12 +366,12 @@ fun LinearProgressIndicator(
 @Suppress("DEPRECATION")
 @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
 @Composable
-fun LinearProgressIndicator(
+public fun LinearProgressIndicator(
     progress: Float,
     modifier: Modifier = Modifier,
     color: Color = ProgressIndicatorDefaults.linearColor,
     trackColor: Color = ProgressIndicatorDefaults.linearTrackColor,
-) =
+): Unit =
     LinearProgressIndicator(
         progress,
         modifier,
@@ -386,11 +382,11 @@ fun LinearProgressIndicator(
 
 @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
 @Composable
-fun LinearProgressIndicator(
+public fun LinearProgressIndicator(
     modifier: Modifier = Modifier,
     color: Color = ProgressIndicatorDefaults.linearColor,
     trackColor: Color = ProgressIndicatorDefaults.linearTrackColor,
-) =
+): Unit =
     LinearProgressIndicator(
         modifier,
         color,
@@ -472,9 +468,8 @@ private fun DrawScope.drawLinearIndicator(
         ),
     level = DeprecationLevel.HIDDEN,
 )
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CircularProgressIndicator(
+public fun CircularProgressIndicator(
     progress: () -> Float,
     modifier: Modifier = Modifier,
     color: Color = ProgressIndicatorDefaults.circularColor,
@@ -518,9 +513,8 @@ fun CircularProgressIndicator(
  * @param strokeCap stroke cap to use for the ends of this progress indicator
  * @param gapSize size of the gap between the progress indicator and the track
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CircularProgressIndicator(
+public fun CircularProgressIndicator(
     progress: () -> Float,
     modifier: Modifier = Modifier,
     color: Color = ProgressIndicatorDefaults.circularColor,
@@ -587,15 +581,14 @@ fun CircularProgressIndicator(
         ),
     level = DeprecationLevel.HIDDEN,
 )
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CircularProgressIndicator(
+public fun CircularProgressIndicator(
     modifier: Modifier = Modifier,
     color: Color = ProgressIndicatorDefaults.circularColor,
     strokeWidth: Dp = ProgressIndicatorDefaults.CircularStrokeWidth,
     trackColor: Color = ProgressIndicatorDefaults.circularIndeterminateTrackColor,
     strokeCap: StrokeCap = ProgressIndicatorDefaults.CircularIndeterminateStrokeCap,
-) =
+): Unit =
     CircularProgressIndicator(
         modifier = modifier,
         color = color,
@@ -623,9 +616,8 @@ fun CircularProgressIndicator(
  * @param strokeCap stroke cap to use for the ends of this progress indicator
  * @param gapSize size of the gap between the progress indicator and the track
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CircularProgressIndicator(
+public fun CircularProgressIndicator(
     modifier: Modifier = Modifier,
     color: Color = ProgressIndicatorDefaults.circularColor,
     strokeWidth: Dp = ProgressIndicatorDefaults.CircularStrokeWidth,
@@ -699,14 +691,14 @@ fun CircularProgressIndicator(
         ),
 )
 @Composable
-fun CircularProgressIndicator(
+public fun CircularProgressIndicator(
     progress: Float,
     modifier: Modifier = Modifier,
     color: Color = ProgressIndicatorDefaults.circularColor,
     strokeWidth: Dp = ProgressIndicatorDefaults.CircularStrokeWidth,
     trackColor: Color = ProgressIndicatorDefaults.circularTrackColor,
     strokeCap: StrokeCap = ProgressIndicatorDefaults.CircularDeterminateStrokeCap,
-) =
+): Unit =
     CircularProgressIndicator(
         progress = { progress },
         modifier = modifier,
@@ -719,12 +711,12 @@ fun CircularProgressIndicator(
 @Suppress("DEPRECATION")
 @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
 @Composable
-fun CircularProgressIndicator(
+public fun CircularProgressIndicator(
     progress: Float,
     modifier: Modifier = Modifier,
     color: Color = ProgressIndicatorDefaults.circularColor,
     strokeWidth: Dp = ProgressIndicatorDefaults.CircularStrokeWidth,
-) =
+): Unit =
     CircularProgressIndicator(
         progress,
         modifier,
@@ -737,11 +729,11 @@ fun CircularProgressIndicator(
 @Suppress("DEPRECATION")
 @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
 @Composable
-fun CircularProgressIndicator(
+public fun CircularProgressIndicator(
     modifier: Modifier = Modifier,
     color: Color = ProgressIndicatorDefaults.circularColor,
     strokeWidth: Dp = ProgressIndicatorDefaults.CircularStrokeWidth,
-) =
+): Unit =
     CircularProgressIndicator(
         modifier,
         color,
@@ -812,17 +804,17 @@ private fun DrawScope.drawIndeterminateCircularIndicator(
 /**
  * Contains the default values used for [LinearProgressIndicator] and [CircularProgressIndicator].
  */
-object ProgressIndicatorDefaults {
+public object ProgressIndicatorDefaults {
     /** Default color for a linear progress indicator. */
-    val linearColor: Color
+    public val linearColor: Color
         @Composable get() = ProgressIndicatorTokens.ActiveIndicatorColor.value
 
     /** Default color for a circular progress indicator. */
-    val circularColor: Color
+    public val circularColor: Color
         @Composable get() = ProgressIndicatorTokens.ActiveIndicatorColor.value
 
     /** Default track color for a linear progress indicator. */
-    val linearTrackColor: Color
+    public val linearTrackColor: Color
         @Composable get() = ProgressIndicatorTokens.TrackColor.value
 
     /** Default track color for a circular progress indicator. */
@@ -831,46 +823,43 @@ object ProgressIndicatorDefaults {
         ReplaceWith("ProgressIndicatorDefaults.circularIndeterminateTrackColor"),
         DeprecationLevel.WARNING,
     )
-    val circularTrackColor: Color
+    public val circularTrackColor: Color
         @Composable get() = Color.Transparent
 
     /** Default track color for a circular determinate progress indicator. */
-    val circularDeterminateTrackColor: Color
+    public val circularDeterminateTrackColor: Color
         @Composable get() = ProgressIndicatorTokens.TrackColor.value
 
     /** Default track color for a circular indeterminate progress indicator. */
-    val circularIndeterminateTrackColor: Color
+    public val circularIndeterminateTrackColor: Color
         @Composable get() = Color.Transparent
 
     /** Default stroke width for a circular progress indicator. */
-    val CircularStrokeWidth: Dp = CircularProgressIndicatorTokens.TrackThickness
+    public val CircularStrokeWidth: Dp = CircularProgressIndicatorTokens.TrackThickness
 
     /** Default stroke cap for a linear progress indicator. */
-    val LinearStrokeCap: StrokeCap = StrokeCap.Round
+    public val LinearStrokeCap: StrokeCap = StrokeCap.Round
 
     /** Default stroke cap for a determinate circular progress indicator. */
-    val CircularDeterminateStrokeCap: StrokeCap = StrokeCap.Round
+    public val CircularDeterminateStrokeCap: StrokeCap = StrokeCap.Round
 
     /** Default stroke cap for an indeterminate circular progress indicator. */
-    val CircularIndeterminateStrokeCap: StrokeCap = StrokeCap.Round
+    public val CircularIndeterminateStrokeCap: StrokeCap = StrokeCap.Round
 
     /** Default track stop indicator size for a linear progress indicator. */
-    @ExperimentalMaterial3Api
-    val LinearTrackStopIndicatorSize: Dp = LinearProgressIndicatorTokens.StopSize
+    public val LinearTrackStopIndicatorSize: Dp = LinearProgressIndicatorTokens.StopSize
 
     /** Default indicator track gap size for a linear progress indicator. */
-    @ExperimentalMaterial3Api
-    val LinearIndicatorTrackGapSize: Dp = LinearProgressIndicatorTokens.TrackActiveSpace
+    public val LinearIndicatorTrackGapSize: Dp = LinearProgressIndicatorTokens.TrackActiveSpace
 
     /** Default indicator track gap size for a circular progress indicator. */
-    @ExperimentalMaterial3Api
-    val CircularIndicatorTrackGapSize: Dp = CircularProgressIndicatorTokens.TrackActiveSpace
+    public val CircularIndicatorTrackGapSize: Dp = CircularProgressIndicatorTokens.TrackActiveSpace
 
     /**
      * The default [androidx.compose.animation.core.AnimationSpec] that should be used when
      * animating between progress in a determinate progress indicator.
      */
-    val ProgressAnimationSpec =
+    public val ProgressAnimationSpec: SpringSpec<Float> =
         SpringSpec(
             dampingRatio = Spring.DampingRatioNoBouncy,
             stiffness = Spring.StiffnessVeryLow,
@@ -887,7 +876,12 @@ object ProgressIndicatorDefaults {
      * @param color color of this stop indicator
      * @param strokeCap stroke cap to use for the ends of this stop indicator
      */
-    fun drawStopIndicator(drawScope: DrawScope, stopSize: Dp, color: Color, strokeCap: StrokeCap) {
+    public fun drawStopIndicator(
+        drawScope: DrawScope,
+        stopSize: Dp,
+        color: Color,
+        strokeCap: StrokeCap,
+    ) {
 
         // Draws a circle or a square indicator according to the provided Cap.
         fun DrawScope.drawIndicator(adjustedStopSize: Float, stopOffset: Float) {
@@ -1033,17 +1027,21 @@ internal val linearIndeterminateSecondLineTailAnimationSpec
 
 // Width is given in the spec but not defined as a token.
 /*@VisibleForTesting*/
-internal val LinearIndicatorWidth = 240.dp
+internal val LinearIndicatorWidth
+    get() = 240.dp
 
 /*@VisibleForTesting*/
-internal val LinearIndicatorHeight = LinearProgressIndicatorTokens.Height
+internal val LinearIndicatorHeight
+    get() = LinearProgressIndicatorTokens.Height
 
-internal val StopIndicatorTrailingSpace = 6.dp
+internal val StopIndicatorTrailingSpace
+    get() = 6.dp
 
 // CircularProgressIndicator Material specs
 // Diameter of the indicator circle
 /*@VisibleForTesting*/
-internal val CircularIndicatorDiameter = CircularProgressIndicatorTokens.Size
+internal val CircularIndicatorDiameter
+    get() = CircularProgressIndicatorTokens.Size
 
 // Indeterminate linear indicator transition specs
 

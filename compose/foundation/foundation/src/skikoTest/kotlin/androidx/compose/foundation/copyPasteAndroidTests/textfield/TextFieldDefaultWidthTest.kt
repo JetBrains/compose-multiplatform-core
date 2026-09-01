@@ -45,6 +45,7 @@ class BaseTextFieldDefaultWidthTest {
 
     val density = Density(density = 1f, fontScale = 1f)
 
+    @Suppress("DEPRECATION")
     @Test
     @Ignore
     fun textField_hasDefaultWidth() = runSkikoComposeUiTest {
@@ -63,6 +64,7 @@ class BaseTextFieldDefaultWidthTest {
         assertThat(size).isEqualTo(defaultTextFieldSize(fontSize))
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun minConstraint_greaterThan_defaultWidth_choosesMinConstraint() = runSkikoComposeUiTest {
         var size: Int? = null
@@ -85,6 +87,7 @@ class BaseTextFieldDefaultWidthTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun maxConstraint_smallerThan_defaultWidth_choosesMaxConstraint() = runSkikoComposeUiTest {
         var size: Int? = null
@@ -108,6 +111,7 @@ class BaseTextFieldDefaultWidthTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     @Ignore
     fun textWidth_smallerThan_defaultWidth_choosesDefaultWidth() = runSkikoComposeUiTest {
         var size: Int? = null
@@ -125,6 +129,7 @@ class BaseTextFieldDefaultWidthTest {
         assertThat(size).isEqualTo(defaultTextFieldSize(fontSize))
     }
 
+    @Suppress("DEPRECATION")
     @Test
     @Ignore
     fun textWidth_greaterThan_defaultWidth_choosesTextWidth() = runSkikoComposeUiTest {
@@ -144,6 +149,7 @@ class BaseTextFieldDefaultWidthTest {
         assertThat(size).isEqualTo(defaultTextFieldSize(fontSize, charCount))
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun respectsWidthSetByModifier() = runSkikoComposeUiTest {
         val textFieldWidth = 100.dp

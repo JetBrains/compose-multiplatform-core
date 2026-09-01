@@ -16,7 +16,9 @@
 
 package androidx.compose.animation
 
+import androidx.compose.animation.core.DeferredTransition
 import androidx.compose.animation.core.ExperimentalDeferredTransitionApi
+import androidx.compose.animation.core.Transition
 import androidx.compose.runtime.RememberObserver
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -66,6 +68,8 @@ internal class SharedElementEntry(
     var overlayClip: SharedTransitionScope.OverlayClip by mutableStateOf(overlayClip)
     var userState: SharedTransitionScope.SharedContentState by mutableStateOf(userState)
 
+    private var deferredTransformState: SharedMutableTransformState? = null
+
     /**
      * Resolves the active [SharedMutableTransformState] that is currently driving the deferred
      * transformations.
@@ -81,22 +85,46 @@ internal class SharedElementEntry(
         get() {
             if (!userState.config.permitTransformDuringDeferredTransition) return null
 
-            val transformState = boundsProvider?.modifierLocalTransformState
+            var currentTransition: Transition<*>? = boundsAnimation.transition
+            var isDeferred = false
+            while (currentTransition != null) {
+                if (currentTransition is DeferredTransition<*>) {
+                    isDeferred = true
+                    break
+                }
+                currentTransition = currentTransition.parentTransition
+            }
+            if (!isDeferred) return null
 
+            val transformState = boundsProvider?.modifierLocalTransformState ?: return null
+
+            if (transformState.isHandoffActive && deferredTransformState != null) {
+                return deferredTransformState
+            }
             // During a deferred phase, the underlying transition state is held back at the original
             // state. This means the `target` property is temporarily inverted (exiting=true,
             // incoming=false).
             val isIncoming = if (isMutating) !target else target
 
-            if (isIncoming) {
-                val exitingEntry =
-                    sharedElement.enabledEntries.fastFirstOrNull {
-                        if (it.isMutating) it.target else !it.target
-                    }
-                return exitingEntry?.boundsProvider?.modifierLocalTransformState ?: transformState
+            val resolvedState =
+                if (isIncoming) {
+                    val exitingEntry =
+                        sharedElement.enabledEntries.fastFirstOrNull {
+                            if (it.isMutating) it.target else !it.target
+                        }
+                    exitingEntry?.boundsProvider?.modifierLocalTransformState ?: transformState
+                } else {
+                    transformState
+                }
+
+            if (isMutating) {
+                deferredTransformState = resolvedState
+            } else if (!transformState.isHandoffActive) {
+                // Clear the cached state once handoff is finished
+                deferredTransformState = null
             }
 
-            return transformState
+            return resolvedState
         }
 
     /**

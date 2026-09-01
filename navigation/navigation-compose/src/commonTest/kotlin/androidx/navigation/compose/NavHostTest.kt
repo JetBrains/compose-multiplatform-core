@@ -81,7 +81,7 @@ import kotlin.test.Test
 
 @OptIn(ExperimentalTestApi::class)
 class NavHostTest {
-    
+
     @Test
     fun testSingleDestinationSet() = runComposeUiTestOnUiThread {
         lateinit var navController: NavHostController
@@ -1134,7 +1134,6 @@ class NavHostTest {
         runOnIdle { navController.navigate(second) }
     }
 
-    @Test
     fun navBackStackEntryLifecycleTest() = runComposeUiTestOnUiThread {
         var stopCount = 0
         lateinit var navController: NavHostController

@@ -40,6 +40,7 @@ import kotlin.test.Test
 @OptIn(ExperimentalTestApi::class)
 class BasicTextDensityTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun simpleParagraph_densityChange() = runSkikoComposeUiTest {
         val density1 = Density(1f)
@@ -74,6 +75,7 @@ class BasicTextDensityTest {
         assertThat(textSizeDensity2.height).isGreaterThan(textSizeDensity1.height)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun simpleMultiParagraph_densityChange() = runSkikoComposeUiTest {
         val density1 = Density(1f)
@@ -116,6 +118,7 @@ class BasicTextDensityTest {
         assertThat(textSizeDensity2.height).isGreaterThan(textSizeDensity1.height)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun selectableText_densityChange() = runSkikoComposeUiTest {
         val density1 = Density(1f)

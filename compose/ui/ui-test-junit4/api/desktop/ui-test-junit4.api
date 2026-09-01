@@ -6,6 +6,10 @@ public final class androidx/compose/ui/test/junit4/ComposeContentTestRule$Defaul
 	public static fun hasPendingWork (Landroidx/compose/ui/test/junit4/ComposeContentTestRule;)Z
 	public static fun runWithoutImplicitWait (Landroidx/compose/ui/test/junit4/ComposeContentTestRule;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 	public static fun waitUntil (Landroidx/compose/ui/test/junit4/ComposeContentTestRule;Ljava/lang/String;JLkotlin/jvm/functions/Function0;)V
+	public static fun waitUntilAtLeastOneExists (Landroidx/compose/ui/test/junit4/ComposeContentTestRule;Landroidx/compose/ui/test/SemanticsMatcher;JZ)V
+	public static fun waitUntilDoesNotExist (Landroidx/compose/ui/test/junit4/ComposeContentTestRule;Landroidx/compose/ui/test/SemanticsMatcher;JZ)V
+	public static fun waitUntilExactlyOneExists (Landroidx/compose/ui/test/junit4/ComposeContentTestRule;Landroidx/compose/ui/test/SemanticsMatcher;JZ)V
+	public static fun waitUntilNodeCount (Landroidx/compose/ui/test/junit4/ComposeContentTestRule;Landroidx/compose/ui/test/SemanticsMatcher;IJZ)V
 }
 
 public abstract interface class androidx/compose/ui/test/junit4/ComposeTestRule : androidx/compose/ui/test/SemanticsNodeInteractionsProvider, org/junit/rules/TestRule {
@@ -23,6 +27,14 @@ public abstract interface class androidx/compose/ui/test/junit4/ComposeTestRule 
 	public fun waitUntil (Ljava/lang/String;JLkotlin/jvm/functions/Function0;)V
 	public static synthetic fun waitUntil$default (Landroidx/compose/ui/test/junit4/ComposeTestRule;JLkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
 	public static synthetic fun waitUntil$default (Landroidx/compose/ui/test/junit4/ComposeTestRule;Ljava/lang/String;JLkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
+	public fun waitUntilAtLeastOneExists (Landroidx/compose/ui/test/SemanticsMatcher;JZ)V
+	public static synthetic fun waitUntilAtLeastOneExists$default (Landroidx/compose/ui/test/junit4/ComposeTestRule;Landroidx/compose/ui/test/SemanticsMatcher;JZILjava/lang/Object;)V
+	public fun waitUntilDoesNotExist (Landroidx/compose/ui/test/SemanticsMatcher;JZ)V
+	public static synthetic fun waitUntilDoesNotExist$default (Landroidx/compose/ui/test/junit4/ComposeTestRule;Landroidx/compose/ui/test/SemanticsMatcher;JZILjava/lang/Object;)V
+	public fun waitUntilExactlyOneExists (Landroidx/compose/ui/test/SemanticsMatcher;JZ)V
+	public static synthetic fun waitUntilExactlyOneExists$default (Landroidx/compose/ui/test/junit4/ComposeTestRule;Landroidx/compose/ui/test/SemanticsMatcher;JZILjava/lang/Object;)V
+	public fun waitUntilNodeCount (Landroidx/compose/ui/test/SemanticsMatcher;IJZ)V
+	public static synthetic fun waitUntilNodeCount$default (Landroidx/compose/ui/test/junit4/ComposeTestRule;Landroidx/compose/ui/test/SemanticsMatcher;IJZILjava/lang/Object;)V
 }
 
 public final class androidx/compose/ui/test/junit4/ComposeTestRule$DefaultImpls {
@@ -31,10 +43,18 @@ public final class androidx/compose/ui/test/junit4/ComposeTestRule$DefaultImpls 
 	public static fun waitUntil (Landroidx/compose/ui/test/junit4/ComposeTestRule;Ljava/lang/String;JLkotlin/jvm/functions/Function0;)V
 	public static synthetic fun waitUntil$default (Landroidx/compose/ui/test/junit4/ComposeTestRule;JLkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
 	public static synthetic fun waitUntil$default (Landroidx/compose/ui/test/junit4/ComposeTestRule;Ljava/lang/String;JLkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
+	public static fun waitUntilAtLeastOneExists (Landroidx/compose/ui/test/junit4/ComposeTestRule;Landroidx/compose/ui/test/SemanticsMatcher;JZ)V
 	public static synthetic fun waitUntilAtLeastOneExists$default (Landroidx/compose/ui/test/junit4/ComposeTestRule;Landroidx/compose/ui/test/SemanticsMatcher;JILjava/lang/Object;)V
+	public static synthetic fun waitUntilAtLeastOneExists$default (Landroidx/compose/ui/test/junit4/ComposeTestRule;Landroidx/compose/ui/test/SemanticsMatcher;JZILjava/lang/Object;)V
+	public static fun waitUntilDoesNotExist (Landroidx/compose/ui/test/junit4/ComposeTestRule;Landroidx/compose/ui/test/SemanticsMatcher;JZ)V
 	public static synthetic fun waitUntilDoesNotExist$default (Landroidx/compose/ui/test/junit4/ComposeTestRule;Landroidx/compose/ui/test/SemanticsMatcher;JILjava/lang/Object;)V
+	public static synthetic fun waitUntilDoesNotExist$default (Landroidx/compose/ui/test/junit4/ComposeTestRule;Landroidx/compose/ui/test/SemanticsMatcher;JZILjava/lang/Object;)V
+	public static fun waitUntilExactlyOneExists (Landroidx/compose/ui/test/junit4/ComposeTestRule;Landroidx/compose/ui/test/SemanticsMatcher;JZ)V
 	public static synthetic fun waitUntilExactlyOneExists$default (Landroidx/compose/ui/test/junit4/ComposeTestRule;Landroidx/compose/ui/test/SemanticsMatcher;JILjava/lang/Object;)V
+	public static synthetic fun waitUntilExactlyOneExists$default (Landroidx/compose/ui/test/junit4/ComposeTestRule;Landroidx/compose/ui/test/SemanticsMatcher;JZILjava/lang/Object;)V
+	public static fun waitUntilNodeCount (Landroidx/compose/ui/test/junit4/ComposeTestRule;Landroidx/compose/ui/test/SemanticsMatcher;IJZ)V
 	public static synthetic fun waitUntilNodeCount$default (Landroidx/compose/ui/test/junit4/ComposeTestRule;Landroidx/compose/ui/test/SemanticsMatcher;IJILjava/lang/Object;)V
+	public static synthetic fun waitUntilNodeCount$default (Landroidx/compose/ui/test/junit4/ComposeTestRule;Landroidx/compose/ui/test/SemanticsMatcher;IJZILjava/lang/Object;)V
 }
 
 public final class androidx/compose/ui/test/junit4/DesktopComposeTestRule_desktopKt {
@@ -42,6 +62,8 @@ public final class androidx/compose/ui/test/junit4/DesktopComposeTestRule_deskto
 }
 
 public final class androidx/compose/ui/test/junit4/v2/ComposeTestRule_desktopKt {
+	public static final fun createComposeRule ()Landroidx/compose/ui/test/junit4/ComposeContentTestRule;
+	public static final fun createComposeRule (Landroidx/compose/ui/test/ComposeUiTestConfig;)Landroidx/compose/ui/test/junit4/ComposeContentTestRule;
 	public static final fun createComposeRule (Lkotlin/coroutines/CoroutineContext;)Landroidx/compose/ui/test/junit4/ComposeContentTestRule;
 	public static synthetic fun createComposeRule$default (Lkotlin/coroutines/CoroutineContext;ILjava/lang/Object;)Landroidx/compose/ui/test/junit4/ComposeContentTestRule;
 }

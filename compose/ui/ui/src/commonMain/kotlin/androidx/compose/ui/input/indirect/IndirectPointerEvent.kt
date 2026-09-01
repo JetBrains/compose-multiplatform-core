@@ -16,6 +16,7 @@
 package androidx.compose.ui.input.indirect
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.HistoricalChange
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerId
 
@@ -31,15 +32,15 @@ import androidx.compose.ui.input.pointer.PointerId
  * This event differs from a [PointerEvent] as it does not necessitate an existence of a pointer. If
  * an event were to have an associated pointer, they will be routed to through [PointerEvent].
  */
-sealed interface IndirectPointerEvent {
+public sealed interface IndirectPointerEvent {
     /** The list of individual pointer changes in this event. */
-    val changes: List<IndirectPointerInputChange>
+    public val changes: List<IndirectPointerInputChange>
 
     /** The reason the [IndirectPointerEvent] was sent. */
-    val type: IndirectPointerEventType
+    public val type: IndirectPointerEventType
 
     /** Main coordinate axis to use for movement. */
-    val primaryDirectionalMotionAxis: IndirectPointerEventPrimaryDirectionalMotionAxis
+    public val primaryDirectionalMotionAxis: IndirectPointerEventPrimaryDirectionalMotionAxis
 }
 
 // Work around for Kotlin cross module sealed interfaces.
@@ -47,23 +48,27 @@ internal interface PlatformIndirectPointerEvent : IndirectPointerEvent
 
 /** Indicates the reason that the [IndirectPointerEvent] was sent. */
 @kotlin.jvm.JvmInline
-value class IndirectPointerEventType private constructor(internal val value: Int) {
-    companion object {
+public value class IndirectPointerEventType private constructor(internal val value: Int) {
+    public companion object {
 
         /** An unknown reason for the event. */
-        val Unknown = IndirectPointerEventType(0)
+        public val Unknown: IndirectPointerEventType
+            get() = IndirectPointerEventType(0)
 
         /** A pressed gesture as started. */
-        val Press = IndirectPointerEventType(1)
+        public val Press: IndirectPointerEventType
+            get() = IndirectPointerEventType(1)
 
         /** A pressed gesture has finished. */
-        val Release = IndirectPointerEventType(2)
+        public val Release: IndirectPointerEventType
+            get() = IndirectPointerEventType(2)
 
         /** A change has happened during a press gesture. */
-        val Move = IndirectPointerEventType(3)
+        public val Move: IndirectPointerEventType
+            get() = IndirectPointerEventType(3)
     }
 
-    override fun toString(): String =
+    public override fun toString(): String =
         when (this) {
             Press -> "Press"
             Release -> "Release"
@@ -82,18 +87,21 @@ value class IndirectPointerEventType private constructor(internal val value: Int
  * vertically - even though the direction of motion on the input device is horizontal in both cases.
  */
 @kotlin.jvm.JvmInline
-value class IndirectPointerEventPrimaryDirectionalMotionAxis
+public value class IndirectPointerEventPrimaryDirectionalMotionAxis
 private constructor(internal val value: Int) {
-    companion object {
+    public companion object {
 
         /** No coordinate axes specified for movement. */
-        val None = IndirectPointerEventPrimaryDirectionalMotionAxis(0)
+        public val None: IndirectPointerEventPrimaryDirectionalMotionAxis
+            get() = IndirectPointerEventPrimaryDirectionalMotionAxis(0)
 
         /** X coordinate axis specified as the primary movement axis. */
-        val X = IndirectPointerEventPrimaryDirectionalMotionAxis(1)
+        public val X: IndirectPointerEventPrimaryDirectionalMotionAxis
+            get() = IndirectPointerEventPrimaryDirectionalMotionAxis(1)
 
         /** Y coordinate axis specified as the primary movement axis. */
-        val Y = IndirectPointerEventPrimaryDirectionalMotionAxis(2)
+        public val Y: IndirectPointerEventPrimaryDirectionalMotionAxis
+            get() = IndirectPointerEventPrimaryDirectionalMotionAxis(2)
     }
 }
 
@@ -112,34 +120,108 @@ private constructor(internal val value: Int) {
  *   previous event.
  * @param previousPressed Whether the pointer was down or up at the previous event.
  */
-class IndirectPointerInputChange(
-    val id: PointerId,
-    val uptimeMillis: Long,
-    val position: Offset,
-    @get:Suppress("GetterSetterNames") val pressed: Boolean,
-    val pressure: Float,
-    val previousUptimeMillis: Long,
-    val previousPosition: Offset,
-    @get:Suppress("GetterSetterNames") val previousPressed: Boolean,
+public class IndirectPointerInputChange(
+    public val id: PointerId,
+    public val uptimeMillis: Long,
+    public val position: Offset,
+    @get:Suppress("GetterSetterNames") public val pressed: Boolean,
+    public val pressure: Float,
+    public val previousUptimeMillis: Long,
+    public val previousPosition: Offset,
+    @get:Suppress("GetterSetterNames") public val previousPressed: Boolean,
 ) {
+    internal constructor(
+        id: PointerId,
+        uptimeMillis: Long,
+        position: Offset,
+        pressed: Boolean,
+        pressure: Float,
+        previousUptimeMillis: Long,
+        previousPosition: Offset,
+        previousPressed: Boolean,
+        historical: List<HistoricalChange>,
+    ) : this(
+        id = id,
+        uptimeMillis = uptimeMillis,
+        position = position,
+        pressed = pressed,
+        pressure = pressure,
+        previousUptimeMillis = previousUptimeMillis,
+        previousPosition = previousPosition,
+        previousPressed = previousPressed,
+    ) {
+        _historical = historical
+    }
+
+    /**
+     * Optional high-frequency pointer moves in between the last two dispatched events. Can be used
+     * for extra accuracy when input rate exceeds framerate.
+     */
+    public val historical: List<HistoricalChange>
+        get() = _historical ?: emptyList()
+
+    private var _historical: List<HistoricalChange>? = null
+
     /** Indicates whether the change was consumed or not. */
-    var isConsumed: Boolean = false
+    public var isConsumed: Boolean = false
         private set
 
     /** Consumes the change event, claiming it for the caller. */
-    fun consume() {
+    public fun consume() {
         isConsumed = true
     }
 
-    override fun toString(): String {
-        return "IndirectPointerInputChange(id=$id, " +
-            "uptimeMillis=$uptimeMillis, " +
-            "position=$position, " +
-            "pressed=$pressed, " +
-            "pressure=$pressure, " +
-            "previousUptimeMillis=$previousUptimeMillis, " +
-            "previousPosition=$previousPosition, " +
-            "previousPressed=$previousPressed, " +
-            "isConsumed=$isConsumed)"
+    public fun copy(
+        id: PointerId = this.id,
+        uptimeMillis: Long = this.uptimeMillis,
+        position: Offset = this.position,
+        pressed: Boolean = this.pressed,
+        pressure: Float = this.pressure,
+        previousUptimeMillis: Long = this.previousUptimeMillis,
+        previousPosition: Offset = this.previousPosition,
+        previousPressed: Boolean = this.previousPressed,
+        historical: List<HistoricalChange> = this.historical,
+    ): IndirectPointerInputChange =
+        IndirectPointerInputChange(
+                id = id,
+                uptimeMillis = uptimeMillis,
+                position = position,
+                pressed = pressed,
+                pressure = pressure,
+                previousUptimeMillis = previousUptimeMillis,
+                previousPosition = previousPosition,
+                previousPressed = previousPressed,
+                historical = historical,
+            )
+            .also {
+                if (this.isConsumed) {
+                    it.consume()
+                }
+            }
+
+    public override fun toString(): String {
+        return buildString {
+            append("IndirectPointerInputChange(id=")
+            append(id)
+            append(", uptimeMillis=")
+            append(uptimeMillis)
+            append(", position=")
+            append(position)
+            append(", pressed=")
+            append(pressed)
+            append(", pressure=")
+            append(pressure)
+            append(", previousUptimeMillis=")
+            append(previousUptimeMillis)
+            append(", previousPosition=")
+            append(previousPosition)
+            append(", previousPressed=")
+            append(previousPressed)
+            append(", historical=")
+            append(historical)
+            append(", isConsumed=")
+            append(isConsumed)
+            append(")")
+        }
     }
 }

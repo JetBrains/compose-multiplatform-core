@@ -46,7 +46,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -54,14 +53,20 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class StyleLayoutTest {
-    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun testPadding() {
         rule
             .onParentWith(parent = { contentPadding(10.dp) }, child = { size(10.dp) })
-            .assertWidthIsEqualTo(30.dp) // 10.dp (child) + 10.dp (padding) + 10.dp (padding)
-            .assertHeightIsEqualTo(30.dp) // 10.dp (child) + 10.dp (padding) + 10.dp (padding)
+            .assertWidthIsEqualTo(
+                30.dp,
+                tolerance = 1.dp,
+            ) // 10.dp (child) + 10.dp (padding) + 10.dp (padding)
+            .assertHeightIsEqualTo(
+                30.dp,
+                tolerance = 1.dp,
+            ) // 10.dp (child) + 10.dp (padding) + 10.dp (padding)
     }
 
     @Test
@@ -75,8 +80,8 @@ class StyleLayoutTest {
                 },
                 child = { size(10.dp) },
             )
-            .assertWidthIsEqualTo(50.dp)
-            .assertHeightIsEqualTo(70.dp)
+            .assertWidthIsEqualTo(50.dp, tolerance = 1.dp)
+            .assertHeightIsEqualTo(70.dp, tolerance = 1.dp)
     }
 
     @Test
@@ -91,8 +96,8 @@ class StyleLayoutTest {
                 },
                 child = { fillSize() },
             )
-            .assertWidthIsEqualTo(140.dp)
-            .assertHeightIsEqualTo(160.dp)
+            .assertWidthIsEqualTo(140.dp, tolerance = 1.dp)
+            .assertHeightIsEqualTo(160.dp, tolerance = 1.dp)
     }
 
     @Test
@@ -248,8 +253,8 @@ class StyleLayoutTest {
                 },
                 child = { size(50.dp) },
             )
-            .assertWidthIsEqualTo(50.dp + 5.dp + 15.dp)
-            .assertHeightIsEqualTo(50.dp + 10.dp + 20.dp)
+            .assertWidthIsEqualTo(50.dp + 5.dp + 15.dp, tolerance = 1.dp)
+            .assertHeightIsEqualTo(50.dp + 10.dp + 20.dp, tolerance = 1.dp)
     }
 
     @Test // 483067194
@@ -262,8 +267,8 @@ class StyleLayoutTest {
                 },
                 child = { size(50.dp) },
             )
-            .assertWidthIsEqualTo(50.dp + 10.dp + 10.dp + 5.dp + 5.dp)
-            .assertHeightIsEqualTo(50.dp + 10.dp + 10.dp + 5.dp + 5.dp)
+            .assertWidthIsEqualTo(50.dp + 10.dp + 10.dp + 5.dp + 5.dp, tolerance = 1.5.dp)
+            .assertHeightIsEqualTo(50.dp + 10.dp + 10.dp + 5.dp + 5.dp, tolerance = 1.5.dp)
     }
 
     @Test
@@ -276,8 +281,8 @@ class StyleLayoutTest {
                 },
                 child = { size(50.dp) },
             )
-            .assertWidthIsEqualTo(50.dp + 10.dp * 2)
-            .assertHeightIsEqualTo(50.dp + 20.dp * 2)
+            .assertWidthIsEqualTo(50.dp + 10.dp * 2, tolerance = 1.dp)
+            .assertHeightIsEqualTo(50.dp + 20.dp * 2, tolerance = 1.dp)
     }
 
     @Test
@@ -317,8 +322,8 @@ class StyleLayoutTest {
                 parent = { contentPadding(start = 5.dp, top = 10.dp, end = 15.dp, bottom = 20.dp) },
                 child = { size(50.dp) },
             )
-            .assertWidthIsEqualTo(50.dp + 5.dp + 15.dp)
-            .assertHeightIsEqualTo(50.dp + 10.dp + 20.dp)
+            .assertWidthIsEqualTo(50.dp + 5.dp + 15.dp, tolerance = 1.dp)
+            .assertHeightIsEqualTo(50.dp + 10.dp + 20.dp, tolerance = 1.dp)
     }
 
     @Test

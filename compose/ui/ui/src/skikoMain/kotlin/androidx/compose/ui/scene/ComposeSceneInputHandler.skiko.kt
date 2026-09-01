@@ -27,7 +27,11 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerButtons
+import androidx.compose.ui.input.pointer.PointerClassification
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.PointerEventType.Companion.PanEnd
+import androidx.compose.ui.input.pointer.PointerEventType.Companion.PanMove
+import androidx.compose.ui.input.pointer.PointerEventType.Companion.PanStart
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerInputEvent
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
@@ -132,6 +136,12 @@ internal class ComposeSceneInputHandler(
             changedButton = button,
             scaleGestureFactor = scaleGestureFactor,
             panGestureOffset = panGestureOffset,
+            activeGesture = when (eventType) {
+                PanStart, PanMove, PanEnd -> PointerClassification.Pan
+                else -> PointerClassification.None
+            },
+            isGestureStart = eventType == PanStart,
+            isGestureEnd = eventType == PanEnd,
         )
         prepareForPointerInputEvent()
         val updatePointerPositionResult = updatePointerPosition()

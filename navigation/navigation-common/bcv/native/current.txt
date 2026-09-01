@@ -21,7 +21,8 @@ open annotation class androidx.navigation/NavOptionsDsl : kotlin/Annotation { //
 abstract interface androidx.navigation/FloatingWindow // androidx.navigation/FloatingWindow|null[0]
 
 abstract interface androidx.navigation/NavViewModelStoreProvider { // androidx.navigation/NavViewModelStoreProvider|null[0]
-    abstract fun getViewModelStore(kotlin/String): androidx.lifecycle/ViewModelStore // androidx.navigation/NavViewModelStoreProvider.getViewModelStore|getViewModelStore(kotlin.String){}[0]
+    abstract fun clear(kotlin/String) // androidx.navigation/NavViewModelStoreProvider.clear|clear(kotlin.String){}[0]
+    abstract fun get(kotlin/String): androidx.lifecycle/ViewModelStore // androidx.navigation/NavViewModelStoreProvider.get|get(kotlin.String){}[0]
 }
 
 abstract interface androidx.navigation/SupportingPane // androidx.navigation/SupportingPane|null[0]
@@ -227,8 +228,6 @@ final class androidx.navigation/NavArgumentBuilder { // androidx.navigation/NavA
 }
 
 final class androidx.navigation/NavBackStackEntry : androidx.lifecycle/HasDefaultViewModelProviderFactory, androidx.lifecycle/LifecycleOwner, androidx.lifecycle/ViewModelStoreOwner, androidx.savedstate/SavedStateRegistryOwner { // androidx.navigation/NavBackStackEntry|null[0]
-    constructor <init>(androidx.navigation/NavBackStackEntry, androidx.savedstate/SavedState? = ...) // androidx.navigation/NavBackStackEntry.<init>|<init>(androidx.navigation.NavBackStackEntry;androidx.savedstate.SavedState?){}[0]
-
     final val arguments // androidx.navigation/NavBackStackEntry.arguments|{}arguments[0]
         final fun <get-arguments>(): androidx.savedstate/SavedState? // androidx.navigation/NavBackStackEntry.arguments.<get-arguments>|<get-arguments>(){}[0]
     final val defaultViewModelCreationExtras // androidx.navigation/NavBackStackEntry.defaultViewModelCreationExtras|{}defaultViewModelCreationExtras[0]
@@ -253,6 +252,7 @@ final class androidx.navigation/NavBackStackEntry : androidx.lifecycle/HasDefaul
         final fun <get-maxLifecycle>(): androidx.lifecycle/Lifecycle.State // androidx.navigation/NavBackStackEntry.maxLifecycle.<get-maxLifecycle>|<get-maxLifecycle>(){}[0]
         final fun <set-maxLifecycle>(androidx.lifecycle/Lifecycle.State) // androidx.navigation/NavBackStackEntry.maxLifecycle.<set-maxLifecycle>|<set-maxLifecycle>(androidx.lifecycle.Lifecycle.State){}[0]
 
+    final fun equals(kotlin/Any?): kotlin/Boolean // androidx.navigation/NavBackStackEntry.equals|equals(kotlin.Any?){}[0]
     final fun handleLifecycleEvent(androidx.lifecycle/Lifecycle.Event) // androidx.navigation/NavBackStackEntry.handleLifecycleEvent|handleLifecycleEvent(androidx.lifecycle.Lifecycle.Event){}[0]
     final fun hashCode(): kotlin/Int // androidx.navigation/NavBackStackEntry.hashCode|hashCode(){}[0]
     final fun saveState(androidx.savedstate/SavedState) // androidx.navigation/NavBackStackEntry.saveState|saveState(androidx.savedstate.SavedState){}[0]
@@ -261,6 +261,7 @@ final class androidx.navigation/NavBackStackEntry : androidx.lifecycle/HasDefaul
 
     final object Companion { // androidx.navigation/NavBackStackEntry.Companion|null[0]
         final fun create(androidx.navigation.internal/NavContext?, androidx.navigation/NavDestination, androidx.savedstate/SavedState? = ..., androidx.lifecycle/Lifecycle.State = ..., androidx.navigation/NavViewModelStoreProvider? = ..., kotlin/String = ..., androidx.savedstate/SavedState? = ...): androidx.navigation/NavBackStackEntry // androidx.navigation/NavBackStackEntry.Companion.create|create(androidx.navigation.internal.NavContext?;androidx.navigation.NavDestination;androidx.savedstate.SavedState?;androidx.lifecycle.Lifecycle.State;androidx.navigation.NavViewModelStoreProvider?;kotlin.String;androidx.savedstate.SavedState?){}[0]
+        final fun create(androidx.navigation/NavBackStackEntry, androidx.savedstate/SavedState? = ...): androidx.navigation/NavBackStackEntry // androidx.navigation/NavBackStackEntry.Companion.create|create(androidx.navigation.NavBackStackEntry;androidx.savedstate.SavedState?){}[0]
     }
 }
 
@@ -605,6 +606,7 @@ final fun <#A: kotlin/Any?> (kotlinx.serialization/KSerializer<#A>).androidx.nav
 final fun <#A: kotlin/Any?> (kotlinx.serialization/KSerializer<#A>).androidx.navigation.serialization/generateHashCode(): kotlin/Int // androidx.navigation.serialization/generateHashCode|generateHashCode@kotlinx.serialization.KSerializer<0:0>(){0§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?> (kotlinx.serialization/KSerializer<#A>).androidx.navigation.serialization/generateNavArguments(kotlin.collections/Map<kotlin.reflect/KType, androidx.navigation/NavType<*>> = ...): kotlin.collections/List<androidx.navigation/NamedNavArgument> // androidx.navigation.serialization/generateNavArguments|generateNavArguments@kotlinx.serialization.KSerializer<0:0>(kotlin.collections.Map<kotlin.reflect.KType,androidx.navigation.NavType<*>>){0§<kotlin.Any?>}[0]
 final fun androidx.navigation/NavUri(kotlin/String): androidx.navigation/NavUri // androidx.navigation/NavUri|NavUri(kotlin.String){}[0]
+final fun androidx.navigation/NavViewModelStoreProvider(androidx.lifecycle/ViewModelStore? = ...): androidx.navigation/NavViewModelStoreProvider // androidx.navigation/NavViewModelStoreProvider|NavViewModelStoreProvider(androidx.lifecycle.ViewModelStore?){}[0]
 final fun androidx.navigation/navArgument(kotlin/String, kotlin/Function1<androidx.navigation/NavArgumentBuilder, kotlin/Unit>): androidx.navigation/NamedNavArgument // androidx.navigation/navArgument|navArgument(kotlin.String;kotlin.Function1<androidx.navigation.NavArgumentBuilder,kotlin.Unit>){}[0]
 final fun androidx.navigation/navDeepLink(kotlin/Function1<androidx.navigation/NavDeepLinkDslBuilder, kotlin/Unit>): androidx.navigation/NavDeepLink // androidx.navigation/navDeepLink|navDeepLink(kotlin.Function1<androidx.navigation.NavDeepLinkDslBuilder,kotlin.Unit>){}[0]
 final fun androidx.navigation/navOptions(kotlin/Function1<androidx.navigation/NavOptionsBuilder, kotlin/Unit>): androidx.navigation/NavOptions // androidx.navigation/navOptions|navOptions(kotlin.Function1<androidx.navigation.NavOptionsBuilder,kotlin.Unit>){}[0]

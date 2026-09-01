@@ -171,6 +171,7 @@ class OnClickTest : SkikoComposeTestBase() {
         assertThat(clicksCount).isEqualTo(2)
     }
 
+    @Suppress("DEPRECATION")
     @OptIn(ExperimentalTestApi::class)
     private fun testDoubleClick(
         pointerMatcher: PointerMatcher,
@@ -236,6 +237,7 @@ class OnClickTest : SkikoComposeTestBase() {
     )
 
     @OptIn(ExperimentalTestApi::class)
+    @Suppress("DEPRECATION")
     private fun testLongClick(
         pointerMatcher: PointerMatcher,
         button: PointerButton

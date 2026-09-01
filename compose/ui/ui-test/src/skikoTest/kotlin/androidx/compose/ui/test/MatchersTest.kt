@@ -34,6 +34,7 @@ import kotlin.test.Test
 @OptIn(ExperimentalTestApi::class)
 class MatchersTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun testNodeWithTag() = runComposeUiTest {
         setContent {
@@ -53,6 +54,7 @@ class MatchersTest {
         onNodeWithTag("text1", useUnmergedTree = true).assertExists()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAllNodesWithTag() = runComposeUiTest {
         setContent {
@@ -63,6 +65,7 @@ class MatchersTest {
         onAllNodesWithTag("tag").assertCountEquals(2)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testNodeWithText() = runComposeUiTest {
         setContent {
@@ -82,6 +85,7 @@ class MatchersTest {
         onNodeWithText("tex", substring = true).assertExists()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAllNodesWithText() = runComposeUiTest {
         setContent {
@@ -97,6 +101,7 @@ class MatchersTest {
         onAllNodesWithText("text", ignoreCase = true, substring = true).assertCountEquals(4)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testNodeWithContentDescription() = runComposeUiTest {
         setContent {
@@ -117,6 +122,7 @@ class MatchersTest {
         onNodeWithContentDescription("desc", substring = true).assertExists()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAllNodesWithContentDescription() = runComposeUiTest {
         setContent {
@@ -133,6 +139,7 @@ class MatchersTest {
             .assertCountEquals(4)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testOnNode() = runComposeUiTest {
         setContent {

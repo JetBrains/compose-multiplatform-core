@@ -277,6 +277,7 @@ public final class androidx/compose/animation/core/DeferredTargetAnimation {
 	public static final field $stable I
 	public fun <init> (Landroidx/compose/animation/core/TwoWayConverter;)V
 	public final fun getPendingTarget ()Ljava/lang/Object;
+	public final fun getValue ()Ljava/lang/Object;
 	public final fun isIdle ()Z
 	public final fun updateTarget (Ljava/lang/Object;Lkotlinx/coroutines/CoroutineScope;Landroidx/compose/animation/core/FiniteAnimationSpec;)Ljava/lang/Object;
 	public static synthetic fun updateTarget$default (Landroidx/compose/animation/core/DeferredTargetAnimation;Ljava/lang/Object;Lkotlinx/coroutines/CoroutineScope;Landroidx/compose/animation/core/FiniteAnimationSpec;ILjava/lang/Object;)Ljava/lang/Object;
@@ -757,10 +758,11 @@ public final class androidx/compose/animation/core/TransitionKt {
 	public static final fun animateRect (Landroidx/compose/animation/core/Transition;Lkotlin/jvm/functions/Function3;Ljava/lang/String;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)Landroidx/compose/runtime/State;
 	public static final fun animateSize (Landroidx/compose/animation/core/Transition;Lkotlin/jvm/functions/Function3;Ljava/lang/String;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)Landroidx/compose/runtime/State;
 	public static final fun animateValue (Landroidx/compose/animation/core/Transition;Landroidx/compose/animation/core/TwoWayConverter;Lkotlin/jvm/functions/Function3;Ljava/lang/String;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)Landroidx/compose/runtime/State;
+	public static final fun createChildTransition (Landroidx/compose/animation/core/Transition;Ljava/lang/String;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)Landroidx/compose/animation/core/Transition;
 	public static final fun createChildTransitionInternal (Landroidx/compose/animation/core/Transition;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;Landroidx/compose/runtime/Composer;I)Landroidx/compose/animation/core/Transition;
 	public static final fun createDeferredAnimation (Landroidx/compose/animation/core/Transition;Landroidx/compose/animation/core/TwoWayConverter;Ljava/lang/String;Landroidx/compose/runtime/Composer;II)Landroidx/compose/animation/core/Transition$DeferredAnimation;
 	public static final fun createTransitionAnimation (Landroidx/compose/animation/core/Transition;Ljava/lang/Object;Ljava/lang/Object;Landroidx/compose/animation/core/FiniteAnimationSpec;Landroidx/compose/animation/core/TwoWayConverter;Ljava/lang/String;Landroidx/compose/runtime/Composer;I)Landroidx/compose/runtime/State;
-	public static final fun rememberTransition (Landroidx/compose/animation/core/DeferredTransitionState;Ljava/lang/String;Landroidx/compose/runtime/Composer;II)Landroidx/compose/animation/core/DeferredTransition;
+	public static final fun rememberDeferredTransition (Landroidx/compose/animation/core/DeferredTransitionState;Ljava/lang/String;Landroidx/compose/runtime/Composer;II)Landroidx/compose/animation/core/DeferredTransition;
 	public static final fun rememberTransition (Landroidx/compose/animation/core/TransitionState;Ljava/lang/String;Landroidx/compose/runtime/Composer;II)Landroidx/compose/animation/core/Transition;
 	public static final fun updateTransition (Landroidx/compose/animation/core/MutableTransitionState;Ljava/lang/String;Landroidx/compose/runtime/Composer;II)Landroidx/compose/animation/core/Transition;
 	public static final fun updateTransition (Ljava/lang/Object;Ljava/lang/String;Landroidx/compose/runtime/Composer;II)Landroidx/compose/animation/core/Transition;
@@ -934,5 +936,11 @@ public final class androidx/compose/animation/core/VisibilityThresholdsKt {
 	public static final fun getVisibilityThreshold (Landroidx/compose/ui/unit/IntOffset$Companion;)J
 	public static final fun getVisibilityThreshold (Landroidx/compose/ui/unit/IntSize$Companion;)J
 	public static final fun getVisibilityThreshold (Lkotlin/jvm/internal/IntCompanionObject;)I
+}
+
+public abstract interface class androidx/compose/animation/core/tooling/AnimateValueAsStateToolingHandle {
+	public abstract fun getAnimatable ()Landroidx/compose/animation/core/Animatable;
+	public abstract fun getAnimationSpec ()Landroidx/compose/animation/core/AnimationSpec;
+	public abstract fun setToolingOverrideState (Landroidx/compose/runtime/State;)V
 }
 

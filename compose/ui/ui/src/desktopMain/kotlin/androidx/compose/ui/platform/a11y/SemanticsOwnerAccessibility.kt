@@ -110,17 +110,17 @@ internal class SemanticsOwnerAccessibility(
         sceneAccessibility.accessibleParentOverride(accessible)?.let { return it }
 
         val parentNode = accessible.semanticsNode.parent ?: return sceneAccessibility.accessible()
-        return accessibleByNodeId(parentNode.id)!!
+        return accessibleByNodeId(parentNode.id)
     }
 
     /**
      * Invoked when a new [ComposeAccessible] is created.
      */
     private fun onNodeAdded(accessible: ComposeAccessible) {
-        for (entry in accessible.semanticsConfig) {
-            when (entry.key) {
+        for ((key, value) in accessible.semanticsConfig) {
+            when (key) {
                 SemanticsProperties.Focused -> {
-                    if (entry.value as Boolean) {
+                    if (value as Boolean) {
                         invokeLaterOnAccessible(accessible.semanticsNode.id) { accessible, config ->
                             // Check that it's still focused
                             if (config.getOrNull(SemanticsProperties.Focused) == true) {
@@ -190,12 +190,11 @@ internal class SemanticsOwnerAccessibility(
         prevConfig: SemanticsConfiguration,
     ) {
         val accessibleContext by lazy { accessible.composeAccessibleContext }
-        for (entry in accessible.semanticsConfig) {
-            val prevValue = prevConfig.getOrNull(entry.key)
-            val newValue = entry.value
+        for ((key, newValue) in accessible.semanticsConfig) {
+            val prevValue = prevConfig.getOrNull(key)
             if (newValue == prevValue) continue
 
-            when (entry.key) {
+            when (key) {
                 SemanticsProperties.Text -> {
                     accessibleContext.firePropertyChange(
                         ACCESSIBLE_TEXT_PROPERTY,

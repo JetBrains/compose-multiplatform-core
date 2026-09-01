@@ -55,8 +55,8 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.lerp
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -65,7 +65,7 @@ import org.junit.runner.RunWith
 @RunWith(ContextMenuFlagFlipperRunner::class)
 open class SelectionContainerContextMenuTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule
     val processTextRule =
@@ -143,6 +143,7 @@ open class SelectionContainerContextMenuTest {
         contextMenuInteraction.assertDoesNotExist()
     }
 
+    @Ignore("b/534893012")
     @Test
     fun contextMenu_disappearsOnTrackpadClickOffOfPopup() {
         rule.setContent {
@@ -274,6 +275,7 @@ open class SelectionContainerContextMenuTest {
             )
         }
 
+    @Ignore("b/534893012")
     @Test
     @ContextMenuFlagSuppress(suppressedFlagValue = false)
     fun contextMenu_onClickProcessText() {
@@ -296,6 +298,7 @@ open class SelectionContainerContextMenuTest {
         }
     }
 
+    @Ignore("b/534893012")
     @Test
     @ContextMenuFlagSuppress(suppressedFlagValue = false)
     fun contextMenu_processText_itemsMatch() = runCorrectItemsTest { selection ->

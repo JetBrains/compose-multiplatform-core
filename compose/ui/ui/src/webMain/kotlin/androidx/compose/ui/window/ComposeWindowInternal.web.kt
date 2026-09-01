@@ -112,6 +112,7 @@ import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.receiveAsFlow
+import org.jetbrains.skia.DirectContext
 import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkikoRenderDelegate
 import org.jetbrains.skiko.hostOs
@@ -206,8 +207,9 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
 
 @VisibleForTesting
 // This value is for internal usage, for example, to call ComposeWindow.dispose() in the tests
+// `null` when Compose is not hosted by a ComposeWindow, e.g. in some tests.
 internal val LocalComposeWindow: ProvidableCompositionLocal<ComposeWindow?> = staticCompositionLocalOf {
-    error("ComposeWindow is not available in this composition")
+    null
 }
 
 @OptIn(InternalComposeApi::class)
@@ -232,7 +234,7 @@ internal class ComposeWindow(
     )
 
     private val _windowInfo = WindowInfoImpl().apply {
-        isWindowFocused = true
+        isWindowFocused = document.hasFocus()
     }
 
     @VisibleForTesting
@@ -397,8 +399,20 @@ internal class ComposeWindow(
                 get() = configuration.isClearFocusOnMouseDownEnabled
         }
 
+    internal val htmlCanvas: HTMLCanvasElement get() = canvas
+
+    /**
+     * Skia's GPU context, captured from the surface canvas on the first rendered frame;
+     * It's used by WebGL texture adoption demo.
+     */
+    internal var skiaDirectContext: DirectContext? = null
+        private set
+
     private val skiaLayer: SkiaLayer = SkiaLayer().apply {
         renderDelegate = SkikoRenderDelegate { canvas, _, _, nanoTime ->
+            if (skiaDirectContext == null) {
+                skiaDirectContext = canvas.recordingContext
+            }
             with(sceneRenderingScope) {
                 scene.render(frameRecomposer, canvas.asComposeCanvas(), nanoTime)
             }
@@ -468,6 +482,9 @@ internal class ComposeWindow(
     // It helps Compose to co-operate with the browser's scroll when the ComposeViewport
     // is nested in a scrollable html container
     private val rootScrollObserver = RootScrollObserver()
+
+
+
 
     private fun initEvents(canvas: HTMLCanvasElement) {
 
@@ -574,22 +591,16 @@ internal class ComposeWindow(
         val onKeyboardEventCallback: (KeyboardEvent) -> Unit = { event ->
             processKeyboardEvent(event)
         }
-        addTypedEvent<KeyboardEvent>("keydown", onKeyboardEventCallback)
-        addTypedEvent<KeyboardEvent>("keyup", onKeyboardEventCallback)
-
-        addTypedEvent<FocusEvent>("focus") { event ->
-            canvasFocused = true
-        }
-
-        addTypedEvent<FocusEvent>("blur") { event ->
-            canvasFocused = false
-        }
+        addTypedEvent("keydown", onKeyboardEventCallback)
+        addTypedEvent("keyup", onKeyboardEventCallback)
 
         state.globalEvents.addDisposableEvent("focus") {
+            _windowInfo.isWindowFocused = true
             archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
         }
 
         state.globalEvents.addDisposableEvent("blur") {
+            _windowInfo.isWindowFocused = false
             archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
         }
 

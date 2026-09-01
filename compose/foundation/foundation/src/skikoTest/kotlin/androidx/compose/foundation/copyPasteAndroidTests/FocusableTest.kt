@@ -16,10 +16,18 @@
 
 package androidx.compose.foundation.copyPasteAndroidTests
 
-import androidx.compose.foundation.*
+import androidx.compose.foundation.assertThat
+import androidx.compose.foundation.containsExactlyInOrder
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.hasSize
 import androidx.compose.foundation.interaction.FocusInteraction
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isEmpty
+import androidx.compose.foundation.isEqualTo
+import androidx.compose.foundation.isFalse
+import androidx.compose.foundation.isNull
+import androidx.compose.foundation.isTrue
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
@@ -29,10 +37,19 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.relocation.BringIntoViewResponder
 import androidx.compose.foundation.relocation.bringIntoViewResponder
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.runtime.*
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReusableContent
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.movableContentOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.*
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.FocusState
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -44,7 +61,16 @@ import androidx.compose.ui.platform.InspectableValue
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.test.*
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsNotFocused
+import androidx.compose.ui.test.isFocusable
+import androidx.compose.ui.test.isNotFocusable
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.runSkikoComposeUiTest
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlin.test.AfterTest
@@ -54,7 +80,7 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class, ExperimentalTestApi::class)
+@OptIn(ExperimentalTestApi::class)
 class FocusableTest {
     private val focusTag = "myFocusable"
 
@@ -68,6 +94,7 @@ class FocusableTest {
         isDebugInspectorInfoEnabled = false
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun focusable_defaultSemantics() = runSkikoComposeUiTest {
         setContent {
@@ -84,6 +111,7 @@ class FocusableTest {
             .assert(isFocusable())
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun focusable_disabledSemantics() = runSkikoComposeUiTest {
         setContent {
@@ -99,6 +127,7 @@ class FocusableTest {
             .assert(isNotFocusable())
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun focusable_focusAcquire() = runSkikoComposeUiTest {
         val (focusRequester, otherFocusRequester) = FocusRequester.createRefs()
@@ -138,6 +167,7 @@ class FocusableTest {
             .assertIsNotFocused()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun focusable_interactionSource() = runSkikoComposeUiTest {
         val interactionSource = MutableInteractionSource()
@@ -196,6 +226,7 @@ class FocusableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun focusable_interactionSource_resetWhenDisposed() = runSkikoComposeUiTest {
         val interactionSource = MutableInteractionSource()
@@ -252,7 +283,7 @@ class FocusableTest {
         }
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun focusable_pins_whenItIsFocused() = runSkikoComposeUiTest {
         // Arrange.
@@ -286,7 +317,7 @@ class FocusableTest {
         }
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun focusable_unpins_whenItIsUnfocused() = runSkikoComposeUiTest {
         // Arrange.
@@ -330,6 +361,7 @@ class FocusableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun focusable_inspectorValue() = runSkikoComposeUiTest {
         val modifier = Modifier.focusable()
@@ -344,6 +376,7 @@ class FocusableTest {
             )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun focusable_requestsBringIntoView_whenFocused() = runSkikoComposeUiTest {
         val requestedRects = mutableListOf<Rect?>()
@@ -380,6 +413,7 @@ class FocusableTest {
 
     // This test also verifies that the internal API autoInvalidateRemovedNode()
     // is called when a modifier node is disposed.
+    @Suppress("DEPRECATION")
     @Test
     fun removingFocusableFromLazyList_clearsFocus() = runSkikoComposeUiTest {
         // Arrange.
@@ -418,6 +452,7 @@ class FocusableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun removingFocusableFromSubcomposeLayout_clearsFocus() = runSkikoComposeUiTest {
         // Arrange.
@@ -456,7 +491,7 @@ class FocusableTest {
         }
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun focusable_updatePinnableContainer_staysPinned() = runSkikoComposeUiTest {
         // Arrange.
@@ -504,6 +539,7 @@ class FocusableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun reusingFocusedItem_itemIsNotFocusedAnymore() = runSkikoComposeUiTest {
         // Arrange.
@@ -541,6 +577,7 @@ class FocusableTest {
         onNodeWithTag(focusTag).assertIsNotFocused()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun movableContent_movedContentBecomesUnfocused() = runSkikoComposeUiTest {
         var moveContent by mutableStateOf(false)

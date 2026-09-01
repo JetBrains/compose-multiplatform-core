@@ -21,6 +21,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.SubcompositionReusableContentHost
@@ -29,7 +30,6 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,6 +47,10 @@ private class LoggerNode(var log: MutableList<String>, name: String) : Modifier.
 
     override fun onDetach() {
         log.add("detach($name)")
+    }
+
+    override fun onReset() {
+        log.add("reset($name)")
     }
 }
 
@@ -71,7 +75,7 @@ private fun Modifier.logger(log: MutableList<String>, name: String) =
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class ModifierNodeAttachOrderTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun attachOrderInitialComposition() {
@@ -252,5 +256,36 @@ class ModifierNodeAttachOrderTest {
         rule.runOnIdle { active = true }
 
         rule.waitForIdle()
+    }
+
+    @Test
+    fun nodesAreAttachedAndDetachedWhenMovedBetweenLayouts() {
+        val log = mutableListOf<String>()
+        var moveContent by mutableStateOf(false)
+
+        rule.setContent {
+            val movableContent = remember { movableContentOf { Box(Modifier.logger(log, "a")) } }
+
+            Box {
+                if (moveContent) {
+                    Box { movableContent() }
+                } else {
+                    Box { movableContent() }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(log).containsExactly("attach(a)")
+            assertThat(log).doesNotContain("reset(a)")
+            log.clear()
+        }
+
+        rule.runOnIdle { moveContent = true }
+
+        rule.runOnIdle {
+            assertThat(log).containsExactly("detach(a)", "attach(a)")
+            assertThat(log).doesNotContain("reset(a)")
+        }
     }
 }

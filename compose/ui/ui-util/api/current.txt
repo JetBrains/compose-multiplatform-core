@@ -4,9 +4,6 @@ package androidx.compose.ui {
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This API is experimental and is likely to change in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalComposeUiApi {
   }
 
-  @SuppressCompatibility @kotlin.RequiresOptIn(message="This API is experimental and is likely to change in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalIndirectPointerApi {
-  }
-
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This API is experimental and is likely to change or be removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalMediaQueryApi {
   }
 
@@ -73,6 +70,7 @@ package androidx.compose.ui.util {
   }
 
   public final class MathHelpersKt {
+    method public static inline boolean equalsIncludingNaN(float, float other);
     method public static float fastCbrt(float x);
     method public static inline double fastCoerceAtLeast(double, double minimumValue);
     method public static inline float fastCoerceAtLeast(float, float minimumValue);

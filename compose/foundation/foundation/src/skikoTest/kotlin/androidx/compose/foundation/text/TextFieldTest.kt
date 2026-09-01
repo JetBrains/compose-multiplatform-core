@@ -39,6 +39,7 @@ import kotlin.test.Test
 
 @OptIn(ExperimentalTestApi::class)
 class TextFieldTest {
+    @Suppress("DEPRECATION")
     @Test
     fun selectionWithVisualTransformation() = runComposeUiTest {
         val rawText = "abcde"

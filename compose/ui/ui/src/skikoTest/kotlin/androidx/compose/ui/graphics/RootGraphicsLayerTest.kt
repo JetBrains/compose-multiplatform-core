@@ -32,6 +32,7 @@ import kotlin.test.Test
 class RootGraphicsLayerTest {
     private val size = Size(100.0f, 60.0f)
 
+    @Suppress("DEPRECATION")
     @Test
     fun rootLayerRedrawnAfterRootRemoval() = runSkikoComposeUiTest(size) {
         var showContent by mutableStateOf(true)

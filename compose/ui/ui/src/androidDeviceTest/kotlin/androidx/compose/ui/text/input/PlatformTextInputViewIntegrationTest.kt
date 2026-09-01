@@ -27,6 +27,8 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.AndroidComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusEventModifierNode
 import androidx.compose.ui.focus.FocusState
@@ -55,7 +57,7 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
+import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -64,7 +66,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class PlatformTextInputViewIntegrationTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private lateinit var hostView: AndroidComposeView
     private lateinit var coroutineScope: CoroutineScope
@@ -646,7 +648,8 @@ class PlatformTextInputViewIntegrationTest {
                 view = (original as TextInputServiceAndroid).view,
                 rootPositionCalculator = FakeMatrixPositionCalculator,
                 inputMethodManager = inputMethodManager,
-                inputCommandProcessorExecutor = original.inputCommandProcessorExecutor,
+                afterFrameCommandExecutor = original.afterFrameCommandExecutor,
+                nextFrameCommandExecutor = original.nextFrameCommandExecutor,
             )
         }
         rule.setContent {
@@ -687,7 +690,8 @@ class PlatformTextInputViewIntegrationTest {
                 view = (original as TextInputServiceAndroid).view,
                 rootPositionCalculator = FakeMatrixPositionCalculator,
                 inputMethodManager = inputMethodManager,
-                original.inputCommandProcessorExecutor,
+                original.afterFrameCommandExecutor,
+                original.nextFrameCommandExecutor,
             )
         }
         rule.setContent {
@@ -711,6 +715,47 @@ class PlatformTextInputViewIntegrationTest {
         }
     }
 
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Suppress("DEPRECATION")
+    @Test
+    fun focusSwitchBetweenTestNodes_undispatched_doesNotHideKeyboard() {
+        assumeTrue(AndroidComposeUiFlags.isOutOfFrameSchedulerForTextInputEventsEnabled)
+        val inputMethodManager = TestInputMethodManager()
+        platformTextInputServiceInterceptor = { original ->
+            val origAndroid = original as TextInputServiceAndroid
+            TextInputServiceAndroid(
+                view = origAndroid.view,
+                rootPositionCalculator = FakeMatrixPositionCalculator,
+                inputMethodManager = inputMethodManager,
+                afterFrameCommandExecutor = origAndroid.afterFrameCommandExecutor,
+                nextFrameCommandExecutor = origAndroid.nextFrameCommandExecutor,
+            )
+        }
+        rule.setContent {
+            Column {
+                Box(
+                    TestElement(CoroutineStart.UNDISPATCHED) { node1 = it }
+                        .focusable()
+                        .testTag("tag1")
+                )
+                Box(
+                    TestElement(CoroutineStart.UNDISPATCHED) { node2 = it }
+                        .focusable()
+                        .testTag("tag2")
+                )
+            }
+        }
+
+        rule.onNodeWithTag("tag1").requestFocus()
+        rule.waitForIdle()
+        inputMethodManager.reset()
+
+        rule.onNodeWithTag("tag2").requestFocus()
+        rule.waitForIdle()
+
+        assertThat(inputMethodManager.hideKeyboardCalls).isEqualTo(0)
+    }
+
     private fun setupContent() {
         rule.setContent {
             hostView = LocalView.current as AndroidComposeView
@@ -721,23 +766,28 @@ class PlatformTextInputViewIntegrationTest {
         }
     }
 
-    private data class TestElement(val onNode: (PlatformTextInputModifierNode) -> Unit) :
-        ModifierNodeElement<TestNode>() {
-        override fun create(): TestNode = TestNode(onNode)
+    private data class TestElement(
+        val start: CoroutineStart = CoroutineStart.DEFAULT,
+        val onNode: (PlatformTextInputModifierNode) -> Unit,
+    ) : ModifierNodeElement<TestNode>() {
+        override fun create(): TestNode = TestNode(start, onNode)
 
         override fun update(node: TestNode) {
+            node.start = start
             node.onNode = onNode
         }
     }
 
-    private class TestNode(var onNode: (PlatformTextInputModifierNode) -> Unit) :
-        Modifier.Node(), PlatformTextInputModifierNode, FocusEventModifierNode {
+    private class TestNode(
+        var start: CoroutineStart = CoroutineStart.DEFAULT,
+        var onNode: (PlatformTextInputModifierNode) -> Unit,
+    ) : Modifier.Node(), PlatformTextInputModifierNode, FocusEventModifierNode {
 
         private var inputSessionJob: Job? = null
 
         private fun startInputSession() {
             inputSessionJob =
-                coroutineScope.launch {
+                coroutineScope.launch(start = start) {
                     establishTextInputSession {
                         launch {
                             startInputMethod(

@@ -17,9 +17,14 @@
 package androidx.compose.ui.layout
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReusableContent
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -32,13 +37,13 @@ import androidx.compose.ui.semantics.elementFor
 import androidx.compose.ui.test.TestActivity
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SmallTest
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -52,7 +57,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class OnSizeChangedTest {
 
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
     private lateinit var activity: TestActivity
 
     @Before
@@ -836,5 +841,61 @@ class OnSizeChangedTest {
         rule.waitForIdle()
         assertEquals(1, placedCalled1)
         assertEquals(1, placedCalled2)
+    }
+
+    @Test
+    fun sizeChangedWhenMovedBetweenLayouts() {
+        var moveContent by mutableStateOf(false)
+        var reportedSize = IntSize.Zero
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                val movableContent = remember {
+                    movableContentOf {
+                        Box(Modifier.fillMaxSize().onSizeChanged { reportedSize = it })
+                    }
+                }
+
+                Box {
+                    if (moveContent) {
+                        Box(Modifier.size(120.dp)) { movableContent() }
+                    } else {
+                        Box(Modifier.size(50.dp)) { movableContent() }
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle { assertEquals(IntSize(50, 50), reportedSize) }
+
+        rule.runOnIdle { moveContent = true }
+
+        rule.runOnIdle { assertEquals(IntSize(120, 120), reportedSize) }
+    }
+
+    @Test
+    fun sizeChangedWhenReused() {
+        var key by mutableStateOf(true)
+        var reportedSize = IntSize.Zero
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                Box {
+                    ReusableContent(key) {
+                        Box(
+                            Modifier.requiredSize(if (key) 50.dp else 100.dp).onSizeChanged {
+                                reportedSize = it
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle { assertEquals(IntSize(50, 50), reportedSize) }
+
+        rule.runOnIdle { key = false }
+
+        rule.runOnIdle { assertEquals(IntSize(100, 100), reportedSize) }
     }
 }

@@ -52,6 +52,7 @@ import androidx.compose.ui.test.findNodeWithLabelOrNull
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.tapContextMenuButton
+import androidx.compose.ui.test.utils.BasicTextFieldType
 import androidx.compose.ui.test.utils.findFirstDescendant
 import androidx.compose.ui.test.utils.isLoupeView
 import androidx.compose.ui.test.utils.up
@@ -307,9 +308,9 @@ class TextFieldEditMenuTest {
             )
         }
 
-    private fun runComplexTextFieldTest(test: UIKitInstrumentedTest.(EditableTextFieldKind, newContextMenuEnabled: Boolean) -> Unit) {
+    private fun runComplexTextFieldTest(test: UIKitInstrumentedTest.(BasicTextFieldType, newContextMenuEnabled: Boolean) -> Unit) {
         for (newContextMenuEnabled in arrayOf(false, true)) {
-            for (textFieldKind in EditableTextFieldKind.entries) {
+            for (textFieldKind in BasicTextFieldType.entries) {
                 runContextMenuTest(newContextMenuEnabled) {
                     test(textFieldKind, newContextMenuEnabled)
                 }
@@ -758,7 +759,7 @@ class TextFieldEditMenuTest {
     }
 
     private fun UIKitInstrumentedTest.setTextFieldContent(
-        textFieldKind: EditableTextFieldKind,
+        textFieldKind: BasicTextFieldType,
         initialValue: TextFieldValue,
         readOnly: Boolean,
     ) {
@@ -766,7 +767,7 @@ class TextFieldEditMenuTest {
             val focusRequester = remember { FocusRequester() }
             Column(modifier = Modifier.safeDrawingPadding()) {
                 when (textFieldKind) {
-                    EditableTextFieldKind.BasicTextField -> {
+                    BasicTextFieldType.V1 -> {
                         val textFieldValue = remember {
                             mutableStateOf(initialValue)
                         }
@@ -777,7 +778,7 @@ class TextFieldEditMenuTest {
                             readOnly = readOnly
                         )
                     }
-                    EditableTextFieldKind.BasicTextField2 -> {
+                    BasicTextFieldType.V2 -> {
                         val textFieldState = remember {
                             TextFieldState(initialValue.text, initialValue.selection)
                         }
@@ -793,11 +794,6 @@ class TextFieldEditMenuTest {
                 focusRequester.requestFocus()
             }
         }
-    }
-
-    private enum class EditableTextFieldKind {
-        BasicTextField,
-        BasicTextField2
     }
 
     private companion object {

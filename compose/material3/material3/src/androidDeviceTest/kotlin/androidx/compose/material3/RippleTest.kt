@@ -60,7 +60,6 @@ import com.google.common.truth.Truth
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -82,7 +81,7 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalMaterial3Api::class)
 class RippleTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun bounded_lightTheme_pressed() {
@@ -493,7 +492,7 @@ class RippleTest {
                 bounded = true,
                 lightTheme = true,
                 contentColor = Color.Black,
-                rippleThemeConfiguration = RippleDefaults.InsetFocusRingRippleThemeConfiguration,
+                rippleThemeConfiguration = RippleDefaults.InsetFocusRingThemeConfiguration,
                 outerStrokeColor = outerColor,
                 innerStrokeColor = innerColor,
             )
@@ -537,7 +536,7 @@ class RippleTest {
                 bounded = true,
                 lightTheme = true,
                 contentColor = Color.Black,
-                rippleThemeConfiguration = RippleDefaults.InsetFocusRingRippleThemeConfiguration,
+                rippleThemeConfiguration = RippleDefaults.InsetFocusRingThemeConfiguration,
             )
 
         // Pause the clock
@@ -589,7 +588,7 @@ class RippleTest {
             MaterialTheme {
                 CompositionLocalProvider(
                     LocalRippleThemeConfiguration provides
-                        RippleDefaults.InsetFocusRingRippleThemeConfiguration,
+                        RippleDefaults.InsetFocusRingThemeConfiguration,
                     LocalRippleConfiguration provides rippleConfiguration,
                 ) {
                     Surface {

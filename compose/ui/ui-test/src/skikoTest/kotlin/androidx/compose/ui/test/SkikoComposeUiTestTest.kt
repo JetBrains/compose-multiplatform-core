@@ -40,6 +40,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
 class SkikoComposeUiTestTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun canSetContent() = runComposeUiTest {
         var set = false
@@ -47,6 +48,7 @@ class SkikoComposeUiTestTest {
         assertThat(set).isTrue()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun canAwaitIdle() = runComposeUiTest {
         var visible by mutableStateOf(false)
@@ -65,6 +67,7 @@ class SkikoComposeUiTestTest {
         onNodeWithText("Hello").assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun canDriveAnimationsFromTest() = runComposeUiTest(runTestContext = UnconfinedTestDispatcher()) {
         val scrollState = ScrollState(initial = 0)

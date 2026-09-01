@@ -63,6 +63,7 @@ class KeyInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testKeyDownAndUp() = runComposeUiTest {
         var keyEvent: KeyEvent? = null
@@ -95,6 +96,7 @@ class KeyInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testIsKeyDown() = runComposeUiTest {
         setContent {
@@ -112,6 +114,7 @@ class KeyInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testPressKey() = runComposeUiTest {
         val keyEvents = mutableListOf<KeyEvent>()
@@ -138,6 +141,7 @@ class KeyInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testWithKeyDown() = runComposeUiTest {
         val keyEvents = mutableListOf<KeyEvent>()
@@ -182,6 +186,7 @@ class KeyInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testWithKeyToggled() = runComposeUiTest {
         val keyEvents = mutableListOf<KeyEvent>()

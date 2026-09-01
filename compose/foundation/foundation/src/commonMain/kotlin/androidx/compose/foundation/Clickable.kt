@@ -17,6 +17,7 @@
 package androidx.compose.foundation
 
 import androidx.annotation.CallSuper
+import androidx.annotation.EmptySuper
 import androidx.collection.mutableLongObjectMapOf
 import androidx.compose.foundation.gestures.changedToDownIgnoreConsumed
 import androidx.compose.foundation.gestures.isChangedToDown
@@ -121,12 +122,12 @@ import kotlinx.coroutines.launch
         "Replaced with new overload that only supports IndicationNodeFactory instances inside LocalIndication, and does not use composed",
     level = DeprecationLevel.HIDDEN,
 )
-fun Modifier.clickable(
+public fun Modifier.clickable(
     enabled: Boolean = true,
     onClickLabel: String? = null,
     role: Role? = null,
     onClick: () -> Unit,
-) =
+): Modifier =
     composed(
         inspectorInfo =
             debugInspectorInfo {
@@ -197,7 +198,7 @@ fun Modifier.clickable(
  *   [MutableInteractionSource] will be created if needed.
  * @param onClick will be called when user clicks on the element
  */
-fun Modifier.clickable(
+public fun Modifier.clickable(
     enabled: Boolean = true,
     onClickLabel: String? = null,
     role: Role? = null,
@@ -258,14 +259,14 @@ fun Modifier.clickable(
  *   the element or do customizations
  * @param onClick will be called when user clicks on the element
  */
-fun Modifier.clickable(
+public fun Modifier.clickable(
     interactionSource: MutableInteractionSource?,
     indication: Indication?,
     enabled: Boolean = true,
     onClickLabel: String? = null,
     role: Role? = null,
     onClick: () -> Unit,
-) =
+): Modifier =
     clickableWithIndicationIfNeeded(
         interactionSource = interactionSource,
         indication = indication,
@@ -319,7 +320,7 @@ fun Modifier.clickable(
         "Replaced with new overload that only supports IndicationNodeFactory instances inside LocalIndication, and does not use composed",
     level = DeprecationLevel.HIDDEN,
 )
-fun Modifier.combinedClickable(
+public fun Modifier.combinedClickable(
     enabled: Boolean = true,
     onClickLabel: String? = null,
     role: Role? = null,
@@ -328,7 +329,7 @@ fun Modifier.combinedClickable(
     onDoubleClick: (() -> Unit)? = null,
     hapticFeedbackEnabled: Boolean = true,
     onClick: () -> Unit,
-) =
+): Modifier =
     composed(
         inspectorInfo =
             debugInspectorInfo {
@@ -413,7 +414,7 @@ fun Modifier.combinedClickable(
  *   [MutableInteractionSource] will be created if needed.
  * @param onClick will be called when user clicks on the element
  */
-fun Modifier.combinedClickable(
+public fun Modifier.combinedClickable(
     enabled: Boolean = true,
     onClickLabel: String? = null,
     role: Role? = null,
@@ -442,7 +443,7 @@ fun Modifier.combinedClickable(
 }
 
 @Deprecated(message = "Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
-fun Modifier.combinedClickable(
+public fun Modifier.combinedClickable(
     enabled: Boolean = true,
     onClickLabel: String? = null,
     role: Role? = null,
@@ -450,7 +451,7 @@ fun Modifier.combinedClickable(
     onLongClick: (() -> Unit)? = null,
     onDoubleClick: (() -> Unit)? = null,
     onClick: () -> Unit,
-) =
+): Modifier =
     composed(
         inspectorInfo =
             debugInspectorInfo {
@@ -538,7 +539,7 @@ fun Modifier.combinedClickable(
  * @param hapticFeedbackEnabled whether to use the default [HapticFeedback] behavior
  * @param onClick will be called when user clicks on the element
  */
-fun Modifier.combinedClickable(
+public fun Modifier.combinedClickable(
     interactionSource: MutableInteractionSource?,
     indication: Indication?,
     enabled: Boolean = true,
@@ -549,7 +550,7 @@ fun Modifier.combinedClickable(
     onDoubleClick: (() -> Unit)? = null,
     hapticFeedbackEnabled: Boolean = true,
     onClick: () -> Unit,
-) =
+): Modifier =
     clickableWithIndicationIfNeeded(
         interactionSource = interactionSource,
         indication = indication,
@@ -570,7 +571,7 @@ fun Modifier.combinedClickable(
     }
 
 @Deprecated(message = "Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
-fun Modifier.combinedClickable(
+public fun Modifier.combinedClickable(
     interactionSource: MutableInteractionSource?,
     indication: Indication?,
     enabled: Boolean = true,
@@ -580,7 +581,7 @@ fun Modifier.combinedClickable(
     onLongClick: (() -> Unit)? = null,
     onDoubleClick: (() -> Unit)? = null,
     onClick: () -> Unit,
-) =
+): Modifier =
     clickableWithIndicationIfNeeded(
         interactionSource = interactionSource,
         indication = indication,
@@ -1694,11 +1695,8 @@ internal abstract class AbstractClickableNode(
 
     private fun shouldLazilyCreateIndication() = userProvidedInteractionSource == null
 
-    @OptIn(ExperimentalFoundationApi::class)
     protected fun playClickSound() {
-        if (ComposeFoundationFlags.isInteractionSoundEffectOnClickEnabled) {
-            currentValueOf(LocalSoundEffect)?.playClickSound()
-        }
+        currentValueOf(LocalSoundEffect)?.playClickSound()
     }
 
     protected fun performClick() {
@@ -1999,7 +1997,7 @@ internal abstract class AbstractClickableNode(
      * Called when focus is lost, to allow cleaning up and resetting the state for ongoing key
      * presses
      */
-    protected open fun onCancelKeyInput() {}
+    @EmptySuper protected open fun onCancelKeyInput() {}
 
     final override fun onPreKeyEvent(event: KeyEvent) = false
 

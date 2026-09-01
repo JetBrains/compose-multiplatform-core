@@ -27,6 +27,7 @@ import org.junit.Test
 
 @Ignore("b/271123970 Fails in AOSP. Will be fixed after upstreaming Compose for Desktop")
 internal class UpdateEffectTest {
+    @Suppress("DEPRECATION")
     @get:Rule
     val rule = createComposeRule()
 

@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.node
 
+import androidx.annotation.EmptySuper
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 
@@ -27,16 +28,16 @@ import androidx.compose.ui.graphics.drawscope.ContentDrawScope
  *
  * @sample androidx.compose.ui.samples.DrawModifierNodeSample
  */
-interface DrawModifierNode : DelegatableNode {
-    fun ContentDrawScope.draw()
+public interface DrawModifierNode : DelegatableNode {
+    public fun ContentDrawScope.draw()
 
-    fun onMeasureResultChanged() {}
+    @EmptySuper public fun onMeasureResultChanged(): Unit {}
 }
 
 /**
  * Invalidates this modifier's draw layer, ensuring that a draw pass will be run on the next frame.
  */
-fun DrawModifierNode.invalidateDraw() {
+public fun DrawModifierNode.invalidateDraw() {
     if (node.isAttached) {
         requireCoordinator(Nodes.Any).invalidateLayer()
     }
@@ -51,6 +52,6 @@ fun DrawModifierNode.invalidateDraw() {
  * executed of any delegates, but the implementation of the node may not have knowledge of which
  * delegates actually implement [DrawModifierNode].
  */
-fun DelegatableNode.dispatchDraw(scope: ContentDrawScope) {
+public fun DelegatableNode.dispatchDraw(scope: ContentDrawScope) {
     node.dispatchForKind(Nodes.Draw) { with(it) { with(scope) { draw() } } }
 }

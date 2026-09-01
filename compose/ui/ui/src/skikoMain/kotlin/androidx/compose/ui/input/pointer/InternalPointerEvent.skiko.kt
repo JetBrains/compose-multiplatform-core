@@ -24,7 +24,10 @@ internal actual class InternalPointerEvent(
     val buttons: PointerButtons,
     val keyboardModifiers: PointerKeyboardModifiers,
     val nativeEvent: Any?,
-    val button: PointerButton?
+    val button: PointerButton?,
+    actual val activeGesture: PointerClassification,
+    actual val isGestureStart: Boolean,
+    actual val isGestureEnd: Boolean,
 ) {
     actual constructor(
         changes: LongSparseArray<PointerInputChange>,
@@ -35,7 +38,10 @@ internal actual class InternalPointerEvent(
         pointerInputEvent.buttons,
         pointerInputEvent.keyboardModifiers,
         pointerInputEvent.nativeEvent,
-        pointerInputEvent.button
+        pointerInputEvent.button,
+        pointerInputEvent.activeGesture,
+        pointerInputEvent.isGestureStart,
+        pointerInputEvent.isGestureEnd,
     )
 
     actual var suppressMovementConsumption: Boolean = false

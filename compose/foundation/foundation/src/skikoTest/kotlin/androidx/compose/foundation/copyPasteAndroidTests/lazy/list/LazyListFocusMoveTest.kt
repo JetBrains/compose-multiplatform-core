@@ -33,7 +33,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusDirection.Companion.Down
@@ -63,7 +62,7 @@ import kotlin.test.Test
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalTestApi::class)
+@OptIn(ExperimentalTestApi::class)
 @Ignore // TODO: the tests fail or get stuck time from time - flaky
 // Fails with:
 // Compose Runtime internal error.
@@ -99,6 +98,7 @@ class LazyListFocusMoveTest {
     private lateinit var lazyListState: LazyListState
     private lateinit var focusManager: FocusManager
 
+    @Suppress("DEPRECATION")
     private fun runParametrizedTest(test: SkikoComposeUiTest.() -> Unit) = runSkikoComposeUiTest {
         initParameters().forEach {
             param = it

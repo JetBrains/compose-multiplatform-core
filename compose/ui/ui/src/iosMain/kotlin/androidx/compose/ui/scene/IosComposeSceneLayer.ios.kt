@@ -122,6 +122,12 @@ internal class IosComposeSceneLayer(
         it.isInterceptingOutsideEvents = consumePointerInputOutside
     }
 
+    var rootForTestListener: PlatformContext.RootForTestListener?
+        get() = mediator.rootForTestListener
+        set(value) {
+            mediator.rootForTestListener = value
+        }
+
     private fun createComposeScene(platformContext: PlatformContext): ComposeScene =
         PlatformLayersComposeScene(
             frameRecomposer = frameChoreographer.frameRecomposer,

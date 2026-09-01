@@ -75,6 +75,7 @@ class ComposeUiTestTestCopyFromAosp {
      * Check that basic scenarios with input work: a composition that receives touch input and
      * changes state as a result of that, triggering recomposition.
      */
+    @Suppress("DEPRECATION")
     @Test
     fun testInputInjection() = runComposeUiTest {
         setContent { ClickCounter() }
@@ -87,6 +88,7 @@ class ComposeUiTestTestCopyFromAosp {
     }
 
     /** Check that basic scenarios work: a composition that is recomposed due to a state change. */
+    @Suppress("DEPRECATION")
     @Test
     fun testStateChange() = runComposeUiTest {
         val clicks = mutableStateOf(0)
@@ -104,6 +106,7 @@ class ComposeUiTestTestCopyFromAosp {
      * idle, stays non-idle while the animation animates to a new target and is idle again after
      * that.
      */
+    @Suppress("DEPRECATION")
     @Test
     fun testAnimation() = runComposeUiTest {
         var target by mutableStateOf(0f)
@@ -122,6 +125,7 @@ class ComposeUiTestTestCopyFromAosp {
      * Check that scrolling and controlling the clock works: a scrollable receives a swipe while the
      * clock is paused, when the clock is resumed it performs the fling.
      */
+    @Suppress("DEPRECATION")
     @Test
     fun testControlledScrolling() = runComposeUiTest {
         // Define constants used in the test
@@ -199,12 +203,14 @@ class ComposeUiTestTestCopyFromAosp {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun runTestContextMustHaveMonotonicFrameClock() = runComposeUiTest {
         val frameClock = coroutineContext[MonotonicFrameClock.Key]
         assertThat(frameClock).isNotNull()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun runTestAndCompositionUseDifferentSchedulers() = runComposeUiTest {
         var number by mutableStateOf(10)
@@ -230,6 +236,7 @@ class ComposeUiTestTestCopyFromAosp {
         assertThat(mainClock.currentTime).isEqualTo(currentCompositionTime + 21)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun shouldKeepCustomCoroutineContextElements() =
         runComposeUiTest(runTestContext = MyCustomElement("testElement")) {
@@ -239,6 +246,7 @@ class ComposeUiTestTestCopyFromAosp {
         }
 
 
+    @Suppress("DEPRECATION")
     @Test
     fun defaultRunTestDispatcherIsStandardDispatcher() = runComposeUiTest {
         var i = 0
@@ -249,6 +257,7 @@ class ComposeUiTestTestCopyFromAosp {
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun canOverrideRunTestDispatcher() =
         runComposeUiTest(runTestContext = UnconfinedTestDispatcher()) {

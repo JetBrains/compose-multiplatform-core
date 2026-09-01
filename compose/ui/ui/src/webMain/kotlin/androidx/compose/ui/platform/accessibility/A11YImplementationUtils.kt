@@ -20,6 +20,10 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.util.fastFilter
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastForEachIndexed
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
 
@@ -58,6 +62,7 @@ internal object AriaRoleId {
     const val List = 9
     const val Grid = 10
     const val Dialog = 11
+    const val Link = 12
 }
 
 internal fun SemanticsConfiguration.getRoleId(): Int {
@@ -85,6 +90,11 @@ internal fun SemanticsConfiguration.getRoleId(): Int {
     if (SemanticsActions.OnClick in this && roleId == AriaRoleId.Unknown) {
         // TODO: Not everything with OnClick is a button! For now default to button for unknown clickable roles
         roleId = Role.Button.toIntId()
+    }
+
+    if (this.contains(SemanticsProperties.LinkTestMarker)) {
+        // TODO: LinkAnnotation.Clickable is not a navigation link, consider `button` for it.
+        roleId = AriaRoleId.Link
     }
 
     if (this.contains(SemanticsProperties.Heading)) {
@@ -156,6 +166,9 @@ internal fun setA11YAriaRole(element: HTMLElement, ariaRoleId: Int) {
             case 11: // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/dialog_role
                 roleValue = "dialog";
                 break;
+            case 12: // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/link_role
+                roleValue = "link";
+                break;
             default:
                 break;
         }
@@ -187,4 +200,51 @@ internal fun Element.setInert(inert: Boolean) {
 private external interface CanToggleAttribute : JsAny {
     // https://developer.mozilla.org/en-US/docs/Web/API/Element/toggleAttribute
     fun toggleAttribute(attributeName: String, force: Boolean): Boolean
+}
+
+/**
+ * The text of a text node split around its link ranges, see [splitTextAndLinks].
+ */
+internal class TextAndLinksSplit(
+    /** The plain text parts surrounding the links: always `linkTexts.size + 1` items. */
+    val textParts: List<String>,
+    /** The text of every non-empty link range, in the order of appearance. */
+    val linkTexts: List<String>,
+) {
+    /**
+     * Returns true if the text has exactly [linksCount] non-empty link ranges, so [textParts] can
+     * be interleaved with the link children of the node. Otherwise, the node should expose the
+     * whole text instead.
+     */
+    fun matchesLinksCount(linksCount: Int) = linkTexts.size == linksCount
+}
+
+/**
+ * Splits [texts] into the plain text parts surrounding the link ranges and the texts of the link
+ * ranges themselves, so that every link range can be exposed by its own a11y node.
+ */
+internal fun splitTextAndLinks(texts: List<AnnotatedString>): TextAndLinksSplit {
+    val parts = mutableListOf<String>()
+    val linkTexts = mutableListOf<String>()
+    var pendingText = StringBuilder()
+
+    texts.fastForEachIndexed { index, text ->
+        if (index > 0) pendingText.append("\n")
+
+        var lastEnd = 0
+        text.getLinkAnnotations(0, text.length)
+            .fastFilter { it.start != it.end } // filter out links with empty text
+            .fastForEach { link ->
+                pendingText.append(text.text, lastEnd, link.start)
+                parts.add(pendingText.toString())
+                pendingText = StringBuilder()
+                linkTexts.add(text.text.substring(link.start, link.end))
+                lastEnd = link.end
+            }
+        pendingText.append(text.text, lastEnd, text.length)
+    }
+
+    parts.add(pendingText.toString())
+
+    return TextAndLinksSplit(textParts = parts, linkTexts = linkTexts)
 }

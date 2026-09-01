@@ -30,6 +30,8 @@ import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -48,6 +50,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CoroutineScope
@@ -165,6 +168,223 @@ class CfWA11YTest : OnCanvasTests {
 
         assertEquals(1, buttonsContainer.children.length)
         assertFalse(button2.isConnected)
+    }
+
+    @Test
+    fun survivingNodeIsNotDetachedWhenSiblingIsInserted() = runApplicationTest {
+        var showButton2 by mutableStateOf(false)
+
+        createComposeWindow {
+            Button(
+                modifier = Modifier.testTag("button1"),
+                onClick = {},
+            ) {
+                Text("Button1")
+            }
+
+            if (showButton2) {
+                Button(
+                    modifier = Modifier.testTag("button2"),
+                    onClick = {},
+                ) {
+                    Text("Button2")
+                }
+            }
+        }
+
+        awaitA11YChanges()
+
+        val a11yContainer = assertNotNull(getA11YContainer())
+        val buttonBefore =
+            assertNotNull(getShadowRoot().getElementById("button1") as? HTMLElement)
+        var buttonWasRemoved = false
+        val observer = createMutationObserver { removedNode ->
+            if (removedNode === buttonBefore ||
+                (removedNode as? HTMLElement)?.contains(buttonBefore) == true
+            ) {
+                buttonWasRemoved = true
+            }
+        }
+        observeChildListMutations(observer, a11yContainer)
+
+        try {
+            showButton2 = true
+            awaitA11YChanges()
+            awaitAnimationFrame()
+
+            val buttonAfter =
+                assertNotNull(getShadowRoot().getElementById("button1") as? HTMLElement)
+            assertSame(buttonBefore, buttonAfter)
+            assertTrue(buttonAfter.isConnected)
+            assertFalse(
+                buttonWasRemoved,
+                "A surviving A11Y node must remain continuously connected",
+            )
+        } finally {
+            disconnectMutationObserver(observer)
+        }
+    }
+
+    @Test
+    fun survivingNodeIsNotDetachedWhenSiblingIsRemoved() = runApplicationTest {
+        var showButton2 by mutableStateOf(true)
+
+        createComposeWindow {
+            Button(modifier = Modifier.testTag("button1"), onClick = {}) {
+                Text("Button1")
+            }
+            if (showButton2) {
+                Button(modifier = Modifier.testTag("button2"), onClick = {}) {
+                    Text("Button2")
+                }
+            }
+        }
+
+        awaitA11YChanges()
+        val a11yContainer = assertNotNull(getA11YContainer())
+        val button1 = assertNotNull(getShadowRoot().getElementById("button1") as? HTMLElement)
+        val button2 = assertNotNull(getShadowRoot().getElementById("button2") as? HTMLElement)
+        var button1WasRemoved = false
+        val observer = createMutationObserver { removedNode ->
+            if (removedNode === button1 ||
+                (removedNode as? HTMLElement)?.contains(button1) == true
+            ) {
+                button1WasRemoved = true
+            }
+        }
+        observeChildListMutations(observer, a11yContainer)
+
+        try {
+            showButton2 = false
+            awaitA11YChanges()
+            awaitAnimationFrame()
+
+            assertSame(button1, getShadowRoot().getElementById("button1"))
+            assertTrue(button1.isConnected)
+            assertFalse(button2.isConnected)
+            assertFalse(button1WasRemoved, "A surviving sibling must not be removed")
+        } finally {
+            disconnectMutationObserver(observer)
+        }
+    }
+
+    @Test
+    fun reorderedNodesRetainTheirElements() = runApplicationTest {
+        var order by mutableStateOf(listOf(1, 2, 3))
+
+        createComposeWindow {
+            Column(modifier = Modifier.testTag("parent")) {
+                order.forEach { item ->
+                    key(item) {
+                        Button(modifier = Modifier.testTag("button$item"), onClick = {}) {
+                            Text("Button$item")
+                        }
+                    }
+                }
+            }
+        }
+
+        awaitA11YChanges()
+        val parent = assertNotNull(getShadowRoot().getElementById("parent") as? HTMLElement)
+        val buttons = (1..3).associateWith { item ->
+            assertNotNull(getShadowRoot().getElementById("button$item") as? HTMLElement)
+        }
+        var parentWasRemoved = false
+        val observer = createMutationObserver { removedNode ->
+            if (removedNode === parent ||
+                (removedNode as? HTMLElement)?.contains(parent) == true
+            ) {
+                parentWasRemoved = true
+            }
+        }
+        observeChildListMutations(observer, assertNotNull(getA11YContainer()))
+
+        try {
+            order = listOf(3, 1, 2)
+            awaitA11YChanges()
+            awaitAnimationFrame()
+
+            assertSame(parent, getShadowRoot().getElementById("parent"))
+            assertEquals(
+                listOf("button3", "button1", "button2"),
+                (0 until parent.children.length).map { parent.children[it]?.id },
+            )
+            buttons.forEach { (item, element) ->
+                assertSame(element, getShadowRoot().getElementById("button$item"))
+                assertTrue(element.isConnected)
+            }
+            assertFalse(parentWasRemoved, "The reordered children's parent must not be removed")
+        } finally {
+            disconnectMutationObserver(observer)
+        }
+    }
+
+    @Test // [A, C, B], and C moves to another parent, leaving [A, B].
+    fun reparentedNodeRetainsItsElement() = runApplicationTest {
+        var moveToSecondParent by mutableStateOf(false)
+        val buttonInMovableContent = movableContentOf {
+            Button(modifier = Modifier.testTag("movableButton"), onClick = {}) {
+                Text("Movable")
+            }
+        }
+
+        createComposeWindow {
+            Column {
+                Box(modifier = Modifier.testTag("parent1")) {
+                    Button(modifier = Modifier.testTag("button1"), onClick = {}) {
+                        Text("Button1")
+                    }
+                    if (!moveToSecondParent) buttonInMovableContent()
+                    Button(modifier = Modifier.testTag("button2"), onClick = {}) {
+                        Text("Button2")
+                    }
+                }
+                Box(modifier = Modifier.testTag("parent2")) {
+                    if (moveToSecondParent) buttonInMovableContent()
+                }
+            }
+        }
+
+        awaitA11YChanges()
+        val parent1 = assertNotNull(getShadowRoot().getElementById("parent1") as? HTMLElement)
+        val parent2 = assertNotNull(getShadowRoot().getElementById("parent2") as? HTMLElement)
+
+        val movableButton = assertNotNull(getShadowRoot().getElementById("movableButton") as? HTMLElement)
+        val button1 = assertNotNull(getShadowRoot().getElementById("button1") as? HTMLElement)
+        val button2 = assertNotNull(getShadowRoot().getElementById("button2") as? HTMLElement)
+
+        var unaffectedNodeWasRemoved = false
+        val observer = createMutationObserver { removedNode ->
+            if (removedNode === parent1 || removedNode === parent2 ||
+                removedNode === button1 || removedNode === button2 ||
+                (removedNode as? HTMLElement)?.contains(button1) == true ||
+                (removedNode as? HTMLElement)?.contains(button2) == true
+            ) {
+                unaffectedNodeWasRemoved = true
+            }
+        }
+        observeChildListMutations(observer, assertNotNull(getA11YContainer()))
+
+        try {
+            moveToSecondParent = true
+            awaitA11YChanges()
+            awaitAnimationFrame()
+
+            assertSame(movableButton, getShadowRoot().getElementById("movableButton"))
+            assertSame(parent2, movableButton.parentElement)
+            assertTrue(movableButton.isConnected)
+            assertSame(parent1, getShadowRoot().getElementById("parent1"))
+            assertSame(parent2, getShadowRoot().getElementById("parent2"))
+            assertSame(button1, getShadowRoot().getElementById("button1"))
+            assertSame(button2, getShadowRoot().getElementById("button2"))
+            assertEquals(
+                listOf("button1", "button2"),
+                (0 until parent1.children.length).map { parent1.children[it]?.id },
+            )
+            assertFalse(unaffectedNodeWasRemoved, "Unaffected nodes must not be removed")
+        } finally {
+            disconnectMutationObserver(observer)
+        }
     }
 
     @Test
@@ -786,4 +1006,27 @@ class CfWA11YTest : OnCanvasTests {
         awaitA11YChanges()
         assertTrue(a11yContainer.innerHTML.contains("Sibling"))
     }
+}
+
+internal external interface TestMutationObserver : JsAny
+
+internal fun createMutationObserver(onRemoved: (JsAny) -> Unit): TestMutationObserver =
+    js(
+        """
+        new MutationObserver(records => {
+            for (const record of records) {
+                for (const removedNode of record.removedNodes) {
+                    onRemoved(removedNode);
+                }
+            }
+        })
+        """
+    )
+
+internal fun observeChildListMutations(observer: TestMutationObserver, element: HTMLElement) {
+    js("observer.observe(element, { childList: true, subtree: true })")
+}
+
+internal fun disconnectMutationObserver(observer: TestMutationObserver) {
+    js("observer.disconnect()")
 }

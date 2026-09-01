@@ -25,16 +25,18 @@ import androidx.compose.runtime.Immutable
  */
 @Immutable
 @kotlin.jvm.JvmInline
-value class ClipOp internal constructor(@Suppress("unused") private val value: Int) {
-    companion object {
+public value class ClipOp internal constructor(@Suppress("unused") private val value: Int) {
+    public companion object {
         /** Subtract the new region from the existing region. */
-        val Difference = ClipOp(0)
+        public val Difference: ClipOp
+            get() = ClipOp(0)
 
         /** Intersect the new region from the existing region. */
-        val Intersect = ClipOp(1)
+        public val Intersect: ClipOp
+            get() = ClipOp(1)
     }
 
-    override fun toString() =
+    override fun toString(): String =
         when (this) {
             Difference -> "Difference"
             Intersect -> "Intersect"

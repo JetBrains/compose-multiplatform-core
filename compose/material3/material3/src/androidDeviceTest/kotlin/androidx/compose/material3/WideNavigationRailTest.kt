@@ -75,7 +75,6 @@ import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -83,7 +82,7 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class WideNavigationRailTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
     private val restorationTester = StateRestorationTester(rule)
 
     private val collapsedWidth = NavigationRailCollapsedTokens.ContainerWidth
@@ -276,7 +275,8 @@ class WideNavigationRailTest {
                 WideNavigationRailItemDefaults.colors()
                     .copy(
                         selectedIconColor = Color.Red,
-                        selectedTextColor = Color.Blue,
+                        selectedTextColorTopIconPosition = Color.Blue,
+                        selectedTextColorStartIconPosition = Color.Blue,
                         unselectedIconColor = Color.Green,
                         unselectedTextColor = Color.White,
                         disabledIconColor = Color.Gray,
@@ -492,12 +492,17 @@ class WideNavigationRailTest {
         val iconBounds =
             rule.onNodeWithTag("icon", useUnmergedTree = true).getUnclippedBoundsInRoot()
 
-        val itemSize =
+        val itemWidth =
+            WNRItemNoLabelIndicatorPadding +
+                iconBounds.width +
+                WNRItemNoLabelIndicatorPadding +
+                (WNRItemHorizontalPadding * 2)
+        val itemHeight =
             WNRItemNoLabelIndicatorPadding + iconBounds.height + WNRItemNoLabelIndicatorPadding
 
         // Assert the item has its minimal width and height values.
-        Truth.assertThat(itemBounds.width).isEqualTo(itemSize)
-        Truth.assertThat(itemBounds.height).isEqualTo(itemSize)
+        Truth.assertThat(itemBounds.width).isEqualTo(itemWidth)
+        Truth.assertThat(itemBounds.height).isEqualTo(itemHeight)
 
         // The icon should be centered in the item, as there is no text placeable provided
         rule
@@ -798,8 +803,6 @@ class WideNavigationRailTest {
         // Assert item is at the bottom.
         rule
             .onNodeWithTag("item", useUnmergedTree = true)
-            .assertTopPositionInRootIsEqualTo(
-                (railBounds.height - verticalPadding - itemBounds.height)
-            )
+            .assertTopPositionInRootIsEqualTo((railBounds.height - itemBounds.height))
     }
 }

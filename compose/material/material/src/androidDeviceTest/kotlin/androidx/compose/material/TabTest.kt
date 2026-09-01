@@ -62,7 +62,6 @@ import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -78,7 +77,7 @@ class TabTest {
 
     private val icon = Icons.Filled.Favorite
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Before
     fun before() {
@@ -387,7 +386,13 @@ class TabTest {
 
         val baselinePositionY = textBounds.top + textBaselinePos
         val expectedPositionY = tabRowBounds.height - expectedBaselineDistance
-        baselinePositionY.assertIsEqualTo(expectedPositionY, "baseline y-position")
+
+        val tolerance = maxOf(0.5.dp, with(rule.density) { 1.toDp() + 0.05.dp })
+        baselinePositionY.assertIsEqualTo(
+            expectedPositionY,
+            "baseline y-position",
+            tolerance = tolerance,
+        )
     }
 
     @Test

@@ -63,6 +63,7 @@ class LazySemanticsTest {
     private fun tag(index: Int): String = "tag_$index"
     private fun key(index: Int): String = "key_$index"
 
+    @Suppress("DEPRECATION")
     @Test
     fun itemSemantics_verticalGrid() = runSkikoComposeUiTest {
         setContent {
@@ -77,6 +78,7 @@ class LazySemanticsTest {
         runTest()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun itemsSemantics_verticalGrid() = runSkikoComposeUiTest {
         setContent {

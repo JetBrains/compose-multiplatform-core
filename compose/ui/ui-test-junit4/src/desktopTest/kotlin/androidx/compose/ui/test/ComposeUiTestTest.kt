@@ -65,6 +65,7 @@ class ComposeUiTestTest {
     // TODO why this test passed before the check for effectContext was added?
     //  effectContext didn't passed anywhere.
     @Test
+    @Suppress("DEPRECATION")
     @Ignore("effectContext isn't implemented https://github.com/JetBrains/compose-multiplatform/issues/2960")
     fun effectContextPropagatedToComposition_runComposeUiTest() {
         val testElement = TestCoroutineContextElement()
@@ -89,6 +90,7 @@ class ComposeUiTestTest {
     fun effectContextPropagatedToComposition_createComposeRule() {
         val testElement = TestCoroutineContextElement()
         lateinit var compositionScope: CoroutineScope
+        @Suppress("DEPRECATION")
         val rule = createComposeRule(testElement)
         val baseStatement = object : Statement() {
             override fun evaluate() {
@@ -106,6 +108,7 @@ class ComposeUiTestTest {
         assertThat(elementFromComposition).isSameInstanceAs(testElement)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun motionDurationScale_defaultValue() = runComposeUiTest {
         var lastRecordedMotionDurationScale: Float? = null
@@ -121,6 +124,7 @@ class ComposeUiTestTest {
 
     // TODO why this test passed before the check for effectContext was added?
     //  effectContext didn't passed anywhere.
+    @Suppress("DEPRECATION")
     @Test
     @Ignore("effectContext isn't implemented https://github.com/JetBrains/compose-multiplatform/issues/2960")
     fun motionDurationScale_propagatedToCoroutines() {
@@ -140,6 +144,7 @@ class ComposeUiTestTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun effectShouldBeCancelledImmediately() {
         runComposeUiTest {
@@ -166,6 +171,7 @@ class ComposeUiTestTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testTimeout() {
         val timeout = 100.milliseconds
@@ -183,6 +189,7 @@ class ComposeUiTestTest {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testFailedAssertion() {
         val error = assertFailsWith<ComparisonFailure> {

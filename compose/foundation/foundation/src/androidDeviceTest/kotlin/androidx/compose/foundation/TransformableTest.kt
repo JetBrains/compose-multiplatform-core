@@ -72,7 +72,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -86,7 +85,7 @@ private const val EDGE_FUZZ_FACTOR = 0.2f
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class TransformableTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private lateinit var scope: CoroutineScope
 
@@ -1000,6 +999,7 @@ class TransformableTest {
     // Classification is only supported on API 34+
     @SdkSuppress(minSdkVersion = 34)
     @Test
+    @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
     fun transformable_ctrlAndTrackpadScrollUp_doesZoomIn() {
         var cumulativeScale = 1.0f
         val centroids = mutableListOf<Offset>()
@@ -1039,6 +1039,7 @@ class TransformableTest {
     // Classification is only supported on API 34+
     @SdkSuppress(minSdkVersion = 34)
     @Test
+    @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
     fun transformable_ctrlAndTrackpadScrollDown_doesZoomOut() {
         var cumulativeScale = 1.0f
         val centroids = mutableListOf<Offset>()
@@ -1125,6 +1126,7 @@ class TransformableTest {
     // Classification is only supported on API 34+
     @SdkSuppress(minSdkVersion = 34)
     @Test
+    @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
     fun transformableInsideScroll_ctrlAndTrackpadScroll_doesZoomNoScroll_withFlags() {
         var cumulativeScale = 1.0f
         val centroids = mutableListOf<Offset>()
@@ -1227,7 +1229,10 @@ class TransformableTest {
             }
         }
 
-        rule.onNodeWithTag(TEST_TAG).performTrackpadInput { pan(Offset(0f, 100f)) }
+        rule.onNodeWithTag(TEST_TAG).performTrackpadInput {
+            moveTo(center)
+            pan(Offset(0f, 100f))
+        }
 
         rule.runOnIdle {
             assertWithMessage("Should not scroll").that(scrollState.value).isEqualTo(0)

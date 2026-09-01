@@ -32,8 +32,6 @@ import android.view.View.MeasureSpec.makeMeasureSpec
 import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.view.WindowManager
-import android.window.OnBackInvokedCallback
-import android.window.OnBackInvokedDispatcher
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
@@ -73,17 +71,27 @@ import androidx.compose.ui.platform.withInfiniteAnimationFrameNanos
 import androidx.compose.ui.semantics.popup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
+import androidx.compose.ui.util.equalsIncludingNaN
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.lifecycle.findViewTreeViewModelStoreOwner
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.navigationevent.DirectNavigationEventInput
+import androidx.navigationevent.NavigationEventDispatcher
+import androidx.navigationevent.NavigationEventDispatcherOwner
+import androidx.navigationevent.NavigationEventHandler
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.OnBackInvokedOverlayInput
+import androidx.navigationevent.setViewTreeNavigationEventDispatcherOwner
 import androidx.savedstate.findViewTreeSavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import java.util.UUID
@@ -130,24 +138,42 @@ import org.jetbrains.annotations.TestOnly
  *   add sub-windows of the specified[windowType]. Providing an invalid, stale, or permission-denied
  *   token will typically result in an [android.view.WindowManager.BadTokenException] when the popup
  *   attempts to show.
+ * @property blurBehindRadius Blurs the screen behind the window. The effect is similar to that of
+ *   [scrimAlpha], but instead of having a scrim applied, the content behind the window will be
+ *   blurred (or combined with the scrim opacity, if such is specified). The density of the blur is
+ *   set by the blur radius. The radius defines the size of the neighboring area, from which pixels
+ *   will be averaged to form the final color for each pixel. The operation approximates a Gaussian
+ *   blur. A radius of `0.dp` means no blur. The higher the radius, the denser the blur. For blur
+ *   behind, a radius of `10.dp` (~20 px) creates a good depth-of-field effect. Avoid blur radii
+ *   higher than `50.dp` (~150 px), as this will significantly impact performance. Some devices
+ *   might not support cross-window blur due to GPU limitations. It can also be disabled by the
+ *   system at runtime (e.g. during battery saving mode). In such situations, no blur will be
+ *   computed or drawn. Supported on Android 12 ([Build.VERSION_CODES.S]) and above.
+ * @property scrimAlpha The opacity of the scrim (also known as dimming) applied behind the popup
+ *   window. Ranging from 0.0f (no scrim) to 1.0f (completely opaque). By default, this value is
+ *   [Float.NaN], which means the popup retains the standard system popup behavior with no scrim
+ *   applied behind the window.
  *
  *   Example usage:
  *
  * @sample androidx.compose.ui.samples.PopupFromServiceSample
+ * @sample androidx.compose.ui.samples.PopupWithBlurSample
  */
 @Immutable
-actual class PopupProperties
-constructor(
+public actual class PopupProperties
+public constructor(
     internal val flags: Int,
     internal val inheritSecurePolicy: Boolean = true,
-    actual val dismissOnBackPress: Boolean = true,
-    actual val dismissOnClickOutside: Boolean = true,
-    val excludeFromSystemGesture: Boolean = true,
-    actual val usePlatformDefaultWidth: Boolean = false,
-    val windowType: Int = WindowManager.LayoutParams.TYPE_APPLICATION_SUB_PANEL,
-    val windowToken: IBinder? = null,
+    public actual val dismissOnBackPress: Boolean = true,
+    public actual val dismissOnClickOutside: Boolean = true,
+    public val excludeFromSystemGesture: Boolean = true,
+    public actual val usePlatformDefaultWidth: Boolean = false,
+    public val windowType: Int = WindowManager.LayoutParams.TYPE_APPLICATION_SUB_PANEL,
+    public val windowToken: IBinder? = null,
+    public val blurBehindRadius: Dp = Dp.Unspecified,
+    public val scrimAlpha: Float = Float.NaN,
 ) {
-    actual constructor(
+    public actual constructor(
         focusable: Boolean,
         dismissOnBackPress: Boolean,
         dismissOnClickOutside: Boolean,
@@ -166,7 +192,7 @@ constructor(
     )
 
     @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
-    constructor(
+    public constructor(
         focusable: Boolean = false,
         dismissOnBackPress: Boolean = true,
         dismissOnClickOutside: Boolean = true,
@@ -187,7 +213,7 @@ constructor(
     )
 
     @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
-    constructor(
+    public constructor(
         flags: Int,
         inheritSecurePolicy: Boolean = true,
         dismissOnBackPress: Boolean = true,
@@ -206,7 +232,54 @@ constructor(
     )
 
     @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
-    actual constructor(
+    public constructor(
+        flags: Int,
+        inheritSecurePolicy: Boolean = true,
+        dismissOnBackPress: Boolean = true,
+        dismissOnClickOutside: Boolean = true,
+        excludeFromSystemGesture: Boolean = true,
+        usePlatformDefaultWidth: Boolean = false,
+        windowType: Int = WindowManager.LayoutParams.TYPE_APPLICATION_SUB_PANEL,
+        windowToken: IBinder? = null,
+    ) : this(
+        flags = flags,
+        inheritSecurePolicy = inheritSecurePolicy,
+        dismissOnBackPress = dismissOnBackPress,
+        dismissOnClickOutside = dismissOnClickOutside,
+        excludeFromSystemGesture = excludeFromSystemGesture,
+        usePlatformDefaultWidth = usePlatformDefaultWidth,
+        windowType = windowType,
+        windowToken = windowToken,
+        blurBehindRadius = Dp.Unspecified,
+        scrimAlpha = Float.NaN,
+    )
+
+    @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+    public constructor(
+        focusable: Boolean = false,
+        dismissOnBackPress: Boolean = true,
+        dismissOnClickOutside: Boolean = true,
+        securePolicy: SecureFlagPolicy = SecureFlagPolicy.Inherit,
+        excludeFromSystemGesture: Boolean = true,
+        clippingEnabled: Boolean = true,
+        usePlatformDefaultWidth: Boolean = false,
+        windowType: Int = WindowManager.LayoutParams.TYPE_APPLICATION_SUB_PANEL,
+        windowToken: IBinder? = null,
+    ) : this(
+        flags = createFlags(focusable, securePolicy, clippingEnabled),
+        inheritSecurePolicy = securePolicy == SecureFlagPolicy.Inherit,
+        dismissOnBackPress = dismissOnBackPress,
+        dismissOnClickOutside = dismissOnClickOutside,
+        excludeFromSystemGesture = excludeFromSystemGesture,
+        usePlatformDefaultWidth = usePlatformDefaultWidth,
+        windowType = windowType,
+        windowToken = windowToken,
+        blurBehindRadius = Dp.Unspecified,
+        scrimAlpha = Float.NaN,
+    )
+
+    @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+    public actual constructor(
         focusable: Boolean,
         dismissOnBackPress: Boolean,
         dismissOnClickOutside: Boolean,
@@ -220,7 +293,7 @@ constructor(
         clippingEnabled = clippingEnabled,
     )
 
-    constructor(
+    public constructor(
         focusable: Boolean = false,
         dismissOnBackPress: Boolean = true,
         dismissOnClickOutside: Boolean = true,
@@ -278,12 +351,26 @@ constructor(
      *   permissions to add sub-windows of the specified[windowType]. Providing an invalid, stale,
      *   or permission-denied token will typically result in an
      *   [android.view.WindowManager.BadTokenException] when the popup attempts to show.
+     * @param blurBehindRadius Blurs the screen behind the window. The effect is similar to that of
+     *   [scrimAlpha], but instead of having a scrim applied, the content behind the window will be
+     *   blurred (or combined with the scrim opacity, if such is specified). The density of the blur
+     *   is set by the blur radius. The radius defines the size of the neighboring area, from which
+     *   pixels will be averaged to form the final color for each pixel. The operation approximates
+     *   a Gaussian blur. A radius of `0.dp` means no blur. The higher the radius, the denser the
+     *   blur. Some devices might not support cross-window blur due to GPU limitations. It can also
+     *   be disabled by the system at runtime (e.g. during battery saving mode). In such situations,
+     *   no blur will be computed or drawn. Supported on Android 12 ([Build.VERSION_CODES.S]) and
+     *   above.
+     * @param scrimAlpha The opacity of the scrim (also known as dimming) applied behind the popup
+     *   window. Ranging from 0.0f (no scrim) to 1.0f (completely opaque). By default, this value is
+     *   [Float.NaN], which means the popup retains the standard system popup behavior with no scrim
+     *   applied behind the window.
      *
-     *   Example usage:
+     * Example usage:
      *
      * @sample androidx.compose.ui.samples.PopupFromServiceSample
      */
-    constructor(
+    public constructor(
         focusable: Boolean = false,
         dismissOnBackPress: Boolean = true,
         dismissOnClickOutside: Boolean = true,
@@ -293,6 +380,8 @@ constructor(
         usePlatformDefaultWidth: Boolean = false,
         windowType: Int = WindowManager.LayoutParams.TYPE_APPLICATION_SUB_PANEL,
         windowToken: IBinder? = null,
+        blurBehindRadius: Dp = Dp.Unspecified,
+        scrimAlpha: Float = Float.NaN,
     ) : this(
         flags = createFlags(focusable, securePolicy, clippingEnabled),
         inheritSecurePolicy = securePolicy == SecureFlagPolicy.Inherit,
@@ -302,17 +391,19 @@ constructor(
         usePlatformDefaultWidth = usePlatformDefaultWidth,
         windowType = windowType,
         windowToken = windowToken,
+        blurBehindRadius = blurBehindRadius,
+        scrimAlpha = scrimAlpha,
     )
 
     /**
      * Whether the popup is focusable. When true, the popup will receive IME events and key presses,
      * such as when the back button is pressed.
      */
-    actual val focusable: Boolean
+    public actual val focusable: Boolean
         get() = (flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE) == 0
 
     /** Policy for how [WindowManager.LayoutParams.FLAG_SECURE] is set on the popup's window. */
-    val securePolicy: SecureFlagPolicy
+    public val securePolicy: SecureFlagPolicy
         get() =
             when {
                 inheritSecurePolicy -> SecureFlagPolicy.Inherit
@@ -325,7 +416,7 @@ constructor(
      * Whether the popup window is clipped to the screen boundaries, or allowed to extend beyond the
      * bounds of the screen.
      */
-    actual val clippingEnabled: Boolean
+    public actual val clippingEnabled: Boolean
         get() = (flags and WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS) == 0
 
     override fun equals(other: Any?): Boolean {
@@ -340,6 +431,8 @@ constructor(
         if (usePlatformDefaultWidth != other.usePlatformDefaultWidth) return false
         if (windowType != other.windowType) return false
         if (windowToken != other.windowToken) return false
+        if (blurBehindRadius != other.blurBehindRadius) return false
+        if (!scrimAlpha.equalsIncludingNaN(other.scrimAlpha)) return false
 
         return true
     }
@@ -353,6 +446,8 @@ constructor(
         result = 31 * result + usePlatformDefaultWidth.hashCode()
         result = 31 * result + windowType
         result = 31 * result + (windowToken?.hashCode() ?: 0)
+        result = 31 * result + blurBehindRadius.hashCode()
+        result = 31 * result + scrimAlpha.hashCode()
 
         return result
     }
@@ -378,7 +473,7 @@ constructor(
  * @param content The content to be displayed inside the popup.
  */
 @Composable
-actual fun Popup(
+public actual fun Popup(
     alignment: Alignment,
     offset: IntOffset,
     onDismissRequest: (() -> Unit)?,
@@ -410,7 +505,7 @@ actual fun Popup(
  * @param content The content to be displayed inside the popup.
  */
 @Composable
-actual fun Popup(
+public actual fun Popup(
     popupPositionProvider: PopupPositionProvider,
     onDismissRequest: (() -> Unit)?,
     properties: PopupProperties,
@@ -462,6 +557,7 @@ actual fun Popup(
             properties = properties,
             testTag = testTag,
             layoutDirection = layoutDirection,
+            density = density,
         )
         onDispose {
             popupLayout.disposeComposition()
@@ -476,6 +572,7 @@ actual fun Popup(
             properties = properties,
             testTag = testTag,
             layoutDirection = layoutDirection,
+            density = density,
         )
     }
 
@@ -617,11 +714,11 @@ internal class PopupLayout(
         } else {
             PopupLayoutHelperImpl()
         },
-) : AbstractComposeView(composeView.context), ViewRootForInspector {
+) : AbstractComposeView(composeView.context), ViewRootForInspector, NavigationEventDispatcherOwner {
     private val windowManager =
         composeView.context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
-    @VisibleForTesting internal val params = createLayoutParams()
+    @VisibleForTesting internal val params = createLayoutParams(density)
 
     /** The logic of positioning the popup relative to its parent. */
     var positionProvider = initialPositionProvider
@@ -664,13 +761,41 @@ internal class PopupLayout(
             }
         )
 
-    private var backCallback: Any? = null
+    private val directNavigationEventInput = DirectNavigationEventInput()
+
+    private val isBackHandlingEnabled: Boolean
+        get() = properties.focusable && properties.dismissOnBackPress
+
+    private var overlayInput: OnBackInvokedOverlayInput? = null
+
+    private val backHandler =
+        object :
+            NavigationEventHandler<NavigationEventInfo>(
+                initialInfo = NavigationEventInfo.None,
+                isBackEnabled = true,
+            ) {
+            override fun onBackCompleted() {
+                onDismissRequest?.invoke()
+            }
+        }
+
+    override val navigationEventDispatcher =
+        NavigationEventDispatcher().apply {
+            addHandler(backHandler)
+            addInput(directNavigationEventInput)
+        }
 
     init {
         id = android.R.id.content
         setViewTreeLifecycleOwner(composeView.findViewTreeLifecycleOwner())
         setViewTreeViewModelStoreOwner(composeView.findViewTreeViewModelStoreOwner())
         setViewTreeSavedStateRegistryOwner(composeView.findViewTreeSavedStateRegistryOwner())
+
+        if (properties.focusable) {
+            setViewTreeNavigationEventDispatcherOwner(this)
+        }
+        navigationEventDispatcher.isEnabled = isBackHandlingEnabled
+
         // Set unique id for AbstractComposeView. This allows state restoration for the state
         // defined inside the Popup via rememberSaveable()
         setTag(R.id.compose_view_saveable_id_tag, "Popup:$popupId")
@@ -720,14 +845,14 @@ internal class PopupLayout(
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         snapshotStateObserver.start()
-        maybeRegisterBackCallback()
+        maybeRegisterBackNavigationInputs()
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         snapshotStateObserver.stop()
         snapshotStateObserver.clear()
-        maybeUnregisterBackCallback()
+        maybeUnregisterBackNavigationInputs()
     }
 
     override fun internalOnMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -769,7 +894,7 @@ internal class PopupLayout(
                 return true
             } else if (event.action == KeyEvent.ACTION_UP) {
                 if (state.isTracking(event) && !event.isCanceled) {
-                    onDismissRequest?.invoke()
+                    directNavigationEventInput.backCompleted()
                     return true
                 }
             }
@@ -777,21 +902,22 @@ internal class PopupLayout(
         return super.dispatchKeyEvent(event)
     }
 
-    private fun maybeRegisterBackCallback() {
+    private fun maybeRegisterBackNavigationInputs() {
         if (!properties.dismissOnBackPress || Build.VERSION.SDK_INT < 33) {
             return
         }
-        if (backCallback == null) {
-            backCallback = Api33Impl.createBackCallback(onDismissRequest)
+        Api33Impl.registerBackNavigationInputs(this, navigationEventDispatcher) { ovr ->
+            overlayInput = ovr
         }
-        Api33Impl.maybeRegisterBackCallback(this, backCallback)
     }
 
-    private fun maybeUnregisterBackCallback() {
-        if (Build.VERSION.SDK_INT >= 33) {
-            Api33Impl.maybeUnregisterBackCallback(this, backCallback)
+    private fun maybeUnregisterBackNavigationInputs() {
+        if (Build.VERSION.SDK_INT < 33) {
+            return
         }
-        backCallback = null
+
+        overlayInput?.let { navigationEventDispatcher.removeInput(it) }
+        overlayInput = null
     }
 
     fun updateParameters(
@@ -799,14 +925,15 @@ internal class PopupLayout(
         properties: PopupProperties,
         testTag: String,
         layoutDirection: LayoutDirection,
+        density: Density,
     ) {
         this.onDismissRequest = onDismissRequest
         this.testTag = testTag
-        updatePopupProperties(properties)
+        updatePopupProperties(properties, density)
         superSetLayoutDirection(layoutDirection)
     }
 
-    private fun updatePopupProperties(properties: PopupProperties) {
+    private fun updatePopupProperties(properties: PopupProperties, density: Density) {
         if (this.properties == properties) return
 
         if (properties.usePlatformDefaultWidth && !this.properties.usePlatformDefaultWidth) {
@@ -817,7 +944,26 @@ internal class PopupLayout(
         }
 
         this.properties = properties
+
+        if (properties.focusable) {
+            setViewTreeNavigationEventDispatcherOwner(this)
+        } else {
+            setViewTreeNavigationEventDispatcherOwner(null)
+        }
+
+        // Disable the dispatcher if the popup shouldn't intercept back events
+        navigationEventDispatcher.isEnabled = isBackHandlingEnabled
+
         params.flags = properties.flagsWithSecureFlagInherited(composeView.isFlagSecureEnabled())
+
+        if (Build.VERSION.SDK_INT >= 31 && properties.blurBehindRadius.isSpecified) {
+            val blurBehindRadiusPx = with(density) { properties.blurBehindRadius.roundToPx() }
+            PopupApi31Impl.setBlurBehindRadius(params, blurBehindRadiusPx)
+        }
+
+        if (!properties.scrimAlpha.isNaN()) {
+            params.setScrimAlpha(properties.scrimAlpha)
+        }
 
         popupLayoutHelper.updateViewLayout(windowManager, this, params)
     }
@@ -932,7 +1078,9 @@ internal class PopupLayout(
     /** Remove the view from the [WindowManager]. */
     fun dismiss() {
         setViewTreeLifecycleOwner(null)
+        setViewTreeNavigationEventDispatcherOwner(null)
         windowManager.removeViewImmediate(this)
+        navigationEventDispatcher.dispose()
     }
 
     /**
@@ -977,17 +1125,32 @@ internal class PopupLayout(
     }
 
     /** Initialize the LayoutParams specific to [android.widget.PopupWindow]. */
-    private fun createLayoutParams(): WindowManager.LayoutParams {
+    private fun createLayoutParams(density: Density): WindowManager.LayoutParams {
         return WindowManager.LayoutParams().apply {
             // Start to position the popup in the top left corner, a new position will be calculated
             gravity = Gravity.START or Gravity.TOP
 
             flags = properties.flagsWithSecureFlagInherited(composeView.isFlagSecureEnabled())
+            if (Build.VERSION.SDK_INT >= 31) {
+                if (properties.blurBehindRadius.isSpecified) {
+                    val blurBehindRadiusPx =
+                        with(density) { properties.blurBehindRadius.roundToPx() }
+                    PopupApi31Impl.setBlurBehindRadius(this, blurBehindRadiusPx)
+                }
+            }
+
+            if (!properties.scrimAlpha.isNaN()) {
+                setScrimAlpha(properties.scrimAlpha)
+            }
 
             type = properties.windowType
 
-            // Use windowToken if provided else get the Window token from the parent view
-            token = properties.windowToken ?: composeView.applicationWindowToken
+            token =
+                resolveWindowToken(
+                    properties.windowToken,
+                    composeView.rootView.layoutParams as? WindowManager.LayoutParams,
+                    composeView.applicationWindowToken,
+                )
 
             // Wrap the frame layout which contains composable content
             width = WindowManager.LayoutParams.WRAP_CONTENT
@@ -1024,27 +1187,38 @@ internal class PopupLayout(
 @RequiresApi(33)
 private object Api33Impl {
     @JvmStatic
-    fun createBackCallback(onDismissRequest: (() -> Unit)?) = OnBackInvokedCallback {
-        onDismissRequest?.invoke()
+    fun registerBackNavigationInputs(
+        view: View,
+        dispatcher: NavigationEventDispatcher,
+        onRegistered: (OnBackInvokedOverlayInput) -> Unit,
+    ) {
+        val invoker = view.findOnBackInvokedDispatcher() ?: return
+        val overlayInput = OnBackInvokedOverlayInput(invoker)
+        dispatcher.addInput(overlayInput)
+        onRegistered(overlayInput)
     }
+}
 
-    @JvmStatic
-    fun maybeRegisterBackCallback(view: View, backCallback: Any?) {
-        if (backCallback is OnBackInvokedCallback) {
-            view
-                .findOnBackInvokedDispatcher()
-                ?.registerOnBackInvokedCallback(
-                    OnBackInvokedDispatcher.PRIORITY_OVERLAY,
-                    backCallback,
-                )
+@RequiresApi(31)
+private object PopupApi31Impl {
+    @androidx.annotation.DoNotInline
+    fun setBlurBehindRadius(params: WindowManager.LayoutParams, blurBehindRadius: Int) {
+        if (blurBehindRadius > 0) {
+            params.flags = params.flags or WindowManager.LayoutParams.FLAG_BLUR_BEHIND
+        } else {
+            params.flags = params.flags and WindowManager.LayoutParams.FLAG_BLUR_BEHIND.inv()
         }
+        params.blurBehindRadius = blurBehindRadius
     }
+}
 
-    @JvmStatic
-    fun maybeUnregisterBackCallback(view: View, backCallback: Any?) {
-        if (backCallback is OnBackInvokedCallback) {
-            view.findOnBackInvokedDispatcher()?.unregisterOnBackInvokedCallback(backCallback)
-        }
+private fun WindowManager.LayoutParams.setScrimAlpha(scrimAlpha: Float) {
+    if (scrimAlpha > 0f) {
+        flags = flags or WindowManager.LayoutParams.FLAG_DIM_BEHIND
+        dimAmount = scrimAlpha
+    } else {
+        flags = flags and WindowManager.LayoutParams.FLAG_DIM_BEHIND.inv()
+        dimAmount = 0f
     }
 }
 
@@ -1124,6 +1298,31 @@ private fun PopupProperties.flagsWithSecureFlagInherited(isParentFlagSecureEnabl
         else -> this.flags
     }
 
+/**
+ * Resolves the window token for a Popup window.
+ *
+ * If [providedToken] is specified, it takes precedence. Otherwise, if [rootLayoutParams] indicates
+ * that the host view is embedded inside a sub-window (`FIRST_SUB_WINDOW`..`LAST_SUB_WINDOW`), the
+ * root view's window token is used to avoid attaching a sub-window to another sub-window across
+ * process boundaries. Otherwise, falls back to [applicationWindowToken].
+ */
+internal fun resolveWindowToken(
+    providedToken: IBinder?,
+    rootLayoutParams: WindowManager.LayoutParams?,
+    applicationWindowToken: IBinder?,
+): IBinder? {
+    val rootSubWindowToken =
+        rootLayoutParams
+            ?.takeIf {
+                it.type in
+                    WindowManager.LayoutParams.FIRST_SUB_WINDOW..WindowManager.LayoutParams
+                            .LAST_SUB_WINDOW
+            }
+            ?.token
+
+    return providedToken ?: rootSubWindowToken ?: applicationWindowToken
+}
+
 private fun Rect.toIntBounds() = IntRect(left = left, top = top, right = right, bottom = bottom)
 
 /**
@@ -1135,5 +1334,5 @@ private fun Rect.toIntBounds() = IntRect(left = left, top = top, right = right, 
  */
 // TODO(b/139861182): Move this functionality to ComposeTestRule
 @TestOnly
-fun isPopupLayout(view: View, testTag: String? = null): Boolean =
+public fun isPopupLayout(view: View, testTag: String? = null): Boolean =
     view is PopupLayout && (testTag == null || testTag == view.testTag)

@@ -28,14 +28,13 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import kotlin.test.Test
 import kotlin.test.fail
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class DecoratedNavEntriesTest {
-    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun decoratedEntriesRemembered() {
@@ -1217,14 +1216,14 @@ class DecoratedNavEntriesTest {
         }
 
         composeTestRule.waitForIdle()
-        assertThat(decoratorState1).containsExactly(1.toString())
+        assertThat(decoratorState1).containsExactly(defaultContentKey(1))
 
         // swap to second list of entries
         backStackState.value = 2
 
         composeTestRule.waitForIdle()
-        assertThat(decoratorState1).containsExactly(1.toString())
-        assertThat(decoratorState2).containsExactly(2.toString())
+        assertThat(decoratorState1).containsExactly(defaultContentKey(1))
+        assertThat(decoratorState2).containsExactly(defaultContentKey(2))
     }
 
     @Test
@@ -1269,19 +1268,19 @@ class DecoratedNavEntriesTest {
         }
 
         composeTestRule.waitForIdle()
-        assertThat(decoratorState1).containsExactly(2.toString())
+        assertThat(decoratorState1).containsExactly(defaultContentKey(2))
 
         // swap to second list of entries
         backStackState.value = 2
 
         composeTestRule.waitForIdle()
-        assertThat(decoratorState2).containsExactly(4.toString())
+        assertThat(decoratorState2).containsExactly(defaultContentKey(4))
 
         // pop last entry
         backStack2.removeLastOrNull()
 
         composeTestRule.waitForIdle()
-        assertThat(decoratorState2).containsExactly(3.toString())
+        assertThat(decoratorState2).containsExactly(defaultContentKey(3))
 
         // swap back to first list of entries
         backStackState.value = 1
@@ -1290,7 +1289,7 @@ class DecoratedNavEntriesTest {
         backStack1.removeLastOrNull()
 
         composeTestRule.waitForIdle()
-        assertThat(decoratorState1).containsExactly(1.toString())
+        assertThat(decoratorState1).containsExactly(defaultContentKey(1))
     }
 
     @Test
@@ -1338,28 +1337,28 @@ class DecoratedNavEntriesTest {
         }
 
         composeTestRule.waitForIdle()
-        assertThat(decoratorState1).containsExactly(1.toString())
+        assertThat(decoratorState1).containsExactly(defaultContentKey(1))
 
         // swap to second list of entries
         backStackState.value = 2
 
         composeTestRule.waitForIdle()
-        assertThat(decoratorState1).containsExactly(1.toString())
-        assertThat(decoratorState2).containsExactly(2.toString())
+        assertThat(decoratorState1).containsExactly(defaultContentKey(1))
+        assertThat(decoratorState2).containsExactly(defaultContentKey(2))
 
         // concat both lists
         backStackState.value = 3
         composeTestRule.waitForIdle()
-        assertThat(decoratorState1).containsExactly(1.toString())
+        assertThat(decoratorState1).containsExactly(defaultContentKey(1))
         // entry 2 is invoked again
-        assertThat(decoratorState2).containsExactly(2.toString(), 2.toString())
+        assertThat(decoratorState2).containsExactly(defaultContentKey(2), defaultContentKey(2))
 
         // concat in reverse order
         backStackState.value = 4
         composeTestRule.waitForIdle()
         // entry 1 is invoked again
-        assertThat(decoratorState1).containsExactly(1.toString(), 1.toString())
-        assertThat(decoratorState2).containsExactly(2.toString(), 2.toString())
+        assertThat(decoratorState1).containsExactly(defaultContentKey(1), defaultContentKey(1))
+        assertThat(decoratorState2).containsExactly(defaultContentKey(2), defaultContentKey(2))
     }
 
     @Test
@@ -1406,20 +1405,20 @@ class DecoratedNavEntriesTest {
         }
 
         composeTestRule.waitForIdle()
-        assertThat(decoratorState1).containsExactly(1.toString())
+        assertThat(decoratorState1).containsExactly(defaultContentKey(1))
 
         // concat both lists
         backStackState.value = 2
         composeTestRule.waitForIdle()
-        assertThat(decoratorState1).containsExactly(1.toString())
-        assertThat(decoratorState2).containsExactly(2.toString())
+        assertThat(decoratorState1).containsExactly(defaultContentKey(1))
+        assertThat(decoratorState2).containsExactly(defaultContentKey(2))
 
         // navigate on first stack, new entry not rendered
         backStack1.add(3)
         composeTestRule.waitForIdle()
-        assertThat(decoratorState1).containsExactly(1.toString())
+        assertThat(decoratorState1).containsExactly(defaultContentKey(1))
         // last rendered entry is rendered again
-        assertThat(decoratorState2).containsExactly(2.toString(), 2.toString())
+        assertThat(decoratorState2).containsExactly(defaultContentKey(2), defaultContentKey(2))
     }
 
     @Test
@@ -1466,19 +1465,19 @@ class DecoratedNavEntriesTest {
         }
 
         composeTestRule.waitForIdle()
-        assertThat(decoratorState1).containsExactly(1.toString())
+        assertThat(decoratorState1).containsExactly(defaultContentKey(1))
 
         // concat both lists
         backStackState.value = 2
         composeTestRule.waitForIdle()
-        assertThat(decoratorState1).containsExactly(1.toString())
-        assertThat(decoratorState2).containsExactly(2.toString())
+        assertThat(decoratorState1).containsExactly(defaultContentKey(1))
+        assertThat(decoratorState2).containsExactly(defaultContentKey(2))
 
         // navigate on second stack, new entry rendered
         backStack2.add(3)
         composeTestRule.waitForIdle()
-        assertThat(decoratorState1).containsExactly(1.toString())
-        assertThat(decoratorState2).containsExactly(2.toString(), 3.toString())
+        assertThat(decoratorState1).containsExactly(defaultContentKey(1))
+        assertThat(decoratorState2).containsExactly(defaultContentKey(2), defaultContentKey(3))
     }
 
     @Test
@@ -1525,20 +1524,20 @@ class DecoratedNavEntriesTest {
         }
 
         composeTestRule.waitForIdle()
-        assertThat(decoratorState1).containsExactly(2.toString())
+        assertThat(decoratorState1).containsExactly(defaultContentKey(2))
 
         // concat both lists
         backStackState.value = 2
         composeTestRule.waitForIdle()
-        assertThat(decoratorState1).containsExactly(2.toString())
-        assertThat(decoratorState2).containsExactly(3.toString())
+        assertThat(decoratorState1).containsExactly(defaultContentKey(2))
+        assertThat(decoratorState2).containsExactly(defaultContentKey(3))
 
         // pop on first stack, state cleared but the entry below it is not rendered
         backStack1.removeLastOrNull()
         composeTestRule.waitForIdle()
         assertThat(decoratorState1).isEmpty()
         // last rendered entry on second stack is rendered again
-        assertThat(decoratorState2).containsExactly(3.toString(), 3.toString())
+        assertThat(decoratorState2).containsExactly(defaultContentKey(3), defaultContentKey(3))
     }
 
     @Test
@@ -1585,20 +1584,20 @@ class DecoratedNavEntriesTest {
         }
 
         composeTestRule.waitForIdle()
-        assertThat(decoratorState1).containsExactly(1.toString())
+        assertThat(decoratorState1).containsExactly(defaultContentKey(1))
 
         // concat both lists
         backStackState.value = 2
         composeTestRule.waitForIdle()
-        assertThat(decoratorState1).containsExactly(1.toString())
-        assertThat(decoratorState2).containsExactly(3.toString())
+        assertThat(decoratorState1).containsExactly(defaultContentKey(1))
+        assertThat(decoratorState2).containsExactly(defaultContentKey(3))
 
         // pop on second stack, state cleared and the entry below it is rendered
         backStack2.removeLastOrNull()
         composeTestRule.waitForIdle()
-        assertThat(decoratorState1).containsExactly(1.toString())
+        assertThat(decoratorState1).containsExactly(defaultContentKey(1))
         // entry below is rendered
-        assertThat(decoratorState2).containsExactly(2.toString())
+        assertThat(decoratorState2).containsExactly(defaultContentKey(2))
     }
 
     @Test
@@ -1645,13 +1644,13 @@ class DecoratedNavEntriesTest {
         // swap to second stack
         backStackState.value = 2
         composeTestRule.waitForIdle()
-        assertThat(decoratorState).containsExactly(2.toString())
+        assertThat(decoratorState).containsExactly(defaultContentKey(2))
 
         // navigate on second stack with immutable backStack
         secondStackState.value = 2
         composeTestRule.waitForIdle()
         // entry below is rendered
-        assertThat(decoratorState).containsExactly(2.toString(), 3.toString())
+        assertThat(decoratorState).containsExactly(defaultContentKey(2), defaultContentKey(3))
     }
 
     @Test
@@ -1698,13 +1697,13 @@ class DecoratedNavEntriesTest {
         // swap to second stack
         backStackState.value = 2
         composeTestRule.waitForIdle()
-        assertThat(decoratorState).containsExactly(3.toString())
+        assertThat(decoratorState).containsExactly(defaultContentKey(3))
 
         // navigate on second stack with immutable backStack
         secondStackState.value = 2
         composeTestRule.waitForIdle()
         // entry below is rendered
-        assertThat(decoratorState).containsExactly(2.toString())
+        assertThat(decoratorState).containsExactly(defaultContentKey(2))
     }
 
     private data class DataClass(val arg: Int)
