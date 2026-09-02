@@ -672,14 +672,10 @@ internal class OverlayInputView(
     }
 
     private val customPinchGestureRecognizer by lazy {
-        if (available(OS.Ios to OSVersion(major = 13, minor = 4))) {
-            PinchGestureRecognizer(
-                onPinchEvent = onPinchEvent,
-                onCancelPinch = onCancelPinch
-            )
-        } else {
-            null
-        }
+        PinchGestureRecognizer(
+            onPinchEvent = onPinchEvent,
+            onCancelPinch = onCancelPinch
+        )
     }
 
     private val hoverGestureRecognizer by lazy {
@@ -705,9 +701,7 @@ internal class OverlayInputView(
         scrollGestureRecognizer?.let {
             addGestureRecognizer(it)
         }
-        customPinchGestureRecognizer?.let {
-            addGestureRecognizer(it)
-        }
+        addGestureRecognizer(customPinchGestureRecognizer)
 
         addGestureRecognizer(hoverGestureRecognizer)
 
@@ -871,10 +865,8 @@ internal class OverlayInputView(
             removeGestureRecognizer(it)
             it.dispose()
         }
-        customPinchGestureRecognizer?.let {
-            removeGestureRecognizer(it)
-            it.dispose()
-        }
+        removeGestureRecognizer(customPinchGestureRecognizer)
+        customPinchGestureRecognizer.dispose()
         removeGestureRecognizer(hoverGestureRecognizer)
         onHoverEvent = { _, _, _ -> }
 
