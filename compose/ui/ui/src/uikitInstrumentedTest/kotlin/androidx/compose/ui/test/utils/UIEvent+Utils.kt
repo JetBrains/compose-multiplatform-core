@@ -35,9 +35,6 @@ import platform.UIKit.UIWindow
  * returned [UIEvent] is a UIScrollEvent already dispatched with `UIScrollPhaseBegan` and
  * the initial [delta]; use [UIEvent.scrollBy] to emit follow-up `Changed` events and
  * [UIEvent.endScroll] to close the session.
- *
- * Returns `null` if the private `UIScrollEvent` class is not available on the current
- * runtime (pre-iOS 13.4) — synthesized scroll is then unavailable.
  */
 @OptIn(ExperimentalForeignApi::class)
 internal fun UIWindow.scrollEventAt(

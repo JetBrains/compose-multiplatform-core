@@ -664,31 +664,22 @@ internal class OverlayInputView(
         isHigherPriorityGestureTrackingTouches = isHigherPriorityGestureTrackingTouches
     )
 
-    private val scrollGestureRecognizer by lazy {
-        ScrollGestureRecognizer(
-            onScrollEvent = onScrollEvent,
-            onCancelScroll = onCancelScroll
-        )
-    }
+    private val scrollGestureRecognizer = ScrollGestureRecognizer(
+        onScrollEvent = onScrollEvent,
+        onCancelScroll = onCancelScroll
+    )
 
-    private val customPinchGestureRecognizer by lazy {
-        if (available(OS.Ios to OSVersion(major = 13, minor = 4))) {
-            PinchGestureRecognizer(
-                onPinchEvent = onPinchEvent,
-                onCancelPinch = onCancelPinch
-            )
-        } else {
-            null
-        }
-    }
+    private val customPinchGestureRecognizer = PinchGestureRecognizer(
+        onPinchEvent = onPinchEvent,
+        onCancelPinch = onCancelPinch
+    )
 
-    private val hoverGestureRecognizer by lazy {
+    private val hoverGestureRecognizer =
         CMPHoverGestureRecognizer(this, NSSelectorFromString(::onHover.name + ":")).apply {
             delaysTouchesBegan = false
             delaysTouchesEnded = false
             cancelsTouchesInView = false
         }
-    }
 
     /**
      * See [androidx.compose.ui.draganddrop.IosDragAndDropManager] for more context
@@ -702,13 +693,8 @@ internal class OverlayInputView(
         multipleTouchEnabled = true
 
         addGestureRecognizer(touchesGestureRecognizer)
-        scrollGestureRecognizer?.let {
-            addGestureRecognizer(it)
-        }
-        customPinchGestureRecognizer?.let {
-            addGestureRecognizer(it)
-        }
-
+        addGestureRecognizer(scrollGestureRecognizer)
+        addGestureRecognizer(customPinchGestureRecognizer)
         addGestureRecognizer(hoverGestureRecognizer)
 
         showsHorizontalScrollIndicator = false
@@ -867,14 +853,11 @@ internal class OverlayInputView(
         endEditing(force = true)
         removeGestureRecognizer(touchesGestureRecognizer)
         touchesGestureRecognizer.dispose()
-        scrollGestureRecognizer?.let {
-            removeGestureRecognizer(it)
-            it.dispose()
-        }
-        customPinchGestureRecognizer?.let {
-            removeGestureRecognizer(it)
-            it.dispose()
-        }
+        removeGestureRecognizer(scrollGestureRecognizer)
+        scrollGestureRecognizer.dispose()
+        removeGestureRecognizer(customPinchGestureRecognizer)
+        customPinchGestureRecognizer.dispose()
+
         removeGestureRecognizer(hoverGestureRecognizer)
         onHoverEvent = { _, _, _ -> }
 
