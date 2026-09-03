@@ -41,6 +41,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
+import androidx.compose.ui.events.keyEvent
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
@@ -746,6 +747,11 @@ class CfWA11YTest : OnCanvasTests {
         val slider = getShadowRoot().getElementById("slider") as? HTMLElement
         assertNotNull(slider)
         assertEquals("slider", slider.getAttribute("role"))
+        assertEquals("0", slider.getAttribute("tabindex"))
+        slider.focus()
+        slider.dispatchEvent(keyEvent("ArrowRight"))
+        awaitA11YChanges()
+        assertEquals(0.51f, slider.getAttribute("aria-valuenow")!!.toFloat())
         assertEquals(0f, slider.getAttribute("aria-valuemin")!!.toFloat())
         assertEquals(1f, slider.getAttribute("aria-valuemax")!!.toFloat())
         assertEquals(0.5f, slider.getAttribute("aria-valuenow")!!.toFloat())
