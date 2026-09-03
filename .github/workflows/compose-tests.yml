@@ -69,24 +69,9 @@ jobs:
   compose-desktop-tests:
     needs: changes
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.desktop == 'true' || needs.changes.outputs.unknown == 'true'
-    runs-on: ${{ matrix.runner }}
-    name: Desktop (${{ matrix.name }})
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: Linux
-            runner: ubuntu-24.04
-          - name: Windows
-            runner: windows-2025
-          - name: macOS
-            runner: macos-26
+    runs-on: ubuntu-24.04
+    name: Desktop
     steps:
-      - name: Enable Git Long Paths
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: git config --global core.longpaths true
-
       - name: Checkout Repository
         uses: actions/checkout@v5
 
@@ -94,11 +79,9 @@ jobs:
         uses: ./.github/actions/setup-prerequisites
 
       - name: Setup Window Manager
-        if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y xvfb openbox x11-utils
 
       - name: Start X Server
-        if: runner.os == 'Linux'
         run: |
           sudo Xvfb :1 -screen 0 1920x1080x24 -extension RANDR +extension GLX &
           export DISPLAY=:1
@@ -108,7 +91,6 @@ jobs:
           echo "DISPLAY=:1.0" >> $GITHUB_ENV
 
       - name: Run Desktop
-        shell: bash
         run: |
           ./gradlew testDesktop \
             --no-daemon --stacktrace
@@ -117,7 +99,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: screenshot-tests-${{ matrix.name }}
+          name: screenshot-tests
           path: |
             golden/**/*_actual.png
             golden/**/*_diff.png

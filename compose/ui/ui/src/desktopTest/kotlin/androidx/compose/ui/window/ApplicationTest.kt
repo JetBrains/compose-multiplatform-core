@@ -33,7 +33,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.isLinux
-import androidx.compose.ui.isWindows
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionOnScreen
@@ -268,9 +267,6 @@ class ApplicationTest {
 
     @Test
     fun `onGloballyPositioned is not called repeatedly with same position on screen`() = runApplicationTest(useDelay = true) {
-        // TODO Fix failing
-        assumeTrue(!isWindows)
-
         lateinit var window: ComposeWindow
         val positionsOnScreen = mutableListOf<Offset>()
         launchTestApplication {

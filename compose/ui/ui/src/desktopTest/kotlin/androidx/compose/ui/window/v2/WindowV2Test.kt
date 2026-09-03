@@ -35,7 +35,6 @@ import androidx.compose.ui.awt.SwingWindow
 import androidx.compose.ui.background
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.isLinux
-import androidx.compose.ui.isWindows
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -74,7 +73,6 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.plus
 import org.junit.Assume.assumeFalse
-import org.junit.Assume.assumeTrue
 import org.junit.Ignore
 
 class WindowV2Test {
@@ -398,9 +396,6 @@ class WindowV2Test {
 
     @Test(timeout = 30000)
     fun `should draw before window is visible`() {
-        // TODO Fix failing
-        assumeTrue(!isWindows)
-
         val windowSize = DpSize(400.dp, 300.dp)
         testDrawingBeforeWindowIsVisible(
             windowState = WindowStateWithBounds(initialSize = windowSize),
@@ -505,9 +500,6 @@ class WindowV2Test {
 
     @Test
     fun `showing a window should measure content specified size`() = runApplicationTest {
-        // TODO Fix failing
-        assumeTrue(!isWindows)
-
         // TODO fix on Linux https://github.com/JetBrains/compose-multiplatform/issues/1297
         assumeFalse(isLinux)
         val constraintsList = mutableListOf<Constraints>()
@@ -673,9 +665,6 @@ class WindowV2Test {
 
     @Test
     fun `window does not flash background when closed`() = runApplicationTest {
-        // TODO Fix failing
-        assumeTrue(!isWindows)
-
         lateinit var outerWindow: Window
         lateinit var innerWindow: Window
         var showInnerWindow by mutableStateOf(false)
