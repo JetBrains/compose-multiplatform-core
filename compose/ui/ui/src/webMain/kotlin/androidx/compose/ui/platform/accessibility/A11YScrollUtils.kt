@@ -16,9 +16,9 @@
 
 package androidx.compose.ui.platform.accessibility
 
+import androidx.collection.MutableIntLongMap
 import androidx.collection.MutableIntObjectMap
 import androidx.collection.MutableIntSet
-import androidx.collection.MutableScatterMap
 import androidx.collection.ScatterMap
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.ScrollAxisRange
@@ -51,16 +51,16 @@ internal class A11YScrollController(
 
     // When a browser (or AT) updates the scroll offset of the node in A11Y tree, we apply the
     // new offset to SemanticsNode and save the applied offset value here.
-    private val appliedScrollOffsets = MutableScatterMap<Int, Offset>()
+    private val appliedScrollOffsets = ScrollOffsetsByIdMap()
 
     // When we process the Semantics updates, we record the new scroll offsets here.
     // After the new offsets get applied to A11Y tree, the map is cleared.
-    private val pendingScrollOffsets = MutableScatterMap<Int, Offset>()
+    private val pendingScrollOffsets = ScrollOffsetsByIdMap()
 
     // The non-semantic elements inserted into A11Y scrollable nodes.
     // To make the scrollable a11y node aware of the possible scroll ranges, they include this "sizer"
     // element, which width/height equal to the scrollable viewport size + max scroll distance.
-    private val domScrollSizers = MutableScatterMap<Int, HTMLElement>()
+    private val domScrollSizers = MutableIntObjectMap<HTMLElement>()
 
     // Tracking the nodes with a scroll listener:
     private val scrollListenersAttached = MutableIntSet()
@@ -69,7 +69,7 @@ internal class A11YScrollController(
     private val onScroll: (Event) -> Unit = onScroll@ { event ->
         val element = event.target as? HTMLElement ?: return@onScroll
         val semanticsNode = a11yNodeToSemanticsNode[element] ?: return@onScroll
-        val applied = appliedScrollOffsets[semanticsNode.id] ?: return@onScroll
+        val applied = appliedScrollOffsets.getOffset(semanticsNode.id) ?: return@onScroll
         val actual = Offset(element.scrollLeft.toFloat(), element.scrollTop.toFloat())
 
         val deltaCssPx = actual - applied
@@ -102,8 +102,8 @@ internal class A11YScrollController(
     }
 
     fun getScrollOffset(semanticsNode: SemanticsNode): Offset {
-        return pendingScrollOffsets[semanticsNode.id]
-            ?: appliedScrollOffsets[semanticsNode.id]
+        return pendingScrollOffsets.getOffset(semanticsNode.id)
+            ?: appliedScrollOffsets.getOffset(semanticsNode.id)
             ?: Offset.Zero
     }
 
@@ -192,7 +192,7 @@ internal class A11YScrollController(
 
     // Applies Compose scroll offsets to DOM
     fun applyScrollOffsets() {
-        pendingScrollOffsets.forEach { id, offset ->
+        pendingScrollOffsets.forEach { id, offset : Offset ->
             val element = idToA11YNode[id] ?: return@forEach
             val sizer = domScrollSizers[id] ?: return@forEach
             if (sizer.parentElement !== element || element.firstElementChild !== sizer) {
@@ -202,7 +202,7 @@ internal class A11YScrollController(
             }
 
             val actual = Offset(element.scrollLeft.toFloat(), element.scrollTop.toFloat())
-            val lastApplied = appliedScrollOffsets[id]
+            val lastApplied = appliedScrollOffsets.getOffset(id)
             if (lastApplied != null && offset.isCloseTo(lastApplied) && !actual.isCloseTo(lastApplied)) {
                 // Preserve a browser/AT offset until its asynchronous scroll event is handled.
                 return@forEach
@@ -236,6 +236,27 @@ internal class A11YScrollController(
         pendingScrollOffsets.remove(id)
         domScrollSizers.remove(id)
         scrollListenersAttached.remove(id)
+    }
+}
+
+private typealias ScrollOffsetsByIdMap = MutableIntLongMap
+
+private inline fun ScrollOffsetsByIdMap.forEach(action: (id: Int, offset: Offset) -> Unit) = forEach { id, longValue ->
+    action(id, Offset(longValue))
+}
+
+@Suppress("NOTHING_TO_INLINE")
+private inline operator fun ScrollOffsetsByIdMap.set(id: Int, offset: Offset) {
+    this[id] = offset.packedValue
+}
+
+@Suppress("INVISIBLE_REFERENCE", "NOTHING_TO_INLINE")
+private inline fun ScrollOffsetsByIdMap.getOffset(key: Int): Offset? {
+    val offset = this.getOrElse(key) { -1L }
+    return if (offset == -1L) {
+        null
+    } else {
+        Offset(values[key])
     }
 }
 
