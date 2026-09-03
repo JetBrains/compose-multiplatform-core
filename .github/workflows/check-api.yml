@@ -1,4 +1,4 @@
-name: Project Structure
+name: Check API
 on:
   workflow_dispatch:
   pull_request:
@@ -21,13 +21,6 @@ jobs:
       - name: Setup Xcode
         uses: ./.github/actions/setup-xcode
 
-      - name: buildSrc tests
-        run: ./gradlew -p buildSrc :test --continue --stacktrace
-
       - name: Public API
         run: |
           ./gradlew jbApiCheck --continue --stacktrace
-
-      - name: Fork Dependencies
-        run: |
-          ./gradlew jbVerifyForkDependencies --continue --stacktrace
