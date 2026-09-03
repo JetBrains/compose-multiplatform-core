@@ -1,41 +1,54 @@
 # Keep platform-specific source sets out of the `unknown` fallback. Shared source
 # sets deliberately remain unknown so they continue to exercise every platform.
-ios:
+native:
   - '**/iosMain/**'
   - '**/iosTest/**'
+
   - '**/darwinMain/**'
   - '**/darwinTest/**'
+
   - '**/nativeMain/**'
   - '**/nativeTest/**'
+
   - '**/uikitMain/**'
   - '**/uikitTest/**'
   - '**/uikitInstrumentedTest/**'
+
   - '**/appleMain/**'
   - '**/appleTest/**'
+
   - '**/macosMain/**'
   - '**/macosTest/**'
+
   - '**/tvosMain/**'
   - '**/tvosTest/**'
+
   - '**/watchosMain/**'
   - '**/watchosTest/**'
+
   - '**/linuxMain/**'
   - '**/linuxTest/**'
+
   - '**/mingwMain/**'
   - '**/mingwTest/**'
 
 web:
   - '**/webMain/**'
   - '**/webTest/**'
+
   - '**/jsMain/**'
   - '**/jsTest/**'
+
   - '**/jsWasmMain/**'
   - '**/jsWasmTest/**'
+
   - '**/wasmJsMain/**'
   - '**/wasmJsTest/**'
 
 desktop:
   - '**/jvmMain/**'
   - '**/jvmTest/**'
+
   - '**/desktopMain/**'
   - '**/desktopTest/**'
 
@@ -43,34 +56,49 @@ unknown:
   - '**'
   - '!**/iosMain/**'
   - '!**/iosTest/**'
+
   - '!**/darwinMain/**'
   - '!**/darwinTest/**'
+
   - '!**/nativeMain/**'
   - '!**/nativeTest/**'
+
   - '!**/uikitMain/**'
   - '!**/uikitTest/**'
   - '!**/uikitInstrumentedTest/**'
+
   - '!**/appleMain/**'
   - '!**/appleTest/**'
+
   - '!**/macosMain/**'
   - '!**/macosTest/**'
+
   - '!**/tvosMain/**'
   - '!**/tvosTest/**'
+
   - '!**/watchosMain/**'
   - '!**/watchosTest/**'
+
   - '!**/linuxMain/**'
   - '!**/linuxTest/**'
+
   - '!**/mingwMain/**'
   - '!**/mingwTest/**'
+
   - '!**/webMain/**'
   - '!**/webTest/**'
+
   - '!**/jsMain/**'
   - '!**/jsTest/**'
+
   - '!**/jsWasmMain/**'
   - '!**/jsWasmTest/**'
+
   - '!**/wasmJsMain/**'
   - '!**/wasmJsTest/**'
+
   - '!**/jvmMain/**'
   - '!**/jvmTest/**'
+
   - '!**/desktopMain/**'
   - '!**/desktopTest/**'

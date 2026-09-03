@@ -20,9 +20,12 @@ jobs:
   changes:
     runs-on: ubuntu-24.04
     outputs:
-      ios: ${{ steps.filter.outputs.ios }}
+      native: ${{ steps.filter.outputs.native }}
+
       web: ${{ steps.filter.outputs.web }}
+
       desktop: ${{ steps.filter.outputs.desktop }}
+
       unknown: ${{ steps.filter.outputs.unknown }}
     steps:
       - uses: actions/checkout@v5
@@ -80,7 +83,7 @@ jobs:
 
   compose-ios-tests:
     needs: changes
-    if: github.event_name != 'pull_request' || needs.changes.outputs.ios == 'true' || needs.changes.outputs.unknown == 'true'
+    if: github.event_name != 'pull_request' || needs.changes.outputs.native == 'true' || needs.changes.outputs.unknown == 'true'
     runs-on: macos-26-xlarge
     name: iOS
     env:
@@ -109,7 +112,7 @@ jobs:
 
   compose-ios-utils-tests:
     needs: changes
-    if: github.event_name != 'pull_request' || needs.changes.outputs.ios == 'true' || needs.changes.outputs.unknown == 'true'
+    if: github.event_name != 'pull_request' || needs.changes.outputs.native == 'true' || needs.changes.outputs.unknown == 'true'
     runs-on: macos-26-xlarge
     name: iOS Utils
     env:
@@ -144,7 +147,7 @@ jobs:
 
   compose-ios-instrumented-tests:
     needs: changes
-    if: github.event_name != 'pull_request' || needs.changes.outputs.ios == 'true' || needs.changes.outputs.unknown == 'true'
+    if: github.event_name != 'pull_request' || needs.changes.outputs.native == 'true' || needs.changes.outputs.unknown == 'true'
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
