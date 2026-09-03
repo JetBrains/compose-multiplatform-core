@@ -1,4 +1,4 @@
-name: IDEA Sync
+name: Check Build
 on:
   workflow_dispatch:
   pull_request:
@@ -12,7 +12,7 @@ on:
       - 'buildSrc-fork/**'
       - 'gradlew'
       - 'gradlew.bat'
-      - '.github/workflows/check-project-sync.yml'
+      - '.github/workflows/check-build.yml'
   push:
     branches:
       - jb-main
@@ -52,3 +52,12 @@ jobs:
         shell: bash
         run: |
           ./gradlew prepareKotlinIdeaImport --no-daemon --stacktrace
+
+      - name: buildSrc tests
+        shell: bash
+        run: ./gradlew -p buildSrc :test --continue --stacktrace
+
+      - name: Fork Dependencies
+        shell: bash
+        run: |
+          ./gradlew jbVerifyForkDependencies --continue --stacktrace
