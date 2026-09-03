@@ -25,12 +25,14 @@ readonly REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 # a symbol that plainly exists in the source.
 "$REPO_ROOT/gradlew" --project-dir "$REPO_ROOT" \
   -Pcompose.platforms=desktop,wasmjs \
-  -Pjetbrains.publication.libraries=COMPOSE,LIFECYCLE,SAVEDSTATE \
-  -Pjetbrains.publication.version.COMPOSE=1.9.0-0-fleet-SNAPSHOT \
-  -Pjetbrains.publication.version.LIFECYCLE=2.9.2-0-fleet-SNAPSHOT \
-  -Pjetbrains.publication.version.SAVEDSTATE=1.3.0-0-fleet-SNAPSHOT \
+  -Pjetbrains.publication.libraries=COMPOSE,LIFECYCLE,SAVEDSTATE,NAVIGATION_EVENT \
+  -Pjetbrains.publication.version.COMPOSE=1.11.0-0-fleet-SNAPSHOT \
+  -Pjetbrains.publication.version.LIFECYCLE=2.11.0-0-fleet-SNAPSHOT \
+  -Pjetbrains.publication.version.SAVEDSTATE=1.5.0-0-fleet-SNAPSHOT \
+  -Pjetbrains.publication.version.NAVIGATION_EVENT=1.1.0-0-fleet-SNAPSHOT \
   :mpp:publishComposeJb \
   :fleet:lifecycle:lifecycle-all-desktop:publish \
   :fleet:compose:runtime:runtime-all-desktop:publish \
   :fleet:compose:ui:ui-all-desktop:publish \
+  :fleet:navigationevent:navigationevent-all-desktop:publish \
   "$@"
