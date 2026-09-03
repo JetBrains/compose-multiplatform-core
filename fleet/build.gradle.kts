@@ -23,6 +23,7 @@ tasks.register("publish") {
         ":fleet:lifecycle:lifecycle-all-desktop:publish",
         ":fleet:compose:runtime:runtime-all-desktop:publish",
         ":fleet:compose:ui:ui-all-desktop:publish",
+        ":fleet:navigationevent:navigationevent-all-desktop:publish",
     )
 }
 
@@ -34,5 +35,6 @@ tasks.register("publishToMavenLocal") {
         ":fleet:lifecycle:lifecycle-all-desktop:publishToMavenLocal",
         ":fleet:compose:runtime:runtime-all-desktop:publishToMavenLocal",
         ":fleet:compose:ui:ui-all-desktop:publishToMavenLocal",
+        ":fleet:navigationevent:navigationevent-all-desktop:publishToMavenLocal",
     )
 }
