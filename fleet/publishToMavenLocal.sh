@@ -26,10 +26,10 @@ readonly REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 "$REPO_ROOT/gradlew" --project-dir "$REPO_ROOT" \
   -Pcompose.platforms=desktop,wasmjs \
   -Pjetbrains.publication.libraries=COMPOSE,LIFECYCLE,SAVEDSTATE,NAVIGATION_EVENT \
-  -Pjetbrains.publication.version.COMPOSE=1.11.0-0-fleet-SNAPSHOT \
-  -Pjetbrains.publication.version.LIFECYCLE=2.11.0-0-fleet-SNAPSHOT \
-  -Pjetbrains.publication.version.SAVEDSTATE=1.5.0-0-fleet-SNAPSHOT \
-  -Pjetbrains.publication.version.NAVIGATION_EVENT=1.1.0-0-fleet-SNAPSHOT \
+  -Pjetbrains.publication.version.COMPOSE=1.11.0-0-fleet-local-SNAPSHOT \
+  -Pjetbrains.publication.version.LIFECYCLE=2.11.0-0-fleet-local-SNAPSHOT \
+  -Pjetbrains.publication.version.SAVEDSTATE=1.5.0-0-fleet-local-SNAPSHOT \
+  -Pjetbrains.publication.version.NAVIGATION_EVENT=1.1.0-0-fleet-local-SNAPSHOT \
   :mpp:publishComposeJbToMavenLocal \
   :fleet:lifecycle:lifecycle-all-desktop:publishToMavenLocal \
   :fleet:compose:runtime:runtime-all-desktop:publishToMavenLocal \
