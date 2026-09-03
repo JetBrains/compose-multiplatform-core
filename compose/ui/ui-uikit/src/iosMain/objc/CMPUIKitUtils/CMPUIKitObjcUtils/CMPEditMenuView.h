@@ -16,6 +16,7 @@
 
 #import <UIKit/UIKit.h>
 #import "CMPEditMenuCustomAction.h"
+#import "CMPMacros.h"
 
 @interface CMPEditMenuView : UIView
 
@@ -42,5 +43,7 @@
 - (UIView *)inputView;
 
 - (UIView *)inputAccessoryView;
+
+- (BOOL)isSecureTextEntry CMP_ABSTRACT_FUNCTION;
 
 @end

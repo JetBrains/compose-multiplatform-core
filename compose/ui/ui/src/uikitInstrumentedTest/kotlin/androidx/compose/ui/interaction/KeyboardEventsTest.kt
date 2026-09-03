@@ -20,6 +20,7 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -40,6 +41,7 @@ import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.beginPress
 import androidx.compose.ui.test.utils.cancel
 import androidx.compose.ui.test.utils.release
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.UIKitView
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -203,41 +205,42 @@ class KeyboardEventsTest {
 
     @Test
     fun simulateInterruptedKeyPressEvent() = runUIKitInstrumentedTest {
-        val requester1 = FocusRequester()
-        val requester2 = FocusRequester()
+        val textFieldRequester = FocusRequester()
+        val boxRequester = FocusRequester()
         val keyEvents = mutableListOf<Pair<KeyEventType, Key>>()
+        var isTextFieldPresent by mutableStateOf(true)
 
         setContent {
             LaunchedEffect(Unit) {
-                requester1.requestFocus()
+                textFieldRequester.requestFocus()
             }
             Column(
-                modifier = Modifier.focusable().onPreviewKeyEvent { event ->
-                    keyEvents += event.type to event.key
-                    true
-                }
+                modifier = Modifier
+                    .onPreviewKeyEvent { event ->
+                        keyEvents += event.type to event.key
+                        true
+                    }
             ) {
-                BasicTextField(
-                    value = "",
-                    onValueChange = {},
-                    modifier = Modifier.focusRequester(requester1)
-                )
-                BasicTextField(
-                    value = "",
-                    onValueChange = {},
-                    modifier = Modifier.focusRequester(requester2)
-                )
+                if (isTextFieldPresent) {
+                    BasicTextField(
+                        value = "",
+                        onValueChange = {},
+                        modifier = Modifier.focusRequester(textFieldRequester)
+                    )
+                }
+                Box(modifier = Modifier.size(20.dp).focusRequester(boxRequester).focusable())
             }
         }
 
-        // Press 'x' and verify key down is dispatched to the onKeyEvent modifier
+        // Press 'x' and verify key down is dispatched to the onKeyEvent modifier.
         val xPress = beginKeyPress('x')
         waitForIdle()
         assertEquals(listOf(KeyEventType.KeyDown to Key.X), keyEvents)
         keyEvents.clear()
 
         // Remove focus from text field while 'x' is still held down
-        requester2.requestFocus()
+        boxRequester.requestFocus()
+        isTextFieldPresent = false
         waitForIdle()
 
         // Key up must be received when focus is removed (press is cancelled by UIKit)

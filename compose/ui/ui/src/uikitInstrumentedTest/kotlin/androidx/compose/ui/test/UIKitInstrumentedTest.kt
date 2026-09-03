@@ -117,7 +117,6 @@ import platform.UIKit.UITouch
 import platform.UIKit.UITraitCollection
 import platform.UIKit.UITraitEnvironmentLayoutDirection
 import platform.UIKit.UITraitEnvironmentLayoutDirectionLeftToRight
-import platform.UIKit.UITraitPreferredContentSizeCategory
 import platform.UIKit.UIUserInterfaceIdiomPad
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
@@ -961,6 +960,21 @@ internal fun UIKitInstrumentedTest.findFocusedUITextInput(): UITextInputProtocol
     }.firstNotNullOfOrNull {
         findFirstResponder(view = it as UIView)
     } as? UITextInputProtocol
+}
+
+internal fun UIKitInstrumentedTest.findAllUITextInputViews(): List<UIView> {
+    val windowScene = viewController.view.window?.windowScene ?: return emptyList()
+
+    fun collect(view: UIView, into: MutableList<UIView>) {
+        if (view is UITextInputProtocol) {
+            into.add(view)
+        }
+        view.subviews.forEach { collect(it as UIView, into) }
+    }
+
+    return buildList {
+        windowScene.windows.reversed().forEach { collect(it as UIView, this) }
+    }
 }
 
 /**

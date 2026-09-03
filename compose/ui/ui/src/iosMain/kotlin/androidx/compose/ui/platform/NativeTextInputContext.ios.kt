@@ -17,30 +17,6 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.ui.InternalComposeUiApi
-import androidx.compose.ui.graphics.Color
-
-/**
- * Interface for providing the required information for the iOS to use native text editing
- * experience.
- *
- * The main difference between this approach and the default compose one is that iOS handles
- * the caret, selection handles, selection area, related gestures and context menu appearance
- * and behavior itself.
- */
-@InternalComposeUiApi
-interface NativeTextInputContext {
-    fun usingNativeTextInput(): Boolean
-
-    fun updateNativeTextInputEditMenuState(
-        copy: (() -> Unit)?,
-        paste: (() -> Unit)?,
-        cut: (() -> Unit)?,
-        selectAll: (() -> Unit)?,
-        customActions: List<NativeTextInputContextMenuCustomAction>?
-    )
-
-    fun updateNativeTextInputTintColor(color: Color?)
-}
 
 @InternalComposeUiApi
 class NativeTextInputContextMenuCustomAction(

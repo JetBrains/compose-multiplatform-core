@@ -282,7 +282,7 @@ class TextFieldEditMenuTest {
 
     @Test
     fun testEditableCollapsedClipboardText() =
-        runComplexTextFieldTest { textFieldKind, newContextMenu ->
+        runComplexTextFieldTest { textFieldKind, _ ->
             UIPasteboard.generalPasteboard().string = "Paste text"
             setTextFieldContent(
                 textFieldKind = textFieldKind,
@@ -291,21 +291,9 @@ class TextFieldEditMenuTest {
             )
 
             longPressNodeWithTagAndAwaitContextMenu("TextField")
-            verifyContextMenuItemsVisible(
-                labels = if (newContextMenu) {
-                    listOf("Paste", "Select All")
-                } else {
-                    listOf("Paste", "Select", "Select All")
-                }
-            )
+            verifyContextMenuItemsVisible(labels = listOf("Paste", "Select", "Select All"))
 
-            verifyContextMenuItemsHidden(
-                labels = if (newContextMenu) {
-                    listOf("Cut", "Copy", "Select")
-                } else {
-                    listOf("Cut", "Copy")
-                }
-            )
+            verifyContextMenuItemsHidden(labels = listOf("Cut", "Copy"))
         }
 
     private fun runComplexTextFieldTest(test: UIKitInstrumentedTest.(BasicTextFieldType, newContextMenuEnabled: Boolean) -> Unit) {
@@ -320,7 +308,7 @@ class TextFieldEditMenuTest {
 
     @Test
     fun testEditableCollapsedClipboardEmpty() =
-        runComplexTextFieldTest { textFieldKind, newContextMenu ->
+        runComplexTextFieldTest { textFieldKind, _ ->
             UIPasteboard.generalPasteboard().string = null
             setTextFieldContent(
                 textFieldKind = textFieldKind,
@@ -329,21 +317,9 @@ class TextFieldEditMenuTest {
             )
 
             longPressNodeWithTagAndAwaitContextMenu("TextField")
-            verifyContextMenuItemsVisible(
-                labels = if (newContextMenu) {
-                    listOf("Select All")
-                } else {
-                    listOf("Select", "Select All")
-                }
-            )
+            verifyContextMenuItemsVisible(listOf("Select", "Select All"))
 
-            verifyContextMenuItemsHidden(
-                labels = if (newContextMenu) {
-                    listOf("Cut", "Copy", "Paste", "Select")
-                } else {
-                    listOf("Cut", "Copy", "Paste")
-                }
-            )
+            verifyContextMenuItemsHidden(labels = listOf("Cut", "Copy", "Paste"))
         }
 
     @Test
@@ -460,8 +436,8 @@ class TextFieldEditMenuTest {
             )
 
             longPressNodeWithTagAndAwaitContextMenu("TextField")
-            verifyContextMenuItemsVisible(labels = listOf("Select All"))
-            verifyContextMenuItemsHidden(labels = listOf("Cut", "Copy", "Paste", "Select"))
+            verifyContextMenuItemsVisible(labels = listOf("Select", "Select All"))
+            verifyContextMenuItemsHidden(labels = listOf("Cut", "Copy", "Paste"))
         }
 
     @Test

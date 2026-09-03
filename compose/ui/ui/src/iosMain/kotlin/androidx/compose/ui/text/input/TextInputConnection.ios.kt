@@ -28,6 +28,8 @@ import androidx.compose.ui.platform.SkikoUITextInputTraits
 import androidx.compose.ui.platform.TextEditingDelegate
 import androidx.compose.ui.platform.NativeTextInputContextMenuCustomAction
 import androidx.compose.ui.platform.getUITextInputTraits
+import androidx.compose.ui.platform.isValidIn
+import androidx.compose.ui.platform.movePositionByGraphemes
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.uikit.density
@@ -38,19 +40,17 @@ import androidx.compose.ui.window.ComposeTextInputView
 import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.NativeTextInputView
 import androidx.compose.ui.window.OverlayInputView
-import kotlin.math.absoluteValue
 import kotlin.math.min
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.jetbrains.skia.BreakIterator
 import platform.UIKit.UIView
+import platform.UIKit.reloadInputViews
 
 internal abstract class TextInputConnection(
-    protected val updateView: () -> Unit,
-    protected val view: UIView,
+    protected var updateView: () -> Unit,
     protected val coroutineScope: CoroutineScope,
     protected val focusedViewsList: FocusedViewsList?,
     private var focusManager: () -> ComposeSceneFocusManager?,
@@ -78,15 +78,22 @@ internal abstract class TextInputConnection(
     protected val unclippedTextOffsetInRoot get() = currentRequest?.unclippedTextOffsetInRoot()
     protected val textFieldRectInRoot get() = currentRequest?.textFieldRectInRoot()
 
-    fun start(request: PlatformTextInputMethodRequest) {
+    abstract val rootView: UIView
+
+    open fun start(request: PlatformTextInputMethodRequest) {
         currentRequest = request
         currentTextFieldValue = request.stateSnapshot()
-        inputTraits = getUITextInputTraits(request.imeOptions)
-        attachInputToView()
-        showKeyboard()
-    }
 
-    protected abstract fun attachInputToView()
+        val previousTraits = inputTraits
+        inputTraits = getUITextInputTraits(request.imeOptions)
+        showKeyboard()
+
+        if (previousTraits.inputView() !== inputTraits.inputView() ||
+            previousTraits.inputAccessoryView() !== inputTraits.inputAccessoryView()
+        ) {
+            reloadInputViews()
+        }
+    }
 
     open fun stop() {
         currentRequest = null
@@ -94,11 +101,14 @@ internal abstract class TextInputConnection(
         inputTraits = EmptyInputTraits
 
         dismissKeyboard()
-
-        detachView()
     }
 
-    protected abstract fun detachView()
+    open fun dispose() {
+        stop()
+
+        updateView = {}
+        focusManager = { null }
+    }
 
     open fun showKeyboard() {
         focusedViewsList?.addAndFocus(textInputView)
@@ -107,6 +117,8 @@ internal abstract class TextInputConnection(
     open fun dismissKeyboard() {
         focusedViewsList?.remove(textInputView, delay = CLEAR_FOCUS_DELAY)
     }
+
+    fun reloadInputViews() = textInputView.reloadInputViews()
 
     open fun onTextFieldValueUpdated(newValue: TextFieldValue) {
         if (postponeSelectionUpdate) {
@@ -283,7 +295,7 @@ internal abstract class TextInputConnection(
             }
             return view.subviews.any { it is UIView && hasFocusedExternalInputView(it) }
         }
-        return view.window?.let { hasFocusedExternalInputView(it) } ?: false
+        return rootView.window?.let { hasFocusedExternalInputView(it) } ?: false
     }
 
     override var inputTraits: SkikoUITextInputTraits = EmptyInputTraits
@@ -302,7 +314,7 @@ internal abstract class TextInputConnection(
         val translation = floatingCursorTranslation ?: return
         val layout = textLayoutResult ?: return
 
-        val fingerPx = offset.toOffset(view.density)
+        val fingerPx = offset.toOffset(rootView.density)
         val virtualCursorPx = fingerPx + translation
         val cursorOffset = layout.getOffsetForPosition(virtualCursorPx)
 
@@ -334,7 +346,7 @@ internal abstract class TextInputConnection(
     override fun beginFloatingCursor(offset: DpOffset) {
         val start = currentTextFieldValue?.selection?.start ?: return
         val cursorRect = textLayoutResult?.getCursorRect(start) ?: return
-        floatingCursorTranslation = cursorRect.center - offset.toOffset(view.density)
+        floatingCursorTranslation = cursorRect.center - offset.toOffset(rootView.density)
     }
 
     override fun endFloatingCursor() {
@@ -420,36 +432,8 @@ internal abstract class TextInputConnection(
         }
     }
 
-    override fun positionFromPosition(position: Int, offset: Int): Int? {
-        val text = currentTextFieldValue?.text ?: return null
-
-        val newPosition = position + offset
-        if (newPosition == text.length || newPosition == 0) {
-            return newPosition
-        }
-        if (newPosition < 0 || newPosition > text.length) {
-            return null
-        }
-        var resultPosition = position
-        val iterator = BreakIterator.makeCharacterInstance()
-        iterator.setText(text)
-
-        repeat(offset.absoluteValue) {
-            val iteratorResult = if (offset > 0) {
-                iterator.following(resultPosition)
-            } else {
-                iterator.preceding(resultPosition)
-            }
-
-            if (iteratorResult == BreakIterator.DONE) {
-                return resultPosition
-            } else {
-                resultPosition = iteratorResult
-            }
-        }
-
-        return resultPosition
-    }
+    override fun positionFromPosition(position: Int, offset: Int): Int? =
+        currentTextFieldValue?.text?.movePositionByGraphemes(position, offset)
 
     override fun verticalPositionFromPosition(position: Int, verticalOffset: Int): Int? {
         val text = currentTextFieldValue?.text ?: return null
@@ -481,9 +465,7 @@ internal abstract class TextInputConnection(
         }
     }
 
-    protected fun isIncorrect(range: TextRange): Boolean {
-        return range.start < 0 || range.end > endOfDocument() || range.start > range.end
-    }
+    protected fun isIncorrect(range: TextRange): Boolean = !range.isValidIn(endOfDocument())
 
     companion object {
         // Due to unexpected delays between the commands to show/hide the keyboard,
