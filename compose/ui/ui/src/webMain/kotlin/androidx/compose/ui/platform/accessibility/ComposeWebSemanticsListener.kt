@@ -444,6 +444,13 @@ internal class ComposeWebSemanticsListener(
             htmlNode.removeAttribute("aria-disabled")
         }
 
+        if (SemanticsProperties.Selected in config) {
+            val selected = config[SemanticsProperties.Selected]
+            htmlNode.setAttribute("aria-selected", selected.toString())
+        } else {
+            htmlNode.removeAttribute("aria-selected")
+        }
+
         val roleId = config.getRoleId()
         setA11YAriaRole(element = htmlNode, roleId)
 
