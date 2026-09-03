@@ -21,11 +21,8 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       native: ${{ steps.filter.outputs.native }}
-
       web: ${{ steps.filter.outputs.web }}
-
       desktop: ${{ steps.filter.outputs.desktop }}
-
       unknown: ${{ steps.filter.outputs.unknown }}
     steps:
       - uses: actions/checkout@v5
