@@ -86,6 +86,8 @@
 
 @property (readwrite) UIEditMenuInteraction* editInteraction API_AVAILABLE(ios(16.0));
 
+- (void)dismissEditMenu;
+
 @end
 
 @implementation CMPEditMenuView
@@ -132,11 +134,11 @@ id _editInteraction;
             [self.editInteraction updateVisibleMenuPositionAnimated:NO];
         }
     } else {
-        self.isEditMenuShown = YES;
         if (contextMenuItemsChanged || positionChanged) {
-            [self hideEditMenu];
+            [self dismissEditMenu];
             [self scheduleShowMenuController];
         }
+        self.isEditMenuShown = YES;
     }
 }
 
@@ -283,7 +285,7 @@ id _editInteraction;
     return YES;
 }
 
-- (void)hideEditMenu {
+- (void)dismissEditMenu {
     if (@available(iOS 16, *)) {
         [self cancelPresentEditMenuInteraction];
 
@@ -297,10 +299,15 @@ id _editInteraction;
         [self cancelShowMenuController];
         [[UIMenuController sharedMenuController] hideMenu];
     }
+}
+
+- (void)hideEditMenu {
+    [self dismissEditMenu];
 
     self.copyBlock = nil;
     self.cutBlock = nil;
     self.pasteBlock = nil;
+    self.selectBlock = nil;
     self.selectAllBlock = nil;
     self.customActions = @[];
 }
