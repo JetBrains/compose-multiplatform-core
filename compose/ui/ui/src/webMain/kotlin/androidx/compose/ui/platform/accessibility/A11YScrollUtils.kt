@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.platform.accessibility
 
+import androidx.collection.MutableIntObjectMap
 import androidx.collection.MutableIntSet
 import androidx.collection.MutableScatterMap
 import androidx.collection.ScatterMap
@@ -44,7 +45,7 @@ import org.w3c.dom.events.Event
  * manipulate the scroll offset.
  */
 internal class A11YScrollController(
-    private val idToA11YNode: ScatterMap<Int, HTMLElement>,
+    private val idToA11YNode: MutableIntObjectMap<HTMLElement>,
     private val a11yNodeToSemanticsNode: ScatterMap<HTMLElement, SemanticsNode>,
 ) {
 
