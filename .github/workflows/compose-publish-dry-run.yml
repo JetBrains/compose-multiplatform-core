@@ -7,8 +7,61 @@ on:
       - jb-main
       - integration
 
+env:
+  PLATFORM_PATH_FILTERS: |
+    ios:
+      - '**/iosMain/**'
+      - '**/darwinMain/**'
+      - '**/nativeMain/**'
+      - '**/uikitMain/**'
+    
+    web:
+      - '**/webMain/**'
+      - '**/jsMain/**'
+      - '**/jsWasmMain/**'
+      - '**/wasmJsMain/**'
+    
+    desktop:
+      - '**/jvmMain/**'
+      - '**/desktopMain/**'
+    
+    unknown:
+      - '**'
+    
+      - '!**/iosMain/**'
+      - '!**/darwinMain/**'
+      - '!**/nativeMain/**'
+      - '!**/uikitMain/**'
+    
+      - '!**/webMain/**'
+      - '!**/jsMain/**'
+      - '!**/jsWasmMain/**'
+      - '!**/wasmJsMain/**'
+    
+      - '!**/jvmMain/**'
+      - '!**/desktopMain/**'
+
 jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      ios: ${{ steps.filter.outputs.ios }}
+      web: ${{ steps.filter.outputs.web }}
+      desktop: ${{ steps.filter.outputs.desktop }}
+      unknown: ${{ steps.filter.outputs.unknown }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Detect affected platforms
+        id: filter
+        uses: dorny/paths-filter@v4
+        with:
+          filters: ${{ env.PLATFORM_PATH_FILTERS }}
+          predicate-quantifier: some-with-excludes
+
   compose-native-publish:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.ios == 'true' || needs.changes.outputs.unknown == 'true'
     runs-on: macos-26-xlarge
     name: Darwin + Native Linux
     steps:
@@ -35,6 +88,8 @@ jobs:
             --no-daemon --stacktrace
 
   compose-web-publish:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.web == 'true' || needs.changes.outputs.unknown == 'true'
     runs-on: ubuntu-24.04
     name: Web
     steps:
@@ -57,6 +112,8 @@ jobs:
             --no-daemon --stacktrace
 
   compose-jvm-publish:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.desktop == 'true' || needs.changes.outputs.unknown == 'true'
     runs-on: ubuntu-24.04
     name: JVM
     steps:
