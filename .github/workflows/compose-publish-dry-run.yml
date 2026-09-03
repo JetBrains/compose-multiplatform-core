@@ -7,40 +7,6 @@ on:
       - jb-main
       - integration
 
-env:
-  PLATFORM_PATH_FILTERS: |
-    ios:
-      - '**/iosMain/**'
-      - '**/darwinMain/**'
-      - '**/nativeMain/**'
-      - '**/uikitMain/**'
-    
-    web:
-      - '**/webMain/**'
-      - '**/jsMain/**'
-      - '**/jsWasmMain/**'
-      - '**/wasmJsMain/**'
-    
-    desktop:
-      - '**/jvmMain/**'
-      - '**/desktopMain/**'
-    
-    unknown:
-      - '**'
-    
-      - '!**/iosMain/**'
-      - '!**/darwinMain/**'
-      - '!**/nativeMain/**'
-      - '!**/uikitMain/**'
-    
-      - '!**/webMain/**'
-      - '!**/jsMain/**'
-      - '!**/jsWasmMain/**'
-      - '!**/wasmJsMain/**'
-    
-      - '!**/jvmMain/**'
-      - '!**/desktopMain/**'
-
 jobs:
   changes:
     runs-on: ubuntu-24.04
@@ -56,12 +22,12 @@ jobs:
         id: filter
         uses: dorny/paths-filter@v4
         with:
-          filters: ${{ env.PLATFORM_PATH_FILTERS }}
+          filters: .github/platform-path-filters.yml
           predicate-quantifier: some-with-excludes
 
   compose-native-publish:
     needs: changes
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.ios == 'true' || needs.changes.outputs.unknown == 'true'
+    if: github.event_name != 'pull_request' || needs.changes.outputs.ios == 'true' || needs.changes.outputs.unknown == 'true'
     runs-on: macos-26-xlarge
     name: Darwin + Native Linux
     steps:
@@ -89,7 +55,7 @@ jobs:
 
   compose-web-publish:
     needs: changes
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.web == 'true' || needs.changes.outputs.unknown == 'true'
+    if: github.event_name != 'pull_request' || needs.changes.outputs.web == 'true' || needs.changes.outputs.unknown == 'true'
     runs-on: ubuntu-24.04
     name: Web
     steps:
@@ -113,7 +79,7 @@ jobs:
 
   compose-jvm-publish:
     needs: changes
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.desktop == 'true' || needs.changes.outputs.unknown == 'true'
+    if: github.event_name != 'pull_request' || needs.changes.outputs.desktop == 'true' || needs.changes.outputs.unknown == 'true'
     runs-on: ubuntu-24.04
     name: JVM
     steps:
