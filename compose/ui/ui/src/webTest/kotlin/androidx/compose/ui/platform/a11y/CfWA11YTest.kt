@@ -27,6 +27,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.Button
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.LinearProgressIndicator
+import androidx.compose.material.RangeSlider
+import androidx.compose.material.Slider
+import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.getValue
@@ -722,6 +727,106 @@ class CfWA11YTest : OnCanvasTests {
 
         assertEquals("textbox", textField.getAttribute("role"))
         assertEquals("Hello, World!", textField.innerText)
+    }
+
+    @Test
+    fun sliderHasSliderRoleAndRangeValues() = runApplicationTest {
+        var value by mutableStateOf(0.5f)
+
+        createComposeWindow {
+            Slider(
+                value = value,
+                onValueChange = { value = it },
+                modifier = Modifier.testTag("slider"),
+            )
+        }
+
+        awaitA11YChanges()
+
+        val slider = getShadowRoot().getElementById("slider") as? HTMLElement
+        assertNotNull(slider)
+        assertEquals("slider", slider.getAttribute("role"))
+        assertEquals(0f, slider.getAttribute("aria-valuemin")!!.toFloat())
+        assertEquals(1f, slider.getAttribute("aria-valuemax")!!.toFloat())
+        assertEquals(0.5f, slider.getAttribute("aria-valuenow")!!.toFloat())
+    }
+
+    @OptIn(ExperimentalMaterialApi::class)
+    @Test
+    fun rangeSliderHasSliderRoleForBothThumbs() = runApplicationTest {
+        createComposeWindow {
+            RangeSlider(
+                value = 0.25f..0.75f,
+                onValueChange = {},
+                modifier = Modifier.testTag("rangeSlider"),
+            )
+        }
+
+        awaitA11YChanges()
+
+        val rangeSlider = getShadowRoot().getElementById("rangeSlider") as? HTMLElement
+        assertNotNull(rangeSlider)
+        val sliders = rangeSlider.querySelectorAll("[role=slider]")
+        assertEquals(2, sliders.length)
+        assertEquals(0.25f, (sliders[0] as HTMLElement).getAttribute("aria-valuenow")!!.toFloat())
+        assertEquals(0.75f, (sliders[1] as HTMLElement).getAttribute("aria-valuenow")!!.toFloat())
+    }
+
+    @Test
+    fun progressIndicatorsHaveProgressbarRoleAndRangeValues() = runApplicationTest {
+        createComposeWindow {
+            LinearProgressIndicator(
+                progress = 0.4f,
+                modifier = Modifier.testTag("progress"),
+            )
+        }
+
+        awaitA11YChanges()
+
+        val progress = getShadowRoot().getElementById("progress") as? HTMLElement
+        assertNotNull(progress)
+        assertEquals("progressbar", progress.getAttribute("role"))
+        assertEquals(0f, progress.getAttribute("aria-valuemin")!!.toFloat())
+        assertEquals(1f, progress.getAttribute("aria-valuemax")!!.toFloat())
+        assertEquals(0.4f, progress.getAttribute("aria-valuenow")!!.toFloat())
+    }
+
+    @Test
+    fun indeterminateProgressIndicatorOmitsRangeValues() = runApplicationTest {
+        createComposeWindow {
+            LinearProgressIndicator(modifier = Modifier.testTag("progress"))
+        }
+
+        awaitA11YChanges()
+
+        val progress = getShadowRoot().getElementById("progress") as? HTMLElement
+        assertNotNull(progress)
+        assertEquals("progressbar", progress.getAttribute("role"))
+        assertNull(progress.getAttribute("aria-valuenow"))
+    }
+
+    @Test
+    fun switchHasSwitchRoleAndCheckedState() = runApplicationTest {
+        var checked by mutableStateOf(false)
+
+        createComposeWindow {
+            Switch(
+                checked = checked,
+                onCheckedChange = { checked = it },
+                modifier = Modifier.testTag("switch"),
+            )
+        }
+
+        awaitA11YChanges()
+
+        val switch = getShadowRoot().getElementById("switch") as? HTMLElement
+        assertNotNull(switch)
+        assertEquals("switch", switch.getAttribute("role"))
+        assertEquals("false", switch.getAttribute("aria-checked"))
+
+        switch.click()
+        awaitA11YChanges()
+        assertEquals("true", switch.getAttribute("aria-checked"))
     }
 
     @Test

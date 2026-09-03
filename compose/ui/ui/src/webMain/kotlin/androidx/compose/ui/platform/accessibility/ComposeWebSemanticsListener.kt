@@ -25,6 +25,7 @@ import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastJoinToString
 import kotlin.time.Duration.Companion.milliseconds
@@ -426,6 +427,21 @@ internal class ComposeWebSemanticsListener(
 
         val roleId = config.getRoleId()
         setA11YAriaRole(element = htmlNode, roleId)
+
+        if (config.contains(SemanticsProperties.ProgressBarRangeInfo)) {
+            val rangeInfo = config[SemanticsProperties.ProgressBarRangeInfo]
+            val stateDescription = config.getOrNull(SemanticsProperties.StateDescription)
+            setA11YProgressBarRangeInfo(htmlNode, rangeInfo, stateDescription)
+        } else {
+            removeA11YProgressBarRangeInfo(htmlNode)
+        }
+
+        if (config.contains(SemanticsProperties.ToggleableState)) {
+            val ariaChecked = config[SemanticsProperties.ToggleableState].toAriaChecked()
+            htmlNode.setAttribute("aria-checked", ariaChecked)
+        } else {
+            htmlNode.removeAttribute("aria-checked")
+        }
 
         val isCollection =
             roleId == AriaRoleId.List || roleId == AriaRoleId.Grid
