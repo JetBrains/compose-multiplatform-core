@@ -420,7 +420,11 @@ internal class ComposeWebSemanticsListener(
             htmlNode.setAttribute("contenteditable", editable.toString())
 
             val readOnly = !editable && !disabled
-            htmlNode.setAttribute("aria-readonly", readOnly.toString())
+            if (readOnly) {
+                htmlNode.setAttribute("aria-readonly", readOnly.toString())
+            } else {
+                htmlNode.removeAttribute("aria-readonly")
+            }
 
             if (justCreated) {
                 htmlNode.addEventListener("focus") {
