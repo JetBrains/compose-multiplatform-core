@@ -31,7 +31,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.isLinux
 import androidx.compose.ui.isMacOs
-import androidx.compose.ui.isWindows
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.toDpSize
 import androidx.compose.ui.unit.DpOffset
@@ -512,9 +511,6 @@ class WindowV2StateTest {
         useDelay = true,
         delayMillis = 1000
     ) {
-        // TODO Fix failing
-        assumeTrue(!isWindows)
-
         // This fails on our CI it fails because the initial placement fails to be Maximized.
         // The `maximize window before show` test fails the same way.
         // Haven't actually tested on Windows; if you run it, and it doesn't pass, replace with
@@ -551,9 +547,6 @@ class WindowV2StateTest {
 
     @Test
     fun `maximize window before show`() = runApplicationTest(useDelay = isLinux) {
-        // TODO Fix failing
-        assumeTrue(!isWindows)
-
         // This fails on our Linux CI; the window reports WindowPlacement.Floating.
         // But testing in an actual Ubuntu 22 system, it succeeds.
         assumeTrue(!isLinux)
@@ -1070,22 +1063,17 @@ class WindowV2StateTest {
     )
 
     @Test
-    fun `preferred size is rounded up`() {
-        // TODO Fix failing
-        assumeTrue(!isWindows)
-
-        runWindowSizeTest(
-            testName = "preferred size is rounded up",
-            sizeProvider = WindowSizeProvider.Unconstrained,
-            content = {
-                Layout { _, _ ->
-                    val size = (density * 100 + 1).toInt()
-                    layout(size, size) { }
-                }
-            },
-            expectedWindowSizeSansInsets = DpSize(101.dp, 101.dp)
-        )
-    }
+    fun `preferred size is rounded up`() = runWindowSizeTest(
+        testName = "preferred size is rounded up",
+        sizeProvider = WindowSizeProvider.Unconstrained,
+        content = {
+            Layout { _, _ ->
+                val size = (density * 100 + 1).toInt()
+                layout(size, size) { }
+            }
+        },
+        expectedWindowSizeSansInsets = DpSize(101.dp, 101.dp)
+    )
 
     private fun runBoundsOverwriteTest(
         name: String,

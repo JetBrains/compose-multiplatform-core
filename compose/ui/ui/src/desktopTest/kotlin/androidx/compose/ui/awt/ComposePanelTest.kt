@@ -52,7 +52,6 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.isWindows
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.sendCharTypedEvents
@@ -100,7 +99,6 @@ import org.jetbrains.skiko.MainUIDispatcher
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.SkiaLayerAnalytics
 import org.junit.Assume.assumeFalse
-import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.Timeout
@@ -913,9 +911,6 @@ class ComposePanelTest {
 
     @Test
     fun `ComposePanel draws background correctly`() = runApplicationTest {
-        // TODO Fix failing
-        assumeTrue(!isWindows)
-
         // Show a canvas and a `ComposePanel` with the same background and compare the two colors.
         // Simply comparing to the set color doesn't work because Robot returns the color after
         // the OS transforms it to the screen color space (which doesn't seem accessible from
