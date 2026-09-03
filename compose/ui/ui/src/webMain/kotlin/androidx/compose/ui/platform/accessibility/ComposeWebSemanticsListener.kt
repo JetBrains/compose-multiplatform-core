@@ -18,6 +18,7 @@ package androidx.compose.ui.platform.accessibility
 
 import androidx.collection.MutableIntObjectMap
 import androidx.collection.MutableScatterMap
+import androidx.collection.mutableIntSetOf
 import androidx.collection.mutableObjectListOf
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.geometry.Offset
@@ -220,7 +221,7 @@ internal class ComposeWebSemanticsListener(
             placeA11YChildrenInOrder(parent, targetChildren)
         }
 
-        val removedIds = mutableSetOf<Int>()
+        val removedIds = mutableIntSetOf()
 
         idToA11YNode.forEach { id, htmlNode ->
             if (!targetChildToParent.containsKey(htmlNode)) {
