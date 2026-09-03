@@ -28,6 +28,7 @@ import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastJoinToString
 import kotlin.time.Duration.Companion.milliseconds
@@ -407,21 +408,37 @@ internal class ComposeWebSemanticsListener(
             htmlNode.id = testTag
         }
 
+        val disabled = SemanticsProperties.Disabled in config
+
         if (config.contains(SemanticsProperties.EditableText)) {
             val editableText = config[SemanticsProperties.EditableText].text
             if (htmlNode.textContent != editableText) {
                 htmlNode.textContent = editableText
             }
 
+            val editable = config.getOrNull(SemanticsProperties.IsEditable) ?: false
+            htmlNode.setAttribute("contenteditable", editable.toString())
+
+            val readOnly = !editable && !disabled
+            htmlNode.setAttribute("aria-readonly", readOnly.toString())
+
             if (justCreated) {
-                htmlNode.setAttribute("contenteditable", "true")
-                htmlNode.addEventListener("focus", {
+                htmlNode.addEventListener("focus") {
                     htmlNode.click()
-                })
+                }
             }
         }
 
-        if (config.contains(SemanticsProperties.Disabled)) {
+        if (SemanticsProperties.MaxTextLength in config) {
+            val maxTextLength = config[SemanticsProperties.MaxTextLength]
+            if(maxTextLength > 0) {
+                htmlNode.setAttribute("maxlength", maxTextLength.toString())
+            }
+        } else {
+            htmlNode.removeAttribute("maxlength")
+        }
+
+        if (disabled) {
             htmlNode.setAttribute("aria-disabled", "true")
         } else {
             htmlNode.removeAttribute("aria-disabled")
