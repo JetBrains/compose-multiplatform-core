@@ -46,11 +46,14 @@ import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.input.EditCommand
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.intl.LocaleList
+import androidx.compose.ui.text.platform.FontLoader
 import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -262,6 +265,12 @@ interface PlatformContext {
     @ExperimentalMediaQueryApi
     val mediaScope: UiMediaScope get() = EmptyMediaScope
 
+    @Suppress("DEPRECATION")
+    val fontLoader: FontLoader
+
+    val fontFamilyResolver: FontFamily.Resolver
+
+
     interface RootForTestListener {
         fun onRootForTestCreated(root: PlatformRootForTest)
         fun onRootForTestDisposed(root: PlatformRootForTest)
@@ -322,6 +331,12 @@ interface PlatformContext {
         }
         override val uriHandler: UriHandler by lazy(LazyThreadSafetyMode.NONE) {
             createPlatformUriHandler()
+        }
+        override val fontFamilyResolver: FontFamily.Resolver by lazy(LazyThreadSafetyMode.NONE) {
+            createFontFamilyResolver()
+        }
+        override val fontLoader: FontLoader by lazy(LazyThreadSafetyMode.NONE) {
+            FontLoader()
         }
     }
 

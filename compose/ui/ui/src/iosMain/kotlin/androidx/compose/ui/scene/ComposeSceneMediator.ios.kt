@@ -90,6 +90,9 @@ import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.platform.createPlatformClipboard
 import androidx.compose.ui.platform.createPlatformClipboardManager
 import androidx.compose.ui.platform.createPlatformUriHandler
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.createFontFamilyResolver
+import androidx.compose.ui.text.platform.FontLoader
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
@@ -940,6 +943,13 @@ internal class ComposeSceneMediator(
 
         override val uriHandler: UriHandler by lazy(LazyThreadSafetyMode.NONE) {
             createPlatformUriHandler()
+        }
+
+        override val fontFamilyResolver: FontFamily.Resolver by lazy(LazyThreadSafetyMode.NONE) {
+            createFontFamilyResolver()
+        }
+        override val fontLoader: FontLoader by lazy(LazyThreadSafetyMode.NONE) {
+            FontLoader()
         }
 
         override fun convertLocalToWindowPosition(localPosition: Offset): Offset =

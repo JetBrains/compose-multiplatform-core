@@ -84,8 +84,9 @@ import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.spatial.RectManager
 import androidx.compose.ui.text.InternalTextApi
-import androidx.compose.ui.text.font.createFontFamilyResolver
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextInputService
+import androidx.compose.ui.text.platform.FontLoader
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
@@ -546,15 +547,13 @@ internal class RootNodeOwner(
         override val semanticsOwner = SemanticsOwner(root, rootSemanticsNode, layoutNodes)
         override val windowInfo get() = platformContext.windowInfo
         override val taskDispatchers: TaskDispatchers get() = platformContext.taskDispatchers
-
         @ExperimentalMediaQueryApi
         override val uiMediaScope: UiMediaScope get() = platformContext.mediaScope
         override val retainedValuesStore: RetainedValuesStore get() = ForgetfulRetainedValuesStore
         override val rectManager = RectManager(layoutNodes)
-
         @Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
-        override val fontLoader = androidx.compose.ui.text.platform.FontLoader()
-        override val fontFamilyResolver = createFontFamilyResolver()
+        override val fontLoader: FontLoader get() = platformContext.fontLoader
+        override val fontFamilyResolver: FontFamily.Resolver get() = platformContext.fontFamilyResolver
         override val layoutDirection get() = _layoutDirection
         override val localeList get() = platformContext.localeList
         override var showLayoutBounds by mutableStateOf(false)
