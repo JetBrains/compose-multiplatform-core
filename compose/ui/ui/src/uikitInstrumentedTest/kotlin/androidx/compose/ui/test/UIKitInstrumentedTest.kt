@@ -918,12 +918,6 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         }
     }
 
-    /**
-     * Accelerates the animations of every window of the test scene by [animationSpeed].
-     *
-     * System windows (the keyboard window in the first place) are created lazily, so newly shown
-     * ones are handled by [windowDidBecomeVisible] as well.
-     */
     private fun startObservingWindowVisibility() {
         if (isObservingWindowVisibility) return
         isObservingWindowVisibility = true
