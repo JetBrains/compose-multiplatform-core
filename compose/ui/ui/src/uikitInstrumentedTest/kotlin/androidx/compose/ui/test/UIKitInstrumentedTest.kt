@@ -1101,7 +1101,7 @@ internal fun UIKitInstrumentedTest.captureScreenshot(): UIImage? {
 internal fun UIKitInstrumentedTest.waitForContextMenu() {
     waitForIdle()
     waitUntil("Waiting for context menu to appear") { isContextMenuVisible }
-    delay(200) // wait for toolbar animation
+    delay(400) // wait for toolbar animation
     waitForIdle()
 }
 

@@ -79,6 +79,7 @@ import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
@@ -1254,7 +1255,8 @@ internal class AccessibilityMediator(
             // Will exit on CancellationException from within await on `invalidationChannel.receive()`
             // when [job] is cancelled
             while (true) {
-                hasPendingInvalidations = false
+                @OptIn(ExperimentalCoroutinesApi::class)
+                hasPendingInvalidations = !invalidationChannel.isEmpty
                 invalidationChannel.receive()
                 hasPendingInvalidations = true
 
@@ -1270,18 +1272,18 @@ internal class AccessibilityMediator(
                             sync()
                         }
                         accessibilityDebugLogger?.log("AccessibilityMediator.sync took $time")
-                    }
 
-                    if (keyboardFocusedElementKey != null) {
-                        // Do nothing.
-                        // When full keyboard access is enabled, the selection rectangle can be updated
-                        // on every frame. To improve the user experience, we should update the
-                        // accessibility tree as quickly as possible.
-                    } else {
-                        // Estimated delay between the iOS Accessibility Engine sync intervals.
-                        // There is no reason to post change notifications more frequently because the
-                        // iOS Accessibility Engine will ignore them.
-                        delay((100.0 * coroutineContext.durationScale()).milliseconds)
+                        if (keyboardFocusedElementKey != null) {
+                            // Do nothing.
+                            // When full keyboard access is enabled, the selection rectangle can be updated
+                            // on every frame. To improve the user experience, we should update the
+                            // accessibility tree as quickly as possible.
+                        } else {
+                            // Estimated delay between the iOS Accessibility Engine sync intervals.
+                            // There is no reason to post change notifications more frequently because the
+                            // iOS Accessibility Engine will ignore them.
+                            delay((100.0 * coroutineContext.durationScale()).milliseconds)
+                        }
                     }
                 } else if (root.element != null) {
                     refocusKeyboardElementIfNeeded()
