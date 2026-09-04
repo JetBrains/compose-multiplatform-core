@@ -18,6 +18,7 @@ package androidx.compose.ui.platform
 
 import androidx.collection.MutableIntSet
 import androidx.compose.runtime.BroadcastFrameClock
+import androidx.compose.ui.animation.durationScale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.node.HitTestResult
@@ -1270,22 +1271,22 @@ internal class AccessibilityMediator(
                         }
                         accessibilityDebugLogger?.log("AccessibilityMediator.sync took $time")
                     }
+
+                    if (keyboardFocusedElementKey != null) {
+                        // Do nothing.
+                        // When full keyboard access is enabled, the selection rectangle can be updated
+                        // on every frame. To improve the user experience, we should update the
+                        // accessibility tree as quickly as possible.
+                    } else {
+                        // Estimated delay between the iOS Accessibility Engine sync intervals.
+                        // There is no reason to post change notifications more frequently because the
+                        // iOS Accessibility Engine will ignore them.
+                        delay((100.0 * coroutineContext.durationScale()).milliseconds)
+                    }
                 } else if (root.element != null) {
                     refocusKeyboardElementIfNeeded()
                     root.element = null
                     AccessibilityNotification(UIAccessibilityLayoutChangedNotification).postNotification()
-                }
-
-                if (keyboardFocusedElementKey != null) {
-                    // Do nothing.
-                    // When full keyboard access is enabled, the selection rectangle can be updated
-                    // on every frame. To improve the user experience, we should update the
-                    // accessibility tree as quickly as possible.
-                } else {
-                    // Estimated delay between the iOS Accessibility Engine sync intervals.
-                    // There is no reason to post change notifications more frequently because the
-                    // iOS Accessibility Engine will ignore them.
-                    delay(100.milliseconds)
                 }
             }
         }
