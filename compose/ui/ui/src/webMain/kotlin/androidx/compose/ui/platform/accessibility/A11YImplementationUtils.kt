@@ -21,6 +21,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.util.fastFilter
@@ -202,13 +203,14 @@ internal fun setA11YAriaRole(element: HTMLElement, ariaRoleId: Int) {
 
 internal fun setA11YProgressBarRangeInfo(
     element: HTMLElement,
-    info: ProgressBarRangeInfo,
-    stateDescription: String?
+    semanticsConfiguration: SemanticsConfiguration,
 ) {
+    val info = semanticsConfiguration[SemanticsProperties.ProgressBarRangeInfo]
     if (info == ProgressBarRangeInfo.Indeterminate) {
         removeA11YProgressBarRangeInfo(element)
         return
     }
+    val stateDescription = semanticsConfiguration.getOrNull(SemanticsProperties.StateDescription)
 
     element.setAttribute("aria-valuemin", info.range.start.toString())
     element.setAttribute("aria-valuemax", info.range.endInclusive.toString())

@@ -453,9 +453,7 @@ internal class ComposeWebSemanticsListener(
         }
 
         if (config.contains(SemanticsProperties.ProgressBarRangeInfo)) {
-            val rangeInfo = config[SemanticsProperties.ProgressBarRangeInfo]
-            val stateDescription = config.getOrNull(SemanticsProperties.StateDescription)
-            setA11YProgressBarRangeInfo(htmlNode, rangeInfo, stateDescription)
+            setA11YProgressBarRangeInfo(htmlNode, config)
         } else {
             removeA11YProgressBarRangeInfo(htmlNode)
         }
