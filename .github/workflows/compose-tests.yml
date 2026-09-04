@@ -8,6 +8,38 @@ on:
       - integration
 
 env:
+  PLATFORM_PATH_FILTERS: |
+    ios:
+      - '**/iosMain/**'
+      - '**/darwinMain/**'
+      - '**/nativeMain/**'
+      - '**/uikitMain/**'
+    
+    web:
+      - '**/webMain/**'
+      - '**/jsMain/**'
+      - '**/jsWasmMain/**'
+      - '**/wasmJsMain/**'
+    
+    desktop:
+      - '**/jvmMain/**'
+      - '**/desktopMain/**'
+    
+    unknown:
+      - '**'
+    
+      - '!**/iosMain/**'
+      - '!**/darwinMain/**'
+      - '!**/nativeMain/**'
+      - '!**/uikitMain/**'
+    
+      - '!**/webMain/**'
+      - '!**/jsMain/**'
+      - '!**/jsWasmMain/**'
+      - '!**/wasmJsMain/**'
+    
+      - '!**/jvmMain/**'
+      - '!**/desktopMain/**'
   # TODO: https://youtrack.jetbrains.com/issue/CMP-9497/Investgate-CfW-tests-flakiness-with-enabled-gradle-configuration-cache-on-CI
   # Web Tests require running additional processes: karma in node, browser;
   # To reduce the memory pressure, we change some defaults:
@@ -17,7 +49,26 @@ env:
     -Porg.gradle.workers.max=1
 
 jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      ios: ${{ steps.filter.outputs.ios }}
+      web: ${{ steps.filter.outputs.web }}
+      desktop: ${{ steps.filter.outputs.desktop }}
+      unknown: ${{ steps.filter.outputs.unknown }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Detect affected platforms
+        id: filter
+        uses: dorny/paths-filter@v4
+        with:
+          filters: ${{ env.PLATFORM_PATH_FILTERS }}
+          predicate-quantifier: some-with-excludes
+
   compose-desktop-tests:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.desktop == 'true' || needs.changes.outputs.unknown == 'true'
     runs-on: ubuntu-24.04
     name: Desktop
     steps:
@@ -60,6 +111,8 @@ jobs:
         if: always()
 
   compose-ios-tests:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.ios == 'true' || needs.changes.outputs.unknown == 'true'
     runs-on: macos-26-xlarge
     name: iOS
     env:
@@ -87,6 +140,8 @@ jobs:
         if: always()
 
   compose-ios-utils-tests:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.ios == 'true' || needs.changes.outputs.unknown == 'true'
     runs-on: macos-26-xlarge
     name: iOS Utils
     env:
@@ -120,6 +175,8 @@ jobs:
           path: compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/TestResults.xcresult
 
   compose-ios-instrumented-tests:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.ios == 'true' || needs.changes.outputs.unknown == 'true'
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -197,6 +254,8 @@ jobs:
         if: always()
 
   compose-web-chrome-tests:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.web == 'true' || needs.changes.outputs.unknown == 'true'
     runs-on: ubuntu-24.04
     name: Web Chrome
     strategy:
@@ -289,6 +348,8 @@ jobs:
         if: always()
 
   compose-web-firefox-tests:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.web == 'true' || needs.changes.outputs.unknown == 'true'
     runs-on: ubuntu-24.04
     name: Web Firefox
     strategy:
