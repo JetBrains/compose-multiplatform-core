@@ -32,6 +32,7 @@ class ComposeSceneMediatorTest {
         tap(screenSize.center)
 
         waitForIdle()
+        // Should not crash
     }
 
     @OptIn(ExperimentalForeignApi::class)
@@ -45,5 +46,6 @@ class ComposeSceneMediatorTest {
         viewController.view.layoutIfNeeded()
 
         waitForIdle()
+        // Should not crash
     }
 }

@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.preferredFrameRate
+import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import kotlin.test.Test
@@ -42,6 +43,8 @@ internal class FrameRateTest {
     @Test
     fun testLowFrameRates() = runUIKitInstrumentedTest {
         val frameRates = listOf(5f, 10f, 30f, 60f)
+
+        animationSpeed = UIKitInstrumentedTest.DefaultAnimationSpeed
 
         setContent {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -66,6 +69,8 @@ internal class FrameRateTest {
     @Test
     fun testPreferredFrameRates() = runUIKitInstrumentedTest {
         val frameRates = listOf(5f, 10f, 30f, 60f, 80f, 120f)
+
+        animationSpeed = UIKitInstrumentedTest.DefaultAnimationSpeed
 
         setContent {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
