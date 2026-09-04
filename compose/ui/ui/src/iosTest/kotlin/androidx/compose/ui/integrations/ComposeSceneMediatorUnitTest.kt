@@ -16,17 +16,16 @@
 
 package androidx.compose.ui.integrations
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.FrameChoreographer
+import androidx.compose.ui.platform.MediaScope
 import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.scene.ComposeSceneContext
 import androidx.compose.ui.scene.ComposeSceneMediator
 import androidx.compose.ui.scene.PlatformLayersComposeScene
 import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
-import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
@@ -93,32 +92,36 @@ class ComposeSceneMediatorUnitTest {
     private fun makeMediator(
         coroutineContext: CoroutineContext,
         frameChoreographer: FrameChoreographer = FrameChoreographer.choreographerForScene(UIWindowScene()),
-    ): ComposeSceneMediator = ComposeSceneMediator(
-        frameChoreographer = frameChoreographer,
-        onFocusBehavior = OnFocusBehavior.DoNothing,
-        isClearFocusOnMouseDownEnabled = false,
-        focusedViewsList = null,
-        windowContext = WindowContext(),
-        architectureComponentsOwner = DefaultArchitectureComponentsOwner(),
-        coroutineContext = coroutineContext,
-        navigationEventInput = IosBackNavigationEventInput(
-            density = Density(1f),
-            initialLayoutDirection = LayoutDirection.Ltr,
-            getTopLeftOffsetInWindow = { IntOffset.Zero },
-            endEdgePanGestureBehavior = EndEdgePanGestureBehavior.Disabled,
-        ),
-        interfaceOrientationState = mutableStateOf(InterfaceOrientation.Portrait),
-        composeSceneFactory = { platformContext ->
-            registerSkikoComposeImplementation()
-            PlatformLayersComposeScene(
-                frameRecomposer = frameChoreographer.frameRecomposer,
+    ): ComposeSceneMediator {
+        val windowContext = WindowContext()
+        val mediaScope = MediaScope(windowContext.windowInfo)
+        return ComposeSceneMediator(
+            frameChoreographer = frameChoreographer,
+            onFocusBehavior = OnFocusBehavior.DoNothing,
+            isClearFocusOnMouseDownEnabled = false,
+            focusedViewsList = null,
+            windowContext = windowContext,
+            architectureComponentsOwner = DefaultArchitectureComponentsOwner(),
+            coroutineContext = coroutineContext,
+            navigationEventInput = IosBackNavigationEventInput(
                 density = Density(1f),
-                composeSceneContext = object : ComposeSceneContext {
-                    override val platformContext = platformContext
-                },
-                invalidateLayout = {},
-                invalidateDraw = {},
-            )
-        },
-    )
+                initialLayoutDirection = LayoutDirection.Ltr,
+                getTopLeftOffsetInWindow = { IntOffset.Zero },
+                endEdgePanGestureBehavior = EndEdgePanGestureBehavior.Disabled,
+            ),
+            mediaScope = mediaScope,
+            composeSceneFactory = { platformContext ->
+                registerSkikoComposeImplementation()
+                PlatformLayersComposeScene(
+                    frameRecomposer = frameChoreographer.frameRecomposer,
+                    density = Density(1f),
+                    composeSceneContext = object : ComposeSceneContext {
+                        override val platformContext = platformContext
+                    },
+                    invalidateLayout = {},
+                    invalidateDraw = {},
+                )
+            },
+        )
+    }
 }
