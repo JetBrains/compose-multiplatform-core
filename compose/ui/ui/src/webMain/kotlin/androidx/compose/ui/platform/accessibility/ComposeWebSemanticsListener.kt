@@ -20,11 +20,13 @@ import androidx.collection.MutableScatterMap
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.PlatformContext
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastJoinToString
 import kotlin.time.Duration.Companion.milliseconds
@@ -41,6 +43,7 @@ import kotlinx.coroutines.launch
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
+import org.w3c.dom.events.KeyboardEvent
 
 internal class ComposeWebSemanticsListener(
     val webSemanticsRoot: HTMLElement,
@@ -135,8 +138,9 @@ internal class ComposeWebSemanticsListener(
             }
         }
 
-        // Event delegation: all nodes delegate to one global click listener
+        // Event delegation: all nodes delegate to global accessibility action listeners.
         webSemanticsRoot.addEventListener("click", onClick)
+        webSemanticsRoot.addEventListener("keydown", onKeyDown)
     }
 
     private val semanticsOwners = mutableListOf<SemanticsOwner>()
@@ -193,6 +197,18 @@ internal class ComposeWebSemanticsListener(
             config.contains(SemanticsActions.OnClick)
         ) {
             config[SemanticsActions.OnClick].action?.invoke()
+        }
+    }
+
+    private val onKeyDown: (Event) -> Unit = onKeyDown@ { event ->
+        val keyboardEvent = event as? KeyboardEvent ?: return@onKeyDown
+        val target = event.target as? HTMLElement ?: return@onKeyDown
+        val semanticsNode = a11yNodeToSemanticsNode[target] ?: return@onKeyDown
+        val config = semanticsNode.config
+        if (config.contains(SemanticsProperties.Disabled)) return@onKeyDown
+
+        if (A11YSliderUtils.isSliderNode(semanticsNode)) {
+            A11YSliderUtils.handleSliderKeyEvents(keyboardEvent, semanticsNode)
         }
     }
 
@@ -427,6 +443,28 @@ internal class ComposeWebSemanticsListener(
         val roleId = config.getRoleId()
         setA11YAriaRole(element = htmlNode, roleId)
 
+        if (roleId == AriaRoleId.Slider &&
+            !config.contains(SemanticsProperties.Disabled) &&
+            config.contains(SemanticsActions.SetProgress)
+        ) {
+            htmlNode.setAttribute("tabindex", "0")
+        } else {
+            htmlNode.removeAttribute("tabindex")
+        }
+
+        if (config.contains(SemanticsProperties.ProgressBarRangeInfo)) {
+            A11YSliderUtils.setA11YProgressBarRangeInfo(htmlNode, config)
+        } else {
+            A11YSliderUtils.removeA11YProgressBarRangeInfo(htmlNode)
+        }
+
+        if (config.contains(SemanticsProperties.ToggleableState)) {
+            val ariaChecked = config[SemanticsProperties.ToggleableState].toAriaChecked()
+            htmlNode.setAttribute("aria-checked", ariaChecked)
+        } else {
+            htmlNode.removeAttribute("aria-checked")
+        }
+
         val isCollection =
             roleId == AriaRoleId.List || roleId == AriaRoleId.Grid
 
@@ -630,6 +668,7 @@ internal class ComposeWebSemanticsListener(
         if (!hasStarted || hasStopped) return
 
         webSemanticsRoot.removeEventListener("click", onClick)
+        webSemanticsRoot.removeEventListener("keydown", onKeyDown)
         a11YScrollController.clear()
 
         dfsSemanticsNodes.clear()
