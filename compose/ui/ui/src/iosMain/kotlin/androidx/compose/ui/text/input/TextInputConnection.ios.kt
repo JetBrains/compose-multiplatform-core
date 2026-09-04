@@ -47,6 +47,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.skia.BreakIterator
 import platform.UIKit.UIView
+import platform.UIKit.reloadInputViews
 
 internal abstract class TextInputConnection(
     protected val updateView: () -> Unit,
@@ -84,6 +85,7 @@ internal abstract class TextInputConnection(
         inputTraits = getUITextInputTraits(request.imeOptions)
         attachInputToView()
         showKeyboard()
+        textInputView.reloadInputViews()
     }
 
     protected abstract fun attachInputToView()
