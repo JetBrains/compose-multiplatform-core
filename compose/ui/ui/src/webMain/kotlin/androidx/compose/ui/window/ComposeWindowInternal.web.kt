@@ -27,9 +27,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.LocalSystemTheme
@@ -111,11 +108,7 @@ import kotlin.js.js
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.receiveAsFlow
 import org.jetbrains.skia.DirectContext
 import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkikoRenderDelegate
@@ -131,7 +124,6 @@ import org.w3c.dom.Node
 import org.w3c.dom.TouchEvent
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.EventTarget
-import org.w3c.dom.events.FocusEvent
 import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.events.WheelEvent
@@ -142,7 +134,8 @@ private val actualDensity
 
 internal interface ComposeWindowState {
     fun init() {}
-    fun sizeFlow(): Flow<IntSize>
+    fun currentSize(): IntSize
+    fun observeSizeAndScaleChanges(listener: () -> Unit): () -> Unit
 
     val globalEvents: EventTargetListener
 
@@ -157,7 +150,7 @@ private sealed interface KeyboardModeState {
 }
 
 internal class DefaultWindowState(private val viewportContainer: Element) : ComposeWindowState {
-    private val resizeAndScaleEventsChannel = Channel<IntSize>(CONFLATED)
+    private var sizeChangeListener: (() -> Unit)? = null
 
     override val globalEvents = EventTargetListener(window)
 
@@ -167,7 +160,7 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
 
     override fun init() {
         val resizeListener: (Event) -> Unit = {
-            resizeAndScaleEventsChannel.trySend(getParentContainerBox())
+            sizeChangeListener?.invoke()
         }
 
         globalEvents.addDisposableEvent("resize", resizeListener)
@@ -178,12 +171,20 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
         viewportTargetListener?.addDisposableEvent("resize", resizeListener)
 
         recreateMediaQueryListener()
-
-        resizeAndScaleEventsChannel.trySend(getParentContainerBox())
     }
 
-    private fun getParentContainerBox(): IntSize {
+    override fun currentSize(): IntSize {
         return IntSize(viewportContainer.clientWidth, viewportContainer.clientHeight)
+    }
+
+    override fun observeSizeAndScaleChanges(listener: () -> Unit): () -> Unit {
+        check(sizeChangeListener == null) { "A size listener is already registered" }
+        sizeChangeListener = listener
+        return {
+            if (sizeChangeListener === listener) {
+                sizeChangeListener = null
+            }
+        }
     }
 
     private fun recreateMediaQueryListener() {
@@ -192,7 +193,7 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
         mediaQueryListener = object : MediaQueryListener("(resolution: ${contentScale}dppx)") {
             override fun onChange(matches: Boolean) {
                 if (!matches) {
-                    resizeAndScaleEventsChannel.trySend(getParentContainerBox())
+                    sizeChangeListener?.invoke()
                 }
                 recreateMediaQueryListener()
             }
@@ -200,13 +201,11 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
     }
 
     override fun dispose() {
-        resizeAndScaleEventsChannel.close()
+        sizeChangeListener = null
         viewportTargetListener?.dispose()
         mediaQueryListener?.dispose()
         super.dispose()
     }
-
-    override fun sizeFlow() = resizeAndScaleEventsChannel.receiveAsFlow()
 }
 
 @VisibleForTesting
@@ -631,8 +630,10 @@ internal class ComposeWindow(
         initEvents(canvas)
         state.init()
 
-
-        scene.density = density // initial density
+        applyResizeAndScale(
+            size = state.currentSize(),
+            viewportScale = getVisualViewportScale()
+        )
         archComponentsOwner.enableSavedStateHandles()
 
         val interopContainer = WebInteropContainer(InteropViewGroup(interopContainerElement))
@@ -655,13 +656,18 @@ internal class ComposeWindow(
                         }
                     }
 
-                    LaunchedEffect(Unit) {
-                        state.sizeFlow().collect { size ->
-                            // Convert to proper type: IntSize was exposed to public API with meaning of DPs.
-                            val boxSize = DpSize(size.width.dp, size.height.dp)
-                            val viewportScale = getVisualViewportScale()
-                            this@ComposeWindow.resizeAndScale(boxSize, viewportScale)
+                    DisposableEffect(state) {
+                        // Observe the resize/scale events and retrieve the new values.
+                        // Apply new values eagerly to improve resize smoothness and avoid performing
+                        // canvas/scene resize mutations while the recomposer drains composition effects.
+                        // See https://youtrack.jetbrains.com/issue/CMP-10751
+                        val stopObservingSize = state.observeSizeAndScaleChanges {
+                            applyResizeAndScale(
+                                size = state.currentSize(),
+                                viewportScale = getVisualViewportScale()
+                            )
                         }
+                        onDispose(stopObservingSize)
                     }
 
                     LaunchedEffect(Unit) {
@@ -688,7 +694,10 @@ internal class ComposeWindow(
             .navigationEventDispatcher.addInput(navigationEventInput)
     }
 
-    private fun resizeAndScale(boxSize: DpSize, viewportScale: Float) = Snapshot.withMutableSnapshot {
+    private fun applyResizeAndScale(
+        size: IntSize,
+        viewportScale: Float
+    ) = Snapshot.withMutableSnapshot {
         // Coerce the original value so it doesn't exceed 2.0 to avoid unlimited canvas growth and memory consumption.
         // Otherwise, the browser might clip the canvas content (tested in Chrome) making some UI parts unreachable.
         // We accept some blur might be still noticeable on higher than 2.0 scale.
@@ -707,7 +716,8 @@ internal class ComposeWindow(
             scene.density = newDensity
         }
 
-        val sizeInPx = boxSize.toSize(density).toIntSize()
+        val dpSize = DpSize(size.width.dp, size.height.dp)
+        val sizeInPx = dpSize.toSize(density).toIntSize()
 
         // we need to scale canvas both via CSS styling and HTML attributes
         // https://www.khronos.org/webgl/wiki/HandlingHighDPI
@@ -719,7 +729,7 @@ internal class ComposeWindow(
         // the wasm2js boundary. See ComposeViewport for the setup.
 
         _windowInfo.containerSize = sizeInPx
-        _windowInfo.containerDpSize = boxSize
+        _windowInfo.containerDpSize = dpSize
 
         // TODO: Align with Container/Mediator architecture
         skiaLayer.attachTo(canvas)
