@@ -30,6 +30,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.test.ComposeTimeoutException
+import androidx.compose.ui.test.HasRobolectricFingerprint
 import androidx.compose.ui.test.MainTestClock
 import androidx.compose.ui.test.TestContext
 import androidx.core.graphics.createBitmap
@@ -41,13 +42,14 @@ import java.util.concurrent.TimeUnit
 internal fun Window.captureRegionToImage(
     testContext: TestContext,
     boundsInWindow: Rect,
+    timeoutMillis: Long,
 ): ImageBitmap {
     lateinit var imageBitmap: ImageBitmap
     runWithRetryWhenNoData {
         // Turn on hardware rendering, if necessary
         imageBitmap = withDrawingEnabled {
             // First force drawing to happen
-            decorView.forceRedraw(testContext)
+            decorView.forceRedraw(testContext, timeoutMillis)
             // Then we generate the bitmap
             generateBitmap(boundsInWindow).asImageBitmap()
         }
@@ -128,7 +130,15 @@ private fun <R> withDrawingEnabled(block: () -> R): R {
     }
 }
 
-internal fun View.forceRedraw(testContext: TestContext) {
+internal fun View.forceRedraw(testContext: TestContext, timeoutMillis: Long) {
+    if (HasRobolectricFingerprint) {
+        // We skip this on Robolectric because its simulated JVM environment lacks a real
+        // RenderThread and native hardware VSYNC. Callbacks like FrameCommitCallback will never
+        // trigger, causing the test clock to hang and time out. Furthermore, Robolectric's
+        // PixelCopy shadow executes synchronously, making this hardware race mitigation
+        // unnecessary.
+        return
+    }
     var drawDone = false
     handler.post {
         if (Build.VERSION.SDK_INT >= 29 && isHardwareAccelerated) {
@@ -155,7 +165,7 @@ internal fun View.forceRedraw(testContext: TestContext) {
         invalidate()
     }
 
-    testContext.testOwner.mainClock.waitUntil(timeoutMillis = 2_000) { drawDone }
+    testContext.testOwner.mainClock.waitUntil(timeoutMillis = timeoutMillis) { drawDone }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)

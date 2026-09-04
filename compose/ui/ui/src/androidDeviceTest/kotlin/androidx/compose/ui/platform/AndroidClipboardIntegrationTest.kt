@@ -29,7 +29,6 @@ import junit.framework.TestCase.assertEquals
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.runner.RunWith
@@ -39,11 +38,11 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)
 class AndroidClipboardIntegrationTest {
 
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     @Test
     fun setText_affects_getClipEntry_and_vice_versa() = runTest {
-        val clipboard: Clipboard = AndroidClipboard(rule.activity)
+        val clipboard: Clipboard = AndroidClipboardImpl(rule.activity)
 
         clipboard.setClipEntry(null)
         assertFalse(clipboard.getClipEntry().hasText())

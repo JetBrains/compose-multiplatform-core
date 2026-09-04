@@ -17,12 +17,12 @@
 package androidx.compose.ui.draw
 
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.GOLDEN_UI
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.background
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.testTag
@@ -34,7 +34,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -44,9 +43,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class NotHardwareAcceleratedActivityTest {
 
-    @get:Rule
-    val composeTestRule =
-        createAndroidComposeRule<NotHardwareAcceleratedActivity>(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createAndroidComposeRule<NotHardwareAcceleratedActivity>()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_UI)
 

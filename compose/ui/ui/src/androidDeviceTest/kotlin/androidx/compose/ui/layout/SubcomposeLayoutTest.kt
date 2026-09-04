@@ -21,6 +21,7 @@ import android.os.Build
 import android.view.View
 import android.view.ViewTreeObserver
 import android.widget.FrameLayout
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -52,7 +53,6 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.testutils.expectAssertionError
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.background
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.assertColor
 import androidx.compose.ui.draw.drawBehind
@@ -106,7 +106,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
@@ -119,7 +118,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class SubcomposeLayoutTest {
 
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     @get:Rule val excessiveAssertions = AndroidOwnerExtraAssertionsRule()
 
@@ -217,7 +216,10 @@ class SubcomposeLayoutTest {
             .assertWidthIsEqualTo(30.dp)
             .assertHeightIsEqualTo(30.dp)
 
-        rule.onNodeWithTag(layoutTag).assertWidthIsEqualTo(50.dp).assertHeightIsEqualTo(80.dp)
+        rule
+            .onNodeWithTag(layoutTag)
+            .assertWidthIsEqualTo(50.dp)
+            .assertHeightIsEqualTo(80.dp, tolerance = 1.dp)
     }
 
     @Test

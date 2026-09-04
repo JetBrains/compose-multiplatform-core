@@ -21,12 +21,12 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.Density
 
 /** Calculates and presents the intrinsic width and height of text. */
-interface ParagraphIntrinsics {
+public interface ParagraphIntrinsics {
     /** The width for text if all soft wrap opportunities were taken. */
-    val minIntrinsicWidth: Float
+    public val minIntrinsicWidth: Float
 
     /** Returns the smallest width beyond which increasing the width never decreases the height. */
-    val maxIntrinsicWidth: Float
+    public val maxIntrinsicWidth: Float
 
     /**
      * Any [Paragraph] rendered using this [ParagraphIntrinsics] will be measured and drawn using
@@ -45,7 +45,7 @@ interface ParagraphIntrinsics {
      * impact of using this object after [hasStaleResolvedFonts] becomes true is stale resolutions
      * of async fonts for measurement and display.
      */
-    val hasStaleResolvedFonts: Boolean
+    public val hasStaleResolvedFonts: Boolean
         get() = false
 }
 
@@ -61,11 +61,12 @@ interface ParagraphIntrinsics {
 @Deprecated(
     "Font.ResourceLoader is deprecated, instead use FontFamily.Resolver",
     ReplaceWith(
-        "ParagraphIntrinsics(text, style, spanStyles, placeholders, density, " +
-            "fontFamilyResolver)"
+        "ParagraphIntrinsics(text, style, spanStyles, density, " +
+            "createFontFamilyResolver(resourceLoader), placeholders, true)",
+        "androidx.compose.ui.text.font.createFontFamilyResolver",
     ),
 )
-expect fun ParagraphIntrinsics(
+public expect fun ParagraphIntrinsics(
     text: String,
     style: TextStyle,
     spanStyles: List<AnnotatedString.Range<SpanStyle>> = listOf(),
@@ -77,10 +78,10 @@ expect fun ParagraphIntrinsics(
 @Deprecated(
     "Use an overload that takes `annotations` instead",
     ReplaceWith(
-        "ParagraphIntrinsics(text, style, spanStyles, density, fontFamilyResolver, placeholders)"
+        "ParagraphIntrinsics(text, style, spanStyles, density, fontFamilyResolver, placeholders, true)"
     ),
 )
-expect fun ParagraphIntrinsics(
+public expect fun ParagraphIntrinsics(
     text: String,
     style: TextStyle,
     spanStyles: List<AnnotatedString.Range<SpanStyle>> = listOf(),
@@ -100,10 +101,10 @@ expect fun ParagraphIntrinsics(
 @Deprecated(
     "Use an override with `softWrap`",
     ReplaceWith(
-        "ParagraphIntrinsics(text, style, annotations, density, fontFamilyResolver, true, listOf())"
+        "ParagraphIntrinsics(text, style, annotations, density, fontFamilyResolver, listOf(), true)"
     ),
 )
-expect fun ParagraphIntrinsics(
+public expect fun ParagraphIntrinsics(
     text: String,
     style: TextStyle,
     annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
@@ -125,7 +126,7 @@ expect fun ParagraphIntrinsics(
  *   expensive calculations.
  * @param placeholders The list of [Placeholder] to be used in the text.
  */
-expect fun ParagraphIntrinsics(
+public expect fun ParagraphIntrinsics(
     text: String,
     style: TextStyle,
     annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,

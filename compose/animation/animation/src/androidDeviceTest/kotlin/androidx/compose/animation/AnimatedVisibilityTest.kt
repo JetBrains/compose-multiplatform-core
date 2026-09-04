@@ -36,6 +36,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
@@ -59,7 +60,6 @@ import androidx.compose.ui.util.lerp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import leakcanary.DetectLeaksAfterTestSuccess
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -73,14 +73,13 @@ import org.junit.runner.RunWith
 @LargeTest
 @OptIn(InternalAnimationApi::class)
 class AnimatedVisibilityTest {
-    val rule = createComposeRule(StandardTestDispatcher())
+    val rule = createComposeRule()
     // Detect leaks BEFORE and AFTER compose rule work
     @get:Rule
     val ruleChain: RuleChain = RuleChain.outerRule(DetectLeaksAfterTestSuccess()).around(rule)
 
     private val frameDuration = 16
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun animateVisibilityExpandShrinkTest() {
         val testModifier by mutableStateOf(TestModifier())
@@ -185,7 +184,6 @@ class AnimatedVisibilityTest {
         }
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun animateVisibilitySlideTest() {
         val testModifier by mutableStateOf(TestModifier())
@@ -286,7 +284,6 @@ class AnimatedVisibilityTest {
         }
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun animateVisibilityContentSizeChangeTest() {
         val size = mutableStateOf(40.dp)
@@ -322,7 +319,7 @@ class AnimatedVisibilityTest {
     }
 
     // Test different animations for fade in and fade out, in a complete run without interruptions
-    @OptIn(ExperimentalAnimationApi::class, InternalAnimationApi::class)
+    @OptIn(InternalAnimationApi::class)
     @Test
     fun animateVisibilityFadeTest() {
         var visible by mutableStateOf(false)
@@ -391,7 +388,7 @@ class AnimatedVisibilityTest {
     }
 
     // Test different animations for scale in and scale out, in a complete run without interruptions
-    @OptIn(ExperimentalAnimationApi::class, InternalAnimationApi::class)
+    @OptIn(InternalAnimationApi::class)
     @Test
     fun animateVisibilityScaleTest() {
         var visible by mutableStateOf(false)
@@ -460,6 +457,19 @@ class AnimatedVisibilityTest {
     }
 
     @Test
+    fun testScaleInAndScaleOutDefaultVisibilityThreshold() {
+        val enterSpring =
+            scaleIn().config.scale?.animationSpec
+                as? androidx.compose.animation.core.SpringSpec<Float>
+        assertEquals(0.002f, enterSpring?.visibilityThreshold)
+
+        val exitSpring =
+            scaleOut().config.scale?.animationSpec
+                as? androidx.compose.animation.core.SpringSpec<Float>
+        assertEquals(0.002f, exitSpring?.visibilityThreshold)
+    }
+
+    @Test
     fun testEnterTransitionNoneAndExitTransitionNone() {
         val testModifier by mutableStateOf(TestModifier())
         val visible = MutableTransitionState(false)
@@ -504,7 +514,6 @@ class AnimatedVisibilityTest {
         State3,
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun testTransitionExtensionAnimatedVisibility() {
         val testModifier by mutableStateOf(TestModifier())
@@ -557,7 +566,6 @@ class AnimatedVisibilityTest {
         rule.runOnIdle { assertThat(disposed).isTrue() }
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun testSeekingAnimatedVisibility() {
         fun <T> spec() = tween<T>(200, easing = LinearEasing)
@@ -756,7 +764,6 @@ class AnimatedVisibilityTest {
             assertThat(boxPosition.x).isGreaterThan(positionAtInterruption.x)
         }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun animateVisibilitySlideAndVeilTest() {
         val testModifier by mutableStateOf(TestModifier())
@@ -801,7 +808,6 @@ class AnimatedVisibilityTest {
         }
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun animateVisibilityVeilInterruptionEnterToExitTest() {
         var visible by mutableStateOf(false)
@@ -855,7 +861,6 @@ class AnimatedVisibilityTest {
         assertThat(veilColor.alpha).isGreaterThan(interruptedColor.alpha)
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun animateVisibilityVeilInterruptionRemoveVeilTest() {
         var visible by mutableStateOf(false)
@@ -908,7 +913,6 @@ class AnimatedVisibilityTest {
         assertThat(veilColor.alpha).isLessThan(interruptedColor.alpha)
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun animateVisibilityVeilNoInterruptionTest() {
         var visible by mutableStateOf(false)
@@ -958,5 +962,99 @@ class AnimatedVisibilityTest {
         // composable was indeed disposed.
         assertThat(exitColor.alpha).isGreaterThan(0f)
         assertTrue(disposed)
+    }
+
+    @Test
+    fun verifyDirectionChangeResetsAccumulatedTransitions() {
+        var visible by mutableStateOf(true)
+        var veilColor by mutableStateOf(Color.Transparent)
+        var hasVeilAnimation by mutableStateOf(false)
+        rule.mainClock.autoAdvance = false
+        val exitColor = Color.Blue
+        var enterTransition by mutableStateOf(EnterTransition.None)
+        var exitTransition by
+            mutableStateOf(veilOut(tween(160, easing = LinearEasing), targetColor = exitColor))
+
+        rule.setContent {
+            AnimatedVisibility(visible, enter = enterTransition, exit = exitTransition) {
+                Box(Modifier.requiredSize(100.dp, 100.dp)) {
+                    hasVeilAnimation = transition.animations.any { it.label.contains("veil") }
+                    veilColor =
+                        transition.animations.firstOrNull { it.label.contains("veil") }?.value
+                            as? Color ?: veilColor
+                }
+            }
+        }
+
+        // Start exiting (visible -> false)
+        rule.runOnIdle { visible = false }
+        rule.mainClock.advanceTimeByFrame()
+        rule.mainClock.advanceTimeByFrame()
+        rule.mainClock.advanceTimeBy(80)
+        rule.waitForIdle()
+
+        // Interrupt back to entering (visible -> true)
+        rule.runOnIdle { visible = true }
+        rule.mainClock.advanceTimeByFrame()
+        rule.mainClock.advanceTimeByFrame()
+        rule.mainClock.advanceTimeBy(40)
+        rule.waitForIdle()
+
+        // Change the exit transition so it no longer contains a veilOut
+        rule.runOnIdle { exitTransition = fadeOut() }
+
+        // Interrupt back to exiting (visible -> false)
+        rule.runOnIdle { visible = false }
+        rule.mainClock.advanceTimeByFrame()
+        rule.mainClock.advanceTimeByFrame()
+
+        rule.mainClock.advanceTimeBy(80)
+        rule.waitForIdle()
+
+        // activeExit is replaced with a neutral exit transition + the new fadeOut().
+        // This ensures the modifier stays attached but gracefully animates to Transparent.
+        assertTrue("Veil animation should be kept alive to smoothly animate out", hasVeilAnimation)
+
+        val colorBeforeNewExit = veilColor
+        rule.mainClock.advanceTimeBy(80)
+        rule.waitForIdle()
+        val colorAfterNewExit = veilColor
+
+        assertTrue(
+            "Veil alpha should be decreasing towards 0, but went from ${colorBeforeNewExit.alpha} to ${colorAfterNewExit.alpha}",
+            colorAfterNewExit.alpha < colorBeforeNewExit.alpha,
+        )
+    }
+
+    @Test
+    fun testAnimationSettleExactTime() {
+        var startAnimation by mutableStateOf(false)
+        var isContentPresent = false
+
+        rule.setContent {
+            val transitionState = remember { MutableTransitionState(true) }
+            transitionState.targetState = !startAnimation
+
+            AnimatedVisibility(
+                visibleState = transitionState,
+                enter = EnterTransition.None,
+                exit = ExitTransition.None,
+            ) {
+                DisposableEffect(Unit) {
+                    isContentPresent = true
+                    onDispose { isContentPresent = false }
+                }
+            }
+        }
+
+        assertTrue("Content should be added to the composition", isContentPresent)
+        startAnimation = true
+
+        // The animation ends exactly after one frame (non-inclusive). Advance by a frame and then
+        // an additional millisecond. The content should be removed.
+        rule.mainClock.advanceTimeByFrame()
+        rule.mainClock.advanceTimeBy(1L)
+
+        assertFalse("Content should be removed from the composition", isContentPresent)
     }
 }

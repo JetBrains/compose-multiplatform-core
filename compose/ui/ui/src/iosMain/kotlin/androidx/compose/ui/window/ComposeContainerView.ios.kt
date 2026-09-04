@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.window
 
+import androidx.compose.ui.uikit.utils.CMPContainerView
+import androidx.compose.ui.node.WeakReference
 import androidx.compose.ui.unit.toDpSize
 import kotlin.math.max
 import kotlinx.cinterop.CValue
@@ -27,6 +29,7 @@ import platform.CoreGraphics.CGPoint
 import platform.CoreGraphics.CGRect
 import platform.CoreGraphics.CGRectEqualToRect
 import platform.CoreGraphics.CGRectMake
+import platform.CoreGraphics.CGSize
 import platform.UIKit.UIColor
 import platform.UIKit.UIEvent
 import platform.UIKit.UIGraphicsImageRenderer
@@ -42,7 +45,7 @@ import platform.UIKit.UIWindow
 internal class ComposeContainerView(
     private val useOpaqueConfiguration: Boolean,
     private val transparentForTouches: Boolean,
-): UIView(frame = UIScreen.mainScreen.bounds) {
+): CMPContainerView(frame = UIScreen.mainScreen.bounds) {
     init {
         setClipsToBounds(true)
         setOpaque(useOpaqueConfiguration)
@@ -53,7 +56,12 @@ internal class ComposeContainerView(
     private var onDidMoveToWindow: (UIWindow?) -> Unit = {}
     private var onWillMoveToWindow: (UIWindow?) -> Unit = {}
     private var onLayoutSubviews: () -> Unit = {}
+    private var onTraitCollectionDidChange: () -> Unit = {}
+    private var onDraw: (needsSynchronousDraw: Boolean) -> Unit = {}
     private var foregroundStateListener: SceneForegroundStateListener? = null
+    private var onIntrinsicContentSizeInvalidated: (() -> Unit)? = null
+    var onSizeThatFits: (CValue<CGSize>) -> CValue<CGSize>? = { null }
+    var onIntrinsicContentSize: () -> CValue<CGSize>? = { null }
 
     val redrawer: MetalRedrawer? get() = metalView?.redrawer
 
@@ -61,10 +69,30 @@ internal class ComposeContainerView(
         return true
     }
 
+    override fun sizeThatFits(size: CValue<CGSize>): CValue<CGSize> =
+        onSizeThatFits(size) ?: super.sizeThatFits(size)
+
+    /**
+     * Exposes `super.sizeThatFits` so sizing interop logic can obtain UIKit's default fallback
+     * without re-entering [onSizeThatFits].
+     */
+    fun superSizeThatFits(size: CValue<CGSize>): CValue<CGSize> {
+        return super.sizeThatFits(size)
+    }
+
+    override fun intrinsicContentSize(): CValue<CGSize> =
+        onIntrinsicContentSize() ?: super.intrinsicContentSize()
+
+    override fun invalidateIntrinsicContentSize() {
+        super.invalidateIntrinsicContentSize()
+        onIntrinsicContentSizeInvalidated?.invoke()
+    }
+
     override fun traitCollectionDidChange(previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
 
         updateBackgroundColor()
+        onTraitCollectionDidChange()
     }
 
     private fun updateBackgroundColor() {
@@ -83,15 +111,19 @@ internal class ComposeContainerView(
         metalView: MetalViewHolder?,
         onWillMoveToWindow: (UIWindow?) -> Unit = {},
         onDidMoveToWindow: (UIWindow?) -> Unit = {},
-        onLayoutSubviews: () -> Unit = {}
+        onLayoutSubviews: () -> Unit = {},
+        onTraitCollectionDidChange: () -> Unit = {},
+        onDraw: (needsSynchronousDraw: Boolean) -> Unit = {},
     ) {
         this.metalView?.dispose()
         this.metalView?.view?.removeFromSuperview()
         this.metalView = metalView
 
-        this.onDidMoveToWindow = onDidMoveToWindow
         this.onWillMoveToWindow = onWillMoveToWindow
+        this.onDidMoveToWindow = onDidMoveToWindow
         this.onLayoutSubviews = onLayoutSubviews
+        this.onTraitCollectionDidChange = onTraitCollectionDidChange
+        this.onDraw = onDraw
 
         metalView?.let {
             addSubview(metalView.view)
@@ -100,6 +132,8 @@ internal class ComposeContainerView(
         window?.let(onWillMoveToWindow)
         window?.let(onDidMoveToWindow)
 
+        onTraitCollectionDidChange()
+
         if (metalView == null) {
             foregroundStateListener?.dispose()
             foregroundStateListener = null
@@ -107,7 +141,9 @@ internal class ComposeContainerView(
             foregroundStateListener = SceneForegroundStateListener(getScene = {
                 window?.windowScene
             }) { isSceneInForeground ->
-                metalView.redrawer.isActive = isSceneInForeground
+                if (!isSceneInForeground) {
+                    metalView.redrawer.awaitRenderingCompletion()
+                }
             }
         }
         updateRedrawerState()
@@ -145,16 +181,13 @@ internal class ComposeContainerView(
     }
 
     override fun drawRect(rect: CValue<CGRect>) {
-        if (needsSynchronousDraw) {
-            metalView?.redrawer?.draw(waitUntilCompletion = true)
+        onDraw(needsSynchronousDraw)
 
-            needsSynchronousDraw = false
-        }
+        needsSynchronousDraw = false
 
         if (needsDisablePresentWithTransactionOnNextDraw) {
             needsDisablePresentWithTransactionOnNextDraw = false
             metalView?.redrawer?.isForcedToPresentWithTransactionEveryFrame = false
-            metalView?.redrawer?.ongoingInteractionEventsCount--
         }
     }
 
@@ -165,7 +198,9 @@ internal class ComposeContainerView(
     }
 
     private fun updateRedrawerState() {
-        metalView?.redrawer?.isActive = foregroundStateListener?.isSceneInForeground ?: false
+        if (foregroundStateListener?.isSceneInForeground == false) {
+            metalView?.redrawer?.awaitRenderingCompletion()
+        }
     }
 
     /**
@@ -243,7 +278,6 @@ internal class ComposeContainerView(
         isAnimating = true
         updateLayout()
         metalView.redrawer.isForcedToPresentWithTransactionEveryFrame = true
-        metalView.redrawer.ongoingInteractionEventsCount++
         scope.launch {
             try {
                 animations()
@@ -267,4 +301,15 @@ internal class ComposeContainerView(
             this.drawViewHierarchyInRect(bounds, false)
         }
     }
+
+    fun <T : Any> setIntrinsicContentSizeInvalidationHandler(
+        owner: T,
+        handler: T.() -> Unit
+    ) {
+        val ownerRef = WeakReference(owner)
+        onIntrinsicContentSizeInvalidated = {
+            ownerRef.get()?.handler()
+        }
+    }
+
 }

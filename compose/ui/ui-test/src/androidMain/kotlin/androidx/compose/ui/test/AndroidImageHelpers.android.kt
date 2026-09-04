@@ -22,10 +22,13 @@ import android.content.ContextWrapper
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.os.Build
+import android.view.SurfaceView
 import android.view.View
+import android.view.ViewGroup
 import android.view.Window
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect as ComposeRect
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.ViewRootForTest
@@ -52,25 +55,52 @@ import kotlin.math.roundToInt
  * @throws IllegalArgumentException if an attempt is made to capture a bitmap of a dialog before
  *   API 28.
  */
+@Deprecated(
+    message = "Use captureToImage with explicit timeoutMillis instead.",
+    level = DeprecationLevel.HIDDEN,
+)
+@RequiresApi(Build.VERSION_CODES.O)
+public fun SemanticsNodeInteraction.captureToImage(): ImageBitmap {
+    return captureToImage(timeoutMillis = 2_000)
+}
+
+/**
+ * Captures the underlying semantics node's surface into an [ImageBitmap].
+ *
+ * This can be used to capture nodes in a normal composable, as well as across multiple roots.
+ * Popups and Dialogs (if API >= 28) are specific cases of this, where they can be captured together
+ * with their anchor.
+ *
+ * For example, selecting the root node (via `onRoot()`) when a popup or dialog is present will
+ * detect multiple roots. In this scenario, the resulting image is cropped to the combined bounding
+ * box of all nodes across the different roots. If a Dialog is present among the roots, the image is
+ * cropped to the window's visible display frame.
+ *
+ * @param timeoutMillis The maximum time (in ms) to wait for the drawing to complete. Default is
+ *   2000 ms.
+ * @throws IllegalArgumentException if an attempt is made to capture a bitmap of a dialog before
+ *   API 28.
+ * @throws ComposeTimeoutException if drawing does not complete within [timeoutMillis].
+ */
 @OptIn(ExperimentalTestApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
-fun SemanticsNodeInteraction.captureToImage(): ImageBitmap {
+public fun SemanticsNodeInteraction.captureToImage(timeoutMillis: Long = 2_000): ImageBitmap {
     val nodes = fetchSemanticsNodes(atLeastOneRootRequired = true).selectedNodes
     require(nodes.isNotEmpty()) { "Failed to capture a node to bitmap." }
 
     if (nodes.size > 1) {
-        return processMultiWindowScreenshot(nodes, testContext)
+        return processMultiWindowScreenshot(nodes, testContext, timeoutMillis)
     }
 
     val node = nodes.single()
 
-    // Popups are in a different window; use the multi-window screenshot mechanism
-    if (node.isInsidePopup) {
-        return processMultiWindowScreenshot(listOf(node), testContext)
+    // Popups and Surface Views are in a different window; use the multi-window screenshot mechanism
+    if (node.isInsidePopup || node.hasIntersectingSurfaceView()) {
+        return processMultiWindowScreenshot(listOf(node), testContext, timeoutMillis)
     }
 
     val windowToUse = node.getDialogWindow() ?: node.view.context.getActivityWindow()
-    return windowToUse.captureRegionToImage(testContext, node.getBoundsInWindow())
+    return windowToUse.captureRegionToImage(testContext, node.getBoundsInWindow(), timeoutMillis)
 }
 
 /**
@@ -82,14 +112,14 @@ fun SemanticsNodeInteraction.captureToImage(): ImageBitmap {
  * @return An [ImageBitmap] cropped specifically to the bounding box of the provided nodes.
  */
 @Suppress("ListIterator")
-@ExperimentalTestApi
 @RequiresApi(Build.VERSION_CODES.O)
 private fun processMultiWindowScreenshot(
     nodes: List<SemanticsNode>,
     testContext: TestContext,
+    timeoutMillis: Long,
 ): ImageBitmap {
     val rootViews = nodes.map { it.view }.distinct()
-    rootViews.forEach { it.forceRedraw(testContext) }
+    rootViews.forEach { it.forceRedraw(testContext, timeoutMillis) }
 
     val combinedBitmap = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
 
@@ -107,6 +137,51 @@ private fun processMultiWindowScreenshot(
 
     val finalBitmap = Bitmap.createBitmap(combinedBitmap, cropX, cropY, cropWidth, cropHeight)
     return finalBitmap.asImageBitmap()
+}
+
+/**
+ * Traverses the root Android View hierarchy to determine if a [SurfaceView] is actively rendered
+ * within the boundaries of this [SemanticsNode].
+ */
+private fun SemanticsNode.hasIntersectingSurfaceView(): Boolean {
+    val composeRootView = this.view as? ViewGroup ?: return false
+    val nodeBoundsOnScreen =
+        this.getPositionOnScreen().let { offset ->
+            ComposeRect(
+                left = offset.x,
+                top = offset.y,
+                right = offset.x + this.boundsInRoot.width,
+                bottom = offset.y + this.boundsInRoot.height,
+            )
+        }
+
+    fun ViewGroup.containsIntersectingSurfaceView(): Boolean {
+        for (i in 0 until childCount) {
+            val child = getChildAt(i)
+
+            if (child is SurfaceView) {
+                val location = intArrayOf(0, 0)
+                child.getLocationOnScreen(location)
+
+                val childBounds =
+                    ComposeRect(
+                        left = location[0].toFloat(),
+                        top = location[1].toFloat(),
+                        right = (location[0] + child.width).toFloat(),
+                        bottom = (location[1] + child.height).toFloat(),
+                    )
+
+                if (nodeBoundsOnScreen.overlaps(childBounds)) {
+                    return true
+                }
+            } else if (child is ViewGroup) {
+                if (child.containsIntersectingSurfaceView()) return true
+            }
+        }
+        return false
+    }
+
+    return composeRootView.containsIntersectingSurfaceView()
 }
 
 /**

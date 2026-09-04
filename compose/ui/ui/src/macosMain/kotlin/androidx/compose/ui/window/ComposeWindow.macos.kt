@@ -31,9 +31,11 @@ import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.MacosTextInputService
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.WindowInfoImpl
+import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.SingleComposeSceneRenderingScope
 import androidx.compose.ui.platform.FrameRecomposer
+import androidx.compose.ui.platform.TaskDispatchers
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
@@ -47,6 +49,7 @@ import androidx.lifecycle.enableSavedStateHandles
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import org.jetbrains.skia.Canvas
 import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkikoRenderDelegate
@@ -114,6 +117,10 @@ private class ComposeWindow(
     private val platformContext: PlatformContext =
         object : PlatformContext by PlatformContext.Empty() {
             override val windowInfo get() = _windowInfo
+            override val taskDispatchers: TaskDispatchers = object : TaskDispatchers {
+                override val Default = Dispatchers.Default
+                override val IO = Dispatchers.IO
+            }
             override val architectureComponentsOwner get() = archComponentsOwner
             override val textInputService get() = macosTextInputService
             override fun setPointerIcon(pointerIcon: PointerIcon) {
@@ -122,6 +129,11 @@ private class ComposeWindow(
             }
         }
     private val skiaLayer = SkiaLayer()
+
+    init {
+        registerSkikoComposeImplementation()
+    }
+
     private val scene = CanvasLayersComposeScene(
         frameRecomposer = frameRecomposer,
         platformContext = platformContext,

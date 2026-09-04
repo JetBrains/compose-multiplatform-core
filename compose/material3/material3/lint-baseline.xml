@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 9.2.0-alpha07" type="baseline" client="gradle" dependencies="false" name="AGP (9.2.0-alpha07)" variant="all" version="9.2.0-alpha07">
+<issues format="6" by="lint 9.4.0-alpha05" type="baseline" client="gradle" dependencies="false" name="AGP (9.4.0-alpha05)" variant="all" version="9.4.0-alpha05">
 
     <issue
         id="BanThreadSleep"
@@ -391,8 +391,8 @@
     <issue
         id="RememberInComposition"
         message="Calling a @RememberInComposition annotated declaration inside composition without using `remember`"
-        errorLine1="                startThumb = { SliderDefaults.Thumb(MutableInteractionSource()) },"
-        errorLine2="                                                    ~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="        rule.setContent { Slider(SliderState(value = 0f, steps = -1)) }"
+        errorLine2="                                 ~~~~~~~~~~~">
         <location
             file="src/androidDeviceTest/kotlin/androidx/compose/material3/SliderTest.kt"/>
     </issue>
@@ -400,8 +400,8 @@
     <issue
         id="RememberInComposition"
         message="Calling a @RememberInComposition annotated declaration inside composition without using `remember`"
-        errorLine1="                endThumb = { SliderDefaults.Thumb(MutableInteractionSource()) },"
-        errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="            Slider(SliderState(0f), modifier = Modifier.testTag(tag))"
+        errorLine2="                   ~~~~~~~~~~~">
         <location
             file="src/androidDeviceTest/kotlin/androidx/compose/material3/SliderTest.kt"/>
     </issue>
@@ -409,8 +409,8 @@
     <issue
         id="RememberInComposition"
         message="Calling a @RememberInComposition annotated declaration inside composition without using `remember`"
-        errorLine1="                        interactionSource = MutableInteractionSource(),"
-        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="            Slider(state = SliderState(0f), modifier = Modifier.testTag(tag), enabled = false)"
+        errorLine2="                           ~~~~~~~~~~~">
         <location
             file="src/androidDeviceTest/kotlin/androidx/compose/material3/SliderTest.kt"/>
     </issue>
@@ -418,8 +418,8 @@
     <issue
         id="RememberInComposition"
         message="Calling a @RememberInComposition annotated declaration inside composition without using `remember`"
-        errorLine1="                        interactionSource = MutableInteractionSource(),"
-        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="                Slider(state = SliderState(0f), modifier = Modifier.testTag(tag).weight(1f))"
+        errorLine2="                               ~~~~~~~~~~~">
         <location
             file="src/androidDeviceTest/kotlin/androidx/compose/material3/SliderTest.kt"/>
     </issue>
@@ -427,8 +427,8 @@
     <issue
         id="RememberInComposition"
         message="Calling a @RememberInComposition annotated declaration inside composition without using `remember`"
-        errorLine1="                        interactionSource = MutableInteractionSource(),"
-        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="                Slider(state = SliderState(0f), modifier = Modifier.testTag(tag))"
+        errorLine2="                               ~~~~~~~~~~~">
         <location
             file="src/androidDeviceTest/kotlin/androidx/compose/material3/SliderTest.kt"/>
     </issue>
@@ -436,8 +436,8 @@
     <issue
         id="RememberInComposition"
         message="Calling a @RememberInComposition annotated declaration inside composition without using `remember`"
-        errorLine1="                        interactionSource = MutableInteractionSource(),"
-        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="                        state = SliderState(0.5f),"
+        errorLine2="                                ~~~~~~~~~~~">
         <location
             file="src/androidDeviceTest/kotlin/androidx/compose/material3/SliderTest.kt"/>
     </issue>
@@ -454,6 +454,60 @@
     <issue
         id="ComposableLambdaParameterNaming"
         message="Composable lambda parameter should be named `content`"
+        errorLine1="    toggle: @Composable () -> Unit,"
+        errorLine2="    ~~~~~~">
+        <location
+            file="src/commonMain/kotlin/androidx/compose/material3/TimePicker.kt"/>
+    </issue>
+
+    <issue
+        id="ComposableLambdaParameterNaming"
+        message="Composable lambda parameter should be named `content`"
+        errorLine1="    toggle: @Composable () -> Unit,"
+        errorLine2="    ~~~~~~">
+        <location
+            file="src/commonMain/kotlin/androidx/compose/material3/TimePicker.kt"/>
+    </issue>
+
+    <issue
+        id="ComposableLambdaParameterNaming"
+        message="Composable lambda parameter should be named `content`"
+        errorLine1="    toggle: @Composable (() -> Unit)? = null,"
+        errorLine2="    ~~~~~~">
+        <location
+            file="src/commonMain/kotlin/androidx/compose/material3/TimePicker.kt"/>
+    </issue>
+
+    <issue
+        id="ComposableLambdaParameterNaming"
+        message="Composable lambda parameter should be named `content`"
+        errorLine1="    toggle: @Composable (() -> Unit)? = null,"
+        errorLine2="    ~~~~~~">
+        <location
+            file="src/commonMain/kotlin/androidx/compose/material3/TimePicker.kt"/>
+    </issue>
+
+    <issue
+        id="ComposableLambdaParameterNaming"
+        message="Composable lambda parameter should be named `content`"
+        errorLine1="    toggle: @Composable (() -> Unit)? = null,"
+        errorLine2="    ~~~~~~">
+        <location
+            file="src/commonMain/kotlin/androidx/compose/material3/TimePicker.kt"/>
+    </issue>
+
+    <issue
+        id="ComposableLambdaParameterNaming"
+        message="Composable lambda parameter should be named `content`"
+        errorLine1="    toggle: @Composable (() -> Unit)? = null,"
+        errorLine2="    ~~~~~~">
+        <location
+            file="src/commonMain/kotlin/androidx/compose/material3/TimePicker.kt"/>
+    </issue>
+
+    <issue
+        id="ComposableLambdaParameterNaming"
+        message="Composable lambda parameter should be named `content`"
         errorLine1="        tooltipContent: @Composable () -> Unit = {},"
         errorLine2="        ~~~~~~~~~~~~~~">
         <location
@@ -472,10 +526,19 @@
     <issue
         id="ComposableLambdaParameterPosition"
         message="Composable lambda parameter should be the last parameter so it can be used as a trailing lambda"
-        errorLine1="    overflowIndicator: @Composable (ButtonGroupMenuState) -> Unit,"
-        errorLine2="    ~~~~~~~~~~~~~~~~~">
+        errorLine1="    toggle: @Composable () -> Unit,"
+        errorLine2="    ~~~~~~">
         <location
-            file="src/commonMain/kotlin/androidx/compose/material3/ButtonGroup.kt"/>
+            file="src/commonMain/kotlin/androidx/compose/material3/TimePicker.kt"/>
+    </issue>
+
+    <issue
+        id="ComposableLambdaParameterPosition"
+        message="Composable lambda parameter should be the last parameter so it can be used as a trailing lambda"
+        errorLine1="    toggle: @Composable () -> Unit,"
+        errorLine2="    ~~~~~~">
+        <location
+            file="src/commonMain/kotlin/androidx/compose/material3/TimePicker.kt"/>
     </issue>
 
     <issue
@@ -485,24 +548,6 @@
         errorLine2="        ~~~~~~~~~~~~~~">
         <location
             file="src/androidDeviceTest/kotlin/androidx/compose/material3/TooltipTest.kt"/>
-    </issue>
-
-    <issue
-        id="ConfigurationScreenWidthHeight"
-        message="Using Configuration.screenHeightDp instead of LocalWindowInfo.current.containerSize"
-        errorLine1="            val screenHeight = LocalContext.current.resources.configuration.screenHeightDp.dp"
-        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidDeviceTest/kotlin/androidx/compose/material3/ModalBottomSheetTest.kt"/>
-    </issue>
-
-    <issue
-        id="ConfigurationScreenWidthHeight"
-        message="Using Configuration.screenHeightDp instead of LocalWindowInfo.current.containerSize"
-        errorLine1="            screenHeight = context.resources.configuration.screenHeightDp.dp"
-        errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidDeviceTest/kotlin/androidx/compose/material3/ModalBottomSheetTest.kt"/>
     </issue>
 
     <issue
@@ -569,24 +614,6 @@
     </issue>
 
     <issue
-        id="LocalContextConfigurationRead"
-        message="Reading Configuration using LocalContext.current.resources.configuration"
-        errorLine1="            val screenHeight = LocalContext.current.resources.configuration.screenHeightDp.dp"
-        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidDeviceTest/kotlin/androidx/compose/material3/ModalBottomSheetTest.kt"/>
-    </issue>
-
-    <issue
-        id="LocalContextConfigurationRead"
-        message="Reading Configuration using LocalContext.current.resources.configuration"
-        errorLine1="            screenHeight = context.resources.configuration.screenHeightDp.dp"
-        errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidDeviceTest/kotlin/androidx/compose/material3/ModalBottomSheetTest.kt"/>
-    </issue>
-
-    <issue
         id="ModifierParameter"
         message="Modifier parameter should be named modifier"
         errorLine1="        textFieldModifier: Modifier = Modifier,"
@@ -606,7 +633,7 @@
 
     <issue
         id="PrivateResource"
-        message="The resource `@string/tooltip_label` is marked as private in androidx.compose.foundation:foundation-android:1.11.0-beta02"
+        message="The resource `@string/tooltip_label` is marked as private in androidx.compose.foundation:foundation-android:1.12.0-beta01"
         errorLine1="    @Composable actual fun label(): String = stringResource(R.string.tooltip_label)"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -615,7 +642,7 @@
 
     <issue
         id="PrivateResource"
-        message="The resource `@string/tooltip_description` is marked as private in androidx.compose.foundation:foundation-android:1.11.0-beta02"
+        message="The resource `@string/tooltip_description` is marked as private in androidx.compose.foundation:foundation-android:1.12.0-beta01"
         errorLine1="    @Composable actual fun description(): String = stringResource(R.string.tooltip_description)"
         errorLine2="                                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -624,7 +651,7 @@
 
     <issue
         id="PrivateResource"
-        message="The resource `@string/default_error_message` is marked as private in androidx.compose.ui:ui-android:1.11.0-beta02"
+        message="The resource `@string/default_error_message` is marked as private in androidx.compose.ui:ui-android:1.12.0-beta01"
         errorLine1="            get() = Strings(R.string.default_error_message)"
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -633,7 +660,7 @@
 
     <issue
         id="PrivateResource"
-        message="The resource `@string/dropdown_menu` is marked as private in androidx.compose.ui:ui-android:1.11.0-beta02"
+        message="The resource `@string/dropdown_menu` is marked as private in androidx.compose.ui:ui-android:1.12.0-beta01"
         errorLine1="            get() = Strings(R.string.dropdown_menu)"
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -642,7 +669,7 @@
 
     <issue
         id="PrivateResource"
-        message="The resource `@string/range_start` is marked as private in androidx.compose.ui:ui-android:1.11.0-beta02"
+        message="The resource `@string/range_start` is marked as private in androidx.compose.ui:ui-android:1.12.0-beta01"
         errorLine1="            get() = Strings(R.string.range_start)"
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -651,7 +678,7 @@
 
     <issue
         id="PrivateResource"
-        message="The resource `@string/range_end` is marked as private in androidx.compose.ui:ui-android:1.11.0-beta02"
+        message="The resource `@string/range_end` is marked as private in androidx.compose.ui:ui-android:1.12.0-beta01"
         errorLine1="            get() = Strings(R.string.range_end)"
         errorLine2="                            ~~~~~~~~~~~~~~~~~~">
         <location
@@ -660,7 +687,7 @@
 
     <issue
         id="PrivateResource"
-        message="The resource `@string/navigation_menu` is marked as private in androidx.compose.ui:ui-android:1.11.0-beta02"
+        message="The resource `@string/navigation_menu` is marked as private in androidx.compose.ui:ui-android:1.12.0-beta01"
         errorLine1="            get() = Strings(R.string.navigation_menu)"
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -669,7 +696,7 @@
 
     <issue
         id="PrivateResource"
-        message="The resource `@string/close_drawer` is marked as private in androidx.compose.ui:ui-android:1.11.0-beta02"
+        message="The resource `@string/close_drawer` is marked as private in androidx.compose.ui:ui-android:1.12.0-beta01"
         errorLine1="            get() = Strings(R.string.close_drawer)"
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -678,7 +705,7 @@
 
     <issue
         id="PrivateResource"
-        message="The resource `@string/close_sheet` is marked as private in androidx.compose.ui:ui-android:1.11.0-beta02"
+        message="The resource `@string/close_sheet` is marked as private in androidx.compose.ui:ui-android:1.12.0-beta01"
         errorLine1="            get() = Strings(R.string.close_sheet)"
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -818,6 +845,15 @@
         errorLine2="                            ~">
         <location
             file="src/androidDeviceTest/kotlin/androidx/compose/material3/SliderTest.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidMain/kotlin/androidx/compose/material3/internal/CalendarModel.android.kt"/>
     </issue>
 
     <issue

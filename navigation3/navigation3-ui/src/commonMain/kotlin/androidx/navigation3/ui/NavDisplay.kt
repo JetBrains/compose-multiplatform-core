@@ -35,6 +35,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -42,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachReversed
+import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.rememberLifecycleOwner
@@ -613,9 +615,6 @@ public fun <T : Any> NavDisplay(
     val transition = rememberTransition(transitionState, label = "scene")
 
     // Transition Handling
-    /** Keep track of the previous entries for the transition's current scene. */
-    val transitionCurrentStateEntries =
-        remember(transition.currentState) { sceneState.entries.toList() }
 
     // Set up Gesture Back tracking
     val previousScene = sceneState.previousScenes.lastOrNull()
@@ -632,15 +631,18 @@ public fun <T : Any> NavDisplay(
             is Idle -> NavigationEvent.EDGE_NONE
             is InProgress -> gestureTransition.latestEvent.swipeEdge
         }
+    // Determine if this should be a pop or not.
+    // Keep track of the previous entries for the current scene.
+    val previousEntries = remember { mutableStateOf(sceneState.entries.map { it.contentKey }) }
 
     val isPop =
-        isPop(
-            // Consider this a pop if the current entries match the previous entries we have
-            // recorded
-            // from the current state of the transition
-            transitionCurrentStateEntries.map { it.contentKey },
-            sceneState.entries.map { it.contentKey },
-        )
+        remember(sceneState.entries) {
+            val oldBackStack = previousEntries.value
+            val newBackStack = sceneState.entries.map { it.contentKey }
+            val result = isPop(oldBackStack, newBackStack)
+            previousEntries.value = newBackStack
+            result
+        }
 
     // Track currently rendered Scenes and their ZIndices
     val sceneMap = remember { mutableStateMapOf<AnimatedSceneKey, Scene<T>>() }
@@ -668,10 +670,18 @@ public fun <T : Any> NavDisplay(
     val overlayScenes = sceneState.overlayScenes
     // includes overlay scenes that are already popped off backStack but still animating out
     val currentOverlayScenes = remember { SnapshotStateList<OverlayScene<T>>() }
+
     LaunchedEffect(overlayScenes) {
         // we want a unique set of overlay scenes, but it needs to be ordered to preserve z-order
         overlayScenes.fastForEach {
-            if (!currentOverlayScenes.contains(it)) currentOverlayScenes.add(it)
+            if (
+                !currentOverlayScenes
+                    .toList()
+                    .fastMap { currScene -> currScene.key }
+                    .contains(it.key)
+            ) {
+                currentOverlayScenes.add(it)
+            }
         }
     }
 
@@ -688,6 +698,8 @@ public fun <T : Any> NavDisplay(
                     .map { it.value }
                     .forEach { if (!scenes.contains(it)) scenes.add(it) }
 
+                val isPop = transition.targetState != scenes.first()
+
                 // At this point we have a list in this order
                 // [zIndex larger --> zIndex smaller]
 
@@ -695,46 +707,25 @@ public fun <T : Any> NavDisplay(
                 // z-order
                 // overlayScenes is already in order of [top most overlay ---> lowest overlay],
                 // so we put overlayScenes in front, and then add the scenes after.
-                val scenesInZOrder = currentOverlayScenes + scenes
+                // During pops, we reverse the scene order so the incoming destination scene
+                // (lowest z-index) claims its entry keys first, allowing shared elements to
+                // render in the target scene and excluding them from outgoing higher z-index
+                // scenes.
+                val scenesInZOrder =
+                    (currentOverlayScenes + scenes).let { if (isPop) it.reversed() else it }
                 // At this point we have a list of all scenes in this order
                 // [top most overlay ---> lowest overlay, other scenes zIndex larger --> zIndex
-                // smaller]
+                // smaller], or vice versa if we are popping.
 
                 // Then we track which entries are already covered
                 val coveredEntryKeys = mutableSetOf<Any>()
 
-                // This determines whether this is a pop or not
-                val shouldSwapExcludedScenesFromTarget = transition.targetState != scenes.first()
-
-                // In scenesInZOrder's natural order, go through each scene, marking
-                // all of the entries not already covered as associated
-                // with that scene. This ensures that each unique contentKey will only be
-                // rendered by one scene.
+                // In scenesInZOrder, go through each scene, marking all of the entries not
+                // already covered as associated with that scene. This ensures that each unique
+                // contentKey will only be rendered by one scene.
                 scenesInZOrder.fastForEach { scene ->
-                    val newlyCoveredEntryKeys =
-                        scene.entries
-                            .map { it.contentKey }
-                            .filterNot(coveredEntryKeys::contains)
-                            .toSet()
-                    // If our target scene is not the scene on top
-                    // we should exclude the entries in the target scene from all other scenes
-                    // this ensures we render the entry in the target scene when popping using
-                    // shared elements
-                    if (shouldSwapExcludedScenesFromTarget && transition.targetState != scene) {
-                        put(
-                            AnimatedSceneKey(scene),
-                            transition.targetState.entries.map { it.contentKey }.toSet(),
-                        )
-                    } else {
-                        put(AnimatedSceneKey(scene), coveredEntryKeys.toMutableSet())
-                    }
-                    coveredEntryKeys.addAll(newlyCoveredEntryKeys)
-                }
-
-                // After we are done building the entire map, check if we should clear
-                // the target scene key
-                if (shouldSwapExcludedScenesFromTarget) {
-                    put(AnimatedSceneKey(transition.targetState), emptySet())
+                    put(AnimatedSceneKey(scene), coveredEntryKeys.toMutableSet())
+                    coveredEntryKeys.addAll(scene.entries.fastMap { it.contentKey })
                 }
             }
         }
@@ -750,11 +741,9 @@ public fun <T : Any> NavDisplay(
 
     // check if in gesture back
     if (inPredictiveBack) {
-        if (transition.currentState != previousScene) {
-            LaunchedEffect(previousScene, progress) {
-                // Retarget on key change; seek on progress updates.
-                transitionState.seekTo(progress, previousScene)
-            }
+        LaunchedEffect(previousScene, progress) {
+            // Retarget on key change; seek on progress updates.
+            transitionState.seekTo(progress, previousScene)
         }
     } else {
         LaunchedEffect(scene) {
@@ -876,7 +865,7 @@ public fun <T : Any> NavDisplay(
     }
 
     // Show all OverlayScene instances above the AnimatedContent
-    currentOverlayScenes.fastForEachReversed { overlayScene ->
+    currentOverlayScenes.toList().fastForEachReversed { overlayScene ->
         key(overlayScene) {
             val overlaySceneLifecycleOwner =
                 rememberLifecycleOwner(
@@ -897,7 +886,7 @@ public fun <T : Any> NavDisplay(
         }
         // if the overlay scene is popped, let onRemoved finish before
         // removing from composition to ensure animations can complete
-        if (overlayScene !in overlayScenes) {
+        if (overlayScene.key !in overlayScenes.fastMap { it.key }) {
             LaunchedEffect(overlayScene.key) {
                 overlayScene.onRemove()
                 currentOverlayScenes.remove(overlayScene)

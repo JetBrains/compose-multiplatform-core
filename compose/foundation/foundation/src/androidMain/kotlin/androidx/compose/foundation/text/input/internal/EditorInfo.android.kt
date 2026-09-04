@@ -163,6 +163,10 @@ internal fun EditorInfo.update(
         if (imeOptions.autoCorrect) {
             this.inputType = this.inputType or InputType.TYPE_TEXT_FLAG_AUTO_CORRECT
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN) {
+            EditorInfoApi37.setEnableTextSuggestionSelectedInputType(this)
+        }
     }
 
     this.initialSelStart = selection.start
@@ -174,6 +178,7 @@ internal fun EditorInfo.update(
         EditorInfoCompat.setContentMimeTypes(this, contentMimeTypes)
     }
 
+    // TODO(b/521833073): Remove this after Extracted Mode support.
     this.imeOptions = this.imeOptions or EditorInfo.IME_FLAG_NO_FULLSCREEN
 
     if (shouldEnableStylusHandwriting(imeOptions)) {
@@ -238,5 +243,13 @@ private object EditorInfoApi34 {
                 SelectRangeGesture::class.java,
                 DeleteRangeGesture::class.java,
             )
+    }
+}
+
+@RequiresApi(37)
+private object EditorInfoApi37 {
+    fun setEnableTextSuggestionSelectedInputType(editorInfo: EditorInfo) {
+        editorInfo.inputType =
+            editorInfo.inputType or EditorInfo.TYPE_TEXT_FLAG_ENABLE_TEXT_SUGGESTION_SELECTED
     }
 }

@@ -20,6 +20,10 @@ import android.window.BackEvent
 import androidx.activity.BackEventCompat
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -32,12 +36,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
 import androidx.kruth.assertThat
+import androidx.navigation3.first
 import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.second
 import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventDispatcher
@@ -46,7 +54,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertWithMessage
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -54,7 +61,7 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class NavDisplayPredictiveBackTest {
-    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun testStateIsRestoredOnBackPressedPredictiveBack() {
@@ -311,7 +318,86 @@ class NavDisplayPredictiveBackTest {
         Truth.assertThat(clicksOnB).isGreaterThan(0)
         composeTestRule.mainClock.autoAdvance = true
     }
-}
 
-private const val first = "first"
-private const val second = "second"
+    @Test
+    fun testPredictiveBackDuringForwardAnimation() {
+        lateinit var navEventDispatcher: NavigationEventDispatcher
+        lateinit var input: DirectNavigationEventInput
+        lateinit var backStack: MutableList<Any>
+
+        composeTestRule.setContent {
+            navEventDispatcher =
+                LocalNavigationEventDispatcherOwner.current!!.navigationEventDispatcher
+            input = DirectNavigationEventInput()
+            navEventDispatcher.addInput(input)
+            backStack = remember { mutableStateListOf(first) }
+            NavDisplay(
+                backStack = backStack,
+                onBack = { backStack.removeAt(backStack.lastIndex) },
+                transitionSpec = {
+                    ContentTransform(
+                        targetContentEnter =
+                            slideIntoContainer(
+                                AnimatedContentTransitionScope.SlideDirection.Start,
+                                animationSpec = tween(1000, easing = LinearEasing),
+                            ),
+                        initialContentExit =
+                            slideOutOfContainer(
+                                AnimatedContentTransitionScope.SlideDirection.Start,
+                                animationSpec = tween(1000, easing = LinearEasing),
+                            ),
+                    )
+                },
+            ) { key ->
+                NavEntry(key) { Box(modifier = Modifier.fillMaxSize()) { Text(key.toString()) } }
+            }
+        }
+
+        composeTestRule.onNodeWithText(first).assertExists()
+
+        // Trigger forward navigation with clock paused
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.runOnIdle { backStack.add(second) }
+
+        // Advance time partially (e.g. 500ms = 50% into forward transition)
+        composeTestRule.mainClock.advanceTimeBy(500)
+        composeTestRule.waitForIdle()
+
+        // Initiate predictive back and seek back towards first (progress = 0.9f)
+        composeTestRule.runOnIdle {
+            input.backStarted(
+                NavigationEvent(
+                    swipeEdge = NavigationEvent.EDGE_LEFT,
+                    progress = 0.1f,
+                    touchX = 0.1f,
+                    touchY = 0.1f,
+                )
+            )
+            input.backProgressed(
+                NavigationEvent(
+                    swipeEdge = NavigationEvent.EDGE_LEFT,
+                    progress = 0.9f,
+                    touchX = 0.1f,
+                    touchY = 0.1f,
+                )
+            )
+        }
+
+        // Advance 2 frames: one to recompose the retargeted scene and one to apply seeking
+        composeTestRule.mainClock.advanceTimeByFrame()
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        val secondSceneLeftPosition =
+            composeTestRule.onNodeWithText(second).getUnclippedBoundsInRoot().left
+
+        // Assert that the entering scene is being seeked backward towards its exit (< 0.dp)
+        assertThat(secondSceneLeftPosition).isLessThan(0.dp)
+
+        // Cancel back gesture and verify it settles on second
+        composeTestRule.runOnIdle { input.backCancelled() }
+        composeTestRule.mainClock.autoAdvance = true
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText(second).assertExists()
+        composeTestRule.onNodeWithText(first).assertDoesNotExist()
+    }
+}

@@ -16,14 +16,20 @@
 
 package androidx.compose.ui.test
 
+import android.content.Context
+import android.graphics.Canvas
 import android.graphics.Rect
 import android.os.Build
+import android.view.SurfaceHolder
+import android.view.SurfaceView
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -37,6 +43,7 @@ import androidx.compose.testutils.assertPixels
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -45,12 +52,15 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.window.Popup
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 import org.junit.Assert.assertThrows
 import org.junit.Rule
@@ -142,7 +152,9 @@ class BitmapCapturingTest(val config: TestConfig) {
 
     @Test
     fun capturePopup_verifyBackground() {
-        setContent { Box { Popup { Box(Modifier.background(Color.Red)) { Text("Hello") } } } }
+        setContent {
+            Box { Popup { Box(Modifier.size(50.dp).background(Color.Red)) { Text("Hello") } } }
+        }
 
         rule.onNode(isPopup()).captureToImage().assertContainsColor(Color.Red)
     }
@@ -212,7 +224,7 @@ class BitmapCapturingTest(val config: TestConfig) {
         }
 
         val visibleFrame = Rect()
-        rule.activity.window.decorView.getWindowVisibleDisplayFrame(visibleFrame)
+        rule.runOnIdle { rule.activity.window.decorView.getWindowVisibleDisplayFrame(visibleFrame) }
         val expectedWidthPx = visibleFrame.width()
         val expectedHeightPx = visibleFrame.height()
 
@@ -312,6 +324,128 @@ class BitmapCapturingTest(val config: TestConfig) {
             .contains("Cannot currently capture dialogs on API lower than 28")
     }
 
+    @Test
+    fun captureToImage_withIntersectingSurfaceView() {
+        val surfaceDrawnLatch = CountDownLatch(1)
+
+        setContent {
+            Box(Modifier.testTag(rootTag).size(200.dp)) {
+                AndroidView(
+                    factory = { ctx ->
+                        SurfaceView(ctx).apply {
+                            holder.addCallback(
+                                object : SurfaceHolder.Callback {
+                                    override fun surfaceCreated(holder: SurfaceHolder) {
+                                        val canvas = holder.lockCanvas()
+                                        if (canvas != null) {
+                                            canvas.drawColor(Color.Blue.toArgb())
+                                            holder.unlockCanvasAndPost(canvas)
+                                            surfaceDrawnLatch.countDown()
+                                        }
+                                    }
+
+                                    override fun surfaceChanged(
+                                        holder: SurfaceHolder,
+                                        format: Int,
+                                        w: Int,
+                                        h: Int,
+                                    ) {}
+
+                                    override fun surfaceDestroyed(holder: SurfaceHolder) {}
+                                }
+                            )
+                        }
+                    },
+                    modifier = Modifier.matchParentSize(),
+                )
+                Box(Modifier.size(50.dp).background(Color.Red).align(Alignment.Center))
+            }
+        }
+
+        surfaceDrawnLatch.await(2, TimeUnit.SECONDS)
+        rule.waitForIdle()
+
+        rule.onNodeWithTag(rootTag).captureToImage().let { bitmap ->
+            bitmap.assertContainsColor(Color.Blue)
+            bitmap.assertContainsColor(Color.Red)
+        }
+    }
+
+    @Test
+    fun captureToImage_withNonIntersectingSurfaceView() {
+        val surfaceDrawnLatch = CountDownLatch(1)
+
+        setContent {
+            Column(Modifier.fillMaxSize()) {
+                // SurfaceView rendered completely outside the target node's bounds
+                AndroidView(
+                    factory = { ctx ->
+                        SurfaceView(ctx).apply {
+                            holder.addCallback(
+                                object : SurfaceHolder.Callback {
+                                    override fun surfaceCreated(holder: SurfaceHolder) {
+                                        val canvas = holder.lockCanvas()
+                                        if (canvas != null) {
+                                            canvas.drawColor(Color.Blue.toArgb())
+                                            holder.unlockCanvasAndPost(canvas)
+                                            surfaceDrawnLatch.countDown()
+                                        }
+                                    }
+
+                                    override fun surfaceChanged(
+                                        holder: SurfaceHolder,
+                                        format: Int,
+                                        w: Int,
+                                        h: Int,
+                                    ) {}
+
+                                    override fun surfaceDestroyed(holder: SurfaceHolder) {}
+                                }
+                            )
+                        }
+                    },
+                    modifier = Modifier.size(100.dp),
+                )
+                Box(Modifier.testTag(rootTag).size(50.dp).background(Color.Red))
+            }
+        }
+
+        surfaceDrawnLatch.await(2, TimeUnit.SECONDS)
+        rule.waitForIdle()
+
+        // Capture the target tag. This should successfully default to the
+        // PixelCopy because there is no coordinate intersection.
+        rule.onNodeWithTag(rootTag).captureToImage().let { bitmap ->
+            bitmap.assertContainsColor(Color.Red)
+            bitmap.assertDoesNotContainColor(Color.Blue)
+        }
+    }
+
+    @Test
+    fun captureToImage_timesOut_whenRedrawExceedsDefaultTimeout() {
+        lateinit var slowView: SlowDrawView
+        setContent { SlowDrawingBox(onCreated = { slowView = it }) }
+        rule.waitForIdle()
+        slowView.shouldDelay = true
+
+        assertThrows(ComposeTimeoutException::class.java) {
+            rule.onNodeWithTag(rootTag).captureToImage()
+        }
+    }
+
+    @Test
+    fun captureToImage_succeeds_whenCustomTimeoutExceedsRedrawDelay() {
+        lateinit var slowView: SlowDrawView
+        setContent { SlowDrawingBox(onCreated = { slowView = it }) }
+        rule.waitForIdle()
+        slowView.shouldDelay = true
+
+        rule
+            .onNodeWithTag(rootTag)
+            .captureToImage(timeoutMillis = 3_500)
+            .assertContainsColor(Color.Red)
+    }
+
     private fun Dp.toPixel(density: Density) = this.value * density.density
 
     private fun expectedColorProvider(pos: IntOffset): Color {
@@ -373,5 +507,47 @@ class BitmapCapturingTest(val config: TestConfig) {
             is CustomComposeHostActivity -> activity.setContent(content)
             else -> rule.setContent(content)
         }
+    }
+
+    private class SlowDrawView(context: Context) :
+        View(context), android.view.ViewTreeObserver.OnPreDrawListener {
+        var delayMillis = 3_000L
+        @Volatile var shouldDelay = false
+
+        override fun onAttachedToWindow() {
+            super.onAttachedToWindow()
+            viewTreeObserver.addOnPreDrawListener(this)
+        }
+
+        override fun onDetachedFromWindow() {
+            super.onDetachedFromWindow()
+            viewTreeObserver.removeOnPreDrawListener(this)
+        }
+
+        @Suppress("BanThreadSleep")
+        override fun onPreDraw(): Boolean {
+            if (shouldDelay) {
+                shouldDelay = false
+                Thread.sleep(delayMillis)
+            }
+            return true
+        }
+
+        override fun onDraw(canvas: Canvas) {
+            canvas.drawColor(android.graphics.Color.RED)
+        }
+    }
+
+    @Composable
+    private fun SlowDrawingBox(tag: String = rootTag, onCreated: (SlowDrawView) -> Unit) {
+        AndroidView(
+            factory = { context ->
+                SlowDrawView(context).apply {
+                    setWillNotDraw(false)
+                    onCreated(this)
+                }
+            },
+            modifier = Modifier.testTag(tag).size(100.dp),
+        )
     }
 }

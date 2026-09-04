@@ -19,7 +19,6 @@
 
 package androidx.compose.foundation.samples
 
-import android.text.TextUtils
 import androidx.annotation.Sampled
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -54,14 +53,14 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.text.input.then
 import androidx.compose.foundation.text.input.toTextFieldBuffer
-import androidx.compose.material.Button
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.MailOutline
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
@@ -304,7 +303,7 @@ fun BasicTextFieldStateEditSample() {
         delete(12, 13) // = "hello, world"
 
         // Add a different name.
-        append("Compose") // = "hello, Compose"
+        insert(length, "Compose") // = "hello, Compose"
 
         // Say goodbye.
         replace(0, 5, "goodbye") // "goodbye, Compose"
@@ -369,7 +368,7 @@ fun BasicTextFieldOutputTransformationSample() {
                 // Pad the text with placeholder chars if too short.
                 // (___) ___-____
                 val padCount = 10 - length
-                repeat(padCount) { append('_') }
+                insert(length, "_".repeat(padCount))
             }
 
             // (123) 456-7890
@@ -383,11 +382,8 @@ fun BasicTextFieldOutputTransformationSample() {
     BasicTextField(
         state,
         inputTransformation =
-            InputTransformation.maxLength(10).then {
-                if (!TextUtils.isDigitsOnly(asCharSequence())) {
-                    revertAllChanges()
-                }
-            },
+            InputTransformation.byValue { _, proposed -> proposed.filter { it.isDigit() } }
+                .maxLength(10),
         outputTransformation = PhoneNumberOutputTransformation(false),
     )
 }
@@ -399,11 +395,8 @@ fun BasicTextFieldAnnotatedOutputTransformationSample() {
     BasicTextField(
         state,
         inputTransformation =
-            InputTransformation.maxLength(10).then {
-                if (!TextUtils.isDigitsOnly(asCharSequence())) {
-                    revertAllChanges()
-                }
-            },
+            InputTransformation.byValue { _, proposed -> proposed.filter { it.isDigit() } }
+                .maxLength(10),
         outputTransformation =
             OutputTransformation {
                 // Find hashtags
@@ -474,11 +467,16 @@ fun BasicTextFieldInputTransformationMaxLengthCustom() {
         inputTransformation =
             object : InputTransformation {
                 override fun SemanticsPropertyReceiver.applySemantics() {
+                    // The output transformation formats "1234567890" to "(123) 456-7890",
+                    // which is 14 characters long. We set the accessibility maximum length
+                    // to 14 so screen readers announce the correct limit.
                     maxLength(14)
                 }
 
                 override fun TextFieldBuffer.transformInput() {
-                    if (length > 10) revertAllChanges()
+                    if (length > 10) {
+                        delete(10, length)
+                    }
                 }
             },
         outputTransformation =
@@ -537,7 +535,7 @@ fun BasicTextFieldTrackedRangeTextRangeSetterSample() {
         val rangeToWipe = TextRange(0, 5)
 
         // Get all span styles that intersect with the wipe range.
-        getSpanStyles(rangeToWipe.start, rangeToWipe.end).forEach { trackedRange ->
+        getSpanStyles(rangeToWipe).forEach { trackedRange ->
             if (trackedRange.spanStyle.fontWeight == FontWeight.Bold) {
                 val current = trackedRange.textRange
 
@@ -603,21 +601,15 @@ fun BasicTextFieldUndoSample() {
 
     Column(Modifier.padding(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            androidx.compose.material.Button(
-                onClick = { state.undoState.undo() },
-                enabled = state.undoState.canUndo,
-            ) {
+            Button(onClick = { state.undoState.undo() }, enabled = state.undoState.canUndo) {
                 Text("Undo")
             }
 
-            androidx.compose.material.Button(
-                onClick = { state.undoState.redo() },
-                enabled = state.undoState.canRedo,
-            ) {
+            Button(onClick = { state.undoState.redo() }, enabled = state.undoState.canRedo) {
                 Text("Redo")
             }
 
-            androidx.compose.material.Button(
+            Button(
                 onClick = { state.undoState.clearHistory() },
                 enabled = state.undoState.canUndo || state.undoState.canRedo,
             ) {
@@ -742,32 +734,32 @@ fun BasicTextFieldTrackedRangeToggleBoldSample() {
     // This derived state calculates whether the current selection is completely covered by
     // bold text styles. This ensures the "Bold" toggle button accurately reflects the
     // state of the selected text.
-    val isSelection100PercentBold by derivedStateOf {
-        val selection = state.selection
-        if (selection.collapsed) {
-            false
-        } else {
-            val spanStyles = state.textStyles.getSpanStyles(selection.min, selection.max)
-            var boldCoverage = 0
-            for (style in spanStyles) {
-                if (style.item.fontWeight == FontWeight.Bold) {
-                    val overlapStart = maxOf(style.start, selection.min)
-                    val overlapEnd = minOf(style.end, selection.max)
-                    if (overlapEnd > overlapStart) {
-                        boldCoverage += (overlapEnd - overlapStart)
+    val isSelection100PercentBold by remember {
+        derivedStateOf {
+            val selection = state.selection
+            if (selection.collapsed) {
+                false
+            } else {
+                val spanStyles = state.textStyles.getSpanStyles(selection)
+                var boldCoverage = 0
+                for (style in spanStyles) {
+                    if (style.item.fontWeight == FontWeight.Bold) {
+                        val overlapStart = maxOf(style.start, selection.min)
+                        val overlapEnd = minOf(style.end, selection.max)
+                        if (overlapEnd > overlapStart) {
+                            boldCoverage += (overlapEnd - overlapStart)
+                        }
                     }
                 }
+                boldCoverage == selection.length
             }
-            boldCoverage == selection.length
         }
     }
 
     fun TextFieldBuffer.unBoldSelection() {
         // Query existing bold styles in the selection
         val intersectingStyles =
-            getSpanStyles(selection.min, selection.max).filter {
-                it.spanStyle.fontWeight == FontWeight.Bold
-            }
+            getSpanStyles(selection).filter { it.spanStyle.fontWeight == FontWeight.Bold }
         // We modify or remove existing styles to exclude the selected range
         for (style in intersectingStyles) {
             val range = style.textRange
@@ -798,9 +790,7 @@ fun BasicTextFieldTrackedRangeToggleBoldSample() {
     fun TextFieldBuffer.boldSelection() {
         // Query existing bold styles in the selection
         val intersectingStyles =
-            getSpanStyles(selection.min, selection.max).filter {
-                it.spanStyle.fontWeight == FontWeight.Bold
-            }
+            getSpanStyles(selection).filter { it.spanStyle.fontWeight == FontWeight.Bold }
         // To keep bold styles non-overlapping, we merge any intersecting bold
         // styles with the new selection range into a single contiguous bold style.
         var mergedStart = selection.min
@@ -855,7 +845,7 @@ fun BasicTextFieldTrackedRangePropertiesSample() {
 
     state.edit {
         // Query the existing styles on the text
-        val existingStyles = getSpanStyles(0, length)
+        val existingStyles = getSpanStyles(TextRange(0, length))
 
         existingStyles.forEach { trackedRange ->
             // Read and update the expand policy of a style
@@ -871,7 +861,7 @@ fun BasicTextFieldTrackedRangePropertiesSample() {
         existingStyles.forEach { trackedRange ->
             // The style's range might have collapsed to zero length, making it no longer valid.
             // It is recommended to check validity before accessing properties like textRange.
-            if (trackedRange.valid) {
+            if (trackedRange.isValid) {
                 // Style is still valid, it's up-to-date range can be accessed via
                 // trackedRange.textRange
             } else {

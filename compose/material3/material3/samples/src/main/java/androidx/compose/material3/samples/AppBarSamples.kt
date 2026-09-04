@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package androidx.compose.material3.samples
 
 import androidx.annotation.Sampled
@@ -53,7 +55,6 @@ import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FlexibleBottomAppBar
@@ -80,7 +81,6 @@ import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -171,7 +171,7 @@ fun SimpleTopAppBar() {
         },
         content = { innerPadding ->
             LazyColumn(
-                contentPadding = innerPadding,
+                modifier = Modifier.padding(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
@@ -294,7 +294,7 @@ fun SimpleTopAppBarWithAdaptiveActions() {
         },
         content = { innerPadding ->
             LazyColumn(
-                contentPadding = innerPadding,
+                modifier = Modifier.padding(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
@@ -315,7 +315,6 @@ fun SimpleTopAppBarWithAdaptiveActions() {
  *
  * The top app bar here does not react to any scroll events in the content under it.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -391,7 +390,7 @@ fun SimpleTopAppBarWithSubtitle() {
         },
         content = { innerPadding ->
             LazyColumn(
-                contentPadding = innerPadding,
+                modifier = Modifier.padding(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
@@ -483,7 +482,7 @@ fun SimpleCenterAlignedTopAppBar() {
         },
         content = { innerPadding ->
             LazyColumn(
-                contentPadding = innerPadding,
+                modifier = Modifier.padding(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
@@ -500,15 +499,14 @@ fun SimpleCenterAlignedTopAppBar() {
 }
 
 /**
- * A sample for a simple use of small [CenterAlignedTopAppBar] with a subtitle.
+ * A sample for a simple use of center-aligned [TopAppBar] with a subtitle.
  *
  * The top app bar here does not react to any scroll events in the content under it.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
-fun SimpleCenterAlignedTopAppBarWithSubtitle() {
+fun SimpleTopAppBarWithSubtitleAndCenterAligned() {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -581,7 +579,7 @@ fun SimpleCenterAlignedTopAppBarWithSubtitle() {
         },
         content = { innerPadding ->
             LazyColumn(
-                contentPadding = innerPadding,
+                modifier = Modifier.padding(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
@@ -701,7 +699,7 @@ fun PinnedTopAppBar() {
         },
         content = { innerPadding ->
             LazyColumn(
-                contentPadding = innerPadding,
+                modifier = Modifier.padding(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
@@ -730,7 +728,7 @@ fun PinnedTopAppBarWithPreScrolledLazyColumn() {
     val lazyListState = rememberLazyListState(initialFirstVisibleItemIndex = 30)
     // Pass the state to ensure the top app bar color updates correctly when content is reversed or
     // pre-scrolled.
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(lazyListState = lazyListState)
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(scrollableState = lazyListState)
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -769,7 +767,7 @@ fun PinnedTopAppBarWithPreScrolledLazyColumn() {
         content = { innerPadding ->
             LazyColumn(
                 state = lazyListState,
-                contentPadding = innerPadding,
+                modifier = Modifier.padding(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
@@ -796,22 +794,7 @@ fun PinnedTopAppBarWithPreScrolledLazyColumn() {
 @Composable
 fun PinnedTopAppBarWithReversedLazyGrid() {
     val lazyGridState = rememberLazyGridState()
-    // In a reversed grid, we need to provide a custom `isScrollingContentAtStart` to the scroll
-    // behavior to ensure the top app bar's color changes correctly.
-    val isScrollingContentAtStart =
-        remember(lazyGridState) {
-            derivedStateOf {
-                if (lazyGridState.layoutInfo.reverseLayout) {
-                    !lazyGridState.canScrollForward
-                } else {
-                    !lazyGridState.canScrollBackward
-                }
-            }
-        }
-    val scrollBehavior =
-        TopAppBarDefaults.pinnedScrollBehavior(
-            isScrollingContentAtStart = { isScrollingContentAtStart.value }
-        )
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(scrollableState = lazyGridState)
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -851,7 +834,7 @@ fun PinnedTopAppBarWithReversedLazyGrid() {
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(minSize = 100.dp),
                 reverseLayout = true,
-                contentPadding = innerPadding,
+                modifier = Modifier.padding(innerPadding),
                 state = lazyGridState,
             ) {
                 val list = (0..75).map { it.toString() }
@@ -873,7 +856,6 @@ fun PinnedTopAppBarWithReversedLazyGrid() {
  * A sample for a small [TopAppBar] that collapses when the content is scrolled up, and appears when
  * the content scrolled down.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -947,7 +929,7 @@ fun EnterAlwaysTopAppBar() {
         },
         content = { innerPadding ->
             LazyColumn(
-                contentPadding = innerPadding,
+                modifier = Modifier.padding(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
@@ -967,19 +949,15 @@ fun EnterAlwaysTopAppBar() {
  * A sample for a small [TopAppBar] that collapses when the content is scrolled up, and appears when
  * the content is scrolled down, using a [Column] with reverse scrolling.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
 fun EnterAlwaysTopAppBarWithReverseScrolling() {
     val scrollState = rememberScrollState()
     val scrollBehavior =
-        // Pass these parameters to ensure the top app bar color updates correctly when content has
+        // Pass this state to ensure the top app bar color updates correctly when content has
         // reverse scrolling.
-        TopAppBarDefaults.enterAlwaysScrollBehavior(
-            scrollState = scrollState,
-            reverseScrolling = true,
-        )
+        TopAppBarDefaults.enterAlwaysScrollBehavior(scrollableState = scrollState)
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -1111,7 +1089,7 @@ fun ExitUntilCollapsedMediumTopAppBar() {
         },
         content = { innerPadding ->
             LazyColumn(
-                contentPadding = innerPadding,
+                modifier = Modifier.padding(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
@@ -1129,13 +1107,12 @@ fun ExitUntilCollapsedMediumTopAppBar() {
 
 /**
  * A sample for a [MediumFlexibleTopAppBar] that collapses when the content is scrolled up, and
- * appears when the content is completely scrolled back down, centered with subtitle.
+ * appears when the content is completely scrolled back down.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
-fun ExitUntilCollapsedCenterAlignedMediumFlexibleTopAppBar() {
+fun ExitUntilCollapsedMediumFlexibleTopAppBar() {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -1145,7 +1122,6 @@ fun ExitUntilCollapsedCenterAlignedMediumFlexibleTopAppBar() {
                     Text("Medium TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis)
                 },
                 subtitle = { Text("Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                titleHorizontalAlignment = Alignment.CenterHorizontally,
                 navigationIcon = {
                     TooltipBox(
                         positionProvider =
@@ -1208,7 +1184,53 @@ fun ExitUntilCollapsedCenterAlignedMediumFlexibleTopAppBar() {
         },
         content = { innerPadding ->
             LazyColumn(
-                contentPadding = innerPadding,
+                modifier = Modifier.padding(innerPadding),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    )
+                }
+            }
+        },
+    )
+}
+
+/** A sample for a [MediumFlexibleTopAppBar] with a centered title and subtitle. */
+@Preview
+@Sampled
+@Composable
+fun MediumFlexibleTopAppBarWithSubtitleAndCenterAligned() {
+    Scaffold(
+        topBar = {
+            MediumFlexibleTopAppBar(
+                title = {
+                    Text("Medium TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                },
+                subtitle = { Text("Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                titleHorizontalAlignment = Alignment.CenterHorizontally,
+                navigationIcon = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menu")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            imageVector = Icons.Filled.Favorite,
+                            contentDescription = "Add to favorites",
+                        )
+                    }
+                },
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                modifier = Modifier.padding(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
@@ -1300,7 +1322,7 @@ fun ExitUntilCollapsedLargeTopAppBar() {
         },
         content = { innerPadding ->
             LazyColumn(
-                contentPadding = innerPadding,
+                modifier = Modifier.padding(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
@@ -1318,13 +1340,12 @@ fun ExitUntilCollapsedLargeTopAppBar() {
 
 /**
  * A sample for a [LargeFlexibleTopAppBar] that collapses when the content is scrolled up, and
- * appears when the content is completely scrolled back down, centered with subtitle.
+ * appears when the content is completely scrolled back down.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
-fun ExitUntilCollapsedCenterAlignedLargeFlexibleTopAppBar() {
+fun ExitUntilCollapsedLargeFlexibleTopAppBar() {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -1332,7 +1353,6 @@ fun ExitUntilCollapsedCenterAlignedLargeFlexibleTopAppBar() {
             LargeFlexibleTopAppBar(
                 title = { Text("Large TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 subtitle = { Text("Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                titleHorizontalAlignment = Alignment.CenterHorizontally,
                 navigationIcon = {
                     TooltipBox(
                         positionProvider =
@@ -1395,7 +1415,51 @@ fun ExitUntilCollapsedCenterAlignedLargeFlexibleTopAppBar() {
         },
         content = { innerPadding ->
             LazyColumn(
-                contentPadding = innerPadding,
+                modifier = Modifier.padding(innerPadding),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    )
+                }
+            }
+        },
+    )
+}
+
+/** A sample for a [LargeFlexibleTopAppBar] with a centered title and subtitle. */
+@Preview
+@Sampled
+@Composable
+fun LargeFlexibleTopAppBarWithSubtitleAndCenterAligned() {
+    Scaffold(
+        topBar = {
+            LargeFlexibleTopAppBar(
+                title = { Text("Large TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                subtitle = { Text("Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                titleHorizontalAlignment = Alignment.CenterHorizontally,
+                navigationIcon = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menu")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            imageVector = Icons.Filled.Favorite,
+                            contentDescription = "Add to favorites",
+                        )
+                    }
+                },
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                modifier = Modifier.padding(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
@@ -1415,7 +1479,6 @@ fun ExitUntilCollapsedCenterAlignedLargeFlexibleTopAppBar() {
  * A sample for a [TwoRowsTopAppBar] that collapses when the content is scrolled up, and appears
  * when the content is completely scrolled back down.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -1490,7 +1553,6 @@ fun CustomTwoRowsTopAppBar() {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -1525,7 +1587,6 @@ fun SimpleBottomAppBar() {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -1618,7 +1679,6 @@ fun BottomAppBarWithFAB() {
  * A sample for a [BottomAppBar] that collapses when the content is scrolled up, and appears when
  * the content scrolled down.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -1737,7 +1797,6 @@ fun ExitAlwaysBottomAppBar() {
  * A sample for a [FlexibleBottomAppBar] that collapses when the content is scrolled up, and appears
  * when the content scrolled down. The content is spaced around.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -1823,7 +1882,6 @@ fun ExitAlwaysBottomAppBarSpacedAround() {
  * A sample for a [FlexibleBottomAppBar] that collapses when the content is scrolled up, and appears
  * when the content scrolled down. The content is spaced between.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -1907,7 +1965,6 @@ fun ExitAlwaysBottomAppBarSpacedBetween() {
  * A sample for a [FlexibleBottomAppBar] that collapses when the content is scrolled up, and appears
  * when the content scrolled down. The content is spaced evenly.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -1992,7 +2049,6 @@ fun ExitAlwaysBottomAppBarSpacedEvenly() {
  * A sample for a [FlexibleBottomAppBar] that collapses when the content is scrolled up, and appears
  * when the content scrolled down. The content arrangement is fixed.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -2076,7 +2132,6 @@ fun ExitAlwaysBottomAppBarFixed() {
  * A sample for a vibrant [FlexibleBottomAppBar] that collapses when the content is scrolled up, and
  * appears when the content scrolled down. The content arrangement is fixed.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -2159,7 +2214,6 @@ fun ExitAlwaysBottomAppBarFixedVibrant() {
 }
 
 /** A sample for a [FlexibleBottomAppBar] with an overflow behavior when the content doesn't fit. */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable

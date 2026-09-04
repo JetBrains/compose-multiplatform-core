@@ -18,8 +18,8 @@ package androidx.compose.ui.contentcapture
 
 import android.os.Build
 import android.os.Bundle
-import android.os.SystemClock
 import android.util.LongSparseArray
+import android.view.ViewGroup
 import android.view.ViewStructure
 import android.view.translation.TranslationRequestValue
 import android.view.translation.TranslationResponseValue
@@ -40,6 +40,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.createAndroidComposeView
 import androidx.compose.ui.platform.AndroidComposeView
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.coreshims.ViewStructureCompat
@@ -66,9 +67,9 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import java.util.function.Consumer
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -77,9 +78,12 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.atLeast
 import org.mockito.kotlin.clearInvocations
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doReturnConsecutively
 import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
@@ -90,7 +94,7 @@ import org.mockito.kotlin.whenever
 @SdkSuppress(minSdkVersion = 31)
 @RunWith(AndroidJUnit4::class)
 class ContentCaptureTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     private val tag = "tag"
     private lateinit var androidComposeView: AndroidComposeView
@@ -170,8 +174,6 @@ class ContentCaptureTest {
         //  invocations of boundsUpdatesEventLoop.
         repeat(2) {
             rule.mainClock.advanceTimeBy(contentCaptureEventLoopIntervalMs)
-            // We're using postDelayed(), so we must wait for the real clock
-            SystemClock.sleep(contentCaptureEventLoopIntervalMs)
             rule.waitForIdle()
         }
 
@@ -217,8 +219,6 @@ class ContentCaptureTest {
         //  invocations of boundsUpdatesEventLoop.
         repeat(2) {
             rule.mainClock.advanceTimeBy(contentCaptureEventLoopIntervalMs)
-            // We're using postDelayed(), so we must wait for the real clock
-            SystemClock.sleep(contentCaptureEventLoopIntervalMs)
             rule.waitForIdle()
         }
 
@@ -255,16 +255,12 @@ class ContentCaptureTest {
         //  AutofillId is a final class, and these tests just use the autofill id of the parent
         //  view.
         rule.mainClock.advanceTimeBy(contentCaptureEventLoopIntervalMs)
-        // We're using postDelayed(), so we must wait for the real clock
-        SystemClock.sleep(contentCaptureEventLoopIntervalMs)
         rule.runOnIdle { appeared = false }
 
         // TODO(b/272068594): After refactoring this code, ensure that we don't need to wait for
         //  two invocations of boundsUpdatesEventLoop.
         repeat(2) {
             rule.mainClock.advanceTimeBy(contentCaptureEventLoopIntervalMs)
-            // We're using postDelayed(), so we must wait for the real clock
-            SystemClock.sleep(contentCaptureEventLoopIntervalMs)
             rule.waitForIdle()
         }
 
@@ -296,8 +292,6 @@ class ContentCaptureTest {
         //  invocations of boundsUpdatesEventLoop.
         repeat(2) {
             rule.mainClock.advanceTimeBy(contentCaptureEventLoopIntervalMs)
-            // We're using postDelayed(), so we must wait for the real clock
-            SystemClock.sleep(contentCaptureEventLoopIntervalMs)
             rule.waitForIdle()
         }
 
@@ -317,8 +311,6 @@ class ContentCaptureTest {
         //  invocations of boundsUpdatesEventLoop.
         repeat(2) {
             rule.mainClock.advanceTimeBy(contentCaptureEventLoopIntervalMs)
-            // We're using postDelayed(), so we must wait for the real clock
-            SystemClock.sleep(contentCaptureEventLoopIntervalMs)
             rule.waitForIdle()
         }
 
@@ -342,8 +334,6 @@ class ContentCaptureTest {
         rule.waitForIdle()
         repeat(2) {
             rule.mainClock.advanceTimeBy(contentCaptureEventLoopIntervalMs)
-            // We're using postDelayed(), so we must wait for the real clock
-            SystemClock.sleep(contentCaptureEventLoopIntervalMs)
             rule.waitForIdle()
         }
 
@@ -383,8 +373,6 @@ class ContentCaptureTest {
             }
             repeat(2) {
                 rule.mainClock.advanceTimeBy(contentCaptureEventLoopIntervalMs)
-                // We're using postDelayed(), so we must wait for the real clock
-                SystemClock.sleep(contentCaptureEventLoopIntervalMs)
                 rule.waitForIdle()
             }
 
@@ -424,8 +412,6 @@ class ContentCaptureTest {
 
             repeat(2) {
                 rule.mainClock.advanceTimeBy(contentCaptureEventLoopIntervalMs)
-                // We're using postDelayed(), so we must wait for the real clock
-                SystemClock.sleep(contentCaptureEventLoopIntervalMs)
                 rule.waitForIdle()
             }
 
@@ -466,8 +452,6 @@ class ContentCaptureTest {
             }
             repeat(2) {
                 rule.mainClock.advanceTimeBy(contentCaptureEventLoopIntervalMs)
-                // We're using postDelayed(), so we must wait for the real clock
-                SystemClock.sleep(contentCaptureEventLoopIntervalMs)
                 rule.waitForIdle()
             }
 
@@ -507,8 +491,6 @@ class ContentCaptureTest {
 
             repeat(2) {
                 rule.mainClock.advanceTimeBy(contentCaptureEventLoopIntervalMs)
-                // We're using postDelayed(), so we must wait for the real clock
-                SystemClock.sleep(contentCaptureEventLoopIntervalMs)
                 rule.waitForIdle()
             }
 
@@ -555,8 +537,6 @@ class ContentCaptureTest {
         // Act.
         rule.runOnIdle { appeared = true }
         rule.mainClock.advanceTimeBy(contentCaptureEventLoopIntervalMs)
-        // We're using postDelayed(), so we must wait for the real clock
-        SystemClock.sleep(contentCaptureEventLoopIntervalMs)
 
         // Assert.
         rule.runOnIdle { assertThat(result).isFalse() }
@@ -591,8 +571,6 @@ class ContentCaptureTest {
         // Act.
         rule.runOnIdle { appeared = true }
         rule.mainClock.advanceTimeBy(contentCaptureEventLoopIntervalMs)
-        // We're using postDelayed(), so we must wait for the real clock
-        SystemClock.sleep(contentCaptureEventLoopIntervalMs)
 
         // Assert.
         rule.runOnIdle { assertThat(result).isTrue() }
@@ -836,8 +814,6 @@ class ContentCaptureTest {
         // Advance the clock past the first accessibility event loop, and clear the initial
         // as we are want the assertions to check the events that were generated later.
         runOnIdle { mainClock.advanceTimeBy(contentCaptureEventLoopIntervalMs) }
-        // We're using postDelayed(), so we must wait for the real clock
-        SystemClock.sleep(contentCaptureEventLoopIntervalMs)
 
         runOnIdle {
             if (!retainInteractionsDuringInitialization) {
@@ -867,5 +843,61 @@ class ContentCaptureTest {
                 )
             )
             .isEqualTo(expected)
+    }
+
+    @Test
+    fun onViewDetachedFromWindow_nullHandler_doesNotCrash() {
+        // A newly instantiated View is not attached to a window, so view.handler is null.
+        rule.runOnUiThread {
+            val view = rule.createAndroidComposeView(coroutineContext = Dispatchers.Main)
+            val manager =
+                AndroidContentCaptureManager(view = view, onContentCaptureSession = { null })
+            manager.onViewDetachedFromWindow(view)
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 29)
+    fun onViewDetachedFromWindow_runnableExitsEarly_whenDetached() {
+        rule.runOnUiThread {
+            val rawView = rule.createAndroidComposeView(coroutineContext = Dispatchers.Main)
+            val view = spy(rawView)
+
+            // Stub isAttachedToWindow to return true initially
+            doReturn(true).whenever(view).isAttachedToWindow
+
+            val mockSession = mock<ContentCaptureSessionWrapper>()
+            val manager =
+                AndroidContentCaptureManager(view = view, onContentCaptureSession = { mockSession })
+
+            // Trigger onStart to initialize the session so isEnabled is true
+            manager.onStart(mock())
+
+            // Trigger attach
+            manager.onViewAttachedToWindow(view)
+
+            // Trigger semantics change which posts the checker
+            manager.onSemanticsChange()
+
+            // Retrieve the private contentCaptureChangeChecker runnable via reflection
+            val checkerField =
+                AndroidContentCaptureManager::class
+                    .java
+                    .getDeclaredField("contentCaptureChangeChecker")
+            checkerField.isAccessible = true
+            val contentCaptureChangeChecker = checkerField.get(manager) as Runnable
+
+            // Simulate detachment by stubbing isAttachedToWindow to false
+            doReturn(false).whenever(view).isAttachedToWindow
+
+            // Reset spy view invocations
+            clearInvocations(view)
+
+            // Run the checker (simulating looper execution)
+            contentCaptureChangeChecker.run()
+
+            // Verify that view.measureAndLayout() was never called (exited early)
+            verify(view, never()).measureAndLayout()
+        }
     }
 }

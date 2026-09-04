@@ -57,9 +57,7 @@ import com.google.common.base.Joiner.on
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.withTimeout
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -71,7 +69,7 @@ import org.mockito.kotlin.mock
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
 class AlertDialogTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun customStyleProperties_shouldApply() {
@@ -499,7 +497,6 @@ class AlertDialogTest {
         )
     }
 
-    @Ignore("TODO(b/503167234): Re-enable this test once flakiness is fixed.")
     @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun alertDialog_withIcon_precisionPointer_positioning() {
@@ -610,7 +607,6 @@ class AlertDialogTest {
         )
     }
 
-    @Ignore("TODO(b/503167234): Re-enable this test once flakiness is fixed.")
     @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun alertDialog_precisionPointer_positioning() {

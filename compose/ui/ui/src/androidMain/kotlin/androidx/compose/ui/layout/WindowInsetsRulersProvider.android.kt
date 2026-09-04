@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 @file:Suppress("NOTHING_TO_INLINE")
+@file:OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
 
 package androidx.compose.ui.layout
 
@@ -23,6 +24,7 @@ import androidx.collection.MutableIntObjectMap
 import androidx.collection.mutableIntObjectMapOf
 import androidx.collection.mutableObjectListOf
 import androidx.compose.runtime.State
+import androidx.compose.ui.AndroidComposeUiFlags
 import androidx.compose.ui.layout.WindowInsetsRulers.Companion.CaptionBar
 import androidx.compose.ui.layout.WindowInsetsRulers.Companion.DisplayCutout
 import androidx.compose.ui.layout.WindowInsetsRulers.Companion.Ime
@@ -43,9 +45,12 @@ internal actual fun findDisplayCutouts(placementScope: Placeable.PlacementScope)
     while (node != null) {
         node.visitNodes(Nodes.Traversable) { traversableNode ->
             if (traversableNode.traverseKey === RulerKey) {
-                return (traversableNode as WindowInsetsRulerProvider)
-                    .insetsProvider
-                    .displayCutoutBoundsRulers
+                val provider = traversableNode as WindowInsetsRulerProvider
+                return if (AndroidComposeUiFlags.isDelayedWindowInsetsRulersEnabled) {
+                    provider.insetsProvider?.displayCutoutBoundsRulers ?: emptyList()
+                } else {
+                    provider.cutoutRulers ?: emptyList()
+                }
             }
         }
         node = node.wrapped
@@ -61,9 +66,13 @@ internal actual fun findInsetsAnimationProperties(
     while (node != null) {
         node.visitNodes(Nodes.Traversable) { traversableNode ->
             if (traversableNode.traverseKey === RulerKey) {
-                return (traversableNode as WindowInsetsRulerProvider)
-                    .insetsProvider
-                    .findWindowInsetsAnimation(windowInsetsRulers) ?: NoWindowInsetsAnimation
+                val provider = traversableNode as WindowInsetsRulerProvider
+                return if (AndroidComposeUiFlags.isDelayedWindowInsetsRulersEnabled) {
+                    provider.insetsProvider?.findWindowInsetsAnimation(windowInsetsRulers)
+                        ?: NoWindowInsetsAnimation
+                } else {
+                    provider.insetsValues?.get(windowInsetsRulers) ?: NoWindowInsetsAnimation
+                }
             }
         }
         node = node.wrapped
@@ -95,7 +104,7 @@ internal class WindowInsetsRulersProvider(val insetsWatcher: WindowInsetsWatcher
                     val cutoutRulers = AllDisplayCutoutBoundsRectRulers
                     for (i in
                         _displayCutoutBoundsRulers.size until
-                            maxOf(cutoutRulers.size, boundingRects.size)) {
+                            minOf(cutoutRulers.size, boundingRects.size)) {
                         _displayCutoutBoundsRulers += cutoutRulers[i]
                     }
                 }
@@ -125,6 +134,7 @@ internal class WindowInsetsRulersProvider(val insetsWatcher: WindowInsetsWatcher
                 val currentInsets = currentInsets ?: return
                 val cutout = currentInsets.displayCutout ?: return
                 val boundingRects = cutout.boundingRects
+                if (whichRectRulers >= boundingRects.size) return
                 val rect = boundingRects[whichRectRulers]
                 with(rulerScope) {
                     rectRulers.left provides rect.left.toFloat()

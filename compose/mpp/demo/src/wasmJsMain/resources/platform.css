@@ -16,7 +16,14 @@
 
 
 
-h1::before {
-    content: "compose multiplatform wasm demo";
-    display: block;
+body::after {
+	content: "Wasm";
+	position: fixed;
+	top: 4px;
+	right: 4px;
+	font-family: monospace;
+	font-size: 15px;
+	color: #AAA;
+	pointer-events: none;
+	z-index: 9999;
 }

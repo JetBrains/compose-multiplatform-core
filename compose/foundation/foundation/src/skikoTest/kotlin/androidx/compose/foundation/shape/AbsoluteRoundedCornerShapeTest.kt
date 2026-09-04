@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.shape
 
+import androidx.compose.foundation.SkikoComposeTestBase
 import androidx.compose.foundation.assertThat
 import androidx.compose.foundation.isEqualTo
 import androidx.compose.foundation.isFalse
@@ -32,7 +33,7 @@ import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class AbsoluteRoundedCornerShapeTest {
+class AbsoluteRoundedCornerShapeTest : SkikoComposeTestBase() {
 
     private var layoutDirection: LayoutDirection? = null
 

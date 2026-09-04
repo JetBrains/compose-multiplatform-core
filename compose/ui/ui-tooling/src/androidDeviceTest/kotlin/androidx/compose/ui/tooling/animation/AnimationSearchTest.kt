@@ -51,7 +51,6 @@ import androidx.compose.ui.tooling.isAnimationPreviewEnabled
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Assert
 import org.junit.Assert.assertEquals
@@ -66,7 +65,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AnimationSearchTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @After
     fun tearDown() {
@@ -175,15 +174,13 @@ class AnimationSearchTest {
         assertEquals(2, search.animations.size)
         search.animations.first().let {
             assertTrue(it.animationSpec is SpringSpec)
-            Assert.assertNotNull(it.toolingOverride.state)
-            Assert.assertNotNull(it.toolingOverride.override)
+            Assert.assertNotNull(it.toolingOverride)
             Assert.assertNotNull(it.animatable)
             assertEquals("IntAnimation", it.animatable.label)
         }
         search.animations.last().let {
             assertTrue(it.animationSpec is SpringSpec)
-            Assert.assertNotNull(it.toolingOverride.state)
-            Assert.assertNotNull(it.toolingOverride.override)
+            Assert.assertNotNull(it.toolingOverride)
             Assert.assertNotNull(it.animatable)
             assertEquals("DpAnimation", it.animatable.label)
         }
@@ -214,15 +211,13 @@ class AnimationSearchTest {
         assertEquals(2, search.animations.size)
         search.animations.first().let {
             assertTrue(it.animationSpec is SpringSpec)
-            Assert.assertNotNull(it.toolingOverride.state)
-            Assert.assertNotNull(it.toolingOverride.override)
+            Assert.assertNotNull(it.toolingOverride)
             Assert.assertNotNull(it.animatable)
             assertEquals("CustomIntLabel", it.animatable.label)
         }
         search.animations.last().let {
             assertTrue(it.animationSpec is SpringSpec)
-            Assert.assertNotNull(it.toolingOverride.state)
-            Assert.assertNotNull(it.toolingOverride.override)
+            Assert.assertNotNull(it.toolingOverride)
             Assert.assertNotNull(it.animatable)
             assertEquals("CustomDpLabel", it.animatable.label)
         }

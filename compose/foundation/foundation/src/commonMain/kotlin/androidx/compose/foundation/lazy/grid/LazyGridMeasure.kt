@@ -17,12 +17,14 @@
 package androidx.compose.foundation.lazy.grid
 
 import androidx.collection.IntList
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.internal.checkPrecondition
 import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.foundation.internal.requirePreconditionNotNull
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.layout.LazyLayoutItemAnimator
+import androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState
 import androidx.compose.foundation.lazy.layout.ObservableScopeInvalidator
 import androidx.compose.foundation.lazy.layout.StickyItemsPlacement
 import androidx.compose.foundation.lazy.layout.applyStickyItems
@@ -50,6 +52,7 @@ import kotlinx.coroutines.CoroutineScope
  * Measures and calculates the positions for the currently visible items. The result is produced as
  * a [LazyGridMeasureResult] which contains all the calculations.
  */
+@OptIn(ExperimentalFoundationApi::class)
 internal fun measureLazyGrid(
     itemsCount: Int,
     measuredLineProvider: LazyGridMeasuredLineProvider,
@@ -80,6 +83,8 @@ internal fun measureLazyGrid(
     lineIndexProvider: (itemIndex: Int) -> Int,
     stickyItemsScrollBehavior: StickyItemsPlacement?,
     layout: (Int, Int, Placeable.PlacementScope.() -> Unit) -> MeasureResult,
+    prefetchState: LazyLayoutPrefetchState?,
+    @Suppress("DEPRECATION") prefetchStrategy: LazyGridPrefetchStrategy?,
 ): LazyGridMeasureResult {
     requirePrecondition(beforeContentPadding >= 0) { "negative beforeContentPadding" }
     requirePrecondition(afterContentPadding >= 0) { "negative afterContentPadding" }
@@ -102,6 +107,7 @@ internal fun measureLazyGrid(
             layoutMaxOffset = 0,
             coroutineScope = coroutineScope,
             graphicsContext = graphicsContext,
+            shouldRunItemAnimation = true,
         )
         if (!isLookingAhead) {
             val disappearingItemsSize = itemAnimator.minSizeToFitDisappearingItems
@@ -131,6 +137,9 @@ internal fun measureLazyGrid(
             coroutineScope = coroutineScope,
             prefetchInfoRetriever = prefetchInfoRetriever,
             lineIndexProvider = lineIndexProvider,
+            stickingItemsCombinedSize = 0,
+            prefetchState = prefetchState,
+            prefetchStrategy = prefetchStrategy,
         )
     } else {
         var currentFirstLineIndex = firstVisibleLineIndex
@@ -386,6 +395,7 @@ internal fun measureLazyGrid(
             layoutMaxOffset = currentMainAxisOffset,
             coroutineScope = coroutineScope,
             graphicsContext = graphicsContext,
+            shouldRunItemAnimation = true,
         )
 
         if (!isLookingAhead) {
@@ -461,6 +471,9 @@ internal fun measureLazyGrid(
             coroutineScope = coroutineScope,
             prefetchInfoRetriever = prefetchInfoRetriever,
             lineIndexProvider = lineIndexProvider,
+            stickingItemsCombinedSize = stickingItems.fastSumBy { it.mainAxisSize },
+            prefetchState = prefetchState,
+            prefetchStrategy = prefetchStrategy,
         )
     }
 }
@@ -487,7 +500,7 @@ private inline fun calculateExtraItems(
             if (items == null) {
                 items = mutableListOf()
             }
-            items?.add(measuredItem)
+            items.add(measuredItem)
         }
     }
 

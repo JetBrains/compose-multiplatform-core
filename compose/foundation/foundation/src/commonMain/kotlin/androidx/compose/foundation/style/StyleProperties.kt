@@ -44,7 +44,10 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.text.style.TextMotion
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.util.lerp
 import kotlin.jvm.JvmField
 
@@ -219,7 +222,7 @@ private fun buildFlags() {
     ForegroundColorId.flag(DrawFlag)
     ForegroundBrushId.flag(DrawFlag)
     ClipId.flag(LayerFlag)
-    ShapeId.flag(DrawFlag)
+    ShapeId.flag(DrawFlag or LayerFlag)
     ColorFilterId.flag(LayerFlag)
     DropShadowId.flag(DrawFlag)
     InnerShadowId.flag(DrawFlag)
@@ -324,7 +327,7 @@ internal class StyleProperties {
     @JvmField internal var externalPaddingEnd: Float = 0f
     @JvmField internal var externalPaddingTop: Float = 0f
     @JvmField internal var externalPaddingBottom: Float = 0f
-    @JvmField internal var borderWidth: Float = 0f
+    @JvmField internal var borderWidthDp: Float = 0f
     @JvmField internal var width: Float = Float.NaN
     @JvmField internal var height: Float = Float.NaN
     @JvmField internal var widthFraction: Float = Float.NaN
@@ -382,6 +385,9 @@ internal class StyleProperties {
     // into a single Int for efficiency.
     @JvmField internal var textEnums: Int = 0
 
+    val borderWidth: Dp
+        get() = borderWidthDp.dp
+
     internal fun clear() {
         EmptyStyleProperties.copyInto(this)
     }
@@ -407,7 +413,7 @@ internal class StyleProperties {
         target.externalPaddingEnd = externalPaddingEnd
         target.externalPaddingTop = externalPaddingTop
         target.externalPaddingBottom = externalPaddingBottom
-        target.borderWidth = borderWidth
+        target.borderWidthDp = borderWidthDp
         target.shape = shape
         target.alpha = alpha
         target.scaleX = scaleX
@@ -450,6 +456,91 @@ internal class StyleProperties {
 
     internal fun copyInto(target: StyleProperties, flags: Int) {
         copyInto(target, primitiveFlagsOf(flags), objectsSetForFlags(flags))
+    }
+
+    internal fun clearProperties(primitivesFilter: Long, objectsFilter: Int) {
+        val primitivesSet = primitivesSet and primitivesFilter
+        if (primitivesSet != 0L) {
+            this.primitivesSet = this.primitivesSet and primitivesSet.inv()
+            if (primitivesSet.hasId(LeftId)) left = EmptyStyleProperties.left
+            if (primitivesSet.hasId(TopId)) top = EmptyStyleProperties.top
+            if (primitivesSet.hasId(RightId)) right = EmptyStyleProperties.right
+            if (primitivesSet.hasId(BottomId)) bottom = EmptyStyleProperties.bottom
+            if (primitivesSet.hasId(MinHeightId)) minHeight = EmptyStyleProperties.minHeight
+            if (primitivesSet.hasId(MaxHeightId)) maxHeight = EmptyStyleProperties.maxHeight
+            if (primitivesSet.hasId(MinWidthId)) minWidth = EmptyStyleProperties.minWidth
+            if (primitivesSet.hasId(MaxWidthId)) maxWidth = EmptyStyleProperties.maxWidth
+            if (primitivesSet.hasId(ContentPaddingStartId))
+                contentPaddingStart = EmptyStyleProperties.contentPaddingStart
+            if (primitivesSet.hasId(ContentPaddingEndId))
+                contentPaddingEnd = EmptyStyleProperties.contentPaddingEnd
+            if (primitivesSet.hasId(ContentPaddingTopId))
+                contentPaddingTop = EmptyStyleProperties.contentPaddingTop
+            if (primitivesSet.hasId(ContentPaddingBottomId))
+                contentPaddingBottom = EmptyStyleProperties.contentPaddingBottom
+            if (primitivesSet.hasId(ExternalPaddingStartId))
+                externalPaddingStart = EmptyStyleProperties.externalPaddingStart
+            if (primitivesSet.hasId(ExternalPaddingEndId))
+                externalPaddingEnd = EmptyStyleProperties.externalPaddingEnd
+            if (primitivesSet.hasId(ExternalPaddingTopId))
+                externalPaddingTop = EmptyStyleProperties.externalPaddingTop
+            if (primitivesSet.hasId(ExternalPaddingBottomId))
+                externalPaddingBottom = EmptyStyleProperties.externalPaddingBottom
+            if (primitivesSet.hasId(BorderWidthId))
+                borderWidthDp = EmptyStyleProperties.borderWidthDp
+            if (primitivesSet.hasId(AlphaId)) alpha = EmptyStyleProperties.alpha
+            if (primitivesSet.hasId(ScaleXId)) scaleX = EmptyStyleProperties.scaleX
+            if (primitivesSet.hasId(ScaleYId)) scaleY = EmptyStyleProperties.scaleY
+            if (primitivesSet.hasId(TranslationXId))
+                translationX = EmptyStyleProperties.translationX
+            if (primitivesSet.hasId(TranslationYId))
+                translationY = EmptyStyleProperties.translationY
+            if (primitivesSet.hasId(RotationXId)) rotationX = EmptyStyleProperties.rotationX
+            if (primitivesSet.hasId(RotationYId)) rotationY = EmptyStyleProperties.rotationY
+            if (primitivesSet.hasId(RotationZId)) rotationZ = EmptyStyleProperties.rotationZ
+            if (primitivesSet.hasId(TransformOriginXId))
+                transformOriginX = EmptyStyleProperties.transformOriginX
+            if (primitivesSet.hasId(TransformOriginYId))
+                transformOriginY = EmptyStyleProperties.transformOriginY
+            if (primitivesSet.hasId(ZIndexId)) zIndex = EmptyStyleProperties.zIndex
+            if (primitivesSet.hasId(CameraDistanceId))
+                cameraDistance = EmptyStyleProperties.cameraDistance
+            if (primitivesSet.hasId(BorderColorId)) borderColor = EmptyStyleProperties.borderColor
+            if (primitivesSet.hasId(BackgroundColorId))
+                backgroundColor = EmptyStyleProperties.backgroundColor
+            if (primitivesSet.hasId(ForegroundColorId))
+                foregroundColor = EmptyStyleProperties.foregroundColor
+            if (primitivesSet.hasId(ClipId)) clip = EmptyStyleProperties.clip
+            if (primitivesSet.hasId(WidthId)) width = EmptyStyleProperties.width
+            if (primitivesSet.hasId(HeightId)) height = EmptyStyleProperties.height
+            if (primitivesSet.hasId(WidthFractionId))
+                widthFraction = EmptyStyleProperties.widthFraction
+            if (primitivesSet.hasId(HeightFractionId))
+                heightFraction = EmptyStyleProperties.heightFraction
+            if (primitivesSet.hasId(ContentColorId))
+                contentColor = EmptyStyleProperties.contentColor
+            if (primitivesSet.hasId(LineHeightId)) lineHeight = EmptyStyleProperties.lineHeight
+            if (primitivesSet.hasId(LetterSpacingId))
+                letterSpacing = EmptyStyleProperties.letterSpacing
+            if (primitivesSet.hasId(BaselineShiftId))
+                baselineShift = EmptyStyleProperties.baselineShift
+            if (primitivesSet.hasId(LineBreakId)) lineBreak = EmptyStyleProperties.lineBreak
+        }
+        val objectsSet = objectsFilter and objectsSet
+        if (objectsSet != 0) {
+            this.objectsSet = this.objectsSet and objectsSet.inv()
+            if (objectsSet.hasId(ShapeId)) shape = EmptyStyleProperties.shape
+            if (objectsSet.hasId(ColorFilterId)) colorFilter = null
+            if (objectsSet.hasId(BorderBrushId)) borderBrush = null
+            if (objectsSet.hasId(BackgroundBrushId)) backgroundBrush = null
+            if (objectsSet.hasId(ForegroundBrushId)) foregroundBrush = null
+            if (objectsSet.hasId(DropShadowId)) dropShadow = null
+            if (objectsSet.hasId(InnerShadowId)) innerShadow = null
+            if (objectsSet.hasId(ContentBrushId)) contentBrush = null
+            if (objectsSet.hasId(FontFamilyId)) fontFamily = null
+            if (objectsSet.hasId(TextMotionId)) textMotion = EmptyStyleProperties.textMotion
+            if (objectsSet.hasId(TextIndentId)) textIndent = null
+        }
     }
 
     internal fun copyInto(target: StyleProperties, primitivesFilter: Long, objectsFilter: Int) {
@@ -585,7 +676,7 @@ internal class StyleProperties {
                     { externalPaddingBottom },
                     { other.externalPaddingBottom },
                 )
-                .compareFloatProperty(BorderWidthId, { borderWidth }, { other.borderWidth })
+                .compareFloatProperty(BorderWidthId, { borderWidthDp }, { other.borderWidthDp })
                 .compareFloatProperty(WidthId, { width }, { other.width })
                 .compareFloatProperty(HeightId, { height }, { other.height })
                 .compareFloatProperty(WidthFractionId, { widthFraction }, { other.widthFraction })
@@ -787,9 +878,9 @@ internal class StyleProperties {
     }
 
     // border
-    fun borderWidth(value: Float) {
+    fun borderWidth(value: Dp) {
         primitivesSet = primitivesSet.withId(BorderWidthId)
-        borderWidth = value
+        borderWidthDp = value.value
     }
 
     fun borderColor(value: Color) {
@@ -1341,7 +1432,7 @@ internal fun lerpDraw(
     with(result) {
         if (primitivesSet.hasId(BorderWidthId)) {
             val t = animations.timeOf(BorderWidthId)
-            borderWidth(lerp(a.borderWidth, b.borderWidth, t))
+            borderWidth(lerp(a.borderWidthDp, b.borderWidthDp, t).dp)
         }
         if (primitivesSet.hasId(BorderColorId)) {
             val t = animations.timeOf(BorderBrushId)

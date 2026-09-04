@@ -45,7 +45,6 @@ import java.awt.Window
 import java.awt.event.WindowEvent
 import javax.swing.JFrame
 import kotlin.math.abs
-import kotlin.math.absoluteValue
 import kotlin.math.max
 import kotlin.test.assertEquals
 import kotlinx.coroutines.channels.Channel
@@ -617,6 +616,7 @@ class WindowStateTest {
     }
 
     @OptIn(ExperimentalTestApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun `can save Unspecified window size`() = runComposeUiTest {
         val expectedState = WindowState(size = DpSize.Unspecified)
@@ -828,66 +828,6 @@ class WindowStateTest {
             size.width - insets.left - insets.right,
             size.height - insets.top - insets.bottom,
         )
-}
-
-private const val LinuxCoordinateTolerance = 10
-
-private val CoordinateTolerance = if (isLinux) LinuxCoordinateTolerance else 0
-
-private fun assertCoordinatesApproximatelyEqual(
-    expected: Point,
-    actual: Point,
-) {
-    if (((expected.x - actual.x).absoluteValue > CoordinateTolerance) ||
-        ((expected.y - actual.y).absoluteValue > CoordinateTolerance)
-    ) {
-        throw AssertionError(
-            "Expected <$expected> with absolute tolerance" +
-                " <$CoordinateTolerance>, actual <$actual>."
-        )
-    }
-}
-
-private fun assertSizesApproximatelyEqual(
-    expected: Dimension,
-    actual: Dimension,
-) {
-    if (((expected.width - actual.width).absoluteValue > CoordinateTolerance) ||
-        ((expected.height - actual.height).absoluteValue > CoordinateTolerance)
-    ) {
-        throw AssertionError(
-            "Expected <$expected> with absolute tolerance" +
-                " <$CoordinateTolerance>, actual <$actual>."
-        )
-    }
-}
-
-private fun assertCoordinatesNotApproximatelyEqual(
-    expected: Point,
-    actual: Point,
-) {
-    if (((expected.x - actual.x).absoluteValue <= CoordinateTolerance) &&
-        ((expected.y - actual.y).absoluteValue <= CoordinateTolerance)
-    ) {
-        throw AssertionError(
-            "Expected <$expected> to not equal actual <$actual> with absolute" +
-                " tolerance <$CoordinateTolerance>"
-        )
-    }
-}
-
-private fun assertSizesNotApproximatelyEqual(
-    expected: Dimension,
-    actual: Dimension,
-) {
-    if (((expected.width - actual.width).absoluteValue <= CoordinateTolerance) &&
-        ((expected.height - actual.height).absoluteValue <= CoordinateTolerance)
-    ) {
-        throw AssertionError(
-            "Expected <$expected> to not equal actual <$actual> with absolute" +
-                " tolerance <$CoordinateTolerance>"
-        )
-    }
 }
 
 private fun assertWindowStateEquals(expected: WindowState, actual: WindowState) {

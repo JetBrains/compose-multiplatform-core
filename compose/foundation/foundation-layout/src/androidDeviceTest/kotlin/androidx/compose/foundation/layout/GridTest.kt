@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalGridApi::class)
-
 package androidx.compose.foundation.layout
 
 import androidx.compose.foundation.focusable
@@ -2774,7 +2772,7 @@ class GridTest : LayoutTest() {
         with(density) {
             val gridHeight = 200.dp
             val fixedRowHeight = 50.dp
-            val expectedLazyHeight = (gridHeight - fixedRowHeight).roundToPx()
+            val expectedLazyHeight = gridHeight.roundToPx() - fixedRowHeight.roundToPx()
 
             val latch = CountDownLatch(1)
             val lazySize = Ref<IntSize>()
@@ -3096,6 +3094,441 @@ class GridTest : LayoutTest() {
                 "Focus should traverse in a Z-shaped order based on placement order, not composition order",
                 expectedOrder,
                 focusLog,
+            )
+        }
+
+    private enum class TestArea {
+        Header,
+        Sidebar,
+        Content,
+        Footer,
+        Center,
+    }
+
+    @Test
+    fun testGrid_namedArea_basic2DPlacement() =
+        with(density) {
+            val size1 = 10
+            val size2 = 20
+            val size3 = 30
+            val size1Dp = size1.toDp()
+            val size2Dp = size2.toDp()
+            val size3Dp = size3.toDp()
+
+            val latch = CountDownLatch(1)
+            val pos = Ref<Offset>()
+            val size = Ref<IntSize>()
+
+            show {
+                Grid(
+                    config = {
+                        column(size1Dp)
+                        column(size2Dp) // col 2
+                        row(size1Dp)
+                        row(size3Dp) // row 2
+
+                        // Map Content to exactly row 2, col 2
+                        area(TestArea.Content, row = 2, column = 2)
+                    }
+                ) {
+                    Box(
+                        Modifier.gridItem(TestArea.Content)
+                            .fillMaxSize()
+                            .saveLayoutInfo(size, pos, latch)
+                    )
+                }
+            }
+            assertTrue(latch.await(1, TimeUnit.SECONDS))
+            assertEquals(Offset(size1.toFloat(), size1.toFloat()), pos.value)
+            assertEquals(IntSize(size2, size3), size.value)
+        }
+
+    @Test
+    fun testGrid_namedArea_rangeBasedPlacement() =
+        with(density) {
+            val size = 10
+            val sizeDp = size.toDp()
+
+            val latch = CountDownLatch(1)
+            val pos = Ref<Offset>()
+            val boundsSize = Ref<IntSize>()
+
+            show {
+                Grid(
+                    config = {
+                        repeat(3) { column(sizeDp) }
+                        repeat(3) { row(sizeDp) }
+
+                        // Map Header to span rows 1..2 and columns 1..3
+                        area(TestArea.Header, rows = 1..2, columns = 1..3)
+                    }
+                ) {
+                    Box(
+                        Modifier.gridItem(TestArea.Header)
+                            .fillMaxSize()
+                            .saveLayoutInfo(boundsSize, pos, latch)
+                    )
+                }
+            }
+            assertTrue(latch.await(1, TimeUnit.SECONDS))
+            assertEquals(Offset(0f, 0f), pos.value)
+            assertEquals(IntSize(size * 3, size * 2), boundsSize.value)
+        }
+
+    @Test
+    fun testGrid_namedArea_1D_autoFlow() =
+        with(density) {
+            val size1 = 10
+            val size2 = 20
+            val size3 = 30
+            val rowHeight = 15
+
+            val latch = CountDownLatch(3)
+            val pos = Array(3) { Ref<Offset>() }
+            val sizes = Array(3) { Ref<IntSize>() }
+
+            show {
+                Grid(
+                    config = {
+                        column(size1.toDp())
+                        column(size2.toDp())
+                        column(size3.toDp())
+                        row(rowHeight.toDp())
+
+                        // 1D Area: Fix the row, but leave the column unspecified
+                        area(TestArea.Header, row = 1)
+                    }
+                ) {
+                    // Because they share a 1D area, they should flow across the columns in row 1
+                    Box(
+                        Modifier.gridItem(TestArea.Header)
+                            .fillMaxSize()
+                            .saveLayoutInfo(sizes[0], pos[0], latch)
+                    )
+                    Box(
+                        Modifier.gridItem(TestArea.Header)
+                            .fillMaxSize()
+                            .saveLayoutInfo(sizes[1], pos[1], latch)
+                    )
+                    Box(
+                        Modifier.gridItem(TestArea.Header)
+                            .fillMaxSize()
+                            .saveLayoutInfo(sizes[2], pos[2], latch)
+                    )
+                }
+            }
+            assertTrue(latch.await(1, TimeUnit.SECONDS))
+
+            assertEquals(Offset(0f, 0f), pos[0].value)
+            assertEquals(IntSize(size1, rowHeight), sizes[0].value)
+
+            assertEquals(Offset(size1.toFloat(), 0f), pos[1].value)
+            assertEquals(IntSize(size2, rowHeight), sizes[1].value)
+
+            assertEquals(Offset((size1 + size2).toFloat(), 0f), pos[2].value)
+            assertEquals(IntSize(size3, rowHeight), sizes[2].value)
+        }
+
+    @Test
+    fun testGrid_namedArea_unknownArea_fallsBackToAutoPlacement() =
+        with(density) {
+            val size1 = 10
+            val size2 = 20
+            val size1Dp = size1.toDp()
+            val size2Dp = size2.toDp()
+
+            val latch = CountDownLatch(2)
+            val pos = Array(2) { Ref<Offset>() }
+            val sizes = Array(2) { Ref<IntSize>() }
+
+            show {
+                Grid(
+                    config = {
+                        column(size1Dp)
+                        column(size2Dp)
+                        row(size1Dp)
+                    }
+                ) {
+                    // Item 1: standard fixed placement at 0,0
+                    Box(
+                        Modifier.gridItem(1, 1)
+                            .fillMaxSize()
+                            .saveLayoutInfo(sizes[0], pos[0], latch)
+                    )
+
+                    // Item 2: asks for an unregistered area.
+                    // It should fail safely and flow to the next available spot (row 1, col 2)
+                    Box(
+                        Modifier.gridItem(TestArea.Sidebar)
+                            .fillMaxSize()
+                            .saveLayoutInfo(sizes[1], pos[1], latch)
+                    )
+                }
+            }
+            assertTrue(latch.await(1, TimeUnit.SECONDS))
+
+            assertEquals(Offset(0f, 0f), pos[0].value)
+            assertEquals(Offset(size1.toFloat(), 0f), pos[1].value)
+            assertEquals(IntSize(size2, size1), sizes[1].value)
+        }
+
+    @Test
+    fun testGrid_namedArea_overlapsWithExplicitPlacement() =
+        with(density) {
+            val size = 50.dp
+            val sizePx = size.roundToPx().toFloat()
+
+            val latch = CountDownLatch(2)
+            val pos1 = Ref<Offset>()
+            val pos2 = Ref<Offset>()
+
+            show {
+                Grid(
+                    config = {
+                        column(size)
+                        row(size)
+                        area(TestArea.Center, row = 1, column = 1)
+                    }
+                ) {
+                    // Explicit coordinate placement
+                    Box(Modifier.gridItem(1, 1).size(size).saveLayoutInfo(Ref(), pos1, latch))
+                    // Named area placement
+                    Box(
+                        Modifier.gridItem(TestArea.Center)
+                            .size(size)
+                            .saveLayoutInfo(Ref(), pos2, latch)
+                    )
+                }
+            }
+            assertTrue(latch.await(1, TimeUnit.SECONDS))
+
+            // Both items should be placed at exactly (0,0)
+            assertEquals(Offset(0f, 0f), pos1.value)
+            assertEquals(Offset(0f, 0f), pos2.value)
+        }
+
+    @Test
+    fun testGrid_namedArea_1DColumn_autoFlowsVertically() =
+        with(density) {
+            val size = 50.dp
+            val sizePx = size.roundToPx().toFloat()
+
+            val latch = CountDownLatch(2)
+            val pos1 = Ref<Offset>()
+            val pos2 = Ref<Offset>()
+
+            show {
+                Grid(
+                    config = {
+                        column(size)
+                        repeat(2) { row(size) }
+
+                        // 1D Area: Fix the column, leave row unspecified
+                        area(TestArea.Sidebar, column = 1)
+                    }
+                ) {
+                    Box(
+                        Modifier.gridItem(TestArea.Sidebar)
+                            .size(size)
+                            .saveLayoutInfo(Ref(), pos1, latch)
+                    )
+                    Box(
+                        Modifier.gridItem(TestArea.Sidebar)
+                            .size(size)
+                            .saveLayoutInfo(Ref(), pos2, latch)
+                    )
+                }
+            }
+            assertTrue(latch.await(1, TimeUnit.SECONDS))
+
+            // Items should stack vertically in column 1
+            assertEquals(Offset(0f, 0f), pos1.value)
+            assertEquals(Offset(0f, sizePx), pos2.value)
+        }
+
+    @Test
+    fun testGrid_namedArea_1DAreas_doNotCorruptGlobalCursor() =
+        with(density) {
+            val size = 50.dp
+            val sizePx = size.roundToPx().toFloat()
+
+            val latch = CountDownLatch(3)
+            val pos1 = Ref<Offset>()
+            val pos2 = Ref<Offset>()
+            val pos3 = Ref<Offset>()
+
+            show {
+                Grid(
+                    config = {
+                        repeat(3) { column(size) }
+                        repeat(3) { row(size) }
+
+                        // 1D Area sitting down in row 3
+                        area(TestArea.Footer, row = 3)
+                    }
+                ) {
+                    // Item 1: Fully Auto. Should go to (0,0). Global cursor moves to (0,1).
+                    Box(Modifier.size(size).saveLayoutInfo(Ref(), pos1, latch))
+
+                    // Item 2: 1D Area. Should go to (2,0) (Row 3, Col 1).
+                    // CRITICAL: This MUST NOT move the global auto-placement cursor.
+                    Box(
+                        Modifier.gridItem(TestArea.Footer)
+                            .size(size)
+                            .saveLayoutInfo(Ref(), pos2, latch)
+                    )
+
+                    // Item 3: Fully Auto. Should resume from (0,1).
+                    Box(Modifier.size(size).saveLayoutInfo(Ref(), pos3, latch))
+                }
+            }
+            assertTrue(latch.await(1, TimeUnit.SECONDS))
+
+            assertEquals(Offset(0f, 0f), pos1.value)
+            assertEquals(Offset(0f, sizePx * 2), pos2.value) // Row 3
+            assertEquals(Offset(sizePx, 0f), pos3.value) // Row 1, Col 2 (Proof cursor survived)
+        }
+
+    @Test
+    fun testGrid_withRowFlow_itemSpanExceedsExplicitColumns_isClamped() =
+        with(density) {
+            val gapSize = 10.dp
+            val colSize = 50.dp
+
+            // Expected Width = Col 1 (50) + Col 2 (50) + Gap (10) = 110.dp
+            val expectedGridWidthPx = (colSize.roundToPx() * 2) + gapSize.roundToPx()
+
+            val latch = CountDownLatch(1)
+            val childSize = Ref<IntSize>()
+            val gridSize = Ref<IntSize>()
+
+            show {
+                // Use unbounded Box so we can measure the unconstrained overflow.
+                Box(Modifier.wrapContentWidth(align = Alignment.Start, unbounded = true)) {
+                    Grid(
+                        config = {
+                            column(GridTrackSize.Fixed(colSize))
+                            column(GridTrackSize.Fixed(colSize))
+                            row(GridTrackSize.Fixed(50.dp))
+                            columnGap(gapSize)
+                        },
+                        modifier = Modifier.onGloballyPositioned { gridSize.value = it.size },
+                    ) {
+                        Box(
+                            // Auto-placement with excessive span
+                            Modifier.gridItem(columnSpan = 4).fillMaxSize().onGloballyPositioned {
+                                childSize.value = it.size
+                                latch.countDown()
+                            }
+                        )
+                    }
+                }
+            }
+
+            assertTrue("Timed out waiting for layout", latch.await(1, TimeUnit.SECONDS))
+
+            assertEquals(
+                "Auto-placed item span should be clamped to explicit column count, ensuring its width doesn't bleed",
+                expectedGridWidthPx,
+                childSize.value?.width,
+            )
+
+            assertEquals(
+                "Grid total width should not be inflated by phantom implicit tracks",
+                expectedGridWidthPx,
+                gridSize.value?.width,
+            )
+        }
+
+    @Test
+    fun testGrid_withColumnFlow_itemSpanExceedsExplicitRows_isClamped() =
+        with(density) {
+            val gapSize = 10.dp
+            val rowSize = 50.dp
+
+            // Expected Height = Row 1 (50) + Row 2 (50) + Gap (10) = 110.dp
+            val expectedGridHeightPx = (rowSize.roundToPx() * 2) + gapSize.roundToPx()
+
+            val latch = CountDownLatch(1)
+            val childSize = Ref<IntSize>()
+            val gridSize = Ref<IntSize>()
+
+            show {
+                Box(Modifier.wrapContentHeight(align = Alignment.Top, unbounded = true)) {
+                    Grid(
+                        config = {
+                            flow = GridFlow.Column
+                            column(GridTrackSize.Fixed(50.dp))
+                            row(GridTrackSize.Fixed(rowSize))
+                            row(GridTrackSize.Fixed(rowSize))
+                            rowGap(gapSize)
+                        },
+                        modifier = Modifier.onGloballyPositioned { gridSize.value = it.size },
+                    ) {
+                        Box(
+                            // Auto-placement with excessive span
+                            Modifier.gridItem(rowSpan = 5).fillMaxSize().onGloballyPositioned {
+                                childSize.value = it.size
+                                latch.countDown()
+                            }
+                        )
+                    }
+                }
+            }
+
+            assertTrue("Timed out waiting for layout", latch.await(1, TimeUnit.SECONDS))
+
+            assertEquals(
+                "Auto-placed item row span should be clamped to explicit row count",
+                expectedGridHeightPx,
+                childSize.value?.height,
+            )
+
+            assertEquals(
+                "Grid total height should not bleed past explicit constraints",
+                expectedGridHeightPx,
+                gridSize.value?.height,
+            )
+        }
+
+    @Test
+    fun testGrid_withRowFlow_itemSpanExceedsExplicitColumns_isClampedToExplicitCount_evenWithImplicitTracks() =
+        with(density) {
+            val gapSize = 10.dp
+            val colSize = 50.dp
+            val expectedAutoItemWidthPx = (colSize.roundToPx() * 2) + gapSize.roundToPx()
+
+            val latch = CountDownLatch(1)
+            val autoItemSize = Ref<IntSize>()
+
+            show {
+                Box(Modifier.wrapContentWidth(align = Alignment.Start, unbounded = true)) {
+                    Grid(
+                        config = {
+                            column(GridTrackSize.Fixed(colSize))
+                            column(GridTrackSize.Fixed(colSize))
+                            row(GridTrackSize.Fixed(50.dp))
+                            row(GridTrackSize.Fixed(50.dp))
+                            columnGap(gapSize)
+                        }
+                    ) {
+                        Box(Modifier.gridItem(row = 2, column = 4).size(50.dp))
+                        Box(
+                            Modifier.gridItem(columnSpan = 3).fillMaxSize().onGloballyPositioned {
+                                autoItemSize.value = it.size
+                                latch.countDown()
+                            }
+                        )
+                    }
+                }
+            }
+
+            assertTrue("Timed out waiting for layout", latch.await(1, TimeUnit.SECONDS))
+
+            assertEquals(
+                "Auto-placed item span should be clamped to explicit column count (2), not the total expanded count (4)",
+                expectedAutoItemWidthPx,
+                autoItemSize.value?.width,
             )
         }
 

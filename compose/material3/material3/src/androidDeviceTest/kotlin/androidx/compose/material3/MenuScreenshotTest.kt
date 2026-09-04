@@ -43,8 +43,6 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,7 +64,6 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import kotlin.jvm.java
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -85,7 +82,7 @@ import org.mockito.kotlin.mock
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class MenuScreenshotTest {
 
-    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -232,7 +229,7 @@ class MenuScreenshotTest {
             DropdownMenuContent(
                 modifier = Modifier,
                 expandedState = MutableTransitionState(initialState = true),
-                transformOriginState = remember { mutableStateOf(TransformOrigin.Center) },
+                transformOrigin = { TransformOrigin.Center },
                 scrollState = rememberScrollState(),
                 shape = shape,
                 containerColor = containerColor,
@@ -277,12 +274,12 @@ class MenuScreenshotTest {
             DropdownMenuPopupContent(
                 Modifier,
                 expandedState = MutableTransitionState(initialState = true),
-                transformOriginState = remember { mutableStateOf(TransformOrigin.Center) },
+                transformOrigin = { TransformOrigin.Center },
             ) {
                 DropdownMenuGroup(
                     shapes = MenuDefaults.groupShapes(shape = MenuDefaults.leadingGroupShape)
                 ) {
-                    DropdownMenuItem(
+                    CheckableDropdownMenuItem(
                         checked = editChecked,
                         onCheckedChange = {},
                         enabled = enabledItems,
@@ -303,7 +300,7 @@ class MenuScreenshotTest {
                         },
                         shapes = MenuDefaults.itemShapes(MenuDefaults.leadingItemShape),
                     )
-                    DropdownMenuItem(
+                    CheckableDropdownMenuItem(
                         checked = settingChecked,
                         onCheckedChange = {},
                         enabled = enabledItems,
@@ -329,7 +326,7 @@ class MenuScreenshotTest {
                 DropdownMenuGroup(
                     shapes = MenuDefaults.groupShapes(shape = MenuDefaults.trailingGroupShape)
                 ) {
-                    DropdownMenuItem(
+                    CheckableDropdownMenuItem(
                         shapes = MenuDefaults.itemShapes(shape = MenuDefaults.leadingItemShape),
                         text = { Text("Home") },
                         checked = homeChecked,
@@ -342,7 +339,7 @@ class MenuScreenshotTest {
                                 contentDescription = null,
                             )
                         },
-                        trailingIcon = {
+                        trailingContent = {
                             if (homeChecked) {
                                 Icon(
                                     Icons.Filled.Home,
@@ -358,7 +355,7 @@ class MenuScreenshotTest {
                             }
                         },
                     )
-                    DropdownMenuItem(
+                    CheckableDropdownMenuItem(
                         text = { Text("More Options") },
                         checked = moreOptionChecked,
                         enabled = enabledItems,
@@ -377,7 +374,7 @@ class MenuScreenshotTest {
                                 contentDescription = null,
                             )
                         },
-                        trailingIcon = {
+                        trailingContent = {
                             Icon(
                                 Icons.Filled.MoreVert,
                                 modifier = Modifier.size(MenuDefaults.TrailingIconSize),
@@ -397,7 +394,7 @@ class MenuScreenshotTest {
             DropdownMenuPopupContent(
                 Modifier,
                 expandedState = MutableTransitionState(initialState = true),
-                transformOriginState = remember { mutableStateOf(TransformOrigin.Center) },
+                transformOrigin = { TransformOrigin.Center },
             ) {
                 DropdownMenuGroup(
                     shapes = MenuDefaults.groupShapes(shape = MenuDefaults.leadingGroupShape)
@@ -420,7 +417,7 @@ class MenuScreenshotTest {
                                 contentDescription = "Leading icon",
                             )
                         },
-                        trailingIcon = {
+                        trailingContent = {
                             Icon(
                                 Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                 modifier = Modifier.size(MenuDefaults.TrailingIconSize),
@@ -445,7 +442,7 @@ class MenuScreenshotTest {
                                 contentDescription = "Trailing icon",
                             )
                         },
-                        trailingIcon = {
+                        trailingContent = {
                             MenuDefaults.DropdownMenuItemTrailingLabel { Text(text = "Ctrl + N") }
                         },
                     )
@@ -454,7 +451,7 @@ class MenuScreenshotTest {
                         onClick = {},
                         text = { Text(text = "Line item") },
                         shape = MenuDefaults.trailingItemShape,
-                        trailingIcon = {
+                        trailingContent = {
                             MenuDefaults.DropdownMenuItemTrailingLabel { Text(text = "Ctrl + N") }
                         },
                     )

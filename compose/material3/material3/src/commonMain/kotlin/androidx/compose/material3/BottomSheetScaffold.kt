@@ -113,7 +113,7 @@ import kotlinx.coroutines.launch
  */
 @Composable
 @ExperimentalMaterial3Api
-fun BottomSheetScaffold(
+public fun BottomSheetScaffold(
     sheetContent: @Composable ColumnScope.() -> Unit,
     modifier: Modifier = Modifier,
     scaffoldState: BottomSheetScaffoldState = rememberBottomSheetScaffoldState(),
@@ -170,9 +170,9 @@ fun BottomSheetScaffold(
  */
 @ExperimentalMaterial3Api
 @Stable
-class BottomSheetScaffoldState(
-    val bottomSheetState: SheetState,
-    val snackbarHostState: SnackbarHostState,
+public class BottomSheetScaffoldState(
+    public val bottomSheetState: SheetState,
+    public val snackbarHostState: SnackbarHostState,
 )
 
 /**
@@ -184,7 +184,7 @@ class BottomSheetScaffoldState(
  */
 @Composable
 @ExperimentalMaterial3Api
-fun rememberBottomSheetScaffoldState(
+public fun rememberBottomSheetScaffoldState(
     bottomSheetState: SheetState =
         rememberBottomSheetState(
             initialValue = PartiallyExpanded,
@@ -207,6 +207,9 @@ fun rememberBottomSheetScaffoldState(
  *   [Expanded] if [skipHiddenState] is true
  * @param confirmValueChange optional callback invoked to confirm or veto a pending state change
  * @param [skipHiddenState] whether Hidden state is skipped for [BottomSheetScaffold]
+ * @note This deprecated method preserves the legacy behavior where the partially expanded state is
+ *   automatically excluded if the sheet height is less than half the screen height. To move away
+ *   from this behavior, use [rememberBottomSheetState].
  */
 @Deprecated(
     message = "Use rememberBottomSheetState with PartiallyExpanded initial value",
@@ -221,17 +224,18 @@ fun rememberBottomSheetScaffoldState(
 )
 @Composable
 @ExperimentalMaterial3Api
-fun rememberStandardBottomSheetState(
+public fun rememberStandardBottomSheetState(
     initialValue: SheetValue = PartiallyExpanded,
     confirmValueChange: (SheetValue) -> Boolean = { true },
     skipHiddenState: Boolean = true,
-) =
-    rememberBottomSheetState(
+): SheetState =
+    rememberSheetState(
         initialValue = initialValue,
         enabledValues =
             if (skipHiddenState) setOf(PartiallyExpanded, Expanded)
             else setOf(Hidden, PartiallyExpanded, Expanded),
         confirmValueChange = confirmValueChange,
+        isBottomSheetPartiallyExpandedDeterministicEnabled = false,
     )
 
 @OptIn(ExperimentalMaterial3Api::class)

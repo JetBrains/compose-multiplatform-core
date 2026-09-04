@@ -17,13 +17,13 @@
 package androidx.compose.ui.graphics
 
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.background
 import androidx.compose.ui.layout.assertCenterPixelColor
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.testTag
@@ -34,7 +34,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,12 +41,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class RootGraphicsLayerTest {
-    @get:Rule
-    val rule =
-        createAndroidComposeRule(
-            ComponentActivity::class.java,
-            effectContext = StandardTestDispatcher(),
-        )
+    @get:Rule val rule = createAndroidComposeRule(ComponentActivity::class.java)
 
     @Test
     @SdkSuppress(minSdkVersion = 26)

@@ -45,7 +45,7 @@ androidXMultiplatform {
             resources.srcDirs += "src/jvmTest/res"
             dependencies {
                 implementation(libs.kotlinCoroutinesTest)
-                implementation(libs.skikoCurrentOs)
+                implementation(libs.skikoAwtRuntime)
                 implementation(project(":compose:ui:ui-test-junit4"))
                 implementation(libs.junit)
                 implementation(libs.truth)
@@ -74,14 +74,12 @@ androidx {
     legacyDisableKotlinStrictApiMode = true
 }
 
-def jvmOs(container, name, skikoDep) {
+def jvmOs(container, name) {
     container.create("jvm$name", MavenPublication) {
         artifactId = "${project.name}-jvm-$name"
         def projectGroup = project.group
         def projectName = project.name
         def composeVersion = project.version
-        def skikoModule = skikoDep.module
-        def skikoVersion = skikoDep.versionConstraint.requiredVersion
         pom {
             withXml {
                 def dependenciesNode = asNode().appendNode("dependencies")
@@ -90,12 +88,6 @@ def jvmOs(container, name, skikoDep) {
                 desktopDependency.appendNode("artifactId", projectName)
                 desktopDependency.appendNode("version", composeVersion)
                 desktopDependency.appendNode("scope", "compile")
-
-                def skikoDependency = dependenciesNode.appendNode("dependency")
-                skikoDependency.appendNode("groupId", skikoModule.group)
-                skikoDependency.appendNode("artifactId", skikoModule.name)
-                skikoDependency.appendNode("version", skikoVersion)
-                skikoDependency.appendNode("scope", "runtime")
             }
         }
     }
@@ -104,12 +96,12 @@ def jvmOs(container, name, skikoDep) {
 afterEvaluate {
     publishing {
         publications {
-            jvmOs(it, "linux-x64", libs.skikoAwtRuntimeLinuxX64.get())
-            jvmOs(it, "linux-arm64", libs.skikoAwtRuntimeLinuxArm64.get())
-            jvmOs(it, "macos-x64", libs.skikoAwtRuntimeMacOsX64.get())
-            jvmOs(it, "macos-arm64", libs.skikoAwtRuntimeMacOsArm64.get())
-            jvmOs(it, "windows-x64", libs.skikoAwtRuntimeWindowsX64.get())
-            jvmOs(it, "windows-arm64", libs.skikoAwtRuntimeWindowsArm64.get())
+            jvmOs(it, "linux-x64")
+            jvmOs(it, "linux-arm64")
+            jvmOs(it, "macos-x64")
+            jvmOs(it, "macos-arm64")
+            jvmOs(it, "windows-x64")
+            jvmOs(it, "windows-arm64")
         }
     }
 }

@@ -39,10 +39,9 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(37) }
     defaultConfig {
-        // Using blocked private API b/425739542
-        targetSdk = 34
+        minSdk { version = release(24) }
     }
     namespace = "androidx.compose.ui.text.benchmark"
 }

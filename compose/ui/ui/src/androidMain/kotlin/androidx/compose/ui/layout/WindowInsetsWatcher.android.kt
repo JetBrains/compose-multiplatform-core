@@ -17,17 +17,22 @@
 
 package androidx.compose.ui.layout
 
+import android.graphics.Rect
 import android.os.Build
 import android.view.View
 import android.view.View.OnAttachStateChangeListener
 import androidx.collection.MutableIntObjectMap
+import androidx.collection.MutableObjectList
+import androidx.collection.ScatterMap
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.R
+import androidx.compose.ui.platform.AndroidComposeView
 import androidx.compose.ui.util.fastForEach
 import androidx.core.graphics.Insets
 import androidx.core.view.OnApplyWindowInsetsListener
@@ -37,7 +42,14 @@ import androidx.core.view.WindowInsetsAnimationCompat.BoundsCompat
 import androidx.core.view.WindowInsetsCompat
 
 internal interface WindowInsetsRulerProvider {
-    val insetsProvider: WindowInsetsRulersProvider
+    // New
+    val insetsProvider: WindowInsetsRulersProvider?
+
+    // Old
+    val insetsValues: ScatterMap<Any, WindowWindowInsetsAnimationValues>?
+    val cutoutRulers: List<RectRulers>?
+    val insetsListener: InsetsListener?
+    val cutoutRects: MutableObjectList<MutableState<Rect>>?
 }
 
 /**
@@ -161,7 +173,11 @@ internal class WindowInsetsWatcher(val view: View) :
         return insets
     }
 
+    @OptIn(ExperimentalMediaQueryApi::class)
     private fun updateInsets(insets: WindowInsetsCompat) {
+        (view as? AndroidComposeView)?._uiMediaScope?.let {
+            it.isImeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
+        }
         if (currentInsets == null) {
             val imeType = WindowInsetsCompat.Type.ime()
             val none = Insets.NONE

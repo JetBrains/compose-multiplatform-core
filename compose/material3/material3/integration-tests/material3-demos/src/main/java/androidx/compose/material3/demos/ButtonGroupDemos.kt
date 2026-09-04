@@ -46,7 +46,6 @@ import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
@@ -64,7 +63,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ButtonGroupDemos() {
     val checked = remember { mutableStateListOf(false, false, false, false, false, false, false) }
@@ -325,12 +323,7 @@ fun ButtonGroupDemos() {
                     buttonGroupContent = {
                         ToggleButton(
                             checked = checked[4],
-                            shapes =
-                                ToggleButtonDefaults.shapes(
-                                    ToggleButtonDefaults.squareShape,
-                                    ToggleButtonDefaults.pressedShape,
-                                    ToggleButtonDefaults.checkedShape,
-                                ),
+                            shapes = ToggleButtonDefaults.shapesFor(ButtonDefaults.MinHeight),
                             onCheckedChange = { checked[4] = it },
                             interactionSource = interactionSources[4],
                             modifier = Modifier.animateWidth(interactionSources[4]),
@@ -384,12 +377,7 @@ fun ButtonGroupDemos() {
                     buttonGroupContent = {
                         ToggleButton(
                             checked = checked[5],
-                            shapes =
-                                ToggleButtonDefaults.shapes(
-                                    ToggleButtonDefaults.squareShape,
-                                    ToggleButtonDefaults.pressedShape,
-                                    ToggleButtonDefaults.checkedShape,
-                                ),
+                            shapes = ToggleButtonDefaults.shapesFor(ButtonDefaults.MinHeight),
                             onCheckedChange = { checked[5] = it },
                             interactionSource = interactionSources[5],
                             modifier = Modifier.animateWidth(interactionSources[5]),
@@ -443,12 +431,7 @@ fun ButtonGroupDemos() {
                     buttonGroupContent = {
                         ToggleButton(
                             checked = checked[6],
-                            shapes =
-                                ToggleButtonDefaults.shapes(
-                                    ToggleButtonDefaults.squareShape,
-                                    ToggleButtonDefaults.pressedShape,
-                                    ToggleButtonDefaults.checkedShape,
-                                ),
+                            shapes = ToggleButtonDefaults.shapesFor(ButtonDefaults.MinHeight),
                             onCheckedChange = { checked[6] = it },
                             interactionSource = interactionSources[6],
                             modifier = Modifier.animateWidth(interactionSources[6]),

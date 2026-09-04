@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.testutils.TestViewConfiguration
 import androidx.compose.testutils.WithViewConfiguration
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventType.Companion.Move
@@ -47,7 +49,6 @@ import com.google.common.truth.Truth.assertThat
 import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -80,7 +81,7 @@ class LongClickTest(private val config: TestConfig) {
         }
     }
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val recordedLongClicks = mutableListOf<Offset>()
     private val expectedClickPosition = config.position ?: Offset(defaultSize / 2, defaultSize / 2)
@@ -130,12 +131,14 @@ class LongClickTest(private val config: TestConfig) {
         recorder.assertIsLongClick(expectedClickPosition)
     }
 
+    @OptIn(ExperimentalComposeUiApi::class)
     private fun SinglePointerInputRecorder.assertIsLongClick(position: Offset) {
         val steps = max(1, (expectedDuration / eventPeriodMillis.toDouble()).roundToInt())
         val t0 = events[0].timestamp
         val id = events[0].id
 
-        assertThat(events).hasSize(2)
+        val hasExtraMove = ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled
+        assertThat(events).hasSize(if (hasExtraMove) steps + 2 else 2)
         events.dropLast(1).forEachIndexed { i, event ->
             // Don't check the timestamp
             val t = t0 + (expectedDuration * i / steps.toDouble()).roundToLong()

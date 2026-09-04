@@ -64,17 +64,19 @@ internal fun SkiaLayerComponent(
     renderDelegate: SkikoRenderDelegate,
     skiaLayerAnalytics: SkiaLayerAnalytics,
     renderSettings: RenderSettings,
+    fillsWindow: Boolean
 ): SkiaLayerComponent = when (renderSettings) {
     is RenderSettings.SwingGraphics -> SwingSkiaLayerComponent(
         mediator = mediator,
         renderDelegate = renderDelegate,
         skiaLayerAnalytics = skiaLayerAnalytics
     )
-    is RenderSettings.SkiaSurface -> WindowSkiaLayerComponent(
+    is RenderSettings.SkiaSurface -> SurfaceSkiaLayerComponent(
         mediator = mediator,
         windowContext = windowContext,
         renderDelegate = renderDelegate,
         skiaLayerAnalytics = skiaLayerAnalytics,
-        renderSettings = renderSettings
+        renderSettings = renderSettings,
+        fillsWindow = fillsWindow
     )
 }

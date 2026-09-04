@@ -48,10 +48,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.GraphicsLayerScope
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
@@ -61,8 +67,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -73,14 +83,14 @@ import kotlin.math.ceil
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.runner.RunWith
 
+@SdkSuppress(minSdkVersion = 25) // b/538599561
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class StyleEquivalenceTests {
-    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun background() {
@@ -237,6 +247,205 @@ class StyleEquivalenceTests {
     }
 
     @Test
+    fun border_customOutline_rectangle() {
+        val customShape =
+            object : Shape {
+                override fun createOutline(
+                    size: Size,
+                    layoutDirection: LayoutDirection,
+                    density: Density,
+                ): Outline = Outline.Rectangle(Rect(5f, 5f, size.width - 5f, size.height - 5f))
+            }
+        checkEquivalence(
+            styleVersion = {
+                BaseStyleableButton(
+                    onClick = {},
+                    style = {
+                        border(2.dp, Color.Red)
+                        shape(customShape)
+                    },
+                ) {
+                    Box(modifier = Modifier.size(30.dp))
+                }
+            },
+            modifierVersion = {
+                BaseModifierButton(
+                    onClick = {},
+                    border = BorderStroke(2.dp, Color.Red),
+                    shape = customShape,
+                ) {
+                    Box(modifier = Modifier.size(30.dp))
+                }
+            },
+        )
+    }
+
+    @Test
+    fun border_customOutline_rounded() {
+        val customShape =
+            object : Shape {
+                override fun createOutline(
+                    size: Size,
+                    layoutDirection: LayoutDirection,
+                    density: Density,
+                ): Outline =
+                    Outline.Rounded(
+                        RoundRect(5f, 5f, size.width - 5f, size.height - 5f, CornerRadius(8f))
+                    )
+            }
+        checkEquivalence(
+            styleVersion = {
+                BaseStyleableButton(
+                    onClick = {},
+                    style = {
+                        border(2.dp, Color.Red)
+                        shape(customShape)
+                    },
+                ) {
+                    Box(modifier = Modifier.size(30.dp))
+                }
+            },
+            modifierVersion = {
+                BaseModifierButton(
+                    onClick = {},
+                    border = BorderStroke(2.dp, Color.Red),
+                    shape = customShape,
+                ) {
+                    Box(modifier = Modifier.size(30.dp))
+                }
+            },
+        )
+    }
+
+    @Test
+    fun border_customOutline_rounded_notSimple() {
+        val customShape =
+            object : Shape {
+                override fun createOutline(
+                    size: Size,
+                    layoutDirection: LayoutDirection,
+                    density: Density,
+                ): Outline =
+                    Outline.Rounded(
+                        RoundRect(
+                            left = 5f,
+                            top = 5f,
+                            right = size.width - 5f,
+                            bottom = size.height - 5f,
+                            topLeftCornerRadius = CornerRadius(4f),
+                            bottomRightCornerRadius = CornerRadius(10f),
+                        )
+                    )
+            }
+        checkEquivalence(
+            styleVersion = {
+                BaseStyleableButton(
+                    onClick = {},
+                    style = {
+                        border(2.dp, Color.Red)
+                        shape(customShape)
+                    },
+                ) {
+                    Box(modifier = Modifier.size(30.dp))
+                }
+            },
+            modifierVersion = {
+                BaseModifierButton(
+                    onClick = {},
+                    border = BorderStroke(2.dp, Color.Red),
+                    shape = customShape,
+                ) {
+                    Box(modifier = Modifier.size(30.dp))
+                }
+            },
+        )
+    }
+
+    @Test
+    fun border_customOutline_generic() {
+        val customShape =
+            object : Shape {
+                override fun createOutline(
+                    size: Size,
+                    layoutDirection: LayoutDirection,
+                    density: Density,
+                ): Outline {
+                    val path =
+                        Path().apply { addRect(Rect(5f, 5f, size.width - 5f, size.height - 5f)) }
+                    return Outline.Generic(path)
+                }
+            }
+        checkEquivalence(
+            styleVersion = {
+                BaseStyleableButton(
+                    onClick = {},
+                    style = {
+                        border(2.dp, Color.Red)
+                        shape(customShape)
+                    },
+                ) {
+                    Box(modifier = Modifier.size(30.dp))
+                }
+            },
+            modifierVersion = {
+                BaseModifierButton(
+                    onClick = {},
+                    border = BorderStroke(2.dp, Color.Red),
+                    shape = customShape,
+                ) {
+                    Box(modifier = Modifier.size(30.dp))
+                }
+            },
+        )
+    }
+
+    @SdkSuppress(minSdkVersion = 28)
+    @Test
+    fun border_customOutline_generic_background() {
+        val customShape =
+            object : Shape {
+                override fun createOutline(
+                    size: Size,
+                    layoutDirection: LayoutDirection,
+                    density: Density,
+                ): Outline {
+                    val path =
+                        Path().apply {
+                            moveTo(size.width / 2, 0f)
+                            lineTo(size.width, size.height)
+                            lineTo(0f, size.height)
+                            close()
+                        }
+                    return Outline.Generic(path)
+                }
+            }
+        checkEquivalence(
+            styleVersion = {
+                BaseStyleableButton(
+                    onClick = {},
+                    style = {
+                        border(2.dp, Color.Red)
+                        background(Color.Blue)
+                        shape(customShape)
+                    },
+                ) {
+                    Box(modifier = Modifier.size(30.dp))
+                }
+            },
+            modifierVersion = {
+                BaseModifierButton(
+                    onClick = {},
+                    border = BorderStroke(2.dp, Color.Red),
+                    background = SolidColor(Color.Blue),
+                    shape = customShape,
+                ) {
+                    Box(modifier = Modifier.size(30.dp))
+                }
+            },
+        )
+    }
+
+    @Test
     fun externalPadding() {
         checkEquivalence(
             styleVersion = {
@@ -378,6 +587,32 @@ class StyleEquivalenceTests {
         )
     }
 
+    @Test // b/509438572
+    fun textStylePriority() {
+        checkEquivalence(
+            styleVersion = {
+                Box(
+                    modifier =
+                        Modifier.styleable(null) {
+                            contentPadding(10.dp)
+                            contentColor(Color.Red)
+                            fontWeight(FontWeight.Bold)
+                        }
+                ) {
+                    BasicText("Expected yellow", style = TextStyle(color = Color.Yellow))
+                }
+            },
+            modifierVersion = {
+                Box(modifier = Modifier.padding(10.dp)) {
+                    BasicText(
+                        "Expected yellow",
+                        style = TextStyle(color = Color.Yellow, fontWeight = FontWeight.Bold),
+                    )
+                }
+            },
+        )
+    }
+
     /** Validate the style and the modifier version produce the same drawing. */
     @SdkSuppress(minSdkVersion = 26)
     private fun checkEquivalence(
@@ -385,81 +620,83 @@ class StyleEquivalenceTests {
         modifierVersion: @Composable () -> Unit,
         debug: Boolean = false,
     ) {
-        if (debug) {
-            // When debugging it will show renderings in a column and wait for
-            // the button to be clicked.
-            var done = false
-            rule.setContent {
-                Column(modifier = Modifier.padding(bottom = 10.dp)) {
-                    BasicText("Style version")
-                    Box(modifier = Modifier.border(1.dp, Color.Black).padding(20.dp)) {
-                        styleVersion()
-                    }
-                    Spacer(modifier = Modifier.height(10.dp))
-                    BasicText("No style version")
-                    Box(modifier = Modifier.border(1.dp, Color.Black).padding(20.dp)) {
-                        modifierVersion()
-                    }
-                    if (!done) {
-                        Box(
-                            modifier =
-                                Modifier.border(
-                                        10.dp,
-                                        color = Color.LightGray,
-                                        RoundedCornerShape(15.dp),
-                                    )
-                                    .background(Color.Cyan, RoundedCornerShape(15.dp))
-                                    .padding(20.dp)
-                                    .clickable { done = true }
-                        ) {
-                            BasicText("Done")
+        withStyleInheritance {
+            if (debug) {
+                // When debugging it will show renderings in a column and wait for
+                // the button to be clicked.
+                var done = false
+                rule.setContent {
+                    Column(modifier = Modifier.padding(bottom = 10.dp)) {
+                        BasicText("Style version")
+                        Box(modifier = Modifier.border(1.dp, Color.Black).padding(20.dp)) {
+                            styleVersion()
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                        BasicText("No style version")
+                        Box(modifier = Modifier.border(1.dp, Color.Black).padding(20.dp)) {
+                            modifierVersion()
+                        }
+                        if (!done) {
+                            Box(
+                                modifier =
+                                    Modifier.border(
+                                            10.dp,
+                                            color = Color.LightGray,
+                                            RoundedCornerShape(15.dp),
+                                        )
+                                        .background(Color.Cyan, RoundedCornerShape(15.dp))
+                                        .padding(20.dp)
+                                        .clickable { done = true }
+                            ) {
+                                BasicText("Done")
+                            }
                         }
                     }
                 }
-            }
-            rule.waitUntil(1000 * 60 * 2) { done }
-        } else {
-            var withStyle by mutableStateOf(true)
-            rule.setContent {
-                if (withStyle) {
-                    styleVersion()
-                } else {
-                    modifierVersion()
-                }
-            }
-            val styleBitmap = rule.onRoot().captureToImage().asAndroidBitmap()
-            withStyle = false
-            rule.waitForIdle()
-            val modifierBitmap = rule.onRoot().captureToImage().asAndroidBitmap()
-
-            assertEquals(modifierBitmap.width, styleBitmap.width, "Width mismatch")
-            assertEquals(modifierBitmap.height, styleBitmap.height, "Height mismatch")
-            if (
-                modifierBitmap.width == styleBitmap.width &&
-                    modifierBitmap.height == styleBitmap.height
-            ) {
-                val matcher = MSSIMMatcher(threshold = 0.995)
-                val result =
-                    matcher.compareBitmaps(
-                        styleBitmap.toIntArray(),
-                        modifierBitmap.toIntArray(),
-                        modifierBitmap.width,
-                        modifierBitmap.height,
-                    )
-                if (!result.matches) {
-                    val message = buildString {
-                        appendLine("Style and modifier versions are different")
-                        appendLine()
-                        appendLine("Styles")
-                        append(styleBitmap.renderedToString())
-                        appendLine()
-                        appendLine("Modifiers")
-                        append(modifierBitmap.renderedToString())
-                        appendLine()
-                        appendLine("Difference")
-                        append(styleBitmap.differenceToString(modifierBitmap))
+                rule.waitUntil(1000 * 60 * 2) { done }
+            } else {
+                var withStyle by mutableStateOf(true)
+                rule.setContent {
+                    if (withStyle) {
+                        styleVersion()
+                    } else {
+                        modifierVersion()
                     }
-                    error(message)
+                }
+                val styleBitmap = rule.onRoot().captureToImage().asAndroidBitmap()
+                withStyle = false
+                rule.waitForIdle()
+                val modifierBitmap = rule.onRoot().captureToImage().asAndroidBitmap()
+
+                assertEquals(modifierBitmap.width, styleBitmap.width, "Width mismatch")
+                assertEquals(modifierBitmap.height, styleBitmap.height, "Height mismatch")
+                if (
+                    modifierBitmap.width == styleBitmap.width &&
+                        modifierBitmap.height == styleBitmap.height
+                ) {
+                    val matcher = MSSIMMatcher(threshold = 0.995)
+                    val result =
+                        matcher.compareBitmaps(
+                            styleBitmap.toIntArray(),
+                            modifierBitmap.toIntArray(),
+                            modifierBitmap.width,
+                            modifierBitmap.height,
+                        )
+                    if (!result.matches) {
+                        val message = buildString {
+                            appendLine("Style and modifier versions are different")
+                            appendLine()
+                            appendLine("Styles")
+                            append(styleBitmap.renderedToString())
+                            appendLine()
+                            appendLine("Modifiers")
+                            append(modifierBitmap.renderedToString())
+                            appendLine()
+                            appendLine("Difference")
+                            append(styleBitmap.differenceToString(modifierBitmap))
+                        }
+                        error(message)
+                    }
                 }
             }
         }

@@ -47,6 +47,7 @@ import kotlin.test.assertFails
 @OptIn(ExperimentalTestApi::class)
 class AssertionsTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAssertExists() = runComposeUiTest {
         setContent {
@@ -59,6 +60,7 @@ class AssertionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAssertDoesNotExist() = runComposeUiTest {
         setContent {
@@ -71,6 +73,7 @@ class AssertionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAssertIsDisplayed() = runComposeUiTest {
         setContent {
@@ -96,6 +99,7 @@ class AssertionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAssertIsNotDisplayed() = runComposeUiTest {
         setContent {
@@ -121,6 +125,7 @@ class AssertionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAssertIsEnabled() = runComposeUiTest {
         setContent {
@@ -142,6 +147,7 @@ class AssertionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAssertIsNotEnabled() = runComposeUiTest {
         setContent {
@@ -163,6 +169,7 @@ class AssertionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAssertIsOn() = runComposeUiTest {
         setContent {
@@ -184,6 +191,7 @@ class AssertionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAssertIsOff() = runComposeUiTest {
         setContent {
@@ -205,6 +213,7 @@ class AssertionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAssertIsSelected() = runComposeUiTest {
         setContent {
@@ -226,6 +235,7 @@ class AssertionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAssertIsNotSelected() = runComposeUiTest {
         setContent {
@@ -247,6 +257,7 @@ class AssertionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAssertIsToggleable() = runComposeUiTest {
         setContent {
@@ -267,6 +278,7 @@ class AssertionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAssertIsSelectable() = runComposeUiTest {
         setContent {
@@ -287,6 +299,7 @@ class AssertionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAssertIsFocused() = runComposeUiTest {
         setContent {
@@ -313,6 +326,7 @@ class AssertionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAssertIsNotFocused() = runComposeUiTest {
         setContent {
@@ -339,6 +353,7 @@ class AssertionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAssertContentDescriptionEquals() = runComposeUiTest {
         setContent {
@@ -363,6 +378,7 @@ class AssertionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAssertContentDescriptionContains() = runComposeUiTest {
         setContent {
@@ -388,6 +404,7 @@ class AssertionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAssertTextEquals() = runComposeUiTest {
         setContent {
@@ -409,6 +426,7 @@ class AssertionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAssertTextContains() = runComposeUiTest {
         setContent {
@@ -428,6 +446,7 @@ class AssertionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAssertValueEquals() = runComposeUiTest {
         setContent {
@@ -440,6 +459,7 @@ class AssertionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAssertRangeInfoEquals() = runComposeUiTest {
         setContent {
@@ -467,6 +487,7 @@ class AssertionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAssertHasClickAction() = runComposeUiTest {
         setContent {
@@ -486,6 +507,7 @@ class AssertionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAssertHasNoClickAction() = runComposeUiTest {
         setContent {
@@ -506,6 +528,7 @@ class AssertionsTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun testAssertAny() = runComposeUiTest {
         setContent {
             Text(
@@ -525,6 +548,7 @@ class AssertionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testAssertAll() = runComposeUiTest {
         setContent {

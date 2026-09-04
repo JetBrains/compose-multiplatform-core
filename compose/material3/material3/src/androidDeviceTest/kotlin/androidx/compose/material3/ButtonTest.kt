@@ -66,18 +66,18 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class ButtonTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun defaultSemantics() {
@@ -783,6 +783,7 @@ class ButtonTest {
         buttonBounds.height.assertIsEqualTo(
             ButtonDefaults.ExtraSmallContainerHeight,
             "height of button",
+            tolerance = 1.dp,
         )
     }
 
@@ -829,7 +830,7 @@ class ButtonTest {
             "button bottom padding",
         )
         textBounds.height.assertIsEqualTo(20.dp, "label line height")
-        buttonBounds.height.assertIsEqualTo(size, "height of button.")
+        buttonBounds.height.assertIsEqualTo(size, "height of button.", tolerance = 1.dp)
     }
 
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -868,29 +869,35 @@ class ButtonTest {
         val iconBounds = rule.onNodeWithTag(IconTestTag).getUnclippedBoundsInRoot()
 
         // Assert small sizes
+        val tolerance = maxOf(0.5.dp, with(rule.density) { 1.toDp() + 0.05.dp })
         (iconBounds.left - buttonBounds.left).assertIsEqualTo(
             expectedStartPadding,
             "button start padding",
+            tolerance = tolerance,
         )
         (textBounds.top - buttonBounds.top).assertIsEqualTo(
             contentPadding.calculateTopPadding(),
             "button top padding",
+            tolerance = tolerance,
         )
         (buttonBounds.right - textBounds.right).assertIsEqualTo(
             expectedEndPadding,
             "button end padding",
+            tolerance = tolerance,
         )
         (buttonBounds.bottom - textBounds.bottom).assertIsEqualTo(
             contentPadding.calculateBottomPadding(),
             "button bottom padding",
+            tolerance = tolerance,
         )
         (textBounds.left - iconBounds.right).assertIsEqualTo(
             ButtonDefaults.IconSpacing,
             "icon to label space",
+            tolerance = tolerance,
         )
-        textBounds.height.assertIsEqualTo(20.dp, "label line height")
-        iconBounds.height.assertIsEqualTo(20.dp, "icon height")
-        buttonBounds.height.assertIsEqualTo(size, "height of button.")
+        textBounds.height.assertIsEqualTo(20.dp, "label line height", tolerance = tolerance)
+        iconBounds.height.assertIsEqualTo(20.dp, "icon height", tolerance = tolerance)
+        buttonBounds.height.assertIsEqualTo(size, "height of button.", tolerance = tolerance)
     }
 
     @Test

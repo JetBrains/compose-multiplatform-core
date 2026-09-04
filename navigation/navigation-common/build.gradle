@@ -25,22 +25,15 @@ import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-import org.jetbrains.kotlin.konan.target.Family
-import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
 
 plugins {
     id("AndroidXPlugin")
-    id("JetBrainsAndroidXPlugin")
     alias(libs.plugins.kotlinSerialization)
 }
 
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.navigation.common"
-        optimization {
-            it.consumerKeepRules.publish = true
-            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
-        }
         androidResources.enable = true
         compilations.withType(KotlinMultiplatformAndroidHostTestCompilation) {
             it.returnDefaultValues = true
@@ -64,17 +57,16 @@ androidXMultiplatform {
 
         commonMain.dependencies {
             api("androidx.annotation:annotation:1.9.1")
-            api("androidx.lifecycle:lifecycle-common:2.11.0-beta01")
-            api("androidx.lifecycle:lifecycle-runtime:2.11.0-beta01")
-            api("androidx.lifecycle:lifecycle-viewmodel:2.11.0-beta01")
-            api("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.11.0-beta01")
+            api("androidx.lifecycle:lifecycle-common:2.11.0")
+            api("androidx.lifecycle:lifecycle-runtime:2.11.0")
+            api("androidx.lifecycle:lifecycle-viewmodel:2.11.0")
+            api("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.11.0")
             api("androidx.savedstate:savedstate:1.5.0")
             implementation("androidx.collection:collection:1.5.0")
             implementation(libs.kotlinSerializationCore)
         }
         commonTest.dependencies {
             implementation(libs.kotlinTest)
-            implementation(libs.kotlinCoroutinesTest)
             implementation(project(":kruth:kruth"))
             implementation(project(":navigation:navigation-testing"))
         }

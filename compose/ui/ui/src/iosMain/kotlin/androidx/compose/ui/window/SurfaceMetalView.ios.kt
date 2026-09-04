@@ -16,9 +16,9 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.ui.uikit.toNanoSeconds
 import androidx.compose.ui.uikit.utils.CMPMetalLayer
-import androidx.compose.ui.viewinterop.UIKitInteropTransaction
+import androidx.compose.ui.viewinterop.InteropSyncTransaction
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ObjCClass
@@ -43,8 +43,8 @@ import platform.UIKit.UIViewMeta
 // Copy of the class LegacyMetalView with a different layer.
 // All changes made here must also be implemented in the `LegacyMetalView`.
 internal class SurfaceMetalView(
-    retrieveInteropTransaction: () -> UIKitInteropTransaction,
-    render: (Canvas, nanoTime: Long) -> Unit,
+    retrieveInteropTransaction: () -> InteropSyncTransaction,
+    draw: (Canvas) -> Unit,
 ) : UIView(frame = CGRectZero.readValue()) {
     companion object : UIViewMeta() {
         @OptIn(BetaInteropApi::class)
@@ -59,9 +59,9 @@ internal class SurfaceMetalView(
     val redrawer = SurfaceMetalRedrawer(
         metalLayer,
         retrieveInteropTransaction,
-    ) { canvas, targetTimestamp ->
+    ) { canvas ->
         canvas.clear(canvasBackground)
-        render(canvas, targetTimestamp.toNanoSeconds())
+        draw(canvas)
     }
 
     var canBeOpaque: Boolean
@@ -107,7 +107,7 @@ internal class SurfaceMetalView(
         drainJob?.cancel()
         drainJob = MainScope().launch {
             // Await a safe time to ensure the metal view won't be displayed again soon
-            delay(500)
+            delay(500.milliseconds)
             if (window == null) {
                 redrawer.drainSkiaSurfaces()
             }
@@ -129,8 +129,6 @@ internal class SurfaceMetalView(
         cancelPendingDrawableDrain()
 
         val screen = window?.screen ?: return
-        redrawer.maximumFramesPerSecond = screen.maximumFramesPerSecond
-        redrawer.preferredFramesPerSecond = screen.maximumFramesPerSecond
 
         contentScaleFactor = screen.scale
         metalLayer.contentsScale = screen.scale

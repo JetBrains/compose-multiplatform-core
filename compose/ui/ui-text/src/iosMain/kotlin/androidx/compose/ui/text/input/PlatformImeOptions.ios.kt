@@ -25,12 +25,13 @@ import platform.UIKit.UIReturnKeyType
 import platform.UIKit.UITextAutocapitalizationType
 import platform.UIKit.UITextAutocorrectionType
 import platform.UIKit.UITextContentType
+import platform.UIKit.UITextSpellCheckingType
 import platform.UIKit.UIView
 import platform.UIKit.UIWritingToolsBehavior
 import platform.UIKit.UIWritingToolsBehaviorDefault
 
 @Immutable
-private data class PlatformImeOptionsImpl(
+private data class IosImeOptions(
     val keyboardType: UIKeyboardType?,
     val keyboardAppearance: UIKeyboardAppearance,
     val returnKeyType: UIReturnKeyType?,
@@ -39,6 +40,7 @@ private data class PlatformImeOptionsImpl(
     val enablesReturnKeyAutomatically: Boolean,
     val autocapitalizationType: UITextAutocapitalizationType?,
     val autocorrectionType: UITextAutocorrectionType?,
+    val spellCheckingType: UITextSpellCheckingType?,
     val hasExplicitTextContentType: Boolean,
     val inputView: UIView?,
     val inputAccessoryView: UIView?,
@@ -59,6 +61,7 @@ class PlatformImeOptionsConfiguration internal constructor() {
     private var enablesReturnKeyAutomatically: Boolean = false
     private var autocapitalizationType: UITextAutocapitalizationType? = null
     private var autocorrectionType: UITextAutocorrectionType? = null
+    private var spellCheckingType: UITextSpellCheckingType? = null
     private var hasExplicitTextContentType: Boolean = false
     private var inputView: UIView? = null
     private var inputAccessoryView: UIView? = null
@@ -151,6 +154,17 @@ class PlatformImeOptionsConfiguration internal constructor() {
     }
 
     /**
+     * Sets the spell checking behavior to apply.
+     * If not set, the value will be derived from [ImeOptions].
+     *
+     * See [UIKit documentation](https://developer.apple.com/documentation/uikit/uitextinputtraits/spellcheckingtype).
+     */
+    @ExperimentalComposeUiApi
+    fun spellCheckingType(value: UITextSpellCheckingType?): PlatformImeOptionsConfiguration = apply {
+        spellCheckingType = value
+    }
+
+    /**
      * Sets a custom input view to be presented instead of the system keyboard when IME becomes first responder.
      * Default value is `null`.
      *
@@ -195,7 +209,7 @@ class PlatformImeOptionsConfiguration internal constructor() {
      * Builds the final PlatformImeOptions instance with the configured values.
      */
     internal fun build(): PlatformImeOptions {
-        return PlatformImeOptionsImpl(
+        return IosImeOptions(
             keyboardType = keyboardType,
             keyboardAppearance = keyboardAppearance,
             returnKeyType = returnKeyType,
@@ -204,6 +218,7 @@ class PlatformImeOptionsConfiguration internal constructor() {
             enablesReturnKeyAutomatically = enablesReturnKeyAutomatically,
             autocapitalizationType = autocapitalizationType,
             autocorrectionType = autocorrectionType,
+            spellCheckingType = spellCheckingType,
             hasExplicitTextContentType = hasExplicitTextContentType,
             inputView = inputView,
             inputAccessoryView = inputAccessoryView,
@@ -229,52 +244,56 @@ fun PlatformImeOptions(configure: (PlatformImeOptionsConfiguration.() -> Unit)? 
 
 @ExperimentalComposeUiApi
 val PlatformImeOptions.keyboardType: UIKeyboardType?
-    get() = (this as? PlatformImeOptionsImpl)?.keyboardType
+    get() = (this as? IosImeOptions)?.keyboardType
 
 @ExperimentalComposeUiApi
 val PlatformImeOptions.keyboardAppearance: UIKeyboardAppearance
-    get() = (this as? PlatformImeOptionsImpl)?.keyboardAppearance ?: UIKeyboardAppearanceDefault
+    get() = (this as? IosImeOptions)?.keyboardAppearance ?: UIKeyboardAppearanceDefault
 
 @ExperimentalComposeUiApi
 val PlatformImeOptions.returnKeyType: UIReturnKeyType?
-    get() = (this as? PlatformImeOptionsImpl)?.returnKeyType
+    get() = (this as? IosImeOptions)?.returnKeyType
 
 @ExperimentalComposeUiApi
 val PlatformImeOptions.textContentType: UITextContentType
-    get() = (this as? PlatformImeOptionsImpl)?.textContentType
+    get() = (this as? IosImeOptions)?.textContentType
 
 @ExperimentalComposeUiApi
 val PlatformImeOptions.isSecureTextEntry: Boolean?
-    get() = (this as? PlatformImeOptionsImpl)?.isSecureTextEntry
+    get() = (this as? IosImeOptions)?.isSecureTextEntry
 
 @ExperimentalComposeUiApi
 val PlatformImeOptions.enablesReturnKeyAutomatically: Boolean
-    get() = (this as? PlatformImeOptionsImpl)?.enablesReturnKeyAutomatically ?: false
+    get() = (this as? IosImeOptions)?.enablesReturnKeyAutomatically ?: false
 
 @ExperimentalComposeUiApi
 val PlatformImeOptions.autocapitalizationType: UITextAutocapitalizationType?
-    get() = (this as? PlatformImeOptionsImpl)?.autocapitalizationType
+    get() = (this as? IosImeOptions)?.autocapitalizationType
 
 @ExperimentalComposeUiApi
 val PlatformImeOptions.autocorrectionType: UITextAutocorrectionType?
-    get() = (this as? PlatformImeOptionsImpl)?.autocorrectionType
+    get() = (this as? IosImeOptions)?.autocorrectionType
+
+@ExperimentalComposeUiApi
+val PlatformImeOptions.spellCheckingType: UITextSpellCheckingType?
+    get() = (this as? IosImeOptions)?.spellCheckingType
 
 @ExperimentalComposeUiApi
 val PlatformImeOptions.hasExplicitTextContentType: Boolean
-    get() = (this as? PlatformImeOptionsImpl)?.hasExplicitTextContentType ?: false
+    get() = (this as? IosImeOptions)?.hasExplicitTextContentType ?: false
 
 @ExperimentalComposeUiApi
 val PlatformImeOptions.inputView: UIView?
-    get() = (this as? PlatformImeOptionsImpl)?.inputView
+    get() = (this as? IosImeOptions)?.inputView
 
 @ExperimentalComposeUiApi
 val PlatformImeOptions.inputAccessoryView: UIView?
-    get() = (this as? PlatformImeOptionsImpl)?.inputAccessoryView
+    get() = (this as? IosImeOptions)?.inputAccessoryView
 
 @ExperimentalComposeUiApi
 val PlatformImeOptions.writingToolsBehavior: UIWritingToolsBehavior
-    get() = (this as? PlatformImeOptionsImpl)?.writingToolsBehavior ?: UIWritingToolsBehaviorDefault
+    get() = (this as? IosImeOptions)?.writingToolsBehavior ?: UIWritingToolsBehaviorDefault
 
 @ExperimentalComposeUiApi
 val PlatformImeOptions.usingNativeTextInput: Boolean
-    get() = (this as? PlatformImeOptionsImpl)?.usingNativeTextInput ?: false
+    get() = (this as? IosImeOptions)?.usingNativeTextInput ?: false

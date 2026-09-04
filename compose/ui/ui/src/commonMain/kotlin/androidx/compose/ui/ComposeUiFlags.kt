@@ -55,14 +55,14 @@ import kotlin.jvm.JvmName
  *      }
  */
 @ExperimentalComposeUiApi
-object ComposeUiFlags {
+public object ComposeUiFlags {
 
     /**
      * This enables fixes for View focus. The changes are large enough to require a flag to allow
      * disabling them.
      */
     // TODO: b/455588830
-    @field:Suppress("MutableBareField") @JvmField var isViewFocusFixEnabled: Boolean = false
+    @field:Suppress("MutableBareField") @JvmField public var isViewFocusFixEnabled: Boolean = false
 
     /**
      * This flag enables an alternate approach to fixing the issues addressed by the
@@ -71,20 +71,22 @@ object ComposeUiFlags {
     // TODO: b/455592447
     @field:Suppress("MutableBareField")
     @JvmField
-    var isBypassUnfocusableComposeViewEnabled: Boolean = true
+    public var isBypassUnfocusableComposeViewEnabled: Boolean = true
 
     /** Enable initial focus when a focusable is added to a screen with no focusable content. */
     // TODO: b/455601824
     @field:Suppress("MutableBareField")
     @JvmField
-    var isInitialFocusOnFocusableAvailable: Boolean = false
+    public var isInitialFocusOnFocusableAvailable: Boolean = false
 
     /**
      * Enable focus restoration, by always saving focus. This flag depends on
      * [isInitialFocusOnFocusableAvailable] also being true.
      */
     // TODO: b/485962036
-    @field:Suppress("MutableBareField") @JvmField var isFocusRestorationEnabled: Boolean = false
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isFocusRestorationEnabled: Boolean = false
 
     /**
      * Enables a change where off-screen children of the partially visible merging nodes (e.g. a
@@ -96,7 +98,7 @@ object ComposeUiFlags {
     // TODO: b/484259656
     @field:Suppress("MutableBareField")
     @JvmField
-    var isAccessibilityShouldIncludeOffscreenChildrenEnabled: Boolean = true
+    public var isAccessibilityShouldIncludeOffscreenChildrenEnabled: Boolean = true
 
     /**
      * Enable the integration of [LocalUiMediaScope] at the root compose view which provides various
@@ -107,7 +109,7 @@ object ComposeUiFlags {
     // TODO: b/485160699 - Remove once the API goes stable
     @field:Suppress("MutableBareField")
     @JvmField
-    var isMediaQueryIntegrationEnabled: Boolean = false
+    public var isMediaQueryIntegrationEnabled: Boolean = false
 
     /**
      * Enables hit test to continue searching for "semantic nodes" if the initial node that is hit
@@ -116,28 +118,70 @@ object ComposeUiFlags {
     // TODO: b/487663967
     @field:Suppress("MutableBareField")
     @JvmField
-    var isSkipNonImportantSemanticsNodesHitTestEnabled: Boolean = true
+    public var isSkipNonImportantSemanticsNodesHitTestEnabled: Boolean = true
 
     /**
-     * Return true for AndroidComposeView.dispatchHoverEvent when handleded by explore by touch.
-     *
-     * This fixes behavior where the event would be bubbled to a container view, causing explore by
-     * touch to flicker focus to Compose buttons.
-     *
-     * After this change compose buttons will correctly report they handled the hover event, and
-     * retain accessibility focus.
+     * This flag controls whether the fix for velocity tracker usage in Draggable and related
+     * classes is enabled to a) properly track velocity per pointer and b) make sure to also take
+     * the pointer events into account that don't move at the beginning of the gesture in order to
+     * increase the stability of the computed velocity.
      */
+    // TODO: Remove this flag once it has soaked (b/501080937)
     @field:Suppress("MutableBareField")
     @JvmField
-    // TODO(b/507533865) cleanup feature flag after 1.12
-    var isExploreByTouchHoverHandled: Boolean = true
+    public var isTriggerMoveEventsWhenLocationHasNotChangedEnabled: Boolean = false
+
+    /** Fixes trackpad pan gestures (CLASSIFICATION_TWO_FINGER_SWIPE). */
+    // TODO: b/535296682 - Cleanup feature flag
+    @field:Suppress("MutableBareField")
+    @JvmField
+    // TODO https://youtrack.jetbrains.com/issue/CMP-10707/Restore-ComposeUiFlags.isTrackpadPanHoverFixEnabled-to-the-AOSP-value
+    public var isTrackpadPanHoverFixEnabled: Boolean = false
 
     /**
-     * Enables fix where coroutine scope lambda and scope are cleared on node detachment to prevent
-     * reference leaking.
+     * Enables re-interpreting trackpad pinch gestures (CLASSIFICATION_PINCH) as mouse events with
+     * scale factor, rather than passing through fake finger touch events.
      */
-    // TODO: b/506963276
+    // TODO: b/519714278 - Cleanup feature flag
     @field:Suppress("MutableBareField")
     @JvmField
-    var isClearNestedScrollCoroutineScopeFixEnabled: Boolean = false
+    public var isTrackpadPinchReinterpretationEnabled: Boolean = true
+
+    /**
+     * Reduce provided CompositionLocals by letting them pull from LocalOwner /
+     * LocalAndroidComposeView dynamically when unprovided, instead of eagerly providing all of
+     * them.
+     */
+    // TODO: b/523295932 - Cleanup feature flag
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isMinimalistLocalsEnabled: Boolean = false
+
+    /**
+     * Enables calculating velocity from two sample points instead of returning zero. This changes
+     * how velocity is calculated for flings, which may affect scrolling, nested scrolling, and
+     * similar gesture behaviors. Please file a bug report if disabling this flag resolves the
+     * issue.
+     *
+     * Note: This flag currently no-ops; the feature will be added in a future change.
+     */
+    // TODO: b/530873034 - Cleanup feature flag
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isVelocityTrackerMinSampleSizeFixEnabled: Boolean = true
+
+    /**
+     * If enabled, [androidx.compose.ui.graphics.vector.VectorPainter] will use a shared cache to
+     * reuse [androidx.compose.ui.graphics.vector.DrawCache] instances across different painters
+     * using the same [androidx.compose.ui.graphics.vector.ImageVector].
+     *
+     * This reduces redundant texture uploads and improves performance when the same vector is used
+     * multiple times within a composition tree, such as in a LazyColumn.
+     *
+     * Note: This flag currently no-ops; the feature will be added in a future change.
+     */
+    // TODO: b/493138866 - Clean feature flag
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isVectorDrawCacheSharingEnabled: Boolean = true
 }

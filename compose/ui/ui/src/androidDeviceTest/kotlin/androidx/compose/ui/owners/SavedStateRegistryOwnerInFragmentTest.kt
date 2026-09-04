@@ -20,6 +20,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentContainerView
@@ -40,21 +41,19 @@ import org.junit.runner.RunWith
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class SavedStateRegistryOwnerInFragmentTest {
-    @Suppress("DEPRECATION")
-    @get:Rule
-    val activityTestRule = androidx.test.rule.ActivityTestRule(FragmentActivity::class.java)
+    @get:Rule val rule = createAndroidComposeRule<FragmentActivity>()
     private lateinit var activity: FragmentActivity
 
     @Before
     fun setup() {
-        activity = activityTestRule.activity
+        activity = rule.activity
     }
 
     @Test
     fun ownerIsAvailable() {
         val fragment = TestFragment()
 
-        activityTestRule.runOnUiThread {
+        rule.runOnUiThread {
             val view = FragmentContainerView(activity)
             view.id = 100
             activity.setContentView(view)

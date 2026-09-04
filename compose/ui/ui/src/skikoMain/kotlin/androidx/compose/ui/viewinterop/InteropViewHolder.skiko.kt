@@ -224,7 +224,7 @@ internal abstract class InteropViewHolder(
 
     companion object {
         private val DispatchUpdateUsingContainerStrategy: (InteropViewHolder) -> Unit = {
-            it.container.scheduleUpdate { it.update() }
+            it.container.scheduleUpdate(it)
         }
     }
 }

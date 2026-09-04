@@ -17,11 +17,13 @@
 package androidx.compose.runtime
 
 import androidx.compose.runtime.internal.PlatformOptimizedCancellationException
+import androidx.compose.runtime.internal.trace
 import androidx.compose.runtime.platform.makeSynchronizedObject
 import androidx.compose.runtime.platform.synchronized
 import androidx.compose.runtime.tooling.ComposeToolingApi
 import androidx.compose.runtime.tooling.ComposeToolingFlags
 import androidx.compose.runtime.tooling.CompositionErrorContextImpl
+import androidx.compose.runtime.tooling.verboseTrace
 import kotlin.concurrent.Volatile
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
@@ -57,7 +59,7 @@ import kotlinx.coroutines.launch
 @ExplicitGroupsComposable
 @OptIn(InternalComposeApi::class)
 public fun SideEffect(effect: () -> Unit) {
-    currentComposer.recordSideEffect(effect)
+    currentComposer.recordSideEffectWithTracing(effect)
 }
 
 /**
@@ -85,7 +87,7 @@ public fun SideEffect(effect: () -> Unit) {
 @OptIn(InternalComposeApi::class)
 public fun SideEffect(key1: Any?, effect: () -> Unit) {
     if (currentComposer.changed(key1)) {
-        currentComposer.recordSideEffect(effect)
+        currentComposer.recordSideEffectWithTracing(effect)
     }
 }
 
@@ -116,7 +118,7 @@ public fun SideEffect(key1: Any?, effect: () -> Unit) {
 @OptIn(InternalComposeApi::class)
 public fun SideEffect(key1: Any?, key2: Any?, effect: () -> Unit) {
     if (currentComposer.changed(key1) or currentComposer.changed(key2)) {
-        currentComposer.recordSideEffect(effect)
+        currentComposer.recordSideEffectWithTracing(effect)
     }
 }
 
@@ -153,7 +155,7 @@ public fun SideEffect(key1: Any?, key2: Any?, key3: Any?, effect: () -> Unit) {
             currentComposer.changed(key2) or
             currentComposer.changed(key3)
     ) {
-        currentComposer.recordSideEffect(effect)
+        currentComposer.recordSideEffectWithTracing(effect)
     }
 }
 
@@ -183,7 +185,7 @@ public fun SideEffect(vararg keys: Any?, effect: () -> Unit) {
     var invalid = currentComposer.changed(keys.size)
     for (key in keys) invalid = invalid or currentComposer.changed(key)
     if (invalid) {
-        currentComposer.recordSideEffect(effect)
+        currentComposer.recordSideEffectWithTracing(effect)
     }
 }
 
@@ -210,18 +212,31 @@ public interface DisposableEffectResult {
 
 private val InternalDisposableEffectScope = DisposableEffectScope()
 
+@OptIn(ComposeToolingApi::class, InternalComposeApi::class)
+private fun Composer.recordSideEffectWithTracing(effect: () -> Unit) {
+    if (ComposeToolingFlags.isVerboseTracingEnabled) {
+        recordSideEffect { trace("Compose:SideEffect:effect", effect) }
+    } else {
+        recordSideEffect(effect)
+    }
+}
+
 private class DisposableEffectImpl(
     private val effect: DisposableEffectScope.() -> DisposableEffectResult
 ) : RememberObserver {
     private var onDispose: DisposableEffectResult? = null
 
     override fun onRemembered() {
-        onDispose = InternalDisposableEffectScope.effect()
+        verboseTrace("Compose:DisposableEffect:effect") {
+            onDispose = InternalDisposableEffectScope.effect()
+        }
     }
 
     override fun onForgotten() {
-        onDispose?.dispose()
-        onDispose = null
+        verboseTrace("Compose:DisposableEffect:dispose") {
+            onDispose?.dispose()
+            onDispose = null
+        }
     }
 
     override fun onAbandoned() {
@@ -423,12 +438,12 @@ internal class LaunchedEffectImpl(
     }
 
     override fun onForgotten() {
-        job?.cancel(LeftCompositionCancellationException())
+        job?.cancel(ExitedCompositionCancellationException())
         job = null
     }
 
     override fun onAbandoned() {
-        job?.cancel(LeftCompositionCancellationException())
+        job?.cancel(ExitedCompositionCancellationException())
         job = null
     }
 
@@ -522,8 +537,19 @@ public fun LaunchedEffect(
     remember(key1, key2, key3) { LaunchedEffectImpl(applyContext, block) }
 }
 
-private class LeftCompositionCancellationException :
-    PlatformOptimizedCancellationException("The coroutine scope left the composition")
+/**
+ * A subclass of [kotlinx.coroutines.CancellationException] that will be thrown to cancel
+ * composition-bound coroutines. Specifically, this exception is thrown to cancel coroutines
+ * launched by [LaunchedEffect] and [Job]s associated with CoroutineScopes created by
+ * [rememberCoroutineScope].
+ *
+ * This exception is thrown when the effect/job is canceled because the effect or coroutineScope was
+ * removed from the composition, possibly because of changed keys.
+ */
+private class ExitedCompositionCancellationException :
+    PlatformOptimizedCancellationException(
+        "The coroutine was canceled because it left the composition"
+    )
 
 /**
  * When [LaunchedEffect] enters the composition it will launch [block] into the composition's
@@ -565,7 +591,7 @@ internal class CompositionScopedCoroutineScopeCanceller(val coroutineScope: Coro
         if (coroutineScope is RememberedCoroutineScope) {
             coroutineScope.cancelIfCreated()
         } else {
-            coroutineScope.cancel(LeftCompositionCancellationException())
+            coroutineScope.cancel(ExitedCompositionCancellationException())
         }
     }
 
@@ -574,7 +600,7 @@ internal class CompositionScopedCoroutineScopeCanceller(val coroutineScope: Coro
         if (coroutineScope is RememberedCoroutineScope) {
             coroutineScope.cancelIfCreated()
         } else {
-            coroutineScope.cancel(LeftCompositionCancellationException())
+            coroutineScope.cancel(ExitedCompositionCancellationException())
         }
     }
 }
@@ -585,9 +611,6 @@ private class CancelledCoroutineContext : CoroutineContext.Element {
 
     companion object Key : CoroutineContext.Key<CancelledCoroutineContext>
 }
-
-private class ForgottenCoroutineScopeException :
-    PlatformOptimizedCancellationException("rememberCoroutineScope left the composition")
 
 internal class RememberedCoroutineScope(
     private val parentContext: CoroutineContext,
@@ -644,7 +667,7 @@ internal class RememberedCoroutineScope(
                         val parentContext = parentContext
                         val cancelledChildJob =
                             Job(parentContext[Job]).apply {
-                                cancel(ForgottenCoroutineScopeException())
+                                cancel(ExitedCompositionCancellationException())
                             }
                         localCoroutineContext =
                             parentContext + cancelledChildJob + overlayContext + exceptionHandler
@@ -672,7 +695,7 @@ internal class RememberedCoroutineScope(
             } else {
                 // Ignore optimizing the case where we might be cancelling an already cancelled job;
                 // only internal callers such as RememberObservers will invoke this method.
-                context.cancel(ForgottenCoroutineScopeException())
+                context.cancel(ExitedCompositionCancellationException())
             }
         }
     }

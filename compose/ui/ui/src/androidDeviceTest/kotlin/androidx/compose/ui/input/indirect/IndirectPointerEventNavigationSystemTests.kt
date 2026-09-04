@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.input.indirect
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,7 +29,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.background
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Offset
@@ -45,8 +45,8 @@ import androidx.compose.ui.test.inputDeviceRight
 import androidx.compose.ui.test.inputDeviceTop
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performIndirectPointerInput
 import androidx.compose.ui.test.requestFocus
+import androidx.compose.ui.test.sendIndirectPointerInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
@@ -56,7 +56,6 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.Test
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.runner.RunWith
@@ -66,7 +65,7 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class IndirectPointerEventNavigationSystemTests {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     // Used to dispatch motion events
     private lateinit var rootView: AndroidComposeView
@@ -128,7 +127,7 @@ class IndirectPointerEventNavigationSystemTests {
         // Clear focus to ensure no focus exists
         rule.runOnIdle { focusManager.clearFocus(true) }
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             IndirectPointerEventPrimaryDirectionalMotionAxis.X,
             inputDeviceSize,
         ) {
@@ -215,7 +214,7 @@ class IndirectPointerEventNavigationSystemTests {
         // Request initial focus for center box
         rule.onNodeWithTag(testTagBox2).requestFocus()
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             IndirectPointerEventPrimaryDirectionalMotionAxis.X,
             inputDeviceSize,
         ) {
@@ -311,7 +310,7 @@ class IndirectPointerEventNavigationSystemTests {
         // Request initial focus for center box
         rule.onNodeWithTag(testTagBox2).requestFocus()
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             IndirectPointerEventPrimaryDirectionalMotionAxis.X,
             inputDeviceSize,
         ) {
@@ -411,7 +410,7 @@ class IndirectPointerEventNavigationSystemTests {
         val indirectPointerEventPrimaryDirectionalMotionAxis =
             IndirectPointerEventPrimaryDirectionalMotionAxis.X
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -427,7 +426,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX += flingTriggeringDistanceBetweenEvents
         indirectY += nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -443,7 +442,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX += flingTriggeringDistanceBetweenEvents
         indirectY += nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -459,7 +458,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX += flingTriggeringDistanceBetweenEvents
         indirectY += nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -561,7 +560,7 @@ class IndirectPointerEventNavigationSystemTests {
         val indirectPointerEventPrimaryDirectionalMotionAxis =
             IndirectPointerEventPrimaryDirectionalMotionAxis.X
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -577,7 +576,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX -= flingTriggeringDistanceBetweenEvents
         indirectY -= nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -592,7 +591,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX -= flingTriggeringDistanceBetweenEvents
         indirectY -= nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -607,7 +606,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX -= flingTriggeringDistanceBetweenEvents
         indirectY -= nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -712,7 +711,7 @@ class IndirectPointerEventNavigationSystemTests {
         val indirectPointerEventPrimaryDirectionalMotionAxis =
             IndirectPointerEventPrimaryDirectionalMotionAxis.X
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -726,7 +725,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX += flingTriggeringDistanceBetweenEvents
         indirectY += (flingTriggeringDistanceBetweenEvents * 2)
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -740,7 +739,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX += flingTriggeringDistanceBetweenEvents
         indirectY += (flingTriggeringDistanceBetweenEvents * 2)
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -754,7 +753,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX += flingTriggeringDistanceBetweenEvents
         indirectY += (flingTriggeringDistanceBetweenEvents * 2)
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -854,7 +853,7 @@ class IndirectPointerEventNavigationSystemTests {
         val indirectPointerEventPrimaryDirectionalMotionAxis =
             IndirectPointerEventPrimaryDirectionalMotionAxis.X
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -868,7 +867,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX -= flingTriggeringDistanceBetweenEvents
         indirectY -= (2 * flingTriggeringDistanceBetweenEvents)
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -882,7 +881,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX -= flingTriggeringDistanceBetweenEvents
         indirectY -= (2 * flingTriggeringDistanceBetweenEvents)
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -896,7 +895,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX -= flingTriggeringDistanceBetweenEvents
         indirectY -= (2 * flingTriggeringDistanceBetweenEvents)
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -995,7 +994,7 @@ class IndirectPointerEventNavigationSystemTests {
         val indirectPointerEventPrimaryDirectionalMotionAxis =
             IndirectPointerEventPrimaryDirectionalMotionAxis.X
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -1008,7 +1007,7 @@ class IndirectPointerEventNavigationSystemTests {
 
         indirectX += nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -1021,7 +1020,7 @@ class IndirectPointerEventNavigationSystemTests {
 
         indirectX += nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -1034,7 +1033,7 @@ class IndirectPointerEventNavigationSystemTests {
 
         indirectX += nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -1134,7 +1133,7 @@ class IndirectPointerEventNavigationSystemTests {
         val indirectPointerEventPrimaryDirectionalMotionAxis =
             IndirectPointerEventPrimaryDirectionalMotionAxis.X
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -1147,7 +1146,7 @@ class IndirectPointerEventNavigationSystemTests {
 
         indirectX -= nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -1160,7 +1159,7 @@ class IndirectPointerEventNavigationSystemTests {
 
         indirectX -= nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -1173,7 +1172,7 @@ class IndirectPointerEventNavigationSystemTests {
 
         indirectX -= nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -1266,7 +1265,7 @@ class IndirectPointerEventNavigationSystemTests {
         // Request initial focus for center box
         rule.onNodeWithTag(testTagBox2).requestFocus()
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             IndirectPointerEventPrimaryDirectionalMotionAxis.X,
             inputDeviceSize,
         ) {
@@ -1357,7 +1356,7 @@ class IndirectPointerEventNavigationSystemTests {
         // Request initial focus for center box
         rule.onNodeWithTag(testTagBox2).requestFocus()
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             IndirectPointerEventPrimaryDirectionalMotionAxis.X,
             inputDeviceSize,
         ) {
@@ -1447,7 +1446,7 @@ class IndirectPointerEventNavigationSystemTests {
         // Request initial focus for center box
         rule.onNodeWithTag(testTagBox2).requestFocus()
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             IndirectPointerEventPrimaryDirectionalMotionAxis.Y,
             inputDeviceSize,
         ) {
@@ -1545,7 +1544,7 @@ class IndirectPointerEventNavigationSystemTests {
         // Request initial focus for center box
         rule.onNodeWithTag(testTagBox2).requestFocus()
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             IndirectPointerEventPrimaryDirectionalMotionAxis.Y,
             inputDeviceSize,
         ) {
@@ -1644,7 +1643,7 @@ class IndirectPointerEventNavigationSystemTests {
         val indirectPointerEventPrimaryDirectionalMotionAxis =
             IndirectPointerEventPrimaryDirectionalMotionAxis.Y
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -1659,7 +1658,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX += nonFlingTriggeringDistanceBetweenEvents
         indirectY += flingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -1675,7 +1674,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX += nonFlingTriggeringDistanceBetweenEvents
         indirectY += flingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -1691,7 +1690,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX += nonFlingTriggeringDistanceBetweenEvents
         indirectY += flingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -1793,7 +1792,7 @@ class IndirectPointerEventNavigationSystemTests {
         val indirectPointerEventPrimaryDirectionalMotionAxis =
             IndirectPointerEventPrimaryDirectionalMotionAxis.Y
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -1808,7 +1807,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX -= nonFlingTriggeringDistanceBetweenEvents
         indirectY -= flingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -1823,7 +1822,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX -= nonFlingTriggeringDistanceBetweenEvents
         indirectY -= flingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -1838,7 +1837,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX -= nonFlingTriggeringDistanceBetweenEvents
         indirectY -= flingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -1942,7 +1941,7 @@ class IndirectPointerEventNavigationSystemTests {
         val indirectPointerEventPrimaryDirectionalMotionAxis =
             IndirectPointerEventPrimaryDirectionalMotionAxis.Y
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -1956,7 +1955,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX += (flingTriggeringDistanceBetweenEvents * 2)
         indirectY += flingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -1970,7 +1969,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX += (flingTriggeringDistanceBetweenEvents * 2)
         indirectY += flingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -1984,7 +1983,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX += (flingTriggeringDistanceBetweenEvents * 2)
         indirectY += flingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -2084,7 +2083,7 @@ class IndirectPointerEventNavigationSystemTests {
         val indirectPointerEventPrimaryDirectionalMotionAxis =
             IndirectPointerEventPrimaryDirectionalMotionAxis.Y
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -2098,7 +2097,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX -= (2 * flingTriggeringDistanceBetweenEvents)
         indirectY -= flingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -2112,7 +2111,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX -= (2 * flingTriggeringDistanceBetweenEvents)
         indirectY -= flingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -2126,7 +2125,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX -= (2 * flingTriggeringDistanceBetweenEvents)
         indirectY -= flingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -2225,7 +2224,7 @@ class IndirectPointerEventNavigationSystemTests {
         val indirectPointerEventPrimaryDirectionalMotionAxis =
             IndirectPointerEventPrimaryDirectionalMotionAxis.Y
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -2238,7 +2237,7 @@ class IndirectPointerEventNavigationSystemTests {
 
         indirectY += nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -2251,7 +2250,7 @@ class IndirectPointerEventNavigationSystemTests {
 
         indirectY += nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -2264,7 +2263,7 @@ class IndirectPointerEventNavigationSystemTests {
 
         indirectY += nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -2363,7 +2362,7 @@ class IndirectPointerEventNavigationSystemTests {
         val indirectPointerEventPrimaryDirectionalMotionAxis =
             IndirectPointerEventPrimaryDirectionalMotionAxis.Y
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -2376,7 +2375,7 @@ class IndirectPointerEventNavigationSystemTests {
 
         indirectY -= nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -2389,7 +2388,7 @@ class IndirectPointerEventNavigationSystemTests {
 
         indirectY -= nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -2402,7 +2401,7 @@ class IndirectPointerEventNavigationSystemTests {
 
         indirectY -= nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -2494,7 +2493,7 @@ class IndirectPointerEventNavigationSystemTests {
         // Request initial focus for center box
         rule.onNodeWithTag(testTagBox2).requestFocus()
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             IndirectPointerEventPrimaryDirectionalMotionAxis.Y,
             inputDeviceSize,
         ) {
@@ -2585,7 +2584,7 @@ class IndirectPointerEventNavigationSystemTests {
         // Request initial focus for center box
         rule.onNodeWithTag(testTagBox2).requestFocus()
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             IndirectPointerEventPrimaryDirectionalMotionAxis.Y,
             inputDeviceSize,
         ) {
@@ -2686,7 +2685,7 @@ class IndirectPointerEventNavigationSystemTests {
         val indirectPointerEventPrimaryDirectionalMotionAxis =
             IndirectPointerEventPrimaryDirectionalMotionAxis.None
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -2710,7 +2709,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX += flingTriggeringDistanceBetweenEvents
         indirectY += flingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -2735,7 +2734,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX += flingTriggeringDistanceBetweenEvents
         indirectY += flingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -2760,7 +2759,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX += flingTriggeringDistanceBetweenEvents
         indirectY += flingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -2866,7 +2865,7 @@ class IndirectPointerEventNavigationSystemTests {
         val indirectPointerEventPrimaryDirectionalMotionAxis =
             IndirectPointerEventPrimaryDirectionalMotionAxis.None
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -2880,7 +2879,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX -= flingTriggeringDistanceBetweenEvents
         indirectY -= flingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -2894,7 +2893,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX -= flingTriggeringDistanceBetweenEvents
         indirectY -= flingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -2908,7 +2907,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX -= flingTriggeringDistanceBetweenEvents
         indirectY -= flingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -3007,7 +3006,7 @@ class IndirectPointerEventNavigationSystemTests {
         val indirectPointerEventPrimaryDirectionalMotionAxis =
             IndirectPointerEventPrimaryDirectionalMotionAxis.None
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -3021,7 +3020,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX += nonFlingTriggeringDistanceBetweenEvents
         indirectY += nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -3035,7 +3034,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX += nonFlingTriggeringDistanceBetweenEvents
         indirectY += nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -3049,7 +3048,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX += nonFlingTriggeringDistanceBetweenEvents
         indirectY += nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -3148,7 +3147,7 @@ class IndirectPointerEventNavigationSystemTests {
         val indirectPointerEventPrimaryDirectionalMotionAxis =
             IndirectPointerEventPrimaryDirectionalMotionAxis.None
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -3162,7 +3161,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX -= nonFlingTriggeringDistanceBetweenEvents
         indirectY -= nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -3176,7 +3175,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX -= nonFlingTriggeringDistanceBetweenEvents
         indirectY -= nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -3190,7 +3189,7 @@ class IndirectPointerEventNavigationSystemTests {
         indirectX -= nonFlingTriggeringDistanceBetweenEvents
         indirectY -= nonFlingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -3282,7 +3281,7 @@ class IndirectPointerEventNavigationSystemTests {
         // Request initial focus for center box
         rule.onNodeWithTag(testTagBox2).requestFocus()
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             IndirectPointerEventPrimaryDirectionalMotionAxis.None,
             inputDeviceSize,
         ) {
@@ -3372,7 +3371,7 @@ class IndirectPointerEventNavigationSystemTests {
         // Request initial focus for center box
         rule.onNodeWithTag(testTagBox2).requestFocus()
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             IndirectPointerEventPrimaryDirectionalMotionAxis.None,
             inputDeviceSize,
         ) {
@@ -3462,7 +3461,7 @@ class IndirectPointerEventNavigationSystemTests {
         // Request initial focus for center box
         rule.onNodeWithTag(testTagBox2).requestFocus()
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             IndirectPointerEventPrimaryDirectionalMotionAxis.None,
             inputDeviceSize,
         ) {
@@ -3552,7 +3551,7 @@ class IndirectPointerEventNavigationSystemTests {
         // Request initial focus for center box
         rule.onNodeWithTag(testTagBox2).requestFocus()
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             IndirectPointerEventPrimaryDirectionalMotionAxis.None,
             inputDeviceSize,
         ) {
@@ -3646,7 +3645,7 @@ class IndirectPointerEventNavigationSystemTests {
         val indirectPointerEventPrimaryDirectionalMotionAxis =
             IndirectPointerEventPrimaryDirectionalMotionAxis.X
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -3661,7 +3660,7 @@ class IndirectPointerEventNavigationSystemTests {
 
         indirectX += flingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -3674,7 +3673,7 @@ class IndirectPointerEventNavigationSystemTests {
             assertThat(indirectPointerCancelEventsThatShouldNotBeTriggered).isFalse()
         }
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -4746,7 +4745,7 @@ class IndirectPointerEventNavigationSystemTests {
         val indirectX = 100f
         val indirectY = 100f
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             IndirectPointerEventPrimaryDirectionalMotionAxis.X,
             inputDeviceSize,
         ) {
@@ -4853,7 +4852,7 @@ class IndirectPointerEventNavigationSystemTests {
         val indirectPointerEventPrimaryDirectionalMotionAxis =
             IndirectPointerEventPrimaryDirectionalMotionAxis.X
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -4867,7 +4866,7 @@ class IndirectPointerEventNavigationSystemTests {
 
         indirectX += flingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -4881,7 +4880,7 @@ class IndirectPointerEventNavigationSystemTests {
 
         indirectX += flingTriggeringDistanceBetweenEvents
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             indirectPointerEventPrimaryDirectionalMotionAxis,
             inputDeviceSize,
         ) {
@@ -4983,7 +4982,7 @@ class IndirectPointerEventNavigationSystemTests {
         // Request initial focus for center box
         rule.onNodeWithTag(testTagBox2).requestFocus()
 
-        rule.performIndirectPointerInput(
+        rule.sendIndirectPointerInput(
             IndirectPointerEventPrimaryDirectionalMotionAxis.X,
             inputDeviceSize,
         ) {

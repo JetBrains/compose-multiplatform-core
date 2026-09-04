@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package androidx.compose.material3.samples
 
 import androidx.activity.compose.BackHandler
@@ -34,6 +36,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Snooze
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButtonMenu
 import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
@@ -204,6 +207,7 @@ fun FloatingActionButtonMenuSample() {
                                         if (
                                             it.type == KeyEventType.KeyDown &&
                                                 (it.key == Key.DirectionUp ||
+                                                    it.key == Key.NumPadDirectionUp ||
                                                     (it.isShiftPressed && it.key == Key.Tab))
                                         ) {
                                             focusRequester.requestFocus()

@@ -250,7 +250,9 @@ internal class TextFieldDecoratorModifierNode(
                     with(textFieldSelectionState) {
                         val requestFocus = { if (!isWindowAndTextFieldFocused) requestFocus() }
 
-                        launch(start = CoroutineStart.UNDISPATCHED) { detectTouchMode() }
+                        launch(start = CoroutineStart.UNDISPATCHED) {
+                            detectDirectTouchInteraction()
+                        }
                         launch(start = CoroutineStart.UNDISPATCHED) {
                             detectTextFieldTapGestures(
                                 requestFocus = requestFocus,
@@ -386,16 +388,18 @@ internal class TextFieldDecoratorModifierNode(
      * [textFieldKeyEventHandler] because Clipboard actions require a [coroutineScope] which is
      * available here.
      */
-    private val clipboardKeyCommandsHandler = ClipboardKeyCommandsHandler { keyCommand ->
-        coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
-            when (keyCommand) {
-                KeyCommand.COPY -> textFieldSelectionState.copy(false)
-                KeyCommand.CUT -> textFieldSelectionState.cut()
-                KeyCommand.PASTE -> textFieldSelectionState.paste()
-                else -> Unit
+    private val clipboardKeyCommandsHandler =
+        ClipboardKeyCommandsHandler { keyCommand, isFromHardwareSource ->
+            coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                when (keyCommand) {
+                    KeyCommand.COPY -> textFieldSelectionState.copy(false)
+                    KeyCommand.CUT -> textFieldSelectionState.cut()
+                    KeyCommand.PASTE ->
+                        textFieldSelectionState.paste(isFromHardwareSource = isFromHardwareSource)
+                    else -> Unit
+                }
             }
         }
-    }
 
     /**
      * A coroutine job that observes text and layout changes in selection state to react to those
@@ -547,7 +551,8 @@ internal class TextFieldDecoratorModifierNode(
         textSelectionRange = selection
         textCompositionRange = textFieldState.untransformedComposition
 
-        inputTextSuggestionState = InputTextSuggestionState(textFieldState.userCommit)
+        inputTextSuggestionState =
+            InputTextSuggestionState(textFieldState.userCommit, textFieldState.suggestionSelected)
 
         if (!enabled) disabled()
         if (isPassword) password()
@@ -733,10 +738,6 @@ internal class TextFieldDecoratorModifierNode(
 
     override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
         textLayoutState.decoratorNodeCoordinates = coordinates
-
-        if (enabled) {
-            focusableNode.onGloballyPositioned(coordinates)
-        }
     }
 
     override fun onPointerEvent(
@@ -801,7 +802,7 @@ internal class TextFieldDecoratorModifierNode(
 
     private fun applyCurrentInputMode() {
         if (currentValueOf(LocalInputModeManager).inputMode != InputMode.Touch) {
-            textFieldSelectionState.isInTouchMode = false
+            textFieldSelectionState.isDirectTouchInteraction = false
         }
     }
 
@@ -811,7 +812,7 @@ internal class TextFieldDecoratorModifierNode(
         val receiveContentConfiguration = getReceiveContentConfiguration()
 
         inputSessionJob =
-            coroutineScope.launch {
+            coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
                 // This will automatically cancel the previous session, if any, so we don't need to
                 // cancel the inputSessionJob ourselves.
                 establishTextInputSession {
@@ -828,7 +829,9 @@ internal class TextFieldDecoratorModifierNode(
                         },
                         stylusHandwritingTrigger = stylusHandwritingTrigger,
                         viewConfiguration = currentValueOf(LocalViewConfiguration),
-                        updateTouchMode = { textFieldSelectionState.isInTouchMode = it },
+                        updateDirectTouchInteraction = {
+                            textFieldSelectionState.isDirectTouchInteraction = it
+                        },
                     )
                 }
             }
@@ -895,5 +898,5 @@ internal expect suspend fun PlatformTextInputSession.platformSpecificTextInputSe
     updateSelectionState: (() -> Unit)? = null,
     stylusHandwritingTrigger: MutableSharedFlow<Unit>? = null,
     viewConfiguration: ViewConfiguration? = null,
-    updateTouchMode: (Boolean) -> Unit,
+    updateDirectTouchInteraction: (Boolean) -> Unit,
 ): Nothing

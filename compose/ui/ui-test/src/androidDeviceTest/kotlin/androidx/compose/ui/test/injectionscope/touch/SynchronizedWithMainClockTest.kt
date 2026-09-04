@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.test.injectionscope.touch
 
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.injectionscope.touch.Common.performTouchInput
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -24,7 +26,6 @@ import androidx.compose.ui.test.util.SinglePointerInputRecorder
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -34,7 +35,7 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class SynchronizedWithMainClockTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val recorder = SinglePointerInputRecorder()
 
@@ -59,6 +60,7 @@ class SynchronizedWithMainClockTest {
         )
     }
 
+    @OptIn(ExperimentalComposeUiApi::class)
     private fun testWithTwoGestures(expectedDifference: Long, betweenGesturesBlock: () -> Unit) {
         rule.performTouchInput { click() }
         betweenGesturesBlock.invoke()
@@ -66,11 +68,11 @@ class SynchronizedWithMainClockTest {
 
         rule.runOnIdle {
             recorder.run {
-                // Then we have recorded [down, up*, down**, up] and the difference
-                // Time between *) and **) should be the expectedDifference
-                assertThat(events).hasSize(4)
-                val t1 = events[1].timestamp
-                val t2 = events[2].timestamp
+                val hasExtraMove =
+                    ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled
+                assertThat(events).hasSize(if (hasExtraMove) 6 else 4)
+                val t1 = if (hasExtraMove) events[2].timestamp else events[1].timestamp
+                val t2 = if (hasExtraMove) events[3].timestamp else events[2].timestamp
                 assertThat(t2 - t1).isEqualTo(expectedDifference)
             }
         }

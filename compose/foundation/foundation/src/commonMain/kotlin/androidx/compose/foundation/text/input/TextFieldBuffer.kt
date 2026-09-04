@@ -55,7 +55,7 @@ import kotlin.jvm.JvmName
  * To get one of these, and for usage samples, see [TextFieldState.edit]. Every change to the buffer
  * is tracked in a [ChangeList] which you can access via the [changes] property.
  */
-class TextFieldBuffer
+public class TextFieldBuffer
 internal constructor(
     initialValue: TextFieldCharSequence,
     initialChanges: ChangeTracker? = null,
@@ -72,6 +72,17 @@ internal constructor(
             null
         }
 
+    /**
+     * Whether a text suggestion is selected, indicating that the transliterated text will be
+     * replaced by the selection. This is relevant for transliteration languages that support one or
+     * multiple text replacement suggestions for each text inputted. If true, then the user is
+     * currently selecting a replacement text.
+     *
+     * This is primarily used by accessibility services so that they are informed of when the user
+     * is currently selecting a replacement text.
+     */
+    internal var suggestionSelected: Boolean = false
+
     private var backingChangeTracker: ChangeTracker? =
         initialChanges?.let { ChangeTracker(initialChanges) }
 
@@ -80,21 +91,21 @@ internal constructor(
         get() = backingChangeTracker ?: ChangeTracker().also { backingChangeTracker = it }
 
     /** The number of characters in the text field. */
-    val length: Int
+    public val length: Int
         get() = buffer.length
 
     /**
      * Original text content of the buffer before any changes were applied. Calling
      * [revertAllChanges] will set the contents of this buffer to this value.
      */
-    val originalText: CharSequence
+    public val originalText: CharSequence
         get() = originalValue.text
 
     /**
      * Original selection before the changes. Calling [revertAllChanges] will set the selection to
      * this value.
      */
-    val originalSelection: TextRange
+    public val originalSelection: TextRange
         get() = originalValue.selection
 
     /**
@@ -106,7 +117,7 @@ internal constructor(
      * @sample androidx.compose.foundation.samples.BasicTextFieldChangeReverseIterationSample
      */
     @ExperimentalFoundationApi
-    val changes: ChangeList
+    public val changes: ChangeList
         get() = changeTracker
 
     // region selection
@@ -118,7 +129,7 @@ internal constructor(
      * @see selection
      */
     @get:JvmName("hasSelection")
-    val hasSelection: Boolean
+    public val hasSelection: Boolean
         get() = !selection.collapsed
 
     /**
@@ -140,7 +151,7 @@ internal constructor(
      * character, pass [TextFieldBuffer.length]. Passing a zero-length range is the same as calling
      * [placeCursorBeforeCharAt].
      */
-    var selection: TextRange
+    public var selection: TextRange
         get() = selectionInChars
         set(value) {
             requireValidRange(value)
@@ -291,7 +302,7 @@ internal constructor(
      * @see insert
      * @see delete
      */
-    fun replace(start: Int, end: Int, text: CharSequence) {
+    public fun replace(start: Int, end: Int, text: CharSequence) {
         replace(start, end, text, 0, text.length)
     }
 
@@ -314,6 +325,12 @@ internal constructor(
         text: CharSequence,
         textStart: Int = 0,
         textEnd: Int = text.length,
+        // Defaulting to false for isFromHardwareSource means the edit is not treated as
+        // originating from a physical hardware source. This maintains similar default behavior
+        // as the previous default of true for isFromSoftKeyboard, following the usage prior to
+        // b/453647445. The source parameter should not need to be optional in the future, the
+        // larger source information work is tracked in b/502914003.
+        isFromHardwareSource: Boolean = false,
     ) {
         requirePrecondition(start <= end) { "Expected start=$start <= end=$end" }
         requirePrecondition(textStart <= textEnd) {
@@ -325,7 +342,12 @@ internal constructor(
         val coercedTextStart = textStart.coerceIn(0, text.length)
         val coercedTextEnd = textEnd.coerceIn(0, text.length)
 
-        onTextWillChange(coercedStart, coercedEnd, coercedTextEnd - coercedTextStart)
+        onTextWillChange(
+            coercedStart,
+            coercedEnd,
+            coercedTextEnd - coercedTextStart,
+            isFromHardwareSource,
+        )
         buffer.replace(coercedStart, coercedEnd, text, coercedTextStart, coercedTextEnd)
 
         commitComposition()
@@ -347,7 +369,7 @@ internal constructor(
     @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
     override fun append(text: CharSequence?): Appendable = apply {
         if (text != null) {
-            onTextWillChange(length, length, text.length)
+            onTextWillChange(length, length, text.length, false)
             buffer.replace(buffer.length, buffer.length, text)
         }
     }
@@ -356,7 +378,7 @@ internal constructor(
     @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
     override fun append(text: CharSequence?, start: Int, end: Int): Appendable = apply {
         if (text != null) {
-            onTextWillChange(length, length, end - start)
+            onTextWillChange(length, length, end - start, false)
             buffer.replace(buffer.length, buffer.length, text.subSequence(start, end))
         }
     }
@@ -364,7 +386,7 @@ internal constructor(
     // Doc inherited from Appendable.
     @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
     override fun append(char: Char): Appendable = apply {
-        onTextWillChange(length, length, 1)
+        onTextWillChange(length, length, 1, false)
         buffer.replace(buffer.length, buffer.length, char.toString())
     }
 
@@ -375,8 +397,16 @@ internal constructor(
      * @param replaceEnd The last offset to be replaced (exclusive).
      * @param newLength The length of the replacement.
      */
-    private fun onTextWillChange(replaceStart: Int, replaceEnd: Int, newLength: Int) {
-        changeTracker.trackChange(replaceStart, replaceEnd, newLength)
+    private fun onTextWillChange(
+        replaceStart: Int,
+        replaceEnd: Int,
+        newLength: Int,
+        // Defaulting to false for isFromHardwareSource means the edit is not treated as
+        // originating from a physical hardware source. This follows the usage prior to
+        // b/453647445.
+        isFromHardwareSource: Boolean = false,
+    ) {
+        changeTracker.trackChange(replaceStart, replaceEnd, newLength, isFromHardwareSource)
         offsetMappingCalculator?.recordEditOperation(replaceStart, replaceEnd, newLength)
         // On Android, IME calls are usually followed with an explicit change to selection.
         // Therefore it might seem unnecessary to adjust the selection here. However, this sort of
@@ -390,7 +420,7 @@ internal constructor(
     // endregion
 
     /** Returns the [Char] at [index] in this buffer. */
-    fun charAt(index: Int): Char = buffer[index]
+    public fun charAt(index: Int): Char = buffer[index]
 
     override fun toString(): String = buffer.toString()
 
@@ -398,7 +428,7 @@ internal constructor(
      * Returns a [CharSequence] backed by this buffer. Any subsequent changes to this buffer will be
      * visible in the returned sequence as well.
      */
-    fun asCharSequence(): CharSequence = buffer
+    public fun asCharSequence(): CharSequence = buffer
 
     private fun clearChangeList() {
         changeTracker.clearChanges()
@@ -411,7 +441,7 @@ internal constructor(
      * created, and [changes] will be empty.
      */
     @OptIn(ExperimentalFoundationApi::class)
-    fun revertAllChanges() {
+    public fun revertAllChanges() {
         replace(0, length, originalValue.toString())
         selection = originalValue.selection
         clearChangeList()
@@ -438,7 +468,7 @@ internal constructor(
      *   [TextFieldBuffer.length], inclusive.
      * @see placeCursorAfterCharAt
      */
-    fun placeCursorBeforeCharAt(index: Int) {
+    public fun placeCursorBeforeCharAt(index: Int) {
         requireValidIndex(index, startExclusive = true, endExclusive = false)
         // skip further validation
         selectionInChars = TextRange(index)
@@ -457,7 +487,7 @@ internal constructor(
      *   [TextFieldBuffer.length] (exclusive).
      * @see placeCursorBeforeCharAt
      */
-    fun placeCursorAfterCharAt(index: Int) {
+    public fun placeCursorAfterCharAt(index: Int) {
         requireValidIndex(index, startExclusive = false, endExclusive = true)
         // skip further validation
         selectionInChars = TextRange((index + 1).coerceAtMost(length))
@@ -541,7 +571,7 @@ internal constructor(
         val start = range.start
         val end = range.end
         // We treat it as replace the original text with newly styled text.
-        changeTracker.trackChange(start, end, end - start)
+        changeTracker.trackChange(start, end, end - start, false)
 
         return requireTextFieldBuffer()
             .addStyle<T>(
@@ -576,7 +606,7 @@ internal constructor(
      * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangeToggleBoldSample
      */
     @OptIn(ExperimentalFoundationApi::class)
-    fun addStyle(spanStyle: SpanStyle, start: Int, end: Int) {
+    public fun addStyle(spanStyle: SpanStyle, start: Int, end: Int) {
         if (ComposeFoundationFlags.isBasicTextFieldStyledTextEnabled) {
             val range = TextRange(start, end)
             requireValidStyleRange(range)
@@ -610,7 +640,7 @@ internal constructor(
      * @throws IllegalArgumentException if [start] or [end] is out of range, or if [start] > [end].
      */
     @OptIn(ExperimentalFoundationApi::class)
-    fun addStyle(paragraphStyle: ParagraphStyle, start: Int, end: Int) {
+    public fun addStyle(paragraphStyle: ParagraphStyle, start: Int, end: Int) {
         if (ComposeFoundationFlags.isBasicTextFieldStyledTextEnabled) {
             val range = TextRange(start, end)
             requireValidStyleRange(range)
@@ -642,7 +672,7 @@ internal constructor(
      * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangeTextRangeSetterSample
      */
     @OptIn(ExperimentalFoundationApi::class)
-    fun addStyle(
+    public fun addStyle(
         spanStyle: SpanStyle,
         range: TextRange,
         expandPolicy: ExpandPolicy,
@@ -676,7 +706,7 @@ internal constructor(
      * @throws IllegalArgumentException if [range] is out of [0, length], or if it's reversed.
      */
     @OptIn(ExperimentalFoundationApi::class)
-    fun addStyle(
+    public fun addStyle(
         paragraphStyle: ParagraphStyle,
         range: TextRange,
         expandPolicy: ExpandPolicy,
@@ -692,13 +722,12 @@ internal constructor(
     }
 
     /**
-     * Returns the [SpanStyle]s that intersect with the given range defined by [start] (inclusive)
-     * and [end] (exclusive).
+     * Returns the [SpanStyle]s that intersect with the given [range].
      *
      * Styles are returned in the same order they were originally added to the buffer.
      *
      * A style intersects with the range if it overlaps with it at any point. For non-empty ranges,
-     * this means `style.start < end` and `start < style.end`.
+     * this means `style.start < range.max` and `range.min < style.end`.
      *
      * Example Query Range: `[5, 15)`
      *
@@ -726,20 +755,18 @@ internal constructor(
      *           [----------)        Style [10, 20)(Touching start) -> Returned
      * ```
      *
-     * @param start the inclusive start offset of the range
-     * @param end the exclusive end offset of the range
+     * @param range the range to query
      * @return a list of [TrackedRange]s referencing the styles intersecting with the given range,
      *   returned in the order they were added to the buffer.
-     * @throws IllegalArgumentException if [start] or [end] is out of [0, length], or
-     *   [start] > [end].
      * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangeSample
      * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangeToggleBoldSample
      * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangeTextRangeSetterSample
      */
     @OptIn(ExperimentalFoundationApi::class)
-    fun getSpanStyles(start: Int, end: Int): List<TrackedRange<SpanStyle>> {
+    public fun getSpanStyles(range: TextRange): List<TrackedRange<SpanStyle>> {
         return if (ComposeFoundationFlags.isBasicTextFieldStyledTextEnabled) {
-            requireValidStyleRange(TextRange(start, end))
+            val start = range.min.coerceIn(0, length)
+            val end = range.max.coerceIn(0, length)
             textStyleBuffer?.getStyles<SpanStyle>(start, end) ?: emptyList()
         } else {
             emptyList()
@@ -747,13 +774,12 @@ internal constructor(
     }
 
     /**
-     * Returns the [ParagraphStyle]s that intersect with the range defined by [start] (inclusive)
-     * and [end] (exclusive).
+     * Returns the [ParagraphStyle]s that intersect with the given [range].
      *
      * Styles are returned in the same order they were originally added to the buffer.
      *
      * A style intersects with the range if it overlaps with it at any point. For non-empty ranges,
-     * this means `style.start < end` and `start < style.end`.
+     * this means `style.start < range.max` and `range.min < style.end`.
      *
      * Example Query Range: `[5, 15)`
      *
@@ -781,17 +807,15 @@ internal constructor(
      *           [----------)        Style [10, 20)(Touching start) -> Returned
      * ```
      *
-     * @param start the inclusive start offset of the range
-     * @param end the exclusive end offset of the range
+     * @param range the range to query
      * @return a list of [TrackedRange]s referencing the styles intersecting with the given range,
      *   returned in the order they were added to the buffer.
-     * @throws IllegalArgumentException if [start] or [end] is out of [0, length], or
-     *   [start] > [end].
      */
     @OptIn(ExperimentalFoundationApi::class)
-    fun getParagraphStyles(start: Int, end: Int): List<TrackedRange<ParagraphStyle>> {
+    public fun getParagraphStyles(range: TextRange): List<TrackedRange<ParagraphStyle>> {
         return if (ComposeFoundationFlags.isBasicTextFieldStyledTextEnabled) {
-            requireValidStyleRange(TextRange(start, end))
+            val start = range.min.coerceIn(0, length)
+            val end = range.max.coerceIn(0, length)
             textStyleBuffer?.getStyles<ParagraphStyle>(start, end) ?: emptyList()
         } else {
             emptyList()
@@ -814,13 +838,28 @@ internal constructor(
      * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangeTextRangeSetterSample
      */
     @OptIn(ExperimentalFoundationApi::class)
-    fun removeStyle(trackedRange: TrackedRange<*>): Boolean {
+    public fun removeStyle(trackedRange: TrackedRange<*>): Boolean {
         return if (ComposeFoundationFlags.isBasicTextFieldStyledTextEnabled) {
             textStyleBuffer?.removeStyle(trackedRange) ?: false
         } else {
             false
         }
     }
+
+    /**
+     * Whether this [TrackedRange] is still valid in the buffer.
+     *
+     * A [TrackedRange] is removed from this buffer when [removeStyle] is called, or when its length
+     * collapses to zero due to text edits. Once it's no longer valid, accessing its other
+     * properties will return default values, and modifying them will have no effect.
+     *
+     * This property is only accessible within the [TextFieldBuffer] scope where the [TrackedRange]
+     * was created.
+     *
+     * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangePropertiesSample
+     */
+    public val TrackedRange<*>.isValid: Boolean
+        get() = textStyleBuffer?.isValid(this) ?: false
 
     /**
      * The [TextRange] of this style. This range will reflect the up-to-date style range as the text
@@ -830,29 +869,32 @@ internal constructor(
      * was created. Do not keep a reference to the [TrackedRange] outside of that block.
      *
      * Modifying the text can potentially invalidate a [TrackedRange] if its length collapses to
-     * zero. It is recommended to check [valid] before accessing this property if any text changes
-     * were made, or if the range might have been explicitly removed via [removeStyle].
+     * zero. If this [TrackedRange] is no longer valid, this property will return [TextRange.Zero],
+     * and setting this property will do nothing.
      *
      * Setting this property will update the range of the style in-place, preserving its original
      * applying order relative to other styles in the buffer.
      *
-     * @throws IllegalStateException if this [TrackedRange] no longer exists in the buffer.
      * @throws IllegalArgumentException if the new range is collapsed, reversed or out of range.
      * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangeSample
      * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangeToggleBoldSample
      * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangeTextRangeSetterSample
      */
-    var TrackedRange<*>.textRange: TextRange
+    public var TrackedRange<*>.textRange: TextRange
         get() =
-            textStyleBuffer?.getRange(this)
-                ?: throw IllegalStateException("TrackedRange is not found.")
+            if (isValid) {
+                textStyleBuffer!!.getRange(this)
+            } else {
+                TextRange.Zero
+            }
         set(value) {
             requireValidStyleRange(value)
             requirePrecondition(!value.collapsed) {
                 "TrackedRange's textRange cannot be collapsed, but was $value"
             }
-            textStyleBuffer?.setRange(this, value)
-                ?: throw IllegalStateException("TrackedRange is not found.")
+            if (isValid) {
+                textStyleBuffer!!.setRange(this, value)
+            }
         }
 
     /**
@@ -862,24 +904,27 @@ internal constructor(
      * was created.
      *
      * Modifying the text can potentially invalidate a [TrackedRange] if its length collapses to
-     * zero. It is recommended to check [valid] before accessing this property if any text changes
-     * were made, or if the range might have been explicitly removed via [removeStyle].
+     * zero. If this [TrackedRange] is no longer valid, this property will return an empty
+     * [SpanStyle], and setting this property will do nothing.
      *
      * Setting this property will update the style applied to the text in-place, preserving its
      * original applying order relative to other styles in the buffer.
      *
-     * @throws IllegalStateException if this [TrackedRange] no longer exists in the buffer.
      * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangeSample
      * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangeToggleBoldSample
      * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangeTextRangeSetterSample
      */
-    var TrackedRange<SpanStyle>.spanStyle: SpanStyle
+    public var TrackedRange<SpanStyle>.spanStyle: SpanStyle
         get() =
-            textStyleBuffer?.getItem<SpanStyle>(this)
-                ?: throw IllegalStateException("TrackedRange is not found.")
+            if (isValid) {
+                textStyleBuffer!!.getItem<SpanStyle>(this) ?: SpanStyle()
+            } else {
+                SpanStyle()
+            }
         set(value) {
-            textStyleBuffer?.setItem(this, value)
-                ?: throw IllegalStateException("TrackedRange is not found.")
+            if (isValid) {
+                textStyleBuffer!!.setItem(this, value)
+            }
         }
 
     /**
@@ -889,37 +934,24 @@ internal constructor(
      * was created.
      *
      * Modifying the text can potentially invalidate a [TrackedRange] if its length collapses to
-     * zero. It is recommended to check [valid] before accessing this property if any text changes
-     * were made, or if the range might have been explicitly removed via [removeStyle].
+     * zero. If this [TrackedRange] is no longer valid, this property will return an empty
+     * [ParagraphStyle], and setting this property will do nothing.
      *
      * Setting this property will update the style applied to the text in-place, preserving its
      * original applying order relative to other styles in the buffer.
-     *
-     * @throws IllegalStateException if this [TrackedRange] no longer exists in the buffer.
      */
-    var TrackedRange<ParagraphStyle>.paragraphStyle: ParagraphStyle
+    public var TrackedRange<ParagraphStyle>.paragraphStyle: ParagraphStyle
         get() =
-            textStyleBuffer?.getItem<ParagraphStyle>(this)
-                ?: throw IllegalStateException("TrackedRange is not found.")
+            if (isValid) {
+                textStyleBuffer!!.getItem<ParagraphStyle>(this) ?: ParagraphStyle()
+            } else {
+                ParagraphStyle()
+            }
         set(value) {
-            textStyleBuffer?.setItem(this, value)
-                ?: throw IllegalStateException("TrackedRange is not found.")
+            if (isValid) {
+                textStyleBuffer!!.setItem(this, value)
+            }
         }
-
-    /**
-     * Whether this [TrackedRange] is still valid in the buffer.
-     *
-     * A style ceases to exist when [removeStyle] is called or when its range collapses to a length
-     * of zero due to text edits. Once it no longer exists, accessing or modifying its properties
-     * will throw an [IllegalStateException].
-     *
-     * This property is only accessible within the [TextFieldBuffer] scope where the [TrackedRange]
-     * was created.
-     *
-     * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangePropertiesSample
-     */
-    val TrackedRange<*>.valid: Boolean
-        get() = textStyleBuffer?.isValid(this) ?: false
 
     /**
      * The [ExpandPolicy] defining how the style range expands when text is inserted at its
@@ -929,22 +961,25 @@ internal constructor(
      * was created.
      *
      * Modifying the text can potentially invalidate a [TrackedRange] if its length collapses to
-     * zero. It is recommended to check [valid] before accessing this property if any text changes
-     * were made, or if the range might have been explicitly removed via [removeStyle].
+     * zero. If this [TrackedRange] is no longer valid, this property will return
+     * [ExpandPolicy.InsideOnly], and setting this property will do nothing.
      *
      * Setting this property will update the expand policy in-place, preserving its original
      * applying order relative to other styles in the buffer.
      *
-     * @throws IllegalStateException if this [TrackedRange] no longer exists in the buffer.
      * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangePropertiesSample
      */
-    var TrackedRange<*>.expandPolicy: ExpandPolicy
+    public var TrackedRange<*>.expandPolicy: ExpandPolicy
         get() =
-            textStyleBuffer?.getExpandPolicy(this)
-                ?: throw IllegalStateException("TrackedRange is not found.")
+            if (isValid) {
+                textStyleBuffer!!.getExpandPolicy(this)
+            } else {
+                ExpandPolicy.InsideOnly
+            }
         set(value) {
-            textStyleBuffer?.setExpandPolicy(this, value)
-                ?: throw IllegalStateException("TrackedRange is not found.")
+            if (isValid) {
+                textStyleBuffer!!.setExpandPolicy(this, value)
+            }
         }
 
     /**
@@ -954,23 +989,23 @@ internal constructor(
      * appear in the text, not the order in which they were made. Overlapping changes are
      * represented as a single change.
      */
-    interface ChangeList {
+    public interface ChangeList {
         /** The number of changes that have been performed. */
-        val changeCount: Int
+        public val changeCount: Int
 
         /**
          * Returns the range in the [TextFieldBuffer] that was changed.
          *
          * @throws IndexOutOfBoundsException If [changeIndex] is not in [0, [changeCount]).
          */
-        fun getRange(changeIndex: Int): TextRange
+        public fun getRange(changeIndex: Int): TextRange
 
         /**
          * Returns the range in the original text that was replaced.
          *
          * @throws IndexOutOfBoundsException If [changeIndex] is not in [0, [changeCount]).
          */
-        fun getOriginalRange(changeIndex: Int): TextRange
+        public fun getOriginalRange(changeIndex: Int): TextRange
     }
 }
 
@@ -1056,7 +1091,7 @@ internal fun adjustTextRange(
  * @see TextFieldBuffer.append
  * @see TextFieldBuffer.delete
  */
-fun TextFieldBuffer.insert(index: Int, text: String) {
+public fun TextFieldBuffer.insert(index: Int, text: String) {
     replace(index, index, text)
 }
 
@@ -1070,17 +1105,17 @@ fun TextFieldBuffer.insert(index: Int, text: String) {
  * @see TextFieldBuffer.append
  * @see TextFieldBuffer.insert
  */
-fun TextFieldBuffer.delete(start: Int, end: Int) {
+public fun TextFieldBuffer.delete(start: Int, end: Int) {
     replace(start, end, "")
 }
 
 /** Places the cursor at the end of the text. */
-fun TextFieldBuffer.placeCursorAtEnd() {
+public fun TextFieldBuffer.placeCursorAtEnd() {
     placeCursorBeforeCharAt(length)
 }
 
 /** Places the selection around all the text. */
-fun TextFieldBuffer.selectAll() {
+public fun TextFieldBuffer.selectAll() {
     selection = TextRange(0, length)
 }
 
@@ -1096,7 +1131,9 @@ fun TextFieldBuffer.selectAll() {
  * @see forEachChangeReversed
  */
 @ExperimentalFoundationApi
-inline fun ChangeList.forEachChange(block: (range: TextRange, originalRange: TextRange) -> Unit) {
+public inline fun ChangeList.forEachChange(
+    block: (range: TextRange, originalRange: TextRange) -> Unit
+) {
     var i = 0
     // Check the size every iteration in case more changes were performed.
     while (i < changeCount) {
@@ -1116,7 +1153,7 @@ inline fun ChangeList.forEachChange(block: (range: TextRange, originalRange: Tex
  * @see forEachChange
  */
 @ExperimentalFoundationApi
-inline fun ChangeList.forEachChangeReversed(
+public inline fun ChangeList.forEachChangeReversed(
     block: (range: TextRange, originalRange: TextRange) -> Unit
 ) {
     var i = changeCount - 1

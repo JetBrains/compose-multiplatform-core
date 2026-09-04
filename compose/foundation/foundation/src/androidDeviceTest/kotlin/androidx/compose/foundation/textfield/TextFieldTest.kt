@@ -85,8 +85,8 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.AndroidClipboard
 import androidx.compose.ui.platform.ClipEntry
-import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -176,7 +176,6 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Ignore
 import org.junit.Rule
@@ -187,7 +186,7 @@ import org.mockito.kotlin.mock
 @MediumTest
 @RunWith(ContextMenuFlagFlipperRunner::class)
 class TextFieldTest : FocusedWindowTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val inputMethodInterceptor = InputMethodInterceptor(rule)
     private val Tag = "textField"
@@ -1336,7 +1335,7 @@ class TextFieldTest : FocusedWindowTest {
         val mockedClipboardManager = mock<android.content.ClipboardManager>()
         var tfv by mutableStateOf(TextFieldValue(shortText))
         val clipboard =
-            object : Clipboard {
+            object : AndroidClipboard {
                 var contents: AnnotatedString? = null
 
                 override suspend fun getClipEntry(): ClipEntry? {
@@ -1347,12 +1346,7 @@ class TextFieldTest : FocusedWindowTest {
                     contents = clipEntry?.readAnnotatedString()
                 }
 
-                // The new extension field [nativeClipboardManager] still delegates to this
-                // property.
-                // Therefore, this deprecated field shall be used in tests to mock the backing
-                // native ClipboardManager.
-                @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
-                override val nativeClipboard: android.content.ClipboardManager
+                override val clipboardManager: android.content.ClipboardManager
                     get() = mockedClipboardManager
             }
         rule.setTextFieldTestContent {

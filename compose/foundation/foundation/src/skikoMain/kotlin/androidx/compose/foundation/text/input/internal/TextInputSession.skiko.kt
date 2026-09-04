@@ -52,7 +52,7 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
     updateSelectionState: (() -> Unit)?,
     stylusHandwritingTrigger: MutableSharedFlow<Unit>?,
     viewConfiguration: ViewConfiguration?,
-    updateTouchMode: (Boolean) -> Unit,
+    updateDirectTouchInteraction: (Boolean) -> Unit,
 ): Nothing {
     val editProcessor = EditProcessor()
     fun onEditCommand(commands: List<EditCommand>) {
@@ -196,7 +196,16 @@ private fun TextEditingScope(buffer: TextFieldBuffer) = object : TextEditingScop
     }
 
     override fun setComposingRegion(start: Int, end: Int) {
-        buffer.setComposition(start, end)
+        // Sanitize the input: reverse if reversed, clamp into valid range, ignore empty range.
+        val clampedStart = start.coerceIn(0, buffer.length)
+        val clampedEnd = end.coerceIn(0, buffer.length)
+        if (clampedStart == clampedEnd) {
+            // do nothing. empty composition range is not allowed.
+        } else if (clampedStart < clampedEnd) {
+            buffer.setComposition(clampedStart, clampedEnd)
+        } else {
+            buffer.setComposition(clampedEnd, clampedStart)
+        }
     }
 
     override fun setComposingText(text: CharSequence, newCursorPosition: Int) {
