@@ -270,6 +270,8 @@ interface PlatformContext {
 
     val fontFamilyResolver: FontFamily.Resolver
 
+    val soundEffect: SoundEffect
+        get() = NoSoundEffect
 
     interface RootForTestListener {
         fun onRootForTestCreated(root: PlatformRootForTest)

@@ -72,6 +72,7 @@ import androidx.compose.ui.platform.PlatformRootForTest
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.PlatformWindowInsets
+import androidx.compose.ui.platform.SoundEffect
 import androidx.compose.ui.platform.TaskDispatchers
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.scene.ComposeScene
@@ -543,7 +544,7 @@ internal class RootNodeOwner(
         }
 
         override val uriHandler : UriHandler get() = platformContext.uriHandler
-
+        override val soundEffect: SoundEffect get() = platformContext.soundEffect
         override val semanticsOwner = SemanticsOwner(root, rootSemanticsNode, layoutNodes)
         override val windowInfo get() = platformContext.windowInfo
         override val taskDispatchers: TaskDispatchers get() = platformContext.taskDispatchers
