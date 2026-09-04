@@ -488,7 +488,8 @@ internal class ComposeSceneMediator(
             keyboardManager.hasPendingWork ||
             isLayoutTransitionAnimating ||
             semanticsOwnerListener.hasInvalidations ||
-            textInputService.hasInvalidations
+            textInputService.hasInvalidations ||
+            interopContainer.hasPendingUpdates
     }
 
     init {
