@@ -201,34 +201,6 @@ internal fun setA11YAriaRole(element: HTMLElement, ariaRoleId: Int) {
     )
 }
 
-internal fun setA11YProgressBarRangeInfo(
-    element: HTMLElement,
-    semanticsConfiguration: SemanticsConfiguration,
-) {
-    val info = semanticsConfiguration[SemanticsProperties.ProgressBarRangeInfo]
-    if (info == ProgressBarRangeInfo.Indeterminate) {
-        removeA11YProgressBarRangeInfo(element)
-        return
-    }
-    val stateDescription = semanticsConfiguration.getOrNull(SemanticsProperties.StateDescription)
-
-    element.setAttribute("aria-valuemin", info.range.start.toString())
-    element.setAttribute("aria-valuemax", info.range.endInclusive.toString())
-    element.setAttribute("aria-valuenow", info.current.toString())
-    if (stateDescription != null) {
-        element.setAttribute("aria-valuetext", stateDescription)
-    } else {
-        element.removeAttribute("aria-valuetext")
-    }
-}
-
-internal fun removeA11YProgressBarRangeInfo(element: HTMLElement) {
-    element.removeAttribute("aria-valuemin")
-    element.removeAttribute("aria-valuemax")
-    element.removeAttribute("aria-valuenow")
-    element.removeAttribute("aria-valuetext")
-}
-
 internal fun ToggleableState.toAriaChecked(): String {
     return when (this) {
         ToggleableState.On -> "true"

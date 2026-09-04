@@ -453,9 +453,9 @@ internal class ComposeWebSemanticsListener(
         }
 
         if (config.contains(SemanticsProperties.ProgressBarRangeInfo)) {
-            setA11YProgressBarRangeInfo(htmlNode, config)
+            A11YSliderUtils.setA11YProgressBarRangeInfo(htmlNode, config)
         } else {
-            removeA11YProgressBarRangeInfo(htmlNode)
+            A11YSliderUtils.removeA11YProgressBarRangeInfo(htmlNode)
         }
 
         if (config.contains(SemanticsProperties.ToggleableState)) {

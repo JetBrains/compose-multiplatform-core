@@ -18,8 +18,11 @@ package androidx.compose.ui.platform.accessibility
 
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
+import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.KeyboardEvent
 
 internal object A11YSliderUtils {
@@ -60,4 +63,32 @@ internal object A11YSliderUtils {
         }
     }
 
+
+    internal fun setA11YProgressBarRangeInfo(
+        element: HTMLElement,
+        semanticsConfiguration: SemanticsConfiguration,
+    ) {
+        val info = semanticsConfiguration[SemanticsProperties.ProgressBarRangeInfo]
+        if (info == ProgressBarRangeInfo.Indeterminate) {
+            removeA11YProgressBarRangeInfo(element)
+            return
+        }
+        val stateDescription = semanticsConfiguration.getOrNull(SemanticsProperties.StateDescription)
+
+        element.setAttribute("aria-valuemin", info.range.start.toString())
+        element.setAttribute("aria-valuemax", info.range.endInclusive.toString())
+        element.setAttribute("aria-valuenow", info.current.toString())
+        if (stateDescription != null) {
+            element.setAttribute("aria-valuetext", stateDescription)
+        } else {
+            element.removeAttribute("aria-valuetext")
+        }
+    }
+
+    internal fun removeA11YProgressBarRangeInfo(element: HTMLElement) {
+        element.removeAttribute("aria-valuemin")
+        element.removeAttribute("aria-valuemax")
+        element.removeAttribute("aria-valuenow")
+        element.removeAttribute("aria-valuetext")
+    }
 }
