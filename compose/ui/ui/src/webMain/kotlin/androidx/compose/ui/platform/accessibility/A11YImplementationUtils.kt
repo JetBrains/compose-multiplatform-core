@@ -120,11 +120,7 @@ internal fun SemanticsConfiguration.getRoleId(): Int {
 
     if (this.contains(SemanticsProperties.ProgressBarRangeInfo)) {
         val info = this[SemanticsProperties.ProgressBarRangeInfo]
-        roleId = if (
-            info.steps > 0 ||
-                SemanticsProperties.Disabled in this ||
-                SemanticsActions.SetProgress in this
-        ) {
+        roleId = if (info.steps > 0 || SemanticsActions.SetProgress in this) {
             AriaRoleId.Slider
         } else {
             AriaRoleId.ProgressBar

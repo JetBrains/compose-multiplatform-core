@@ -748,13 +748,15 @@ class CfWA11YTest : OnCanvasTests {
         assertNotNull(slider)
         assertEquals("slider", slider.getAttribute("role"))
         assertEquals("0", slider.getAttribute("tabindex"))
+        assertEquals(0.5f, slider.getAttribute("aria-valuenow")!!.toFloat())
+
         slider.focus()
         slider.dispatchEvent(keyEvent("ArrowRight"))
         awaitA11YChanges()
+
         assertEquals(0.51f, slider.getAttribute("aria-valuenow")!!.toFloat())
         assertEquals(0f, slider.getAttribute("aria-valuemin")!!.toFloat())
         assertEquals(1f, slider.getAttribute("aria-valuemax")!!.toFloat())
-        assertEquals(0.5f, slider.getAttribute("aria-valuenow")!!.toFloat())
     }
 
     @OptIn(ExperimentalMaterialApi::class)

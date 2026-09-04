@@ -16,15 +16,13 @@
 
 package androidx.compose.ui.platform.accessibility
 
-import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
-import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.KeyboardEvent
 
-object A11YSliderUtils {
+internal object A11YSliderUtils {
 
     fun isSliderNode(semanticsNode: SemanticsNode): Boolean {
         val config = semanticsNode.config
