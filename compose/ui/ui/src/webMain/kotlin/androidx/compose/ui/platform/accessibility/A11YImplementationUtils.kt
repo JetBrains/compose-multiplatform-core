@@ -33,10 +33,19 @@ internal fun setSizeAndPosition(
     // language=javascript
     js(
         """
-       element.style.left = "" + left + "px";
-       element.style.top = "" + top + "px";
-       element.style.width = "" + width + "px";
-       element.style.height = "" + height + "px";
+       const transformValue = 'matrix(1, 0, 0, 1, ' + left + ', ' + top + ')';
+       const widthValue = "" + width + "px";
+       const heightValue = "" + height + "px";
+
+       if (element.style.transform !== transformValue) {
+           element.style.transform = transformValue;
+       }
+       if (element.style.width !== widthValue) {
+           element.style.width = widthValue;
+       }
+       if (element.style.height !== heightValue) {
+           element.style.height = heightValue;
+       }
     """
     )
 }
