@@ -29,9 +29,48 @@ import org.tomlj.Toml
 import org.tomlj.TomlTable
 
 /**
+ * The androidx.dev repository flavour an [AndroidxSnapshotBuild] was published to, selected by the
+ * `repo` field of a `[[snapshots]]` entry.
+ */
+enum class AndroidxSnapshotRepoFlavour(val id: String) {
+    /** The KMP build repository, carrying the multiplatform artifacts. */
+    KMP("kmp"),
+    /** The Android-only build repository, for groups the KMP build does not carry. */
+    ANDROIDX("androidx");
+
+    fun repositoryUrl(buildId: String): String =
+        when (this) {
+            KMP -> "https://androidx.dev/kmp/builds/$buildId/artifacts/snapshots/repository"
+            ANDROIDX -> "https://androidx.dev/snapshots/builds/$buildId/artifacts/repository"
+        }
+
+    companion object {
+        const val DEFAULT_ID = "kmp"
+
+        fun fromId(id: String): AndroidxSnapshotRepoFlavour? = values().firstOrNull { it.id == id }
+    }
+}
+
+/**
+ * One `[[snapshots]]` entry of `redirectversions.toml`: the androidx.dev build a set of redirect
+ * group prefixes take their `-SNAPSHOT` version from. One build normally covers several groups,
+ * which is how Google cuts them.
+ */
+data class AndroidxSnapshotBuild(
+    val buildId: String,
+    val flavour: AndroidxSnapshotRepoFlavour,
+    val groups: List<String>,
+) {
+    val repositoryUrl: String
+        get() = flavour.repositoryUrl(buildId)
+}
+
+/**
  * Loads the artifact-redirection version registry from `redirectversions.toml` (repo root) once per
  * build. The `[versions]` table maps a redirect-coordinate group prefix (e.g. `androidx.compose`) to
- * the `androidx.*` version the redirect points at.
+ * the `androidx.*` version the redirect points at. The optional `[[snapshots]]` array records which
+ * androidx.dev build backs each group whose version is a `-SNAPSHOT`, so those coordinates stay
+ * resolvable before Google publishes them to Google Maven.
  */
 abstract class RedirectVersionsService : BuildService<RedirectVersionsService.Parameters> {
     interface Parameters : BuildServiceParameters {
@@ -39,30 +78,128 @@ abstract class RedirectVersionsService : BuildService<RedirectVersionsService.Pa
         var tomlFileContents: Provider<String>
     }
 
+    private data class Registry(
+        val versions: Map<String, String>,
+        val snapshots: List<AndroidxSnapshotBuild>,
+    )
+
+    private val registry: Registry by lazy { parseRegistry() }
+
     /** Group prefix (e.g. `androidx.compose`) -> redirect version. */
-    val versions: Map<String, String> by lazy {
+    val versions: Map<String, String>
+        get() = registry.versions
+
+    /** `[[snapshots]]` entries in file order. Empty when every redirect is on a released version. */
+    val snapshots: List<AndroidxSnapshotBuild>
+        get() = registry.snapshots
+
+    /** Group prefix -> the androidx.dev build its `-SNAPSHOT` version comes from. */
+    val snapshotBuildsByGroup: Map<String, AndroidxSnapshotBuild> by lazy {
+        registry.snapshots.flatMap { build -> build.groups.map { it to build } }.toMap()
+    }
+
+    private fun parseRegistry(): Registry {
+        val fileName = parameters.tomlFileName
         val parsed = Toml.parse(parameters.tomlFileContents.get())
         if (parsed.hasErrors()) {
-            val issues =
-                parsed.errors().joinToString("\n") {
-                    "${parameters.tomlFileName}:${it.position()}: ${it.message}"
-                }
-            throw GradleException("${parameters.tomlFileName} has issues.\n$issues")
+            val issues = parsed.errors().joinToString("\n") { "$fileName:${it.position()}: ${it.message}" }
+            throw GradleException("$fileName has issues.\n$issues")
         }
         val table: TomlTable =
             parsed.getTable("versions")
-                ?: throw GradleException("${parameters.tomlFileName} is missing the [versions] table")
+                ?: throw GradleException("$fileName is missing the [versions] table")
         // tomlj treats a dotted String key as a path lookup, so the dotted group keys must be read
         // via the literal single-segment List overload (getString(listOf(key))), not getString(key).
-        table.keySet().associateWith { key ->
-            table.getString(listOf(key))
-                ?: throw GradleException(
-                    "${parameters.tomlFileName}: [versions] \"$key\" must be a string",
+        val versions =
+            table.keySet().associateWith { key ->
+                table.getString(listOf(key))
+                    ?: throw GradleException("$fileName: [versions] \"$key\" must be a string")
+            }
+
+        val entries = parsed.getArray("snapshots")
+        val snapshots =
+            (0 until (entries?.size() ?: 0)).map { index ->
+                val entry =
+                    entries!!.getTable(index)
+                        ?: throw GradleException(
+                            "$fileName: [[snapshots]] entry #${index + 1} must be a table",
+                        )
+                val buildId =
+                    entry.getString("buildId")
+                        ?: throw GradleException(
+                            "$fileName: [[snapshots]] entry #${index + 1} must declare a string " +
+                                "\"buildId\" naming the androidx.dev build",
+                        )
+                val flavourId = entry.getString("repo") ?: AndroidxSnapshotRepoFlavour.DEFAULT_ID
+                val flavour =
+                    AndroidxSnapshotRepoFlavour.fromId(flavourId)
+                        ?: throw GradleException(
+                            "$fileName: [[snapshots]] buildId \"$buildId\" has repo = \"$flavourId\"; " +
+                                "known flavours are " +
+                                AndroidxSnapshotRepoFlavour.values().joinToString { "\"${it.id}\"" },
+                        )
+                val groups =
+                    entry.getArray("groups")?.takeIf { it.containsStrings() }
+                        ?: throw GradleException(
+                            "$fileName: [[snapshots]] buildId \"$buildId\" must declare a \"groups\" " +
+                                "array of redirect group prefixes",
+                        )
+                AndroidxSnapshotBuild(
+                    buildId = buildId,
+                    flavour = flavour,
+                    groups = (0 until groups.size()).map { groups.getString(it) },
                 )
+            }
+        validate(fileName, versions, snapshots)
+        return Registry(versions, snapshots)
+    }
+
+    private fun validate(
+        fileName: String,
+        versions: Map<String, String>,
+        snapshots: List<AndroidxSnapshotBuild>,
+    ) {
+        val buildIdByGroup = mutableMapOf<String, String>()
+        snapshots.forEach { build ->
+            build.groups.forEach { group ->
+                buildIdByGroup.put(group, build.buildId)?.let { owner ->
+                    throw GradleException(
+                        "$fileName: group \"$group\" is listed in the [[snapshots]] entries of both " +
+                            "build \"$owner\" and build \"${build.buildId}\". A group takes its " +
+                            "version from exactly one androidx.dev build.",
+                    )
+                }
+                val version =
+                    versions[group]
+                        ?: throw GradleException(
+                            "$fileName: [[snapshots]] build \"${build.buildId}\" lists group " +
+                                "\"$group\", which has no entry in the [versions] table.",
+                        )
+                if (!version.endsWith(SNAPSHOT_SUFFIX)) {
+                    throw GradleException(
+                        "$fileName: group \"$group\" is pinned to androidx.dev build " +
+                            "\"${build.buildId}\" but its [versions] entry is \"$version\". Only " +
+                            "$SNAPSHOT_SUFFIX versions are served by androidx.dev; a released " +
+                            "version must not carry a buildId.",
+                    )
+                }
+            }
+        }
+        versions.forEach { (group, version) ->
+            if (version.endsWith(SNAPSHOT_SUFFIX) && group !in buildIdByGroup) {
+                throw GradleException(
+                    "$fileName: [versions] \"$group\" is \"$version\" but no [[snapshots]] entry " +
+                        "lists it. A snapshot version without an androidx.dev buildId is not " +
+                        "resolvable — add the group to the [[snapshots]] entry for the build it " +
+                        "was merged from.",
+                )
+            }
         }
     }
 
     companion object {
+        private const val SNAPSHOT_SUFFIX = "-SNAPSHOT"
+
         private const val TOML_FILE_NAME = "redirectversions.toml"
 
         internal fun registerOrGet(project: Project): Provider<RedirectVersionsService> {
@@ -121,9 +258,56 @@ internal fun Project.registerRedirectVersionsExtension() {
  */
 fun Project.findArtifactRedirectionVersion(groupId: String): String? {
     val versions = RedirectVersionsService.registerOrGet(this).get().versions
-    val parts = groupId.split(".") + name
-    val variations = (parts.size downTo 1).map { i -> parts.take(i).joinToString(".") }
-    return variations.firstNotNullOfOrNull { versions[it] }
+    return groupPrefixes(groupId, name).firstNotNullOfOrNull { versions[it] }
+}
+
+/**
+ * Look up the androidx.dev build the redirect version of [groupId] comes from. Resolves the same
+ * prefix [findArtifactRedirectionVersion] does and asks only that one: a more specific prefix on a
+ * released version (`androidx.compose.material3`) must not inherit the snapshot of a less specific
+ * one (`androidx.compose`). Null when the redirect is on a version already on Google Maven.
+ */
+fun Project.findArtifactRedirectionSnapshot(groupId: String): AndroidxSnapshotBuild? {
+    val redirects = RedirectVersionsService.registerOrGet(this).get()
+    val prefix = groupPrefixes(groupId, name).firstOrNull { it in redirects.versions } ?: return null
+    return redirects.snapshotBuildsByGroup[prefix]
+}
+
+/**
+ * Group prefixes of [groupId] from the most specific (`<groupId>.<projectName>`) down to the least
+ * specific (the leading segment), the lookup order of the redirect registry.
+ */
+private fun groupPrefixes(groupId: String, projectName: String): List<String> {
+    val parts = groupId.split(".") + projectName
+    return (parts.size downTo 1).map { i -> parts.take(i).joinToString(".") }
+}
+
+/**
+ * Registers `printAndroidxSnapshots`, which prints the registered androidx.dev builds as a flat
+ * comma-separated list of `<group>:<version>:<buildId>:<repo>`, empty when no redirect is on a
+ * snapshot. Consumed by the Gradle plugin build of `compose-multiplatform`, which bakes the ids into
+ * the published plugin so external consumers of a dev build can resolve the same coordinates.
+ */
+internal fun Project.registerPrintAndroidxSnapshotsTask() {
+    val service = RedirectVersionsService.registerOrGet(this)
+    val registry =
+        service.map { versions ->
+            versions.snapshots
+                .flatMap { build ->
+                    build.groups.map { group ->
+                        "$group:${versions.versions.getValue(group)}:${build.buildId}:${build.flavour.id}"
+                    }
+                }
+                .joinToString(",")
+        }
+    tasks.register("printAndroidxSnapshots") { task ->
+        task.group = "Compose Multiplatform"
+        task.description =
+            "Prints the androidx.dev builds backing the -SNAPSHOT artifact redirects, as " +
+                "comma-separated <group>:<version>:<buildId>:<repo> records."
+        task.usesService(service)
+        task.doLast { println(registry.get()) }
+    }
 }
 
 /**
@@ -247,9 +431,16 @@ internal fun Project.applyParallelRedirectGraph(
             if (redirectJavaTasks == null || jc.name in redirectJavaTasks) jc.setSource(files())
         }
 
+        // Name the androidx.dev build when the redirect is on a snapshot: the version string alone
+        // ("1.13.0-SNAPSHOT") is reused across builds and does not say what is being compiled against.
+        val snapshotBuild = findArtifactRedirectionSnapshot(redirectCoord.substringBefore(':'))
         logger.lifecycle(
-            "[artifactRedirection] {} -> {} (parallel graph: {} redirect target(s), forkBuilt={})",
-            path, redirectCoord, redirectTargetNames.size, forkBuiltExists,
+            "[artifactRedirection] {} -> {}{} (parallel graph: {} redirect target(s), forkBuilt={})",
+            path,
+            redirectCoord,
+            snapshotBuild?.let { " from androidx.dev build ${it.buildId}" } ?: "",
+            redirectTargetNames.size,
+            forkBuiltExists,
         )
     }
 }

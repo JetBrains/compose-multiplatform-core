@@ -1,0 +1,170 @@
+/*
+ * Copyright 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import groovy.transform.Field
+import org.gradle.api.artifacts.dsl.RepositoryHandler
+import org.tomlj.Toml
+
+import java.util.regex.Pattern
+
+buildscript {
+    // The settings buildscript classpath is not visible to script plugins applied from it, so this
+    // script carries its own. tomlj is already trusted in gradle/verification-metadata.xml.
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.tomlj:tomlj:1.0.0")
+    }
+}
+
+/*
+ * Declares the androidx.dev repositories serving the artifact redirects that `redirectversions.toml`
+ * pins to a `-SNAPSHOT`, i.e. to an androidx build Google has cut but not yet published to Google
+ * Maven. Each `[[snapshots]]` entry becomes one repository, filtered down to exactly the group
+ * prefixes and versions recorded for it.
+ *
+ * Kept out of `repos.gradle` — that file is shared byte-identically with AOSP and also configures
+ * buildscript classpaths, which never resolve redirect coordinates.
+ *
+ * The registry is validated in `ArtifactRedirection.kt`; this reader reports only what it must read.
+ */
+
+@Field final String TOML_FILE_NAME = "redirectversions.toml"
+
+@Field List<Map> snapshotBuildsCache = null
+
+ext.androidxSnapshots = new Properties()
+ext.androidxSnapshots.addRepositories = this.&addRepositories
+ext.androidxSnapshots.disableChangingModuleCache = this.&disableChangingModuleCache
+
+String repositoryUrl(String flavour, String buildId) {
+    switch (flavour) {
+        case "kmp":
+            return "https://androidx.dev/kmp/builds/$buildId/artifacts/snapshots/repository"
+        case "androidx":
+            return "https://androidx.dev/snapshots/builds/$buildId/artifacts/repository"
+        default:
+            throw new GradleException("$TOML_FILE_NAME: [[snapshots]] buildId \"$buildId\" has " +
+                    "repo = \"$flavour\"; known flavours are \"kmp\" and \"androidx\".")
+    }
+}
+
+/**
+ * Parses `[[snapshots]]` into one entry per androidx.dev build:
+ * `[buildId: String, url: String, versionsByGroup: Map<String, String>]`.
+ * Empty when every redirect is on a released version.
+ */
+List<Map> snapshotBuilds(File rootDir) {
+    if (snapshotBuildsCache != null) return snapshotBuildsCache
+
+    def tomlFile = new File(rootDir, TOML_FILE_NAME)
+    if (!tomlFile.exists()) {
+        snapshotBuildsCache = []
+        return snapshotBuildsCache
+    }
+    def parsed = Toml.parse(tomlFile.toPath())
+    if (parsed.hasErrors()) {
+        def issues = parsed.errors().collect { "$TOML_FILE_NAME:${it.position()}: ${it.message}" }
+        throw new GradleException("$TOML_FILE_NAME has issues.\n${issues.join("\n")}")
+    }
+    def entries = parsed.getArray("snapshots")
+    if (entries == null) {
+        snapshotBuildsCache = []
+        return snapshotBuildsCache
+    }
+    def versions = parsed.getTable("versions")
+    if (versions == null) {
+        throw new GradleException("$TOML_FILE_NAME is missing the [versions] table")
+    }
+
+    def builds = []
+    for (int i = 0; i < entries.size(); i++) {
+        def entry = entries.getTable(i)
+        def buildId = entry.getString("buildId")
+        if (buildId == null) {
+            throw new GradleException("$TOML_FILE_NAME: [[snapshots]] entry #${i + 1} must declare " +
+                    "a string \"buildId\" naming the androidx.dev build")
+        }
+        def groups = entry.getArray("groups")
+        if (groups == null || !groups.containsStrings()) {
+            throw new GradleException("$TOML_FILE_NAME: [[snapshots]] buildId \"$buildId\" must " +
+                    "declare a \"groups\" array of redirect group prefixes")
+        }
+        def versionsByGroup = [:]
+        for (int g = 0; g < groups.size(); g++) {
+            def group = groups.getString(g)
+            // tomlj treats a dotted String key as a path lookup, so a dotted group key must be read
+            // via the literal single-segment List overload.
+            def version = versions.getString([group])
+            if (version == null) {
+                throw new GradleException("$TOML_FILE_NAME: [[snapshots]] build \"$buildId\" lists " +
+                        "group \"$group\", which has no entry in the [versions] table.")
+            }
+            versionsByGroup[group] = version
+        }
+        builds << [
+                buildId        : buildId,
+                url            : repositoryUrl(entry.getString("repo") ?: "kmp", buildId),
+                versionsByGroup: versionsByGroup,
+        ]
+    }
+    snapshotBuildsCache = builds
+    return snapshotBuildsCache
+}
+
+/**
+ * Adds one filtered repository per registered androidx.dev build to [handler]. No-op when the
+ * registry is empty, which is the state of a released branch.
+ */
+def addRepositories(RepositoryHandler handler, File rootDir) {
+    def added = snapshotBuilds(rootDir).collect { build ->
+        handler.maven { repo ->
+            repo.name = "androidxDevBuild${build.buildId}"
+            repo.url = build.url
+            repo.content { content ->
+                // Group prefix AND exact version. The version half is what keeps overlapping
+                // prefixes (androidx.compose vs androidx.compose.material3) and two groups pinned to
+                // two different builds apart: a repository answers only for what it was recorded for.
+                build.versionsByGroup.each { group, version ->
+                    content.includeVersionByRegex(
+                            Pattern.quote(group) + "(\\..*)?",
+                            ".*",
+                            Pattern.quote(version))
+                }
+            }
+        }
+    }
+    if (!added.isEmpty()) {
+        // Ahead of `mavenLocal()` and the unfiltered Sonatype snapshots repo, both of which would
+        // otherwise be asked for these coordinates first.
+        handler.removeAll(added)
+        handler.addAll(0, added)
+    }
+}
+
+/**
+ * Opts [project] out of Gradle's 24h changing-module cache while any redirect is on a snapshot.
+ * Google reuses the version string `X.Y.Z-SNAPSHOT` across builds, so moving the registry to a new
+ * buildId would otherwise keep serving the previous build's artifacts, silently. No-op on a released
+ * state; `--refresh-dependencies` remains the manual escape hatch.
+ */
+def disableChangingModuleCache(Project project) {
+    if (snapshotBuilds(project.rootDir).isEmpty()) return
+    project.configurations.configureEach { configuration ->
+        configuration.resolutionStrategy.cacheChangingModulesFor(0, "seconds")
+    }
+}
