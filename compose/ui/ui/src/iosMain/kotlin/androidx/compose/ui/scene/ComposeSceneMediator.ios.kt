@@ -76,7 +76,6 @@ import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalNativeTextInputContext
 import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.OnFocusBehavior
-import androidx.compose.ui.uikit.density
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
@@ -532,7 +531,7 @@ internal class ComposeSceneMediator(
             scrollDelta = delta.toOffset(composeSceneDensity) * SCROLL_DELTA_MULTIPLIER,
             timeMillis = event.timeMillis,
             nativeEvent = event,
-            keyboardModifiers = PointerKeyboardModifiers(modifierFlags =event.modifierFlagsOrZero)
+            keyboardModifiers = PointerKeyboardModifiers(modifierFlags = event.modifierFlagsOrZero)
         )
     }
 
@@ -559,7 +558,7 @@ internal class ComposeSceneMediator(
             ),
             timeMillis = event.timeMillis,
             nativeEvent = event,
-            keyboardModifiers = PointerKeyboardModifiers(modifierFlags =event.modifierFlagsOrZero)
+            keyboardModifiers = PointerKeyboardModifiers(modifierFlags = event.modifierFlagsOrZero)
         )
     }
 
@@ -568,30 +567,24 @@ internal class ComposeSceneMediator(
         scene.cancelPointerInput()
     }
 
-    private fun onCancelAllTouches(touches: Set<*>) {
-        activitiesHandler.onActivitiesEnded(touches.count())
+    private fun onCancelAllTouches(cancelledTouches: Set<UITouch>) {
+        activitiesHandler.onActivitiesEnded(cancelledTouches.count())
         scene.cancelPointerInput()
     }
 
-    /**
-     * Converts [UITouch] objects from [touches] to [ComposeScenePointer] and dispatches them to the appropriate handlers.
-     * @param touches a [Set] of [UITouch] objects. Erasure happens due to K/N not supporting Obj-C lightweight generics.
-     * @param event the [UIEvent] associated with the touches
-     * @param eventKind the [TouchesEventKind] of the touches
-     */
     private fun onTouchesEvent(
-        touches: Set<*>,
+        allTrackedTouches: Set<UITouch>,
+        changedTouches: Set<UITouch>,
         event: UIEvent?,
         eventKind: TouchesEventKind
     ): PointerEventResult {
         when (eventKind) {
-            TouchesEventKind.BEGAN -> activitiesHandler.onActivitiesStarted(touches.count())
-            TouchesEventKind.ENDED -> activitiesHandler.onActivitiesEnded(touches.count())
+            TouchesEventKind.BEGAN -> activitiesHandler.onActivitiesStarted(changedTouches.count())
+            TouchesEventKind.ENDED -> activitiesHandler.onActivitiesEnded(changedTouches.count())
             TouchesEventKind.MOVED -> {}
         }
 
-        val pointers = touches.mapIndexed { index, touch ->
-            touch as UITouch
+        val pointers = allTrackedTouches.mapIndexed { index, touch ->
             val position = touch.offsetInView(_backgroundView, screenDensity.density)
             val pointerType = when (touch.type) {
                 UITouchTypeDirect -> PointerType.Touch
@@ -629,7 +622,7 @@ internal class ComposeSceneMediator(
             nativeEvent = event,
             button = event?.getButton(previousButtonMask, eventKind, previousTouchEventKind),
             buttons = PointerButtons(pointerButtonsMask),
-            keyboardModifiers = PointerKeyboardModifiers(modifierFlags =event.modifierFlagsOrZero)
+            keyboardModifiers = PointerKeyboardModifiers(modifierFlags = event.modifierFlagsOrZero)
         ).also {
             previousButtonMask = event.buttonMaskOrZero
             if (eventKind != TouchesEventKind.MOVED) {
