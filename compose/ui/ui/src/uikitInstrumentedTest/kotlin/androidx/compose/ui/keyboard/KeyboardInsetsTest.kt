@@ -98,6 +98,8 @@ internal abstract class KeyboardInsetsTest(
         var focusManager: FocusManager? = null
         val focusRequester = FocusRequester()
 
+        animationSpeed = UIKitInstrumentedTest.DefaultAnimationSpeed
+
         setContent({
             onFocusBehavior = OnFocusBehavior.FocusableAboveKeyboard
         }) {
@@ -187,6 +189,8 @@ internal abstract class KeyboardInsetsTest(
         var lastContentFrame = DpRect(DpOffset.Unspecified, DpSize.Unspecified)
         var focusManager: FocusManager? = null
         val focusRequester = FocusRequester()
+
+        animationSpeed = UIKitInstrumentedTest.DefaultAnimationSpeed
 
         setContent({
             onFocusBehavior = OnFocusBehavior.DoNothing
@@ -589,6 +593,8 @@ internal abstract class KeyboardInsetsTest(
         var textFieldBottom = Int.MIN_VALUE
         val drawnTextFieldFrames = mutableListOf<Pair<Int, Int>>()
         val focusRequester = FocusRequester()
+
+        animationSpeed = UIKitInstrumentedTest.DefaultAnimationSpeed
 
         setContent({
             onFocusBehavior = OnFocusBehavior.FocusableAboveKeyboard

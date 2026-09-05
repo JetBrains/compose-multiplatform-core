@@ -38,8 +38,10 @@ internal class IosInteropContainer(
 
     private val interopViews = mutableMapOf<InteropView, InteropViewHolder>()
     private var transaction = InteropMutableTransaction(isInteropActive = false)
+    private var scheduledUpdatesCount = 0
 
     val hasInteropViews: Boolean get() = interopViews.isNotEmpty()
+    val hasPendingUpdates: Boolean get() = transaction.hasPendingActions || scheduledUpdatesCount > 0
     val hasPendingViewUpdatesOnly: Boolean get() = transaction.hasPendingViewUpdatesOnly
 
     // TODO: Android reuses `owner.snapshotObserver`. We should probably do the same with RootNodeOwner.
@@ -140,14 +142,21 @@ internal class IosInteropContainer(
     }
 
     override fun scheduleUpdate(action: () -> Unit) {
+        scheduledUpdatesCount++
         // Add lambda to a list of commands which will be executed later
         // in the same [CATransaction], when the next rendered Compose frame is presented.
-        transaction.scheduleFrameSynchronizedAction(action)
+        transaction.scheduleFrameSynchronizedAction {
+            action()
+            scheduledUpdatesCount--
+        }
         requestRedraw()
     }
 
     override fun scheduleUpdate(holder: InteropViewHolder) {
-        transaction.scheduleViewUpdate(holder)
+        scheduledUpdatesCount++
+        transaction.scheduleViewUpdate(holder) {
+            scheduledUpdatesCount--
+        }
         requestRedraw()
     }
 

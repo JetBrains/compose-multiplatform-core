@@ -206,7 +206,9 @@ internal class ComposeContainer(
     }
 
     fun hasInvalidations(): Boolean {
-        return mediator?.hasInvalidations == true || layersHolder?.layersViewController?.hasInvalidations == true
+        return mediator?.hasInvalidations == true ||
+            layersHolder?.layersViewController?.hasInvalidations == true ||
+            focusedViewsList.hasScheduledTasks
     }
 
     private val currentInterfaceOrientation: InterfaceOrientation?

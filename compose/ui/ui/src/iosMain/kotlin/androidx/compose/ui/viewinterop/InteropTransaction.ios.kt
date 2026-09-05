@@ -101,9 +101,12 @@ internal class InteropMutableTransaction(
     /**
      * Schedules a user-provided `UIKitView.update` or `UIKitViewController.update` callback.
      */
-    fun scheduleViewUpdate(holder: InteropViewHolder) {
+    fun scheduleViewUpdate(holder: InteropViewHolder, completion: () -> Unit) {
         if (holdersWithPendingViewUpdates.add(holder)) {
-            actions.add { holder.update() }
+            actions.add {
+                holder.update()
+                completion()
+            }
         }
     }
 }

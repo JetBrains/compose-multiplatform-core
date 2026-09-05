@@ -75,7 +75,9 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
+import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.ObjCAction
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -84,7 +86,10 @@ import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGSizeMake
 import platform.Foundation.NSDate
+import platform.Foundation.NSNotification
+import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSRunLoop
+import platform.Foundation.NSSelectorFromString
 import platform.Foundation.dateWithTimeIntervalSinceNow
 import platform.Foundation.runUntilDate
 import platform.UIKit.UIApplication
@@ -117,11 +122,11 @@ import platform.UIKit.UITouch
 import platform.UIKit.UITraitCollection
 import platform.UIKit.UITraitEnvironmentLayoutDirection
 import platform.UIKit.UITraitEnvironmentLayoutDirectionLeftToRight
-import platform.UIKit.UITraitPreferredContentSizeCategory
 import platform.UIKit.UIUserInterfaceIdiomPad
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 import platform.UIKit.UIWindow
+import platform.UIKit.UIWindowDidBecomeVisibleNotification
 import platform.UIKit.UIWindowScene
 import platform.UIKit.endEditing
 import platform.UIKit.setOverrideTraitCollection
@@ -217,6 +222,16 @@ internal class UIKitInstrumentedTest(
     val useHostingView: Boolean
 ) {
     companion object {
+        /**
+         * The factor by which animations are sped up in instrumented tests.
+         */
+        internal const val TestsAnimationSpeed = 100f
+
+        /**
+         * Default animation speed for tests that require one-to-one animations.
+         */
+        internal const val DefaultAnimationSpeed = 1f
+
         fun delay(timeoutMillis: Long) {
             val runLoop = NSRunLoop.currentRunLoop()
             runLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(timeoutMillis.toDouble() / 1000.0))
@@ -248,6 +263,8 @@ internal class UIKitInstrumentedTest(
     private val screen = UIScreen.mainScreen()
     val density = Density(density = screen.scale.toFloat())
     val appDelegate = MockAppDelegate()
+    var animationSpeed: Float by appDelegate::animationSpeed
+
     val keyboardHeight: Dp get() =
         KeyboardVisibilityListener.keyboardFrame.useContents { size.height.dp }
     val screenBounds: DpRect get() = screen.bounds().toDpRect()
@@ -731,7 +748,7 @@ internal class UIKitInstrumentedTest(
     fun AccessibilityTestNode.dragSelectionHandle(
         handle: TestHandle,
         toOffset: Int,
-        duration: Duration = 0.5.seconds,
+        duration: Duration = 0.1.seconds,
     ) = dragSelectionHandleImpl(this, handle, toOffset, duration)
 
     /**
@@ -739,10 +756,10 @@ internal class UIKitInstrumentedTest(
      * over a given duration.
      *
      * @param location The target position of the drag in DpOffset.
-     * @param duration The duration of the drag gesture, defaulting to 0.5 seconds.
+     * @param duration The duration of the drag gesture, defaulting to 0.1 seconds.
      * @return The same UITouch instance after completing the drag gesture.
      */
-    private fun UITouch.dragTo(location: DpOffset, duration: Duration = 0.5.seconds): UITouch {
+    private fun UITouch.dragTo(location: DpOffset, duration: Duration = 0.1.seconds): UITouch {
         val startLocation = locationInView(null).toDpOffset()
 
         val startTime = TimeSource.Monotonic.markNow()
@@ -764,10 +781,10 @@ internal class UIKitInstrumentedTest(
      * over a given duration.
      *
      * @param offset The offset by which the touch is moved, specified as a DpOffset.
-     * @param duration The duration of the drag gesture, defaulting to 0.5 seconds.
+     * @param duration The duration of the drag gesture, defaulting to 0.1 seconds.
      * @return The same UITouch instance after completing the drag gesture.
      */
-    fun UITouch.dragBy(offset: DpOffset, duration: Duration = 0.5.seconds): UITouch {
+    fun UITouch.dragBy(offset: DpOffset, duration: Duration = 0.1.seconds): UITouch {
         return dragTo(locationInView(null).toDpOffset() + offset, duration)
     }
 
@@ -777,10 +794,10 @@ internal class UIKitInstrumentedTest(
      *
      * @param dx The horizontal offset by which the touch is moved, specified as a Dp. Defaults to 0.dp.
      * @param dy The vertical offset by which the touch is moved, specified as a Dp. Defaults to 0.dp.
-     * @param duration The duration of the drag gesture, specified as a Duration. Defaults to 0.5 seconds.
+     * @param duration The duration of the drag gesture, specified as a Duration. Defaults to 0.1 seconds.
      * @return The same UITouch instance after completing the drag gesture.
      */
-    fun UITouch.dragBy(dx: Dp = 0.dp, dy: Dp = 0.dp, duration: Duration = 0.5.seconds): UITouch {
+    fun UITouch.dragBy(dx: Dp = 0.dp, dy: Dp = 0.dp, duration: Duration = 0.1.seconds): UITouch {
         return dragBy(DpOffset(dx, dy), duration)
     }
 
@@ -790,10 +807,10 @@ internal class UIKitInstrumentedTest(
      *
      * @param x The horizontal destination point. The default value does not change the current horizontal offset.
      * @param y The vertical destination point. The default value does not change the current vertical offset.
-     * @param duration The duration of the drag gesture, specified as a Duration. Defaults to 0.5 seconds.
+     * @param duration The duration of the drag gesture, specified as a Duration. Defaults to 0.1 seconds.
      * @return The same UITouch instance after completing the drag gesture.
      */
-    fun UITouch.dragTo(x: Dp? = null, y: Dp? = null, duration: Duration = 0.5.seconds): UITouch {
+    fun UITouch.dragTo(x: Dp? = null, y: Dp? = null, duration: Duration = 0.1.seconds): UITouch {
         val location = locationInView(null).toDpOffset()
         return dragTo(DpOffset(x ?: location.x, y ?: location.y), duration)
     }
@@ -825,6 +842,13 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
     private var _window: UIWindow? = UIWindow(frame = UIScreen.mainScreen.bounds)
     override fun window(): UIWindow? = _window
 
+    var animationSpeed: Float = UIKitInstrumentedTest.TestsAnimationSpeed
+        set(value) {
+            field = value
+            applyAnimationSpeed()
+        }
+    private var isObservingWindowVisibility = false
+
     private var supportedInterfaceOrientations: UIInterfaceOrientationMask = UIInterfaceOrientationMaskAll
 
     private val infiniteAnimationPolicy = object : InfiniteAnimationPolicy {
@@ -849,6 +873,11 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         _window?.backgroundColor = UIColor.systemBackgroundColor
         _window?.windowScene = scene
 
+        // Must be applied before the Compose container is attached to the window: it picks the
+        // window layer speed up in `onDidMoveToWindow` to derive its `MotionDurationScale`.
+        startObservingWindowVisibility()
+        applyAnimationSpeed()
+
         _window?.rootViewController = viewController
         _window?.makeKeyAndVisible()
 
@@ -857,7 +886,13 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         }
     }
 
+    private fun applyAnimationSpeed() {
+        _window?.applyAnimationSpeed()
+        _window?.windowScene?.windows?.forEach { (it as UIWindow).applyAnimationSpeed() }
+    }
+
     fun cleanUp() {
+        stopObservingWindowVisibility()
         sceneJob.cancel()
         val scene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
         val allWindows = scene?.windows ?: emptyList<UIWindow>()
@@ -881,6 +916,37 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         allWindows.forEach {
             (it as UIWindow).setHidden(true)
         }
+    }
+
+    private fun startObservingWindowVisibility() {
+        if (isObservingWindowVisibility) return
+        isObservingWindowVisibility = true
+        NSNotificationCenter.defaultCenter.addObserver(
+            observer = this,
+            selector = NSSelectorFromString(::windowDidBecomeVisible.name + ":"),
+            name = UIWindowDidBecomeVisibleNotification,
+            `object` = null
+        )
+    }
+
+    private fun stopObservingWindowVisibility() {
+        if (!isObservingWindowVisibility) return
+        isObservingWindowVisibility = false
+        NSNotificationCenter.defaultCenter.removeObserver(
+            observer = this,
+            name = UIWindowDidBecomeVisibleNotification,
+            `object` = null
+        )
+    }
+
+    @OptIn(BetaInteropApi::class)
+    @ObjCAction
+    fun windowDidBecomeVisible(arg: NSNotification) {
+        (arg.`object` as? UIWindow)?.applyAnimationSpeed()
+    }
+
+    private fun UIWindow.applyAnimationSpeed() {
+        layer.speed = animationSpeed
     }
 
     /**
@@ -1033,18 +1099,22 @@ internal fun UIKitInstrumentedTest.captureScreenshot(): UIImage? {
 }
 
 internal fun UIKitInstrumentedTest.waitForContextMenu() {
+    waitForIdle()
+    waitUntil("Waiting for context menu to appear") { isContextMenuVisible }
+    delay(400) // wait for toolbar animation
+    waitForIdle()
+}
+
+internal val UIKitInstrumentedTest.isContextMenuVisible: Boolean get() {
     val menuClassName = if (available(OS.Ios to OSVersion(16))) {
         "_UIEditMenuContainerView"
     } else {
         "UICalloutBar"
     }
-    waitForIdle()
-    waitUntil("Waiting for context menu to appear") {
-        firstNodeOrNull { node ->
-            node.element?.let { it::class.simpleName } == menuClassName
-        } != null
-    }
-    delay(500) // wait for toolbar animation
+
+    return firstNodeOrNull { node ->
+        node.element?.let { it::class.simpleName } == menuClassName
+    } != null
 }
 
 internal fun UIViewController.setLayoutDirection(
