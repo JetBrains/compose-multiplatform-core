@@ -37,6 +37,8 @@ import androidx.compose.ui.test.utils.beginKeyPress
 import androidx.compose.ui.test.utils.beginModifierKeyPress
 import androidx.compose.ui.test.utils.beginPress
 import androidx.compose.ui.test.utils.center
+import androidx.compose.ui.test.utils.endPinch
+import androidx.compose.ui.test.utils.endScroll
 import androidx.compose.ui.test.utils.dragSelectionHandleImpl
 import androidx.compose.ui.test.utils.findFirstDescendant
 import androidx.compose.ui.test.utils.getTouchesEvent
@@ -45,9 +47,13 @@ import androidx.compose.ui.test.utils.isLoupeView
 import androidx.compose.ui.test.utils.leftCenter
 import androidx.compose.ui.test.utils.mouseDown
 import androidx.compose.ui.test.utils.moveToLocationOnWindow
+import androidx.compose.ui.test.utils.pinchBy
+import androidx.compose.ui.test.utils.pinchEventAt
 import androidx.compose.ui.test.utils.offsetBy
 import androidx.compose.ui.test.utils.release
 import androidx.compose.ui.test.utils.resetTouches
+import androidx.compose.ui.test.utils.scrollBy
+import androidx.compose.ui.test.utils.scrollEventAt
 import androidx.compose.ui.test.utils.rightCenter
 import androidx.compose.ui.test.utils.toCGPoint
 import androidx.compose.ui.test.utils.touchDown
@@ -117,7 +123,6 @@ import platform.UIKit.UITouch
 import platform.UIKit.UITraitCollection
 import platform.UIKit.UITraitEnvironmentLayoutDirection
 import platform.UIKit.UITraitEnvironmentLayoutDirectionLeftToRight
-import platform.UIKit.UITraitPreferredContentSizeCategory
 import platform.UIKit.UIUserInterfaceIdiomPad
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
@@ -782,6 +787,64 @@ internal class UIKitInstrumentedTest(
      */
     fun UITouch.dragBy(dx: Dp = 0.dp, dy: Dp = 0.dp, duration: Duration = 0.5.seconds): UITouch {
         return dragBy(DpOffset(dx, dy), duration)
+    }
+
+    /**
+     * Simulates a trackpad continuous pan gesture as a stateful scroll session anchored
+     * at [position].
+     * All scroll synthesis goes through the `UIEvent (CMPScroll)` category in
+     * `UIEvent+Test.m`, which dispatches via `-[UIApplication sendEvent:]` and
+     * then forces each [UIPanGestureRecognizer] into the matching state so
+     * target-actions observe the proper `Began → Changed …→ Ended` lifecycle.
+     */
+    fun trackpadPan(
+        position: DpOffset,
+        dx: Dp = 0.dp,
+        dy: Dp = 0.dp,
+        duration: Duration = 0.5.seconds,
+    ) {
+        val stepInterval = 16.milliseconds
+        val steps = maxOf(1, (duration / stepInterval).toInt())
+        val targetWindow = appDelegate.window()!!
+        val scrollEvent = targetWindow.scrollEventAt(location = position)
+
+        val perStepDelta = DpOffset(dx / steps.toFloat(), dy / steps.toFloat())
+        repeat(steps) {
+            delay(stepInterval.inWholeMilliseconds)
+            scrollEvent.scrollBy(perStepDelta, targetWindow)
+        }
+
+        delay(stepInterval.inWholeMilliseconds)
+        scrollEvent.endScroll(targetWindow)
+    }
+
+    /**
+     * Simulates a trackpad continuous pinch gesture as a stateful transform session anchored
+     * at [position]. The gesture ramps the absolute scale linearly from `1.0` to [finalScale]
+     * over [duration], emitting one `phase-Began`, multiple `phase-Changed`, and a final
+     * `phase-Ended` event. All transform synthesis goes through the `UIEvent (CMPPinch)`
+     * category in `UIEvent+Test.m`, which drives each [platform.UIKit.UIPinchGestureRecognizer]
+     * directly so target-actions observe the proper `Began → Changed …→ Ended` lifecycle.
+     */
+    fun trackpadPinch(
+        position: DpOffset,
+        finalScale: Float,
+        duration: Duration = 0.5.seconds,
+    ) {
+        val stepInterval = 16.milliseconds
+        val steps = maxOf(1, (duration / stepInterval).toInt())
+        val targetWindow = appDelegate.window()!!
+        val pinchEvent = targetWindow.pinchEventAt(location = position, scale = 1.0)
+
+        repeat(steps) { i ->
+            delay(stepInterval.inWholeMilliseconds)
+            val progress = (i + 1).toFloat() / steps.toFloat()
+            val scale = 1.0 + (finalScale - 1.0) * progress
+            pinchEvent.pinchBy(scale.toDouble(), targetWindow)
+        }
+
+        delay(stepInterval.inWholeMilliseconds)
+        pinchEvent.endPinch(targetWindow)
     }
 
     /**

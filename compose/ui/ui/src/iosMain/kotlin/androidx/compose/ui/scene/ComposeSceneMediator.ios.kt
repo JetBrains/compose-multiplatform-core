@@ -342,6 +342,8 @@ internal class ComposeSceneMediator(
         onCancelAllTouches = ::onCancelAllTouches,
         onScrollEvent = ::onScrollEvent,
         onCancelScroll = ::onCancelScroll,
+        onPinchEvent = ::onPinchEvent,
+        onCancelPinch = ::onCancelPinch,
         onHoverEvent = ::onHoverEvent,
         onKeyboardPresses = ::onKeyboardPresses,
         isHigherPriorityGestureTrackingTouches = navigationEventInput::isBackGestureTrackingTouches,
@@ -513,14 +515,22 @@ internal class ComposeSceneMediator(
         event: UIEvent?,
         eventKind: TouchesEventKind
     ) {
-        when (eventKind) {
-            TouchesEventKind.BEGAN -> activitiesHandler.onActivitiesStarted()
-            TouchesEventKind.MOVED -> {}
-            TouchesEventKind.ENDED -> activitiesHandler.onActivitiesEnded()
+        val eventType = when (eventKind) {
+            TouchesEventKind.BEGAN -> {
+                activitiesHandler.onActivitiesStarted()
+                PointerEventType.PanStart
+            }
+            TouchesEventKind.MOVED -> {
+                PointerEventType.PanMove
+            }
+            TouchesEventKind.ENDED -> {
+                activitiesHandler.onActivitiesEnded()
+                PointerEventType.PanEnd
+            }
         }
 
         scene.sendPointerEvent(
-            eventType = PointerEventType.Scroll,
+            eventType = eventType,
             pointers = listOf(
                 ComposeScenePointer(
                     id = PointerId(0),
@@ -529,10 +539,47 @@ internal class ComposeSceneMediator(
                     type = PointerType.Mouse,
                 )
             ),
-            scrollDelta = delta.toOffset(composeSceneDensity) * SCROLL_DELTA_MULTIPLIER,
             timeMillis = event.timeMillis,
             nativeEvent = event,
-            keyboardModifiers = PointerKeyboardModifiers(modifierFlags =event.modifierFlagsOrZero)
+            keyboardModifiers = PointerKeyboardModifiers(event.modifierFlagsOrZero),
+            panGestureOffset = delta.toOffset(composeSceneDensity),
+        )
+    }
+
+    private fun onPinchEvent(
+        position: DpOffset,
+        scale: Float,
+        event: UIEvent?,
+        eventKind: TouchesEventKind
+    ) {
+        val eventType = when (eventKind) {
+            TouchesEventKind.BEGAN -> {
+                activitiesHandler.onActivitiesStarted()
+                PointerEventType.ScaleStart
+            }
+            TouchesEventKind.MOVED -> {
+                PointerEventType.ScaleChange
+            }
+            TouchesEventKind.ENDED -> {
+                activitiesHandler.onActivitiesEnded()
+                PointerEventType.ScaleEnd
+            }
+        }
+
+        scene.sendPointerEvent(
+            eventType = eventType,
+            pointers = listOf(
+                ComposeScenePointer(
+                    id = PointerId(0),
+                    position = position.toOffset(composeSceneDensity),
+                    pressed = false,
+                    type = PointerType.Mouse,
+                )
+            ),
+            timeMillis = event.timeMillis,
+            nativeEvent = event,
+            keyboardModifiers = PointerKeyboardModifiers(modifierFlags =event.modifierFlagsOrZero),
+            scaleGestureFactor = scale,
         )
     }
 
@@ -564,6 +611,11 @@ internal class ComposeSceneMediator(
     }
 
     private fun onCancelScroll() {
+        activitiesHandler.onActivitiesEnded()
+        scene.cancelPointerInput()
+    }
+
+    private fun onCancelPinch() {
         activitiesHandler.onActivitiesEnded()
         scene.cancelPointerInput()
     }
@@ -989,7 +1041,6 @@ private val UIEvent?.timeMillis: Long get() {
 }
 
 private val FOCUS_CHANGE_ANIMATION_DURATION = 0.15.seconds
-private val SCROLL_DELTA_MULTIPLIER = 0.01f
 
 private fun TouchesEventKind.toPointerEventType(): PointerEventType =
     when (this) {
