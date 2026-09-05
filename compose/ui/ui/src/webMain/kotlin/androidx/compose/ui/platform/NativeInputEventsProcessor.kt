@@ -110,6 +110,19 @@ internal abstract class NativeInputEventsProcessor(
                     }
                 }
 
+                "keyup" -> {
+                    if (isInIMEComposition) return@fastForEach
+
+                    evt as KeyboardEvent
+                    // Skip typed characters - they are handled via text input events
+                    if (isTypedEvent(evt)) return@fastForEach
+
+                    // Send keyup events to Compose so that clickable elements can
+                    // trigger onClick when Enter/Space is released.
+                    // See https://youtrack.jetbrains.com/issue/CMP-9386
+                    composeSender.sendKeyboardEvent(evt.toComposeEvent())
+                }
+
                 "compositionend" -> {
                     lastCompositionEndTimestamp = timestamp
                     composeSender.sendEditCommand(CommitTextCommand((evt as CompositionEvent).data, 1))
