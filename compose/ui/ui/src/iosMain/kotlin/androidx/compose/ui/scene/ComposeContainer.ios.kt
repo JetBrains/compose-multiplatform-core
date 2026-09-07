@@ -23,6 +23,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
+import androidx.compose.ui.asComposeSystemTheme
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
@@ -71,7 +72,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
-import org.jetbrains.skia.Canvas
 import org.jetbrains.skiko.SystemTheme
 import platform.Foundation.NSKeyValueObservingOptionNew
 import platform.Foundation.addObserver
@@ -491,7 +491,8 @@ internal class ComposeContainer(
     private fun ProvideContainerCompositionLocals(content: @Composable () -> Unit) =
         CompositionLocalProvider(
             LocalUIViewController provides containingViewController,
-            LocalSystemTheme provides systemThemeState.value,
+            @Suppress("DEPRECATION")
+            LocalSystemTheme provides systemThemeState.value.asComposeSystemTheme(),
             content = content
         )
 
