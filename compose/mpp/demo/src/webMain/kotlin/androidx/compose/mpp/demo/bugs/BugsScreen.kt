@@ -17,6 +17,7 @@
 package androidx.compose.mpp.demo.bugs
 
 import androidx.compose.mpp.demo.KeyEventsDemo
+import androidx.compose.mpp.demo.CrashAfterResizeDemo
 import androidx.compose.mpp.demo.Screen
 
 val BugsScreen = Screen.Selection("Web Bug Reproducers", screens = listOf(
@@ -39,6 +40,9 @@ val BugsScreen = Screen.Selection("Web Bug Reproducers", screens = listOf(
     },
     Screen.Example("Tab Focus With Interop") {
         TabFocusWithInterop()
+    },
+    Screen.Example("Crash after resize") {
+        CrashAfterResizeDemo()
     },
 ))
 

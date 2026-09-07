@@ -89,7 +89,7 @@ private class DefaultSceneTransitionsSceneStrategy<T : Any>() : SceneStrategy<T>
     }
 }
 
-private class DefaultSceneTransitionsScene<T : Any>(
+private data class DefaultSceneTransitionsScene<T : Any>(
     val currentEntry: NavEntry<T>,
     override val previousEntries: List<NavEntry<T>>,
 ) : Scene<T> {
@@ -135,7 +135,7 @@ private class SceneOverrideEntryTransitionsSceneStrategy<T : Any>() : SceneStrat
     }
 }
 
-private class SceneOverrideEntryTransitionsScene<T : Any>(
+private data class SceneOverrideEntryTransitionsScene<T : Any>(
     val currentEntry: NavEntry<T>,
     override val previousEntries: List<NavEntry<T>>,
 ) : Scene<T> {
@@ -183,5 +183,12 @@ fun RedBox(text: String) {
         contentAlignment = Alignment.Center,
     ) {
         BasicText(text, Modifier.size(50.dp), style = TextStyle(textAlign = TextAlign.Center))
+    }
+}
+
+@Composable
+fun GreenBox(text: String) {
+    Box(Modifier.fillMaxSize().background(Color.Green), contentAlignment = Alignment.Center) {
+        BasicText(text, Modifier.size(300.dp), style = TextStyle(textAlign = TextAlign.Center))
     }
 }

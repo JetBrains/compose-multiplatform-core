@@ -40,6 +40,7 @@ import android.view.accessibility.AccessibilityEvent.TYPE_VIEW_TEXT_TRAVERSED_AT
 import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
 import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
 import android.view.accessibility.AccessibilityManager
+import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_RENDERING_INFO_KEY
 import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_LENGTH
 import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_START_INDEX
 import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY
@@ -244,7 +245,6 @@ import java.util.Date
 import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.hamcrest.CoreMatchers.instanceOf
 import org.junit.After
 import org.junit.Assume
@@ -269,7 +269,7 @@ import org.mockito.kotlin.verify
 @OptIn(ExperimentalMaterialApi::class)
 @RunWith(AndroidJUnit4::class)
 class AndroidAccessibilityTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     private val accessibilityEventLoopIntervalMs = 100L
     private lateinit var androidComposeView: AndroidComposeView
@@ -743,12 +743,19 @@ class AndroidAccessibilityTest {
                         AccessibilityActionCompat(ACTION_FOCUS, null),
                         AccessibilityActionCompat(ACTION_ACCESSIBILITY_FOCUS, null),
                     )
-                if (Build.VERSION.SDK_INT >= 26) {
+
+                if (Build.VERSION.SDK_INT >= 37) {
                     assertThat(availableExtraData)
                         .containsExactly(
                             "androidx.compose.ui.semantics.id",
-                            // TODO(b/272068594): This looks like a bug. This should be
-                            //  AccessibilityNodeInfoCompat.EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY
+                            "androidx.compose.ui.semantics.testTag",
+                            EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY,
+                            EXTRA_DATA_RENDERING_INFO_KEY,
+                        )
+                } else if (Build.VERSION.SDK_INT >= 26) {
+                    assertThat(availableExtraData)
+                        .containsExactly(
+                            "androidx.compose.ui.semantics.id",
                             EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY,
                             "androidx.compose.ui.semantics.testTag",
                         )
@@ -4463,58 +4470,6 @@ class AndroidAccessibilityTest {
                     y = (unhoverableBounds.top + unhoverableBounds.bottom) / 2f,
                 )
             assertThat(androidComposeView.dispatchHoverEvent(hoverEnter)).isFalse()
-        }
-    }
-
-    @OptIn(ExperimentalComposeUiApi::class)
-    @Test
-    fun dispatchHoverEvent_returnsTrueForHandledAndFalseForUnhandled_featureFlagOff() {
-        val original = AndroidComposeUiFlags.isExploreByTouchHoverHandled
-        try {
-            AndroidComposeUiFlags.isExploreByTouchHoverHandled = false
-            val hoverableBoxTag = "hoverable"
-            val unhoverableBoxTag = "unhoverable"
-
-            setContent {
-                Column {
-                    Box(
-                        Modifier.testTag(hoverableBoxTag).size(100.dp).semantics {
-                            contentDescription = "Hoverable Box"
-                        }
-                    )
-                    Box(Modifier.testTag(unhoverableBoxTag).size(100.dp))
-                }
-            }
-
-            val hoverableBounds =
-                with(rule.density) {
-                    rule.onNodeWithTag(hoverableBoxTag).getBoundsInRoot().toRect()
-                }
-            rule.runOnUiThread {
-                val hoverEnter =
-                    createHoverMotionEvent(
-                        action = ACTION_HOVER_ENTER,
-                        x = (hoverableBounds.left + hoverableBounds.right) / 2f,
-                        y = (hoverableBounds.top + hoverableBounds.bottom) / 2f,
-                    )
-                assertThat(androidComposeView.dispatchHoverEvent(hoverEnter)).isFalse()
-            }
-
-            val unhoverableBounds =
-                with(rule.density) {
-                    rule.onNodeWithTag(unhoverableBoxTag).getBoundsInRoot().toRect()
-                }
-            rule.runOnUiThread {
-                val hoverEnter =
-                    createHoverMotionEvent(
-                        action = ACTION_HOVER_ENTER,
-                        x = (unhoverableBounds.left + unhoverableBounds.right) / 2f,
-                        y = (unhoverableBounds.top + unhoverableBounds.bottom) / 2f,
-                    )
-                assertThat(androidComposeView.dispatchHoverEvent(hoverEnter)).isFalse()
-            }
-        } finally {
-            AndroidComposeUiFlags.isExploreByTouchHoverHandled = original
         }
     }
 

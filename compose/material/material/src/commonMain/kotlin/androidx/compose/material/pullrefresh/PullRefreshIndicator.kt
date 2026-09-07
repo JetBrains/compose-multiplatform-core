@@ -72,7 +72,7 @@ import kotlin.math.pow
 @ExperimentalMaterialApi
 // TODO(b/244423199): Consider whether the state parameter should be replaced with lambdas to
 //  enable people to use this indicator with custom pull-to-refresh components.
-fun PullRefreshIndicator(
+public fun PullRefreshIndicator(
     refreshing: Boolean,
     state: PullRefreshState,
     modifier: Modifier = Modifier,
@@ -213,13 +213,19 @@ private fun DrawScope.drawArrow(
 private const val CrossfadeDurationMs = 100
 private const val MaxProgressArc = 0.8f
 
-private val IndicatorSize = 40.dp
+private val IndicatorSize
+    get() = 40.dp
 private val SpinnerShape = CircleShape
-private val ArcRadius = 7.5.dp
-private val StrokeWidth = 2.5.dp
-private val ArrowWidth = 10.dp
-private val ArrowHeight = 5.dp
-private val Elevation = 6.dp
+private val ArcRadius
+    get() = 7.5.dp
+private val StrokeWidth
+    get() = 2.5.dp
+private val ArrowWidth
+    get() = 10.dp
+private val ArrowHeight
+    get() = 5.dp
+private val Elevation
+    get() = 6.dp
 
 // Values taken from SwipeRefreshLayout
 private const val MinAlpha = 0.3f

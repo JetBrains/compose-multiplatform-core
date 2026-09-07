@@ -77,7 +77,6 @@ class Lsq2VelocityTrackerTest {
         }
     }
 
-    @OptIn(ExperimentalVelocityTrackerApi::class)
     @Test
     fun calculateVelocity_gapOf40MillisecondsInPositions_positionsAfterGapIgnored() {
         val tracker = Lsq2VelocityTracker()
@@ -120,6 +119,42 @@ class Lsq2VelocityTrackerTest {
     }
 
     @Test
+    fun calculateVelocity_whenOlderSamplesDiscardedDueToTimeGap_computesVelocityWithRemainingTwoSamples() {
+        val tracker = Lsq2VelocityTracker()
+
+        // Add older samples which will will end up being discarded due to the time gap.
+        tracker.addPosition(0L, Offset(0f, 0f))
+        tracker.addPosition(20L, Offset(100f, 0f))
+
+        // Introduce a time gap (which exceeds the 40ms threshold).
+        // This leaves exactly 2 effective samples (the ones at 120ms and 130ms) for the
+        // calculation.
+        tracker.addPosition(120L, Offset(200f, 0f))
+        tracker.addPosition(130L, Offset(300f, 0f))
+
+        checkVelocity(
+            actual = tracker.calculateVelocity(MaximumVelocity),
+            expectedDx = 10000f,
+            expectedDy = 0f,
+        )
+    }
+
+    @Test
+    fun calculateVelocity_exactlyTwoSamples_returnsLinearVelocity() {
+        val tracker = Lsq2VelocityTracker()
+
+        // 10 pixels over 10 milliseconds = 1000 pixels per second
+        tracker.addPosition(0L, Offset(0f, 0f))
+        tracker.addPosition(10L, Offset(10f, 0f))
+
+        checkVelocity(
+            actual = tracker.calculateVelocity(MaximumVelocity),
+            expectedDx = 1000f,
+            expectedDy = 0f,
+        )
+    }
+
+    @Test
     fun resetTracking_resetsTracking() {
         val tracker = Lsq2VelocityTracker()
         tracker.addPosition(velocityEventData[0].uptime, velocityEventData[0].position)
@@ -156,7 +191,6 @@ private fun createPxPosition(width: Float, height: Float) = Offset(width, height
 internal class PointerInputData(val uptime: Long, val position: Offset, val down: Boolean)
 
 // Expected velocities for "velocityEventData". See below.
-@OptIn(ExperimentalVelocityTrackerApi::class)
 internal val expected2DVelocities =
     listOf(
         Pair(219.59280094228163f, 1304.701682306001f),

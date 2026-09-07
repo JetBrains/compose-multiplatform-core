@@ -62,6 +62,8 @@ import platform.UIKit.UIAccessibilityTraitTabBar
 import platform.UIKit.UIAccessibilityTraitToggleButton
 import platform.UIKit.UIAccessibilityTraitUpdatesFrequently
 import platform.UIKit.UIAccessibilityTraits
+import platform.UIKit.UITraitEnvironmentLayoutDirection
+import platform.UIKit.UITraitEnvironmentLayoutDirectionRightToLeft
 import platform.UIKit.UIView
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
@@ -241,6 +243,21 @@ internal class AccessibilityTestNode(
 
     fun node(builder: AccessibilityTestNode.() -> Unit) {
         children = (children ?: emptyList()) + AccessibilityTestNode().apply(builder)
+    }
+
+    /** Adds a group of nodes in traversal order for [layoutDirection]. */
+    fun node(
+        layoutDirection: UITraitEnvironmentLayoutDirection,
+        builder: AccessibilityTestNode.() -> Unit
+    ) {
+        val nodes = AccessibilityTestNode().apply(builder).children.orEmpty()
+        children = (children ?: emptyList()) + if (
+            layoutDirection == UITraitEnvironmentLayoutDirectionRightToLeft
+        ) {
+            nodes.reversed()
+        } else {
+            nodes
+        }
     }
 
     fun traits(vararg trait: UIAccessibilityTraits) {

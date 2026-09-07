@@ -32,7 +32,7 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.compose.material3.windowsizeclass"
-        compileSdk { version = release(37) }
+        compileSdk { version = release(35) }
     }
     jvmStubs()
     linuxX64Stubs()
@@ -79,6 +79,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2022"
     description = "Provides window size classes for building responsive UIs"
-    legacyDisableKotlinStrictApiMode = true
     samples(project(":compose:material3:material3-window-size-class:material3-window-size-class-samples"))
 }

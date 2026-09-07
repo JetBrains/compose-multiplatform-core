@@ -19,6 +19,8 @@ package androidx.compose.foundation.gestures
 import androidx.annotation.FloatRange
 import androidx.collection.LongSparseArray
 import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ComposeFoundationFlags.isDraggableInitialPassConsumptionFixEnabled
+import androidx.compose.foundation.ComposeFoundationFlags.isDraggableZeroDeltaConsumptionEnabled
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.GestureConnection
 import androidx.compose.foundation.GestureState
@@ -37,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.isSpecified
@@ -47,12 +50,16 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.PointerType
+import androidx.compose.ui.input.pointer.changedToDown
+import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
+import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.input.pointer.positionChangeIgnoreConsumed
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.input.pointer.util.addPointerInputChange
+import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.DelegatableNode
@@ -85,7 +92,7 @@ import kotlinx.coroutines.launch
  * well as to write custom drag methods using [drag] suspend function.
  */
 @JvmDefaultWithCompatibility
-interface DraggableState {
+public interface DraggableState {
     /**
      * Call this function to take control of drag logic.
      *
@@ -99,7 +106,7 @@ interface DraggableState {
      * @param dragPriority of the drag operation
      * @param block to perform drag in
      */
-    suspend fun drag(
+    public suspend fun drag(
         dragPriority: MutatePriority = MutatePriority.Default,
         block: suspend DragScope.() -> Unit,
     )
@@ -118,13 +125,13 @@ interface DraggableState {
      *
      * @param delta amount of scroll dispatched in the nested drag process
      */
-    fun dispatchRawDelta(delta: Float)
+    public fun dispatchRawDelta(delta: Float)
 }
 
 /** Scope used for suspending drag blocks */
-interface DragScope {
+public interface DragScope {
     /** Attempts to drag by [pixels] px. */
-    fun dragBy(pixels: Float)
+    public fun dragBy(pixels: Float)
 }
 
 /**
@@ -139,7 +146,7 @@ interface DragScope {
  *
  * @param onDelta callback invoked when drag occurs. The callback receives the delta in pixels.
  */
-fun DraggableState(onDelta: (Float) -> Unit): DraggableState = DefaultDraggableState(onDelta)
+public fun DraggableState(onDelta: (Float) -> Unit): DraggableState = DefaultDraggableState(onDelta)
 
 /**
  * Create and remember default implementation of [DraggableState] interface that allows to pass a
@@ -152,7 +159,7 @@ fun DraggableState(onDelta: (Float) -> Unit): DraggableState = DefaultDraggableS
  * @param onDelta callback invoked when drag occurs. The callback receives the delta in pixels.
  */
 @Composable
-fun rememberDraggableState(onDelta: (Float) -> Unit): DraggableState {
+public fun rememberDraggableState(onDelta: (Float) -> Unit): DraggableState {
     val onDeltaState = rememberUpdatedState(onDelta)
     return remember { DraggableState { onDeltaState.value.invoke(it) } }
 }
@@ -197,7 +204,7 @@ fun rememberDraggableState(onDelta: (Float) -> Unit): DraggableState {
  *   like bottom to top and left to right will behave like right to left.
  */
 @Stable
-fun Modifier.draggable(
+public fun Modifier.draggable(
     state: DraggableState,
     orientation: Orientation,
     enabled: Boolean = true,
@@ -448,6 +455,8 @@ internal abstract class DragGestureNode(
 
     private var velocityTracker: VelocityTracker? = null
     private var previousPositionOnScreen = Offset.Unspecified
+    private var rootOffset = Offset.Zero
+    private var previousRootPositionOnScreen = Offset.Unspecified
     private var velocityTrackerMulti: LongSparseArray<VelocityTracker>? = null
     private var touchSlopDetector: TouchSlopDetector? = null
     private var indirectPointerInputDragCycleDetector: IndirectPointerInputDragCycleDetector? = null
@@ -556,6 +565,8 @@ internal abstract class DragGestureNode(
         disposeInteractionSource()
         if (!ComposeFoundationFlags.isDragNodeOffsetDoubleCountingFixEnabled) {
             nodeOffset = Offset.Zero
+        } else {
+            rootOffset = Offset.Zero
         }
 
         resetGestureNodes()
@@ -756,8 +767,13 @@ internal abstract class DragGestureNode(
             }
     }
 
-    private fun moveToDraggingState(pointerId: PointerId) {
-        currentDragState = draggingState.apply { this.pointerId = pointerId }
+    private fun moveToDraggingState(pointerId: PointerId, hasStartedDragImmediately: Boolean) {
+        currentDragState =
+            draggingState.apply {
+                this.pointerId = pointerId
+                this.consumedOnInitial = false
+                this.hasStartedDragImmediately = hasStartedDragImmediately
+            }
     }
 
     private fun moveToAwaitDownState() {
@@ -783,6 +799,7 @@ internal abstract class DragGestureNode(
             }
     }
 
+    @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
     private fun processInitialDownState(
         pointerEvent: PointerEvent,
         pass: PointerEventPass,
@@ -790,9 +807,18 @@ internal abstract class DragGestureNode(
     ) {
         /** Wait for a down event in any pass. */
         if (pointerEvent.changes.isEmpty()) return
-        if (!pointerEvent.isChangedToDown(requireUnconsumed = false)) return
-
-        val firstDown = pointerEvent.changes.first()
+        val firstDown =
+            if (ComposeUiFlags.isTrackpadPanHoverFixEnabled) {
+                // We use isAnyChangedToDown instead of isChangedToDown to handle cases where a
+                // persistent pointer (like a trackpad hover pointer) co-exists with a new touch
+                // pointer in the same event. If we used isChangedToDown (which requires all
+                // pointers to change to down), the touch gesture would be ignored because the
+                // hover pointer didn't change to down.
+                pointerEvent.changes.fastFirstOrNull { it.changedToDownIgnoreConsumed() } ?: return
+            } else {
+                if (!pointerEvent.isChangedToDown(requireUnconsumed = false)) return
+                pointerEvent.changes.first()
+            }
         val awaitTouchSlop =
             when (state.awaitTouchSlop) {
                 DragDetectionState.AwaitDown.AwaitTouchSlop.NotInitialized -> {
@@ -834,7 +860,7 @@ internal abstract class DragGestureNode(
             } else if (state.consumedOnInitial) {
                 sendDragStart(firstDown, firstDown, Offset.Zero)
                 sendDragEvent(firstDown, Offset.Zero)
-                moveToDraggingState(firstDown.id)
+                moveToDraggingState(firstDown.id, hasStartedDragImmediately = true)
             }
         }
     }
@@ -969,7 +995,7 @@ internal abstract class DragGestureNode(
                             dragEvent.consume()
                             sendDragStart(state.initialDown!!, dragEvent, postSlopOffset)
                             sendDragEvent(dragEvent, postSlopOffset)
-                            moveToDraggingState(dragEvent.id)
+                            moveToDraggingState(dragEvent.id, hasStartedDragImmediately = false)
                         }
                     } else {
                         state.verifyConsumptionInFinalPass = true
@@ -1062,38 +1088,105 @@ internal abstract class DragGestureNode(
         pass: PointerEventPass,
         state: DragDetectionState.Dragging,
     ) {
-        if (pass != PointerEventPass.Main) return
-
-        val pointer = state.pointerId
-        val dragEvent = pointerEvent.changes.fastFirstOrNull { it.id == pointer } ?: return
-        if (dragEvent.changedToUpIgnoreConsumed()) {
-            val otherDown = pointerEvent.changes.fastFirstOrNull { it.pressed }
-            if (otherDown == null) {
-                // This is the last "up"
-                if (!dragEvent.isConsumed && dragEvent.changedToUpIgnoreConsumed()) {
-                    sendDragStopped(dragEvent)
-                } else {
-                    sendDragCancelled()
+        if (isDraggableInitialPassConsumptionFixEnabled) {
+            if (pass == PointerEventPass.Initial && state.hasStartedDragImmediately) {
+                val pointer = state.pointerId
+                val dragEvent = pointerEvent.changes.fastFirstOrNull { it.id == pointer } ?: return
+                if (!dragEvent.isConsumed) {
+                    dragEvent.consume()
+                    state.consumedOnInitial = true
                 }
-                moveToAwaitDownState()
+                return
+            }
+
+            if (pass != PointerEventPass.Main) return
+
+            val pointer = state.pointerId
+            val dragEvent = pointerEvent.changes.fastFirstOrNull { it.id == pointer } ?: return
+            val wasConsumedOnInitial = state.consumedOnInitial
+            val isConsumedByOther = dragEvent.isConsumed && !wasConsumedOnInitial
+            state.consumedOnInitial = false
+            if (dragEvent.changedToUpIgnoreConsumed()) {
+                val otherDown = pointerEvent.changes.fastFirstOrNull { it.pressed }
+                if (otherDown == null) {
+                    // This is the last "up"
+                    if (!isConsumedByOther && dragEvent.changedToUpIgnoreConsumed()) {
+                        sendDragStopped(dragEvent)
+                    } else {
+                        sendDragCancelled()
+                    }
+                    moveToAwaitDownState()
+                } else {
+                    state.pointerId = otherDown.id
+                }
             } else {
-                state.pointerId = otherDown.id
+                if (isConsumedByOther) {
+                    sendDragCancelled()
+                } else {
+                    if (isDraggableZeroDeltaConsumptionEnabled) {
+                        val positionChange =
+                            if (wasConsumedOnInitial) dragEvent.positionChangeIgnoreConsumed()
+                            else dragEvent.positionChange()
+                        sendDragEvent(dragEvent, positionChange)
+                        dragEvent.consume()
+                    } else {
+                        val positionChange = dragEvent.positionChangeIgnoreConsumed()
+
+                        /**
+                         * During the gesture pickup we can pickup events at any direction so
+                         * disable the orientation lock.
+                         */
+                        val motionChange = positionChange.getDistance()
+                        if (motionChange != 0.0f) {
+                            val effectivePositionChange =
+                                if (wasConsumedOnInitial) dragEvent.positionChangeIgnoreConsumed()
+                                else dragEvent.positionChange()
+                            sendDragEvent(dragEvent, effectivePositionChange)
+                            dragEvent.consume()
+                        }
+                    }
+                }
             }
         } else {
-            if (dragEvent.isConsumed) {
-                sendDragCancelled()
-            } else {
-                val positionChange = dragEvent.positionChangeIgnoreConsumed()
+            if (pass != PointerEventPass.Main) return
 
-                /**
-                 * During the gesture pickup we can pickup events at any direction so disable the
-                 * orientation lock.
-                 */
-                val motionChange = positionChange.getDistance()
-                if (motionChange != 0.0f) {
-                    val positionChange = dragEvent.positionChange()
-                    sendDragEvent(dragEvent, positionChange)
-                    dragEvent.consume()
+            val pointer = state.pointerId
+            val dragEvent = pointerEvent.changes.fastFirstOrNull { it.id == pointer } ?: return
+            if (dragEvent.changedToUpIgnoreConsumed()) {
+                val otherDown = pointerEvent.changes.fastFirstOrNull { it.pressed }
+                if (otherDown == null) {
+                    // This is the last "up"
+                    if (!dragEvent.isConsumed && dragEvent.changedToUpIgnoreConsumed()) {
+                        sendDragStopped(dragEvent)
+                    } else {
+                        sendDragCancelled()
+                    }
+                    moveToAwaitDownState()
+                } else {
+                    state.pointerId = otherDown.id
+                }
+            } else {
+                if (dragEvent.isConsumed) {
+                    sendDragCancelled()
+                } else {
+                    if (isDraggableZeroDeltaConsumptionEnabled) {
+                        val positionChange = dragEvent.positionChange()
+                        sendDragEvent(dragEvent, positionChange)
+                        dragEvent.consume()
+                    } else {
+                        val positionChange = dragEvent.positionChangeIgnoreConsumed()
+
+                        /**
+                         * During the gesture pickup we can pickup events at any direction so
+                         * disable the orientation lock.
+                         */
+                        val motionChange = positionChange.getDistance()
+                        if (motionChange != 0.0f) {
+                            val positionChange = dragEvent.positionChange()
+                            sendDragEvent(dragEvent, positionChange)
+                            dragEvent.consume()
+                        }
+                    }
                 }
             }
         }
@@ -1114,6 +1207,8 @@ internal abstract class DragGestureNode(
             // or in this case the event that triggered the touch slop minus
             // the post slop offset
             nodeOffset = Offset.Zero // restart node offset
+        } else {
+            rootOffset = Offset.Zero
         }
         if (canDrag(down.type)) {
             if (!isListeningForEvents) {
@@ -1124,6 +1219,9 @@ internal abstract class DragGestureNode(
             }
             if (!ComposeFoundationFlags.isDragNodeOffsetDoubleCountingFixEnabled) {
                 previousPositionOnScreen = requireLayoutCoordinates().positionOnScreen()
+            } else {
+                previousRootPositionOnScreen =
+                    requireLayoutCoordinates().findRootCoordinates().positionOnScreen()
             }
             requireChannel().trySend(DragStarted(dragStartedOffset))
         }
@@ -1145,7 +1243,17 @@ internal abstract class DragGestureNode(
                 previousPositionOnScreen = currentPositionOnScreen
                 requireVelocityTracker().addPointerInputChange(event = change, offset = nodeOffset)
             } else {
-                requireVelocityTracker().addPointerInputChange(change)
+                val currentRootPositionOnScreen =
+                    requireLayoutCoordinates().findRootCoordinates().positionOnScreen()
+                if (
+                    previousRootPositionOnScreen != Offset.Unspecified &&
+                        currentRootPositionOnScreen != previousRootPositionOnScreen
+                ) {
+                    val delta = currentRootPositionOnScreen - previousRootPositionOnScreen
+                    rootOffset += delta
+                }
+                previousRootPositionOnScreen = currentRootPositionOnScreen
+                requireVelocityTracker().addPointerInputChange(change, rootOffset)
             }
         }
         requireChannel().trySend(DragDelta(dragAmount, false))
@@ -1266,7 +1374,11 @@ private sealed class DragDetectionState {
     ) : DragDetectionState()
 
     /** State where dragging is happening. */
-    class Dragging(var pointerId: PointerId = PointerId(Long.MAX_VALUE)) : DragDetectionState()
+    class Dragging(
+        var pointerId: PointerId = PointerId(Long.MAX_VALUE),
+        var consumedOnInitial: Boolean = false,
+        var hasStartedDragImmediately: Boolean = false,
+    ) : DragDetectionState()
 }
 
 /** A specialized [GestureConnection] to allow high level coordination between drag gestures. */
@@ -1340,3 +1452,32 @@ private fun isDragAngleAlignedWithOrientation(
 
 private const val HorizontalAngleUpperBounds = 30
 private const val VerticalAngleUpperBounds = 90
+
+/**
+ * Returns true if any pointer in the event changed to down, provided there are no other active
+ * pressed pointers that did not change to down.
+ *
+ * This is used instead of [PointerEvent.isChangedToDown] to allow touch gestures to start even when
+ * a persistent non-pressed pointer (like a trackpad hover pointer) is present in the same event,
+ * while still ignoring new down events if there is already an active touch gesture.
+ */
+private fun PointerEvent.isAnyChangedToDown(requireUnconsumed: Boolean): Boolean {
+    val onlyPrimaryButtonCausesDown =
+        firstDownRefersToPrimaryMouseButtonOnly() &&
+            changes.fastAll { it.type == PointerType.Mouse }
+    if (onlyPrimaryButtonCausesDown && !buttons.isPrimaryPressed) return false
+
+    // Check if there are any other pressed pointers that did not change to down.
+    // If so, we ignore this event to match the old behavior where all pressed pointers
+    // must have changed to down (i.e. we don't start on ACTION_POINTER_DOWN if another
+    // pointer is already active).
+    val hasOtherActivePressedPointer =
+        changes.fastAny {
+            it.pressed &&
+                !(if (requireUnconsumed) it.changedToDown() else it.changedToDownIgnoreConsumed())
+        }
+    if (hasOtherActivePressedPointer) return false
+    return changes.fastAny {
+        if (requireUnconsumed) it.changedToDown() else it.changedToDownIgnoreConsumed()
+    }
+}

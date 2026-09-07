@@ -22,10 +22,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ScrollField
 import androidx.compose.material3.Text
@@ -37,11 +38,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.hideFromAccessibility
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Sampled
 @Composable
 @Preview
@@ -66,6 +69,8 @@ fun ScrollFieldSample() {
         ScrollField(
             state = state,
             modifier = Modifier.size(width = 192.dp, height = 160.dp),
+            contentDescription = "Select value between 1000 and 2000",
+            fieldAccessibilityDescription = { index -> (minVal + index).toString() },
             field = { index, isSelected ->
                 val valueToShow = minVal + index
                 Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
@@ -73,7 +78,7 @@ fun ScrollFieldSample() {
                         text = valueToShow.toString(),
                         style =
                             if (isSelected) {
-                                MaterialTheme.typography.displayLarge
+                                MaterialTheme.typography.displayLargeEmphasized
                             } else {
                                 MaterialTheme.typography.displayMedium
                             },
@@ -90,7 +95,6 @@ fun ScrollFieldSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Sampled
 @Composable
 @Preview
@@ -114,15 +118,107 @@ fun TimeScrollFieldSample() {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        ScrollField(state = hourState, modifier = Modifier.size(width = 80.dp, height = 160.dp))
+        ScrollField(
+            state = hourState,
+            modifier = Modifier.size(width = 100.dp, height = 120.dp),
+            contentDescription = "Select hour",
+            fieldAccessibilityDescription = { index ->
+                if (index == 1) "$index hour" else "$index hours"
+            },
+        )
 
         Text(
             text = ":",
             style = MaterialTheme.typography.displayLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
+            modifier = Modifier.offset(y = (-4).dp).semantics { hideFromAccessibility() },
         )
 
-        ScrollField(state = minuteState, modifier = Modifier.size(width = 80.dp, height = 160.dp))
+        ScrollField(
+            state = minuteState,
+            modifier = Modifier.size(width = 100.dp, height = 120.dp),
+            contentDescription = "Select minute",
+            fieldAccessibilityDescription = { index ->
+                if (index == 1) "$index minute" else "$index minutes"
+            },
+        )
+    }
+}
+
+@Sampled
+@Composable
+@Preview
+fun UnitScrollFieldSample() {
+    val amountCount = 100 // 0.1 to 10.0
+    val unitCount = 2 // L, oz
+
+    val amountState = rememberScrollFieldState(itemCount = amountCount, index = 26) // 2.7
+    val unitState = rememberScrollFieldState(itemCount = unitCount, index = 0) // L
+
+    val units = listOf("L", "oz")
+
+    Row(
+        modifier =
+            Modifier.background(
+                    MaterialTheme.colorScheme.surfaceContainerHighest,
+                    RoundedCornerShape(28.dp),
+                )
+                .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        ScrollField(
+            state = amountState,
+            modifier = Modifier.size(width = 120.dp, height = 160.dp),
+            contentDescription = "Select amount",
+            fieldAccessibilityDescription = { index -> ((index + 1) / 10.0).toString() },
+            field = { index, isSelected ->
+                val amount = (index + 1) / 10.0
+                Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = "${(amount * 10).toInt() / 10.0}",
+                        style =
+                            if (isSelected) {
+                                MaterialTheme.typography.displayLargeEmphasized
+                            } else {
+                                MaterialTheme.typography.displayMedium
+                            },
+                        color =
+                            if (isSelected) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.outline
+                            },
+                    )
+                }
+            },
+        )
+
+        ScrollField(
+            state = unitState,
+            modifier = Modifier.size(width = 120.dp, height = 160.dp),
+            contentDescription = "Select unit",
+            fieldAccessibilityDescription = { index -> units[index] },
+            field = { index, isSelected ->
+                Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = units[index],
+                        style =
+                            if (isSelected) {
+                                MaterialTheme.typography.displayLargeEmphasized
+                            } else {
+                                MaterialTheme.typography.displayMedium
+                            },
+                        color =
+                            if (isSelected) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.outline
+                            },
+                    )
+                }
+            },
+        )
     }
 }

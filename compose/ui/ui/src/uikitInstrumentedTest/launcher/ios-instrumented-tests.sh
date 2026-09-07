@@ -76,6 +76,56 @@ echo "  log file: ${log_file_pattern}"
 xcrun simctl shutdown all
 defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false
 
+# Tests that look up UIKit-side accessibility labels (context menu items, native text views) only
+# see them when accessibility is enabled on the target simulator; without it they fail with
+# "Unable to find node with label". Mirrors the Configure Simulator step of
+# .github/actions/setup-ios-instrumented-test-environment/action.yml.
+accessibility_keys=(AccessibilityEnabled ApplicationAccessibilityEnabled AutomationEnabled)
+
+simulator_id="$(xcrun simctl list devices available \
+  | awk -v os="$os_version" -v name="$device_name" '
+      /^-- / { in_os = ($0 ~ ("^-- iOS " os " --$")); next }
+      !found && in_os && index($0, name " (") {
+        if (match($0, /\([0-9A-Fa-f-]{36}\)/)) {
+          found = substr($0, RSTART + 1, RLENGTH - 2)
+        }
+      }
+      END { if (found) print found }
+    ')"
+
+if [[ -z "$simulator_id" ]]; then
+  echo "Simulator not found: ${device_name} (iOS ${os_version}). Available:" >&2
+  xcrun simctl list devices available >&2
+  exit 1
+fi
+
+accessibility_plist="${HOME}/Library/Developer/CoreSimulator/Devices/${simulator_id}/data/Library/Preferences/com.apple.Accessibility.plist"
+
+accessibility_enabled="true"
+for key in "${accessibility_keys[@]}"; do
+  if [[ "$(defaults read "$accessibility_plist" "$key" 2>/dev/null)" != "1" ]]; then
+    accessibility_enabled="false"
+    break
+  fi
+done
+
+if [[ "$accessibility_enabled" == "true" ]]; then
+  echo "Accessibility already enabled on ${device_name} (${simulator_id})."
+else
+  echo "Enabling accessibility on ${device_name} (${simulator_id})..."
+  xcrun simctl boot "$simulator_id"
+  xcrun simctl bootstatus "$simulator_id" -b
+
+  for key in "${accessibility_keys[@]}"; do
+    xcrun simctl spawn "$simulator_id" defaults write com.apple.Accessibility "$key" -bool true
+  done
+
+  # Restart SpringBoard so system services pick up the change, then shut down: the flags apply
+  # on the next boot, which xcodebuild performs itself.
+  xcrun simctl spawn "$simulator_id" launchctl stop com.apple.SpringBoard
+  xcrun simctl shutdown "$simulator_id"
+fi
+
 # Build once, then reuse the build products for the actual test execution.
 xcodebuild \
   -project Launcher.xcodeproj \

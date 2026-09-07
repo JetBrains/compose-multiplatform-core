@@ -16,10 +16,13 @@
 
 package androidx.compose.ui.platform.accessibility
 
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastForEach
@@ -63,6 +66,8 @@ internal object AriaRoleId {
     const val Grid = 10
     const val Dialog = 11
     const val Link = 12
+    const val ProgressBar = 13
+    const val Slider = 14
 }
 
 internal fun SemanticsConfiguration.getRoleId(): Int {
@@ -111,6 +116,15 @@ internal fun SemanticsConfiguration.getRoleId(): Int {
             AriaRoleId.Grid
         } else {
             AriaRoleId.List
+        }
+    }
+
+    if (this.contains(SemanticsProperties.ProgressBarRangeInfo)) {
+        val info = this[SemanticsProperties.ProgressBarRangeInfo]
+        roleId = if (info.steps > 0 || SemanticsActions.SetProgress in this) {
+            AriaRoleId.Slider
+        } else {
+            AriaRoleId.ProgressBar
         }
     }
 
@@ -169,6 +183,12 @@ internal fun setA11YAriaRole(element: HTMLElement, ariaRoleId: Int) {
             case 12: // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/link_role
                 roleValue = "link";
                 break;
+            case 13: // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/progressbar_role
+                roleValue = "progressbar";
+                break;
+            case 14: // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/slider_role
+                roleValue = "slider";
+                break;
             default:
                 break;
         }
@@ -179,6 +199,14 @@ internal fun setA11YAriaRole(element: HTMLElement, ariaRoleId: Int) {
         }
     """
     )
+}
+
+internal fun ToggleableState.toAriaChecked(): String {
+    return when (this) {
+        ToggleableState.On -> "true"
+        ToggleableState.Off -> "false"
+        ToggleableState.Indeterminate -> "mixed"
+    }
 }
 
 internal fun removeAllChildrenOf(element: HTMLElement) {

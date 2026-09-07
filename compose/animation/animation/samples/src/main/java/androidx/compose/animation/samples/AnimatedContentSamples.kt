@@ -23,14 +23,13 @@ import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.DeferredAnimatedContent
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.MutableContentTransform
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.DeferredTransitionState
 import androidx.compose.animation.core.ExperimentalDeferredTransitionApi
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.keyframes
-import androidx.compose.animation.core.rememberTransition
+import androidx.compose.animation.core.rememberDeferredTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.fadeIn
@@ -331,7 +330,6 @@ private enum class NestedMenuState {
     Level3,
 }
 
-@OptIn(ExperimentalAnimationApi::class)
 @Sampled
 @Composable
 fun AnimatedContentVeil() {
@@ -369,7 +367,7 @@ fun DeferredAnimatedContentSample() {
     val swipeOffset by remember { mutableStateOf(IntOffset.Zero) }
 
     val transitionState = remember { DeferredTransitionState(targetScreen) }
-    val transition = rememberTransition(transitionState)
+    val transition = rememberDeferredTransition(transitionState)
     LaunchedEffect(isBackGestureInProgress, targetScreen) {
         if (isBackGestureInProgress) {
             transitionState.defer(targetScreen)

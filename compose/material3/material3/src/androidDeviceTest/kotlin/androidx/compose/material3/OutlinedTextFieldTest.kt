@@ -59,7 +59,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.testutils.assertPixels
 import androidx.compose.testutils.assertShape
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -110,7 +109,6 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
 import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -125,7 +123,7 @@ class OutlinedTextFieldTest {
     private val IconPadding = 12.dp
     private val TextFieldTag = "textField"
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun testOutlinedTextField_setSmallWidth() {
@@ -1837,7 +1835,6 @@ class OutlinedTextFieldTest {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     fun testOutlinedTextField_imeActionAndKeyboardTypePropagatedDownstream() {
@@ -2398,6 +2395,22 @@ class OutlinedTextFieldTest {
                 OutlinedTextField(state = rememberTextFieldState(), leadingIcon = { Text("Icon") })
             }
         }
+    }
+
+    @Test
+    fun testOutlinedTextField_prefixAndSuffix_semantics() {
+        rule.setMaterialContent(lightColorScheme()) {
+            OutlinedTextField(
+                state = rememberTextFieldState("google"),
+                prefix = { Text("www.") },
+                suffix = { Text(".com") },
+                modifier = Modifier.testTag("TextField"),
+            )
+        }
+
+        val rootNode = rule.onNodeWithTag("TextField", useUnmergedTree = false).fetchSemanticsNode()
+        val textList = rootNode.config.getOrNull(SemanticsProperties.Text)?.map { it.text }
+        assertThat(textList).containsExactly("www.", "google", ".com").inOrder()
     }
 
     private fun getLabelPosition(labelHeight: Int): Int {

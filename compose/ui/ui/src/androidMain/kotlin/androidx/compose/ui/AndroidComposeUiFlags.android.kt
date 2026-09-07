@@ -49,22 +49,31 @@ package androidx.compose.ui
  *      }
  */
 @ExperimentalComposeUiApi
-object AndroidComposeUiFlags {
+public object AndroidComposeUiFlags {
 
     /**
      * This flag enables using the View's handler for semantics processing instead of the Main
      * Looper. This avoids crashes in environments where Compose is used on a non-main thread.
      */
+    // TODO remove me b/486998514
     @field:Suppress("MutableBareField")
     @JvmField
-    // TODO remove me b/486998514
-    var isViewBasedSemanticsHandlerEnabled: Boolean = true
+    public var isViewBasedSemanticsHandlerEnabled: Boolean = true
 
     /** This flag enables the Android Framework implementation of VelocityTracker. */
     // TODO: b/483449576
     @field:Suppress("MutableBareField")
     @JvmField
-    var isFrameworkVelocityTrackerEnabled: Boolean = false
+    public var isFrameworkVelocityTrackerEnabled: Boolean = false
+
+    /**
+     * If enabled, the creation of the container for AndroidViews is delayed until an AndroidView is
+     * added.
+     */
+    // TODO: b/529483648
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isDelayAndroidViewsHandlerCreationEnabled: Boolean = false
 
     /**
      * This flag forces scroll capture to center the content being rendered even if it's already
@@ -73,34 +82,45 @@ object AndroidComposeUiFlags {
     // TODO: remove and close b/509934021
     @field:Suppress("MutableBareField")
     @JvmField
-    var isAlwaysScrollDuringScrollCaptureEnabled: Boolean = true
-
-    /**
-     * If enabled, interactions (like clicks) will automatically trigger interaction sound effects
-     * on Android.
-     */
-    // TODO: Remove this flag once it has soaked (b/495886959)
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isInteractionSoundEffectsEnabled: Boolean = true
+    public var isAlwaysScrollDuringScrollCaptureEnabled: Boolean = true
 
     /** Enables using out of frame scheduler instead of Choreographer for text input events. */
     // TODO(b/513525072): Cleanup once proven stable.
     @field:Suppress("MutableBareField")
     @JvmField
-    var isOutOfFrameSchedulerForTextInputEventsEnabled: Boolean = true
+    public var isOutOfFrameSchedulerForTextInputEventsEnabled: Boolean = true
 
     /**
-     * Return true for AndroidComposeView.dispatchHoverEvent when handleded by explore by touch.
-     *
-     * This fixes behavior where the event would be bubbled to a container view, causing explore by
-     * touch to flicker focus to Compose buttons.
-     *
-     * After this change compose buttons will correctly report they handled the hover event, and
-     * retain accessibility focus.
+     * Enables sorting of accessibility children based on their traversal index when the parent is a
+     * traversal group and is a merging container.
      */
+    // TODO: b/522932901
     @field:Suppress("MutableBareField")
     @JvmField
-    // TODO(b/507533865) cleanup feature flag after 1.12
-    var isExploreByTouchHoverHandled: Boolean = true
+    public var isTraversalGroupSortingEnabled: Boolean = true
+
+    /** Enables propagation of hideFromAccessibility to children of merging parents. */
+    // TODO: b/522817006
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isPropagateHideFromAccessibilityToMergingChildrenEnabled: Boolean = true
+
+    /**
+     * This flag enables performance improvements in accessibility, such as caching accessibility
+     * state and deferring listener registration.
+     */
+    // TODO: remove me b/529420099
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isAccessibilityPerformanceEnabled: Boolean = true
+
+    /**
+     * If enabled, WindowInsetsRulers interactions will use the delayed-initialization path to
+     * improve ComposeView startup time. If disabled, the immediate-initialization path is used
+     * instead.
+     */
+    // TODO: Remove this flag once it has soaked (b/531596705)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isDelayedWindowInsetsRulersEnabled: Boolean = false
 }

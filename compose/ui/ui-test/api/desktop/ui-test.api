@@ -52,8 +52,10 @@ public final class androidx/compose/ui/test/AssertionsKt {
 	public static final fun assertRangeInfoEquals (Landroidx/compose/ui/test/SemanticsNodeInteraction;Landroidx/compose/ui/semantics/ProgressBarRangeInfo;)Landroidx/compose/ui/test/SemanticsNodeInteraction;
 	public static final fun assertTextContains (Landroidx/compose/ui/test/SemanticsNodeInteraction;Ljava/lang/String;ZZ)Landroidx/compose/ui/test/SemanticsNodeInteraction;
 	public static synthetic fun assertTextContains$default (Landroidx/compose/ui/test/SemanticsNodeInteraction;Ljava/lang/String;ZZILjava/lang/Object;)Landroidx/compose/ui/test/SemanticsNodeInteraction;
-	public static final fun assertTextEquals (Landroidx/compose/ui/test/SemanticsNodeInteraction;[Ljava/lang/String;Z)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static final synthetic fun assertTextEquals (Landroidx/compose/ui/test/SemanticsNodeInteraction;[Ljava/lang/String;Z)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static final fun assertTextEquals (Landroidx/compose/ui/test/SemanticsNodeInteraction;[Ljava/lang/String;ZZ)Landroidx/compose/ui/test/SemanticsNodeInteraction;
 	public static synthetic fun assertTextEquals$default (Landroidx/compose/ui/test/SemanticsNodeInteraction;[Ljava/lang/String;ZILjava/lang/Object;)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static synthetic fun assertTextEquals$default (Landroidx/compose/ui/test/SemanticsNodeInteraction;[Ljava/lang/String;ZZILjava/lang/Object;)Landroidx/compose/ui/test/SemanticsNodeInteraction;
 	public static final fun assertValueEquals (Landroidx/compose/ui/test/SemanticsNodeInteraction;Ljava/lang/String;)Landroidx/compose/ui/test/SemanticsNodeInteraction;
 	public static final fun isDisplayed (Landroidx/compose/ui/test/SemanticsNodeInteraction;)Z
 	public static final fun isNotDisplayed (Landroidx/compose/ui/test/SemanticsNodeInteraction;)Z
@@ -61,16 +63,30 @@ public final class androidx/compose/ui/test/AssertionsKt {
 
 public final class androidx/compose/ui/test/BoundsAssertionsKt {
 	public static final fun assertHeightIsAtLeast-3ABfNKs (Landroidx/compose/ui/test/SemanticsNodeInteraction;F)Landroidx/compose/ui/test/SemanticsNodeInteraction;
-	public static final fun assertHeightIsEqualTo-3ABfNKs (Landroidx/compose/ui/test/SemanticsNodeInteraction;F)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static final synthetic fun assertHeightIsEqualTo-3ABfNKs (Landroidx/compose/ui/test/SemanticsNodeInteraction;F)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static final fun assertHeightIsEqualTo-VpY3zN4 (Landroidx/compose/ui/test/SemanticsNodeInteraction;FF)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static synthetic fun assertHeightIsEqualTo-VpY3zN4$default (Landroidx/compose/ui/test/SemanticsNodeInteraction;FFILjava/lang/Object;)Landroidx/compose/ui/test/SemanticsNodeInteraction;
 	public static final fun assertIsEqualTo-cWfXhoU (FFLjava/lang/String;F)V
 	public static synthetic fun assertIsEqualTo-cWfXhoU$default (FFLjava/lang/String;FILjava/lang/Object;)V
-	public static final fun assertLeftPositionInRootIsEqualTo-3ABfNKs (Landroidx/compose/ui/test/SemanticsNodeInteraction;F)Landroidx/compose/ui/test/SemanticsNodeInteraction;
-	public static final fun assertPositionInRootIsEqualTo-VpY3zN4 (Landroidx/compose/ui/test/SemanticsNodeInteraction;FF)Landroidx/compose/ui/test/SemanticsNodeInteraction;
-	public static final fun assertTopPositionInRootIsEqualTo-3ABfNKs (Landroidx/compose/ui/test/SemanticsNodeInteraction;F)Landroidx/compose/ui/test/SemanticsNodeInteraction;
-	public static final fun assertTouchHeightIsEqualTo-3ABfNKs (Landroidx/compose/ui/test/SemanticsNodeInteraction;F)Landroidx/compose/ui/test/SemanticsNodeInteraction;
-	public static final fun assertTouchWidthIsEqualTo-3ABfNKs (Landroidx/compose/ui/test/SemanticsNodeInteraction;F)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static final synthetic fun assertLeftPositionInRootIsEqualTo-3ABfNKs (Landroidx/compose/ui/test/SemanticsNodeInteraction;F)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static final fun assertLeftPositionInRootIsEqualTo-VpY3zN4 (Landroidx/compose/ui/test/SemanticsNodeInteraction;FF)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static synthetic fun assertLeftPositionInRootIsEqualTo-VpY3zN4$default (Landroidx/compose/ui/test/SemanticsNodeInteraction;FFILjava/lang/Object;)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static final synthetic fun assertPositionInRootIsEqualTo-VpY3zN4 (Landroidx/compose/ui/test/SemanticsNodeInteraction;FF)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static final fun assertPositionInRootIsEqualTo-qQh39rQ (Landroidx/compose/ui/test/SemanticsNodeInteraction;FFF)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static synthetic fun assertPositionInRootIsEqualTo-qQh39rQ$default (Landroidx/compose/ui/test/SemanticsNodeInteraction;FFFILjava/lang/Object;)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static final synthetic fun assertTopPositionInRootIsEqualTo-3ABfNKs (Landroidx/compose/ui/test/SemanticsNodeInteraction;F)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static final fun assertTopPositionInRootIsEqualTo-VpY3zN4 (Landroidx/compose/ui/test/SemanticsNodeInteraction;FF)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static synthetic fun assertTopPositionInRootIsEqualTo-VpY3zN4$default (Landroidx/compose/ui/test/SemanticsNodeInteraction;FFILjava/lang/Object;)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static final synthetic fun assertTouchHeightIsEqualTo-3ABfNKs (Landroidx/compose/ui/test/SemanticsNodeInteraction;F)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static final fun assertTouchHeightIsEqualTo-VpY3zN4 (Landroidx/compose/ui/test/SemanticsNodeInteraction;FF)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static synthetic fun assertTouchHeightIsEqualTo-VpY3zN4$default (Landroidx/compose/ui/test/SemanticsNodeInteraction;FFILjava/lang/Object;)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static final synthetic fun assertTouchWidthIsEqualTo-3ABfNKs (Landroidx/compose/ui/test/SemanticsNodeInteraction;F)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static final fun assertTouchWidthIsEqualTo-VpY3zN4 (Landroidx/compose/ui/test/SemanticsNodeInteraction;FF)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static synthetic fun assertTouchWidthIsEqualTo-VpY3zN4$default (Landroidx/compose/ui/test/SemanticsNodeInteraction;FFILjava/lang/Object;)Landroidx/compose/ui/test/SemanticsNodeInteraction;
 	public static final fun assertWidthIsAtLeast-3ABfNKs (Landroidx/compose/ui/test/SemanticsNodeInteraction;F)Landroidx/compose/ui/test/SemanticsNodeInteraction;
-	public static final fun assertWidthIsEqualTo-3ABfNKs (Landroidx/compose/ui/test/SemanticsNodeInteraction;F)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static final synthetic fun assertWidthIsEqualTo-3ABfNKs (Landroidx/compose/ui/test/SemanticsNodeInteraction;F)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static final fun assertWidthIsEqualTo-VpY3zN4 (Landroidx/compose/ui/test/SemanticsNodeInteraction;FF)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static synthetic fun assertWidthIsEqualTo-VpY3zN4$default (Landroidx/compose/ui/test/SemanticsNodeInteraction;FFILjava/lang/Object;)Landroidx/compose/ui/test/SemanticsNodeInteraction;
 	public static final fun getAlignmentLinePosition (Landroidx/compose/ui/test/SemanticsNodeInteraction;Landroidx/compose/ui/layout/AlignmentLine;)F
 	public static final fun getBoundsInRoot (Landroidx/compose/ui/test/SemanticsNodeInteraction;)Landroidx/compose/ui/unit/DpRect;
 	public static final fun getFirstLinkBounds (Landroidx/compose/ui/test/SemanticsNodeInteraction;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/geometry/Rect;
@@ -81,6 +97,49 @@ public final class androidx/compose/ui/test/BoundsAssertionsKt {
 public final class androidx/compose/ui/test/ComposeTimeoutException : java/lang/Throwable {
 	public static final field $stable I
 	public fun <init> (Ljava/lang/String;)V
+}
+
+public abstract interface class androidx/compose/ui/test/ComposeUiTest : androidx/compose/ui/test/SemanticsNodeInteractionsProvider {
+	public abstract fun awaitIdle (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getDensity ()Landroidx/compose/ui/unit/Density;
+	public abstract fun getMainClock ()Landroidx/compose/ui/test/MainTestClock;
+	public abstract fun hasPendingWork ()Z
+	public abstract fun runOnIdle (Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public abstract fun runOnUiThread (Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public abstract fun runWithoutImplicitWait (Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public abstract fun setContent (Lkotlin/jvm/functions/Function2;)V
+	public abstract fun waitForIdle ()V
+	public abstract fun waitUntil (Ljava/lang/String;JLkotlin/jvm/functions/Function0;)V
+	public static synthetic fun waitUntil$default (Landroidx/compose/ui/test/ComposeUiTest;Ljava/lang/String;JLkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
+}
+
+public final class androidx/compose/ui/test/ComposeUiTestConfig {
+	public static final field $stable I
+	public synthetic fun <init> (Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JILandroidx/compose/ui/test/TestFailurePolicy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JILandroidx/compose/ui/test/TestFailurePolicy;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEffectContext ()Lkotlin/coroutines/CoroutineContext;
+	public final fun getFailurePolicy ()Landroidx/compose/ui/test/TestFailurePolicy;
+	public final fun getInputMode-aOaMEAU ()I
+	public final fun getRunTestContext ()Lkotlin/coroutines/CoroutineContext;
+	public final fun getTestTimeout-UwyO8pc ()J
+	public fun hashCode ()I
+}
+
+public final class androidx/compose/ui/test/ComposeUiTestKt {
+	public static final fun isIdlingResourceSupported (Landroidx/compose/ui/test/ComposeUiTest;)Z
+	public static final fun registerIdlingResource (Landroidx/compose/ui/test/ComposeUiTest;Landroidx/compose/ui/test/IdlingResource;)Z
+	public static final fun unregisterIdlingResource (Landroidx/compose/ui/test/ComposeUiTest;Landroidx/compose/ui/test/IdlingResource;)Z
+	public static final fun waitUntilAtLeastOneExists (Landroidx/compose/ui/test/ComposeUiTest;Landroidx/compose/ui/test/SemanticsMatcher;JZ)V
+	public static synthetic fun waitUntilAtLeastOneExists$default (Landroidx/compose/ui/test/ComposeUiTest;Landroidx/compose/ui/test/SemanticsMatcher;JZILjava/lang/Object;)V
+	public static final fun waitUntilDoesNotExist (Landroidx/compose/ui/test/ComposeUiTest;Landroidx/compose/ui/test/SemanticsMatcher;JZ)V
+	public static synthetic fun waitUntilDoesNotExist$default (Landroidx/compose/ui/test/ComposeUiTest;Landroidx/compose/ui/test/SemanticsMatcher;JZILjava/lang/Object;)V
+	public static final fun waitUntilExactlyOneExists (Landroidx/compose/ui/test/ComposeUiTest;Landroidx/compose/ui/test/SemanticsMatcher;JZ)V
+	public static synthetic fun waitUntilExactlyOneExists$default (Landroidx/compose/ui/test/ComposeUiTest;Landroidx/compose/ui/test/SemanticsMatcher;JZILjava/lang/Object;)V
+	public static final fun waitUntilNodeCount (Landroidx/compose/ui/test/ComposeUiTest;Landroidx/compose/ui/test/SemanticsMatcher;IJZ)V
+	public static synthetic fun waitUntilNodeCount$default (Landroidx/compose/ui/test/ComposeUiTest;Landroidx/compose/ui/test/SemanticsMatcher;IJZILjava/lang/Object;)V
 }
 
 public abstract interface class androidx/compose/ui/test/DeviceConfigurationOverride {
@@ -104,6 +163,39 @@ public final class androidx/compose/ui/test/DeviceConfigurationOverride_skikoKt 
 }
 
 public abstract interface annotation class androidx/compose/ui/test/ExperimentalTestApi : java/lang/annotation/Annotation {
+}
+
+public final class androidx/compose/ui/test/FailureArtifact {
+	public static final field $stable I
+	public synthetic fun <init> (ILjava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getFileName ()Ljava/lang/String;
+	public final fun getType-CPZAQgk ()I
+}
+
+public final class androidx/compose/ui/test/FailureArtifact$Type {
+	public static final field Companion Landroidx/compose/ui/test/FailureArtifact$Type$Companion;
+	public static final synthetic fun box-impl (I)Landroidx/compose/ui/test/FailureArtifact$Type;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
+	public fun hashCode ()I
+	public static fun hashCode-impl (I)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
+}
+
+public final class androidx/compose/ui/test/FailureArtifact$Type$Companion {
+	public final fun getScreenshot-CPZAQgk ()I
+	public final fun getUiHierarchy-CPZAQgk ()I
+}
+
+public final class androidx/compose/ui/test/FailureContext {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/Throwable;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/lang/Throwable;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getArtifacts ()Ljava/util/List;
+	public final fun getError ()Ljava/lang/Throwable;
 }
 
 public final class androidx/compose/ui/test/FiltersKt {
@@ -132,8 +224,10 @@ public final class androidx/compose/ui/test/FiltersKt {
 	public static final fun hasTestTag (Ljava/lang/String;)Landroidx/compose/ui/test/SemanticsMatcher;
 	public static final fun hasText (Ljava/lang/String;ZZ)Landroidx/compose/ui/test/SemanticsMatcher;
 	public static synthetic fun hasText$default (Ljava/lang/String;ZZILjava/lang/Object;)Landroidx/compose/ui/test/SemanticsMatcher;
-	public static final fun hasTextExactly ([Ljava/lang/String;Z)Landroidx/compose/ui/test/SemanticsMatcher;
+	public static final synthetic fun hasTextExactly ([Ljava/lang/String;Z)Landroidx/compose/ui/test/SemanticsMatcher;
+	public static final fun hasTextExactly ([Ljava/lang/String;ZZ)Landroidx/compose/ui/test/SemanticsMatcher;
 	public static synthetic fun hasTextExactly$default ([Ljava/lang/String;ZILjava/lang/Object;)Landroidx/compose/ui/test/SemanticsMatcher;
+	public static synthetic fun hasTextExactly$default ([Ljava/lang/String;ZZILjava/lang/Object;)Landroidx/compose/ui/test/SemanticsMatcher;
 	public static final fun isDialog ()Landroidx/compose/ui/test/SemanticsMatcher;
 	public static final fun isEditable ()Landroidx/compose/ui/test/SemanticsMatcher;
 	public static final fun isEnabled ()Landroidx/compose/ui/test/SemanticsMatcher;
@@ -631,6 +725,7 @@ public final class androidx/compose/ui/test/SelectorsKt {
 	public static final fun onChild (Landroidx/compose/ui/test/SemanticsNodeInteraction;)Landroidx/compose/ui/test/SemanticsNodeInteraction;
 	public static final fun onChildAt (Landroidx/compose/ui/test/SemanticsNodeInteraction;I)Landroidx/compose/ui/test/SemanticsNodeInteraction;
 	public static final fun onChildren (Landroidx/compose/ui/test/SemanticsNodeInteraction;)Landroidx/compose/ui/test/SemanticsNodeInteractionCollection;
+	public static final fun onDescendants (Landroidx/compose/ui/test/SemanticsNodeInteraction;)Landroidx/compose/ui/test/SemanticsNodeInteractionCollection;
 	public static final fun onFirst (Landroidx/compose/ui/test/SemanticsNodeInteractionCollection;)Landroidx/compose/ui/test/SemanticsNodeInteraction;
 	public static final fun onLast (Landroidx/compose/ui/test/SemanticsNodeInteractionCollection;)Landroidx/compose/ui/test/SemanticsNodeInteraction;
 	public static final fun onParent (Landroidx/compose/ui/test/SemanticsNodeInteraction;)Landroidx/compose/ui/test/SemanticsNodeInteraction;
@@ -704,6 +799,40 @@ public final class androidx/compose/ui/test/SkikoImageHelpersKt {
 
 public final class androidx/compose/ui/test/TestContext {
 	public static final field $stable I
+}
+
+public abstract interface class androidx/compose/ui/test/TestFailureHandler {
+	public abstract fun onTestFailed (Landroidx/compose/ui/test/FailureContext;)V
+}
+
+public final class androidx/compose/ui/test/TestFailurePolicy {
+	public static final field $stable I
+	public synthetic fun <init> (IILjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (IILjava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFailureHandlers ()Ljava/util/List;
+	public final fun getScreenshotCaptureMode-zYtJLZc ()I
+	public final fun getUiHierarchyCaptureMode-zYtJLZc ()I
+	public fun hashCode ()I
+}
+
+public final class androidx/compose/ui/test/TestFailurePolicy$CaptureMode {
+	public static final field Companion Landroidx/compose/ui/test/TestFailurePolicy$CaptureMode$Companion;
+	public static final synthetic fun box-impl (I)Landroidx/compose/ui/test/TestFailurePolicy$CaptureMode;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
+	public fun hashCode ()I
+	public static fun hashCode-impl (I)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
+}
+
+public final class androidx/compose/ui/test/TestFailurePolicy$CaptureMode$Companion {
+	public final fun getDisabled-zYtJLZc ()I
+	public final fun getEnabled-zYtJLZc ()I
+	public final fun getUnspecified-zYtJLZc ()I
 }
 
 public final class androidx/compose/ui/test/TextActionsKt {
@@ -894,5 +1023,9 @@ public final class androidx/compose/ui/test/TrackpadInjectionScopeKt {
 	public static final fun scale (Landroidx/compose/ui/test/TrackpadInjectionScope;F)V
 	public static final fun tripleClick-8c717Hs (Landroidx/compose/ui/test/TrackpadInjectionScope;JI)V
 	public static synthetic fun tripleClick-8c717Hs$default (Landroidx/compose/ui/test/TrackpadInjectionScope;JIILjava/lang/Object;)V
+}
+
+public final class androidx/compose/ui/test/v2/ComposeUiTest_skikoKt {
+	public static final fun runComposeUiTest (Lkotlin/jvm/functions/Function2;)V
 }
 

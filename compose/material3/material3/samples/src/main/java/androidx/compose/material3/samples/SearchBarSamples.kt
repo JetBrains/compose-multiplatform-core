@@ -45,7 +45,6 @@ import androidx.compose.material3.ExpandedDockedSearchBarWithGap
 import androidx.compose.material3.ExpandedFullScreenContainedSearchBar
 import androidx.compose.material3.ExpandedFullScreenSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -113,7 +112,6 @@ fun SimpleSearchBarSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -178,7 +176,6 @@ fun FullScreenSearchBarScaffoldSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -242,7 +239,7 @@ private fun SampleSearchResults(onResultClick: (String) -> Unit, modifier: Modif
         repeat(10) { idx ->
             val resultText = "Suggestion $idx"
             ListItem(
-                headlineContent = { Text(resultText) },
+                content = { Text(resultText) },
                 supportingContent = { Text("Additional info") },
                 leadingContent = { Icon(Icons.Filled.Star, contentDescription = null) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
@@ -309,7 +306,6 @@ private fun SampleTrailingIcon() =
         }
     }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun SampleNavigationIcon(state: SearchBarState, isAnimated: Boolean = false) =
     AnimatedVisibility(
@@ -349,7 +345,6 @@ private fun SampleNavigationIcon(state: SearchBarState, isAnimated: Boolean = fa
         }
     }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun SampleActions(state: SearchBarState, isAnimated: Boolean = false) =
     AnimatedVisibility(

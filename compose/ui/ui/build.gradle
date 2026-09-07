@@ -115,6 +115,8 @@ androidXMultiplatform {
             // the `lifecycle-viewmodel-savedstate` dependency directly works around the issue.
             // See https://github.com/gradle/gradle/issues/14220 for details.
             compileOnly("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.9.2")
+
+            implementation("androidx.navigationevent:navigationevent:1.1.0")
         }
 
         androidDeviceTest.dependencies {
@@ -122,7 +124,7 @@ androidXMultiplatform {
             implementation(project(":appcompat:appcompat"))
             implementation("androidx.activity:activity:1.9.1")
             implementation("androidx.transition:transition:1.7.0")
-            implementation("androidx.core:core:1.16.0-beta01")
+            implementation("androidx.core:core:1.16.0")
             implementation(libs.testUiautomator)
             implementation(libs.testRules)
             implementation(libs.testRunner)
@@ -159,6 +161,7 @@ androidXMultiplatform {
             implementation("androidx.core:core-ktx:1.2.0")
             implementation("androidx.activity:activity-compose:1.7.0")
             implementation("androidx.fragment:fragment-testing:1.4.1")
+            implementation("androidx.navigationevent:navigationevent:1.1.0")
         }
 
         androidHostTest.dependencies {
@@ -209,7 +212,6 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2019"
     description = "Compose UI primitives. This library contains the primitives that form the Compose UI Toolkit, such as drawing, measurement and layout."
-    legacyDisableKotlinStrictApiMode = true
     samples(project(":compose:ui:ui:ui-samples"))
     addGoldenImageAssets()
     enableRobolectric()

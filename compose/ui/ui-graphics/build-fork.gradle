@@ -92,13 +92,14 @@ androidXMultiplatform {
                 api(libs.skiko)
             }
         }
+        skikoTest.dependsOn(nonAndroidTest)
 
         nonAndroidExcludingWebMain {
             dependsOn(skikoMain)
         }
 
         nonAndroidExcludingWebTest {
-            dependsOn(nonAndroidTest)
+            dependsOn(skikoTest)
         }
 
         desktopMain {
@@ -107,7 +108,7 @@ androidXMultiplatform {
         }
 
         desktopTest {
-            dependsOn(nonAndroidTest)
+            dependsOn(skikoTest)
             dependsOn(nonAndroidExcludingWebTest)
             resources.srcDirs += "src/desktopTest/res"
             dependencies {
@@ -127,7 +128,7 @@ androidXMultiplatform {
         }
 
         nonJvmTest {
-            dependsOn(nonAndroidTest)
+            dependsOn(skikoTest)
         }
 
         nativeMain {

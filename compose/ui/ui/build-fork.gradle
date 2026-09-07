@@ -255,7 +255,6 @@ tasks.register("updateTranslations", UpdateTranslationsTask.class) {
 // See also `scripts/convertCrowdinToStringsXml.sh`.
 tasks.register("updateTranslationsIos", UpdateTranslationsTask.class) {
     group = "localization"
-    gitRepo = "https://github.com/JetBrains/compose-multiplatform-core"
     repoResDirectories = ["compose/ui/ui/src/iosMain/res"]
     targetDirectory = project.file("src/iosMain/kotlin/androidx/compose/ui/platform/l10n")
     targetPackageName = "androidx.compose.ui.platform.l10n"

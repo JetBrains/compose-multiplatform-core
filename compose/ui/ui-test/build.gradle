@@ -57,9 +57,9 @@ androidXMultiplatform {
             implementation("androidx.activity:activity-compose:1.3.0")
             implementation("androidx.annotation:annotation:1.8.1")
             implementation("androidx.core:core-ktx:1.12.0")
-            implementation("androidx.test.espresso:espresso-core:3.5.0")
-            implementation("androidx.test.espresso:espresso-idling-resource:3.5.0")
-            implementation("androidx.test:monitor:1.6.1")
+            implementation("androidx.test.espresso:espresso-core:3.7.0")
+            implementation("androidx.test.espresso:espresso-idling-resource:3.7.0")
+            implementation("androidx.test:monitor:1.8.0")
         }
 
         androidCommonTest {
@@ -114,7 +114,6 @@ androidx {
     type = SoftwareType.PUBLISHED_KOTLIN_ONLY_TEST_LIBRARY
     inceptionYear = "2019"
     description = "Compose testing library"
-    legacyDisableKotlinStrictApiMode = true
     samples(project(":compose:ui:ui-test:ui-test-samples"))
     enableRobolectric()
     deviceTests.minSdkForFtlOverride = 24 // b/437944630

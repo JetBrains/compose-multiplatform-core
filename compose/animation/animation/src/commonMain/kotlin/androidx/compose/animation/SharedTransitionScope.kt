@@ -31,7 +31,6 @@ import androidx.compose.animation.SharedTransitionScope.ResizeMode.Companion.sca
 import androidx.compose.animation.SharedTransitionScope.SharedContentState
 import androidx.compose.animation.core.DeferredTransition
 import androidx.compose.animation.core.ExperimentalDeferredTransitionApi
-import androidx.compose.animation.core.ExperimentalTransitionApi
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.Spring.StiffnessMediumLow
@@ -957,6 +956,7 @@ public interface SharedTransitionScope : LookaheadScope {
      *
      * @sample androidx.compose.animation.samples.DynamicallyEnabledSharedElementInPagerSample
      * @sample androidx.compose.animation.samples.SharedContentConfigSample
+     * @sample androidx.compose.animation.samples.SharedContentConfigDeferredTransitionSample
      */
     public interface SharedContentConfig {
         /**
@@ -986,6 +986,8 @@ public interface SharedTransitionScope : LookaheadScope {
          * the transition switches to the automatic phase. This makes it look like it remains
          * visually attached to its parent container. If false, it remains statically detached in
          * its start position during the deferred phase.
+         *
+         * @sample androidx.compose.animation.samples.SharedContentConfigDeferredTransitionSample
          */
         @ExperimentalDeferredTransitionApi
         @get:Suppress("GetterSetterNames")
@@ -1046,6 +1048,7 @@ public interface SharedTransitionScope : LookaheadScope {
      *   part in the manual transformations applied to its container during the deferred phase of a
      *   [DeferredTransition]. This makes it look like it remains visually attached to its parent
      *   container.
+     * @sample androidx.compose.animation.samples.SharedContentConfigDeferredTransitionSample
      * @see SharedContentConfig
      */
     @ExperimentalDeferredTransitionApi
@@ -1329,7 +1332,6 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
      * will add its animations to. When [parentTransition] is null, [visible] will be cast to (Unit)
      * -> Boolean, since we have no parent state to use for the query.
      */
-    @OptIn(ExperimentalTransitionApi::class)
     private fun <T> Modifier.sharedBoundsImpl(
         sharedContentState: SharedContentState,
         parentTransition: Transition<T>?,
