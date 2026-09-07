@@ -35,6 +35,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -46,7 +47,6 @@ import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.rememberLifecycleOwner
-import androidx.navigation3.fastToSet
 import androidx.navigation3.runtime.MetadataScope
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavEntryDecorator
@@ -57,7 +57,6 @@ import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.LocalCurrentScene
 import androidx.navigation3.scene.LocalEntriesToExcludeFromCurrentScene
-import androidx.navigation3.scene.NavigationBackHandler
 import androidx.navigation3.scene.OverlayScene
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneDecoratorStrategy
@@ -65,7 +64,6 @@ import androidx.navigation3.scene.SceneInfo
 import androidx.navigation3.scene.SceneState
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SinglePaneSceneStrategy
-import androidx.navigation3.scene.rememberNavigationEventState
 import androidx.navigation3.scene.rememberSceneState
 import androidx.navigation3.ui.NavDisplay.popTransitionSpec
 import androidx.navigation3.ui.NavDisplay.predictivePopTransitionSpec
@@ -73,7 +71,9 @@ import androidx.navigation3.ui.NavDisplay.transitionSpec
 import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventTransitionState.Idle
 import androidx.navigationevent.NavigationEventTransitionState.InProgress
+import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.NavigationEventState
+import androidx.navigationevent.compose.rememberNavigationEventState
 import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
 import kotlin.reflect.KClass
@@ -545,14 +545,29 @@ public fun <T : Any> NavDisplay(
             sharedTransitionScope,
             onBack,
         )
+    val scene = sceneState.currentScene
 
     // Predictive Back Handling
-    val navigationEventState = rememberNavigationEventState(sceneState)
-    NavigationBackHandler(sceneState, navigationEventState, onBackCompleted = onBack)
+    val currentInfo = SceneInfo(scene)
+    val previousSceneInfos = sceneState.previousScenes.map { SceneInfo(it) }
+    val gestureState =
+        rememberNavigationEventState(currentInfo = currentInfo, backInfo = previousSceneInfos)
+
+    NavigationBackHandler(
+        state = gestureState,
+        isBackEnabled = scene.previousEntries.isNotEmpty(),
+        onBackCompleted = {
+            // If `enabled` becomes stale (e.g., it was set to false but a gesture was
+            // dispatched in the same frame), this may result in no entries being popped
+            // due to entries.size being smaller than scene.previousEntries.size
+            // but that's preferable to crashing with an IndexOutOfBoundsException
+            repeat(entries.size - scene.previousEntries.size) { onBack() }
+        },
+    )
 
     NavDisplay(
         sceneState,
-        navigationEventState,
+        gestureState,
         modifier,
         contentAlignment,
         sizeTransform,
@@ -615,9 +630,6 @@ public fun <T : Any> NavDisplay(
     val transition = rememberTransition(transitionState, label = "scene")
 
     // Transition Handling
-    /** Keep track of the previous entries for the transition's current scene. */
-    val transitionCurrentStateEntries =
-        remember(transition.currentState) { sceneState.entries.toList() }
 
     // Set up Gesture Back tracking
     val previousScene = sceneState.previousScenes.lastOrNull()
@@ -634,15 +646,18 @@ public fun <T : Any> NavDisplay(
             is Idle -> NavigationEvent.EDGE_NONE
             is InProgress -> gestureTransition.latestEvent.swipeEdge
         }
+    // Determine if this should be a pop or not.
+    // Keep track of the previous entries for the current scene.
+    val previousEntries = remember { mutableStateOf(sceneState.entries.map { it.contentKey }) }
 
     val isPop =
-        isPop(
-            // Consider this a pop if the current entries match the previous entries we have
-            // recorded
-            // from the current state of the transition
-            transitionCurrentStateEntries.map { it.contentKey },
-            sceneState.entries.map { it.contentKey },
-        )
+        remember(sceneState.entries) {
+            val oldBackStack = previousEntries.value
+            val newBackStack = sceneState.entries.map { it.contentKey }
+            val result = isPop(oldBackStack, newBackStack)
+            previousEntries.value = newBackStack
+            result
+        }
 
     // Track currently rendered Scenes and their ZIndices
     val sceneMap = remember { mutableStateMapOf<AnimatedSceneKey, Scene<T>>() }
@@ -652,11 +667,6 @@ public fun <T : Any> NavDisplay(
     val initialZIndex = zIndices.getOrPut(initialKey) { 0f }
     val targetZIndex =
         when {
-            // AnimatedContent does not change the zIndex of content that is already on the
-            // screen, regardless of what you pass as the targetZIndex. So we need to check
-            // if the target is mid-transition and if it is, re-use the previously calculated
-            // zIndex. This ensures that `zIndices` is tracking the correct zIndex and that
-            // it matches the actual zIndex running in AnimatedContent.
             !inPredictiveBack && transition.targetState != scene && zIndices.contains(targetKey) ->
                 zIndices[targetKey]
             initialKey == targetKey -> initialZIndex
@@ -693,6 +703,8 @@ public fun <T : Any> NavDisplay(
                     .map { it.value }
                     .forEach { if (!scenes.contains(it)) scenes.add(it) }
 
+                val isPop = transition.targetState != scenes.first()
+
                 // At this point we have a list in this order
                 // [zIndex larger --> zIndex smaller]
 
@@ -700,46 +712,25 @@ public fun <T : Any> NavDisplay(
                 // z-order
                 // overlayScenes is already in order of [top most overlay ---> lowest overlay],
                 // so we put overlayScenes in front, and then add the scenes after.
-                val scenesInZOrder = currentOverlayScenes + scenes
+                // During pops, we reverse the scene order so the incoming destination scene
+                // (lowest z-index) claims its entry keys first, allowing shared elements to
+                // render in the target scene and excluding them from outgoing higher z-index
+                // scenes.
+                val scenesInZOrder =
+                    (currentOverlayScenes + scenes).let { if (isPop) it.reversed() else it }
                 // At this point we have a list of all scenes in this order
                 // [top most overlay ---> lowest overlay, other scenes zIndex larger --> zIndex
-                // smaller]
+                // smaller], or vice versa if we are popping.
 
                 // Then we track which entries are already covered
                 val coveredEntryKeys = mutableSetOf<Any>()
 
-                // This determines whether this is a pop or not
-                val shouldSwapExcludedScenesFromTarget = transition.targetState != scenes.first()
-
-                // In scenesInZOrder's natural order, go through each scene, marking
-                // all of the entries not already covered as associated
-                // with that scene. This ensures that each unique contentKey will only be
-                // rendered by one scene.
+                // In scenesInZOrder, go through each scene, marking all of the entries not
+                // already covered as associated with that scene. This ensures that each unique
+                // contentKey will only be rendered by one scene.
                 scenesInZOrder.fastForEach { scene ->
-                    val newlyCoveredEntryKeys =
-                        scene.entries
-                            .map { it.contentKey }
-                            .filterNot(coveredEntryKeys::contains)
-                            .toSet()
-                    // If our target scene is not the scene on top
-                    // we should exclude the entries in the target scene from all other scenes
-                    // this ensures we render the entry in the target scene when popping using
-                    // shared elements
-                    if (shouldSwapExcludedScenesFromTarget && transition.targetState != scene) {
-                        put(
-                            AnimatedSceneKey(scene),
-                            transition.targetState.entries.fastMap { it.contentKey }.fastToSet(),
-                        )
-                    } else {
-                        put(AnimatedSceneKey(scene), coveredEntryKeys.toMutableSet())
-                    }
-                    coveredEntryKeys.addAll(newlyCoveredEntryKeys)
-                }
-
-                // After we are done building the entire map, check if we should clear
-                // the target scene key
-                if (shouldSwapExcludedScenesFromTarget) {
-                    put(AnimatedSceneKey(transition.targetState), emptySet())
+                    put(AnimatedSceneKey(scene), coveredEntryKeys.toMutableSet())
+                    coveredEntryKeys.addAll(scene.entries.fastMap { it.contentKey })
                 }
             }
         }
@@ -755,11 +746,9 @@ public fun <T : Any> NavDisplay(
 
     // check if in gesture back
     if (inPredictiveBack) {
-        if (transition.currentState != previousScene) {
-            LaunchedEffect(previousScene, progress) {
-                // Retarget on key change; seek on progress updates.
-                transitionState.seekTo(progress, previousScene)
-            }
+        LaunchedEffect(previousScene, progress) {
+            // Retarget on key change; seek on progress updates.
+            transitionState.seekTo(progress, previousScene)
         }
     } else {
         LaunchedEffect(scene) {
