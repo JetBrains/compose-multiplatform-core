@@ -317,7 +317,7 @@ class NavHostTest {
     @Test
     fun testViewModelClearedAfterPopWithConfigChange() = runComposeUiTestOnUiThread {
         lateinit var navController: NavHostController
-        var lifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
+        val lifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
         lateinit var state: MutableState<Int>
         lateinit var viewModel: TestViewModel
         setContent {
@@ -359,7 +359,7 @@ class NavHostTest {
     @Test
     fun testViewModelClearedAfterPopMultipleWithConfigChange() = runComposeUiTestOnUiThread {
         lateinit var navController: NavHostController
-        var lifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
+        val lifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
         lateinit var state: MutableState<Int>
         lateinit var viewModel_second: TestViewModel
         lateinit var viewModel_third: TestViewModel
@@ -1200,7 +1200,15 @@ class NavHostTest {
     @Test
     fun testPopWithBackHandler() = runComposeUiTestOnUiThread {
         lateinit var navController: NavHostController
+<<<<<<< HEAD:navigation/navigation-compose/src/commonTest/kotlin/androidx/navigation/compose/NavHostTest.kt
         setContent {
+=======
+        val lifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
+        var backPressedDispatcher: OnBackPressedDispatcher? = null
+        var count = 0
+        var wasCalled = false
+        composeTestRule.setContent {
+>>>>>>> 90fa0e9f4a4eef2091af508a50239c7a01515975:navigation/navigation-compose/src/androidDeviceTest/kotlin/androidx/navigation/compose/NavHostTest.kt
             navController = rememberNavController()
             val innerNavController = rememberNavController()
             NavHost(navController, startDestination = first) {
