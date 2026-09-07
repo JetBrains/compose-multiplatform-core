@@ -49,11 +49,10 @@ androidXMultiplatform {
 
     sourceSets {
         def navigation3Version = project.findProperty('artifactRedirection.version.androidx.navigation3')
-        def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
 
         commonMain.dependencies {
             api("androidx.navigation3:navigation3-runtime:$navigation3Version")
-            api("org.jetbrains.androidx.navigationevent:navigationevent-compose:1.0.1")
+            api("org.jetbrains.androidx.navigationevent:navigationevent-compose:1.1.0")
             api("org.jetbrains.compose.animation:animation:1.10.0")
             api("org.jetbrains.compose.runtime:runtime:1.10.0")
             api("org.jetbrains.compose.runtime:runtime-saveable:1.10.0")
@@ -70,7 +69,7 @@ androidXMultiplatform {
             implementation(libs.kotlinTest)
             implementation(project(":kruth:kruth"))
             implementation(project(":compose:runtime:runtime-test-utils"))
-            implementation("androidx.navigationevent:navigationevent-testing:$navigationEventVersion")
+            implementation("androidx.navigationevent:navigationevent-testing:1.1.2")
         }
 
         androidMain.dependencies {

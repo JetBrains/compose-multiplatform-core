@@ -57,14 +57,14 @@ androidXMultiplatform {
             api("androidx.savedstate:savedstate-compose:1.4.0")
             implementation("androidx.collection:collection:1.5.0")
             implementation("androidx.lifecycle:lifecycle-runtime:2.10.0")
-            api("androidx.navigationevent:navigationevent:1.0.2")
+            api("androidx.navigationevent:navigationevent:1.1.2")
         }
 
         commonTest.dependencies {
             implementation(libs.kotlinTest)
             implementation(project(":kruth:kruth"))
             implementation(project(":compose:runtime:runtime-test-utils"))
-            implementation("androidx.navigationevent:navigationevent-testing:1.0.2")
+            implementation("androidx.navigationevent:navigationevent-testing:1.1.2")
         }
 
         androidDeviceTest.dependencies {
