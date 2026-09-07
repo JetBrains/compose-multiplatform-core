@@ -18,6 +18,7 @@ package androidx.compose.ui.navigationevent
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
 import androidx.compose.ui.uikit.utils.CMPScreenEdgePanGestureRecognizer
 import androidx.compose.ui.unit.Density
@@ -61,6 +62,14 @@ internal class IosBackNavigationEventInput(
         private const val BACK_GESTURE_SCREEN_SIZE = 0.3
         private const val BACK_GESTURE_VELOCITY = 100
     }
+
+    private var frameChoreographer: FrameChoreographer? = null
+        set(value) {
+            if (field == value) return
+            field = value
+            startEdgePanGestureRecognizer.activitiesHandler = null
+            endEdgePanGestureRecognizer.activitiesHandler = null
+        }
 
     private var isRecognizersEnabled: Boolean = false
         set(value) {
@@ -124,6 +133,8 @@ internal class IosBackNavigationEventInput(
 
     fun onDidMoveToWindow(window: UIWindow?, composeRootView: UIView) {
         removeGestureListeners()
+        frameChoreographer = window?.windowScene?.let(FrameChoreographer::choreographerForScene)
+
         if (window != null) {
             var view: UIView = composeRootView
             while (view.superview != window) {
@@ -143,6 +154,9 @@ internal class IosBackNavigationEventInput(
     private fun removeGestureListeners() {
         startEdgePanGestureRecognizer.view?.removeGestureRecognizer(startEdgePanGestureRecognizer)
         endEdgePanGestureRecognizer.view?.removeGestureRecognizer(endEdgePanGestureRecognizer)
+
+        startEdgePanGestureRecognizer.activitiesHandler = null
+        endEdgePanGestureRecognizer.activitiesHandler = null
     }
 
     @OptIn(BetaInteropApi::class, ExperimentalComposeUiApi::class)
@@ -193,8 +207,17 @@ internal class IosBackNavigationEventInput(
         }
 
         @ObjCAction
-        fun handleEdgePan(recognizer: UIScreenEdgePanGestureRecognizer) {
+        fun handleEdgePan(recognizer: BackGestureRecognizer) {
             val view = recognizer.view ?: return
+
+            if (recognizer.state == UIGestureRecognizerStateBegan) {
+                recognizer.activitiesHandler = frameChoreographer?.createActivitiesHandler()?.also {
+                    it.onActivitiesStarted()
+                }
+            } else if (recognizer.isInTerminalState) {
+                recognizer.activitiesHandler = null
+            }
+
             when (recognizer.state) {
                 UIGestureRecognizerStateBegan -> {
                     if (recognizer.numberOfTouches == 0uL || recognizer.numberOfTouches == NSUIntegerMax) {
@@ -297,6 +320,22 @@ internal class IosBackNavigationEventInput(
 internal class BackGestureRecognizer(
     target: Any?, action: CPointer<out CPointed>?
 ) : CMPScreenEdgePanGestureRecognizer(target = target, action = action) {
+
+    var activitiesHandler: FrameChoreographer.ActivitiesHandler? = null
+        set(value) {
+            if (field == value) return
+            field?.dispose()
+            field = value
+        }
+
+    override fun setEnabled(enabled: Boolean) {
+        super.setEnabled(enabled)
+
+        if (!enabled) {
+            activitiesHandler = null
+        }
+    }
+
     init {
         setDelaysTouchesBegan(true)
         setDelaysTouchesEnded(true)
