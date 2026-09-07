@@ -731,6 +731,54 @@ class CfWA11YTest : OnCanvasTests {
     }
 
     @Test
+    fun textFieldWithLabelUpdatesEditableText() = runApplicationTest {
+        var text by mutableStateOf("")
+
+        createComposeWindow {
+            TextField(
+                value = text,
+                onValueChange = { text = it },
+                label = { Text("Paste here") },
+                modifier = Modifier.testTag("textFieldTag"),
+            )
+        }
+
+        awaitA11YChanges()
+
+        val textField = getShadowRoot().getElementById("textFieldTag") as? HTMLElement
+        assertNotNull(textField)
+
+        text = "Entered text"
+        awaitA11YChanges()
+
+        assertEquals("Entered text", textField.innerText)
+    }
+
+    @Test
+    fun textFieldWithPlaceholderUpdatesEditableText() = runApplicationTest {
+        var text by mutableStateOf("")
+
+        createComposeWindow {
+            TextField(
+                value = text,
+                onValueChange = { text = it },
+                placeholder = { Text("Paste here") },
+                modifier = Modifier.testTag("textFieldTag"),
+            )
+        }
+
+        awaitA11YChanges()
+
+        val textField = getShadowRoot().getElementById("textFieldTag") as? HTMLElement
+        assertNotNull(textField)
+
+        text = "Entered text"
+        awaitA11YChanges()
+
+        assertEquals("Entered text", textField.innerText)
+    }
+
+    @Test
     fun sliderHasSliderRoleAndRangeValues() = runApplicationTest {
         var value by mutableStateOf(0.5f)
 
