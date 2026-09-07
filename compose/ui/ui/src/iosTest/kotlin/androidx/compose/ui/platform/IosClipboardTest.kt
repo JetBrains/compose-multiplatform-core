@@ -23,7 +23,7 @@ import kotlin.test.assertNotNull
 import kotlinx.coroutines.runBlocking
 
 @OptIn(ExperimentalTestApi::class)
-class UiKitPlatformClipboardTest {
+class IosClipboardTest {
 
     // TODO: consider writing instrumented tests for Clipboard
     // The unit tests can't use (copy/paste) the native UIPasteboard:

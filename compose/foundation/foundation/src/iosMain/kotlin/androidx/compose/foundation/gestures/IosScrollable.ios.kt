@@ -25,9 +25,9 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFold
 
-internal actual fun CompositionLocalConsumerModifierNode.platformScrollConfig(): ScrollConfig = UiKitScrollConfig
+internal actual fun CompositionLocalConsumerModifierNode.platformScrollConfig(): ScrollConfig = IosScrollConfig
 
-internal object UiKitScrollConfig : ScrollConfig {
+internal object IosScrollConfig : ScrollConfig {
     override fun Density.calculateMouseWheelScroll(event: PointerEvent, bounds: IntSize): Offset =
         event.changes.fastFold(Offset.Zero) { acc, c ->
             if (event.type == PointerEventType.PanMove) {
