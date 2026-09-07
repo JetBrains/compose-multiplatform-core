@@ -22,9 +22,11 @@ import android.view.Surface.ROTATION_180
 import android.view.Surface.ROTATION_270
 import android.view.Surface.ROTATION_90
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class ScreenOrientationCompatTest {
+class ScreenOrientationTest {
 
     /**
      * Simulates resolving an orientation by taking unrotated baseline display dimensions, rotating
@@ -40,7 +42,7 @@ class ScreenOrientationCompatTest {
         val isSideways = currentRotation == ROTATION_90 || currentRotation == ROTATION_270
         val currentWidth = if (isSideways) baseHeight else baseWidth
         val currentHeight = if (isSideways) baseWidth else baseHeight
-        return ScreenOrientationCompat.resolveOrientation(
+        return ScreenOrientation.resolveOrientation(
             currentWidth,
             currentHeight,
             currentRotation,
@@ -147,5 +149,20 @@ class ScreenOrientationCompatTest {
             ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT,
             resolveFromBaseline(1920, 1080, ROTATION_0, true, ROTATION_270),
         )
+    }
+
+    @Test
+    fun testIsPortraitAndLandscape() {
+        assertTrue(ScreenOrientation.isPortrait(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT))
+        assertTrue(ScreenOrientation.isPortrait(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT))
+        assertFalse(ScreenOrientation.isPortrait(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE))
+        assertFalse(ScreenOrientation.isPortrait(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE))
+        assertFalse(ScreenOrientation.isPortrait(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED))
+
+        assertTrue(ScreenOrientation.isLandscape(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE))
+        assertTrue(ScreenOrientation.isLandscape(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE))
+        assertFalse(ScreenOrientation.isLandscape(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT))
+        assertFalse(ScreenOrientation.isLandscape(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT))
+        assertFalse(ScreenOrientation.isLandscape(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED))
     }
 }
