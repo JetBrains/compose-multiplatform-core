@@ -14,11 +14,27 @@
  * limitations under the License.
  */
 
-package androidx.a2ui.model
+import androidx.build.SoftwareType
 
-/**
- * Placeholder class for the A2UI library.
- *
- * TODO: Remove this once actual classes are added.
- */
-internal class Placeholder
+plugins {
+    id("AndroidXPlugin")
+    id("com.android.library")
+}
+
+dependencies {
+    compileOnly(project(":annotation:annotation-sampled"))
+
+    implementation(project(":camera:camera-common"))
+}
+
+android {
+    compileSdk { version = release(36) }
+    namespace = "androidx.camera.common.samples"
+}
+
+androidx {
+    name = "Camera Common Samples"
+    type = SoftwareType.SAMPLES
+    inceptionYear = "2026"
+    description = "Contains sample code for the Androidx Camera Common APIs and Utilities"
+}
