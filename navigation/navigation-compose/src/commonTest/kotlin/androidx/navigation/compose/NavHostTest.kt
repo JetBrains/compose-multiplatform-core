@@ -1200,15 +1200,7 @@ class NavHostTest {
     @Test
     fun testPopWithBackHandler() = runComposeUiTestOnUiThread {
         lateinit var navController: NavHostController
-<<<<<<< HEAD:navigation/navigation-compose/src/commonTest/kotlin/androidx/navigation/compose/NavHostTest.kt
         setContent {
-=======
-        val lifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
-        var backPressedDispatcher: OnBackPressedDispatcher? = null
-        var count = 0
-        var wasCalled = false
-        composeTestRule.setContent {
->>>>>>> 90fa0e9f4a4eef2091af508a50239c7a01515975:navigation/navigation-compose/src/androidDeviceTest/kotlin/androidx/navigation/compose/NavHostTest.kt
             navController = rememberNavController()
             val innerNavController = rememberNavController()
             NavHost(navController, startDestination = first) {
