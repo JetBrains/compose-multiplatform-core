@@ -31,8 +31,50 @@ fun ColorFilter.asSkiaColorFilter(): SkColorFilter = nativeColorFilter
  */
 fun SkColorFilter.asComposeColorFilter(): ColorFilter = ColorFilter(this)
 
-internal actual fun actualTintColorFilter(color: Color, blendMode: BlendMode): NativeColorFilter =
-    SkColorFilter.makeBlend(color.toArgb(), blendMode.toSkia())
+internal actual fun actualTintColorFilter(color: Color, blendMode: BlendMode): NativeColorFilter {
+    // TODO: https://github.com/JetBrains/skiko/pull/1272 - drop isNoOpBlend and the
+    //  pass-through filter once skiko reports the absent filter as null. Replace by this:
+    // SkColorFilter.makeBlend(color.toArgb(), blendMode.toSkia()) ?: PassThroughColorFilter
+    if (isNoOpBlend(color, blendMode)) return PassThroughColorFilter
+    return SkColorFilter.makeBlend(color.toArgb(), blendMode.toSkia())
+}
+
+/**
+ * Whether skia leaves the color untouched for this blend. Skia has no filter object for those and
+ * answers with none at all, which [NativeColorFilter] cannot carry, so a pass-through filter stands
+ * in for them.
+ *
+ * Decided on the 8 bit alpha that skia itself receives, so that an alpha which rounds to fully
+ * transparent or fully opaque is judged the way skia judges it.
+ */
+private fun isNoOpBlend(color: Color, blendMode: BlendMode): Boolean {
+    if (blendMode == BlendMode.Dst) return true
+    return when (color.toArgb() ushr 24) {
+        0 ->
+            blendMode == BlendMode.SrcOver ||
+                blendMode == BlendMode.DstOver ||
+                blendMode == BlendMode.DstOut ||
+                blendMode == BlendMode.SrcAtop ||
+                blendMode == BlendMode.Xor ||
+                blendMode == BlendMode.Darken
+        255 -> blendMode == BlendMode.DstIn
+        else -> false
+    }
+}
+
+/** Passes every channel through unchanged. */
+private val PassThroughColorFilter by lazy {
+    SkColorFilter.makeMatrix(
+        SkColorMatrix(
+            floatArrayOf(
+                1f, 0f, 0f, 0f, 0f,
+                0f, 1f, 0f, 0f, 0f,
+                0f, 0f, 1f, 0f, 0f,
+                0f, 0f, 0f, 1f, 0f,
+            )
+        )
+    )
+}
 
 /**
  * Remaps compose [ColorMatrix] to [org.jetbrains.skia.ColorMatrix] and returns [ColorFilter]
