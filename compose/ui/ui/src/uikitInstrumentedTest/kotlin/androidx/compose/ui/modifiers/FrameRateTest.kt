@@ -44,7 +44,7 @@ internal class FrameRateTest {
     fun testLowFrameRates() = runUIKitInstrumentedTest {
         val frameRates = listOf(5f, 10f, 30f, 60f)
 
-        animationSpeed = UIKitInstrumentedTest.DefaultAnimationSpeed
+        animationSpeed = UIKitInstrumentedTest.RealAnimationSpeed
 
         setContent {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -70,7 +70,7 @@ internal class FrameRateTest {
     fun testPreferredFrameRates() = runUIKitInstrumentedTest {
         val frameRates = listOf(5f, 10f, 30f, 60f, 80f, 120f)
 
-        animationSpeed = UIKitInstrumentedTest.DefaultAnimationSpeed
+        animationSpeed = UIKitInstrumentedTest.RealAnimationSpeed
 
         setContent {
             LazyColumn(modifier = Modifier.fillMaxSize()) {

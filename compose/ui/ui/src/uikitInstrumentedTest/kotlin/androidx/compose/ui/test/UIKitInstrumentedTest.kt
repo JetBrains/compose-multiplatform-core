@@ -228,9 +228,14 @@ internal class UIKitInstrumentedTest(
         internal const val TestsAnimationSpeed = 100f
 
         /**
-         * Default animation speed for tests that require one-to-one animations.
+         * Real animation speed for tests that require one-to-one animations.
          */
-        internal const val DefaultAnimationSpeed = 1f
+        internal const val RealAnimationSpeed = 1f
+
+        /**
+         * The default duration of drag gestures in instrumented tests.
+         */
+        internal val DefaultDragDuration = 0.1.seconds
 
         fun delay(timeoutMillis: Long) {
             val runLoop = NSRunLoop.currentRunLoop()
@@ -748,7 +753,7 @@ internal class UIKitInstrumentedTest(
     fun AccessibilityTestNode.dragSelectionHandle(
         handle: TestHandle,
         toOffset: Int,
-        duration: Duration = 0.1.seconds,
+        duration: Duration = DefaultDragDuration,
     ) = dragSelectionHandleImpl(this, handle, toOffset, duration)
 
     /**
@@ -756,10 +761,10 @@ internal class UIKitInstrumentedTest(
      * over a given duration.
      *
      * @param location The target position of the drag in DpOffset.
-     * @param duration The duration of the drag gesture, defaulting to 0.1 seconds.
+     * @param duration The duration of the drag gesture, defaulting to [DefaultDragDuration].
      * @return The same UITouch instance after completing the drag gesture.
      */
-    private fun UITouch.dragTo(location: DpOffset, duration: Duration = 0.1.seconds): UITouch {
+    private fun UITouch.dragTo(location: DpOffset, duration: Duration = DefaultDragDuration): UITouch {
         val startLocation = locationInView(null).toDpOffset()
 
         val startTime = TimeSource.Monotonic.markNow()
@@ -781,10 +786,10 @@ internal class UIKitInstrumentedTest(
      * over a given duration.
      *
      * @param offset The offset by which the touch is moved, specified as a DpOffset.
-     * @param duration The duration of the drag gesture, defaulting to 0.1 seconds.
+     * @param duration The duration of the drag gesture, defaulting to [DefaultDragDuration].
      * @return The same UITouch instance after completing the drag gesture.
      */
-    fun UITouch.dragBy(offset: DpOffset, duration: Duration = 0.1.seconds): UITouch {
+    fun UITouch.dragBy(offset: DpOffset, duration: Duration = DefaultDragDuration): UITouch {
         return dragTo(locationInView(null).toDpOffset() + offset, duration)
     }
 
@@ -794,10 +799,10 @@ internal class UIKitInstrumentedTest(
      *
      * @param dx The horizontal offset by which the touch is moved, specified as a Dp. Defaults to 0.dp.
      * @param dy The vertical offset by which the touch is moved, specified as a Dp. Defaults to 0.dp.
-     * @param duration The duration of the drag gesture, specified as a Duration. Defaults to 0.1 seconds.
+     * @param duration The duration of the drag gesture, specified as a Duration. Defaults to [DefaultDragDuration].
      * @return The same UITouch instance after completing the drag gesture.
      */
-    fun UITouch.dragBy(dx: Dp = 0.dp, dy: Dp = 0.dp, duration: Duration = 0.1.seconds): UITouch {
+    fun UITouch.dragBy(dx: Dp = 0.dp, dy: Dp = 0.dp, duration: Duration = DefaultDragDuration): UITouch {
         return dragBy(DpOffset(dx, dy), duration)
     }
 
@@ -807,10 +812,10 @@ internal class UIKitInstrumentedTest(
      *
      * @param x The horizontal destination point. The default value does not change the current horizontal offset.
      * @param y The vertical destination point. The default value does not change the current vertical offset.
-     * @param duration The duration of the drag gesture, specified as a Duration. Defaults to 0.1 seconds.
+     * @param duration The duration of the drag gesture, specified as a Duration. Defaults to [DefaultDragDuration].
      * @return The same UITouch instance after completing the drag gesture.
      */
-    fun UITouch.dragTo(x: Dp? = null, y: Dp? = null, duration: Duration = 0.1.seconds): UITouch {
+    fun UITouch.dragTo(x: Dp? = null, y: Dp? = null, duration: Duration = DefaultDragDuration): UITouch {
         val location = locationInView(null).toDpOffset()
         return dragTo(DpOffset(x ?: location.x, y ?: location.y), duration)
     }
