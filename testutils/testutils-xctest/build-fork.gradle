@@ -77,7 +77,12 @@ private static String frameworksPath(target) {
     }
 }
 
+private def isMacHost() {
+    return System.getProperty("os.name") == "Mac OS X"
+}
+
 private def configure(target, isDevice) {
+    if (!isMacHost()) return
     def frameworkName = "CMPTestUtils"
     def buildSchemeName = frameworkName
     def frameworkSourcesDir = new File(project.projectDir, "src/iosMain/objc")
