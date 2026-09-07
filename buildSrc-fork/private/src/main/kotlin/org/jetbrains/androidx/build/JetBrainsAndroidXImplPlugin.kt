@@ -23,6 +23,7 @@ import androidx.build.ProjectLayoutType.Companion.isJetBrainsFork
 import javax.inject.Inject
 import kotlinx.validation.ApiValidationExtension
 import kotlinx.validation.ExperimentalBCVApi
+import org.gradle.api.DefaultTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.component.SoftwareComponentFactory
@@ -59,6 +60,31 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
         enableBinaryCompatibilityValidator(project)
         val multiplatformExtension =
             project.extensions.getByType(KotlinMultiplatformExtension::class.java)
+        val compileTests =
+            project.tasks.register("compileTests", DefaultTask::class.java) { task: DefaultTask ->
+                task.group = "build"
+                task.description = "Compiles all Kotlin Multiplatform test sources."
+            }
+        project.afterEvaluate {
+            val redirectTargetNames =
+                project.extensions
+                    .findByType(AndroidXMultiplatformExtension::class.java)
+                    ?.redirectTargetDecls
+                    ?.map { it.targetName }
+                    ?.toSet()
+                    .orEmpty()
+            multiplatformExtension.targets.configureEach { target ->
+                if (target.name !in redirectTargetNames) {
+                    target.compilations.configureEach { compilation ->
+                        if (compilation.name == "test" || compilation.name.endsWith("Test")) {
+                            compileTests.configure { task: DefaultTask ->
+                                task.dependsOn(compilation.compileTaskProvider)
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         // Parallel-graph back-end: consume `redirect { }` target declarations and re-root each
         // redirect target onto an empty `redirectCommonMain` that depends on the androidx.* coord.
