@@ -88,7 +88,7 @@ object AndroidComposeUiFlags {
     // TODO(b/513525072): Cleanup once proven stable.
     @field:Suppress("MutableBareField")
     @JvmField
-    var isOutOfFrameSchedulerForTextInputEventsEnabled: Boolean = true
+    public var isOutOfFrameSchedulerForTextInputEventsEnabled: Boolean = false
 
     /**
      * Return true for AndroidComposeView.dispatchHoverEvent when handleded by explore by touch.
