@@ -36,17 +36,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachReversed
-import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.rememberLifecycleOwner
-import androidx.navigation3.fastToSet
 import androidx.navigation3.runtime.MetadataScope
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavEntryDecorator
@@ -57,7 +56,6 @@ import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.LocalCurrentScene
 import androidx.navigation3.scene.LocalEntriesToExcludeFromCurrentScene
-import androidx.navigation3.scene.NavigationBackHandler
 import androidx.navigation3.scene.OverlayScene
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneDecoratorStrategy
@@ -65,7 +63,6 @@ import androidx.navigation3.scene.SceneInfo
 import androidx.navigation3.scene.SceneState
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SinglePaneSceneStrategy
-import androidx.navigation3.scene.rememberNavigationEventState
 import androidx.navigation3.scene.rememberSceneState
 import androidx.navigation3.ui.NavDisplay.popTransitionSpec
 import androidx.navigation3.ui.NavDisplay.predictivePopTransitionSpec
@@ -73,7 +70,9 @@ import androidx.navigation3.ui.NavDisplay.transitionSpec
 import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventTransitionState.Idle
 import androidx.navigationevent.NavigationEventTransitionState.InProgress
+import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.NavigationEventState
+import androidx.navigationevent.compose.rememberNavigationEventState
 import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
 import kotlin.reflect.KClass
@@ -545,14 +544,29 @@ public fun <T : Any> NavDisplay(
             sharedTransitionScope,
             onBack,
         )
+    val scene = sceneState.currentScene
 
     // Predictive Back Handling
-    val navigationEventState = rememberNavigationEventState(sceneState)
-    NavigationBackHandler(sceneState, navigationEventState, onBackCompleted = onBack)
+    val currentInfo = SceneInfo(scene)
+    val previousSceneInfos = sceneState.previousScenes.map { SceneInfo(it) }
+    val gestureState =
+        rememberNavigationEventState(currentInfo = currentInfo, backInfo = previousSceneInfos)
+
+    NavigationBackHandler(
+        state = gestureState,
+        isBackEnabled = scene.previousEntries.isNotEmpty(),
+        onBackCompleted = {
+            // If `enabled` becomes stale (e.g., it was set to false but a gesture was
+            // dispatched in the same frame), this may result in no entries being popped
+            // due to entries.size being smaller than scene.previousEntries.size
+            // but that's preferable to crashing with an IndexOutOfBoundsException
+            repeat(entries.size - scene.previousEntries.size) { onBack() }
+        },
+    )
 
     NavDisplay(
         sceneState,
-        navigationEventState,
+        gestureState,
         modifier,
         contentAlignment,
         sizeTransform,
@@ -652,11 +666,6 @@ public fun <T : Any> NavDisplay(
     val initialZIndex = zIndices.getOrPut(initialKey) { 0f }
     val targetZIndex =
         when {
-            // AnimatedContent does not change the zIndex of content that is already on the
-            // screen, regardless of what you pass as the targetZIndex. So we need to check
-            // if the target is mid-transition and if it is, re-use the previously calculated
-            // zIndex. This ensures that `zIndices` is tracking the correct zIndex and that
-            // it matches the actual zIndex running in AnimatedContent.
             !inPredictiveBack && transition.targetState != scene && zIndices.contains(targetKey) ->
                 zIndices[targetKey]
             initialKey == targetKey -> initialZIndex
@@ -670,13 +679,10 @@ public fun <T : Any> NavDisplay(
     val overlayScenes = sceneState.overlayScenes
     // includes overlay scenes that are already popped off backStack but still animating out
     val currentOverlayScenes = remember { SnapshotStateList<OverlayScene<T>>() }
-
     LaunchedEffect(overlayScenes) {
         // we want a unique set of overlay scenes, but it needs to be ordered to preserve z-order
         overlayScenes.fastForEach {
-            if (!currentOverlayScenes.fastMap { currScene -> currScene.key }.contains(it.key)) {
-                currentOverlayScenes.add(it)
-            }
+            if (!currentOverlayScenes.contains(it)) currentOverlayScenes.add(it)
         }
     }
 
@@ -728,7 +734,7 @@ public fun <T : Any> NavDisplay(
                     if (shouldSwapExcludedScenesFromTarget && transition.targetState != scene) {
                         put(
                             AnimatedSceneKey(scene),
-                            transition.targetState.entries.fastMap { it.contentKey }.fastToSet(),
+                            transition.targetState.entries.map { it.contentKey }.toSet(),
                         )
                     } else {
                         put(AnimatedSceneKey(scene), coveredEntryKeys.toMutableSet())
@@ -882,6 +888,7 @@ public fun <T : Any> NavDisplay(
 
     // Show all OverlayScene instances above the AnimatedContent
     currentOverlayScenes.fastForEachReversed { overlayScene ->
+        val scope = rememberCoroutineScope()
         key(overlayScene) {
             val overlaySceneLifecycleOwner =
                 rememberLifecycleOwner(
@@ -902,8 +909,8 @@ public fun <T : Any> NavDisplay(
         }
         // if the overlay scene is popped, let onRemoved finish before
         // removing from composition to ensure animations can complete
-        if (overlayScene.key !in overlayScenes.fastMap { it.key }) {
-            LaunchedEffect(overlayScene.key) {
+        if (overlayScene !in overlayScenes) {
+            scope.launch {
                 overlayScene.onRemove()
                 currentOverlayScenes.remove(overlayScene)
             }

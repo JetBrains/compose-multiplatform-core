@@ -150,7 +150,6 @@ enum class NavUiLayoutPolicy {
     NoNavBar; // Never show the nav bar
 
     @Composable
-    @Suppress("DEPRECATION") // Move to currentWindowAdaptiveInfoV2 when dependency is updated
     fun toLayoutType(): NavigationSuiteType {
         val defaultLayout =
             NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(currentWindowAdaptiveInfo())
