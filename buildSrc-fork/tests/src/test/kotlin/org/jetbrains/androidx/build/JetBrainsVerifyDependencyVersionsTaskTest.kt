@@ -24,7 +24,7 @@ import org.junit.rules.TemporaryFolder
 
 class JetBrainsVerifyDependencyVersionsTaskTest {
     @get:Rule
-        val temporaryFolder = TemporaryFolder()
+    val temporaryFolder = TemporaryFolder()
 
     @Test
     fun `fails when dependency is less stable`() {
