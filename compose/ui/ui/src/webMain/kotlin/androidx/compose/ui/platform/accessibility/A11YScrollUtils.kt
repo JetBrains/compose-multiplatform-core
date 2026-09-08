@@ -31,16 +31,22 @@ import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
 
+/** Shared by DOM scroll setup and accessibility exposure classification. */
+internal fun SemanticsConfiguration.isDomA11YScrollContainer(): Boolean =
+    (getOrNull(SemanticsProperties.VerticalScrollAxisRange) != null ||
+        getOrNull(SemanticsProperties.HorizontalScrollAxisRange) != null) &&
+        getOrNull(SemanticsActions.ScrollBy)?.action != null
+
 /**
  * Responsibilities:
- * 1. For Compose nodes with scrollable semantics,
- * it configures and maintains the scrollable html node / container. See [syncNodeScrollability]
+ * 1. For Compose nodes with scrollable semantics, it configures and maintains the scrollable html
+ *    node / container. See [syncNodeScrollability]
  * 2. It ensures the two-way synchronization of scroll offsets:
  * - from Compose to A11Y tree. See [applyScrollOffsets]
  * - from A11Y tree back to Compose. See [onScroll]
  *
- * The scrollability of the html node is achieved by placing a "sizer" element exceeding
- * the container's sizes (according to Compose-specified scroll ranges), allowing AT and browser
+ * The scrollability of the html node is achieved by placing a "sizer" element exceeding the
+ * container's sizes (according to Compose-specified scroll ranges), allowing AT and browser
  * manipulate the scroll offset.
  */
 internal class A11YScrollController(
@@ -57,15 +63,17 @@ internal class A11YScrollController(
     private val pendingScrollOffsets = MutableScatterMap<Int, Offset>()
 
     // The non-semantic elements inserted into A11Y scrollable nodes.
-    // To make the scrollable a11y node aware of the possible scroll ranges, they include this "sizer"
+    // To make the scrollable a11y node aware of the possible scroll ranges, they include this
+    // "sizer"
     // element, which width/height equal to the scrollable viewport size + max scroll distance.
     private val domScrollSizers = MutableScatterMap<Int, HTMLElement>()
 
     // Tracking the nodes with a scroll listener:
     private val scrollListenersAttached = MutableIntSet()
 
-    // Applies the browser scroll offset changes to the corresponding SemanticsNode - SemanticsActions.ScrollBy
-    private val onScroll: (Event) -> Unit = onScroll@ { event ->
+    // Applies the browser scroll offset changes to the corresponding SemanticsNode -
+    // SemanticsActions.ScrollBy
+    private val onScroll: (Event) -> Unit = onScroll@{ event ->
         val element = event.target as? HTMLElement ?: return@onScroll
         val semanticsNode = a11yNodeToSemanticsNode[element] ?: return@onScroll
         val applied = appliedScrollOffsets[semanticsNode.id] ?: return@onScroll
@@ -82,20 +90,22 @@ internal class A11YScrollController(
         val horizontalDirection = config.getSupportedScrollDirection(horizontal = true)
         val verticalDirection = config.getSupportedScrollDirection(horizontal = false)
 
-        config.getOrNull(SemanticsActions.ScrollBy)?.action?.invoke(
-            deltaCssPx.x * density * horizontalDirection,
-            deltaCssPx.y * density * verticalDirection,
-        )
+        config
+            .getOrNull(SemanticsActions.ScrollBy)
+            ?.action
+            ?.invoke(
+                deltaCssPx.x * density * horizontalDirection,
+                deltaCssPx.y * density * verticalDirection,
+            )
     }
 
-    private fun SemanticsConfiguration.getSupportedScrollDirection(
-        horizontal: Boolean
-    ): Float {
-        val key = if (horizontal) {
-            SemanticsProperties.HorizontalScrollAxisRange
-        } else {
-            SemanticsProperties.VerticalScrollAxisRange
-        }
+    private fun SemanticsConfiguration.getSupportedScrollDirection(horizontal: Boolean): Float {
+        val key =
+            if (horizontal) {
+                SemanticsProperties.HorizontalScrollAxisRange
+            } else {
+                SemanticsProperties.VerticalScrollAxisRange
+            }
         val isReverse = this.getOrNull(key)?.reverseScrolling == true
         return if (isReverse) -1f else 1f
     }
@@ -118,8 +128,7 @@ internal class A11YScrollController(
         val nodeId = semanticsNode.id
         val verticalRange = config.getOrNull(SemanticsProperties.VerticalScrollAxisRange)
         val horizontalRange = config.getOrNull(SemanticsProperties.HorizontalScrollAxisRange)
-        val canScroll = (verticalRange != null || horizontalRange != null) &&
-            config.getOrNull(SemanticsActions.ScrollBy)?.action != null
+        val canScroll = config.isDomA11YScrollContainer()
 
         if (!canScroll) {
             if (scrollListenersAttached.remove(nodeId)) {
@@ -134,11 +143,12 @@ internal class A11YScrollController(
             vertical = verticalRange != null,
         )
 
-        val ariaOrientation = when {
-            verticalRange != null && horizontalRange == null -> "vertical"
-            horizontalRange != null && verticalRange == null -> "horizontal"
-            else -> null // Bidirectional scroll, or no scroll range at all
-        }
+        val ariaOrientation =
+            when {
+                verticalRange != null && horizontalRange == null -> "vertical"
+                horizontalRange != null && verticalRange == null -> "horizontal"
+                else -> null // Bidirectional scroll, or no scroll range at all
+            }
         if (ariaOrientation != null) {
             htmlNode.setAttribute("aria-orientation", ariaOrientation)
         } else {
@@ -151,27 +161,29 @@ internal class A11YScrollController(
         val viewportWidth = semanticsNode.size.width / density
         val viewportHeight = semanticsNode.size.height / density
 
-        val sizerElementWidth = (viewportWidth + maxHorizontal / density)
-            .coerceAtMost(MAX_SUPPORTED_SCROLL_CSS_PX)
-        val sizerElementHeight = (viewportHeight + maxVertical / density)
-            .coerceAtMost(MAX_SUPPORTED_SCROLL_CSS_PX)
+        val sizerElementWidth =
+            (viewportWidth + maxHorizontal / density).coerceAtMost(MAX_SUPPORTED_SCROLL_CSS_PX)
+        val sizerElementHeight =
+            (viewportHeight + maxVertical / density).coerceAtMost(MAX_SUPPORTED_SCROLL_CSS_PX)
 
         val sizerElement = domScrollSizers.getOrPut(nodeId) { createDomScrollSizer() }
         setSizeAndPosition(sizerElement, 0f, 0f, sizerElementWidth, sizerElementHeight)
 
-        val scrollLeft = horizontalRange?.toCssScrollOffset(
-            maxValue = maxHorizontal,
-            viewportSize = viewportWidth,
-            contentSize = sizerElementWidth,
-            density = density,
-        ) ?: 0f
+        val scrollLeft =
+            horizontalRange?.toCssScrollOffset(
+                maxValue = maxHorizontal,
+                viewportSize = viewportWidth,
+                contentSize = sizerElementWidth,
+                density = density,
+            ) ?: 0f
 
-        val scrollTop = verticalRange?.toCssScrollOffset(
-            maxValue = maxVertical,
-            viewportSize = viewportHeight,
-            contentSize = sizerElementHeight,
-            density = density,
-        ) ?: 0f
+        val scrollTop =
+            verticalRange?.toCssScrollOffset(
+                maxValue = maxVertical,
+                viewportSize = viewportHeight,
+                contentSize = sizerElementHeight,
+                density = density,
+            ) ?: 0f
 
         pendingScrollOffsets[nodeId] = Offset(scrollLeft, scrollTop)
 
@@ -202,7 +214,11 @@ internal class A11YScrollController(
 
             val actual = Offset(element.scrollLeft.toFloat(), element.scrollTop.toFloat())
             val lastApplied = appliedScrollOffsets[id]
-            if (lastApplied != null && offset.isCloseTo(lastApplied) && !actual.isCloseTo(lastApplied)) {
+            if (
+                lastApplied != null &&
+                    offset.isCloseTo(lastApplied) &&
+                    !actual.isCloseTo(lastApplied)
+            ) {
                 // Preserve a browser/AT offset until its asynchronous scroll event is handled.
                 return@forEach
             }
@@ -254,11 +270,7 @@ internal fun createDomScrollSizer(): HTMLElement {
     return sizer
 }
 
-internal fun setScrollContainerStyle(
-    element: HTMLElement,
-    horizontal: Boolean,
-    vertical: Boolean,
-) {
+internal fun setScrollContainerStyle(element: HTMLElement, horizontal: Boolean, vertical: Boolean) {
     // language=javascript
     js(
         """
@@ -280,7 +292,6 @@ internal fun resetScrollContainerStyle(element: HTMLElement) {
     )
 }
 
-
 private fun ScrollAxisRange.toCssScrollOffset(
     maxValue: Float,
     viewportSize: Float,
@@ -288,12 +299,12 @@ private fun ScrollAxisRange.toCssScrollOffset(
     density: Float,
 ): Float {
     val value = value().coerceIn(0f, maxValue)
-    val offset = if (reverseScrolling) {
-        maxValue - value
-    } else {
-        value
-    }
+    val offset =
+        if (reverseScrolling) {
+            maxValue - value
+        } else {
+            value
+        }
 
-    return (offset / density)
-        .coerceIn(0f, (contentSize - viewportSize).coerceAtLeast(0f))
+    return (offset / density).coerceIn(0f, (contentSize - viewportSize).coerceAtLeast(0f))
 }

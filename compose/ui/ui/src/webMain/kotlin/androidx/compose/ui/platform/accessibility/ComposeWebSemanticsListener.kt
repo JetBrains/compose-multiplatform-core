@@ -20,7 +20,6 @@ import androidx.collection.MutableScatterMap
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.PlatformContext
-import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
@@ -45,14 +44,12 @@ import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
 
-internal class ComposeWebSemanticsListener(
-    val webSemanticsRoot: HTMLElement,
-) : PlatformContext.SemanticsOwnerListener {
+internal class ComposeWebSemanticsListener(val webSemanticsRoot: HTMLElement) :
+    PlatformContext.SemanticsOwnerListener {
 
     private val invalidationChannel =
         Channel<Unit>(1, onBufferOverflow = BufferOverflow.DROP_LATEST)
-    private val syncTriggerChannel =
-        Channel<Long>(1, onBufferOverflow = BufferOverflow.DROP_LATEST)
+    private val syncTriggerChannel = Channel<Long>(1, onBufferOverflow = BufferOverflow.DROP_LATEST)
 
     private companion object {
         const val MAX_TIME_IN_DEBOUNCE_MS = 1000L
@@ -64,8 +61,8 @@ internal class ComposeWebSemanticsListener(
     private val startJob = Job()
 
     /**
-     * @param coroutineScope The [CoroutineScope] used to run this listener,
-     * typically the composition scope so the listener follows the composition lifecycle.
+     * @param coroutineScope The [CoroutineScope] used to run this listener, typically the
+     *   composition scope so the listener follows the composition lifecycle.
      */
     internal fun start(coroutineScope: CoroutineScope) {
         check(!hasStopped) { "ComposeWebSemanticsListener can't be started after it was stopped" }
@@ -73,26 +70,26 @@ internal class ComposeWebSemanticsListener(
         hasStarted = true
 
         // Here we do the following:
-        // - Every invalidation doesn't trigger an a11y tree sync immediately, but only after the changes have settled (debounce 100ms).
-        // - We track the time spent in "debounce", so eventually it must sync the a11y tree despite no pause in invalidation events (the changes couldn't settle).
-        // So the a11y tree sync will happen either when the changes have settled or when the timeSpentInDebounce exceeds 1000 ms.
+        // - Every invalidation doesn't trigger an a11y tree sync immediately, but only after the
+        // changes have settled (debounce 100ms).
+        // - We track the time spent in "debounce", so eventually it must sync the a11y tree despite
+        // no pause in invalidation events (the changes couldn't settle).
+        // So the a11y tree sync will happen either when the changes have settled or when the
+        // timeSpentInDebounce exceeds 1000 ms.
 
         /*
-              1) --x-x-x-x-------------------------------------------------
-                         |--- 100ms ---| -> sync after changes settle
+             1) --x-x-x-x-------------------------------------------------
+                        |--- 100ms ---| -> sync after changes settle
 
-              2) ---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x--
-                    |-------- 1000ms -------| spent 1 second debouncing
-                                            |-> forced sync
+             2) ---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x--
+                   |-------- 1000ms -------| spent 1 second debouncing
+                                           |-> forced sync
 
-              3) ----------------------------x-x-x-x-x-x-x-x---------------
-                 |---------- 1200ms ---------|             |--- 100 ms ---| -> sync after changes settle
-                                             | No forced sync here, because the debouncing has just started
-         */
-        coroutineScope.launch(
-            context = startJob,
-            start = CoroutineStart.UNDISPATCHED
-        ) {
+             3) ----------------------------x-x-x-x-x-x-x-x---------------
+                |---------- 1200ms ---------|             |--- 100 ms ---| -> sync after changes settle
+                                            | No forced sync here, because the debouncing has just started
+        */
+        coroutineScope.launch(context = startJob, start = CoroutineStart.UNDISPATCHED) {
             var timeSpentDebouncing = 0L
             var lastDebouncedTime = 0L
             var lastSyncTime = currentTimeMillis()
@@ -111,7 +108,8 @@ internal class ComposeWebSemanticsListener(
                     }
 
                     if (timeSpentDebouncing >= MAX_TIME_IN_DEBOUNCE_MS) {
-                        // we've been debouncing for too long, but must sync periodically, so force a sync
+                        // we've been debouncing for too long, but must sync periodically, so force
+                        // a sync
                         lastDebouncedTime = 0L
                         lastSyncTime = currentTime
                         syncSemanticsWithWebA11Y()
@@ -161,15 +159,20 @@ internal class ComposeWebSemanticsListener(
         invalidationChannel.trySend(Unit)
     }
 
-    override fun onLayoutChange(
-        semanticsOwner: SemanticsOwner, semanticsNodeId: Int
-    ) {
+    override fun onLayoutChange(semanticsOwner: SemanticsOwner, semanticsNodeId: Int) {
         invalidationChannel.trySend(Unit)
     }
 
-    // Two array deques for dfs traversal / tree sync:
+    // Parallel stacks for semantics, DOM parents, and inherited accessibility exposure.
     private val dfsSemanticsNodes = ArrayDeque<SemanticsNode>()
     private val dfsA11YParents = ArrayDeque<HTMLElement>()
+    private val dfsExposureContexts = ArrayDeque<ExposureContext>()
+    private val hiddenOwnerRoots = mutableSetOf<HTMLElement>()
+
+    private data class ExposureContext(
+        val hidden: Boolean = false,
+        val scroll: A11YScrollContext? = null,
+    )
 
     // Lookup maps between semantics nodes and corresponding A11Y DOM elements:
     private val idToA11YNode = MutableScatterMap<Int, HTMLElement>()
@@ -183,26 +186,29 @@ internal class ComposeWebSemanticsListener(
     private val a11YScrollController = A11YScrollController(idToA11YNode, a11yNodeToSemanticsNode)
 
     /**
-     * Event delegation: Single shared click listener for all a11y nodes with SemanticsActions.OnClick.
-     * It's expected to be triggered by A11Y tools and tests (element.click()), not by pointer input.
+     * Event delegation: Single shared click listener for all a11y nodes with
+     * SemanticsActions.OnClick. It's expected to be triggered by A11Y tools and tests
+     * (element.click()), not by pointer input.
      */
-    private val onClick: (Event) -> Unit = onClick@ { event ->
-        val semanticsNode = (event.target as? HTMLElement)
-            ?.let { a11yNodeToSemanticsNode[it] }
-            ?: return@onClick
+    private val onClick: (Event) -> Unit = onClick@{ event ->
+        val target = event.target as? HTMLElement ?: return@onClick
+        if (target.closest("[inert]") != null) return@onClick
+        val semanticsNode = a11yNodeToSemanticsNode[target] ?: return@onClick
 
         val config = semanticsNode.config
 
-        if (!config.contains(SemanticsProperties.Disabled) &&
-            config.contains(SemanticsActions.OnClick)
+        if (
+            !config.contains(SemanticsProperties.Disabled) &&
+                config.contains(SemanticsActions.OnClick)
         ) {
             config[SemanticsActions.OnClick].action?.invoke()
         }
     }
 
-    private val onKeyDown: (Event) -> Unit = onKeyDown@ { event ->
+    private val onKeyDown: (Event) -> Unit = onKeyDown@{ event ->
         val keyboardEvent = event as? KeyboardEvent ?: return@onKeyDown
         val target = event.target as? HTMLElement ?: return@onKeyDown
+        if (target.closest("[inert]") != null) return@onKeyDown
         val semanticsNode = a11yNodeToSemanticsNode[target] ?: return@onKeyDown
         val config = semanticsNode.config
         if (config.contains(SemanticsProperties.Disabled)) return@onKeyDown
@@ -214,22 +220,22 @@ internal class ComposeWebSemanticsListener(
 
     /**
      * Updates the A11Y DOM to mirror all current semantics owners using only necessary structural
-     * changes. The tree is updated incrementally instead of being rebuilt from scratch on every sync.
-     * Elements whose semantics node and parent remain unchanged must not be detached, because
-     * assistive technologies may lose their current accessibility node when it is reattached.
-     * HTML elements are reused by semantics node ID and moved only when their parent or sibling
-     * position changes.
+     * changes. The tree is updated incrementally instead of being rebuilt from scratch on every
+     * sync. Elements whose semantics node and parent remain unchanged must not be detached, because
+     * assistive technologies may lose their current accessibility node when it is reattached. HTML
+     * elements are reused by semantics node ID and moved only when their parent or sibling position
+     * changes.
      */
     private fun syncSemanticsWithWebA11Y() {
         targetParentToChildren.clear()
         targetChildToParent.clear()
+        hiddenOwnerRoots.clear()
 
-        semanticsOwners.fastForEach {
-            syncSemanticsWithWebA11Y(it)
-        }
+        semanticsOwners.fastForEach { syncSemanticsWithWebA11Y(it) }
 
         // Move surviving nodes to their target parents before removing obsolete elements.
-        // Otherwise, removing an obsolete parent would also temporarily detach surviving descendants.
+        // Otherwise, removing an obsolete parent would also temporarily detach surviving
+        // descendants.
         targetParentToChildren.forEach { parent, targetChildren ->
             placeA11YChildrenInOrder(parent, targetChildren)
         }
@@ -255,12 +261,12 @@ internal class ComposeWebSemanticsListener(
         updateInertRoots()
     }
 
-    // The last (top) root is never inert.
-    // Other owners might become inert when the top root contains a dialog.
+    // Modal-layer inertness is additional to geometric exposure, not a replacement for it.
+    // Owners below the top root become inert when the top root contains a dialog.
     // See LayersA11YTest.
     private fun updateInertRoots() {
         val lastOwnerRoot = webSemanticsRoot.lastElementChild
-        lastOwnerRoot?.setInert(false)
+        lastOwnerRoot?.setInert(lastOwnerRoot in hiddenOwnerRoots)
 
         // Assuming the dialog semantics are set on the first node of the owner:
         val isModalOnTop = lastOwnerRoot?.firstElementChild?.hasAttribute("aria-modal") == true
@@ -268,13 +274,11 @@ internal class ComposeWebSemanticsListener(
         val children = webSemanticsRoot.children
         repeat(children.length - 1) {
             val ownerRoot = children.item(it)
-            ownerRoot?.setInert(isModalOnTop)
+            ownerRoot?.setInert(isModalOnTop || ownerRoot in hiddenOwnerRoots)
         }
     }
 
-    /**
-     * Syncs the tree corresponding to [semanticsOwner] and records its target DOM structure.
-     */
+    /** Syncs the tree corresponding to [semanticsOwner] and records its target DOM structure. */
     private fun syncSemanticsWithWebA11Y(semanticsOwner: SemanticsOwner) {
         fun SemanticsNode.isValid() = layoutNode.let { it.isPlaced && it.isAttached }
 
@@ -283,47 +287,77 @@ internal class ComposeWebSemanticsListener(
 
         dfsSemanticsNodes.clear()
         dfsA11YParents.clear()
+        dfsExposureContexts.clear()
         dfsSemanticsNodes.addLast(root)
         dfsA11YParents.addLast(webSemanticsRoot)
+        dfsExposureContexts.addLast(ExposureContext())
 
-        val rootPosition = webSemanticsRoot.getBoundingClientRect().let {
-            Offset(it.left.toFloat(), it.top.toFloat())
-        }
+        val rootPosition =
+            webSemanticsRoot.getBoundingClientRect().let {
+                Offset(it.left.toFloat(), it.top.toFloat())
+            }
 
         while (!dfsSemanticsNodes.isEmpty()) {
             val node = dfsSemanticsNodes.removeLast()
             val htmlParent = dfsA11YParents.removeLast()
+            val exposureContext = dfsExposureContexts.removeLast()
 
             // `config` recreates the merged subtree on every call, so read it once
             val config = node.config
             val children = node.replacedChildren
+            val isHidden = exposureContext.hidden || node.isHiddenForA11Y(exposureContext.scroll)
+            val childrenContext = childExposureContext(node, config, exposureContext, isHidden)
 
-            val htmlNode = if (config.contains(SemanticsProperties.Text)) {
-                // Usually, the order of SemanticsNode children matches the mirroring a11y HTML.
-                // But for text with links we have to interleave text parts with links.
-                // We split text into parts: plain text fragments and links.
-                // That's why a text node doesn't push its children to the traversal queue.
-                // It handles its link children itself:
-                syncTextNode(node, config, children, htmlParent, rootPosition)
-            } else {
-                syncNode(node, config, htmlParent, rootPosition)
-                    .also { pushNodesForTraversal(children, it) }
-            }
+            val htmlNode =
+                if (config.contains(SemanticsProperties.Text)) {
+                    // Usually, the order of SemanticsNode children matches the mirroring a11y HTML.
+                    // But for text with links we have to interleave text parts with links.
+                    // We split text into parts: plain text fragments and links.
+                    // That's why a text node doesn't push its children to the traversal queue.
+                    // It handles its link children itself:
+                    syncTextNode(
+                        node,
+                        config,
+                        children,
+                        htmlParent,
+                        rootPosition,
+                        isHidden,
+                        childrenContext,
+                    )
+                } else {
+                    syncNode(node, config, htmlParent, rootPosition, isHidden = isHidden).also {
+                        pushNodesForTraversal(children, it, childrenContext)
+                    }
+                }
+            if (node === root && isHidden) hiddenOwnerRoots.add(htmlNode)
             check(htmlNode !== htmlParent) { "A11Y node ${node.id} cannot be its own parent" }
             targetParentToChildren.getOrPut(htmlParent) { mutableListOf() }.add(htmlNode)
             targetChildToParent[htmlNode] = htmlParent
         }
     }
 
-    /**
-     * @param children - the nodes to be added for traversal during the sync
-     * @param htmlParent - the a11y (dom) parent element to contain the children a11y elements
-     */
-    private fun pushNodesForTraversal(children: List<SemanticsNode>, htmlParent: HTMLElement) {
+    private fun childExposureContext(
+        node: SemanticsNode,
+        config: SemanticsConfiguration,
+        inherited: ExposureContext,
+        isHidden: Boolean,
+    ): ExposureContext {
+        // A hidden subtree cannot reactivate itself by introducing another scroll container.
+        if (isHidden) return if (inherited.hidden) inherited else ExposureContext(hidden = true)
+        val scroll = node.createA11YScrollContext(config, inherited.scroll) ?: return inherited
+        return ExposureContext(scroll = scroll)
+    }
+
+    private fun pushNodesForTraversal(
+        children: List<SemanticsNode>,
+        htmlParent: HTMLElement,
+        exposureContext: ExposureContext,
+    ) {
         val reversedChildren = children.asReversed()
         dfsSemanticsNodes.addAll(reversedChildren)
         repeat(reversedChildren.size) {
             dfsA11YParents.addLast(htmlParent)
+            dfsExposureContexts.addLast(exposureContext)
         }
     }
 
@@ -337,12 +371,21 @@ internal class ComposeWebSemanticsListener(
         htmlParent: HTMLElement,
         rootPosition: Offset,
         text: String? = null,
+        isHidden: Boolean = false,
     ): HTMLElement {
         val currentId = semanticsNode.id
 
         var htmlNode = idToA11YNode[currentId]
         if (htmlNode != null) {
-            syncNodeProperties(semanticsNode, config, htmlNode, htmlParent, rootPosition, text)
+            syncNodeProperties(
+                semanticsNode,
+                config,
+                htmlNode,
+                htmlParent,
+                rootPosition,
+                text,
+                isHidden = isHidden,
+            )
         } else {
             htmlNode = document.createElement("div") as HTMLElement
             htmlNode.style.apply {
@@ -359,6 +402,7 @@ internal class ComposeWebSemanticsListener(
                 rootPosition,
                 text,
                 justCreated = true,
+                isHidden = isHidden,
             )
         }
 
@@ -366,10 +410,7 @@ internal class ComposeWebSemanticsListener(
         return htmlNode
     }
 
-    private fun placeA11YChildrenInOrder(
-        parent: HTMLElement,
-        children: List<HTMLElement>,
-    ) {
+    private fun placeA11YChildrenInOrder(parent: HTMLElement, children: List<HTMLElement>) {
         var current = parent.firstElementChild?.nextExpectedSibling(parent)
 
         children.fastForEach { child ->
@@ -394,8 +435,8 @@ internal class ComposeWebSemanticsListener(
     }
 
     /**
-     * Writes the state of [semanticsNode] onto [htmlNode]:
-     * the text, the ARIA attributes and role, the size and the position.
+     * Writes the state of [semanticsNode] onto [htmlNode]: the text, the ARIA attributes and role,
+     * the size and the position.
      */
     private fun syncNodeProperties(
         semanticsNode: SemanticsNode,
@@ -405,7 +446,9 @@ internal class ComposeWebSemanticsListener(
         rootOffset: Offset,
         text: String?,
         justCreated: Boolean = false,
+        isHidden: Boolean = false,
     ) {
+        htmlNode.setInert(isHidden)
         if (text != null && htmlNode.innerText != text) {
             htmlNode.innerText = text
         }
@@ -428,9 +471,7 @@ internal class ComposeWebSemanticsListener(
 
             if (justCreated) {
                 htmlNode.setAttribute("contenteditable", "true")
-                htmlNode.addEventListener("focus", {
-                    htmlNode.click()
-                })
+                htmlNode.addEventListener("focus", { htmlNode.click() })
             }
         }
 
@@ -443,9 +484,10 @@ internal class ComposeWebSemanticsListener(
         val roleId = config.getRoleId()
         setA11YAriaRole(element = htmlNode, roleId)
 
-        if (roleId == AriaRoleId.Slider &&
-            !config.contains(SemanticsProperties.Disabled) &&
-            config.contains(SemanticsActions.SetProgress)
+        if (
+            roleId == AriaRoleId.Slider &&
+                !config.contains(SemanticsProperties.Disabled) &&
+                config.contains(SemanticsActions.SetProgress)
         ) {
             htmlNode.setAttribute("tabindex", "0")
         } else {
@@ -465,8 +507,7 @@ internal class ComposeWebSemanticsListener(
             htmlNode.removeAttribute("aria-checked")
         }
 
-        val isCollection =
-            roleId == AriaRoleId.List || roleId == AriaRoleId.Grid
+        val isCollection = roleId == AriaRoleId.List || roleId == AriaRoleId.Grid
 
         if (isCollection) {
             // Prevent VoiceOver from announcing every child added as a lazy collection scrolls.
@@ -509,8 +550,10 @@ internal class ComposeWebSemanticsListener(
             val parentScroll = a11YScrollController.getScrollOffset(parentSemanticsNode)
             setSizeAndPosition(
                 htmlNode,
-                (positionInRoot.x - parentSemanticsNode.positionInRoot.x) / density + parentScroll.x,
-                (positionInRoot.y - parentSemanticsNode.positionInRoot.y) / density + parentScroll.y,
+                (positionInRoot.x - parentSemanticsNode.positionInRoot.x) / density +
+                    parentScroll.x,
+                (positionInRoot.y - parentSemanticsNode.positionInRoot.y) / density +
+                    parentScroll.y,
                 width,
                 height,
             )
@@ -523,8 +566,8 @@ internal class ComposeWebSemanticsListener(
      *
      * A link doesn't have its own text in the semantics tree: the whole text (including the links)
      * belongs to the text node, while every link range is a separate child node marked with
-     * [SemanticsProperties.LinkTestMarker]. Exposing it as is would read the link text twice,
-     * so the text is split and interleaved with the link nodes:
+     * [SemanticsProperties.LinkTestMarker]. Exposing it as is would read the link text twice, so
+     * the text is split and interleaved with the link nodes:
      * ```
      * Semantics nodes:                     HTML nodes:
      *
@@ -535,6 +578,7 @@ internal class ComposeWebSemanticsListener(
      *                                        ", please"
      *                                      </div>
      * ```
+     *
      * Note that the empty text parts (here: the one before the first link) are skipped.
      *
      * If the text parts don't surround the link children exactly (for example, a link clipped by
@@ -550,21 +594,26 @@ internal class ComposeWebSemanticsListener(
         children: List<SemanticsNode>,
         htmlParent: HTMLElement,
         rootPosition: Offset,
+        isHidden: Boolean,
+        childrenContext: ExposureContext,
     ): HTMLElement {
         val texts = config[SemanticsProperties.Text]
         val linksCount = children.count { it.config.contains(SemanticsProperties.LinkTestMarker) }
 
         val split = if (linksCount == 0) null else splitTextAndLinks(texts)
-        // Null if the parts don't surround the link children exactly: the whole text is exposed then.
+        // Null if the parts don't surround the link children exactly: the whole text is exposed
+        // then.
         val textParts = split?.textParts?.takeIf { split.matchesLinksCount(linksCount) }
 
         val text = texts.fastJoinToString("\n") { it.text }
-        val htmlNode = syncNode(
-            semanticsNode = node,
-            config = config,
-            htmlParent = htmlParent,
-            rootPosition = rootPosition,
-        )
+        val htmlNode =
+            syncNode(
+                semanticsNode = node,
+                config = config,
+                htmlParent = htmlParent,
+                rootPosition = rootPosition,
+                isHidden = isHidden,
+            )
         val targetTextAndLinks = mutableListOf<Any>()
         if (textParts == null) {
             targetTextAndLinks.add(text)
@@ -577,9 +626,9 @@ internal class ComposeWebSemanticsListener(
         children.fastForEach { child ->
             val childConfig = child.config
             if (!childConfig.contains(SemanticsProperties.LinkTestMarker)) {
-                val deferred = deferredChildren ?: mutableListOf<SemanticsNode>().also {
-                    deferredChildren = it
-                }
+                val deferred =
+                    deferredChildren
+                        ?: mutableListOf<SemanticsNode>().also { deferredChildren = it }
                 deferred.add(child)
                 return@fastForEach
             }
@@ -589,18 +638,25 @@ internal class ComposeWebSemanticsListener(
             }
 
             val linkChildren = child.replacedChildren
-            val linkHtmlNode = syncNode(
-                semanticsNode = child,
-                config = childConfig,
-                htmlParent = htmlNode,
-                rootPosition = rootPosition,
-                text = split?.linkTexts?.getOrNull(linkIndex),
-            )
+            val linkHidden = childrenContext.hidden || child.isHiddenForA11Y(childrenContext.scroll)
+            val linkHtmlNode =
+                syncNode(
+                    semanticsNode = child,
+                    config = childConfig,
+                    htmlParent = htmlNode,
+                    rootPosition = rootPosition,
+                    text = split?.linkTexts?.getOrNull(linkIndex),
+                    isHidden = linkHidden,
+                )
             targetTextAndLinks.add(linkHtmlNode)
             targetParentToChildren.getOrPut(htmlNode) { mutableListOf() }.add(linkHtmlNode)
             targetChildToParent[linkHtmlNode] = htmlNode
             // A link node is expected to be a leaf, but don't rely on it.
-            pushNodesForTraversal(linkChildren, linkHtmlNode)
+            pushNodesForTraversal(
+                linkChildren,
+                linkHtmlNode,
+                childExposureContext(child, childConfig, childrenContext, linkHidden),
+            )
 
             linkIndex++
         }
@@ -610,7 +666,7 @@ internal class ComposeWebSemanticsListener(
         }
 
         updateTextAndLinks(htmlNode, targetTextAndLinks, a11YScrollController.getScrollSizer(node))
-        deferredChildren?.let { pushNodesForTraversal(it, htmlNode) }
+        deferredChildren?.let { pushNodesForTraversal(it, htmlNode, childrenContext) }
         return htmlNode
     }
 
@@ -652,10 +708,11 @@ internal class ComposeWebSemanticsListener(
         // Regular semantics children follow the text/link prefix and are placed later.
         while (current != null) {
             val currentElement = current as? HTMLElement
-            val isRegularSemanticsChild = currentElement
-                ?.let { a11yNodeToSemanticsNode[it] }
-                ?.config
-                ?.contains(SemanticsProperties.LinkTestMarker) == false
+            val isRegularSemanticsChild =
+                currentElement
+                    ?.let { a11yNodeToSemanticsNode[it] }
+                    ?.config
+                    ?.contains(SemanticsProperties.LinkTestMarker) == false
             if (isRegularSemanticsChild) break
 
             val next = current?.nextSibling
@@ -673,6 +730,8 @@ internal class ComposeWebSemanticsListener(
 
         dfsSemanticsNodes.clear()
         dfsA11YParents.clear()
+        dfsExposureContexts.clear()
+        hiddenOwnerRoots.clear()
         idToA11YNode.clear()
         a11yNodeToSemanticsNode.clear()
         targetParentToChildren.clear()
