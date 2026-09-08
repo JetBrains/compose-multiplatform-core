@@ -53,7 +53,9 @@ fun OverlayHost(
     val overlayHostState = remember(key) { OverlayHostState() }
     CompositionLocalProvider(key provides overlayHostState) {
         Box(
-            modifier.onPlaced { overlayHostState.coordinates = it },
+            modifier
+                .onPlaced { overlayHostState.coordinates = it }
+                .outsidePressObserver(overlayHostState.outsidePressRegistry),
             propagateMinConstraints = true,
         ) {
             content()
@@ -134,6 +136,7 @@ val MainOverlayHostKey = OverlayHostKey()
 class OverlayHostState {
     internal var coordinates by mutableStateOf<LayoutCoordinates?>(null)
     internal var overlays by mutableStateOf(emptyList<OverlayState>())
+    internal val outsidePressRegistry = OutsidePressRegistry()
 }
 
 internal class OverlayState(
