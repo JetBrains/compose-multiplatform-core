@@ -256,7 +256,7 @@ private inline fun ScrollOffsetsByIdMap.getOffset(key: Int): Offset? {
     return if (offset == -1L) {
         null
     } else {
-        Offset(values[key])
+        Offset(offset)
     }
 }
 
