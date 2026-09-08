@@ -233,16 +233,12 @@ internal class ComposeSceneMediator(
 
     private val isActive get() = coroutineContext.isActive
 
-    private var isPrefetchVoteActive: Boolean = false // TODO CMP-10587: Move inside the IosPrefetchScheduler
     private val prefetchScheduler = IosPrefetchScheduler(
-        onHasWorkScheduled = { hasWork ->
-            if (hasWork != isPrefetchVoteActive) {
-                isPrefetchVoteActive = hasWork
-                if (hasWork) {
-                    activitiesHandler.onActivitiesStarted()
-                } else {
-                    activitiesHandler.onActivitiesEnded()
-                }
+        onPrefetchVoteChanged = { isVoteActive ->
+            if (isVoteActive) {
+                activitiesHandler.onActivitiesStarted()
+            } else {
+                activitiesHandler.onActivitiesEnded()
             }
         }
     )
@@ -358,6 +354,8 @@ internal class ComposeSceneMediator(
         onCancelAllTouches = ::onCancelAllTouches,
         onScrollEvent = ::onScrollEvent,
         onCancelScroll = ::onCancelScroll,
+        onPinchEvent = ::onPinchEvent,
+        onCancelPinch = ::onCancelPinch,
         onHoverEvent = ::onHoverEvent,
         onKeyboardPresses = ::onKeyboardPresses,
         isHigherPriorityGestureTrackingTouches = navigationEventInput::isBackGestureTrackingTouches,
@@ -529,14 +527,22 @@ internal class ComposeSceneMediator(
         event: UIEvent?,
         eventKind: TouchesEventKind
     ) {
-        when (eventKind) {
-            TouchesEventKind.BEGAN -> activitiesHandler.onActivitiesStarted()
-            TouchesEventKind.MOVED -> {}
-            TouchesEventKind.ENDED -> activitiesHandler.onActivitiesEnded()
+        val eventType = when (eventKind) {
+            TouchesEventKind.BEGAN -> {
+                activitiesHandler.onActivitiesStarted()
+                PointerEventType.PanStart
+            }
+            TouchesEventKind.MOVED -> {
+                PointerEventType.PanMove
+            }
+            TouchesEventKind.ENDED -> {
+                activitiesHandler.onActivitiesEnded()
+                PointerEventType.PanEnd
+            }
         }
 
         scene.sendPointerEvent(
-            eventType = PointerEventType.Scroll,
+            eventType = eventType,
             pointers = listOf(
                 ComposeScenePointer(
                     id = PointerId(0),
@@ -545,10 +551,47 @@ internal class ComposeSceneMediator(
                     type = PointerType.Mouse,
                 )
             ),
-            scrollDelta = delta.toOffset(composeSceneDensity) * SCROLL_DELTA_MULTIPLIER,
             timeMillis = event.timeMillis,
             nativeEvent = event,
-            keyboardModifiers = PointerKeyboardModifiers(modifierFlags =event.modifierFlagsOrZero)
+            keyboardModifiers = PointerKeyboardModifiers(modifierFlags = event.modifierFlagsOrZero),
+            panGestureOffset = delta.toOffset(composeSceneDensity),
+        )
+    }
+
+    private fun onPinchEvent(
+        position: DpOffset,
+        scale: Float,
+        event: UIEvent?,
+        eventKind: TouchesEventKind
+    ) {
+        val eventType = when (eventKind) {
+            TouchesEventKind.BEGAN -> {
+                activitiesHandler.onActivitiesStarted()
+                PointerEventType.ScaleStart
+            }
+            TouchesEventKind.MOVED -> {
+                PointerEventType.ScaleChange
+            }
+            TouchesEventKind.ENDED -> {
+                activitiesHandler.onActivitiesEnded()
+                PointerEventType.ScaleEnd
+            }
+        }
+
+        scene.sendPointerEvent(
+            eventType = eventType,
+            pointers = listOf(
+                ComposeScenePointer(
+                    id = PointerId(0),
+                    position = position.toOffset(composeSceneDensity),
+                    pressed = false,
+                    type = PointerType.Mouse,
+                )
+            ),
+            timeMillis = event.timeMillis,
+            nativeEvent = event,
+            keyboardModifiers = PointerKeyboardModifiers(modifierFlags = event.modifierFlagsOrZero),
+            scaleGestureFactor = scale,
         )
     }
 
@@ -575,7 +618,7 @@ internal class ComposeSceneMediator(
             ),
             timeMillis = event.timeMillis,
             nativeEvent = event,
-            keyboardModifiers = PointerKeyboardModifiers(modifierFlags =event.modifierFlagsOrZero)
+            keyboardModifiers = PointerKeyboardModifiers(modifierFlags = event.modifierFlagsOrZero)
         )
     }
 
@@ -584,30 +627,29 @@ internal class ComposeSceneMediator(
         scene.cancelPointerInput()
     }
 
-    private fun onCancelAllTouches(touches: Set<*>) {
-        activitiesHandler.onActivitiesEnded(touches.count())
+    private fun onCancelPinch() {
+        activitiesHandler.onActivitiesEnded()
         scene.cancelPointerInput()
     }
 
-    /**
-     * Converts [UITouch] objects from [touches] to [ComposeScenePointer] and dispatches them to the appropriate handlers.
-     * @param touches a [Set] of [UITouch] objects. Erasure happens due to K/N not supporting Obj-C lightweight generics.
-     * @param event the [UIEvent] associated with the touches
-     * @param eventKind the [TouchesEventKind] of the touches
-     */
+    private fun onCancelAllTouches(cancelledTouches: Set<UITouch>) {
+        activitiesHandler.onActivitiesEnded(cancelledTouches.count())
+        scene.cancelPointerInput()
+    }
+
     private fun onTouchesEvent(
-        touches: Set<*>,
+        allTrackedTouches: Set<UITouch>,
+        changedTouches: Set<UITouch>,
         event: UIEvent?,
         eventKind: TouchesEventKind
     ): PointerEventResult {
         when (eventKind) {
-            TouchesEventKind.BEGAN -> activitiesHandler.onActivitiesStarted(touches.count())
-            TouchesEventKind.ENDED -> activitiesHandler.onActivitiesEnded(touches.count())
+            TouchesEventKind.BEGAN -> activitiesHandler.onActivitiesStarted(changedTouches.count())
+            TouchesEventKind.ENDED -> activitiesHandler.onActivitiesEnded(changedTouches.count())
             TouchesEventKind.MOVED -> {}
         }
 
-        val pointers = touches.mapIndexed { index, touch ->
-            touch as UITouch
+        val pointers = allTrackedTouches.mapIndexed { index, touch ->
             val position = touch.offsetInView(_backgroundView, screenDensity.density)
             val pointerType = when (touch.type) {
                 UITouchTypeDirect -> PointerType.Touch
@@ -645,7 +687,7 @@ internal class ComposeSceneMediator(
             nativeEvent = event,
             button = event?.getButton(previousButtonMask, eventKind, previousTouchEventKind),
             buttons = PointerButtons(pointerButtonsMask),
-            keyboardModifiers = PointerKeyboardModifiers(modifierFlags =event.modifierFlagsOrZero)
+            keyboardModifiers = PointerKeyboardModifiers(modifierFlags = event.modifierFlagsOrZero)
         ).also {
             previousButtonMask = event.buttonMaskOrZero
             if (eventKind != TouchesEventKind.MOVED) {
@@ -1023,7 +1065,6 @@ private val UIEvent?.timeMillis: Long get() {
 }
 
 private val FOCUS_CHANGE_ANIMATION_DURATION = 0.15.seconds
-private val SCROLL_DELTA_MULTIPLIER = 0.01f
 
 private fun TouchesEventKind.toPointerEventType(): PointerEventType =
     when (this) {
