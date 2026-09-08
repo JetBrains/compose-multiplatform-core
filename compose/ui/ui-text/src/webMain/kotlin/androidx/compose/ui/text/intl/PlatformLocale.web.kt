@@ -69,16 +69,16 @@ internal actual fun createPlatformLocaleDelegate(): PlatformLocaleDelegate =
     WebPlatformLocaleDelegate()
 
 private class WebPlatformLocaleDelegate : PlatformLocaleDelegate {
-    private val currentLocaleList = mutableStateOf(readCurrentLocaleList())
+    private var currentLocaleList = readCurrentLocaleList()
 
     init {
         addLanguageChangeListener {
-            currentLocaleList.value = readCurrentLocaleList()
+            currentLocaleList = readCurrentLocaleList()
         }
     }
 
     override val current: LocaleList
-        get() = currentLocaleList.value
+        get() = currentLocaleList
 
 
     private fun readCurrentLocaleList() = localeListFromLanguageTags(userPreferredLanguages())
