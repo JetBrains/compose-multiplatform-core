@@ -30,6 +30,8 @@ import androidx.compose.ui.viewinterop.InteropWrappingView
 import androidx.compose.ui.viewinterop.UIKitInteropInteractionMode
 import kotlin.getValue
 import kotlin.math.abs
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ObjCAction
@@ -98,6 +100,13 @@ private val UIGestureRecognizerState.isOngoing: Boolean
             else -> false
         }
 
+internal typealias TouchesEventHandler = (
+    allTrackedTouches: Set<UITouch>,
+    changedTouches: Set<UITouch>,
+    event: UIEvent?,
+    phase: TouchesEventKind
+) -> PointerEventResult
+
 /**
  * Implementation of [UIGestureRecognizer] that handles touch events and forwards
  * them. The main difference from the original [UIView] touches based is that it's built on top of
@@ -107,8 +116,8 @@ private val UIGestureRecognizerState.isOngoing: Boolean
  * to control touches delivery to [UIView]s and their [UIGestureRecognizer]s in a fine-grain manner.
  */
 private class TouchesGestureRecognizer(
-    private var onTouchesEvent: (touches: Set<*>, event: UIEvent?, phase: TouchesEventKind) -> PointerEventResult,
-    private var onCancelAllTouches: (touches: Set<*>) -> Unit,
+    private var onTouchesEvent: TouchesEventHandler,
+    private var onCancelAllTouches: (cancelledTouches: Set<UITouch>) -> Unit,
     private var canIgnoreDragGesture: (UIGestureRecognizer) -> Boolean,
     private var isHigherPriorityGestureTrackingTouches: () -> Boolean
 ) : CMPGestureRecognizer(target = null, action = null) {
@@ -153,8 +162,11 @@ private class TouchesGestureRecognizer(
 
         fun startTouchesEvent() {
             val isInitialTouches = trackedTouches.isEmpty()
+            val startedTouches = touchesToHitTestResult.mapNotNullTo(mutableSetOf()) { it ->
+                it.key.takeIf { !trackedTouches.containsKey(it) }
+            }
             trackedTouches.putAll(touchesToHitTestResult)
-            onTouchesEvent(trackedTouches.keys, withEvent, TouchesEventKind.BEGAN)
+            onTouchesEvent(trackedTouches.keys, startedTouches, withEvent, TouchesEventKind.BEGAN)
             if (isInitialTouches) {
                 setState(UIGestureRecognizerStatePossible)
             } else if (state.isOngoing) {
@@ -168,7 +180,7 @@ private class TouchesGestureRecognizer(
         when (interactionMode) {
             is UIKitInteropInteractionMode.Cooperative -> {
                 startTouchesEvent()
-                scheduleTouchesFailureIfNeeded(interactionMode.delayMillis)
+                scheduleTouchesFailureIfNeeded(interactionMode.delayMillis.milliseconds)
             }
 
             UIKitInteropInteractionMode.NonCooperative -> {
@@ -193,7 +205,12 @@ private class TouchesGestureRecognizer(
             if (trackedTouches.isEmpty()) {
                 return
             }
-            val result = onTouchesEvent(trackedTouches.keys, withEvent, TouchesEventKind.MOVED)
+            val result = onTouchesEvent(
+                trackedTouches.keys,
+                emptySet(),
+                withEvent,
+                TouchesEventKind.MOVED
+            )
             if (result.anyMovementConsumed) {
                 if (!state.isOngoing) {
                     setState(UIGestureRecognizerStateBegan)
@@ -219,7 +236,11 @@ private class TouchesGestureRecognizer(
         super.touchesEnded(touches, withEvent)
 
         fun endTouchesEvent() {
-            onTouchesEvent(trackedTouches.keys, withEvent, TouchesEventKind.ENDED)
+            val endedTouches = touches.mapNotNullTo(mutableSetOf()) { it ->
+                (it as UITouch).takeIf { trackedTouches.containsKey(it) }
+            }
+
+            onTouchesEvent(trackedTouches.keys, endedTouches, withEvent, TouchesEventKind.ENDED)
             stopTrackingTouches(touches)
             if (trackedTouches.isEmpty()) {
                 setState(UIGestureRecognizerStateEnded)
@@ -380,7 +401,7 @@ private class TouchesGestureRecognizer(
      */
     fun dispose() {
         cancelTouchesFailure()
-        onTouchesEvent = { _, _, _ -> PointerEventResult(anyMovementConsumed = false) }
+        onTouchesEvent = { _, _, _, _ -> PointerEventResult(anyMovementConsumed = false) }
         onCancelAllTouches = {}
         canIgnoreDragGesture = { false }
         isHigherPriorityGestureTrackingTouches = { false }
@@ -389,7 +410,7 @@ private class TouchesGestureRecognizer(
     }
 
     /**
-     * Schedule the gesture recognizer failure after [delayMills].
+     * Schedule the gesture recognizer failure after [delay].
      *
      * We still pass the touches to the interop view
      * until the gesture recognizer is explicitly failed.
@@ -402,12 +423,12 @@ private class TouchesGestureRecognizer(
      *
      * @see [cancelTouchesFailure]
      */
-    private fun scheduleTouchesFailureIfNeeded(delayMills: Int) {
+    private fun scheduleTouchesFailureIfNeeded(delayDuration: Duration?) {
         failureJob?.cancel()
 
-        if (delayMills != Int.MAX_VALUE) {
+        if (delayDuration != null) {
             failureJob = CoroutineScope(Dispatchers.Main).launch {
-                delay(delayMills.toLong())
+                delay(delayDuration)
 
                 cancelAllTrackedTouches()
             }
@@ -638,8 +659,8 @@ private class PinchGestureRecognizer(
 internal class OverlayInputView(
     private var hitTestInteropView: (point: CValue<CGPoint>) -> UIView?,
     private var isPointInsideInteractionBounds: (CValue<CGPoint>) -> Boolean,
-    private var onTouchesEvent: (touches: Set<*>, event: UIEvent?, phase: TouchesEventKind) -> PointerEventResult,
-    private var onCancelAllTouches: (touches: Set<*>) -> Unit,
+    private var onTouchesEvent: TouchesEventHandler,
+    private var onCancelAllTouches: (cancelledTouches: Set<UITouch>) -> Unit,
     onScrollEvent: (position: DpOffset, delta: DpOffset, event: UIEvent?, eventKind: TouchesEventKind) -> Unit,
     onCancelScroll: () -> Unit,
     onPinchEvent: (position: DpOffset, scale: Float, event: UIEvent?, eventKind: TouchesEventKind) -> Unit,
@@ -743,13 +764,15 @@ internal class OverlayInputView(
 
     private val trackedTouchesOutside: MutableSet<UITouch> = mutableSetOf()
     private fun handleTouchesEvent(
-        touches: Set<*>, event: UIEvent?, phase: TouchesEventKind
+        allTrackedTouches: Set<UITouch>,
+        changedTouches: Set<UITouch>,
+        event: UIEvent?,
+        phase: TouchesEventKind
     ): PointerEventResult {
         if (isInterceptingOutsideEvents && event?.type == UIEventTypeTouches) {
             when (phase) {
                 TouchesEventKind.BEGAN -> {
-                    touches.forEach { touch ->
-                        touch as UITouch
+                    allTrackedTouches.forEach { touch ->
                         if (!isPointInsideInteractionBounds(touch.locationInView(this))) {
                             val isNewPressEvent = trackedTouchesOutside.isEmpty()
                             trackedTouchesOutside.add(touch)
@@ -761,8 +784,7 @@ internal class OverlayInputView(
                 }
 
                 TouchesEventKind.ENDED -> {
-                    touches.forEach { touch ->
-                        touch as UITouch
+                    allTrackedTouches.forEach { touch ->
                         if (touch in trackedTouchesOutside) {
                             trackedTouchesOutside.remove(touch)
                             if (trackedTouchesOutside.isEmpty()) {
@@ -776,10 +798,10 @@ internal class OverlayInputView(
             }
         }
 
-        return onTouchesEvent(touches, event, phase)
+        return onTouchesEvent(allTrackedTouches, changedTouches, event, phase)
     }
 
-    private fun handleCancelAllTouches(touches: Set<*>) {
+    private fun handleCancelAllTouches(touches: Set<UITouch>) {
         trackedTouchesOutside.clear()
         onCancelAllTouches(touches)
     }
@@ -823,6 +845,7 @@ internal class OverlayInputView(
     }
 
     private var lastHoverPosition: DpOffset? = null
+
     @OptIn(BetaInteropApi::class)
     @ObjCAction
     fun onHover(gestureRecognizer: CMPHoverGestureRecognizer) {
@@ -866,7 +889,7 @@ internal class OverlayInputView(
         canIgnoreDragGesture = { false }
         onKeyboardPresses = {}
         onOutsidePointerEvent = {}
-        onTouchesEvent = { _, _, _ -> PointerEventResult() }
+        onTouchesEvent = { _, _, _, _ -> PointerEventResult() }
         onCancelAllTouches = {}
         onRemoveSubview = {}
         onHasWindowChanged = {}
@@ -883,8 +906,8 @@ internal class BackgroundInputView(
     private var onLayoutSubviews: () -> Unit,
     private var hitTestInteropView: (point: CValue<CGPoint>) -> UIView?,
     private var isPointInsideInteractionBounds: (CValue<CGPoint>) -> Boolean,
-    onTouchesEvent: (touches: Set<*>, event: UIEvent?, phase: TouchesEventKind) -> PointerEventResult,
-    onCancelAllTouches: (touches: Set<*>) -> Unit,
+    onTouchesEvent: TouchesEventHandler,
+    onCancelAllTouches: (cancelledTouches: Set<UITouch>) -> Unit,
     isHigherPriorityGestureTrackingTouches: () -> Boolean,
 ) : UIView(CGRectZero.readValue()) {
 
@@ -993,7 +1016,8 @@ private fun UIView?.hasTrackingUIScrollView(): Boolean {
         if (view is UIScrollView &&
             view.userInteractionEnabled &&
             view.scrollEnabled &&
-            view.panGestureRecognizer.isEnabled()) {
+            view.panGestureRecognizer.isEnabled()
+        ) {
             if ((view.panGestureRecognizer.state == UIGestureRecognizerStatePossible ||
                     view.panGestureRecognizer.state == UIGestureRecognizerStateBegan) &&
                 view.isTracking()
