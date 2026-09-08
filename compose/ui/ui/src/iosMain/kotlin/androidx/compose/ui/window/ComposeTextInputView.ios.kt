@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.TextInputPosition
 import androidx.compose.ui.platform.TextInputRange
 import androidx.compose.ui.platform.TextInputStringTokenizer
 import androidx.compose.ui.platform.TextEditingDelegate
+import androidx.compose.ui.platform.caretRectForPosition
 import androidx.compose.ui.platform.selectTextNearCursor
 import androidx.compose.ui.platform.toTextRange
 import androidx.compose.ui.platform.toUITextRange
@@ -27,6 +28,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.uikit.utils.CMPEditMenuView
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toCGRect
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.DurationUnit
 import kotlinx.cinterop.CValue
@@ -397,7 +399,7 @@ internal class ComposeTextInputView(
         CGRectNull.readValue()
 
     override fun caretRectForPosition(position: UITextPosition): CValue<CGRect> =
-        CGRectMake(x = 1.0, y = 1.0, width = 0.0, height = 1.0)
+        input.caretRectForPosition(position)
 
     override fun selectionRectsForRange(range: UITextRange): List<*> =
         listOf<UITextSelectionRect>()

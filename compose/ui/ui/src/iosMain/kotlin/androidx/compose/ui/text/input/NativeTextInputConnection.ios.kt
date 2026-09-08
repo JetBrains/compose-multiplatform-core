@@ -34,7 +34,6 @@ import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.utils.CMPEditMenuCustomAction
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.toSize
@@ -178,7 +177,7 @@ internal class NativeTextInputConnection(
         }
         val rect = currentTextLayoutResult.getCursorRect(position)
         return rect.toDpRect(view.density).let {
-            val halfWidth = cursorThickness / 2
+            val halfWidth = CURSOR_THICKNESS / 2
             val center = (it.left + it.right) / 2
             it.copy(left = center - halfWidth, right = center + halfWidth)
         }
@@ -390,11 +389,4 @@ internal class NativeTextInputConnection(
         selectionTintColor = color
         setupTintColor()
     }
-
-    /**
-     * Matches DefaultCursorThickness
-     *
-     * Must be at least 1.dp to make caret interactable
-     */
-    private val cursorThickness = 2.dp
 }
