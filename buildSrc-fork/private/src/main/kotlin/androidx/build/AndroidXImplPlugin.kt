@@ -116,6 +116,7 @@ import org.gradle.kotlin.dsl.withType
 import org.gradle.plugin.devel.plugins.JavaGradlePluginPlugin
 import org.gradle.plugin.devel.tasks.ValidatePlugins
 import org.gradle.process.CommandLineArgumentProvider
+import org.jetbrains.androidx.build.JetBrainsPublication
 import org.jetbrains.androidx.build.jetBrainsGetDefaultAndroidBaseJavaVersion
 import org.jetbrains.androidx.build.jetBrainsGetDefaultTargetJavaVersion
 import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
@@ -1302,6 +1303,9 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 val otherProjectShouldExist =
                     allProjectsExist || findProject(otherGradlePath) != null
                 if (!otherProjectShouldExist) {
+                    continue
+                }
+                if (!JetBrainsPublication.shouldPublish(otherGradlePath)) {
                     continue
                 }
                 // We only emit constraints referring to projects that will release
