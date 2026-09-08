@@ -12,7 +12,7 @@ buildCode:
   - '.github/workflows/build-code.yml'
   - '.github/path-filter.yml'
 
-# Change with sourceSetsUnknown
+# When changing this list, please change sourceSetsUnknown as well.
 sourceSetsNative:
   - '**/iosMain/**'
   - '**/iosTest/**'
@@ -34,7 +34,7 @@ sourceSetsNative:
   - '**/mingwMain/**'
   - '**/mingwTest/**'
 
-# Change with sourceSetsUnknown
+# When changing this list, please change sourceSetsUnknown as well.
 sourceSetsWeb:
   - '**/webMain/**'
   - '**/webTest/**'
@@ -45,14 +45,14 @@ sourceSetsWeb:
   - '**/wasmJsMain/**'
   - '**/wasmJsTest/**'
 
-# Change with sourceSetsUnknown
+# When changing this list, please change sourceSetsUnknown as well.
 sourceSetsDesktop:
   - '**/jvmMain/**'
   - '**/jvmTest/**'
   - '**/desktopMain/**'
   - '**/desktopTest/**'
 
-# Change with sourceSetsNative, sourceSetsWeb, sourceSetsDesktop
+# When changing this list, please change sourceSetsNative, sourceSetsWeb, and sourceSetsDesktop as well.
 # A copy because of simplicity and a low chance of mistakes
 sourceSetsUnknown:
   - '**'
