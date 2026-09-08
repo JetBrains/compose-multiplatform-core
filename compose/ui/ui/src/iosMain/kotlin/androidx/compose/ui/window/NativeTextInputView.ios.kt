@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.TextInputRange
 import androidx.compose.ui.platform.TextInputStringTokenizer
 import androidx.compose.ui.platform.TextLayoutDirection
 import androidx.compose.ui.platform.NativeTextEditingDelegate
+import androidx.compose.ui.platform.caretRectForPosition
 import androidx.compose.ui.platform.selectTextNearCursor
 import androidx.compose.ui.platform.toTextRange
 import androidx.compose.ui.platform.toUITextRange
@@ -464,12 +465,8 @@ internal class NativeTextInputView(
             ?: fallback
     }
 
-    override fun caretRectForPosition(position: UITextPosition): CValue<CGRect> {
-        val fallbackRect = CGRectMake(x = 1.0, y = 1.0, width = 0.0, height = 1.0)
-        val position = (position as? TextInputPosition)?.position ?: return fallbackRect
-        val caretDpRect = input.caretDpRectForPosition(position)
-        return caretDpRect?.toCGRect() ?: fallbackRect
-    }
+    override fun caretRectForPosition(position: UITextPosition): CValue<CGRect> =
+        input.caretRectForPosition(position)
 
     override fun selectionRectsForRange(range: UITextRange): List<*> {
         val fallbackList = listOf<UITextSelectionRect>()

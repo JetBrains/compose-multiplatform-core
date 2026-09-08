@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.toCGRect
 import kotlinx.cinterop.CValue
 import org.jetbrains.skia.BreakIterator
 import platform.CoreGraphics.CGRect
+import platform.CoreGraphics.CGRectMake
 import platform.Foundation.NSCharacterSet
 import platform.UIKit.NSWritingDirection
 import platform.UIKit.NSWritingDirectionLeftToRight
@@ -287,6 +288,13 @@ internal fun TextEditingDelegate.selectTextNearCursor() {
     if (range == selection) return
 
     setSelectedTextRange(range)
+}
+
+internal fun TextEditingDelegate.caretRectForPosition(position: UITextPosition): CValue<CGRect> {
+    val fallbackRect = CGRectMake(x = 1.0, y = 1.0, width = 0.0, height = 1.0)
+    val position = (position as? TextInputPosition)?.position ?: return fallbackRect
+    val caretDpRect = caretDpRectForPosition(position)
+    return caretDpRect?.toCGRect() ?: fallbackRect
 }
 
 /**
