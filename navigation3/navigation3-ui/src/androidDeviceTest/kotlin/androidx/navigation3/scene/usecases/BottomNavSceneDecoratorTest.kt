@@ -41,12 +41,11 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import kotlin.test.Test
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.runner.RunWith
 
 /** A [Scene] that displays a list and a detail [NavEntry] side-by-side in a 40/60 split. */
-class BottomNavSceneDecorator<T : Any>(scene: Scene<T>) : Scene<T> {
+private class BottomNavSceneDecorator<T : Any>(private val scene: Scene<T>) : Scene<T> {
     override val key: Any = scene.key
     override val entries: List<NavEntry<T>> = scene.entries
     override val previousEntries: List<NavEntry<T>> = scene.previousEntries
@@ -61,6 +60,16 @@ class BottomNavSceneDecorator<T : Any>(scene: Scene<T>) : Scene<T> {
                 }
             }
         }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is BottomNavSceneDecorator<*>) return false
+        return scene == other.scene
+    }
+
+    override fun hashCode(): Int {
+        return scene.hashCode()
     }
 
     companion object {
@@ -96,7 +105,7 @@ fun <T : Any> rememberBottomNavSceneStrategy(): BottomNavSceneDecoratorStrategy<
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class BottomNavSceneDecoratorTest {
-    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun testContentShown() {

@@ -500,6 +500,8 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
     override val windowInfo: WindowInfo
         get() = composeViewContext.windowInfo
 
+    override val taskDispatchers: TaskDispatchers = AndroidTaskDispatchers
+
     // This is only needed because the existing XR implementation is lacking. It is currently
     // relying on the derivedStateOf() notification change. This can be removed when
     // b/442011315 is fixed.
@@ -913,14 +915,11 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         get() =
             _legacyTextInputServiceAndroid
                 ?: TextInputServiceAndroid(
-                        view,
                         this,
-                        @OptIn(ExperimentalComposeUiApi::class)
-                        if (AndroidComposeUiFlags.isOutOfFrameSchedulerForTextInputEventsEnabled) {
-                            Executor { outOfFrameExecutor?.schedule(it::run) }
-                        } else {
-                            Executor(::postOnAnimation)
-                        },
+                        this,
+                        afterFrameCommandExecutor =
+                            Executor { outOfFrameExecutor?.schedule(it::run) },
+                        nextFrameCommandExecutor = Executor(::postOnAnimation),
                     )
                     .also { _legacyTextInputServiceAndroid = it }
 
@@ -1909,9 +1908,20 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         val androidViewsHandler =
             if (AndroidComposeUiFlags.isDelayAndroidViewsHandlerCreationEnabled) {
                 _androidViewsHandler
-                    ?: AndroidViewsHandler(context).also {
-                        _androidViewsHandler = it
-                        addView(it)
+                    ?: AndroidViewsHandler(context).also { newHandler ->
+                        _androidViewsHandler = newHandler
+                        addView(newHandler)
+                        if (isLaidOut || width != 0 || height != 0) {
+                            newHandler.measure(
+                                MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
+                                MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY),
+                            )
+                            newHandler.layout(0, 0, width, height)
+                        }
+                        // Ensure that AndroidViewsHandler is measured and laid out after creation,
+                        // so that it can report correct bounds on screen (for semantics, etc).
+                        // Normally this is done by addView, but here we disabled it for
+                        // optimization purposes.
                         requestLayout()
                     }
             } else {

@@ -1199,6 +1199,7 @@ public final class androidx/compose/ui/focus/Focusability$Companion {
 }
 
 public final class androidx/compose/ui/focus/RequestChildFocusKt {
+	public static final fun requestFocusForChildInLocalBounds (Landroidx/compose/ui/node/DelegatableNode;IIII)Z
 	public static final fun requestFocusForChildInRootBounds (Landroidx/compose/ui/node/DelegatableNode;IIII)Z
 }
 
@@ -3776,6 +3777,7 @@ public final class androidx/compose/ui/platform/CompositionLocalsKt {
 	public static final fun getLocalScrollCaptureInProgress ()Landroidx/compose/runtime/CompositionLocal;
 	public static final fun getLocalSoftwareKeyboardController ()Landroidx/compose/runtime/ProvidableCompositionLocal;
 	public static final fun getLocalSoundEffect ()Landroidx/compose/runtime/ProvidableCompositionLocal;
+	public static final fun getLocalTaskDispatchers ()Landroidx/compose/runtime/ProvidableCompositionLocal;
 	public static final fun getLocalTextInputService ()Landroidx/compose/runtime/ProvidableCompositionLocal;
 	public static final fun getLocalTextToolbar ()Landroidx/compose/runtime/ProvidableCompositionLocal;
 	public static final fun getLocalUriHandler ()Landroidx/compose/runtime/ProvidableCompositionLocal;
@@ -3934,6 +3936,11 @@ public abstract interface class androidx/compose/ui/platform/SoundEffect {
 
 public final class androidx/compose/ui/platform/SynchronizationKt {
 	public static final fun synchronized (Landroidx/compose/ui/platform/SynchronizedObject;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+}
+
+public abstract interface class androidx/compose/ui/platform/TaskDispatchers {
+	public abstract fun getDefault ()Lkotlinx/coroutines/CoroutineDispatcher;
+	public abstract fun getIO ()Lkotlinx/coroutines/CoroutineDispatcher;
 }
 
 public final class androidx/compose/ui/platform/TestTagKt {
@@ -4282,6 +4289,7 @@ public final class androidx/compose/ui/semantics/SemanticsOwnerKt {
 public final class androidx/compose/ui/semantics/SemanticsProperties {
 	public static final field $stable I
 	public static final field INSTANCE Landroidx/compose/ui/semantics/SemanticsProperties;
+	public final fun getBackgroundColor ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getCollectionInfo ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getCollectionItemInfo ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getContentDataType ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
@@ -4304,6 +4312,7 @@ public final class androidx/compose/ui/semantics/SemanticsProperties {
 	public final fun getIsContainer ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getIsDialog ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getIsEditable ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
+	public final fun getIsPasswordObfuscated ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getIsPopup ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getIsSensitiveData ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getIsShowingTextSubstitution ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
@@ -4346,6 +4355,7 @@ public final class androidx/compose/ui/semantics/SemanticsPropertiesKt {
 	public static final fun error (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;)V
 	public static final fun expand (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
 	public static synthetic fun expand$default (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
+	public static final fun getBackgroundColor (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Landroidx/compose/ui/graphics/ColorProducer;
 	public static final fun getCollectionInfo (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Landroidx/compose/ui/semantics/CollectionInfo;
 	public static final fun getCollectionItemInfo (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Landroidx/compose/ui/semantics/CollectionItemInfo;
 	public static final fun getContentDataType (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Landroidx/compose/ui/autofill/ContentDataType;
@@ -4409,7 +4419,9 @@ public final class androidx/compose/ui/semantics/SemanticsPropertiesKt {
 	public static synthetic fun pageRight$default (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
 	public static final fun pageUp (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
 	public static synthetic fun pageUp$default (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
-	public static final fun password (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)V
+	public static final synthetic fun password (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)V
+	public static final fun password (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Z)V
+	public static synthetic fun password$default (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;ZILjava/lang/Object;)V
 	public static final fun pasteText (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
 	public static synthetic fun pasteText$default (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
 	public static final fun performImeAction (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
@@ -4423,6 +4435,7 @@ public final class androidx/compose/ui/semantics/SemanticsPropertiesKt {
 	public static final fun scrollToIndex (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
 	public static synthetic fun scrollToIndex$default (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 	public static final fun selectableGroup (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)V
+	public static final fun setBackgroundColor (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Landroidx/compose/ui/graphics/ColorProducer;)V
 	public static final fun setCollectionInfo (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Landroidx/compose/ui/semantics/CollectionInfo;)V
 	public static final fun setCollectionItemInfo (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Landroidx/compose/ui/semantics/CollectionItemInfo;)V
 	public static final fun setContainer (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Z)V

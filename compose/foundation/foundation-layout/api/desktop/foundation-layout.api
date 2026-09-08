@@ -131,9 +131,6 @@ public final class androidx/compose/foundation/layout/ColumnScopeInstance : andr
 	public fun weight (Landroidx/compose/ui/Modifier;FZ)Landroidx/compose/ui/Modifier;
 }
 
-public abstract interface annotation class androidx/compose/foundation/layout/ExperimentalFlexBoxApi : java/lang/annotation/Annotation {
-}
-
 public abstract interface annotation class androidx/compose/foundation/layout/ExperimentalGridApi : java/lang/annotation/Annotation {
 }
 
@@ -271,10 +268,6 @@ public abstract interface class androidx/compose/foundation/layout/FlexBoxScope 
 	public fun flex (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
 }
 
-public final class androidx/compose/foundation/layout/FlexBoxScope$DefaultImpls {
-	public static fun flex (Landroidx/compose/foundation/layout/FlexBoxScope;Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
-}
-
 public final class androidx/compose/foundation/layout/FlexBoxScopeInstance : androidx/compose/foundation/layout/FlexBoxScope {
 	public static final field $stable I
 	public static final field INSTANCE Landroidx/compose/foundation/layout/FlexBoxScopeInstance;
@@ -299,10 +292,10 @@ public abstract interface class androidx/compose/foundation/layout/FlexConfigSco
 	public abstract fun basis (F)V
 	public abstract fun basis-0680j_4 (F)V
 	public abstract fun basis-MFoeH6Y (J)V
-	public abstract fun getFlexBoxCrossAxisMax ()I
-	public abstract fun getFlexBoxCrossAxisMin ()I
-	public abstract fun getFlexBoxMainAxisMax ()I
-	public abstract fun getFlexBoxMainAxisMin ()I
+	public abstract fun getFlexBoxCrossAxisMaxPx ()I
+	public abstract fun getFlexBoxCrossAxisMinPx ()I
+	public abstract fun getFlexBoxMainAxisMaxPx ()I
+	public abstract fun getFlexBoxMainAxisMinPx ()I
 	public abstract fun grow (F)V
 	public abstract fun order (I)V
 	public abstract fun shrink (F)V

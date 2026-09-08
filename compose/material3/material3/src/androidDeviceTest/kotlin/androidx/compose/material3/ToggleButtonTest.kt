@@ -18,8 +18,10 @@ package androidx.compose.material3
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,6 +32,7 @@ import androidx.compose.material3.tokens.ElevatedButtonTokens
 import androidx.compose.material3.tokens.FilledButtonTokens
 import androidx.compose.material3.tokens.OutlinedButtonTokens
 import androidx.compose.material3.tokens.TonalButtonTokens
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,7 +56,9 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
@@ -61,7 +66,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class ToggleButtonTest {
@@ -155,14 +159,13 @@ class ToggleButtonTest {
                     modifier = Modifier.testTag(ToggleButtonTag),
                     onCheckedChange = {},
                     enabled = false,
+                    icon = {
+                        Box(
+                            modifier =
+                                Modifier.testTag(IconTag).semantics(mergeDescendants = true) {}
+                        )
+                    },
                 ) {
-                    Box(
-                        modifier =
-                            Modifier.size(ToggleButtonDefaults.IconSize).testTag(IconTag).semantics(
-                                mergeDescendants = true
-                            ) {}
-                    )
-                    Spacer(modifier = Modifier.width(ToggleButtonDefaults.IconSpacing))
                     Text(
                         text = "test",
                         modifier = Modifier.testTag(TextTag).semantics(mergeDescendants = true) {},
@@ -184,7 +187,7 @@ class ToggleButtonTest {
     fun toggleButton_defaultColors() {
         rule.setMaterialContent(lightColorScheme()) {
             assertThat(
-                    ToggleButtonDefaults.toggleButtonColors(
+                    ToggleButtonDefaults.colors(
                         containerColor = Color.Unspecified,
                         contentColor = Color.Unspecified,
                         disabledContainerColor = Color.Unspecified,
@@ -216,7 +219,7 @@ class ToggleButtonTest {
     fun elevatedToggleButton_defaultColors() {
         rule.setMaterialContent(lightColorScheme()) {
             assertThat(
-                    ElevatedToggleButtonDefaults.elevatedToggleButtonColors(
+                    ElevatedToggleButtonDefaults.colors(
                         containerColor = Color.Unspecified,
                         contentColor = Color.Unspecified,
                         disabledContainerColor = Color.Unspecified,
@@ -249,7 +252,7 @@ class ToggleButtonTest {
     fun tonalToggleButton_defaultColors() {
         rule.setMaterialContent(lightColorScheme()) {
             assertThat(
-                    FilledTonalToggleButtonDefaults.filledTonalToggleButtonColors(
+                    FilledTonalToggleButtonDefaults.colors(
                         containerColor = Color.Unspecified,
                         contentColor = Color.Unspecified,
                         disabledContainerColor = Color.Unspecified,
@@ -281,7 +284,7 @@ class ToggleButtonTest {
     fun outlinedToggleButton_defaultColors() {
         rule.setMaterialContent(lightColorScheme()) {
             assertThat(
-                    OutlinedToggleButtonDefaults.outlinedToggleButtonColors(
+                    OutlinedToggleButtonDefaults.colors(
                         containerColor = Color.Unspecified,
                         contentColor = Color.Unspecified,
                         disabledContainerColor = Color.Unspecified,
@@ -337,25 +340,22 @@ class ToggleButtonTest {
 
     @Test
     fun toggleButton_XSmall_positioning() {
-        val size = ButtonDefaults.ExtraSmallContainerHeight
         rule.setMaterialContent(lightColorScheme()) {
             Box {
                 ToggleButton(
                     checked = false,
                     onCheckedChange = {},
-                    modifier = Modifier.heightIn(size).testTag(ToggleButtonTag),
-                    shapes = ToggleButtonDefaults.shapesFor(size),
-                    contentPadding = ButtonDefaults.contentPaddingFor(size),
+                    buttonSize = ToggleButtonSize.ExtraSmall,
+                    modifier = Modifier.testTag(ToggleButtonTag),
+                    icon = {
+                        Icon(
+                            Icons.Outlined.Edit,
+                            contentDescription = "Localized description",
+                            modifier =
+                                Modifier.testTag(IconTag).semantics(mergeDescendants = true) {},
+                        )
+                    },
                 ) {
-                    Icon(
-                        Icons.Outlined.Edit,
-                        contentDescription = "Localized description",
-                        modifier =
-                            Modifier.size(ButtonDefaults.iconSizeFor(size))
-                                .testTag(IconTag)
-                                .semantics(mergeDescendants = true) {},
-                    )
-                    Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
                     Text(
                         "Label",
                         modifier = Modifier.testTag(TextTag).semantics(mergeDescendants = true) {},
@@ -375,28 +375,24 @@ class ToggleButtonTest {
 
     @Test
     fun toggleButton_Medium_positioning() {
-        val size = ButtonDefaults.MediumContainerHeight
         rule.setMaterialContent(lightColorScheme()) {
             Box {
                 ToggleButton(
                     checked = false,
                     onCheckedChange = {},
-                    modifier = Modifier.heightIn(size).testTag(ToggleButtonTag),
-                    shapes = ToggleButtonDefaults.shapesFor(size),
-                    contentPadding = ButtonDefaults.contentPaddingFor(size),
+                    buttonSize = ToggleButtonSize.Medium,
+                    modifier = Modifier.testTag(ToggleButtonTag),
+                    icon = {
+                        Icon(
+                            Icons.Outlined.Edit,
+                            contentDescription = "Localized description",
+                            modifier =
+                                Modifier.testTag(IconTag).semantics(mergeDescendants = true) {},
+                        )
+                    },
                 ) {
-                    Icon(
-                        Icons.Outlined.Edit,
-                        contentDescription = "Localized description",
-                        modifier =
-                            Modifier.size(ButtonDefaults.iconSizeFor(size))
-                                .testTag(IconTag)
-                                .semantics(mergeDescendants = true) {},
-                    )
-                    Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
                     Text(
                         "Label",
-                        style = ButtonDefaults.textStyleFor(size),
                         modifier = Modifier.testTag(TextTag).semantics(mergeDescendants = true) {},
                     )
                 }
@@ -414,28 +410,24 @@ class ToggleButtonTest {
 
     @Test
     fun toggleButton_Large_positioning() {
-        val size = ButtonDefaults.LargeContainerHeight
         rule.setMaterialContent(lightColorScheme()) {
             Box {
                 ToggleButton(
                     checked = false,
                     onCheckedChange = {},
-                    modifier = Modifier.heightIn(size).testTag(ToggleButtonTag),
-                    shapes = ToggleButtonDefaults.shapesFor(size),
-                    contentPadding = ButtonDefaults.contentPaddingFor(size),
+                    buttonSize = ToggleButtonSize.Large,
+                    modifier = Modifier.testTag(ToggleButtonTag),
+                    icon = {
+                        Icon(
+                            Icons.Outlined.Edit,
+                            contentDescription = "Localized description",
+                            modifier =
+                                Modifier.testTag(IconTag).semantics(mergeDescendants = true) {},
+                        )
+                    },
                 ) {
-                    Icon(
-                        Icons.Outlined.Edit,
-                        contentDescription = "Localized description",
-                        modifier =
-                            Modifier.size(ButtonDefaults.iconSizeFor(size))
-                                .testTag(IconTag)
-                                .semantics(mergeDescendants = true) {},
-                    )
-                    Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
                     Text(
                         "Label",
-                        style = ButtonDefaults.textStyleFor(size),
                         modifier = Modifier.testTag(TextTag).semantics(mergeDescendants = true) {},
                     )
                 }
@@ -453,28 +445,24 @@ class ToggleButtonTest {
 
     @Test
     fun toggleButton_XLarge_positioning() {
-        val size = ButtonDefaults.ExtraLargeContainerHeight
         rule.setMaterialContent(lightColorScheme()) {
             Box {
                 ToggleButton(
                     checked = false,
                     onCheckedChange = {},
-                    modifier = Modifier.heightIn(size).testTag(ToggleButtonTag),
-                    shapes = ToggleButtonDefaults.shapesFor(size),
-                    contentPadding = ButtonDefaults.contentPaddingFor(size),
+                    buttonSize = ToggleButtonSize.ExtraLarge,
+                    modifier = Modifier.testTag(ToggleButtonTag),
+                    icon = {
+                        Icon(
+                            Icons.Outlined.Edit,
+                            contentDescription = "Localized description",
+                            modifier =
+                                Modifier.testTag(IconTag).semantics(mergeDescendants = true) {},
+                        )
+                    },
                 ) {
-                    Icon(
-                        Icons.Outlined.Edit,
-                        contentDescription = "Localized description",
-                        modifier =
-                            Modifier.size(ButtonDefaults.iconSizeFor(size))
-                                .testTag(IconTag)
-                                .semantics(mergeDescendants = true) {},
-                    )
-                    Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
                     Text(
                         "Label",
-                        style = ButtonDefaults.textStyleFor(size),
                         modifier = Modifier.testTag(TextTag).semantics(mergeDescendants = true) {},
                     )
                 }
@@ -521,5 +509,59 @@ class ToggleButtonTest {
         assertThat(evaluatedBorder).isNotNull()
         assertThat(evaluatedBorder!!.width).isEqualTo(2.dp)
         assertThat((evaluatedBorder!!.brush as SolidColor).value).isEqualTo(Color.Red)
+    }
+
+    @Test
+    fun toggleButton_buttonSize_sizesAndDimensions() {
+        val sizes =
+            listOf(
+                ToggleButtonSize.ExtraSmall,
+                ToggleButtonSize.Small,
+                ToggleButtonSize.Medium,
+                ToggleButtonSize.Large,
+                ToggleButtonSize.ExtraLarge,
+            )
+        val contentWidth = 50.dp
+
+        rule.setMaterialContent(lightColorScheme()) {
+            CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
+                Column {
+                    for (size in sizes) {
+                        ToggleButton(
+                            checked = true,
+                            onCheckedChange = {},
+                            buttonSize = size,
+                            icon = { Box(Modifier.fillMaxSize()) },
+                            modifier = Modifier.testTag(ToggleButtonTag + size.height),
+                        ) {
+                            Box(Modifier.size(contentWidth, 10.dp))
+                        }
+                    }
+                }
+            }
+        }
+
+        for (size in sizes) {
+            val toggleButtonBounds =
+                rule.onNodeWithTag(ToggleButtonTag + size.height).getUnclippedBoundsInRoot()
+
+            val contentPadding =
+                ToggleButtonDefaults.contentPaddingFor(size.height, hasStartIcon = true)
+            val expectedWidth =
+                contentPadding.calculateStartPadding(LayoutDirection.Ltr) +
+                    ButtonDefaults.iconSizeFor(size.height) +
+                    ButtonDefaults.iconSpacingFor(size.height) +
+                    contentWidth +
+                    contentPadding.calculateEndPadding(LayoutDirection.Ltr)
+
+            (toggleButtonBounds.bottom - toggleButtonBounds.top).assertIsEqualTo(
+                size.height,
+                tolerance = 1.dp,
+            )
+            (toggleButtonBounds.right - toggleButtonBounds.left).assertIsEqualTo(
+                expectedWidth,
+                tolerance = 1.dp,
+            )
+        }
     }
 }

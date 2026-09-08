@@ -1135,6 +1135,7 @@ public final class androidx/compose/ui/graphics/VertexMode$Companion {
 public final class androidx/compose/ui/graphics/Vertices {
 	public static final field $stable I
 	public synthetic fun <init> (ILjava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (I[F[F[I[SLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getColors ()[I
 	public final fun getIndices ()[S
 	public final fun getPositions ()[F

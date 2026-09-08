@@ -99,6 +99,7 @@ public fun rememberLazyGridState(
 @Deprecated(
     """Providing `LazyLayoutCacheWindow` via the `Lazy[Orientation]Grid` composable should be preferred over using `LazyGridPrefetchStrategy` here."""
 )
+@Suppress("DEPRECATION")
 @Composable
 public fun rememberLazyGridState(
     initialFirstVisibleItemIndex: Int = 0,
@@ -106,7 +107,6 @@ public fun rememberLazyGridState(
     prefetchStrategy: LazyGridPrefetchStrategy = remember { LazyGridPrefetchStrategy() },
 ): LazyGridState {
     return rememberSaveable(prefetchStrategy, saver = LazyGridState.saver(prefetchStrategy)) {
-        @Suppress("DEPRECATION")
         LazyGridState(
             initialFirstVisibleItemIndex,
             initialFirstVisibleItemScrollOffset,
@@ -152,7 +152,7 @@ public fun rememberLazyGridState(
 public class LazyGridState
 @ExperimentalFoundationApi
 internal constructor(
-    internal val legacyPrefetchStrategy: LazyGridPrefetchStrategy?,
+    @Suppress("DEPRECATION") internal val legacyPrefetchStrategy: LazyGridPrefetchStrategy?,
     firstVisibleItemIndex: Int = 0,
     firstVisibleItemScrollOffset: Int = 0,
 ) : ScrollableState {
@@ -172,6 +172,7 @@ internal constructor(
     @Deprecated(
         """`LazyGridPrefetchStrategy` is deprecated. Prefetching behaviour should be specified via the lazy grid composable arguments as a `CacheWindow`."""
     )
+    @Suppress("DEPRECATION")
     public constructor(
         firstVisibleItemIndex: Int = 0,
         firstVisibleItemScrollOffset: Int = 0,
@@ -352,85 +353,91 @@ internal constructor(
             Snapshot.withoutReadObservation { layoutInfoState.value.prefetchState }
                 ?: legacyPrefetchState
 
+    @Suppress("DEPRECATION")
     private val prefetchStrategy
         get() =
             Snapshot.withoutReadObservation { layoutInfoState.value.prefetchStrategy }
                 ?: legacyPrefetchStrategy
 
-    private val prefetchScope: LazyGridPrefetchScope by lazy {
-        object : LazyGridPrefetchScope {
-            override fun scheduleLinePrefetch(
-                lineIndex: Int
-            ): List<LazyLayoutPrefetchState.PrefetchHandle> {
-                return scheduleLinePrefetch(lineIndex, null)
-            }
+    @Suppress("DEPRECATION")
+    private val prefetchScope: LazyGridPrefetchScope by
+        lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+            object : LazyGridPrefetchScope {
+                override fun scheduleLinePrefetch(
+                    lineIndex: Int
+                ): List<LazyLayoutPrefetchState.PrefetchHandle> {
+                    return scheduleLinePrefetch(lineIndex, null)
+                }
 
-            @Suppress("PrimitiveInCollection")
-            override fun scheduleLinePrefetch(
-                lineIndex: Int,
-                onPrefetchFinished: (LazyGridPrefetchResultScope.() -> Unit)?,
-            ): List<LazyLayoutPrefetchState.PrefetchHandle> {
-                // Without read observation since this can be triggered from scroll - this will then
-                // cause us to recompose when the measure result changes. We don't care since the
-                // prefetch is best effort.
-                val prefetchHandles = mutableListOf<LazyLayoutPrefetchState.PrefetchHandle>()
-                val itemSizes: MutableList<Int>? =
-                    if (onPrefetchFinished == null) null else mutableListOf()
+                @Suppress("PrimitiveInCollection")
+                override fun scheduleLinePrefetch(
+                    lineIndex: Int,
+                    onPrefetchFinished: (LazyGridPrefetchResultScope.() -> Unit)?,
+                ): List<LazyLayoutPrefetchState.PrefetchHandle> {
+                    // Without read observation since this can be triggered from scroll - this will
+                    // then cause us to recompose when the measure result changes. We don't care
+                    // since the prefetch is best effort.
+                    val prefetchHandles = mutableListOf<LazyLayoutPrefetchState.PrefetchHandle>()
+                    val itemSizes: MutableList<Int>? =
+                        if (onPrefetchFinished == null) null else mutableListOf()
 
-                Snapshot.withoutReadObservation {
-                    val layoutInfo =
-                        if (hasLookaheadOccurred) {
-                            approachLayoutInfo
-                        } else {
-                            layoutInfoState.value
-                        }
+                    Snapshot.withoutReadObservation {
+                        val layoutInfo =
+                            if (hasLookaheadOccurred) {
+                                approachLayoutInfo
+                            } else {
+                                layoutInfoState.value
+                            }
 
-                    layoutInfo?.let { measureResult ->
-                        var completedCount = 1
-                        val itemsInLineInfo = measureResult.prefetchInfoRetriever(lineIndex)
-                        itemsInLineInfo.fastForEach { lineInfo ->
-                            val prefetchHandle =
-                                prefetchState?.schedulePrecompositionAndPremeasure(
-                                    lineInfo.first,
-                                    lineInfo.second,
-                                    executeRequestsInHighPriorityMode,
-                                ) {
-                                    var itemMainAxisItemSize = 0
-                                    repeat(placeablesCount) {
-                                        itemMainAxisItemSize +=
-                                            if (measureResult.orientation == Orientation.Vertical) {
-                                                getSize(it).height
-                                            } else {
-                                                getSize(it).width
-                                            }
-                                    }
-
-                                    itemSizes?.add(itemMainAxisItemSize)
-                                    // all items in this line were prefetched, report the size
-                                    if (completedCount == itemsInLineInfo.size) {
-                                        if (onPrefetchFinished != null && itemSizes != null) {
-                                            onPrefetchFinished.invoke(
-                                                LazyGridPrefetchResultScopeImpl(
-                                                    lineIndex,
-                                                    itemSizes,
-                                                )
-                                            )
+                        layoutInfo?.let { measureResult ->
+                            var completedCount = 1
+                            val itemsInLineInfo = measureResult.prefetchInfoRetriever(lineIndex)
+                            itemsInLineInfo.fastForEach { lineInfo ->
+                                val prefetchHandle =
+                                    prefetchState?.schedulePrecompositionAndPremeasure(
+                                        lineInfo.first,
+                                        lineInfo.second,
+                                        executeRequestsInHighPriorityMode,
+                                    ) {
+                                        var itemMainAxisItemSize = 0
+                                        repeat(placeablesCount) {
+                                            itemMainAxisItemSize +=
+                                                if (
+                                                    measureResult.orientation ==
+                                                        Orientation.Vertical
+                                                ) {
+                                                    getSize(it).height
+                                                } else {
+                                                    getSize(it).width
+                                                }
                                         }
-                                    } else {
-                                        completedCount++
-                                    }
-                                }
 
-                            if (prefetchHandle != null) {
-                                prefetchHandles.add(prefetchHandle)
+                                        itemSizes?.add(itemMainAxisItemSize)
+                                        // all items in this line were prefetched, report the size
+                                        if (completedCount == itemsInLineInfo.size) {
+                                            if (onPrefetchFinished != null && itemSizes != null) {
+                                                onPrefetchFinished.invoke(
+                                                    LazyGridPrefetchResultScopeImpl(
+                                                        lineIndex,
+                                                        itemSizes,
+                                                    )
+                                                )
+                                            }
+                                        } else {
+                                            completedCount++
+                                        }
+                                    }
+
+                                if (prefetchHandle != null) {
+                                    prefetchHandles.add(prefetchHandle)
+                                }
                             }
                         }
                     }
+                    return prefetchHandles
                 }
-                return prefetchHandles
             }
         }
-    }
 
     private val _scrollIndicatorState =
         object : ScrollIndicatorState {
@@ -783,11 +790,11 @@ internal constructor(
          * [LazyGridPrefetchStrategy].
          */
         @ExperimentalFoundationApi
+        @Suppress("DEPRECATION")
         internal fun saver(prefetchStrategy: LazyGridPrefetchStrategy): Saver<LazyGridState, *> =
             listSaver(
                 save = { listOf(it.firstVisibleItemIndex, it.firstVisibleItemScrollOffset) },
                 restore = {
-                    @Suppress("DEPRECATION")
                     LazyGridState(
                         firstVisibleItemIndex = it[0],
                         firstVisibleItemScrollOffset = it[1],
