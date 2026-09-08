@@ -50,6 +50,7 @@ import androidx.compose.ui.test.assertVisibleInContainer
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithLabelOrNull
 import androidx.compose.ui.test.findNodeWithTag
+import androidx.compose.ui.test.isContextMenuVisible
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.tapContextMenuButton
 import androidx.compose.ui.test.utils.BasicTextFieldType
@@ -751,12 +752,15 @@ class TextFieldEditMenuTest {
 
     private fun UIKitInstrumentedTest.longPressNodeWithTagAndAwaitContextMenu(textFieldTag: String) {
         val touch = findNodeWithTag(textFieldTag).touchDown()
-        waitUntil {
-            findFirstDescendant { it.isLoupeView } != null
+        waitUntil("Awaiting context menu or loupe") {
+            isContextMenuVisible || isLoupeVisible
         }
         touch.up()
         waitForContextMenu()
     }
+
+    private val UIKitInstrumentedTest.isLoupeVisible: Boolean get() =
+        findFirstDescendant { it.isLoupeView } != null
 
     private fun UIKitInstrumentedTest.setTextFieldContent(
         textFieldKind: BasicTextFieldType,
