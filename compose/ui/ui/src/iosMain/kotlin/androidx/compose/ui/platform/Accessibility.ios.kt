@@ -570,12 +570,10 @@ private class AccessibilityElement(
 
     val key: AccessibilityElementKey get() = node.key
 
-    private var disposed = false
-
     /**
      * Indicates whether this element is still present in the tree.
      */
-    private val isAlive get() = !disposed && node.semanticsNode.isValid
+    private val isAlive get() = !isDisposed && node.semanticsNode.isValid
 
     init {
         setAccessibilityElements(children + nodeSemanticsElements())
@@ -610,11 +608,11 @@ private class AccessibilityElement(
     }
 
     fun dispose() {
-        check(!disposed) {
+        check(!this.isDisposed) {
             "AccessibilityElement is already disposed"
         }
 
-        disposed = true
+        isDisposed = true
         setAccessibilityContainer(null)
         setAccessibilityElements(emptyList<Any>())
         if (available(OS.Ios to OSVersion(major = 17))) {
