@@ -53,7 +53,7 @@ sourceSetsDesktop:
   - '**/desktopTest/**'
 
 # When changing this list, please change sourceSetsNative, sourceSetsWeb, and sourceSetsDesktop as well.
-# A copy because of simplicity and a low chance of mistakes
+# Duplicated for simplicity and to reduce mistakes.
 sourceSetsUnknown:
   - '**'
   - '!**/iosMain/**'
