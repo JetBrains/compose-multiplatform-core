@@ -17,6 +17,7 @@
 package androidx.compose.ui.text.intl
 
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.util.fastMapNotNull
 import kotlin.js.ExperimentalWasmJsInterop
@@ -65,10 +66,24 @@ actual class Locale internal constructor(internal val platformLocale: IntlLocale
 private const val FALLBACK_LANGUAGE_TAG = "en-001"
 
 internal actual fun createPlatformLocaleDelegate(): PlatformLocaleDelegate =
-    object : PlatformLocaleDelegate {
-        override val current: LocaleList
-            get() = localeListFromLanguageTags(userPreferredLanguages())
+    WebPlatformLocaleDelegate()
+
+private class WebPlatformLocaleDelegate : PlatformLocaleDelegate {
+    private val currentLocaleList = mutableStateOf(readCurrentLocaleList())
+
+    init {
+        addLanguageChangeListener {
+            currentLocaleList.value = readCurrentLocaleList()
+        }
     }
+
+    override val current: LocaleList
+        get() = currentLocaleList.value
+
+
+    private fun readCurrentLocaleList() = localeListFromLanguageTags(userPreferredLanguages())
+}
+
 
 internal fun localeListFromLanguageTags(tags: List<String>): LocaleList {
     val locales = tags.fastMapNotNull { it.toIntlLocaleOrNull()?.let(::Locale) }
@@ -128,3 +143,8 @@ private fun userPreferredLanguages(): List<String> {
 @OptIn(ExperimentalWasmJsInterop::class)
 private fun getUserPreferredLanguagesAsArray(): JsArray<JsString> =
     js("window.navigator.languages")
+
+@OptIn(ExperimentalWasmJsInterop::class)
+private fun addLanguageChangeListener(listener: () -> Unit) {
+    js("window.addEventListener('languagechange', listener)")
+}
