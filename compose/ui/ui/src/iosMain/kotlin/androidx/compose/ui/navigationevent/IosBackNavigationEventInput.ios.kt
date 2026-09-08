@@ -53,6 +53,7 @@ import platform.darwin.NSObject
 import platform.darwin.NSUIntegerMax
 
 internal class IosBackNavigationEventInput(
+    private val frameChoreographer: FrameChoreographer,
     private val density: Density,
     initialLayoutDirection: LayoutDirection,
     private val endEdgePanGestureBehavior: EndEdgePanGestureBehavior,
@@ -62,14 +63,6 @@ internal class IosBackNavigationEventInput(
         private const val BACK_GESTURE_SCREEN_SIZE = 0.3
         private const val BACK_GESTURE_VELOCITY = 100
     }
-
-    private var frameChoreographer: FrameChoreographer? = null
-        set(value) {
-            if (field == value) return
-            field = value
-            startEdgePanGestureRecognizer.activitiesHandler = null
-            endEdgePanGestureRecognizer.activitiesHandler = null
-        }
 
     private var isRecognizersEnabled: Boolean = false
         set(value) {
@@ -133,7 +126,6 @@ internal class IosBackNavigationEventInput(
 
     fun onDidMoveToWindow(window: UIWindow?, composeRootView: UIView) {
         removeGestureListeners()
-        frameChoreographer = window?.windowScene?.let(FrameChoreographer::choreographerForScene)
 
         if (window != null) {
             var view: UIView = composeRootView
@@ -211,7 +203,7 @@ internal class IosBackNavigationEventInput(
             val view = recognizer.view ?: return
 
             if (recognizer.state == UIGestureRecognizerStateBegan) {
-                recognizer.activitiesHandler = frameChoreographer?.createActivitiesHandler()?.also {
+                recognizer.activitiesHandler = frameChoreographer.createActivitiesHandler().also {
                     it.onActivitiesStarted()
                 }
             } else if (recognizer.isInTerminalState) {
