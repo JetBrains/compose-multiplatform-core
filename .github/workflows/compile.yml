@@ -1,4 +1,4 @@
-name: Build
+name: Compile
 on:
   workflow_dispatch:
   pull_request:
@@ -8,7 +8,26 @@ on:
       - integration
 
 jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      sourceSetsNative: ${{ steps.filter.outputs.sourceSetsNative }}
+      sourceSetsWeb: ${{ steps.filter.outputs.sourceSetsWeb }}
+      sourceSetsDesktop: ${{ steps.filter.outputs.sourceSetsDesktop }}
+      sourceSetsUnknown: ${{ steps.filter.outputs.sourceSetsUnknown }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Detect affected platforms
+        id: filter
+        uses: dorny/paths-filter@v4
+        with:
+          filters: .github/path-filter.yml
+          predicate-quantifier: some-with-excludes
+
   compose-native-publish:
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.sourceSetsNative == 'true' || needs.changes.outputs.sourceSetsUnknown == 'true'
     runs-on: macos-26-xlarge
     name: Darwin + Native Linux
     steps:
@@ -35,6 +54,8 @@ jobs:
             --no-daemon --stacktrace
 
   compose-web-publish:
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.sourceSetsWeb == 'true' || needs.changes.outputs.sourceSetsUnknown == 'true'
     runs-on: ubuntu-24.04
     name: Web
     steps:
@@ -57,6 +78,8 @@ jobs:
             --no-daemon --stacktrace
 
   compose-jvm-publish:
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.sourceSetsDesktop == 'true' || needs.changes.outputs.sourceSetsUnknown == 'true'
     runs-on: ubuntu-24.04
     name: JVM
     steps:
