@@ -23,6 +23,8 @@ import androidx.compose.foundation.ComposeFoundationFlags.isCacheWindowLookahead
 import androidx.compose.foundation.ComposeFoundationFlags.isMultiLaneCacheWindowEnabled
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState.PrefetchHandle
+import androidx.compose.runtime.tooling.ComposeToolingApi
+import androidx.compose.runtime.tooling.ComposeToolingFlags
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.traceValue
 import kotlin.math.absoluteValue
@@ -161,24 +163,25 @@ internal class MultiLaneCacheWindow(
         }
     }
 
+    @OptIn(ComposeToolingApi::class)
     private fun traceWindowInfo() {
-        repeat(currentLaneCount) { lane ->
-            traceValue(
-                "perLaneCacheWindowStartSpace lane=$lane",
-                perLaneCacheWindowStartSpace[lane].toLong(),
-            )
-            traceValue(
-                "perLaneCacheWindowEndSpace lane=$lane",
-                perLaneCacheWindowEndSpace[lane].toLong(),
-            )
-            traceValue(
-                "perLaneCacheWindowStartIndex lane=$lane",
-                perLaneCacheWindowStartIndex[lane].toLong(),
-            )
-            traceValue(
-                "perLaneCacheWindowEndItemIndex lane=$lane",
-                perLaneCacheWindowEndItemIndex[lane].toLong(),
-            )
+        if (ComposeToolingFlags.isVerboseTracingEnabled) {
+            repeat(currentLaneCount) { lane ->
+                traceValue("windowTraceInfoLane", lane.toLong())
+                traceValue(
+                    "perLaneCacheWindowStartSpace",
+                    perLaneCacheWindowStartSpace[lane].toLong(),
+                )
+                traceValue("perLaneCacheWindowEndSpace", perLaneCacheWindowEndSpace[lane].toLong())
+                traceValue(
+                    "perLaneCacheWindowStartIndex",
+                    perLaneCacheWindowStartIndex[lane].toLong(),
+                )
+                traceValue(
+                    "perLaneCacheWindowEndItemIndex",
+                    perLaneCacheWindowEndItemIndex[lane].toLong(),
+                )
+            }
         }
     }
 
@@ -749,7 +752,11 @@ internal class MultiLaneCacheWindow(
 
         debugLog { "nextPrefetchableItemIndex=$nextPrefetchableItemIndex" }
 
-        if (nextPrefetchableItemIndex >= 0) {
+        if (
+            nextPrefetchableItemIndex >= 0 &&
+                !prefetchWindowHandles.containsKey(nextPrefetchableItemIndex) &&
+                !windowCacheWithItems.containsKey(nextPrefetchableItemIndex)
+        ) {
             val nextPrefetchableItemIndex = nextPrefetchableItemIndex
             prefetchWindowHandles[nextPrefetchableItemIndex] =
                 schedulePrefetch(lane, nextPrefetchableItemIndex) { mainAxisSize ->
@@ -893,11 +900,14 @@ internal class LegacyCacheWindowLogic(
         }
     }
 
+    @OptIn(ComposeToolingApi::class)
     private fun traceWindowInfo() {
-        traceValue("prefetchWindowStartExtraSpace", prefetchWindowStartExtraSpace.toLong())
-        traceValue("prefetchWindowEndExtraSpace", prefetchWindowEndExtraSpace.toLong())
-        traceValue("prefetchWindowStartIndex", prefetchWindowStartLine.toLong())
-        traceValue("prefetchWindowEndIndex", prefetchWindowEndLine.toLong())
+        if (ComposeToolingFlags.isVerboseTracingEnabled) {
+            traceValue("prefetchWindowStartExtraSpace", prefetchWindowStartExtraSpace.toLong())
+            traceValue("prefetchWindowEndExtraSpace", prefetchWindowEndExtraSpace.toLong())
+            traceValue("prefetchWindowStartIndex", prefetchWindowStartLine.toLong())
+            traceValue("prefetchWindowEndIndex", prefetchWindowEndLine.toLong())
+        }
     }
 
     override fun CacheWindowScope.onVisibleItemsUpdated() {
@@ -1310,7 +1320,9 @@ internal class LegacyCacheWindowLogic(
         if (
             nextPrefetchableLineIndex > 0 &&
                 lastItemIndexInLine(nextPrefetchableLineIndex) != InvalidIndex &&
-                lastItemIndexInLine(nextPrefetchableLineIndex) < itemsCount
+                lastItemIndexInLine(nextPrefetchableLineIndex) < itemsCount &&
+                !prefetchWindowHandles.containsKey(nextPrefetchableLineIndex) &&
+                !windowCacheWithItems.containsKey(nextPrefetchableLineIndex)
         ) {
             prefetchWindowHandles[nextPrefetchableLineIndex] =
                 schedulePrefetch(0, nextPrefetchableLineIndex) { mainAxisSize ->

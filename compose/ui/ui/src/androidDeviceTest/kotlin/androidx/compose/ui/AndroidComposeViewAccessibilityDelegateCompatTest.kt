@@ -63,11 +63,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.platform.AndroidComposeView
@@ -3225,6 +3227,40 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
 
     @Test
     @SdkSuppress(minSdkVersion = 37)
+    fun testPopulateExtraRenderingInfo_textBackgroundColorTakesPrecedenceOverModifierBackground() {
+        // Arrange.
+        val textColor = Color(0x77ff3322)
+        rule.setContentWithAccessibilityEnabled {
+            BasicText(
+                text = "Hello",
+                style = TextStyle(color = textColor, background = Color.Yellow),
+                modifier = Modifier.background(Color.Green),
+            )
+        }
+        val virtualViewId = rule.onNodeWithText("Hello").semanticsId()
+        val info = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(virtualViewId) }
+
+        // Act.
+        androidComposeView.composeAccessibilityDelegate
+            .getAccessibilityNodeProvider(androidComposeView)
+            .addExtraDataToAccessibilityNodeInfo(
+                virtualViewId,
+                info,
+                EXTRA_DATA_RENDERING_INFO_KEY,
+                Bundle(),
+            )
+
+        // Assert.
+        rule.runOnIdle {
+            val extraRenderingInfo = info.unwrap().extraRenderingInfo
+            assertThat(extraRenderingInfo).isNotNull()
+            assertThat(extraRenderingInfo!!.textColor).isEqualTo(textColor.toArgb())
+            assertThat(extraRenderingInfo!!.backgroundColor).isEqualTo(Color.Yellow.toArgb())
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 37)
     fun testPopulateExtraRenderingInfo_textColor_usesGlobalStyleNotSpanStyle() {
         // Arrange.
         val globalColor = Color.Blue
@@ -3407,6 +3443,109 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
         }
     }
 
+    @Test
+    @SdkSuppress(minSdkVersion = 37)
+    fun testPopulateExtraRenderingInfo_backgroundColor() {
+        // Arrange.
+        val backgroundColor = Color.Yellow
+        val tag = "BoxWithBackground"
+        rule.setContentWithAccessibilityEnabled {
+            Box(Modifier.size(10.dp).background(backgroundColor).semantics { testTag = tag })
+        }
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
+        val info = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(virtualViewId) }
+        assertThat(info.availableExtraData).contains(EXTRA_DATA_RENDERING_INFO_KEY)
+
+        // Act.
+        androidComposeView.composeAccessibilityDelegate
+            .getAccessibilityNodeProvider(androidComposeView)
+            .addExtraDataToAccessibilityNodeInfo(
+                virtualViewId,
+                info,
+                EXTRA_DATA_RENDERING_INFO_KEY,
+                Bundle(),
+            )
+
+        // Assert.
+        rule.runOnIdle {
+            val extraRenderingInfo = info.unwrap().extraRenderingInfo
+            assertThat(extraRenderingInfo).isNotNull()
+            assertThat(extraRenderingInfo!!.backgroundColor).isEqualTo(backgroundColor.toArgb())
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 37)
+    fun testPopulateExtraRenderingInfo_gradient_noBackgroundColor() {
+        // Arrange.
+        val tag = "BoxWithBackground"
+        rule.setContentWithAccessibilityEnabled {
+            Box(
+                Modifier.size(10.dp)
+                    .background(
+                        brush = Brush.linearGradient(colors = listOf(Color.Red, Color.Yellow))
+                    )
+                    .semantics { testTag = tag }
+            )
+        }
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
+        val info = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(virtualViewId) }
+
+        // Act.
+        androidComposeView.composeAccessibilityDelegate
+            .getAccessibilityNodeProvider(androidComposeView)
+            .addExtraDataToAccessibilityNodeInfo(
+                virtualViewId,
+                info,
+                EXTRA_DATA_RENDERING_INFO_KEY,
+                Bundle(),
+            )
+
+        // Assert.
+        rule.runOnIdle {
+            val extraRenderingInfo = info.unwrap().extraRenderingInfo
+            assertThat(extraRenderingInfo).isNotNull()
+            assertThat(extraRenderingInfo!!.backgroundColor).isEqualTo(0)
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 37)
+    fun testPopulateExtraRenderingInfo_backgroundColor_alphaCombined() {
+        // Arrange.
+        val baseColor = Color.Red.copy(alpha = 0.5f)
+        val brushAlpha = 0.6f
+        val expectedColor = baseColor.copy(alpha = baseColor.alpha * brushAlpha)
+        val tag = "BoxWithBackground"
+        rule.setContentWithAccessibilityEnabled {
+            Box(
+                Modifier.size(10.dp)
+                    .background(brush = SolidColor(baseColor), alpha = brushAlpha)
+                    .semantics { testTag = tag }
+            )
+        }
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
+        val info = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(virtualViewId) }
+        assertThat(info.availableExtraData).contains(EXTRA_DATA_RENDERING_INFO_KEY)
+
+        // Act.
+        androidComposeView.composeAccessibilityDelegate
+            .getAccessibilityNodeProvider(androidComposeView)
+            .addExtraDataToAccessibilityNodeInfo(
+                virtualViewId,
+                info,
+                EXTRA_DATA_RENDERING_INFO_KEY,
+                Bundle(),
+            )
+
+        // Assert.
+        rule.runOnIdle {
+            val extraRenderingInfo = info.unwrap().extraRenderingInfo
+            assertThat(extraRenderingInfo).isNotNull()
+            assertThat(extraRenderingInfo!!.backgroundColor).isEqualTo(expectedColor.toArgb())
+        }
+    }
+
     private fun AndroidComposeView.createAccessibilityNodeInfo(
         semanticsId: Int
     ): AccessibilityNodeInfoCompat {
@@ -3535,6 +3674,133 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
 
             // 5. Assert that no events were sent.
             assertThat(dispatchedEvents).isEmpty()
+        }
+    }
+
+    @Test
+    fun passwordSemantics_withIsPasswordObfuscated_mapsToAccessibilityNodeInfo() {
+        var isPasswordObfuscated by mutableStateOf(true)
+        val tag = "passwordField"
+        rule.setContentWithAccessibilityEnabled {
+            Box(
+                Modifier.size(10.dp).testTag(tag).semantics {
+                    password(isPasswordObfuscated = isPasswordObfuscated)
+                }
+            )
+        }
+
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
+        val infoInitially =
+            rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(virtualViewId) }
+        assertThat(infoInitially?.isPassword).isTrue()
+
+        rule.runOnIdle { isPasswordObfuscated = false }
+
+        val infoVisible =
+            rule.runOnIdle {
+                val newVirtualViewId = rule.onNodeWithTag(tag).semanticsId()
+                androidComposeView.createAccessibilityNodeInfo(newVirtualViewId)
+            }
+        assertThat(infoVisible?.isPassword).isFalse()
+    }
+
+    @Test
+    fun nonPasswordSemantics_withIsPasswordObfuscated_mapsToAccessibilityNodeInfo() {
+        var isPasswordObfuscated by mutableStateOf(true)
+        val tag = "nonPasswordField"
+        rule.setContentWithAccessibilityEnabled {
+            Box(
+                Modifier.size(10.dp).testTag(tag).semantics {
+                    this[SemanticsProperties.IsPasswordObfuscated] = isPasswordObfuscated
+                }
+            )
+        }
+
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
+        val infoInitially =
+            rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(virtualViewId) }
+        assertThat(infoInitially?.isPassword).isFalse()
+
+        rule.runOnIdle { isPasswordObfuscated = false }
+
+        val infoVisible =
+            rule.runOnIdle {
+                val newVirtualViewId = rule.onNodeWithTag(tag).semanticsId()
+                androidComposeView.createAccessibilityNodeInfo(newVirtualViewId)
+            }
+        assertThat(infoVisible?.isPassword).isFalse()
+    }
+
+    @Test
+    fun passwordVisibilityToggle_usingIsPasswordObfuscated_fromObfuscatedToRevealed_sendTwoSelectionEvents() {
+        var isPasswordObfuscated by mutableStateOf(true)
+        rule.mainClock.autoAdvance = false
+        rule.setContentWithAccessibilityEnabled {
+            Box(
+                Modifier.size(10.dp).semantics(mergeDescendants = true) {
+                    setText { true }
+                    password(isPasswordObfuscated = isPasswordObfuscated)
+                    textSelectionRange = TextRange(4)
+                    editableText = AnnotatedString(if (isPasswordObfuscated) "****" else "1234")
+                }
+            )
+        }
+
+        rule.runOnIdle { isPasswordObfuscated = false }
+        rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+
+        rule.runOnIdle {
+            assertThat(dispatchedAccessibilityEvents)
+                .comparingElementsUsing(AccessibilityEventComparator)
+                .containsExactly(
+                    AccessibilityEvent().apply {
+                        eventType = TYPE_VIEW_TEXT_SELECTION_CHANGED
+                        className = "android.widget.EditText"
+                        text.add("1234")
+                        itemCount = 4
+                        fromIndex = 4
+                        toIndex = 4
+                        isPassword = false
+                    },
+                    AccessibilityEvent().apply {
+                        eventType = TYPE_VIEW_TEXT_SELECTION_CHANGED
+                        className = "android.widget.EditText"
+                        text.add("1234")
+                        itemCount = 4
+                        fromIndex = 4
+                        toIndex = 4
+                        isPassword = false
+                    },
+                    AccessibilityEvent().apply {
+                        eventType = TYPE_WINDOW_CONTENT_CHANGED
+                        isPassword = false
+                    },
+                )
+        }
+    }
+
+    @Test
+    fun passwordVisibilityToggle_usingIsPasswordObfuscated_fromObfuscatedToRevealed_doNotSendTextChangeEvent() {
+        var isPasswordObfuscated by mutableStateOf(true)
+        rule.mainClock.autoAdvance = false
+        rule.setContentWithAccessibilityEnabled {
+            Box(
+                Modifier.size(10.dp).semantics(mergeDescendants = true) {
+                    setText { true }
+                    password(isPasswordObfuscated = isPasswordObfuscated)
+                    textSelectionRange = TextRange(4)
+                    editableText = AnnotatedString(if (isPasswordObfuscated) "****" else "1234")
+                }
+            )
+        }
+
+        rule.runOnIdle { isPasswordObfuscated = false }
+        rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+
+        rule.runOnIdle {
+            assertThat(dispatchedAccessibilityEvents)
+                .comparingElementsUsing(AccessibilityEventComparator)
+                .doesNotContain(AccessibilityEvent().apply { eventType = TYPE_VIEW_TEXT_CHANGED })
         }
     }
 

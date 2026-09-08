@@ -21,6 +21,7 @@ import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.autofill.FillableData
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.ColorProducer
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.AnnotatedString
@@ -286,6 +287,10 @@ public object SemanticsProperties {
     /** @see SemanticsPropertyReceiver.password */
     public val Password: SemanticsPropertyKey<Unit> = AccessibilityKey<Unit>("Password")
 
+    /** @see SemanticsPropertyReceiver.password */
+    public val IsPasswordObfuscated: SemanticsPropertyKey<Boolean> =
+        AccessibilityKey<Boolean>("IsPasswordObfuscated")
+
     /** @see SemanticsPropertyReceiver.error */
     public val Error: SemanticsPropertyKey<String> = AccessibilityKey<String>("Error")
 
@@ -299,6 +304,13 @@ public object SemanticsProperties {
 
     /** @see SemanticsPropertyReceiver.maxTextLength */
     public val MaxTextLength: SemanticsPropertyKey<Int> = SemanticsPropertyKey<Int>("MaxTextLength")
+
+    /** @see SemanticsPropertyReceiver.backgroundColor */
+    public val BackgroundColor: SemanticsPropertyKey<ColorProducer> =
+        SemanticsPropertyKey<ColorProducer>(
+            name = "BackgroundColor",
+            mergePolicy = { parentValue, _ -> parentValue },
+        )
 
     /** @see SemanticsPropertyReceiver.shape */
     public val Shape: SemanticsPropertyKey<Shape> =
@@ -1016,6 +1028,14 @@ public var SemanticsPropertyReceiver.stateDescription: String by
     SemanticsProperties.StateDescription
 
 /**
+ * Background color of the node.
+ *
+ * This must incorporate the background's alpha property as well as the color's alpha, if provided.
+ */
+public var SemanticsPropertyReceiver.backgroundColor: ColorProducer by
+    SemanticsProperties.BackgroundColor
+
+/**
  * The semantics represents a range of possible values with a current value. For example, when used
  * on a slider control, this will allow screen readers to communicate the slider's state.
  */
@@ -1373,9 +1393,32 @@ public var SemanticsPropertyReceiver.inputTextSuggestionState: InputTextSuggesti
 /** Whether this semantics node is editable, e.g. an editable text field. */
 public var SemanticsPropertyReceiver.isEditable: Boolean by SemanticsProperties.IsEditable
 
-/** The node is marked as a password. */
-public fun SemanticsPropertyReceiver.password(): Unit {
+/**
+ * Marks this semantics node as a password field (e.g. for credentials and sensitive text input).
+ *
+ * Setting password semantics identifies the node as a credential field, ensuring appropriate
+ * handling for credential security, autofill, and speech masking. If the password text is visually
+ * revealed to the user, pass [isPasswordObfuscated] as `false` to allow screen readers (such as
+ * TalkBack) to announce the revealed characters aloud.
+ *
+ * Note: [isPasswordObfuscated] is descriptive for accessibility services and tests; it does not
+ * control the visual masking or rendering of the password text field itself (which is typically
+ * managed by the text field's visual or codepoint transformation).
+ *
+ * @param isPasswordObfuscated whether the password in a secure text field is currently visually
+ *   masked with obfuscation characters. When false (revealed), accessibility services such as
+ *   TalkBack may announce the revealed character content aloud to the user instead of masking it.
+ * @see SemanticsProperties.Password
+ * @see SemanticsProperties.IsPasswordObfuscated
+ */
+public fun SemanticsPropertyReceiver.password(isPasswordObfuscated: Boolean = true): Unit {
     this[SemanticsProperties.Password] = Unit
+    this[SemanticsProperties.IsPasswordObfuscated] = isPasswordObfuscated
+}
+
+@Deprecated(message = "Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+public fun SemanticsPropertyReceiver.password(): Unit {
+    password(isPasswordObfuscated = true)
 }
 
 /**

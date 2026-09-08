@@ -28,11 +28,18 @@ import platform.QuartzCore.CACurrentMediaTime
 
 internal class IosPrefetchScheduler(
     private val currentTime: () -> NSTimeInterval = { CACurrentMediaTime() },
-    private var onHasWorkScheduled: (Boolean) -> Unit,
+    private var onPrefetchVoteChanged: (Boolean) -> Unit,
 ) : PlatformPrefetchScheduler {
     private val scheduledPrefetchRequests = ScheduledPrefetchRequests()
     private val scope = PrefetchRequestScopeImpl()
     private val hasWorkScheduled: Boolean get() = scheduledPrefetchRequests.hasWorkScheduled
+
+    /**
+     * Whether the scheduler currently votes for prefetch activities to be running.
+     *
+     * Tracked here so [onPrefetchVoteChanged] is only invoked when the vote actually changes.
+     */
+    private var isPrefetchVoteActive: Boolean = false
 
     /**
      * Marks the start of the display-link interval where drawing happened.
@@ -73,7 +80,7 @@ internal class IosPrefetchScheduler(
         }
 
         scheduledPrefetchRequests.addHighPriority(request)
-        onHasWorkScheduled(hasWorkScheduled)
+        updatePrefetchVote(hasWorkScheduled)
     }
 
     override fun scheduleLowPriorityPrefetch(request: PlatformPrefetchRequest) {
@@ -86,7 +93,7 @@ internal class IosPrefetchScheduler(
         }
 
         scheduledPrefetchRequests.addLowPriority(request)
-        onHasWorkScheduled(hasWorkScheduled)
+        updatePrefetchVote(hasWorkScheduled)
     }
 
     /**
@@ -106,7 +113,7 @@ internal class IosPrefetchScheduler(
             "IosPrefetchScheduler.execute() must be called on main thread"
         }
         if (isDisposed) {
-            onHasWorkScheduled(false)
+            updatePrefetchVote(false)
             return
         }
 
@@ -119,7 +126,7 @@ internal class IosPrefetchScheduler(
         }
 
         if (!hasWorkScheduled) {
-            onHasWorkScheduled(false)
+            updatePrefetchVote(false)
             return
         }
 
@@ -137,7 +144,7 @@ internal class IosPrefetchScheduler(
                 }
         }
 
-        onHasWorkScheduled(hasWorkScheduled)
+        updatePrefetchVote(hasWorkScheduled)
         traceValue("compose:lazy:prefetch:available_time_nanos", 0L)
     }
 
@@ -166,8 +173,15 @@ internal class IosPrefetchScheduler(
         }
         isDisposed = true
         scheduledPrefetchRequests.clear()
-        onHasWorkScheduled(false)
-        onHasWorkScheduled = {}
+        updatePrefetchVote(false)
+        onPrefetchVoteChanged = {}
+    }
+
+    private fun updatePrefetchVote(hasWork: Boolean) {
+        if (hasWork != isPrefetchVoteActive) {
+            isPrefetchVoteActive = hasWork
+            onPrefetchVoteChanged(hasWork)
+        }
     }
 
     private fun executeRequest(): Boolean {
