@@ -98,7 +98,7 @@ private val UIGestureRecognizerState.isOngoing: Boolean
             else -> false
         }
 
-internal typealias TouchesEvensHandler = (
+internal typealias TouchesEventHandler = (
     allTrackedTouches: Set<UITouch>,
     changedTouches: Set<UITouch>,
     event: UIEvent?,
@@ -114,7 +114,7 @@ internal typealias TouchesEvensHandler = (
  * to control touches delivery to [UIView]s and their [UIGestureRecognizer]s in a fine-grain manner.
  */
 private class TouchesGestureRecognizer(
-    private var onTouchesEvent: TouchesEvensHandler,
+    private var onTouchesEvent: TouchesEventHandler,
     private var onCancelAllTouches: (cancelledTouches: Set<UITouch>) -> Unit,
     private var canIgnoreDragGesture: (UIGestureRecognizer) -> Boolean,
     private var isHigherPriorityGestureTrackingTouches: () -> Boolean
@@ -571,7 +571,7 @@ private class ScrollGestureRecognizer(
 internal class OverlayInputView(
     private var hitTestInteropView: (point: CValue<CGPoint>) -> UIView?,
     private var isPointInsideInteractionBounds: (CValue<CGPoint>) -> Boolean,
-    private var onTouchesEvent: TouchesEvensHandler,
+    private var onTouchesEvent: TouchesEventHandler,
     private var onCancelAllTouches: (cancelledTouches: Set<UITouch>) -> Unit,
     onScrollEvent: (position: DpOffset, delta: DpOffset, event: UIEvent?, eventKind: TouchesEventKind) -> Unit,
     onCancelScroll: () -> Unit,
@@ -811,7 +811,7 @@ internal class BackgroundInputView(
     private var onLayoutSubviews: () -> Unit,
     private var hitTestInteropView: (point: CValue<CGPoint>) -> UIView?,
     private var isPointInsideInteractionBounds: (CValue<CGPoint>) -> Boolean,
-    onTouchesEvent: TouchesEvensHandler,
+    onTouchesEvent: TouchesEventHandler,
     onCancelAllTouches: (cancelledTouches: Set<UITouch>) -> Unit,
     isHigherPriorityGestureTrackingTouches: () -> Boolean,
 ) : UIView(CGRectZero.readValue()) {
