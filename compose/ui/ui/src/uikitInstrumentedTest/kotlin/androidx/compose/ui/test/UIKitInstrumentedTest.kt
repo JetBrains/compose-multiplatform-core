@@ -410,10 +410,12 @@ internal class UIKitInstrumentedTest(
 
         // Stop text editing and hide keyboard if any
         attachedViewController?.view?.endEditing(force = true)
-        waitForIdle()
-
-        AccessibilityNotification.onNotificationPostedForTests = null
-        appDelegate.cleanUp()
+        try {
+            waitForIdle()
+        } finally {
+            AccessibilityNotification.onNotificationPostedForTests = null
+            appDelegate.cleanUp()
+        }
     }
 
     fun stopComposeScene() {
