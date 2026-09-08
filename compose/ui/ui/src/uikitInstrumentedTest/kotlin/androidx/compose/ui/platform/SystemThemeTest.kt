@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.compose.ui.platform
 
 import androidx.compose.ui.LocalSystemTheme
+import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import org.jetbrains.skiko.SystemTheme
 import platform.UIKit.UIUserInterfaceStyle
 
 class SystemThemeTest {
@@ -34,7 +36,7 @@ class SystemThemeTest {
             systemTheme = LocalSystemTheme.current
         }
 
-        assertEquals(SystemTheme.LIGHT, systemTheme)
+        assertEquals(SystemTheme.Light, systemTheme)
     }
 
     @Test
@@ -45,7 +47,7 @@ class SystemThemeTest {
             systemTheme = LocalSystemTheme.current
         }
 
-        assertEquals(SystemTheme.DARK, systemTheme)
+        assertEquals(SystemTheme.Dark, systemTheme)
     }
 
     @Test
@@ -59,14 +61,14 @@ class SystemThemeTest {
 
         appDelegate.window?.overrideUserInterfaceStyle =
             UIUserInterfaceStyle.UIUserInterfaceStyleLight
-        waitUntil("System theme should eventually be Light") { systemTheme == SystemTheme.LIGHT }
+        waitUntil("System theme should eventually be Light") { systemTheme == SystemTheme.Light }
 
         appDelegate.window?.overrideUserInterfaceStyle =
             UIUserInterfaceStyle.UIUserInterfaceStyleDark
-        waitUntil("System theme should eventually be Dark") { systemTheme == SystemTheme.DARK }
+        waitUntil("System theme should eventually be Dark") { systemTheme == SystemTheme.Dark }
 
         appDelegate.window?.overrideUserInterfaceStyle =
             UIUserInterfaceStyle.UIUserInterfaceStyleLight
-        waitUntil("System theme should eventually be Light") { systemTheme == SystemTheme.LIGHT }
+        waitUntil("System theme should eventually be Light") { systemTheme == SystemTheme.Light }
     }
 }

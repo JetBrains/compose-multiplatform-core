@@ -27,6 +27,7 @@ import kotlin.math.absoluteValue
 import kotlinx.cinterop.CValue
 import org.jetbrains.skia.BreakIterator
 import platform.CoreGraphics.CGRect
+import platform.CoreGraphics.CGRectMake
 import platform.Foundation.NSCharacterSet
 import platform.UIKit.NSWritingDirection
 import platform.UIKit.NSWritingDirectionLeftToRight
@@ -154,12 +155,7 @@ internal interface TextEditingDelegate {
      * Returned value must be in range between 0 and length of the text (inclusive).
      */
     fun verticalPositionFromPosition(position: Int, verticalOffset: Int): Int?
-}
 
-/**
- * Extension of [TextEditingDelegate] for the Native iOS Text Input path.
- */
-internal interface NativeTextEditingDelegate : TextEditingDelegate {
     /**
      * Returns the caret rectangle for a given text position.
      * https://developer.apple.com/documentation/uikit/uitextinput/caretrect(for:)
@@ -168,7 +164,12 @@ internal interface NativeTextEditingDelegate : TextEditingDelegate {
      * if the position is invalid.
      */
     fun caretDpRectForPosition(position: Int): DpRect?
+}
 
+/**
+ * Extension of [TextEditingDelegate] for the Native iOS Text Input path.
+ */
+internal interface NativeTextEditingDelegate : TextEditingDelegate {
     /**
      * Returns the selection rectangles that enclose a range of text.
      * https://developer.apple.com/documentation/uikit/uitextinput/selectionrects(for:)
@@ -330,6 +331,13 @@ internal fun TextEditingDelegate.selectTextNearCursor() {
     if (range == selection) return
 
     setSelectedTextRange(range)
+}
+
+internal fun TextEditingDelegate.caretRectForPosition(position: UITextPosition): CValue<CGRect> {
+    val fallbackRect = CGRectMake(x = 1.0, y = 1.0, width = 0.0, height = 1.0)
+    val position = (position as? TextInputPosition)?.position ?: return fallbackRect
+    val caretDpRect = caretDpRectForPosition(position)
+    return caretDpRect?.toCGRect() ?: fallbackRect
 }
 
 /**
