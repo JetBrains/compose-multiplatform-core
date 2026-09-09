@@ -85,9 +85,8 @@ internal class TextInputService(
 
     private val toolbarConnection: ComposeTextInputConnection?
         get() = currentInputConnection as? ComposeTextInputConnection
+            ?: holders.firstOrNull { it.delegate.isFocused }?.connection as? ComposeTextInputConnection
             ?: selectionContainerConnection
-            ?: holders.firstOrNull { it.delegate.isFocused }
-                ?.let { it.connection as? ComposeTextInputConnection }
 
     val hasInvalidations: Boolean
         get() = currentInputConnection?.hasInvalidations
@@ -174,7 +173,7 @@ internal class TextInputService(
                 onCutRequested: (() -> Unit)?,
                 onSelectAllRequested: (() -> Unit)?
             ) {
-                if (currentInputConnection == null && selectionContainerConnection == null) {
+                if (toolbarConnection == null) {
                     // Entry point for showing the context menu in SelectionContainer scenarios, where
                     // there is no active text input session. iOS requires a UIView that can become first
                     // responder in order to host the context menu, so we create a dedicated connection
