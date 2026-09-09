@@ -23,6 +23,7 @@ import androidx.collection.mutableObjectListOf
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.PlatformContext
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
@@ -45,6 +46,7 @@ import kotlinx.coroutines.launch
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
+import org.w3c.dom.events.KeyboardEvent
 
 internal class ComposeWebSemanticsListener(
     val webSemanticsRoot: HTMLElement,
@@ -139,8 +141,9 @@ internal class ComposeWebSemanticsListener(
             }
         }
 
-        // Event delegation: all nodes delegate to one global click listener
+        // Event delegation: all nodes delegate to global accessibility action listeners.
         webSemanticsRoot.addEventListener("click", onClick)
+        webSemanticsRoot.addEventListener("keydown", onKeyDown)
     }
 
     private val semanticsOwners = mutableObjectListOf<SemanticsOwner>()
@@ -197,6 +200,18 @@ internal class ComposeWebSemanticsListener(
             config.contains(SemanticsActions.OnClick)
         ) {
             config[SemanticsActions.OnClick].action?.invoke()
+        }
+    }
+
+    private val onKeyDown: (Event) -> Unit = onKeyDown@ { event ->
+        val keyboardEvent = event as? KeyboardEvent ?: return@onKeyDown
+        val target = event.target as? HTMLElement ?: return@onKeyDown
+        val semanticsNode = a11yNodeToSemanticsNode[target] ?: return@onKeyDown
+        val config = semanticsNode.config
+        if (config.contains(SemanticsProperties.Disabled)) return@onKeyDown
+
+        if (A11YSliderUtils.isSliderNode(semanticsNode)) {
+            A11YSliderUtils.handleSliderKeyEvents(keyboardEvent, semanticsNode)
         }
     }
 
@@ -286,16 +301,16 @@ internal class ComposeWebSemanticsListener(
             val config = node.config
             val children = node.replacedChildren
 
-            val htmlNode = if (config.contains(SemanticsProperties.Text)) {
+            val htmlNode = syncNode(node, config, htmlParent, rootPosition)
+            if (config.hasNonEditableText()) {
                 // Usually, the order of SemanticsNode children matches the mirroring a11y HTML.
                 // But for text with links we have to interleave text parts with links.
                 // We split text into parts: plain text fragments and links.
                 // That's why a text node doesn't push its children to the traversal queue.
                 // It handles its link children itself:
-                syncTextNode(node, config, children, htmlParent, rootPosition)
+                syncTextContentAndChildren(node, config, children, htmlNode, rootPosition)
             } else {
-                syncNode(node, config, htmlParent, rootPosition)
-                    .also { pushNodesForTraversal(children, it) }
+                pushNodesForTraversal(children, htmlNode)
             }
             check(htmlNode !== htmlParent) { "A11Y node ${node.id} cannot be its own parent" }
             targetParentToChildren.getOrPut(htmlParent) { mutableListOf() }.add(htmlNode)
@@ -398,9 +413,11 @@ internal class ComposeWebSemanticsListener(
             htmlNode.textContent = text
         }
 
-        if (config.contains(SemanticsProperties.ContentDescription)) {
-            val contentDescription = config[SemanticsProperties.ContentDescription]
-            htmlNode.setAttribute("aria-label", contentDescription.fastJoinToString(", "))
+        val ariaLabel = config.getAriaLabel()
+        if (ariaLabel != null) {
+            htmlNode.setAttribute("aria-label", ariaLabel)
+        } else {
+            htmlNode.removeAttribute("aria-label")
         }
 
         if (config.contains(SemanticsProperties.TestTag)) {
@@ -412,8 +429,15 @@ internal class ComposeWebSemanticsListener(
 
         if (config.contains(SemanticsProperties.EditableText)) {
             val editableText = config[SemanticsProperties.EditableText].text
-            if (htmlNode.textContent != editableText) {
-                htmlNode.textContent = editableText
+           
+            val isObfuscatedPassword = config.isObfuscatedPassword()
+            val exposedEditableText = if (isObfuscatedPassword) {
+                obfuscatedPassword(editableText)
+            } else {
+                editableText
+            }
+             if (htmlNode.textContent != exposedEditableText) {
+                htmlNode.textContent = exposedEditableText
             }
 
             val editable = config.getOrNull(SemanticsProperties.IsEditable) ?: false
@@ -457,6 +481,28 @@ internal class ComposeWebSemanticsListener(
 
         val roleId = config.getRoleId()
         setA11YAriaRole(element = htmlNode, roleId)
+
+        if (roleId == AriaRoleId.Slider &&
+            !config.contains(SemanticsProperties.Disabled) &&
+            config.contains(SemanticsActions.SetProgress)
+        ) {
+            htmlNode.setAttribute("tabindex", "0")
+        } else {
+            htmlNode.removeAttribute("tabindex")
+        }
+
+        if (config.contains(SemanticsProperties.ProgressBarRangeInfo)) {
+            A11YSliderUtils.setA11YProgressBarRangeInfo(htmlNode, config)
+        } else {
+            A11YSliderUtils.removeA11YProgressBarRangeInfo(htmlNode)
+        }
+
+        if (config.contains(SemanticsProperties.ToggleableState)) {
+            val ariaChecked = config[SemanticsProperties.ToggleableState].toAriaChecked()
+            htmlNode.setAttribute("aria-checked", ariaChecked)
+        } else {
+            htmlNode.removeAttribute("aria-checked")
+        }
 
         val isCollection =
             roleId == AriaRoleId.List || roleId == AriaRoleId.Grid
@@ -511,8 +557,8 @@ internal class ComposeWebSemanticsListener(
     }
 
     /**
-     * Syncs a node with [SemanticsProperties.Text], attaching its link children right away instead
-     * of scheduling them for the regular traversal.
+     * Syncs the content and children of a non-editable node with [SemanticsProperties.Text],
+     * attaching its link children right away instead of scheduling them for the regular traversal.
      *
      * A link doesn't have its own text in the semantics tree: the whole text (including the links)
      * belongs to the text node, while every link range is a separate child node marked with
@@ -537,13 +583,13 @@ internal class ComposeWebSemanticsListener(
      * [children] other than the links (a text node might be a merged node with arbitrary merging
      * children) are pushed to the regular traversal and end up after the links.
      */
-    private fun syncTextNode(
+    private fun syncTextContentAndChildren(
         node: SemanticsNode,
         config: SemanticsConfiguration,
         children: List<SemanticsNode>,
-        htmlParent: HTMLElement,
+        htmlNode: HTMLElement,
         rootPosition: Offset,
-    ): HTMLElement {
+    ) {
         val texts = config[SemanticsProperties.Text]
         val linksCount = children.count { it.config.contains(SemanticsProperties.LinkTestMarker) }
 
@@ -552,12 +598,7 @@ internal class ComposeWebSemanticsListener(
         val textParts = split?.textParts?.takeIf { split.matchesLinksCount(linksCount) }
 
         val text = texts.fastJoinToString("\n") { it.text }
-        val htmlNode = syncNode(
-            semanticsNode = node,
-            config = config,
-            htmlParent = htmlParent,
-            rootPosition = rootPosition,
-        )
+
         val targetTextAndLinks = mutableListOf<Any>()
         if (textParts == null) {
             targetTextAndLinks.add(text)
@@ -604,7 +645,6 @@ internal class ComposeWebSemanticsListener(
 
         updateTextAndLinks(htmlNode, targetTextAndLinks, a11YScrollController.getScrollSizer(node))
         deferredChildren?.let { pushNodesForTraversal(it, htmlNode) }
-        return htmlNode
     }
 
     /** Updates the text fragments and semantic link elements after the optional scroll sizer. */
@@ -661,6 +701,7 @@ internal class ComposeWebSemanticsListener(
         if (!hasStarted || hasStopped) return
 
         webSemanticsRoot.removeEventListener("click", onClick)
+        webSemanticsRoot.removeEventListener("keydown", onKeyDown)
         a11YScrollController.clear()
 
         dfsSemanticsNodes.clear()

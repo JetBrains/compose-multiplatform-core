@@ -21,6 +21,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface CMPAccessibilityElement : UIAccessibilityElement <UIFocusItem>
 
+@property (nonatomic, assign) BOOL isDisposed;
+
 - (NSArray<UIAccessibilityCustomAction *> *)accessibilityCustomActions;
 
 - (UIAccessibilityTraits)accessibilityTraits;
