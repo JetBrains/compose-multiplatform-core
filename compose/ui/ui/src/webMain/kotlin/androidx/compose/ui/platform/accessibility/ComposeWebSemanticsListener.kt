@@ -298,16 +298,16 @@ internal class ComposeWebSemanticsListener(
             val config = node.config
             val children = node.replacedChildren
 
-            val htmlNode = if (config.contains(SemanticsProperties.Text)) {
+            val htmlNode = syncNode(node, config, htmlParent, rootPosition)
+            if (config.hasNonEditableText()) {
                 // Usually, the order of SemanticsNode children matches the mirroring a11y HTML.
                 // But for text with links we have to interleave text parts with links.
                 // We split text into parts: plain text fragments and links.
                 // That's why a text node doesn't push its children to the traversal queue.
                 // It handles its link children itself:
-                syncTextNode(node, config, children, htmlParent, rootPosition)
+                syncTextContentAndChildren(node, config, children, htmlNode, rootPosition)
             } else {
-                syncNode(node, config, htmlParent, rootPosition)
-                    .also { pushNodesForTraversal(children, it) }
+                pushNodesForTraversal(children, htmlNode)
             }
             check(htmlNode !== htmlParent) { "A11Y node ${node.id} cannot be its own parent" }
             targetParentToChildren.getOrPut(htmlParent) { mutableListOf() }.add(htmlNode)
@@ -410,9 +410,11 @@ internal class ComposeWebSemanticsListener(
             htmlNode.innerText = text
         }
 
-        if (config.contains(SemanticsProperties.ContentDescription)) {
-            val contentDescription = config[SemanticsProperties.ContentDescription]
-            htmlNode.setAttribute("aria-label", contentDescription.fastJoinToString(", "))
+        val ariaLabel = config.getAriaLabel()
+        if (ariaLabel != null) {
+            htmlNode.setAttribute("aria-label", ariaLabel)
+        } else {
+            htmlNode.removeAttribute("aria-label")
         }
 
         if (config.contains(SemanticsProperties.TestTag)) {
@@ -422,8 +424,14 @@ internal class ComposeWebSemanticsListener(
 
         if (config.contains(SemanticsProperties.EditableText)) {
             val editableText = config[SemanticsProperties.EditableText].text
-            if (htmlNode.innerText != editableText) {
-                htmlNode.innerText = editableText
+            val isObfuscatedPassword = config.isObfuscatedPassword()
+            val exposedEditableText = if (isObfuscatedPassword) {
+                obfuscatedPassword(editableText)
+            } else {
+                editableText
+            }
+            if (htmlNode.innerText != exposedEditableText) {
+                htmlNode.innerText = exposedEditableText
             }
 
             if (justCreated) {
@@ -518,8 +526,8 @@ internal class ComposeWebSemanticsListener(
     }
 
     /**
-     * Syncs a node with [SemanticsProperties.Text], attaching its link children right away instead
-     * of scheduling them for the regular traversal.
+     * Syncs the content and children of a non-editable node with [SemanticsProperties.Text],
+     * attaching its link children right away instead of scheduling them for the regular traversal.
      *
      * A link doesn't have its own text in the semantics tree: the whole text (including the links)
      * belongs to the text node, while every link range is a separate child node marked with
@@ -544,13 +552,13 @@ internal class ComposeWebSemanticsListener(
      * [children] other than the links (a text node might be a merged node with arbitrary merging
      * children) are pushed to the regular traversal and end up after the links.
      */
-    private fun syncTextNode(
+    private fun syncTextContentAndChildren(
         node: SemanticsNode,
         config: SemanticsConfiguration,
         children: List<SemanticsNode>,
-        htmlParent: HTMLElement,
+        htmlNode: HTMLElement,
         rootPosition: Offset,
-    ): HTMLElement {
+    ) {
         val texts = config[SemanticsProperties.Text]
         val linksCount = children.count { it.config.contains(SemanticsProperties.LinkTestMarker) }
 
@@ -559,12 +567,7 @@ internal class ComposeWebSemanticsListener(
         val textParts = split?.textParts?.takeIf { split.matchesLinksCount(linksCount) }
 
         val text = texts.fastJoinToString("\n") { it.text }
-        val htmlNode = syncNode(
-            semanticsNode = node,
-            config = config,
-            htmlParent = htmlParent,
-            rootPosition = rootPosition,
-        )
+
         val targetTextAndLinks = mutableListOf<Any>()
         if (textParts == null) {
             targetTextAndLinks.add(text)
@@ -611,7 +614,6 @@ internal class ComposeWebSemanticsListener(
 
         updateTextAndLinks(htmlNode, targetTextAndLinks, a11YScrollController.getScrollSizer(node))
         deferredChildren?.let { pushNodesForTraversal(it, htmlNode) }
-        return htmlNode
     }
 
     /** Updates the text fragments and semantic link elements after the optional scroll sizer. */

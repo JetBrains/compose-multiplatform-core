@@ -44,5 +44,8 @@ val BugsScreen = Screen.Selection("Web Bug Reproducers", screens = listOf(
     Screen.Example("Crash after resize") {
         CrashAfterResizeDemo()
     },
+    Screen.Example("A11Y Text Value Not Updated") {
+        A11YTextValueNotUpdated()
+    }
 ))
 

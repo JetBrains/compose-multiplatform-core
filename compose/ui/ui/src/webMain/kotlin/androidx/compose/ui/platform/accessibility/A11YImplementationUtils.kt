@@ -16,17 +16,16 @@
 
 package androidx.compose.ui.platform.accessibility
 
-import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
+import androidx.compose.ui.util.fastJoinToString
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
 
@@ -275,4 +274,29 @@ internal fun splitTextAndLinks(texts: List<AnnotatedString>): TextAndLinksSplit 
     parts.add(pendingText.toString())
 
     return TextAndLinksSplit(textParts = parts, linkTexts = linkTexts)
+}
+
+
+internal fun SemanticsConfiguration.getAriaLabel(): String? {
+    return when {
+        this.contains(SemanticsProperties.ContentDescription) ->
+            this[SemanticsProperties.ContentDescription].fastJoinToString(", ")
+        this.contains(SemanticsProperties.EditableText) &&
+            this.contains(SemanticsProperties.Text) ->
+            this[SemanticsProperties.Text].fastJoinToString("\n") { it.text }
+        else -> null
+    }
+}
+
+internal fun SemanticsConfiguration.hasNonEditableText(): Boolean {
+    return this.contains(SemanticsProperties.Text) && !this.contains(SemanticsProperties.EditableText)
+}
+
+internal fun SemanticsConfiguration.isObfuscatedPassword(): Boolean {
+    return this.contains(SemanticsProperties.Password) &&
+        this.getOrElse(SemanticsProperties.IsPasswordObfuscated) { true }
+}
+
+internal fun obfuscatedPassword(password: String): String {
+    return "\u2022".repeat(password.length)
 }
