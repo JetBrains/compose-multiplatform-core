@@ -62,7 +62,7 @@ interface TextInputContainer {
 
     /**
      * Provides a temporary connection between non-editable text field and iOS text input.
-     * Used to support the auto-safe/autofill password feature.
+     * Used to support the auto-save/autofill password feature.
      */
     interface Delegate {
         val text: String
