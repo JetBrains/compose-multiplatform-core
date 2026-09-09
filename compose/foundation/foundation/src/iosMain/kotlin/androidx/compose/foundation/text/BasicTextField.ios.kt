@@ -190,7 +190,9 @@ private class BasicTextFieldOverlayNode(
     private fun observeMirroredState() {
         stateObserverJob?.cancel()
         stateObserverJob = coroutineScope.launch {
-            snapshotFlow { transformedState.visualText.let { it.toString() to it.selection } }
+            snapshotFlow {
+                transformedState.untransformedText.let { it.toString() to it.selection }
+            }
                 .collect {
                     delegate.refreshValue()
                 }
@@ -230,26 +232,23 @@ private class BasicTextFieldInputDelegate(
 
     override var isFocused: Boolean = false
 
-    private val visualText
-        get() = transformedState.visualText
+    private val untransformedText
+        get() = transformedState.untransformedText
 
-    /**
-     * The last known state of the text field.
-     */
-    override var text: String = visualText.toString()
+    override var text: String = untransformedText.toString()
         private set
 
-    override var selectionTextRange: TextRange = visualText.selection
+    override var selectionTextRange: TextRange = untransformedText.selection
         private set
 
-    override var markedTextRange: TextRange? = visualText.composition
+    override var markedTextRange: TextRange? = transformedState.untransformedComposition
         private set
 
     fun refreshValue() {
-        val visualText = visualText
-        text = visualText.toString()
-        selectionTextRange = visualText.selection
-        markedTextRange = visualText.composition
+        val untransformedText = untransformedText
+        text = untransformedText.toString()
+        selectionTextRange = untransformedText.selection
+        markedTextRange = transformedState.untransformedComposition
     }
 
     private inline fun edit(block: () -> Unit) {
@@ -262,20 +261,27 @@ private class BasicTextFieldInputDelegate(
     }
 
     override fun replaceRange(range: TextRange, text: String) = edit {
-        transformedState.replaceText(text, range)
+        replaceUntransformedText(range, text)
     }
 
     override fun deleteBackward() = edit {
-        val selection = visualText.selection
+        val selection = untransformedText.selection
         if (!selection.collapsed) {
             transformedState.deleteSelectedText()
         } else if (selection.min > 0) {
-            transformedState.replaceText("", TextRange(selection.min - 1, selection.max))
+            replaceUntransformedText(TextRange(selection.min - 1, selection.max), "")
         }
     }
 
     override fun setSelectedText(range: TextRange?) = edit {
-        transformedState.selectCharsIn(range ?: TextRange(visualText.length))
+        transformedState.selectUntransformedCharsIn(range ?: TextRange(untransformedText.length))
+    }
+
+    private fun replaceUntransformedText(range: TextRange, newText: String) {
+        transformedState.editUntransformedTextAsUser {
+            replace(range.min, range.max, newText)
+            setSelectionCoerced(range.min + newText.length)
+        }
     }
 
     override fun setMarkedText(markedText: String?, selectedRange: TextRange) {

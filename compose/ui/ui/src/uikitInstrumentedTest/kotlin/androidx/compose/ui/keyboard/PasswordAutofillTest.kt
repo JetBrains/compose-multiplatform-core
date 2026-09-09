@@ -17,8 +17,10 @@
 package androidx.compose.ui.keyboard
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.text.BasicSecureTextField
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextObfuscationMode
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,6 +32,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.findAllUITextInputViews
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.PlatformImeOptions
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -238,9 +241,10 @@ internal class PasswordAutofillTest {
                     modifier = usernameModifier,
                     keyboardOptions = usernameOptions,
                 )
-                BasicTextField(
+                BasicSecureTextField(
                     state = rememberTextFieldState(PASSWORD),
                     keyboardOptions = passwordOptions,
+                    textObfuscationMode = TextObfuscationMode.Hidden,
                 )
             } else {
                 BasicTextField(
@@ -253,6 +257,7 @@ internal class PasswordAutofillTest {
                     value = PASSWORD,
                     onValueChange = {},
                     keyboardOptions = passwordOptions,
+                    visualTransformation = PasswordVisualTransformation(),
                 )
             }
         }
