@@ -79,6 +79,7 @@ import org.jetbrains.skia.paragraph.ParagraphStyle
 import org.jetbrains.skia.paragraph.PlaceholderAlignment
 import org.jetbrains.skia.paragraph.PlaceholderStyle
 import org.jetbrains.skia.paragraph.Shadow as SkShadow
+import org.jetbrains.skia.paragraph.StrutStyle
 import org.jetbrains.skia.paragraph.TextBox
 import org.jetbrains.skia.paragraph.TextIndent as SkTextIndent
 import org.jetbrains.skia.paragraph.TextStyle as SkTextStyle
@@ -652,6 +653,15 @@ internal class ParagraphBuilder(
              * internal (between lines in multiline text) calculated as-is.
              */
             pStyle.heightMode = HeightMode.DISABLE_ALL
+        }
+
+        if (lineHeight != null && lineHeight <= computedStyle.fontSize) {
+            // keep empty and non-empty lines on the same baseline, without a forced strut,
+            // Skia gives an empty line a different height and then baseline changes when line receives its first glyph
+            pStyle.strutStyle = StrutStyle().apply {
+                fontSize = computedStyle.fontSize
+                isHeightForced = true
+            }
         }
 
         pStyle.direction = textDirection.toSkDirection()
