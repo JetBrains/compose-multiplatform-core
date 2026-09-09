@@ -39,6 +39,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.cinterop.BetaInteropApi
+import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSSelectorFromString
 import platform.UIKit.UITextContentType
 import platform.UIKit.UITextContentTypePassword
@@ -125,7 +126,7 @@ internal class PasswordAutofillTest {
             )
         }
 
-    @OptIn(BetaInteropApi::class)
+    @OptIn(BetaInteropApi::class, ExperimentalForeignApi::class)
     @Test
     fun testSecureInputViewTextSelectorReturnsWholeDocument() =
         runUIKitInstrumentedTest(params = configurations) { config ->
@@ -162,7 +163,7 @@ internal class PasswordAutofillTest {
             }
         }
 
-    @OptIn(BetaInteropApi::class)
+    @OptIn(BetaInteropApi::class, ExperimentalForeignApi::class)
     @Test
     fun testDetachedCredentialViewsStillHoldTheirValues() =
         runUIKitInstrumentedTest(params = configurations) { config ->
