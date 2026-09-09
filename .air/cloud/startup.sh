@@ -16,8 +16,8 @@ JDK_URL="https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21
 SDK_DIR="$HOME/android-sdk"
 # dl.google.com is blocked by the proxy; the JetBrains redirector mirrors it.
 SDK_MIRROR="https://cache-redirector.jetbrains.com/dl.google.com/android/repository/"
-# SDK 34/36 from gradle.properties, build-tools from buildSrc/public/.../build/AndroidXConfig.kt.
-SDK_PACKAGES=(platform-tools 'platforms;android-34' 'platforms;android-36' 'build-tools;36.0.0')
+# SDK 34/35/36 from gradle.properties, build-tools from buildSrc/public/.../build/AndroidXConfig.kt.
+SDK_PACKAGES=(platform-tools 'platforms;android-34' 'platforms;android-35' 'platforms;android-36' 'build-tools;36.0.0')
 
 log() { printf '[startup] %s\n' "$*"; }
 
