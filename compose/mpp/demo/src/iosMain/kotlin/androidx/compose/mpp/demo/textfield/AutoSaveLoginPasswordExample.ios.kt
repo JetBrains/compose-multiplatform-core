@@ -67,7 +67,7 @@ import platform.UIKit.UITextField
 import platform.UIKit.UITextSpellCheckingType
 import platform.UIKit.endEditing
 
-val AutoSafeLoginPasswordExample = Screen.Selection(
+val AutoSaveLoginPasswordExample = Screen.Selection(
     title = "Autosave Login & Password",
     screens = listOf(
         Screen.Fullscreen("UITextField safe password") { back -> UITextFieldSafePassword(back) },

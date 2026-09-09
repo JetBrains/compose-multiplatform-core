@@ -19,6 +19,7 @@ package androidx.compose.foundation.text
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -52,6 +53,7 @@ import androidx.compose.ui.text.input.SetComposingRegionCommand
 import androidx.compose.ui.text.input.SetComposingTextCommand
 import androidx.compose.ui.text.input.SetSelectionCommand
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.usingNativeTextInput
 import androidx.compose.ui.uikit.LocalTextInputContainer
 import androidx.compose.ui.unit.Density
 
@@ -247,6 +249,7 @@ private class CoreTextFieldImeOverlayNode(
         density = null
     }
 
+    @OptIn(ExperimentalComposeUiApi::class)
     fun update(state: LegacyTextFieldState, imeOptions: ImeOptions, interactionSource: InteractionSource?) {
         if (this.state !== state) {
             this.state.holder = null
@@ -254,8 +257,15 @@ private class CoreTextFieldImeOverlayNode(
             state.holder = holder
             delegate.state = state
         }
+        val nativeTextInputChanged = delegate.imeOptions.platformImeOptions?.usingNativeTextInput !=
+            imeOptions.platformImeOptions?.usingNativeTextInput
         delegate.imeOptions = imeOptions
         delegate.interactionSource = interactionSource
+
+        if (nativeTextInputChanged) {
+            removeTextInput()
+            createTextInput()
+        }
     }
 
     override fun onObservedReadsChanged() {

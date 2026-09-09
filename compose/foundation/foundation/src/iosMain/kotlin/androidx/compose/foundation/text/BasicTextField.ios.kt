@@ -21,6 +21,7 @@ import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.text.input.setSelectionCoerced
 import androidx.compose.foundation.text.input.internal.TransformedTextFieldState
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
@@ -37,6 +38,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.TextInputContainer
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeOptions
+import androidx.compose.ui.text.input.usingNativeTextInput
 import androidx.compose.ui.uikit.LocalTextInputContainer
 import androidx.compose.ui.unit.Density
 import kotlinx.coroutines.Job
@@ -46,22 +48,22 @@ internal actual fun Modifier.textFieldOverlay(
     transformedState: TransformedTextFieldState,
     keyboardOptions: KeyboardOptions,
     interactionSource: InteractionSource
-): Modifier = this then BasicTextFieldImeOverlayElement(transformedState, keyboardOptions, interactionSource)
+): Modifier = this then BasicTextFieldOverlayElement(transformedState, keyboardOptions, interactionSource)
 
-private data class BasicTextFieldImeOverlayElement(
+private data class BasicTextFieldOverlayElement(
     private val transformedState: TransformedTextFieldState,
     private val keyboardOptions: KeyboardOptions,
     private val interactionSource: InteractionSource,
-) : ModifierNodeElement<BasicTextFieldImeOverlayNode>() {
+) : ModifierNodeElement<BasicTextFieldOverlayNode>() {
 
-    override fun create() = BasicTextFieldImeOverlayNode(transformedState, keyboardOptions, interactionSource)
+    override fun create() = BasicTextFieldOverlayNode(transformedState, keyboardOptions, interactionSource)
 
-    override fun update(node: BasicTextFieldImeOverlayNode) {
+    override fun update(node: BasicTextFieldOverlayNode) {
         node.update(transformedState, keyboardOptions, interactionSource)
     }
 
     override fun InspectorInfo.inspectableProperties() {
-        name = "basicTextFieldImeOverlay"
+        name = "basicTextFieldOverlay"
         properties["transformedState"] = transformedState
         properties["keyboardOptions"] = keyboardOptions
         properties["interactionSource"] = interactionSource
@@ -69,7 +71,7 @@ private data class BasicTextFieldImeOverlayElement(
 }
 
 @OptIn(InternalComposeUiApi::class)
-private class BasicTextFieldImeOverlayNode(
+private class BasicTextFieldOverlayNode(
     private var transformedState: TransformedTextFieldState,
     keyboardOptions: KeyboardOptions,
     private var interactionSource: InteractionSource,
@@ -112,6 +114,7 @@ private class BasicTextFieldImeOverlayNode(
         density = null
     }
 
+    @OptIn(ExperimentalComposeUiApi::class)
     fun update(
         transformedState: TransformedTextFieldState,
         keyboardOptions: KeyboardOptions,
@@ -126,7 +129,16 @@ private class BasicTextFieldImeOverlayNode(
             delegate.transformedState = transformedState
             observeMirroredState()
         }
-        delegate.imeOptions = keyboardOptions.toImeOptions()
+        val newImeOptions = keyboardOptions.toImeOptions()
+        val nativeTextInputChanged = delegate.imeOptions.platformImeOptions?.usingNativeTextInput !=
+            newImeOptions.platformImeOptions?.usingNativeTextInput
+
+        delegate.imeOptions = newImeOptions
+
+        if (nativeTextInputChanged) {
+            removeTextInput()
+            createTextInput()
+        }
 
         if (this.interactionSource != interactionSource) {
             this.interactionSource = interactionSource
