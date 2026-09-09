@@ -31,4 +31,5 @@ val IosSpecificFeatures = Screen.Selection(
     IosImeOptionsExample,
     NativeTextInputTextFields,
     AutoSaveLoginPasswordExample,
+    PanPinchCircleExample,
 )

@@ -109,9 +109,6 @@ internal class ComposeContainer(
         useOpaqueConfiguration = configuration.opaque,
     )
 
-    private val frameChoreographer: FrameChoreographer?
-        get() = view.window?.windowScene?.let { FrameChoreographer.choreographerForScene(it) }
-
     private var mediator: ComposeSceneMediator? = null
 
     @OptIn(InternalComposeUiApi::class)
@@ -136,7 +133,7 @@ internal class ComposeContainer(
         set(value) {
             field = value
             mediator?.layoutDirection = value
-            navigationEventInput.layoutDirection = value
+            navigationEventInput?.layoutDirection = value
         }
     private val motionDurationScale = MotionDurationScaleImpl()
     private var activeStateListener: SceneActiveStateListener? = null
@@ -155,12 +152,7 @@ internal class ComposeContainer(
     private val interfaceOrientationObserver = SceneGeometryObserver {
         updateInterfaceOrientationState()
     }
-    private val navigationEventInput = IosBackNavigationEventInput(
-        density = view.density,
-        initialLayoutDirection = layoutDirection,
-        getTopLeftOffsetInWindow = { IntOffset.Zero }, //full screen
-        endEdgePanGestureBehavior = configuration.endEdgePanGestureBehavior
-    )
+    private var navigationEventInput: IosBackNavigationEventInput? = null
     private var layoutInvalidationHandler: LayoutInvalidationHandler? = null
     private val fontScaleProvider = FontScaleProvider(
         view = view,
@@ -229,7 +221,7 @@ internal class ComposeContainer(
     }
 
     private fun onDidMoveToWindow(window: UIWindow?) {
-        navigationEventInput.onDidMoveToWindow(window, view)
+        navigationEventInput?.onDidMoveToWindow(window, view)
         interfaceOrientationObserver.windowScene = window?.windowScene
 
         window ?: return
@@ -253,7 +245,7 @@ internal class ComposeContainer(
 
         // Because the container view can change during the modal transition animation,
         // the gesture handlers and layers view are added back when the animation ends.
-        navigationEventInput.onDidMoveToWindow(view.window, view)
+        navigationEventInput?.onDidMoveToWindow(view.window, view)
 
         layoutInvalidationHandler?.invalidateLayoutIfNeeded()
         view.setNeedsDisplay()
@@ -262,7 +254,7 @@ internal class ComposeContainer(
     fun sceneWillDisappear() {
         mediator?.sceneWillDisappear()
 
-        navigationEventInput.onDidMoveToWindow(null, view)
+        navigationEventInput?.onDidMoveToWindow(null, view)
     }
 
     fun updateUserInterfaceStyle(style: UIUserInterfaceStyle) {
@@ -271,8 +263,12 @@ internal class ComposeContainer(
 
     fun initializeComposeScene() {
         sceneJob = Job()
-        val frameChoreographer = frameChoreographer ?: error("No window scene found")
-        val containerCoroutineContext = frameChoreographer.coroutineContext + motionDurationScale + sceneJob
+        val frameChoreographer = view.window?.windowScene
+            ?.let(FrameChoreographer::choreographerForScene)
+            ?: error("No window scene found")
+
+        val containerCoroutineContext =
+            frameChoreographer.coroutineContext + motionDurationScale + sceneJob
 
         val layoutInvalidationHandler = LayoutInvalidationHandler(containerCoroutineContext) {
             view.setNeedsLayout()
@@ -281,7 +277,9 @@ internal class ComposeContainer(
         this.layoutInvalidationHandler = layoutInvalidationHandler
 
         val metalView = MetalView(
-            retrieveInteropTransaction = { mediator?.retrieveInteropTransaction() ?: InteropSyncTransaction.Empty },
+            retrieveInteropTransaction = {
+                mediator?.retrieveInteropTransaction() ?: InteropSyncTransaction.Empty
+            },
             useSeparateRenderThreadWhenPossible = configuration.parallelRendering,
             draw = { canvas ->
                 layoutInvalidationHandler.postponeLayoutInvalidationCalls {
@@ -304,6 +302,16 @@ internal class ComposeContainer(
         )
         architectureComponentsOwner.enableSavedStateHandles()
         lifecycleDelegate.onLifecycleStateUpdated = architectureComponentsOwner::setLifecycleState
+
+        val backNavigationEventInput = IosBackNavigationEventInput(
+            frameChoreographer = frameChoreographer,
+            density = view.density,
+            initialLayoutDirection = layoutDirection,
+            getTopLeftOffsetInWindow = { IntOffset.Zero }, // full screen
+            endEdgePanGestureBehavior = configuration.endEdgePanGestureBehavior
+        ).also {
+            navigationEventInput = it
+        }
 
         mediator = ComposeSceneMediator(
             frameChoreographer = frameChoreographer,
@@ -332,7 +340,7 @@ internal class ComposeContainer(
                     },
                 )
             },
-            navigationEventInput = navigationEventInput,
+            navigationEventInput = backNavigationEventInput,
             interfaceOrientationState = interfaceOrientationState,
             schedulePendingInteropViewUpdates = view::setNeedsDisplay,
         ).also { mediator ->
@@ -369,9 +377,9 @@ internal class ComposeContainer(
 
         interfaceOrientationObserver.isObservingEnabled = true
 
-        architectureComponentsOwner.navigationEventDispatcher.addInput(navigationEventInput)
+        architectureComponentsOwner.navigationEventDispatcher.addInput(backNavigationEventInput)
         lifecycleDelegate.windowScene = windowScene
-        navigationEventInput.onDidMoveToWindow(view.window, view)
+        backNavigationEventInput.onDidMoveToWindow(view.window, view)
         onFocusConditionsChanged()
     }
 
@@ -384,8 +392,11 @@ internal class ComposeContainer(
         sceneJob.cancel()
 
         view.updateMetalView(metalView = null)
-        navigationEventInput.onDidMoveToWindow(null, view)
-        architectureComponentsOwner.navigationEventDispatcher.removeInput(navigationEventInput)
+        navigationEventInput?.let {
+            it.onDidMoveToWindow(null, view)
+            architectureComponentsOwner.navigationEventDispatcher.removeInput(it)
+        }
+        navigationEventInput = null
 
         mediator = null
 

@@ -81,8 +81,18 @@ internal class TextInputService(
 
     private var currentInputConnection: TextInputConnection? by mutableStateOf(null)
 
+    private var selectionContainerConnection: SelectionContainerConnection? = null
+
+    private val toolbarConnection: ComposeTextInputConnection?
+        get() = currentInputConnection as? ComposeTextInputConnection
+            ?: selectionContainerConnection
+            ?: holders.firstOrNull { it.delegate.isFocused }
+                ?.let { it.connection as? ComposeTextInputConnection }
+
     val hasInvalidations: Boolean
-        get() = currentInputConnection?.hasInvalidations ?: false
+        get() = currentInputConnection?.hasInvalidations
+            ?: selectionContainerConnection?.hasInvalidations
+            ?: false
 
     private val holders = mutableSetOf<TextInputHolder>()
 
@@ -116,6 +126,7 @@ internal class TextInputService(
 
     private fun startInput(request: PlatformTextInputMethodRequest) {
         currentInputConnection?.stop()
+        stopSelectionContainerConnection()
         listener.onInputWillStart()
 
         currentInputConnection = holderFor(request)?.connection
@@ -133,7 +144,13 @@ internal class TextInputService(
         currentInputConnection = null
         listener.onInputDidStop()
     }
-
+    private fun stopSelectionContainerConnection() {
+        // TODO: Verify
+        selectionContainerConnection?.stop()
+        selectionContainerConnection?.rootView?.removeFromSuperview()
+        selectionContainerConnection?.dispose()
+        selectionContainerConnection = null
+    }
     fun showSoftwareKeyboard() {
         currentInputConnection?.showKeyboard()
     }
@@ -148,7 +165,7 @@ internal class TextInputService(
     val textToolbar: TextToolbar by lazy(LazyThreadSafetyMode.NONE) {
         object : TextToolbar {
             override val status: TextToolbarStatus
-                get() = (currentInputConnection as? ComposeTextInputConnection)?.toolbarStatus ?: TextToolbarStatus.Hidden
+                get() = toolbarConnection?.toolbarStatus ?: TextToolbarStatus.Hidden
 
             override fun showMenu(
                 rect: Rect,
@@ -157,8 +174,17 @@ internal class TextInputService(
                 onCutRequested: (() -> Unit)?,
                 onSelectAllRequested: (() -> Unit)?
             ) {
-                val connection = activeMenuConnection() ?: return
-                connection.showToolbarMenu(
+                if (currentInputConnection == null && selectionContainerConnection == null) {
+                    // Entry point for showing the context menu in SelectionContainer scenarios, where
+                    // there is no active text input session. iOS requires a UIView that can become first
+                    // responder in order to host the context menu, so we create a dedicated connection
+                    // backed by a hidden view for this purpose.
+                    // Note: start() is intentionally not called here — it establishes a text editing
+                    // session (requiring a PlatformTextInputMethodRequest) which is not applicable for
+                    // SelectionContainer.
+                    startSelectionContainerConnection()
+                }
+                toolbarConnection?.showToolbarMenu(
                     rect = rect,
                     onCopyRequested = onCopyRequested,
                     onPasteRequested = onPasteRequested,
@@ -169,28 +195,11 @@ internal class TextInputService(
             }
 
             override fun hide() {
-                (currentInputConnection as? ComposeTextInputConnection)?.hideToolbar()
-
-                if (currentInputConnection is SelectionContainerConnection) {
-                    currentInputConnection?.rootView?.removeFromSuperview()
-                    currentInputConnection?.dispose()
-                    currentInputConnection = null
-                }
+                toolbarConnection?.hideToolbar()
+                stopSelectionContainerConnection()
             }
 
-            private fun activeMenuConnection(): ComposeTextInputConnection? {
-                currentInputConnection?.let { return it as? ComposeTextInputConnection }
-                holders.firstOrNull { it.delegate.isFocused }
-                    ?.let { it.connection as? ComposeTextInputConnection }
-                    ?.let {
-                        currentInputConnection?.stop()
-                        currentInputConnection = it
-                        return it
-                    }
-                return startSelectionContainerConnection()
-            }
-
-            private fun startSelectionContainerConnection(): ComposeTextInputConnection {
+            private fun startSelectionContainerConnection() {
                 val connection = SelectionContainerConnection(
                     coroutineScope = coroutineScope,
                     viewConfiguration = viewConfiguration,
@@ -199,7 +208,7 @@ internal class TextInputService(
                     it.rootView.setFrame(view.bounds)
                     view.addSubview(it.rootView)
                 }
-                currentInputConnection = connection
+                selectionContainerConnection = connection
                 connection.start(
                     object : PlatformTextInputMethodRequest {
                         override val value: () -> TextFieldValue get() = { TextFieldValue() }
@@ -222,7 +231,6 @@ internal class TextInputService(
                         override val editText: (block: TextEditingScope.() -> Unit) -> Unit get() = { _ -> }
                     }
                 )
-                return connection
             }
         }
     }

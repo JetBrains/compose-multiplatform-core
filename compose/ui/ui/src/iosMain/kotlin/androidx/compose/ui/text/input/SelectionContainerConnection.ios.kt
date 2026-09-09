@@ -17,9 +17,13 @@
 package androidx.compose.ui.text.input
 
 import androidx.compose.ui.platform.DetachedTextEditingDelegate
+import androidx.compose.ui.platform.SkikoUITextInputTraits
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.scene.ComposeSceneFocusManager
+import kotlinx.cinterop.readValue
 import kotlinx.coroutines.CoroutineScope
+import platform.CoreGraphics.CGRectZero
+import platform.UIKit.UIView
 
 
 internal class SelectionContainerConnection(
@@ -34,6 +38,15 @@ internal class SelectionContainerConnection(
     focusedViewsList = null,
     focusManager = focusManager
 ) {
+    private val keyboardlessInputTraits = object : SkikoUITextInputTraits {
+        val emptyInputView = UIView(frame = CGRectZero.readValue())
+        override fun inputView(): UIView = emptyInputView
+    }
+
+    override var inputTraits: SkikoUITextInputTraits
+        get() = keyboardlessInputTraits
+        set(value) {}
+
     override fun showKeyboard() {
         // Does nothing. Keyboard is not needed for the selection container
     }

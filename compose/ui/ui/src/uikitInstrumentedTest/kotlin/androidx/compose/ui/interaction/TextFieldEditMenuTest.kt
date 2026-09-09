@@ -30,6 +30,8 @@ import androidx.compose.foundation.text.contextmenu.modifier.filterTextContextMe
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.text.selection.SelectionState
+import androidx.compose.foundation.text.selection.rememberSelectionState
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.LaunchedEffect
@@ -50,6 +52,7 @@ import androidx.compose.ui.test.assertVisibleInContainer
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithLabelOrNull
 import androidx.compose.ui.test.findNodeWithTag
+import androidx.compose.ui.test.isContextMenuVisible
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.tapContextMenuButton
 import androidx.compose.ui.test.utils.BasicTextFieldType
@@ -715,6 +718,66 @@ class TextFieldEditMenuTest {
         }
     }
 
+    @Test
+    fun testSelectionContainerToolbar() = runContextMenuTest(newContextMenuEnabled = false) {
+        lateinit var selectionState: SelectionState
+        setContent {
+            selectionState = rememberSelectionState()
+            Column(modifier = Modifier.safeDrawingPadding()) {
+                SelectionContainer(
+                    state = selectionState,
+                    modifier = Modifier.testTag("SelectionContainer")
+                ) {
+                    Text(SELECTION_CONTAINER_TEXT)
+                }
+            }
+        }
+
+        // A double tap in the middle of the text selects the word under it.
+        findNodeWithTag("SelectionContainer").doubleTap()
+        waitForContextMenu()
+
+        assertEquals(
+            listOf(SELECTION_CONTAINER_MIDDLE_WORD),
+            selectionState.selectedTexts.map { it.text },
+            "The word in the middle of the text should be selected"
+        )
+
+        verifyContextMenuItemsVisible(labels = listOf("Copy"))
+        verifyContextMenuItemsHidden(labels = listOf("Cut", "Paste"))
+
+        assertEquals(0.dp, keyboardHeight, "Software keyboard should stay hidden")
+    }
+
+    @Test
+    fun testSelectionContainerToolbarWithTextField() = runContextMenuTest(newContextMenuEnabled = false) {
+        lateinit var selectionState: SelectionState
+        setContent {
+            selectionState = rememberSelectionState()
+            SelectionContainer(state = selectionState) {
+                Column(modifier = Modifier.safeDrawingPadding()) {
+                    TextField(value = PARTIAL_SELECTION_TEXT, onValueChange = {})
+                    Text(SELECTION_CONTAINER_TEXT, modifier = Modifier.testTag("SelectionText"))
+                }
+            }
+        }
+
+        // A double tap in the middle of the text selects the word under it.
+        findNodeWithTag("SelectionText").doubleTap()
+        waitForContextMenu()
+
+        assertEquals(
+            listOf(SELECTION_CONTAINER_MIDDLE_WORD),
+            selectionState.selectedTexts.map { it.text },
+            "The word in the middle of the text should be selected"
+        )
+
+        verifyContextMenuItemsVisible(labels = listOf("Copy"))
+        verifyContextMenuItemsHidden(labels = listOf("Cut", "Paste"))
+
+        assertEquals(0.dp, keyboardHeight, "Software keyboard should stay hidden")
+    }
+
     private fun UIKitInstrumentedTest.openToolbar(textFieldTag: String) {
         findNodeWithTag(textFieldTag).focusThenDoubleTap()
         waitForContextMenu()
@@ -727,12 +790,15 @@ class TextFieldEditMenuTest {
 
     private fun UIKitInstrumentedTest.longPressNodeWithTagAndAwaitContextMenu(textFieldTag: String) {
         val touch = findNodeWithTag(textFieldTag).touchDown()
-        waitUntil {
-            findFirstDescendant { it.isLoupeView } != null
+        waitUntil("Awaiting context menu or loupe") {
+            isContextMenuVisible || isLoupeVisible
         }
         touch.up()
         waitForContextMenu()
     }
+
+    private val UIKitInstrumentedTest.isLoupeVisible: Boolean get() =
+        findFirstDescendant { it.isLoupeView } != null
 
     private fun UIKitInstrumentedTest.setTextFieldContent(
         textFieldKind: BasicTextFieldType,
@@ -773,6 +839,8 @@ class TextFieldEditMenuTest {
     }
 
     private companion object {
+        private const val SELECTION_CONTAINER_MIDDLE_WORD = "LongLongLongLongLongLong"
+        private const val SELECTION_CONTAINER_TEXT = "Hello-$SELECTION_CONTAINER_MIDDLE_WORD-text"
         private const val PARTIAL_SELECTION_TEXT = "accomplishment extraordinary magnificent establishment"
     }
 
