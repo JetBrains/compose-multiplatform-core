@@ -33,6 +33,7 @@ import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.Nodes
 import androidx.compose.ui.node.requireLayoutNode
 import androidx.compose.ui.node.requireOwner
+import androidx.compose.ui.node.visitAncestors
 import androidx.compose.ui.node.visitChildren
 import androidx.compose.ui.util.fastCoerceAtLeast
 
@@ -126,12 +127,21 @@ internal fun FocusTargetNode.findChildCorrespondingToFocusEnter(
     onFound: (FocusTargetNode) -> Boolean,
 ): Boolean {
 
+    fun requestFocus(candidate: FocusTargetNode): Boolean {
+        return when (performAutomaticEnterOnPathTo(candidate, direction)) {
+            CustomDestinationResult.None -> onFound(candidate)
+            CustomDestinationResult.Redirected -> true
+            CustomDestinationResult.Cancelled,
+            CustomDestinationResult.RedirectCancelled -> false
+        }
+    }
+
     val focusableChildren = MutableVector<FocusTargetNode>()
     collectAccessibleChildren(focusableChildren)
 
     // If there are aren't multiple children to choose from, return the first child.
     if (focusableChildren.size <= 1) {
-        return focusableChildren.firstOrNull()?.let { onFound.invoke(it) } ?: false
+        return focusableChildren.firstOrNull()?.let { requestFocus(it) } ?: false
     }
 
     // These directions carry no geometry to search with. They reach us when a focus request is
@@ -141,8 +151,8 @@ internal fun FocusTargetNode.findChildCorrespondingToFocusEnter(
     // last one in traversal order.
     when (direction) {
         Enter,
-        Next -> return onFound.invoke(focusableChildren.first())
-        Previous -> return onFound.invoke(focusableChildren.last())
+        Next -> return requestFocus(focusableChildren.first())
+        Previous -> return requestFocus(focusableChildren.last())
     }
 
     // Everything that is left is a 2-D search. To start it, we pick one of the four corners of this
@@ -156,7 +166,40 @@ internal fun FocusTargetNode.findChildCorrespondingToFocusEnter(
             else -> error(InvalidFocusDirection)
         }
     val nextCandidate = focusableChildren.findBestCandidate(initialFocusRect, direction)
-    return nextCandidate?.let { onFound.invoke(it) } ?: false
+    return nextCandidate?.let { requestFocus(it) } ?: false
+}
+
+/**
+ * Offers automatic focus entry to the non-focusable groups between this node and [destination].
+ *
+ * [collectAccessibleChildren] flattens non-focusable groups to select a concrete focusable
+ * destination. Without visiting the selected path afterward, a custom enter on one of those groups
+ * only observes the explicit request for the destination and cannot distinguish delegated entry.
+ */
+private fun FocusTargetNode.performAutomaticEnterOnPathTo(
+    destination: FocusTargetNode,
+    direction: FocusDirection,
+): CustomDestinationResult {
+    val path = MutableVector<FocusTargetNode>()
+    var reachedSource = false
+    destination.visitAncestors(Nodes.FocusTarget) { ancestor ->
+        if (!reachedSource) {
+            if (ancestor === this) {
+                reachedSource = true
+            } else {
+                path.add(ancestor)
+            }
+        }
+    }
+
+    for (index in path.lastIndex downTo 0) {
+        val target = path[index]
+        if (!target.fetchFocusProperties().canFocus) {
+            val result = target.performCustomEnter(direction, isAutomatic = true)
+            if (result != CustomDestinationResult.None) return result
+        }
+    }
+    return CustomDestinationResult.None
 }
 
 // Search among your children for the next child.
