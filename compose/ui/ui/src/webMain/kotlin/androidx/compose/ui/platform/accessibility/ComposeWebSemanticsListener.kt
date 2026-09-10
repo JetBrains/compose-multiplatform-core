@@ -16,7 +16,10 @@
 
 package androidx.compose.ui.platform.accessibility
 
+import androidx.collection.MutableIntObjectMap
 import androidx.collection.MutableScatterMap
+import androidx.collection.mutableIntSetOf
+import androidx.collection.mutableObjectListOf
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.PlatformContext
@@ -143,7 +146,7 @@ internal class ComposeWebSemanticsListener(
         webSemanticsRoot.addEventListener("keydown", onKeyDown)
     }
 
-    private val semanticsOwners = mutableListOf<SemanticsOwner>()
+    private val semanticsOwners = mutableObjectListOf<SemanticsOwner>()
 
     override fun onSemanticsOwnerAppended(semanticsOwner: SemanticsOwner) {
         if (semanticsOwners.contains(semanticsOwner)) return
@@ -172,7 +175,7 @@ internal class ComposeWebSemanticsListener(
     private val dfsA11YParents = ArrayDeque<HTMLElement>()
 
     // Lookup maps between semantics nodes and corresponding A11Y DOM elements:
-    private val idToA11YNode = MutableScatterMap<Int, HTMLElement>()
+    private val idToA11YNode = MutableIntObjectMap<HTMLElement>()
     private val a11yNodeToSemanticsNode = MutableScatterMap<HTMLElement, SemanticsNode>()
 
     // An intermediate tree representation which is applied to the actual DOM after every sync:
@@ -224,7 +227,7 @@ internal class ComposeWebSemanticsListener(
         targetParentToChildren.clear()
         targetChildToParent.clear()
 
-        semanticsOwners.fastForEach {
+        semanticsOwners.forEach {
             syncSemanticsWithWebA11Y(it)
         }
 
@@ -234,7 +237,7 @@ internal class ComposeWebSemanticsListener(
             placeA11YChildrenInOrder(parent, targetChildren)
         }
 
-        val removedIds = mutableSetOf<Int>()
+        val removedIds = mutableIntSetOf()
 
         idToA11YNode.forEach { id, htmlNode ->
             if (!targetChildToParent.containsKey(htmlNode)) {
@@ -406,8 +409,8 @@ internal class ComposeWebSemanticsListener(
         text: String?,
         justCreated: Boolean = false,
     ) {
-        if (text != null && htmlNode.innerText != text) {
-            htmlNode.innerText = text
+        if (text != null && htmlNode.textContent != text) {
+            htmlNode.textContent = text
         }
 
         val ariaLabel = config.getAriaLabel()
@@ -422,30 +425,58 @@ internal class ComposeWebSemanticsListener(
             htmlNode.id = testTag
         }
 
+        val disabled = SemanticsProperties.Disabled in config
+
         if (config.contains(SemanticsProperties.EditableText)) {
             val editableText = config[SemanticsProperties.EditableText].text
+           
             val isObfuscatedPassword = config.isObfuscatedPassword()
             val exposedEditableText = if (isObfuscatedPassword) {
                 obfuscatedPassword(editableText)
             } else {
                 editableText
             }
-            if (htmlNode.innerText != exposedEditableText) {
-                htmlNode.innerText = exposedEditableText
+             if (htmlNode.textContent != exposedEditableText) {
+                htmlNode.textContent = exposedEditableText
+            }
+
+            val editable = config.getOrNull(SemanticsProperties.IsEditable) ?: false
+            htmlNode.setAttribute("contenteditable", editable.toString())
+
+            val readOnly = !editable && !disabled
+            if (readOnly) {
+                htmlNode.setAttribute("aria-readonly", readOnly.toString())
+            } else {
+                htmlNode.removeAttribute("aria-readonly")
             }
 
             if (justCreated) {
-                htmlNode.setAttribute("contenteditable", "true")
-                htmlNode.addEventListener("focus", {
+                htmlNode.addEventListener("focus") {
                     htmlNode.click()
-                })
+                }
             }
         }
 
-        if (config.contains(SemanticsProperties.Disabled)) {
+        if (SemanticsProperties.MaxTextLength in config) {
+            val maxTextLength = config[SemanticsProperties.MaxTextLength]
+            if(maxTextLength > 0) {
+                htmlNode.setAttribute("maxlength", maxTextLength.toString())
+            }
+        } else {
+            htmlNode.removeAttribute("maxlength")
+        }
+
+        if (disabled) {
             htmlNode.setAttribute("aria-disabled", "true")
         } else {
             htmlNode.removeAttribute("aria-disabled")
+        }
+
+        if (SemanticsProperties.Selected in config) {
+            val selected = config[SemanticsProperties.Selected]
+            htmlNode.setAttribute("aria-selected", selected.toString())
+        } else {
+            htmlNode.removeAttribute("aria-selected")
         }
 
         val roleId = config.getRoleId()

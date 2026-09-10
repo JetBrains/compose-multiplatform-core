@@ -32,13 +32,30 @@ import org.w3c.dom.HTMLElement
 internal fun setSizeAndPosition(
     element: HTMLElement, left: Float, top: Float, width: Float, height: Float
 ) {
+    // Note: the position must be set via left/top (not via a CSS transform).
+    // Transforms don't participate in the DOM layout: they break the layout-based geometry
+    // (offsetTop/offsetLeft), the scrollable overflow of the a11y scroll containers and
+    // the browser scroll anchoring, which ATs and browsers rely on.
     // language=javascript
     js(
         """
-       element.style.left = "" + left + "px";
-       element.style.top = "" + top + "px";
-       element.style.width = "" + width + "px";
-       element.style.height = "" + height + "px";
+       const leftValue = "" + left + "px";
+       const topValue = "" + top + "px";
+       const widthValue = "" + width + "px";
+       const heightValue = "" + height + "px";
+
+       if (element.style.left !== leftValue) {
+           element.style.left = leftValue;
+       }
+       if (element.style.top !== topValue) {
+           element.style.top = topValue;
+       }
+       if (element.style.width !== widthValue) {
+           element.style.width = widthValue;
+       }
+       if (element.style.height !== heightValue) {
+           element.style.height = heightValue;
+       }
     """
     )
 }
