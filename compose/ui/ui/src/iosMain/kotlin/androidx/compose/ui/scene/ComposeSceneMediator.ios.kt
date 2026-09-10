@@ -768,7 +768,6 @@ internal class ComposeSceneMediator(
             OffsetToFocusedRect(
                 insets = windowInsetsManager.windowInsets.ime,
                 getFocusedRect = ::getFocusedRect,
-                size = scene.size,
                 animationDuration = if (animateKeyboardOffsetChanges) {
                     FOCUS_CHANGE_ANIMATION_DURATION
                 } else {
