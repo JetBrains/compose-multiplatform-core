@@ -80,6 +80,7 @@ import kotlin.test.assertNotNull
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.DurationUnit
 import kotlin.time.TimeSource
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -243,9 +244,21 @@ internal class UIKitInstrumentedTest(
          */
         internal val DefaultDragDuration = 0.1.seconds
 
-        fun delay(timeoutMillis: Long) {
+        /**
+         * The time given to UIKit to complete a requested interface orientation change.
+         *
+         * The orientation change is driven by the system rather than by the window's layer, so this
+         * duration doesn't scale with [animationSpeed].
+         */
+        internal val InterfaceOrientationChangeDuration = 700.milliseconds
+
+        fun delay(timeoutMillis: Long) = delay(timeoutMillis.milliseconds)
+
+        fun delay(duration: Duration) {
             val runLoop = NSRunLoop.currentRunLoop()
-            runLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(timeoutMillis.toDouble() / 1000.0))
+            runLoop.runUntilDate(
+                NSDate.dateWithTimeIntervalSinceNow(duration.toDouble(DurationUnit.SECONDS))
+            )
         }
 
         fun waitUntil(
@@ -349,8 +362,17 @@ internal class UIKitInstrumentedTest(
 
         waitForIdle()
 
+        rotateTo(interfaceOrientation)
+    }
+
+    /**
+     * Rotates the test window to [interfaceOrientation] and waits until the rotation transition and
+     * the layout it triggers are finished.
+     */
+    fun rotateTo(interfaceOrientation: UIInterfaceOrientation) {
         if (appDelegate.requestInterfaceOrientationChangeIfNeeded(interfaceOrientation)) {
-            delay(700)
+            delay(InterfaceOrientationChangeDuration)
+            waitForIdle()
         }
     }
 
@@ -459,6 +481,8 @@ internal class UIKitInstrumentedTest(
     }
 
     fun delay(timeoutMillis: Long) = UIKitInstrumentedTest.delay(timeoutMillis)
+
+    fun delay(duration: Duration) = UIKitInstrumentedTest.delay(duration)
 
     fun waitUntil(
         conditionDescription: String? = null,
