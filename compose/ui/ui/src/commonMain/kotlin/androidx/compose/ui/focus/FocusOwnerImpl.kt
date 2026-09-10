@@ -62,6 +62,8 @@ import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachReversed
 import androidx.compose.ui.util.trace
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 /**
  * The focus manager is used by different [Owner][androidx.compose.ui.node.Owner] implementations to
@@ -189,6 +191,7 @@ internal class FocusOwnerImpl(
         focusDirection: FocusDirection,
         isAutomatic: Boolean,
     ): Boolean {
+        val hadFocus = activeFocusTargetNode != null
         val clearedFocusSuccessfully =
             if (!force) {
                 // Don't clear focus if an item on the focused path has a custom exit specified.
@@ -206,6 +209,8 @@ internal class FocusOwnerImpl(
         if (clearedFocusSuccessfully && clearOwnerFocus) {
             clearOwnerFocus(isAutomatic)
         }
+
+        if (clearedFocusSuccessfully && hadFocus && focusDirection == Exit) scheduleFocusReentry()
         return clearedFocusSuccessfully
     }
 
@@ -233,6 +238,22 @@ internal class FocusOwnerImpl(
         if (!successfulReset) clearOwnerFocus(isAutomatic = false)
 
         return successfulReset
+    }
+
+    /** Whether a re-entry is already waiting, so that one loss asks once. */
+    private var focusReentryScheduled = false
+
+    /** Sends focus back into the hierarchy, after the frame that left it with none. */
+    override fun scheduleFocusReentry() {
+        if (focusReentryScheduled) return
+        if (activeFocusTargetNode != null) return
+        focusReentryScheduled = true
+        CoroutineScope(owner.coroutineContext).launch {
+            focusReentryScheduled = false
+            if (activeFocusTargetNode != null) return@launch
+            if (!rootFocusNode.node.isAttached) return@launch
+            rootFocusNode.requestFocus(FocusDirection.Enter)
+        }
     }
 
     private fun clearFocus(forced: Boolean = false, refreshFocusEvents: Boolean): Boolean {
