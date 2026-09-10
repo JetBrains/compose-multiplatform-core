@@ -175,6 +175,8 @@ internal class FocusOwnerImpl(
      * component.
      */
     override fun clearFocus(force: Boolean) {
+        // Read before the clear. A hierarchy that had no focus has lost none.
+        val hadFocus = activeFocusTargetNode != null
         clearFocus(
             force,
             refreshFocusEvents = true,
@@ -182,6 +184,7 @@ internal class FocusOwnerImpl(
             focusDirection = Exit,
             isAutomatic = false
         )
+        if (hadFocus) scheduleFocusReentry()
     }
 
     override fun clearFocus(
@@ -191,7 +194,6 @@ internal class FocusOwnerImpl(
         focusDirection: FocusDirection,
         isAutomatic: Boolean,
     ): Boolean {
-        val hadFocus = activeFocusTargetNode != null
         val clearedFocusSuccessfully =
             if (!force) {
                 // Don't clear focus if an item on the focused path has a custom exit specified.
@@ -209,8 +211,6 @@ internal class FocusOwnerImpl(
         if (clearedFocusSuccessfully && clearOwnerFocus) {
             clearOwnerFocus(isAutomatic)
         }
-
-        if (clearedFocusSuccessfully && hadFocus && focusDirection == Exit) scheduleFocusReentry()
         return clearedFocusSuccessfully
     }
 
