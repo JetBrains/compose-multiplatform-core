@@ -1393,10 +1393,6 @@ internal class AccessibilityMediator(
         refocusKeyboardElementIfNeeded()
         view.accessibilityElements = listOf<NSObject>()
 
-        for (element in accessibilityElementsMap.values) {
-            element.dispose()
-        }
-
         cleanUp()
     }
 
@@ -1408,6 +1404,10 @@ internal class AccessibilityMediator(
         isAccessibilityActive = false
 
         root.element = null
+
+        for (element in accessibilityElementsMap.values) {
+            element.dispose()
+        }
         accessibilityElementsMap.clear()
     }
 
