@@ -243,6 +243,11 @@ internal class UIKitInstrumentedTest(
          */
         internal val DefaultDragDuration = 0.1.seconds
 
+        /**
+         * The time given to UIKit to complete a requested interface orientation change.
+         */
+        internal const val InterfaceOrientationChangeDurationMillis = 700L
+
         fun delay(timeoutMillis: Long) {
             val runLoop = NSRunLoop.currentRunLoop()
             runLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(timeoutMillis.toDouble() / 1000.0))
@@ -350,7 +355,18 @@ internal class UIKitInstrumentedTest(
         waitForIdle()
 
         if (appDelegate.requestInterfaceOrientationChangeIfNeeded(interfaceOrientation)) {
-            delay(700)
+            delay(InterfaceOrientationChangeDurationMillis)
+        }
+    }
+
+    /**
+     * Rotates the test window to [interfaceOrientation] and waits until the rotation transition and
+     * the layout it triggers are finished.
+     */
+    fun rotateTo(interfaceOrientation: UIInterfaceOrientation) {
+        if (appDelegate.requestInterfaceOrientationChangeIfNeeded(interfaceOrientation)) {
+            delay(InterfaceOrientationChangeDurationMillis)
+            waitForIdle()
         }
     }
 
