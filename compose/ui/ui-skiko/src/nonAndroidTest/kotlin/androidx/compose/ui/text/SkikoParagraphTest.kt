@@ -509,7 +509,6 @@ class SkikoParagraphTest {
         }
     }
 
-    // Regression test for https://youtrack.jetbrains.com/issue/CMP-8371
     @Test
     fun getCursorRect_hasSameHeightForEmptyAndNonEmptyText() {
         val style = TextStyle(
