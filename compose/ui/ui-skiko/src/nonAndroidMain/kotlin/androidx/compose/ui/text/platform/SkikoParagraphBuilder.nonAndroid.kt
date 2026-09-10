@@ -59,7 +59,6 @@ import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachReversed
-import kotlin.jvm.JvmName
 import org.jetbrains.skia.Font as SkFont
 import org.jetbrains.skia.FontEdging as SkFontEdging
 import org.jetbrains.skia.FontFeature
@@ -653,15 +652,6 @@ internal class ParagraphBuilder(
              * internal (between lines in multiline text) calculated as-is.
              */
             pStyle.heightMode = HeightMode.DISABLE_ALL
-        }
-
-        if (lineHeight != null && lineHeight <= computedStyle.fontSize) {
-            // keep empty and non-empty lines on the same baseline, without a forced strut,
-            // Skia gives an empty line a different height and then baseline changes when line receives its first glyph
-            pStyle.strutStyle = StrutStyle().apply {
-                fontSize = computedStyle.fontSize
-                isHeightForced = true
-            }
         }
 
         pStyle.direction = textDirection.toSkDirection()
