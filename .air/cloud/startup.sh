@@ -3,7 +3,7 @@
 # Air cloud environment setup for compose-multiplatform-core.
 # Runs on every environment launch - the snapshotted warmup and each task start - so it is idempotent.
 #
-# Installs a JDK 21 and the Android SDK, then points Gradle at them.
+# Installs a JDK 21, the Android SDK, and Kotlin/JS's Node runtime, then points Gradle at them.
 #
 set -euo pipefail
 
@@ -18,6 +18,13 @@ SDK_DIR="$HOME/android-sdk"
 SDK_MIRROR="https://cache-redirector.jetbrains.com/dl.google.com/android/repository/"
 # SDK 34/35/36 from gradle.properties, build-tools from buildSrc/public/.../build/AndroidXConfig.kt.
 SDK_PACKAGES=(platform-tools 'platforms;android-34' 'platforms;android-35' 'platforms;android-36' 'build-tools;36.0.0')
+
+# Kotlin 2.3's JS webpack task uses this managed Node distribution. Keep it in Gradle's
+# standard Node cache so jsBrowserProductionWebpack can execute it without downloading tools.
+NODE_VERSION="24.10.0"
+NODE_PLATFORM="linux-x64"
+NODE_DIR="$HOME/.gradle/nodejs/node-v$NODE_VERSION-$NODE_PLATFORM"
+NODE_URL="https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-$NODE_PLATFORM.tar.xz"
 
 log() { printf '[startup] %s\n' "$*"; }
 
@@ -70,6 +77,20 @@ install_sdk() {
   run_sdkmanager "${SDK_PACKAGES[@]}"
 }
 
+install_node() {
+  if [ -x "$NODE_DIR/bin/node" ] && [ "$("$NODE_DIR/bin/node" --version)" = "v$NODE_VERSION" ]; then
+    log "Node $NODE_VERSION already installed"
+    return
+  fi
+
+  log "installing Node $NODE_VERSION for Kotlin/JS"
+  rm -rf "$NODE_DIR"
+  mkdir -p "$(dirname "$NODE_DIR")"
+  curl -fL --retry 3 --retry-all-errors -o /tmp/node.tar.xz "$NODE_URL"
+  tar -xf /tmp/node.tar.xz -C "$(dirname "$NODE_DIR")"
+  rm -f /tmp/node.tar.xz
+}
+
 write_gradle_config() {
   # Overrides the repository's 12 GB + 8 GB daemons, too big for this 15 GB / 4 CPU container.
   # installations.paths stands in for fromEnv=ANDROIDX_JDK21, unset here, with auto-detect off.
@@ -98,5 +119,6 @@ EOF
 
 install_jdk
 install_sdk
+install_node
 write_gradle_config
 log "ready"
