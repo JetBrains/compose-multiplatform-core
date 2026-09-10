@@ -84,11 +84,37 @@ install_node() {
   fi
 
   log "installing Node $NODE_VERSION for Kotlin/JS"
+  local node_parent stage_dir archive_file
+  node_parent="$(dirname "$NODE_DIR")"
+  stage_dir="$(mktemp -d /tmp/node-install.XXXXXX)"
+  archive_file="$(mktemp /tmp/node.XXXXXX.tar.xz)"
+  curl -fL --retry 3 --retry-all-errors -o "$archive_file" "$NODE_URL"
+  tar -xf "$archive_file" -C "$stage_dir"
+  rm -f "$archive_file"
+
+  [ -x "$stage_dir/node-v$NODE_VERSION-$NODE_PLATFORM/bin/node" ]
+  mkdir -p "$node_parent"
   rm -rf "$NODE_DIR"
-  mkdir -p "$(dirname "$NODE_DIR")"
-  curl -fL --retry 3 --retry-all-errors -o /tmp/node.tar.xz "$NODE_URL"
-  tar -xf /tmp/node.tar.xz -C "$(dirname "$NODE_DIR")"
-  rm -f /tmp/node.tar.xz
+  mv "$stage_dir/node-v$NODE_VERSION-$NODE_PLATFORM" "$NODE_DIR"
+  rmdir "$stage_dir"
+}
+
+warm_gradle_caches() {
+  if [ "${AIR_STARTUP_MODE:-task}" != "warmup" ]; then
+    log "skipping Gradle cache warmup (startup mode: ${AIR_STARTUP_MODE:-task})"
+    return
+  fi
+
+  local attempt
+  for attempt in 1 2 3; do
+    log "warming Gradle dependency caches (attempt $attempt/3)"
+    if (cd "$REPO_DIR" && ./gradlew assemble compileTests); then
+      return
+    fi
+    log "Gradle cache warmup attempt $attempt failed"
+  done
+
+  return 1
 }
 
 write_gradle_config() {
@@ -121,4 +147,5 @@ install_jdk
 install_sdk
 install_node
 write_gradle_config
+warm_gradle_caches
 log "ready"
