@@ -63,10 +63,17 @@ internal class UIKitTextInputService(
 
     private var currentInputConnection: TextInputConnection? by mutableStateOf(null)
 
+    private var selectionContainerConnection: SelectionContainerConnection? = null
+
+    private val toolbarConnection: ComposeTextInputConnection?
+        get() = currentInputConnection as? ComposeTextInputConnection ?: selectionContainerConnection
+
     private var updateEditMenuState = {}
 
     val hasInvalidations: Boolean
-        get() = currentInputConnection?.hasInvalidations ?: false
+        get() = currentInputConnection?.hasInvalidations
+            ?: selectionContainerConnection?.hasInvalidations
+            ?: false
 
     suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
         coroutineScope {
@@ -100,6 +107,7 @@ internal class UIKitTextInputService(
         val usingNativeTextInput = request.imeOptions.platformImeOptions?.usingNativeTextInput ?: false
 
         currentInputConnection?.stop()
+        stopSelectionContainerConnection()
         currentInputConnection = if (usingNativeTextInput) {
             NativeTextInputConnection(
                 updateView = updateView,
@@ -127,7 +135,10 @@ internal class UIKitTextInputService(
         currentInputConnection?.stop()
         currentInputConnection = null
     }
-
+    private fun stopSelectionContainerConnection() {
+        selectionContainerConnection?.stop()
+        selectionContainerConnection = null
+    }
     fun showSoftwareKeyboard() {
         currentInputConnection?.showKeyboard()
     }
@@ -142,7 +153,7 @@ internal class UIKitTextInputService(
     val textToolbar: TextToolbar by lazy(LazyThreadSafetyMode.NONE) {
         object : TextToolbar {
             override val status: TextToolbarStatus
-                get() = (currentInputConnection as? ComposeTextInputConnection)?.toolbarStatus ?: TextToolbarStatus.Hidden
+                get() = toolbarConnection?.toolbarStatus ?: TextToolbarStatus.Hidden
 
             override fun showMenu(
                 rect: Rect,
@@ -151,7 +162,7 @@ internal class UIKitTextInputService(
                 onCutRequested: (() -> Unit)?,
                 onSelectAllRequested: (() -> Unit)?
             ) {
-                if (currentInputConnection == null) {
+                if (currentInputConnection == null && selectionContainerConnection == null) {
                     // Entry point for showing the context menu in SelectionContainer scenarios, where
                     // there is no active text input session. iOS requires a UIView that can become first
                     // responder in order to host the context menu, so we create a dedicated connection
@@ -159,13 +170,13 @@ internal class UIKitTextInputService(
                     // Note: start() is intentionally not called here — it establishes a text editing
                     // session (requiring a PlatformTextInputMethodRequest) which is not applicable for
                     // SelectionContainer.
-                    currentInputConnection = SelectionContainerConnection(
+                    selectionContainerConnection = SelectionContainerConnection(
                         view = view,
                         coroutineScope = coroutineScope,
                         viewConfiguration = viewConfiguration,
                         focusManager = focusManager
                     )
-                    currentInputConnection?.start(
+                    selectionContainerConnection?.start(
                         object : PlatformTextInputMethodRequest {
                             override val value: () -> TextFieldValue get() = { TextFieldValue() }
                             override val state: TextEditorState = object : TextEditorState {
@@ -188,7 +199,7 @@ internal class UIKitTextInputService(
                         }
                     )
                 }
-                (currentInputConnection as? ComposeTextInputConnection)?.showToolbarMenu(
+                toolbarConnection?.showToolbarMenu(
                     rect = rect,
                     onCopyRequested = onCopyRequested,
                     onPasteRequested = onPasteRequested,
@@ -198,14 +209,8 @@ internal class UIKitTextInputService(
             }
 
             override fun hide() {
-                (currentInputConnection as? ComposeTextInputConnection)?.hideToolbar()
-
-                if (currentInputConnection is SelectionContainerConnection) {
-                    // stop() removes the view from the hierarchy and resigns first responder,
-                    // without requiring a prior start() call.
-                    currentInputConnection?.stop()
-                    currentInputConnection = null
-                }
+                toolbarConnection?.hideToolbar()
+                stopSelectionContainerConnection()
             }
         }
     }
