@@ -20,6 +20,7 @@
  * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
@@ -51,7 +52,6 @@ androidXMultiplatform {
 
     sourceSets {
         def navigation3Version = project.redirectVersions.get('androidx.navigation3')
-        def navigationEventVersion = project.redirectVersions.get('androidx.navigationevent')
 
         commonMain.dependencies {
             api("androidx.navigation3:navigation3-runtime:$navigation3Version")
@@ -72,7 +72,7 @@ androidXMultiplatform {
             implementation(libs.kotlinTest)
             implementation(project(":kruth:kruth"))
             implementation(project(":compose:runtime:runtime-test-utils"))
-            implementation("androidx.navigationevent:navigationevent-testing:$navigationEventVersion")
+            implementation("androidx.navigationevent:navigationevent-testing:1.1.2")
         }
 
         androidMain.dependencies {
