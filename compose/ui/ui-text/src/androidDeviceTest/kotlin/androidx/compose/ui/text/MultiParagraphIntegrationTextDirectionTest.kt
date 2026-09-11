@@ -42,23 +42,8 @@ class MultiParagraphIntegrationTextDirectionTest {
     private val fontFamilyMeasureFont = FontTestData.BASIC_MEASURE_FONT.toFontFamily()
     private val ltrLocaleList = LocaleList("en")
     private val rtlLocaleList = LocaleList("ar")
-<<<<<<< HEAD
-    private val ltrLocale = Locale.ENGLISH
-    private val rtlLocale = Locale("ar")
-
-    @Before
-    fun before() {
-        defaultLocale = Locale.getDefault()
-    }
-
-    @After
-    fun after() {
-        Locale.setDefault(defaultLocale)
-    }
-=======
     private val ltrLocale = Locale("en")
     private val rtlLocale = Locale("ar")
->>>>>>> a80c61f2261aa88096b3ac6d7ee2e4baf56aa3f1
 
     @Test
     fun unspecifiedTextDirection_withLtrLocale_resolvesToLtr() {

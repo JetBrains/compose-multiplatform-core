@@ -404,9 +404,9 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
             layoutResult = value.layoutResult
         }
 
-<<<<<<< HEAD
         // Long string concatenation causes atomicfu plugin to be slow/hang.
-        // See https://youtrack.jetbrains.com/issue/KT-65645/Atomicfu-plugin-compilation-hangs-on-a-long-string-concatenation
+        // See
+        // https://youtrack.jetbrains.com/issue/KT-65645/Atomicfu-plugin-compilation-hangs-on-a-long-string-concatenation
         override fun toString(): String = buildString {
             append("CacheRecord(")
             append("visualText=$visualText, ")
@@ -419,28 +419,11 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
             append("fontScale=$fontScale, ")
             append("layoutDirection=$layoutDirection, ")
             append("fontFamilyResolver=$fontFamilyResolver, ")
+            append("defaultLocaleList=$defaultLocaleList, ")
             append("constraints=$constraints, ")
             append("layoutResult=$layoutResult")
             append(")")
         }
-=======
-        override fun toString(): String =
-            "CacheRecord(" +
-                "visualText=$visualText, " +
-                "annotations=$annotations, " +
-                "composition=$composition, " +
-                "textStyle=$textStyle, " +
-                "singleLine=$singleLine, " +
-                "softWrap=$softWrap, " +
-                "densityValue=$densityValue, " +
-                "fontScale=$fontScale, " +
-                "layoutDirection=$layoutDirection, " +
-                "fontFamilyResolver=$fontFamilyResolver, " +
-                "defaultLocaleList=$defaultLocaleList, " +
-                "constraints=$constraints, " +
-                "layoutResult=$layoutResult" +
-                ")"
->>>>>>> a80c61f2261aa88096b3ac6d7ee2e4baf56aa3f1
     }
 
     // endregion

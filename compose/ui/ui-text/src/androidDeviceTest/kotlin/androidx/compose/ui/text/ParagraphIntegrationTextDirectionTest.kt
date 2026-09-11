@@ -40,21 +40,7 @@ class ParagraphIntegrationTextDirectionTest {
     private val ltrLocaleList = LocaleList("en")
     private val rtlLocaleList = LocaleList("ar")
     private val rtlLocale = Locale("ar")
-<<<<<<< HEAD
-    private val ltrLocale = Locale.ENGLISH
-
-    @Before
-    fun before() {
-        defaultLocale = Locale.getDefault()
-    }
-
-    @After
-    fun after() {
-        Locale.setDefault(defaultLocale)
-    }
-=======
     private val ltrLocale = Locale("en")
->>>>>>> a80c61f2261aa88096b3ac6d7ee2e4baf56aa3f1
 
     @Test
     fun unspecifiedTextDirection_withLtrLocale_resolvesToLtr() {

@@ -31,52 +31,8 @@ import org.junit.runner.RunWith
 @OptIn(InternalPlatformTextApi::class)
 class AndroidParagraphTextDirectionTest {
 
-<<<<<<< HEAD
-    private lateinit var defaultLocale: Locale
-    private val ltrLocaleList = LocaleList("en")
-    private val rtlLocaleList = LocaleList("ar")
-    private val ltrLocale = Locale.ENGLISH
-    private val rtlLocale = Locale("ar")
-
-    @Before
-    fun before() {
-        defaultLocale = Locale.getDefault()
-    }
-
-    @After
-    fun after() {
-        Locale.setDefault(defaultLocale)
-    }
-
-    @Test
-    fun resolveTextDirectionHeuristics_unspecifiedTextDirection_nullLocaleList_defaultLtrLocale() {
-        Locale.setDefault(ltrLocale)
-
-        assertThat(
-                resolveTextDirectionHeuristics(
-                    textDirection = TextDirection.Unspecified,
-                    localeList = null,
-                )
-            )
-            .isEqualTo(LayoutCompat.TEXT_DIRECTION_FIRST_STRONG_LTR)
-    }
-
-    @Test
-    fun resolveTextDirectionHeuristics_unspecifiedTextDirection_nullLocaleList_defaultRtlLocale() {
-        Locale.setDefault(rtlLocale)
-
-        assertThat(
-                resolveTextDirectionHeuristics(
-                    textDirection = TextDirection.Unspecified,
-                    localeList = null,
-                )
-            )
-            .isEqualTo(LayoutCompat.TEXT_DIRECTION_FIRST_STRONG_RTL)
-    }
-=======
     private val ltrLocale = Locale("en")
     private val rtlLocale = Locale("ar")
->>>>>>> a80c61f2261aa88096b3ac6d7ee2e4baf56aa3f1
 
     @Test
     fun resolveTextDirectionHeuristics_unspecifiedTextDirection_ltrLocaleList() {

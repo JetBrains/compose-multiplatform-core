@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.internal.JvmDefaultWithCompatibility
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.platform.PlatformTextRegistry
 import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.text.style.TextDecoration
@@ -55,41 +56,70 @@ actual sealed interface Paragraph {
     actual val didExceedMaxLines: Boolean
     actual val lineCount: Int
     actual val placeholderRects: List<Rect?>
+
     actual fun getPathForRange(start: Int, end: Int): Path
+
     actual fun getCursorRect(offset: Int): Rect
+
     actual fun getLineLeft(lineIndex: Int): Float
+
     actual fun getLineRight(lineIndex: Int): Float
+
     actual fun getLineTop(lineIndex: Int): Float
+
     actual fun getLineBaseline(lineIndex: Int): Float
+
     actual fun getLineBottom(lineIndex: Int): Float
+
     actual fun getLineHeight(lineIndex: Int): Float
+
     actual fun getLineWidth(lineIndex: Int): Float
+
     actual fun getLineStart(lineIndex: Int): Int
+
     actual fun getLineEnd(lineIndex: Int, visibleEnd: Boolean): Int
+
     actual fun isLineEllipsized(lineIndex: Int): Boolean
+
     actual fun getLineForOffset(offset: Int): Int
+
     actual fun getHorizontalPosition(offset: Int, usePrimaryDirection: Boolean): Float
+
     actual fun getParagraphDirection(offset: Int): ResolvedTextDirection
+
     actual fun getBidiRunDirection(offset: Int): ResolvedTextDirection
+
     actual fun getLineForVerticalPosition(vertical: Float): Int
+
     actual fun getOffsetForPosition(position: Offset): Int
+
     actual fun getRangeForRect(
         rect: Rect,
         granularity: TextGranularity,
-        inclusionStrategy: TextInclusionStrategy
+        inclusionStrategy: TextInclusionStrategy,
     ): TextRange
+
     actual fun getBoundingBox(offset: Int): Rect
-    actual fun fillBoundingBoxes(range: TextRange, array: FloatArray, @IntRange(from = 0) arrayStart: Int)
+
+    actual fun fillBoundingBoxes(
+        range: TextRange,
+        array: FloatArray,
+        @IntRange(from = 0) arrayStart: Int,
+    )
+
     actual fun getWordBoundary(offset: Int): TextRange
+
     actual fun paint(canvas: Canvas, color: Color, shadow: Shadow?, textDecoration: TextDecoration?)
+
     actual fun paint(
         canvas: Canvas,
         color: Color,
         shadow: Shadow?,
         textDecoration: TextDecoration?,
         drawStyle: DrawStyle?,
-        blendMode: BlendMode
+        blendMode: BlendMode,
     )
+
     actual fun paint(
         canvas: Canvas,
         brush: Brush,
@@ -97,7 +127,7 @@ actual sealed interface Paragraph {
         shadow: Shadow?,
         textDecoration: TextDecoration?,
         drawStyle: DrawStyle?,
-        blendMode: BlendMode
+        blendMode: BlendMode,
     )
 }
 
@@ -121,16 +151,44 @@ actual fun Paragraph(
     density: Density,
     resourceLoader: Font.ResourceLoader,
 ): Paragraph =
-    PlatformTextRegistry.requireCurrent().createParagraph(
+    PlatformTextRegistry.requireCurrent()
+        .createParagraph(
+            text = text,
+            style = style,
+            annotations = spanStyles,
+            placeholders = placeholders,
+            maxLines = maxLines,
+            overflow = if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip,
+            constraints = Constraints(maxWidth = width.ceilToInt()),
+            density = density,
+            fontFamilyResolver = createFontFamilyResolver(resourceLoader),
+        )
+
+@Deprecated(
+    "Paragraph that doesn't take a default locale list is deprecated, pass a LocaleList instead"
+)
+actual fun Paragraph(
+    text: String,
+    style: TextStyle,
+    constraints: Constraints,
+    density: Density,
+    fontFamilyResolver: FontFamily.Resolver,
+    spanStyles: List<AnnotatedString.Range<SpanStyle>>,
+    placeholders: List<AnnotatedString.Range<Placeholder>>,
+    maxLines: Int,
+    overflow: TextOverflow,
+): Paragraph =
+    Paragraph(
         text = text,
         style = style,
-        annotations = spanStyles,
+        constraints = constraints,
+        density = density,
+        fontFamilyResolver = fontFamilyResolver,
+        defaultLocaleList = @Suppress("DEPRECATION") LocaleList.current,
+        spanStyles = spanStyles,
         placeholders = placeholders,
         maxLines = maxLines,
-        overflow = if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip,
-        constraints = Constraints(maxWidth = width.ceilToInt()),
-        density = density,
-        fontFamilyResolver = createFontFamilyResolver(resourceLoader),
+        overflow = overflow,
     )
 
 @Deprecated(
@@ -153,17 +211,18 @@ actual fun Paragraph(
     maxLines: Int,
     ellipsis: Boolean,
 ): Paragraph =
-    PlatformTextRegistry.requireCurrent().createParagraph(
-        text = text,
-        style = style,
-        annotations = spanStyles,
-        placeholders = placeholders,
-        maxLines = maxLines,
-        overflow = if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip,
-        constraints = Constraints(maxWidth = width.ceilToInt()),
-        density = density,
-        fontFamilyResolver = fontFamilyResolver,
-    )
+    PlatformTextRegistry.requireCurrent()
+        .createParagraph(
+            text = text,
+            style = style,
+            annotations = spanStyles,
+            placeholders = placeholders,
+            maxLines = maxLines,
+            overflow = if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip,
+            constraints = Constraints(maxWidth = width.ceilToInt()),
+            density = density,
+            fontFamilyResolver = fontFamilyResolver,
+        )
 
 @Deprecated(
     "Paragraph that takes `ellipsis: Boolean` is deprecated, pass TextOverflow instead.",
@@ -180,17 +239,18 @@ actual fun Paragraph(
     maxLines: Int,
     ellipsis: Boolean,
 ): Paragraph =
-    PlatformTextRegistry.requireCurrent().createParagraph(
-        text = text,
-        style = style,
-        annotations = spanStyles,
-        placeholders = placeholders,
-        maxLines = maxLines,
-        overflow = if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip,
-        constraints = constraints,
-        density = density,
-        fontFamilyResolver = fontFamilyResolver,
-    )
+    PlatformTextRegistry.requireCurrent()
+        .createParagraph(
+            text = text,
+            style = style,
+            annotations = spanStyles,
+            placeholders = placeholders,
+            maxLines = maxLines,
+            overflow = if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip,
+            constraints = constraints,
+            density = density,
+            fontFamilyResolver = fontFamilyResolver,
+        )
 
 actual fun Paragraph(
     text: String,
@@ -198,22 +258,27 @@ actual fun Paragraph(
     constraints: Constraints,
     density: Density,
     fontFamilyResolver: FontFamily.Resolver,
+    defaultLocaleList: LocaleList,
     spanStyles: List<AnnotatedString.Range<SpanStyle>>,
     placeholders: List<AnnotatedString.Range<Placeholder>>,
     maxLines: Int,
     overflow: TextOverflow,
 ): Paragraph =
-    PlatformTextRegistry.requireCurrent().createParagraph(
-        text = text,
-        style = style,
-        annotations = spanStyles,
-        placeholders = placeholders,
-        maxLines = maxLines,
-        overflow = overflow,
-        constraints = constraints,
-        density = density,
-        fontFamilyResolver = fontFamilyResolver,
-    )
+    // TODO(Merge) Normal, Implement after merging a80c61f2261aa88096b3ac6d7ee2e4baf56aa3f1.
+    // The non-Android text backend ignores the default locale list, so it cannot provide locale
+    // fallback.
+    PlatformTextRegistry.requireCurrent()
+        .createParagraph(
+            text = text,
+            style = style,
+            annotations = spanStyles,
+            placeholders = placeholders,
+            maxLines = maxLines,
+            overflow = overflow,
+            constraints = constraints,
+            density = density,
+            fontFamilyResolver = fontFamilyResolver,
+        )
 
 @Deprecated(
     "Paragraph that takes maximum allowed width is deprecated, pass constraints instead.",
@@ -230,12 +295,13 @@ actual fun Paragraph(
     ellipsis: Boolean,
     width: Float,
 ): Paragraph =
-    PlatformTextRegistry.requireCurrent().createParagraph(
-        paragraphIntrinsics = paragraphIntrinsics,
-        maxLines = maxLines,
-        overflow = if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip,
-        constraints = Constraints(maxWidth = width.ceilToInt()),
-    )
+    PlatformTextRegistry.requireCurrent()
+        .createParagraph(
+            paragraphIntrinsics = paragraphIntrinsics,
+            maxLines = maxLines,
+            overflow = if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip,
+            constraints = Constraints(maxWidth = width.ceilToInt()),
+        )
 
 @Deprecated(
     "Paragraph that takes ellipsis: Boolean is deprecated, pass TextOverflow instead.",
@@ -247,12 +313,13 @@ actual fun Paragraph(
     maxLines: Int,
     ellipsis: Boolean,
 ): Paragraph =
-    PlatformTextRegistry.requireCurrent().createParagraph(
-        paragraphIntrinsics = paragraphIntrinsics,
-        maxLines = maxLines,
-        overflow = if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip,
-        constraints = constraints,
-    )
+    PlatformTextRegistry.requireCurrent()
+        .createParagraph(
+            paragraphIntrinsics = paragraphIntrinsics,
+            maxLines = maxLines,
+            overflow = if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip,
+            constraints = constraints,
+        )
 
 actual fun Paragraph(
     paragraphIntrinsics: ParagraphIntrinsics,
@@ -260,9 +327,10 @@ actual fun Paragraph(
     maxLines: Int,
     overflow: TextOverflow,
 ): Paragraph =
-    PlatformTextRegistry.requireCurrent().createParagraph(
-        paragraphIntrinsics = paragraphIntrinsics,
-        maxLines = maxLines,
-        overflow = overflow,
-        constraints = constraints,
-    )
+    PlatformTextRegistry.requireCurrent()
+        .createParagraph(
+            paragraphIntrinsics = paragraphIntrinsics,
+            maxLines = maxLines,
+            overflow = overflow,
+            constraints = constraints,
+        )
