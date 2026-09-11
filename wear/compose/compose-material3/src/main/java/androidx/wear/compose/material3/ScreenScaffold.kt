@@ -48,6 +48,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -1042,34 +1043,32 @@ public fun ScreenScaffold(
     val scaffoldState = LocalScaffoldState.current
     val key = remember { Any() }
 
-    // Update the timeText & scrollInfoProvider if there is a change and the screen is already
-    // present
-    scaffoldState.screenContent.updateIfNeeded(
-        key = key,
-        timeText = timeText,
-        scrollInfoProvider = scrollInfoProvider,
-        statusBarMode = statusBarMode,
-        view = currentView,
-    )
+    val timeTextState = rememberUpdatedState(timeText)
+    val scrollInfoProviderState = rememberUpdatedState(scrollInfoProvider)
+    val statusBarModeState = rememberUpdatedState(statusBarMode)
+    val viewState = rememberUpdatedState(currentView)
 
-    scaffoldState.screenContent.UpdateIdlingDetectorIfNeeded()
+    scaffoldState?.screenContent?.UpdateIdlingDetectorIfNeeded()
 
     val screenIsActive = LocalScreenIsActive.current
     DisposableEffect(screenIsActive, scaffoldState) {
         if (screenIsActive) {
-            scaffoldState.screenContent.addScreen(
-                key = key,
-                timeText = timeText,
-                scrollInfoProvider = scrollInfoProvider,
-                statusBarMode = statusBarMode,
-                view = currentView,
-            )
+            scaffoldState
+                ?.screenContent
+                ?.addScreen(
+                    key = key,
+                    view = viewState,
+                    timeText = timeTextState,
+                    scrollInfoProvider = scrollInfoProviderState,
+                    statusBarMode = statusBarModeState,
+                )
         }
-        onDispose { scaffoldState.screenContent.removeScreen(key) }
+        onDispose { scaffoldState?.screenContent?.removeScreen(key) }
     }
 
     val resolvedShowStatusBar =
-        scaffoldState.screenContent.resolveShowStatusBarForScreen(key, statusBarMode)
+        scaffoldState?.screenContent?.resolveShowStatusBarForScreen(key, statusBarMode)
+            ?: (LocalStatusBarEnabled.current && statusBarMode == StatusBarMode.Enabled)
 
     // Resolve the system status bar top inset boundaries.
     // - When showStatusBar is true (and supported on hardware):
@@ -1116,8 +1115,8 @@ public fun ScreenScaffold(
             scrollInfoProvider?.let {
                 AnimatedIndicator(
                     isVisible = {
-                        scaffoldState.screenContent.screenStage.value != ScreenStage.Idle &&
-                            scrollInfoProvider.isScrollable
+                        (scaffoldState?.screenContent?.screenStage?.value ?: ScreenStage.New) !=
+                            ScreenStage.Idle && scrollInfoProvider.isScrollable
                     },
                     modifier = Modifier.align(Alignment.CenterEnd),
                     content = scrollIndicator,

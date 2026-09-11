@@ -63,17 +63,20 @@ import kotlinx.coroutines.launch
  * @param appTimeText The default time text composable provided by [AppScaffold].
  * @param appShowStatusBar Whether the system status bar overlay is enabled at the app level.
  * @param isStatusBarSupported Whether status bar management is supported on this device/platform.
+ * @param appWindowView The [View] associated with the root [AppScaffold] window.
  */
 internal class ScaffoldState(
     appTimeText: State<@Composable () -> Unit> = mutableStateOf({}),
     appShowStatusBar: State<Boolean> = mutableStateOf(true),
     isStatusBarSupported: State<Boolean> = mutableStateOf(false),
+    appWindowView: State<View>,
 ) {
     val screenContent =
         ScreenContent(
             appShowStatusBar = appShowStatusBar,
             isStatusBarSupported = isStatusBarSupported,
             appTimeText = appTimeText,
+            appWindowView = appWindowView,
         )
 
     /**
@@ -97,37 +100,28 @@ internal class ScaffoldState(
  * @param appShowStatusBar Default status bar overlay visibility configured by [AppScaffold].
  * @param isStatusBarSupported Whether the device platform supports status bar overlay control.
  * @param appTimeText Default application-level [TimeText] composable.
+ * @param appWindowView The [View] associated with the root [AppScaffold] window.
  */
 internal class ScreenContent(
     private val appShowStatusBar: State<Boolean>,
     private val isStatusBarSupported: State<Boolean>,
     private val appTimeText: State<@Composable () -> Unit>,
+    private val appWindowView: State<View>,
 ) {
-    /**
-     * The [View] associated with the root [AppScaffold] window.
-     *
-     * Used as the fallback window target when no active screens are on the stack, and prevents the
-     * app window's [StatusBarOrchestrator] from being prematurely cleaned up while the app scaffold
-     * is active.
-     */
-    private val appWindowView = mutableStateOf<View?>(null)
-
     /** Active [StatusBarOrchestrator] instances for windows managed by this scaffold. */
     private val orchestrators = mutableListOf<StatusBarOrchestrator>()
 
     /**
      * Returns the active top-most screen's status bar orchestrator, or falls back to the app window
-     * orchestrator if no screen is on the stack, or [NoOpStatusBarOrchestrator] if neither is
-     * available.
+     * orchestrator if no screen is on the stack.
      */
     val currentActiveOrchestrator: State<StatusBarOrchestrator> = derivedStateOf {
         val targetView = contentItems.lastOrNull()?.view?.value ?: appWindowView.value
-        if (targetView != null) {
-            orchestrators.fastFirstOrNull { it.isForWindow(targetView) }
-                ?: StatusBarOrchestrator(targetView).also { orchestrators.add(it) }
-        } else {
-            NoOpStatusBarOrchestrator
-        }
+        orchestrators.fastFirstOrNull { it.isForWindow(targetView) }
+            ?: run {
+                cleanupUnusedOrchestrators()
+                StatusBarOrchestrator(targetView).also { orchestrators.add(it) }
+            }
     }
 
     /**
@@ -223,35 +217,6 @@ internal class ScreenContent(
         }
 
     /**
-     * Registers the [View] associated with the root [AppScaffold] window.
-     *
-     * Called when [AppScaffold] enters composition or when its hosting window view changes.
-     *
-     * @param view The [View] containing the [AppScaffold].
-     */
-    fun setAppWindowView(view: View) {
-        if (appWindowView.value !== view) {
-            appWindowView.value = view
-            cleanupUnusedOrchestrators()
-        }
-    }
-
-    /**
-     * Unregisters the [View] associated with the root [AppScaffold] window and cleans up its
-     * [StatusBarOrchestrator] if no longer in use by any active screen.
-     *
-     * Called when [AppScaffold] leaves composition or when its hosting window view changes.
-     *
-     * @param view The [View] previously registered via [setAppWindowView].
-     */
-    fun clearAppWindowView(view: View) {
-        if (appWindowView.value === view) {
-            appWindowView.value = null
-            cleanupUnusedOrchestrators()
-        }
-    }
-
-    /**
      * Removes the screen associated with [key] from the screen stack and disposes its associated
      * window orchestrator if no remaining screens or host view are using it.
      *
@@ -266,20 +231,20 @@ internal class ScreenContent(
     }
 
     /**
-     * Adds a screen to the top of the screen stack.
+     * Adds a screen to the top of the screen stack using reactive [State] handles.
      *
      * @param key The unique key identifying this screen.
-     * @param timeText The custom time text composable for this screen, or null to inherit.
-     * @param scrollInfoProvider The [ScrollInfoProvider] for scroll-driven effects, or null.
-     * @param statusBarMode The [StatusBarMode] configured for this screen.
-     * @param view The [View] associated with this screen, used to resolve its root window.
+     * @param view The [View] state associated with this screen, used to resolve its root window.
+     * @param timeText The custom time text composable state for this screen.
+     * @param scrollInfoProvider The [ScrollInfoProvider] state for scroll-driven effects.
+     * @param statusBarMode The [StatusBarMode] state configured for this screen.
      */
     fun addScreen(
         key: Any,
-        timeText: @Composable (() -> Unit)?,
-        scrollInfoProvider: ScrollInfoProvider? = null,
-        statusBarMode: StatusBarMode = StatusBarMode.Inherit,
-        view: View? = null,
+        view: State<View>,
+        timeText: State<(@Composable () -> Unit)?> = mutableStateOf(null),
+        scrollInfoProvider: State<ScrollInfoProvider?> = mutableStateOf(null),
+        statusBarMode: State<StatusBarMode> = mutableStateOf(StatusBarMode.Inherit),
     ) {
         // If a screen with this key is already present, remove it first. This ensures no duplicate
         // entries exist in contentItems (which would cause removeScreen to orphan duplicate
@@ -293,46 +258,12 @@ internal class ScreenContent(
         contentItems.add(
             ScreenContentData(
                 key = key,
-                view = mutableStateOf(view),
-                scrollInfoProvider = mutableStateOf(scrollInfoProvider),
-                statusBarMode = mutableStateOf(statusBarMode),
-                timeText = mutableStateOf(timeText),
+                view = view,
+                scrollInfoProvider = scrollInfoProvider,
+                statusBarMode = statusBarMode,
+                timeText = timeText,
             )
         )
-
-        cleanupUnusedOrchestrators()
-    }
-
-    /**
-     * Updates an existing screen's metadata, cleaning up and restoring any window that is no longer
-     * in use.
-     *
-     * @param key The unique key identifying this screen.
-     * @param timeText The updated custom time text composable, or null.
-     * @param scrollInfoProvider The updated [ScrollInfoProvider], or null.
-     * @param statusBarMode The updated [StatusBarMode].
-     * @param view The updated [View] associated with this screen.
-     */
-    fun updateIfNeeded(
-        key: Any,
-        timeText: @Composable (() -> Unit)?,
-        scrollInfoProvider: ScrollInfoProvider? = null,
-        statusBarMode: StatusBarMode = StatusBarMode.Inherit,
-        view: View? = null,
-    ) {
-        contentItems
-            .toList()
-            .fastFirstOrNull { it.key == key }
-            ?.let {
-                it.timeText.value = timeText
-                it.scrollInfoProvider.value = scrollInfoProvider
-                it.statusBarMode.value = statusBarMode
-                val oldView = it.view.value
-                if (oldView !== view) {
-                    it.view.value = view
-                    cleanupUnusedOrchestrators()
-                }
-            }
     }
 
     /** Restores all registered window status bar states and clears all active orchestrators. */
@@ -364,12 +295,11 @@ internal class ScreenContent(
      * [appWindowView] or any active screen in [contentItems].
      */
     private fun cleanupUnusedOrchestrators() {
+        val appView = appWindowView.value
         orchestrators.removeAll { orchestrator ->
             val inUse =
-                (appWindowView.value?.let { orchestrator.isForWindow(it) } == true) ||
-                    contentItems.toList().fastAny {
-                        it.view.value?.let { v -> orchestrator.isForWindow(v) } == true
-                    }
+                orchestrator.isForWindow(appView) ||
+                    contentItems.toList().fastAny { orchestrator.isForWindow(it.view.value) }
             if (!inUse) {
                 // An orchestrator not in use belongs to a secondary window (e.g. a Dialog)
                 // with no remaining screens on the stack (appWindowView is retained in inUse).
@@ -419,10 +349,10 @@ internal class ScreenContent(
      */
     private class ScreenContentData(
         val key: Any,
-        val view: MutableState<View?>,
-        val scrollInfoProvider: MutableState<ScrollInfoProvider?> = mutableStateOf(null),
-        val statusBarMode: MutableState<StatusBarMode> = mutableStateOf(StatusBarMode.Inherit),
-        val timeText: MutableState<(@Composable () -> Unit)?> = mutableStateOf(null),
+        val view: State<View>,
+        val scrollInfoProvider: State<ScrollInfoProvider?> = mutableStateOf(null),
+        val statusBarMode: State<StatusBarMode> = mutableStateOf(StatusBarMode.Inherit),
+        val timeText: State<(@Composable () -> Unit)?> = mutableStateOf(null),
     )
 }
 
@@ -464,7 +394,7 @@ internal fun AnimatedIndicator(
     }
 }
 
-internal val LocalScaffoldState = compositionLocalOf { ScaffoldState() }
+internal val LocalScaffoldState = compositionLocalOf<ScaffoldState?> { null }
 
 private const val IDLE_DELAY = 2000L
 
