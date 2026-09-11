@@ -61,8 +61,8 @@ sourceSetsDesktop:
   - '**/desktopMain/**'
   - '**/desktopTest/**'
 
-# When changing these lists, please update the full copies below as well.
-# Duplicated for simplicity and to reduce mistakes.
+# This list copies the lists above, change them first, then change this list.
+# Duplicated for simplicity.
 sourceSetsUnknown:
   - '**'
   - '!**/iosMain/**'
