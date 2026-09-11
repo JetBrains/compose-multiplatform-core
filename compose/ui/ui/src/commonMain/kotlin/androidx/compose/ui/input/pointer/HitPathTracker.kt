@@ -397,6 +397,13 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
     private val relevantChanges: LongSparseArray<PointerInputChange> = LongSparseArray(2)
     private var coordinates: LayoutCoordinates? = null
     private var pointerEvent: PointerEvent? = null
+<<<<<<< HEAD
+=======
+    private var syntheticEnterEvent: PointerEvent? = null
+    private var wasIn = false
+    private var isIn = true
+    private var hasExited = true
+>>>>>>> eb81162e7d460140736101556df88964aa886fe9
 
     override fun removeInvalidPointerIdsAndChanges(
         pointerIdValue: Long,
@@ -427,6 +434,26 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
         return dispatchIfNeeded {
             val event = pointerEvent!!
             val size = coordinates!!.size
+
+            // If a synthetic enter event was generated during a pan gesture, dispatch it first
+            // across Initial, Main, and Final passes so hover listeners can fully activate before
+            // the pan gesture begins.
+            syntheticEnterEvent?.let { enterEvent ->
+                modifierNode.dispatchForKind(Nodes.PointerInput) {
+                    it.onPointerEvent(enterEvent, PointerEventPass.Initial, size)
+                }
+                if (modifierNode.isAttached) {
+                    modifierNode.dispatchForKind(Nodes.PointerInput) {
+                        it.onPointerEvent(enterEvent, PointerEventPass.Main, size)
+                    }
+                }
+                if (modifierNode.isAttached) {
+                    modifierNode.dispatchForKind(Nodes.PointerInput) {
+                        it.onPointerEvent(enterEvent, PointerEventPass.Final, size)
+                    }
+                }
+                syntheticEnterEvent = null
+            }
 
             // Dispatch on the tunneling pass.
             modifierNode.dispatchForKind(Nodes.PointerInput) {
@@ -466,6 +493,7 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
         val result = dispatchIfNeeded {
             val event = pointerEvent!!
             val size = coordinates!!.size
+
             // Dispatch on the tunneling pass.
             modifierNode.dispatchForKind(Nodes.PointerInput) {
                 it.onPointerEvent(event, PointerEventPass.Final, size)
@@ -606,6 +634,7 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                 event.type == PointerEventType.PanStart ||
                     event.type == PointerEventType.PanMove ||
                     event.type == PointerEventType.PanEnd
+<<<<<<< HEAD
             if (event.type == PointerEventType.Move ||
                 event.type == PointerEventType.Enter ||
                 event.type == PointerEventType.Exit ||
@@ -616,6 +645,35 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                     hasEntered && !isIn -> PointerEventType.Exit
                     else -> PointerEventType.Move
                 }
+=======
+            if (
+                isIn != wasIn &&
+                    (event.type == PointerEventType.Move ||
+                        event.type == PointerEventType.Enter ||
+                        event.type == PointerEventType.Exit)
+            ) {
+                event.type =
+                    if (isIn) {
+                        PointerEventType.Enter
+                    } else {
+                        PointerEventType.Exit
+                    }
+            } else if (isIn != wasIn && ComposeUiFlags.isTrackpadPanHoverFixEnabled && isPan) {
+                if (isIn) {
+                    // Create a synthetic Enter event to dispatch to hover listeners
+                    // without altering the pan gesture event.
+                    syntheticEnterEvent =
+                        PointerEvent(changesList, internalPointerEvent).also {
+                            it.type = PointerEventType.Enter
+                        }
+                } else {
+                    event.type = PointerEventType.Exit
+                }
+            } else if (event.type == PointerEventType.Enter && wasIn && !hasExited) {
+                event.type = PointerEventType.Move // We already knew that it was in.
+            } else if (event.type == PointerEventType.Exit && isIn && activeHoverChange.pressed) {
+                event.type = PointerEventType.Move // We are still in.
+>>>>>>> eb81162e7d460140736101556df88964aa886fe9
             }
 
             if (event.type == PointerEventType.Enter) hasEntered = true
@@ -628,6 +686,7 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                 // Older way optimizes not triggering move events when location hasn't changed
                 (childChanged ||
                     event.type != PointerEventType.Move ||
+                    syntheticEnterEvent != null ||
                     hasPositionChanged(pointerEvent, event))
         pointerEvent = event
         return changed
@@ -656,6 +715,7 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
     private fun clearCache() {
         relevantChanges.clear()
         coordinates = null
+        syntheticEnterEvent = null
     }
 
     /**
