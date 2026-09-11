@@ -24,7 +24,6 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.font.toFontFamily
-import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.platform.SynchronizedObject
 import androidx.compose.ui.text.platform.makeSynchronizedObject
 import androidx.compose.ui.text.platform.synchronized
@@ -82,13 +81,6 @@ private constructor(
     /** The font resolver used for computing this text layout. */
     public val fontFamilyResolver: FontFamily.Resolver,
 
-    /**
-     * The default locale list used for computing this text layout. This locale is used for
-     * operations like line breaking and capitalization when no locale list is specified in the text
-     * styles.
-     */
-    public val defaultLocaleList: LocaleList,
-
     /** The minimum width provided while calculating this text layout. */
     public val constraints: Constraints,
 ) {
@@ -111,7 +103,7 @@ private constructor(
             ReplaceWith(
                 "TextLayoutInput(text, style, placeholders, " +
                     "maxLines, softWrap, overflow, density, layoutDirection, fontFamilyResolver, " +
-                    "constraints)"
+                    "constraints"
             ),
     )
     @Suppress("DEPRECATION")
@@ -137,12 +129,9 @@ private constructor(
         layoutDirection,
         resourceLoader,
         createFontFamilyResolver(resourceLoader),
-        LocaleList.current,
         constraints,
     )
 
-    @Deprecated("Pass a default locale list")
-    @Suppress("DEPRECATION")
     public constructor(
         text: AnnotatedString,
         style: TextStyle,
@@ -165,34 +154,6 @@ private constructor(
         layoutDirection,
         @Suppress("DEPRECATION") null,
         fontFamilyResolver,
-        LocaleList.current,
-        constraints,
-    )
-
-    public constructor(
-        text: AnnotatedString,
-        style: TextStyle,
-        placeholders: List<AnnotatedString.Range<Placeholder>>,
-        maxLines: Int,
-        softWrap: Boolean,
-        overflow: TextOverflow,
-        density: Density,
-        layoutDirection: LayoutDirection,
-        fontFamilyResolver: FontFamily.Resolver,
-        defaultLocaleList: LocaleList,
-        constraints: Constraints,
-    ) : this(
-        text,
-        style,
-        placeholders,
-        maxLines,
-        softWrap,
-        overflow,
-        density,
-        layoutDirection,
-        @Suppress("DEPRECATION") null,
-        fontFamilyResolver,
-        defaultLocaleList,
         constraints,
     )
 
@@ -233,7 +194,6 @@ private constructor(
             layoutDirection = layoutDirection,
             resourceLoader = resourceLoader,
             fontFamilyResolver = fontFamilyResolver,
-            defaultLocaleList = defaultLocaleList,
             constraints = constraints,
         )
     }
@@ -251,7 +211,6 @@ private constructor(
         if (density != other.density) return false
         if (layoutDirection != other.layoutDirection) return false
         if (fontFamilyResolver != other.fontFamilyResolver) return false
-        if (defaultLocaleList != other.defaultLocaleList) return false
         if (constraints != other.constraints) return false
 
         return true
@@ -267,7 +226,6 @@ private constructor(
         result = 31 * result + density.hashCode()
         result = 31 * result + layoutDirection.hashCode()
         result = 31 * result + fontFamilyResolver.hashCode()
-        result = 31 * result + defaultLocaleList.hashCode()
         result = 31 * result + constraints.hashCode()
         return result
     }
@@ -276,6 +234,7 @@ private constructor(
     // See
     // https://youtrack.jetbrains.com/issue/KT-65645/Atomicfu-plugin-compilation-hangs-on-a-long-string-concatenation
     public override fun toString(): String {
+<<<<<<< HEAD
         return buildString {
             append("TextLayoutInput(")
             append("text=$text, ")
@@ -291,6 +250,20 @@ private constructor(
             append("constraints=$constraints")
             append(")")
         }
+=======
+        return "TextLayoutInput(" +
+            "text=$text, " +
+            "style=$style, " +
+            "placeholders=$placeholders, " +
+            "maxLines=$maxLines, " +
+            "softWrap=$softWrap, " +
+            "overflow=$overflow, " +
+            "density=$density, " +
+            "layoutDirection=$layoutDirection, " +
+            "fontFamilyResolver=$fontFamilyResolver, " +
+            "constraints=$constraints" +
+            ")"
+>>>>>>> 42cbb9654241cd67c502e1bb4a6e1b7e3824c2e2
     }
 }
 
