@@ -32,6 +32,11 @@ import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
 
+internal fun SemanticsConfiguration.isScrollContainer(): Boolean =
+    (getOrNull(SemanticsProperties.VerticalScrollAxisRange) != null ||
+        getOrNull(SemanticsProperties.HorizontalScrollAxisRange) != null) &&
+        getOrNull(SemanticsActions.ScrollBy)?.action != null
+
 /**
  * Responsibilities:
  * 1. For Compose nodes with scrollable semantics,
@@ -119,8 +124,7 @@ internal class A11YScrollController(
         val nodeId = semanticsNode.id
         val verticalRange = config.getOrNull(SemanticsProperties.VerticalScrollAxisRange)
         val horizontalRange = config.getOrNull(SemanticsProperties.HorizontalScrollAxisRange)
-        val canScroll = (verticalRange != null || horizontalRange != null) &&
-            config.getOrNull(SemanticsActions.ScrollBy)?.action != null
+        val canScroll = config.isScrollContainer()
 
         if (!canScroll) {
             if (scrollListenersAttached.remove(nodeId)) {
