@@ -207,9 +207,7 @@ private fun ComposeUiTestConfig.checkFieldIsNotSet(
     getFieldValue: ComposeUiTestConfig.() -> Any,
 ) {
     if (getFieldValue() != defaultComposeUiTestConfig.getFieldValue()) {
-        println(
-            "ComposeUiTestConfig.checkSupported, $name: setting is not supported in Compose Multiplatform"
-        )
+        println("ComposeUiTestConfig: $name is not supported in Compose Multiplatform")
     }
 }
 
