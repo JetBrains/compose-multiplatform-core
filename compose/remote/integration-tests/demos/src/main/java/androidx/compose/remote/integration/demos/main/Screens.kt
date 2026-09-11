@@ -20,8 +20,10 @@ import androidx.compose.material3.Text
 import androidx.compose.remote.integration.demos.integration.DragPropagationDemo
 import androidx.compose.remote.integration.demos.integration.GesturePropagationDemo
 import androidx.compose.remote.integration.demos.integration.GesturePropagationViewDemo
+import androidx.compose.remote.integration.demos.integration.HorizontalDragPropagationDemo
 import androidx.compose.remote.integration.demos.layout.RemoteBoxAlignmentsDemo
 import androidx.compose.remote.integration.demos.layout.RemoteFlowRowDemo
+import androidx.compose.remote.integration.demos.layout.RemoteStateLayoutSharedElementsDemo
 import androidx.compose.remote.integration.demos.layout.RemoteStateLayoutSimpleDemo
 import androidx.compose.remote.integration.demos.modifier.AlphaDemo
 import androidx.compose.remote.integration.demos.modifier.ClickableDemo
@@ -46,6 +48,7 @@ private object ScreenKeys {
     const val REMOTE_BOX_ALIGNMENT = "REMOTE_BOX_ALIGNMENT"
     const val REMOTE_FLOW_ROW = "REMOTE_FLOW_ROW"
     const val REMOTE_STATE_LAYOUT = "REMOTE_STATE_LAYOUT"
+    const val REMOTE_STATE_LAYOUT_SHARED_ELEMENTS = "REMOTE_STATE_LAYOUT_SHARED_ELEMENTS"
     const val CLICKABLE = "CLICKABLE"
     const val COMBINED_CLICKABLE = "COMBINED_CLICKABLE"
     const val PADDING = "PADDING"
@@ -65,6 +68,7 @@ private object ScreenKeys {
     const val GESTURE_PROPAGATION = "GESTURE_PROPAGATION"
     const val GESTURE_PROPAGATION_VIEW = "GESTURE_PROPAGATION_VIEW"
     const val DRAG_PROPAGATION = "REMOTE_PLAYER_DRAG_PROPAGATION"
+    const val HORIZONTAL_DRAG_PROPAGATION = "REMOTE_PLAYER_HORIZONTAL_DRAG_PROPAGATION"
     const val SETTINGS = "SETTINGS"
 }
 
@@ -74,6 +78,7 @@ fun ComposableScreenNavigation(key: String, onNavigateUp: () -> Unit) {
         ScreenKeys.REMOTE_BOX_ALIGNMENT -> RemoteBoxAlignmentsDemo()
         ScreenKeys.REMOTE_FLOW_ROW -> RemoteFlowRowDemo()
         ScreenKeys.REMOTE_STATE_LAYOUT -> RemoteStateLayoutSimpleDemo()
+        ScreenKeys.REMOTE_STATE_LAYOUT_SHARED_ELEMENTS -> RemoteStateLayoutSharedElementsDemo()
         ScreenKeys.PADDING -> PaddingDemo()
         ScreenKeys.ALPHA -> AlphaDemo()
         ScreenKeys.ROTATE -> RotateDemo()
@@ -93,6 +98,7 @@ fun ComposableScreenNavigation(key: String, onNavigateUp: () -> Unit) {
         ScreenKeys.GESTURE_PROPAGATION -> GesturePropagationDemo()
         ScreenKeys.GESTURE_PROPAGATION_VIEW -> GesturePropagationViewDemo()
         ScreenKeys.DRAG_PROPAGATION -> DragPropagationDemo()
+        ScreenKeys.HORIZONTAL_DRAG_PROPAGATION -> HorizontalDragPropagationDemo()
         ScreenKeys.SETTINGS -> SettingsScreen()
         else -> Text("Unknown screen: $key")
     }
@@ -120,6 +126,10 @@ val Screens =
                             ComposableScreen(
                                 key = ScreenKeys.REMOTE_STATE_LAYOUT,
                                 title = "RemoteStateLayout",
+                            ),
+                            ComposableScreen(
+                                key = ScreenKeys.REMOTE_STATE_LAYOUT_SHARED_ELEMENTS,
+                                title = "RemoteStateLayout Shared Elements",
                             ),
                         ),
                 ),
@@ -199,6 +209,10 @@ val Screens =
                             ComposableScreen(
                                 key = ScreenKeys.DRAG_PROPAGATION,
                                 title = "Drag Propagation",
+                            ),
+                            ComposableScreen(
+                                key = ScreenKeys.HORIZONTAL_DRAG_PROPAGATION,
+                                title = "Horizontal Drag Propagation",
                             ),
                         ),
                 ),

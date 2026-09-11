@@ -50,7 +50,7 @@ public final class TabTemplateLayoutsDemoScreen extends Screen {
         listBuilder.addItem(buildRowForTemplate(new TabTemplateNoTabsDemoScreen(getCarContext()),
                 R.string.tab_template_no_tabs_demo_title));
         listBuilder.addItem(buildRowForTemplate(new TabTemplateStyleDemoScreen(getCarContext()),
-                R.string.tab_template_style_demo_screen));
+                R.string.tab_template_style_demo_title));
         return new ListTemplate.Builder()
                 .setSingleList(listBuilder.build())
                 .setHeader(new Header.Builder()

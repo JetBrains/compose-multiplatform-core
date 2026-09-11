@@ -24,6 +24,10 @@ import androidx.a2ui.compose.ui.testing.A2uiTestController
 import androidx.a2ui.compose.ui.testing.A2uiTestSurface
 import androidx.a2ui.model.protocol.A2uiComponentPayload
 import androidx.a2ui.model.protocol.A2uiException.A2uiRuntimeException
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -33,13 +37,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.v2.runComposeUiTest
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -711,5 +720,843 @@ class MaterialA2uiBasicCatalogV1ColumnTest {
         controller.failComponent("stub_child", A2uiRuntimeException("Failure"))
         controller.waitForIdle()
         onNode(hasTestTag("column_tag")).assertIsDisplayed()
+    }
+
+    @Test
+    fun justify_start_arrangesChildrenAtTop() = runComposeUiTest {
+        val controller =
+            A2uiTestController(
+                catalog = testCatalog,
+                initialComponents =
+                    listOf(
+                        A2uiComponentPayload(
+                            id = "root",
+                            type = "Column",
+                            properties =
+                                mapOf(
+                                    "children" to listOf("child1", "child2"),
+                                    "justify" to "start",
+                                ),
+                        ),
+                        A2uiComponentPayload(id = "child1"),
+                        A2uiComponentPayload(id = "child2"),
+                    ),
+                componentStubs =
+                    listOf(
+                        A2uiComponentStub.withId("child1") { _, modifier ->
+                            Box(
+                                modifier =
+                                    modifier
+                                        .testTag("child1")
+                                        .sizeIn(minWidth = 50.dp, minHeight = 40.dp)
+                            )
+                        },
+                        A2uiComponentStub.withId("child2") { _, modifier ->
+                            Box(
+                                modifier =
+                                    modifier
+                                        .testTag("child2")
+                                        .sizeIn(minWidth = 50.dp, minHeight = 40.dp)
+                            )
+                        },
+                    ),
+            )
+        val surface = controller.start()
+
+        setContent {
+            MaterialTheme {
+                A2uiTestSurface(
+                    surface = surface,
+                    modifier = Modifier.testTag("column_tag").width(100.dp).height(200.dp),
+                )
+            }
+        }
+
+        val columnBounds = onNodeWithTag("column_tag").getUnclippedBoundsInRoot()
+        val child1Bounds = onNodeWithTag("child1").getUnclippedBoundsInRoot()
+        val child2Bounds = onNodeWithTag("child2").getUnclippedBoundsInRoot()
+
+        assertThat(child1Bounds.top.value).isWithin(0.5f).of(columnBounds.top.value)
+        assertThat(child2Bounds.top.value)
+            .isWithin(0.5f)
+            .of((child1Bounds.bottom + MaterialA2uiBasicCatalogV1Column.ItemSpacing).value)
+    }
+
+    @Test
+    fun justify_end_arrangesChildrenAtBottom() = runComposeUiTest {
+        val controller =
+            A2uiTestController(
+                catalog = testCatalog,
+                initialComponents =
+                    listOf(
+                        A2uiComponentPayload(
+                            id = "root",
+                            type = "Column",
+                            properties =
+                                mapOf("children" to listOf("child1", "child2"), "justify" to "end"),
+                        ),
+                        A2uiComponentPayload(id = "child1"),
+                        A2uiComponentPayload(id = "child2"),
+                    ),
+                componentStubs =
+                    listOf(
+                        A2uiComponentStub.withId("child1") { _, modifier ->
+                            Box(
+                                modifier =
+                                    modifier
+                                        .testTag("child1")
+                                        .sizeIn(minWidth = 50.dp, minHeight = 40.dp)
+                            )
+                        },
+                        A2uiComponentStub.withId("child2") { _, modifier ->
+                            Box(
+                                modifier =
+                                    modifier
+                                        .testTag("child2")
+                                        .sizeIn(minWidth = 50.dp, minHeight = 40.dp)
+                            )
+                        },
+                    ),
+            )
+        val surface = controller.start()
+
+        setContent {
+            MaterialTheme {
+                A2uiTestSurface(
+                    surface = surface,
+                    modifier = Modifier.testTag("column_tag").width(100.dp).height(200.dp),
+                )
+            }
+        }
+
+        val columnBounds = onNodeWithTag("column_tag").getUnclippedBoundsInRoot()
+        val child1Bounds = onNodeWithTag("child1").getUnclippedBoundsInRoot()
+        val child2Bounds = onNodeWithTag("child2").getUnclippedBoundsInRoot()
+
+        assertThat(child2Bounds.bottom.value).isWithin(0.5f).of(columnBounds.bottom.value)
+        assertThat(child1Bounds.bottom.value)
+            .isWithin(0.5f)
+            .of((child2Bounds.top - MaterialA2uiBasicCatalogV1Column.ItemSpacing).value)
+    }
+
+    @Test
+    fun justify_center_arrangesChildrenInCenter() = runComposeUiTest {
+        val controller =
+            A2uiTestController(
+                catalog = testCatalog,
+                initialComponents =
+                    listOf(
+                        A2uiComponentPayload(
+                            id = "root",
+                            type = "Column",
+                            properties =
+                                mapOf(
+                                    "children" to listOf("child1", "child2"),
+                                    "justify" to "center",
+                                ),
+                        ),
+                        A2uiComponentPayload(id = "child1"),
+                        A2uiComponentPayload(id = "child2"),
+                    ),
+                componentStubs =
+                    listOf(
+                        A2uiComponentStub.withId("child1") { _, modifier ->
+                            Box(
+                                modifier =
+                                    modifier
+                                        .testTag("child1")
+                                        .sizeIn(minWidth = 50.dp, minHeight = 40.dp)
+                            )
+                        },
+                        A2uiComponentStub.withId("child2") { _, modifier ->
+                            Box(
+                                modifier =
+                                    modifier
+                                        .testTag("child2")
+                                        .sizeIn(minWidth = 50.dp, minHeight = 40.dp)
+                            )
+                        },
+                    ),
+            )
+        val surface = controller.start()
+
+        setContent {
+            MaterialTheme {
+                A2uiTestSurface(
+                    surface = surface,
+                    modifier = Modifier.testTag("column_tag").width(100.dp).height(200.dp),
+                )
+            }
+        }
+
+        val columnBounds = onNodeWithTag("column_tag").getUnclippedBoundsInRoot()
+        val child1Bounds = onNodeWithTag("child1").getUnclippedBoundsInRoot()
+        val child2Bounds = onNodeWithTag("child2").getUnclippedBoundsInRoot()
+
+        val childrenCenter = (child1Bounds.top + child2Bounds.bottom) / 2
+        val columnCenter = (columnBounds.top + columnBounds.bottom) / 2
+        assertThat(childrenCenter.value).isWithin(0.5f).of(columnCenter.value)
+        assertThat(child1Bounds.top).isGreaterThan(columnBounds.top)
+        assertThat(child2Bounds.bottom).isLessThan(columnBounds.bottom)
+    }
+
+    @Test
+    fun justify_spaceBetween_spacesChildrenBetween() = runComposeUiTest {
+        val controller =
+            A2uiTestController(
+                catalog = testCatalog,
+                initialComponents =
+                    listOf(
+                        A2uiComponentPayload(
+                            id = "root",
+                            type = "Column",
+                            properties =
+                                mapOf(
+                                    "children" to listOf("child1", "child2"),
+                                    "justify" to "spaceBetween",
+                                ),
+                        ),
+                        A2uiComponentPayload(id = "child1"),
+                        A2uiComponentPayload(id = "child2"),
+                    ),
+                componentStubs =
+                    listOf(
+                        A2uiComponentStub.withId("child1") { _, modifier ->
+                            Box(
+                                modifier =
+                                    modifier
+                                        .testTag("child1")
+                                        .sizeIn(minWidth = 50.dp, minHeight = 40.dp)
+                            )
+                        },
+                        A2uiComponentStub.withId("child2") { _, modifier ->
+                            Box(
+                                modifier =
+                                    modifier
+                                        .testTag("child2")
+                                        .sizeIn(minWidth = 50.dp, minHeight = 40.dp)
+                            )
+                        },
+                    ),
+            )
+        val surface = controller.start()
+
+        setContent {
+            MaterialTheme {
+                A2uiTestSurface(
+                    surface = surface,
+                    modifier = Modifier.testTag("column_tag").width(100.dp).height(200.dp),
+                )
+            }
+        }
+
+        val columnBounds = onNodeWithTag("column_tag").getUnclippedBoundsInRoot()
+        val child1Bounds = onNodeWithTag("child1").getUnclippedBoundsInRoot()
+        val child2Bounds = onNodeWithTag("child2").getUnclippedBoundsInRoot()
+
+        assertThat(child1Bounds.top.value).isWithin(0.5f).of(columnBounds.top.value)
+        assertThat(child2Bounds.bottom.value).isWithin(0.5f).of(columnBounds.bottom.value)
+        assertThat(child2Bounds.top).isGreaterThan(child1Bounds.bottom)
+    }
+
+    @Test
+    fun justify_spaceAround_spacesChildrenAround() = runComposeUiTest {
+        val controller =
+            A2uiTestController(
+                catalog = testCatalog,
+                initialComponents =
+                    listOf(
+                        A2uiComponentPayload(
+                            id = "root",
+                            type = "Column",
+                            properties =
+                                mapOf(
+                                    "children" to listOf("child1", "child2"),
+                                    "justify" to "spaceAround",
+                                ),
+                        ),
+                        A2uiComponentPayload(id = "child1"),
+                        A2uiComponentPayload(id = "child2"),
+                    ),
+                componentStubs =
+                    listOf(
+                        A2uiComponentStub.withId("child1") { _, modifier ->
+                            Box(
+                                modifier =
+                                    modifier
+                                        .testTag("child1")
+                                        .sizeIn(minWidth = 50.dp, minHeight = 40.dp)
+                            )
+                        },
+                        A2uiComponentStub.withId("child2") { _, modifier ->
+                            Box(
+                                modifier =
+                                    modifier
+                                        .testTag("child2")
+                                        .sizeIn(minWidth = 50.dp, minHeight = 40.dp)
+                            )
+                        },
+                    ),
+            )
+        val surface = controller.start()
+
+        setContent {
+            MaterialTheme {
+                A2uiTestSurface(
+                    surface = surface,
+                    modifier = Modifier.testTag("column_tag").width(100.dp).height(200.dp),
+                )
+            }
+        }
+
+        val columnBounds = onNodeWithTag("column_tag").getUnclippedBoundsInRoot()
+        val child1Bounds = onNodeWithTag("child1").getUnclippedBoundsInRoot()
+        val child2Bounds = onNodeWithTag("child2").getUnclippedBoundsInRoot()
+
+        val spaceBefore = child1Bounds.top - columnBounds.top
+        val spaceBetween = child2Bounds.top - child1Bounds.bottom
+        val spaceAfter = columnBounds.bottom - child2Bounds.bottom
+
+        assertThat(spaceBefore.value).isWithin(0.5f).of(30f)
+        assertThat(spaceBetween.value).isWithin(0.5f).of(60f)
+        assertThat(spaceAfter.value).isWithin(0.5f).of(30f)
+    }
+
+    @Test
+    fun justify_spaceEvenly_spacesChildrenEvenly() = runComposeUiTest {
+        val controller =
+            A2uiTestController(
+                catalog = testCatalog,
+                initialComponents =
+                    listOf(
+                        A2uiComponentPayload(
+                            id = "root",
+                            type = "Column",
+                            properties =
+                                mapOf(
+                                    "children" to listOf("child1", "child2"),
+                                    "justify" to "spaceEvenly",
+                                ),
+                        ),
+                        A2uiComponentPayload(id = "child1"),
+                        A2uiComponentPayload(id = "child2"),
+                    ),
+                componentStubs =
+                    listOf(
+                        A2uiComponentStub.withId("child1") { _, modifier ->
+                            Box(
+                                modifier =
+                                    modifier
+                                        .testTag("child1")
+                                        .sizeIn(minWidth = 50.dp, minHeight = 40.dp)
+                            )
+                        },
+                        A2uiComponentStub.withId("child2") { _, modifier ->
+                            Box(
+                                modifier =
+                                    modifier
+                                        .testTag("child2")
+                                        .sizeIn(minWidth = 50.dp, minHeight = 40.dp)
+                            )
+                        },
+                    ),
+            )
+        val surface = controller.start()
+
+        setContent {
+            MaterialTheme {
+                A2uiTestSurface(
+                    surface = surface,
+                    modifier = Modifier.testTag("column_tag").width(100.dp).height(200.dp),
+                )
+            }
+        }
+
+        val columnBounds = onNodeWithTag("column_tag").getUnclippedBoundsInRoot()
+        val child1Bounds = onNodeWithTag("child1").getUnclippedBoundsInRoot()
+        val child2Bounds = onNodeWithTag("child2").getUnclippedBoundsInRoot()
+
+        val spaceBefore = child1Bounds.top - columnBounds.top
+        val spaceBetween = child2Bounds.top - child1Bounds.bottom
+        val spaceAfter = columnBounds.bottom - child2Bounds.bottom
+
+        assertThat(spaceBefore.value).isWithin(0.5f).of(40f)
+        assertThat(spaceBetween.value).isWithin(0.5f).of(40f)
+        assertThat(spaceAfter.value).isWithin(0.5f).of(40f)
+    }
+
+    @Test
+    fun justify_stretch_stretchesChildren() = runComposeUiTest {
+        val controller =
+            A2uiTestController(
+                catalog = testCatalog,
+                initialComponents =
+                    listOf(
+                        A2uiComponentPayload(
+                            id = "root",
+                            type = "Column",
+                            properties =
+                                mapOf(
+                                    "children" to listOf("child1", "child2"),
+                                    "justify" to "stretch",
+                                ),
+                        ),
+                        A2uiComponentPayload(id = "child1"),
+                        A2uiComponentPayload(id = "child2"),
+                    ),
+                componentStubs =
+                    listOf(
+                        A2uiComponentStub.withId("child1") { _, modifier ->
+                            Box(
+                                modifier =
+                                    modifier
+                                        .testTag("child1")
+                                        .sizeIn(minWidth = 50.dp, minHeight = 40.dp)
+                            )
+                        },
+                        A2uiComponentStub.withId("child2") { _, modifier ->
+                            Box(
+                                modifier =
+                                    modifier
+                                        .testTag("child2")
+                                        .sizeIn(minWidth = 50.dp, minHeight = 40.dp)
+                            )
+                        },
+                    ),
+            )
+        val surface = controller.start()
+
+        setContent {
+            MaterialTheme {
+                A2uiTestSurface(
+                    surface = surface,
+                    modifier = Modifier.testTag("column_tag").width(100.dp).height(200.dp),
+                )
+            }
+        }
+
+        val columnBounds = onNodeWithTag("column_tag").getUnclippedBoundsInRoot()
+        val child1Bounds = onNodeWithTag("child1").getUnclippedBoundsInRoot()
+        val child2Bounds = onNodeWithTag("child2").getUnclippedBoundsInRoot()
+
+        val expectedChildHeight = (200.dp - MaterialA2uiBasicCatalogV1Column.ItemSpacing) / 2
+
+        assertThat(child1Bounds.top.value).isWithin(0.5f).of(columnBounds.top.value)
+        assertThat(child2Bounds.bottom.value).isWithin(0.5f).of(columnBounds.bottom.value)
+        assertThat(child1Bounds.height.value).isWithin(0.5f).of(expectedChildHeight.value)
+        assertThat(child2Bounds.height.value).isWithin(0.5f).of(expectedChildHeight.value)
+    }
+
+    @Test
+    fun align_start_alignsChildrenAtStart() = runComposeUiTest {
+        val childWidth = 50.dp
+        val controller =
+            A2uiTestController(
+                catalog = testCatalog,
+                initialComponents =
+                    listOf(
+                        A2uiComponentPayload(
+                            id = "root",
+                            type = "Column",
+                            properties = mapOf("children" to listOf("child1"), "align" to "start"),
+                        ),
+                        A2uiComponentPayload(id = "child1"),
+                    ),
+                componentStubs =
+                    listOf(
+                        A2uiComponentStub.withId("child1") { _, modifier ->
+                            Box(
+                                modifier =
+                                    modifier
+                                        .testTag("child1")
+                                        .sizeIn(minWidth = childWidth, minHeight = 40.dp)
+                            )
+                        }
+                    ),
+            )
+        val surface = controller.start()
+
+        setContent {
+            MaterialTheme {
+                A2uiTestSurface(
+                    surface = surface,
+                    modifier = Modifier.testTag("column_tag").width(200.dp).height(100.dp),
+                )
+            }
+        }
+
+        val columnBounds = onNodeWithTag("column_tag").getUnclippedBoundsInRoot()
+        val child1Bounds = onNodeWithTag("child1").getUnclippedBoundsInRoot()
+
+        assertThat(child1Bounds.left.value).isWithin(0.5f).of(columnBounds.left.value)
+        assertThat(child1Bounds.width.value).isWithin(0.5f).of(childWidth.value)
+    }
+
+    @Test
+    fun align_center_alignsChildrenAtCenterHorizontally() = runComposeUiTest {
+        val childWidth = 50.dp
+        val controller =
+            A2uiTestController(
+                catalog = testCatalog,
+                initialComponents =
+                    listOf(
+                        A2uiComponentPayload(
+                            id = "root",
+                            type = "Column",
+                            properties = mapOf("children" to listOf("child1"), "align" to "center"),
+                        ),
+                        A2uiComponentPayload(id = "child1"),
+                    ),
+                componentStubs =
+                    listOf(
+                        A2uiComponentStub.withId("child1") { _, modifier ->
+                            Box(
+                                modifier =
+                                    modifier
+                                        .testTag("child1")
+                                        .sizeIn(minWidth = childWidth, minHeight = 40.dp)
+                            )
+                        }
+                    ),
+            )
+        val surface = controller.start()
+
+        setContent {
+            MaterialTheme {
+                A2uiTestSurface(
+                    surface = surface,
+                    modifier = Modifier.testTag("column_tag").width(200.dp).height(100.dp),
+                )
+            }
+        }
+
+        val columnBounds = onNodeWithTag("column_tag").getUnclippedBoundsInRoot()
+        val child1Bounds = onNodeWithTag("child1").getUnclippedBoundsInRoot()
+
+        val childCenter = (child1Bounds.left + child1Bounds.right) / 2
+        val columnCenter = (columnBounds.left + columnBounds.right) / 2
+        assertThat(childCenter.value).isWithin(0.5f).of(columnCenter.value)
+        assertThat(child1Bounds.width.value).isWithin(0.5f).of(childWidth.value)
+    }
+
+    @Test
+    fun align_end_alignsChildrenAtEnd() = runComposeUiTest {
+        val childWidth = 50.dp
+        val controller =
+            A2uiTestController(
+                catalog = testCatalog,
+                initialComponents =
+                    listOf(
+                        A2uiComponentPayload(
+                            id = "root",
+                            type = "Column",
+                            properties = mapOf("children" to listOf("child1"), "align" to "end"),
+                        ),
+                        A2uiComponentPayload(id = "child1"),
+                    ),
+                componentStubs =
+                    listOf(
+                        A2uiComponentStub.withId("child1") { _, modifier ->
+                            Box(
+                                modifier =
+                                    modifier
+                                        .testTag("child1")
+                                        .sizeIn(minWidth = childWidth, minHeight = 40.dp)
+                            )
+                        }
+                    ),
+            )
+        val surface = controller.start()
+
+        setContent {
+            MaterialTheme {
+                A2uiTestSurface(
+                    surface = surface,
+                    modifier = Modifier.testTag("column_tag").width(200.dp).height(100.dp),
+                )
+            }
+        }
+
+        val columnBounds = onNodeWithTag("column_tag").getUnclippedBoundsInRoot()
+        val child1Bounds = onNodeWithTag("child1").getUnclippedBoundsInRoot()
+
+        assertThat(child1Bounds.right.value).isWithin(0.5f).of(columnBounds.right.value)
+        assertThat(child1Bounds.width.value).isWithin(0.5f).of(childWidth.value)
+    }
+
+    @Test
+    fun align_stretch_stretchesChildrenHorizontally() = runComposeUiTest {
+        val childWidth = 50.dp
+        val columnWidth = 200.dp
+        val controller =
+            A2uiTestController(
+                catalog = testCatalog,
+                initialComponents =
+                    listOf(
+                        A2uiComponentPayload(
+                            id = "root",
+                            type = "Column",
+                            properties = mapOf("children" to listOf("child1"), "align" to "stretch"),
+                        ),
+                        A2uiComponentPayload(id = "child1"),
+                    ),
+                componentStubs =
+                    listOf(
+                        A2uiComponentStub.withId("child1") { _, modifier ->
+                            Box(
+                                modifier =
+                                    modifier
+                                        .testTag("child1")
+                                        .sizeIn(minWidth = childWidth, minHeight = 40.dp)
+                            )
+                        }
+                    ),
+            )
+        val surface = controller.start()
+
+        setContent {
+            MaterialTheme {
+                A2uiTestSurface(
+                    surface = surface,
+                    modifier = Modifier.testTag("column_tag").width(columnWidth),
+                )
+            }
+        }
+
+        val columnBounds = onNodeWithTag("column_tag").getUnclippedBoundsInRoot()
+        val child1Bounds = onNodeWithTag("child1").getUnclippedBoundsInRoot()
+
+        assertThat(child1Bounds.width).isEqualTo(columnBounds.width)
+    }
+
+    @Test
+    fun children_withWeights_distributeHeightProportionally() = runComposeUiTest {
+        val controller =
+            A2uiTestController(
+                catalog = testCatalog,
+                initialComponents =
+                    listOf(
+                        A2uiComponentPayload(
+                            id = "root",
+                            type = "Column",
+                            properties = mapOf("children" to listOf("child1", "child2")),
+                        ),
+                        A2uiComponentPayload(id = "child1", properties = mapOf("weight" to 1)),
+                        A2uiComponentPayload(id = "child2", properties = mapOf("weight" to 3)),
+                    ),
+                componentStubs =
+                    listOf(
+                        A2uiComponentStub.withId("child1") { _, modifier ->
+                            Box(modifier = modifier.testTag("child1").width(50.dp))
+                        },
+                        A2uiComponentStub.withId("child2") { _, modifier ->
+                            Box(modifier = modifier.testTag("child2").width(50.dp))
+                        },
+                    ),
+            )
+        val surface = controller.start()
+
+        setContent {
+            MaterialTheme {
+                A2uiTestSurface(
+                    surface = surface,
+                    modifier = Modifier.testTag("column_tag").width(100.dp).height(200.dp),
+                )
+            }
+        }
+
+        val columnBounds = onNodeWithTag("column_tag").getUnclippedBoundsInRoot()
+        val child1Bounds = onNodeWithTag("child1").getUnclippedBoundsInRoot()
+        val child2Bounds = onNodeWithTag("child2").getUnclippedBoundsInRoot()
+
+        val totalAvailableHeight = 200.dp - MaterialA2uiBasicCatalogV1Column.ItemSpacing
+        val expectedChild1Height = totalAvailableHeight * (1f / 4f)
+        val expectedChild2Height = totalAvailableHeight * (3f / 4f)
+
+        assertThat(child1Bounds.top.value).isWithin(0.5f).of(columnBounds.top.value)
+        assertThat(child2Bounds.bottom.value).isWithin(0.5f).of(columnBounds.bottom.value)
+        assertThat(child1Bounds.height.value).isWithin(0.5f).of(expectedChild1Height.value)
+        assertThat(child2Bounds.height.value).isWithin(0.5f).of(expectedChild2Height.value)
+    }
+
+    @Test
+    fun children_mixedWeightAndFixedHeight_occupiesRemainingHeight() = runComposeUiTest {
+        val fixedChildHeight = 50.dp
+        val controller =
+            A2uiTestController(
+                catalog = testCatalog,
+                initialComponents =
+                    listOf(
+                        A2uiComponentPayload(
+                            id = "root",
+                            type = "Column",
+                            properties = mapOf("children" to listOf("child1", "child2")),
+                        ),
+                        A2uiComponentPayload(id = "child1"),
+                        A2uiComponentPayload(id = "child2", properties = mapOf("weight" to 1)),
+                    ),
+                componentStubs =
+                    listOf(
+                        A2uiComponentStub.withId("child1") { _, modifier ->
+                            Box(
+                                modifier =
+                                    modifier.testTag("child1").width(50.dp).height(fixedChildHeight)
+                            )
+                        },
+                        A2uiComponentStub.withId("child2") { _, modifier ->
+                            Box(modifier = modifier.testTag("child2").width(50.dp))
+                        },
+                    ),
+            )
+        val surface = controller.start()
+
+        setContent {
+            MaterialTheme {
+                A2uiTestSurface(
+                    surface = surface,
+                    modifier = Modifier.testTag("column_tag").width(100.dp).height(200.dp),
+                )
+            }
+        }
+
+        val columnBounds = onNodeWithTag("column_tag").getUnclippedBoundsInRoot()
+        val child1Bounds = onNodeWithTag("child1").getUnclippedBoundsInRoot()
+        val child2Bounds = onNodeWithTag("child2").getUnclippedBoundsInRoot()
+
+        val expectedChild2Height =
+            200.dp - fixedChildHeight - MaterialA2uiBasicCatalogV1Column.ItemSpacing
+
+        assertThat(child1Bounds.top.value).isWithin(0.5f).of(columnBounds.top.value)
+        assertThat(child1Bounds.height.value).isWithin(0.5f).of(fixedChildHeight.value)
+        assertThat(child2Bounds.bottom.value).isWithin(0.5f).of(columnBounds.bottom.value)
+        assertThat(child2Bounds.height.value).isWithin(0.5f).of(expectedChild2Height.value)
+    }
+
+    @Test
+    fun justify_stretch_withCustomWeights_distributesHeightProportionally() = runComposeUiTest {
+        val controller =
+            A2uiTestController(
+                catalog = testCatalog,
+                initialComponents =
+                    listOf(
+                        A2uiComponentPayload(
+                            id = "root",
+                            type = "Column",
+                            properties =
+                                mapOf(
+                                    "children" to listOf("child1", "child2"),
+                                    "justify" to "stretch",
+                                ),
+                        ),
+                        A2uiComponentPayload(id = "child1", properties = mapOf("weight" to 1)),
+                        A2uiComponentPayload(id = "child2", properties = mapOf("weight" to 3)),
+                    ),
+                componentStubs =
+                    listOf(
+                        A2uiComponentStub.withId("child1") { _, modifier ->
+                            Box(modifier = modifier.testTag("child1").width(50.dp))
+                        },
+                        A2uiComponentStub.withId("child2") { _, modifier ->
+                            Box(modifier = modifier.testTag("child2").width(50.dp))
+                        },
+                    ),
+            )
+        val surface = controller.start()
+
+        setContent {
+            MaterialTheme {
+                A2uiTestSurface(
+                    surface = surface,
+                    modifier = Modifier.testTag("column_tag").width(100.dp).height(200.dp),
+                )
+            }
+        }
+
+        val columnBounds = onNodeWithTag("column_tag").getUnclippedBoundsInRoot()
+        val child1Bounds = onNodeWithTag("child1").getUnclippedBoundsInRoot()
+        val child2Bounds = onNodeWithTag("child2").getUnclippedBoundsInRoot()
+
+        val totalAvailableHeight = 200.dp - MaterialA2uiBasicCatalogV1Column.ItemSpacing
+        val expectedChild1Height = totalAvailableHeight * (1f / 4f)
+        val expectedChild2Height = totalAvailableHeight * (3f / 4f)
+
+        assertThat(child1Bounds.top.value).isWithin(0.5f).of(columnBounds.top.value)
+        assertThat(child2Bounds.bottom.value).isWithin(0.5f).of(columnBounds.bottom.value)
+        assertThat(child1Bounds.height.value).isWithin(0.5f).of(expectedChild1Height.value)
+        assertThat(child2Bounds.height.value).isWithin(0.5f).of(expectedChild2Height.value)
+    }
+
+    @Test
+    fun children_weightsUpdated_recomposesAndUpdatesLayout() = runComposeUiTest {
+        val controller =
+            A2uiTestController(
+                catalog = testCatalog,
+                initialComponents =
+                    listOf(
+                        A2uiComponentPayload(
+                            id = "root",
+                            type = "Column",
+                            properties = mapOf("children" to listOf("child1", "child2")),
+                        ),
+                        A2uiComponentPayload(id = "child1", properties = mapOf("weight" to 1)),
+                        A2uiComponentPayload(id = "child2", properties = mapOf("weight" to 3)),
+                    ),
+                componentStubs =
+                    listOf(
+                        A2uiComponentStub.withId("child1") { _, modifier ->
+                            Box(modifier = modifier.testTag("child1").width(50.dp))
+                        },
+                        A2uiComponentStub.withId("child2") { _, modifier ->
+                            Box(modifier = modifier.testTag("child2").width(50.dp))
+                        },
+                    ),
+            )
+        val surface = controller.start()
+
+        setContent {
+            MaterialTheme {
+                A2uiTestSurface(
+                    surface = surface,
+                    modifier = Modifier.testTag("column_tag").width(100.dp).height(200.dp),
+                )
+            }
+        }
+
+        val columnBounds = onNodeWithTag("column_tag").getUnclippedBoundsInRoot()
+        val totalAvailableHeight = 200.dp - MaterialA2uiBasicCatalogV1Column.ItemSpacing
+
+        val child1InitialBounds = onNodeWithTag("child1").getUnclippedBoundsInRoot()
+        val child2InitialBounds = onNodeWithTag("child2").getUnclippedBoundsInRoot()
+
+        val expectedChild1InitialHeight = totalAvailableHeight * (1f / 4f)
+        val expectedChild2InitialHeight = totalAvailableHeight * (3f / 4f)
+
+        assertThat(child1InitialBounds.top.value).isWithin(0.5f).of(columnBounds.top.value)
+        assertThat(child2InitialBounds.bottom.value).isWithin(0.5f).of(columnBounds.bottom.value)
+        assertThat(child1InitialBounds.height.value)
+            .isWithin(0.5f)
+            .of(expectedChild1InitialHeight.value)
+        assertThat(child2InitialBounds.height.value)
+            .isWithin(0.5f)
+            .of(expectedChild2InitialHeight.value)
+
+        controller.updateComponent(id = "child1", properties = mapOf("weight" to 3))
+        controller.updateComponent(id = "child2", properties = mapOf("weight" to 1))
+        controller.waitForIdle()
+
+        val child1UpdatedBounds = onNodeWithTag("child1").getUnclippedBoundsInRoot()
+        val child2UpdatedBounds = onNodeWithTag("child2").getUnclippedBoundsInRoot()
+
+        val expectedChild1UpdatedHeight = totalAvailableHeight * (3f / 4f)
+        val expectedChild2UpdatedHeight = totalAvailableHeight * (1f / 4f)
+
+        assertThat(child1UpdatedBounds.top.value).isWithin(0.5f).of(columnBounds.top.value)
+        assertThat(child2UpdatedBounds.bottom.value).isWithin(0.5f).of(columnBounds.bottom.value)
+        assertThat(child1UpdatedBounds.height.value)
+            .isWithin(0.5f)
+            .of(expectedChild1UpdatedHeight.value)
+        assertThat(child2UpdatedBounds.height.value)
+            .isWithin(0.5f)
+            .of(expectedChild2UpdatedHeight.value)
     }
 }

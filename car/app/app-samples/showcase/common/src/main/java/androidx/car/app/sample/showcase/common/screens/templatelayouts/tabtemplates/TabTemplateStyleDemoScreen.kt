@@ -26,6 +26,7 @@ import androidx.car.app.model.Action
 import androidx.car.app.model.CarColor
 import androidx.car.app.model.CarIcon
 import androidx.car.app.model.CarIconStyle
+import androidx.car.app.model.Header
 import androidx.car.app.model.MessageTemplate
 import androidx.car.app.model.Shape
 import androidx.car.app.model.Tab
@@ -35,17 +36,21 @@ import androidx.car.app.model.TabTemplate
 import androidx.car.app.model.TabTemplate.TabCallback
 import androidx.car.app.model.Template
 import androidx.car.app.sample.showcase.common.R
+import androidx.car.app.versioning.CarAppApiLevels
 import androidx.core.graphics.drawable.IconCompat
 
+/** Creates a screen that demonstrates custom styling and colors for [TabTemplate] and [Tab]s. */
 @OptIn(ExperimentalCarApi::class)
 class TabTemplateStyleDemoScreen(carContext: CarContext) : Screen(carContext) {
     private var mActiveContentId: String = "0"
 
     private data class TabProperty(
         @StringRes val titleRes: Int,
+        @StringRes val messageRes: Int,
         @DrawableRes val selectedIconRes: Int,
         @DrawableRes val unselectedIconRes: Int = selectedIconRes,
-        val iconColor: CarColor? = greenOnIndicatorColor,
+        val iconColor: CarColor? = null,
+        val customStyle: TabStyle? = null,
     )
 
     private companion object {
@@ -57,7 +62,7 @@ class TabTemplateStyleDemoScreen(carContext: CarContext) : Screen(carContext) {
         private val blueIndicatorCarColor =
             CarColor.createCustom(0xFFD3E3FD.toInt(), 0xFF0842A0.toInt()) // Background pill
         private val blueOnIndicatorColor =
-            CarColor.createCustom(0xFF0a2f6e.toInt(), 0xFFD3E3FD.toInt()) // Text & Icon color
+            CarColor.createCustom(0xFF0A2F6E.toInt(), 0xFFD3E3FD.toInt()) // Text & Icon color
 
         private val tabTemplateStyle =
             TabStyle.Builder()
@@ -80,26 +85,34 @@ class TabTemplateStyleDemoScreen(carContext: CarContext) : Screen(carContext) {
         private val TAB_PROPERTIES =
             listOf(
                 TabProperty(
-                    titleRes = R.string.tab_title_default_style,
+                    titleRes = R.string.tab_title_template_style_1,
+                    messageRes = R.string.msg_tab_template_style_1_text,
                     selectedIconRes = R.drawable.ic_home_filled_24px,
                     unselectedIconRes = R.drawable.ic_home_24px,
+                    iconColor = greenOnIndicatorColor,
                 ),
                 TabProperty(
-                    titleRes = R.string.tab_title_default_style,
+                    titleRes = R.string.tab_title_template_style_2,
+                    messageRes = R.string.msg_tab_template_style_2_text,
                     selectedIconRes = R.drawable.ic_event_note_filled_24px,
                     unselectedIconRes = R.drawable.ic_event_note_24px,
+                    iconColor = greenOnIndicatorColor,
                 ),
                 TabProperty(
                     titleRes = R.string.tab_title_overridden_style,
+                    messageRes = R.string.msg_tab_overridden_style_text,
                     selectedIconRes = R.drawable.ic_favorite_filled_white_24dp,
                     unselectedIconRes = R.drawable.ic_favorite_white_24dp,
                     iconColor = blueOnIndicatorColor,
+                    customStyle = tabCustomStyle,
                 ),
                 TabProperty(
                     titleRes = R.string.tab_title_failing_style,
+                    messageRes = R.string.msg_tab_failing_style_text,
                     selectedIconRes = R.drawable.ic_settings_filled_24px,
                     unselectedIconRes = R.drawable.ic_settings_24px,
                     iconColor = CarColor.RED,
+                    customStyle = tabFailingStyle,
                 ),
             )
     }
@@ -110,7 +123,7 @@ class TabTemplateStyleDemoScreen(carContext: CarContext) : Screen(carContext) {
         @StringRes titleRes: Int,
         @DrawableRes selectedIconRes: Int,
         @DrawableRes unselectedIconRes: Int = selectedIconRes,
-        iconColor: CarColor? = greenOnIndicatorColor,
+        iconColor: CarColor? = null,
         isSelected: Boolean = false,
         customStyle: TabStyle? = null,
     ): Tab {
@@ -143,19 +156,6 @@ class TabTemplateStyleDemoScreen(carContext: CarContext) : Screen(carContext) {
     private fun buildTabs(): List<Tab> {
         return TAB_PROPERTIES.mapIndexed { index, prop ->
             val contentId = "$index"
-            val customStyle =
-                when (contentId) {
-                    "2" -> {
-                        tabCustomStyle
-                    }
-                    "3" -> {
-                        tabFailingStyle
-                    }
-                    else -> {
-                        // defaults to template style
-                        null
-                    }
-                }
             createTab(
                 contentId = contentId,
                 titleRes = prop.titleRes,
@@ -163,13 +163,32 @@ class TabTemplateStyleDemoScreen(carContext: CarContext) : Screen(carContext) {
                 unselectedIconRes = prop.unselectedIconRes,
                 isSelected = (contentId == mActiveContentId),
                 iconColor = prop.iconColor,
-                customStyle = customStyle,
+                customStyle = prop.customStyle,
             )
         }
     }
 
     override fun onGetTemplate(): Template {
-        val tabs = buildTabs()
+        if (carContext.carAppApiLevel < CarAppApiLevels.LEVEL_9) {
+            val backAction =
+                Action.Builder()
+                    .setTitle(carContext.getString(R.string.back_caps_action_title))
+                    .setOnClickListener { screenManager.pop() }
+                    .build()
+            val header = Header.Builder().setStartHeaderAction(Action.BACK).build()
+            return MessageTemplate.Builder(
+                    "Tab styling requires Car API Level 9 or above. Current API level is " +
+                        carContext.carAppApiLevel
+                )
+                .setHeader(header)
+                .addAction(backAction)
+                .build()
+        }
+
+        val activeProperty =
+            mActiveContentId.toIntOrNull()?.let { TAB_PROPERTIES.getOrNull(it) }
+                ?: throw IllegalStateException("Invalid tab id: $mActiveContentId")
+
         val builder =
             TabTemplate.Builder(
                 object : TabCallback {
@@ -185,30 +204,20 @@ class TabTemplateStyleDemoScreen(carContext: CarContext) : Screen(carContext) {
             .setActiveTabContentId(mActiveContentId)
             .setHeaderAction(Action.APP_ICON)
             .setTabContents(
-                TabContents.Builder(
-                        when (mActiveContentId) {
-                            "0" -> createShortMessageTemplate(R.string.msg_tab_template_style_text)
-                            "1" -> createShortMessageTemplate(R.string.msg_tab_template_style_text)
-                            "2" ->
-                                createShortMessageTemplate(R.string.msg_tab_overridden_style_text)
-                            "3" -> createShortMessageTemplate(R.string.msg_tab_failing_style_text)
-                            else -> throw IllegalStateException("Invalid tab id: $mActiveContentId")
-                        }
-                    )
-                    .build()
+                TabContents.Builder(createShortMessageTemplate(activeProperty.messageRes)).build()
             )
             .setStyle(tabTemplateStyle)
             .build()
     }
 
-    private fun createShortMessageTemplate(message: Int): MessageTemplate {
+    private fun createShortMessageTemplate(@StringRes messageRes: Int): MessageTemplate {
         val action =
             Action.Builder()
                 .setTitle(carContext.getString(R.string.back_caps_action_title))
                 .setIcon(CarIcon.BACK)
                 .setOnClickListener { screenManager.pop() }
                 .build()
-        return MessageTemplate.Builder(carContext.getString(message))
+        return MessageTemplate.Builder(carContext.getString(messageRes))
             .setIcon(
                 CarIcon.Builder(
                         IconCompat.createWithResource(carContext, R.drawable.test_android_media)

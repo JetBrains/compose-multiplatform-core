@@ -68,8 +68,14 @@ class MaterialA2uiBasicCatalogV1Test {
             .isSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.list)
         assertThat(catalog.components["Tabs"])
             .isSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.tabs)
+        assertThat(catalog.components["Divider"])
+            .isSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.divider)
         assertThat(catalog.components["Button"])
             .isSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.button)
+        assertThat(catalog.components["CheckBox"])
+            .isSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.checkBox)
+        assertThat(catalog.components["Slider"])
+            .isSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.slider)
         assertThat(catalog.components["DateTimeInput"])
             .isSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.dateTimeInput)
 
@@ -286,6 +292,31 @@ class MaterialA2uiBasicCatalogV1Test {
     }
 
     @Test
+    fun factory_withCustomDividerComponent_overridesDefaultMaterialDivider() {
+        val customDivider =
+            object : A2uiBasicCatalogV1.Divider {
+                @Composable
+                override fun A2uiComponentScope.TypedContent(
+                    axis: A2uiBasicCatalogV1.Divider.Axis,
+                    modifier: Modifier,
+                ) {}
+            }
+
+        val catalog =
+            materialA2uiBasicCatalogV1(
+                image = MaterialA2uiBasicCatalogV1Defaults.image(fakeImageRenderer),
+                urlOpener = fakeUrlOpener,
+                messageFormatter = fakeMessageFormatter,
+                localeProvider = fakeLocaleProvider,
+                divider = customDivider,
+            )
+
+        assertThat(catalog.components["Divider"]).isSameInstanceAs(customDivider)
+        assertThat(catalog.components["Divider"])
+            .isNotSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.divider)
+    }
+
+    @Test
     fun factory_withCustomButtonComponent_overridesDefaultMaterialButton() {
         val customButton =
             object : A2uiBasicCatalogV1.Button {
@@ -310,6 +341,64 @@ class MaterialA2uiBasicCatalogV1Test {
         assertThat(catalog.components["Button"]).isSameInstanceAs(customButton)
         assertThat(catalog.components["Button"])
             .isNotSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.button)
+    }
+
+    @Test
+    fun factory_withCustomCheckBoxComponent_overridesDefaultMaterialCheckBox() {
+        val customCheckBox =
+            object : A2uiBasicCatalogV1.CheckBox {
+                @Composable
+                override fun A2uiComponentScope.TypedContent(
+                    label: String,
+                    value: Boolean,
+                    onValueChange: (Boolean) -> Unit,
+                    enabled: Boolean,
+                    modifier: Modifier,
+                ) {}
+            }
+
+        val catalog =
+            materialA2uiBasicCatalogV1(
+                image = MaterialA2uiBasicCatalogV1Defaults.image(fakeImageRenderer),
+                urlOpener = fakeUrlOpener,
+                messageFormatter = fakeMessageFormatter,
+                localeProvider = fakeLocaleProvider,
+                checkBox = customCheckBox,
+            )
+
+        assertThat(catalog.components["CheckBox"]).isSameInstanceAs(customCheckBox)
+        assertThat(catalog.components["CheckBox"])
+            .isNotSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.checkBox)
+    }
+
+    @Test
+    fun factory_withCustomSliderComponent_overridesDefaultMaterialSlider() {
+        val customSlider =
+            object : A2uiBasicCatalogV1.Slider {
+                @Composable
+                override fun A2uiComponentScope.TypedContent(
+                    label: String?,
+                    min: Float,
+                    max: Float,
+                    value: Float,
+                    onValueChange: (Float) -> Unit,
+                    enabled: Boolean,
+                    modifier: Modifier,
+                ) {}
+            }
+
+        val catalog =
+            materialA2uiBasicCatalogV1(
+                image = MaterialA2uiBasicCatalogV1Defaults.image(fakeImageRenderer),
+                urlOpener = fakeUrlOpener,
+                messageFormatter = fakeMessageFormatter,
+                localeProvider = fakeLocaleProvider,
+                slider = customSlider,
+            )
+
+        assertThat(catalog.components["Slider"]).isSameInstanceAs(customSlider)
+        assertThat(catalog.components["Slider"])
+            .isNotSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.slider)
     }
 
     @Test
@@ -361,8 +450,14 @@ class MaterialA2uiBasicCatalogV1Test {
             .isSameInstanceAs(MaterialA2uiBasicCatalogV1List)
         assertThat(MaterialA2uiBasicCatalogV1Defaults.tabs)
             .isSameInstanceAs(MaterialA2uiBasicCatalogV1Tabs)
+        assertThat(MaterialA2uiBasicCatalogV1Defaults.divider)
+            .isSameInstanceAs(MaterialA2uiBasicCatalogV1Divider)
         assertThat(MaterialA2uiBasicCatalogV1Defaults.button)
             .isSameInstanceAs(MaterialA2uiBasicCatalogV1Button)
+        assertThat(MaterialA2uiBasicCatalogV1Defaults.checkBox)
+            .isSameInstanceAs(MaterialA2uiBasicCatalogV1CheckBox)
+        assertThat(MaterialA2uiBasicCatalogV1Defaults.slider)
+            .isSameInstanceAs(MaterialA2uiBasicCatalogV1Slider)
         assertThat(MaterialA2uiBasicCatalogV1Defaults.dateTimeInput)
             .isSameInstanceAs(MaterialA2uiBasicCatalogV1DateTimeInput)
     }

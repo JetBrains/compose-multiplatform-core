@@ -63,7 +63,10 @@ import java.util.TimeZone
  * @property column The [Column] component implementation.
  * @property list The [List] component implementation.
  * @property tabs The [Tabs] component implementation.
+ * @property divider The [Divider] component implementation.
  * @property button The [Button] component implementation.
+ * @property checkBox The [CheckBox] component implementation.
+ * @property slider The [Slider] component implementation.
  * @property dateTimeInput The [DateTimeInput] component implementation.
  * @property functions The list of [A2uiFunction]s supported by this catalog, recommended default is
  *   to create the function list using
@@ -78,7 +81,10 @@ public class A2uiBasicCatalogV1(
     public val column: Column,
     public val list: List,
     public val tabs: Tabs,
+    public val divider: Divider,
     public val button: Button,
+    public val checkBox: CheckBox,
+    public val slider: Slider,
     public val dateTimeInput: DateTimeInput,
     // TODO(b/547851648): Add the rest of the basic catalog component types.
     public val functions: kotlin.collections.List<A2uiFunction>,
@@ -101,7 +107,10 @@ public class A2uiBasicCatalogV1(
             column,
             list,
             tabs,
+            divider,
             button,
+            checkBox,
+            slider,
             dateTimeInput,
             // TODO(b/547851648): Add the rest of the basic catalog component types.
         )
@@ -138,6 +147,28 @@ public class A2uiBasicCatalogV1(
                                         "agent or tool that created it."
                             ),
                     )
+            )
+
+        /**
+         * The relative weight property for [A2uiBasicCatalogV1] components.
+         *
+         * Defined at the catalog level because it is supported across all [A2uiBasicCatalogV1]
+         * components rather than belonging to a single component type.
+         *
+         * Expected usage:
+         * * **Components**: Included in the [A2uiComponent.properties] list of all basic catalog
+         *   components.
+         * * **Parent components**: Container components (such as [Row] and [Column]) access this
+         *   property from child component properties to apply layout weights to their direct
+         *   children.
+         */
+        public val WeightProperty: StaticA2uiProperty<Number> =
+            A2uiProperty.number(
+                key = "weight",
+                description =
+                    "The relative weight of the component within a Row or Column. " +
+                        "Note: this may ONLY be set when the component is a direct descendant of a " +
+                        "Row or Column.",
             )
     }
 
@@ -220,7 +251,7 @@ public class A2uiBasicCatalogV1(
                     description = "A hint for the base text style.",
                 )
             internal val componentProperties: kotlin.collections.List<A2uiProperty<*>> =
-                listOf(textProperty, variantProperty)
+                listOf(WeightProperty, textProperty, variantProperty)
         }
 
         override val properties: kotlin.collections.List<A2uiProperty<*>>
@@ -344,7 +375,13 @@ public class A2uiBasicCatalogV1(
                 )
 
             internal val ComponentProperties: kotlin.collections.List<A2uiProperty<*>> =
-                listOf(UrlProperty, DescriptionProperty, FitProperty, VariantProperty)
+                listOf(
+                    WeightProperty,
+                    UrlProperty,
+                    DescriptionProperty,
+                    FitProperty,
+                    VariantProperty,
+                )
         }
 
         override val properties: kotlin.collections.List<A2uiProperty<*>>
@@ -572,7 +609,7 @@ public class A2uiBasicCatalogV1(
                 )
 
             internal val ComponentProperties: kotlin.collections.List<A2uiProperty<*>> =
-                listOf(NameProperty, AccessibilityProperty)
+                listOf(WeightProperty, NameProperty, AccessibilityProperty)
         }
 
         override val properties: kotlin.collections.List<A2uiProperty<*>>
@@ -638,7 +675,7 @@ public class A2uiBasicCatalogV1(
                             "multiple IDs or a non-existent ID.",
                 )
             internal val ComponentProperties: kotlin.collections.List<A2uiProperty<*>> =
-                listOf(ChildProperty)
+                listOf(WeightProperty, ChildProperty)
         }
 
         override val properties: kotlin.collections.List<A2uiProperty<*>>
@@ -755,7 +792,7 @@ public class A2uiBasicCatalogV1(
                 )
 
             internal val ComponentProperties: kotlin.collections.List<A2uiProperty<*>> =
-                listOf(ChildrenProperty, JustifyProperty, AlignProperty)
+                listOf(WeightProperty, ChildrenProperty, JustifyProperty, AlignProperty)
         }
 
         override val properties: kotlin.collections.List<A2uiProperty<*>>
@@ -893,7 +930,7 @@ public class A2uiBasicCatalogV1(
                 )
 
             internal val ComponentProperties: kotlin.collections.List<A2uiProperty<*>> =
-                listOf(ChildrenProperty, JustifyProperty, AlignProperty)
+                listOf(WeightProperty, ChildrenProperty, JustifyProperty, AlignProperty)
         }
 
         override val properties: kotlin.collections.List<A2uiProperty<*>>
@@ -1020,7 +1057,7 @@ public class A2uiBasicCatalogV1(
                 )
 
             internal val ComponentProperties: kotlin.collections.List<A2uiProperty<*>> =
-                listOf(ChildrenProperty, DirectionProperty, AlignProperty)
+                listOf(WeightProperty, ChildrenProperty, DirectionProperty, AlignProperty)
         }
 
         override val properties: kotlin.collections.List<A2uiProperty<*>>
@@ -1136,7 +1173,7 @@ public class A2uiBasicCatalogV1(
                 )
 
             internal val ComponentProperties: kotlin.collections.List<A2uiProperty<*>> =
-                listOf(TabsProperty)
+                listOf(WeightProperty, TabsProperty)
         }
 
         override val properties: kotlin.collections.List<A2uiProperty<*>>
@@ -1189,6 +1226,75 @@ public class A2uiBasicCatalogV1(
             tabs: kotlin.collections.List<Tab>,
             modifier: Modifier,
         )
+    }
+
+    /**
+     * The A2UI `"Divider"` component for displaying a horizontal or vertical dividing line.
+     *
+     * **Schema Properties:**
+     * * `axis` (String Enum, optional): The orientation of the divider. Valid options:
+     *   `"horizontal"`, `"vertical"`. Defaults to `"horizontal"`.
+     */
+    public interface Divider : A2uiComponent {
+        override val name: String
+            get() = "Divider"
+
+        override val description: String
+            get() = "A horizontal or vertical dividing line."
+
+        /** The orientation of the divider. */
+        public enum class Axis(public val value: String) {
+            Horizontal("horizontal"),
+            Vertical("vertical");
+
+            public companion object {
+                /** The default [Axis] value. */
+                public val Default: Axis = Horizontal
+
+                /** Returns the [Axis] matching [value], or [Default] if unknown. */
+                public fun fromValue(value: String): Axis =
+                    entries.fastFirstOrNull { it.value == value } ?: Default
+            }
+        }
+
+        public companion object {
+            /** The [A2uiProperty] for the `"axis"` property of a [Divider]. */
+            public val AxisProperty: StaticA2uiProperty<Axis> =
+                A2uiProperty.enum(
+                    key = "axis",
+                    enumValues = Axis.entries,
+                    mapToString = { it.value },
+                    convertFromString = Axis::fromValue,
+                    defaultValue = Axis.Default,
+                    description = "The orientation of the divider.",
+                )
+
+            internal val ComponentProperties: kotlin.collections.List<A2uiProperty<*>> =
+                listOf(WeightProperty, AxisProperty)
+        }
+
+        override val properties: kotlin.collections.List<A2uiProperty<*>>
+            get() = ComponentProperties
+
+        @Composable
+        override fun A2uiComponentScope.isReady(properties: A2uiComponentProperties): Boolean = true
+
+        @Composable
+        override fun A2uiComponentScope.Content(
+            properties: A2uiComponentProperties,
+            modifier: Modifier,
+        ) {
+            val axis = properties[AxisProperty] ?: Axis.Default
+            TypedContent(axis = axis, modifier = modifier)
+        }
+
+        /**
+         * Renders the [Divider] with its resolved [axis] property.
+         *
+         * @param axis [Axis] orientation of the divider
+         * @param modifier [Modifier] to apply to the layout
+         */
+        @Composable public fun A2uiComponentScope.TypedContent(axis: Axis, modifier: Modifier)
     }
 
     /**
@@ -1255,7 +1361,7 @@ public class A2uiBasicCatalogV1(
                 A2uiProperty.action(key = "action", required = true)
 
             internal val ComponentProperties: kotlin.collections.List<A2uiProperty<*>> =
-                listOf(ChildProperty, VariantProperty, ActionProperty)
+                listOf(WeightProperty, ChildProperty, VariantProperty, ActionProperty)
         }
 
         override val properties: kotlin.collections.List<A2uiProperty<*>>
@@ -1300,6 +1406,119 @@ public class A2uiBasicCatalogV1(
     }
 
     /**
+     * The A2UI `"Slider"` component for selecting a numeric value within a range.
+     *
+     * **Schema Properties:**
+     * * `label` (Dynamic String, optional): The label for the slider.
+     * * `min` (Number, optional): The minimum value of the slider. Defaults to `0`.
+     * * `max` (Number, required): The maximum value of the slider.
+     * * `value` (Dynamic Number, required): The current value of the slider.
+     */
+    public interface Slider : A2uiComponent {
+        override val name: String
+            get() = "Slider"
+
+        override val description: String
+            get() = "A slider for selecting a numeric value within a range."
+
+        public companion object {
+            /** The [A2uiProperty] for the `"label"` property of a [Slider]. */
+            public val LabelProperty: DynamicA2uiProperty<String> =
+                A2uiProperty.dynamicString(
+                    key = "label",
+                    required = false,
+                    description = "The label for the slider.",
+                )
+
+            /** The [A2uiProperty] for the `"min"` property of a [Slider]. */
+            public val MinProperty: StaticA2uiProperty<Number> =
+                A2uiProperty.number(
+                    key = "min",
+                    defaultValue = 0,
+                    description = "The minimum value of the slider.",
+                )
+
+            /** The [A2uiProperty] for the `"max"` property of a [Slider]. */
+            public val MaxProperty: StaticA2uiProperty<Number> =
+                A2uiProperty.number(
+                    key = "max",
+                    required = true,
+                    description = "The maximum value of the slider.",
+                )
+
+            /** The [A2uiProperty] for the `"value"` property of a [Slider]. */
+            public val ValueProperty: DynamicA2uiProperty<Number> =
+                A2uiProperty.dynamicNumber(
+                    key = "value",
+                    required = true,
+                    description = "The current value of the slider.",
+                )
+
+            internal val ComponentProperties: kotlin.collections.List<A2uiProperty<*>> =
+                listOf(WeightProperty, LabelProperty, MinProperty, MaxProperty, ValueProperty)
+        }
+
+        override val properties: kotlin.collections.List<A2uiProperty<*>>
+            get() = ComponentProperties
+
+        @Composable
+        override fun A2uiComponentScope.isReady(properties: A2uiComponentProperties): Boolean =
+            properties.bind(ValueProperty) != null
+
+        @Composable
+        override fun A2uiComponentScope.Content(
+            properties: A2uiComponentProperties,
+            modifier: Modifier,
+        ) {
+            val label = properties.bind(LabelProperty)
+            val min = properties[MinProperty]?.toFloat() ?: 0f
+            val max =
+                checkNotNull(properties[MaxProperty]?.toFloat()) {
+                    "Required property '${MaxProperty.key}' is missing."
+                }
+            val value =
+                checkNotNull(properties.bind(ValueProperty)?.toFloat()) {
+                    "Required property '${ValueProperty.key}' is missing."
+                }
+            val onValueChange = properties.bindUpdater(ValueProperty)
+            val isEnabled = onValueChange != null
+
+            TypedContent(
+                label = label,
+                min = min,
+                max = max,
+                value = value,
+                onValueChange = { newValue -> onValueChange?.invoke(newValue) },
+                enabled = isEnabled,
+                modifier = modifier,
+            )
+        }
+
+        /**
+         * Renders the [Slider] with its resolved properties.
+         *
+         * @param label The text label for the slider.
+         * @param min The minimum value of the slider.
+         * @param max The maximum value of the slider.
+         * @param value The current value of the slider.
+         * @param onValueChange callback invoked when the user interacts with the slider.
+         * @param enabled controls the enabled state of the slider. When `false`, this component
+         *   will not respond to user input.
+         * @param modifier [Modifier] to apply to the layout.
+         */
+        @Composable
+        public fun A2uiComponentScope.TypedContent(
+            label: String?,
+            min: Float,
+            max: Float,
+            value: Float,
+            onValueChange: (Float) -> Unit,
+            enabled: Boolean,
+            modifier: Modifier,
+        )
+    }
+
+    /**
      * The A2UI `"DateTimeInput"` component for selecting date and/or time.
      *
      * **Schema Properties:**
@@ -1321,6 +1540,46 @@ public class A2uiBasicCatalogV1(
             get() = "Allows the user to select a date and/or time."
 
         public companion object {
+            private val DateTimeFormatConstraintSchema =
+                A2uiAnySchema(
+                    keywords =
+                        listOf(
+                            A2uiSchemaKeyword.IfThen(
+                                ifSchema = A2uiStringSchema.INSTANCE,
+                                thenSchema =
+                                    A2uiAnySchema(
+                                        keywords =
+                                            listOf(
+                                                A2uiSchemaKeyword.OneOf(
+                                                    listOf(
+                                                        A2uiAnySchema(
+                                                            keywords =
+                                                                listOf(
+                                                                    A2uiSchemaKeyword.Format("date")
+                                                                )
+                                                        ),
+                                                        A2uiAnySchema(
+                                                            keywords =
+                                                                listOf(
+                                                                    A2uiSchemaKeyword.Format("time")
+                                                                )
+                                                        ),
+                                                        A2uiAnySchema(
+                                                            keywords =
+                                                                listOf(
+                                                                    A2uiSchemaKeyword.Format(
+                                                                        "date-time"
+                                                                    )
+                                                                )
+                                                        ),
+                                                    )
+                                                )
+                                            )
+                                    ),
+                            )
+                        )
+                )
+
             /** The [A2uiProperty] for the `"value"` property of a [DateTimeInput]. */
             public val ValueProperty: DynamicA2uiProperty<String> =
                 A2uiProperty.dynamicString(
@@ -1357,9 +1616,10 @@ public class A2uiBasicCatalogV1(
                             keywords =
                                 listOf(
                                     A2uiSchemaKeyword.AllOf(
-                                        // TODO(b/553193771): Support the `format` schema values
-                                        //  once supported in the schema API.
-                                        listOf(A2uiDynamicStringSchema.DEFAULT_INSTANCE)
+                                        listOf(
+                                            A2uiDynamicStringSchema.DEFAULT_INSTANCE,
+                                            DateTimeFormatConstraintSchema,
+                                        )
                                     )
                                 ),
                         ),
@@ -1377,9 +1637,10 @@ public class A2uiBasicCatalogV1(
                             keywords =
                                 listOf(
                                     A2uiSchemaKeyword.AllOf(
-                                        // TODO(b/553193771): Support the `format` schema values
-                                        //  once supported in the schema API.
-                                        listOf(A2uiDynamicStringSchema.DEFAULT_INSTANCE)
+                                        listOf(
+                                            A2uiDynamicStringSchema.DEFAULT_INSTANCE,
+                                            DateTimeFormatConstraintSchema,
+                                        )
                                     )
                                 ),
                         ),
@@ -1397,6 +1658,7 @@ public class A2uiBasicCatalogV1(
 
             internal val ComponentProperties: kotlin.collections.List<A2uiProperty<*>> =
                 listOf(
+                    WeightProperty,
                     ValueProperty,
                     EnableDateProperty,
                     EnableTimeProperty,
@@ -1496,6 +1758,95 @@ public class A2uiBasicCatalogV1(
             @Suppress("AutoBoxing") min: Long?,
             @Suppress("AutoBoxing") max: Long?,
             label: String?,
+            modifier: Modifier,
+        )
+    }
+
+    /**
+     * The A2UI `"CheckBox"` component for displaying a checkable control with an associated label.
+     *
+     * **Schema Properties:**
+     * * `label` (Dynamic String, required): The text to display next to the checkbox.
+     * * `value` (Dynamic Boolean, required): The current state of the checkbox (true for checked,
+     *   false for unchecked).
+     */
+    public interface CheckBox : A2uiComponent {
+        override val name: String
+            get() = "CheckBox"
+
+        override val description: String
+            get() = "A checkbox with a label and a boolean value."
+
+        public companion object {
+            /** The [A2uiProperty] for the `"label"` property of a [CheckBox]. */
+            public val LabelProperty: DynamicA2uiProperty<String> =
+                A2uiProperty.dynamicString(
+                    key = "label",
+                    required = true,
+                    description = "The text to display next to the checkbox.",
+                )
+
+            /** The [A2uiProperty] for the `"value"` property of a [CheckBox]. */
+            public val ValueProperty: DynamicA2uiProperty<Boolean> =
+                A2uiProperty.dynamicBoolean(
+                    key = "value",
+                    required = true,
+                    description =
+                        "The current state of the checkbox (true for checked, false for unchecked).",
+                )
+
+            internal val ComponentProperties: kotlin.collections.List<A2uiProperty<*>> =
+                listOf(WeightProperty, LabelProperty, ValueProperty)
+        }
+
+        override val properties: kotlin.collections.List<A2uiProperty<*>>
+            get() = ComponentProperties
+
+        @Composable
+        override fun A2uiComponentScope.isReady(properties: A2uiComponentProperties): Boolean =
+            properties.bind(LabelProperty) != null && properties.bind(ValueProperty) != null
+
+        @Composable
+        override fun A2uiComponentScope.Content(
+            properties: A2uiComponentProperties,
+            modifier: Modifier,
+        ) {
+            val label =
+                checkNotNull(properties.bind(LabelProperty)) {
+                    "Required property '${LabelProperty.key}' is missing."
+                }
+            val value =
+                checkNotNull(properties.bind(ValueProperty)) {
+                    "Required property '${ValueProperty.key}' is missing."
+                }
+            val onValueChange = properties.bindUpdater(ValueProperty)
+            val isEnabled = onValueChange != null
+
+            TypedContent(
+                label = label,
+                value = value,
+                onValueChange = { newValue -> onValueChange?.invoke(newValue) },
+                enabled = isEnabled,
+                modifier = modifier,
+            )
+        }
+
+        /**
+         * Renders the [CheckBox] with its resolved [label] and [value] properties.
+         *
+         * @param label The text to display next to the checkbox.
+         * @param value The current state of the checkbox.
+         * @param onValueChange callback invoked when the user toggles the checkbox.
+         * @param enabled controls the enabled state of the checkbox. When `false`, this component
+         *   will not respond to user input.
+         * @param modifier [Modifier] to apply to the layout.
+         */
+        @Composable
+        public fun A2uiComponentScope.TypedContent(
+            label: String,
+            value: Boolean,
+            onValueChange: (Boolean) -> Unit,
+            enabled: Boolean,
             modifier: Modifier,
         )
     }

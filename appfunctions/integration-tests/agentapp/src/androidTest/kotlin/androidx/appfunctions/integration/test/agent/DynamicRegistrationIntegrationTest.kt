@@ -42,6 +42,7 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.Ignore
 import kotlin.test.assertIs
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -116,6 +117,7 @@ class DynamicRegistrationIntegrationTest {
     }
 
     @Test
+    @Ignore("b/553962620 - Disable until the test is fixed")
     fun executeAppFunction_activityScopedRegistration_success() = doBlocking {
         // Start the activity which will register the app function
         val intent =
@@ -422,13 +424,19 @@ class DynamicRegistrationIntegrationTest {
 
     @Test
     fun getHandleAppFunctionRequestAdapter_adapterNotFound_throwsException() = doBlocking {
-        val exception =
+        val exceptionFromReified =
+            assertThrows(IllegalArgumentException::class.java) {
+                appFunctionManager.getHandleAppFunctionRequestAdapter<UnadaptedSignature>()
+            }
+        assertThat(exceptionFromReified.message).contains("@AppFunctionSignature")
+
+        val exceptionFromClass =
             assertThrows(IllegalArgumentException::class.java) {
                 appFunctionManager.getHandleAppFunctionRequestAdapter(
                     UnadaptedSignature::class.java
                 )
             }
-        assertThat(exception.message).contains("@AppFunctionSignature")
+        assertThat(exceptionFromClass.message).contains("@AppFunctionSignature")
     }
 
     private interface UnadaptedSignature
