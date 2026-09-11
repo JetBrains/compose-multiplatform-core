@@ -32,7 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.Role
-import androidx.xr.glimmer.internal.color.withToneAndChroma
+import androidx.xr.glimmer.internal.color.withTone
 
 /**
  * A Jetpack Compose Glimmer icon toggle button that changes its appearance depending on the
@@ -78,12 +78,6 @@ public fun IconToggleButton(
     interactionSource: MutableInteractionSource? = null,
     content: @Composable () -> Unit,
 ) {
-    val depthEffect =
-        SurfaceDepthEffect(
-            depthEffect = null,
-            focusedDepthEffect = GlimmerTheme.depthEffectLevels.level1,
-        )
-
     val internalInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
 
     val color = colors.resolveBackgroundColor(checked)
@@ -97,7 +91,7 @@ public fun IconToggleButton(
                 focusedColor = color,
                 contentColor = contentColor,
                 focusedContentColor = contentColor,
-                depthEffect = depthEffect,
+                depthEffect = null,
                 interactionSource = internalInteractionSource,
             )
             .toggleable(
@@ -193,13 +187,9 @@ public object IconToggleButtonDefaults {
      */
     @Composable
     public fun checkedBackgroundColor(color: Color = GlimmerTheme.colors.primary): Color =
-        color.withToneAndChroma(
-            newTone = CheckedBackgroundColorTone,
-            newChroma = CheckedBackgroundColorChroma,
-        )
+        color.withTone(newTone = CheckedBackgroundColorTone)
 
     private const val CheckedBackgroundColorTone = 70f
-    private const val CheckedBackgroundColorChroma = 50f
 }
 
 /**

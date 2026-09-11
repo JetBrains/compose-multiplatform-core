@@ -19,7 +19,10 @@ package androidx.glance.adaptive.appwidget
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.util.Log
 import androidx.annotation.CallSuper
 import androidx.annotation.RestrictTo
@@ -54,6 +57,7 @@ private const val TAG = "GlanceAdaptiveReceiver"
  * <receiver android:name=".MyGlanceAdaptiveWidgetReceiver" android:exported="true">
  *     <intent-filter>
  *         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+ *         <action android:name="android.intent.action.LOCALE_CHANGED" />
  *     </intent-filter>
  *     <meta-data
  *         android:name="androidx.glance.adaptive.WIDGET_NAME"
@@ -109,7 +113,45 @@ public abstract class GlanceAdaptiveWidgetReceiver : AppWidgetProvider() {
         goAsync(coroutineContext) { onUpdate(context) }
     }
 
+    override fun onReceive(context: Context, intent: Intent) {
+        runAndLogExceptions {
+            when (intent.action) {
+                Intent.ACTION_LOCALE_CHANGED -> {
+                    handleUpdateBroadcast(context, intent)
+                }
+                ACTION_DEBUG_UPDATE -> {
+                    if ((context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+                        handleUpdateBroadcast(context, intent)
+                    }
+                }
+                else -> super.onReceive(context, intent)
+            }
+        }
+    }
+
+    private fun handleUpdateBroadcast(context: Context, intent: Intent) {
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val componentName = ComponentName(context, javaClass)
+        val ids =
+            intent.getIntArrayExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS)
+                ?: appWidgetManager.getAppWidgetIds(componentName)
+        if (ids.isNotEmpty()) {
+            onUpdate(context, appWidgetManager, ids)
+        }
+    }
+
     public companion object {
+        /**
+         * Broadcast action to force a debug update of the Glance Adaptive widget via adb: `adb
+         * shell am broadcast -a androidx.glance.adaptive.action.DEBUG_UPDATE -n APP/COMPONENT`
+         *
+         * To target specific widget IDs, pass [AppWidgetManager.EXTRA_APPWIDGET_IDS]: `adb shell am
+         * broadcast -a androidx.glance.adaptive.action.DEBUG_UPDATE -n APP/COMPONENT --eia
+         * appWidgetIds 1,2`
+         */
+        public const val ACTION_DEBUG_UPDATE: String =
+            "androidx.glance.adaptive.action.DEBUG_UPDATE"
+
         /**
          * Manifest `<meta-data>` name used to associate an [AppWidgetProvider] receiver with a
          * specific developer [widgetName] string identifier in `AndroidManifest.xml`.
@@ -151,5 +193,15 @@ internal fun BroadcastReceiver.goAsync(
                 Log.e(TAG, "Error thrown when trying to finish broadcast", e)
             }
         }
+    }
+}
+
+private inline fun runAndLogExceptions(block: () -> Unit) {
+    try {
+        block()
+    } catch (ex: CancellationException) {
+        // Regular cancellation, ignore
+    } catch (ex: Exception) {
+        Log.e(TAG, "Error in Glance Adaptive Widget Receiver", ex)
     }
 }

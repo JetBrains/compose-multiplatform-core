@@ -14,10 +14,17 @@
  * limitations under the License.
  */
 
-package androidx.activity
+package androidx.xr.runtime
 
-/** @see ComponentActivity.enableExportedActivityDefaultArgs */
+@RequiresOptIn(
+    message =
+        "This is an experimental API for Spatial Annotations. It may be changed or removed in the future."
+)
+@Target(
+    AnnotationTarget.CLASS,
+    AnnotationTarget.FUNCTION,
+    AnnotationTarget.PROPERTY,
+    AnnotationTarget.FIELD,
+)
 @Retention(AnnotationRetention.BINARY)
-@Target(AnnotationTarget.FUNCTION)
-@RequiresOptIn(level = RequiresOptIn.Level.WARNING)
-public annotation class ExportedActivityDefaultArgControl
+public annotation class ExperimentalSpatialAnnotationsApi

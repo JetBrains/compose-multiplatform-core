@@ -50,7 +50,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
-import androidx.xr.glimmer.internal.color.withToneAndChroma
+import androidx.xr.glimmer.internal.color.withTone
 
 /**
  * A Jetpack Compose Glimmer toggle button that changes its appearance depending on the [checked]
@@ -123,12 +123,6 @@ public fun ToggleButton(
     val iconSpacing = ButtonDefaults.iconSpacing
     val minHeight = ButtonDefaults.minimumHeight(buttonSize)
 
-    val depth =
-        SurfaceDepthEffect(
-            depthEffect = null,
-            focusedDepthEffect = GlimmerTheme.depthEffectLevels.level1,
-        )
-
     val internalInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
 
     val color = colors.resolveBackgroundColor(checked)
@@ -144,7 +138,7 @@ public fun ToggleButton(
                     focusedColor = color,
                     contentColor = contentColor,
                     focusedContentColor = contentColor,
-                    depthEffect = depth,
+                    depthEffect = null,
                     interactionSource = internalInteractionSource,
                 )
                 .toggleable(
@@ -253,13 +247,9 @@ public object ToggleButtonDefaults {
      */
     @Composable
     public fun checkedBackgroundColor(color: Color = GlimmerTheme.colors.primary): Color =
-        color.withToneAndChroma(
-            newTone = CheckedBackgroundColorTone,
-            newChroma = CheckedBackgroundColorChroma,
-        )
+        color.withTone(newTone = CheckedBackgroundColorTone)
 
     private const val CheckedBackgroundColorTone = 70f
-    private const val CheckedBackgroundColorChroma = 50f
 
     /** Default shape for [ToggleButton] and [IconToggleButton] in the checked state. */
     public val CheckedShape: Shape = RoundedCornerShape(20.dp)
