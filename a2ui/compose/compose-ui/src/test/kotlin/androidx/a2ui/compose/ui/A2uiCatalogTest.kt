@@ -135,9 +135,12 @@ class A2uiCatalogTest {
         assertThat(catalog.themeSchema).isEqualTo(A2uiBasicCatalogV1.ThemeSchema)
         assertThat(catalog.components["Text"]).isSameInstanceAs(basicCatalog.text)
         assertThat(catalog.components["Image"]).isSameInstanceAs(basicCatalog.image)
+        assertThat(catalog.components["Icon"]).isSameInstanceAs(basicCatalog.icon)
         assertThat(catalog.components["Card"]).isSameInstanceAs(basicCatalog.card)
         assertThat(catalog.components["Row"]).isSameInstanceAs(basicCatalog.row)
         assertThat(catalog.components["Column"]).isSameInstanceAs(basicCatalog.column)
+        assertThat(catalog.components["List"]).isSameInstanceAs(basicCatalog.list)
+        assertThat(catalog.components["Tabs"]).isSameInstanceAs(basicCatalog.tabs)
         assertThat(catalog.components["Button"]).isSameInstanceAs(basicCatalog.button)
         assertThat(catalog.components["DateTimeInput"]).isSameInstanceAs(basicCatalog.dateTimeInput)
         assertThat(catalog.functions["TestFunc"]).isSameInstanceAs(testFunction)
@@ -327,9 +330,12 @@ class A2uiCatalogTest {
         fun createTestBasicCatalog(
             text: A2uiBasicCatalogV1.Text = createStubText(),
             image: A2uiBasicCatalogV1.Image = createStubImage(),
+            icon: A2uiBasicCatalogV1.Icon = createStubIcon(),
             card: A2uiBasicCatalogV1.Card = createStubCard(),
             row: A2uiBasicCatalogV1.Row = createStubRow(),
             column: A2uiBasicCatalogV1.Column = createStubColumn(),
+            list: A2uiBasicCatalogV1.List = createStubList(),
+            tabs: A2uiBasicCatalogV1.Tabs = createStubTabs(),
             button: A2uiBasicCatalogV1.Button = createStubButton(),
             dateTimeInput: A2uiBasicCatalogV1.DateTimeInput = createStubDateTimeInput(),
             functions: List<A2uiFunction> = emptyList(),
@@ -337,9 +343,12 @@ class A2uiCatalogTest {
             A2uiBasicCatalogV1(
                 text = text,
                 image = image,
+                icon = icon,
                 card = card,
                 row = row,
                 column = column,
+                list = list,
+                tabs = tabs,
                 button = button,
                 dateTimeInput = dateTimeInput,
                 functions = functions,
@@ -363,6 +372,16 @@ class A2uiCatalogTest {
                     description: String?,
                     fit: A2uiBasicCatalogV1.Image.Fit,
                     variant: A2uiBasicCatalogV1.Image.Variant,
+                    modifier: Modifier,
+                ) {}
+            }
+
+        fun createStubIcon() =
+            object : A2uiBasicCatalogV1.Icon {
+                @Composable
+                override fun A2uiComponentScope.TypedContent(
+                    source: A2uiBasicCatalogV1.Icon.Source,
+                    accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
                     modifier: Modifier,
                 ) {}
             }
@@ -391,6 +410,26 @@ class A2uiCatalogTest {
                     children: List<A2uiComponentReference>,
                     justify: A2uiBasicCatalogV1.Column.Justify,
                     align: A2uiBasicCatalogV1.Column.Align,
+                    modifier: Modifier,
+                ) {}
+            }
+
+        fun createStubList() =
+            object : A2uiBasicCatalogV1.List {
+                @Composable
+                override fun A2uiComponentScope.TypedContent(
+                    children: List<A2uiComponentReference>,
+                    direction: A2uiBasicCatalogV1.List.Direction,
+                    align: A2uiBasicCatalogV1.List.Align,
+                    modifier: Modifier,
+                ) {}
+            }
+
+        fun createStubTabs() =
+            object : A2uiBasicCatalogV1.Tabs {
+                @Composable
+                override fun A2uiComponentScope.TypedContent(
+                    tabs: List<A2uiBasicCatalogV1.Tabs.Tab>,
                     modifier: Modifier,
                 ) {}
             }

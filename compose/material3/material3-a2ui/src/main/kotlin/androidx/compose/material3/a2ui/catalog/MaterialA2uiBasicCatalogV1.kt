@@ -39,12 +39,18 @@ import androidx.a2ui.model.catalog.functions.A2uiUrlOpener
  *   locale
  * @param text [A2uiBasicCatalogV1.Text] component implementation, defaults to
  *   [MaterialA2uiBasicCatalogV1Defaults.text]
+ * @param icon [A2uiBasicCatalogV1.Icon] component implementation, defaults to
+ *   [MaterialA2uiBasicCatalogV1Defaults.icon]
  * @param card [A2uiBasicCatalogV1.Card] component implementation, defaults to
  *   [MaterialA2uiBasicCatalogV1Defaults.card]
  * @param row [A2uiBasicCatalogV1.Row] component implementation, defaults to
  *   [MaterialA2uiBasicCatalogV1Defaults.row]
  * @param column [A2uiBasicCatalogV1.Column] component implementation, defaults to
  *   [MaterialA2uiBasicCatalogV1Defaults.column]
+ * @param list [A2uiBasicCatalogV1.List] component implementation, defaults to
+ *   [MaterialA2uiBasicCatalogV1Defaults.list]
+ * @param tabs [A2uiBasicCatalogV1.Tabs] component implementation, defaults to
+ *   [MaterialA2uiBasicCatalogV1Defaults.tabs]
  * @param button [A2uiBasicCatalogV1.Button] component implementation, defaults to
  *   [MaterialA2uiBasicCatalogV1Defaults.button]
  * @param dateTimeInput [A2uiBasicCatalogV1.DateTimeInput] component implementation, defaults to
@@ -57,9 +63,12 @@ public fun materialA2uiBasicCatalogV1(
     messageFormatter: A2uiMessageFormatter,
     localeProvider: A2uiLocaleProvider,
     text: A2uiBasicCatalogV1.Text = MaterialA2uiBasicCatalogV1Defaults.text,
+    icon: A2uiBasicCatalogV1.Icon = MaterialA2uiBasicCatalogV1Defaults.icon,
     card: A2uiBasicCatalogV1.Card = MaterialA2uiBasicCatalogV1Defaults.card,
     row: A2uiBasicCatalogV1.Row = MaterialA2uiBasicCatalogV1Defaults.row,
     column: A2uiBasicCatalogV1.Column = MaterialA2uiBasicCatalogV1Defaults.column,
+    list: A2uiBasicCatalogV1.List = MaterialA2uiBasicCatalogV1Defaults.list,
+    tabs: A2uiBasicCatalogV1.Tabs = MaterialA2uiBasicCatalogV1Defaults.tabs,
     button: A2uiBasicCatalogV1.Button = MaterialA2uiBasicCatalogV1Defaults.button,
     dateTimeInput: A2uiBasicCatalogV1.DateTimeInput =
         MaterialA2uiBasicCatalogV1Defaults.dateTimeInput,
@@ -69,9 +78,12 @@ public fun materialA2uiBasicCatalogV1(
         A2uiBasicCatalogV1(
             text = text,
             image = image,
+            icon = icon,
             card = card,
             row = row,
             column = column,
+            list = list,
+            tabs = tabs,
             button = button,
             dateTimeInput = dateTimeInput,
             // TODO(b/547851648): Add the rest of the basic catalog component types.
@@ -93,6 +105,9 @@ public object MaterialA2uiBasicCatalogV1Defaults {
     public fun image(imageRenderer: A2uiImageRenderer): A2uiBasicCatalogV1.Image =
         MaterialA2uiBasicCatalogV1Image(imageRenderer)
 
+    /** Default Material 3 implementation of the [A2uiBasicCatalogV1.Icon] component. */
+    public val icon: A2uiBasicCatalogV1.Icon = MaterialA2uiBasicCatalogV1Icon
+
     /** Default Material 3 implementation of the [A2uiBasicCatalogV1.Card] component. */
     public val card: A2uiBasicCatalogV1.Card = MaterialA2uiBasicCatalogV1Card
 
@@ -101,6 +116,12 @@ public object MaterialA2uiBasicCatalogV1Defaults {
 
     /** Default Material 3 implementation of the [A2uiBasicCatalogV1.Column] component. */
     public val column: A2uiBasicCatalogV1.Column = MaterialA2uiBasicCatalogV1Column
+
+    /** Default Material 3 implementation of the [A2uiBasicCatalogV1.List] component. */
+    public val list: A2uiBasicCatalogV1.List = MaterialA2uiBasicCatalogV1List
+
+    /** Default Material 3 implementation of the [A2uiBasicCatalogV1.Tabs] component. */
+    public val tabs: A2uiBasicCatalogV1.Tabs = MaterialA2uiBasicCatalogV1Tabs
 
     /** Default Material 3 implementation of the [A2uiBasicCatalogV1.Button] component. */
     public val button: A2uiBasicCatalogV1.Button = MaterialA2uiBasicCatalogV1Button

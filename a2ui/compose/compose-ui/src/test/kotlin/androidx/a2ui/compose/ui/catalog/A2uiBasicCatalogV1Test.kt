@@ -56,18 +56,24 @@ class A2uiBasicCatalogV1Test {
     fun properties_initializedWithConstructorArguments() {
         val text = TestTextComponent()
         val image = TestImageComponent()
+        val icon = TestIconComponent()
         val card = TestCardComponent()
         val row = TestRowComponent()
         val column = TestColumnComponent()
+        val list = TestListComponent()
+        val tabs = TestTabsComponent()
         val button = TestButtonComponent()
         val dateTimeInput = TestDateTimeInputComponent()
         val catalog =
             createTestBasicCatalog(
                 text = text,
                 image = image,
+                icon = icon,
                 card = card,
                 row = row,
                 column = column,
+                list = list,
+                tabs = tabs,
                 button = button,
                 dateTimeInput = dateTimeInput,
                 functions = listOf(A2uiFormatStringFunction.INSTANCE),
@@ -75,13 +81,27 @@ class A2uiBasicCatalogV1Test {
 
         assertThat(catalog.text).isSameInstanceAs(text)
         assertThat(catalog.image).isSameInstanceAs(image)
+        assertThat(catalog.icon).isSameInstanceAs(icon)
         assertThat(catalog.card).isSameInstanceAs(card)
         assertThat(catalog.row).isSameInstanceAs(row)
         assertThat(catalog.column).isSameInstanceAs(column)
+        assertThat(catalog.list).isSameInstanceAs(list)
+        assertThat(catalog.tabs).isSameInstanceAs(tabs)
         assertThat(catalog.button).isSameInstanceAs(button)
         assertThat(catalog.dateTimeInput).isSameInstanceAs(dateTimeInput)
         assertThat(catalog.components)
-            .containsExactly(text, image, card, row, column, button, dateTimeInput)
+            .containsExactly(
+                text,
+                image,
+                icon,
+                card,
+                row,
+                column,
+                list,
+                tabs,
+                button,
+                dateTimeInput,
+            )
         assertThat(catalog.functions).containsExactly(A2uiFormatStringFunction.INSTANCE)
     }
 
@@ -89,18 +109,24 @@ class A2uiBasicCatalogV1Test {
     fun equalsAndHashCode_equalCatalogs_match() {
         val text = TestTextComponent()
         val image = TestImageComponent()
+        val icon = TestIconComponent()
         val card = TestCardComponent()
         val row = TestRowComponent()
         val column = TestColumnComponent()
+        val list = TestListComponent()
+        val tabs = TestTabsComponent()
         val button = TestButtonComponent()
         val dateTimeInput = TestDateTimeInputComponent()
         val catalog1 =
             createTestBasicCatalog(
                 text = text,
                 image = image,
+                icon = icon,
                 card = card,
                 row = row,
                 column = column,
+                list = list,
+                tabs = tabs,
                 button = button,
                 dateTimeInput = dateTimeInput,
             )
@@ -108,9 +134,12 @@ class A2uiBasicCatalogV1Test {
             createTestBasicCatalog(
                 text = text,
                 image = image,
+                icon = icon,
                 card = card,
                 row = row,
                 column = column,
+                list = list,
+                tabs = tabs,
                 button = button,
                 dateTimeInput = dateTimeInput,
             )
@@ -124,18 +153,24 @@ class A2uiBasicCatalogV1Test {
         val text1 = TestTextComponent()
         val text2 = TestTextComponent()
         val sharedImage = TestImageComponent()
+        val sharedIcon = TestIconComponent()
         val sharedCard = TestCardComponent()
         val sharedRow = TestRowComponent()
         val sharedColumn = TestColumnComponent()
+        val sharedList = TestListComponent()
+        val sharedTabs = TestTabsComponent()
         val sharedButton = TestButtonComponent()
         val sharedDateTimeInput = TestDateTimeInputComponent()
         val catalog1 =
             createTestBasicCatalog(
                 text = text1,
                 image = sharedImage,
+                icon = sharedIcon,
                 card = sharedCard,
                 row = sharedRow,
                 column = sharedColumn,
+                list = sharedList,
+                tabs = sharedTabs,
                 button = sharedButton,
                 dateTimeInput = sharedDateTimeInput,
             )
@@ -143,9 +178,12 @@ class A2uiBasicCatalogV1Test {
             createTestBasicCatalog(
                 text = text2,
                 image = sharedImage,
+                icon = sharedIcon,
                 card = sharedCard,
                 row = sharedRow,
                 column = sharedColumn,
+                list = sharedList,
+                tabs = sharedTabs,
                 button = sharedButton,
                 dateTimeInput = sharedDateTimeInput,
             )
@@ -161,16 +199,21 @@ class A2uiBasicCatalogV1Test {
         assertThat(catalog.toString()).contains("catalogId=${A2uiBasicCatalogV1.CatalogId}")
         assertThat(catalog.toString()).contains("themeSchema=${A2uiBasicCatalogV1.ThemeSchema}")
         assertThat(catalog.toString())
-            .containsMatch("components=.*Text.*Image.*Card.*Row.*Column.*Button.*DateTimeInput")
+            .containsMatch(
+                "components=.*Text.*Image.*Icon.*Card.*Row.*Column.*List.*Tabs.*Button.*DateTimeInput"
+            )
         assertThat(catalog.toString()).contains("functions=[]")
     }
 
     private fun createTestBasicCatalog(
         text: A2uiBasicCatalogV1.Text = TestTextComponent(),
         image: A2uiBasicCatalogV1.Image = TestImageComponent(),
+        icon: A2uiBasicCatalogV1.Icon = TestIconComponent(),
         card: A2uiBasicCatalogV1.Card = TestCardComponent(),
         row: A2uiBasicCatalogV1.Row = TestRowComponent(),
         column: A2uiBasicCatalogV1.Column = TestColumnComponent(),
+        list: A2uiBasicCatalogV1.List = TestListComponent(),
+        tabs: A2uiBasicCatalogV1.Tabs = TestTabsComponent(),
         button: A2uiBasicCatalogV1.Button = TestButtonComponent(),
         dateTimeInput: A2uiBasicCatalogV1.DateTimeInput = TestDateTimeInputComponent(),
         functions: List<A2uiFunction> = emptyList(),
@@ -178,9 +221,12 @@ class A2uiBasicCatalogV1Test {
         A2uiBasicCatalogV1(
             text = text,
             image = image,
+            icon = icon,
             card = card,
             row = row,
             column = column,
+            list = list,
+            tabs = tabs,
             button = button,
             dateTimeInput = dateTimeInput,
             functions = functions,
@@ -206,6 +252,15 @@ class A2uiBasicCatalogV1Test {
         ) {}
     }
 
+    private class TestIconComponent : A2uiBasicCatalogV1.Icon {
+        @Composable
+        override fun A2uiComponentScope.TypedContent(
+            source: A2uiBasicCatalogV1.Icon.Source,
+            accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
+            modifier: Modifier,
+        ) {}
+    }
+
     private class TestCardComponent : A2uiBasicCatalogV1.Card {
         @Composable
         override fun A2uiComponentScope.TypedContent(childId: String, modifier: Modifier) {}
@@ -227,6 +282,24 @@ class A2uiBasicCatalogV1Test {
             children: List<A2uiComponentReference>,
             justify: A2uiBasicCatalogV1.Column.Justify,
             align: A2uiBasicCatalogV1.Column.Align,
+            modifier: Modifier,
+        ) {}
+    }
+
+    private class TestListComponent : A2uiBasicCatalogV1.List {
+        @Composable
+        override fun A2uiComponentScope.TypedContent(
+            children: List<A2uiComponentReference>,
+            direction: A2uiBasicCatalogV1.List.Direction,
+            align: A2uiBasicCatalogV1.List.Align,
+            modifier: Modifier,
+        ) {}
+    }
+
+    private class TestTabsComponent : A2uiBasicCatalogV1.Tabs {
+        @Composable
+        override fun A2uiComponentScope.TypedContent(
+            tabs: List<A2uiBasicCatalogV1.Tabs.Tab>,
             modifier: Modifier,
         ) {}
     }

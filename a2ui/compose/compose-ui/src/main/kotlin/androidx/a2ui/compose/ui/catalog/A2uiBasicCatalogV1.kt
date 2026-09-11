@@ -31,12 +31,17 @@ import androidx.a2ui.model.schema.A2uiObjectSchema
 import androidx.a2ui.model.schema.A2uiSchema
 import androidx.a2ui.model.schema.A2uiSchemaKeyword
 import androidx.a2ui.model.schema.A2uiStringSchema
+import androidx.a2ui.model.schema.commontypes.A2uiAccessibilityAttributesSchema
+import androidx.a2ui.model.schema.commontypes.A2uiDataBindingSchema
 import androidx.a2ui.model.schema.commontypes.A2uiDynamicStringSchema
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastFirstOrNull
+import androidx.compose.ui.util.fastMap
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -52,9 +57,12 @@ import java.util.TimeZone
  *
  * @property text The [Text] component implementation.
  * @property image The [Image] component implementation.
+ * @property icon The [Icon] component implementation.
  * @property card The [Card] component implementation.
  * @property row The [Row] component implementation.
  * @property column The [Column] component implementation.
+ * @property list The [List] component implementation.
+ * @property tabs The [Tabs] component implementation.
  * @property button The [Button] component implementation.
  * @property dateTimeInput The [DateTimeInput] component implementation.
  * @property functions The list of [A2uiFunction]s supported by this catalog, recommended default is
@@ -64,13 +72,16 @@ import java.util.TimeZone
 public class A2uiBasicCatalogV1(
     public val text: Text,
     public val image: Image,
+    public val icon: Icon,
     public val card: Card,
     public val row: Row,
     public val column: Column,
+    public val list: List,
+    public val tabs: Tabs,
     public val button: Button,
     public val dateTimeInput: DateTimeInput,
     // TODO(b/547851648): Add the rest of the basic catalog component types.
-    public val functions: List<A2uiFunction>,
+    public val functions: kotlin.collections.List<A2uiFunction>,
 ) {
 
     /** The unique identifier for this catalog. */
@@ -80,13 +91,16 @@ public class A2uiBasicCatalogV1(
     public val themeSchema: A2uiSchema = ThemeSchema
 
     /** The list of [A2uiComponent]s supported by this catalog. */
-    public val components: List<A2uiComponent> =
+    public val components: kotlin.collections.List<A2uiComponent> =
         listOf(
             text,
             image,
+            icon,
             card,
             row,
             column,
+            list,
+            tabs,
             button,
             dateTimeInput,
             // TODO(b/547851648): Add the rest of the basic catalog component types.
@@ -125,6 +139,32 @@ public class A2uiBasicCatalogV1(
                             ),
                     )
             )
+    }
+
+    /** Accessibility attributes for an element in the A2UI Basic Catalog V1. */
+    @Immutable
+    public class AccessibilityAttributes(
+        public val label: String? = null,
+        public val description: String? = null,
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is AccessibilityAttributes) return false
+
+            if (label != other.label) return false
+            if (description != other.description) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = label.hashCode()
+            result = 31 * result + description.hashCode()
+            return result
+        }
+
+        override fun toString(): String =
+            "AccessibilityAttributes(label=$label, description=$description)"
     }
 
     /**
@@ -179,11 +219,11 @@ public class A2uiBasicCatalogV1(
                     convertFromString = Variant::fromValue,
                     description = "A hint for the base text style.",
                 )
-            internal val componentProperties: List<A2uiProperty<*>> =
+            internal val componentProperties: kotlin.collections.List<A2uiProperty<*>> =
                 listOf(textProperty, variantProperty)
         }
 
-        override val properties: List<A2uiProperty<*>>
+        override val properties: kotlin.collections.List<A2uiProperty<*>>
             get() = componentProperties
 
         @Composable
@@ -303,11 +343,11 @@ public class A2uiBasicCatalogV1(
                     description = "A hint for the image size and style.",
                 )
 
-            internal val ComponentProperties: List<A2uiProperty<*>> =
+            internal val ComponentProperties: kotlin.collections.List<A2uiProperty<*>> =
                 listOf(UrlProperty, DescriptionProperty, FitProperty, VariantProperty)
         }
 
-        override val properties: List<A2uiProperty<*>>
+        override val properties: kotlin.collections.List<A2uiProperty<*>>
             get() = ComponentProperties
 
         @Composable
@@ -357,6 +397,221 @@ public class A2uiBasicCatalogV1(
     }
 
     /**
+     * The A2UI `"Icon"` component for displaying an icon.
+     *
+     * **Schema Properties:**
+     * * `name` (Dynamic Custom, required): The name of the icon to display. Accepts either a static
+     *   string literal from the predefined list, an object with an `svgPath` string, or a dynamic
+     *   data binding.
+     * * `accessibility` (Dynamic Custom, optional): Accessibility attributes for the icon.
+     */
+    public interface Icon : A2uiComponent {
+        override val name: String
+            get() = "Icon"
+
+        override val description: String
+            get() = "Displays an icon from a predefined set of icons or an SVG path."
+
+        /** The visual source for the [Icon]. */
+        public sealed interface Source
+
+        /** Indicates an icon should be drawn from a bespoke client-provided SVG path. */
+        @Immutable
+        public class SvgPath(public val svgPath: String) : Source {
+            override fun equals(other: Any?): Boolean {
+                if (this === other) return true
+                if (other !is SvgPath) return false
+                return svgPath == other.svgPath
+            }
+
+            override fun hashCode(): Int = svgPath.hashCode()
+
+            override fun toString(): String = "SvgPath(svgPath='$svgPath')"
+        }
+
+        /** Supported built-in icon tokens in the A2UI basic catalog schema. */
+        public enum class BuiltIn(public val value: String) : Source {
+            AccountCircle("accountCircle"),
+            Add("add"),
+            ArrowBack("arrowBack"),
+            ArrowForward("arrowForward"),
+            AttachFile("attachFile"),
+            CalendarToday("calendarToday"),
+            Call("call"),
+            Camera("camera"),
+            Check("check"),
+            Close("close"),
+            Delete("delete"),
+            Download("download"),
+            Edit("edit"),
+            Error("error"),
+            Event("event"),
+            FastForward("fastForward"),
+            Favorite("favorite"),
+            FavoriteOff("favoriteOff"),
+            Folder("folder"),
+            Help("help"),
+            Home("home"),
+            Info("info"),
+            LocationOn("locationOn"),
+            Lock("lock"),
+            LockOpen("lockOpen"),
+            Mail("mail"),
+            Menu("menu"),
+            MoreHoriz("moreHoriz"),
+            MoreVert("moreVert"),
+            Notifications("notifications"),
+            NotificationsOff("notificationsOff"),
+            Pause("pause"),
+            Payment("payment"),
+            Person("person"),
+            Phone("phone"),
+            Photo("photo"),
+            Play("play"),
+            Print("print"),
+            Refresh("refresh"),
+            Rewind("rewind"),
+            Search("search"),
+            Send("send"),
+            Settings("settings"),
+            Share("share"),
+            ShoppingCart("shoppingCart"),
+            SkipNext("skipNext"),
+            SkipPrevious("skipPrevious"),
+            Star("star"),
+            StarHalf("starHalf"),
+            StarOff("starOff"),
+            Stop("stop"),
+            Upload("upload"),
+            Visibility("visibility"),
+            VisibilityOff("visibilityOff"),
+            VolumeDown("volumeDown"),
+            VolumeMute("volumeMute"),
+            VolumeOff("volumeOff"),
+            VolumeUp("volumeUp"),
+            Warning("warning");
+
+            public companion object {
+                /** Returns the [BuiltIn] matching [value], or null if unknown. */
+                public fun fromValue(value: String): BuiltIn? =
+                    entries.fastFirstOrNull { it.value == value }
+            }
+        }
+
+        /**
+         * Indicates an icon specified by an unrecognized name string that does not match any
+         * predefined [BuiltIn] token.
+         */
+        @Immutable
+        public class Unrecognized(public val name: String) : Source {
+            override fun equals(other: Any?): Boolean {
+                if (this === other) return true
+                if (other !is Unrecognized) return false
+                return name == other.name
+            }
+
+            override fun hashCode(): Int = name.hashCode()
+
+            override fun toString(): String = "Unrecognized(name='$name')"
+        }
+
+        public companion object {
+            /** The [A2uiProperty] for the `"accessibility"` property of an [Icon]. */
+            public val AccessibilityProperty: DynamicA2uiProperty<AccessibilityAttributes> =
+                A2uiProperty.dynamicCustom(
+                    key = "accessibility",
+                    schema = A2uiAccessibilityAttributesSchema.DEFAULT_INSTANCE,
+                    safeCast = { value ->
+                        val map = value as? Map<*, *> ?: return@dynamicCustom null
+                        AccessibilityAttributes(
+                            label = map["label"]?.toString(),
+                            description = map["description"]?.toString(),
+                        )
+                    },
+                )
+
+            private val nameSchema: A2uiSchema =
+                A2uiAnySchema(
+                    description = "The name of the icon to display.",
+                    keywords =
+                        listOf(
+                            A2uiSchemaKeyword.OneOf(
+                                listOf(
+                                    A2uiStringSchema(
+                                        keywords =
+                                            listOf(
+                                                A2uiSchemaKeyword.Enum(
+                                                    BuiltIn.entries.fastMap { it.value }
+                                                )
+                                            )
+                                    ),
+                                    A2uiObjectSchema(
+                                        properties = mapOf("svgPath" to A2uiStringSchema.INSTANCE),
+                                        required = setOf("svgPath"),
+                                        isAdditionalPropertiesAllowed = false,
+                                    ),
+                                    A2uiDataBindingSchema.DEFAULT_INSTANCE,
+                                )
+                            )
+                        ),
+                )
+
+            /** The [A2uiProperty] for the `"name"` property of an [Icon]. */
+            public val NameProperty: DynamicA2uiProperty<Source> =
+                A2uiProperty.dynamicCustom(
+                    key = "name",
+                    required = true,
+                    schema = nameSchema,
+                    safeCast = { value ->
+                        when (value) {
+                            is String -> BuiltIn.fromValue(value) ?: Unrecognized(value)
+                            is Map<*, *> -> (value["svgPath"] as? String)?.let { SvgPath(it) }
+                            else -> null
+                        }
+                    },
+                )
+
+            internal val ComponentProperties: kotlin.collections.List<A2uiProperty<*>> =
+                listOf(NameProperty, AccessibilityProperty)
+        }
+
+        override val properties: kotlin.collections.List<A2uiProperty<*>>
+            get() = ComponentProperties
+
+        @Composable
+        override fun A2uiComponentScope.isReady(properties: A2uiComponentProperties): Boolean =
+            properties.bind(NameProperty) != null
+
+        @Composable
+        override fun A2uiComponentScope.Content(
+            properties: A2uiComponentProperties,
+            modifier: Modifier,
+        ) {
+            val nameValue =
+                checkNotNull(properties.bind(NameProperty)) {
+                    "Required property '${NameProperty.key}' is missing."
+                }
+            val accessibility = properties.bind(AccessibilityProperty)
+            TypedContent(source = nameValue, accessibility = accessibility, modifier = modifier)
+        }
+
+        /**
+         * Renders the [Icon] with its resolved [source] built-in name or SVG path and optional
+         * [accessibility] attributes.
+         *
+         * @param source The resolved [Source] identifying the visual to draw.
+         * @param accessibility Accessibility attributes for the icon.
+         * @param modifier [Modifier] to apply to the layout.
+         */
+        @Composable
+        public fun A2uiComponentScope.TypedContent(
+            source: Source,
+            accessibility: AccessibilityAttributes?,
+            modifier: Modifier,
+        )
+    }
+
+    /**
      * The A2UI `"Card"` component for displaying content in a styled container.
      *
      * **Schema Properties:**
@@ -382,10 +637,11 @@ public class A2uiBasicCatalogV1(
                             "(like Column or Row) and pass that container's ID here. Do NOT pass " +
                             "multiple IDs or a non-existent ID.",
                 )
-            internal val ComponentProperties: List<A2uiProperty<*>> = listOf(ChildProperty)
+            internal val ComponentProperties: kotlin.collections.List<A2uiProperty<*>> =
+                listOf(ChildProperty)
         }
 
-        override val properties: List<A2uiProperty<*>>
+        override val properties: kotlin.collections.List<A2uiProperty<*>>
             get() = ComponentProperties
 
         @Composable
@@ -498,11 +754,11 @@ public class A2uiBasicCatalogV1(
                             "camelCase values (e.g., 'start').",
                 )
 
-            internal val ComponentProperties: List<A2uiProperty<*>> =
+            internal val ComponentProperties: kotlin.collections.List<A2uiProperty<*>> =
                 listOf(ChildrenProperty, JustifyProperty, AlignProperty)
         }
 
-        override val properties: List<A2uiProperty<*>>
+        override val properties: kotlin.collections.List<A2uiProperty<*>>
             get() = ComponentProperties
 
         @Composable
@@ -535,7 +791,7 @@ public class A2uiBasicCatalogV1(
          */
         @Composable
         public fun A2uiComponentScope.TypedContent(
-            children: List<A2uiComponentReference>,
+            children: kotlin.collections.List<A2uiComponentReference>,
             justify: Justify,
             align: Align,
             modifier: Modifier,
@@ -636,11 +892,11 @@ public class A2uiBasicCatalogV1(
                             "This is similar to the CSS 'align-items' property.",
                 )
 
-            internal val ComponentProperties: List<A2uiProperty<*>> =
+            internal val ComponentProperties: kotlin.collections.List<A2uiProperty<*>> =
                 listOf(ChildrenProperty, JustifyProperty, AlignProperty)
         }
 
-        override val properties: List<A2uiProperty<*>>
+        override val properties: kotlin.collections.List<A2uiProperty<*>>
             get() = ComponentProperties
 
         @Composable
@@ -673,9 +929,264 @@ public class A2uiBasicCatalogV1(
          */
         @Composable
         public fun A2uiComponentScope.TypedContent(
-            children: List<A2uiComponentReference>,
+            children: kotlin.collections.List<A2uiComponentReference>,
             justify: Justify,
             align: Align,
+            modifier: Modifier,
+        )
+    }
+
+    /**
+     * The A2UI `"List"` component for displaying a scrollable list of components.
+     *
+     * **Schema Properties:**
+     * * `children` (ChildList, required): Defines the children. Use an array of strings for a fixed
+     *   set of children, or a template object to generate children from a data list.
+     * * `direction` (String Enum, optional): The direction in which the list items are laid out.
+     *   Valid options: `"vertical"`, `"horizontal"`. Defaults to `"vertical"`.
+     * * `align` (String Enum, optional): Defines the alignment of children along the cross axis.
+     *   Valid options: `"start"`, `"center"`, `"end"`, `"stretch"`. Defaults to `"stretch"`.
+     */
+    public interface List : A2uiComponent {
+        override val name: String
+            get() = "List"
+
+        override val description: String
+            get() = "A scrollable list of components laid out vertically or horizontally."
+
+        /** The direction in which the list items are laid out. */
+        public enum class Direction(public val value: String) {
+            Vertical("vertical"),
+            Horizontal("horizontal");
+
+            public companion object {
+                /** The default [Direction] value. */
+                public val Default: Direction = Vertical
+
+                /** Returns the [Direction] matching [value], or [Default] if unknown. */
+                public fun fromValue(value: String): Direction =
+                    entries.fastFirstOrNull { it.value == value } ?: Default
+            }
+        }
+
+        /** Defines the alignment of children along the cross axis. */
+        public enum class Align(public val value: String) {
+            Start("start"),
+            Center("center"),
+            End("end"),
+            Stretch("stretch");
+
+            public companion object {
+                /** The default [Align] value. */
+                public val Default: Align = Stretch
+
+                /** Returns the [Align] matching [value], or [Default] if unknown. */
+                public fun fromValue(value: String): Align =
+                    entries.fastFirstOrNull { it.value == value } ?: Default
+            }
+        }
+
+        public companion object {
+            /** The [A2uiProperty] for the `"children"` property of a [List]. */
+            public val ChildrenProperty: ChildListA2uiProperty =
+                A2uiProperty.childList(
+                    key = "children",
+                    required = true,
+                    description =
+                        "Defines the children. Use an array of strings for a fixed set of " +
+                            "children, or a template object to generate children from a data list.",
+                )
+
+            /** The [A2uiProperty] for the `"direction"` property of a [List]. */
+            public val DirectionProperty: StaticA2uiProperty<Direction> =
+                A2uiProperty.enum(
+                    key = "direction",
+                    enumValues = Direction.entries,
+                    mapToString = { it.value },
+                    convertFromString = Direction::fromValue,
+                    defaultValue = Direction.Default,
+                    description = "The direction in which the list items are laid out.",
+                )
+
+            /** The [A2uiProperty] for the `"align"` property of a [List]. */
+            public val AlignProperty: StaticA2uiProperty<Align> =
+                A2uiProperty.enum(
+                    key = "align",
+                    enumValues = Align.entries,
+                    mapToString = { it.value },
+                    convertFromString = Align::fromValue,
+                    defaultValue = Align.Default,
+                    description = "Defines the alignment of children along the cross axis.",
+                )
+
+            internal val ComponentProperties: kotlin.collections.List<A2uiProperty<*>> =
+                listOf(ChildrenProperty, DirectionProperty, AlignProperty)
+        }
+
+        override val properties: kotlin.collections.List<A2uiProperty<*>>
+            get() = ComponentProperties
+
+        @Composable
+        override fun A2uiComponentScope.isReady(properties: A2uiComponentProperties): Boolean =
+            properties.bindChildReferences(ChildrenProperty) != null
+
+        @Composable
+        override fun A2uiComponentScope.Content(
+            properties: A2uiComponentProperties,
+            modifier: Modifier,
+        ) {
+            val children =
+                checkNotNull(properties.bindChildReferences(ChildrenProperty)) {
+                    "Required property '${ChildrenProperty.key}' is missing or could not be " +
+                        "resolved."
+                }
+            val direction = properties[DirectionProperty] ?: Direction.Default
+            val align = properties[AlignProperty] ?: Align.Default
+
+            TypedContent(
+                children = children,
+                direction = direction,
+                align = align,
+                modifier = modifier,
+            )
+        }
+
+        /**
+         * Renders the [List] with its resolved [children], [direction], and [align] properties.
+         *
+         * @param children list of child [A2uiComponentReference]s to render in this list
+         * @param direction [Direction] layout direction of the list items
+         * @param align [Align] alignment of children along the cross axis
+         * @param modifier [Modifier] to apply to the layout
+         */
+        @Composable
+        public fun A2uiComponentScope.TypedContent(
+            children: kotlin.collections.List<A2uiComponentReference>,
+            direction: Direction,
+            align: Align,
+            modifier: Modifier,
+        )
+    }
+
+    /**
+     * The A2UI `"Tabs"` component for displaying a set of tabs.
+     *
+     * **Schema Properties:**
+     * * `tabs` (NestedList, required): An array of objects, where each object defines a tab with a
+     *   `title` (Dynamic String) and a `child` (ComponentId) component ID.
+     */
+    public interface Tabs : A2uiComponent {
+        override val name: String
+            get() = "Tabs"
+
+        override val description: String
+            get() = "A set of tabs, each with a title and a corresponding child component."
+
+        /** Represents a resolved tab with its evaluated title and child component ID. */
+        @Immutable
+        public class Tab(public val title: String, public val childId: String) {
+            override fun equals(other: Any?): Boolean {
+                if (this === other) return true
+                if (other !is Tab) return false
+                if (title != other.title) return false
+                if (childId != other.childId) return false
+                return true
+            }
+
+            override fun hashCode(): Int {
+                var result = title.hashCode()
+                result = 31 * result + childId.hashCode()
+                return result
+            }
+
+            override fun toString(): String {
+                return "Tab(title='$title', childId='$childId')"
+            }
+        }
+
+        public companion object {
+            /** The [A2uiProperty] for the `"title"` property of a Tab in [Tabs]. */
+            public val TitleProperty: DynamicA2uiProperty<String> =
+                A2uiProperty.dynamicString(
+                    key = "title",
+                    required = true,
+                    description = "The tab title.",
+                )
+
+            /** The [A2uiProperty] for the `"child"` property of a Tab in [Tabs]. */
+            public val ChildProperty: StaticA2uiProperty<String> =
+                A2uiProperty.componentId(
+                    key = "child",
+                    required = true,
+                    description = "The ID of the child component.",
+                )
+
+            /** The [A2uiProperty] for the `"tabs"` property of [Tabs]. */
+            public val TabsProperty:
+                StaticA2uiProperty<kotlin.collections.List<A2uiComponentProperties>> =
+                A2uiProperty.nestedList(
+                    key = "tabs",
+                    properties = listOf(TitleProperty, ChildProperty),
+                    required = true,
+                    description =
+                        "An array of objects, where each object defines a tab with a title and a " +
+                            "child component.",
+                    minItems = 1,
+                    isAdditionalPropertiesAllowed = false,
+                )
+
+            internal val ComponentProperties: kotlin.collections.List<A2uiProperty<*>> =
+                listOf(TabsProperty)
+        }
+
+        override val properties: kotlin.collections.List<A2uiProperty<*>>
+            get() = ComponentProperties
+
+        @Composable
+        override fun A2uiComponentScope.isReady(properties: A2uiComponentProperties): Boolean {
+            val tabsList =
+                checkNotNull(properties[TabsProperty]) {
+                    "Required property '${TabsProperty.key}' is missing."
+                }
+            return tabsList.fastAll { tabProps -> tabProps.bind(TitleProperty) != null }
+        }
+
+        @Composable
+        override fun A2uiComponentScope.Content(
+            properties: A2uiComponentProperties,
+            modifier: Modifier,
+        ) {
+            val tabsList =
+                checkNotNull(properties[TabsProperty]) {
+                    "Required property '${TabsProperty.key}' is missing."
+                }
+
+            val resolvedTabs = ArrayList<Tab>(tabsList.size)
+            for (i in tabsList.indices) {
+                val tabProps = tabsList[i]
+                val title =
+                    checkNotNull(tabProps.bind(TitleProperty)) {
+                        "Required property '${TitleProperty.key}' is missing."
+                    }
+                val childId =
+                    checkNotNull(tabProps[ChildProperty]) {
+                        "Required property '${ChildProperty.key}' is missing."
+                    }
+                resolvedTabs.add(Tab(title, childId))
+            }
+
+            TypedContent(tabs = resolvedTabs, modifier = modifier)
+        }
+
+        /**
+         * Renders the [Tabs] with its resolved [tabs].
+         *
+         * @param tabs list of [Tab] objects to render
+         * @param modifier [Modifier] to apply to the layout
+         */
+        @Composable
+        public fun A2uiComponentScope.TypedContent(
+            tabs: kotlin.collections.List<Tab>,
             modifier: Modifier,
         )
     }
@@ -743,11 +1254,11 @@ public class A2uiBasicCatalogV1(
             public val ActionProperty: StaticA2uiProperty<Map<String, Any?>> =
                 A2uiProperty.action(key = "action", required = true)
 
-            internal val ComponentProperties: List<A2uiProperty<*>> =
+            internal val ComponentProperties: kotlin.collections.List<A2uiProperty<*>> =
                 listOf(ChildProperty, VariantProperty, ActionProperty)
         }
 
-        override val properties: List<A2uiProperty<*>>
+        override val properties: kotlin.collections.List<A2uiProperty<*>>
             get() = ComponentProperties
 
         @Composable
@@ -884,7 +1395,7 @@ public class A2uiBasicCatalogV1(
                     description = "The text label for the component.",
                 )
 
-            internal val ComponentProperties: List<A2uiProperty<*>> =
+            internal val ComponentProperties: kotlin.collections.List<A2uiProperty<*>> =
                 listOf(
                     ValueProperty,
                     EnableDateProperty,
@@ -895,7 +1406,7 @@ public class A2uiBasicCatalogV1(
                 )
         }
 
-        override val properties: List<A2uiProperty<*>>
+        override val properties: kotlin.collections.List<A2uiProperty<*>>
             get() = ComponentProperties
 
         @Composable
