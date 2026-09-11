@@ -23,7 +23,6 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.node.HitTestResult
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.requireLayoutNode
-import androidx.compose.ui.platform.CachedAccessibilityPropertyKeys.accessibilityElements
 import androidx.compose.ui.platform.accessibility.AccessibilityScrollEventResult
 import androidx.compose.ui.platform.accessibility.accessibilityAttributedValue
 import androidx.compose.ui.platform.accessibility.accessibilityCustomActions
