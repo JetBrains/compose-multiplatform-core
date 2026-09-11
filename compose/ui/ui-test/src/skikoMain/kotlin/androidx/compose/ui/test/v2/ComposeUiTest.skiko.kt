@@ -94,7 +94,7 @@ actual fun runComposeUiTest(
     effectContext: CoroutineContext,
     runTestContext: CoroutineContext,
     testTimeout: Duration,
-    block: suspend ComposeUiTest.() -> Unit
+    block: suspend ComposeUiTest.() -> Unit,
 ): TestResult {
     return runSkikoComposeUiTest(
         effectContext = effectContext,
@@ -157,19 +157,20 @@ fun runSkikoComposeUiTest(
     effectContext: CoroutineContext = EmptyCoroutineContext,
     runTestContext: CoroutineContext = EmptyCoroutineContext,
     testTimeout: Duration = Duration.INFINITE,
-    block: suspend SkikoComposeUiTest.() -> Unit
+    block: suspend SkikoComposeUiTest.() -> Unit,
 ): TestResult {
     return SkikoComposeUiTest(
-        width = size.width.roundToInt(),
-        height = size.height.roundToInt(),
-        effectContext = effectContext,
-        testTimeout = testTimeout,
-        runTestContext = runTestContext,
-        density = density,
-        semanticsOwnerListener = null,
-        windowInsets = null,
-        useStandardTestDispatcherForComposition = true,
-    ).runTest(block)
+            width = size.width.roundToInt(),
+            height = size.height.roundToInt(),
+            effectContext = effectContext,
+            testTimeout = testTimeout,
+            runTestContext = runTestContext,
+            density = density,
+            semanticsOwnerListener = null,
+            windowInsets = null,
+            useStandardTestDispatcherForComposition = true,
+        )
+        .runTest(block)
 }
 
 @InternalTestApi
@@ -186,26 +187,29 @@ fun runInternalSkikoComposeUiTest(
     block: suspend SkikoComposeUiTest.() -> Unit,
 ): TestResult {
     return SkikoComposeUiTest(
-        width = width,
-        height = height,
-        effectContext = effectContext,
-        runTestContext = runTestContext,
-        testTimeout = testTimeout,
-        density = density,
-        semanticsOwnerListener = semanticsOwnerListener,
-        windowInsets = windowInsets,
-        useStandardTestDispatcherForComposition = true,
-    ).runTest(block)
+            width = width,
+            height = height,
+            effectContext = effectContext,
+            runTestContext = runTestContext,
+            testTimeout = testTimeout,
+            density = density,
+            semanticsOwnerListener = semanticsOwnerListener,
+            windowInsets = windowInsets,
+            useStandardTestDispatcherForComposition = true,
+        )
+        .runTest(block)
 }
 
 private val defaultComposeUiTestConfig = ComposeUiTestConfig()
 
 private fun ComposeUiTestConfig.checkFieldIsNotSet(
     name: String,
-    getFieldValue: ComposeUiTestConfig.() -> Any
+    getFieldValue: ComposeUiTestConfig.() -> Any,
 ) {
     if (getFieldValue() != defaultComposeUiTestConfig.getFieldValue()) {
-        println("ComposeUiTestConfig: setting $name is not supported in Compose Multiplatform")
+        println(
+            "ComposeUiTestConfig.checkSupported, $name: setting is not supported in Compose Multiplatform"
+        )
     }
 }
 
@@ -214,4 +218,8 @@ private fun ComposeUiTestConfig.checkSupported() {
     checkFieldIsNotSet("inputMode", ComposeUiTestConfig::inputMode)
     // TODO https://youtrack.jetbrains.com/issue/CMP-10711/Support-ComposeUiTestConfigfailurePolicy
     checkFieldIsNotSet("failurePolicy", ComposeUiTestConfig::failurePolicy)
+    // TODO(Merge) Minor, Implement after merging 341cbc1921d338ae5056873a0cf9f2be7a505ca2.
+    // Apply the configured tolerance to bounds assertions; non-default values are currently
+    // ignored.
+    checkFieldIsNotSet("boundsAssertionTolerance", ComposeUiTestConfig::boundsAssertionTolerance)
 }

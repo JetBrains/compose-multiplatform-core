@@ -18,6 +18,7 @@ package androidx.compose.ui.test
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.unit.Dp
 import kotlin.coroutines.CoroutineContext
 import kotlin.jvm.JvmInline
 import kotlin.time.Duration
@@ -30,9 +31,10 @@ actual constructor(
     actual val testTimeout: Duration,
     actual val inputMode: InputMode,
     actual val failurePolicy: TestFailurePolicy,
+    actual val boundsAssertionTolerance: Dp,
 ) {
     @Deprecated("Kept for binary compatibility", level = DeprecationLevel.HIDDEN)
-    actual constructor(
+    constructor(
         effectContext: CoroutineContext,
         runTestContext: CoroutineContext,
         testTimeout: Duration,
@@ -43,18 +45,18 @@ actual constructor(
         testTimeout = testTimeout,
         inputMode = inputMode,
         failurePolicy = TestFailurePolicy(),
+        boundsAssertionTolerance = Dp.Unspecified,
     )
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ComposeUiTestConfig) return false
-
         if (effectContext != other.effectContext) return false
         if (runTestContext != other.runTestContext) return false
         if (testTimeout != other.testTimeout) return false
         if (inputMode != other.inputMode) return false
         if (failurePolicy != other.failurePolicy) return false
-
+        if (boundsAssertionTolerance != other.boundsAssertionTolerance) return false
         return true
     }
 
@@ -64,6 +66,7 @@ actual constructor(
         result = 31 * result + testTimeout.hashCode()
         result = 31 * result + inputMode.hashCode()
         result = 31 * result + failurePolicy.hashCode()
+        result = 31 * result + boundsAssertionTolerance.hashCode()
         return result
     }
 }
@@ -78,11 +81,9 @@ public actual constructor(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is TestFailurePolicy) return false
-
         if (screenshotCaptureMode != other.screenshotCaptureMode) return false
         if (uiHierarchyCaptureMode != other.uiHierarchyCaptureMode) return false
         if (failureHandlers != other.failureHandlers) return false
-
         return true
     }
 
@@ -105,10 +106,8 @@ public actual constructor(
         public actual companion object {
             /** Fall back to the suite-level runner configuration. */
             public actual val Unspecified: CaptureMode = CaptureMode(0)
-
             /** Explicitly enable the capture for this test, overriding runner configuration. */
             public actual val Enabled: CaptureMode = CaptureMode(1)
-
             /** Explicitly disable the capture for this test, overriding runner configuration. */
             public actual val Disabled: CaptureMode = CaptureMode(2)
         }
