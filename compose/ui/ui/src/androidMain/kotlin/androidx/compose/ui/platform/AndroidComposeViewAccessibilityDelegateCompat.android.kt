@@ -2508,6 +2508,22 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             event.maxScrollY = it.maxValue().toInt()
         }
         sendEvent(event)
+
+        // When navigating with a hardware keyboard, scrolling moves the currently focused item
+        // on screen. Dispatching TYPE_VIEW_ACCESSIBILITY_FOCUSED post-scroll ensures TalkBack
+        // recalculates and synchronizes its accessibility focus bounds ("green box") with the
+        // newly scrolled position of the focused item.
+        if (
+            AndroidComposeUiFlags.isScrollAccessibilityFocusEventEnabled &&
+                !view.isInTouchMode &&
+                focusedVirtualViewId != InvalidId &&
+                currentSemanticsNodes.containsKey(focusedVirtualViewId)
+        ) {
+            sendEventForVirtualView(
+                focusedVirtualViewId,
+                AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED,
+            )
+        }
     }
 
     private fun sendSubtreeChangeAccessibilityEvents(
@@ -3492,7 +3508,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
 
         @JvmStatic
         fun setExtraRenderingInfo(node: SemanticsNode, info: AccessibilityNodeInfo) {
-            val view = node.layoutNode.owner as? AndroidComposeView ?: return
+            node.layoutNode.owner as? AndroidComposeView ?: return
 
             val builder = AccessibilityNodeInfo.ExtraRenderingInfo.Builder()
 

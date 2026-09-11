@@ -14,11 +14,16 @@
  * limitations under the License.
  */
 
-package androidx.compose.foundation.layout
+package androidx.room3.integration.multiplatformtestapp.test
 
-@Deprecated(message = "Grid and its related APIs are now stable.", level = DeprecationLevel.WARNING)
-@RequiresOptIn(
-    "This foundation layout API is experimental and is likely to change or be removed in the future."
-)
-@Retention(AnnotationRetention.BINARY)
-public annotation class ExperimentalGridApi
+import androidx.driver.web.worker.createDefaultWebWorkerDriver
+import androidx.room3.Room
+
+class KotlinUuidTest : BaseUuidTest() {
+
+    override fun getRoomDatabase(): SampleUuidDatabase {
+        return Room.inMemoryDatabaseBuilder<SampleUuidDatabase>()
+            .setDriver(createDefaultWebWorkerDriver())
+            .build()
+    }
+}
