@@ -29,6 +29,8 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material.Button
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
@@ -985,22 +987,19 @@ class NavHostTest {
     @Test
     fun testStateSaved() = runComposeUiTestOnUiThread {
         lateinit var navController: NavHostController
-        lateinit var text: MutableState<String>
+        val textFieldState = TextFieldState()
 
         setContent {
             navController = rememberNavController()
             NavHost(navController, "start") {
-                composable("start") {
-                    text = rememberSaveable { mutableStateOf("") }
-                    Column { TextField(value = text.value, onValueChange = { text.value = it }) }
-                }
+                composable("start") { Column { TextField(textFieldState) } }
                 composable("second") {}
             }
         }
 
         onNodeWithText("test").assertDoesNotExist()
 
-        text.value = "test"
+        textFieldState.setTextAndPlaceCursorAtEnd("test")
 
         onNodeWithText("test").assertExists()
 
