@@ -114,6 +114,12 @@ fun MainScreen(
                 }
                 item {
                     MenuButton(
+                        "RemoteEdgeButton",
+                        onClick = { navigateToRoute(Screen.RemoteEdgeButtonDemosScreen.route) },
+                    )
+                }
+                item {
+                    MenuButton(
                         "RemoteIconButton",
                         onClick = { navigateToRoute(Screen.RemoteIconButtonDemosScreen.route) },
                     )
@@ -149,6 +155,14 @@ fun MainScreen(
                         "RemoteCurvedProgressIndicator",
                         onClick = {
                             navigateToRoute(Screen.RemoteCurvedProgressIndicatorDemosScreen.route)
+                        },
+                    )
+                }
+                item {
+                    MenuButton(
+                        "RemoteLinearProgressIndicator",
+                        onClick = {
+                            navigateToRoute(Screen.RemoteLinearProgressIndicatorDemosScreen.route)
                         },
                     )
                 }

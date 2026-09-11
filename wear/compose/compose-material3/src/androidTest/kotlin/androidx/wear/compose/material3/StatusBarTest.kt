@@ -25,6 +25,7 @@ import android.view.WindowInsets
 import android.view.WindowInsetsController
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -271,6 +272,90 @@ class StatusBarTest {
     }
 
     @Test
+    fun appScaffold_orchestrator_whenScrollingAndOffsetIsNaN_hidesStatusBar() {
+        val targetContext = InstrumentationRegistry.getInstrumentation().targetContext
+        val testView = TestView(targetContext)
+        val mockInsets =
+            WindowInsets.Builder().setVisible(WindowInsets.Type.statusBars(), true).build()
+        testView.mockRootWindowInsets = mockInsets
+        val scrollState = mutableStateOf(false)
+        val offsetState = mutableStateOf(Float.NaN)
+        val mockScrollInfo =
+            object : ScrollInfoProvider {
+                override val anchorItemOffset: Float
+                    get() = offsetState.value
+
+                override val isScrollAwayValid: Boolean
+                    get() = true
+
+                override val isScrollInProgress: Boolean
+                    get() = scrollState.value
+
+                override val isScrollable: Boolean
+                    get() = true
+
+                override val lastItemOffset: Float
+                    get() = 0f
+            }
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(
+                LocalStatusBarEnabledForTest provides true,
+                LocalView provides testView,
+            ) {
+                AppScaffold(isStatusBarEnabled = true) {
+                    ScreenScaffold(
+                        scrollInfoProvider = mockScrollInfo,
+                        statusBarMode = StatusBarMode.Inherit,
+                    ) {
+                        Box(modifier = Modifier.fillMaxSize())
+                    }
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+
+        // 1. Initial State (Stationary) -> show() should be called
+        Assert.assertTrue(
+            "Initially stationary: show() should be called",
+            testView.testController.showCount > 0,
+        )
+
+        // Reset counters for the action phase
+        testView.testController.showCount = 0
+        testView.testController.hideCount = 0
+
+        // 2. Start scrolling when anchorItemOffset is NaN -> hide() must be called
+        composeTestRule.runOnUiThread {
+            scrollState.value = true
+            offsetState.value = Float.NaN
+        }
+        composeTestRule.waitForIdle()
+
+        Assert.assertTrue(
+            "Scrolling with NaN offset: hide() must be called",
+            testView.testController.hideCount > 0,
+        )
+        Assert.assertEquals(
+            "Scrolling with NaN offset: show() count must be 0",
+            0,
+            testView.testController.showCount,
+        )
+
+        // 3. While scrolling, scroll back to top (offset <= 0f) -> show() should be called
+        testView.testController.showCount = 0
+        testView.testController.hideCount = 0
+        composeTestRule.runOnUiThread { offsetState.value = 0f }
+        composeTestRule.waitForIdle()
+
+        Assert.assertTrue(
+            "Scrolling at top (offset <= 0): show() must be called",
+            testView.testController.showCount > 0,
+        )
+    }
+
+    @Test
     fun appScaffold_orchestrator_showStatusBarFalse_hidesSystemStatusBar() {
         val targetContext = InstrumentationRegistry.getInstrumentation().targetContext
         val testView = TestView(targetContext)
@@ -297,6 +382,224 @@ class StatusBarTest {
             "isStatusBarEnabled = false: show() should never be called",
             0,
             testView.testController.showCount,
+        )
+    }
+
+    @Test
+    fun screenScaffold_padding_isolatedFromOverlayScreenWithDisabledMode() {
+        var backgroundScreenTopPadding = 0.dp
+        var expectedStatusBarTopPadding = 0.dp
+        var showOverlayScreen by mutableStateOf(false)
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalStatusBarEnabledForTest provides true) {
+                AppScaffold(isStatusBarEnabled = true) {
+                    val density = LocalDensity.current
+                    val insets =
+                        androidx.compose.foundation.layout.WindowInsets.statusBarsIgnoringVisibility
+                    expectedStatusBarTopPadding =
+                        insets.asPaddingValues(density).calculateTopPadding()
+
+                    // Background screen with statusBarMode = Enabled and contentPadding = 0.dp
+                    // so that top padding is entirely driven by status bar insets
+                    ScreenScaffold(
+                        statusBarMode = StatusBarMode.Enabled,
+                        contentPadding = PaddingValues(0.dp),
+                    ) { contentPadding ->
+                        backgroundScreenTopPadding = contentPadding.calculateTopPadding()
+                        Box(modifier = Modifier.fillMaxSize())
+                    }
+
+                    // Overlay screen (e.g. Dialog) with statusBarMode = Disabled
+                    if (showOverlayScreen) {
+                        ScreenScaffold(statusBarMode = StatusBarMode.Disabled) {
+                            Box(modifier = Modifier.fillMaxSize())
+                        }
+                    }
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        val initialBackgroundPadding = backgroundScreenTopPadding
+        Assert.assertEquals(
+            "Initial background screen padding should match system status bar top inset",
+            expectedStatusBarTopPadding,
+            initialBackgroundPadding,
+        )
+
+        // Open overlay with StatusBarMode.Disabled
+        composeTestRule.runOnUiThread { showOverlayScreen = true }
+        composeTestRule.waitForIdle()
+
+        // Background screen layout padding MUST remain isolated and unchanged
+        Assert.assertEquals(
+            "Background screen padding should NOT change when an overlay screen with Disabled mode opens",
+            initialBackgroundPadding,
+            backgroundScreenTopPadding,
+        )
+    }
+
+    @Test
+    fun screenScaffold_padding_withCustomContentPadding_isolatedFromOverlayScreenWithDisabledMode() {
+        var backgroundScreenTopPadding = 0.dp
+        var expectedTopPadding = 0.dp
+        var showOverlayScreen by mutableStateOf(false)
+        val customTopPadding = 16.dp
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalStatusBarEnabledForTest provides true) {
+                AppScaffold(isStatusBarEnabled = true) {
+                    val density = LocalDensity.current
+                    val insets =
+                        androidx.compose.foundation.layout.WindowInsets.statusBarsIgnoringVisibility
+                    val statusBarTopInset = insets.asPaddingValues(density).calculateTopPadding()
+                    expectedTopPadding = maxOf(statusBarTopInset, customTopPadding)
+
+                    // Background screen with statusBarMode = Enabled and custom contentPadding
+                    ScreenScaffold(
+                        statusBarMode = StatusBarMode.Enabled,
+                        contentPadding = PaddingValues(top = customTopPadding),
+                    ) { contentPadding ->
+                        backgroundScreenTopPadding = contentPadding.calculateTopPadding()
+                        Box(modifier = Modifier.fillMaxSize())
+                    }
+
+                    // Overlay screen (e.g. Dialog) with statusBarMode = Disabled
+                    if (showOverlayScreen) {
+                        ScreenScaffold(statusBarMode = StatusBarMode.Disabled) {
+                            Box(modifier = Modifier.fillMaxSize())
+                        }
+                    }
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        val initialBackgroundPadding = backgroundScreenTopPadding
+        Assert.assertEquals(
+            "Initial background screen padding should match maxOf(statusBarInset, customTopPadding)",
+            expectedTopPadding,
+            initialBackgroundPadding,
+        )
+
+        // Open overlay with StatusBarMode.Disabled
+        composeTestRule.runOnUiThread { showOverlayScreen = true }
+        composeTestRule.waitForIdle()
+
+        // Background screen layout padding MUST remain isolated and unchanged
+        Assert.assertEquals(
+            "Background screen padding should NOT change when an overlay screen with Disabled mode opens",
+            initialBackgroundPadding,
+            backgroundScreenTopPadding,
+        )
+    }
+
+    @Test
+    fun screenScaffold_disabledMode_paddingIsStableAcrossFrames() {
+        val observedPaddings = mutableListOf<androidx.compose.ui.unit.Dp>()
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalStatusBarEnabledForTest provides true) {
+                AppScaffold(isStatusBarEnabled = true) {
+                    ScreenScaffold(
+                        statusBarMode = StatusBarMode.Disabled,
+                        contentPadding = PaddingValues(0.dp),
+                    ) { contentPadding ->
+                        observedPaddings.add(contentPadding.calculateTopPadding())
+                        Box(modifier = Modifier.fillMaxSize())
+                    }
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+
+        Assert.assertTrue("Observed at least one composition pass", observedPaddings.isNotEmpty())
+        Assert.assertTrue(
+            "Screen with StatusBarMode.Disabled should maintain stable 0.dp status bar padding across all frames without shifting, but observed: $observedPaddings",
+            observedPaddings.all { it == 0.dp },
+        )
+    }
+
+    @Test
+    fun screenScaffold_switchingFromEnabledToDisabledScreen_paddingIsStableAcrossFrames() {
+        val observedDisabledPaddings = mutableListOf<androidx.compose.ui.unit.Dp>()
+        var showDisabledScreen by mutableStateOf(false)
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalStatusBarEnabledForTest provides true) {
+                AppScaffold(isStatusBarEnabled = true) {
+                    if (!showDisabledScreen) {
+                        ScreenScaffold(
+                            statusBarMode = StatusBarMode.Enabled,
+                            contentPadding = PaddingValues(0.dp),
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize())
+                        }
+                    } else {
+                        ScreenScaffold(
+                            statusBarMode = StatusBarMode.Disabled,
+                            contentPadding = PaddingValues(0.dp),
+                        ) { contentPadding ->
+                            observedDisabledPaddings.add(contentPadding.calculateTopPadding())
+                            Box(modifier = Modifier.fillMaxSize())
+                        }
+                    }
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+
+        // Navigate / switch from Enabled screen to Disabled screen
+        composeTestRule.runOnUiThread { showDisabledScreen = true }
+        composeTestRule.waitForIdle()
+
+        Assert.assertTrue(
+            "Observed at least one composition pass for new screen",
+            observedDisabledPaddings.isNotEmpty(),
+        )
+        Assert.assertTrue(
+            "Newly navigated screen with StatusBarMode.Disabled should maintain stable 0.dp status bar padding across all frames without shifting, but observed: $observedDisabledPaddings",
+            observedDisabledPaddings.all { it == 0.dp },
+        )
+    }
+
+    @Test
+    fun screenScaffold_inheritMode_insideDisabledContainer_paddingIsStableAcrossFrames() {
+        val observedInnerPaddings = mutableListOf<androidx.compose.ui.unit.Dp>()
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalStatusBarEnabledForTest provides true) {
+                AppScaffold(isStatusBarEnabled = true) {
+                    // Outer container (e.g. DialogBase) with StatusBarMode.Disabled
+                    ScreenScaffold(
+                        statusBarMode = StatusBarMode.Disabled,
+                        contentPadding = PaddingValues(0.dp),
+                    ) {
+                        // Inner screen with StatusBarMode.Inherit
+                        ScreenScaffold(
+                            statusBarMode = StatusBarMode.Inherit,
+                            contentPadding = PaddingValues(0.dp),
+                        ) { contentPadding ->
+                            observedInnerPaddings.add(contentPadding.calculateTopPadding())
+                            Box(modifier = Modifier.fillMaxSize())
+                        }
+                    }
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+
+        Assert.assertTrue(
+            "Observed at least one composition pass for inner screen",
+            observedInnerPaddings.isNotEmpty(),
+        )
+        Assert.assertTrue(
+            "Inner screen with Inherit mode inside Disabled container must maintain stable 0.dp status bar padding across all frames without shifting, but observed: $observedInnerPaddings",
+            observedInnerPaddings.all { it == 0.dp },
         )
     }
 
@@ -1101,6 +1404,82 @@ class StatusBarTest {
 
         // Now isForWindow matches view2 because both share the same rootView (DecorView)
         Assert.assertTrue(orchestrator.isForWindow(view2))
+    }
+
+    @Test
+    fun screenContent_resolveShowStatusBarForScreen_isolatesScreensInStack() {
+        val screenContent =
+            ScreenContent(
+                appShowStatusBar = mutableStateOf(true),
+                isStatusBarSupported = mutableStateOf(true),
+                appTimeText = mutableStateOf({}),
+            )
+
+        val backgroundScreenKey = Any()
+        val overlayScreenKey = Any()
+
+        // 1. Add background screen with StatusBarMode.Enabled
+        screenContent.addScreen(
+            key = backgroundScreenKey,
+            timeText = null,
+            statusBarMode = StatusBarMode.Enabled,
+        )
+
+        // Background screen resolves to true, currentShowStatusBar is true
+        Assert.assertTrue(
+            screenContent.resolveShowStatusBarForScreen(backgroundScreenKey, StatusBarMode.Enabled)
+        )
+        Assert.assertTrue(screenContent.currentShowStatusBar.value)
+
+        // 2. Add overlay screen with StatusBarMode.Disabled
+        screenContent.addScreen(
+            key = overlayScreenKey,
+            timeText = null,
+            statusBarMode = StatusBarMode.Disabled,
+        )
+
+        // Active top screen (overlay) sets currentShowStatusBar to false
+        Assert.assertFalse(screenContent.currentShowStatusBar.value)
+        // Overlay screen resolves to false
+        Assert.assertFalse(
+            screenContent.resolveShowStatusBarForScreen(overlayScreenKey, StatusBarMode.Disabled)
+        )
+        // BUT background screen's resolveShowStatusBarForScreen MUST remain true!
+        Assert.assertTrue(
+            screenContent.resolveShowStatusBarForScreen(backgroundScreenKey, StatusBarMode.Enabled)
+        )
+    }
+
+    @Test
+    fun screenContent_resolveShowStatusBarForScreen_inheritsFromParent() {
+        val screenContent =
+            ScreenContent(
+                appShowStatusBar = mutableStateOf(true),
+                isStatusBarSupported = mutableStateOf(true),
+                appTimeText = mutableStateOf({}),
+            )
+
+        val parentKey = Any()
+        val childKey = Any()
+
+        // Add parent screen with Disabled mode
+        screenContent.addScreen(
+            key = parentKey,
+            timeText = null,
+            statusBarMode = StatusBarMode.Disabled,
+        )
+
+        // Add child screen with Inherit mode
+        screenContent.addScreen(
+            key = childKey,
+            timeText = null,
+            statusBarMode = StatusBarMode.Inherit,
+        )
+
+        // Child inherits Disabled (false) from parent
+        Assert.assertFalse(
+            screenContent.resolveShowStatusBarForScreen(childKey, StatusBarMode.Inherit)
+        )
     }
 
     private class TestWindowInsetsController : WindowInsetsController {

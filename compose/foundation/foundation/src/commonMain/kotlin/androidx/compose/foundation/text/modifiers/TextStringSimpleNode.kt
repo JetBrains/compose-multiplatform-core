@@ -16,11 +16,9 @@
 
 package androidx.compose.foundation.text.modifiers
 
-import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.internal.requirePreconditionNotNull
 import androidx.compose.foundation.text.DefaultMinLines
-import androidx.compose.foundation.text.InternalFoundationTextApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorProducer
@@ -60,7 +58,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Constraints.Companion.fitPrioritizingWidth
-import androidx.compose.ui.unit.constrain
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.util.trace
 import kotlin.jvm.JvmName
@@ -72,7 +69,7 @@ import kotlin.jvm.JvmName
  *
  * Note that this Node never calculates [TextLayoutResult] unless needed by semantics.
  */
-@OptIn(ExperimentalFoundationApi::class, InternalFoundationTextApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 internal class TextStringSimpleNode(
     private var text: String,
     private var style: TextStyle,
@@ -86,10 +83,6 @@ internal class TextStringSimpleNode(
     override val shouldAutoInvalidate: Boolean
         get() = false
 
-    private var lookaheadConstraints: Constraints = Constraints()
-    private var hasLookaheadConstraints: Boolean = false
-    private var offsetX: Float = 0f
-
     @Suppress("PrimitiveInCollection") // Map required for use in public API.
     // Usages of this collection are so few that the gains of using
     // MutableObjectIntMap<AlignmentLine> and then converting to a Map<AlignmentLine, Int>
@@ -99,10 +92,7 @@ internal class TextStringSimpleNode(
     private var _layoutCache: ParagraphLayoutCache? = null
     private val layoutCache: ParagraphLayoutCache
         get() {
-            val style =
-                if (ComposeFoundationFlags.isInheritedTextStyleEnabled)
-                    resolvedInheritedStyle ?: style
-                else style
+            val style = style
             if (_layoutCache == null) {
                 _layoutCache =
                     ParagraphLayoutCache(
@@ -118,8 +108,6 @@ internal class TextStringSimpleNode(
             return _layoutCache!!
         }
 
-    private var resolvedInheritedStyle: TextStyle? = null
-
     /**
      * Get the layout cache for the current state of the node during layout.
      *
@@ -130,31 +118,9 @@ internal class TextStringSimpleNode(
      *   the density value of the returned cache.
      */
     private fun IntrinsicMeasureScope.getLayoutCacheForMeasure(): ParagraphLayoutCache {
-        if (ComposeFoundationFlags.isInheritedTextStyleEnabled) {
-            if (resolveInheritedStyle(StylePhase.Layout)) {
-                val style = resolvedInheritedStyle ?: style
-                layoutCache.update(
-                    text = text,
-                    style = style,
-                    fontFamilyResolver = fontFamilyResolver,
-                    overflow = overflow,
-                    softWrap = softWrap,
-                    maxLines = maxLines,
-                    minLines = minLines,
-                )
-            }
-        }
         val activeCache = getLayoutCache()
         activeCache.density = this@getLayoutCacheForMeasure
         return activeCache
-    }
-
-    private fun resolveInheritedStyle(phase: StylePhase): Boolean {
-        val previousStyle = resolvedInheritedStyle
-        val newInheritedStyle = inheritedTextStyle(phase, style)
-        resolvedInheritedStyle = newInheritedStyle
-        if (previousStyle == null) return false
-        return previousStyle != newInheritedStyle
     }
 
     /**
@@ -237,10 +203,6 @@ internal class TextStringSimpleNode(
 
     /** request invalidate based on the results of [updateText] and [updateLayoutRelatedArgs] */
     fun doInvalidations(drawChanged: Boolean, textChanged: Boolean, layoutChanged: Boolean) {
-        if (drawChanged || textChanged || layoutChanged) {
-            resolvedInheritedStyle = null
-        }
-
         // bring caches up to date even if the node is detached in case it is used again later
         if (textChanged || layoutChanged) {
             layoutCache.update(
@@ -392,25 +354,18 @@ internal class TextStringSimpleNode(
         measurable: Measurable,
         constraints: Constraints,
     ): MeasureResult {
-        if (isLookingAhead) {
-            lookaheadConstraints = constraints
-            hasLookaheadConstraints = true
-        }
-        val hasLookahead = hasLookaheadConstraints
         trace("TextStringSimpleNode::measure") {
             val layoutCache = getLayoutCacheForMeasure()
 
-            val width: Int
-            val height: Int
-            val layoutConstraints = if (hasLookahead) lookaheadConstraints else constraints
-            val didChangeLayout =
-                layoutCache.layoutWithConstraints(layoutConstraints, layoutDirection)
+            val didChangeLayout = layoutCache.layoutWithConstraints(constraints, layoutDirection)
+            // ensure measure restarts when hasStaleResolvedFonts by reading in measure
             layoutCache.observeFontChanges
             val paragraph = layoutCache.paragraph!!
             val layoutSize = layoutCache.layoutSize
 
             if (didChangeLayout) {
                 invalidateLayer()
+                // Map<AlignmentLine, Int> required for use in public API `layout` below
                 @Suppress("PrimitiveInCollection") var cache = baselineCache
                 if (cache == null) {
                     cache = HashMap(2)
@@ -420,37 +375,20 @@ internal class TextStringSimpleNode(
                 cache[LastBaseline] = paragraph.lastBaseline.fastRoundToInt()
             }
 
-            val isApproachConstraintsDifferent = hasLookahead && lookaheadConstraints != constraints
-
-            if (isApproachConstraintsDifferent) {
-                val constrainedSize = constraints.constrain(layoutSize)
-                width = constrainedSize.width
-                height = constrainedSize.height
-                offsetX =
-                    calculateAlignmentOffset(
-                        textAlign = style.textAlign,
-                        layoutDirection = layoutDirection,
-                        nodeWidth = width,
-                        paragraphWidth = layoutSize.width,
-                    )
-            } else {
-                width = layoutSize.width
-                height = layoutSize.height
-                offsetX = 0f
-            }
-
             // then allow children to measure _inside_ our final box, with the above placeholders
             val placeable =
                 measurable.measure(
                     fitPrioritizingWidth(
-                        minWidth = width,
-                        maxWidth = width,
-                        minHeight = height,
-                        maxHeight = height,
+                        minWidth = layoutSize.width,
+                        maxWidth = layoutSize.width,
+                        minHeight = layoutSize.height,
+                        maxHeight = layoutSize.height,
                     )
                 )
 
-            return layout(width, height, baselineCache!!) { placeable.place(0, 0) }
+            return layout(layoutSize.width, layoutSize.height, baselineCache!!) {
+                placeable.place(0, 0)
+            }
         }
     }
 
@@ -491,26 +429,14 @@ internal class TextStringSimpleNode(
 
         drawIntoCanvas { canvas ->
             val willClip = layoutCache.didOverflow
-            val offset = if (hasLookaheadConstraints) offsetX else 0f
-            val needsTranslate = offset != 0f
-            val needsSave = needsTranslate || willClip
-            if (needsSave) {
+            if (willClip) {
+                val width = layoutCache.layoutSize.width.toFloat()
+                val height = layoutCache.layoutSize.height.toFloat()
                 canvas.save()
-                if (needsTranslate) {
-                    canvas.translate(offset, 0f)
-                }
-                if (willClip) {
-                    val width = layoutCache.layoutSize.width.toFloat()
-                    val height = layoutCache.layoutSize.height.toFloat()
-                    canvas.clipRect(left = 0f, top = 0f, right = width, bottom = height)
-                }
+                canvas.clipRect(left = 0f, top = 0f, right = width, bottom = height)
             }
             try {
-                val style =
-                    if (ComposeFoundationFlags.isInheritedTextStyleEnabled) {
-                        resolveInheritedStyle(StylePhase.Draw)
-                        resolvedInheritedStyle ?: style
-                    } else style
+                val style = style
                 val textDecoration = style.textDecoration ?: TextDecoration.None
                 val shadow = style.shadow ?: Shadow.None
                 val drawStyle = style.drawStyle ?: Fill
@@ -544,7 +470,7 @@ internal class TextStringSimpleNode(
                     )
                 }
             } finally {
-                if (needsSave) {
+                if (willClip) {
                     canvas.restore()
                 }
             }
