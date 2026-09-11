@@ -80,6 +80,7 @@ public final class AudioSource {
      */
     @VisibleForTesting
     static final long DEFAULT_START_RETRY_INTERVAL_MS = 3000L;
+    private static final long AMPLITUDE_UPDATE_INTERVAL_NS = MILLISECONDS.toNanos(200L);
 
     enum InternalState {
         /** The initial state or when {@link #stop} is called after started. */
@@ -326,9 +327,9 @@ public final class AudioSource {
                             // Fall-through
                         case CONFIGURED:
                             resetBufferProvider(null);
+                            stopSendingAudio();
                             mSilentAudioStream.release();
                             mAudioStream.release();
-                            stopSendingAudio();
                             setState(RELEASED);
                             break;
                         case RELEASED:
@@ -453,7 +454,8 @@ public final class AudioSource {
                         // should only be ENCODING_PCM_16BIT for now at least
                         // reads incoming bytebuffer for amplitude value every .2 seconds
                         if (mCallbackExecutor != null
-                                && (packetInfo.getTimestampNs() - mAmplitudeTimestamp) >= 200) {
+                                && (packetInfo.getTimestampNs() - mAmplitudeTimestamp)
+                                >= AMPLITUDE_UPDATE_INTERVAL_NS) {
                             mAmplitudeTimestamp = packetInfo.getTimestampNs();
                             postMaxAmplitude(byteBuffer);
                         }
@@ -608,6 +610,7 @@ public final class AudioSource {
         mIsSendingAudio = false;
         Logger.d(TAG, "stopSendingAudio");
         mAudioStream.stop();
+        mSilentAudioStream.stop();
     }
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */

@@ -30,7 +30,10 @@ import androidx.camera.video.internal.encoder.FakeInputBuffer
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.ListenableFuture
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.NANOSECONDS
 import org.junit.After
 import org.junit.Test
@@ -278,6 +281,40 @@ class AudioSourceTest {
     }
 
     @Test
+    fun failedToStartAudioStream_stopWillStopSilentAudioStream() {
+        // Arrange.
+        val error = AudioStream.AudioStreamException()
+        val audioStream = createAudioStream(exceptionOnStart = error)
+        val audioSourceCallback = createAudioSourceCallback()
+        val audioSource =
+            createAudioSource(
+                audioStreamFactory = { _, _ -> audioStream },
+                audioSourceCallback = audioSourceCallback,
+            )
+
+        // Act: Start AudioSource (which fails to start mAudioStream and falls back to
+        // mSilentAudioStream).
+        audioSource.start()
+
+        // Assert: Silence state is triggered (indicating SilentAudioStream was started).
+        audioSourceCallback.verifyOnSilenceStateChanged(CallTimes(1), COMMON_TIMEOUT_MS) {
+            assertThat(it.single()).isTrue()
+        }
+        assertThat(audioSource.mSilentAudioStream.isStarted).isTrue()
+
+        // Act: Stop AudioSource.
+        audioSource.stop()
+
+        // Wait for stop() to complete on AudioSource's sequential executor.
+        val latch = CountDownLatch(1)
+        audioSource.mExecutor.execute { latch.countDown() }
+        assertThat(latch.await(COMMON_TIMEOUT_MS, TimeUnit.MILLISECONDS)).isTrue()
+
+        // Assert: SilentAudioStream is stopped.
+        assertThat(audioSource.mSilentAudioStream.isStarted).isFalse()
+    }
+
+    @Test
     fun canMuteAudioSource_beforeStart() {
         // Arrange.
         val bufferProvider = createBufferProvider()
@@ -371,6 +408,67 @@ class AudioSourceTest {
         }
     }
 
+    @Test
+    fun audioSource_amplitudeCallback_throttledBy200Milliseconds() {
+        val totalValidPackets = 9
+        val audioDataProvider: (Int) -> FakeAudioStream.AudioData = { index ->
+            val buf = ByteBuffer.allocate(BYTE_BUFFER_CAPACITY).order(ByteOrder.nativeOrder())
+            // 50ms interval between packets up to index 8 (400ms).
+            // Cap timestamp at 400ms for subsequent packets so exactly 2 callbacks fire.
+            val effectiveIndex = minOf(index, totalValidPackets - 1)
+            val timestampNs = TimeUnit.MILLISECONDS.toNanos(50L * effectiveIndex)
+            FakeAudioStream.AudioData(buf, timestampNs)
+        }
+
+        val audioStream = createAudioStream(audioDataProvider = audioDataProvider)
+        val audioSourceCallback = createAudioSourceCallback()
+        val audioSource =
+            createAudioSource(
+                audioStreamFactory = { _, _ -> audioStream },
+                audioSourceCallback = audioSourceCallback,
+            )
+
+        audioSource.start()
+
+        // Wait until all valid packets have been read
+        audioStream.verifyReadCall(CallTimesAtLeast(totalValidPackets), COMMON_TIMEOUT_MS)
+
+        // Only 2 callbacks should be triggered (at 200ms and 400ms) due to 200ms throttling
+        audioSourceCallback.verifyOnAmplitudeValue(CallTimes(2), COMMON_TIMEOUT_MS)
+    }
+
+    @Test
+    fun audioSource_amplitudeCallback_calculatesCorrectMaxAmplitude() {
+        val testAmplitudeValue = (Short.MAX_VALUE / 2).toShort()
+        val audioDataProvider: (Int) -> FakeAudioStream.AudioData = { index ->
+            val buf = ByteBuffer.allocate(BYTE_BUFFER_CAPACITY).order(ByteOrder.nativeOrder())
+            val shortBuf = buf.asShortBuffer()
+            while (shortBuf.hasRemaining()) {
+                shortBuf.put(testAmplitudeValue)
+            }
+            // timestamp >= 200ms to trigger amplitude callback on first packet
+            FakeAudioStream.AudioData(buf, TimeUnit.MILLISECONDS.toNanos(200L * (index + 1)))
+        }
+
+        val audioStream = createAudioStream(audioDataProvider = audioDataProvider)
+        val audioSourceCallback = createAudioSourceCallback()
+        val audioSource =
+            createAudioSource(
+                audioStreamFactory = { _, _ -> audioStream },
+                audioSourceCallback = audioSourceCallback,
+            )
+
+        audioSource.start()
+
+        audioStream.verifyReadCall(CallTimesAtLeast(1), COMMON_TIMEOUT_MS)
+        audioSourceCallback.verifyOnAmplitudeValue(CallTimesAtLeast(1), COMMON_TIMEOUT_MS) {
+            amplitudes ->
+            assertThat(amplitudes.first()).isWithin(0.01).of(0.5)
+        }
+
+        audioSource.stop()
+    }
+
     private fun createAudioStream(
         audioDataProvider: (Int) -> FakeAudioStream.AudioData = createAudioDataProvider(),
         exceptionOnStart: AudioStream.AudioStreamException? = null,
@@ -401,6 +499,7 @@ class AudioSourceTest {
         initState: BufferProvider.State = BufferProvider.State.ACTIVE,
         bufferFactory: (Int) -> ListenableFuture<FakeInputBuffer> = { _ ->
             val inputBuffer = FakeInputBuffer(BYTE_BUFFER_CAPACITY)
+            inputBuffer.byteBuffer.order(ByteOrder.nativeOrder())
             immediateFuture(inputBuffer)
         },
     ): FakeBufferProvider = FakeBufferProvider(state = initState, bufferFactory = bufferFactory)
