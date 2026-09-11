@@ -773,23 +773,27 @@ private class AccessibilityElement(
     override fun focusItemContainer(): UIFocusItemContainerProtocol = this
 
     var focusFrame: CValue<CGRect> = CGRectZero.readValue()
-    override fun frame(): CValue<CGRect> = if (USE_HIERARCHICAL_COORDINATE_SPACE) {
-        focusFrame
-    } else {
-        convertRect(rect = bounds(), toCoordinateSpace = mediator.view)
-    }
+    override fun frame(): CValue<CGRect> = getIfAlive {
+        if (USE_HIERARCHICAL_COORDINATE_SPACE) {
+            focusFrame
+        } else {
+            convertRect(rect = bounds(), toCoordinateSpace = mediator.view)
+        }
+    } ?: CGRectZero.readValue()
 
-    override fun focusEffectRect(): CValue<CGRect> = convertRect(rect = bounds, toCoordinateSpace = mediator.view)
+    override fun focusEffectRect(): CValue<CGRect> = getIfAlive {
+        convertRect(rect = bounds, toCoordinateSpace = mediator.view)
+    } ?: CGRectZero.readValue()
 
-    override fun bounds(): CValue<CGRect> {
+    override fun bounds(): CValue<CGRect> = getIfAlive {
         val offset = contentOffset()
-        return CGRectMake(
+        CGRectMake(
             x = offset.useContents { x },
             y = offset.useContents { y },
             width = focusFrame.useContents { size.width },
             height = focusFrame.useContents { size.height }
         )
-    }
+    } ?: CGRectZero.readValue()
 
     override fun parentFocusEnvironment(): UIFocusEnvironmentProtocol? =
         accessibilityContainer as? UIFocusEnvironmentProtocol
@@ -799,6 +803,9 @@ private class AccessibilityElement(
 
     private var updateFocusScheduled = false
     override fun setNeedsFocusUpdate() {
+        if (!isAlive) {
+            return
+        }
         if (updateFocusScheduled) {
             return
         }
@@ -809,18 +816,19 @@ private class AccessibilityElement(
         }
     }
 
-    override fun updateFocusIfNeeded() {
+    override fun updateFocusIfNeeded() = runIfAlive {
         UIFocusSystem.focusSystemForEnvironment(environment = this)?.updateFocusIfNeeded()
     }
 
     override fun shouldUpdateFocusInContext(context: UIFocusUpdateContext): Boolean = true
 
-    override fun coordinateSpace(): UICoordinateSpaceProtocol =
+    override fun coordinateSpace(): UICoordinateSpaceProtocol = getIfAlive {
         if (USE_HIERARCHICAL_COORDINATE_SPACE) {
             this
         } else {
             mediator.view
         }
+    } ?: this
 
     override fun focusItemsInRect(rect: CValue<CGRect>): List<*> = accessibilityElements?.filter {
         it is UIFocusItemProtocol && CGRectIntersectsRect(it.frame, rect)
@@ -873,53 +881,59 @@ private class AccessibilityElement(
     override fun convertPoint(
         point: CValue<CGPoint>,
         toCoordinateSpace: UICoordinateSpaceProtocol
-    ): CValue<CGPoint> {
+    ): CValue<CGPoint> = getIfAlive {
         val globalPoint = convertPointToGlobal(point)
-        return when (toCoordinateSpace) {
+        when (toCoordinateSpace) {
             is AccessibilityElement -> toCoordinateSpace.convertPointFromGlobal(globalPoint)
             is UIView -> toCoordinateSpace.convertPoint(globalPoint, fromView = null)
-            else -> mediator.view.window!!.convertPoint(globalPoint, toCoordinateSpace = toCoordinateSpace)
+            // The view is detached from the window during transitions. The point is already
+            // in the window coordinate space, so return it as is.
+            else -> mediator.view.window?.convertPoint(globalPoint, toCoordinateSpace = toCoordinateSpace)
+                ?: globalPoint
         }
-    }
+    } ?: point
 
     @ObjCSignatureOverride
     override fun convertPoint(
         point: CValue<CGPoint>,
         fromCoordinateSpace: UICoordinateSpaceProtocol
-    ): CValue<CGPoint> {
+    ): CValue<CGPoint> = getIfAlive {
         val globalPoint = when (fromCoordinateSpace) {
             is AccessibilityElement -> fromCoordinateSpace.convertPointToGlobal(point)
             is UIView -> fromCoordinateSpace.convertPoint(point, toView = null)
-            else -> mediator.view.window!!.convertPoint(point, fromCoordinateSpace = fromCoordinateSpace)
+            else -> mediator.view.window?.convertPoint(point, fromCoordinateSpace = fromCoordinateSpace)
+                ?: point
         }
-        return convertPointFromGlobal(globalPoint)
-    }
+        convertPointFromGlobal(globalPoint)
+    } ?: point
 
     @ObjCSignatureOverride
     override fun convertRect(
         rect: CValue<CGRect>,
         toCoordinateSpace: UICoordinateSpaceProtocol
-    ): CValue<CGRect> {
+    ): CValue<CGRect> = getIfAlive {
         val globalRect = convertRectToGlobal(rect)
-        return when (toCoordinateSpace) {
+        when (toCoordinateSpace) {
             is AccessibilityElement -> toCoordinateSpace.convertRectFromGlobal(globalRect)
             is UIView -> toCoordinateSpace.convertRect(globalRect, fromView = null)
-            else -> mediator.view.window!!.convertRect(globalRect, toCoordinateSpace = toCoordinateSpace)
+            else -> mediator.view.window?.convertRect(globalRect, toCoordinateSpace = toCoordinateSpace)
+                ?: globalRect
         }
-    }
+    } ?: rect
 
     @ObjCSignatureOverride
     override fun convertRect(
         rect: CValue<CGRect>,
         fromCoordinateSpace: UICoordinateSpaceProtocol
-    ): CValue<CGRect> {
+    ): CValue<CGRect> = getIfAlive {
         val globalRect = when (fromCoordinateSpace) {
             is AccessibilityElement -> fromCoordinateSpace.convertRectToGlobal(rect)
             is UIView -> fromCoordinateSpace.convertRect(rect, toView = null)
-            else -> mediator.view.window!!.convertRect(rect, fromCoordinateSpace = fromCoordinateSpace)
+            else -> mediator.view.window?.convertRect(rect, fromCoordinateSpace = fromCoordinateSpace)
+                ?: rect
         }
-        return convertRectFromGlobal(globalRect)
-    }
+        convertRectFromGlobal(globalRect)
+    } ?: rect
 
     private fun convertPointToGlobal(point: CValue<CGPoint>): CValue<CGPoint> {
         var globalPoint = point
