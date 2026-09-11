@@ -61,6 +61,7 @@ androidXMultiplatform {
             implementation(project(":compose:ui:ui-text"))
             implementation(project(":compose:ui:ui-util"))
             implementation(project(":compose:foundation:foundation-layout"))
+            implementation("androidx.graphics:graphics-shapes:1.1.0")
         }
 
         def navigationEventVersion = project.redirectVersions.get('androidx.navigationevent')
