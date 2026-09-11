@@ -30,5 +30,6 @@ val IosSpecificFeatures = Screen.Selection(
     UpdatableInteropPropertiesExample,
     IosImeOptionsExample,
     NativeTextInputTextFields,
+    AutoSaveLoginPasswordExample,
     PanPinchCircleExample,
 )

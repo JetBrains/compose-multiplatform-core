@@ -17,15 +17,11 @@
 package androidx.compose.foundation.text
 
 import androidx.compose.foundation.interaction.InteractionSource
-import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.internal.TransformedTextFieldState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.ImeOptions
 
-// TODO https://youtrack.jetbrains.com/issue/CMP-10340/Implement-textFieldOverlay
 internal actual fun Modifier.textFieldOverlay(
-    state: LegacyTextFieldState,
-    imeOptions: ImeOptions,
-    interactionSource: InteractionSource?,
-): Modifier {
-    return this
-}
+    transformedState: TransformedTextFieldState,
+    keyboardOptions: KeyboardOptions,
+    interactionSource: InteractionSource
+): Modifier = this

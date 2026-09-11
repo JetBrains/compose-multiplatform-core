@@ -33,7 +33,7 @@ import androidx.compose.ui.graphics.skiaPaint
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.ResolvedTextDirection
-import androidx.compose.ui.uikit.LocalNativeTextInputContext
+import androidx.compose.ui.uikit.LocalTextInputContainer
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
@@ -85,8 +85,8 @@ internal actual fun SelectionHandle(
     lineHeight: Float,
     modifier: Modifier
 ) {
-    val nativeInputProvider = LocalNativeTextInputContext.current
-    if (nativeInputProvider.usingNativeTextInput()) {
+    val nativeInputProvider = LocalTextInputContainer.current
+    if (nativeInputProvider.activeSessionUsesNativeTextInput()) {
         return // iOS draws selection handles itself.
     }
     val style = iosHandleStyle
