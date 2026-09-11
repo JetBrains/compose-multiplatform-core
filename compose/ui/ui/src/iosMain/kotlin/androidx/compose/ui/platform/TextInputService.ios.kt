@@ -124,7 +124,7 @@ internal class TextInputService(
     }
 
     private fun startInput(request: PlatformTextInputMethodRequest) {
-        currentInputConnection?.stop()
+        stopInput()
         stopSelectionContainerConnection()
         listener.onInputWillStart()
 
@@ -139,12 +139,14 @@ internal class TextInputService(
     }
 
     private fun stopInput() {
+        if (currentInputConnection == null) {
+            return
+        }
         currentInputConnection?.stop()
         currentInputConnection = null
         listener.onInputDidStop()
     }
     private fun stopSelectionContainerConnection() {
-        // TODO: Verify
         selectionContainerConnection?.stop()
         selectionContainerConnection?.rootView?.removeFromSuperview()
         selectionContainerConnection?.dispose()
