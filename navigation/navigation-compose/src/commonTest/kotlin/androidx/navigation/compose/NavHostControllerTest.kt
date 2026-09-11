@@ -66,8 +66,14 @@ class NavHostControllerTest {
             }
         }
 
+<<<<<<< HEAD:navigation/navigation-compose/src/commonTest/kotlin/androidx/navigation/compose/NavHostControllerTest.kt
         val navigator =
             runOnIdle { navController.navigatorProvider[ComposeNavigator::class] }
+=======
+        val navigator = composeTestRule.runOnIdle {
+            navController.navigatorProvider[ComposeNavigator::class]
+        }
+>>>>>>> d6d16198bffab57c9fda3a5585c0862041c41b9f:navigation/navigation-compose/src/androidDeviceTest/kotlin/androidx/navigation/compose/NavHostControllerTest.kt
 
         // trigger recompose
         runOnIdle { navController.navigate("second") }
@@ -93,8 +99,14 @@ class NavHostControllerTest {
             }
         }
 
+<<<<<<< HEAD:navigation/navigation-compose/src/commonTest/kotlin/androidx/navigation/compose/NavHostControllerTest.kt
         val navigator =
             runOnIdle { navController.navigatorProvider[NoOpNavigator::class] }
+=======
+        val navigator = composeTestRule.runOnIdle {
+            navController.navigatorProvider[NoOpNavigator::class]
+        }
+>>>>>>> d6d16198bffab57c9fda3a5585c0862041c41b9f:navigation/navigation-compose/src/androidDeviceTest/kotlin/androidx/navigation/compose/NavHostControllerTest.kt
 
         // trigger recompose
         runOnIdle { navController.navigate("second") }
