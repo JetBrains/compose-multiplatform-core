@@ -82,17 +82,15 @@ internal abstract class TextInputConnection(
     abstract val rootView: UIView
 
     open fun start(request: PlatformTextInputMethodRequest) {
+        val inputViewWasFirstResponder = textInputView.isFirstResponder
         currentRequest = request
         currentTextFieldValue = request.stateSnapshot()
 
-        val previousTraits = inputTraits
         inputTraits = getUITextInputTraits(request.imeOptions)
         showKeyboard()
 
-        if (previousTraits.inputView() !== inputTraits.inputView() ||
-            previousTraits.inputAccessoryView() !== inputTraits.inputAccessoryView()
-        ) {
-            reloadInputViews()
+        if (inputViewWasFirstResponder) {
+            textInputView.reloadInputViews()
         }
     }
 
