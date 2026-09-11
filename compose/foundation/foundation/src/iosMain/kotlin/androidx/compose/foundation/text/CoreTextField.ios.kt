@@ -166,7 +166,7 @@ private class TextFieldDrawNode(
             drawIntoCanvas { canvas ->
                 // iOS handles selection drawing itself in native text input mode
                 // still needs this for text rendering
-                if (usingNativeTextInput) {
+                if (usingNativeTextInput || !state.hasFocus) {
                     TextPainter.paint(canvas, layoutResult.value)
                 } else {
                     TextFieldDelegate.draw(

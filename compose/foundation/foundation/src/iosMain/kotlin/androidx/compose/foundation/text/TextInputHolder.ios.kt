@@ -20,6 +20,8 @@ import androidx.compose.foundation.text.input.internal.TransformedTextFieldState
 import androidx.compose.foundation.text.selection.DefaultTextSelectionColors
 import androidx.compose.foundation.text.selection.SelectionManager
 import androidx.compose.foundation.text.selection.TextSelectionColors
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.TextInputContainer
@@ -58,18 +60,30 @@ internal var SelectionManager.holder: TextInputContainer.Holder?
 private val TextInputHolderAssociationKey: COpaquePointer = nativeHeap.alloc<IntVar>().ptr
 
 /** Associated object storage, since the common text field states can't declare an iOS-only field. */
-@OptIn(ExperimentalForeignApi::class, InternalComposeUiApi::class)
+@OptIn(InternalComposeUiApi::class)
 private var Any.textInputHolder: TextInputContainer.Holder?
-    get() =
-        objc_getAssociatedObject(this, TextInputHolderAssociationKey)
-            as? TextInputContainer.Holder
+    get() = textInputHolderState.value
     set(value) {
-        objc_setAssociatedObject(
-            this,
-            TextInputHolderAssociationKey,
-            value,
-            OBJC_ASSOCIATION_RETAIN
-        )
+        textInputHolderState.value = value
+    }
+
+@Suppress("UNCHECKED_CAST")
+@OptIn(ExperimentalForeignApi::class, InternalComposeUiApi::class)
+private val Any.textInputHolderState: MutableState<TextInputContainer.Holder?>
+    get() {
+        val existingState =
+            objc_getAssociatedObject(this, TextInputHolderAssociationKey)
+                as? MutableState<TextInputContainer.Holder?>
+
+        return existingState
+            ?: mutableStateOf<TextInputContainer.Holder?>(null).also { state ->
+                objc_setAssociatedObject(
+                    this,
+                    TextInputHolderAssociationKey,
+                    state,
+                    OBJC_ASSOCIATION_RETAIN
+                )
+            }
     }
 
 @OptIn(InternalComposeUiApi::class)
