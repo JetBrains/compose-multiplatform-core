@@ -288,11 +288,11 @@ private fun SelectableInfo.snapToWordBoundary(
     return anchorForOffset(resultOffset)
 }
 
-private fun interface BoundaryFunction {
+internal fun interface BoundaryFunction {
     fun SelectableInfo.getBoundary(offset: Int): TextRange
 }
 
-private fun adjustToBoundaries(
+internal fun adjustToBoundaries(
     layout: SelectionLayout,
     boundaryFunction: BoundaryFunction,
 ): Selection {
