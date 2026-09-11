@@ -17,7 +17,27 @@ env:
     -Porg.gradle.workers.max=1
 
 jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      sourceSetsIos: ${{ steps.filter.outputs.sourceSetsIos }}
+      sourceSetsNativeNonIos: ${{ steps.filter.outputs.sourceSetsNativeNonIos }}
+      sourceSetsWeb: ${{ steps.filter.outputs.sourceSetsWeb }}
+      sourceSetsDesktop: ${{ steps.filter.outputs.sourceSetsDesktop }}
+      sourceSetsUnknown: ${{ steps.filter.outputs.sourceSetsUnknown }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Detect affected platforms
+        id: filter
+        uses: dorny/paths-filter@v4
+        with:
+          filters: .github/path-filter.yml
+          predicate-quantifier: some-with-excludes
+
   compose-desktop-tests:
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.sourceSetsDesktop == 'true' || needs.changes.outputs.sourceSetsUnknown == 'true'
     runs-on: ubuntu-24.04
     name: Desktop
     steps:
@@ -60,6 +80,8 @@ jobs:
         if: always()
 
   compose-ios-tests:
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.sourceSetsIos == 'true' || needs.changes.outputs.sourceSetsUnknown == 'true'
     runs-on: macos-26-xlarge
     name: iOS
     env:
@@ -87,6 +109,8 @@ jobs:
         if: always()
 
   compose-ios-utils-tests:
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.sourceSetsIos == 'true' || needs.changes.outputs.sourceSetsUnknown == 'true'
     runs-on: macos-26-xlarge
     name: iOS Utils
     env:
@@ -120,6 +144,8 @@ jobs:
           path: compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/TestResults.xcresult
 
   compose-ios-instrumented-tests:
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.sourceSetsIos == 'true' || needs.changes.outputs.sourceSetsUnknown == 'true'
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -197,6 +223,8 @@ jobs:
         if: always()
 
   compose-web-chrome-tests:
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.sourceSetsWeb == 'true' || needs.changes.outputs.sourceSetsUnknown == 'true'
     runs-on: ubuntu-24.04
     name: Web Chrome
     strategy:
@@ -289,6 +317,8 @@ jobs:
         if: always()
 
   compose-web-firefox-tests:
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.sourceSetsWeb == 'true' || needs.changes.outputs.sourceSetsUnknown == 'true'
     runs-on: ubuntu-24.04
     name: Web Firefox
     strategy:

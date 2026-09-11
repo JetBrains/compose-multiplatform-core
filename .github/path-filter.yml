@@ -1,0 +1,107 @@
+buildCode:
+  - '**/*.gradle'
+  - '**/*.gradle.kts'
+  - '**/*.toml'
+  - '**/gradle.properties'
+  - 'gradle/**'
+  - 'buildSrc/**'
+  - 'buildSrc-fork/**'
+  - 'androidx-settings-plugins-fork/**'
+  - 'gradlew'
+  - 'gradlew.bat'
+  - '.github/workflows/build-code.yml'
+  - '.github/path-filter.yml'
+
+# When changing this list, please change sourceSetsUnknown as well.
+sourceSetsIos:
+  - '**/iosMain/**'
+  - '**/iosTest/**'
+  - '**/darwinMain/**'
+  - '**/darwinTest/**'
+  - '**/nativeMain/**'
+  - '**/nativeTest/**'
+  - '**/uikitInstrumentedTest/**'
+  - '**/appleMain/**'
+  - '**/appleTest/**'
+
+# When changing this list, please change sourceSetsUnknown as well.
+sourceSetsNativeNonIos:
+  - '**/darwinMain/**'
+  - '**/darwinTest/**'
+  - '**/nativeMain/**'
+  - '**/nativeTest/**'
+  - '**/appleMain/**'
+  - '**/appleTest/**'
+  - '**/macosMain/**'
+  - '**/macosTest/**'
+  - '**/tvosMain/**'
+  - '**/tvosTest/**'
+  - '**/watchosMain/**'
+  - '**/watchosTest/**'
+  - '**/linuxMain/**'
+  - '**/linuxTest/**'
+  - '**/mingwMain/**'
+  - '**/mingwTest/**'
+
+# When changing this list, please change sourceSetsUnknown as well.
+sourceSetsWeb:
+  - '**/webMain/**'
+  - '**/webTest/**'
+  - '**/jsMain/**'
+  - '**/jsTest/**'
+  - '**/jsWasmMain/**'
+  - '**/jsWasmTest/**'
+  - '**/wasmJsMain/**'
+  - '**/wasmJsTest/**'
+
+# When changing this list, please change sourceSetsUnknown as well.
+sourceSetsDesktop:
+  - '**/jvmMain/**'
+  - '**/jvmTest/**'
+  - '**/desktopMain/**'
+  - '**/desktopTest/**'
+
+# This list copies the lists above, change them first, then change this list.
+# Duplicated for simplicity.
+sourceSetsUnknown:
+  - '**'
+  - '!**/iosMain/**'
+  - '!**/iosTest/**'
+  - '!**/darwinMain/**'
+  - '!**/darwinTest/**'
+  - '!**/nativeMain/**'
+  - '!**/nativeTest/**'
+  - '!**/uikitInstrumentedTest/**'
+  - '!**/appleMain/**'
+  - '!**/appleTest/**'
+
+  - '!**/darwinMain/**'
+  - '!**/darwinTest/**'
+  - '!**/nativeMain/**'
+  - '!**/nativeTest/**'
+  - '!**/appleMain/**'
+  - '!**/appleTest/**'
+  - '!**/macosMain/**'
+  - '!**/macosTest/**'
+  - '!**/tvosMain/**'
+  - '!**/tvosTest/**'
+  - '!**/watchosMain/**'
+  - '!**/watchosTest/**'
+  - '!**/linuxMain/**'
+  - '!**/linuxTest/**'
+  - '!**/mingwMain/**'
+  - '!**/mingwTest/**'
+
+  - '!**/webMain/**'
+  - '!**/webTest/**'
+  - '!**/jsMain/**'
+  - '!**/jsTest/**'
+  - '!**/jsWasmMain/**'
+  - '!**/jsWasmTest/**'
+  - '!**/wasmJsMain/**'
+  - '!**/wasmJsTest/**'
+
+  - '!**/jvmMain/**'
+  - '!**/jvmTest/**'
+  - '!**/desktopMain/**'
+  - '!**/desktopTest/**'
