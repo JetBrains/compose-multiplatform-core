@@ -23,6 +23,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.node.HitTestResult
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.requireLayoutNode
+import androidx.compose.ui.platform.CachedAccessibilityPropertyKeys.accessibilityElements
 import androidx.compose.ui.platform.accessibility.AccessibilityScrollEventResult
 import androidx.compose.ui.platform.accessibility.accessibilityAttributedValue
 import androidx.compose.ui.platform.accessibility.accessibilityCustomActions
@@ -573,7 +574,7 @@ private class AccessibilityElement(
     /**
      * Indicates whether this element is still present in the tree.
      */
-    private val isAlive get() = !isDisposed && node.semanticsNode.isValid
+    private val isAlive get() = isInitialized && node.semanticsNode.isValid
 
     init {
         setAccessibilityElements(children + nodeSemanticsElements())
@@ -608,11 +609,11 @@ private class AccessibilityElement(
     }
 
     fun dispose() {
-        check(!this.isDisposed) {
+        check(this.isInitialized) {
             "AccessibilityElement is already disposed"
         }
 
-        isDisposed = true
+        isInitialized = false
         setAccessibilityContainer(null)
         setAccessibilityElements(emptyList<Any>())
         if (available(OS.Ios to OSVersion(major = 17))) {
