@@ -16,6 +16,7 @@
 
 package androidx.compose.material3.a2ui.catalog
 
+import androidx.a2ui.compose.runtime.A2uiComponentReference
 import androidx.a2ui.compose.runtime.A2uiComponentScope
 import androidx.a2ui.compose.ui.catalog.A2uiBasicCatalogV1
 import androidx.a2ui.model.catalog.functions.A2uiLocaleProvider
@@ -32,14 +33,17 @@ import org.junit.runners.JUnit4
 @RunWith(JUnit4::class)
 class MaterialA2uiBasicCatalogV1Test {
 
+    private val fakeImageRenderer = A2uiImageRenderer { _, _, _, _, _ -> }
     private val fakeUrlOpener = A2uiUrlOpener { _ -> }
     private val fakeMessageFormatter = A2uiMessageFormatter { _, _, _ -> "" }
     private val fakeLocaleProvider = A2uiLocaleProvider { Locale.US }
 
     @Test
-    fun factory_withDefaults_createsCatalogWithMaterialTextAndBasicFunctions() {
+    fun factory_withDefaults_createsCatalogWithDefaultComponentsAndBasicFunctions() {
+        val image = MaterialA2uiBasicCatalogV1Defaults.image(fakeImageRenderer)
         val catalog =
             materialA2uiBasicCatalogV1(
+                image = image,
                 urlOpener = fakeUrlOpener,
                 messageFormatter = fakeMessageFormatter,
                 localeProvider = fakeLocaleProvider,
@@ -48,11 +52,20 @@ class MaterialA2uiBasicCatalogV1Test {
         assertThat(catalog.id).isEqualTo(A2uiBasicCatalogV1.CatalogId)
         assertThat(catalog.themeSchema).isEqualTo(A2uiBasicCatalogV1.ThemeSchema)
 
-        // Verifies the default Material text component is used
+        // Verifies the default components are populated
         assertThat(catalog.components["Text"])
             .isSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.text)
+        assertThat(catalog.components["Image"]).isSameInstanceAs(image)
+        assertThat(catalog.components["Card"])
+            .isSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.card)
+        assertThat(catalog.components["Row"])
+            .isSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.row)
+        assertThat(catalog.components["Column"])
+            .isSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.column)
+        assertThat(catalog.components["Button"])
+            .isSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.button)
 
-        // Verifies standard basic functions are successfully populated
+        // Verifies standard basic functions are populated
         assertThat(catalog.functions["formatString"]).isNotNull()
         assertThat(catalog.functions["openUrl"]).isNotNull()
     }
@@ -71,6 +84,7 @@ class MaterialA2uiBasicCatalogV1Test {
 
         val catalog =
             materialA2uiBasicCatalogV1(
+                image = MaterialA2uiBasicCatalogV1Defaults.image(fakeImageRenderer),
                 urlOpener = fakeUrlOpener,
                 messageFormatter = fakeMessageFormatter,
                 localeProvider = fakeLocaleProvider,
@@ -83,8 +97,148 @@ class MaterialA2uiBasicCatalogV1Test {
     }
 
     @Test
-    fun materialA2uiBasicCatalogV1Defaults_text_isMaterialA2uiBasicCatalogV1Text() {
+    fun factory_withCustomImageComponent_overridesDefaultMaterialImage() {
+        val customImage =
+            object : A2uiBasicCatalogV1.Image {
+                @Composable
+                override fun A2uiComponentScope.TypedContent(
+                    url: String,
+                    description: String?,
+                    fit: A2uiBasicCatalogV1.Image.Fit,
+                    variant: A2uiBasicCatalogV1.Image.Variant,
+                    modifier: Modifier,
+                ) {}
+            }
+
+        val catalog =
+            materialA2uiBasicCatalogV1(
+                image = customImage,
+                urlOpener = fakeUrlOpener,
+                messageFormatter = fakeMessageFormatter,
+                localeProvider = fakeLocaleProvider,
+            )
+
+        assertThat(catalog.components["Image"]).isSameInstanceAs(customImage)
+        assertThat(catalog.components["Image"])
+            .isNotSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.image(fakeImageRenderer))
+    }
+
+    @Test
+    fun factory_withCustomCardComponent_overridesDefaultMaterialCard() {
+        val customCard =
+            object : A2uiBasicCatalogV1.Card {
+                @Composable
+                override fun A2uiComponentScope.TypedContent(childId: String, modifier: Modifier) {}
+            }
+
+        val catalog =
+            materialA2uiBasicCatalogV1(
+                image = MaterialA2uiBasicCatalogV1Defaults.image(fakeImageRenderer),
+                urlOpener = fakeUrlOpener,
+                messageFormatter = fakeMessageFormatter,
+                localeProvider = fakeLocaleProvider,
+                card = customCard,
+            )
+
+        assertThat(catalog.components["Card"]).isSameInstanceAs(customCard)
+        assertThat(catalog.components["Card"])
+            .isNotSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.card)
+    }
+
+    @Test
+    fun factory_withCustomRowComponent_overridesDefaultMaterialRow() {
+        val customRow =
+            object : A2uiBasicCatalogV1.Row {
+                @Composable
+                override fun A2uiComponentScope.TypedContent(
+                    children: List<A2uiComponentReference>,
+                    justify: A2uiBasicCatalogV1.Row.Justify,
+                    align: A2uiBasicCatalogV1.Row.Align,
+                    modifier: Modifier,
+                ) {}
+            }
+
+        val catalog =
+            materialA2uiBasicCatalogV1(
+                image = MaterialA2uiBasicCatalogV1Defaults.image(fakeImageRenderer),
+                urlOpener = fakeUrlOpener,
+                messageFormatter = fakeMessageFormatter,
+                localeProvider = fakeLocaleProvider,
+                row = customRow,
+            )
+
+        assertThat(catalog.components["Row"]).isSameInstanceAs(customRow)
+        assertThat(catalog.components["Row"])
+            .isNotSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.row)
+    }
+
+    @Test
+    fun factory_withCustomColumnComponent_overridesDefaultMaterialColumn() {
+        val customColumn =
+            object : A2uiBasicCatalogV1.Column {
+                @Composable
+                override fun A2uiComponentScope.TypedContent(
+                    children: List<A2uiComponentReference>,
+                    justify: A2uiBasicCatalogV1.Column.Justify,
+                    align: A2uiBasicCatalogV1.Column.Align,
+                    modifier: Modifier,
+                ) {}
+            }
+
+        val catalog =
+            materialA2uiBasicCatalogV1(
+                image = MaterialA2uiBasicCatalogV1Defaults.image(fakeImageRenderer),
+                urlOpener = fakeUrlOpener,
+                messageFormatter = fakeMessageFormatter,
+                localeProvider = fakeLocaleProvider,
+                column = customColumn,
+            )
+
+        assertThat(catalog.components["Column"]).isSameInstanceAs(customColumn)
+        assertThat(catalog.components["Column"])
+            .isNotSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.column)
+    }
+
+    @Test
+    fun factory_withCustomButtonComponent_overridesDefaultMaterialButton() {
+        val customButton =
+            object : A2uiBasicCatalogV1.Button {
+                @Composable
+                override fun A2uiComponentScope.TypedContent(
+                    childId: String,
+                    variant: A2uiBasicCatalogV1.Button.Variant,
+                    action: Map<String, Any?>,
+                    modifier: Modifier,
+                ) {}
+            }
+
+        val catalog =
+            materialA2uiBasicCatalogV1(
+                image = MaterialA2uiBasicCatalogV1Defaults.image(fakeImageRenderer),
+                urlOpener = fakeUrlOpener,
+                messageFormatter = fakeMessageFormatter,
+                localeProvider = fakeLocaleProvider,
+                button = customButton,
+            )
+
+        assertThat(catalog.components["Button"]).isSameInstanceAs(customButton)
+        assertThat(catalog.components["Button"])
+            .isNotSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.button)
+    }
+
+    @Test
+    fun materialA2uiBasicCatalogV1Defaults_providesExpectedObjects() {
         assertThat(MaterialA2uiBasicCatalogV1Defaults.text)
             .isSameInstanceAs(MaterialA2uiBasicCatalogV1Text)
+        assertThat(MaterialA2uiBasicCatalogV1Defaults.image(fakeImageRenderer))
+            .isInstanceOf(MaterialA2uiBasicCatalogV1Image::class.java)
+        assertThat(MaterialA2uiBasicCatalogV1Defaults.card)
+            .isSameInstanceAs(MaterialA2uiBasicCatalogV1Card)
+        assertThat(MaterialA2uiBasicCatalogV1Defaults.row)
+            .isSameInstanceAs(MaterialA2uiBasicCatalogV1Row)
+        assertThat(MaterialA2uiBasicCatalogV1Defaults.column)
+            .isSameInstanceAs(MaterialA2uiBasicCatalogV1Column)
+        assertThat(MaterialA2uiBasicCatalogV1Defaults.button)
+            .isSameInstanceAs(MaterialA2uiBasicCatalogV1Button)
     }
 }

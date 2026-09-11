@@ -983,26 +983,6 @@ public class TimePickerShapes(
  *   buttons to switch between hour and minutes
  * @property timeSelectorContentColor color used for the content of the display buttons to switch
  *   between hour and minutes
- * @param clockDialColor the color of the clock dial
- * @param selectorColor the color of the clock dial selector
- * @param containerColor the container color of the time picker
- * @param periodSelectorBorderColor the color used for the border of the AM/PM toggle
- * @param clockDialSelectedContentColor the color of the numbers of the clock dial when they are
- *   selected or overlapping with the selector
- * @param clockDialContentColor the color of the numbers of the clock dial when they are unselected
- * @param periodSelectorSelectedContainerColor the color used for the selected container of the
- *   AM/PM toggle
- * @param periodSelectorContainerColor the color used for the container of the AM/PM toggle
- * @param periodSelectorSelectedContentColor color used for the selected content of the AM/PM toggle
- * @param periodSelectorContentColor color used for the content of the AM/PM toggle
- * @param timeSelectorSelectedContainerColor color used for the selected container of the display
- *   buttons to switch between hour and minutes
- * @param timeSelectorContainerColor color used for the container of the display buttons to switch
- *   between hour and minutes
- * @param timeSelectorSelectedContentColor color used for the selected content of the display
- *   buttons to switch between hour and minutes
- * @param timeSelectorContentColor color used for the content of the display buttons to switch
- *   between hour and minutes
  * @constructor create an instance with arbitrary colors. See [TimePickerDefaults.colors] for the
  *   default implementation that follows Material specifications.
  */
@@ -1251,14 +1231,6 @@ public constructor(
  *   toggle
  * @property periodSelectorContentColor color used for the content of the AM/PM toggle
  * @property timeTextFieldColors the [TextFieldColors] used for the hour and minute text fields
- * @param containerColor the container color of the time input
- * @param periodSelectorBorderColor the color used for the border of the AM/PM toggle
- * @param periodSelectorSelectedContainerColor the color used for the selected container of the
- *   AM/PM toggle
- * @param periodSelectorContainerColor the color used for the container of the AM/PM toggle
- * @param periodSelectorSelectedContentColor color used for the selected content of the AM/PM toggle
- * @param periodSelectorContentColor color used for the content of the AM/PM toggle
- * @param timeTextFieldColors the [TextFieldColors] used for the hour and minute text fields
  * @constructor create an instance with arbitrary colors. See [TimeInputDefaults.colors] for the
  *   default implementation that follows Material specifications.
  */
@@ -1321,6 +1293,22 @@ public constructor(
                 periodSelectorContentColor.takeOrElse { this.periodSelectorContentColor },
             timeTextFieldColors = timeTextFieldColors ?: this.timeTextFieldColors,
         )
+
+    @Deprecated(
+        message = "Use periodSelectorContainerColor instead",
+        replaceWith = ReplaceWith("periodSelectorContainerColor"),
+        level = DeprecationLevel.HIDDEN,
+    )
+    public val periodSelectorUnselectedContainerColor: Color
+        get() = periodSelectorContainerColor
+
+    @Deprecated(
+        message = "Use periodSelectorContentColor instead",
+        replaceWith = ReplaceWith("periodSelectorContentColor"),
+        level = DeprecationLevel.HIDDEN,
+    )
+    public val periodSelectorUnselectedContentColor: Color
+        get() = periodSelectorContentColor
 
     @Stable
     internal fun periodSelectorContainerColor(selected: Boolean) =
@@ -1473,10 +1461,6 @@ private val VibrantHorizontalTimePickerGap
     get() = 52.dp
 private val VibrantVerticalTimePickerGap
     get() = 36.dp
-private val VibrantTimePickerPaddingVertical
-    get() = 12.dp
-private val VibrantTimePickerPaddingHorizontal
-    get() = 24.dp
 
 /**
  * A state object that can be hoisted to observe the time picker state. It holds the current values
@@ -1963,10 +1947,7 @@ internal fun VerticalTimePicker(
     shapes: TimePickerShapes? = null,
 ) {
     Column(
-        modifier =
-            modifier
-                .semantics { isTraversalGroup = true }
-                .padding(shapes.orVibrant(0.dp, VibrantTimePickerPaddingVertical)),
+        modifier = modifier.semantics { isTraversalGroup = true },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         VerticalClockDisplay(state = state, colors = colors, shapes = shapes)
@@ -1995,10 +1976,7 @@ internal fun HorizontalTimePicker(
     shapes: TimePickerShapes? = null,
 ) {
     Row(
-        modifier =
-            modifier
-                .semantics { isTraversalGroup = true }
-                .padding(shapes.orVibrant(0.dp, VibrantTimePickerPaddingHorizontal)),
+        modifier = modifier.semantics { isTraversalGroup = true },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         HorizontalClockDisplay(state, colors, shapes)
@@ -2083,12 +2061,7 @@ private fun TimeInputImpl(
         if (hasSideControlColumn) UncontainedTimeFieldHeight else VibrantTimeFieldHeight
 
     Row(
-        modifier =
-            modifier
-                .semantics { isTraversalGroup = true }
-                .then(
-                    shapes.orVibrant(Modifier, Modifier.padding(VibrantTimePickerPaddingVertical))
-                ),
+        modifier = modifier.semantics { isTraversalGroup = true },
         verticalAlignment = Alignment.Top,
     ) {
         val textStyle =
@@ -2209,9 +2182,7 @@ private fun TimeInputImpl(
             )
         } else if (!state.is24hour) {
             Box(
-                Modifier.padding(
-                    start = shapes.orVibrant(startPadding, VibrantPeriodToggleLargePadding)
-                )
+                Modifier.padding(start = shapes.orVibrant(startPadding, VibrantPeriodTogglePadding))
             ) {
                 VerticalPeriodToggle(
                     modifier =
@@ -2285,12 +2256,7 @@ private fun TimeScrollImpl(
         if (hasSideControlColumn) UncontainedTimeFieldHeight else VibrantTimeFieldHeight
 
     Row(
-        modifier =
-            modifier
-                .semantics { isTraversalGroup = true }
-                .then(
-                    shapes.orVibrant(Modifier, Modifier.padding(VibrantTimePickerPaddingVertical))
-                ),
+        modifier = modifier.semantics { isTraversalGroup = true },
         verticalAlignment = Alignment.Top,
     ) {
         val textStyle =
@@ -2369,7 +2335,7 @@ private fun TimeScrollImpl(
             )
         } else if (!state.is24hour) {
             Box(
-                Modifier.padding(start = shapes.orVibrant(startPadding, PeriodTogglePaddingLarge))
+                Modifier.padding(start = shapes.orVibrant(startPadding, VibrantPeriodTogglePadding))
             ) {
                 VerticalPeriodToggle(
                     modifier =

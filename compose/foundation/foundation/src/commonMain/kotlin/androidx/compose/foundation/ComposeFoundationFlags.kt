@@ -82,17 +82,6 @@ public object ComposeFoundationFlags {
     public var isInheritedTextStyleEnabled: Boolean = false
 
     /**
-     * Selecting flag to enable the use of new PausableComposition in lazy layout prefetch. This
-     * change allows us to distribute work we need to do during the prefetch better, for example we
-     * can only perform the composition for parts of the LazyColumn's next item during one ui frame,
-     * and then continue composing the rest of it in the next frames.
-     */
-    // TODO: b/455589928
-    @field:Suppress("MutableBareField")
-    @JvmField
-    public var isPausableCompositionInPrefetchEnabled: Boolean = true
-
-    /**
      * With this flag on, Pager will use
      * [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow] as the default prefetching
      * strategy, instead of 1 item in the direction of the scroll. The window used will be 1 view
@@ -280,14 +269,24 @@ public object ComposeFoundationFlags {
     public var isKeepAroundDuringLookaheadDisabled: Boolean = true
 
     /**
-     * This flag controls whether [androidx.compose.foundation.lazy.grid.LazyGrid] prefers using the
+     * This flag controls whether [androidx.compose.foundation.lazy.LazyList] prefers using the
      * default [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow] over
-     * [androidx.compose.foundation.lazy.grid.LazyGridPrefetchStrategy].
+     * [androidx.compose.foundation.lazy.LazyListPrefetchStrategy].
      */
     // TODO: b/536884365
     @field:Suppress("MutableBareField")
     @JvmField
-    public var isPreferDefaultCacheWindowOverPrefetchStrategy: Boolean = true
+    public var isPreferDefaultCacheWindowOverPrefetchStrategyLazyList: Boolean = true
+
+    /**
+     * This flag controls whether [androidx.compose.foundation.lazy.grid.LazyGrid] prefers using the
+     * default [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow] over
+     * [androidx.compose.foundation.lazy.grid.LazyGridPrefetchStrategy].
+     */
+    // TODO: b/543758449
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isPreferDefaultCacheWindowOverPrefetchStrategyLazyGrid: Boolean = true
 
     /**
      * This flag controls whether lazy list measure passes calculate `firstVisibleIndex` and

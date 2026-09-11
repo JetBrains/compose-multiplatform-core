@@ -17,6 +17,7 @@
 package androidx.a2ui.compose.ui
 
 import androidx.a2ui.compose.runtime.A2uiComponentProperties
+import androidx.a2ui.compose.runtime.A2uiComponentReference
 import androidx.a2ui.compose.runtime.A2uiComponentScope
 import androidx.a2ui.compose.runtime.A2uiProperty
 import androidx.a2ui.compose.ui.catalog.A2uiBasicCatalogV1
@@ -127,16 +128,69 @@ class A2uiCatalogTest {
                 @Composable
                 override fun A2uiComponentScope.TypedContent(childId: String, modifier: Modifier) {}
             }
+        val testRow =
+            object : A2uiBasicCatalogV1.Row {
+                @Composable
+                override fun A2uiComponentScope.TypedContent(
+                    children: List<A2uiComponentReference>,
+                    justify: A2uiBasicCatalogV1.Row.Justify,
+                    align: A2uiBasicCatalogV1.Row.Align,
+                    modifier: Modifier,
+                ) {}
+            }
+        val testColumn =
+            object : A2uiBasicCatalogV1.Column {
+                @Composable
+                override fun A2uiComponentScope.TypedContent(
+                    children: List<A2uiComponentReference>,
+                    justify: A2uiBasicCatalogV1.Column.Justify,
+                    align: A2uiBasicCatalogV1.Column.Align,
+                    modifier: Modifier,
+                ) {}
+            }
+        val testButton =
+            object : A2uiBasicCatalogV1.Button {
+                @Composable
+                override fun A2uiComponentScope.TypedContent(
+                    childId: String,
+                    variant: A2uiBasicCatalogV1.Button.Variant,
+                    action: Map<String, Any?>,
+                    modifier: Modifier,
+                ) {}
+            }
+        val testImage =
+            object : A2uiBasicCatalogV1.Image {
+                @Composable
+                override fun A2uiComponentScope.TypedContent(
+                    url: String,
+                    description: String?,
+                    fit: A2uiBasicCatalogV1.Image.Fit,
+                    variant: A2uiBasicCatalogV1.Image.Variant,
+                    modifier: Modifier,
+                ) {}
+            }
         val testFunction = StubFunction("TestFunc")
         val basicCatalog =
-            A2uiBasicCatalogV1(text = testText, card = testCard, functions = listOf(testFunction))
+            A2uiBasicCatalogV1(
+                text = testText,
+                image = testImage,
+                card = testCard,
+                row = testRow,
+                column = testColumn,
+                button = testButton,
+                functions = listOf(testFunction),
+            )
 
         val catalog = A2uiCatalog(basicCatalog)
 
         assertThat(catalog.id).isEqualTo(A2uiBasicCatalogV1.CatalogId)
         assertThat(catalog.themeSchema).isEqualTo(A2uiBasicCatalogV1.ThemeSchema)
         assertThat(catalog.components["Text"]).isSameInstanceAs(testText)
+        assertThat(catalog.components["Image"]).isSameInstanceAs(testImage)
         assertThat(catalog.components["Card"]).isSameInstanceAs(testCard)
+        assertThat(catalog.components["Row"]).isSameInstanceAs(testRow)
+        assertThat(catalog.components["Column"]).isSameInstanceAs(testColumn)
+        assertThat(catalog.components["Button"]).isSameInstanceAs(testButton)
         assertThat(catalog.functions["TestFunc"]).isSameInstanceAs(testFunction)
     }
 

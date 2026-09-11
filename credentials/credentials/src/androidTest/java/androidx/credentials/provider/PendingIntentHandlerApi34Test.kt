@@ -425,15 +425,15 @@ class PendingIntentHandlerApi34Test {
     ) {
         if (biometricPromptResult.isSuccessful) {
             Assert.assertNotNull(biometricPromptResult.authenticationResult)
-            var extraResultKey = AuthenticationResult.EXTRA_BIOMETRIC_AUTH_RESULT_TYPE
+            val extraResultKey = AuthenticationResult.EXTRA_BIOMETRIC_AUTH_RESULT_TYPE
             intent.putExtra(
                 extraResultKey,
                 biometricPromptResult.authenticationResult!!.authenticationType,
             )
         } else {
             Assert.assertNotNull(biometricPromptResult.authenticationError)
-            var extraErrorKey = AuthenticationError.EXTRA_BIOMETRIC_AUTH_ERROR
-            var extraErrorMessageKey = AuthenticationError.EXTRA_BIOMETRIC_AUTH_ERROR_MESSAGE
+            val extraErrorKey = AuthenticationError.EXTRA_BIOMETRIC_AUTH_ERROR
+            val extraErrorMessageKey = AuthenticationError.EXTRA_BIOMETRIC_AUTH_ERROR_MESSAGE
             intent.putExtra(extraErrorKey, biometricPromptResult.authenticationError!!.errorCode)
             intent.putExtra(
                 extraErrorMessageKey,
@@ -485,7 +485,7 @@ class PendingIntentHandlerApi34Test {
     fun test_credentialResponse() {
         val intent = Intent()
         val credential = PasswordCredential("a", "b")
-        val initialResponse = GetCredentialResponse(credential)
+        val initialResponse = GetCredentialResponse(listOf(credential))
 
         PendingIntentHandler.setGetCredentialResponse(
             intent,
@@ -544,7 +544,7 @@ class PendingIntentHandlerApi34Test {
         val byteArray = Random.nextBytes(1024 * 1024 + 100)
         largeData.putByteArray("large_array", byteArray)
         val customCredential = androidx.credentials.CustomCredential("type", largeData)
-        val initialResponse = GetCredentialResponse(customCredential)
+        val initialResponse = GetCredentialResponse(listOf(customCredential))
 
         val requestData = Bundle()
         var receivedIntent: Intent? = null
@@ -577,7 +577,8 @@ class PendingIntentHandlerApi34Test {
         // Verify that the GetCredentialResponse can be successfully retrieved from the same
         // process.
         val finalResponse = PendingIntentHandler.retrieveGetCredentialResponse(receivedIntent!!)
-        assertThat(finalResponse!!.credential.data.getByteArray("large_array")).isEqualTo(byteArray)
+        assertThat(finalResponse!!.credentials.first().data.getByteArray("large_array"))
+            .isEqualTo(byteArray)
     }
 
     @Test
@@ -587,7 +588,7 @@ class PendingIntentHandlerApi34Test {
         val byteArray = ByteArray(205000)
         largeData.putByteArray("large_array", byteArray)
         val customCredential = androidx.credentials.CustomCredential("type", largeData)
-        val initialResponse = GetCredentialResponse(customCredential)
+        val initialResponse = GetCredentialResponse(listOf(customCredential))
 
         val option =
             androidx.credentials.GetCustomCredentialOption("type", Bundle(), Bundle(), false, true)
