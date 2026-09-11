@@ -11,7 +11,8 @@ jobs:
   changes:
     runs-on: ubuntu-24.04
     outputs:
-      sourceSetsNative: ${{ steps.filter.outputs.sourceSetsNative }}
+      sourceSetsIos: ${{ steps.filter.outputs.sourceSetsIos }}
+      sourceSetsNativeNonIos: ${{ steps.filter.outputs.sourceSetsNativeNonIos }}
       sourceSetsWeb: ${{ steps.filter.outputs.sourceSetsWeb }}
       sourceSetsDesktop: ${{ steps.filter.outputs.sourceSetsDesktop }}
       sourceSetsUnknown: ${{ steps.filter.outputs.sourceSetsUnknown }}
@@ -27,7 +28,7 @@ jobs:
 
   compose-native-publish:
     needs: changes
-    if: github.event_name != 'pull_request' || needs.changes.outputs.sourceSetsNative == 'true' || needs.changes.outputs.sourceSetsUnknown == 'true'
+    if: github.event_name != 'pull_request' || needs.changes.outputs.sourceSetsIos == 'true' || needs.changes.outputs.sourceSetsNativeNonIos == 'true' || needs.changes.outputs.sourceSetsUnknown == 'true'
     runs-on: macos-26-xlarge
     name: Darwin + Native Linux
     steps:

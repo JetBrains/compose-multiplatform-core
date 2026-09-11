@@ -13,7 +13,7 @@ buildCode:
   - '.github/path-filter.yml'
 
 # When changing this list, please change sourceSetsUnknown as well.
-sourceSetsNative:
+sourceSetsIos:
   - '**/iosMain/**'
   - '**/iosTest/**'
   - '**/darwinMain/**'
@@ -21,6 +21,15 @@ sourceSetsNative:
   - '**/nativeMain/**'
   - '**/nativeTest/**'
   - '**/uikitInstrumentedTest/**'
+  - '**/appleMain/**'
+  - '**/appleTest/**'
+
+# When changing this list, please change sourceSetsUnknown as well.
+sourceSetsNativeNonIos:
+  - '**/darwinMain/**'
+  - '**/darwinTest/**'
+  - '**/nativeMain/**'
+  - '**/nativeTest/**'
   - '**/appleMain/**'
   - '**/appleTest/**'
   - '**/macosMain/**'
@@ -52,7 +61,7 @@ sourceSetsDesktop:
   - '**/desktopMain/**'
   - '**/desktopTest/**'
 
-# When changing this list, please change sourceSetsNative, sourceSetsWeb, and sourceSetsDesktop as well.
+# When changing these lists, please update the full copies below as well.
 # Duplicated for simplicity and to reduce mistakes.
 sourceSetsUnknown:
   - '**'
@@ -63,6 +72,13 @@ sourceSetsUnknown:
   - '!**/nativeMain/**'
   - '!**/nativeTest/**'
   - '!**/uikitInstrumentedTest/**'
+  - '!**/appleMain/**'
+  - '!**/appleTest/**'
+
+  - '!**/darwinMain/**'
+  - '!**/darwinTest/**'
+  - '!**/nativeMain/**'
+  - '!**/nativeTest/**'
   - '!**/appleMain/**'
   - '!**/appleTest/**'
   - '!**/macosMain/**'

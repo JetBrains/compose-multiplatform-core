@@ -20,7 +20,8 @@ jobs:
   changes:
     runs-on: ubuntu-24.04
     outputs:
-      sourceSetsNative: ${{ steps.filter.outputs.sourceSetsNative }}
+      sourceSetsIos: ${{ steps.filter.outputs.sourceSetsIos }}
+      sourceSetsNativeNonIos: ${{ steps.filter.outputs.sourceSetsNativeNonIos }}
       sourceSetsWeb: ${{ steps.filter.outputs.sourceSetsWeb }}
       sourceSetsDesktop: ${{ steps.filter.outputs.sourceSetsDesktop }}
       sourceSetsUnknown: ${{ steps.filter.outputs.sourceSetsUnknown }}
@@ -80,7 +81,7 @@ jobs:
 
   compose-ios-tests:
     needs: changes
-    if: github.event_name != 'pull_request' || needs.changes.outputs.sourceSetsNative == 'true' || needs.changes.outputs.sourceSetsUnknown == 'true'
+    if: github.event_name != 'pull_request' || needs.changes.outputs.sourceSetsIos == 'true' || needs.changes.outputs.sourceSetsUnknown == 'true'
     runs-on: macos-26-xlarge
     name: iOS
     env:
@@ -109,7 +110,7 @@ jobs:
 
   compose-ios-utils-tests:
     needs: changes
-    if: github.event_name != 'pull_request' || needs.changes.outputs.sourceSetsNative == 'true' || needs.changes.outputs.sourceSetsUnknown == 'true'
+    if: github.event_name != 'pull_request' || needs.changes.outputs.sourceSetsIos == 'true' || needs.changes.outputs.sourceSetsUnknown == 'true'
     runs-on: macos-26-xlarge
     name: iOS Utils
     env:
@@ -144,7 +145,7 @@ jobs:
 
   compose-ios-instrumented-tests:
     needs: changes
-    if: github.event_name != 'pull_request' || needs.changes.outputs.sourceSetsNative == 'true' || needs.changes.outputs.sourceSetsUnknown == 'true'
+    if: github.event_name != 'pull_request' || needs.changes.outputs.sourceSetsIos == 'true' || needs.changes.outputs.sourceSetsUnknown == 'true'
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
