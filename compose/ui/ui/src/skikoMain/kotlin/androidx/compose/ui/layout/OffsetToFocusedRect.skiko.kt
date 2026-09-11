@@ -168,6 +168,8 @@ private class OffsetToFocusedRectNode(
     private var startOffset = IntOffset.Zero
     private var offsetProgress = 1f
     private var animationJob: Job? = null
+    private var canSettleOffset = false
+    private var isSettlingOffset = false
 
     override val shouldAutoInvalidate: Boolean = false
 
@@ -211,6 +213,8 @@ private class OffsetToFocusedRectNode(
         constraints: Constraints,
     ): MeasureResult {
         val placeable = measurable.measure(constraints)
+        canSettleOffset = !isSettlingOffset
+        isSettlingOffset = false
         currentOffset = calculatedOffset()
         return layout(placeable.width, placeable.height) {
             placeable.place(currentOffset)
@@ -218,11 +222,19 @@ private class OffsetToFocusedRectNode(
     }
 
     override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
-        // The first point at which the focus rect contains both the new offset and a  simultaneous
+        // The first point at which the focus rect contains both the new offset and a simultaneous
         // child-layout change (e.g. imePadding). Settle only when that changes the offset.
+        // The settling measure pass itself doesn't settle again, so the offset can't be
+        // recalculated indefinitely.
+        if (!canSettleOffset) {
+            return
+        }
+        canSettleOffset = false
+
         val settledOffset = calculatedOffset()
         if (settledOffset != currentOffset) {
             currentOffset = settledOffset
+            isSettlingOffset = true
             invalidateMeasurement()
         }
     }
