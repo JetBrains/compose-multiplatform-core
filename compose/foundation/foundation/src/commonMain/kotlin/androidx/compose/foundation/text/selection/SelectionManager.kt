@@ -1540,7 +1540,12 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
                     ComposeFoundationFlags.isMouseSelectionBetweenTextEnabled && !isInTouchMode,
             )
 
-        sortedSelectables.fastForEach { it.appendSelectableInfoToBuilder(builder) }
+        sortedSelectables.fastForEachIndexed { i, selectable ->
+            selectable.appendSelectableInfoToBuilder(
+                builder = builder,
+                isLast = i == sortedSelectables.lastIndex,
+            )
+        }
 
         return builder.build()
     }

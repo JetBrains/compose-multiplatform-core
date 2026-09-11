@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
@@ -286,6 +287,32 @@ class SelectionContainerTest {
 
         assertEquals("Text1Text2", selectionState.selectedText)
         assertTrue(selectionState.selection!!.handlesCrossed)
+    }
+
+    // https://youtrack.jetbrains.com/issue/CMP-10673
+    @Test
+    fun selectWithMouseInsideAndDragRightUpAndOutside() = androidx.compose.ui.test.v2.runComposeUiTest {
+        val selectionState = SelectionState()
+        setContent {
+            SelectionContainer(selectionState) {
+                Column(Modifier.testTag("column").padding(50.dp)) {
+                    BasicText(
+                        "Lorem\nipsum\ndolor",
+                        modifier = Modifier.testTag("text1")
+                    )
+                    // The 2nd text is needed to reproduce the issue
+                    BasicText("Hello")
+                }
+            }
+        }
+
+        onNodeWithTag("text1").performMouseInput {
+            updatePointerTo(center)
+            press()
+            moveTo(topRight + Offset(10f, 0f))
+        }
+
+        waitForIdle()
     }
 }
 
