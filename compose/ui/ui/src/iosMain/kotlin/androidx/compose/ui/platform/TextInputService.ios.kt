@@ -173,7 +173,7 @@ internal class TextInputService(
                 onCutRequested: (() -> Unit)?,
                 onSelectAllRequested: (() -> Unit)?
             ) {
-                if (toolbarConnection == null) {
+                if (currentInputConnection == null && selectionContainerConnection == null) {
                     // Entry point for showing the context menu in SelectionContainer scenarios, where
                     // there is no active text input session. iOS requires a UIView that can become first
                     // responder in order to host the context menu, so we create a dedicated connection
