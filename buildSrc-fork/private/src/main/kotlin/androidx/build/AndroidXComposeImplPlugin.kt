@@ -29,6 +29,7 @@ import org.gradle.api.artifacts.type.ArtifactTypeDefinition
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.file.FileCollection
 import org.gradle.kotlin.dsl.getByType
+import org.jetbrains.androidx.build.configureSwiftCompatibilityLinking
 import org.jetbrains.kotlin.gradle.plugin.CompilerPluginConfig
 import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
@@ -42,6 +43,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile
 /** Plugin to apply common configuration for Compose projects. */
 class AndroidXComposeImplPlugin : Plugin<Project> {
     override fun apply(project: Project) {
+        project.configureSwiftCompatibilityLinking()
+
         project.plugins.configureEach { plugin ->
             when (plugin) {
                 is AppPlugin,
