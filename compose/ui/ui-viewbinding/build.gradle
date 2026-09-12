@@ -28,7 +28,6 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -52,11 +51,10 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2020"
     description = "Compose integration with ViewBinding"
-    legacyDisableKotlinStrictApiMode = true
     samples(project(":compose:ui:ui-viewbinding:ui-viewbinding-samples"))
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(37) }
     namespace = "androidx.compose.ui.viewbinding"
 }

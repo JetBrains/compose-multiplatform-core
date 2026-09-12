@@ -31,6 +31,7 @@ class DrawOnlyInvalidationTest {
      * invalidation is also flushed by `waitForIdle`. Android-verified:
      * `afterSetContent=[0] afterFirstWait=[0] afterMutate=[0] afterWaitAfterMutate=[0, 1]`.
      */
+    @Suppress("DEPRECATION")
     @Test
     fun pausedClock_drawInvalidationIsFlushedByWaitForIdle() = runComposeUiTest {
         mainClock.autoAdvance = false
@@ -54,6 +55,7 @@ class DrawOnlyInvalidationTest {
      * Paused clock, measure invalidation (state read in measure): flushed by `waitForIdle`.
      * Android-verified: draw count 1 -> 2.
      */
+    @Suppress("DEPRECATION")
     @Test
     fun pausedClock_measureInvalidationIsFlushedByWaitForIdle() = runComposeUiTest {
         mainClock.autoAdvance = false
@@ -81,6 +83,7 @@ class DrawOnlyInvalidationTest {
      * pending (and, per [MainTestClock], pending recompositions are not awaited when autoAdvance is
      * false). Android-verified: `[0] -> [0]`.
      */
+    @Suppress("DEPRECATION")
     @Test
     fun pausedClock_recompositionIsNotFlushedWithoutAdvancingClock() = runComposeUiTest {
         mainClock.autoAdvance = false
@@ -101,6 +104,7 @@ class DrawOnlyInvalidationTest {
     }
 
     /** Running clock (autoAdvance=true, the default): draw-only invalidation flushed. */
+    @Suppress("DEPRECATION")
     @Test
     fun runningClock_drawOnlyInvalidationIsFlushed() = runComposeUiTest {
         val state = mutableStateOf(0)

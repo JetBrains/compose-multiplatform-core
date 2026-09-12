@@ -55,6 +55,7 @@ class LazyCustomKeysTest {
         100.toDp()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun itemsWithKeysAreLaidOutCorrectly() = runSkikoComposeUiTest {
         val list = listOf(MyClass(0), MyClass(1), MyClass(2))
@@ -70,6 +71,7 @@ class LazyCustomKeysTest {
         assertItems("0", "1", "2")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun removing_statesAreMoved() = runSkikoComposeUiTest {
         var list by mutableStateOf(listOf(MyClass(0), MyClass(1), MyClass(2)))
@@ -89,6 +91,7 @@ class LazyCustomKeysTest {
         assertItems("0", "2")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun reordering_statesAreMoved_list() = runSkikoComposeUiTest {
         testReordering { list ->
@@ -98,6 +101,7 @@ class LazyCustomKeysTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun reordering_statesAreMoved_list_indexed() = runSkikoComposeUiTest {
         testReordering { list ->
@@ -107,6 +111,7 @@ class LazyCustomKeysTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun reordering_statesAreMoved_array() = runSkikoComposeUiTest {
         testReordering { list ->
@@ -117,6 +122,7 @@ class LazyCustomKeysTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun reordering_statesAreMoved_array_indexed() = runSkikoComposeUiTest {
         testReordering { list ->
@@ -127,6 +133,7 @@ class LazyCustomKeysTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun reordering_statesAreMoved_itemsWithCount() = runSkikoComposeUiTest {
         testReordering { list ->
@@ -136,6 +143,7 @@ class LazyCustomKeysTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun fullyReplacingTheList() = runSkikoComposeUiTest {
         var list by mutableStateOf(listOf(MyClass(0), MyClass(1), MyClass(2)))
@@ -156,6 +164,7 @@ class LazyCustomKeysTest {
         assertItems("3", "4", "5", "6")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun keepingOneItem() = runSkikoComposeUiTest {
         var list by mutableStateOf(listOf(MyClass(0), MyClass(1), MyClass(2)))
@@ -176,6 +185,7 @@ class LazyCustomKeysTest {
         assertItems("1")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun keepingOneItemAndAddingMore() = runSkikoComposeUiTest {
         var list by mutableStateOf(listOf(MyClass(0), MyClass(1), MyClass(2)))
@@ -196,6 +206,7 @@ class LazyCustomKeysTest {
         assertItems("1", "3")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun mixingKeyedItemsAndNot() = runSkikoComposeUiTest {
         testReordering { list ->
@@ -208,6 +219,7 @@ class LazyCustomKeysTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun updatingTheDataSetIsCorrectlyApplied() = runSkikoComposeUiTest {
         val state = mutableStateOf(emptyList<Int>())
@@ -235,6 +247,7 @@ class LazyCustomKeysTest {
         assertItems("2", "4", "6", "1", "3", "5")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun reordering_usingMutableStateListOf() = runSkikoComposeUiTest {
         val list = mutableStateListOf(MyClass(0), MyClass(1), MyClass(2))
@@ -254,6 +267,7 @@ class LazyCustomKeysTest {
         assertItems("0", "2", "1")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun keysInLazyListItemInfoAreCorrect() = runSkikoComposeUiTest {
         val list = listOf(MyClass(0), MyClass(1), MyClass(2))
@@ -275,6 +289,7 @@ class LazyCustomKeysTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun keysInLazyListItemInfoAreCorrectAfterReordering() = runSkikoComposeUiTest {
         var list by mutableStateOf(listOf(MyClass(0), MyClass(1), MyClass(2)))
@@ -300,6 +315,7 @@ class LazyCustomKeysTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun addingItemsBeforeWithoutKeysIsMaintainingTheIndex() = runSkikoComposeUiTest {
         var list by mutableStateOf((10..15).toList())
@@ -323,6 +339,7 @@ class LazyCustomKeysTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun addingItemsBeforeKeepingThisItemFirst() = runSkikoComposeUiTest {
         var list by mutableStateOf((10..15).toList())
@@ -349,6 +366,7 @@ class LazyCustomKeysTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun addingItemsRightAfterKeepingThisItemFirst() = runSkikoComposeUiTest {
         var list by mutableStateOf((0..5).toList() + (10..15).toList())
@@ -375,6 +393,7 @@ class LazyCustomKeysTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun addingItemsBeforeWhileCurrentItemIsNotInTheBeginning() = runSkikoComposeUiTest {
         var list by mutableStateOf((10..30).toList())
@@ -401,6 +420,7 @@ class LazyCustomKeysTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun removingTheCurrentItemMaintainsTheIndex() = runSkikoComposeUiTest {
         var list by mutableStateOf((0..20).toList())

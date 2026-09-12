@@ -27,6 +27,7 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalTestApi::class)
 class DepthSortedSetTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun sortedByDepth() = runSkikoComposeUiTest {
         val owner = MockOwner()
@@ -52,6 +53,7 @@ class DepthSortedSetTest {
         assertTrue(set.isEmpty())
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun sortedByDepthWithItemsOfTheSameDepth() = runSkikoComposeUiTest {
         val owner = MockOwner()
@@ -82,6 +84,7 @@ class DepthSortedSetTest {
         assertTrue(set.isEmpty())
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun modifyingSetWhileWeIterate() = runSkikoComposeUiTest {
         val owner = MockOwner()
@@ -129,6 +132,7 @@ class DepthSortedSetTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun modifyingDepthAfterAddingThrows() = runSkikoComposeUiTest {
         val owner = MockOwner()

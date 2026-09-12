@@ -27,7 +27,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
@@ -49,7 +48,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import kotlin.test.Ignore
 import kotlin.test.Test
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalTestApi::class)
+@OptIn(ExperimentalTestApi::class)
 @Ignore // TODO: these test can be applied for targets supporting touch and virtual keyboard
 class CoreTextFieldInputServiceIntegrationTest {
 
@@ -58,6 +57,7 @@ class CoreTextFieldInputServiceIntegrationTest {
     @Suppress("DEPRECATION")
     private val textInputService = androidx.compose.ui.text.input.TextInputService(platformTextInputService)
 
+    @Suppress("DEPRECATION")
     @Test
     fun textField_ImeOptions_isPassedTo_platformTextInputService() = runSkikoComposeUiTest {
         val testTag = "KeyboardOption"
@@ -94,6 +94,7 @@ class CoreTextFieldInputServiceIntegrationTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textField_stopsThenStartsInput_whenFocusMovesBetweenTextFields() = runSkikoComposeUiTest {
         val value = TextFieldValue("abc")
@@ -130,6 +131,7 @@ class CoreTextFieldInputServiceIntegrationTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun keyboardShownOnInitialClick() = runSkikoComposeUiTest {
         // Arrange.
@@ -148,6 +150,7 @@ class CoreTextFieldInputServiceIntegrationTest {
         runOnIdle { assertThat(platformTextInputService.keyboardShown).isTrue() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun keyboardShownOnInitialFocus() = runSkikoComposeUiTest {
         // Arrange.
@@ -167,6 +170,7 @@ class CoreTextFieldInputServiceIntegrationTest {
         runOnIdle { assertThat(platformTextInputService.keyboardShown).isTrue() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun keyboardHiddenWhenFocusIsLost() = runSkikoComposeUiTest {
         // Arrange.
@@ -189,6 +193,7 @@ class CoreTextFieldInputServiceIntegrationTest {
         runOnIdle { assertThat(platformTextInputService.keyboardShown).isFalse() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun keyboardShownAfterDismissingKeyboardAndClickingAgain() = runSkikoComposeUiTest {
         // Arrange.
@@ -210,6 +215,7 @@ class CoreTextFieldInputServiceIntegrationTest {
         runOnIdle { assertThat(platformTextInputService.keyboardShown).isTrue() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun keyboardStaysVisibleWhenMovingFromOneTextFieldToAnother() = runSkikoComposeUiTest {
         // Arrange.
@@ -238,6 +244,7 @@ class CoreTextFieldInputServiceIntegrationTest {
         runOnIdle { assertThat(platformTextInputService.keyboardShown).isTrue() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun keyboardHiddenWhenFieldRemovedFromComposition() = runSkikoComposeUiTest {
         // Arrange.
@@ -263,6 +270,7 @@ class CoreTextFieldInputServiceIntegrationTest {
         runOnIdle { assertThat(platformTextInputService.keyboardShown).isFalse() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun keyboardHiddenWhenFieldChangedToDisabled() = runSkikoComposeUiTest {
         // Arrange.
@@ -287,6 +295,7 @@ class CoreTextFieldInputServiceIntegrationTest {
         runOnIdle { assertThat(platformTextInputService.keyboardShown).isFalse() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun keyboardHiddenWhenFieldChangedToReadOnly() = runSkikoComposeUiTest {
         // Arrange.

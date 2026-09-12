@@ -94,6 +94,7 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
     var isClearFocusOnMouseDownEnabled: Boolean by composePanel::isClearFocusOnMouseDownEnabled
 
     init {
+        disableDoubleBuffering()  // To reduce memory use
         contentPane.add(composePanel)
     }
 

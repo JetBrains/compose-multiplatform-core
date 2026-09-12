@@ -51,6 +51,7 @@ import kotlinx.coroutines.launch
 
 class LegacyPlatformTextInputServiceAdapterTest {
     @OptIn(ExperimentalTestApi::class, ExperimentalComposeUiApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun testRequestValuesUpdate() = runComposeUiTest {
         var value: TextFieldValue? = null
@@ -124,6 +125,7 @@ class LegacyPlatformTextInputServiceAdapterTest {
     }
 
     @OptIn(ExperimentalComposeUiApi::class, ExperimentalTestApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun testTextEditing() = runComposeUiTest {
         var text by mutableStateOf(TextFieldValue(""))

@@ -16,9 +16,11 @@
 
 package androidx.compose.ui.viewinterop
 
+import androidx.compose.runtime.CompositionContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.interop.UIKitView
 import androidx.compose.ui.interop.UIKitViewController
+import androidx.compose.ui.scene.attachedCompositionContext
 import androidx.compose.ui.semantics.AccessibilityKey
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.semantics
@@ -51,7 +53,8 @@ internal actual typealias InteropViewGroup = UIView
  * @see UIKitInteropInteractionMode
  */
 internal class InteropWrappingView(
-    interactionMode: UIKitInteropInteractionMode?
+    interactionMode: UIKitInteropInteractionMode?,
+    compositionContext: CompositionContext,
 ) : CMPInteropWrappingView(frame = CGRectZero.readValue()) {
     var actualAccessibilityContainer: Any? = null
     var isAccessibilityFocusable: () -> Boolean = { true }
@@ -65,6 +68,7 @@ internal class InteropWrappingView(
 
     init {
         userInteractionEnabled = interactionMode != null
+        attachedCompositionContext = compositionContext
     }
 
     private fun updateAccessibilityElements() {

@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.input.key
 
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.google.common.truth.Truth.assertThat
 import java.awt.event.KeyEvent
@@ -25,9 +24,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-@OptIn(ExperimentalComposeUiApi::class)
 @RunWith(JUnit4::class)
 class KeyTest {
+    @Suppress("DEPRECATION")
     @get:Rule
     val rule = createComposeRule()
 

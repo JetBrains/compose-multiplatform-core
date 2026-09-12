@@ -17,7 +17,6 @@
 package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.ExperimentalComposeUiApi
 import kotlin.js.js
 import kotlinx.browser.document
 import org.w3c.dom.Element
@@ -27,9 +26,8 @@ import org.w3c.dom.HTMLElement
 import org.w3c.dom.OPEN
 import org.w3c.dom.ShadowRootInit
 import org.w3c.dom.ShadowRootMode
+
 /**
- * EXPERIMENTAL! Might be deleted or changed in the future!
- *
  * Creates the composition in HTML canvas created in parent container identified by [viewportContainerId] id.
  * This size of canvas is adjusted with the size of the container
  *
@@ -39,7 +37,6 @@ import org.w3c.dom.ShadowRootMode
  * See [ComposeViewportConfiguration] for available options.
  * @param content - The Composable content to be rendered on the `<canvas>` element.
  */
-@ExperimentalComposeUiApi
 fun ComposeViewport(
     viewportContainerId: String? = null,
     configure: ComposeViewportConfiguration.() -> Unit = {},
@@ -57,8 +54,6 @@ fun ComposeViewport(
 }
 
 /**
- * EXPERIMENTAL! Might be deleted or changed in the future!
- *
  * Creates the composition in HTML canvas created in parent container identified by [viewportContainer] Element.
  * This size of canvas is adjusted with the size of the container
  *
@@ -77,7 +72,6 @@ fun ComposeViewport(
  *
  * Note: The viewportContainer will be cleared on composition creation.
  */
-@ExperimentalComposeUiApi
 fun ComposeViewport(
     viewportContainer: Element,
     configure: ComposeViewportConfiguration.() -> Unit = {},
@@ -172,8 +166,6 @@ fun ComposeViewport(
     canvas.style.setProperty("touch-action", "pan-x pan-y") // allow the browser to scroll when compose is not scrolling
     appContainer.appendChild(canvas)
 
-
-
     //a11y container
     val configuration = ComposeViewportConfiguration().apply(configure)
     val a11yContainerElement = if (configuration.isA11YEnabled) {
@@ -200,9 +192,13 @@ fun ComposeViewport(
     }
     positioningContainer.appendChild(interopContainerElement)
 
+    // To keep DOM focus on the canvas after Tabbing out of the interop container:
+    positioningContainer.appendChild(createHtmlFocusDecoy(canvas))
+
     val composeWindow = ComposeWindow(
         canvas = canvas,
         rootNode = shadowRoot,
+        viewportContainer = viewportContainer,
         layerRoot = appContainer,
         interopContainerElement = interopContainerElement,
         a11yContainerElement = a11yContainerElement,
@@ -229,3 +225,27 @@ private const val WEBGL2_NOT_SUPPORTED_MSG = "This application requires WebGL2. 
     "Please ensure your browser is updated and hardware acceleration is enabled in the browser settings."
 private fun isWebGL2Supported(): Boolean =
     js("!!document.createElement('canvas').getContext('webgl2')")
+
+/**
+ * Creates a hidden focusable decoy element to be placed after the interop container in DOM order.
+ *
+ * When Tab is pressed on the last HTML interop element, the browser would normally
+ * move focus to the address bar since no further focusable elements exist.
+ * This decoy intercepts that focus and immediately redirects it to the canvas,
+ * allowing Compose's focus manager to continue navigation to the next Compose element.
+ */
+private fun createHtmlFocusDecoy(canvas: HTMLCanvasElement): HTMLDivElement =
+    (document.createElement("div") as HTMLDivElement).apply {
+        tabIndex = 0
+        setAttribute("aria-hidden", "true") // Usually it's an antipattern for a focusable element, but it's okay for a decoy element.
+        style.apply {
+            position = "absolute" // to remove the decoy completely out of the document layout tree
+            width = "0"
+            height = "0"
+            outline = "none"
+            setProperty("pointer-events", "none")
+        }
+        addEventListener("focus") {
+            canvas.focus()
+        }
+    }

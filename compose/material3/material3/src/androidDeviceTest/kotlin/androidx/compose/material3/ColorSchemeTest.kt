@@ -16,13 +16,16 @@
 
 package androidx.compose.material3
 
+import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
+import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,7 +35,7 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 class ColorSchemeTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     /**
      * Test for switching between provided [ColorScheme]s, ensuring that the existing colors objects
@@ -224,6 +227,21 @@ class ColorSchemeTest {
                 )
                 .isAtLeast(expectedContrastValue)
         }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.S)
+    fun dynamicColorSchemes_resolveCorrectly() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val lightDynamicScheme = dynamicLightColorScheme(context)
+        val darkDynamicScheme = dynamicDarkColorScheme(context)
+
+        assertThat(lightDynamicScheme).isNotNull()
+        assertThat(darkDynamicScheme).isNotNull()
+
+        // Verify they load colors (not fallback black color objects)
+        assertThat(lightDynamicScheme.primary).isNotEqualTo(Color.Black)
+        assertThat(darkDynamicScheme.primary).isNotEqualTo(Color.Black)
     }
 
     @Composable

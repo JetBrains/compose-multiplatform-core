@@ -45,6 +45,7 @@ class OwnerSnapshotObserverTest {
      * [The issue where the bug was originally discovered](https://youtrack.jetbrains.com/issue/COMPOSE-595).
      * Also see [Slack discussion](https://kotlinlang.slack.com/archives/G010KHY484C/p1700136697942499).
      */
+    @Suppress("DEPRECATION")
     @Test
     fun onObserveReadsChangedCalledBeforeOnDispose() = runComposeUiTest {
         var value by mutableIntStateOf(0)

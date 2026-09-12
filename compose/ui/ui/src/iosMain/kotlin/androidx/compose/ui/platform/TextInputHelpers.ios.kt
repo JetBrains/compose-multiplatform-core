@@ -25,8 +25,8 @@ import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.toCGRect
 import kotlinx.cinterop.CValue
 import org.jetbrains.skia.BreakIterator
-import org.jetbrains.skia.BreakIterator.Companion.makeWordInstance
 import platform.CoreGraphics.CGRect
+import platform.CoreGraphics.CGRectMake
 import platform.Foundation.NSCharacterSet
 import platform.UIKit.NSWritingDirection
 import platform.UIKit.NSWritingDirectionLeftToRight
@@ -47,7 +47,9 @@ import platform.UIKit.UITextStorageDirectionForward
 import platform.UIKit.UITextWritingDirection
 
 internal interface TextEditingDelegate {
-    var inputTraits: SkikoUITextInputTraits
+    val isInteractive: Boolean
+
+    val inputTraits: SkikoUITextInputTraits
 
     fun onResignFocus()
 
@@ -152,12 +154,7 @@ internal interface TextEditingDelegate {
      * Returned value must be in range between 0 and length of the text (inclusive).
      */
     fun verticalPositionFromPosition(position: Int, verticalOffset: Int): Int?
-}
 
-/**
- * Extension of [TextEditingDelegate] for the Native iOS Text Input path.
- */
-internal interface NativeTextEditingDelegate : TextEditingDelegate {
     /**
      * Returns the caret rectangle for a given text position.
      * https://developer.apple.com/documentation/uikit/uitextinput/caretrect(for:)
@@ -166,7 +163,12 @@ internal interface NativeTextEditingDelegate : TextEditingDelegate {
      * if the position is invalid.
      */
     fun caretDpRectForPosition(position: Int): DpRect?
+}
 
+/**
+ * Extension of [TextEditingDelegate] for the Native iOS Text Input path.
+ */
+internal interface NativeTextEditingDelegate : TextEditingDelegate {
     /**
      * Returns the selection rectangles that enclose a range of text.
      * https://developer.apple.com/documentation/uikit/uitextinput/selectionrects(for:)
@@ -215,7 +217,67 @@ internal interface NativeTextEditingDelegate : TextEditingDelegate {
      * @param farthestInDirection A direction constant (left, right, up, or down).
      * @return The farthest position within the range in the given direction, or `null` if none.
      */
-    fun positionWithinRange(range: TextRange, farthestInDirection: PlatformTextLayoutDirection): Int?
+    fun positionWithinRange(range: TextRange, farthestInDirection: TextLayoutDirection): Int?
+}
+
+internal object EmptyTextEditingDelegate : NativeTextEditingDelegate {
+    override val isInteractive: Boolean = false
+
+    override val inputTraits: SkikoUITextInputTraits = EmptyInputTraits
+
+    override fun onResignFocus() = Unit
+
+    override fun beginFloatingCursor(offset: DpOffset) = Unit
+
+    override fun updateFloatingCursor(offset: DpOffset) = Unit
+
+    override fun endFloatingCursor() = Unit
+
+    override fun hasText(): Boolean = false
+
+    override fun insertText(text: String) = Unit
+
+    override fun deleteBackward() = Unit
+
+    override fun endOfDocument(): Int = 0
+
+    override fun getSelectedTextRange(): TextRange? = null
+
+    override fun setSelectedTextRange(range: TextRange?) = Unit
+
+    override fun selectAll() = Unit
+
+    override fun textInRange(range: TextRange): String? = null
+
+    override fun replaceRange(range: TextRange, text: String) = Unit
+
+    override fun setMarkedText(markedText: String?, selectedRange: TextRange) = Unit
+
+    override fun markedTextRange(): TextRange? = null
+
+    override fun unmarkText() = Unit
+
+    override fun positionFromPosition(position: Int, offset: Int): Int? = null
+
+    override fun verticalPositionFromPosition(position: Int, verticalOffset: Int): Int? = null
+
+    override fun caretDpRectForPosition(position: Int): DpRect? = null
+
+    override fun selectionDpRectsForRange(range: TextRange): List<TextInputSelectionRect> =
+        emptyList()
+
+    override fun firstSelectionRectForRange(range: TextRange): DpRect? = null
+
+    override fun closestPositionToPoint(point: DpOffset): Int? = null
+
+    override fun closestPositionToPoint(point: DpOffset, withinRange: TextRange): Int? = null
+
+    override fun characterRangeAtPoint(point: DpOffset): TextRange? = null
+
+    override fun positionWithinRange(
+        range: TextRange,
+        farthestInDirection: TextLayoutDirection
+    ): Int? = null
 }
 
 internal fun TextEditingDelegate.selectTextNearCursor() {
@@ -226,6 +288,13 @@ internal fun TextEditingDelegate.selectTextNearCursor() {
     if (range == selection) return
 
     setSelectedTextRange(range)
+}
+
+internal fun TextEditingDelegate.caretRectForPosition(position: UITextPosition): CValue<CGRect> {
+    val fallbackRect = CGRectMake(x = 1.0, y = 1.0, width = 0.0, height = 1.0)
+    val position = (position as? TextInputPosition)?.position ?: return fallbackRect
+    val caretDpRect = caretDpRectForPosition(position)
+    return caretDpRect?.toCGRect() ?: fallbackRect
 }
 
 /**
@@ -267,7 +336,7 @@ private fun wordSelectionRangeForCursor(text: String, cursor: Int): TextRange? {
 
 /** Returns the boundaries of the word containing the visible character at [offset]. */
 private fun wordRangeContaining(text: String, offset: Int): TextRange {
-    val iterator = makeWordInstance()
+    val iterator = BreakIterator.makeWordInstance()
     iterator.setText(text)
     val end = iterator.following(offset).takeIf { it != BreakIterator.DONE } ?: text.length
     val start = iterator.preceding(end).takeIf { it != BreakIterator.DONE } ?: 0
@@ -276,7 +345,7 @@ private fun wordRangeContaining(text: String, offset: Int): TextRange {
 
 /** Returns the start boundary of the word that ends at [wordEnd]. */
 private fun wordStartPreceding(text: String, wordEnd: Int): Int {
-    val iterator = makeWordInstance()
+    val iterator = BreakIterator.makeWordInstance()
     iterator.setText(text)
     return iterator.preceding(wordEnd).takeIf { it != BreakIterator.DONE } ?: 0
 }
@@ -463,15 +532,15 @@ internal class TextInputStringTokenizer(
 }
 
 // Kotlin wrapper for UITextLayoutDirection
-internal enum class PlatformTextLayoutDirection(val platform: UITextLayoutDirection) {
+internal enum class TextLayoutDirection(val platform: UITextLayoutDirection) {
     Left(UITextLayoutDirectionLeft),
     Right(UITextLayoutDirectionRight),
     Up(UITextLayoutDirectionUp),
     Down(UITextLayoutDirectionDown);
 
     companion object {
-        operator fun invoke(platform: UITextLayoutDirection): PlatformTextLayoutDirection? {
-            return entries.find { it.platform == platform }
+        operator fun invoke(uiTextLayoutDirection: UITextLayoutDirection): TextLayoutDirection? {
+            return entries.find { it.platform == uiTextLayoutDirection }
         }
     }
 }

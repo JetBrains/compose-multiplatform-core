@@ -227,10 +227,11 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             Job()
     )
 
-    private val surface = Surface.makeRasterN32Premul(width, height)
-
+    // Lazy on purpose: on JS Skia is only usable after onSkikoReady
+    private val surface by lazy { Surface.makeRasterN32Premul(width, height) }
     @OptIn(InternalComposeApi::class)
     private val canvasHolder : SkiaCanvasHolder = SkiaCanvasHolder(surface.canvas)
+    
     private val size = IntSize(width, height)
 
     @InternalComposeUiApi
@@ -264,21 +265,23 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
                 .plus(runTestContext)
                 .plus(testDispatcher)
 
-        // Note: on web this call returns immediately (it returns a Promise),
-        return runTest(
-            timeout = testTimeout,
-            context = combinedRunTestCoroutineContext
-        ) {
-            composeRootRegistry.withRegistry {
-                withScene {
-                    withRenderLoop {
-                        // MonotonicFrameClock is necessary. See the CL for details:
-                        // https://android-review.googlesource.com/c/platform/frameworks/support/+/3284298
-                        // > Anything that might result in animation may require the MonotonicFrameClock,
-                        // > and to get the timing right it should be the clock provided by the Recomposer's effect context
-                        // It's covered by SkikoComposeUiTestTest.canDriveAnimationsFromTest.
-                        frameRecomposer.withMonotonicFrameClock {
-                            block()
+        return onSkikoReady {
+            // Note: on web this call returns immediately (it returns a Promise),
+            runTest(
+                timeout = testTimeout,
+                context = combinedRunTestCoroutineContext
+            ) {
+                composeRootRegistry.withRegistry {
+                    withScene {
+                        withRenderLoop {
+                            // MonotonicFrameClock is necessary. See the CL for details:
+                            // https://android-review.googlesource.com/c/platform/frameworks/support/+/3284298
+                            // > Anything that might result in animation may require the MonotonicFrameClock,
+                            // > and to get the timing right it should be the clock provided by the Recomposer's effect context
+                            // It's covered by SkikoComposeUiTestTest.canDriveAnimationsFromTest.
+                            frameRecomposer.withMonotonicFrameClock {
+                                block()
+                            }
                         }
                     }
                 }

@@ -9,8 +9,6 @@ package androidx.compose.ui.test {
     method public static androidx.compose.ui.test.SemanticsNodeInteraction performFirstLinkClick(androidx.compose.ui.test.SemanticsNodeInteraction, optional kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.LinkAnnotation>,java.lang.Boolean> predicate);
     method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction! performFirstLinkClick$default(androidx.compose.ui.test.SemanticsNodeInteraction!, kotlin.jvm.functions.Function1!, int, Object!);
     method @Deprecated public static androidx.compose.ui.test.SemanticsNodeInteraction performGesture(androidx.compose.ui.test.SemanticsNodeInteraction, kotlin.jvm.functions.Function1<? super androidx.compose.ui.test.GestureScope,kotlin.Unit> block);
-    method @KotlinOnly public static void performIndirectPointerInput(androidx.compose.ui.test.SemanticsNodeInteractionsProvider, androidx.compose.ui.input.indirect.IndirectPointerEventPrimaryDirectionalMotionAxis indirectPointerEventPrimaryDirectionalMotionAxis, androidx.compose.ui.unit.IntSize inputDeviceSize, kotlin.jvm.functions.Function1<androidx.compose.ui.test.IndirectPointerInjectionScope,kotlin.Unit> block);
-    method @BytecodeOnly public static void performIndirectPointerInput-O3Q2Zgs(androidx.compose.ui.test.SemanticsNodeInteractionsProvider, int, long, kotlin.jvm.functions.Function1<? super androidx.compose.ui.test.IndirectPointerInjectionScope!,kotlin.Unit!>);
     method public static androidx.compose.ui.test.SemanticsNodeInteraction performKeyInput(androidx.compose.ui.test.SemanticsNodeInteraction, kotlin.jvm.functions.Function1<? super androidx.compose.ui.test.KeyInjectionScope,kotlin.Unit> block);
     method public static androidx.compose.ui.test.SemanticsNodeInteraction performMouseInput(androidx.compose.ui.test.SemanticsNodeInteraction, kotlin.jvm.functions.Function1<? super androidx.compose.ui.test.MouseInjectionScope,kotlin.Unit> block);
     method public static androidx.compose.ui.test.SemanticsNodeInteraction performMultiModalInput(androidx.compose.ui.test.SemanticsNodeInteraction, kotlin.jvm.functions.Function1<? super androidx.compose.ui.test.MultiModalInjectionScope,kotlin.Unit> block);
@@ -24,6 +22,8 @@ package androidx.compose.ui.test {
     method public static androidx.compose.ui.test.SemanticsNodeInteraction performTouchInput(androidx.compose.ui.test.SemanticsNodeInteraction, kotlin.jvm.functions.Function1<? super androidx.compose.ui.test.TouchInjectionScope,kotlin.Unit> block);
     method public static androidx.compose.ui.test.SemanticsNodeInteraction performTrackpadInput(androidx.compose.ui.test.SemanticsNodeInteraction, kotlin.jvm.functions.Function1<? super androidx.compose.ui.test.TrackpadInjectionScope,kotlin.Unit> block);
     method public static androidx.compose.ui.test.SemanticsNodeInteraction requestFocus(androidx.compose.ui.test.SemanticsNodeInteraction);
+    method @KotlinOnly public static void sendIndirectPointerInput(androidx.compose.ui.test.SemanticsNodeInteractionsProvider, androidx.compose.ui.input.indirect.IndirectPointerEventPrimaryDirectionalMotionAxis indirectPointerEventPrimaryDirectionalMotionAxis, androidx.compose.ui.unit.IntSize inputDeviceSize, kotlin.jvm.functions.Function1<androidx.compose.ui.test.IndirectPointerInjectionScope,kotlin.Unit> block);
+    method @BytecodeOnly public static void sendIndirectPointerInput-O3Q2Zgs(androidx.compose.ui.test.SemanticsNodeInteractionsProvider, int, long, kotlin.jvm.functions.Function1<? super androidx.compose.ui.test.IndirectPointerInjectionScope!,kotlin.Unit!>);
     method public static androidx.compose.ui.test.SemanticsNodeInteractionCollection tryPerformAccessibilityChecks(androidx.compose.ui.test.SemanticsNodeInteractionCollection);
   }
 
@@ -31,17 +31,17 @@ package androidx.compose.ui.test {
     method public static androidx.compose.ui.test.SemanticsNodeInteraction tryPerformAccessibilityChecks(androidx.compose.ui.test.SemanticsNodeInteraction);
   }
 
-  @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public sealed nonexhaustive interface AndroidComposeUiTest<A extends androidx.activity.ComponentActivity> extends androidx.compose.ui.test.ComposeUiTest {
+  public sealed nonexhaustive interface AndroidComposeUiTest<A extends androidx.activity.ComponentActivity> extends androidx.compose.ui.test.ComposeUiTest androidx.compose.ui.test.IdlingResourceOwner {
     method @InaccessibleFromKotlin public A? getActivity();
     property public abstract A? activity;
   }
 
-  @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public abstract class AndroidComposeUiTestEnvironment<A extends androidx.activity.ComponentActivity> {
+  public abstract class AndroidComposeUiTestEnvironment<A extends androidx.activity.ComponentActivity> {
     ctor public AndroidComposeUiTestEnvironment();
+    ctor public AndroidComposeUiTestEnvironment(androidx.compose.ui.test.ComposeUiTestConfig config);
     ctor public AndroidComposeUiTestEnvironment(optional kotlin.coroutines.CoroutineContext effectContext);
     ctor @BytecodeOnly public AndroidComposeUiTestEnvironment(kotlin.coroutines.CoroutineContext!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @KotlinOnly public <A extends androidx.activity.ComponentActivity> AndroidComposeUiTestEnvironment(optional kotlin.coroutines.CoroutineContext effectContext, optional kotlin.coroutines.CoroutineContext runTestContext, optional kotlin.time.Duration testTimeout);
-    ctor @BytecodeOnly public AndroidComposeUiTestEnvironment(kotlin.coroutines.CoroutineContext!, kotlin.coroutines.CoroutineContext!, long, boolean, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @BytecodeOnly public AndroidComposeUiTestEnvironment(kotlin.coroutines.CoroutineContext!, kotlin.coroutines.CoroutineContext!, long, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @BytecodeOnly public AndroidComposeUiTestEnvironment(kotlin.coroutines.CoroutineContext!, kotlin.coroutines.CoroutineContext!, long, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public final void cancelAndRecreateRecomposer();
@@ -53,8 +53,16 @@ package androidx.compose.ui.test {
     property public final androidx.compose.ui.test.AndroidComposeUiTest<A> test;
   }
 
+  @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public final class AndroidComposeUiTestFlags {
+    property public boolean isInputModeSetForDeviceTests;
+    field public static final androidx.compose.ui.test.AndroidComposeUiTestFlags INSTANCE;
+    field public static boolean isInputModeSetForDeviceTests;
+  }
+
   public final class AndroidImageHelpers_androidKt {
-    method @RequiresApi(android.os.Build.VERSION_CODES.O) public static androidx.compose.ui.graphics.ImageBitmap captureToImage(androidx.compose.ui.test.SemanticsNodeInteraction);
+    method @BytecodeOnly @Deprecated @RequiresApi(26) public static androidx.compose.ui.graphics.ImageBitmap! captureToImage(androidx.compose.ui.test.SemanticsNodeInteraction!);
+    method @RequiresApi(android.os.Build.VERSION_CODES.O) public static androidx.compose.ui.graphics.ImageBitmap captureToImage(androidx.compose.ui.test.SemanticsNodeInteraction, optional long timeoutMillis);
+    method @BytecodeOnly @RequiresApi(android.os.Build.VERSION_CODES.O) public static androidx.compose.ui.graphics.ImageBitmap! captureToImage$default(androidx.compose.ui.test.SemanticsNodeInteraction!, long, int, Object!);
   }
 
   public final class AssertionsKt {
@@ -83,35 +91,51 @@ package androidx.compose.ui.test {
     method public static androidx.compose.ui.test.SemanticsNodeInteraction assertRangeInfoEquals(androidx.compose.ui.test.SemanticsNodeInteraction, androidx.compose.ui.semantics.ProgressBarRangeInfo value);
     method public static androidx.compose.ui.test.SemanticsNodeInteraction assertTextContains(androidx.compose.ui.test.SemanticsNodeInteraction, String value, optional boolean substring, optional boolean ignoreCase);
     method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction! assertTextContains$default(androidx.compose.ui.test.SemanticsNodeInteraction!, String!, boolean, boolean, int, Object!);
-    method public static androidx.compose.ui.test.SemanticsNodeInteraction assertTextEquals(androidx.compose.ui.test.SemanticsNodeInteraction, String[] values, optional boolean includeEditableText);
-    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction! assertTextEquals$default(androidx.compose.ui.test.SemanticsNodeInteraction!, String![]!, boolean, int, Object!);
+    method @BytecodeOnly @Deprecated public static androidx.compose.ui.test.SemanticsNodeInteraction! assertTextEquals(androidx.compose.ui.test.SemanticsNodeInteraction!, String![]!, boolean);
+    method public static androidx.compose.ui.test.SemanticsNodeInteraction assertTextEquals(androidx.compose.ui.test.SemanticsNodeInteraction, String[] values, optional boolean includeEditableText, optional boolean includeInputText);
+    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction! assertTextEquals$default(androidx.compose.ui.test.SemanticsNodeInteraction!, String![]!, boolean, boolean, int, Object!);
+    method @BytecodeOnly @Deprecated public static androidx.compose.ui.test.SemanticsNodeInteraction! assertTextEquals$default(androidx.compose.ui.test.SemanticsNodeInteraction!, String![]!, boolean, int, Object!);
     method public static androidx.compose.ui.test.SemanticsNodeInteraction assertValueEquals(androidx.compose.ui.test.SemanticsNodeInteraction, String value);
-    method public static boolean isDisplayed(androidx.compose.ui.test.SemanticsNodeInteraction);
-    method public static boolean isNotDisplayed(androidx.compose.ui.test.SemanticsNodeInteraction);
+    method @CheckResult(suggest="assertIsDisplayed()") public static boolean isDisplayed(androidx.compose.ui.test.SemanticsNodeInteraction);
+    method @CheckResult(suggest="assertIsNotDisplayed()") public static boolean isNotDisplayed(androidx.compose.ui.test.SemanticsNodeInteraction);
   }
 
   public final class BoundsAssertionsKt {
     method @KotlinOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertHeightIsAtLeast(androidx.compose.ui.test.SemanticsNodeInteraction, androidx.compose.ui.unit.Dp expectedMinHeight);
     method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertHeightIsAtLeast-3ABfNKs(androidx.compose.ui.test.SemanticsNodeInteraction, float);
-    method @KotlinOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertHeightIsEqualTo(androidx.compose.ui.test.SemanticsNodeInteraction, androidx.compose.ui.unit.Dp expectedHeight);
-    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertHeightIsEqualTo-3ABfNKs(androidx.compose.ui.test.SemanticsNodeInteraction, float);
+    method @KotlinOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertHeightIsEqualTo(androidx.compose.ui.test.SemanticsNodeInteraction, androidx.compose.ui.unit.Dp expectedHeight, optional androidx.compose.ui.unit.Dp tolerance);
+    method @BytecodeOnly @Deprecated public static androidx.compose.ui.test.SemanticsNodeInteraction! assertHeightIsEqualTo-3ABfNKs(androidx.compose.ui.test.SemanticsNodeInteraction!, float);
+    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertHeightIsEqualTo-VpY3zN4(androidx.compose.ui.test.SemanticsNodeInteraction, float, float);
+    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction! assertHeightIsEqualTo-VpY3zN4$default(androidx.compose.ui.test.SemanticsNodeInteraction!, float, float, int, Object!);
     method @KotlinOnly public static void assertIsEqualTo(androidx.compose.ui.unit.Dp, androidx.compose.ui.unit.Dp expected, String subject, optional androidx.compose.ui.unit.Dp tolerance);
     method @BytecodeOnly public static void assertIsEqualTo-cWfXhoU(float, float, String, float);
     method @BytecodeOnly public static void assertIsEqualTo-cWfXhoU$default(float, float, String!, float, int, Object!);
-    method @KotlinOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertLeftPositionInRootIsEqualTo(androidx.compose.ui.test.SemanticsNodeInteraction, androidx.compose.ui.unit.Dp expectedLeft);
-    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertLeftPositionInRootIsEqualTo-3ABfNKs(androidx.compose.ui.test.SemanticsNodeInteraction, float);
-    method @KotlinOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertPositionInRootIsEqualTo(androidx.compose.ui.test.SemanticsNodeInteraction, androidx.compose.ui.unit.Dp expectedLeft, androidx.compose.ui.unit.Dp expectedTop);
-    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertPositionInRootIsEqualTo-VpY3zN4(androidx.compose.ui.test.SemanticsNodeInteraction, float, float);
-    method @KotlinOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertTopPositionInRootIsEqualTo(androidx.compose.ui.test.SemanticsNodeInteraction, androidx.compose.ui.unit.Dp expectedTop);
-    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertTopPositionInRootIsEqualTo-3ABfNKs(androidx.compose.ui.test.SemanticsNodeInteraction, float);
-    method @KotlinOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertTouchHeightIsEqualTo(androidx.compose.ui.test.SemanticsNodeInteraction, androidx.compose.ui.unit.Dp expectedHeight);
-    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertTouchHeightIsEqualTo-3ABfNKs(androidx.compose.ui.test.SemanticsNodeInteraction, float);
-    method @KotlinOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertTouchWidthIsEqualTo(androidx.compose.ui.test.SemanticsNodeInteraction, androidx.compose.ui.unit.Dp expectedWidth);
-    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertTouchWidthIsEqualTo-3ABfNKs(androidx.compose.ui.test.SemanticsNodeInteraction, float);
+    method @KotlinOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertLeftPositionInRootIsEqualTo(androidx.compose.ui.test.SemanticsNodeInteraction, androidx.compose.ui.unit.Dp expectedLeft, optional androidx.compose.ui.unit.Dp tolerance);
+    method @BytecodeOnly @Deprecated public static androidx.compose.ui.test.SemanticsNodeInteraction! assertLeftPositionInRootIsEqualTo-3ABfNKs(androidx.compose.ui.test.SemanticsNodeInteraction!, float);
+    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertLeftPositionInRootIsEqualTo-VpY3zN4(androidx.compose.ui.test.SemanticsNodeInteraction, float, float);
+    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction! assertLeftPositionInRootIsEqualTo-VpY3zN4$default(androidx.compose.ui.test.SemanticsNodeInteraction!, float, float, int, Object!);
+    method @KotlinOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertPositionInRootIsEqualTo(androidx.compose.ui.test.SemanticsNodeInteraction, androidx.compose.ui.unit.Dp expectedLeft, androidx.compose.ui.unit.Dp expectedTop, optional androidx.compose.ui.unit.Dp tolerance);
+    method @BytecodeOnly @Deprecated public static androidx.compose.ui.test.SemanticsNodeInteraction! assertPositionInRootIsEqualTo-VpY3zN4(androidx.compose.ui.test.SemanticsNodeInteraction!, float, float);
+    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertPositionInRootIsEqualTo-qQh39rQ(androidx.compose.ui.test.SemanticsNodeInteraction, float, float, float);
+    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction! assertPositionInRootIsEqualTo-qQh39rQ$default(androidx.compose.ui.test.SemanticsNodeInteraction!, float, float, float, int, Object!);
+    method @KotlinOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertTopPositionInRootIsEqualTo(androidx.compose.ui.test.SemanticsNodeInteraction, androidx.compose.ui.unit.Dp expectedTop, optional androidx.compose.ui.unit.Dp tolerance);
+    method @BytecodeOnly @Deprecated public static androidx.compose.ui.test.SemanticsNodeInteraction! assertTopPositionInRootIsEqualTo-3ABfNKs(androidx.compose.ui.test.SemanticsNodeInteraction!, float);
+    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertTopPositionInRootIsEqualTo-VpY3zN4(androidx.compose.ui.test.SemanticsNodeInteraction, float, float);
+    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction! assertTopPositionInRootIsEqualTo-VpY3zN4$default(androidx.compose.ui.test.SemanticsNodeInteraction!, float, float, int, Object!);
+    method @KotlinOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertTouchHeightIsEqualTo(androidx.compose.ui.test.SemanticsNodeInteraction, androidx.compose.ui.unit.Dp expectedHeight, optional androidx.compose.ui.unit.Dp tolerance);
+    method @BytecodeOnly @Deprecated public static androidx.compose.ui.test.SemanticsNodeInteraction! assertTouchHeightIsEqualTo-3ABfNKs(androidx.compose.ui.test.SemanticsNodeInteraction!, float);
+    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertTouchHeightIsEqualTo-VpY3zN4(androidx.compose.ui.test.SemanticsNodeInteraction, float, float);
+    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction! assertTouchHeightIsEqualTo-VpY3zN4$default(androidx.compose.ui.test.SemanticsNodeInteraction!, float, float, int, Object!);
+    method @KotlinOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertTouchWidthIsEqualTo(androidx.compose.ui.test.SemanticsNodeInteraction, androidx.compose.ui.unit.Dp expectedWidth, optional androidx.compose.ui.unit.Dp tolerance);
+    method @BytecodeOnly @Deprecated public static androidx.compose.ui.test.SemanticsNodeInteraction! assertTouchWidthIsEqualTo-3ABfNKs(androidx.compose.ui.test.SemanticsNodeInteraction!, float);
+    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertTouchWidthIsEqualTo-VpY3zN4(androidx.compose.ui.test.SemanticsNodeInteraction, float, float);
+    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction! assertTouchWidthIsEqualTo-VpY3zN4$default(androidx.compose.ui.test.SemanticsNodeInteraction!, float, float, int, Object!);
     method @KotlinOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertWidthIsAtLeast(androidx.compose.ui.test.SemanticsNodeInteraction, androidx.compose.ui.unit.Dp expectedMinWidth);
     method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertWidthIsAtLeast-3ABfNKs(androidx.compose.ui.test.SemanticsNodeInteraction, float);
-    method @KotlinOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertWidthIsEqualTo(androidx.compose.ui.test.SemanticsNodeInteraction, androidx.compose.ui.unit.Dp expectedWidth);
-    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertWidthIsEqualTo-3ABfNKs(androidx.compose.ui.test.SemanticsNodeInteraction, float);
+    method @KotlinOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertWidthIsEqualTo(androidx.compose.ui.test.SemanticsNodeInteraction, androidx.compose.ui.unit.Dp expectedWidth, optional androidx.compose.ui.unit.Dp tolerance);
+    method @BytecodeOnly @Deprecated public static androidx.compose.ui.test.SemanticsNodeInteraction! assertWidthIsEqualTo-3ABfNKs(androidx.compose.ui.test.SemanticsNodeInteraction!, float);
+    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction assertWidthIsEqualTo-VpY3zN4(androidx.compose.ui.test.SemanticsNodeInteraction, float, float);
+    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsNodeInteraction! assertWidthIsEqualTo-VpY3zN4$default(androidx.compose.ui.test.SemanticsNodeInteraction!, float, float, int, Object!);
     method @KotlinOnly public static androidx.compose.ui.unit.Dp getAlignmentLinePosition(androidx.compose.ui.test.SemanticsNodeInteraction, androidx.compose.ui.layout.AlignmentLine alignmentLine);
     method @BytecodeOnly public static float getAlignmentLinePosition(androidx.compose.ui.test.SemanticsNodeInteraction, androidx.compose.ui.layout.AlignmentLine);
     method public static androidx.compose.ui.unit.DpRect getBoundsInRoot(androidx.compose.ui.test.SemanticsNodeInteraction);
@@ -120,27 +144,24 @@ package androidx.compose.ui.test {
     method public static androidx.compose.ui.unit.DpRect getUnclippedBoundsInRoot(androidx.compose.ui.test.SemanticsNodeInteraction);
   }
 
-  @SuppressCompatibility public final class ComposeTestInteropExt_androidKt {
-    method @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static androidx.compose.ui.test.SemanticsNodeInteractionsProvider onRootWithViewInteraction(androidx.compose.ui.test.ComposeUiTest, androidx.test.espresso.ViewInteraction interaction);
+  public final class ComposeTestInteropExt_androidKt {
+    method public static androidx.compose.ui.test.SemanticsNodeInteractionsProvider onRootWithViewInteraction(androidx.compose.ui.test.ComposeUiTest, androidx.test.espresso.ViewInteraction interaction);
   }
 
   public final class ComposeTimeoutException extends java.lang.Throwable {
     ctor public ComposeTimeoutException(String? message);
   }
 
-  @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public sealed exhaustive interface ComposeUiTest extends androidx.compose.ui.test.SemanticsNodeInteractionsProvider {
-    method public suspend <T> Object? awaitAndRunWhenIdle(kotlin.jvm.functions.Function0<? extends T> action, kotlin.coroutines.Continuation<? super T>);
+  public interface ComposeUiTest extends androidx.compose.ui.test.SemanticsNodeInteractionsProvider {
     method public suspend Object? awaitIdle(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @InaccessibleFromKotlin public androidx.compose.ui.unit.Density getDensity();
     method @InaccessibleFromKotlin public androidx.compose.ui.test.MainTestClock getMainClock();
     method public boolean hasPendingWork();
-    method public void registerIdlingResource(androidx.compose.ui.test.IdlingResource idlingResource);
     method public <T> T runOnIdle(kotlin.jvm.functions.Function0<? extends T> action);
     method public <T> T runOnUiThread(kotlin.jvm.functions.Function0<? extends T> action);
-    method public <T> T runWhenIdle(kotlin.jvm.functions.Function0<? extends T> action);
+    method public <T> T runWithoutImplicitWait(kotlin.jvm.functions.Function0<? extends T> block);
     method public void setContent(kotlin.jvm.functions.Function0<kotlin.Unit> composable);
     method @BytecodeOnly public void setContent(kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
-    method public void unregisterIdlingResource(androidx.compose.ui.test.IdlingResource idlingResource);
     method public void waitForIdle();
     method public void waitUntil(optional String? conditionDescription, optional long timeoutMillis, kotlin.jvm.functions.Function0<java.lang.Boolean> condition);
     method @BytecodeOnly public static void waitUntil$default(androidx.compose.ui.test.ComposeUiTest!, String!, long, kotlin.jvm.functions.Function0!, int, Object!);
@@ -148,19 +169,50 @@ package androidx.compose.ui.test {
     property public abstract androidx.compose.ui.test.MainTestClock mainClock;
   }
 
-  @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public final class ComposeUiTestFlags {
-    field public static final androidx.compose.ui.test.ComposeUiTestFlags INSTANCE;
+  @androidx.compose.runtime.Immutable public final class ComposeUiTestConfig {
+    ctor @KotlinOnly public ComposeUiTestConfig(optional kotlin.coroutines.CoroutineContext effectContext, optional kotlin.coroutines.CoroutineContext runTestContext, optional kotlin.time.Duration testTimeout, optional androidx.compose.ui.input.InputMode inputMode, optional androidx.compose.ui.test.TestFailurePolicy failurePolicy);
+    ctor @BytecodeOnly public ComposeUiTestConfig(kotlin.coroutines.CoroutineContext!, kotlin.coroutines.CoroutineContext!, long, int, androidx.compose.ui.test.TestFailurePolicy!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public ComposeUiTestConfig(kotlin.coroutines.CoroutineContext!, kotlin.coroutines.CoroutineContext!, long, int, androidx.compose.ui.test.TestFailurePolicy!, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public ComposeUiTestConfig(kotlin.coroutines.CoroutineContext!, kotlin.coroutines.CoroutineContext!, long, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly @Deprecated public ComposeUiTestConfig(kotlin.coroutines.CoroutineContext!, kotlin.coroutines.CoroutineContext!, long, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method @InaccessibleFromKotlin public kotlin.coroutines.CoroutineContext getEffectContext();
+    method @InaccessibleFromKotlin public androidx.compose.ui.test.TestFailurePolicy getFailurePolicy();
+    method @BytecodeOnly public int getInputMode-aOaMEAU();
+    method @InaccessibleFromKotlin public kotlin.coroutines.CoroutineContext getRunTestContext();
+    method @BytecodeOnly public long getTestTimeout-UwyO8pc();
+    property public kotlin.coroutines.CoroutineContext effectContext;
+    property public androidx.compose.ui.test.TestFailurePolicy failurePolicy;
+    property public androidx.compose.ui.input.InputMode inputMode;
+    property public kotlin.coroutines.CoroutineContext runTestContext;
+    property public kotlin.time.Duration testTimeout;
   }
 
-  @SuppressCompatibility public final class ComposeUiTestKt {
-    method @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void waitUntilAtLeastOneExists(androidx.compose.ui.test.ComposeUiTest, androidx.compose.ui.test.SemanticsMatcher matcher, optional long timeoutMillis);
-    method @BytecodeOnly @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void waitUntilAtLeastOneExists$default(androidx.compose.ui.test.ComposeUiTest!, androidx.compose.ui.test.SemanticsMatcher!, long, int, Object!);
-    method @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void waitUntilDoesNotExist(androidx.compose.ui.test.ComposeUiTest, androidx.compose.ui.test.SemanticsMatcher matcher, optional long timeoutMillis);
-    method @BytecodeOnly @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void waitUntilDoesNotExist$default(androidx.compose.ui.test.ComposeUiTest!, androidx.compose.ui.test.SemanticsMatcher!, long, int, Object!);
-    method @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void waitUntilExactlyOneExists(androidx.compose.ui.test.ComposeUiTest, androidx.compose.ui.test.SemanticsMatcher matcher, optional long timeoutMillis);
-    method @BytecodeOnly @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void waitUntilExactlyOneExists$default(androidx.compose.ui.test.ComposeUiTest!, androidx.compose.ui.test.SemanticsMatcher!, long, int, Object!);
-    method @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void waitUntilNodeCount(androidx.compose.ui.test.ComposeUiTest, androidx.compose.ui.test.SemanticsMatcher matcher, int count, optional long timeoutMillis);
-    method @BytecodeOnly @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void waitUntilNodeCount$default(androidx.compose.ui.test.ComposeUiTest!, androidx.compose.ui.test.SemanticsMatcher!, int, long, int, Object!);
+  @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public final class ComposeUiTestFlags {
+    property public boolean isMainThreadTestSynchronizationEnabledForDeviceTests;
+    field public static final androidx.compose.ui.test.ComposeUiTestFlags INSTANCE;
+    field public static boolean isMainThreadTestSynchronizationEnabledForDeviceTests;
+  }
+
+  public final class ComposeUiTestKt {
+    method public static boolean isIdlingResourceSupported(androidx.compose.ui.test.ComposeUiTest);
+    method public static boolean registerIdlingResource(androidx.compose.ui.test.ComposeUiTest, androidx.compose.ui.test.IdlingResource idlingResource);
+    method public static boolean unregisterIdlingResource(androidx.compose.ui.test.ComposeUiTest, androidx.compose.ui.test.IdlingResource idlingResource);
+    method @BytecodeOnly @Deprecated @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void waitUntilAtLeastOneExists(androidx.compose.ui.test.ComposeUiTest!, androidx.compose.ui.test.SemanticsMatcher!, long);
+    method public static void waitUntilAtLeastOneExists(androidx.compose.ui.test.ComposeUiTest, androidx.compose.ui.test.SemanticsMatcher matcher, optional long timeoutMillis, optional boolean useUnmergedTree);
+    method @BytecodeOnly public static void waitUntilAtLeastOneExists$default(androidx.compose.ui.test.ComposeUiTest!, androidx.compose.ui.test.SemanticsMatcher!, long, boolean, int, Object!);
+    method @BytecodeOnly @Deprecated @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void waitUntilAtLeastOneExists$default(androidx.compose.ui.test.ComposeUiTest!, androidx.compose.ui.test.SemanticsMatcher!, long, int, Object!);
+    method @BytecodeOnly @Deprecated @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void waitUntilDoesNotExist(androidx.compose.ui.test.ComposeUiTest!, androidx.compose.ui.test.SemanticsMatcher!, long);
+    method public static void waitUntilDoesNotExist(androidx.compose.ui.test.ComposeUiTest, androidx.compose.ui.test.SemanticsMatcher matcher, optional long timeoutMillis, optional boolean useUnmergedTree);
+    method @BytecodeOnly public static void waitUntilDoesNotExist$default(androidx.compose.ui.test.ComposeUiTest!, androidx.compose.ui.test.SemanticsMatcher!, long, boolean, int, Object!);
+    method @BytecodeOnly @Deprecated @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void waitUntilDoesNotExist$default(androidx.compose.ui.test.ComposeUiTest!, androidx.compose.ui.test.SemanticsMatcher!, long, int, Object!);
+    method @BytecodeOnly @Deprecated @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void waitUntilExactlyOneExists(androidx.compose.ui.test.ComposeUiTest!, androidx.compose.ui.test.SemanticsMatcher!, long);
+    method public static void waitUntilExactlyOneExists(androidx.compose.ui.test.ComposeUiTest, androidx.compose.ui.test.SemanticsMatcher matcher, optional long timeoutMillis, optional boolean useUnmergedTree);
+    method @BytecodeOnly public static void waitUntilExactlyOneExists$default(androidx.compose.ui.test.ComposeUiTest!, androidx.compose.ui.test.SemanticsMatcher!, long, boolean, int, Object!);
+    method @BytecodeOnly @Deprecated @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void waitUntilExactlyOneExists$default(androidx.compose.ui.test.ComposeUiTest!, androidx.compose.ui.test.SemanticsMatcher!, long, int, Object!);
+    method @BytecodeOnly @Deprecated @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void waitUntilNodeCount(androidx.compose.ui.test.ComposeUiTest!, androidx.compose.ui.test.SemanticsMatcher!, int, long);
+    method public static void waitUntilNodeCount(androidx.compose.ui.test.ComposeUiTest, androidx.compose.ui.test.SemanticsMatcher matcher, int count, optional long timeoutMillis, optional boolean useUnmergedTree);
+    method @BytecodeOnly public static void waitUntilNodeCount$default(androidx.compose.ui.test.ComposeUiTest!, androidx.compose.ui.test.SemanticsMatcher!, int, long, boolean, int, Object!);
+    method @BytecodeOnly @Deprecated @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void waitUntilNodeCount$default(androidx.compose.ui.test.ComposeUiTest!, androidx.compose.ui.test.SemanticsMatcher!, int, long, int, Object!);
   }
 
   @SuppressCompatibility public final class ComposeUiTest_androidKt {
@@ -221,6 +273,37 @@ package androidx.compose.ui.test {
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This testing API is experimental and is likely to be changed or removed entirely") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalTestApi {
   }
 
+  public final class FailureArtifact {
+    ctor @KotlinOnly public FailureArtifact(androidx.compose.ui.test.FailureArtifact.Type type, String fileName);
+    ctor @BytecodeOnly public FailureArtifact(int, String!, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method @InaccessibleFromKotlin public String getFileName();
+    method @BytecodeOnly public int getType-CPZAQgk();
+    property public String fileName;
+    property public androidx.compose.ui.test.FailureArtifact.Type type;
+  }
+
+  @kotlin.jvm.JvmInline public static final value class FailureArtifact.Type {
+    method @BytecodeOnly public static androidx.compose.ui.test.FailureArtifact.Type! box-impl(int);
+    method @BytecodeOnly public int unbox-impl();
+    field public static final androidx.compose.ui.test.FailureArtifact.Type.Companion Companion;
+  }
+
+  public static final class FailureArtifact.Type.Companion {
+    method @BytecodeOnly public int getScreenshot-CPZAQgk();
+    method @BytecodeOnly public int getUiHierarchy-CPZAQgk();
+    property public androidx.compose.ui.test.FailureArtifact.Type Screenshot;
+    property public androidx.compose.ui.test.FailureArtifact.Type UiHierarchy;
+  }
+
+  public final class FailureContext {
+    ctor @BytecodeOnly public FailureContext(Throwable!, java.util.List!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public FailureContext(Throwable error, optional java.util.List<androidx.compose.ui.test.FailureArtifact> artifacts);
+    method @InaccessibleFromKotlin public java.util.List<androidx.compose.ui.test.FailureArtifact> getArtifacts();
+    method @InaccessibleFromKotlin public Throwable getError();
+    property public java.util.List<androidx.compose.ui.test.FailureArtifact> artifacts;
+    property public Throwable error;
+  }
+
   public final class FiltersKt {
     method public static androidx.compose.ui.test.SemanticsMatcher hasAnyAncestor(androidx.compose.ui.test.SemanticsMatcher matcher);
     method public static androidx.compose.ui.test.SemanticsMatcher hasAnyChild(androidx.compose.ui.test.SemanticsMatcher matcher);
@@ -248,8 +331,10 @@ package androidx.compose.ui.test {
     method public static androidx.compose.ui.test.SemanticsMatcher hasTestTag(String testTag);
     method public static androidx.compose.ui.test.SemanticsMatcher hasText(String text, optional boolean substring, optional boolean ignoreCase);
     method @BytecodeOnly public static androidx.compose.ui.test.SemanticsMatcher! hasText$default(String!, boolean, boolean, int, Object!);
-    method public static androidx.compose.ui.test.SemanticsMatcher hasTextExactly(String[] textValues, optional boolean includeEditableText);
-    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsMatcher! hasTextExactly$default(String![]!, boolean, int, Object!);
+    method @BytecodeOnly @Deprecated public static androidx.compose.ui.test.SemanticsMatcher! hasTextExactly(String![]!, boolean);
+    method public static androidx.compose.ui.test.SemanticsMatcher hasTextExactly(String[] textValues, optional boolean includeEditableText, optional boolean includeInputText);
+    method @BytecodeOnly public static androidx.compose.ui.test.SemanticsMatcher! hasTextExactly$default(String![]!, boolean, boolean, int, Object!);
+    method @BytecodeOnly @Deprecated public static androidx.compose.ui.test.SemanticsMatcher! hasTextExactly$default(String![]!, boolean, int, Object!);
     method public static androidx.compose.ui.test.SemanticsMatcher isDialog();
     method public static androidx.compose.ui.test.SemanticsMatcher isEditable();
     method public static androidx.compose.ui.test.SemanticsMatcher isEnabled();
@@ -399,6 +484,11 @@ package androidx.compose.ui.test {
     property public abstract boolean isIdleNow;
   }
 
+  public interface IdlingResourceOwner {
+    method public void registerIdlingResource(androidx.compose.ui.test.IdlingResource idlingResource);
+    method public void unregisterIdlingResource(androidx.compose.ui.test.IdlingResource idlingResource);
+  }
+
   @kotlin.jvm.JvmDefaultWithCompatibility public interface IndirectPointerInjectionScope extends androidx.compose.ui.unit.Density {
     method public void advanceEventTime(optional long durationMillis);
     method @BytecodeOnly public static void advanceEventTime$default(androidx.compose.ui.test.IndirectPointerInjectionScope!, long, int, Object!);
@@ -435,8 +525,10 @@ package androidx.compose.ui.test {
     method @BytecodeOnly public static void moveWithHistoryMultiPointer$default(androidx.compose.ui.test.IndirectPointerInjectionScope!, java.util.List!, java.util.List!, long, int, Object!);
     method public void up(optional int pointerId);
     method @BytecodeOnly public static void up$default(androidx.compose.ui.test.IndirectPointerInjectionScope!, int, int, Object!);
+    method @KotlinOnly public default void updatePointerBy(androidx.compose.ui.geometry.Offset delta);
     method @KotlinOnly public default void updatePointerBy(int pointerId, androidx.compose.ui.geometry.Offset delta);
     method @BytecodeOnly public default void updatePointerBy-Uv8p0NA(int, long);
+    method @BytecodeOnly public default void updatePointerBy-k-4lQ0M(long);
     method @KotlinOnly public default void updatePointerTo(androidx.compose.ui.geometry.Offset position);
     method @KotlinOnly public void updatePointerTo(int pointerId, androidx.compose.ui.geometry.Offset position);
     method @BytecodeOnly public void updatePointerTo-Uv8p0NA(int, long);
@@ -769,6 +861,7 @@ package androidx.compose.ui.test {
     method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteraction onChild(androidx.compose.ui.test.SemanticsNodeInteraction);
     method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteraction onChildAt(androidx.compose.ui.test.SemanticsNodeInteraction, int index);
     method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteractionCollection onChildren(androidx.compose.ui.test.SemanticsNodeInteraction);
+    method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteractionCollection onDescendants(androidx.compose.ui.test.SemanticsNodeInteraction);
     method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteraction onFirst(androidx.compose.ui.test.SemanticsNodeInteractionCollection);
     method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteraction onLast(androidx.compose.ui.test.SemanticsNodeInteractionCollection);
     method @CheckResult public static androidx.compose.ui.test.SemanticsNodeInteraction onParent(androidx.compose.ui.test.SemanticsNodeInteraction);
@@ -839,6 +932,37 @@ package androidx.compose.ui.test {
   public final class TestContext {
   }
 
+  public fun interface TestFailureHandler {
+    method public void onTestFailed(androidx.compose.ui.test.FailureContext context);
+  }
+
+  @androidx.compose.runtime.Immutable public final class TestFailurePolicy {
+    ctor @KotlinOnly public TestFailurePolicy(optional androidx.compose.ui.test.TestFailurePolicy.CaptureMode screenshotCaptureMode, optional androidx.compose.ui.test.TestFailurePolicy.CaptureMode uiHierarchyCaptureMode, optional java.util.List<androidx.compose.ui.test.TestFailureHandler> failureHandlers);
+    ctor @BytecodeOnly public TestFailurePolicy(int, int, java.util.List!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public TestFailurePolicy(int, int, java.util.List!, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method @InaccessibleFromKotlin public java.util.List<androidx.compose.ui.test.TestFailureHandler> getFailureHandlers();
+    method @BytecodeOnly public int getScreenshotCaptureMode-zYtJLZc();
+    method @BytecodeOnly public int getUiHierarchyCaptureMode-zYtJLZc();
+    property public java.util.List<androidx.compose.ui.test.TestFailureHandler> failureHandlers;
+    property public androidx.compose.ui.test.TestFailurePolicy.CaptureMode screenshotCaptureMode;
+    property public androidx.compose.ui.test.TestFailurePolicy.CaptureMode uiHierarchyCaptureMode;
+  }
+
+  @kotlin.jvm.JvmInline public static final value class TestFailurePolicy.CaptureMode {
+    method @BytecodeOnly public static androidx.compose.ui.test.TestFailurePolicy.CaptureMode! box-impl(int);
+    method @BytecodeOnly public int unbox-impl();
+    field public static final androidx.compose.ui.test.TestFailurePolicy.CaptureMode.Companion Companion;
+  }
+
+  public static final class TestFailurePolicy.CaptureMode.Companion {
+    method @BytecodeOnly public int getDisabled-zYtJLZc();
+    method @BytecodeOnly public int getEnabled-zYtJLZc();
+    method @BytecodeOnly public int getUnspecified-zYtJLZc();
+    property public androidx.compose.ui.test.TestFailurePolicy.CaptureMode Disabled;
+    property public androidx.compose.ui.test.TestFailurePolicy.CaptureMode Enabled;
+    property public androidx.compose.ui.test.TestFailurePolicy.CaptureMode Unspecified;
+  }
+
   @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi @kotlinx.coroutines.ExperimentalCoroutinesApi public final class TestMonotonicFrameClock implements androidx.compose.runtime.MonotonicFrameClock {
     ctor @BytecodeOnly public TestMonotonicFrameClock(kotlinx.coroutines.CoroutineScope!, long, kotlin.jvm.functions.Function1!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor public TestMonotonicFrameClock(kotlinx.coroutines.CoroutineScope coroutineScope, optional long frameDelayNanos, optional kotlin.jvm.functions.Function1<? super java.lang.Long,kotlin.Unit> onPerformTraversals);
@@ -901,8 +1025,10 @@ package androidx.compose.ui.test {
     method @BytecodeOnly @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void moveWithHistoryMultiPointer$default(androidx.compose.ui.test.TouchInjectionScope!, java.util.List!, java.util.List!, long, int, Object!);
     method public void up(optional int pointerId);
     method @BytecodeOnly public static void up$default(androidx.compose.ui.test.TouchInjectionScope!, int, int, Object!);
+    method @KotlinOnly public default void updatePointerBy(androidx.compose.ui.geometry.Offset delta);
     method @KotlinOnly public default void updatePointerBy(int pointerId, androidx.compose.ui.geometry.Offset delta);
     method @BytecodeOnly public default void updatePointerBy-Uv8p0NA(int, long);
+    method @BytecodeOnly public default void updatePointerBy-k-4lQ0M(long);
     method @KotlinOnly public void updatePointerTo(int pointerId, androidx.compose.ui.geometry.Offset position);
     method @BytecodeOnly public void updatePointerTo-Uv8p0NA(int, long);
   }
@@ -1058,20 +1184,36 @@ package androidx.compose.ui.test.junit4.android {
 
 }
 
-package @SuppressCompatibility androidx.compose.ui.test.v2 {
+package androidx.compose.ui.test.platform {
 
-  @SuppressCompatibility public final class ComposeUiTest_androidKt {
-    method @KotlinOnly @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static inline <A extends androidx.activity.ComponentActivity> androidx.compose.ui.test.AndroidComposeUiTestEnvironment<A> AndroidComposeUiTestEnvironment(optional kotlin.coroutines.CoroutineContext effectContext, optional kotlin.coroutines.CoroutineContext runTestContext, optional kotlin.time.Duration testTimeout, kotlin.jvm.functions.Function0<A?> activityProvider);
-    method @BytecodeOnly @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static <A extends androidx.activity.ComponentActivity> androidx.compose.ui.test.AndroidComposeUiTestEnvironment<A> AndroidComposeUiTestEnvironment-exY8QGI(kotlin.coroutines.CoroutineContext, kotlin.coroutines.CoroutineContext, long, kotlin.jvm.functions.Function0<? extends A>);
-    method @BytecodeOnly @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static androidx.compose.ui.test.AndroidComposeUiTestEnvironment! AndroidComposeUiTestEnvironment-exY8QGI$default(kotlin.coroutines.CoroutineContext!, kotlin.coroutines.CoroutineContext!, long, kotlin.jvm.functions.Function0!, int, Object!);
-    method @KotlinOnly @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static <A extends androidx.activity.ComponentActivity> void runAndroidComposeUiTest(Class<A> activityClass, optional kotlin.coroutines.CoroutineContext effectContext, optional kotlin.coroutines.CoroutineContext runTestContext, optional kotlin.time.Duration testTimeout, kotlin.jvm.functions.Function2<androidx.compose.ui.test.AndroidComposeUiTest<A>,kotlin.coroutines.Continuation<? super kotlin.Unit>,?> block);
-    method @KotlinOnly @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static inline <reified A extends androidx.activity.ComponentActivity> void runAndroidComposeUiTest(optional kotlin.coroutines.CoroutineContext effectContext, optional kotlin.coroutines.CoroutineContext runTestContext, optional kotlin.time.Duration testTimeout, kotlin.jvm.functions.Function2<androidx.compose.ui.test.AndroidComposeUiTest<A>,kotlin.coroutines.Continuation<? super kotlin.Unit>,?> block);
-    method @BytecodeOnly @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static <A extends androidx.activity.ComponentActivity> void runAndroidComposeUiTest-zkXUZaI(Class<A>, kotlin.coroutines.CoroutineContext, kotlin.coroutines.CoroutineContext, long, kotlin.jvm.functions.Function2<? super androidx.compose.ui.test.AndroidComposeUiTest<A>!,? super kotlin.coroutines.Continuation<? super kotlin.Unit!>!,? extends java.lang.Object!>);
-    method @BytecodeOnly @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void runAndroidComposeUiTest-zkXUZaI$default(Class!, kotlin.coroutines.CoroutineContext!, kotlin.coroutines.CoroutineContext!, long, kotlin.jvm.functions.Function2!, int, Object!);
-    method @KotlinOnly @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void runComposeUiTest(optional kotlin.coroutines.CoroutineContext effectContext, optional kotlin.coroutines.CoroutineContext runTestContext, optional kotlin.time.Duration testTimeout, kotlin.jvm.functions.Function2<androidx.compose.ui.test.ComposeUiTest,kotlin.coroutines.Continuation<? super kotlin.Unit>,?> block);
-    method @BytecodeOnly @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void runComposeUiTest-exY8QGI(kotlin.coroutines.CoroutineContext, kotlin.coroutines.CoroutineContext, long, kotlin.jvm.functions.Function2<? super androidx.compose.ui.test.ComposeUiTest!,? super kotlin.coroutines.Continuation<? super kotlin.Unit!>!,? extends java.lang.Object!>);
-    method @BytecodeOnly @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void runComposeUiTest-exY8QGI$default(kotlin.coroutines.CoroutineContext!, kotlin.coroutines.CoroutineContext!, long, kotlin.jvm.functions.Function2!, int, Object!);
-    method @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public static void runEmptyComposeUiTest(kotlin.jvm.functions.Function1<? super androidx.compose.ui.test.ComposeUiTest,kotlin.Unit> block);
+  public final class Synchronization_androidKt {
+    method @kotlin.PublishedApi internal static inline <R> R synchronized(Object lock, kotlin.jvm.functions.Function0<? extends R> block);
+  }
+
+}
+
+package androidx.compose.ui.test.v2 {
+
+  public final class ComposeUiTest_androidKt {
+    method public static inline <A extends androidx.activity.ComponentActivity> androidx.compose.ui.test.AndroidComposeUiTestEnvironment<A> AndroidComposeUiTestEnvironment(androidx.compose.ui.test.ComposeUiTestConfig config, kotlin.jvm.functions.Function0<? extends A?> activityProvider);
+    method @KotlinOnly @Deprecated public static inline <A extends androidx.activity.ComponentActivity> androidx.compose.ui.test.AndroidComposeUiTestEnvironment<A> AndroidComposeUiTestEnvironment(optional kotlin.coroutines.CoroutineContext effectContext, optional kotlin.coroutines.CoroutineContext runTestContext, optional kotlin.time.Duration testTimeout, kotlin.jvm.functions.Function0<A?> activityProvider);
+    method public static <A extends androidx.activity.ComponentActivity> androidx.compose.ui.test.AndroidComposeUiTestEnvironment<A> AndroidComposeUiTestEnvironment(kotlin.jvm.functions.Function0<? extends A?> activityProvider);
+    method @BytecodeOnly @Deprecated public static <A extends androidx.activity.ComponentActivity> androidx.compose.ui.test.AndroidComposeUiTestEnvironment<A> AndroidComposeUiTestEnvironment-exY8QGI(kotlin.coroutines.CoroutineContext, kotlin.coroutines.CoroutineContext, long, kotlin.jvm.functions.Function0<? extends A>);
+    method @BytecodeOnly @Deprecated public static androidx.compose.ui.test.AndroidComposeUiTestEnvironment! AndroidComposeUiTestEnvironment-exY8QGI$default(kotlin.coroutines.CoroutineContext!, kotlin.coroutines.CoroutineContext!, long, kotlin.jvm.functions.Function0!, int, Object!);
+    method @KotlinOnly public static inline <reified A extends androidx.activity.ComponentActivity> void runAndroidComposeUiTest(androidx.compose.ui.test.ComposeUiTestConfig config, kotlin.jvm.functions.Function2<androidx.compose.ui.test.AndroidComposeUiTest<A>,kotlin.coroutines.Continuation<? super kotlin.Unit>,?> block);
+    method public static <A extends androidx.activity.ComponentActivity> void runAndroidComposeUiTest(Class<A> activityClass, androidx.compose.ui.test.ComposeUiTestConfig config, kotlin.jvm.functions.Function2<? super androidx.compose.ui.test.AndroidComposeUiTest<A>,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> block);
+    method @KotlinOnly @Deprecated public static <A extends androidx.activity.ComponentActivity> void runAndroidComposeUiTest(Class<A> activityClass, optional kotlin.coroutines.CoroutineContext effectContext, optional kotlin.coroutines.CoroutineContext runTestContext, optional kotlin.time.Duration testTimeout, kotlin.jvm.functions.Function2<androidx.compose.ui.test.AndroidComposeUiTest<A>,kotlin.coroutines.Continuation<? super kotlin.Unit>,?> block);
+    method public static <A extends androidx.activity.ComponentActivity> void runAndroidComposeUiTest(Class<A> activityClass, kotlin.jvm.functions.Function2<? super androidx.compose.ui.test.AndroidComposeUiTest<A>,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> block);
+    method @KotlinOnly @Deprecated public static inline <reified A extends androidx.activity.ComponentActivity> void runAndroidComposeUiTest(optional kotlin.coroutines.CoroutineContext effectContext, optional kotlin.coroutines.CoroutineContext runTestContext, optional kotlin.time.Duration testTimeout, kotlin.jvm.functions.Function2<androidx.compose.ui.test.AndroidComposeUiTest<A>,kotlin.coroutines.Continuation<? super kotlin.Unit>,?> block);
+    method @KotlinOnly public static inline <reified A extends androidx.activity.ComponentActivity> void runAndroidComposeUiTest(kotlin.jvm.functions.Function2<androidx.compose.ui.test.AndroidComposeUiTest<A>,kotlin.coroutines.Continuation<? super kotlin.Unit>,?> block);
+    method @BytecodeOnly @Deprecated public static <A extends androidx.activity.ComponentActivity> void runAndroidComposeUiTest-zkXUZaI(Class<A>, kotlin.coroutines.CoroutineContext, kotlin.coroutines.CoroutineContext, long, kotlin.jvm.functions.Function2<? super androidx.compose.ui.test.AndroidComposeUiTest<A>!,? super kotlin.coroutines.Continuation<? super kotlin.Unit!>!,? extends java.lang.Object!>);
+    method @BytecodeOnly @Deprecated public static void runAndroidComposeUiTest-zkXUZaI$default(Class!, kotlin.coroutines.CoroutineContext!, kotlin.coroutines.CoroutineContext!, long, kotlin.jvm.functions.Function2!, int, Object!);
+    method public static void runComposeUiTest(androidx.compose.ui.test.ComposeUiTestConfig config, kotlin.jvm.functions.Function2<? super androidx.compose.ui.test.ComposeUiTest,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> block);
+    method @KotlinOnly @Deprecated public static void runComposeUiTest(optional kotlin.coroutines.CoroutineContext effectContext, optional kotlin.coroutines.CoroutineContext runTestContext, optional kotlin.time.Duration testTimeout, kotlin.jvm.functions.Function2<androidx.compose.ui.test.ComposeUiTest,kotlin.coroutines.Continuation<? super kotlin.Unit>,?> block);
+    method public static void runComposeUiTest(kotlin.jvm.functions.Function2<? super androidx.compose.ui.test.ComposeUiTest,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> block);
+    method @BytecodeOnly @Deprecated public static void runComposeUiTest-exY8QGI(kotlin.coroutines.CoroutineContext, kotlin.coroutines.CoroutineContext, long, kotlin.jvm.functions.Function2<? super androidx.compose.ui.test.ComposeUiTest!,? super kotlin.coroutines.Continuation<? super kotlin.Unit!>!,? extends java.lang.Object!>);
+    method @BytecodeOnly @Deprecated public static void runComposeUiTest-exY8QGI$default(kotlin.coroutines.CoroutineContext!, kotlin.coroutines.CoroutineContext!, long, kotlin.jvm.functions.Function2!, int, Object!);
+    method public static void runEmptyComposeUiTest(kotlin.jvm.functions.Function1<? super androidx.compose.ui.test.ComposeUiTest,kotlin.Unit> block);
   }
 
 }

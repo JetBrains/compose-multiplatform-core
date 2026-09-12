@@ -23,6 +23,7 @@ import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.awt.toAwtColor
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.layout.IntrinsicMeasurable
 import androidx.compose.ui.layout.IntrinsicMeasureScope
 import androidx.compose.ui.layout.Measurable
@@ -67,7 +68,7 @@ val NoOpUpdate: Component.() -> Unit = {}
 )
 @Composable
 fun <T : Component> SwingPanel(
-    background: Color? = Color.White,
+    background: Color = Color.White,
     factory: () -> T,
     modifier: Modifier = Modifier,
     update: (T) -> Unit = NoOpUpdate,
@@ -106,7 +107,7 @@ fun <T : Component> SwingPanel(
         factory = { interopViewHolder },
         modifier = modifier.then(focusSwitcher.modifier),
         update = {
-            if (background != null) {
+            if (background.isSpecified) {
                 it.background = background.toAwtColor()
             }
             update(it)
@@ -137,7 +138,7 @@ fun <T : Component> SwingPanel(
 ) {
     @Suppress("DEPRECATION")
     SwingPanel(
-        background = null,
+        background = Color.Unspecified,
         factory = factory,
         modifier = modifier,
         update = update
@@ -197,6 +198,11 @@ internal class SwingInteropViewGroup(
             }
         }
         isFocusCycleRoot = true
+
+        // `true` is already the default in JPanel, but setting it explicitly because we disable
+        // double buffering at the root (ComposeWindow, ComposeDialog), so we need it enabled here
+        // or else Swing interop won't be double-buffered.
+        isDoubleBuffered = true
     }
 
     override fun getPreferredSize(): Dimension {

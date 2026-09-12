@@ -17,14 +17,12 @@
 package androidx.compose.ui.test
 
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.pointer.util.ExperimentalVelocityTrackerApi
 
-@OptIn(ExperimentalVelocityTrackerApi::class)
 internal actual fun VelocityPathFinder(
     startPosition: Offset,
     endPosition: Offset,
     endVelocity: Float,
     durationMillis: Long,
 ): VelocityPathFinder {
-    return LsqVelocityPathFinder(startPosition, endPosition, endVelocity, durationMillis)
+    return LegacyVelocityPathFinder(startPosition, endPosition, endVelocity, durationMillis)
 }

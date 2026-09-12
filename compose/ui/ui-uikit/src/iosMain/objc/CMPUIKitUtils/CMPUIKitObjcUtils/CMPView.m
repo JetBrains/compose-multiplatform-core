@@ -17,8 +17,6 @@
 #import "CMPView.h"
 #import "CMPComposeContainerLifecycleState.h"
 
-#pragma mark - CMPViewController
-
 @implementation CMPView {
     CMPComposeContainerLifecycleState _lifecycleState;
     id<CMPComposeContainerLifecycleDelegate> _lifecycleDelegate;

@@ -62,6 +62,7 @@ import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.platform.TaskDispatchers
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.a11y.ComposeSceneAccessibility
@@ -110,6 +111,7 @@ import javax.swing.JComponent
 import javax.swing.SwingUtilities
 import javax.swing.SwingUtilities.isEventDispatchThread
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.Dispatchers
 import org.jetbrains.skia.Canvas as SkCanvas
 import org.jetbrains.skia.Surface
 import org.jetbrains.skiko.ClipRectangle
@@ -743,6 +745,7 @@ internal class ComposeSceneMediator(
         interopContainer.postponingExecutingScheduledUpdates {
             canvas.withSceneOffset {
                 with(sceneRenderingScope) {
+                    scene.size = IntSize(width, height)
                     scene.render(frameRecomposer, this@withSceneOffset, nanoTime)
                 }
             }
@@ -840,6 +843,12 @@ internal class ComposeSceneMediator(
 
     private inner class DesktopPlatformContext : PlatformContext {
         override val windowInfo: WindowInfo get() = windowContext.windowInfo
+
+        override val taskDispatchers: TaskDispatchers = object : TaskDispatchers {
+            override val Default = Dispatchers.Default
+            override val IO = Dispatchers.IO
+        }
+
         override val architectureComponentsOwner get() = this@ComposeSceneMediator.architectureComponentsOwner
         override val isWindowTransparent: Boolean get() = windowContext.isWindowTransparent
 

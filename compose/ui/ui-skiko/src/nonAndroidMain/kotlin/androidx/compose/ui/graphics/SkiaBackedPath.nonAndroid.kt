@@ -26,6 +26,7 @@ import androidx.compose.ui.geometry.RoundRect
 import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
 import org.jetbrains.skia.Matrix33 as SkMatrix3
+import kotlin.math.PI
 import org.jetbrains.skia.Path as SkPath
 import org.jetbrains.skia.PathDirection
 import org.jetbrains.skia.PathBuilder
@@ -335,7 +336,11 @@ internal class SkiaBackedPath(
     }
 
     override fun addArcRad(oval: Rect, startAngleRadians: Float, sweepAngleRadians: Float) {
-        addArc(oval, degrees(startAngleRadians), degrees(sweepAngleRadians))
+        addArc(
+            oval,
+            startAngleRadians.toDegrees(),
+            sweepAngleRadians.toDegrees(),
+        )
     }
 
     override fun addArc(oval: Rect, startAngleDegrees: Float, sweepAngleDegrees: Float) = mutatePath {
@@ -436,3 +441,5 @@ private fun Path.Direction.toSkiaPathDirection() = when (this) {
     Path.Direction.CounterClockwise -> PathDirection.COUNTER_CLOCKWISE
     Path.Direction.Clockwise -> PathDirection.CLOCKWISE
 }
+
+private fun Float.toDegrees(): Float = this * (180f / PI.toFloat())

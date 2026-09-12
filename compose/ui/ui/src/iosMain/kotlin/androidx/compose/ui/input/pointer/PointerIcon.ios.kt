@@ -17,9 +17,9 @@
 package androidx.compose.ui.input.pointer
 
 // uikit doesn't seem to have NSCursor.
-private data class UIKitCursor(val id: String): PointerIcon
+private data class IosPointerIcon(val id: String): PointerIcon
 
-internal actual val pointerIconDefault: PointerIcon = UIKitCursor("default")
-internal actual val pointerIconCrosshair: PointerIcon = UIKitCursor("crosshair")
-internal actual val pointerIconText: PointerIcon = UIKitCursor("text")
-internal actual val pointerIconHand: PointerIcon = UIKitCursor("hand")
+internal actual val pointerIconDefault: PointerIcon = IosPointerIcon("default")
+internal actual val pointerIconCrosshair: PointerIcon = IosPointerIcon("crosshair")
+internal actual val pointerIconText: PointerIcon = IosPointerIcon("text")
+internal actual val pointerIconHand: PointerIcon = IosPointerIcon("hand")

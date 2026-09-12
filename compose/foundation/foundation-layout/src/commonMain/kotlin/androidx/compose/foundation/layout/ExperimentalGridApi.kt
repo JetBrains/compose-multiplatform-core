@@ -16,8 +16,9 @@
 
 package androidx.compose.foundation.layout
 
+@Deprecated(message = "Grid and its related APIs are now stable.", level = DeprecationLevel.WARNING)
 @RequiresOptIn(
     "This foundation layout API is experimental and is likely to change or be removed in the future."
 )
 @Retention(AnnotationRetention.BINARY)
-annotation class ExperimentalGridApi
+public annotation class ExperimentalGridApi

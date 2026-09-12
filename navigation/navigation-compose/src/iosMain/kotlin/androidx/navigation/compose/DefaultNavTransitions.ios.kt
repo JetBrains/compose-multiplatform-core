@@ -107,33 +107,51 @@ public actual object DefaultNavTransitions {
         (AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)? =
         null
 
+    // ios specific: by default the enter and the popEnter transitions are different.
+    // BUT when user overrides only the default enter transition in NavHost function
+    // then return the new enter transition as default popEnterTransition.
+    // This is a NavHost API expectation
     public actual fun popEnterTransition(
         enterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition
-    ): AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
-        slideIntoContainer(
-            towards = AnimatedContentTransitionScope.SlideDirection.End,
-            initialOffset = { it / 4 },
-            animationSpec = tween(
-                DEFAULT_TRANSITION_DURATION_MILLISECOND,
-                easing = IosTransitionEasing
-            ),
-        ) + unveilIn(
-            animationSpec = tween(
-                DEFAULT_TRANSITION_DURATION_MILLISECOND,
-                easing = IosTransitionEasing
+    ): AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition {
+        if (enterTransition !== DefaultNavTransitions.enterTransition) {
+            return enterTransition
+        }
+        return {
+            slideIntoContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.End,
+                initialOffset = { it / 4 },
+                animationSpec = tween(
+                    DEFAULT_TRANSITION_DURATION_MILLISECOND,
+                    easing = IosTransitionEasing
+                ),
+            ) + unveilIn(
+                animationSpec = tween(
+                    DEFAULT_TRANSITION_DURATION_MILLISECOND,
+                    easing = IosTransitionEasing
+                )
             )
-        )
+        }
     }
 
+    // ios specific: by default the exit and the popExit transitions are different.
+    // BUT when user overrides only the default exit transition in NavHost function
+    // then return the new exit transition as default popExitTransition.
+    // This is a NavHost API expectation
     public actual fun popExitTransition(
         exitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition
-    ): AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
-        slideOutOfContainer(
-            towards = AnimatedContentTransitionScope.SlideDirection.End,
-            animationSpec = tween(
-                DEFAULT_TRANSITION_DURATION_MILLISECOND,
-                easing = IosTransitionEasing
-            ),
-        )
+    ): AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition {
+        if (exitTransition !== DefaultNavTransitions.exitTransition) {
+            return exitTransition
+        }
+        return {
+            slideOutOfContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.End,
+                animationSpec = tween(
+                    DEFAULT_TRANSITION_DURATION_MILLISECOND,
+                    easing = IosTransitionEasing
+                ),
+            )
+        }
     }
 }

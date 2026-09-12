@@ -472,6 +472,7 @@ class DragGestureTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @OptIn(ExperimentalTestApi::class)
     @Test
     fun dragGestureDoesNotRestartOnMatcherChange() = runComposeUiTest {

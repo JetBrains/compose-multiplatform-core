@@ -55,14 +55,6 @@ androidXMultiplatform {
             implementation(libs.kotlinTest)
         }
 
-        androidMain.dependencies {
-            api("androidx.annotation:annotation:1.8.1")
-        }
-
-        androidDeviceTest.dependencies {
-            implementation(libs.testRunner)
-        }
-
         skikoTest {
             dependsOn(commonTest)
             dependencies {
@@ -82,4 +74,3 @@ androidx {
     description = "Compose classes related to dimensions without units"
     legacyDisableKotlinStrictApiMode = true
 }
-

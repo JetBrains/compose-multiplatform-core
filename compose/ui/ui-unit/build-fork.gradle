@@ -60,25 +60,6 @@ androidXMultiplatform {
             implementation(project(":kruth:kruth"))
         }
 
-        androidMain.dependencies {
-            api("androidx.annotation:annotation-experimental:1.4.1")
-            implementation("androidx.collection:collection-ktx:1.4.2")
-        }
-
-        androidDeviceTest.dependencies {
-            implementation(libs.testRules)
-            implementation(libs.testRunner)
-            implementation(libs.testExtJunit)
-            implementation(libs.espressoCore)
-            implementation(libs.truth)
-            implementation("androidx.collection:collection-ktx:1.4.2")
-        }
-
-        androidHostTest.dependencies {
-            implementation(libs.truth)
-            implementation("androidx.collection:collection-ktx:1.4.2")
-        }
-
         nonAndroidMain {
             dependsOn(commonMain)
         }
@@ -121,5 +102,4 @@ androidx {
     inceptionYear = "2020"
     description = "Compose classes for simple units"
     legacyDisableKotlinStrictApiMode = true
-    samples(project(":compose:ui:ui-unit:ui-unit-samples"))
 }

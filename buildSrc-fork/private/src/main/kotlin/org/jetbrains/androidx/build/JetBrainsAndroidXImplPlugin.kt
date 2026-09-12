@@ -45,6 +45,7 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
         project.changeMavenCoordinatesToJetBrains()
 //        project.configureRedirectionCapability() // TODO CMP-10368 fix old capability mechanism after migration to new artifact redirection
         project.configureMavenArtifactUpload(componentFactory)
+        project.configureForkDependenciesTasks()
         project.configureDependencyVerification()
         project.registerRedirectVersionsExtension()
         project.plugins.all { plugin ->

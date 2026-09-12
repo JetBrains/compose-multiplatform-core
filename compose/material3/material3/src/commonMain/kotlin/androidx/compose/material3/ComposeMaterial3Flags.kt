@@ -36,7 +36,7 @@ import kotlin.jvm.JvmField
  * ```
  */
 @ExperimentalMaterial3Api
-object ComposeMaterial3Flags {
+public object ComposeMaterial3Flags {
     /**
      * When the flag is `true`, the [Checkbox] will use Material Design 3 styling, including updated
      * colors and container sizing. When `false`, it uses older Material Design 2 styling. See the
@@ -44,14 +44,18 @@ object ComposeMaterial3Flags {
      * the [Material Design 3 Checkboxes Specs](https://m3.material.io/components/checkbox/specs).
      */
     // TODO: b/450332377
-    @field:Suppress("MutableBareField") @JvmField var isCheckboxStylingFixEnabled: Boolean = false
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isCheckboxStylingFixEnabled: Boolean = false
 
     /**
      * When this flag is `true`, the [Snackbar] component will use an updated layout implementation
      * that correctly handles vertical alignment for multi-line text.
      */
     // TODO: b/485970632
-    @field:Suppress("MutableBareField") @JvmField var isSnackbarStylingFixEnabled: Boolean = false
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isSnackbarStylingFixEnabled: Boolean = false
 
     /**
      * When this flag is true and a precision pointer is present, components are resized accordingly
@@ -59,7 +63,7 @@ object ComposeMaterial3Flags {
     // TODO: b/485970768
     @field:Suppress("MutableBareField")
     @JvmField
-    var isPrecisionPointerComponentSizingEnabled: Boolean = false
+    public var isPrecisionPointerComponentSizingEnabled: Boolean = false
 
     /**
      * This flag affects Material3 components that use
@@ -79,7 +83,7 @@ object ComposeMaterial3Flags {
     // TODO: b/485967826
     @field:Suppress("MutableBareField")
     @JvmField
-    var isAnchoredDraggableComponentsStrictOffsetCheckEnabled: Boolean = true
+    public var isAnchoredDraggableComponentsStrictOffsetCheckEnabled: Boolean = true
 
     /**
      * This flag affects Material3 components that use
@@ -93,7 +97,7 @@ object ComposeMaterial3Flags {
     // TODO: b/485969385
     @field:Suppress("MutableBareField")
     @JvmField
-    var isAnchoredDraggableComponentsInvalidationFixEnabled: Boolean = true
+    public var isAnchoredDraggableComponentsInvalidationFixEnabled: Boolean = true
 
     /**
      * This flag affects [BottomSheet] and [ModalBottomSheet].
@@ -107,7 +111,7 @@ object ComposeMaterial3Flags {
     // TODO: b/512076811
     @field:Suppress("MutableBareField")
     @JvmField
-    var isBottomSheetPartiallyExpandedDeterministicEnabled: Boolean = true
+    public var isBottomSheetPartiallyExpandedDeterministicEnabled: Boolean = true
 
     /**
      * This flag affects [TimePicker].
@@ -120,5 +124,31 @@ object ComposeMaterial3Flags {
     // TODO: b/521427342
     @field:Suppress("MutableBareField")
     @JvmField
-    var isUpdatedTimepickerToggleEnabled: Boolean = true
+    public var isUpdatedTimepickerToggleEnabled: Boolean = true
+
+    /**
+     * This flag affects overloads of [ListItem] and [SegmentedListItem] that use expressive
+     * styling.
+     *
+     * When true (default), list item minimum height will depend on the lines of text in its
+     * content.
+     *
+     * When false, the number of lines in a list item has no effect on its minimum height.
+     */
+    // TODO: b/524205564
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isExpressiveListItemHeightBasedOnTextLinesFixEnabled: Boolean = true
+
+    /**
+     * When true (default), ModalBottomSheet will only trigger its initial entrance animation when
+     * [SheetState.targetValue] is [SheetValue.Hidden], preserving restored state (e.g. expanded
+     * state) across configuration changes or process recreation.
+     *
+     * When false, the legacy behavior is used where show() is called unconditionally.
+     */
+    // TODO: b/539999255
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isModalBottomSheetStateRestorationFixEnabled: Boolean = true
 }

@@ -63,6 +63,7 @@ class LazySemanticsTest {
     private fun key(index: Int): String = "key_$index"
     
 
+    @Suppress("DEPRECATION")
     @Test
     fun itemSemantics_column() = runSkikoComposeUiTest {
         setContent {
@@ -77,6 +78,7 @@ class LazySemanticsTest {
         runTest()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun itemsSemantics_column() = runSkikoComposeUiTest {
         setContent {
@@ -89,6 +91,7 @@ class LazySemanticsTest {
         runTest()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun itemSemantics_row() = runSkikoComposeUiTest {
         setContent {
@@ -103,6 +106,7 @@ class LazySemanticsTest {
         runTest()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun itemsSemantics_row() = runSkikoComposeUiTest {
         setContent {

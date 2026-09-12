@@ -27,7 +27,7 @@ import java.io.File
 
 actual sealed class PlatformFont : Font {
     actual abstract val identity: String
-    actual abstract val variationSettings: FontVariation.Settings
+    actual abstract override val variationSettings: FontVariation.Settings
     @InternalComposeUiApi
     actual val cacheKey: String
         get() = "${this::class.qualifiedName}|$identity|weight=${weight.weight}|style=$style"

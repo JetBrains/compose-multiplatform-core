@@ -19,8 +19,8 @@ package androidx.compose.ui.uikit
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.UIKitNativeTextInputContextMenuCustomAction
-import androidx.compose.ui.platform.UIKitNativeTextInputContext
+import androidx.compose.ui.platform.NativeTextInputContextMenuCustomAction
+import androidx.compose.ui.platform.NativeTextInputContext
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 
@@ -45,8 +45,8 @@ val LocalUIView = staticCompositionLocalOf<UIView> {
 }
 
 @InternalComposeUiApi
-val LocalNativeTextInputContext = staticCompositionLocalOf<UIKitNativeTextInputContext> {
-    object : UIKitNativeTextInputContext {
+val LocalNativeTextInputContext = staticCompositionLocalOf<NativeTextInputContext> {
+    object : NativeTextInputContext {
         override fun usingNativeTextInput(): Boolean = false
 
         override fun updateNativeTextInputEditMenuState(
@@ -54,7 +54,7 @@ val LocalNativeTextInputContext = staticCompositionLocalOf<UIKitNativeTextInputC
             paste: (() -> Unit)?,
             cut: (() -> Unit)?,
             selectAll: (() -> Unit)?,
-            customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
+            customActions: List<NativeTextInputContextMenuCustomAction>?
         ) {}
 
         override fun updateNativeTextInputTintColor(color: Color?) {}

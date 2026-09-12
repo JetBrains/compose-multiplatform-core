@@ -65,6 +65,7 @@ class LazyListsReverseLayoutTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun column_emitTwoElementsAsOneItem_positionedReversed() = runSkikoComposeUiTest {
         setContent {
@@ -84,6 +85,7 @@ class LazyListsReverseLayoutTest {
             .assertTopPositionInRootIsEqualTo(itemSize)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun column_emitTwoItems_positionedReversed() = runSkikoComposeUiTest {
         setContent {
@@ -105,6 +107,7 @@ class LazyListsReverseLayoutTest {
             .assertTopPositionInRootIsEqualTo(itemSize)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun column_initialScrollPositionIs0() = runSkikoComposeUiTest {
         lateinit var state: LazyListState
@@ -126,6 +129,7 @@ class LazyListsReverseLayoutTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun column_scrollInWrongDirectionDoesNothing() = runSkikoComposeUiTest {
         lateinit var state: LazyListState
@@ -157,6 +161,7 @@ class LazyListsReverseLayoutTest {
             .assertTopPositionInRootIsEqualTo(itemSize)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     @Ignore // TODO: the test is failing
     fun column_scrollForwardHalfWay() = runSkikoComposeUiTest {
@@ -191,6 +196,7 @@ class LazyListsReverseLayoutTest {
             .assertTopPositionInRootIsEqualTo(itemSize + scrolled)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun column_scrollForwardTillTheEnd() = runSkikoComposeUiTest {
         lateinit var state: LazyListState
@@ -225,6 +231,7 @@ class LazyListsReverseLayoutTest {
             .assertTopPositionInRootIsEqualTo(itemSize)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun row_emitTwoElementsAsOneItem_positionedReversed() = runSkikoComposeUiTest {
         setContent {
@@ -244,6 +251,7 @@ class LazyListsReverseLayoutTest {
             .assertLeftPositionInRootIsEqualTo(itemSize)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun row_emitTwoItems_positionedReversed() = runSkikoComposeUiTest {
         setContent {
@@ -265,6 +273,7 @@ class LazyListsReverseLayoutTest {
             .assertLeftPositionInRootIsEqualTo(itemSize)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun row_initialScrollPositionIs0() = runSkikoComposeUiTest {
         lateinit var state: LazyListState
@@ -286,6 +295,7 @@ class LazyListsReverseLayoutTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun row_scrollInWrongDirectionDoesNothing() = runSkikoComposeUiTest {
         lateinit var state: LazyListState
@@ -318,6 +328,7 @@ class LazyListsReverseLayoutTest {
             .assertLeftPositionInRootIsEqualTo(itemSize)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     @Ignore // TODO: the test is failing
     fun row_scrollForwardHalfWay() = runSkikoComposeUiTest {
@@ -353,6 +364,7 @@ class LazyListsReverseLayoutTest {
             .assertLeftPositionInRootIsEqualTo(itemSize + scrolled)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun row_scrollForwardTillTheEnd() = runSkikoComposeUiTest {
         lateinit var state: LazyListState
@@ -388,6 +400,7 @@ class LazyListsReverseLayoutTest {
             .assertLeftPositionInRootIsEqualTo(itemSize)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun row_rtl_emitTwoElementsAsOneItem_positionedReversed() = runSkikoComposeUiTest {
         setContent {
@@ -409,6 +422,7 @@ class LazyListsReverseLayoutTest {
             .assertLeftPositionInRootIsEqualTo(0.dp)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun row_rtl_emitTwoItems_positionedReversed() = runSkikoComposeUiTest {
         setContent {
@@ -432,6 +446,7 @@ class LazyListsReverseLayoutTest {
             .assertLeftPositionInRootIsEqualTo(0.dp)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     @Ignore // TODO: the test is failing
     fun row_rtl_scrollForwardHalfWay() = runSkikoComposeUiTest {
@@ -469,6 +484,7 @@ class LazyListsReverseLayoutTest {
             .assertLeftPositionInRootIsEqualTo(itemSize * 2 - scrolled)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun column_whenParameterChanges() = runSkikoComposeUiTest {
         var reverse by mutableStateOf(true)
@@ -498,6 +514,7 @@ class LazyListsReverseLayoutTest {
             .assertTopPositionInRootIsEqualTo(itemSize)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun row_whenParameterChanges() = runSkikoComposeUiTest {
         var reverse by mutableStateOf(true)

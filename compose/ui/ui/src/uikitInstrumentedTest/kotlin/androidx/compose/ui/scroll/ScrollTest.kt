@@ -1054,7 +1054,6 @@ internal class ScrollTest {
                     }
                 }
             },
-            coroutineContext = Dispatchers.Main
         )
 
         var presented = false
@@ -1111,7 +1110,6 @@ internal class ScrollTest {
                                 }
                             }
                         },
-                        coroutineContext = Dispatchers.Main
                     )
                     parent.addChildViewController(composeVC)
                     scrollView.addSubview(composeVC.view)

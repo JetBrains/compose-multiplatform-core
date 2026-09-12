@@ -31,9 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.ScrollWheel
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.test.swipe
@@ -44,6 +42,7 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalTestApi::class)
 class SkikoLazyListTest {
     // https://github.com/JetBrains/compose-multiplatform/issues/3559
+    @Suppress("DEPRECATION")
     @Test
     fun textFields() = runComposeUiTest {
         val state by mutableStateOf(LazyListState())
@@ -62,6 +61,7 @@ class SkikoLazyListTest {
     }
 
     // reduced https://github.com/JetBrains/compose-multiplatform/issues/3559
+    @Suppress("DEPRECATION")
     @Test
     fun dynamicModifiers() = runComposeUiTest {
         val state by mutableStateOf(LazyListState())

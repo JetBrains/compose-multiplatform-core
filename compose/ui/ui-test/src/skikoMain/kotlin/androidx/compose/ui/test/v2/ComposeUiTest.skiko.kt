@@ -21,6 +21,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.test.ComposeUiTest
+import androidx.compose.ui.test.ComposeUiTestConfig
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.InternalTestApi
 import androidx.compose.ui.test.MainTestClock
@@ -30,11 +31,9 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.math.roundToInt
 import kotlin.time.Duration
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestResult
-import kotlinx.coroutines.test.runTest
 
 /**
  * Sets up the test environment, runs the given [test][block] and then tears down the test
@@ -74,6 +73,22 @@ import kotlinx.coroutines.test.runTest
  *   platform specific timeout exception will be thrown.
  * @param block The suspendable test body.
  */
+@Deprecated(
+    level = DeprecationLevel.WARNING,
+    message =
+        "Use runComposeUiTest(config, block) instead. " +
+            "The individual parameters `effectContext`, `runTestContext`, and `testTimeout` " +
+            "have been consolidated into [ComposeUiTestConfig] to allow for more flexible test " +
+            "environment configuration.\n" +
+            "Before:\n" +
+            "runComposeUiTest(effectContext, runTestContext, testTimeout) { ... }\n" +
+            "After:\n" +
+            "runComposeUiTest(ComposeUiTestConfig(effectContext, runTestContext, testTimeout)) { ... }",
+    replaceWith =
+        ReplaceWith(
+            "runComposeUiTest(ComposeUiTestConfig(effectContext, runTestContext, testTimeout), block)"
+        ),
+)
 @ExperimentalTestApi
 actual fun runComposeUiTest(
     effectContext: CoroutineContext,
@@ -89,6 +104,26 @@ actual fun runComposeUiTest(
         block()
     }
 }
+
+@Suppress("DEPRECATION")
+@ExperimentalTestApi
+actual fun runComposeUiTest(
+    config: ComposeUiTestConfig,
+    block: suspend ComposeUiTest.() -> Unit,
+): TestResult {
+    config.checkSupported()
+    return runSkikoComposeUiTest(
+        effectContext = config.effectContext,
+        runTestContext = config.runTestContext,
+        testTimeout = config.testTimeout,
+        block = block,
+    )
+}
+
+@OptIn(ExperimentalTestApi::class)
+@Suppress("DEPRECATION", "KotlinRunTestResultUnused")
+actual fun runComposeUiTest(block: suspend ComposeUiTest.() -> Unit): TestResult =
+    runComposeUiTest(ComposeUiTestConfig(), block)
 
 /**
  * Runs a Skiko-based Compose UI test within the specified configuration and test execution context.
@@ -161,4 +196,22 @@ fun runInternalSkikoComposeUiTest(
         windowInsets = windowInsets,
         useStandardTestDispatcherForComposition = true,
     ).runTest(block)
+}
+
+private val defaultComposeUiTestConfig = ComposeUiTestConfig()
+
+private fun ComposeUiTestConfig.checkFieldIsNotSet(
+    name: String,
+    getFieldValue: ComposeUiTestConfig.() -> Any
+) {
+    if (getFieldValue() != defaultComposeUiTestConfig.getFieldValue()) {
+        println("ComposeUiTestConfig: setting $name is not supported in Compose Multiplatform")
+    }
+}
+
+private fun ComposeUiTestConfig.checkSupported() {
+    // TODO https://youtrack.jetbrains.com/issue/CMP-10712/Support-ComposeUiTestConfiginputMode
+    checkFieldIsNotSet("inputMode", ComposeUiTestConfig::inputMode)
+    // TODO https://youtrack.jetbrains.com/issue/CMP-10711/Support-ComposeUiTestConfigfailurePolicy
+    checkFieldIsNotSet("failurePolicy", ComposeUiTestConfig::failurePolicy)
 }

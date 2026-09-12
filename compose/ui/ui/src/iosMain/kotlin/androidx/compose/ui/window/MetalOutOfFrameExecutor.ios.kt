@@ -31,7 +31,7 @@ import platform.darwin.dispatch_get_main_queue
  * The async main-queue drain is a best-effort way to run such work early, while [onFrameStart]
  * provides the ordering guarantee if the display-link callback wins the race.
  */
-internal class MetalOutOfFrameExecutor : PlatformOutOfFrameExecutor {
+internal class OutOfFrameExecutor : PlatformOutOfFrameExecutor {
     private val queue = ArrayDeque<() -> Unit>()
     private var isFrameInProgress = false
     private var isDrainScheduled = false

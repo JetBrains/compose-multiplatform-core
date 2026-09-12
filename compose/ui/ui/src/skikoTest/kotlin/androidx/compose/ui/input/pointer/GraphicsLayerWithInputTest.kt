@@ -42,6 +42,7 @@ import kotlin.test.assertNotEquals
 @OptIn(ExperimentalTestApi::class)
 class GraphicsLayerWithInputTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun testClickOnScaledBox() = runSkikoComposeUiTest {
         var clickCounter = 0

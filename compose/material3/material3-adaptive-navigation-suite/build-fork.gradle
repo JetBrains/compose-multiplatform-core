@@ -63,27 +63,6 @@ androidXMultiplatform {
             }
         }
 
-        androidMain.dependencies {
-            api("androidx.annotation:annotation:1.8.1")
-            api("androidx.annotation:annotation-experimental:1.4.1")
-        }
-
-        androidDeviceTest.dependencies {
-            implementation(project(":compose:test-utils"))
-            implementation(project(":window:window-testing"))
-            implementation(libs.junit)
-            implementation(libs.testRunner)
-            implementation(libs.truth)
-        }
-
-        androidHostTest.dependencies {
-            implementation(libs.junit)
-            implementation(libs.testRunner)
-            implementation(libs.espressoCore)
-            implementation(libs.truth)
-            implementation(project(":compose:ui:ui"))
-        }
-
         // TODO: Align naming: nonAndroidMain
         skikoMain {
             dependsOn(commonMain)
@@ -129,5 +108,4 @@ androidx {
     inceptionYear = "2023"
     description = "Compose Material Design Adaptive Navigation Suite Library"
     legacyDisableKotlinStrictApiMode = true
-    samples(project(":compose:material3:material3-adaptive-navigation-suite:material3-adaptive-navigation-suite-samples"))
 }

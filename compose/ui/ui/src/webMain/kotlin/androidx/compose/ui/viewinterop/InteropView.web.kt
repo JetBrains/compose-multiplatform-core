@@ -45,7 +45,6 @@ actual typealias InteropView = Any
  * containing [T] was reused. If null, [T] will not be reused, a new instance of [T] will be created
  * using [factory] every time this function enters the composition.
  */
-@ExperimentalComposeUiApi
 @Composable
 fun <T : HTMLElement> HtmlElementView(
     factory: () -> T,
@@ -54,12 +53,22 @@ fun <T : HTMLElement> HtmlElementView(
     onRelease: (T) -> Unit = NoOp,
     onReset: ((T) -> Unit)? = null,
 ) {
-    InternalHtmlElementView(
-        factory = factory,
-        modifier = modifier,
-        update = update,
-        onRelease = onRelease,
-        onReset = onReset,
+    val interopContainer = LocalInteropContainer.current
+
+    InteropView(
+        factory = { compositeKeyHash ->
+            WebInteropViewHolder(
+                factory,
+                interopContainer,
+                compositeKeyHash
+            )
+        },
+        modifier.focusInteropModifier(),
+        onReset,
+        onRelease,
+        update = {
+            update(it)
+        }
     )
 }
 /**
@@ -86,7 +95,6 @@ fun <T : HTMLElement> HtmlElementView(
  * using [factory] every time this function enters the composition.
  */
 @Deprecated("Use HtmlElementView instead", replaceWith = ReplaceWith("HtmlElementView(factory, modifier, update, onRelease, onReset)"))
-@ExperimentalComposeUiApi
 @Composable
 fun <T : HTMLElement> WebElementView(
     factory: () -> T,
@@ -105,30 +113,3 @@ fun <T : HTMLElement> WebElementView(
 }
 
 internal actual class InteropViewGroup(val htmlElement: HTMLElement)
-
-@Composable
-internal fun <T : HTMLElement> InternalHtmlElementView(
-    factory: () -> T,
-    modifier: Modifier,
-    update: (T) -> Unit,
-    onRelease: (T) -> Unit,
-    onReset: ((T) -> Unit)?,
-) {
-    val interopContainer = LocalInteropContainer.current
-
-    InteropView(
-        factory = { compositeKeyHash ->
-            WebInteropViewHolder(
-                factory,
-                interopContainer,
-                compositeKeyHash
-            )
-        },
-        modifier,
-        onReset,
-        onRelease,
-        update = {
-            update(it)
-        }
-    )
-}

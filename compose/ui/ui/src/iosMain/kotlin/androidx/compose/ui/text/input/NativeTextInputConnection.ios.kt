@@ -20,10 +20,11 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.DpInsets
+import androidx.compose.ui.platform.EmptyTextEditingDelegate
 import androidx.compose.ui.platform.NativeTextEditingDelegate
-import androidx.compose.ui.platform.PlatformTextLayoutDirection
+import androidx.compose.ui.platform.TextLayoutDirection
 import androidx.compose.ui.platform.TextInputSelectionRect
-import androidx.compose.ui.platform.UIKitNativeTextInputContextMenuCustomAction
+import androidx.compose.ui.platform.NativeTextInputContextMenuCustomAction
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.platform.toUIColor
 import androidx.compose.ui.scene.ComposeSceneFocusManager
@@ -33,7 +34,6 @@ import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.utils.CMPEditMenuCustomAction
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.toSize
@@ -63,7 +63,9 @@ internal class NativeTextInputConnection(
 ), NativeTextEditingDelegate {
     private val scrollView by lazy { NativeTextInputScrollView() }
 
-    override val textInputView = NativeTextInputView()
+    override val isInteractive: Boolean = true
+
+    override val textInputView = NativeTextInputView(input = EmptyTextEditingDelegate)
 
     override fun attachInputToView() {
         view.addSubview(scrollView)
@@ -81,7 +83,7 @@ internal class NativeTextInputConnection(
         // Out-of-bounds non-empty frame is required to hide text keyboard focus frame
         val outOfBoundsFrame = CGRectMake(-100000.0, 0.0, 1.0, 1.0)
 
-        textInputView.input = null
+        textInputView.input = EmptyTextEditingDelegate
 
         textInputView.let { textView ->
             textView.setFrame(outOfBoundsFrame)
@@ -175,7 +177,7 @@ internal class NativeTextInputConnection(
         }
         val rect = currentTextLayoutResult.getCursorRect(position)
         return rect.toDpRect(view.density).let {
-            val halfWidth = cursorThickness / 2
+            val halfWidth = CURSOR_THICKNESS / 2
             val center = (it.left + it.right) / 2
             it.copy(left = center - halfWidth, right = center + halfWidth)
         }
@@ -327,12 +329,12 @@ internal class NativeTextInputConnection(
 
     override fun positionWithinRange(
         range: TextRange,
-        farthestInDirection: PlatformTextLayoutDirection
+        farthestInDirection: TextLayoutDirection
     ): Int? {
         if (isIncorrect(range)) return null
         return when (farthestInDirection) {
-            PlatformTextLayoutDirection.Up -> range.start
-            PlatformTextLayoutDirection.Down -> range.end
+            TextLayoutDirection.Up -> range.start
+            TextLayoutDirection.Down -> range.end
             else -> {
                 val layout = textLayoutResult ?: return null
                 val startLine = layout.getLineForOffset(range.start)
@@ -349,9 +351,9 @@ internal class NativeTextInputConnection(
                 }
 
                 when (farthestInDirection) {
-                    PlatformTextLayoutDirection.Left ->
+                    TextLayoutDirection.Left ->
                         candidateOffsets.minByOrNull { layout.getHorizontalPosition(it, true) }
-                    PlatformTextLayoutDirection.Right ->
+                    TextLayoutDirection.Right ->
                         candidateOffsets.maxByOrNull { layout.getHorizontalPosition(it, true) }
                     else -> null
                 }
@@ -370,7 +372,7 @@ internal class NativeTextInputConnection(
         paste: (() -> Unit)?,
         cut: (() -> Unit)?,
         selectAll: (() -> Unit)?,
-        customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
+        customActions: List<NativeTextInputContextMenuCustomAction>?
     ) {
         textInputView.updateMenuActions(
             copy,
@@ -387,11 +389,4 @@ internal class NativeTextInputConnection(
         selectionTintColor = color
         setupTintColor()
     }
-
-    /**
-     * Matches DefaultCursorThickness
-     *
-     * Must be at least 1.dp to make caret interactable
-     */
-    private val cursorThickness = 2.dp
 }

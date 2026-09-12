@@ -1,0 +1,8 @@
+apply from: "../shared.gradle"
+
+dependencies {
+    testImplementation(project(":private"))
+    testImplementation(gradleTestKit())
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
+}

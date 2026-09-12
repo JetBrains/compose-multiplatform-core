@@ -79,7 +79,6 @@ import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.test.StandardTestDispatcher
 import leakcanary.DetectLeaksAfterTestSuccess
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -95,7 +94,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @LargeTest
 class AnimatedContentTest {
-    val rule = createComposeRule(StandardTestDispatcher())
+    val rule = createComposeRule()
 
     // Detect leaks BEFORE and AFTER compose rule work
     @get:Rule
@@ -453,7 +452,6 @@ class AnimatedContentTest {
         }
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun AnimatedContentSlideInAndOutOfContainerTest() {
         val transitionState = MutableTransitionState(true)
@@ -737,7 +735,6 @@ class AnimatedContentTest {
         }
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun AnimatedContentWithInterruption() {
         var flag by mutableStateOf(true)
@@ -794,7 +791,6 @@ class AnimatedContentTest {
         rule.runOnIdle { flag = false }
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun testExitHold() {
         var target by mutableStateOf(true)
@@ -914,7 +910,6 @@ class AnimatedContentTest {
         rule.waitForIdle()
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun testExitHoldDefersUntilAllFinished() {
         var target by mutableStateOf(true)

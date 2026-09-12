@@ -40,7 +40,12 @@ import org.w3c.dom.ImageData
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.Node
 
-internal abstract class WebDragAndDropManager(private val rootNode: Node, eventListener: EventTargetListener, globalEventsListener: EventTargetListener, private val density: Density) :
+internal abstract class WebDragAndDropManager(
+    private val rootNode: Node,
+    eventListener: EventTargetListener,
+    globalEventsListener: EventTargetListener,
+    private val densityProvider: () -> Density
+) :
     PlatformDragAndDropManager {
     override val isRequestDragAndDropTransferRequired: Boolean
         get() = false
@@ -120,7 +125,7 @@ internal abstract class WebDragAndDropManager(private val rootNode: Node, eventL
             previousDragEventIsStart = true
             event as DragEvent
 
-            val scope = InternalStartTransferScope(density)
+            val scope = InternalStartTransferScope(densityProvider())
 
             if (scope.startTransfer(event)) {
                 // without setting any kind of data in data transfer Safari on iOS won't proceed with drag action
@@ -176,7 +181,7 @@ internal abstract class WebDragAndDropManager(private val rootNode: Node, eventL
     private val DragEvent.offset get() = Offset(
         x = offsetX.toFloat(),
         y = offsetY.toFloat()
-    ) * density.density
+    ) * densityProvider().density
 }
 
 @Suppress("UNUSED_PARAMETER")

@@ -23,11 +23,14 @@ import androidx.collection.mutableIntObjectMapOf
 import androidx.collection.mutableIntSetOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.LocalSystemTheme
+import androidx.compose.ui.asComposeSystemTheme
 import androidx.compose.ui.draganddrop.WebDragAndDropManager
 import androidx.compose.ui.events.EventTargetListener
 import androidx.compose.ui.geometry.Offset
@@ -75,8 +78,10 @@ import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.PlatformOutOfFrameExecutor
 import androidx.compose.ui.platform.PlatformPrefetchScheduler
+import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.WebPrefetchScheduler
 import androidx.compose.ui.platform.isIdleCallbackSupported
+import androidx.compose.ui.platform.isVibrationSupported
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
 import androidx.compose.ui.scene.ComposeScenePointer
 import androidx.compose.ui.scene.PointerEventResult
@@ -104,11 +109,8 @@ import kotlin.js.js
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.receiveAsFlow
+import org.jetbrains.skia.DirectContext
 import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkikoRenderDelegate
 import org.jetbrains.skiko.hostOs
@@ -123,7 +125,6 @@ import org.w3c.dom.Node
 import org.w3c.dom.TouchEvent
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.EventTarget
-import org.w3c.dom.events.FocusEvent
 import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.events.WheelEvent
@@ -134,7 +135,8 @@ private val actualDensity
 
 internal interface ComposeWindowState {
     fun init() {}
-    fun sizeFlow(): Flow<IntSize>
+    fun currentSize(): IntSize
+    fun observeSizeAndScaleChanges(listener: () -> Unit): () -> Unit
 
     val globalEvents: EventTargetListener
 
@@ -149,25 +151,41 @@ private sealed interface KeyboardModeState {
 }
 
 internal class DefaultWindowState(private val viewportContainer: Element) : ComposeWindowState {
-    private val channel = Channel<IntSize>(CONFLATED)
+    private var sizeChangeListener: (() -> Unit)? = null
 
     override val globalEvents = EventTargetListener(window)
 
     private var mediaQueryListener: MediaQueryListener? = null
 
-    override fun init() {
+    private var viewportTargetListener: EventTargetListener? = null
 
-        globalEvents.addDisposableEvent("resize") {
-            channel.trySend(getParentContainerBox())
+    override fun init() {
+        val resizeListener: (Event) -> Unit = {
+            sizeChangeListener?.invoke()
         }
 
-        recreateMediaQueryListener()
+        globalEvents.addDisposableEvent("resize", resizeListener)
 
-        channel.trySend(getParentContainerBox())
+        viewportTargetListener = getVisualViewport()?.let { EventTargetListener(it) }
+        // Unlike resize on window, this one is also trigerred when visualViewport.scale is changed,
+        // so on pinch-to-zoom too:
+        viewportTargetListener?.addDisposableEvent("resize", resizeListener)
+
+        recreateMediaQueryListener()
     }
 
-    private fun getParentContainerBox(): IntSize {
+    override fun currentSize(): IntSize {
         return IntSize(viewportContainer.clientWidth, viewportContainer.clientHeight)
+    }
+
+    override fun observeSizeAndScaleChanges(listener: () -> Unit): () -> Unit {
+        check(sizeChangeListener == null) { "A size listener is already registered" }
+        sizeChangeListener = listener
+        return {
+            if (sizeChangeListener === listener) {
+                sizeChangeListener = null
+            }
+        }
     }
 
     private fun recreateMediaQueryListener() {
@@ -176,7 +194,7 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
         mediaQueryListener = object : MediaQueryListener("(resolution: ${contentScale}dppx)") {
             override fun onChange(matches: Boolean) {
                 if (!matches) {
-                    channel.trySend(getParentContainerBox())
+                    sizeChangeListener?.invoke()
                 }
                 recreateMediaQueryListener()
             }
@@ -184,17 +202,18 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
     }
 
     override fun dispose() {
+        sizeChangeListener = null
+        viewportTargetListener?.dispose()
         mediaQueryListener?.dispose()
         super.dispose()
     }
-
-    override fun sizeFlow() = channel.receiveAsFlow()
 }
 
 @VisibleForTesting
 // This value is for internal usage, for example, to call ComposeWindow.dispose() in the tests
+// `null` when Compose is not hosted by a ComposeWindow, e.g. in some tests.
 internal val LocalComposeWindow: ProvidableCompositionLocal<ComposeWindow?> = staticCompositionLocalOf {
-    error("ComposeWindow is not available in this composition")
+    null
 }
 
 @OptIn(InternalComposeApi::class)
@@ -202,6 +221,7 @@ internal class ComposeWindow(
     private val canvas: HTMLCanvasElement,
     private val rootNode: Node,
     private val layerRoot: HTMLElement,
+    private val viewportContainer: Element,
     private val interopContainerElement: HTMLDivElement,
     private val a11yContainerElement: HTMLDivElement?,
     private val configuration: ComposeViewportConfiguration,
@@ -212,17 +232,21 @@ internal class ComposeWindow(
 
     private var actualActivePointerButtons: PointerButtons = PointerButtons()
 
-    private val density: Density = Density(
+    private var density: Density = Density(
         density = actualDensity.toFloat(),
         fontScale = 1f
     )
 
     private val _windowInfo = WindowInfoImpl().apply {
-        isWindowFocused = true
+        isWindowFocused = document.hasFocus()
     }
 
     @VisibleForTesting
     internal val archComponentsOwner = DefaultArchitectureComponentsOwner()
+
+    @VisibleForTesting
+    internal val webSemanticsListener: ComposeWebSemanticsListener?
+        get() = platformContext.semanticsOwnerListener as? ComposeWebSemanticsListener
 
     private val navigationEventInput = BackNavigationEventInput()
 
@@ -259,11 +283,17 @@ internal class ComposeWindow(
             override val outOfFrameExecutor: PlatformOutOfFrameExecutor? get() = webOutOfFrameExecutor
 
             override val windowInfo get() = _windowInfo
+
+            override val screenReader: PlatformScreenReader
+                get() = object : PlatformScreenReader {
+                    override var isActive = configuration.isA11YEnabled
+                }
+
             override val architectureComponentsOwner get() = archComponentsOwner
             override val windowInsets get() = insetsManager?.windowInsets ?: EmptyPlatformWindowInsets
 
             override val dragAndDropManager: PlatformDragAndDropManager = object :
-                WebDragAndDropManager(rootNode, canvasEvents, state.globalEvents, density) {
+                WebDragAndDropManager(rootNode, canvasEvents, state.globalEvents, { density }) {
                 override val rootDragAndDropNode: ComposeSceneDragAndDropNode
                     get() = scene.rootDragAndDropNode
             }
@@ -292,7 +322,7 @@ internal class ComposeWindow(
             }
 
             override val hapticFeedback by lazy(LazyThreadSafetyMode.NONE) {
-                WebHapticFeedback.webHapticFeedbackOrDefault()
+                if (isVibrationSupported()) WebHapticFeedback() else super.hapticFeedback
             }
 
             override val prefetchScheduler: PlatformPrefetchScheduler =
@@ -381,8 +411,21 @@ internal class ComposeWindow(
 
     @InternalComposeApi
     private val canvasHolder = SkiaCanvasHolder()
+
+    internal val htmlCanvas: HTMLCanvasElement get() = canvas
+
+    /**
+     * Skia's GPU context, captured from the surface canvas on the first rendered frame;
+     * It's used by WebGL texture adoption demo.
+     */
+    internal var skiaDirectContext: DirectContext? = null
+        private set
+
     private val skiaLayer: SkiaLayer = SkiaLayer().apply {
         renderDelegate = SkikoRenderDelegate { canvas, _, _, nanoTime ->
+            if (skiaDirectContext == null) {
+                skiaDirectContext = canvas.recordingContext
+            }
             @Suppress("INVISIBLE_REFERENCE")
             canvasHolder.drawInto(canvas) {
                 with(sceneRenderingScope) {
@@ -399,7 +442,7 @@ internal class ComposeWindow(
     private val scene = CanvasLayersComposeScene(
         frameRecomposer = frameRecomposer,
         platformContext = platformContext,
-        density = density,
+        density = density, // initial density
         // TODO: Split layout invalidation from draw invalidation once the web host has distinct
         //  scheduling paths for relayout vs redraw.
         invalidateLayout = sceneRenderingScope::onSceneInvalidation,
@@ -456,6 +499,9 @@ internal class ComposeWindow(
     // is nested in a scrollable html container
     private val rootScrollObserver = RootScrollObserver()
 
+
+
+
     private fun initEvents(canvas: HTMLCanvasElement) {
 
         val onPointerCallback: (PointerEvent) -> Unit = { onPointerEvent(it) }
@@ -476,15 +522,31 @@ internal class ComposeWindow(
             actualActivePointerButtons = PointerButtons()
         }
 
-        addTypedEvent<TouchEvent>("touchstart", passive = true) { _ ->
-            // We deliberately never preventDefault() touchstart, even though Compose consumes
+        val webTextInputService = platformContext.textInputService as WebTextInputService
+
+        addTypedEvent<TouchEvent>("touchstart", passive = false) { evt ->
+            // preventDefault the touchstart if the corresponding pointerdown hits the active text input.
+            // Pros: a long press (touchstart + ~500ms delay after it) triggers focus changes in iOS Safari,
+            // and this is the only chance (the only event we have) to prevent that behavior,
+            // since we want the focus to remain in the active text input.
+            // Cons: the browser's gestures (e.g., pull-to-refresh) become suppressed while
+            // the pointer is in the active text input.
+            val isTextFieldActive = webTextInputService.getBackingInput()?.isFocused() ?: false
+            if (isTextFieldActive) {
+                val position = activeTouchPointers[lastPointerDownId]?.composePointer?.position
+                if (webTextInputService.hitTest(position ?: Offset.Unspecified)) {
+                    evt.preventDefault()
+                }
+            }
+            lastPointerDownId = -1
+
+            // In other cases, we never preventDefault() touchstart, even though Compose consumes
             // the corresponding pointerdown on interactive areas. Per the Touch Events spec,
             // canceling touchstart suppresses the browser's default actions for the entire
-            // touch sequence: scrolling, back gesture, pull-to-refresh, AND the compatibility
-            // mouse events - and at touchstart time we can't yet know whether Compose will
+            // touch sequence: scrolling, back gesture, pull-to-refresh, and the compatibility
+            // mouse events. At touchstart time we can't yet know whether Compose will
             // actually handle the gesture. The decision is deferred to where it can be made
             // correctly: touchmove (move-based gestures) and touchend (tap-based defaults).
-            // The listener is passive and empty; it exists to document this decision.
         }
 
         addTypedEvent<TouchEvent>("touchend", passive = false) { evt ->
@@ -545,22 +607,16 @@ internal class ComposeWindow(
         val onKeyboardEventCallback: (KeyboardEvent) -> Unit = { event ->
             processKeyboardEvent(event)
         }
-        addTypedEvent<KeyboardEvent>("keydown", onKeyboardEventCallback)
-        addTypedEvent<KeyboardEvent>("keyup", onKeyboardEventCallback)
-
-        addTypedEvent<FocusEvent>("focus") { event ->
-            canvasFocused = true
-        }
-
-        addTypedEvent<FocusEvent>("blur") { event ->
-            canvasFocused = false
-        }
+        addTypedEvent("keydown", onKeyboardEventCallback)
+        addTypedEvent("keyup", onKeyboardEventCallback)
 
         state.globalEvents.addDisposableEvent("focus") {
+            _windowInfo.isWindowFocused = true
             archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
         }
 
         state.globalEvents.addDisposableEvent("blur") {
+            _windowInfo.isWindowFocused = false
             archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
         }
 
@@ -575,14 +631,16 @@ internal class ComposeWindow(
     init {
         if (configuration.enableBrowserWindowInsets) {
             checkViewportFitCover()
-            insetsManager = WebWindowInsetsManager(density, canvas)
+            insetsManager = WebWindowInsetsManager({ density }, canvas)
         }
 
         initEvents(canvas)
         state.init()
 
-
-        scene.density = density
+        applyResizeAndScale(
+            size = state.currentSize(),
+            viewportScale = getVisualViewportScale()
+        )
         archComponentsOwner.enableSavedStateHandles()
 
         val interopContainer = WebInteropContainer(InteropViewGroup(interopContainerElement))
@@ -593,7 +651,8 @@ internal class ComposeWindow(
         }
         scene.setContent {
             CompositionLocalProvider(
-                LocalSystemTheme provides systemThemeObserver.currentSystemTheme.value,
+                @Suppress("DEPRECATION")
+                LocalSystemTheme provides systemThemeObserver.currentSystemTheme.value.asComposeSystemTheme(),
                 LocalInteropContainer provides interopContainer,
                 LocalActiveClipEventsTarget provides clipEventsTargetProvider,
                 LocalComposeWindow provides this,
@@ -605,24 +664,31 @@ internal class ComposeWindow(
                         }
                     }
 
+                    DisposableEffect(state) {
+                        // Observe the resize/scale events and retrieve the new values.
+                        // Apply new values eagerly to improve resize smoothness and avoid performing
+                        // canvas/scene resize mutations while the recomposer drains composition effects.
+                        // See https://youtrack.jetbrains.com/issue/CMP-10751
+                        val stopObservingSize = state.observeSizeAndScaleChanges {
+                            applyResizeAndScale(
+                                size = state.currentSize(),
+                                viewportScale = getVisualViewportScale()
+                            )
+                        }
+                        onDispose(stopObservingSize)
+                    }
+
                     LaunchedEffect(Unit) {
-                        state.sizeFlow().collect { size ->
-                            // Convert to proper type: IntSize was exposed to public API with meaning of DPs.
-                            val boxSize = DpSize(size.width.dp, size.height.dp)
-                            this@ComposeWindow.resize(boxSize)
+                        coroutineScope {
+                            // The initial composition would create a lot of noisy invalidations,
+                            // so it makes sense to start the listener here - after the initial composition.
+                            // The composition's coroutine scope ties the listener's lifetime to the composition.
+                            webSemanticsListener?.start(this)
                         }
                     }
 
-                    val webSemanticsListener = platformContext.semanticsOwnerListener as? ComposeWebSemanticsListener
-                    if (webSemanticsListener != null) {
-                        LaunchedEffect(Unit) {
-                            coroutineScope {
-                                // The initial composition would create a lot of noisy invalidations,
-                                // so it makes sense to start the listener here - after the initial composition.
-                                // The composition's coroutine scope ties the listener's lifetime to the composition.
-                                webSemanticsListener.start(this)
-                            }
-                        }
+                    DisposableEffect(Unit) {
+                        onDispose { webSemanticsListener?.stop() }
                     }
                 }
             )
@@ -636,8 +702,30 @@ internal class ComposeWindow(
             .navigationEventDispatcher.addInput(navigationEventInput)
     }
 
-    private fun resize(boxSize: DpSize) {
-        val sizeInPx = boxSize.toSize(density).toIntSize()
+    private fun applyResizeAndScale(
+        size: IntSize,
+        viewportScale: Float
+    ) = Snapshot.withMutableSnapshot {
+        // Coerce the original value so it doesn't exceed 2.0 to avoid unlimited canvas growth and memory consumption.
+        // Otherwise, the browser might clip the canvas content (tested in Chrome) making some UI parts unreachable.
+        // We accept some blur might be still noticeable on higher than 2.0 scale.
+        val coercedViewportScale = viewportScale.coerceIn(1f, 2f)
+
+        val newDensity = Density(
+            // actualDensity accounts for browser zoom (via Cmd/Ctrl+-),
+            // but it doesn't account for viewport scale.
+            // So account for viewport scale to avoid blurred UI after pinch-to-zoom:
+            density = actualDensity.toFloat() * coercedViewportScale,
+            fontScale = density.fontScale
+        )
+
+        if (newDensity != density) {
+            density = newDensity
+            scene.density = newDensity
+        }
+
+        val dpSize = DpSize(size.width.dp, size.height.dp)
+        val sizeInPx = dpSize.toSize(density).toIntSize()
 
         // we need to scale canvas both via CSS styling and HTML attributes
         // https://www.khronos.org/webgl/wiki/HandlingHighDPI
@@ -649,7 +737,7 @@ internal class ComposeWindow(
         // the wasm2js boundary. See ComposeViewport for the setup.
 
         _windowInfo.containerSize = sizeInPx
-        _windowInfo.containerDpSize = boxSize
+        _windowInfo.containerDpSize = dpSize
 
         // TODO: Align with Container/Mediator architecture
         skiaLayer.attachTo(canvas)
@@ -671,6 +759,7 @@ internal class ComposeWindow(
         archComponentsOwner.navigationEventDispatcherOwner
             .navigationEventDispatcher.removeInput(navigationEventInput)
 
+        webSemanticsListener?.stop()
         webOutOfFrameExecutor?.dispose()
         scene.close()
         frameRecomposer.close()
@@ -682,6 +771,7 @@ internal class ComposeWindow(
         // modern browsers supposed to garbage collect all events on the element disposed
         // but actually we never can be sure dom element was collected in first place
         canvasEvents.dispose()
+
         isDisposed = true
     }
 
@@ -711,6 +801,9 @@ internal class ComposeWindow(
     }
 
     private val activeTouchPointers = mutableIntObjectMapOf<TouchEventWithContainerOffset>()
+
+
+    private var lastPointerDownId: Int = -1
 
     // Whether Compose consumed the most recent touch pointerup. Read (and then reset) by the
     // touchend handler, which the browser dispatches right after pointerup, to decide whether
@@ -881,6 +974,8 @@ internal class ComposeWindow(
                 event.preventDefault()
                 if (eventType == PointerEventType.Move) {
                     activeTouchPointersConsumedMoves.add(event.pointerId)
+                } else if (eventType == PointerEventType.Press) {
+                    lastPointerDownId = event.pointerId
                 }
             }
         }
@@ -938,6 +1033,15 @@ internal class ComposeWindow(
             x = offsetX.toFloat() * density.density,
             y = offsetY.toFloat() * density.density
         )
+
+    internal fun focusCanvas() {
+        canvas.focus()
+    }
+
+    internal fun isFocusInComposeContainer(): Boolean {
+        return document.activeElement != null && viewportContainer.contains(document.activeElement)
+            || (rootNode as ShadowRootExt).activeElement != null
+    }
 
     companion object {
         private val DomDisposableRegistry = WeakMap<JsAny>()
@@ -1002,8 +1106,8 @@ private fun PointerEvent.toScenePointerEvent(
     val event = this
     val type = event.getPointerEventType()
     val position = Offset(
-        x = (event.clientX - containerOffset.x) * density.density,
-        y = (event.clientY - containerOffset.y) * density.density
+        x = (clientXOf(event).toFloat() - containerOffset.x) * density.density,
+        y = (clientYOf(event).toFloat() - containerOffset.y) * density.density
     )
     return ComposeScenePointer(
         id = PointerId(event.pointerId.toLong()),
@@ -1061,6 +1165,19 @@ private fun checkViewportFitCover(): Unit = js(
         }
     })()"""
 )
+
+// `MouseEvent.clientX`/`clientY` are declared as `Int` in the Kotlin DOM bindings, while the CSSOM
+// View spec defines them as `double`. Going through the typed accessors truncates the coordinates to
+// whole CSS pixels, which on a high-DPI screen quantizes every pointer position to `devicePixelRatio`
+// Compose pixels and turns slow, sub-pixel movement into a stream of zero-delta moves. Compose reads
+// a move with a zero position delta as "no one is handling this gesture", so an outer scrollable can
+// take an ongoing drag away from an inner one - see https://youtrack.jetbrains.com/issue/CMP-10575.
+// Read the raw values instead to keep the fractional part.
+// language=js
+private fun clientXOf(event: PointerEvent): Double = js("event.clientX")
+
+// language=js
+private fun clientYOf(event: PointerEvent): Double = js("event.clientY")
 
 // strings checks are faster on a JS side
 // language=js
@@ -1153,3 +1270,12 @@ private external interface CustomElementRegistry : JsAny {
 }
 
 private external val customElements: CustomElementRegistry
+
+//language=js
+private fun getVisualViewportScale(): Float =
+    js("window.visualViewport.scale")
+
+// https://developer.mozilla.org/en-US/docs/Web/API/Window/visualViewport
+// Widely available
+private fun getVisualViewport(): EventTarget =
+    js("window.visualViewport")

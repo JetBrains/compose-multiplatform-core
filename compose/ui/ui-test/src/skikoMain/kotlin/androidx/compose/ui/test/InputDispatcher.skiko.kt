@@ -406,6 +406,7 @@ internal class SkikoInputDispatcher(
             currentClockTime = event.eventTime
             event.action()
         }
+        testContext.testOwner.runCurrent()
     }
 
     override fun onDispose() {

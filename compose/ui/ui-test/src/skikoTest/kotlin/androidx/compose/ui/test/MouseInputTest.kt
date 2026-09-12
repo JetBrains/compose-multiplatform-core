@@ -18,11 +18,15 @@ package androidx.compose.ui.test
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.PointerMatcher
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.onClick
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.*
@@ -40,6 +44,7 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalTestApi::class, ExperimentalFoundationApi::class)
 class MouseInputTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun testPerformClick() = runComposeUiTest {
         var clicked = false
@@ -60,6 +65,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testMouseClick() = runComposeUiTest {
         var clicked = false
@@ -82,6 +88,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testMousePressDragAndRelease() = runComposeUiTest {
         var pressDetected = false
@@ -146,6 +153,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testMouseEnterExit() = runComposeUiTest {
         var mouseEnterDetected = false
@@ -178,6 +186,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun updatePointerToDoesNotSendMoveEvent() = runComposeUiTest {
         var mouseMoveDetected = false
@@ -203,6 +212,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testScroll() = runComposeUiTest {
         var scrollDelta = Offset.Unspecified
@@ -236,6 +246,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testClick() = runComposeUiTest {
         var clickDetected = false
@@ -259,6 +270,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testRightClick() = runComposeUiTest {
         var rightClickDetected = false
@@ -282,6 +294,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testDoubleClick() = runComposeUiTest {
         var doubleClickDetected = false
@@ -309,6 +322,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testTripleClick() = runComposeUiTest {
         var clickCount = 0
@@ -335,6 +349,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testLongClick() = runComposeUiTest {
         var longClickDetected = false
@@ -362,6 +377,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testDragAndDrop() = runComposeUiTest {
         var dragOffset = Offset.Zero
@@ -394,6 +410,7 @@ class MouseInputTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testSmoothScroll() = runComposeUiTest {
         var scrollDelta = Offset.Zero
@@ -447,5 +464,84 @@ class MouseInputTest {
             message = (if (message == null) "" else "$message; ") +
                 "expected=$expected, actual=$actual, toleratedDistance=$toleratedDistance"
         )
+    }
+
+    private fun Modifier.dragWithNoMoveWorkaround(
+        onDrag: (PointerInputChange) -> Unit
+    ) = this
+        .pointerInput(onDrag) {
+            awaitPointerEventScope {
+                val press = awaitFirstDown()
+                val pointerId = press.id
+                drag(pointerId) { change ->
+                    onDrag(change)
+                    change.consume()
+                }
+            }
+        }
+
+    // Verify that only move events are consumed during drag
+    @Test
+    fun scrollDuringDragIsNotConsumed() = androidx.compose.ui.test.v2.runComposeUiTest {
+        var scrollEventReceived = false
+        setContent {
+            Box(
+                modifier = Modifier
+                    .testTag("box")
+                    .size(100.dp)
+                    .onPointerEvent(PointerEventType.Scroll) {
+                        scrollEventReceived = true
+                    }
+                    .dragWithNoMoveWorkaround { }
+            )
+        }
+
+        onNodeWithTag("box").performMouseInput {
+            press()
+            moveBy(Offset(0f, 20f))
+            scroll(Offset(0f, 20f))
+            release()
+        }
+
+        assertTrue(scrollEventReceived)
+    }
+
+    // Verify that moving the underlying element during a drag gesture causes a drag event to be
+    // detected.
+    @Test
+    fun dragCalledWhenElementIsMoved() = androidx.compose.ui.test.v2.runComposeUiTest {
+        var pointerPosition = Offset.Unspecified
+        val scrollState = ScrollState(0)
+        setContent {
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .verticalScroll(scrollState)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .testTag("box")
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .dragWithNoMoveWorkaround { change ->
+                            pointerPosition = change.position
+                        }
+                )
+            }
+        }
+
+        onNodeWithTag("box").performMouseInput {
+            moveTo(Offset(0f, 0f))
+            press()
+        }
+
+        scrollState.scrollTo(50)
+        awaitIdle()
+
+        onNodeWithTag("box").performMouseInput {
+            release()
+        }
+
+        assertEquals(Offset(0f, 50f), pointerPosition)
     }
 }

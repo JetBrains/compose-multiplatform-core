@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -47,14 +48,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.material3.ToggleButtonShapes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -87,7 +91,7 @@ fun ButtonGroupWithCustomItemSample() {
     val options = listOf("Work", "Restaurant", "Home")
     val unCheckedIcons = listOf(Icons.Outlined.Work, Icons.Outlined.Restaurant, Icons.Outlined.Home)
     val checkedIcons = listOf(Icons.Filled.Work, Icons.Filled.Restaurant, Icons.Filled.Home)
-    val checked = remember { mutableStateListOf(false, false, false) }
+    val checked = rememberSaveable { mutableStateListOf(false, false, false) }
     val interactionSources = remember { List(options.size) { MutableInteractionSource() } }
     ButtonGroup(
         overflowIndicator = { menuState ->
@@ -98,6 +102,8 @@ fun ButtonGroupWithCustomItemSample() {
         options.forEachIndexed { index, label ->
             customItem(
                 buttonGroupContent = {
+                    val contentPadding = ButtonDefaults.ButtonWithIconContentPadding
+                    val layoutDirection = LocalLayoutDirection.current
                     ToggleButton(
                         checked = checked[index],
                         onCheckedChange = { checked[index] = it },
@@ -108,12 +114,13 @@ fun ButtonGroupWithCustomItemSample() {
                                     ButtonGroupDefaults.connectedTrailingButtonShapes()
                                 else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
                             },
-                        contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                        contentPadding = contentPadding,
                         interactionSource = interactionSources[index],
                         modifier =
                             Modifier.animateWidth(
                                 interactionSource = interactionSources[index],
-                                compressionLimit = ButtonDefaults.ButtonWithIconContentPadding,
+                                compressionLimit =
+                                    contentPadding.calculateEndPadding(layoutDirection),
                             ),
                     ) {
                         Icon(
@@ -163,7 +170,7 @@ fun SingleSelectConnectedButtonGroupSample() {
             Icons.Filled.Search,
             Icons.Filled.Home,
         )
-    var selectedIndex by remember { mutableIntStateOf(0) }
+    var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
 
     FlowRow(
         Modifier.padding(horizontal = 8.dp).fillMaxWidth(),
@@ -214,7 +221,7 @@ fun MultiSelectConnectedButtonGroupSample() {
             Icons.Filled.Search,
             Icons.Filled.Home,
         )
-    val checked = remember { mutableStateListOf(false, false, false, false, false) }
+    val checked = rememberSaveable { mutableStateListOf(false, false, false, false, false) }
 
     FlowRow(
         Modifier.padding(horizontal = 8.dp).fillMaxWidth(),
@@ -249,7 +256,7 @@ fun MultiSelectConnectedButtonGroupSample() {
 @Composable
 fun VerticalButtonGroupSample() {
     val options = listOf("Button 1", "Button 2", "Button 3", "Button 4", "Button 5")
-    var selectedIndex by remember { mutableIntStateOf(0) }
+    var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
 
     Column(verticalArrangement = Arrangement.spacedBy((-6).dp)) {
         options.forEachIndexed { index, label ->
@@ -269,8 +276,9 @@ fun VerticalButtonGroupSample() {
                 checked = selectedIndex == index,
                 onCheckedChange = { selectedIndex = index },
                 shapes =
-                    ToggleButtonDefaults.shapes(
+                    ToggleButtonShapes(
                         shape = shape,
+                        pressedShape = ToggleButtonDefaults.pressedShape,
                         checkedShape = ButtonGroupDefaults.connectedButtonCheckedShape,
                     ),
                 modifier = Modifier.semantics { role = Role.RadioButton },

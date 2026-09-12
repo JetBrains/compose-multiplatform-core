@@ -27,9 +27,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.SessionMutex
+import androidx.compose.ui.UiMediaScope
 import androidx.compose.ui.areWindowInsetsRulersEnabled
 import androidx.compose.ui.autofill.AutofillManager
 import androidx.compose.ui.focus.FocusDirection
@@ -71,8 +73,10 @@ import androidx.compose.ui.platform.PlatformRootForTest
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.PlatformWindowInsets
+import androidx.compose.ui.platform.TaskDispatchers
 import androidx.compose.ui.platform.createPlatformClipboard
 import androidx.compose.ui.platform.createPlatformClipboardManager
+import androidx.compose.ui.platform.createPlatformUriHandler
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.ComposeSceneInputHandler
 import androidx.compose.ui.scene.ComposeScenePointer
@@ -93,6 +97,7 @@ import androidx.compose.ui.unit.bounds
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.toMaxConstraints
 import androidx.compose.ui.unit.toRect
+import androidx.compose.ui.useSnapshotCache
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.trace
@@ -132,7 +137,10 @@ internal class RootNodeOwner(
 
     private val rootSemanticsNode = EmptySemanticsModifier()
     private val snapshotObserver = OwnerSnapshotObserver(onChangedExecutor)
-    private val graphicsContext = SkiaGraphicsContext(platformContext.measureDrawLayerBounds)
+    private val graphicsContext = SkiaGraphicsContext(
+        measureDrawBounds = platformContext.measureDrawLayerBounds,
+        snapshotCache = ComposeUiFlags.useSnapshotCache,
+    )
     private val coroutineScope =
         CoroutineScope(coroutineContext + Job(parent = coroutineContext[Job]))
 
@@ -536,8 +544,14 @@ internal class RootNodeOwner(
             PointerIconServiceImpl()
         }
 
+        override val uriHandler by lazy(LazyThreadSafetyMode.NONE) { createPlatformUriHandler() }
+
         override val semanticsOwner = SemanticsOwner(root, rootSemanticsNode, layoutNodes)
         override val windowInfo get() = platformContext.windowInfo
+        override val taskDispatchers: TaskDispatchers get() = platformContext.taskDispatchers
+
+        @ExperimentalMediaQueryApi
+        override val uiMediaScope: UiMediaScope get() = platformContext.mediaScope
         override val retainedValuesStore: RetainedValuesStore get() = ForgetfulRetainedValuesStore
         override val rectManager = RectManager(layoutNodes)
 

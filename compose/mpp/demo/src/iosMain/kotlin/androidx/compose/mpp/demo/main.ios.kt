@@ -24,6 +24,7 @@ import platform.UIKit.UISceneConfiguration
 import platform.UIKit.UISceneConnectionOptions
 import platform.UIKit.UISceneDelegateProtocol
 import platform.UIKit.UISceneSession
+import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
@@ -37,7 +38,6 @@ import platform.UIKit.UIWindowSceneDelegateProtocol
  * - XCode will open this project automatically
  * - press the Run (Cmd+R) button in the XCode
  */
-@OptIn(ExperimentalComposeUiApi::class)
 fun main(vararg args: String) {
     androidx.compose.ui.util.enableTraceOSLog()
 
@@ -50,17 +50,16 @@ fun main(vararg args: String) {
 }
 
 @Composable
-fun IosDemo(arg: String, makeHostingController: ((Int) -> UIViewController)? = null) {
+fun IosDemo(
+    arg: String,
+    viewControllerFactory: IosDemoViewControllerFactory? = null,
+) {
     val app = remember {
         App(
             extraScreens = listOf(
                 IosBugs,
                 IosSpecificFeatures,
-            ) + listOf(makeHostingController).mapNotNull {
-                it?.let {
-                    SwiftUIInteropExample(it)
-                }
-            }
+            ) + viewControllerFactory?.extraScreens().orEmpty()
         )
     }
     when (arg) {
@@ -72,6 +71,25 @@ fun IosDemo(arg: String, makeHostingController: ((Int) -> UIViewController)? = n
     }
 }
 
+class IosDemoViewControllerFactory(
+    val makeHostingController: (Int) -> UIViewController,
+    val makeSwiftUISizeThatFitsSizingDemoController: (UIView, SwiftUISizeThatFitsSizingExample) -> UIViewController,
+    val makeSwiftUIIntrinsicSizingDemoController: (UIView, SwiftUIIntrinsicSizingExample) -> UIViewController,
+    val makeUIKitSizingDemoController: (UIView, UIKitSizingExample) -> UIViewController,
+) {
+    internal fun extraScreens(): List<Screen> = listOf(
+        IosSizing(
+            makeSwiftUISizeThatFitsSizingDemoController,
+            makeSwiftUIIntrinsicSizingDemoController,
+            makeUIKitSizingDemoController,
+        ),
+        Screen.Selection(
+            "SwiftUI",
+            SwiftUIInteropExample(makeHostingController),
+        ),
+    )
+}
+
 private lateinit var MakeRootViewController: () -> UIViewController
 @OptIn(BetaInteropApi::class)
 private fun UIKitMain(makeRootViewController: () -> UIViewController) {
@@ -80,12 +98,12 @@ private fun UIKitMain(makeRootViewController: () -> UIViewController) {
         val argc = 1
         val argv = arrayOf("ComposeDemo").map { it.cstr.ptr }.toCValues()
         autoreleasepool {
-            UIApplicationMain(argc, argv, null, NSStringFromClass(IOSAppDelegate))
+            UIApplicationMain(argc, argv, null, NSStringFromClass(AppDelegate))
         }
     }
 }
 
-private class IOSAppDelegate : UIResponder, UIApplicationDelegateProtocol {
+private class AppDelegate : UIResponder, UIApplicationDelegateProtocol {
     companion object Companion : UIResponderMeta(), UIApplicationDelegateProtocolMeta
 
     @Suppress("unused")
@@ -105,13 +123,13 @@ private class IOSAppDelegate : UIResponder, UIApplicationDelegateProtocol {
         options: UISceneConnectionOptions
     ): UISceneConfiguration {
         val config = UISceneConfiguration()
-        config.delegateClass = IOSSceneDelegate.`class`()
+        config.delegateClass = SceneDelegate.`class`()
         config.sceneClass = UIWindowScene.`class`()
         return config
     }
 }
 
-private class IOSSceneDelegate: UIResponder, UIWindowSceneDelegateProtocol, UISceneDelegateProtocol {
+private class SceneDelegate: UIResponder, UIWindowSceneDelegateProtocol, UISceneDelegateProtocol {
     companion object Companion : UIResponderMeta(), UIApplicationDelegateProtocolMeta
 
     @Suppress("unused")

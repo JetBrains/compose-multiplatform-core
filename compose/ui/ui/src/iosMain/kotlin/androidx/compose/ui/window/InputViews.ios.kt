@@ -17,11 +17,12 @@
 package androidx.compose.ui.window
 
 import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.navigationevent.UIKitBackGestureRecognizer
+import androidx.compose.ui.navigationevent.BackGestureRecognizer
 import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.uikit.utils.CMPGestureRecognizer
 import androidx.compose.ui.uikit.utils.CMPHoverGestureRecognizer
 import androidx.compose.ui.uikit.utils.CMPPanGestureRecognizer
+import androidx.compose.ui.uikit.utils.CMPPinchGestureRecognizer
 import androidx.compose.ui.uikit.utils.CMPScrollView
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.toDpOffset
@@ -29,6 +30,8 @@ import androidx.compose.ui.viewinterop.InteropWrappingView
 import androidx.compose.ui.viewinterop.UIKitInteropInteractionMode
 import kotlin.getValue
 import kotlin.math.abs
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ObjCAction
@@ -58,6 +61,7 @@ import platform.UIKit.UIGestureRecognizerStateEnded
 import platform.UIKit.UIGestureRecognizerStateFailed
 import platform.UIKit.UIGestureRecognizerStatePossible
 import platform.UIKit.UIPanGestureRecognizer
+import platform.UIKit.UIPinchGestureRecognizer
 import platform.UIKit.UIPressesEvent
 import platform.UIKit.UIScreenEdgePanGestureRecognizer
 import platform.UIKit.UIScrollTypeMaskAll
@@ -96,6 +100,13 @@ private val UIGestureRecognizerState.isOngoing: Boolean
             else -> false
         }
 
+internal typealias TouchesEventHandler = (
+    allTrackedTouches: Set<UITouch>,
+    changedTouches: Set<UITouch>,
+    event: UIEvent?,
+    phase: TouchesEventKind
+) -> PointerEventResult
+
 /**
  * Implementation of [UIGestureRecognizer] that handles touch events and forwards
  * them. The main difference from the original [UIView] touches based is that it's built on top of
@@ -105,8 +116,8 @@ private val UIGestureRecognizerState.isOngoing: Boolean
  * to control touches delivery to [UIView]s and their [UIGestureRecognizer]s in a fine-grain manner.
  */
 private class TouchesGestureRecognizer(
-    private var onTouchesEvent: (touches: Set<*>, event: UIEvent?, phase: TouchesEventKind) -> PointerEventResult,
-    private var onCancelAllTouches: (touches: Set<*>) -> Unit,
+    private var onTouchesEvent: TouchesEventHandler,
+    private var onCancelAllTouches: (cancelledTouches: Set<UITouch>) -> Unit,
     private var canIgnoreDragGesture: (UIGestureRecognizer) -> Boolean,
     private var isHigherPriorityGestureTrackingTouches: () -> Boolean
 ) : CMPGestureRecognizer(target = null, action = null) {
@@ -151,8 +162,11 @@ private class TouchesGestureRecognizer(
 
         fun startTouchesEvent() {
             val isInitialTouches = trackedTouches.isEmpty()
+            val startedTouches = touchesToHitTestResult.mapNotNullTo(mutableSetOf()) { it ->
+                it.key.takeIf { !trackedTouches.containsKey(it) }
+            }
             trackedTouches.putAll(touchesToHitTestResult)
-            onTouchesEvent(trackedTouches.keys, withEvent, TouchesEventKind.BEGAN)
+            onTouchesEvent(trackedTouches.keys, startedTouches, withEvent, TouchesEventKind.BEGAN)
             if (isInitialTouches) {
                 setState(UIGestureRecognizerStatePossible)
             } else if (state.isOngoing) {
@@ -166,7 +180,7 @@ private class TouchesGestureRecognizer(
         when (interactionMode) {
             is UIKitInteropInteractionMode.Cooperative -> {
                 startTouchesEvent()
-                scheduleTouchesFailureIfNeeded(interactionMode.delayMillis)
+                scheduleTouchesFailureIfNeeded(interactionMode.delayMillis.milliseconds)
             }
 
             UIKitInteropInteractionMode.NonCooperative -> {
@@ -191,7 +205,12 @@ private class TouchesGestureRecognizer(
             if (trackedTouches.isEmpty()) {
                 return
             }
-            val result = onTouchesEvent(trackedTouches.keys, withEvent, TouchesEventKind.MOVED)
+            val result = onTouchesEvent(
+                trackedTouches.keys,
+                emptySet(),
+                withEvent,
+                TouchesEventKind.MOVED
+            )
             if (result.anyMovementConsumed) {
                 if (!state.isOngoing) {
                     setState(UIGestureRecognizerStateBegan)
@@ -217,7 +236,11 @@ private class TouchesGestureRecognizer(
         super.touchesEnded(touches, withEvent)
 
         fun endTouchesEvent() {
-            onTouchesEvent(trackedTouches.keys, withEvent, TouchesEventKind.ENDED)
+            val endedTouches = touches.mapNotNullTo(mutableSetOf()) { it ->
+                (it as UITouch).takeIf { trackedTouches.containsKey(it) }
+            }
+
+            onTouchesEvent(trackedTouches.keys, endedTouches, withEvent, TouchesEventKind.ENDED)
             stopTrackingTouches(touches)
             if (trackedTouches.isEmpty()) {
                 setState(UIGestureRecognizerStateEnded)
@@ -254,7 +277,9 @@ private class TouchesGestureRecognizer(
 
     private fun cancelAllTrackedTouches() {
         setState(UIGestureRecognizerStateCancelled)
-        onCancelAllTouches(trackedTouches.keys)
+        if (trackedTouches.isNotEmpty()) {
+            onCancelAllTouches(trackedTouches.keys)
+        }
         trackedTouches.clear()
         trackedTouchesWithSuppressedMoves.clear()
         cancelTouchesFailure()
@@ -272,7 +297,7 @@ private class TouchesGestureRecognizer(
     override fun canBePreventedByGestureRecognizer(
         preventingGestureRecognizer: UIGestureRecognizer
     ): Boolean {
-        return if (preventingGestureRecognizer is UIKitBackGestureRecognizer) {
+        return if (preventingGestureRecognizer is BackGestureRecognizer) {
             cancelAllTrackedTouches()
             true
         } else if (canIgnoreDragGesture(preventingGestureRecognizer)) {
@@ -320,7 +345,7 @@ private class TouchesGestureRecognizer(
     override fun shouldRequireFailureOfGestureRecognizer(
         otherGestureRecognizer: UIGestureRecognizer
     ): Boolean {
-        return (otherGestureRecognizer is UIKitBackGestureRecognizer &&
+        return (otherGestureRecognizer is BackGestureRecognizer &&
             otherGestureRecognizer.state in activeGestureStates) ||
             super.shouldRequireFailureOfGestureRecognizer(otherGestureRecognizer)
     }
@@ -376,7 +401,7 @@ private class TouchesGestureRecognizer(
      */
     fun dispose() {
         cancelTouchesFailure()
-        onTouchesEvent = { _, _, _ -> PointerEventResult(anyMovementConsumed = false) }
+        onTouchesEvent = { _, _, _, _ -> PointerEventResult(anyMovementConsumed = false) }
         onCancelAllTouches = {}
         canIgnoreDragGesture = { false }
         isHigherPriorityGestureTrackingTouches = { false }
@@ -385,7 +410,7 @@ private class TouchesGestureRecognizer(
     }
 
     /**
-     * Schedule the gesture recognizer failure after [delayMills].
+     * Schedule the gesture recognizer failure after [delay].
      *
      * We still pass the touches to the interop view
      * until the gesture recognizer is explicitly failed.
@@ -398,12 +423,12 @@ private class TouchesGestureRecognizer(
      *
      * @see [cancelTouchesFailure]
      */
-    private fun scheduleTouchesFailureIfNeeded(delayMills: Int) {
+    private fun scheduleTouchesFailureIfNeeded(delayDuration: Duration?) {
         failureJob?.cancel()
 
-        if (delayMills != Int.MAX_VALUE) {
+        if (delayDuration != null) {
             failureJob = CoroutineScope(Dispatchers.Main).launch {
-                delay(delayMills.toLong())
+                delay(delayDuration)
 
                 cancelAllTrackedTouches()
             }
@@ -540,6 +565,90 @@ private class ScrollGestureRecognizer(
     }
 }
 
+private class PinchGestureRecognizer(
+    private var onPinchEvent: (position: DpOffset, scale: Float, event: UIEvent?, eventKind: TouchesEventKind) -> Unit,
+    private var onCancelPinch: () -> Unit
+) : CMPPinchGestureRecognizer(target = null, action = null) {
+
+    init {
+        setDelaysTouchesBegan(false)
+        setDelaysTouchesEnded(false)
+        setCancelsTouchesInView(false)
+        addTarget(this, NSSelectorFromString(::onPinch.name + ":"))
+    }
+
+    private var pinchCenter: DpOffset? = null
+    private var previousScale: Float = 1f
+    private var event: UIEvent? = null
+
+    @OptIn(BetaInteropApi::class)
+    @ObjCAction
+    fun onPinch(gestureRecognizer: UIPinchGestureRecognizer) {
+        val position = gestureRecognizer.locationInView(view).toDpOffset()
+
+        when (gestureRecognizer.state) {
+            UIGestureRecognizerStateBegan -> {
+                onPinchEvent(position, 1f, event, TouchesEventKind.BEGAN)
+                pinchCenter = position
+                previousScale = 1f
+            }
+
+            UIGestureRecognizerStateChanged -> {
+                val scale = gestureRecognizer.scale.toFloat()
+                val delta = scale / previousScale
+                onPinchEvent(pinchCenter ?: position, delta, event, TouchesEventKind.MOVED)
+                previousScale = scale
+            }
+
+            UIGestureRecognizerStateEnded -> {
+                val scale = gestureRecognizer.scale.toFloat()
+                val delta = scale / previousScale
+                onPinchEvent(pinchCenter ?: position, delta, event, TouchesEventKind.ENDED)
+                pinchCenter = null
+                previousScale = 1f
+                event = null
+            }
+
+            UIGestureRecognizerStateCancelled, UIGestureRecognizerStateFailed -> {
+                onCancelPinch()
+                pinchCenter = null
+                previousScale = 1f
+                event = null
+            }
+
+            else -> {}
+        }
+    }
+
+    override fun shouldReceiveEvent(event: UIEvent): Boolean {
+        this.event = event
+        return super.shouldReceiveEvent(event)
+    }
+
+    fun dispose() {
+        removeTarget(this, null)
+        onPinchEvent = { _, _, _, _ -> }
+        onCancelPinch = {}
+    }
+
+    override fun touchesBegan(touches: Set<*>, withEvent: UIEvent) {
+        // Gesture recognizer only works with the trackpad. All touches should be cancelled.
+        setState(UIGestureRecognizerStateFailed)
+    }
+
+    override fun touchesMoved(touches: Set<*>, withEvent: UIEvent) {
+        // Do nothing. No need to handle touches for pinch gesture
+    }
+
+    override fun touchesEnded(touches: Set<*>, withEvent: UIEvent) {
+        // Do nothing. No need to handle touches for pinch gesture
+    }
+
+    override fun touchesCancelled(touches: Set<*>, withEvent: UIEvent) {
+        // Do nothing. No need to handle touches for pinch gesture
+    }
+}
+
 /**
  * The application can place interop views above and below the rendering canvas which is implemented
  * by using [OverlayInputView] and [BackgroundInputView].
@@ -550,14 +659,17 @@ private class ScrollGestureRecognizer(
 internal class OverlayInputView(
     private var hitTestInteropView: (point: CValue<CGPoint>) -> UIView?,
     private var isPointInsideInteractionBounds: (CValue<CGPoint>) -> Boolean,
-    private var onTouchesEvent: (touches: Set<*>, event: UIEvent?, phase: TouchesEventKind) -> PointerEventResult,
-    private var onCancelAllTouches: (touches: Set<*>) -> Unit,
+    private var onTouchesEvent: TouchesEventHandler,
+    private var onCancelAllTouches: (cancelledTouches: Set<UITouch>) -> Unit,
     onScrollEvent: (position: DpOffset, delta: DpOffset, event: UIEvent?, eventKind: TouchesEventKind) -> Unit,
     onCancelScroll: () -> Unit,
+    onPinchEvent: (position: DpOffset, scale: Float, event: UIEvent?, eventKind: TouchesEventKind) -> Unit,
+    onCancelPinch: () -> Unit,
     private var onHoverEvent: (position: DpOffset, event: UIEvent?, eventKind: TouchesEventKind) -> Unit,
     private var onKeyboardPresses: (Set<*>) -> Unit,
     isHigherPriorityGestureTrackingTouches: () -> Boolean,
     private var onRemoveSubview: () -> Unit,
+    private var onHasWindowChanged: (Boolean) -> Unit,
 ) : CMPScrollView(CGRectZero.readValue()) {
     /**
      * Gesture recognizer responsible for processing touches
@@ -573,23 +685,25 @@ internal class OverlayInputView(
         isHigherPriorityGestureTrackingTouches = isHigherPriorityGestureTrackingTouches
     )
 
-    private val scrollGestureRecognizer by lazy {
-        ScrollGestureRecognizer(
-            onScrollEvent = onScrollEvent,
-            onCancelScroll = onCancelScroll
-        )
-    }
+    private val scrollGestureRecognizer = ScrollGestureRecognizer(
+        onScrollEvent = onScrollEvent,
+        onCancelScroll = onCancelScroll
+    )
 
-    private val hoverGestureRecognizer by lazy {
+    private val customPinchGestureRecognizer = PinchGestureRecognizer(
+        onPinchEvent = onPinchEvent,
+        onCancelPinch = onCancelPinch
+    )
+
+    private val hoverGestureRecognizer =
         CMPHoverGestureRecognizer(this, NSSelectorFromString(::onHover.name + ":")).apply {
             delaysTouchesBegan = false
             delaysTouchesEnded = false
             cancelsTouchesInView = false
         }
-    }
 
     /**
-     * See [androidx.compose.ui.draganddrop.UIKitDragAndDropManager] for more context
+     * See [androidx.compose.ui.draganddrop.IosDragAndDropManager] for more context
      */
     var canIgnoreDragGesture: (UIGestureRecognizer) -> Boolean = { false }
 
@@ -600,10 +714,8 @@ internal class OverlayInputView(
         multipleTouchEnabled = true
 
         addGestureRecognizer(touchesGestureRecognizer)
-        scrollGestureRecognizer?.let {
-            addGestureRecognizer(it)
-        }
-
+        addGestureRecognizer(scrollGestureRecognizer)
+        addGestureRecognizer(customPinchGestureRecognizer)
         addGestureRecognizer(hoverGestureRecognizer)
 
         showsHorizontalScrollIndicator = false
@@ -623,6 +735,12 @@ internal class OverlayInputView(
         // Employ safe calls to prevent access to `this` reference that has already been invalidated.
         @Suppress("UNNECESSARY_SAFE_CALL")
         this?.onRemoveSubview?.invoke()
+    }
+
+    override fun didMoveToWindow() {
+        super.didMoveToWindow()
+
+        onHasWindowChanged(window != null)
     }
 
     override fun canBecomeFirstResponder() = true
@@ -646,13 +764,15 @@ internal class OverlayInputView(
 
     private val trackedTouchesOutside: MutableSet<UITouch> = mutableSetOf()
     private fun handleTouchesEvent(
-        touches: Set<*>, event: UIEvent?, phase: TouchesEventKind
+        allTrackedTouches: Set<UITouch>,
+        changedTouches: Set<UITouch>,
+        event: UIEvent?,
+        phase: TouchesEventKind
     ): PointerEventResult {
         if (isInterceptingOutsideEvents && event?.type == UIEventTypeTouches) {
             when (phase) {
                 TouchesEventKind.BEGAN -> {
-                    touches.forEach { touch ->
-                        touch as UITouch
+                    allTrackedTouches.forEach { touch ->
                         if (!isPointInsideInteractionBounds(touch.locationInView(this))) {
                             val isNewPressEvent = trackedTouchesOutside.isEmpty()
                             trackedTouchesOutside.add(touch)
@@ -664,8 +784,7 @@ internal class OverlayInputView(
                 }
 
                 TouchesEventKind.ENDED -> {
-                    touches.forEach { touch ->
-                        touch as UITouch
+                    allTrackedTouches.forEach { touch ->
                         if (touch in trackedTouchesOutside) {
                             trackedTouchesOutside.remove(touch)
                             if (trackedTouchesOutside.isEmpty()) {
@@ -679,10 +798,10 @@ internal class OverlayInputView(
             }
         }
 
-        return onTouchesEvent(touches, event, phase)
+        return onTouchesEvent(allTrackedTouches, changedTouches, event, phase)
     }
 
-    private fun handleCancelAllTouches(touches: Set<*>) {
+    private fun handleCancelAllTouches(touches: Set<UITouch>) {
         trackedTouchesOutside.clear()
         onCancelAllTouches(touches)
     }
@@ -726,6 +845,7 @@ internal class OverlayInputView(
     }
 
     private var lastHoverPosition: DpOffset? = null
+
     @OptIn(BetaInteropApi::class)
     @ObjCAction
     fun onHover(gestureRecognizer: CMPHoverGestureRecognizer) {
@@ -756,10 +876,11 @@ internal class OverlayInputView(
         endEditing(force = true)
         removeGestureRecognizer(touchesGestureRecognizer)
         touchesGestureRecognizer.dispose()
-        scrollGestureRecognizer?.let {
-            removeGestureRecognizer(it)
-            it.dispose()
-        }
+        removeGestureRecognizer(scrollGestureRecognizer)
+        scrollGestureRecognizer.dispose()
+        removeGestureRecognizer(customPinchGestureRecognizer)
+        customPinchGestureRecognizer.dispose()
+
         removeGestureRecognizer(hoverGestureRecognizer)
         onHoverEvent = { _, _, _ -> }
 
@@ -768,9 +889,10 @@ internal class OverlayInputView(
         canIgnoreDragGesture = { false }
         onKeyboardPresses = {}
         onOutsidePointerEvent = {}
-        onTouchesEvent = { _, _, _ -> PointerEventResult() }
+        onTouchesEvent = { _, _, _, _ -> PointerEventResult() }
         onCancelAllTouches = {}
         onRemoveSubview = {}
+        onHasWindowChanged = {}
         trackedTouchesOutside.clear()
     }
 }
@@ -781,12 +903,11 @@ internal class OverlayInputView(
  * All other user input events should be handled by the [OverlayInputView] or with its help.
  */
 internal class BackgroundInputView(
-    private var onMovedToWindow: () -> Unit,
     private var onLayoutSubviews: () -> Unit,
     private var hitTestInteropView: (point: CValue<CGPoint>) -> UIView?,
     private var isPointInsideInteractionBounds: (CValue<CGPoint>) -> Boolean,
-    onTouchesEvent: (touches: Set<*>, event: UIEvent?, phase: TouchesEventKind) -> PointerEventResult,
-    onCancelAllTouches: (touches: Set<*>) -> Unit,
+    onTouchesEvent: TouchesEventHandler,
+    onCancelAllTouches: (cancelledTouches: Set<UITouch>) -> Unit,
     isHigherPriorityGestureTrackingTouches: () -> Boolean,
 ) : UIView(CGRectZero.readValue()) {
 
@@ -819,9 +940,6 @@ internal class BackgroundInputView(
     override fun didMoveToWindow() {
         super.didMoveToWindow()
 
-        window?.let {
-            onMovedToWindow()
-        }
         setNeedsLayout()
     }
 
@@ -859,7 +977,6 @@ internal class BackgroundInputView(
         removeGestureRecognizer(touchesGestureRecognizer)
         touchesGestureRecognizer.dispose()
 
-        onMovedToWindow = {}
         hitTestInteropView = { null }
         isPointInsideInteractionBounds = { false }
         onLayoutSubviews = {}
@@ -899,7 +1016,8 @@ private fun UIView?.hasTrackingUIScrollView(): Boolean {
         if (view is UIScrollView &&
             view.userInteractionEnabled &&
             view.scrollEnabled &&
-            view.panGestureRecognizer.isEnabled()) {
+            view.panGestureRecognizer.isEnabled()
+        ) {
             if ((view.panGestureRecognizer.state == UIGestureRecognizerStatePossible ||
                     view.panGestureRecognizer.state == UIGestureRecognizerStateBegan) &&
                 view.isTracking()

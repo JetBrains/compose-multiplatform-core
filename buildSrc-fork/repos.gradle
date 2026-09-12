@@ -19,12 +19,12 @@ if (supportRootFolder == null) {
     throw new RuntimeException("Canonical root project directory is not set. You must specify " +
             "ext.supportRootFolder before including this script")
 }
-// Makes strong assumptions about the project structure.
-def checkoutRoot = supportRootFolder.parentFile.parentFile
 
 ext.repos = new Properties()
-ext.repos.checkoutRoot = checkoutRoot.absolutePath
-ext.repos.prebuiltsRoot = new File(checkoutRoot, "prebuilts").absolutePath
+ext.repos.checkoutRoot = supportRootFolder.absolutePath
+
+ // TODO remove, it doesn't exist and not used in fork
+ext.repos.prebuiltsRoot = new File(supportRootFolder, "prebuilts").absolutePath
 
 /**
  * Adds maven repositories to the given repository handler.
@@ -67,6 +67,14 @@ def addMavenRepositories(RepositoryHandler handler) {
     */
     if (true /* In JetBrains Fork */) {
         handler.mavenCentral()
+        handler.maven {
+            url = "https://cache-redirector.jetbrains.com/dl.google.com/dl/android/maven2/"
+            content {
+                includeGroupByRegex("androidx.*")
+                includeGroupByRegex("com\\.android.*")
+                includeGroupByRegex("com\\.google.*")
+            }
+        }
         handler.google {
             content {
                 includeGroupByRegex("androidx.*")

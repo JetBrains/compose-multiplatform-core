@@ -36,6 +36,7 @@ import kotlin.test.Test
 @OptIn(ExperimentalTestApi::class)
 class FiltersTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun testIsDialogOnDialog() = runComposeUiTest {
         setContent {
@@ -53,6 +54,7 @@ class FiltersTest {
         onNodeWithTag("tag").assert(hasAnyAncestor(isDialog()))
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testIsPopup() = runComposeUiTest {
         setContent {
@@ -67,6 +69,7 @@ class FiltersTest {
         onNodeWithTag("tag").assert(hasAnyAncestor(isPopup()))
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testHasAnyChild() = runComposeUiTest {
         setContent {
@@ -78,6 +81,7 @@ class FiltersTest {
         onNodeWithTag("box").assert(hasAnyChild(hasText("text")))
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testHasAnyAncestor() = runComposeUiTest {
         setContent {
@@ -92,6 +96,7 @@ class FiltersTest {
         onNodeWithText("text").assert(hasAnyAncestor(hasTestTag("ancestor2")))
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testHasAnyParent() = runComposeUiTest {
         setContent {
@@ -103,6 +108,7 @@ class FiltersTest {
         onNodeWithText("text").assert(hasParent(hasTestTag("parent")))
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testHasAnySibling() = runComposeUiTest {
         setContent {
@@ -115,6 +121,7 @@ class FiltersTest {
         onNodeWithText("text1").assert(hasAnySibling(hasText("text2")))
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testIsRoot() = runComposeUiTest {
         setContent {
@@ -124,6 +131,7 @@ class FiltersTest {
         onNodeWithText("text").assert(hasParent(isRoot()))
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testHasSetTextAction() = runComposeUiTest {
         setContent {
@@ -136,6 +144,7 @@ class FiltersTest {
         onNodeWithText("text").assert(hasSetTextAction())
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testHasScrollAction() = runComposeUiTest {
         setContent {
@@ -152,6 +161,7 @@ class FiltersTest {
         onNodeWithTag("tag").assert(hasScrollAction())
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testHasNoScrollAction() = runComposeUiTest {
         setContent {
@@ -166,6 +176,7 @@ class FiltersTest {
         onNodeWithTag("tag").assert(hasNoScrollAction())
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testHasScrollToIndexAction() = runComposeUiTest {
         setContent {
@@ -181,6 +192,7 @@ class FiltersTest {
         onNodeWithTag("tag").assert(hasScrollToIndexAction())
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testHasScrollToKeyAction() = runComposeUiTest {
         setContent {
@@ -196,6 +208,7 @@ class FiltersTest {
         onNodeWithTag("tag").assert(hasScrollToKeyAction())
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testHasScrollToNodeAction() = runComposeUiTest {
         setContent {

@@ -40,6 +40,7 @@ import kotlin.test.assertEquals
 @OptIn(ExperimentalTestApi::class, InternalComposeUiApi::class)
 class ToggleableTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun toggleable_by_Space_button() = runComposeUiTest {
         var state: Boolean by mutableStateOf(false)

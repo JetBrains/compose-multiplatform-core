@@ -20,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.MotionDurationScale
+import androidx.compose.ui.test.ComposeUiTestConfig
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.test.filters.SmallTest
@@ -27,12 +28,11 @@ import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Test
 
 @SmallTest
 class DurationScaleTransitionTest {
-    @OptIn(ExperimentalTestApi::class, ExperimentalTransitionApi::class)
+    @OptIn(ExperimentalTestApi::class)
     @Test
     fun childTransitionWithDurationScale() {
         val motionDurationScale =
@@ -40,7 +40,7 @@ class DurationScaleTransitionTest {
                 override val scaleFactor: Float
                     get() = 4f
             }
-        runComposeUiTest(effectContext = motionDurationScale + StandardTestDispatcher()) {
+        runComposeUiTest(ComposeUiTestConfig(effectContext = motionDurationScale)) {
             mainClock.autoAdvance = false
             val state = MutableTransitionState(0)
             var value1 = -1f
@@ -86,7 +86,7 @@ class DurationScaleTransitionTest {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class, ExperimentalTransitionApi::class)
+    @OptIn(ExperimentalTestApi::class)
     @Test
     fun childTransitionWithDurationScaleSeekableTransition() {
         val motionDurationScale =
@@ -94,7 +94,7 @@ class DurationScaleTransitionTest {
                 override val scaleFactor: Float
                     get() = 4f
             }
-        runComposeUiTest(effectContext = motionDurationScale + StandardTestDispatcher()) {
+        runComposeUiTest(ComposeUiTestConfig(effectContext = motionDurationScale)) {
             mainClock.autoAdvance = false
             val state = SeekableTransitionState(0)
             var value1 = -1f
@@ -147,7 +147,7 @@ class DurationScaleTransitionTest {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class, ExperimentalTransitionApi::class)
+    @OptIn(ExperimentalTestApi::class)
     @Test
     fun childTransitionWithDurationScaleSeekTransition() {
         val motionDurationScale =
@@ -155,7 +155,7 @@ class DurationScaleTransitionTest {
                 override val scaleFactor: Float
                     get() = 4f
             }
-        runComposeUiTest(effectContext = motionDurationScale + StandardTestDispatcher()) {
+        runComposeUiTest(ComposeUiTestConfig(effectContext = motionDurationScale)) {
             mainClock.autoAdvance = false
             val state = SeekableTransitionState(0)
             var value1 = -1f

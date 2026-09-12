@@ -19,7 +19,10 @@ package androidx.compose.ui.test
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -40,7 +43,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -65,6 +67,7 @@ class ComposeUiSkikoTestTest {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun mouse_move() = runComposeUiTest {
         setContent { TestEventBox() }
@@ -90,6 +93,7 @@ class ComposeUiSkikoTestTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun mouse_drag() = runComposeUiTest {
         setContent { TestEventBox() }
@@ -123,6 +127,7 @@ class ComposeUiSkikoTestTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun mouse_press_primary() = runComposeUiTest {
         setContent { TestEventBox() }
@@ -140,6 +145,7 @@ class ComposeUiSkikoTestTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun mouse_press_and_release_primary() = runComposeUiTest {
         setContent { TestEventBox() }
@@ -170,6 +176,7 @@ class ComposeUiSkikoTestTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun mouse_click() = runComposeUiTest {
         setContent { TestEventBox() }
@@ -199,6 +206,7 @@ class ComposeUiSkikoTestTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun mouse_press_multiple() = runComposeUiTest {
         setContent { TestEventBox() }
@@ -254,6 +262,7 @@ class ComposeUiSkikoTestTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun mouse_scroll() = runComposeUiTest {
         setContent { TestEventBox() }
@@ -282,6 +291,7 @@ class ComposeUiSkikoTestTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun touch_drag() = runComposeUiTest {
         setContent { TestEventBox() }
@@ -309,6 +319,7 @@ class ComposeUiSkikoTestTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun touch_press() = runComposeUiTest {
         setContent { TestEventBox() }
@@ -324,6 +335,7 @@ class ComposeUiSkikoTestTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun touch_press_and_release() = runComposeUiTest {
         setContent { TestEventBox() }
@@ -345,6 +357,7 @@ class ComposeUiSkikoTestTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun touch_click() = runComposeUiTest {
         setContent { TestEventBox() }
@@ -365,6 +378,7 @@ class ComposeUiSkikoTestTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun touch_press_multiple() = runComposeUiTest {
         setContent { TestEventBox() }
@@ -401,6 +415,7 @@ class ComposeUiSkikoTestTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun text_input() = runComposeUiTest {
         var text by mutableStateOf(TextFieldValue(""))

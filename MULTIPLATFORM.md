@@ -91,41 +91,36 @@ To fix this error:
 
 Compose Multiplatform core libraries can be published to local Maven with the following steps:
 
-1. Use these gradle properties to set the published libraries versions
-
-   `-Pjetbrains.publication.version.CORE_BUNDLE`,
-   `-Pjetbrains.publication.version.CORE_URI`,
-   `-Pjetbrains.publication.version.COMPOSE`,
-   `-Pjetbrains.publication.version.COMPOSE_MATERIAL3_ADAPTIVE`,
-   `-Pjetbrains.publication.version.LIFECYCLE`,
-   `-Pjetbrains.publication.version.NAVIGATION`,
-   `-Pjetbrains.publication.version.NAVIGATION_3`,
-   `-Pjetbrains.publication.version.NAVIGATION_EVENT`,
-   `-Pjetbrains.publication.version.SAVEDSTATE`,
-   `-Pjetbrains.publication.version.WINDOW`,
-
-   The default value for the version is `0.0.0-SNAPSHOT`
-
-   And library groups:
-   `-Pjetbrains.publication.libraries=COMPOSE,COMPOSE_MATERIAL3_ADAPTIVE,LIFECYCLE,NAVIGATION,NAVIGATION_3,NAVIGATION_EVENT,SAVEDSTATE,WINDOW`
-
-   The default value includes all libraries.
-
-2. Publish core libraries
-
+1. Publish libraries
    ```bash
-   ./gradlew :mpp:publishComposeJbToMavenLocal -Pcompose.platforms=all -Pjetbrains.publication.version.COMPOSE=9999.0.0-alpha01 -Pjetbrains.publication.version.LIFECYCLE=9999.0.0-alpha01
+   ./gradlew :mpp:publishComposeJbToMavenLocal -Pcompose.platforms=all
    ```
 
-   `-Pcompose.platforms=all` could be replace with comma-separated list of platforms, such as `js,jvm,androidDebug,androidRelease,macosx64,ios`.
+   `-Pcompose.platforms=all` can be replaced with comma-separated list of platforms, such as `web,desktop,android,macosx64,ios`.
 
-3. Publish extended icons
+   (Optional) Specify different versions
+   ```
+   ./gradlew ... -Pjetbrains.publication.version.COMPOSE=9999.1.0-alpha01 -Pjetbrains.publication.version.COMPOSE_MATERIAL3_ADAPTIVE=9999.1.0-alpha01
+   ```
+   The default value for a version is `9999.0.0-SNAPSHOT`
 
-   ```bash
-   ./gradlew :mpp:publishComposeJbExtendedIconsToMavenLocal -Pcompose.platforms=all --max-workers=1
+   (Optional) Specify different libraries to publish
+   ```
+   ./gradlew ... -Pjetbrains.publication.libraries=COMPOSE,COMPOSE_MATERIAL3_ADAPTIVE
+   ```
+   By default all libraries are published.
+
+   See available libraries as keys in [JetBrainsPublication](https://github.com/JetBrains/compose-multiplatform-core/blob/jb-main/buildSrc/public/src/main/kotlin/org/jetbrains/androidx/build/JetBrainsPublication.kt#L32)
+
+2. (Optional) Publish Gradle plugin from https://github.com/JetBrains/compose-multiplatform/tree/master/gradle-plugins using the published Compose:
+   ```
+   ./gradlew publishToMavenLocal -Pcompose.version="9999.0.0-SNAPSHOT" -Pdeploy.version="9999.0.0-SNAPSHOT"
    ```
 
-4. (Optional) Publish Gradle plugin using [instructions](https://github.com/JetBrains/compose-multiplatform/tree/master/compose#publishing) to check changes locally.
+3. (Optional) Publish Components from https://github.com/JetBrains/compose-multiplatform/tree/master/components:
+   ```
+   ./gradlew publishToMavenLocal -Pdeploy.version="9999.0.0-SNAPSHOT"
+   ```
 
 ### Run samples
 
@@ -166,7 +161,7 @@ Run jvm desktop samples:
 Run wasm sample:
 
 ```bash
-./gradlew :compose:mpp:demo:jsRun
+./gradlew :compose:mpp:demo:wasmJsBrowserDevelopmentRun
 ```
 
 Run native macos X64 sample:
@@ -220,3 +215,12 @@ Wait while Xcode is opening, and press run button.
 - ```bash
   ./cleanTempFiles.sh
   ```
+### AOSP mode
+The project can be opened in AOSP mode, which uses largely unmodified `buildSrc` and `build.gradle` files from the upstream `androidx-main` branch. This mode supports building and running standard upstream AndroidX targets, but does not support Compose Multiplatform targets (which require `buildSrc-fork`). AOSP mode is available only on the `integration` branch.
+
+> **Note:** Opening the project in AOSP mode requires cloning the entire workspace setup using the Google `repo` tool.
+
+Run this script to open the project in this mode:
+```bash
+./aospComposeProject.sh
+```

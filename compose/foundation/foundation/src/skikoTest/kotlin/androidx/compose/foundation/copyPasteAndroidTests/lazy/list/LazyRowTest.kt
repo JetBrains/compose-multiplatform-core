@@ -89,6 +89,7 @@ class LazyRowTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun lazyRowAlignmentCenterVertically() = runSkikoComposeUiTest {
         prepareLazyRowForAlignment(Alignment.CenterVertically)
@@ -100,6 +101,7 @@ class LazyRowTest {
             .assertPositionInRootIsEqualTo(50.dp, 15.dp)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun lazyRowAlignmentTop() = runSkikoComposeUiTest {
         prepareLazyRowForAlignment(Alignment.Top)
@@ -111,6 +113,7 @@ class LazyRowTest {
             .assertPositionInRootIsEqualTo(50.dp, 0.dp)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun lazyRowAlignmentBottom() = runSkikoComposeUiTest {
         prepareLazyRowForAlignment(Alignment.Bottom)
@@ -122,6 +125,7 @@ class LazyRowTest {
             .assertPositionInRootIsEqualTo(50.dp, 30.dp)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     @Ignore // TODO: the test is failing
     fun scrollsLeftInRtl() = runSkikoComposeUiTest {
@@ -151,6 +155,7 @@ class LazyRowTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun laysOutRtlCorrectlyWithLargerRow() = runSkikoComposeUiTest {
         val rowWidth = with(density) { 300.toDp() }

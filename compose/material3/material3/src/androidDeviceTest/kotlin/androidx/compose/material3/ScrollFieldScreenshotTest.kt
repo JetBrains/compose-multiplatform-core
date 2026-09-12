@@ -29,7 +29,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,10 +36,9 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 class ScrollFieldScreenshotTest() {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -65,7 +63,6 @@ class ScrollFieldScreenshotTest() {
 
     private val ScrollFieldTestTag = "scrollField"
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Composable
     private fun TestContent() {
         val itemCount = 100
@@ -75,8 +72,9 @@ class ScrollFieldScreenshotTest() {
 
         ScrollField(
             state = state,
+            contentDescription = null,
             // Since this is a static screenshot, a no-op is appropriate.
-            modifier = Modifier.size(width = 80.dp, height = 160.dp).testTag(ScrollFieldTestTag),
+            modifier = Modifier.size(width = 100.dp, height = 120.dp).testTag(ScrollFieldTestTag),
         )
     }
 }

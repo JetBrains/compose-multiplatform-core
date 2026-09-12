@@ -47,6 +47,7 @@ internal class SurfaceSkiaLayerComponent(
     renderDelegate: SkikoRenderDelegate,
     skiaLayerAnalytics: SkiaLayerAnalytics,
     private val renderSettings: RenderSettings.SkiaSurface,
+    fillsWindow: Boolean
 ) : SkiaLayerComponent {
     /**
      * See also backend layer for swing interop in [SwingSkiaLayerComponent]
@@ -55,12 +56,12 @@ internal class SurfaceSkiaLayerComponent(
         accessibleContextProvider = mediator.accessibility.accessibleContextProvider,
         properties = run {
             val defaultProperties = SkiaLayerProperties()
-
             SkiaLayerProperties(
                 isVsyncEnabled = renderSettings.isVsyncEnabled ?: defaultProperties.isVsyncEnabled,
             )
         },
-        analytics = skiaLayerAnalytics
+        analytics = skiaLayerAnalytics,
+        fillsWindow = fillsWindow
     ) {
 
         init {

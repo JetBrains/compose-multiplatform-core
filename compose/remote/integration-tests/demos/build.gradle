@@ -17,15 +17,14 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.application")
     id("AndroidXComposePlugin")
-    id("org.jetbrains.kotlin.android")
     alias(libs.plugins.kotlinSerialization)
 }
 
 android {
-    compileSdk = 36
+    compileSdk { version = release(37) }
     namespace = "androidx.compose.remote.integration.demos"
     defaultConfig {
-        minSdk = 29
+        minSdk { version = release(29) }
     }
 }
 

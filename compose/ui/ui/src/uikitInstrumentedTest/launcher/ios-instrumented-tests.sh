@@ -10,6 +10,8 @@ device_name="iPhone 17"
 iterations="1"
 # `run_until_failure` is applied only when iterations > 1.
 run_until_failure="false"
+# When true, xcodebuild output is mirrored into last-run-<n>.log next to this script.
+log_to_file="false"
 
 if [[ -z "$platform" || -z "$os_version" || -z "$device_name" ]]; then
   echo "Platform, OS, and device name must be non-empty." >&2
@@ -26,20 +28,103 @@ if [[ "$run_until_failure" != "true" && "$run_until_failure" != "false" ]]; then
   exit 1
 fi
 
+if [[ "$log_to_file" != "true" && "$log_to_file" != "false" ]]; then
+  echo "log_to_file must be true or false, got: $log_to_file" >&2
+  exit 1
+fi
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$script_dir"
 
 destination="platform=${platform},OS=${os_version},name=${device_name}"
 
+if [[ "$iterations" -eq 1 ]]; then
+  log_file_pattern="last-run.log"
+else
+  log_file_pattern="last-run-<n>.log"
+fi
+
+if [[ "$log_to_file" == "true" ]]; then
+  rm -f last-run.log last-run-[0-9]*.log
+  export NSUnbufferedIO=YES
+else
+  log_file_pattern="disabled"
+fi
+
+log_pipe() {
+  if [[ "$log_to_file" != "true" ]]; then
+    cat
+  elif [[ "$iterations" -eq 1 ]]; then
+    tee "${script_dir}/last-run.log"
+  else
+    awk -v dir="$script_dir" '
+      BEGIN { n = 1; file = dir "/last-run-1.log" }
+      /Test Suite .All tests. started/ { if (started) { n++; file = dir "/last-run-" n ".log" } started = 1 }
+      { print; print > file; fflush() }
+    '
+  fi
+}
+
 echo "Running iOS instrumented tests with:"
 echo "  destination: ${destination}"
 echo "  iterations: ${iterations}"
 echo "  derivedDataPath: Xcode default"
+echo "  log file: ${log_file_pattern}"
 
 # The keyboard preference is picked up when a simulator boots, so shut them all down
 # before forcing the detached-keyboard setup required by these instrumented tests.
 xcrun simctl shutdown all
 defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false
+
+# Tests that look up UIKit-side accessibility labels (context menu items, native text views) only
+# see them when accessibility is enabled on the target simulator; without it they fail with
+# "Unable to find node with label". Mirrors the Configure Simulator step of
+# .github/actions/setup-ios-instrumented-test-environment/action.yml.
+accessibility_keys=(AccessibilityEnabled ApplicationAccessibilityEnabled AutomationEnabled)
+
+simulator_id="$(xcrun simctl list devices available \
+  | awk -v os="$os_version" -v name="$device_name" '
+      /^-- / { in_os = ($0 ~ ("^-- iOS " os " --$")); next }
+      !found && in_os && index($0, name " (") {
+        if (match($0, /\([0-9A-Fa-f-]{36}\)/)) {
+          found = substr($0, RSTART + 1, RLENGTH - 2)
+        }
+      }
+      END { if (found) print found }
+    ')"
+
+if [[ -z "$simulator_id" ]]; then
+  echo "Simulator not found: ${device_name} (iOS ${os_version}). Available:" >&2
+  xcrun simctl list devices available >&2
+  exit 1
+fi
+
+accessibility_plist="${HOME}/Library/Developer/CoreSimulator/Devices/${simulator_id}/data/Library/Preferences/com.apple.Accessibility.plist"
+
+accessibility_enabled="true"
+for key in "${accessibility_keys[@]}"; do
+  if [[ "$(defaults read "$accessibility_plist" "$key" 2>/dev/null)" != "1" ]]; then
+    accessibility_enabled="false"
+    break
+  fi
+done
+
+if [[ "$accessibility_enabled" == "true" ]]; then
+  echo "Accessibility already enabled on ${device_name} (${simulator_id})."
+else
+  echo "Enabling accessibility on ${device_name} (${simulator_id})..."
+  xcrun simctl boot "$simulator_id"
+  xcrun simctl bootstatus "$simulator_id" -b
+
+  for key in "${accessibility_keys[@]}"; do
+    xcrun simctl spawn "$simulator_id" defaults write com.apple.Accessibility "$key" -bool true
+  done
+
+  # Restart SpringBoard so system services pick up the change, then shut down: the flags apply
+  # on the next boot, which xcodebuild performs itself.
+  xcrun simctl spawn "$simulator_id" launchctl stop com.apple.SpringBoard
+  xcrun simctl shutdown "$simulator_id"
+fi
 
 # Build once, then reuse the build products for the actual test execution.
 xcodebuild \
@@ -73,8 +158,8 @@ xcodebuild \
   -scheme Launcher \
   -destination "$destination" \
   test-without-building \
-  "${test_args[@]}"
-test_exit_code=$?
+  "${test_args[@]}" 2>&1 | log_pipe
+test_exit_code=${PIPESTATUS[0]}
 set -e
 
 exit "$test_exit_code"

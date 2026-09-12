@@ -21,10 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
-import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.Dp
@@ -39,6 +37,7 @@ import kotlin.test.Test
 @OptIn(ExperimentalTestApi::class)
 class ArrangementSpacedByUnspecifiedTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun columnWithSpacedByDpUnspecifiedDoesNotCrash() = runComposeUiTest {
         val itemSize = 50.dp
@@ -57,6 +56,7 @@ class ArrangementSpacedByUnspecifiedTest {
         onNodeWithTag("item2").assertTopPositionInRootIsEqualTo(itemSize)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun rowWithSpacedByDpUnspecifiedDoesNotCrash() = runComposeUiTest {
         val itemSize = 50.dp

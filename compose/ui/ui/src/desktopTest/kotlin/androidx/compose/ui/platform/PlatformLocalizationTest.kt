@@ -59,6 +59,7 @@ class PlatformLocalizationTest {
      * Verify that [LocalLocalization] is available to the composable passed to
      * [ComposeUiTest.setContent].
      */
+    @Suppress("DEPRECATION")
     @Test
     fun platformLocalizationExistsByDefaultInTest() = runComposeUiTest {
         var localization: PlatformLocalization? = null
@@ -74,6 +75,7 @@ class PlatformLocalizationTest {
      * default one.
      */
     @OptIn(ExperimentalFoundationApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun canOverridePlatformLocalizationInContextMenuArea() = runComposeUiTest {
         val customLocalization = object : PlatformLocalization {
@@ -158,6 +160,7 @@ class PlatformLocalizationTest {
      * Verify that providing a [PlatformLocalization] in [LocalLocalization] in the window scope
      * correctly overrides it in a [Popup].
      */
+    @Suppress("DEPRECATION")
     @Test
     fun canOverridePlatformLocalizationFromWindowToPopupScope() = runComposeUiTest {
         val customLocalization = object : PlatformLocalization {

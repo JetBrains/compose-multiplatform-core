@@ -36,6 +36,7 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalTestApi::class)
 class DropShadowPainterTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun testDropShadowPainterWithColor() = runSkikoComposeUiTest {
         val dropShadow = DropShadowPainter(RectangleShape, Shadow(200.dp, Color.Red))
@@ -56,6 +57,7 @@ class DropShadowPainterTest {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testDropShadowPainterWithPathAndColor() = runSkikoComposeUiTest {
         val dropShadow =
@@ -95,6 +97,7 @@ class DropShadowPainterTest {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testDropShadowPainterWithBrush() = runSkikoComposeUiTest {
         val dropShadow =
@@ -116,6 +119,7 @@ class DropShadowPainterTest {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testDropShadowPainterPathWithBrush() = runSkikoComposeUiTest {
         val dropShadow =
@@ -155,6 +159,7 @@ class DropShadowPainterTest {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testDropShadowPainterWithBrushAndColorFilter() = runSkikoComposeUiTest {
         val dropShadow =
@@ -176,6 +181,7 @@ class DropShadowPainterTest {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testDropShadowPainterWithBrushAndAlpha() = runSkikoComposeUiTest {
         val dropShadow =

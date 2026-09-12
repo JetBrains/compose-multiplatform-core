@@ -19,7 +19,6 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
     id("AndroidXComposePlugin")
 }
 
@@ -30,17 +29,21 @@ androidx {
     description = "Provides a compose API to create RemoteCompose documents"
     enableRobolectric()
     addGoldenImageAssets()
+    samples(project(":compose:remote:remote-creation-compose-samples"))
 }
 
 android {
     namespace = "androidx.compose.remote.creation.compose"
-    compileSdk = 35
+    compileSdk { version = release(37) }
     defaultConfig {
-        minSdk = 29
+        minSdk { version = release(29) }
     }
 }
 
 dependencies {
+    lintChecks(project(":compose:remote:remote-lint"))
+    lintPublish(project(":compose:remote:remote-lint"))
+
     api(libs.jspecify)
     api("androidx.collection:collection:1.5.0")
     api("androidx.compose.ui:ui:1.11.0")
@@ -63,6 +66,8 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(project(":compose:remote:remote-testing"))
+    testImplementation(project(":compose:remote:remote-core-testutils"))
+    testImplementation(project(":compose:remote:remote-player-view"))
     testImplementation(libs.testParameterInjector)
     testImplementation(libs.testCoreKtx)
     testImplementation(libs.testRules)
@@ -89,5 +94,6 @@ dependencies {
     androidTestImplementation(project(":compose:test-utils"))
     androidTestImplementation(project(":compose:ui:ui-test-junit4"))
     androidTestImplementation(project(":test:screenshot:screenshot"))
+    androidTestImplementation(project(":compose:remote:remote-creation-compose-samples"))
     androidTestImplementation("org.jetbrains.kotlin:kotlin-reflect")
 }

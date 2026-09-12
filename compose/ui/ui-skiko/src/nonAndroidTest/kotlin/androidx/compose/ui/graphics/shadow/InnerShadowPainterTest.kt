@@ -28,6 +28,7 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalTestApi::class)
 class InnerShadowPainterTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun testInnerShadowPainterWithColor() = runSkikoComposeUiTest {
         val innerShadow = InnerShadowPainter(RectangleShape, Shadow(20.dp, Color.Red))
@@ -48,6 +49,7 @@ class InnerShadowPainterTest {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testInnerShadowPainterWithPathAndColor() = runSkikoComposeUiTest {
         val innerShadow = InnerShadowPainter(RectangleShape, Shadow(20.dp, Color.Red))

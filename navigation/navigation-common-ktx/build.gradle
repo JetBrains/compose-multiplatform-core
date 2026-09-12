@@ -25,7 +25,6 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -37,6 +36,7 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2018"
     description = "Android Navigation-Common-Ktx"
+    doNotDocumentReason = "empty artifact maintained for compatibility"
 }
 
 android {

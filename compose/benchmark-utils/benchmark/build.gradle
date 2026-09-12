@@ -20,7 +20,6 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("org.jetbrains.kotlin.android")
     id("androidx.benchmark")
 }
 
@@ -35,7 +34,10 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(37) }
+    defaultConfig {
+        minSdk { version = release(24) }
+    }
     namespace = "androidx.compose.benchmarkutils.benchmark"
 }
 

@@ -65,34 +65,6 @@ androidXMultiplatform {
             implementation(kotlin("test"))
         }
 
-        androidMain.dependencies {
-            // This has stub APIs for access to legacy Android APIs, so we don't want
-            // any dependency on this module.
-            compileOnly(project(":compose:ui:ui-android-stubs"))
-            implementation("androidx.graphics:graphics-path:1.0.1")
-            implementation libs.androidx.core
-            api("androidx.annotation:annotation-experimental:1.4.1")
-        }
-
-        androidDeviceTest.dependencies {
-            implementation(project(":compose:ui:ui-graphics:ui-graphics-samples"))
-            implementation(project(":compose:ui:ui-test-junit4"))
-            implementation(project(":compose:test-utils"))
-            implementation(libs.testRules)
-            implementation(libs.testRunner)
-            implementation(libs.espressoCore)
-            implementation(libs.junit)
-            implementation(libs.truth)
-        }
-
-        androidHostTest.dependencies {
-            implementation(libs.testRules)
-            implementation(libs.testRunner)
-            implementation(libs.junit)
-            implementation(libs.truth)
-            implementation(project(":compose:test-utils"))
-        }
-
         nonAndroidMain {
             dependsOn(commonMain)
             dependencies {
@@ -120,13 +92,14 @@ androidXMultiplatform {
                 api(libs.skiko)
             }
         }
+        skikoTest.dependsOn(nonAndroidTest)
 
         nonAndroidExcludingWebMain {
             dependsOn(skikoMain)
         }
 
         nonAndroidExcludingWebTest {
-            dependsOn(nonAndroidTest)
+            dependsOn(skikoTest)
         }
 
         desktopMain {
@@ -135,7 +108,7 @@ androidXMultiplatform {
         }
 
         desktopTest {
-            dependsOn(nonAndroidTest)
+            dependsOn(skikoTest)
             dependsOn(nonAndroidExcludingWebTest)
             resources.srcDirs += "src/desktopTest/res"
             dependencies {
@@ -155,7 +128,7 @@ androidXMultiplatform {
         }
 
         nonJvmTest {
-            dependsOn(nonAndroidTest)
+            dependsOn(skikoTest)
         }
 
         nativeMain {
@@ -183,7 +156,6 @@ androidx {
     description = "Compose graphics"
     legacyDisableKotlinStrictApiMode = true
     enableRobolectric()
-    samples(project(":compose:ui:ui-graphics:ui-graphics-samples"))
 }
 
 // TODO(b/407640608): Task :compose:ui:ui-inspection:connectedCheck fails without this block

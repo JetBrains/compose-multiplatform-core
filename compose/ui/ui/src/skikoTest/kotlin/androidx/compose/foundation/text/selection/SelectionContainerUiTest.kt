@@ -39,6 +39,7 @@ import kotlin.test.assertEquals
  */
 @OptIn(ExperimentalTestApi::class)
 class SelectionContainerUiTest {
+    @Suppress("DEPRECATION")
     @Test
     fun selectionContainerSetsTextPointerIcon() = runComposeUiTest {
         lateinit var pointerIconService: PointerIconService

@@ -54,6 +54,7 @@ class LazyListSlotsReuseTest {
     private val itemsSizePx = 30f
     private val itemsSizeDp = with(density) { itemsSizePx.toDp() }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scroll1ItemScrolledOffItemIsKeptForReuse() = runSkikoComposeUiTest {
         lateinit var state: LazyListState
@@ -77,6 +78,7 @@ class LazyListSlotsReuseTest {
         onNodeWithTag("1").assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scroll2ItemsScrolledOffItemsAreKeptForReuse() = runSkikoComposeUiTest {
         lateinit var state: LazyListState
@@ -103,6 +105,7 @@ class LazyListSlotsReuseTest {
         onNodeWithTag("2").assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun checkMaxItemsKeptForReuse() = runSkikoComposeUiTest {
         lateinit var state: LazyListState
@@ -131,6 +134,7 @@ class LazyListSlotsReuseTest {
         onNodeWithTag("${DefaultMaxItemsToRetain + 1}").assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scroll3Items2OfScrolledOffItemsAreKeptForReuse() = runSkikoComposeUiTest {
         lateinit var state: LazyListState
@@ -173,6 +177,7 @@ class LazyListSlotsReuseTest {
         onNodeWithTag("4").assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun doMultipleScrollsOneByOne() = runSkikoComposeUiTest {
         lateinit var state: LazyListState
@@ -216,6 +221,7 @@ class LazyListSlotsReuseTest {
         onNodeWithTag("5").assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollBackwardOnce() = runSkikoComposeUiTest {
         lateinit var state: LazyListState
@@ -248,6 +254,7 @@ class LazyListSlotsReuseTest {
         onNodeWithTag("9").assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollBackwardOneByOne() = runSkikoComposeUiTest {
         lateinit var state: LazyListState
@@ -283,6 +290,7 @@ class LazyListSlotsReuseTest {
         onNodeWithTag("7").assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollingBackReusesTheSameSlot() = runSkikoComposeUiTest {
         lateinit var state: LazyListState
@@ -358,6 +366,7 @@ class LazyListSlotsReuseTest {
         onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(id3)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun differentContentTypes() = runSkikoComposeUiTest {
         lateinit var state: LazyListState
@@ -396,6 +405,7 @@ class LazyListSlotsReuseTest {
         onNodeWithTag("${startOfType1 + DefaultMaxItemsToRetain}").assertDoesNotExist()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun differentTypesFromDifferentItemCalls() = runSkikoComposeUiTest {
         lateinit var state: LazyListState
@@ -455,4 +465,4 @@ class LazyListSlotsReuseTest {
     }
 }
 
-private val DefaultMaxItemsToRetain = 7
+private const val DefaultMaxItemsToRetain = 7

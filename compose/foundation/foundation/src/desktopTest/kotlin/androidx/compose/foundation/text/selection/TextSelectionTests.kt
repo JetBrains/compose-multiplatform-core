@@ -52,6 +52,7 @@ import org.junit.Test
 
 class TextSelectionTests {
 
+    @Suppress("DEPRECATION")
     @get:Rule
     val rule = createComposeRule()
 
@@ -70,7 +71,6 @@ class TextSelectionTests {
         return this
     }
 
-    @OptIn(ExperimentalTestApi::class)
     private fun DesktopPlatform.textFieldSemanticInteraction(
         initialValue: String = "",
         semanticNodeContext: SemanticsNodeInteraction.(state: MutableState<TextFieldValue>) -> SemanticsNodeInteraction
@@ -98,7 +98,6 @@ class TextSelectionTests {
     }
 
 
-    @OptIn(ExperimentalTestApi::class)
     private fun DesktopPlatform.selectLineStart(keyboardInteraction: KeyInjectionScope.() -> Unit) {
         textFieldSemanticInteraction("line 1\nline 2\nline 3\nline 4\nline 5") { state ->
             performKeyInput {
@@ -115,7 +114,6 @@ class TextSelectionTests {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     private fun DesktopPlatform.selectTextStart(keyboardInteraction: KeyInjectionScope.() -> Unit) {
         textFieldSemanticInteraction("line 1\nline 2\nline 3\nline 4\nline 5") { state ->
             performKeyInput {
@@ -129,7 +127,6 @@ class TextSelectionTests {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     private fun DesktopPlatform.selectTextEnd(keyboardInteraction: KeyInjectionScope.() -> Unit) {
         textFieldSemanticInteraction("line 1\nline 2\nline 3\nline 4\nline 5") { state ->
             performKeyInput {
@@ -145,7 +142,6 @@ class TextSelectionTests {
                 }
         }
     }
-    @OptIn(ExperimentalTestApi::class)
     private fun DesktopPlatform.selectLineEnd(keyboardInteraction: KeyInjectionScope.() -> Unit) {
         textFieldSemanticInteraction("line 1\nline 2\nline 3\nline 4\nline 5") { state ->
             performKeyInput {
@@ -242,7 +238,6 @@ class TextSelectionTests {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     private fun DesktopPlatform.deleteAllFromKeyBoard(
         initialText: String, deleteAllInteraction: KeyInjectionScope.() -> Unit
     ) {
@@ -268,7 +263,6 @@ class TextSelectionTests {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     private fun DesktopPlatform.selectAllTest(selectAllInteraction: KeyInjectionScope.() -> Unit) {
         textFieldSemanticInteraction("Select this text") { state ->
             performKeyInput(selectAllInteraction)
@@ -301,7 +295,6 @@ class TextSelectionTests {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun rightClickOnMacOsInSelectionContainerSelectsWord() {
         assumeTrue(DesktopPlatform.Current == DesktopPlatform.MacOS)
@@ -348,7 +341,6 @@ class TextSelectionTests {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun rightClickOnMacOsInTextFieldSelectsWord() {
         assumeTrue(DesktopPlatform.Current == DesktopPlatform.MacOS)
@@ -395,7 +387,6 @@ class TextSelectionTests {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun rightClickOnMacOsWithoutTextDoesNotCrash() {
         assumeTrue(DesktopPlatform.Current == DesktopPlatform.MacOS)
@@ -419,7 +410,6 @@ class TextSelectionTests {
         assertNull(selectionState.selection)
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun rightClickOnMacOsAtEmptySpaceDoesNotCrash() {
         assumeTrue(DesktopPlatform.Current == DesktopPlatform.MacOS)
@@ -464,7 +454,6 @@ class TextSelectionTests {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun rightClickOnMacOsInSelectionDoesNotCancelExistingSelection() {
         assumeTrue(DesktopPlatform.Current == DesktopPlatform.MacOS)
@@ -503,7 +492,6 @@ class TextSelectionTests {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun rightClickOnMacOsInTextFieldSelectionDoesNotCancelExistingSelection() {
         assumeTrue(DesktopPlatform.Current == DesktopPlatform.MacOS)

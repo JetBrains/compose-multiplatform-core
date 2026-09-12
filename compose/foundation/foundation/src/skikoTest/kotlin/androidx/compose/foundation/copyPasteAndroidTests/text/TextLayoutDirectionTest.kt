@@ -31,6 +31,7 @@ import kotlin.test.Test
 @OptIn(ExperimentalTestApi::class)
 class TextLayoutDirectionTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun testCoreTextField_getsCorrectLayoutDirection() = runSkikoComposeUiTest {
         var layoutDirection: LayoutDirection? = null

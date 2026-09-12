@@ -16,10 +16,15 @@
 
 package androidx.compose.ui.window
 
+import androidx.compose.ui.isLinux
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import java.awt.Dimension
 import java.awt.GraphicsConfiguration
 import java.awt.Insets
+import java.awt.Point
+import kotlin.math.absoluteValue
 
 
 /**
@@ -40,5 +45,86 @@ internal fun GraphicsConfiguration.screenSize(): DpSize {
     return bounds.let {
         // The AWT coordinates are scaled, so they're Dp
         DpSize(it.width.dp, it.height.dp)
+    }
+}
+
+
+private const val LinuxCoordinateTolerance = 10
+
+private val CoordinateTolerance = if (isLinux) LinuxCoordinateTolerance else 0
+
+internal fun assertCoordinatesApproximatelyEqual(
+    expected: Point,
+    actual: Point,
+) {
+    if (((expected.x - actual.x).absoluteValue > CoordinateTolerance) ||
+        ((expected.y - actual.y).absoluteValue > CoordinateTolerance)
+    ) {
+        throw AssertionError(
+            "Expected <$expected> with absolute tolerance" +
+                " <$CoordinateTolerance>, actual <$actual>."
+        )
+    }
+}
+
+internal fun assertCoordinatesApproximatelyEqual(
+    expected: DpOffset,
+    actual: DpOffset,
+) {
+    assertCoordinatesApproximatelyEqual(
+        expected = expected.roundToPoint(),
+        actual = actual.roundToPoint(),
+    )
+}
+
+internal fun assertSizesApproximatelyEqual(
+    expected: Dimension,
+    actual: Dimension,
+) {
+    if (((expected.width - actual.width).absoluteValue > CoordinateTolerance) ||
+        ((expected.height - actual.height).absoluteValue > CoordinateTolerance)
+    ) {
+        throw AssertionError(
+            "Expected <$expected> with absolute tolerance" +
+                " <$CoordinateTolerance>, actual <$actual>."
+        )
+    }
+}
+
+internal fun assertSizesApproximatelyEqual(
+    expected: DpSize,
+    actual: DpSize,
+) {
+    assertSizesApproximatelyEqual(
+        expected = expected.roundToDimension(),
+        actual = actual.roundToDimension(),
+    )
+}
+
+internal fun assertCoordinatesNotApproximatelyEqual(
+    expected: Point,
+    actual: Point,
+) {
+    if (((expected.x - actual.x).absoluteValue <= CoordinateTolerance) &&
+        ((expected.y - actual.y).absoluteValue <= CoordinateTolerance)
+    ) {
+        throw AssertionError(
+            "Expected <$expected> to not equal actual <$actual> with absolute" +
+                " tolerance <$CoordinateTolerance>"
+        )
+    }
+}
+
+internal fun assertSizesNotApproximatelyEqual(
+    expected: Dimension,
+    actual: Dimension,
+) {
+    if (((expected.width - actual.width).absoluteValue <= CoordinateTolerance) &&
+        ((expected.height - actual.height).absoluteValue <= CoordinateTolerance)
+    ) {
+        throw AssertionError(
+            "Expected <$expected> to not equal actual <$actual> with absolute" +
+                " tolerance <$CoordinateTolerance>"
+        )
     }
 }

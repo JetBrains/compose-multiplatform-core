@@ -1,0 +1,33 @@
+name: Project Structure
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - jb-main
+      - integration
+
+jobs:
+  check:
+    runs-on: macos-26-xlarge
+    name: Check
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+      - name: Setup Prerequisites
+        uses: ./.github/actions/setup-prerequisites
+
+      - name: Setup Xcode
+        uses: ./.github/actions/setup-xcode
+
+      - name: buildSrc tests
+        run: ./gradlew -p buildSrc :test --continue --stacktrace
+
+      - name: Public API
+        run: |
+          ./gradlew jbApiCheck --continue --stacktrace
+
+      - name: Fork Dependencies
+        run: |
+          ./gradlew jbVerifyForkDependencies --continue --stacktrace

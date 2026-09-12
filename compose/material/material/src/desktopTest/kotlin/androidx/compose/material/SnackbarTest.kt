@@ -27,6 +27,7 @@ import org.junit.Test
 
 class SnackbarTest {
     @OptIn(ExperimentalTestApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun testParallelQueueing() = runComposeUiTest {
         var snackbarsShown = 0
@@ -50,6 +51,7 @@ class SnackbarTest {
     }
 
     @OptIn(ExperimentalTestApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun testSequentialQueueing() = runComposeUiTest {
         var snackbarsShown = 0

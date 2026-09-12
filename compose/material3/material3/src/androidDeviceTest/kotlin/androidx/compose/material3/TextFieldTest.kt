@@ -64,7 +64,6 @@ import androidx.compose.testutils.assertIsEqualTo
 import androidx.compose.testutils.assertPixels
 import androidx.compose.testutils.assertShape
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -125,7 +124,6 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -141,7 +139,7 @@ class TextFieldTest {
     private val TextFieldWidth = 300.dp
     private val TextFieldTag = "textField"
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun testTextField_setSmallHeight() {
@@ -400,7 +398,6 @@ class TextFieldTest {
         rule.runOnIdle { assertThat(hostView.isSoftwareKeyboardShown).isFalse() }
     }
 
-    @ExperimentalComposeUiApi
     @Test
     fun testTextField_clickingOnTextAfterDismissingKeyboard_showsKeyboard() {
         val (focusRequester, parentFocusRequester) = FocusRequester.createRefs()
@@ -1712,7 +1709,6 @@ class TextFieldTest {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     fun testTextField_imeActionAndKeyboardTypePropagatedDownstream() {
@@ -2359,6 +2355,22 @@ class TextFieldTest {
                 outputTransformation = { addStyle(SpanStyle(), 0, length) },
             )
         }
+    }
+
+    @Test
+    fun testTextField_prefixAndSuffix_semantics() {
+        rule.setMaterialContent(lightColorScheme()) {
+            TextField(
+                state = rememberTextFieldState("google"),
+                prefix = { Text("www.") },
+                suffix = { Text(".com") },
+                modifier = Modifier.testTag("TextField"),
+            )
+        }
+
+        val rootNode = rule.onNodeWithTag("TextField", useUnmergedTree = false).fetchSemanticsNode()
+        val textList = rootNode.config.getOrNull(SemanticsProperties.Text)?.map { it.text }
+        assertThat(textList).containsExactly("www.", "google", ".com").inOrder()
     }
 }
 

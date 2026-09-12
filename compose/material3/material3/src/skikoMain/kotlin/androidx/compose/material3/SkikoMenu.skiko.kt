@@ -214,53 +214,6 @@ actual fun DropdownMenu(
     }
 }
 
-@ExperimentalMaterial3ExpressiveApi
-@Composable
-actual fun DropdownMenuPopup(
-    expanded: Boolean,
-    onDismissRequest: () -> Unit,
-    modifier: Modifier,
-    offset: DpOffset,
-    properties: PopupProperties,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    val expandedState = remember { MutableTransitionState(false) }
-    expandedState.targetState = expanded
-
-    if (expandedState.currentState || expandedState.targetState) {
-        val density = LocalDensity.current
-        val popupPositionProvider =
-            remember(offset, density) {
-                DropdownMenuPositionProvider(
-                    contentOffset = offset,
-                    density = density,
-                    dropdownMenuAnchorPosition = MenuAnchorPosition.Below,
-                )
-            }
-
-        var focusManager: FocusManager? by mutableStateOf(null)
-        var inputModeManager: InputModeManager? by mutableStateOf(null)
-        Popup(
-            onDismissRequest = onDismissRequest,
-            popupPositionProvider = popupPositionProvider,
-            properties = properties,
-            onKeyEvent = {
-                handleDropdownOnKeyEvent(it, focusManager, inputModeManager)
-            },
-        ) {
-            focusManager = LocalFocusManager.current
-            inputModeManager = LocalInputModeManager.current
-
-            DropdownMenuPopupContent(
-                modifier = modifier,
-                expandedState = expandedState,
-                transformOrigin = { popupPositionProvider.transformOrigin },
-                content = content,
-            )
-        }
-    }
-}
-
 @Suppress("ModifierParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Deprecated(

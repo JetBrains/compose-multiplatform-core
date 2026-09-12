@@ -50,8 +50,8 @@ import kotlin.concurrent.Volatile
 @OptIn(InternalComposeUiApi::class)
 internal abstract class BaseComposeScene(
     protected val frameRecomposer: FrameRecomposer,
-    private val invalidateLayout: () -> Unit,
-    private val invalidateDraw: () -> Unit,
+    private var invalidateLayout: () -> Unit,
+    private var invalidateDraw: () -> Unit,
 ) : ComposeScene {
     protected val inputHandler: ComposeSceneInputHandler =
         ComposeSceneInputHandler(
@@ -120,6 +120,8 @@ internal abstract class BaseComposeScene(
         isClosed = true
 
         composition?.dispose()
+        invalidateDraw = {}
+        invalidateLayout = {}
     }
 
     override fun setContent(
@@ -172,13 +174,6 @@ internal abstract class BaseComposeScene(
         hasForcedDraw = false
 
         postponeInvalidation("BaseComposeScene:draw") {
-            // FIXME: Remove applying the global snapshot here.
-            //  Android never applies the snapshot *between* the layout and draw phases
-            //  (applies happen once per frame on the main looper, not between phases).
-            //  This between-phase apply is a temporary workaround kept only to preserve current
-            //  behavior for OffsetToFocusedRect (iOS FocusableAboveKeyboard).
-            Snapshot.sendApplyNotifications()
-
             // AndroidComposeView.dispatchDraw() begins with measureAndLayout() so layout changes
             // discovered after the host layout traversal are still settled before drawing. Keep
             // that trailing layout pass here even though measureAndLayout() is also a public phase.

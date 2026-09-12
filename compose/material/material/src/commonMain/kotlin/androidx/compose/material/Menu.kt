@@ -109,7 +109,7 @@ import kotlin.math.min
  * @param content the content of this dropdown menu, typically a [DropdownMenuItem]
  */
 @Composable
-expect fun DropdownMenu(
+public expect fun DropdownMenu(
     expanded: Boolean,
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
@@ -137,7 +137,7 @@ expect fun DropdownMenu(
  * @param content the content of this menu item
  */
 @Composable
-expect fun DropdownMenuItem(
+public expect fun DropdownMenuItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -257,9 +257,9 @@ internal fun DropdownMenuItemContent(
 }
 
 /** Contains default values used for [DropdownMenuItem]. */
-object MenuDefaults {
+public object MenuDefaults {
     /** Default padding used for [DropdownMenuItem]. */
-    val DropdownMenuItemContentPadding =
+    public val DropdownMenuItemContentPadding: PaddingValues =
         PaddingValues(horizontal = DropdownMenuItemHorizontalPadding, vertical = 0.dp)
 }
 
@@ -267,13 +267,20 @@ object MenuDefaults {
 internal expect val DefaultMenuProperties: PopupProperties
 
 // Size defaults.
-private val MenuElevation = 8.dp
-internal val MenuVerticalMargin = 48.dp
-private val DropdownMenuItemHorizontalPadding = 16.dp
-internal val DropdownMenuVerticalPadding = 8.dp
-private val DropdownMenuItemDefaultMinWidth = 112.dp
-private val DropdownMenuItemDefaultMaxWidth = 280.dp
-private val DropdownMenuItemDefaultMinHeight = 48.dp
+private val MenuElevation
+    get() = 8.dp
+internal val MenuVerticalMargin
+    get() = 48.dp
+private val DropdownMenuItemHorizontalPadding
+    get() = 16.dp
+internal val DropdownMenuVerticalPadding
+    get() = 8.dp
+private val DropdownMenuItemDefaultMinWidth
+    get() = 112.dp
+private val DropdownMenuItemDefaultMaxWidth
+    get() = 280.dp
+private val DropdownMenuItemDefaultMinHeight
+    get() = 48.dp
 
 // Menu open/close animation.
 internal const val InTransitionDuration = 120

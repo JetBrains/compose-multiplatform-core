@@ -452,7 +452,8 @@ internal class ComposeContainer(
             windowContext = windowContext,
             renderDelegate = renderDelegate,
             skiaLayerAnalytics = skiaLayerAnalytics,
-            renderSettings = renderSettings
+            renderSettings = renderSettings,
+            fillsWindow = isWindowLevel
         )
     }
 

@@ -71,6 +71,9 @@ androidXMultiplatform {
         desktopMain {
             dependsOn(nonAndroidMain)
             dependsOn(nonAndroidExcludingWebMain)
+            dependencies {
+                runtimeOnly(libs.skikoAwtRuntime)
+            }
         }
 
         desktopTest {

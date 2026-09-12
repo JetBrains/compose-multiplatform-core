@@ -22,7 +22,7 @@ import platform.UIKit.UIPasteboard
 
 actual typealias NativeClipboard = UIPasteboard
 
-private class UIKitPlatformClipboard : Clipboard {
+private class IosClipboard : Clipboard {
     override suspend fun getClipEntry(): ClipEntry? {
         if (nativeClipboard.numberOfItems() == 0L) return null
         return ClipEntry().apply {
@@ -49,7 +49,7 @@ private class UIKitPlatformClipboard : Clipboard {
 }
 
 @Suppress("DEPRECATION")
-private class UIKitPlatformClipboardManager : ClipboardManager {
+private class IosClipboardManager : ClipboardManager {
     override fun getText(): AnnotatedString? =
         UIPasteboard.generalPasteboard.string?.let { AnnotatedString(it) }
 
@@ -66,9 +66,9 @@ private class UIKitPlatformClipboardManager : ClipboardManager {
 }
 
 @Suppress("DEPRECATION")
-internal actual fun createPlatformClipboardManager(): ClipboardManager = UIKitPlatformClipboardManager()
+internal actual fun createPlatformClipboardManager(): ClipboardManager = IosClipboardManager()
 
-internal actual fun createPlatformClipboard(): Clipboard = UIKitPlatformClipboard()
+internal actual fun createPlatformClipboard(): Clipboard = IosClipboard()
 
 /**
  * A wrapper for [UIPasteboard] items.

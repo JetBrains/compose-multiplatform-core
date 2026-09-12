@@ -64,6 +64,7 @@ import platform.UIKit.UITextContentTypePassword
 import platform.UIKit.UITextContentTypeTelephoneNumber
 import platform.UIKit.UITextContentTypeUsername
 import platform.UIKit.UITextInputProtocol
+import platform.UIKit.UITextSpellCheckingType
 import platform.UIKit.UIView
 import platform.UIKit.UIWritingToolsBehaviorDefault
 import platform.UIKit.UIWritingToolsBehaviorLimited
@@ -459,6 +460,52 @@ internal class ImeOptionsTest {
             imeOptions = PlatformImeOptions { writingToolsBehavior(UIWritingToolsBehaviorLimited) }
         )
         assertEquals(UIWritingToolsBehaviorLimited, input.writingToolsBehavior)
+    }
+
+    @Test
+    fun testSpellCheckingTypeDefault() = runUIKitInstrumentedTest {
+        val input = setContentAndFindInput(
+            imeOptions = PlatformImeOptions()
+        )
+        assertEquals(
+            UITextSpellCheckingType.UITextSpellCheckingTypeYes,
+            input.spellCheckingType
+        )
+    }
+
+    @Test
+    fun testSpellCheckingType() = runUIKitInstrumentedTest {
+        val input = setContentAndFindInput(
+            imeOptions = PlatformImeOptions {
+                spellCheckingType(UITextSpellCheckingType.UITextSpellCheckingTypeNo)
+            }
+        )
+        assertEquals(
+            UITextSpellCheckingType.UITextSpellCheckingTypeNo,
+            input.spellCheckingType
+        )
+    }
+
+    @Test
+    fun testSpellCheckingTypeFollowsDisabledAutoCorrect() = runUIKitInstrumentedTest {
+        val input = setContentAndFindInput(
+            keyboardOptions = KeyboardOptions(autoCorrectEnabled = false)
+        )
+        assertEquals(
+            UITextSpellCheckingType.UITextSpellCheckingTypeNo,
+            input.spellCheckingType
+        )
+    }
+
+    @Test
+    fun testPlatformOverridesCommonSpellCheckingType() = runUIKitInstrumentedTest {
+        val input = setContentAndFindInput(
+            keyboardOptions = KeyboardOptions(
+                autoCorrectEnabled = false,
+                platformImeOptions = PlatformImeOptions { spellCheckingType(UITextSpellCheckingType.UITextSpellCheckingTypeYes) }
+            )
+        )
+        assertEquals(UITextSpellCheckingType.UITextSpellCheckingTypeYes, input.spellCheckingType)
     }
 
     private fun UIKitInstrumentedTest.setContentAndFindInputView(

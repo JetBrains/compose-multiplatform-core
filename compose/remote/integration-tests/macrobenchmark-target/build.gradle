@@ -23,16 +23,15 @@ plugins {
 group="androidx.compose.remote"
 
 android {
-    compileSdk { version = release(36) }
+    compileSdk { version = release(37) }
 
     namespace = "androidx.compose.remote.integration.macrobenchmark.target"
     defaultConfig.minSdk { version = release(29) }
     buildTypes {
         release {
-            minifyEnabled = true
-            shrinkResources = true
-            proguardFiles(getDefaultProguardFile('proguard-android-optimize.txt'),
-                    "proguard-benchmark.pro")
+            optimization {
+                enable = true
+            }
         }
     }
 }

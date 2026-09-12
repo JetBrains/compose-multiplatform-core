@@ -38,13 +38,13 @@ import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * A scrollbar that represents the current scroll position of a scrolling component.
+ * A visual-only scrollbar that represents the current scroll position of a scrolling component.
  *
  * This scrollbar cannot be interacted with to scroll the component, it is a visual only
  * representation of the scroll position. It is drawn at the end edge (respecting layout direction)
@@ -58,14 +58,13 @@ import kotlinx.coroutines.launch
  *
  * To use a scrollbar with a [androidx.compose.foundation.lazy.LazyColumn], see:
  *
- * @sample androidx.compose.material3.samples.ScrollbarWithLazyColumnSample
+ * @sample androidx.compose.material3.samples.NonInteractiveScrollbarWithLazyColumnSample
  *
  * To use a scrollbar with a [androidx.compose.foundation.layout.Column] that uses
  * [androidx.compose.foundation.verticalScroll], see:
  *
- * @sample androidx.compose.material3.samples.ScrollbarWithVerticalScrollSample
- * @param state the [ScrollIndicatorState] that represents the scroll state. If null, the scrollbar
- *   will not be drawn.
+ * @sample androidx.compose.material3.samples.NonInteractiveScrollbarWithVerticalScrollSample
+ * @param state the [ScrollIndicatorState] that represents the scroll state.
  * @param orientation the orientation of the scrollbar.
  * @param thumbColor the color of the scrollbar thumb.
  * @param trackColor the color of the scrollbar track.
@@ -83,25 +82,24 @@ import kotlinx.coroutines.launch
  * @param crossAxisTrackInset the inset to apply to the scrollbar track along the cross axis.
  */
 @Composable
-fun Modifier.scrollbar(
-    state: ScrollIndicatorState?,
+public fun Modifier.nonInteractiveScrollbar(
+    state: ScrollIndicatorState,
     orientation: Orientation,
-    thumbColor: Color = ScrollbarDefaults.thumbColor,
+    thumbColor: Color = NonInteractiveScrollbarDefaults.thumbColor,
     trackColor: Color = Color.Transparent,
-    thickness: Dp = ScrollbarDefaults.Thickness,
-    thumbMinLength: Dp = ScrollbarDefaults.ThumbMinLength,
+    thickness: Dp = NonInteractiveScrollbarDefaults.Thickness,
+    thumbMinLength: Dp = NonInteractiveScrollbarDefaults.ThumbMinLength,
     @FloatRange(from = 0.0, to = 1.0)
-    thumbMaxLengthFraction: Float = ScrollbarDefaults.ThumbMaxLengthFraction,
+    thumbMaxLengthFraction: Float = NonInteractiveScrollbarDefaults.ThumbMaxLengthFraction,
     isFadeEnabled: Boolean = true,
-    fadeDurationMillis: Int = ScrollbarDefaults.ThumbFadeDurationMillis,
-    fadeDelayMillis: Int = ScrollbarDefaults.ThumbFadeDelayMillis,
-    mainAxisTrackInset: Dp = ScrollbarDefaults.MainAxisTrackInset,
-    crossAxisTrackInset: Dp = ScrollbarDefaults.CrossAxisTrackInset,
+    fadeDurationMillis: Int = NonInteractiveScrollbarDefaults.ThumbFadeDurationMillis,
+    fadeDelayMillis: Int = NonInteractiveScrollbarDefaults.ThumbFadeDelayMillis,
+    mainAxisTrackInset: Dp = NonInteractiveScrollbarDefaults.MainAxisTrackInset,
+    crossAxisTrackInset: Dp = NonInteractiveScrollbarDefaults.CrossAxisTrackInset,
 ): Modifier {
-    if (state == null) return this
     require(thumbMaxLengthFraction in 0f..1f) { "thumbMaxLengthFraction must be between 0f and 1f" }
     return this.then(
-        ScrollbarElement(
+        NonInteractiveScrollbarElement(
             state = state,
             orientation = orientation,
             thumbColor = thumbColor,
@@ -118,38 +116,38 @@ fun Modifier.scrollbar(
     )
 }
 
-/** Contains the default values used by [Modifier.scrollbar]. */
-object ScrollbarDefaults {
+/** Contains the default values used by [Modifier.nonInteractiveScrollbar]. */
+public object NonInteractiveScrollbarDefaults {
     /** Default opacity for the scrollbar thumb. */
-    val ThumbOpacity = 0.7f
+    public val ThumbOpacity: Float = 0.7f
 
     /** Default duration in milliseconds for the fade animation. */
-    val ThumbFadeDurationMillis: Int = 250
+    public val ThumbFadeDurationMillis: Int = 250
 
     /** Default delay in milliseconds before the scrollbar fades out. */
-    val ThumbFadeDelayMillis: Int = 400
+    public val ThumbFadeDelayMillis: Int = 400
 
     /** Default color for the scrollbar thumb. */
-    val thumbColor: Color
+    public val thumbColor: Color
         @Composable get() = MaterialTheme.colorScheme.outline.copy(alpha = ThumbOpacity)
 
     /** Default thickness for a scrollbar. */
-    val Thickness: Dp = 4.dp
+    public val Thickness: Dp = 4.dp
 
     /** Default minimum height for the scrollbar thumb. */
-    val ThumbMinLength: Dp = 24.dp
+    public val ThumbMinLength: Dp = 24.dp
 
     /** Default maximum length for the scrollbar thumb as a fraction of the viewport length. */
-    val ThumbMaxLengthFraction: Float = 0.9f
+    public val ThumbMaxLengthFraction: Float = 0.9f
 
     /** Default main axis inset for the scrollbar track. */
-    val MainAxisTrackInset: Dp = 2.dp
+    public val MainAxisTrackInset: Dp = 2.dp
 
     /** Default cross axis inset for the scrollbar track. */
-    val CrossAxisTrackInset: Dp = 0.dp
+    public val CrossAxisTrackInset: Dp = 0.dp
 }
 
-private class ScrollbarElement(
+private class NonInteractiveScrollbarElement(
     private val state: ScrollIndicatorState,
     private val orientation: Orientation,
     private val thumbColor: Color,
@@ -162,10 +160,10 @@ private class ScrollbarElement(
     private val fadeDelayMillis: Int,
     private val mainAxisTrackInset: Dp,
     private val crossAxisTrackInset: Dp,
-) : ModifierNodeElement<ScrollbarNodeWrapper>() {
+) : ModifierNodeElement<NonInteractiveScrollbarNodeWrapper>() {
 
-    override fun create(): ScrollbarNodeWrapper {
-        return ScrollbarNodeWrapper(
+    override fun create(): NonInteractiveScrollbarNodeWrapper {
+        return NonInteractiveScrollbarNodeWrapper(
             state,
             orientation,
             thumbColor,
@@ -181,7 +179,7 @@ private class ScrollbarElement(
         )
     }
 
-    override fun update(node: ScrollbarNodeWrapper) {
+    override fun update(node: NonInteractiveScrollbarNodeWrapper) {
         node.update(
             state,
             orientation,
@@ -200,7 +198,7 @@ private class ScrollbarElement(
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is ScrollbarElement) return false
+        if (other !is NonInteractiveScrollbarElement) return false
         if (state != other.state) return false
         if (orientation != other.orientation) return false
         if (thumbColor != other.thumbColor) return false
@@ -233,7 +231,7 @@ private class ScrollbarElement(
     }
 
     override fun InspectorInfo.inspectableProperties() {
-        name = "scrollbar"
+        name = "nonInteractiveScrollbar"
         properties["state"] = state
         properties["orientation"] = orientation
         properties["thumbColor"] = thumbColor
@@ -249,7 +247,7 @@ private class ScrollbarElement(
     }
 }
 
-internal class ScrollbarNodeWrapper(
+internal class NonInteractiveScrollbarNodeWrapper(
     private var state: ScrollIndicatorState,
     private var orientation: Orientation,
     private var thumbColor: Color,
@@ -266,7 +264,7 @@ internal class ScrollbarNodeWrapper(
 
     private var scrollbarNode =
         delegate(
-            createScrollbarModifierNode(
+            createNonInteractiveScrollbarModifierNode(
                 state = state,
                 orientation = orientation,
                 thumbColor = { thumbColor },
@@ -312,7 +310,7 @@ internal class ScrollbarNodeWrapper(
         undelegate(scrollbarNode)
         scrollbarNode =
             delegate(
-                createScrollbarModifierNode(
+                createNonInteractiveScrollbarModifierNode(
                     state = state,
                     orientation = orientation,
                     thumbColor = { thumbColor },
@@ -361,7 +359,7 @@ internal class ScrollbarNodeWrapper(
  * @param crossAxisTrackInset the inset to apply to the scrollbar track along the cross axis.
  */
 // TODO: b/505077759 - Publish this as a public API in some lower layer.
-internal fun createScrollbarModifierNode(
+internal fun createNonInteractiveScrollbarModifierNode(
     state: ScrollIndicatorState,
     orientation: Orientation,
     thumbColor: ColorProducer,
@@ -375,7 +373,7 @@ internal fun createScrollbarModifierNode(
     mainAxisTrackInset: Dp,
     crossAxisTrackInset: Dp,
 ): DelegatableNode =
-    ScrollbarNode(
+    NonInteractiveScrollbarNode(
         state,
         orientation,
         thumbColor,
@@ -390,7 +388,7 @@ internal fun createScrollbarModifierNode(
         crossAxisTrackInset,
     )
 
-private class ScrollbarNode(
+private class NonInteractiveScrollbarNode(
     private val state: ScrollIndicatorState,
     private val orientation: Orientation,
     private val thumbColor: ColorProducer,
@@ -409,11 +407,19 @@ private class ScrollbarNode(
     private var cachedCornerRadius = CornerRadius.Zero
     private var lastOffset = -1
     private var fadeJob: Job? = null
+    private var scrollEvents: Channel<Unit>? = null
+
+    override fun onAttach() {
+        super.onAttach()
+        // Baseline the initial offset on node re-attach
+        lastOffset = state.scrollOffset
+    }
 
     override fun onDetach() {
         fadeJob?.cancel()
         fadeJob = null
-        lastOffset = -1
+        scrollEvents?.close()
+        scrollEvents = null
         super.onDetach()
     }
 
@@ -433,30 +439,48 @@ private class ScrollbarNode(
         if (isFadeEnabled && currentOffset != lastOffset) {
             lastOffset = currentOffset
 
-            fadeJob?.cancel()
-            fadeJob =
-                coroutineScope.launch {
-                    if (alpha.value != 1f) {
-                        alpha.snapTo(1f)
-                    }
+            var events = scrollEvents
+            if (events == null) {
+                events = Channel(1)
+                scrollEvents = events
+            }
+            events.trySend(Unit)
 
-                    // We use coroutine delay instead of AnimationSpec delay because system
-                    // animations might be disabled (MotionDurationScale = 0f). A coroutine delay
-                    // ensures the scrollbar remains visible for the configured fade delay period
-                    // before fading out, whereas an AnimationSpec's delay would scale to 0f and
-                    // cause the scrollbar to disappear instantly.
-                    delay(fadeDelayMillis.milliseconds)
-                    alpha.animateTo(0f, fadeAnimationSpec)
-                }
+            // Launch a single coroutine loop that persists throughout the active scroll session.
+            if (alpha.targetValue == 0f || fadeJob == null || fadeJob?.isActive == false) {
+                fadeJob?.cancel()
+                fadeJob =
+                    coroutineScope.launch {
+                        alpha.snapTo(1f)
+
+                        while (true) {
+                            // Consume any pending events before starting the wait
+                            events.tryReceive()
+
+                            // Suspend until a new scroll event comes in, OR the timeout is reached.
+                            val interrupted =
+                                withTimeoutOrNull(fadeDelayMillis.toLong()) { events.receive() }
+
+                            // Timeout completed without being interrupted by a scroll.
+                            if (interrupted == null) {
+                                break
+                            }
+                        }
+
+                        alpha.animateTo(0f, fadeAnimationSpec)
+                    }
+            }
         }
 
-        val currentAlpha = alpha.value
+        val currentAlpha = if (isFadeEnabled) alpha.value else 1f
         val currentThumbColor = thumbColor()
         val currentTrackColor = trackColor()
         val resolvedThumbColor =
-            currentThumbColor.copy(alpha = currentThumbColor.alpha * currentAlpha)
+            if (currentAlpha == 1f) currentThumbColor
+            else currentThumbColor.copy(alpha = currentThumbColor.alpha * currentAlpha)
         val resolvedTrackColor =
-            currentTrackColor.copy(alpha = currentTrackColor.alpha * currentAlpha)
+            if (currentAlpha == 1f) currentTrackColor
+            else currentTrackColor.copy(alpha = currentTrackColor.alpha * currentAlpha)
 
         val isTrackVisible = resolvedTrackColor.alpha > 0f
         val isThumbVisible = resolvedThumbColor.alpha > 0f

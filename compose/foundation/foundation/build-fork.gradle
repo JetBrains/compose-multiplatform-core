@@ -71,51 +71,6 @@ androidXMultiplatform {
             implementation("androidx.navigationevent:navigationevent-compose:$navigationEventVersion")
         }
 
-        androidMain.dependencies {
-            api("androidx.annotation:annotation:1.8.1")
-            api("androidx.annotation:annotation-experimental:1.4.1")
-            implementation("androidx.emoji2:emoji2:1.3.0")
-            implementation("androidx.core:core:1.13.1")
-        }
-
-        androidDeviceTest.dependencies {
-            implementation(project(":compose:test-utils"))
-            implementation(project(":internal-testutils-fonts"))
-            implementation(project(":test:screenshot:screenshot"))
-            implementation(project(":internal-testutils-runtime"))
-            implementation("androidx.activity:activity-compose:1.3.1")
-            implementation("androidx.lifecycle:lifecycle-runtime:2.6.1")
-            implementation("androidx.savedstate:savedstate:1.2.1")
-            implementation("androidx.emoji2:emoji2-bundled:1.5.0")
-
-            implementation(libs.testUiautomator)
-            implementation(libs.testRules)
-            implementation(libs.testRunner)
-            implementation(libs.testMonitor)
-            implementation(libs.espressoCore)
-            implementation(libs.junit)
-            implementation(libs.truth)
-            implementation(libs.dexmakerMockito)
-            implementation(libs.mockitoCore)
-            implementation(libs.mockitoKotlin)
-
-            implementation(libs.leakcanary)
-            implementation(libs.leakcanaryInstrumentation)
-        }
-
-        androidHostTest.dependencies {
-            implementation(libs.testRules)
-            implementation(libs.testRunner)
-            implementation(libs.junit)
-            implementation(libs.truth)
-            implementation(libs.kotlinReflect)
-            implementation(libs.mockitoCore4)
-            implementation(libs.mockitoKotlin4)
-            implementation(libs.dexmakerMockitoInlineExtended)
-            implementation(libs.byteBuddy)
-            implementation(project(":constraintlayout:constraintlayout-compose"))
-        }
-
         // TODO: Align naming: nonAndroidMain
         skikoMain {
             dependsOn(commonMain)
@@ -222,7 +177,6 @@ androidx {
     inceptionYear = "2018"
     description = "Higher level abstractions of the Compose UI primitives. This library is design system agnostic, providing the high-level building blocks for both application and design-system developers"
     legacyDisableKotlinStrictApiMode = true
-    samples(project(":compose:foundation:foundation:foundation-samples"))
     addGoldenImageAssets()
     deviceTests.minSdkForFtlOverride = 24 // b/437944630
 }

@@ -40,7 +40,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 import kotlin.test.assertTrue
-import kotlin.concurrent.Volatile
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.atomicfu.atomic
@@ -48,6 +47,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.runTest
 
+@Suppress("DEPRECATION")
 @OptIn(ExperimentalTestApi::class)
 class TestBasicsTest : AbstractTestBasicsTest(
     runUiTest = { runComposeUiTest(block = it) }
