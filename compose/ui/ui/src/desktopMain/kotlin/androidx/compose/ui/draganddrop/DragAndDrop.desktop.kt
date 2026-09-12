@@ -79,17 +79,20 @@ value class DragAndDropTransferAction private constructor(private val name: Stri
         /**
          * Indicates the dragged object should be copied into the target.
          */
-        val Copy = DragAndDropTransferAction("Copy")
+        val Copy: DragAndDropTransferAction
+            get() = DragAndDropTransferAction("Copy")
 
         /**
          * Indicates the dragged object should be moved ("cut" and "pasted") into the target.
          */
-        val Move = DragAndDropTransferAction("Move")
+        val Move: DragAndDropTransferAction
+            get() = DragAndDropTransferAction("Move")
 
         /**
          * Indicates the dragged object should be linked to at the target.
          */
-        val Link = DragAndDropTransferAction("Link")
+        val Link: DragAndDropTransferAction
+            get() = DragAndDropTransferAction("Link")
     }
 }
 
