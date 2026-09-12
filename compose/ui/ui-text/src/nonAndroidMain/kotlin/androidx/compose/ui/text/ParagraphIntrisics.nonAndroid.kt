@@ -23,7 +23,6 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
-import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.platform.PlatformTextRegistry
 import androidx.compose.ui.unit.Density
 import kotlin.jvm.JvmName
@@ -53,12 +52,6 @@ actual fun ParagraphIntrinsics(
             fontFamilyResolver = createFontFamilyResolver(resourceLoader),
         )
 
-@Deprecated(
-    "Use an override with `defaultLocaleList`",
-    ReplaceWith(
-        "ParagraphIntrinsics(text, style, annotations, density, fontFamilyResolver, placeholders, softWrap, LocaleList.current)"
-    ),
-)
 actual fun ParagraphIntrinsics(
     text: String,
     style: TextStyle,
@@ -68,16 +61,15 @@ actual fun ParagraphIntrinsics(
     placeholders: List<AnnotatedString.Range<Placeholder>>,
     softWrap: Boolean,
 ): ParagraphIntrinsics =
-    ParagraphIntrinsics(
-        text = text,
-        style = style,
-        annotations = annotations,
-        density = density,
-        fontFamilyResolver = fontFamilyResolver,
-        placeholders = placeholders,
-        softWrap = softWrap,
-        defaultLocaleList = @Suppress("DEPRECATION") LocaleList.current,
-    )
+    PlatformTextRegistry.requireCurrent()
+        .createParagraphIntrinsics(
+            text = text,
+            style = style,
+            annotations = annotations,
+            placeholders = placeholders,
+            density = density,
+            fontFamilyResolver = fontFamilyResolver,
+        )
 
 @Deprecated(
     "Use an overload that takes `annotations` instead",
@@ -111,29 +103,6 @@ actual fun ParagraphIntrinsics(
     fontFamilyResolver: FontFamily.Resolver,
     placeholders: List<AnnotatedString.Range<Placeholder>>,
 ): ParagraphIntrinsics =
-    PlatformTextRegistry.requireCurrent()
-        .createParagraphIntrinsics(
-            text = text,
-            style = style,
-            annotations = annotations,
-            placeholders = placeholders,
-            density = density,
-            fontFamilyResolver = fontFamilyResolver,
-        )
-
-actual fun ParagraphIntrinsics(
-    text: String,
-    style: TextStyle,
-    annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
-    density: Density,
-    fontFamilyResolver: FontFamily.Resolver,
-    placeholders: List<AnnotatedString.Range<Placeholder>>,
-    softWrap: Boolean,
-    defaultLocaleList: LocaleList,
-): ParagraphIntrinsics =
-    // TODO(Merge) Normal, Implement after merging a80c61f2261aa88096b3ac6d7ee2e4baf56aa3f1.
-    // The non-Android text backend ignores the default locale list, so it cannot provide locale
-    // fallback.
     PlatformTextRegistry.requireCurrent()
         .createParagraphIntrinsics(
             text = text,

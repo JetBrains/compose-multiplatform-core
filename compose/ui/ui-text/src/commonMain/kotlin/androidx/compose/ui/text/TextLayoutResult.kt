@@ -234,7 +234,6 @@ private constructor(
     // See
     // https://youtrack.jetbrains.com/issue/KT-65645/Atomicfu-plugin-compilation-hangs-on-a-long-string-concatenation
     public override fun toString(): String {
-<<<<<<< HEAD
         return buildString {
             append("TextLayoutInput(")
             append("text=$text, ")
@@ -246,24 +245,9 @@ private constructor(
             append("density=$density, ")
             append("layoutDirection=$layoutDirection, ")
             append("fontFamilyResolver=$fontFamilyResolver, ")
-            append("defaultLocaleList=$defaultLocaleList, ")
             append("constraints=$constraints")
             append(")")
         }
-=======
-        return "TextLayoutInput(" +
-            "text=$text, " +
-            "style=$style, " +
-            "placeholders=$placeholders, " +
-            "maxLines=$maxLines, " +
-            "softWrap=$softWrap, " +
-            "overflow=$overflow, " +
-            "density=$density, " +
-            "layoutDirection=$layoutDirection, " +
-            "fontFamilyResolver=$fontFamilyResolver, " +
-            "constraints=$constraints" +
-            ")"
->>>>>>> 42cbb9654241cd67c502e1bb4a6e1b7e3824c2e2
     }
 }
 

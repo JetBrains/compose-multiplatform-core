@@ -22,7 +22,6 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.intl.LocaleList
 
 @Suppress("ComposableNaming")
 @Composable
@@ -31,7 +30,6 @@ internal actual fun BackgroundTextMeasurement(
     text: String,
     style: TextStyle,
     fontFamilyResolver: FontFamily.Resolver,
-    defaultLocaleList: LocaleList,
     softWrap: Boolean,
 ) {
     // TODO: https://youtrack.jetbrains.com/issue/CMP-7818
@@ -44,7 +42,6 @@ internal actual fun BackgroundTextMeasurement(
     text: AnnotatedString,
     style: TextStyle,
     fontFamilyResolver: FontFamily.Resolver,
-    defaultLocaleList: LocaleList,
     placeholders: List<AnnotatedString.Range<Placeholder>>?,
     softWrap: Boolean,
 ) {

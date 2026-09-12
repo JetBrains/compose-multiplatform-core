@@ -35,7 +35,6 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.internal.JvmDefaultWithCompatibility
-import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.platform.PlatformTextRegistry
 import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.text.style.TextDecoration
@@ -164,9 +163,6 @@ actual fun Paragraph(
             fontFamilyResolver = createFontFamilyResolver(resourceLoader),
         )
 
-@Deprecated(
-    "Paragraph that doesn't take a default locale list is deprecated, pass a LocaleList instead"
-)
 actual fun Paragraph(
     text: String,
     style: TextStyle,
@@ -178,18 +174,18 @@ actual fun Paragraph(
     maxLines: Int,
     overflow: TextOverflow,
 ): Paragraph =
-    Paragraph(
-        text = text,
-        style = style,
-        constraints = constraints,
-        density = density,
-        fontFamilyResolver = fontFamilyResolver,
-        defaultLocaleList = @Suppress("DEPRECATION") LocaleList.current,
-        spanStyles = spanStyles,
-        placeholders = placeholders,
-        maxLines = maxLines,
-        overflow = overflow,
-    )
+    PlatformTextRegistry.requireCurrent()
+        .createParagraph(
+            text = text,
+            style = style,
+            annotations = spanStyles,
+            placeholders = placeholders,
+            maxLines = maxLines,
+            overflow = overflow,
+            constraints = constraints,
+            density = density,
+            fontFamilyResolver = fontFamilyResolver,
+        )
 
 @Deprecated(
     "Paragraph that takes maximum allowed width is deprecated, pass constraints instead.",
@@ -247,34 +243,6 @@ actual fun Paragraph(
             placeholders = placeholders,
             maxLines = maxLines,
             overflow = if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip,
-            constraints = constraints,
-            density = density,
-            fontFamilyResolver = fontFamilyResolver,
-        )
-
-actual fun Paragraph(
-    text: String,
-    style: TextStyle,
-    constraints: Constraints,
-    density: Density,
-    fontFamilyResolver: FontFamily.Resolver,
-    defaultLocaleList: LocaleList,
-    spanStyles: List<AnnotatedString.Range<SpanStyle>>,
-    placeholders: List<AnnotatedString.Range<Placeholder>>,
-    maxLines: Int,
-    overflow: TextOverflow,
-): Paragraph =
-    // TODO(Merge) Normal, Implement after merging a80c61f2261aa88096b3ac6d7ee2e4baf56aa3f1.
-    // The non-Android text backend ignores the default locale list, so it cannot provide locale
-    // fallback.
-    PlatformTextRegistry.requireCurrent()
-        .createParagraph(
-            text = text,
-            style = style,
-            annotations = spanStyles,
-            placeholders = placeholders,
-            maxLines = maxLines,
-            overflow = overflow,
             constraints = constraints,
             density = density,
             fontFamilyResolver = fontFamilyResolver,
