@@ -32,8 +32,8 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.skiaCanvas
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.graphics.toComposeRect
-import androidx.compose.ui.text.PlatformParagraph
 import androidx.compose.ui.text.platform.SkikoParagraphIntrinsics
 import androidx.compose.ui.text.platform.cursorHorizontalPosition
 import androidx.compose.ui.text.style.LineHeightStyle
@@ -42,7 +42,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.isUnspecified
+import androidx.compose.ui.util.fastForEach
 import kotlin.math.floor
 import org.jetbrains.skia.FontMetrics
 import org.jetbrains.skia.IRange
@@ -66,6 +68,9 @@ internal class SkikoParagraph(
 
     internal val defaultFont
         get() = layouter.defaultFont
+
+    private val bulletPainter =
+        if (layouter.bullets.isEmpty()) null else SkikoBulletPainter()
 
     /**
      * Paragraph isn't always immutable, it could be changed via [paint] method without
@@ -560,6 +565,7 @@ internal class SkikoParagraph(
             )
         }
         paragraph.paint(canvas.skiaCanvas, 0.0f, 0.0f)
+        paintBullets(canvas, color = color, brush = null, alpha = 1f)
     }
 
     @ExperimentalTextApi
@@ -584,6 +590,7 @@ internal class SkikoParagraph(
             )
         }
         paragraph.paint(canvas.skiaCanvas, 0.0f, 0.0f)
+        paintBullets(canvas, color = color, brush = null, alpha = 1f)
     }
 
     @ExperimentalTextApi
@@ -613,6 +620,50 @@ internal class SkikoParagraph(
             )
         }
         paragraph.paint(canvas.skiaCanvas, 0.0f, 0.0f)
+        paintBullets(canvas, color = Color.Unspecified, brush = brush, alpha = alpha)
+    }
+
+    private fun paintBullets(canvas: Canvas, color: Color, brush: Brush?, alpha: Float) {
+        val painter = bulletPainter ?: return
+        val density = layouter.density
+        val contextFontSize = layouter.defaultFont.size
+        val textColor = color.takeOrElse { layouter.textStyle.color }
+        val layoutDirection = when (paragraphIntrinsics.textDirection) {
+            ResolvedTextDirection.Rtl -> LayoutDirection.Rtl
+            else -> LayoutDirection.Ltr
+        }
+
+        layouter.bullets.fastForEach { range ->
+            val bullet = range.item
+            val widthPx = bullet.width.resolveBulletSizeToPx(density, contextFontSize)
+            val heightPx = bullet.height.resolveBulletSizeToPx(density, contextFontSize)
+            val gapPx = bullet.padding.resolveBulletSizeToPx(density, contextFontSize)
+            if (widthPx.isNaN() || heightPx.isNaN() || gapPx.isNaN()) return@fastForEach
+
+            val line = lineMetricsForOffset(range.start) ?: return@fastForEach
+            val lineTop = (line.baseline - line.ascent).toFloat()
+            val lineBottom = (line.baseline + line.descent).toFloat()
+            val yCenter = (lineTop + lineBottom) / 2f
+            val xStart = if (layoutDirection == LayoutDirection.Rtl) {
+                line.right.toFloat() + gapPx
+            } else {
+                (line.left.toFloat() - (widthPx + gapPx)).coerceAtLeast(0f)
+            }
+
+            painter.paint(
+                canvas = canvas,
+                bullet = bullet,
+                widthPx = widthPx,
+                heightPx = heightPx,
+                xStart = xStart,
+                yCenter = yCenter,
+                layoutDirection = layoutDirection,
+                density = density,
+                textColor = textColor,
+                textBrush = brush,
+                textAlpha = alpha,
+            )
+        }
     }
 
     /**

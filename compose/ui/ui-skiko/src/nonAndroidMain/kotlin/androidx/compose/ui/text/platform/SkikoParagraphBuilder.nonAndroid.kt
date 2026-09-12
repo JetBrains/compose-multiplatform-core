@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.Bullet
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.FontHinting
 import androidx.compose.ui.text.FontRasterizationSettings
@@ -57,9 +58,9 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachReversed
-import kotlin.jvm.JvmName
 import org.jetbrains.skia.Font as SkFont
 import org.jetbrains.skia.FontEdging as SkFontEdging
 import org.jetbrains.skia.FontFeature
@@ -389,6 +390,9 @@ internal class ParagraphBuilder(
     private lateinit var initialStyle: SpanStyle
     private lateinit var ops: List<Op>
 
+    /** [Bullet]s to be painted next to the paragraphs they are attached to. */
+    val bullets: List<AnnotatedString.Range<Bullet>> = annotations.filterBullets()
+
     private fun prepareDefaultStyle() {
         initialStyle = textStyle.toSpanStyle().copyWithDefaultFontSize(
             drawStyle = drawStyle
@@ -542,7 +546,7 @@ internal class ParagraphBuilder(
     ): List<Op> {
         val cuts = mutableListOf<Cut>()
         annotations.fastForEach { annotation ->
-            // TODO https://youtrack.jetbrains.com/issue/CMP-7151
+            // Only [SpanStyle] is turned into a skia style span.
             val spanStyle = annotation.item as? SpanStyle ?: return@fastForEach
 
             cuts.add(Cut.StyleAdd(annotation.start, spanStyle))
@@ -657,7 +661,7 @@ internal class ParagraphBuilder(
         pStyle.direction = textDirection.toSkDirection()
         textStyle.textIndent?.run {
             pStyle.textIndent = SkTextIndent(
-                firstLine.toPx(density, computedStyle.fontSize),
+                firstLineIndentPx,
                 restLine.toPx(density, computedStyle.fontSize)
             )
         }
@@ -674,6 +678,17 @@ internal class ParagraphBuilder(
         val loadResult = textStyle.resolveFontFamily(fontFamilyResolver)
         SkFont(loadResult?.typeface, defaultStyle.fontSize)
     }
+
+    /**
+     * Indentation of the paragraph's first line in pixels, as passed to skia in [SkTextIndent].
+     * Skia leaves the indentation out of the paragraph's intrinsic widths, so
+     * [SkikoParagraphIntrinsics] adds this value back on top of them.
+     *
+     * A font size relative unit resolves against the default font size, which is known only once
+     * [build] has run, so before that this returns [Float.NaN].
+     */
+    internal val firstLineIndentPx: Float
+        get() = textStyle.textIndent?.firstLine?.toPx(density, defaultStyle.fontSize) ?: 0f
 
     // workaround for https://bugs.chromium.org/p/skia/issues/detail?id=11321 :(
     internal fun emptyLineMetrics(paragraph: SkParagraph): Array<LineMetrics> {
@@ -719,6 +734,19 @@ private fun TextUnit.orDefaultFontSize() = when {
     isUnspecified -> DefaultFontSize
     isEm -> DefaultFontSize * value
     else -> this
+}
+
+private fun List<AnnotatedString.Range<out AnnotatedString.Annotation>>.filterBullets():
+    List<AnnotatedString.Range<Bullet>> {
+    if (!fastAny { it.item is Bullet }) return emptyList()
+    val bullets = mutableListOf<AnnotatedString.Range<Bullet>>()
+    fastForEach { annotation ->
+        val item = annotation.item
+        if (item is Bullet) {
+            bullets.add(AnnotatedString.Range(item, annotation.start, annotation.end))
+        }
+    }
+    return bullets
 }
 
 private fun TextUnit.toPx(density: Density, fontSize: TextUnit): Float =

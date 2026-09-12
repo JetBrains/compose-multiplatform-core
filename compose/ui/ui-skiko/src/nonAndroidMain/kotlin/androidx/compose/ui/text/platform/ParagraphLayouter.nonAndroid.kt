@@ -112,6 +112,9 @@ internal class ParagraphLayouter(
 
     val defaultFont get() = builder.defaultFont
     val textStyle get() = builder.textStyle
+    val bullets get() = builder.bullets
+    val density get() = builder.density
+    val firstLineIndentPx get() = builder.firstLineIndentPx
 
     private fun invalidateParagraph(onlyForeground: Boolean = false) {
         // skia's updateForegroundPaint applies the same style to every span,
