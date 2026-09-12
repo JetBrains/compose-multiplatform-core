@@ -43,11 +43,13 @@ internal class SkikoParagraphIntrinsics(
     private val annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
     private val placeholders: List<Range<Placeholder>>,
     private val density: Density,
-    private val fontFamilyResolver: FontFamily.Resolver
+    private val fontFamilyResolver: FontFamily.Resolver,
+    private val defaultLocaleList: LocaleList,
 ) : ParagraphIntrinsics {
-    val textDirection = resolveTextDirection(text, style.textDirection, style.localeList)
+    val textDirection =
+        resolveTextDirection(text, style.textDirection, style.localeList ?: defaultLocaleList)
 
-    //we need to track it reactively to invalidate the UI
+    // we need to track it reactively to invalidate the UI
     override var hasStaleResolvedFonts: Boolean by mutableStateOf(false)
         private set
 
@@ -59,19 +61,21 @@ internal class SkikoParagraphIntrinsics(
         return layouter
     }
 
-    private fun newLayouter() = ParagraphLayouter(
-        text = text,
-        textDirection = textDirection,
-        style = style,
-        annotations = annotations,
-        placeholders = placeholders,
-        density = density,
-        fontFamilyResolver = fontFamilyResolver,
-        onFontStale = { hasStaleResolvedFonts = true }
-    )
+    private fun newLayouter() =
+        ParagraphLayouter(
+            text = text,
+            textDirection = textDirection,
+            style = style,
+            annotations = annotations,
+            placeholders = placeholders,
+            density = density,
+            fontFamilyResolver = fontFamilyResolver,
+            onFontStale = { hasStaleResolvedFonts = true },
+        )
 
     override var minIntrinsicWidth = 0f
         private set
+
     override var maxIntrinsicWidth = 0f
         private set
 
@@ -85,12 +89,13 @@ internal class SkikoParagraphIntrinsics(
 internal fun resolveTextDirection(
     text: String,
     textDirection: TextDirection? = null,
-    localeList: LocaleList? = null
+    localeList: LocaleList? = null,
 ): ResolvedTextDirection {
     return when (textDirection ?: TextDirection.Content) {
         TextDirection.Ltr -> ResolvedTextDirection.Ltr
         TextDirection.Rtl -> ResolvedTextDirection.Rtl
-        TextDirection.Content, TextDirection.Unspecified -> {
+        TextDirection.Content,
+        TextDirection.Unspecified -> {
             contentBasedTextDirection(text) { localeBasedTextDirection(localeList?.firstOrNull()) }
         }
         TextDirection.ContentOrLtr -> contentBasedTextDirection(text) { ResolvedTextDirection.Ltr }
@@ -103,8 +108,8 @@ internal fun resolveTextDirection(
  * Determine the paragraph direction by the first strong directional character. If no strong
  * character is found, fallback() will be called.
  *
- * This is the standard Unicode Bidirectional Algorithm (steps P2 and P3).
- * See https://www.unicode.org/reports/tr9/
+ * This is the standard Unicode Bidirectional Algorithm (steps P2 and P3). See
+ * https://www.unicode.org/reports/tr9/
  */
 private fun contentBasedTextDirection(text: String, fallback: () -> ResolvedTextDirection) =
     when (text.firstStrongDirectionType()) {

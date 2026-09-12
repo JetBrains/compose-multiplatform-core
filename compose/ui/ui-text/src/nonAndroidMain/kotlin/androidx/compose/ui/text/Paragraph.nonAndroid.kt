@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.internal.JvmDefaultWithCompatibility
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.platform.PlatformTextRegistry
 import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.text.style.TextDecoration
@@ -142,30 +143,6 @@ actual sealed interface Paragraph {
 actual fun Paragraph(
     text: String,
     style: TextStyle,
-    spanStyles: List<AnnotatedString.Range<SpanStyle>>,
-    placeholders: List<AnnotatedString.Range<Placeholder>>,
-    maxLines: Int,
-    ellipsis: Boolean,
-    width: Float,
-    density: Density,
-    resourceLoader: Font.ResourceLoader,
-): Paragraph =
-    PlatformTextRegistry.requireCurrent()
-        .createParagraph(
-            text = text,
-            style = style,
-            annotations = spanStyles,
-            placeholders = placeholders,
-            maxLines = maxLines,
-            overflow = if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip,
-            constraints = Constraints(maxWidth = width.ceilToInt()),
-            density = density,
-            fontFamilyResolver = createFontFamilyResolver(resourceLoader),
-        )
-
-actual fun Paragraph(
-    text: String,
-    style: TextStyle,
     constraints: Constraints,
     density: Density,
     fontFamilyResolver: FontFamily.Resolver,
@@ -185,6 +162,58 @@ actual fun Paragraph(
             constraints = constraints,
             density = density,
             fontFamilyResolver = fontFamilyResolver,
+            defaultLocaleList = LocaleList.current,
+        )
+
+actual fun Paragraph(
+    text: String,
+    style: TextStyle,
+    spanStyles: List<AnnotatedString.Range<SpanStyle>>,
+    placeholders: List<AnnotatedString.Range<Placeholder>>,
+    maxLines: Int,
+    ellipsis: Boolean,
+    width: Float,
+    density: Density,
+    resourceLoader: Font.ResourceLoader,
+): Paragraph =
+    PlatformTextRegistry.requireCurrent()
+        .createParagraph(
+            text = text,
+            style = style,
+            annotations = spanStyles,
+            placeholders = placeholders,
+            maxLines = maxLines,
+            overflow = if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip,
+            constraints = Constraints(maxWidth = width.ceilToInt()),
+            density = density,
+            fontFamilyResolver = createFontFamilyResolver(resourceLoader),
+            defaultLocaleList = LocaleList.current,
+        )
+
+actual fun Paragraph(
+    text: String,
+    style: TextStyle,
+    constraints: Constraints,
+    density: Density,
+    fontFamilyResolver: FontFamily.Resolver,
+    defaultLocaleList: LocaleList,
+    spanStyles: List<AnnotatedString.Range<SpanStyle>>,
+    placeholders: List<AnnotatedString.Range<Placeholder>>,
+    maxLines: Int,
+    overflow: TextOverflow,
+): Paragraph =
+    PlatformTextRegistry.requireCurrent()
+        .createParagraph(
+            text = text,
+            style = style,
+            annotations = spanStyles,
+            placeholders = placeholders,
+            maxLines = maxLines,
+            overflow = overflow,
+            constraints = constraints,
+            density = density,
+            fontFamilyResolver = fontFamilyResolver,
+            defaultLocaleList = defaultLocaleList,
         )
 
 @Deprecated(
@@ -218,6 +247,7 @@ actual fun Paragraph(
             constraints = Constraints(maxWidth = width.ceilToInt()),
             density = density,
             fontFamilyResolver = fontFamilyResolver,
+            defaultLocaleList = LocaleList.current,
         )
 
 @Deprecated(
@@ -246,6 +276,7 @@ actual fun Paragraph(
             constraints = constraints,
             density = density,
             fontFamilyResolver = fontFamilyResolver,
+            defaultLocaleList = LocaleList.current,
         )
 
 @Deprecated(

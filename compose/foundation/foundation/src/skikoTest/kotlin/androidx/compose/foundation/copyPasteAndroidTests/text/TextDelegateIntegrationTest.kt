@@ -27,6 +27,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -53,6 +54,7 @@ class TextDelegateIntegrationTest : SkikoComposeTestBase() {
                     style = TextStyle.Default,
                     density = this,
                     fontFamilyResolver = createFontFamilyResolver(),
+                    defaultLocaleList = LocaleList.current,
                 )
 
             textDelegate.layoutIntrinsics(LayoutDirection.Ltr)
@@ -74,6 +76,7 @@ class TextDelegateIntegrationTest : SkikoComposeTestBase() {
                     style = TextStyle.Default,
                     density = this,
                     fontFamilyResolver = createFontFamilyResolver(),
+                    defaultLocaleList = LocaleList.current,
                 )
 
             textDelegate.layoutIntrinsics(LayoutDirection.Ltr)
@@ -90,6 +93,7 @@ class TextDelegateIntegrationTest : SkikoComposeTestBase() {
                     style = TextStyle.Default,
                     density = this,
                     fontFamilyResolver = createFontFamilyResolver(),
+                    defaultLocaleList = LocaleList.current,
                 )
             val width = 200
             val heightFirstLayout = 100
@@ -115,6 +119,7 @@ class TextDelegateIntegrationTest : SkikoComposeTestBase() {
                     style = TextStyle.Default,
                     density = this,
                     fontFamilyResolver = createFontFamilyResolver(),
+                    defaultLocaleList = LocaleList.current,
                 )
             val width = 200
             val heightFirstLayout = 100
@@ -144,6 +149,7 @@ class TextDelegateIntegrationTest : SkikoComposeTestBase() {
                     overflow = TextOverflow.Ellipsis,
                     density = this,
                     fontFamilyResolver = createFontFamilyResolver(),
+                    defaultLocaleList = LocaleList.current,
                 )
             textDelegate.layoutIntrinsics(LayoutDirection.Ltr)
             // Makes width smaller than needed.
@@ -168,6 +174,7 @@ class TextDelegateIntegrationTest : SkikoComposeTestBase() {
                     overflow = TextOverflow.Ellipsis,
                     density = this,
                     fontFamilyResolver = createFontFamilyResolver(),
+                    defaultLocaleList = LocaleList.current,
                 )
             textDelegate.layoutIntrinsics(LayoutDirection.Ltr)
 
@@ -194,6 +201,7 @@ class TextDelegateIntegrationTest : SkikoComposeTestBase() {
                     overflow = TextOverflow.Ellipsis,
                     density = this,
                     fontFamilyResolver = createFontFamilyResolver(),
+                    defaultLocaleList = LocaleList.current,
                 )
             val layoutResultLtr = textDelegate.layout(Constraints(), LayoutDirection.Ltr)
             val layoutResultRtl = textDelegate.layout(Constraints(), LayoutDirection.Rtl)

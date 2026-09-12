@@ -26,6 +26,7 @@ import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlatformParagraph
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -52,6 +53,7 @@ interface PlatformText {
         constraints: Constraints,
         density: Density,
         fontFamilyResolver: FontFamily.Resolver,
+        defaultLocaleList: LocaleList,
     ): PlatformParagraph
 
     /** Re-lays out a previously measured [paragraphIntrinsics] under new [constraints]. */
@@ -70,6 +72,7 @@ interface PlatformText {
         placeholders: List<AnnotatedString.Range<Placeholder>>,
         density: Density,
         fontFamilyResolver: FontFamily.Resolver,
+        defaultLocaleList: LocaleList,
     ): ParagraphIntrinsics
 
     /** Creates a [FontFamily.Resolver] for use outside of composition. */
@@ -86,8 +89,9 @@ interface PlatformText {
 
     /**
      * The platform-default [androidx.compose.ui.text.FontRasterizationSettings], backing
-     * [androidx.compose.ui.text.FontRasterizationSettings.Companion.PlatformDefault]. The backend computes these from the
-     * host platform so the platform-specific detection stays out of ui-text.
+     * [androidx.compose.ui.text.FontRasterizationSettings.Companion.PlatformDefault]. The backend
+     * computes these from the host platform so the platform-specific detection stays out of
+     * ui-text.
      */
     @OptIn(ExperimentalTextApi::class)
     val defaultFontRasterizationSettings: FontRasterizationSettings
@@ -104,10 +108,11 @@ object PlatformTextRegistry {
             when {
                 current == null -> this.implementation = implementation
                 current === implementation -> Unit
-                else -> error(
-                    "Compose UI text implementation is already registered with a different " +
-                        "instance. Call clear() first if replacement is intentional."
-                )
+                else ->
+                    error(
+                        "Compose UI text implementation is already registered with a different " +
+                            "instance. Call clear() first if replacement is intentional."
+                    )
             }
         }
     }

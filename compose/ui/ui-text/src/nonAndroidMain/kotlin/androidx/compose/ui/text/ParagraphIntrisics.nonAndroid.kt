@@ -23,6 +23,7 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.platform.PlatformTextRegistry
 import androidx.compose.ui.unit.Density
 import kotlin.jvm.JvmName
@@ -34,24 +35,6 @@ import kotlin.jvm.JvmName
             "fontFamilyResolver"
     ),
 )
-actual fun ParagraphIntrinsics(
-    text: String,
-    style: TextStyle,
-    spanStyles: List<AnnotatedString.Range<SpanStyle>>,
-    placeholders: List<AnnotatedString.Range<Placeholder>>,
-    density: Density,
-    resourceLoader: Font.ResourceLoader,
-): ParagraphIntrinsics =
-    PlatformTextRegistry.requireCurrent()
-        .createParagraphIntrinsics(
-            text = text,
-            style = style,
-            annotations = spanStyles,
-            placeholders = placeholders,
-            density = density,
-            fontFamilyResolver = createFontFamilyResolver(resourceLoader),
-        )
-
 actual fun ParagraphIntrinsics(
     text: String,
     style: TextStyle,
@@ -69,6 +52,47 @@ actual fun ParagraphIntrinsics(
             placeholders = placeholders,
             density = density,
             fontFamilyResolver = fontFamilyResolver,
+            defaultLocaleList = LocaleList.current,
+        )
+
+actual fun ParagraphIntrinsics(
+    text: String,
+    style: TextStyle,
+    spanStyles: List<AnnotatedString.Range<SpanStyle>>,
+    placeholders: List<AnnotatedString.Range<Placeholder>>,
+    density: Density,
+    resourceLoader: Font.ResourceLoader,
+): ParagraphIntrinsics =
+    PlatformTextRegistry.requireCurrent()
+        .createParagraphIntrinsics(
+            text = text,
+            style = style,
+            annotations = spanStyles,
+            placeholders = placeholders,
+            density = density,
+            fontFamilyResolver = createFontFamilyResolver(resourceLoader),
+            defaultLocaleList = LocaleList.current,
+        )
+
+actual fun ParagraphIntrinsics(
+    text: String,
+    style: TextStyle,
+    annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
+    density: Density,
+    fontFamilyResolver: FontFamily.Resolver,
+    placeholders: List<AnnotatedString.Range<Placeholder>>,
+    softWrap: Boolean,
+    defaultLocaleList: LocaleList,
+): ParagraphIntrinsics =
+    PlatformTextRegistry.requireCurrent()
+        .createParagraphIntrinsics(
+            text = text,
+            style = style,
+            annotations = annotations,
+            placeholders = placeholders,
+            density = density,
+            fontFamilyResolver = fontFamilyResolver,
+            defaultLocaleList = defaultLocaleList,
         )
 
 @Deprecated(
@@ -93,6 +117,7 @@ actual fun ParagraphIntrinsics(
             placeholders = placeholders,
             density = density,
             fontFamilyResolver = fontFamilyResolver,
+            defaultLocaleList = LocaleList.current,
         )
 
 actual fun ParagraphIntrinsics(
@@ -111,4 +136,5 @@ actual fun ParagraphIntrinsics(
             placeholders = placeholders,
             density = density,
             fontFamilyResolver = fontFamilyResolver,
+            defaultLocaleList = LocaleList.current,
         )

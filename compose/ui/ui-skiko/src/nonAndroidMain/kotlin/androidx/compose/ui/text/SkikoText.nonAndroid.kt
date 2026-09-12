@@ -20,8 +20,8 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.SkiaFontLoader
 import androidx.compose.ui.text.font.createPlatformFontFamilyResolver
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.platform.Platform
-import androidx.compose.ui.text.PlatformParagraph
 import androidx.compose.ui.text.platform.PlatformText
 import androidx.compose.ui.text.platform.SkikoParagraphIntrinsics
 import androidx.compose.ui.text.platform.currentPlatform
@@ -46,19 +46,22 @@ internal object SkikoText : PlatformText {
         constraints: Constraints,
         density: Density,
         fontFamilyResolver: FontFamily.Resolver,
-    ): PlatformParagraph = SkikoParagraph(
-        SkikoParagraphIntrinsics(
-            text = text,
-            style = style,
-            annotations = annotations,
-            placeholders = placeholders,
-            density = density,
-            fontFamilyResolver = fontFamilyResolver,
-        ),
-        maxLines,
-        overflow,
-        constraints,
-    )
+        defaultLocaleList: LocaleList,
+    ): PlatformParagraph =
+        SkikoParagraph(
+            SkikoParagraphIntrinsics(
+                text = text,
+                style = style,
+                annotations = annotations,
+                placeholders = placeholders,
+                density = density,
+                fontFamilyResolver = fontFamilyResolver,
+                defaultLocaleList = defaultLocaleList,
+            ),
+            maxLines,
+            overflow,
+            constraints,
+        )
 
     override fun createParagraph(
         paragraphIntrinsics: ParagraphIntrinsics,
@@ -80,14 +83,17 @@ internal object SkikoText : PlatformText {
         placeholders: List<AnnotatedString.Range<Placeholder>>,
         density: Density,
         fontFamilyResolver: FontFamily.Resolver,
-    ): ParagraphIntrinsics = SkikoParagraphIntrinsics(
-        text = text,
-        style = style,
-        annotations = annotations,
-        placeholders = placeholders,
-        density = density,
-        fontFamilyResolver = fontFamilyResolver,
-    )
+        defaultLocaleList: LocaleList,
+    ): ParagraphIntrinsics =
+        SkikoParagraphIntrinsics(
+            text = text,
+            style = style,
+            annotations = annotations,
+            placeholders = placeholders,
+            density = density,
+            fontFamilyResolver = fontFamilyResolver,
+            defaultLocaleList = defaultLocaleList,
+        )
 
     override fun createFontFamilyResolver(): FontFamily.Resolver =
         createPlatformFontFamilyResolver(SkiaFontLoader())
@@ -105,36 +111,50 @@ internal object SkikoText : PlatformText {
     @OptIn(ExperimentalTextApi::class)
     override val defaultFontRasterizationSettings: FontRasterizationSettings by lazy {
         when (currentPlatform()) {
-            Platform.Windows -> FontRasterizationSettings(
-                subpixelPositioning = true,
-                // Most UIs still use ClearType on Windows, so we should match this
-                // We temporarily disabled `SubpixelAntiAlias` until we figure out
-                // how to properly retrieve default OS settings
-                smoothing = FontSmoothing.AntiAlias,
-                hinting = FontHinting.Normal, // None would trigger some potentially unwanted behavior, but everything else is forced into Normal on Windows
-                autoHintingForced = false,
-            )
+            Platform.Windows ->
+                FontRasterizationSettings(
+                    subpixelPositioning = true,
+                    // Most UIs still use ClearType on Windows, so we should match this
+                    // We temporarily disabled `SubpixelAntiAlias` until we figure out
+                    // how to properly retrieve default OS settings
+                    smoothing = FontSmoothing.AntiAlias,
+                    hinting =
+                        FontHinting
+                            .Normal, // None would trigger some potentially unwanted behavior, but
+                                     // everything else is forced into Normal on Windows
+                    autoHintingForced = false,
+                )
 
-            Platform.Linux, Platform.Unknown -> FontRasterizationSettings(
-                subpixelPositioning = true,
-                smoothing = FontSmoothing.AntiAlias,
-                hinting = FontHinting.Slight, // Most distributions use Slight now by default
-                autoHintingForced = false,
-            )
+            Platform.Linux,
+            Platform.Unknown ->
+                FontRasterizationSettings(
+                    subpixelPositioning = true,
+                    smoothing = FontSmoothing.AntiAlias,
+                    hinting = FontHinting.Slight, // Most distributions use Slight now by default
+                    autoHintingForced = false,
+                )
 
-            Platform.Android -> FontRasterizationSettings(
-                subpixelPositioning = true,
-                smoothing = FontSmoothing.AntiAlias,
-                hinting = FontHinting.Slight,
-                autoHintingForced = false,
-            )
+            Platform.Android ->
+                FontRasterizationSettings(
+                    subpixelPositioning = true,
+                    smoothing = FontSmoothing.AntiAlias,
+                    hinting = FontHinting.Slight,
+                    autoHintingForced = false,
+                )
 
-            Platform.MacOS, Platform.IOS, Platform.TvOS, Platform.WatchOS -> FontRasterizationSettings(
-                subpixelPositioning = true,
-                smoothing = FontSmoothing.AntiAlias, // macOS doesn't support SubpixelAntiAlias anymore as of Catalina
-                hinting = FontHinting.Normal, // Completely ignored on macOS
-                autoHintingForced = false, // Completely ignored on macOS
-            )
+            Platform.MacOS,
+            Platform.IOS,
+            Platform.TvOS,
+            Platform.WatchOS ->
+                FontRasterizationSettings(
+                    subpixelPositioning = true,
+                    smoothing =
+                        FontSmoothing
+                            .AntiAlias, // macOS doesn't support SubpixelAntiAlias anymore as of
+                                        // Catalina
+                    hinting = FontHinting.Normal, // Completely ignored on macOS
+                    autoHintingForced = false, // Completely ignored on macOS
+                )
         }
     }
 }
