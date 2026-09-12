@@ -229,6 +229,13 @@ interface PlatformContext {
     val prefetchScheduler: PlatformPrefetchScheduler get() = NoOpPlatformPrefetchScheduler
 
     /**
+     * Executor used to perform background text measurement work.
+     *
+     * If non-null, text measurement may be offloaded to this executor to avoid
+     * blocking the UI thread. Default is `null` which indicates no platform
+     * provided background executor.
+     */
+    val backgroundTextMeasurementExecutor: PlatformBackgroundTextMeasurementExecutor? get() = null
      * Media-related information exposed to the composition.
      *
      * This provides platform-specific environment details such as window posture,
