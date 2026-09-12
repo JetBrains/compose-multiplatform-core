@@ -38,9 +38,12 @@ internal fun findSkikoFollowingBreak(text: String, index: Int): Int {
 @JvmInline
 internal value class StrongDirectionType private constructor(val value: Int) {
     companion object {
-        val None = StrongDirectionType(0)
-        val Ltr = StrongDirectionType(1)
-        val Rtl = StrongDirectionType(2)
+        inline val None: StrongDirectionType
+            get() = StrongDirectionType(0)
+        inline val Ltr: StrongDirectionType
+            get() = StrongDirectionType(1)
+        inline val Rtl: StrongDirectionType
+            get() = StrongDirectionType(2)
     }
 }
 
