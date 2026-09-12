@@ -46,7 +46,6 @@ import kotlinx.coroutines.launch
 internal fun OffsetToFocusedRect(
     insets: PlatformInsets,
     getFocusedRect: () -> Rect?,
-    size: IntSize?,
     animationDuration: Duration,
     animationCompletion: () -> Unit,
     content: @Composable () -> Unit,
@@ -55,7 +54,6 @@ internal fun OffsetToFocusedRect(
         OffsetToFocusedRectElement(
             insets = insets,
             getFocusedRect = getFocusedRect,
-            size = size,
             animationDuration = animationDuration,
             animationCompletion = animationCompletion,
         )
@@ -134,14 +132,12 @@ private fun directionalFocusOffset(
 private data class OffsetToFocusedRectElement(
     val insets: PlatformInsets,
     val getFocusedRect: () -> Rect?,
-    val size: IntSize?,
     val animationDuration: Duration,
     val animationCompletion: () -> Unit,
 ) : ModifierNodeElement<OffsetToFocusedRectNode>() {
     override fun create() = OffsetToFocusedRectNode(
         insets = insets,
         getFocusedRect = getFocusedRect,
-        size = size,
         animationDuration = animationDuration,
         animationCompletion = animationCompletion,
     )
@@ -150,7 +146,6 @@ private data class OffsetToFocusedRectElement(
         node.update(
             insets = insets,
             getFocusedRect = getFocusedRect,
-            size = size,
             animationDuration = animationDuration,
             animationCompletion = animationCompletion,
         )
@@ -160,10 +155,10 @@ private data class OffsetToFocusedRectElement(
 private class OffsetToFocusedRectNode(
     private var insets: PlatformInsets,
     private var getFocusedRect: () -> Rect?,
-    private var size: IntSize?,
     private var animationDuration: Duration,
     private var animationCompletion: () -> Unit,
 ) : Modifier.Node(), GlobalPositionAwareModifierNode, LayoutModifierNode {
+    private var contentSize: IntSize? = null
     private var currentOffset = IntOffset.Zero
     private var startOffset = IntOffset.Zero
     private var offsetProgress = 1f
@@ -176,18 +171,16 @@ private class OffsetToFocusedRectNode(
     fun update(
         insets: PlatformInsets,
         getFocusedRect: () -> Rect?,
-        size: IntSize?,
         animationDuration: Duration,
         animationCompletion: () -> Unit,
     ) {
         val animationInputsChanged =
             this.insets != insets || this.animationDuration != animationDuration
         val needsRemeasure =
-            animationInputsChanged || this.getFocusedRect !== getFocusedRect || this.size != size
+            animationInputsChanged || this.getFocusedRect !== getFocusedRect
 
         this.insets = insets
         this.getFocusedRect = getFocusedRect
-        this.size = size
         this.animationDuration = animationDuration
         this.animationCompletion = animationCompletion
 
@@ -212,6 +205,10 @@ private class OffsetToFocusedRectNode(
         measurable: Measurable,
         constraints: Constraints,
     ): MeasureResult {
+        if (constraints.hasBoundedWidth && constraints.hasBoundedHeight) {
+            contentSize = IntSize(constraints.maxWidth, constraints.maxHeight)
+        }
+
         val placeable = measurable.measure(constraints)
         canSettleOffset = !isSettlingOffset
         isSettlingOffset = false
@@ -279,7 +276,7 @@ private class OffsetToFocusedRectNode(
         return adjustedToFocusedRectOffset(
             insets = insets,
             focusedRect = focusedRect,
-            size = size,
+            size = contentSize,
         )
     }
 }
