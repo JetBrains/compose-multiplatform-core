@@ -59,7 +59,6 @@ import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachReversed
-import kotlin.jvm.JvmName
 import org.jetbrains.skia.Font as SkFont
 import org.jetbrains.skia.FontEdging as SkFontEdging
 import org.jetbrains.skia.FontFeature
@@ -79,6 +78,7 @@ import org.jetbrains.skia.paragraph.ParagraphStyle
 import org.jetbrains.skia.paragraph.PlaceholderAlignment
 import org.jetbrains.skia.paragraph.PlaceholderStyle
 import org.jetbrains.skia.paragraph.Shadow as SkShadow
+import org.jetbrains.skia.paragraph.StrutStyle
 import org.jetbrains.skia.paragraph.TextBox
 import org.jetbrains.skia.paragraph.TextIndent as SkTextIndent
 import org.jetbrains.skia.paragraph.TextStyle as SkTextStyle
