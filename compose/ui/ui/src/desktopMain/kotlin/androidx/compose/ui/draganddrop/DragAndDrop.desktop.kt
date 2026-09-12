@@ -69,7 +69,8 @@ interface DragAndDropTransferable
  * The possible actions on the transferred object in a drag-and-drop session.
  */
 @ExperimentalComposeUiApi
-class DragAndDropTransferAction private constructor(private val name: String) {
+@JvmInline
+value class DragAndDropTransferAction private constructor(private val name: String) {
     override fun toString(): String {
         return name
     }
