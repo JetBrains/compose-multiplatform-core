@@ -19,10 +19,12 @@ package androidx.compose.ui.scene
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
+import androidx.compose.ui.graphics.SkiaCanvasHolder
 import androidx.compose.ui.asComposeSystemTheme
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
@@ -171,6 +173,9 @@ internal class ComposeContainer(
 
     private val focusedViewsList = FocusedViewsList()
 
+    @OptIn(InternalComposeApi::class)
+    private val canvasHolder = SkiaCanvasHolder()
+
     val currentLifecycleState: Lifecycle.State get() =
         architectureComponentsOwner.lifecycle.currentState
 
@@ -261,6 +266,7 @@ internal class ComposeContainer(
         systemThemeState.value = style.asComposeSystemTheme()
     }
 
+    @OptIn(InternalComposeApi::class)
     fun initializeComposeScene() {
         sceneJob = Job()
         val frameChoreographer = view.window?.windowScene
@@ -282,9 +288,12 @@ internal class ComposeContainer(
             },
             useSeparateRenderThreadWhenPossible = configuration.parallelRendering,
             draw = { canvas ->
+              @Suppress("INVISIBLE_REFERENCE")
+              canvasHolder.drawInto(canvas) {
                 layoutInvalidationHandler.postponeLayoutInvalidationCalls {
-                    mediator?.draw(canvas.asComposeCanvas())
+                    mediator?.draw(this@drawInto)
                 }
+              }
             }
         )
         metalView.canBeOpaque = configuration.opaque
