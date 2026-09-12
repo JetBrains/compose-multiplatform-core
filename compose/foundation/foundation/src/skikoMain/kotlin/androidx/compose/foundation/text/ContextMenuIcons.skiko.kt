@@ -23,10 +23,15 @@ import kotlin.jvm.JvmInline
 @JvmInline
 internal actual value class ContextMenuIcons actual constructor(actual val value: Int) {
     actual companion object {
-        actual val ActionModeCutDrawable = ContextMenuIcons(0)
-        actual val ActionModeCopyDrawable = ContextMenuIcons(1)
-        actual val ActionModePasteDrawable = ContextMenuIcons(2)
-        actual val ActionModeSelectAllDrawable = ContextMenuIcons(3)
-        actual val ID_NULL = ContextMenuIcons(-1)
+        actual inline val ActionModeCutDrawable: ContextMenuIcons
+            get() = ContextMenuIcons(0)
+        actual inline val ActionModeCopyDrawable: ContextMenuIcons
+            get() = ContextMenuIcons(1)
+        actual inline val ActionModePasteDrawable: ContextMenuIcons
+            get() = ContextMenuIcons(2)
+        actual inline val ActionModeSelectAllDrawable: ContextMenuIcons
+            get() = ContextMenuIcons(3)
+        actual inline val ID_NULL: ContextMenuIcons
+            get() = ContextMenuIcons(-1)
     }
 }

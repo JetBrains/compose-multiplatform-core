@@ -24,10 +24,14 @@ import androidx.compose.ui.platform.l10n.translationFor
 @JvmInline
 internal value class Strings private constructor(@Suppress("unused") private val value: Int) {
     companion object {
-        val Copy = Strings(0)
-        val Cut = Strings(1)
-        val Paste = Strings(2)
-        val SelectAll = Strings(3)
+        inline val Copy: Strings
+            get() = Strings(0)
+        inline val Cut: Strings
+            get() = Strings(1)
+        inline val Paste: Strings
+            get() = Strings(2)
+        inline val SelectAll: Strings
+            get() = Strings(3)
         // When adding values here, make sure to also add them in ui/build.gradle,
         // updateTranslationsDesktop task (stringByResourceName parameter), and re-run the task
     }
