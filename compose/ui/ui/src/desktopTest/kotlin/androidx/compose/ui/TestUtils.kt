@@ -174,12 +174,13 @@ fun Container.sendMouseRelease(
     button: Int = MouseEvent.BUTTON1,
     x: Int,
     y: Int,
+    modifiers: Int = 0,
 ): Boolean {
     return sendMouseEvent(
         id = MouseEvent.MOUSE_RELEASED,
         x = x,
         y = y,
-        modifiers = 0,
+        modifiers = modifiers,
         button = button
     )
 }
@@ -219,6 +220,34 @@ fun Container.sendMouseWheelEvent(
     // we use width and height instead of x and y because we can send (-1, -1), but still need
     // the component inside window
     val component = findComponentAt(width / 2, height / 2)
+    val event = MouseWheelEvent(
+        component,
+        MouseWheelEvent.MOUSE_WHEEL,
+        0,
+        modifiers,
+        x,
+        y,
+        x,
+        y,
+        1,
+        false,
+        scrollType,
+        1,
+        wheelRotation.toInt(),
+        wheelRotation
+    )
+    component.dispatchEvent(event)
+    return event.isConsumed
+}
+
+fun Window.sendMouseWheelEventToFocusOwner(
+    x: Int = width / 2,
+    y: Int = height / 2,
+    scrollType: Int = MouseWheelEvent.WHEEL_UNIT_SCROLL,
+    wheelRotation: Double = 0.0,
+    modifiers: Int = 0,
+): Boolean {
+    val component = mostRecentFocusOwner!!
     val event = MouseWheelEvent(
         component,
         MouseWheelEvent.MOUSE_WHEEL,
