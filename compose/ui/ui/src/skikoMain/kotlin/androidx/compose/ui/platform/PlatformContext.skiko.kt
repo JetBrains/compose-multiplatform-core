@@ -421,8 +421,9 @@ private object NoOpHapticFeedback : HapticFeedback {
 
 @ExperimentalMediaQueryApi
 private object EmptyMediaScope : UiMediaScope {
-    override val windowPosture: UiMediaScope.Posture
-        get() = UiMediaScope.Posture.Flat
+    override val windowPosture: UiMediaScope.WindowPosture
+        get() = UiMediaScope.WindowPosture(emptyList())
+
     override val windowWidth: Dp
         get() = Dp.Unspecified
     override val windowHeight: Dp
