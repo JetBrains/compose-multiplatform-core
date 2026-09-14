@@ -24,11 +24,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.text.UnresolvedSymbolsRegistry
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.platform.WebUnresolvedSymbolsRegistry
+import androidx.compose.ui.util.fastForEach
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -58,6 +61,9 @@ internal class WebFallbackFontDownloader(
                     drainChannel()
                     onFontsLoaded(newFonts)
                 } catch (e: Throwable) {
+                    if (e is CancellationException) {
+                        ensureActive()
+                    }
                     val pause = 5.seconds * errorCount
                     errorCount++
                     scope.launch {
@@ -102,7 +108,7 @@ internal fun installFallbackFontDownloader() {
             scope = coroutineScope,
             onFontsLoaded = { fonts ->
                 if (fonts.isNotEmpty()) {
-                    for (font in fonts) {
+                    fonts.fastForEach { font ->
                         fontFamilyResolver.preload(font)
                     }
                     WebUnresolvedSymbolsRegistry.onNewFontInstalled()
