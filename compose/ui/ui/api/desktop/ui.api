@@ -204,6 +204,10 @@ public final class androidx/compose/ui/ImageComposeScene_skikoMainKt {
 	public static final fun use (Landroidx/compose/ui/ImageComposeScene;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 }
 
+public final class androidx/compose/ui/InteractionBarrierKt {
+	public static final fun interactionBarrier (Landroidx/compose/ui/Modifier;)Landroidx/compose/ui/Modifier;
+}
+
 public final class androidx/compose/ui/KeepScreenOnKt {
 	public static final fun keepScreenOn (Landroidx/compose/ui/Modifier;)Landroidx/compose/ui/Modifier;
 }
@@ -306,8 +310,44 @@ public abstract interface class androidx/compose/ui/UiMediaScope {
 	public abstract fun getPointerPrecision-fpxItnM ()I
 	public abstract fun getViewingDistance-tKro-MQ ()I
 	public abstract fun getWindowHeight-D9Ej5fM ()F
-	public abstract fun getWindowPosture-m18o9QQ ()I
+	public abstract fun getWindowPosture ()Landroidx/compose/ui/UiMediaScope$WindowPosture;
 	public abstract fun getWindowWidth-D9Ej5fM ()F
+}
+
+public final class androidx/compose/ui/UiMediaScope$FoldOrientation {
+	public static final field Companion Landroidx/compose/ui/UiMediaScope$FoldOrientation$Companion;
+	public static final synthetic fun box-impl (I)Landroidx/compose/ui/UiMediaScope$FoldOrientation;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
+	public fun hashCode ()I
+	public static fun hashCode-impl (I)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
+}
+
+public final class androidx/compose/ui/UiMediaScope$FoldOrientation$Companion {
+	public final fun getHorizontal-hIhEK1o ()I
+	public final fun getVertical-hIhEK1o ()I
+}
+
+public final class androidx/compose/ui/UiMediaScope$FoldState {
+	public static final field Companion Landroidx/compose/ui/UiMediaScope$FoldState$Companion;
+	public static final synthetic fun box-impl (I)Landroidx/compose/ui/UiMediaScope$FoldState;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
+	public fun hashCode ()I
+	public static fun hashCode-impl (I)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
+}
+
+public final class androidx/compose/ui/UiMediaScope$FoldState$Companion {
+	public final fun getFlat-O5fZRa0 ()I
+	public final fun getHalfOpened-O5fZRa0 ()I
 }
 
 public final class androidx/compose/ui/UiMediaScope$KeyboardKind {
@@ -349,25 +389,6 @@ public final class androidx/compose/ui/UiMediaScope$PointerPrecision$Companion {
 	public final fun getNone-fpxItnM ()I
 }
 
-public final class androidx/compose/ui/UiMediaScope$Posture {
-	public static final field Companion Landroidx/compose/ui/UiMediaScope$Posture$Companion;
-	public static final synthetic fun box-impl (I)Landroidx/compose/ui/UiMediaScope$Posture;
-	public fun equals (Ljava/lang/Object;)Z
-	public static fun equals-impl (ILjava/lang/Object;)Z
-	public static final fun equals-impl0 (II)Z
-	public fun hashCode ()I
-	public static fun hashCode-impl (I)I
-	public fun toString ()Ljava/lang/String;
-	public static fun toString-impl (I)Ljava/lang/String;
-	public final synthetic fun unbox-impl ()I
-}
-
-public final class androidx/compose/ui/UiMediaScope$Posture$Companion {
-	public final fun getBook-m18o9QQ ()I
-	public final fun getFlat-m18o9QQ ()I
-	public final fun getTabletop-m18o9QQ ()I
-}
-
 public final class androidx/compose/ui/UiMediaScope$ViewingDistance {
 	public static final field Companion Landroidx/compose/ui/UiMediaScope$ViewingDistance$Companion;
 	public static final synthetic fun box-impl (I)Landroidx/compose/ui/UiMediaScope$ViewingDistance;
@@ -385,6 +406,27 @@ public final class androidx/compose/ui/UiMediaScope$ViewingDistance$Companion {
 	public final fun getFar-tKro-MQ ()I
 	public final fun getMedium-tKro-MQ ()I
 	public final fun getNear-tKro-MQ ()I
+}
+
+public final class androidx/compose/ui/UiMediaScope$WindowFold {
+	public static final field $stable I
+	public synthetic fun <init> (IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getOrientation-hIhEK1o ()I
+	public final fun getState-O5fZRa0 ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class androidx/compose/ui/UiMediaScope$WindowPosture {
+	public static final field $stable I
+	public fun <init> (Ljava/util/List;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFolds ()Ljava/util/List;
+	public fun hashCode ()I
+	public final fun isFlat ()Z
+	public final fun isTabletop ()Z
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class androidx/compose/ui/ZIndexModifierKt {
@@ -748,10 +790,23 @@ public final class androidx/compose/ui/draw/AlphaKt {
 }
 
 public final class androidx/compose/ui/draw/BlurKt {
+	public static final fun blur (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
 	public static final fun blur-1fqS-gw (Landroidx/compose/ui/Modifier;FFLandroidx/compose/ui/graphics/Shape;)Landroidx/compose/ui/Modifier;
 	public static synthetic fun blur-1fqS-gw$default (Landroidx/compose/ui/Modifier;FFLandroidx/compose/ui/draw/BlurredEdgeTreatment;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
 	public static final fun blur-F8QBwvs (Landroidx/compose/ui/Modifier;FLandroidx/compose/ui/graphics/Shape;)Landroidx/compose/ui/Modifier;
 	public static synthetic fun blur-F8QBwvs$default (Landroidx/compose/ui/Modifier;FLandroidx/compose/ui/draw/BlurredEdgeTreatment;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
+	public static final fun blur-d3-LrFo (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;Landroidx/compose/ui/graphics/Shape;F)Landroidx/compose/ui/Modifier;
+	public static synthetic fun blur-d3-LrFo$default (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;Landroidx/compose/ui/draw/BlurredEdgeTreatment;FILjava/lang/Object;)Landroidx/compose/ui/Modifier;
+}
+
+public abstract interface class androidx/compose/ui/draw/BlurScope : androidx/compose/ui/unit/Density {
+	public abstract fun getAlpha ()F
+	public abstract fun getBlurRadiusSpec ()Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;
+	public abstract fun getEdgeTreatment---Goahg ()Landroidx/compose/ui/graphics/Shape;
+	public abstract fun getSize-MYxV2XQ ()J
+	public abstract fun setAlpha (F)V
+	public abstract fun setBlurRadiusSpec (Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;)V
+	public abstract fun setEdgeTreatment-JyGir4Q (Landroidx/compose/ui/graphics/Shape;)V
 }
 
 public final class androidx/compose/ui/draw/BlurredEdgeTreatment {
@@ -3373,6 +3428,7 @@ public final class androidx/compose/ui/layout/WindowInsetsRulers$Companion {
 }
 
 public final class androidx/compose/ui/layout/WindowInsetsRulersKt {
+	public static final fun disable (Landroidx/compose/ui/layout/WindowInsetsRulers$Companion;)V
 	public static final fun getDisplayCutoutBounds (Landroidx/compose/ui/layout/Placeable$PlacementScope;)Ljava/util/List;
 }
 
