@@ -63,6 +63,7 @@ import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.PositionCalculator
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
+import androidx.compose.ui.internal.WeakCache
 import androidx.compose.ui.layout.RootMeasurePolicy
 import androidx.compose.ui.layout.RulerProviderModifierElement
 import androidx.compose.ui.modifier.ModifierLocalManager
@@ -141,6 +142,7 @@ internal class RootNodeOwner(
         measureDrawBounds = platformContext.measureDrawLayerBounds,
         snapshotCache = ComposeUiFlags.useSnapshotCache,
     )
+    private val layerCache = WeakCache<OwnedLayer>()
     private val coroutineScope =
         CoroutineScope(coroutineContext + Job(parent = coroutineContext[Job]))
 
@@ -921,18 +923,37 @@ internal class RootNodeOwner(
             drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
             invalidateParentLayer: () -> Unit,
             explicitLayer: GraphicsLayer?
-        ) = GraphicsLayerOwnerLayer(
-            graphicsLayer = explicitLayer ?: graphicsContext.createGraphicsLayer(),
-            context = if (explicitLayer != null) null else graphicsContext,
-            layerManager = this,
-            drawBlock = drawBlock,
-            invalidateParentLayer = invalidateParentLayer,
-        )
+        ): GraphicsLayerOwnerLayer {
+            if (explicitLayer != null) {
+                return GraphicsLayerOwnerLayer(
+                    graphicsLayer = explicitLayer,
+                    context = null,
+                    layerManager = this,
+                    drawBlock = drawBlock,
+                    invalidateParentLayer = invalidateParentLayer,
+                )
+            }
+            // First try the layer cache
+            val layer = layerCache.pop()
+            if (layer !== null) {
+                layer.reuseLayer(drawBlock, invalidateParentLayer)
+                return layer as GraphicsLayerOwnerLayer
+            }
+
+            return GraphicsLayerOwnerLayer(
+                graphicsLayer = graphicsContext.createGraphicsLayer(),
+                context = graphicsContext,
+                layerManager = this,
+                drawBlock = drawBlock,
+                invalidateParentLayer = invalidateParentLayer,
+            )
+        }
 
         override fun recycle(layer: OwnedLayer): Boolean {
             needClearObservations = true
+            layerCache.push(layer as GraphicsLayerOwnerLayer)
             dirtyLayers -= layer
-            return false
+            return true
         }
 
         override fun notifyLayerIsDirty(layer: OwnedLayer, isDirty: Boolean) {
