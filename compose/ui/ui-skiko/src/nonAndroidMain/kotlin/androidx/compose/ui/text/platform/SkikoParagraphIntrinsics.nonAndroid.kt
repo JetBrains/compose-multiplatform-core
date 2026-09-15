@@ -40,7 +40,7 @@ import kotlin.math.ceil
 internal class SkikoParagraphIntrinsics(
     val text: String,
     private val style: TextStyle,
-    private val annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
+    private val annotations: List<Range<out AnnotatedString.Annotation>>,
     private val placeholders: List<Range<Placeholder>>,
     private val density: Density,
     private val fontFamilyResolver: FontFamily.Resolver
@@ -76,9 +76,14 @@ internal class SkikoParagraphIntrinsics(
         private set
 
     init {
-        val para = layouter!!.layoutParagraph(Float.POSITIVE_INFINITY)
-        minIntrinsicWidth = ceil(para.minIntrinsicWidth)
-        maxIntrinsicWidth = ceil(para.maxIntrinsicWidth)
+        val layouter = layouter!!
+        val para = layouter.layoutParagraph(Float.POSITIVE_INFINITY)
+
+        // Skia excludes the indentation from the intrinsic widths, so text laid out at that width
+        // breaks a line early. Android sums the leading margins in, see Layout.measurePara.
+        val indent = layouter.firstLineIndentPx
+        minIntrinsicWidth = ceil(para.minIntrinsicWidth + indent)
+        maxIntrinsicWidth = ceil(para.maxIntrinsicWidth + indent)
     }
 }
 
