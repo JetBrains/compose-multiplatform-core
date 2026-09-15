@@ -66,17 +66,15 @@ import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.layout.RootMeasurePolicy
 import androidx.compose.ui.layout.RulerProviderModifierElement
 import androidx.compose.ui.modifier.ModifierLocalManager
-import androidx.compose.ui.platform.DefaultAccessibilityManager
 import androidx.compose.ui.platform.DelegatingSoftwareKeyboardController
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformRootForTest
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.PlatformWindowInsets
+import androidx.compose.ui.platform.SoundEffect
 import androidx.compose.ui.platform.TaskDispatchers
-import androidx.compose.ui.platform.createPlatformClipboard
-import androidx.compose.ui.platform.createPlatformClipboardManager
-import androidx.compose.ui.platform.createPlatformUriHandler
+import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.ComposeSceneInputHandler
 import androidx.compose.ui.scene.ComposeScenePointer
@@ -87,8 +85,9 @@ import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.spatial.RectManager
 import androidx.compose.ui.text.InternalTextApi
-import androidx.compose.ui.text.font.createFontFamilyResolver
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextInputService
+import androidx.compose.ui.text.platform.FontLoader
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
@@ -475,21 +474,21 @@ internal class RootNodeOwner(
         override val rootForTest get() = this@RootNodeOwner.rootForTest
         override val hapticFeedBack get() = platformContext.hapticFeedback
         override val inputModeManager get() = platformContext.inputModeManager
-        override val clipboardManager = createPlatformClipboardManager()
-        override val clipboard = createPlatformClipboard()
-        override val accessibilityManager = DefaultAccessibilityManager()
+        override val clipboardManager get() = platformContext.clipboardManager
+        override val clipboard get() = platformContext.clipboard
+        override val accessibilityManager get() = platformContext.accessibilityManager
         override val graphicsContext get() = this@RootNodeOwner.graphicsContext
         override val textToolbar get() = platformContext.textToolbar
 
         @Suppress("DEPRECATION")
-        override val autofillTree = androidx.compose.ui.autofill.AutofillTree()
+        override val autofillTree get() = platformContext.autofillTree
 
         @Suppress("DEPRECATION")
         override val autofill: androidx.compose.ui.autofill.Autofill?
-            get() = null
+            get() = platformContext.autofill
 
-        // TODO https://youtrack.jetbrains.com/issue/CMP-1572
-        override val autofillManager: AutofillManager? get() = null
+        // TODO https://youtrack.jetbrains.com/issue/CMP-7485
+        override val autofillManager: AutofillManager? get() = platformContext.autofillManager
         override val density get() = this@RootNodeOwner.density
         override val textInputService by lazy(LazyThreadSafetyMode.NONE) {
             TextInputService(platformContext.textInputService)
@@ -544,20 +543,18 @@ internal class RootNodeOwner(
             PointerIconServiceImpl()
         }
 
-        override val uriHandler by lazy(LazyThreadSafetyMode.NONE) { createPlatformUriHandler() }
-
+        override val uriHandler : UriHandler get() = platformContext.uriHandler
+        override val soundEffect: SoundEffect get() = platformContext.soundEffect
         override val semanticsOwner = SemanticsOwner(root, rootSemanticsNode, layoutNodes)
         override val windowInfo get() = platformContext.windowInfo
         override val taskDispatchers: TaskDispatchers get() = platformContext.taskDispatchers
-
         @ExperimentalMediaQueryApi
         override val uiMediaScope: UiMediaScope get() = platformContext.mediaScope
         override val retainedValuesStore: RetainedValuesStore get() = ForgetfulRetainedValuesStore
         override val rectManager = RectManager(layoutNodes)
-
         @Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
-        override val fontLoader = androidx.compose.ui.text.platform.FontLoader()
-        override val fontFamilyResolver = createFontFamilyResolver()
+        override val fontLoader: FontLoader get() = platformContext.fontLoader
+        override val fontFamilyResolver: FontFamily.Resolver get() = platformContext.fontFamilyResolver
         override val layoutDirection get() = _layoutDirection
         override val localeList get() = platformContext.localeList
         override var showLayoutBounds by mutableStateOf(false)
