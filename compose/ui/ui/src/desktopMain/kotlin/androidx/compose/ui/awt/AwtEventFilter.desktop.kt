@@ -62,6 +62,11 @@ internal object OnlyValidPrimaryMouseButtonFilter : AwtEventFilter() {
     private var isPrimaryButtonPressed = false
 
     override fun shouldSendMouseEvent(event: MouseEvent): Boolean {
+        // Touchscreen scroll can arrive as MOUSE_WHEEL with BUTTON1_DOWN_MASK while the
+        // finger is touching the screen. Wheel events are not button state transitions.
+        if (event.id == MouseEvent.MOUSE_WHEEL) {
+            return true
+        }
         val eventReportsPrimaryButtonPressed =
             (event.modifiersEx and MouseEvent.BUTTON1_DOWN_MASK) != 0
         if ((event.button == MouseEvent.BUTTON1) &&
