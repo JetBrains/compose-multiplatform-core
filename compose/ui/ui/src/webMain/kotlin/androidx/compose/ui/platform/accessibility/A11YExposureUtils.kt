@@ -18,11 +18,39 @@ package androidx.compose.ui.platform.accessibility
 
 import androidx.compose.ui.semantics.SemanticsNode
 
+internal enum class A11YReachability {
+    /* The node is not clipped and must be reachable by AT */
+    DirectlyReachable,
+
+    /* The node can be brought into view by scrolling, and it must remain reachable so AT can scroll to it too */
+    ReachableByScroll,
+
+    /* The node is fully clipped and AT must not interact with it */
+    Unreachable,
+    ;
+
+    @Suppress("NOTHING_TO_INLINE")
+    inline fun isReachable(): Boolean = this != Unreachable
+}
+
 /**
- * Whether this non-zero-sized semantics node is fully clipped in the Compose root.
- *
- * Zero-sized semantics retain their existing exposure. A hidden ancestor is handled separately by
- * the accessibility traversal and still hides zero-sized descendants.
+ * The reachability of an a11y node depends on:
+ * - its ancestors' reachability - it automatically inherits `Unreachable` froms its ancestors
+ * - its own clipping - fully clipped node must not be reachable
+ * - whether one of its ancestors is a reachable scrollable container (then the node is reachable even if fully offscreen/clipped)
  */
-internal fun SemanticsNode.isFullyClippedForA11Y(): Boolean =
-    size.width != 0 && size.height != 0 && boundsInRoot.isEmpty
+internal fun SemanticsNode.a11yReachability(
+    parentReachability: A11YReachability
+): A11YReachability = when (parentReachability) {
+    A11YReachability.Unreachable,
+    A11YReachability.ReachableByScroll -> parentReachability // just inherit from the parent
+
+    A11YReachability.DirectlyReachable -> {
+        val isFullyClipped = size.width != 0 && size.height != 0 && boundsInRoot.isEmpty
+        when {
+            isFullyClipped -> A11YReachability.Unreachable
+            config.isScrollContainer() -> A11YReachability.ReachableByScroll
+            else -> parentReachability
+        }
+    }
+}

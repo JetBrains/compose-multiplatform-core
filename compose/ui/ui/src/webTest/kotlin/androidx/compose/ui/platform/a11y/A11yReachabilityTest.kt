@@ -41,8 +41,7 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.w3c.dom.HTMLElement
 
-/** Regression coverage for basic Web A11Y exposure independently from DOM geometry. */
-class A11yExposureTest : OnCanvasTests {
+class A11yReachabilityTest : OnCanvasTests {
     private fun element(tag: String): HTMLElement =
         assertNotNull(
             getShadowRoot().getElementById(tag) as? HTMLElement,
@@ -103,7 +102,7 @@ class A11yExposureTest : OnCanvasTests {
     }
 
     @Test
-    fun descendantOfVisibleScrollContainerRemainsExposed() = runApplicationTest {
+    fun descendantOfVisibleScrollContainerRemainsReachable() = runApplicationTest {
         val scrollState = ScrollState(0)
         createComposeWindow {
             Column(Modifier.size(100.dp).verticalScroll(scrollState).testTag("scroller")) {
@@ -120,7 +119,7 @@ class A11yExposureTest : OnCanvasTests {
         assertTrue(item.getBoundingClientRect().height > 0.0)
 
         scrollIntoView(item)
-        awaitCondition("Browser scrolling must reach the exposed offscreen item") {
+        awaitCondition("Browser scrolling must reach the reachable offscreen item") {
             scrollState.value > 0
         }
         assertSame(item, element("item"))
@@ -147,7 +146,7 @@ class A11yExposureTest : OnCanvasTests {
     }
 
     @Test
-    fun partiallyClippedAndZeroSizedNodesRemainExposed() = runApplicationTest {
+    fun partiallyClippedAndZeroSizedNodesRemainReachable() = runApplicationTest {
         createComposeWindow {
             Box(Modifier.size(100.dp).clipToBounds()) {
                 Box(Modifier.offset(80.dp, 0.dp).size(40.dp).testTag("partial"))
