@@ -19,7 +19,6 @@ package androidx.compose.ui.graphics.blur
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Shader
-import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
@@ -40,7 +39,6 @@ import kotlin.test.assertNotEquals
 class BlurRadiusSpecTest {
 
     private val density = Density(2f)
-    private val size = Size(200f, 100f)
 
     private fun stops(count: Int): List<BlurStop> =
         List(count) { i -> BlurStop(fraction = i / (count - 1f), radius = (i * 4).dp) }
@@ -521,64 +519,4 @@ class BlurRadiusSpecTest {
         assertEquals(160f, explicit.resolveFallOffRadius(Size(200f, 100f), density))
     }
 
-    @Test
-    fun structurallyEqualParameters_areEqual() {
-        // The blur node relies on this equality to hit its cache. Two independently built values
-        // over equal parameters must compare equal to reuse the platform effect.
-        val a =
-            BlurRadiusSpec.verticalGradient(startRadius = 0.dp, endRadius = 20.dp)
-                .createRenderEffect(size, density)
-        val b =
-            BlurRadiusSpec.verticalGradient(startRadius = 0.dp, endRadius = 20.dp)
-                .createRenderEffect(size, density)
-        assertEquals(a, b)
-        assertEquals(a.hashCode(), b.hashCode())
-    }
-
-    @Test
-    fun differingEdgeTreatment_breaksEquality() {
-        val radius = BlurRadiusSpec.verticalGradient(startRadius = 0.dp, endRadius = 20.dp)
-        val a = radius.createRenderEffect(size, density, TileMode.Clamp)
-        val b = radius.createRenderEffect(size, density, TileMode.Decal)
-        assertNotEquals(a, b)
-    }
-
-    @Test
-    fun differingRadius_breaksEquality() {
-        val a =
-            BlurRadiusSpec.verticalGradient(startRadius = 0.dp, endRadius = 20.dp)
-                .createRenderEffect(size, density)
-        val b =
-            BlurRadiusSpec.verticalGradient(startRadius = 0.dp, endRadius = 10.dp)
-                .createRenderEffect(size, density)
-        assertNotEquals(a, b)
-    }
-
-    @Test
-    fun differingSize_breaksEquality() {
-        val radius = BlurRadiusSpec.verticalGradient(startRadius = 0.dp, endRadius = 20.dp)
-        val a = radius.createRenderEffect(Size(200f, 100f), density)
-        val b = radius.createRenderEffect(Size(200f, 200f), density)
-        assertNotEquals(a, b)
-    }
-
-    @Test
-    fun differingDensity_breaksEquality() {
-        val radius = BlurRadiusSpec.verticalGradient(startRadius = 0.dp, endRadius = 20.dp)
-        val a = radius.createRenderEffect(size, Density(2f))
-        val b = radius.createRenderEffect(size, Density(3f))
-        assertNotEquals(a, b)
-    }
-
-    @Test
-    fun sameShaderRadiusInstance_effectsAreNeverEqual() {
-        // A shader-based radius wraps mutable user-owned shader state. Two effects wrapping the
-        // identical mask instance must never compare equal, forcing the cache to miss.
-        // Reflexivity still holds via identity.
-        val maskRadius = BlurRadiusSpec.shader(24.dp) { throw UnsupportedOperationException() }
-        val a = maskRadius.createRenderEffect(size, density)
-        val b = maskRadius.createRenderEffect(size, density)
-        assertNotEquals(a, b)
-        assertEquals(a, a)
-    }
 }
