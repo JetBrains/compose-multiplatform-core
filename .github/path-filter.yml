@@ -65,6 +65,8 @@ sourceSetsDesktop:
 # Duplicated for simplicity.
 sourceSetsUnknown:
   - '**'
+  - '!**/*.md'
+  - '!**/*.txt'
   - '!**/iosMain/**'
   - '!**/iosTest/**'
   - '!**/darwinMain/**'
