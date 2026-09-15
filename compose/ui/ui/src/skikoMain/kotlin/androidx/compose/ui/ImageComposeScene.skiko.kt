@@ -19,12 +19,13 @@
 package androidx.compose.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.graphics.SkiaCanvasHolder
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerButtons
@@ -163,6 +164,9 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
         containerDpSize = imageSize.toSize().toDpSize(density)
     }
 
+    @OptIn(InternalComposeApi::class)
+    private val canvasHolder = SkiaCanvasHolder(surface.canvas)
+
     private val frameRecomposer = FrameRecomposer(coroutineContext)
 
     private val _platformContext = object : PlatformContext by PlatformContext.Empty(),
@@ -290,11 +294,15 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
      * Render the current content into an image. [nanoTime] will be used to drive all
      * animations in the content (or any other code, which uses [withFrameNanos]
      */
+    @OptIn(InternalComposeApi::class)
     fun render(nanoTime: Long = 0): Image {
         surface.canvas.clear(Color.TRANSPARENT)
         frameRecomposer.performFrame(nanoTime)
         scene.measureAndLayout()
-        scene.draw(surface.canvas.asComposeCanvas())
+        @Suppress("INVISIBLE_REFERENCE")
+        canvasHolder.drawInto(surface.canvas){
+            scene.draw(this@drawInto)
+        }
         return surface.makeImageSnapshot()
     }
 

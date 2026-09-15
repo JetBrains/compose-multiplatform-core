@@ -16,7 +16,10 @@
 
 package androidx.compose.ui.scene
 
+import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.graphics.SkiaCanvasHolder
+import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.uikit.addLayoutConstraintsToMatch
@@ -88,6 +91,8 @@ internal class ComposeLayersViewController(
         )
     }
 
+    @OptIn(InternalComposeApi::class)
+    private val canvasHolder = SkiaCanvasHolder()
     private val layoutInvalidationHandler = LayoutInvalidationHandler(coroutineContext) {
         composeContainerView.setNeedsLayout()
         composeContainerView.invalidateIntrinsicContentSize()
@@ -349,15 +354,16 @@ internal class ComposeLayersViewController(
 
     private fun draw(canvas: Canvas) {
         layoutInvalidationHandler.postponeLayoutInvalidationCalls {
-            val composeCanvas = canvas.asComposeCanvas()
-
+        @Suppress("INVISIBLE_REFERENCE")
+        canvasHolder.drawInto(canvas) { 
             // Some layers may be removed during rendering, because recomposition will happen in the
             // process, so we need to make a temporary copy of the list
             layersCache.withCopy { layers ->
                 layers.fastForEach {
-                    it.draw(composeCanvas)
+                    it.draw(this@drawInto)
                 }
             }
+          }
         }
     }
 }
