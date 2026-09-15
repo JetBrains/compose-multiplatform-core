@@ -28,86 +28,166 @@ import kotlin.jvm.JvmInline
 @JvmInline
 internal actual value class Strings(val value: Int) {
     actual companion object {
-        actual val NavigationMenu = Strings(0)
-        actual val CloseDrawer = Strings(1)
-        actual val CloseRail = Strings(2)
-        actual val CloseSheet = Strings(3)
-        actual val DefaultErrorMessage = Strings(4)
-        actual val ExposedDropdownMenu = Strings(5)
-        actual val SliderRangeStart = Strings(6)
-        actual val SliderRangeEnd = Strings(7)
-        actual val Dialog = Strings(8)
-        actual val MenuExpanded = Strings(9)
-        actual val MenuCollapsed = Strings(10)
-        actual val ToggleDropdownMenu = Strings(11)
-        actual val SnackbarDismiss = Strings(12)
-        actual val SnackbarPaneTitle = Strings(13)
-        actual val SearchBarSearch = Strings(14)
-        actual val SuggestionsAvailable = Strings(15)
-        actual val DatePickerTitle = Strings(16)
-        actual val DatePickerHeadline = Strings(17)
-        actual val DatePickerYearPickerPaneTitle = Strings(18)
-        actual val DatePickerSwitchToYearSelection = Strings(19)
-        actual val DatePickerSwitchToDaySelection = Strings(20)
-        actual val DatePickerSwitchToNextMonth = Strings(21)
-        actual val DatePickerSwitchToPreviousMonth = Strings(22)
-        actual val DatePickerNavigateToYearDescription = Strings(23)
-        actual val DatePickerHeadlineDescription = Strings(24)
-        actual val DatePickerNoSelectionDescription = Strings(25)
-        actual val DatePickerTodayDescription = Strings(26)
-        actual val DatePickerScrollToShowLaterYears = Strings(27)
-        actual val DatePickerScrollToShowEarlierYears = Strings(28)
-        actual val DateInputTitle = Strings(29)
-        actual val DateInputHeadline = Strings(30)
-        actual val DateInputLabel = Strings(31)
-        actual val DateInputHeadlineDescription = Strings(32)
-        actual val DateInputNoInputDescription = Strings(33)
-        actual val DateInputInvalidNotAllowed = Strings(34)
-        actual val DateInputInvalidForPattern = Strings(35)
-        actual val DateInputInvalidYearRange = Strings(36)
-        actual val DatePickerSwitchToCalendarMode = Strings(37)
-        actual val DatePickerSwitchToInputMode = Strings(38)
-        actual val DateRangePickerTitle = Strings(39)
-        actual val DateRangePickerStartHeadline = Strings(40)
-        actual val DateRangePickerEndHeadline = Strings(41)
-        actual val DateRangePickerScrollToShowNextMonth = Strings(42)
-        actual val DateRangePickerScrollToShowPreviousMonth = Strings(43)
-        actual val DateRangePickerDayInRange = Strings(44)
-        actual val DateRangeInputTitle = Strings(45)
-        actual val DateRangeInputInvalidRangeInput = Strings(46)
-        actual val FloatingToolbarCollapse = Strings(47)
-        actual val FloatingToolbarExpand = Strings(48)
-        actual val FloatingToolbarMoreOptions = Strings(49)
-        actual val BottomSheetPaneTitle = Strings(50)
-        actual val BottomSheetDragHandleDescription = Strings(51)
-        actual val BottomSheetPartialExpandDescription = Strings(52)
-        actual val BottomSheetDismissDescription = Strings(53)
-        actual val BottomSheetExpandDescription = Strings(54)
-        actual val TooltipLongPressLabel = Strings(55)
-        actual val TimePickerAM = Strings(56)
-        actual val TimePickerPM = Strings(57)
-        actual val TimePickerPeriodToggle = Strings(58)
-        actual val TimePickerHourSelection = Strings(59)
-        actual val TimePickerMinuteSelection = Strings(60)
-        actual val TimePickerHourSuffix = Strings(61)
-        actual val TimePicker24HourSuffix = Strings(62)
-        actual val TimePickerMinuteSuffix = Strings(63)
-        actual val TimePickerHour = Strings(64)
-        actual val TimePickerMinute = Strings(65)
-        actual val TimePickerHourTextField = Strings(66)
-        actual val TimePickerMinuteTextField = Strings(67)
-        actual val TimePickerDialogTitle = Strings(68)
-        actual val TimeScrollDialogTitle = Strings(69)
-        actual val TimeInputDialogTitle = Strings(70)
-        actual val TimePickerToggleKeyboard= Strings(71)
-        actual val TimePickerToggleScroll = Strings(72)
-        actual val TimePickerToggleTouch = Strings(73)
-        actual val TimePickerMinuteError = Strings(74)
-        actual val TimePickerHourError = Strings(75)
-        actual val TimePicker24HourError = Strings(76)
-        actual val TooltipPaneDescription = Strings(77)
-        actual val WideNavigationRailPaneTitle = Strings(78)
-        actual val ButtonGroupMoreOptions = Strings(79)
+        actual inline val NavigationMenu: Strings
+            get() = Strings(0)
+        actual inline val CloseDrawer: Strings
+            get() = Strings(1)
+        actual inline val CloseRail: Strings
+            get() = Strings(2)
+        actual inline val CloseSheet: Strings
+            get() = Strings(3)
+        actual inline val DefaultErrorMessage: Strings
+            get() = Strings(4)
+        actual inline val ExposedDropdownMenu: Strings
+            get() = Strings(5)
+        actual inline val SliderRangeStart: Strings
+            get() = Strings(6)
+        actual inline val SliderRangeEnd: Strings
+            get() = Strings(7)
+        actual inline val Dialog: Strings
+            get() = Strings(8)
+        actual inline val MenuExpanded: Strings
+            get() = Strings(9)
+        actual inline val MenuCollapsed: Strings
+            get() = Strings(10)
+        actual inline val ToggleDropdownMenu: Strings
+            get() = Strings(11)
+        actual inline val SnackbarDismiss: Strings
+            get() = Strings(12)
+        actual inline val SnackbarPaneTitle: Strings
+            get() = Strings(13)
+        actual inline val SearchBarSearch: Strings
+            get() = Strings(14)
+        actual inline val SuggestionsAvailable: Strings
+            get() = Strings(15)
+        actual inline val DatePickerTitle: Strings
+            get() = Strings(16)
+        actual inline val DatePickerHeadline: Strings
+            get() = Strings(17)
+        actual inline val DatePickerYearPickerPaneTitle: Strings
+            get() = Strings(18)
+        actual inline val DatePickerSwitchToYearSelection: Strings
+            get() = Strings(19)
+        actual inline val DatePickerSwitchToDaySelection: Strings
+            get() = Strings(20)
+        actual inline val DatePickerSwitchToNextMonth: Strings
+            get() = Strings(21)
+        actual inline val DatePickerSwitchToPreviousMonth: Strings
+            get() = Strings(22)
+        actual inline val DatePickerNavigateToYearDescription: Strings
+            get() = Strings(23)
+        actual inline val DatePickerHeadlineDescription: Strings
+            get() = Strings(24)
+        actual inline val DatePickerNoSelectionDescription: Strings
+            get() = Strings(25)
+        actual inline val DatePickerTodayDescription: Strings
+            get() = Strings(26)
+        actual inline val DatePickerScrollToShowLaterYears: Strings
+            get() = Strings(27)
+        actual inline val DatePickerScrollToShowEarlierYears: Strings
+            get() = Strings(28)
+        actual inline val DateInputTitle: Strings
+            get() = Strings(29)
+        actual inline val DateInputHeadline: Strings
+            get() = Strings(30)
+        actual inline val DateInputLabel: Strings
+            get() = Strings(31)
+        actual inline val DateInputHeadlineDescription: Strings
+            get() = Strings(32)
+        actual inline val DateInputNoInputDescription: Strings
+            get() = Strings(33)
+        actual inline val DateInputInvalidNotAllowed: Strings
+            get() = Strings(34)
+        actual inline val DateInputInvalidForPattern: Strings
+            get() = Strings(35)
+        actual inline val DateInputInvalidYearRange: Strings
+            get() = Strings(36)
+        actual inline val DatePickerSwitchToCalendarMode: Strings
+            get() = Strings(37)
+        actual inline val DatePickerSwitchToInputMode: Strings
+            get() = Strings(38)
+        actual inline val DateRangePickerTitle: Strings
+            get() = Strings(39)
+        actual inline val DateRangePickerStartHeadline: Strings
+            get() = Strings(40)
+        actual inline val DateRangePickerEndHeadline: Strings
+            get() = Strings(41)
+        actual inline val DateRangePickerScrollToShowNextMonth: Strings
+            get() = Strings(42)
+        actual inline val DateRangePickerScrollToShowPreviousMonth: Strings
+            get() = Strings(43)
+        actual inline val DateRangePickerDayInRange: Strings
+            get() = Strings(44)
+        actual inline val DateRangeInputTitle: Strings
+            get() = Strings(45)
+        actual inline val DateRangeInputInvalidRangeInput: Strings
+            get() = Strings(46)
+        actual inline val FloatingToolbarCollapse: Strings
+            get() = Strings(47)
+        actual inline val FloatingToolbarExpand: Strings
+            get() = Strings(48)
+        actual inline val FloatingToolbarMoreOptions: Strings
+            get() = Strings(49)
+        actual inline val BottomSheetPaneTitle: Strings
+            get() = Strings(50)
+        actual inline val BottomSheetDragHandleDescription: Strings
+            get() = Strings(51)
+        actual inline val BottomSheetPartialExpandDescription: Strings
+            get() = Strings(52)
+        actual inline val BottomSheetDismissDescription: Strings
+            get() = Strings(53)
+        actual inline val BottomSheetExpandDescription: Strings
+            get() = Strings(54)
+        actual inline val TooltipLongPressLabel: Strings
+            get() = Strings(55)
+        actual inline val TimePickerAM: Strings
+            get() = Strings(56)
+        actual inline val TimePickerPM: Strings
+            get() = Strings(57)
+        actual inline val TimePickerPeriodToggle: Strings
+            get() = Strings(58)
+        actual inline val TimePickerHourSelection: Strings
+            get() = Strings(59)
+        actual inline val TimePickerMinuteSelection: Strings
+            get() = Strings(60)
+        actual inline val TimePickerHourSuffix: Strings
+            get() = Strings(61)
+        actual inline val TimePicker24HourSuffix: Strings
+            get() = Strings(62)
+        actual inline val TimePickerMinuteSuffix: Strings
+            get() = Strings(63)
+        actual inline val TimePickerHour: Strings
+            get() = Strings(64)
+        actual inline val TimePickerMinute: Strings
+            get() = Strings(65)
+        actual inline val TimePickerHourTextField: Strings
+            get() = Strings(66)
+        actual inline val TimePickerMinuteTextField: Strings
+            get() = Strings(67)
+        actual inline val TimePickerDialogTitle: Strings
+            get() = Strings(68)
+        actual inline val TimeScrollDialogTitle: Strings
+            get() = Strings(69)
+        actual inline val TimeInputDialogTitle: Strings
+            get() = Strings(70)
+        actual inline val TimePickerToggleKeyboard: Strings
+            get() = Strings(71)
+        actual inline val TimePickerToggleScroll: Strings
+            get() = Strings(72)
+        actual inline val TimePickerToggleTouch: Strings
+            get() = Strings(73)
+        actual inline val TimePickerMinuteError: Strings
+            get() = Strings(74)
+        actual inline val TimePickerHourError: Strings
+            get() = Strings(75)
+        actual inline val TimePicker24HourError: Strings
+            get() = Strings(76)
+        actual inline val TooltipPaneDescription: Strings
+            get() = Strings(77)
+        actual inline val WideNavigationRailPaneTitle: Strings
+            get() = Strings(78)
+        actual inline val ButtonGroupMoreOptions: Strings
+            get() = Strings(79)
         // When adding values here, make sure to also add them in material3/build-fork.gradle,
         // updateTranslations task (stringByResourceName parameter), and re-run the task
     }

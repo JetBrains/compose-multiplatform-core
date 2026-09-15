@@ -23,10 +23,14 @@ import androidx.compose.ui.platform.l10n.translationFor
 @Immutable
 internal value class Strings private constructor(@Suppress("unused") private val value: Int) {
     companion object {
-        val NextPage = Strings(0)
-        val PreviousPage = Strings(1)
-        val FirstPage = Strings(2)
-        val LastPage = Strings(3)
+        inline val NextPage: Strings
+            get() = Strings(0)
+        inline val PreviousPage: Strings
+            get() = Strings(1)
+        inline val FirstPage: Strings
+            get() = Strings(2)
+        inline val LastPage: Strings
+            get() = Strings(3)
         // When adding values here, make sure to also add them in ui/build.gradle,
         // updateTranslationsIos task (stringByResourceName parameter), and re-run the task
     }
