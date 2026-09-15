@@ -458,7 +458,6 @@ class OutlinedTextFieldTest {
     @Test
     fun testOutlinedTextField_labelPosition_whenFocused_inside() {
         val labelPosition = Ref<Offset>()
-        val labelSize = MinFocusedLabelLineHeight
 
         rule.setMaterialContent(lightColorScheme()) {
             OutlinedTextField(
@@ -1852,7 +1851,10 @@ class OutlinedTextFieldTest {
                     modifier = Modifier.testTag(TextFieldTag),
                     state = rememberTextFieldState(),
                     keyboardOptions =
-                        KeyboardOptions(imeAction = ImeAction.Go, keyboardType = KeyboardType.Email),
+                        KeyboardOptions(
+                            imeAction = ImeAction.Go,
+                            keyboardType = KeyboardType.Email,
+                        ),
                 )
             }
         }
