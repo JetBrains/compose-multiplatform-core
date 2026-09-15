@@ -208,7 +208,7 @@ private sealed interface ComputedStyle {
                     it,
                     fontWeight ?: FontWeight.Normal,
                     fontStyle ?: FontStyle.Normal,
-                    fontSynthesis ?: FontSynthesis.None
+                    fontSynthesis ?: FontSynthesis.All
                 ).value as FontLoadResult
                 res.fontFamilies = resolved.aliases.toTypedArray()
                 res.typeface = resolved.typeface
