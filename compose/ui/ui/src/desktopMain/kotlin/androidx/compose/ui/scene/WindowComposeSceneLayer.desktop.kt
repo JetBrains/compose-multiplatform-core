@@ -40,7 +40,6 @@ import java.awt.Point
 import java.awt.Window
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
-import javax.swing.JDialog
 import javax.swing.JWindow
 import org.jetbrains.skia.Canvas
 import org.jetbrains.skiko.DelicateSkikoApi
@@ -217,6 +216,7 @@ internal class WindowComposeSceneLayer(
             renderDelegate = renderDelegate,
             skiaLayerAnalytics = skiaLayerAnalytics,
             renderSettings = renderSettings,
+            fillsWindow = false
         )
     }
 

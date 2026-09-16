@@ -47,7 +47,8 @@ import kotlin.test.assertFailsWith
 // TODO: move to commonTest once sample_font will be available outside of JVM
 
 // Adopted tests from androidInstrumentedTest/kotlin/androidx/compose/ui/text/ParagraphIntegrationTest.kt
-class DesktopParagraphIntegrationTest {
+class DesktopParagraphIntegrationTest : SkikoComposeTestBase() {
+
     private val fontFamilyResolver = createFontFamilyResolver()
     private val fontFamilyMeasureFont =
         FontFamily(

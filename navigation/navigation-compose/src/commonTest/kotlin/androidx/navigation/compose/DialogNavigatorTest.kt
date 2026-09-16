@@ -30,7 +30,6 @@ import kotlin.test.Test
 
 @OptIn(ExperimentalTestApi::class)
 class DialogNavigatorTest {
-
     private val defaultText = "dialogText"
 
     @Test

@@ -682,6 +682,7 @@ class DialogWindowTest {
     }
 
     @OptIn(ExperimentalTestApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun `can save Unspecified dialog size`() = runComposeUiTest {
         val expectedState = DialogState(size = DpSize.Unspecified)

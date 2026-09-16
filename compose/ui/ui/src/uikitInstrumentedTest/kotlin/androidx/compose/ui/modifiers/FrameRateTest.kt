@@ -31,11 +31,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.preferredFrameRate
+import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
-import androidx.compose.ui.window.LegacyMetalRedrawer
-import androidx.compose.ui.window.MetalRedrawer
-import androidx.compose.ui.window.SurfaceMetalRedrawer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -46,6 +44,8 @@ internal class FrameRateTest {
     fun testLowFrameRates() = runUIKitInstrumentedTest {
         val frameRates = listOf(5f, 10f, 30f, 60f)
 
+        animationSpeed = UIKitInstrumentedTest.RealAnimationSpeed
+
         setContent {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(frameRates.size) { index ->
@@ -54,16 +54,14 @@ internal class FrameRateTest {
             }
         }
 
-        val redrawer = rootRedrawer
-        assertNotNull(redrawer, "redrawer is null")
+        val choreographer = frameChoreographer
+        assertNotNull(choreographer, "frameChoreographer is null")
 
         for (frameRate in frameRates) {
             val expectedFrameDuration = 1.0 / frameRate
             findNodeWithTag("${frameRate}fps").tap()
             waitUntil {
-                val frameDuration = redrawer.currentTargetFrameDuration
-                assertNotNull(frameDuration)
-                checkEqual(expectedFrameDuration, frameDuration, 1e-5)
+                checkEqual(expectedFrameDuration, choreographer.currentTargetFrameDuration, 1e-5)
             }
         }
     }
@@ -72,6 +70,8 @@ internal class FrameRateTest {
     fun testPreferredFrameRates() = runUIKitInstrumentedTest {
         val frameRates = listOf(5f, 10f, 30f, 60f, 80f, 120f)
 
+        animationSpeed = UIKitInstrumentedTest.RealAnimationSpeed
+
         setContent {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(frameRates.size) { index ->
@@ -80,23 +80,17 @@ internal class FrameRateTest {
             }
         }
 
-        val redrawer = rootRedrawer
-        assertNotNull(redrawer, "redrawer is null")
+        val choreographer = frameChoreographer
+        assertNotNull(choreographer, "frameChoreographer is null")
 
         for (frameRate in frameRates) {
             findNodeWithTag("${frameRate}fps").tap()
             waitUntil {
-                redrawer.preferredFramesPerSecond == frameRate.toLong()
+                choreographer.preferredFramesPerSecond == frameRate.toLong()
             }
         }
     }
 }
-
-private val MetalRedrawer.preferredFramesPerSecond: Long?
-    get() = when (this) {
-        is LegacyMetalRedrawer -> displayLinkFrameRate?.preferredFramesPerSecond
-        is SurfaceMetalRedrawer -> displayLinkFrameRate?.preferredFramesPerSecond
-    }
 
 private fun checkEqual(expected: Double, actual: Double, absoluteTolerance: Double): Boolean =
     try {

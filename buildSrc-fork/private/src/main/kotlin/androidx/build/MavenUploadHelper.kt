@@ -55,7 +55,7 @@ fun Project.configureMavenArtifactUpload(
     androidXKmpExtension: AndroidXMultiplatformExtension,
     afterConfigure: () -> Unit,
 ) {
-    if (isJetBrainsFork(project) && JetBrainsPublication.shouldPublish(this)) return
+    if (isJetBrainsFork(project)) return
     apply(mapOf("plugin" to "maven-publish"))
     var registered = false
     fun registerOnFirstPublishableArtifact(component: SoftwareComponent) {

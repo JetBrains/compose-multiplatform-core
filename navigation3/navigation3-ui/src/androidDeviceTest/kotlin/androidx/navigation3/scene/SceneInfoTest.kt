@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.kruth.assertThat
+import androidx.navigation3.defaultContentKey
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
 import androidx.navigationevent.DirectNavigationEventInput
@@ -31,7 +32,6 @@ import androidx.navigationevent.testing.TestNavigationEventDispatcherOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import kotlin.test.Test
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.runner.RunWith
 
@@ -39,7 +39,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 internal class NavDisplayInfoTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun testPredictiveBackSwipePopulatesSceneInfoCorrectly() {
@@ -92,7 +92,7 @@ internal class NavDisplayInfoTest {
             // Assert the "current" entry (at currentIndex) matches the full back stack
             val currentInfo = history.mergedHistory[history.currentIndex] as SceneInfo<String>
             assertThat(currentInfo.scene.entries.map { it.contentKey })
-                .containsExactlyElementsIn(currentBackStack)
+                .containsExactlyElementsIn(currentBackStack.map { it.defaultContentKey() })
 
             // Assert the "back" stack (everything before currentIndex)
             // matches the state *after* the pop, as calculated by the SceneStrategy.
@@ -100,7 +100,9 @@ internal class NavDisplayInfoTest {
             @Suppress("UNCHECKED_CAST")
             val previousInfo = backInfoStack.lastOrNull() as? SceneInfo<String>
             assertThat(previousInfo?.scene?.entries?.map { it.contentKey })
-                .containsExactlyElementsIn(currentBackStack.dropLast(2))
+                .containsExactlyElementsIn(
+                    currentBackStack.dropLast(2).map { it.defaultContentKey() }
+                )
         }
     }
 }

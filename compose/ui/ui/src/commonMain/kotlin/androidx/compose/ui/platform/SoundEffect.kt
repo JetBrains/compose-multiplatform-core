@@ -24,7 +24,7 @@ package androidx.compose.ui.platform
  * @sample androidx.compose.ui.samples.InteractionSoundSamples
  * @see LocalSoundEffect
  */
-interface SoundEffect {
+public interface SoundEffect {
 
     /**
      * Plays a click sound effect.
@@ -33,5 +33,11 @@ interface SoundEffect {
      * platform, enabled by the user's system, and has not been silenced or customized via
      * `SoundEffectOnInteraction`.
      */
-    fun playClickSound()
+    public fun playClickSound()
+}
+
+internal object NoSoundEffect : SoundEffect {
+    override fun playClickSound() {
+        // This platform does not support sound, or sound effects are disabled/silenced
+    }
 }

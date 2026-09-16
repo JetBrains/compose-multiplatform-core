@@ -20,7 +20,6 @@ import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ListItemDefaults.defaultListItemColors
 import androidx.compose.material3.internal.rememberAnimatedShape
 import androidx.compose.material3.tokens.ListTokens
 import androidx.compose.material3.tokens.ReorderListTokens
@@ -38,9 +37,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /** Contains the default values used by list items. */
-object ListItemDefaults {
+public object ListItemDefaults {
     /** The default padding applied to all content within a list item. */
-    val ContentPadding: PaddingValues =
+    public val ContentPadding: PaddingValues =
         PaddingValues(
             start = InteractiveListStartPadding,
             end = InteractiveListEndPadding,
@@ -65,25 +64,34 @@ object ListItemDefaults {
             }
 
     /** The default elevation of a list item */
-    val Elevation: Dp = ListTokens.ItemContainerElevation
+    @Deprecated(
+        "Use `ListItemDefaults.elevation` instead",
+        replaceWith = ReplaceWith("ListItemDefaults.elevation()"),
+    )
+    public val Elevation: Dp = ListTokens.ItemContainerElevation
 
     /** The default shape of a list item */
-    val shape: Shape
+    @Deprecated(
+        "Use `ListItemDefaults.shapes` instead",
+        replaceWith = ReplaceWith("ListItemDefaults.shapes()"),
+    )
+    public val shape: Shape
         @Composable @ReadOnlyComposable get() = ListTokens.ItemContainerShape.value
 
     /** The container color of a list item */
-    val containerColor: Color
+    public val containerColor: Color
         @Composable @ReadOnlyComposable get() = ListTokens.ItemContainerColor.value
 
     /** The content color of a list item */
-    val contentColor: Color
+    public val contentColor: Color
         @Composable @ReadOnlyComposable get() = ListTokens.ItemLabelTextColor.value
 
     /**
      * Creates a [ListItemColors] that represents the default colors for a [ListItem] in different
      * states.
      */
-    @Composable fun colors() = MaterialTheme.colorScheme.defaultListItemColors
+    @Composable
+    public fun colors(): ListItemColors = MaterialTheme.colorScheme.defaultListItemColors
 
     /**
      * Creates a [ListItemColors] that represents the default colors for a [ListItem] in different
@@ -122,7 +130,7 @@ object ListItemDefaults {
      *   dragged.
      */
     @Composable
-    fun colors(
+    public fun colors(
         // default
         containerColor: Color = Color.Unspecified,
         contentColor: Color = Color.Unspecified,
@@ -238,9 +246,9 @@ object ListItemDefaults {
      * Creates a [ListItemColors] that represents the default colors for a [SegmentedListItem] in
      * different states.
      */
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
-    fun segmentedColors(): ListItemColors = MaterialTheme.colorScheme.defaultSegmentedListItemColors
+    public fun segmentedColors(): ListItemColors =
+        MaterialTheme.colorScheme.defaultSegmentedListItemColors
 
     /**
      * Creates a [ListItemColors] that represents the default colors for a [SegmentedListItem] in
@@ -278,9 +286,8 @@ object ListItemDefaults {
      * @param draggedSupportingContentColor the supporting content color of the list item when
      *   dragged.
      */
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
-    fun segmentedColors(
+    public fun segmentedColors(
         // default
         containerColor: Color = Color.Unspecified,
         contentColor: Color = Color.Unspecified,
@@ -396,9 +403,7 @@ object ListItemDefaults {
      * Creates a [ListItemShapes] that represents the default shapes for a [ListItem] in different
      * states.
      */
-    @ExperimentalMaterial3ExpressiveApi
-    @Composable
-    fun shapes(): ListItemShapes = MaterialTheme.shapes.defaultListItemShapes
+    @Composable public fun shapes(): ListItemShapes = MaterialTheme.shapes.defaultListItemShapes
 
     /**
      * Creates a [ListItemShapes] that represents the default shapes for a [ListItem] in different
@@ -411,9 +416,8 @@ object ListItemDefaults {
      * @param hoveredShape the shape of the list item when hovered.
      * @param draggedShape the shape of the list item when dragged.
      */
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
-    fun shapes(
+    public fun shapes(
         shape: Shape? = null,
         selectedShape: Shape? = null,
         pressedShape: Shape? = null,
@@ -436,12 +440,12 @@ object ListItemDefaults {
      *
      * @param index the index for this list item in the overall list.
      * @param count the total count of list items in the overall list.
-     * @param defaultShapes the default [ListItemShapes] that should be used for standalone items or
-     *   items in the middle of the list.
+     * @param defaultShapes the default [ListItemShapes] that should be used for items in the middle
+     *   of the list. If using [CornerBasedShape]s, this factory function modifies the corners of
+     *   [ListItemShapes.shape] for the first/last items of the list and single list items.
      */
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
-    fun segmentedShapes(
+    public fun segmentedShapes(
         index: Int,
         count: Int,
         defaultShapes: ListItemShapes = shapes(),
@@ -449,7 +453,22 @@ object ListItemDefaults {
         val overrideShape = ListTokens.ContainerShape.value
         return remember(index, count, defaultShapes, overrideShape) {
             when {
-                count == 1 -> defaultShapes
+                count == 1 -> {
+                    val defaultBaseShape = defaultShapes.shape
+                    if (defaultBaseShape is CornerBasedShape && overrideShape is CornerBasedShape) {
+                        defaultShapes.copy(
+                            shape =
+                                defaultBaseShape.copy(
+                                    topStart = overrideShape.topStart,
+                                    topEnd = overrideShape.topEnd,
+                                    bottomStart = overrideShape.bottomStart,
+                                    bottomEnd = overrideShape.bottomEnd,
+                                )
+                        )
+                    } else {
+                        defaultShapes
+                    }
+                }
 
                 index == 0 -> {
                     val defaultBaseShape = defaultShapes.shape
@@ -486,7 +505,6 @@ object ListItemDefaults {
         }
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     internal val Shapes.defaultListItemShapes: ListItemShapes
         get() {
             return defaultListItemShapesCached
@@ -508,24 +526,22 @@ object ListItemDefaults {
      * @param elevation the default elevation of the list item.
      * @param draggedElevation the elevation of the list item when dragged.
      */
-    @ExperimentalMaterial3ExpressiveApi
-    fun elevation(
+    public fun elevation(
         elevation: Dp = ListTokens.ItemContainerElevation,
         draggedElevation: Dp = ListTokens.ItemDraggedContainerElevation,
     ): ListItemElevation =
         ListItemElevation(elevation = elevation, draggedElevation = draggedElevation)
 
     /** The vertical space between different [SegmentedListItem]s. */
-    @ExperimentalMaterial3ExpressiveApi val SegmentedGap: Dp = ListTokens.SegmentedGap
+    public val SegmentedGap: Dp = ListTokens.SegmentedGap
 
     /**
      * Returns the default vertical alignment of children content within a [ListItem]. This is
      * equivalent to [Alignment.CenterVertically] for shorter items and [Alignment.Top] for taller
      * items.
      */
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
-    fun verticalAlignment(): Alignment.Vertical {
+    public fun verticalAlignment(): Alignment.Vertical {
         val density = LocalDensity.current
         return Alignment.Vertical { size, space ->
             val breakpoint =
@@ -557,7 +573,7 @@ object ListItemDefaults {
      *   enabled.
      */
     @Composable
-    fun colors(
+    public fun colors(
         containerColor: Color = Color.Unspecified,
         headlineColor: Color = Color.Unspecified,
         leadingIconColor: Color = Color.Unspecified,
@@ -621,37 +637,69 @@ object ListItemDefaults {
  *   dragged.
  */
 @Immutable
-class ListItemColors(
+public class ListItemColors(
     // default
-    val containerColor: Color,
-    val contentColor: Color,
-    val leadingContentColor: Color,
-    val trailingContentColor: Color,
-    val overlineContentColor: Color,
-    val supportingContentColor: Color,
+    public val containerColor: Color,
+    public val contentColor: Color,
+    public val leadingContentColor: Color,
+    public val trailingContentColor: Color,
+    public val overlineContentColor: Color,
+    public val supportingContentColor: Color,
     // disabled
-    val disabledContainerColor: Color,
-    val disabledContentColor: Color,
-    val disabledLeadingContentColor: Color,
-    val disabledTrailingContentColor: Color,
-    val disabledOverlineContentColor: Color,
-    val disabledSupportingContentColor: Color,
+    public val disabledContainerColor: Color,
+    public val disabledContentColor: Color,
+    public val disabledLeadingContentColor: Color,
+    public val disabledTrailingContentColor: Color,
+    public val disabledOverlineContentColor: Color,
+    public val disabledSupportingContentColor: Color,
     // selected
-    val selectedContainerColor: Color,
-    val selectedContentColor: Color,
-    val selectedLeadingContentColor: Color,
-    val selectedTrailingContentColor: Color,
-    val selectedOverlineContentColor: Color,
-    val selectedSupportingContentColor: Color,
+    public val selectedContainerColor: Color,
+    public val selectedContentColor: Color,
+    public val selectedLeadingContentColor: Color,
+    public val selectedTrailingContentColor: Color,
+    public val selectedOverlineContentColor: Color,
+    public val selectedSupportingContentColor: Color,
     // dragged
-    val draggedContainerColor: Color,
-    val draggedContentColor: Color,
-    val draggedLeadingContentColor: Color,
-    val draggedTrailingContentColor: Color,
-    val draggedOverlineContentColor: Color,
-    val draggedSupportingContentColor: Color,
+    public val draggedContainerColor: Color,
+    public val draggedContentColor: Color,
+    public val draggedLeadingContentColor: Color,
+    public val draggedTrailingContentColor: Color,
+    public val draggedOverlineContentColor: Color,
+    public val draggedSupportingContentColor: Color,
 ) {
-    constructor(
+    @Deprecated(
+        "Use overload with parameters for selected and dragged colors",
+        ReplaceWith(
+            "ListItemColors(" +
+                "containerColor = containerColor, " +
+                "contentColor = headlineColor, " +
+                "leadingContentColor = leadingIconColor, " +
+                "trailingContentColor = trailingIconColor, " +
+                "overlineContentColor = overlineColor, " +
+                "supportingContentColor = supportingTextColor, " +
+                "disabledContainerColor = Color.Unspecified, " +
+                "disabledContentColor = disabledHeadlineColor, " +
+                "disabledLeadingContentColor = disabledLeadingIconColor, " +
+                "disabledTrailingContentColor = disabledTrailingIconColor, " +
+                "disabledOverlineContentColor = Color.Unspecified, " +
+                "disabledSupportingContentColor = Color.Unspecified, " +
+                "selectedContainerColor = Color.Unspecified, " +
+                "selectedContentColor = Color.Unspecified, " +
+                "selectedLeadingContentColor = Color.Unspecified, " +
+                "selectedTrailingContentColor = Color.Unspecified, " +
+                "selectedOverlineContentColor = Color.Unspecified, " +
+                "selectedSupportingContentColor = Color.Unspecified, " +
+                "draggedContainerColor = Color.Unspecified, " +
+                "draggedContentColor = Color.Unspecified, " +
+                "draggedLeadingContentColor = Color.Unspecified, " +
+                "draggedTrailingContentColor = Color.Unspecified, " +
+                "draggedOverlineContentColor = Color.Unspecified, " +
+                "draggedSupportingContentColor = Color.Unspecified" +
+                ")",
+            "androidx.compose.ui.graphics.Color",
+        ),
+    )
+    public constructor(
         containerColor: Color,
         headlineColor: Color,
         leadingIconColor: Color,
@@ -699,7 +747,7 @@ class ListItemColors(
      * @param selected whether the list item is selected.
      * @param dragged whether the list item is dragged.
      */
-    fun containerColor(enabled: Boolean, selected: Boolean, dragged: Boolean): Color =
+    public fun containerColor(enabled: Boolean, selected: Boolean, dragged: Boolean): Color =
         when {
             !enabled -> disabledContainerColor
             dragged -> draggedContainerColor
@@ -714,7 +762,7 @@ class ListItemColors(
      * @param selected whether the list item is selected.
      * @param dragged whether the list item is dragged.
      */
-    fun contentColor(enabled: Boolean, selected: Boolean, dragged: Boolean): Color =
+    public fun contentColor(enabled: Boolean, selected: Boolean, dragged: Boolean): Color =
         when {
             !enabled -> disabledContentColor
             dragged -> draggedContentColor
@@ -729,7 +777,7 @@ class ListItemColors(
      * @param selected whether the list item is selected.
      * @param dragged whether the list item is dragged.
      */
-    fun leadingContentColor(enabled: Boolean, selected: Boolean, dragged: Boolean): Color =
+    public fun leadingContentColor(enabled: Boolean, selected: Boolean, dragged: Boolean): Color =
         when {
             !enabled -> disabledLeadingContentColor
             dragged -> draggedLeadingContentColor
@@ -744,7 +792,7 @@ class ListItemColors(
      * @param selected whether the list item is selected.
      * @param dragged whether the list item is dragged.
      */
-    fun trailingContentColor(enabled: Boolean, selected: Boolean, dragged: Boolean): Color =
+    public fun trailingContentColor(enabled: Boolean, selected: Boolean, dragged: Boolean): Color =
         when {
             !enabled -> disabledTrailingContentColor
             dragged -> draggedTrailingContentColor
@@ -759,7 +807,7 @@ class ListItemColors(
      * @param selected whether the list item is selected.
      * @param dragged whether the list item is dragged.
      */
-    fun overlineContentColor(enabled: Boolean, selected: Boolean, dragged: Boolean): Color =
+    public fun overlineContentColor(enabled: Boolean, selected: Boolean, dragged: Boolean): Color =
         when {
             !enabled -> disabledOverlineContentColor
             dragged -> draggedOverlineContentColor
@@ -774,7 +822,11 @@ class ListItemColors(
      * @param selected whether the list item is selected.
      * @param dragged whether the list item is dragged.
      */
-    fun supportingContentColor(enabled: Boolean, selected: Boolean, dragged: Boolean): Color =
+    public fun supportingContentColor(
+        enabled: Boolean,
+        selected: Boolean,
+        dragged: Boolean,
+    ): Color =
         when {
             !enabled -> disabledSupportingContentColor
             dragged -> draggedSupportingContentColor
@@ -786,7 +838,7 @@ class ListItemColors(
      * Returns a copy of this [ListItemColors], optionally overriding some of the values. This uses
      * [Color.Unspecified] to mean “use the value from the source”.
      */
-    fun copy(
+    public fun copy(
         // default
         containerColor: Color = this.containerColor,
         contentColor: Color = this.contentColor,
@@ -920,58 +972,58 @@ class ListItemColors(
     }
 
     @Deprecated("Renamed to contentColor", replaceWith = ReplaceWith("contentColor"))
-    val headlineColor: Color
+    public val headlineColor: Color
         get() = contentColor
 
     @Deprecated("Renamed to leadingContentColor", replaceWith = ReplaceWith("leadingContentColor"))
-    val leadingIconColor: Color
+    public val leadingIconColor: Color
         get() = leadingContentColor
 
     @Deprecated(
         "Renamed to overlineContentColor",
         replaceWith = ReplaceWith("overlineContentColor"),
     )
-    val overlineColor: Color
+    public val overlineColor: Color
         get() = overlineContentColor
 
     @Deprecated(
         "Renamed to supportingContentColor",
         replaceWith = ReplaceWith("supportingContentColor"),
     )
-    val supportingTextColor: Color
+    public val supportingTextColor: Color
         get() = supportingContentColor
 
     @Deprecated(
         "Renamed to trailingContentColor",
         replaceWith = ReplaceWith("trailingContentColor"),
     )
-    val trailingIconColor: Color
+    public val trailingIconColor: Color
         get() = trailingContentColor
 
     @Deprecated(
         "Renamed to disabledContentColor",
         replaceWith = ReplaceWith("disabledContentColor"),
     )
-    val disabledHeadlineColor: Color
+    public val disabledHeadlineColor: Color
         get() = disabledContentColor
 
     @Deprecated(
         "Renamed to disabledLeadingContentColor",
         replaceWith = ReplaceWith("disabledLeadingContentColor"),
     )
-    val disabledLeadingIconColor: Color
+    public val disabledLeadingIconColor: Color
         get() = disabledLeadingContentColor
 
     @Deprecated(
         "Renamed to disabledTrailingContentColor",
         replaceWith = ReplaceWith("disabledTrailingContentColor"),
     )
-    val disabledTrailingIconColor: Color
+    public val disabledTrailingIconColor: Color
         get() = disabledTrailingContentColor
 
     @Deprecated("Use overload with parameters for selected and dragged colors")
     @Suppress("DEPRECATION")
-    fun copy(
+    public fun copy(
         containerColor: Color = this.containerColor,
         headlineColor: Color = this.headlineColor,
         leadingIconColor: Color = this.leadingIconColor,
@@ -981,7 +1033,7 @@ class ListItemColors(
         disabledHeadlineColor: Color = this.disabledHeadlineColor,
         disabledLeadingIconColor: Color = this.disabledLeadingIconColor,
         disabledTrailingIconColor: Color = this.disabledTrailingIconColor,
-    ) =
+    ): ListItemColors =
         ListItemColors(
             containerColor = containerColor.takeOrElse { this.containerColor },
             headlineColor = headlineColor.takeOrElse { this.headlineColor },
@@ -1007,18 +1059,17 @@ class ListItemColors(
  * @param hoveredShape the shape of the list item when hovered.
  * @param draggedShape the shape of the list item when dragged.
  */
-@ExperimentalMaterial3ExpressiveApi
 @Immutable
-class ListItemShapes(
-    val shape: Shape,
-    val selectedShape: Shape,
-    val pressedShape: Shape,
-    val focusedShape: Shape,
-    val hoveredShape: Shape,
-    val draggedShape: Shape,
+public class ListItemShapes(
+    public val shape: Shape,
+    public val selectedShape: Shape,
+    public val pressedShape: Shape,
+    public val focusedShape: Shape,
+    public val hoveredShape: Shape,
+    public val draggedShape: Shape,
 ) {
     /** Returns a copy of this [ListItemShapes], optionally overriding some of the values. */
-    fun copy(
+    public fun copy(
         shape: Shape? = this.shape,
         selectedShape: Shape? = this.selectedShape,
         pressedShape: Shape? = this.pressedShape,
@@ -1062,7 +1113,6 @@ class ListItemShapes(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private val ListItemShapes.hasRoundedCornerShapes: Boolean
     get() =
         shape is RoundedCornerShape &&
@@ -1072,7 +1122,6 @@ private val ListItemShapes.hasRoundedCornerShapes: Boolean
             hoveredShape is RoundedCornerShape &&
             draggedShape is RoundedCornerShape
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private val ListItemShapes.hasCornerBasedShapes: Boolean
     get() =
         shape is CornerBasedShape &&
@@ -1082,7 +1131,6 @@ private val ListItemShapes.hasCornerBasedShapes: Boolean
             hoveredShape is CornerBasedShape &&
             draggedShape is CornerBasedShape
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun ListItemShapes.shapeForInteraction(
     selected: Boolean,
@@ -1117,9 +1165,8 @@ internal fun ListItemShapes.shapeForInteraction(
  * @param elevation the default elevation of the list item.
  * @param draggedElevation the elevation of the list item when dragged.
  */
-@ExperimentalMaterial3ExpressiveApi
 @Immutable
-class ListItemElevation(val elevation: Dp, val draggedElevation: Dp) {
+public class ListItemElevation(public val elevation: Dp, public val draggedElevation: Dp) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || other !is ListItemElevation) return false

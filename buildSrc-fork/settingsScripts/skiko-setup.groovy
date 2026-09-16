@@ -54,8 +54,6 @@ class SkikoSetup {
                     } else {
                         throw new GradleException("Unsupported operating system $os")
                     }
-                    library("skikoCurrentOs", "org.jetbrains.skiko",
-                            currentOsArtifact).versionRef("skiko")
                 }
             }
         }

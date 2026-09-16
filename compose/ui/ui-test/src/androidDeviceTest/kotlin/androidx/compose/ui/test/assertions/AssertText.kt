@@ -18,6 +18,7 @@ package androidx.compose.ui.test.assertions
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
@@ -34,7 +35,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -43,7 +43,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AssertText {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun equals() {
@@ -91,7 +91,7 @@ class AssertText {
             Box(Modifier.semantics(mergeDescendants = true) { testTag = "test" }) {
                 Text("Hello")
                 Text("World")
-                TextField("TextField", onValueChange = {})
+                TextField(rememberTextFieldState("TextField"))
             }
         }
         rule.onNodeWithTag("test").assertTextEquals("Hello", "World", "TextField")
@@ -169,6 +169,41 @@ class AssertText {
         }
 
         rule.onNodeWithTag("test").assertTextContains("hello", ignoreCase = true, substring = true)
+    }
+
+    @Test
+    fun textAndInputText_defaultIgnoresInputText() {
+        rule.setContent {
+            Box(Modifier.semantics(mergeDescendants = true) { testTag = "test" }) {
+                Text("Visual Text")
+                BoundaryNode { inputText = AnnotatedString("Raw Input") }
+            }
+        }
+        rule.onNodeWithTag("test").assertTextEquals("Visual Text")
+    }
+
+    @Test
+    fun textAndInputText_includeInputTextTrue() {
+        rule.setContent {
+            Box(Modifier.semantics(mergeDescendants = true) { testTag = "test" }) {
+                Text("Visual Text")
+                BoundaryNode { inputText = AnnotatedString("Raw Input") }
+            }
+        }
+        rule
+            .onNodeWithTag("test")
+            .assertTextEquals("Visual Text", "Raw Input", includeInputText = true)
+    }
+
+    @Test(expected = AssertionError::class)
+    fun textAndInputText_includeInputTextTrue_failsIfMissing() {
+        rule.setContent {
+            Box(Modifier.semantics(mergeDescendants = true) { testTag = "test" }) {
+                Text("Visual Text")
+                BoundaryNode { inputText = AnnotatedString("Raw Input") }
+            }
+        }
+        rule.onNodeWithTag("test").assertTextEquals("Visual Text", includeInputText = true)
     }
 
     @Composable

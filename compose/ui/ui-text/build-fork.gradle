@@ -64,77 +64,39 @@ androidXMultiplatform {
             implementation(project(":compose:ui:ui-util"))
 
             // TODO: Pin androidx.collection when SieveCache is available
-            // implementation("androidx.collection:collection:1.4.2")
-            implementation("androidx.collection:collection:1.5.0")
+            implementation("androidx.collection:collection:1.6.0")
         }
 
         commonTest.dependencies {
             implementation(libs.kotlinTest)
         }
 
-        androidMain.dependencies {
-            api("androidx.annotation:annotation:1.8.1")
-            api("androidx.annotation:annotation-experimental:1.4.1")
-            implementation("androidx.core:core:1.7.0")
-            implementation("androidx.emoji2:emoji2:1.4.0")
-        }
-
-        androidDeviceTest.dependencies {
-            implementation("androidx.emoji2:emoji2-bundled:1.4.0")
-            implementation(project(":compose:ui:ui-test-junit4"))
-            implementation(project(":internal-testutils-fonts"))
-            implementation(project(":compose:foundation:foundation"))
-            implementation(project(":compose:test-utils"))
-            implementation(libs.testRules)
-            implementation(libs.testRunner)
-            implementation(libs.espressoCore)
-            implementation(libs.junit)
-            implementation(libs.dexmakerMockito)
-            implementation(libs.mockitoCore)
-            implementation(libs.truth)
-            implementation(libs.mockitoKotlin)
-            implementation(libs.kotlinReflect)
-        }
-
-        androidHostTest.dependencies {
-            implementation(project(":internal-testutils-fonts"))
-            implementation(libs.testRules)
-            implementation(libs.testRunner)
-            implementation(libs.junit)
-            implementation(libs.truth)
-            implementation(libs.kotlinReflect)
-            implementation(libs.kotlinTest)
-            implementation(libs.mockitoCore4)
-            implementation(libs.mockitoKotlin4)
-            implementation(libs.byteBuddy)
-        }
-
-        // TODO: Align naming: nonAndroidMain
-        skikoMain {
+        nonAndroidMain {
             dependsOn(commonMain)
             dependencies {
-                api(libs.skiko)
+                // ui-text is skia-free: the skia-backed font/paragraph backend lives in ui-skiko.
                 implementation(libs.atomicFu)
             }
         }
 
-        skikoTest {
+        nonAndroidTest {
             dependsOn(commonTest)
             dependencies {
+                implementation(project(":compose:ui:ui-skiko"))
                 implementation(project(":kruth:kruth"))
             }
         }
 
         desktopMain {
-            dependsOn(skikoMain)
+            dependsOn(nonAndroidMain)
         }
 
         desktopTest {
-            dependsOn(skikoTest)
+            dependsOn(nonAndroidTest)
             dependencies {
                 implementation(libs.truth)
                 implementation(libs.junit)
-                implementation(libs.skikoCurrentOs)
+                implementation(libs.skikoAwtRuntime)
                 implementation(project(":compose:foundation:foundation"))
                 implementation(project(":compose:ui:ui-test-junit4"))
                 implementation(project(":internal-testutils-fonts"))
@@ -147,7 +109,7 @@ androidXMultiplatform {
         }
 
         nonJvmMain {
-            dependsOn(skikoMain)
+            dependsOn(nonAndroidMain)
             dependencies {
                 // To comply with Klib resolver until https://youtrack.jetbrains.com/issue/KT-61096 is fixed
                 implementation("org.jetbrains.compose.collection-internal:collection:1.10.0")
@@ -155,7 +117,7 @@ androidXMultiplatform {
         }
 
         nonJvmTest {
-            dependsOn(skikoTest)
+            dependsOn(nonAndroidTest)
         }
 
         nativeMain {
@@ -190,22 +152,11 @@ androidXMultiplatform {
             dependsOn(darwinTest)
         }
 
-        wasmJsMain {
-            dependencies {
-                implementation(libs.skikoWasmJs)
-                implementation(libs.skikoJsWasmRuntime)
-            }
-        }
-
         // TODO: Align it with AOSP or make explicit
         configureEach {
             languageSettings.optIn("androidx.compose.ui.text.ExperimentalTextApi")
         }
     }
-}
-
-dependencies {
-    lintChecks(project(":compose:ui:ui-text-lint"))
 }
 
 androidx {
@@ -214,7 +165,6 @@ androidx {
     inceptionYear = "2019"
     description = "Compose Text primitives and utilities"
     legacyDisableKotlinStrictApiMode = true
-    samples(project(":compose:ui:ui-text:ui-text-samples"))
 }
 
 afterEvaluate {

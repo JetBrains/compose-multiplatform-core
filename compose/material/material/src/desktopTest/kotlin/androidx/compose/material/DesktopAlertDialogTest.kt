@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.IntrinsicMeasurable
@@ -58,6 +57,7 @@ import org.junit.runners.JUnit4
 @RunWith(JUnit4::class)
 class DesktopAlertDialogTest {
 
+    @Suppress("DEPRECATION")
     @get:Rule
     val rule = createComposeRule()
 
@@ -83,7 +83,6 @@ class DesktopAlertDialogTest {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun `back event invokes onDismissRequest`() {
         val dialogSize = IntSize(150, 150)
@@ -114,7 +113,8 @@ class DesktopAlertDialogTest {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class, ExperimentalMaterialApi::class)
+    @Suppress("DEPRECATION")
+    @OptIn(ExperimentalTestApi::class)
     @Test
     fun `uses available width`() = runDesktopComposeUiTest(
         width = 800,

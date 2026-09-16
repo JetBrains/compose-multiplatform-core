@@ -58,78 +58,63 @@ androidXMultiplatform {
             api(project(":compose:ui:ui-unit"))
             implementation(project(":compose:runtime:runtime"))
             implementation(project(":compose:ui:ui-util"))
-            implementation("androidx.collection:collection:1.5.0")
+            implementation("androidx.collection:collection:1.6.0")
         }
 
         commonTest.dependencies {
             implementation(kotlin("test"))
         }
 
-        androidMain.dependencies {
-            // This has stub APIs for access to legacy Android APIs, so we don't want
-            // any dependency on this module.
-            compileOnly(project(":compose:ui:ui-android-stubs"))
-            implementation("androidx.graphics:graphics-path:1.0.1")
-            implementation libs.androidx.core
-            api("androidx.annotation:annotation-experimental:1.4.1")
-        }
-
-        androidDeviceTest.dependencies {
-            implementation(project(":compose:ui:ui-graphics:ui-graphics-samples"))
-            implementation(project(":compose:ui:ui-test-junit4"))
-            implementation(project(":compose:test-utils"))
-            implementation(libs.testRules)
-            implementation(libs.testRunner)
-            implementation(libs.espressoCore)
-            implementation(libs.junit)
-            implementation(libs.truth)
-        }
-
-        androidHostTest.dependencies {
-            implementation(libs.testRules)
-            implementation(libs.testRunner)
-            implementation(libs.junit)
-            implementation(libs.truth)
-            implementation(project(":compose:test-utils"))
-        }
-
-        // TODO: Align naming: nonAndroidMain
-        skikoMain {
+        nonAndroidMain {
             dependsOn(commonMain)
             dependencies {
-                api(libs.skiko)
+                // No skiko here: nonAndroidMain is skia-free. Skia lives in skikoMain (below).
+                implementation(libs.atomicFu)
             }
         }
 
-        skikoTest {
+        nonAndroidTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:ui:ui-test"))
+                implementation(project(":compose:ui:ui-skiko"))
                 implementation(project(":kruth:kruth"))
             }
         }
 
-        skikoExcludingWebMain {
+        // Skia-bearing compatibility layer between the skia-free nonAndroidMain and the platform
+        // leaves. Holds public skia-typed API structurally pinned to ui-graphics (deprecated
+        // skia-returning members + Native* typealiases).
+        // commonMain -> nonAndroidMain -> skikoMain -> (desktop/native/web).
+        skikoMain {
+            dependsOn(nonAndroidMain)
+            dependencies {
+                api(libs.skiko)
+            }
+        }
+        skikoTest.dependsOn(nonAndroidTest)
+
+        nonAndroidExcludingWebMain {
             dependsOn(skikoMain)
         }
 
-        skikoExcludingWebTest {
+        nonAndroidExcludingWebTest {
             dependsOn(skikoTest)
         }
 
         desktopMain {
             dependsOn(skikoMain)
-            dependsOn(skikoExcludingWebMain)
+            dependsOn(nonAndroidExcludingWebMain)
         }
 
         desktopTest {
             dependsOn(skikoTest)
-            dependsOn(skikoExcludingWebTest)
+            dependsOn(nonAndroidExcludingWebTest)
             resources.srcDirs += "src/desktopTest/res"
             dependencies {
                 implementation(libs.junit)
                 implementation(libs.truth)
-                implementation(libs.skikoCurrentOs)
+                implementation(libs.skikoAwtRuntime)
                 implementation(project(":compose:ui:ui-test-junit4"))
             }
         }
@@ -148,18 +133,17 @@ androidXMultiplatform {
 
         nativeMain {
             dependsOn(nonJvmMain)
-            dependsOn(skikoExcludingWebMain)
+            dependsOn(nonAndroidExcludingWebMain)
         }
 
         nativeTest {
             dependsOn(nonJvmTest)
-            dependsOn(skikoExcludingWebTest)
+            dependsOn(nonAndroidExcludingWebTest)
         }
 
         wasmJsMain {
             dependencies {
                 implementation(libs.skikoWasmJs)
-                implementation(libs.skikoJsWasmRuntime)
             }
         }
     }
@@ -172,7 +156,6 @@ androidx {
     description = "Compose graphics"
     legacyDisableKotlinStrictApiMode = true
     enableRobolectric()
-    samples(project(":compose:ui:ui-graphics:ui-graphics-samples"))
 }
 
 // TODO(b/407640608): Task :compose:ui:ui-inspection:connectedCheck fails without this block

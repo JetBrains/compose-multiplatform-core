@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.node
 
+import androidx.compose.ui.SkikoComposeTestBase
 import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.platform.PlatformContext
@@ -31,7 +32,7 @@ import kotlin.test.fail
 import kotlinx.coroutines.test.runTest
 import org.jetbrains.skia.Surface
 
-class VoteFrameRateTest {
+class VoteFrameRateTest : SkikoComposeTestBase() {
 
     @Test
     fun testNoVotedFrameRate() = runTest {

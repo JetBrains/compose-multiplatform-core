@@ -20,12 +20,11 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("org.jetbrains.kotlin.android")
     id("androidx.benchmark")
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(37) }
     namespace = "androidx.compose.runtime.benchmark"
 
     buildTypes.release {
@@ -50,6 +49,8 @@ dependencies {
     androidTestImplementation(project(":compose:ui:ui-util"))
     androidTestImplementation(project(":compose:test-utils"))
     androidTestImplementation(project(":compose:benchmark-utils"))
+
+    androidTestImplementation(project(":lifecycle:lifecycle-runtime-compose"))
 
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testExtJunit)

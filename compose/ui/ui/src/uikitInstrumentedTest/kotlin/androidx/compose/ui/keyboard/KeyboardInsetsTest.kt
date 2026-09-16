@@ -49,6 +49,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.dpRectInWindow
@@ -58,15 +59,16 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.min
+import androidx.compose.ui.unit.toDpRect
+import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.KeyboardVisibilityListener
-import androidx.compose.ui.window.KeyboardVisibilityObserver
+import androidx.compose.ui.window.KeyboardVisibilitySubscriber
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -78,13 +80,25 @@ import platform.CoreGraphics.CGRect
 import platform.UIKit.UIView
 import platform.UIKit.UIViewAnimationOptions
 
-internal class KeyboardInsetsTest {
+internal class KeyboardInsetsInHostingViewTest : KeyboardInsetsTest(
+    runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = true, it) }
+)
+
+internal class KeyboardInsetsInHostingViewControllerTest : KeyboardInsetsTest(
+    runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = false, it) }
+)
+
+internal abstract class KeyboardInsetsTest(
+    private val runUIKitInstrumentedTest: (UIKitInstrumentedTest.() -> Unit) -> Unit
+) {
     @Test
     fun testImePaddingInsetsAnimationFrames_FocusAboveKeyboard() = runUIKitInstrumentedTest {
         val contentFrames = mutableListOf<DpRect>()
         var lastContentFrame = DpRect(DpOffset.Unspecified, DpSize.Unspecified)
         var focusManager: FocusManager? = null
         val focusRequester = FocusRequester()
+
+        animationSpeed = UIKitInstrumentedTest.RealAnimationSpeed
 
         setContent({
             onFocusBehavior = OnFocusBehavior.FocusableAboveKeyboard
@@ -101,6 +115,7 @@ internal class KeyboardInsetsTest {
                     }
                     .drawWithContent {
                         contentFrames.add(lastContentFrame)
+                        drawContent()
                     }
             ) {
                 TextField(
@@ -174,6 +189,8 @@ internal class KeyboardInsetsTest {
         var lastContentFrame = DpRect(DpOffset.Unspecified, DpSize.Unspecified)
         var focusManager: FocusManager? = null
         val focusRequester = FocusRequester()
+
+        animationSpeed = UIKitInstrumentedTest.RealAnimationSpeed
 
         setContent({
             onFocusBehavior = OnFocusBehavior.DoNothing
@@ -367,7 +384,7 @@ internal class KeyboardInsetsTest {
     fun testRefocusByTapKeyboardSizeNotChanges() = runUIKitInstrumentedTest {
         val keyboardFrames = mutableListOf<DpRect>()
         val contentFrames = mutableListOf<DpRect>()
-        val observer = object : KeyboardVisibilityObserver {
+        val observer = object : KeyboardVisibilitySubscriber {
             override fun keyboardWillShow(
                 targetFrame: CValue<CGRect>,
                 duration: Double,
@@ -390,7 +407,7 @@ internal class KeyboardInsetsTest {
                 keyboardFrames.add(targetFrame.toDpRect())
             }
         }
-        KeyboardVisibilityListener.addObserver(observer)
+        KeyboardVisibilityListener.addSubscriber(observer)
 
         setContent {
             Column(modifier = Modifier.fillMaxSize().imePadding().onGloballyPositioned {
@@ -423,7 +440,7 @@ internal class KeyboardInsetsTest {
         waitForIdle()
         findNodeWithTag("TF1").tap()
         waitForIdle()
-        KeyboardVisibilityListener.removeObserver(observer)
+        KeyboardVisibilityListener.removeSubscriber(observer)
 
         // Verify that nor keyboard or content size changed and keyboard presents on the screen.
         assertTrue(keyboardFrames.emptyOrAllEqual())
@@ -438,7 +455,7 @@ internal class KeyboardInsetsTest {
         val focusRequester2 = FocusRequester()
         val keyboardFrames = mutableListOf<DpRect>()
         val contentFrames = mutableListOf<DpRect>()
-        val observer = object : KeyboardVisibilityObserver {
+        val observer = object : KeyboardVisibilitySubscriber {
             override fun keyboardWillShow(
                 targetFrame: CValue<CGRect>,
                 duration: Double,
@@ -461,7 +478,7 @@ internal class KeyboardInsetsTest {
                 keyboardFrames.add(targetFrame.toDpRect())
             }
         }
-        KeyboardVisibilityListener.addObserver(observer)
+        KeyboardVisibilityListener.addSubscriber(observer)
 
         setContent {
             Column(modifier = Modifier.fillMaxSize().imePadding().onGloballyPositioned {
@@ -494,7 +511,7 @@ internal class KeyboardInsetsTest {
         waitForIdle()
         focusRequester1.requestFocus()
         waitForIdle()
-        KeyboardVisibilityListener.removeObserver(observer)
+        KeyboardVisibilityListener.removeSubscriber(observer)
 
         // Verify that nor keyboard or content size changed and keyboard presents on the screen.
         assertTrue(keyboardFrames.emptyOrAllEqual())
@@ -569,6 +586,59 @@ internal class KeyboardInsetsTest {
             bottom = screenSize.height - keyboardHeight
         )
         assertEquals(expectedTextField, lastTextFieldFrame)
+    }
+
+    @Test
+    fun testFocusableAboveKeyboardWithIMEInsetsStaysAboveKeyboardDuringAnimation() = runUIKitInstrumentedTest {
+        var textFieldBottom = Int.MIN_VALUE
+        val drawnTextFieldFrames = mutableListOf<Pair<Int, Int>>()
+        val focusRequester = FocusRequester()
+
+        animationSpeed = UIKitInstrumentedTest.RealAnimationSpeed
+
+        setContent({
+            onFocusBehavior = OnFocusBehavior.FocusableAboveKeyboard
+        }) {
+            val imeInsets = WindowInsets.ime
+            BasicTextField(
+                value = "test Focusable AboveKeyboard Large Text Field".repeat(200),
+                onValueChange = {},
+                modifier = Modifier
+                    .focusRequester(focusRequester)
+                    .fillMaxSize()
+                    .imePadding()
+                    .onGloballyPositioned { coordinates ->
+                        textFieldBottom = coordinates.boundsInWindow().roundToIntRect().bottom
+                    }
+                    .drawWithContent {
+                        val visibleBottom = screenSize.height.roundToPx() - imeInsets.getBottom(Density(density))
+                        drawnTextFieldFrames += textFieldBottom to visibleBottom
+                        drawContent()
+                    }
+            )
+        }
+
+        drawnTextFieldFrames.clear()
+        focusRequester.requestFocus()
+        waitForIdle()
+
+        assertTrue(
+            drawnTextFieldFrames.size > 5,
+            "Animation should produce large number of frames"
+        )
+
+        assertEquals(
+            expected = with(density) { (screenSize.height - keyboardHeight).roundToPx() },
+            actual = drawnTextFieldFrames.last().second
+        )
+
+        drawnTextFieldFrames.forEach { frame ->
+            assertTrue(
+                actual = frame.first <= frame.second,
+                "Focused field must be settled above the keyboard in every drawn frame: " +
+                    "fieldBottom=${frame.first}, visibleBottom=${frame.second}",
+            )
+        }
     }
 
     @Test

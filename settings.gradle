@@ -1,8 +1,8 @@
 import groovy.transform.Field
 
 pluginManagement {
-    def isRunFromGradlewStudio = System.getenv().get("EXPECTED_AGP_VERSION")
-    if (!isRunFromGradlewStudio) {
+    def isForkModeEnabled = System.getenv().get("PROJECT_MODE") != "AOSP"
+    if (isForkModeEnabled) {
         apply from: "settings-plugin-management-fork.gradle"
         this.ext.configureForkPluginManagement.call(delegate)
         return
@@ -29,8 +29,8 @@ pluginManagement {
 }
 
 buildscript {
-    def isRunFromGradlewStudio = System.getenv().get("EXPECTED_AGP_VERSION")
-    if (!isRunFromGradlewStudio) {
+    def isForkModeEnabled = System.getenv().get("PROJECT_MODE") != "AOSP"
+    if (isForkModeEnabled) {
         apply from: "settings-buildscript-fork.gradle"
         this.ext.configureForkBuildscript.call(delegate)
         return
@@ -61,8 +61,8 @@ buildscript {
     }
 }
 
-def isRunFromGradlewStudio = System.getenv().get("EXPECTED_AGP_VERSION")
-if (!isRunFromGradlewStudio) {
+def isForkModeEnabled = System.getenv().get("PROJECT_MODE") != "AOSP"
+if (isForkModeEnabled) {
     apply from: "settings-fork.gradle"
     return
 }
@@ -439,7 +439,6 @@ includeProject(":compose:animation:animation-graphics:animation-graphics-samples
 includeProject(":compose:desktop")
 includeProject(":compose:desktop:desktop")
 includeProject(":compose:desktop:desktop:desktop-samples", "compose/desktop/desktop/samples")
-includeProject(":compose:desktop:desktop:desktop-samples-material3", "compose/desktop/desktop/samples-material3")
 includeProject(":compose:mpp")
 includeProject(":compose:mpp:demo")
 includeProject(":compose:mpp:demo-swiftui")

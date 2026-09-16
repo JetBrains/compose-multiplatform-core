@@ -43,6 +43,7 @@ class MacosScrollableTest {
     private val density = Density(2f)
     private val scrollLine = density.density * 10f
 
+    @Suppress("DEPRECATION")
     @Test
     fun `scroll by pixels vertically`() = runSkikoComposeUiTest(density = density) {
         val context = TestColumn()
@@ -63,6 +64,7 @@ class MacosScrollableTest {
         assertEquals(10F, context.offset, 0.1F)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun `scroll by lines vertically`() = runSkikoComposeUiTest(density = density) {
         val context = TestColumn()
@@ -84,6 +86,7 @@ class MacosScrollableTest {
         assertEquals(3F * scrollLine, context.offset, 0.1F)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun `scroll by pixels horizontally`() = runSkikoComposeUiTest(density = density) {
         val context = TestColumn()
@@ -105,6 +108,7 @@ class MacosScrollableTest {
         assertEquals(5F, context.offset, 0.1F)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun `scroll by lines horizontally`() = runSkikoComposeUiTest(density = density) {
         val context = TestColumn()

@@ -33,6 +33,7 @@ import kotlin.test.assertEquals
 @OptIn(ExperimentalTestApi::class)
 class WindowInfoTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun windowInfoContainerSize() = runSkikoComposeUiTest(
         size = Size(234f, 432f),

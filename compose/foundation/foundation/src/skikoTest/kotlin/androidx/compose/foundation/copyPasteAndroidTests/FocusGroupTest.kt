@@ -16,19 +16,17 @@
 
 package androidx.compose.foundation.copyPasteAndroidTests
 
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.assertThat
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.assertThat
-import androidx.compose.foundation.isTrue
 import androidx.compose.foundation.isFalse
+import androidx.compose.foundation.isTrue
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection.Companion.Enter
 import androidx.compose.ui.focus.FocusDirection.Companion.Exit
@@ -47,12 +45,13 @@ import androidx.compose.ui.test.runSkikoComposeUiTest
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalTestApi::class)
+@OptIn(ExperimentalTestApi::class)
 class FocusGroupTest {
 
     private val initialFocus = FocusRequester()
     private lateinit var focusManager: FocusManager
 
+    @Suppress("DEPRECATION")
     @Test
     fun focusGroup_withNonFocusableContent_isNotFocusable() = runSkikoComposeUiTest {
         // Arrange.
@@ -76,6 +75,7 @@ class FocusGroupTest {
         runOnIdle { assertThat(isFocused).isFalse() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun focusGroup_withFocusableContent_isNotFocusable() = runSkikoComposeUiTest {
         // Arrange.
@@ -99,6 +99,7 @@ class FocusGroupTest {
         runOnIdle { assertThat(isFocused).isFalse() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun focusGroup_canBeMadeFocusableUsingFocusProperties() = runSkikoComposeUiTest {
         // Arrange.
@@ -123,6 +124,7 @@ class FocusGroupTest {
         runOnIdle { assertThat(isFocused).isTrue() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun itemWithFocusGroup_canBeMadeFocusable() = runSkikoComposeUiTest {
         // Arrange.
@@ -151,6 +153,7 @@ class FocusGroupTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun oneDimensionalFocusSearch_traversesCurrentFocusGroupBeforeNextGroup() = runSkikoComposeUiTest {
         // Arrange.
@@ -175,6 +178,7 @@ class FocusGroupTest {
         runOnIdle { assertThat(expectedFocus.isFocused).isTrue() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun oneDimensionalFocusSearch_flowsOverToNextGroup() = runSkikoComposeUiTest {
         // Arrange.
@@ -199,6 +203,7 @@ class FocusGroupTest {
         runOnIdle { assertThat(expectedFocus.isFocused).isTrue() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun oneDimensionalFocusSearch_flowsOverToNextFocusGroupParent() = runSkikoComposeUiTest {
         // Arrange.
@@ -228,6 +233,7 @@ class FocusGroupTest {
         runOnIdle { assertThat(expectedFocus.isFocused).isTrue() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun oneDimensionalFocusSearch_wrapsAroundToFirstGroup() = runSkikoComposeUiTest {
         // Arrange.
@@ -252,6 +258,7 @@ class FocusGroupTest {
         runOnIdle { assertThat(expectedFocus.isFocused).isTrue() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun twoDimensionalFocusSearch_Enter() = runSkikoComposeUiTest {
         // Arrange.
@@ -272,13 +279,13 @@ class FocusGroupTest {
         }
 
         // Act.
-        @OptIn(ExperimentalComposeUiApi::class)
         runOnIdle { focusManager.moveFocus(Enter) }
 
         // Assert.
         runOnIdle { assertThat(expectedFocus.isFocused).isTrue() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun twoDimensionalFocusSearch_Exit() = runSkikoComposeUiTest {
         // Arrange.
@@ -299,13 +306,13 @@ class FocusGroupTest {
         }
 
         // Act.
-        @OptIn(ExperimentalComposeUiApi::class)
         runOnIdle { focusManager.moveFocus(Exit) }
 
         // Assert.
         runOnIdle { assertThat(expectedFocus.isFocused).isTrue() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun twoDimensionalFocusSearch_skipsChildrenIfTheyAreNotInDirectionOfSearch() = runSkikoComposeUiTest {
         // Arrange.
@@ -330,6 +337,7 @@ class FocusGroupTest {
         runOnIdle { assertThat(expectedFocus.isFocused).isTrue() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun twoDimensionalFocusSearch_returnsNextFocusGroupParentIfItIsFocusable() = runSkikoComposeUiTest {
         // Arrange.
@@ -359,6 +367,7 @@ class FocusGroupTest {
         runOnIdle { assertThat(expectedFocus.isFocused).isTrue() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun twoDimensionalFocusSearch_acrossFocusableFocusGroups_skipsChildren() = runSkikoComposeUiTest {
         // Arrange.
@@ -394,6 +403,7 @@ class FocusGroupTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun twoDimensionalFocusSearch_acrossFocusableFocusGroups_whenChildIsInitiallyFocused() = runSkikoComposeUiTest {
         // Arrange.
@@ -453,7 +463,6 @@ class FocusGroupTest {
         modifier: Modifier = Modifier,
         noinline content: @Composable BoxScope.() -> Unit = {}
     ) {
-        @OptIn(ExperimentalFoundationApi::class)
         Box(modifier.focusGroup(), content)
     }
 }

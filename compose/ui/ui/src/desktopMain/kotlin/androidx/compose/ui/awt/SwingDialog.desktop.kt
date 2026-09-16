@@ -23,7 +23,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
@@ -137,23 +136,7 @@ fun SwingDialog(
             it.exceptionHandler = windowExceptionHandlerFactory.exceptionHandler(it)
             it.componentOrientation = layoutDirection.componentOrientation
 
-            val wasDisplayable = it.isDisplayable
-
             update(it)
-
-            // If displaying for the first time, make sure we draw the first frame before making
-            // the dialog visible to avoid showing the dialog background.
-            // It's the responsibility of setSizeSafely to
-            // - Make the dialog displayable
-            // - Size the dialog and the ComposeLayer correctly, so that we can draw it here
-            if (!wasDisplayable && it.isDisplayable) {
-                Snapshot.withoutReadObservation {
-                    if (!it.isValid) {
-                        it.validate()
-                    }
-                    it.renderImmediately()
-                }
-            }
         },
     )
 }

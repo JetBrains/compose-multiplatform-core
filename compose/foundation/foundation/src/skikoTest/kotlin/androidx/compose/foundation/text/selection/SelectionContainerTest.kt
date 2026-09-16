@@ -19,13 +19,15 @@ package androidx.compose.foundation.text.selection
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -48,6 +50,7 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
 class SelectionContainerTest {
+    @Suppress("DEPRECATION")
     @Test
     fun selectionWorksWhenDraggingFromBelowText() = runComposeUiTest {
         val selectionState = SelectionState()
@@ -77,6 +80,7 @@ class SelectionContainerTest {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun clickOnDisabledSelectionClearsSelection() = runComposeUiTest {
         val selectionState = SelectionState()
@@ -109,6 +113,7 @@ class SelectionContainerTest {
         assertFalse(selectionState.selection.exists())
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun dragToSelect() = runComposeUiTest {
         val selectionState = SelectionState()
@@ -184,6 +189,131 @@ class SelectionContainerTest {
             assertEquals(7, it.end.offset)
         }
     }
+
+    @Composable
+    private fun SelectionContainerWithGaps(selectionState: SelectionState) {
+        SelectionContainer(selectionState) {
+            Column(Modifier.testTag("column")) {
+                Spacer(Modifier.size(20.dp).testTag("gap_before"))
+                BasicText("Text1", Modifier.testTag("text1"))
+                Spacer(Modifier.size(20.dp).testTag("gap_between"))
+                BasicText("Text2", Modifier.testTag("text2"))
+                Spacer(Modifier.size(20.dp).testTag("gap_after"))
+            }
+        }
+    }
+
+    @Test
+    fun selectWithMouseFromGapBefore() = androidx.compose.ui.test.v2.runComposeUiTest {
+        val selectionState = SelectionState()
+        setContent {
+            SelectionContainerWithGaps(selectionState)
+        }
+
+        val column = onNodeWithTag("column")
+        val gapBefore = onNodeWithTag("gap_before").fetchSemanticsNode()
+        val gapBetween = onNodeWithTag("gap_between").fetchSemanticsNode()
+        val gapAfter = onNodeWithTag("gap_after").fetchSemanticsNode()
+
+        column.performMouseInput {
+            updatePointerTo(gapBefore.boundsInRoot.center)
+            press()
+            moveTo(gapBetween.boundsInRoot.center)
+        }
+        assertEquals("Text1", selectionState.selectedText)
+        assertFalse(selectionState.selection!!.handlesCrossed)
+
+        column.performMouseInput {
+            moveTo(gapAfter.boundsInRoot.center)
+        }
+        assertEquals("Text1Text2", selectionState.selectedText)
+        assertFalse(selectionState.selection!!.handlesCrossed)
+    }
+
+    @Test
+    fun selectWithMouseFromGapBetween() = androidx.compose.ui.test.v2.runComposeUiTest {
+        val selectionState = SelectionState()
+        setContent {
+            SelectionContainerWithGaps(selectionState)
+        }
+
+        val column = onNodeWithTag("column")
+        val gapBefore = onNodeWithTag("gap_before").fetchSemanticsNode()
+        val gapBetween = onNodeWithTag("gap_between").fetchSemanticsNode()
+        val gapAfter = onNodeWithTag("gap_after").fetchSemanticsNode()
+
+        column.performMouseInput {
+            updatePointerTo(gapBetween.boundsInRoot.center)
+            press()
+            moveTo(gapBefore.boundsInRoot.center)
+        }
+        assertEquals("Text1", selectionState.selectedText)
+        assertTrue(selectionState.selection!!.handlesCrossed)
+
+        column.performMouseInput {
+            moveTo(gapAfter.boundsInRoot.center)
+        }
+
+        assertEquals("Text2", selectionState.selectedText)
+        assertFalse(selectionState.selection!!.handlesCrossed)
+    }
+
+    @Test
+    fun selectWithMouseFromGapAfter() = androidx.compose.ui.test.v2.runComposeUiTest {
+        val selectionState = SelectionState()
+        setContent {
+            SelectionContainerWithGaps(selectionState)
+        }
+
+        val column = onNodeWithTag("column")
+        val gapBefore = onNodeWithTag("gap_before").fetchSemanticsNode()
+        val gapBetween = onNodeWithTag("gap_between").fetchSemanticsNode()
+        val gapAfter = onNodeWithTag("gap_after").fetchSemanticsNode()
+
+        column.performMouseInput {
+            updatePointerTo(gapAfter.boundsInRoot.center)
+            press()
+            moveTo(gapBetween.boundsInRoot.center)
+        }
+        assertEquals("Text2", selectionState.selectedText)
+        assertTrue(selectionState.selection!!.handlesCrossed)
+
+        column.performMouseInput {
+            moveTo(gapBefore.boundsInRoot.center)
+        }
+
+        assertEquals("Text1Text2", selectionState.selectedText)
+        assertTrue(selectionState.selection!!.handlesCrossed)
+    }
+
+    // https://youtrack.jetbrains.com/issue/CMP-10673
+    @Test
+    fun selectWithMouseInsideAndDragRightUpAndOutside() = androidx.compose.ui.test.v2.runComposeUiTest {
+        val selectionState = SelectionState()
+        setContent {
+            SelectionContainer(selectionState) {
+                Column(Modifier.testTag("column").padding(50.dp)) {
+                    BasicText(
+                        "Lorem\nipsum\ndolor",
+                        modifier = Modifier.testTag("text1")
+                    )
+                    // The 2nd text is needed to reproduce the issue
+                    BasicText("Hello")
+                }
+            }
+        }
+
+        onNodeWithTag("text1").performMouseInput {
+            updatePointerTo(center)
+            press()
+            moveTo(topRight + Offset(10f, 0f))
+        }
+
+        waitForIdle()
+    }
 }
 
 private fun Selection?.exists() = (this != null) && !this.toTextRange().collapsed
+
+private val SelectionState.selectedText
+    get() = selectedTexts.joinToString(separator = "")

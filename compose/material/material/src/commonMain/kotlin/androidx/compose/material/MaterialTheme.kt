@@ -55,19 +55,18 @@ import androidx.compose.runtime.remember
  * @param content The content inheriting this theme
  */
 @Composable
-fun MaterialTheme(
+public fun MaterialTheme(
     colors: Colors = MaterialTheme.colors,
     typography: Typography = MaterialTheme.typography,
     shapes: Shapes = MaterialTheme.shapes,
     content: @Composable () -> Unit,
 ) {
-    val rememberedColors =
-        remember {
-                // Explicitly creating a new object here so we don't mutate the initial [colors]
-                // provided, and overwrite the values set in it.
-                colors.copy()
-            }
-            .apply { updateColorsFrom(colors) }
+    val rememberedColors = remember {
+        // Explicitly creating a new object here so we don't mutate the initial [colors]
+        // provided, and overwrite the values set in it.
+        colors.copy()
+    }
+        .apply { updateColorsFrom(colors) }
     val rippleIndication = ripple()
     val selectionColors = rememberTextSelectionColors(rememberedColors)
     CompositionLocalProvider(
@@ -88,13 +87,13 @@ fun MaterialTheme(
  * Contains functions to access the current theme values provided at the call site's position in the
  * hierarchy.
  */
-object MaterialTheme {
+public object MaterialTheme {
     /**
      * Retrieves the current [Colors] at the call site's position in the hierarchy.
      *
      * @sample androidx.compose.material.samples.ThemeColorSample
      */
-    val colors: Colors
+    public val colors: Colors
         @Composable @ReadOnlyComposable get() = LocalColors.current
 
     /**
@@ -102,10 +101,10 @@ object MaterialTheme {
      *
      * @sample androidx.compose.material.samples.ThemeTextStyleSample
      */
-    val typography: Typography
+    public val typography: Typography
         @Composable @ReadOnlyComposable get() = LocalTypography.current
 
     /** Retrieves the current [Shapes] at the call site's position in the hierarchy. */
-    val shapes: Shapes
+    public val shapes: Shapes
         @Composable @ReadOnlyComposable get() = LocalShapes.current
 }

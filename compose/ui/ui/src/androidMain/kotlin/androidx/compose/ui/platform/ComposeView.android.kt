@@ -30,9 +30,12 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.R
 import androidx.compose.ui.UiComposable
+import androidx.compose.ui.layout.WindowInsetsRulers
+import androidx.compose.ui.layout.disable
 import androidx.compose.ui.node.Owner
 import androidx.compose.ui.util.trace
 import androidx.core.view.isEmpty
+import androidx.core.view.isNotEmpty
 import androidx.core.viewtree.getParentOrViewTreeDisjointParent
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -58,7 +61,7 @@ import java.lang.ref.WeakReference
  * it set up correctly as [androidx.activity.ComponentActivity], [androidx.fragment.app.Fragment]
  * and [androidx.navigation.NavController] will provide the correct values.
  */
-abstract class AbstractComposeView
+public abstract class AbstractComposeView
 @JvmOverloads
 constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
     ViewGroup(context, attrs, defStyleAttr) {
@@ -92,7 +95,19 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
             }
         }
 
-    private var composition: Composition? = null
+    @Volatile private var composition: Composition? = null
+
+    /**
+     * Lock used to serialize composition creation, disposal, and parent context changes to ensure
+     * that only one thread creates or mutates the composition at a time.
+     */
+    private val compositionLock = Any()
+    /**
+     * `true` while [ensureCompositionCreated] is in the process of creating the composition. Used
+     * to prevent reentrant calls on the same thread from attempting redundant creation and to
+     * permit [addView] to attach the root [AndroidComposeView].
+     */
+    private var isCreatingComposition = false
 
     /**
      * The explicitly set [CompositionContext] to use as the parent of compositions created for this
@@ -107,14 +122,16 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
                 if (value != null) {
                     cachedViewTreeCompositionContext = null
                 }
-                val old = composition
-                if (old !== null) {
-                    old.dispose()
-                    composition = null
+                synchronized(compositionLock) {
+                    val old = composition
+                    if (old !== null) {
+                        old.dispose()
+                        composition = null
 
-                    // Recreate the composition now if we are attached.
-                    if (isAttachedToWindow) {
-                        ensureCompositionCreated()
+                        // Recreate the composition now if we are attached.
+                        if (isAttachedToWindow) {
+                            ensureCompositionCreated()
+                        }
                     }
                 }
             }
@@ -127,34 +144,32 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      */
     internal var composeViewContext: ComposeViewContext? = null
         set(value) {
-            val current = field
-            if (current === value) {
-                return
+            val existing = field
+            if (existing !== value) {
+                if (value == null) {
+                    disposeComposition()
+                } else if (isNotEmpty()) {
+                    val child = getChildAt(0) as? AndroidComposeView
+                    if (child != null) {
+                        if (
+                            child.coroutineContext !==
+                                value.compositionContext.effectCoroutineContext
+                        ) {
+                            disposeComposition()
+                        }
+                        child.composeViewContext = value
+                    }
+                }
+                field = value
             }
-
-            field = value
-            updateComposeViewContext(value)
         }
-
-    internal fun updateComposeViewContext(context: ComposeViewContext?) {
-        val restartComposition = composition?.isDisposed == false
-        disposeComposition()
-
-        val child = getChildAt(0) as? AndroidComposeView
-        if (context != null) {
-            child?.composeViewContext = context
-            if (restartComposition) {
-                ensureCompositionCreated()
-            }
-        }
-    }
 
     /**
      * Set the [CompositionContext] that should be the parent of this view's composition. If
      * [parent] is `null` it will be determined automatically from the window the view is attached
      * to.
      */
-    fun setParentCompositionContext(parent: CompositionContext?) {
+    public fun setParentCompositionContext(parent: CompositionContext?) {
         parentContext = parent
     }
 
@@ -173,7 +188,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      *
      * See [ViewCompositionStrategy] for more information.
      */
-    fun setViewCompositionStrategy(strategy: ViewCompositionStrategy) {
+    public fun setViewCompositionStrategy(strategy: ViewCompositionStrategy) {
         disposeViewCompositionStrategy?.invoke()
         disposeViewCompositionStrategy = strategy.installFor(this)
     }
@@ -196,7 +211,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     @InternalComposeUiApi
     @Suppress("GetterSetterNames")
     @get:Suppress("GetterSetterNames")
-    var showLayoutBounds: Boolean = false
+    public var showLayoutBounds: Boolean = false
         set(value) {
             field = value
             getChildAt(0)?.let { (it as Owner).showLayoutBounds = value }
@@ -208,7 +223,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      *
      * This property should be set prior to first composition.
      */
-    var autoClearFocusBehavior: AutoClearFocusBehavior
+    public var autoClearFocusBehavior: AutoClearFocusBehavior
         get() =
             getTag(R.id.auto_clear_focus_behavior_tag) as? AutoClearFocusBehavior
                 ?: AutoClearFocusBehavior.Default
@@ -221,7 +236,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      * provide content. Initial composition will occur when the view becomes attached to a window or
      * when [createComposition] is called, whichever comes first.
      */
-    @Composable @UiComposable abstract fun Content()
+    @Composable @UiComposable public abstract fun Content()
 
     /**
      * Perform initial composition for this view. Once this method is called or the view becomes
@@ -237,7 +252,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      * For best results in composing while the [ComposeView] isn't attached, use the version of this
      * with [ComposeViewContext] as an argument.
      */
-    fun createComposition() {
+    public fun createComposition() {
         check(
             parentContext != null ||
                 isAttachedToWindow ||
@@ -269,7 +284,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      * @param composeViewContext The [ComposeViewContext] to use for the composition. The
      *   [ComposeViewContext.view] must be attached to the hierarchy.
      */
-    fun createComposition(composeViewContext: ComposeViewContext) {
+    public fun createComposition(composeViewContext: ComposeViewContext) {
         check(composeViewContext.view.isAttachedToWindow) {
             "createComposition requires the ComposeViewContext's view to be attached to a window."
         }
@@ -277,10 +292,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         ensureCompositionCreated()
     }
 
-    private var creatingComposition = false
-
     private fun checkAddView() {
-        if (!creatingComposition) {
+        if (!isCreatingComposition) {
             throw UnsupportedOperationException(
                 "Cannot add views to " +
                     "${javaClass.simpleName}; only Compose content is supported"
@@ -325,18 +338,21 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
             ?: cachedViewTreeCompositionContext?.get()?.takeIf { it.isAlive }
             ?: windowRecomposer.cacheIfAlive()
 
-    @OptIn(ExperimentalStdlibApi::class)
-    @Suppress("DEPRECATION") // Still using ViewGroup.setContent for now
     private fun ensureCompositionCreated() {
         if (composition == null) {
-            try {
-                creatingComposition = true
-                trace("Compose:initializeView") {
-                    val composeViewContext = this.composeViewContext ?: resolveComposeViewContext()
-                    composition = setContent(composeViewContext) { Content() }
+            synchronized(compositionLock) {
+                if (composition == null && !isCreatingComposition) {
+                    isCreatingComposition = true
+                    try {
+                        trace("Compose:initializeView") {
+                            val composeViewContext =
+                                this.composeViewContext ?: resolveComposeViewContext()
+                            composition = setContent(composeViewContext) { Content() }
+                        }
+                    } finally {
+                        isCreatingComposition = false
+                    }
                 }
-            } finally {
-                creatingComposition = false
             }
         }
     }
@@ -413,19 +429,21 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      * Dispose of the underlying composition and [requestLayout]. A new composition will be created
      * if [createComposition] is called or when needed to lay out this view.
      */
-    fun disposeComposition() {
-        val child = getChildAt(0) as? AndroidComposeView
-        child?.removeConnectionToComposeViewContext()
-        composition?.dispose()
-        composition = null
-        requestLayout()
+    public fun disposeComposition() {
+        synchronized(compositionLock) {
+            val child = getChildAt(0) as? AndroidComposeView
+            child?.removeConnectionToComposeViewContext()
+            composition?.dispose()
+            composition = null
+            requestLayout()
+        }
     }
 
     /**
      * `true` if this View is host to an active Compose UI composition. An active composition may
      * consume resources.
      */
-    val hasComposition: Boolean
+    public val hasComposition: Boolean
         get() = composition != null
 
     override fun onAttachedToWindow() {
@@ -491,8 +509,13 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         )
     }
 
-    final override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) =
-        internalOnLayout(changed, left, top, right, bottom)
+    final override fun onLayout(
+        changed: Boolean,
+        left: Int,
+        top: Int,
+        right: Int,
+        bottom: Int,
+    ): Unit = internalOnLayout(changed, left, top, right, bottom)
 
     internal open fun internalOnLayout(
         changed: Boolean,
@@ -600,7 +623,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
  * set up correctly as [androidx.activity.ComponentActivity], [androidx.fragment.app.Fragment] and
  * [androidx.navigation.NavController] will provide the correct values.
  */
-class ComposeView
+public class ComposeView
 @JvmOverloads
 constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
     AbstractComposeView(context, attrs, defStyleAttr) {
@@ -617,7 +640,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     }
 
     override fun getAccessibilityClassName(): CharSequence {
-        return javaClass.name
+        return "androidx.compose.ui.platform.ComposeView"
     }
 
     /**
@@ -625,7 +648,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      * view becomes attached to a window or when [createComposition] is called, whichever comes
      * first.
      */
-    fun setContent(content: @Composable () -> Unit) {
+    public fun setContent(content: @Composable () -> Unit) {
         shouldCreateCompositionOnAttachedToWindow = true
         this.content.value = content
         if (isAttachedToWindow || composeViewContext != null) {
@@ -634,7 +657,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     }
 
     /** Here to allow extension functions */
-    companion object
+    public companion object
 }
 
 /**
@@ -643,8 +666,16 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
  * updates. Only call this when no ComposeViews will ever need to handle insets over the lifetime of
  * the application. This should be called before the first [ComposeView] is created.
  */
-fun ComposeView.Companion.disableWindowInsetsRulers() {
-    androidx.compose.ui.disableWindowInsetsRulers()
+@Deprecated(
+    message = "Use WindowInsetsRulers.disable()",
+    replaceWith =
+        ReplaceWith(
+            expression = "WindowInsetsRulers.disable()",
+            imports = ["androidx.compose.ui.layout.WindowInsetsRulers"],
+        ),
+)
+public fun ComposeView.Companion.disableWindowInsetsRulers() {
+    WindowInsetsRulers.disable()
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -728,7 +759,7 @@ private fun View.findDepthToTag(tag: Int): Int {
  * @sample androidx.compose.ui.samples.ComposeViewContextUnattachedSample
  * @see View.composeViewContext
  */
-fun View.findViewTreeComposeViewContext(): ComposeViewContext? {
+public fun View.findViewTreeComposeViewContext(): ComposeViewContext? {
     return findViewTreeComposeViewRoot().composeViewContext
 }
 

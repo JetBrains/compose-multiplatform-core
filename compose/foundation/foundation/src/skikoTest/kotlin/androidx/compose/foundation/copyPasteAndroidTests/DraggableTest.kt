@@ -84,6 +84,7 @@ class DraggableTest {
         isDebugInspectorInfoEnabled = false
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun draggable_horizontalDrag() = runSkikoComposeUiTest {
         var total = 0f
@@ -123,6 +124,7 @@ class DraggableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun draggable_verticalDrag() = runSkikoComposeUiTest {
         var total = 0f
@@ -163,6 +165,7 @@ class DraggableTest {
     }
 
     @OptIn(ExperimentalTestApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun draggable_dragWithPrimaryMouseButton() = runSkikoComposeUiTest {
         var total = 0f
@@ -203,6 +206,7 @@ class DraggableTest {
     }
 
     @OptIn(ExperimentalTestApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun draggable_dragWithSecondaryMouseButton() = runSkikoComposeUiTest {
         var total = 0f
@@ -233,6 +237,7 @@ class DraggableTest {
         release(MouseButton.Secondary)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun draggable_verticalDrag_newState() = runSkikoComposeUiTest {
         var total = 0f
@@ -272,6 +277,7 @@ class DraggableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun draggable_startStop() = runSkikoComposeUiTest {
         var startTrigger = 0
@@ -300,6 +306,7 @@ class DraggableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun draggable_disabledWontCallLambda() = runSkikoComposeUiTest {
         var total = 0f
@@ -333,6 +340,7 @@ class DraggableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun draggable_velocityProxy() = runSkikoComposeUiTest {
         var velocityTriggered = 0f
@@ -358,6 +366,7 @@ class DraggableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun draggable_startWithoutSlop_ifAnimating() = runSkikoComposeUiTest {
         var total = 0f
@@ -379,6 +388,7 @@ class DraggableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun draggable_cancel_callsDragStop() = runSkikoComposeUiTest {
         var total = 0f
@@ -408,6 +418,7 @@ class DraggableTest {
 
     // regression test for b/176971558
     @OptIn(ExperimentalTestApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun draggable_immediateStart_callsStopWithoutSlop() = runSkikoComposeUiTest {
         var total = 0f
@@ -435,6 +446,7 @@ class DraggableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun draggable_callsDragStop_whenNewState() = runSkikoComposeUiTest {
         var total = 0f
@@ -465,6 +477,7 @@ class DraggableTest {
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun draggable_resumesNormally_whenInterruptedWithHigherPriority() = runSkikoComposeUiTest {
         kotlinx.coroutines.test.runTest(UnconfinedTestDispatcher()) {
@@ -511,7 +524,7 @@ class DraggableTest {
         }
     }
 
-
+    @Suppress("DEPRECATION")
     @Test
     fun draggable_noNestedDrag()= runSkikoComposeUiTest {
         var innerDrag = 0f
@@ -551,6 +564,7 @@ class DraggableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun draggable_interactionSource() = runSkikoComposeUiTest {
         val interactionSource = MutableInteractionSource()
@@ -600,6 +614,7 @@ class DraggableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun draggable_interactionSource_resetWhenDisposed() = runSkikoComposeUiTest {
         val interactionSource = MutableInteractionSource()
@@ -660,6 +675,7 @@ class DraggableTest {
     }
 
     @OptIn(ExperimentalTestApi::class)
+    @Suppress("DEPRECATION")
     @Test
     @Ignore // TODO: the test fails on skiko targets
     fun draggable_cancelMidDown_shouldContinueWithNextDown() = runSkikoComposeUiTest {
@@ -695,6 +711,7 @@ class DraggableTest {
         assertThat(total).isGreaterThan(0f)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     @Ignore // TODO: doesn't pass on skiko targets
     fun testInspectableValue() = runSkikoComposeUiTest {

@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.PlatformDragAndDropSource
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.platform.WindowInfo
+import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.semantics.SemanticsNode
@@ -225,7 +226,8 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             Job()
     )
 
-    private val surface = Surface.makeRasterN32Premul(width, height)
+    // Lazy on purpose: on JS Skia is only usable after onSkikoReady
+    private val surface by lazy { Surface.makeRasterN32Premul(width, height) }
     private val size = IntSize(width, height)
 
     @InternalComposeUiApi
@@ -259,21 +261,23 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
                 .plus(runTestContext)
                 .plus(testDispatcher)
 
-        // Note: on web this call returns immediately (it returns a Promise),
-        return runTest(
-            timeout = testTimeout,
-            context = combinedRunTestCoroutineContext
-        ) {
-            composeRootRegistry.withRegistry {
-                withScene {
-                    withRenderLoop {
-                        // MonotonicFrameClock is necessary. See the CL for details:
-                        // https://android-review.googlesource.com/c/platform/frameworks/support/+/3284298
-                        // > Anything that might result in animation may require the MonotonicFrameClock,
-                        // > and to get the timing right it should be the clock provided by the Recomposer's effect context
-                        // It's covered by SkikoComposeUiTestTest.canDriveAnimationsFromTest.
-                        frameRecomposer.withMonotonicFrameClock {
-                            block()
+        return onSkikoReady {
+            // Note: on web this call returns immediately (it returns a Promise),
+            runTest(
+                timeout = testTimeout,
+                context = combinedRunTestCoroutineContext
+            ) {
+                composeRootRegistry.withRegistry {
+                    withScene {
+                        withRenderLoop {
+                            // MonotonicFrameClock is necessary. See the CL for details:
+                            // https://android-review.googlesource.com/c/platform/frameworks/support/+/3284298
+                            // > Anything that might result in animation may require the MonotonicFrameClock,
+                            // > and to get the timing right it should be the clock provided by the Recomposer's effect context
+                            // It's covered by SkikoComposeUiTestTest.canDriveAnimationsFromTest.
+                            frameRecomposer.withMonotonicFrameClock {
+                                block()
+                            }
                         }
                     }
                 }
@@ -282,6 +286,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     }
 
     private inline fun <R> withScene(block: () -> R): R {
+        registerSkikoComposeImplementation()
         runOnUiThread(::createScene)
         try {
             return block()
@@ -290,6 +295,10 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             // After the scene is closed, run all left foreground TestDispatchEvent.
             // They might've been added outside the runTest call, using the provided coroutineDispatcher:
             compositionCoroutineDispatcher.scheduler.advanceUntilIdle()
+            // TODO: re-enable once tests that register the backend asynchronously (e.g. AWT
+            //  ComposePanel/ComposeWindow via ComposeContainer on the EDT) no longer rely on the
+            //  registration persisting across tests.
+            // clearSkikoComposeImplementation()
             uncaughtExceptionHandler.throwUncaught()
         }
     }

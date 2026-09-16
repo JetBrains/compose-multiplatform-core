@@ -563,19 +563,17 @@ private class AccessibilityElement(
     private val scrollableProtocol = objc_getProtocol("UIFocusItemScrollableContainer")!!
     override fun conformsToProtocol(aProtocol: Protocol?): Boolean {
         if (protocol_isEqual(proto = aProtocol, other = scrollableProtocol)) {
-            return node.canScroll
+            return getIfAlive { node.canScroll } ?: false
         }
         return super.conformsToProtocol(aProtocol)
     }
 
     val key: AccessibilityElementKey get() = node.key
 
-    private var disposed = false
-
     /**
      * Indicates whether this element is still present in the tree.
      */
-    private val isAlive get() = !disposed && node.semanticsNode.isValid
+    private val isAlive get() = isInitialized && node.semanticsNode.isValid
 
     init {
         setAccessibilityElements(children + nodeSemanticsElements())
@@ -586,7 +584,7 @@ private class AccessibilityElement(
     }
 
     private fun nodeSemanticsElements(): List<Any> =
-        getOrElse(CachedAccessibilityPropertyKeys.accessibilityElements) {
+        getCachedIfAlive(CachedAccessibilityPropertyKeys.accessibilityElements, emptyList()) {
             listOfNotNull(node.accessibilityInteropView?.also {
                 it.actualAccessibilityContainer = this
             })
@@ -610,11 +608,11 @@ private class AccessibilityElement(
     }
 
     fun dispose() {
-        check(!disposed) {
+        check(this.isInitialized) {
             "AccessibilityElement is already disposed"
         }
 
-        disposed = true
+        isInitialized = false
         setAccessibilityContainer(null)
         setAccessibilityElements(emptyList<Any>())
         if (available(OS.Ios to OSVersion(major = 17))) {
@@ -623,17 +621,23 @@ private class AccessibilityElement(
         cachedProperties.clear()
     }
 
-    /**
-     * Returns the value for the given [key] from the cache if it's present, otherwise computes the
-     * value using the given [block] and caches it.
-     */
-    @Suppress("UNCHECKED_CAST") // cast is safe because the set value is constrained by the key T
-    private inline fun <T> getOrElse(
+    private inline fun <T> getCachedIfAlive(
         key: CachedAccessibilityPropertyKey<T>,
-        crossinline block: () -> T
-    ): T {
+        defaultValue: T,
+        crossinline getValue: () -> T
+    ): T = getCachedIfAlive(key, getValue) ?: defaultValue
+
+    @Suppress("UNCHECKED_CAST") // cast is safe because the set value is constrained by the key T
+    private inline fun <T> getCachedIfAlive(
+        key: CachedAccessibilityPropertyKey<T>,
+        crossinline getValue: () -> T
+    ): T? {
+        if (!isAlive) {
+            return null
+        }
+
         val value = cachedProperties.getOrElse(key) {
-            val newValue = block()
+            val newValue = getValue()
             cachedProperties[key] = newValue
             newValue
         }
@@ -641,104 +645,97 @@ private class AccessibilityElement(
         return value as T
     }
 
+    private inline fun <T> getIfAlive(crossinline block: () -> T?): T? {
+        if (!isAlive) {
+            return null
+        }
+        return block()
+    }
+
+    private inline fun runIfAlive(crossinline block: () -> Unit) {
+        if (!isAlive) {
+            return
+        }
+        return block()
+    }
+
     override fun accessibilityLabel(): String? = accessibilityAttributedLabel()?.string
 
     override fun accessibilityAttributedLabel(): NSAttributedString? =
-        getOrElse(CachedAccessibilityPropertyKeys.accessibilityAttributedLabel) {
+        getCachedIfAlive(CachedAccessibilityPropertyKeys.accessibilityAttributedLabel) {
             makeAccessibilityAttributedLabel()
         }
 
     override fun accessibilityValue(): String? = accessibilityAttributedValue()?.string
 
     override fun accessibilityAttributedValue(): NSAttributedString? =
-        getOrElse(CachedAccessibilityPropertyKeys.accessibilityAttributedValue) {
+        getCachedIfAlive(CachedAccessibilityPropertyKeys.accessibilityAttributedValue) {
             node.accessibilityAttributedValue
         }
 
-    override fun accessibilityElementDidBecomeFocused() {
-        if (!isAlive) {
-            return
-        }
-
+    override fun accessibilityElementDidBecomeFocused() = runIfAlive {
         node.accessibilityElementDidBecomeFocused()
     }
 
-    override fun accessibilityElementDidLoseFocus() {
+    override fun accessibilityElementDidLoseFocus() = runIfAlive {
         node.accessibilityElementDidLoseFocus()
     }
 
-    override fun accessibilityActivate(): Boolean {
-        if (!isAlive) {
-            return false
-        }
+    override fun accessibilityActivate(): Boolean = getIfAlive {
+        node.accessibilityActivate()
+    } ?: false
 
-        return node.accessibilityActivate()
-    }
-
-    override fun accessibilityIncrement() {
-        if (!isAlive) {
-            return
-        }
-
+    override fun accessibilityIncrement() = runIfAlive {
         node.accessibilityIncrement()
     }
 
-    override fun accessibilityDecrement() {
-        if (!isAlive) {
-            return
-        }
-
+    override fun accessibilityDecrement() = runIfAlive {
         node.accessibilityDecrement()
     }
 
-    override fun accessibilityScroll(direction: UIAccessibilityScrollDirection): Boolean {
-        if (!isAlive) {
-            return false
-        }
+    override fun accessibilityScroll(direction: UIAccessibilityScrollDirection): Boolean =
+        getIfAlive {
+            node.accessibilityScroll(direction)
+        } ?: false
 
-        return node.accessibilityScroll(direction)
-    }
-
-    override fun isAccessibilityElement(): Boolean {
+    override fun isAccessibilityElement(): Boolean = getIfAlive {
         // Node visibility changes don't trigger accessibility semantic recalculation.
         // This value should not be cached. See [SemanticsNode.isScreenReaderFocusable()]
-        return isAlive && node.isAccessibilityElement
-    }
+        node.isAccessibilityElement
+    } ?: false
 
     override fun accessibilityIdentifier(): String? =
-        getOrElse(CachedAccessibilityPropertyKeys.accessibilityIdentifier) {
+        getCachedIfAlive(CachedAccessibilityPropertyKeys.accessibilityIdentifier) {
             node.accessibilityIdentifier
         }
 
     override fun accessibilityHint(): String? =
-        getOrElse(CachedAccessibilityPropertyKeys.accessibilityHint) {
+        getCachedIfAlive(CachedAccessibilityPropertyKeys.accessibilityHint) {
             node.accessibilityHint
         }
 
     override fun accessibilityCustomActions(): List<UIAccessibilityCustomAction> =
-        getOrElse(CachedAccessibilityPropertyKeys.accessibilityCustomActions) {
+        getCachedIfAlive(CachedAccessibilityPropertyKeys.accessibilityCustomActions, emptyList()) {
             node.accessibilityCustomActions
         }
 
     override fun accessibilityTraits(): UIAccessibilityTraits =
-        getOrElse(CachedAccessibilityPropertyKeys.accessibilityTraits) {
+        getCachedIfAlive(CachedAccessibilityPropertyKeys.accessibilityTraits, UIAccessibilityTraitNone) {
             node.accessibilityTraits
         }
 
-    override fun accessibilityPerformEscape(): Boolean {
-        if (!isAlive) {
-            return false
-        }
-
-        return if (node.accessibilityPerformEscape()) {
+    override fun accessibilityPerformEscape(): Boolean = getIfAlive {
+        if (node.accessibilityPerformEscape()) {
             true
         } else {
             super.accessibilityPerformEscape()
         }
-    }
+    } ?: false
 
     override fun accessibilityContainerType(): UIAccessibilityContainerType =
-        node.accessibilityContainerType
+        getIfAlive {
+            node.accessibilityContainerType
+        } ?: UIAccessibilityContainerTypeNone
 
     private fun debugContainmentChain() = debugContainmentChain(this)
 
@@ -759,16 +756,12 @@ private class AccessibilityElement(
 
     // UIFocusItemProtocol & UIFocusItemContainerProtocol
 
-    override fun canBecomeFocused(): Boolean = isAlive && node.canBecomeFocused
+    override fun canBecomeFocused(): Boolean = getIfAlive { node.canBecomeFocused } ?: false
 
     override fun didUpdateFocusInContext(
         context: UIFocusUpdateContext,
         withAnimationCoordinator: UIFocusAnimationCoordinator
-    ) {
-        if (!isAlive) {
-            return
-        }
-
+    ) = runIfAlive {
         if (context.previouslyFocusedItem === this) {
             node.didResignFocused()
         }
@@ -780,23 +773,27 @@ private class AccessibilityElement(
     override fun focusItemContainer(): UIFocusItemContainerProtocol = this
 
     var focusFrame: CValue<CGRect> = CGRectZero.readValue()
-    override fun frame(): CValue<CGRect> = if (USE_HIERARCHICAL_COORDINATE_SPACE) {
-        focusFrame
-    } else {
-        convertRect(rect = bounds(), toCoordinateSpace = mediator.view)
-    }
+    override fun frame(): CValue<CGRect> = getIfAlive {
+        if (USE_HIERARCHICAL_COORDINATE_SPACE) {
+            focusFrame
+        } else {
+            convertRect(rect = bounds(), toCoordinateSpace = mediator.view)
+        }
+    } ?: CGRectZero.readValue()
 
-    override fun focusEffectRect(): CValue<CGRect> = convertRect(rect = bounds, toCoordinateSpace = mediator.view)
+    override fun focusEffectRect(): CValue<CGRect> = getIfAlive {
+        convertRect(rect = bounds, toCoordinateSpace = mediator.view)
+    } ?: CGRectZero.readValue()
 
-    override fun bounds(): CValue<CGRect> {
+    override fun bounds(): CValue<CGRect> = getIfAlive {
         val offset = contentOffset()
-        return CGRectMake(
+        CGRectMake(
             x = offset.useContents { x },
             y = offset.useContents { y },
             width = focusFrame.useContents { size.width },
             height = focusFrame.useContents { size.height }
         )
-    }
+    } ?: CGRectZero.readValue()
 
     override fun parentFocusEnvironment(): UIFocusEnvironmentProtocol? =
         accessibilityContainer as? UIFocusEnvironmentProtocol
@@ -806,6 +803,9 @@ private class AccessibilityElement(
 
     private var updateFocusScheduled = false
     override fun setNeedsFocusUpdate() {
+        if (!isAlive) {
+            return
+        }
         if (updateFocusScheduled) {
             return
         }
@@ -816,18 +816,19 @@ private class AccessibilityElement(
         }
     }
 
-    override fun updateFocusIfNeeded() {
+    override fun updateFocusIfNeeded() = runIfAlive {
         UIFocusSystem.focusSystemForEnvironment(environment = this)?.updateFocusIfNeeded()
     }
 
     override fun shouldUpdateFocusInContext(context: UIFocusUpdateContext): Boolean = true
 
-    override fun coordinateSpace(): UICoordinateSpaceProtocol =
+    override fun coordinateSpace(): UICoordinateSpaceProtocol = getIfAlive {
         if (USE_HIERARCHICAL_COORDINATE_SPACE) {
             this
         } else {
             mediator.view
         }
+    } ?: this
 
     override fun focusItemsInRect(rect: CValue<CGRect>): List<*> = accessibilityElements?.filter {
         it is UIFocusItemProtocol && CGRectIntersectsRect(it.frame, rect)
@@ -835,17 +836,21 @@ private class AccessibilityElement(
 
     override fun isTransparentFocusItem(): Boolean = true
 
-    override fun drawsFocusRingWhenChildrenFocused(): Boolean = node.canScroll
+    override fun drawsFocusRingWhenChildrenFocused(): Boolean =
+        getIfAlive { node.canScroll } ?: false
 
     // Scrolling
 
-    override fun visibleSize(): CValue<CGSize> = node.scrollVisibleSize
+    override fun visibleSize(): CValue<CGSize> =
+        getIfAlive { node.scrollVisibleSize } ?: CGSizeZero.readValue()
 
-    override fun contentSize(): CValue<CGSize> = node.scrollContentSize
+    override fun contentSize(): CValue<CGSize> =
+        getIfAlive { node.scrollContentSize } ?: CGSizeZero.readValue()
 
-    override fun contentOffset(): CValue<CGPoint> = node.scrollContentOffset
+    override fun contentOffset(): CValue<CGPoint> =
+        getIfAlive { node.scrollContentOffset } ?: CGPointZero.readValue()
 
-    override fun setContentOffset(contentOffset: CValue<CGPoint>) {
+    override fun setContentOffset(contentOffset: CValue<CGPoint>) = runIfAlive {
         val currentContentOffset = contentOffset()
         val delta = CGPointMake(
             x = contentOffset.useContents { x } - currentContentOffset.useContents { x },
@@ -876,53 +881,59 @@ private class AccessibilityElement(
     override fun convertPoint(
         point: CValue<CGPoint>,
         toCoordinateSpace: UICoordinateSpaceProtocol
-    ): CValue<CGPoint> {
+    ): CValue<CGPoint> = getIfAlive {
         val globalPoint = convertPointToGlobal(point)
-        return when (toCoordinateSpace) {
+        when (toCoordinateSpace) {
             is AccessibilityElement -> toCoordinateSpace.convertPointFromGlobal(globalPoint)
             is UIView -> toCoordinateSpace.convertPoint(globalPoint, fromView = null)
-            else -> mediator.view.window!!.convertPoint(globalPoint, toCoordinateSpace = toCoordinateSpace)
+            // The view is detached from the window during transitions. The point is already
+            // in the window coordinate space, so return it as is.
+            else -> mediator.view.window?.convertPoint(globalPoint, toCoordinateSpace = toCoordinateSpace)
+                ?: globalPoint
         }
-    }
+    } ?: point
 
     @ObjCSignatureOverride
     override fun convertPoint(
         point: CValue<CGPoint>,
         fromCoordinateSpace: UICoordinateSpaceProtocol
-    ): CValue<CGPoint> {
+    ): CValue<CGPoint> = getIfAlive {
         val globalPoint = when (fromCoordinateSpace) {
             is AccessibilityElement -> fromCoordinateSpace.convertPointToGlobal(point)
             is UIView -> fromCoordinateSpace.convertPoint(point, toView = null)
-            else -> mediator.view.window!!.convertPoint(point, fromCoordinateSpace = fromCoordinateSpace)
+            else -> mediator.view.window?.convertPoint(point, fromCoordinateSpace = fromCoordinateSpace)
+                ?: point
         }
-        return convertPointFromGlobal(globalPoint)
-    }
+        convertPointFromGlobal(globalPoint)
+    } ?: point
 
     @ObjCSignatureOverride
     override fun convertRect(
         rect: CValue<CGRect>,
         toCoordinateSpace: UICoordinateSpaceProtocol
-    ): CValue<CGRect> {
+    ): CValue<CGRect> = getIfAlive {
         val globalRect = convertRectToGlobal(rect)
-        return when (toCoordinateSpace) {
+        when (toCoordinateSpace) {
             is AccessibilityElement -> toCoordinateSpace.convertRectFromGlobal(globalRect)
             is UIView -> toCoordinateSpace.convertRect(globalRect, fromView = null)
-            else -> mediator.view.window!!.convertRect(globalRect, toCoordinateSpace = toCoordinateSpace)
+            else -> mediator.view.window?.convertRect(globalRect, toCoordinateSpace = toCoordinateSpace)
+                ?: globalRect
         }
-    }
+    } ?: rect
 
     @ObjCSignatureOverride
     override fun convertRect(
         rect: CValue<CGRect>,
         fromCoordinateSpace: UICoordinateSpaceProtocol
-    ): CValue<CGRect> {
+    ): CValue<CGRect> = getIfAlive {
         val globalRect = when (fromCoordinateSpace) {
             is AccessibilityElement -> fromCoordinateSpace.convertRectToGlobal(rect)
             is UIView -> fromCoordinateSpace.convertRect(rect, toView = null)
-            else -> mediator.view.window!!.convertRect(rect, fromCoordinateSpace = fromCoordinateSpace)
+            else -> mediator.view.window?.convertRect(rect, fromCoordinateSpace = fromCoordinateSpace)
+                ?: rect
         }
-        return convertRectFromGlobal(globalRect)
-    }
+        convertRectFromGlobal(globalRect)
+    } ?: rect
 
     private fun convertPointToGlobal(point: CValue<CGPoint>): CValue<CGPoint> {
         var globalPoint = point
@@ -1396,10 +1407,6 @@ internal class AccessibilityMediator(
         refocusKeyboardElementIfNeeded()
         view.accessibilityElements = listOf<NSObject>()
 
-        for (element in accessibilityElementsMap.values) {
-            element.dispose()
-        }
-
         cleanUp()
     }
 
@@ -1411,6 +1418,10 @@ internal class AccessibilityMediator(
         isAccessibilityActive = false
 
         root.element = null
+
+        for (element in accessibilityElementsMap.values) {
+            element.dispose()
+        }
         accessibilityElementsMap.clear()
     }
 

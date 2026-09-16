@@ -87,7 +87,6 @@ import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.Ignore
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -98,7 +97,7 @@ import org.junit.runner.RunWith
 // TODO(MNUZEN): split into filling / saving etc. when more of Autofill goes live and more
 // data types are supported.
 class PerformAndroidAutofillManagerTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
     private val height = 200.dp
     private val width = 200.dp
 
@@ -1953,13 +1952,12 @@ class PerformAndroidAutofillManagerTest {
         val toggleTag = "toggle_id"
 
         val newToggleValue = false
-        var checked = true
-        val onCheckedChange: (Boolean) -> Unit = { checked = it }
+        var checked by mutableStateOf(true)
 
         rule.setContent {
             view = LocalView.current
             Box(
-                Modifier.toggleable(value = checked, onValueChange = onCheckedChange)
+                Modifier.toggleable(value = checked, onValueChange = { checked = it })
                     .testTag(toggleTag)
             )
         }

@@ -87,19 +87,17 @@ import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assume.assumeNotNull
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalMaterial3Api::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class ExposedDropdownMenuTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val TFTag = "TextFieldTag"
     private val TrailingIconTag = "TrailingIconTag"
@@ -337,6 +335,26 @@ class ExposedDropdownMenuTest {
 
         // Menu still is not displayed
         rule.onNodeWithTag(EDMTag).assertDoesNotExist()
+    }
+
+    @Test
+    fun edm_editable_focusesTextField_whenClickedViaSemantics() {
+        rule.setMaterialContent(lightColorScheme()) {
+            var expanded by remember { mutableStateOf(false) }
+            ExposedDropdownMenuForTest(
+                expanded = expanded,
+                onExpandChange = {
+                    // Simulate autocomplete where empty text prevents expansion.
+                },
+                editable = true,
+            )
+        }
+
+        // Click on the TextField
+        rule.onNodeWithTag(TFTag).performClick()
+
+        // TextField is focused
+        rule.onNodeWithTag(TFTag).assertIsFocused()
     }
 
     @Test
@@ -798,7 +816,6 @@ class ExposedDropdownMenuTest {
         // Should not have crashed.
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun edm_withScrolledContent() {
         lateinit var scrollState: ScrollState
@@ -922,6 +939,28 @@ class ExposedDropdownMenuTest {
                     windowSize.height + topWindowInsets - verticalMargin - popupSize.height,
                 )
             )
+    }
+
+    @Test
+    fun edm_positionProvider_contentExceedsWindowHeight() {
+        val density = Density(1f)
+        val anchorSize = IntSize(width = 200, height = 50)
+        val popupSize = IntSize(width = 200, height = 300)
+        val windowSize = IntSize(width = 500, height = 200)
+        val layoutDirection = LayoutDirection.Ltr
+
+        val edmPositionProvider =
+            ExposedDropdownMenuPositionProvider(density = density, topWindowInsets = 0)
+
+        val position =
+            edmPositionProvider.calculatePosition(
+                anchorBounds = IntRect(size = anchorSize, offset = IntOffset(0, 50)),
+                windowSize = windowSize,
+                popupContentSize = popupSize,
+                layoutDirection = layoutDirection,
+            )
+
+        assertThat(position.y).isEqualTo((windowSize.height - popupSize.height) / 2)
     }
 
     @Composable

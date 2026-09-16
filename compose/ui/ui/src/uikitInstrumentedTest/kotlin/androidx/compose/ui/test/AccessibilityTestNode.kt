@@ -62,6 +62,8 @@ import platform.UIKit.UIAccessibilityTraitTabBar
 import platform.UIKit.UIAccessibilityTraitToggleButton
 import platform.UIKit.UIAccessibilityTraitUpdatesFrequently
 import platform.UIKit.UIAccessibilityTraits
+import platform.UIKit.UITraitEnvironmentLayoutDirection
+import platform.UIKit.UITraitEnvironmentLayoutDirectionRightToLeft
 import platform.UIKit.UIView
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
@@ -211,7 +213,7 @@ private val allContainerTypes = mapOf(
  * within a UI hierarchy. This class captures various accessibility properties of UI components
  * and structures them into a tree.
  */
-internal data class AccessibilityTestNode(
+internal class AccessibilityTestNode(
     var isAccessibilityElement: Boolean? = null,
     var identifier: String? = null,
     var label: String? = null,
@@ -225,8 +227,37 @@ internal data class AccessibilityTestNode(
     var element: NSObject? = null,
     var parent: AccessibilityTestNode? = null,
 ) {
+    fun copyWith(children: List<AccessibilityTestNode>?) = AccessibilityTestNode(
+        isAccessibilityElement = isAccessibilityElement,
+        identifier = identifier,
+        label = label,
+        accessibilityLabel = accessibilityLabel,
+        value = value,
+        accessibilityValue = accessibilityValue,
+        frame = frame,
+        containerType = containerType,
+        children = children,
+        traits = traits,
+        element = element,
+    ).also { copy -> children?.forEach { it.parent = copy } }
+
     fun node(builder: AccessibilityTestNode.() -> Unit) {
         children = (children ?: emptyList()) + AccessibilityTestNode().apply(builder)
+    }
+
+    /** Adds a group of nodes in traversal order for [layoutDirection]. */
+    fun node(
+        layoutDirection: UITraitEnvironmentLayoutDirection,
+        builder: AccessibilityTestNode.() -> Unit
+    ) {
+        val nodes = AccessibilityTestNode().apply(builder).children.orEmpty()
+        children = (children ?: emptyList()) + if (
+            layoutDirection == UITraitEnvironmentLayoutDirectionRightToLeft
+        ) {
+            nodes.reversed()
+        } else {
+            nodes
+        }
     }
 
     fun traits(vararg trait: UIAccessibilityTraits) {
@@ -319,6 +350,25 @@ internal data class AccessibilityTestNode(
 
         return builder.toString()
     }
+
+    override fun toString(): String =
+        "AccessibilityTestNode(" +
+            "isAccessibilityElement=$isAccessibilityElement, " +
+            "identifier=$identifier, " +
+            "label=$label, " +
+            "accessibilityLabel=$accessibilityLabel, " +
+            "value=$value, " +
+            "accessibilityValue=$accessibilityValue, " +
+            "frame=$frame, " +
+            "containerType=$containerType, " +
+            "traits=$traits, " +
+            "element=$element, " +
+            "children=$children, " +
+            "parent=${parent?.shallowToString()}" +
+            ")"
+
+    private fun shallowToString(): String =
+        "AccessibilityTestNode(identifier=$identifier, label=$label, frame=$frame)"
 }
 
 /**
@@ -337,7 +387,7 @@ internal fun AccessibilityTestNode.normalized(): AccessibilityTestNode? {
     } ?: emptyList()
 
     return if (hasAccessibilityComponents || normalizedChildren.count() > 1) {
-        this.copy(children = normalizedChildren)
+        this.copyWith(children = normalizedChildren)
     } else if (normalizedChildren.count() == 1) {
         normalizedChildren.single()
     } else {

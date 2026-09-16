@@ -42,6 +42,7 @@ class ComposeWindowLifecycleTest : OnCanvasTests {
         val composeWindow = ComposeWindow(
             canvas = canvas,
             rootNode = getShadowRoot(),
+            viewportContainer = document.body!!,
             layerRoot = document.createElement("div") as HTMLElement,
             interopContainerElement = document.createElement("div") as HTMLDivElement,
             a11yContainerElement = null,

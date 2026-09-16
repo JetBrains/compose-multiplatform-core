@@ -749,7 +749,7 @@ class RetainTests {
             recomposeScope = currentRecomposeScope
             if (includeContent) {
                 LocalRetainedValuesStoreProvider(store) {
-                    @Suppress("UnusedVariable")
+                    @Suppress("UnusedVariable", "UNUSED_VARIABLE")
                     val retained = retain { CountingRetainObject().also { factoryResults += it } }
                 }
             }
@@ -796,7 +796,7 @@ class RetainTests {
             recomposeScope = currentRecomposeScope
             val content = remember {
                 movableContentOf {
-                    @Suppress("UnusedVariable")
+                    @Suppress("UnusedVariable", "UNUSED_VARIABLE")
                     val retained = retain { CountingRetainObject().also { factoryResults += it } }
                 }
             }
@@ -846,7 +846,7 @@ class RetainTests {
             recomposeScope = currentRecomposeScope
             val content = remember {
                 movableContentOf {
-                    @Suppress("UnusedVariable")
+                    @Suppress("UnusedVariable", "UNUSED_VARIABLE")
                     val retained = retain { CountingRetainObject().also { factoryResults += it } }
                 }
             }
@@ -1424,7 +1424,7 @@ class RetainTests {
         }
 
         var expectedAText = "A:0"
-        var expectedBText = "B:1"
+        val expectedBText = "B:1"
         validate {
             if (includeA) Text(expectedAText)
             if (includeB) Text(expectedBText)
@@ -1787,6 +1787,54 @@ class RetainTests {
             events,
         )
         assertFalse(store.isRetainingExitedValues)
+    }
+
+    @Test
+    fun provideRetainedValuesStore_withReturnPassthrough() = compositionTest {
+        val store = ManagedRetainedValuesStore()
+        var retainCount = 0
+        var rememberCount = 0
+        var capturedValue by mutableStateOf(0)
+        var showContent by mutableStateOf(true)
+        var invocations = 0
+        compose {
+            if (showContent) {
+                val result =
+                    withLocalRetainedValuesStore(store) {
+                        val retained = retain { retainCount++ }
+                        val remembered = remember { rememberCount++ }
+                        val captured = capturedValue
+
+                        "Retain: $retained, Remembered: $remembered, " +
+                            "Captured: $captured, Invocations: ${invocations++}"
+                    }
+
+                Text(result)
+            }
+        }
+
+        validate { Text("Retain: 0, Remembered: 0, Captured: 0, Invocations: 0") }
+
+        capturedValue++
+        advance()
+        validate { Text("Retain: 0, Remembered: 0, Captured: 1, Invocations: 1") }
+
+        showContent = false
+        advance()
+        validate {}
+
+        showContent = true
+        advance()
+        validate { Text("Retain: 0, Remembered: 1, Captured: 1, Invocations: 2") }
+
+        store.disableRetainingExitedValues()
+        showContent = false
+        advance()
+        validate {}
+
+        showContent = true
+        advance()
+        validate { Text("Retain: 1, Remembered: 2, Captured: 1, Invocations: 3") }
     }
 
     private inline fun <reified T : Throwable> assertThrows(

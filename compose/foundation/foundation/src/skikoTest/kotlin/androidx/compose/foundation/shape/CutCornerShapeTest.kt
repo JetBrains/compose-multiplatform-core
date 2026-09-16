@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.shape
 
+import androidx.compose.foundation.SkikoComposeTestBase
 import androidx.compose.foundation.assertThat
 import androidx.compose.foundation.isEqualTo
 import androidx.compose.foundation.isFalse
@@ -33,7 +34,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class CutCornerShapeTest {
+class CutCornerShapeTest : SkikoComposeTestBase() {
 
     private val density = Density(2f)
     private val size = Size(100.0f, 150.0f)

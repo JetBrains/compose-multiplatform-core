@@ -66,6 +66,7 @@ import kotlin.test.Test
 @OptIn(ExperimentalFoundationApi::class, ExperimentalTestApi::class)
 class LazyLayoutTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun recompositionWithTheSameInputDoesntCauseRemeasure() = runSkikoComposeUiTest {
         val counter = mutableStateOf(0)
@@ -101,6 +102,7 @@ class LazyLayoutTest {
         runOnIdle { assertThat(remeasureCount).isEqualTo(1) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun measureAndPlaceTwoItems() = runSkikoComposeUiTest {
         val itemProvider =
@@ -124,6 +126,7 @@ class LazyLayoutTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun measureAndPlaceMultipleLayoutsInOneItem() = runSkikoComposeUiTest {
         val itemProvider =
@@ -150,6 +153,7 @@ class LazyLayoutTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun updatingitemProvider() = runSkikoComposeUiTest {
         var itemProvider by
@@ -180,6 +184,7 @@ class LazyLayoutTest {
         onNodeWithTag("1").assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun stateBaseditemProvider() = runSkikoComposeUiTest {
         var itemCount by mutableStateOf(1)
@@ -213,6 +218,7 @@ class LazyLayoutTest {
         assertThat(getDefaultLazyLayoutKey(0)).isNotEqualTo(0)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun prefetchItem() = runSkikoComposeUiTest {
         val constraints = Constraints.fixed(50, 50)
@@ -262,6 +268,7 @@ class LazyLayoutTest {
         runOnIdle { assertThat(measureCount).isEqualTo(1) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun prefetchItem_reportMeasuredSizeAfterPremeasure() = runSkikoComposeUiTest {
         val constraints = Constraints.fixed(50, 50)
@@ -306,6 +313,7 @@ class LazyLayoutTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun prefetchItemWithContentType() = runSkikoComposeUiTest {
         val constraints = Constraints.fixed(50, 50)
@@ -355,6 +363,7 @@ class LazyLayoutTest {
         runOnIdle { assertThat(measureCount).isEqualTo(1) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun cancelPrefetchedItem() = runSkikoComposeUiTest {
         var composed = false
@@ -383,6 +392,7 @@ class LazyLayoutTest {
         runOnIdle { assertThat(composed).isFalse() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun prefetchItemWithCustomExecutor() = runSkikoComposeUiTest {
         val itemProvider =
@@ -467,6 +477,7 @@ class LazyLayoutTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun keptForReuseItemIsDisposedWhenCanceled() = runSkikoComposeUiTest {
         val needChild = mutableStateOf(true)
@@ -496,6 +507,7 @@ class LazyLayoutTest {
         runOnIdle { assertThat(composed).isFalse() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun nodeIsReusedWithoutExtraRemeasure() = runSkikoComposeUiTest {
         var indexToCompose by mutableStateOf<Int?>(0)
@@ -536,6 +548,7 @@ class LazyLayoutTest {
     }
 
     @Ignore // TODO(b/369188686)
+    @Suppress("DEPRECATION")
     @Test
     fun nodeIsReusedWhenRemovedFirst() = runSkikoComposeUiTest {
         var itemCount by mutableStateOf(1)
@@ -575,6 +588,7 @@ class LazyLayoutTest {
         runOnIdle { assertThat(remeasuresCount).isEqualTo(1) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun skippingItemBlockWhenKeyIsObservableButDidntChange() = runSkikoComposeUiTest {
         val stateList = mutableStateListOf(0)
@@ -609,6 +623,7 @@ class LazyLayoutTest {
         runOnIdle { assertThat(itemCalls).isEqualTo(1) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun subcomposeNodeContentIsResetWhenReused() = runSkikoComposeUiTest {
         var indexToCompose by mutableStateOf(0)

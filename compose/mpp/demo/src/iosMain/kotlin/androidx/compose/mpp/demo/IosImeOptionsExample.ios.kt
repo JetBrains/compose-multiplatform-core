@@ -229,7 +229,8 @@ val IosImeOptionsExample = Screen.Selection(
     IosImeOptionsAutocapitalizationTypeExample,
     IosImeOptionsAutocorrectionTypeExample,
     IosImeOptionsInputViewExample,
-    IosImeOptionsWritingToolsBehaviorExample
+    IosImeOptionsWritingToolsBehaviorExample,
+    IosImeOptionsSpellCheckingExample
 )
 
 @Composable

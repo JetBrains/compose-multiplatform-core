@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.test.partialgesturescope
 
-import android.os.SystemClock.sleep
 import androidx.compose.testutils.expectError
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventType.Companion.Move
@@ -36,7 +35,6 @@ import androidx.compose.ui.test.util.assertTimestampsAreIncreasing
 import androidx.compose.ui.test.util.verify
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -51,7 +49,7 @@ class SendMoveToTest {
         private val moveToPosition2 = Offset(21f, 21f)
     }
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val recorder = MultiPointerInputRecorder()
 
@@ -66,7 +64,12 @@ class SendMoveToTest {
     fun onePointer() {
         // When we inject a down event followed by a move event
         rule.partialGesture { down(downPosition1) }
-        sleep(20) // (with some time in between)
+        // Since this gesture is split across separate input blocks, we must manually advance
+        // the clock between them. By default, advanceTimeBy rounds up durations to the nearest
+        // multiple of the frame duration (16ms), which would cause the 20ms delay to become a
+        // 32ms delay. Adding ignoreFrameDuration = true ensures that the clock advances by exactly
+        // 20ms.
+        rule.mainClock.advanceTimeBy(20, ignoreFrameDuration = true)
         rule.partialGesture { moveTo(moveToPosition1) }
 
         rule.runOnIdle {
@@ -78,7 +81,7 @@ class SendMoveToTest {
                 var t = events[0].getPointer(0).timestamp
                 val pointerId = events[0].getPointer(0).id
 
-                t += eventPeriodMillis
+                t += 20 + eventPeriodMillis
                 assertThat(events[1].pointerCount).isEqualTo(1)
                 events[1].getPointer(0).verify(t, pointerId, true, moveToPosition1, Touch, Move)
             }
@@ -123,7 +126,12 @@ class SendMoveToTest {
         // When we inject two down events followed by one move events
         rule.partialGesture { down(1, downPosition1) }
         rule.partialGesture { down(2, downPosition2) }
-        sleep(20) // (with some time in between)
+        // Since this gesture is split across separate input blocks, we must manually advance
+        // the clock between them. By default, advanceTimeBy rounds up durations to the nearest
+        // multiple of the frame duration (16ms), which would cause the 20ms delay to become a
+        // 32ms delay. Adding ignoreFrameDuration = true ensures that the clock advances by exactly
+        // 20ms.
+        rule.mainClock.advanceTimeBy(20, ignoreFrameDuration = true)
         rule.partialGesture { movePointerTo(1, moveToPosition1) }
         rule.partialGesture { movePointerTo(2, moveToPosition2) }
         rule.partialGesture { move() }
@@ -138,7 +146,7 @@ class SendMoveToTest {
                 val pointerId1 = events[0].getPointer(0).id
                 val pointerId2 = events[1].getPointer(1).id
 
-                t += eventPeriodMillis
+                t += 20 + eventPeriodMillis
                 assertThat(events[2].pointerCount).isEqualTo(2)
                 events[2].getPointer(0).verify(t, pointerId1, true, moveToPosition1, Touch, Move)
                 events[2].getPointer(1).verify(t, pointerId2, true, moveToPosition2, Touch, Move)

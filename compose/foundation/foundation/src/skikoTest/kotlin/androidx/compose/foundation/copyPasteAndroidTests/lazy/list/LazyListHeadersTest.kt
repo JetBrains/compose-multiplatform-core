@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.copyPasteAndroidTests.lazy.list
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -47,11 +46,12 @@ import kotlinx.coroutines.launch
 import kotlinx.test.IgnoreJsTarget
 import kotlinx.test.IgnoreWasmTarget
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalTestApi::class)
+@OptIn(ExperimentalTestApi::class)
 class LazyListHeadersTest {
 
     private val LazyListTag = "LazyList"
 
+    @Suppress("DEPRECATION")
     @Test
     fun lazyColumnShowsHeader() = runSkikoComposeUiTest {
         val items = (1..2).map { it.toString() }
@@ -93,6 +93,7 @@ class LazyListHeadersTest {
             .assertDoesNotExist()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun lazyColumnShowsHeadersOnScroll() = runSkikoComposeUiTest {
         val items = (1..2).map { it.toString() }
@@ -145,6 +146,7 @@ class LazyListHeadersTest {
             .assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     @IgnoreJsTarget
     @IgnoreWasmTarget
@@ -193,6 +195,7 @@ class LazyListHeadersTest {
             .assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun lazyRowShowsHeader() = runSkikoComposeUiTest {
         val items = (1..2).map { it.toString() }
@@ -234,6 +237,7 @@ class LazyListHeadersTest {
             .assertDoesNotExist()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun lazyRowShowsHeadersOnScroll() = runSkikoComposeUiTest {
         val items = (1..2).map { it.toString() }
@@ -286,6 +290,7 @@ class LazyListHeadersTest {
             .assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun lazyRowHeaderIsReplaced() = runSkikoComposeUiTest {
         val items = (1..2).map { it.toString() }
@@ -332,6 +337,7 @@ class LazyListHeadersTest {
             .assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun headerIsDisplayedWhenItIsFullyInContentPadding() = runSkikoComposeUiTest {
         val headerTag = "header"

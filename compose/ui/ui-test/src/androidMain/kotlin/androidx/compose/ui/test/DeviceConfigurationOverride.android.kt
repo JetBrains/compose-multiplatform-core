@@ -28,6 +28,11 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.ExperimentalMediaQueryApi
+import androidx.compose.ui.LocalUiMediaScope
+import androidx.compose.ui.UiMediaScope
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -41,6 +46,7 @@ import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
@@ -56,7 +62,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-actual fun DeviceConfigurationOverride.Companion.ForcedSize(
+public actual fun DeviceConfigurationOverride.Companion.ForcedSize(
     size: DpSize
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     // First override the density. Doing this first allows using the resulting density in the
@@ -79,7 +85,7 @@ actual fun DeviceConfigurationOverride.Companion.ForcedSize(
     }
 }
 
-actual fun DeviceConfigurationOverride.Companion.FontScale(
+public actual fun DeviceConfigurationOverride.Companion.FontScale(
     fontScale: Float
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     OverriddenConfiguration(
@@ -95,7 +101,7 @@ actual fun DeviceConfigurationOverride.Companion.FontScale(
     )
 }
 
-actual fun DeviceConfigurationOverride.Companion.LayoutDirection(
+public actual fun DeviceConfigurationOverride.Companion.LayoutDirection(
     layoutDirection: LayoutDirection
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     OverriddenConfiguration(
@@ -127,7 +133,7 @@ actual fun DeviceConfigurationOverride.Companion.LayoutDirection(
  * @return a [DeviceConfigurationOverride] that specifies the locales for the content under test.
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideLocalesSample
  */
-fun DeviceConfigurationOverride.Companion.Locales(
+public fun DeviceConfigurationOverride.Companion.Locales(
     locales: LocaleList
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     OverriddenConfiguration(
@@ -157,7 +163,7 @@ fun DeviceConfigurationOverride.Companion.Locales(
  * @return a [DeviceConfigurationOverride] that specifies the dark mode for the content under test.
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideDarkModeSample
  */
-fun DeviceConfigurationOverride.Companion.DarkMode(
+public fun DeviceConfigurationOverride.Companion.DarkMode(
     isDarkMode: Boolean
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     OverriddenConfiguration(
@@ -190,7 +196,7 @@ fun DeviceConfigurationOverride.Companion.DarkMode(
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideFontWeightAdjustmentSample
  */
 @RequiresApi(31)
-fun DeviceConfigurationOverride.Companion.FontWeightAdjustment(
+public fun DeviceConfigurationOverride.Companion.FontWeightAdjustment(
     fontWeightAdjustment: Int
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     OverriddenConfiguration(
@@ -216,7 +222,7 @@ fun DeviceConfigurationOverride.Companion.FontWeightAdjustment(
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideRoundScreenSample
  */
 @RequiresApi(23)
-fun DeviceConfigurationOverride.Companion.RoundScreen(
+public fun DeviceConfigurationOverride.Companion.RoundScreen(
     isScreenRound: Boolean
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     OverriddenConfiguration(
@@ -259,7 +265,7 @@ private annotation class KeyboardType
  * @see [Configuration.keyboardHidden]
  * @see [Configuration.hardKeyboardHidden]
  */
-fun DeviceConfigurationOverride.Companion.Keyboard(
+public fun DeviceConfigurationOverride.Companion.Keyboard(
     @KeyboardType keyboardType: Int,
     isHardKeyboardHidden: Boolean = false,
     isHidden: Boolean = false,
@@ -311,7 +317,7 @@ private annotation class NavigationType
  * @see [Configuration.navigation]
  * @see [Configuration.navigationHidden]
  */
-fun DeviceConfigurationOverride.Companion.Navigation(
+public fun DeviceConfigurationOverride.Companion.Navigation(
     @NavigationType navigationType: Int,
     isHidden: Boolean = false,
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
@@ -338,7 +344,7 @@ fun DeviceConfigurationOverride.Companion.Navigation(
  *
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideTouchscreen
  */
-fun DeviceConfigurationOverride.Companion.Touchscreen(
+public fun DeviceConfigurationOverride.Companion.Touchscreen(
     isTouchScreen: Boolean
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     OverriddenConfiguration(
@@ -380,7 +386,7 @@ private annotation class UiModeType
  *   test.
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideUiMode
  */
-fun DeviceConfigurationOverride.Companion.UiMode(
+public fun DeviceConfigurationOverride.Companion.UiMode(
     @UiModeType uiModeType: Int
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     OverriddenConfiguration(
@@ -403,7 +409,7 @@ fun DeviceConfigurationOverride.Companion.UiMode(
  *   test.
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideWindowInsetsSample
  */
-fun DeviceConfigurationOverride.Companion.WindowInsets(
+public fun DeviceConfigurationOverride.Companion.WindowInsets(
     windowInsets: WindowInsetsCompat
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     val currentContentUnderTest by rememberUpdatedState(contentUnderTest)
@@ -439,7 +445,8 @@ fun DeviceConfigurationOverride.Companion.WindowInsets(
     )
 }
 
-actual fun DeviceConfigurationOverride.Companion.WindowSize(
+@OptIn(ExperimentalMediaQueryApi::class, ExperimentalComposeUiApi::class)
+public actual fun DeviceConfigurationOverride.Companion.WindowSize(
     size: DpSize
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     // First override the density. Doing this first allows using the resulting density in the
@@ -462,7 +469,28 @@ actual fun DeviceConfigurationOverride.Companion.WindowSize(
                 }
             }
 
-        CompositionLocalProvider(LocalWindowInfo provides newWindowInfo) {
+        val providedLocals =
+            if (ComposeUiFlags.isMediaQueryIntegrationEnabled) {
+                val currentUiMediaScope = LocalUiMediaScope.current
+                val newUiMediaScope =
+                    remember(currentUiMediaScope, newWindowInfo) {
+                        object : UiMediaScope by currentUiMediaScope {
+                            override val windowWidth: Dp
+                                get() = newWindowInfo.containerDpSize.width
+
+                            override val windowHeight: Dp
+                                get() = newWindowInfo.containerDpSize.height
+                        }
+                    }
+                arrayOf(
+                    LocalWindowInfo provides newWindowInfo,
+                    LocalUiMediaScope provides newUiMediaScope,
+                )
+            } else {
+                arrayOf(LocalWindowInfo provides newWindowInfo)
+            }
+
+        CompositionLocalProvider(*providedLocals) {
             // Third, override the configuration to use the updated window size and updated
             // density
             OverriddenConfiguration(

@@ -18,31 +18,10 @@
 
 package androidx.navigation.compose.internal
 
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import kotlin.experimental.and
 import kotlin.experimental.or
 import kotlin.random.Random
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-
-internal actual class BackEventCompat(
-    actual val touchX: Float,
-    actual val touchY: Float,
-    actual val progress: Float,
-    actual val swipeEdge: Int
-)
-
-@OptIn(ExperimentalComposeUiApi::class)
-@Composable
-internal actual fun PredictiveBackHandler(
-    enabled: Boolean,
-    onBack: suspend (progress: Flow<BackEventCompat>) -> Unit,
-) {
-    androidx.compose.ui.backhandler.PredictiveBackHandler(enabled) { progress ->
-        onBack(progress.map { BackEventCompat(it.touchX, it.touchY, it.progress, it.swipeEdge) })
-    }
-}
 
 @OptIn(ExperimentalStdlibApi::class)
 internal actual fun randomUUID(): String {

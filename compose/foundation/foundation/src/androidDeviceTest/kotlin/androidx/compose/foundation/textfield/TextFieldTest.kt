@@ -176,7 +176,6 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Ignore
 import org.junit.Rule
@@ -187,7 +186,7 @@ import org.mockito.kotlin.mock
 @MediumTest
 @RunWith(ContextMenuFlagFlipperRunner::class)
 class TextFieldTest : FocusedWindowTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val inputMethodInterceptor = InputMethodInterceptor(rule)
     private val Tag = "textField"
@@ -305,7 +304,8 @@ class TextFieldTest : FocusedWindowTest {
                     BasicTextField(
                         value = "",
                         onValueChange = {},
-                        modifier = Modifier.weight(1f).onGloballyPositioned { size = it.size.width },
+                        modifier =
+                            Modifier.weight(1f).onGloballyPositioned { size = it.size.width },
                     )
                     Box(Modifier.size(boxSize))
                 }

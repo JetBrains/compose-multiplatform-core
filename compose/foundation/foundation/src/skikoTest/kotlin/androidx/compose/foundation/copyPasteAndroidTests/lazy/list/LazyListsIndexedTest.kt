@@ -40,6 +40,7 @@ import kotlin.test.Test
 @OptIn(ExperimentalTestApi::class)
 class LazyListsIndexedTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun lazyColumnShowsIndexedItems() = runSkikoComposeUiTest {
         val items = (1..4).map { it.toString() }
@@ -68,6 +69,7 @@ class LazyListsIndexedTest {
             .assertDoesNotExist()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun columnWithIndexesComposedWithCorrectIndexAndItem() = runSkikoComposeUiTest {
         val items = (0..1).map { it.toString() }
@@ -89,6 +91,7 @@ class LazyListsIndexedTest {
             .assertTopPositionInRootIsEqualTo(100.dp)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun lazyRowShowsIndexedItems() = runSkikoComposeUiTest {
         val items = (1..4).map { it.toString() }
@@ -117,6 +120,7 @@ class LazyListsIndexedTest {
             .assertDoesNotExist()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun rowWithIndexesComposedWithCorrectIndexAndItem() = runSkikoComposeUiTest {
         val items = (0..1).map { it.toString() }

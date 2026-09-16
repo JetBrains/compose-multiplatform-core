@@ -17,6 +17,7 @@
 package androidx.compose.ui.text.intl
 
 import androidx.compose.runtime.Immutable
+import androidx.compose.ui.InternalComposeUiApi
 import platform.Foundation.*
 
 @Deprecated(
@@ -77,6 +78,7 @@ fun NSLocale.toComposeLocale(): Locale = Locale(this)
 private fun NSLocale.isRtl(): Boolean =
     NSLocale.characterDirectionForLanguage(languageCode) == NSLocaleLanguageDirectionRightToLeft
 
-internal actual fun Locale.isRtl(): Boolean {
+@InternalComposeUiApi
+actual fun Locale.isRtl(): Boolean {
     return platformLocale.isRtl()
 }

@@ -42,7 +42,7 @@ abstract class DesktopGraphicsTest {
     protected fun initCanvas(widthPx: Int, heightPx: Int): Canvas {
         require(_surface == null)
         _surface = Surface.makeRasterN32Premul(widthPx, heightPx)
-        return SkiaBackedCanvas(_surface!!.canvas)
+        return _surface!!.canvas.asComposeCanvas()
     }
 
     @After

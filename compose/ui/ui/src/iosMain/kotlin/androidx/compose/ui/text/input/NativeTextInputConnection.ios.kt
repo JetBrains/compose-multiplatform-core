@@ -21,11 +21,13 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.DpInsets
 import androidx.compose.ui.platform.NativeTextEditingDelegate
-import androidx.compose.ui.platform.PlatformTextLayoutDirection
+import androidx.compose.ui.platform.TextLayoutDirection
 import androidx.compose.ui.platform.TextInputSelectionRect
-import androidx.compose.ui.platform.UIKitNativeTextInputContextMenuCustomAction
+import androidx.compose.ui.platform.NativeTextInputContextMenuCustomAction
+import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.platform.toUIColor
+import androidx.compose.ui.platform.detachedCopy
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
@@ -33,7 +35,6 @@ import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.utils.CMPEditMenuCustomAction
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.toSize
@@ -43,31 +44,33 @@ import androidx.compose.ui.window.NativeTextInputView
 import kotlin.math.max
 import kotlin.math.min
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import platform.CoreGraphics.CGRectMake
 import platform.UIKit.UIView
+import platform.UIKit.reloadInputViews
 
 internal class NativeTextInputConnection(
+    private var inactiveTextInputDelegate: NativeTextEditingDelegate,
     updateView: () -> Unit,
-    view: UIView,
     coroutineScope: CoroutineScope,
     focusedViewsList: FocusedViewsList?,
     focusManager: () -> ComposeSceneFocusManager?
 ) : TextInputConnection(
-    updateView,
-    view,
-    coroutineScope,
-    focusedViewsList,
-    focusManager
+    updateView = updateView,
+    coroutineScope = coroutineScope,
+    focusedViewsList = focusedViewsList,
+    focusManager = focusManager
 ), NativeTextEditingDelegate {
+    override val isInteractive: Boolean = true
+
     private val scrollView by lazy { NativeTextInputScrollView() }
 
-    override val textInputView = NativeTextInputView()
+    override val textInputView = NativeTextInputView(input = inactiveTextInputDelegate).also {
+        scrollView.textView = it
+    }
 
-    override fun attachInputToView() {
-        view.addSubview(scrollView)
-        scrollView.textView = textInputView
+    override val rootView: UIView get() = scrollView
+
+    override fun start(request: PlatformTextInputMethodRequest) {
+        super.start(request)
 
         textInputView.input = this
 
@@ -77,21 +80,18 @@ internal class NativeTextInputConnection(
         onViewGeometryUpdated()
     }
 
-    override fun detachView() {
-        // Out-of-bounds non-empty frame is required to hide text keyboard focus frame
-        val outOfBoundsFrame = CGRectMake(-100000.0, 0.0, 1.0, 1.0)
+    override fun stop() {
+        super.stop()
 
-        textInputView.input = null
+        textInputView.input = inactiveTextInputDelegate
+    }
 
-        textInputView.let { textView ->
-            textView.setFrame(outOfBoundsFrame)
-            coroutineScope.launch {
-                delay(CLEAR_FOCUS_DELAY)
-                scrollView.textView = null
-                textView.removeFromSuperview()
-            }
-        }
-        scrollView.removeFromSuperview()
+    override fun dispose() {
+        super.dispose()
+
+        // Keep answering for the text that was here, without holding the text field alive.
+        inactiveTextInputDelegate = inactiveTextInputDelegate.detachedCopy()
+        textInputView.input = inactiveTextInputDelegate
     }
 
     override fun stateWillChange(textChanged: Boolean, selectionChanged: Boolean) {
@@ -137,8 +137,8 @@ internal class NativeTextInputConnection(
         val contentInsets = calculateContentInsets(rect, contentBounds)
         currentContentInsets = contentInsets
         scrollView.setFrame(
-            rect.toDpRect(view.density),
-            contentBounds.toDpRect(view.density),
+            rect.toDpRect(rootView.density),
+            contentBounds.toDpRect(rootView.density),
             contentInsets
         )
     }
@@ -152,17 +152,21 @@ internal class NativeTextInputConnection(
         return contentBounds
     }
 
-    private fun calculateContentInsets(textFieldFrame: Rect, contentBounds: Rect): DpInsets = with(view.density) {
-        return DpInsets(
-            left = max(0f, -contentBounds.left).toDp(),
-            top = max(0f, -contentBounds.top).toDp(),
-            right = max(0f, textFieldFrame.width - contentBounds.width + contentBounds.left).toDp(),
-            bottom = max(
-                0f,
-                textFieldFrame.height - contentBounds.height + contentBounds.top
-            ).toDp()
-        )
-    }
+    private fun calculateContentInsets(textFieldFrame: Rect, contentBounds: Rect): DpInsets =
+        with(rootView.density) {
+            DpInsets(
+                left = max(0f, -contentBounds.left).toDp(),
+                top = max(0f, -contentBounds.top).toDp(),
+                right = max(
+                    0f,
+                    textFieldFrame.width - contentBounds.width + contentBounds.left
+                ).toDp(),
+                bottom = max(
+                    0f,
+                    textFieldFrame.height - contentBounds.height + contentBounds.top
+                ).toDp()
+            )
+        }
 
     override fun caretDpRectForPosition(position: Int): DpRect? {
         val text = currentTextFieldValue?.text ?: return null
@@ -174,8 +178,8 @@ internal class NativeTextInputConnection(
             return null
         }
         val rect = currentTextLayoutResult.getCursorRect(position)
-        return rect.toDpRect(view.density).let {
-            val halfWidth = cursorThickness / 2
+        return rect.toDpRect(rootView.density).let {
+            val halfWidth = CURSOR_THICKNESS / 2
             val center = (it.left + it.right) / 2
             it.copy(left = center - halfWidth, right = center + halfWidth)
         }
@@ -205,7 +209,7 @@ internal class NativeTextInputConnection(
                     dpRect = Rect(
                         topLeft = startSelectionHandleRect.topLeft,
                         bottomRight = endSelectionHandleRect.bottomRight
-                    ).toDpRect(view.density),
+                    ).toDpRect(rootView.density),
                     writingDirection = TextDirection.Content,
                     containsStart = true,
                     containsEnd = true,
@@ -217,7 +221,7 @@ internal class NativeTextInputConnection(
             // We require separate rects for start line, end line and everything in between them
             val contentInsets = currentContentInsets ?: return emptyList()
             val contentRect = currentContentBounds?.let {
-                with(view.density) {
+                with(rootView.density) {
                     Rect(
                         top = it.top + contentInsets.top.toPx(),
                         left = it.left + contentInsets.left.toPx(),
@@ -233,7 +237,7 @@ internal class NativeTextInputConnection(
                     left = startSelectionHandleRect.left,
                     right = contentRect.right,
                     bottom = startSelectionHandleRect.bottom
-                ).toDpRect(view.density),
+                ).toDpRect(rootView.density),
                 writingDirection = TextDirection.Content,
                 containsStart = true,
                 containsEnd = false,
@@ -246,7 +250,7 @@ internal class NativeTextInputConnection(
                     left = contentRect.left,
                     right = contentRect.right,
                     bottom = endSelectionHandleRect.top
-                ).toDpRect(view.density),
+                ).toDpRect(rootView.density),
                 writingDirection = TextDirection.Content,
                 containsStart = false,
                 containsEnd = false,
@@ -260,7 +264,7 @@ internal class NativeTextInputConnection(
                 dpRect = Rect(
                     topLeft = lastLineStartRect.topLeft,
                     bottomRight = endSelectionHandleRect.bottomRight
-                ).toDpRect(view.density),
+                ).toDpRect(rootView.density),
                 writingDirection = TextDirection.Content,
                 containsStart = false,
                 containsEnd = true,
@@ -294,7 +298,7 @@ internal class NativeTextInputConnection(
             Rect(
                 topLeft = startHandleRect.topLeft,
                 bottomRight = currentTextLayoutResult.getCursorRect(range.end).bottomRight
-            ).toDpRect(view.density)
+            ).toDpRect(rootView.density)
         } else {
             val startLineNumber = currentTextLayoutResult.getLineForOffset(range.start)
             val startLineRight = currentTextLayoutResult.getLineRight(startLineNumber)
@@ -303,36 +307,36 @@ internal class NativeTextInputConnection(
                 startHandleRect.top,
                 startLineRight,
                 startHandleRect.bottom
-            ).toDpRect(view.density)
+            ).toDpRect(rootView.density)
         }
     }
 
     override fun closestPositionToPoint(point: DpOffset): Int? {
-        return textLayoutResult?.getOffsetForPosition(point.toOffset(view.density))
+        return textLayoutResult?.getOffsetForPosition(point.toOffset(rootView.density))
     }
 
     override fun closestPositionToPoint(point: DpOffset, withinRange: TextRange): Int? {
         val pointOffset =
-            textLayoutResult?.getOffsetForPosition(point.toOffset(view.density))
+            textLayoutResult?.getOffsetForPosition(point.toOffset(rootView.density))
                 ?: return null
         return pointOffset.coerceIn(withinRange.start, withinRange.end)
     }
 
     override fun characterRangeAtPoint(point: DpOffset): TextRange? {
         val pointOffset =
-            textLayoutResult?.getOffsetForPosition(point.toOffset(view.density))
+            textLayoutResult?.getOffsetForPosition(point.toOffset(rootView.density))
                 ?: return null
         return textLayoutResult?.getWordBoundary(pointOffset)
     }
 
     override fun positionWithinRange(
         range: TextRange,
-        farthestInDirection: PlatformTextLayoutDirection
+        farthestInDirection: TextLayoutDirection
     ): Int? {
         if (isIncorrect(range)) return null
         return when (farthestInDirection) {
-            PlatformTextLayoutDirection.Up -> range.start
-            PlatformTextLayoutDirection.Down -> range.end
+            TextLayoutDirection.Up -> range.start
+            TextLayoutDirection.Down -> range.end
             else -> {
                 val layout = textLayoutResult ?: return null
                 val startLine = layout.getLineForOffset(range.start)
@@ -349,9 +353,9 @@ internal class NativeTextInputConnection(
                 }
 
                 when (farthestInDirection) {
-                    PlatformTextLayoutDirection.Left ->
+                    TextLayoutDirection.Left ->
                         candidateOffsets.minByOrNull { layout.getHorizontalPosition(it, true) }
-                    PlatformTextLayoutDirection.Right ->
+                    TextLayoutDirection.Right ->
                         candidateOffsets.maxByOrNull { layout.getHorizontalPosition(it, true) }
                     else -> null
                 }
@@ -370,7 +374,7 @@ internal class NativeTextInputConnection(
         paste: (() -> Unit)?,
         cut: (() -> Unit)?,
         selectAll: (() -> Unit)?,
-        customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
+        customActions: List<NativeTextInputContextMenuCustomAction>?
     ) {
         textInputView.updateMenuActions(
             copy,
@@ -387,11 +391,4 @@ internal class NativeTextInputConnection(
         selectionTintColor = color
         setupTintColor()
     }
-
-    /**
-     * Matches DefaultCursorThickness
-     *
-     * Must be at least 1.dp to make caret interactable
-     */
-    private val cursorThickness = 2.dp
 }

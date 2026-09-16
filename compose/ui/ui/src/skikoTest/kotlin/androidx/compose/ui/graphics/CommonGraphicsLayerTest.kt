@@ -94,6 +94,7 @@ import org.jetbrains.skia.Bitmap
 @OptIn(ExperimentalTestApi::class)
 class CommonGraphicsLayerTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun testLayerBoundsPosition() = runComposeUiTest {
         var coords: LayoutCoordinates? = null
@@ -119,6 +120,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testScale() = runComposeUiTest {
         var coords: LayoutCoordinates? = null
@@ -141,6 +143,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testScaleConvenienceXY() = runComposeUiTest {
         var coords: LayoutCoordinates? = null
@@ -161,6 +164,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testScaleConvenienceUniform() = runComposeUiTest {
         var coords: LayoutCoordinates? = null
@@ -178,6 +182,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testRotation() = runComposeUiTest {
         var coords: LayoutCoordinates? = null
@@ -200,6 +205,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testRotationConvenience() = runComposeUiTest {
         var coords: LayoutCoordinates? = null
@@ -217,6 +223,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testRotationPivot() = runComposeUiTest {
         var coords: LayoutCoordinates? = null
@@ -241,6 +248,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testTranslationXY() = runComposeUiTest {
         var coords: LayoutCoordinates? = null
@@ -262,6 +270,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testClip() = runComposeUiTest {
         var coords: LayoutCoordinates? = null
@@ -285,6 +294,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testSiblingComparisons() = runComposeUiTest {
         var coords1: LayoutCoordinates? = null
@@ -324,6 +334,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testCameraDistanceWithRotationY() = runComposeUiTest {
         val testTag = "parent"
@@ -351,6 +362,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testEmptyClip() = runComposeUiTest {
         val EmptyRectangle =
@@ -378,6 +390,7 @@ class CommonGraphicsLayerTest {
         onNodeWithTag(tag).captureToImage().assertPixels { Color.Blue }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testTotalClip() = runComposeUiTest {
         var coords: LayoutCoordinates? = null
@@ -398,6 +411,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testColorFilter() = runComposeUiTest {
         val testTag = "colorFilterTag"
@@ -422,6 +436,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testColorFilterAsScope() = runComposeUiTest {
         val testTag = "colorFilterTag"
@@ -446,6 +461,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testBlendMode() = runComposeUiTest {
         val testTag = "blendModeTag"
@@ -468,6 +484,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testBlendModeAsScope() = runComposeUiTest {
         val testTag = "blendModeTag"
@@ -517,6 +534,7 @@ class CommonGraphicsLayerTest {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testBlurEffect() = runComposeUiTest {
         val tag = "blurTag"
@@ -541,6 +559,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testZeroRadiusBlurDoesNotCrash() = runComposeUiTest {
         val tag = "blurTag"
@@ -548,6 +567,7 @@ class CommonGraphicsLayerTest {
         setContent { BoxBlur(tag, size, 0f) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testOffsetEffect() = runComposeUiTest {
         val tag = "blurTag"
@@ -575,6 +595,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun invalidateWhenWeHaveSemanticModifierAfterLayer() = runComposeUiTest {
         var color by mutableStateOf(Color.Red)
@@ -585,6 +606,7 @@ class CommonGraphicsLayerTest {
         onNodeWithTag("tag").captureToImage().assertPixels { color }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testDpPixelConversions() = runComposeUiTest {
         var density: Density? = null
@@ -611,6 +633,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testClickOnScaledElement() = runComposeUiTest {
         var firstClicked = false
@@ -645,6 +668,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun usingNestedDerivedStateInGraphicsLayerBlock() = runComposeUiTest {
         val mutableState = mutableStateOf(1f)
@@ -671,6 +695,7 @@ class CommonGraphicsLayerTest {
         runOnIdle { assertEquals(2f, valueReadInGraphicsLayer) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testCompositingStrategyModulateAlpha() = runComposeUiTest {
         val tag = "testTag"
@@ -708,6 +733,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testCompositingStrategyAlways() = runComposeUiTest {
         val tag = "testTag"
@@ -738,6 +764,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testCompositingStrategyAuto() = runComposeUiTest {
         val tag = "testTag"
@@ -772,6 +799,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testGraphicsLayerScopeSize() = runComposeUiTest {
         val widthDp = 200.dp
@@ -801,6 +829,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testGraphicsLayerSizeAfterRelayout() = runComposeUiTest {
         var composableSize by mutableStateOf(20.dp)
@@ -848,6 +877,7 @@ class CommonGraphicsLayerTest {
         assertEquals(sizePx, drawScopeHeight)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun removingGraphicsLayerInvalidatesParentLayer() = runComposeUiTest {
         var toggle by mutableStateOf(true)
@@ -881,6 +911,7 @@ class CommonGraphicsLayerTest {
     // Repro test for b/298520326. Unfortunately, this test does not successfully reproduce the
     // issue prior to the "fix", so is not a valid regression test. The act of calling
     // `captureToImage()` causes the bug to disappear.
+    @Suppress("DEPRECATION")
     @Test
     fun removingGraphicsLayerInvalidatesParentLayer2() = runComposeUiTest {
         var toggle by mutableStateOf(false)
@@ -925,6 +956,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun removingGraphicsLayerModifierResetsItsAction() = runComposeUiTest {
         var addGraphicsLayer by mutableStateOf(true)
@@ -951,6 +983,7 @@ class CommonGraphicsLayerTest {
         runOnIdle { assertEquals(Rect(0f, 0f, 10f, 10f), coordinates.boundsInRoot()) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun invalidationAfterMovingMovableContentWithLayer() = runComposeUiTest {
         var moveContent by mutableStateOf(false)
@@ -978,6 +1011,7 @@ class CommonGraphicsLayerTest {
         runOnIdle { assertThat(counterReadInDrawing).isEqualTo(counter) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun updatingLayerPropertiesAfterMovingMovableContent() = runComposeUiTest {
         var moveContent by mutableStateOf(false)
@@ -1005,6 +1039,7 @@ class CommonGraphicsLayerTest {
         runOnIdle { assertThat(counterReadInLayerBlock).isEqualTo(counter) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun updatingValueIsNotCausingRemeasureOrRelayout() = runComposeUiTest {
         var translationX by mutableStateOf(0f)
@@ -1044,6 +1079,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun updatingLambdaIsNotCausingRemeasureOrRelayout() = runComposeUiTest {
         var lambda by mutableStateOf<GraphicsLayerScope.() -> Unit>({})
@@ -1083,6 +1119,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun addingLayerForChildDoesntTriggerChildRelayout() = runComposeUiTest {
         var relayoutCount = 0
@@ -1130,6 +1167,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun movingChildsLayerDoesntTriggerChildRelayout() = runComposeUiTest {
         var relayoutCount = 0
@@ -1169,6 +1207,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun placingWithExplicitLayerDraws() = runComposeUiTest {
         setContent {
@@ -1189,6 +1228,7 @@ class CommonGraphicsLayerTest {
         onNodeWithTag("tag").captureToImage().assertPixels(IntSize(10, 10)) { Color.Blue }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun placingWithExplicitLayerSetsCorrectSizeAndOffset() = runComposeUiTest {
         lateinit var layer: GraphicsLayer
@@ -1215,6 +1255,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun layerIsNotReleasedWhenWeStopPlacingIt() = runComposeUiTest {
         lateinit var layer: GraphicsLayer
@@ -1241,6 +1282,7 @@ class CommonGraphicsLayerTest {
         runOnIdle { assertFalse(layer.isReleased) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun switchingFromExplicitLayerToImplicit() = runComposeUiTest {
         var useExplicitLayer by mutableStateOf(true)
@@ -1275,6 +1317,7 @@ class CommonGraphicsLayerTest {
         onNodeWithTag("tag").captureToImage().assertPixels(IntSize(10, 10)) { Color.Blue }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun centerPivotIsUsedWhenWeCalculateBoundsBeforeLayerWasFirstDrawn() = runComposeUiTest {
         var bounds: Rect = Rect.Zero
@@ -1290,6 +1333,7 @@ class CommonGraphicsLayerTest {
         runOnIdle { assertRectEqual(bounds, Rect(0f, 0f, 10f, 10f)) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun centerPivotIsCorrectlyCalculatedForOddSize() = runComposeUiTest {
         var bounds: Rect = Rect.Zero
@@ -1305,6 +1349,7 @@ class CommonGraphicsLayerTest {
         runOnIdle { assertRectEqual(bounds, Rect(0f, 0f, 9f, 9f)) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun customPivotIsCalculatedCorrectlyWhenWeCalculateBoundsBeforeLayerWasFirstDrawn() = runComposeUiTest {
         var bounds: Rect = Rect.Zero
@@ -1325,6 +1370,7 @@ class CommonGraphicsLayerTest {
         runOnIdle { assertRectEqual(bounds, Rect(10f, 10f, 20f, 20f)) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun reusedLayerIsRedrawn() = runComposeUiTest {
         val drawRed = mutableStateOf(true)
@@ -1356,6 +1402,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun layerIsCorrectlyRecreatedWithClipAppliedAfterReuse() = runComposeUiTest {
         var switch by mutableStateOf(true)
@@ -1390,6 +1437,7 @@ class CommonGraphicsLayerTest {
         assertPixels()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun layerIsCorrectlyRecreatedWithClipAppliedWhenMoved() = runComposeUiTest {
         var switch by mutableStateOf(true)
@@ -1427,6 +1475,7 @@ class CommonGraphicsLayerTest {
         assertPixels()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testLayerOutsetsWithImplicitClipToBounds() = runComposeUiTest {
         val outerBoxSizePx = 100
@@ -1472,6 +1521,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testLayerOutsetsUpdatesCorrectly() = runComposeUiTest {
         val outerBoxSizePx = 100
@@ -1529,6 +1579,7 @@ class CommonGraphicsLayerTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testLayerOutsetsWithPivot() = runComposeUiTest {
         val outerBoxSizePx = 100

@@ -46,7 +46,7 @@ import kotlinx.coroutines.test.runTest
 
 @ExperimentalCoroutinesApi
 @OptIn(ExperimentalFoundationApi::class, InternalComposeUiApi::class)
-class OnClickTest {
+class OnClickTest : SkikoComposeTestBase() {
 
     private fun testClick(
         pointerMatcher: PointerMatcher,
@@ -171,6 +171,7 @@ class OnClickTest {
         assertThat(clicksCount).isEqualTo(2)
     }
 
+    @Suppress("DEPRECATION")
     @OptIn(ExperimentalTestApi::class)
     private fun testDoubleClick(
         pointerMatcher: PointerMatcher,
@@ -236,6 +237,7 @@ class OnClickTest {
     )
 
     @OptIn(ExperimentalTestApi::class)
+    @Suppress("DEPRECATION")
     private fun testLongClick(
         pointerMatcher: PointerMatcher,
         button: PointerButton

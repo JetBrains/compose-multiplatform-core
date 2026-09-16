@@ -1,0 +1,349 @@
+/*
+ * Copyright 2021 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@file:JvmName("PlatformFont_skikoKt")
+@file:OptIn(InternalComposeUiApi::class)
+
+package androidx.compose.ui.text.platform
+
+import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.ExpireAfterAccessCache
+import androidx.compose.ui.text.InternalTextApi
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontListFontFamily
+import androidx.compose.ui.text.font.FontResourceLoaderWithResolver
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontVariation
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.GenericFontFamily
+import androidx.compose.ui.text.font.LoadedFontFamily
+import androidx.compose.ui.text.font.SkiaFontLoader
+import androidx.compose.ui.text.font.Typeface
+import androidx.compose.ui.text.font.createPlatformFontFamilyResolver
+import androidx.compose.ui.util.fastMap
+import androidx.compose.ui.util.fastMapNotNull
+import kotlin.jvm.JvmName
+import org.jetbrains.skia.FontMgrWithFallback
+import org.jetbrains.skia.FontVariation as SkFontVariation
+import org.jetbrains.skia.Typeface as SkTypeface
+import org.jetbrains.skia.paragraph.FontCollection
+import org.jetbrains.skia.paragraph.TypefaceFontProviderWithFallback
+import org.jetbrains.skiko.currentNanoTime
+
+/**
+ * Creates a Font using byte array with loaded font data.
+ *
+ * @param identity Unique identity for a font. Used internally to distinguish fonts.
+ * @param getData should return Byte array with loaded font data.
+ * @param weight The weight of the font. The system uses this to match a font to a font request
+ * that is given in a [androidx.compose.ui.text.SpanStyle].
+ * @param style The style of the font, normal or italic. The system uses this to match a font to a
+ * font request that is given in a [androidx.compose.ui.text.SpanStyle].
+ *
+ * @see FontFamily
+ */
+fun Font(
+    identity: String,
+    getData: () -> ByteArray,
+    weight: FontWeight = FontWeight.Normal,
+    style: FontStyle = FontStyle.Normal
+): Font = LoadedFont(identity, getData, weight, style, FontVariation.Settings())
+
+/**
+ * Creates a Font using byte array with loaded font data.
+ *
+ * @param identity Unique identity for a font. Used internally to distinguish fonts.
+ * @param getData should return Byte array with loaded font data.
+ * @param weight The weight of the font. The system uses this to match a font to a font request
+ * that is given in a [androidx.compose.ui.text.SpanStyle]. For non-variable fonts, this directly
+ * affects the font style.
+ * @param style The style of the font, normal or italic. The system uses this to match a font to a
+ * font request that is given in a [androidx.compose.ui.text.SpanStyle]. For non-variable fonts,
+ * this directly affects the font style.
+ * @param variationSettings Specifies the variation settings for the font. This allows for fine-tuned
+ * control over font characteristics such as weight and style. It can be used to create custom
+ * font variations within a single font file, if the font supports variable axes. By default,
+ * it uses the provided weight and style parameters.
+ *
+ * Note on font style determination:
+ * 1. For non-variable fonts, the font style is defined only by the weight and style parameters.
+ * 2. For variable fonts, the font style is determined solely by the variationSettings.
+ * 3. When weight, style, and variationSettings are all set for variable fonts, the font style
+ *    will be determined by variationSettings, as its default values are derived from weight and style.
+ *
+ * @see FontFamily
+ */
+fun Font(
+    identity: String,
+    getData: () -> ByteArray,
+    weight: FontWeight = FontWeight.Normal,
+    style: FontStyle = FontStyle.Normal,
+    variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style)
+): Font = LoadedFont(identity, getData, weight, style, variationSettings)
+
+/**
+ * Creates a Font using byte array with loaded font data.
+ *
+ * @param identity Unique identity for a font. Used internally to distinguish fonts.
+ * @param data Byte array with loaded font data.
+ * @param weight The weight of the font. The system uses this to match a font to a font request
+ * that is given in a [androidx.compose.ui.text.SpanStyle].
+ * @param style The style of the font, normal or italic. The system uses this to match a font to a
+ * font request that is given in a [androidx.compose.ui.text.SpanStyle].
+ *
+ * @see FontFamily
+ */
+fun Font(
+    identity: String,
+    data: ByteArray,
+    weight: FontWeight = FontWeight.Normal,
+    style: FontStyle = FontStyle.Normal
+): Font = Font(
+    identity = identity,
+    getData = { data },
+    weight = weight,
+    style = style,
+    variationSettings = FontVariation.Settings(),
+)
+
+/**
+ * Creates a Font using byte array with loaded font data.
+ *
+ * @param identity Unique identity for a font. Used internally to distinguish fonts.
+ * @param data Byte array with loaded font data.
+ * @param weight The weight of the font. The system uses this to match a font to a font request
+ * that is given in a [androidx.compose.ui.text.SpanStyle]. For non-variable fonts, this directly
+ * affects the font style.
+ * @param style The style of the font, normal or italic. The system uses this to match a font to a
+ * font request that is given in a [androidx.compose.ui.text.SpanStyle]. For non-variable fonts,
+ * this directly affects the font style.
+ * @param variationSettings Specifies the variation settings for the font. This allows for fine-tuned
+ * control over font characteristics such as weight and style. It can be used to create custom
+ * font variations within a single font file, if the font supports variable axes. By default,
+ * it uses the provided weight and style parameters.
+ *
+ * Note on font style determination:
+ * 1. For non-variable fonts, the font style is defined only by the weight and style parameters.
+ * 2. For variable fonts, the font style is determined solely by the variationSettings.
+ * 3. When weight, style, and variationSettings are all set for variable fonts, the font style
+ *    will be determined by variationSettings, as its default values are derived from weight and style.
+ *
+ * @see FontFamily
+ */
+fun Font(
+    identity: String,
+    data: ByteArray,
+    weight: FontWeight = FontWeight.Normal,
+    style: FontStyle = FontStyle.Normal,
+    variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style)
+): Font = Font(
+    identity = identity,
+    getData = { data },
+    weight = weight,
+    style = style,
+    variationSettings = variationSettings,
+)
+
+private class SkiaBackedTypeface(
+    alias: String?,
+    val nativeTypeface: SkTypeface
+) : Typeface {
+    val alias = alias ?: nativeTypeface.familyName
+    override val fontFamily: FontFamily? = null
+}
+
+/**
+ * Returns a Compose [Typeface] from Skia [SkTypeface].
+ *
+ * @param typeface Android Typeface instance
+ */
+fun Typeface(typeface: SkTypeface, alias: String? = null): Typeface {
+    return SkiaBackedTypeface(alias, typeface)
+}
+
+@Suppress("DEPRECATION", "OverridingDeprecatedMember")
+@Deprecated(
+    "Replaced with PlatformFontLoader during the introduction of async fonts, all usages" +
+        " should be replaced",
+    ReplaceWith("PlatformFontLoader"),
+)
+class FontLoader : Font.ResourceLoader, FontResourceLoaderWithResolver {
+
+    private val fontCache: FontCache by lazy { FontCache() }
+    override val fontFamilyResolver: FontFamily.Resolver by lazy {
+        createPlatformFontFamilyResolver(SkiaFontLoader(fontCache))
+    }
+
+    // TODO: we need to support:
+    //  1. font collection (.ttc). Looks like skia currently doesn't have
+    //  proper interfaces or they are broken (.makeFromFile(*, 1) always fails)
+    //  2. variable fonts. for them we also need to extend definition interfaces to support
+    //  custom variation settings
+    @Deprecated(
+        "Replaced by FontFamily.Resolver, this method should not be called",
+        ReplaceWith("FontFamily.Resolver.resolve(font, )"),
+    )
+    override fun load(font: Font): SkTypeface {
+        if (font !is PlatformFont) {
+            throw IllegalArgumentException("Unsupported font type: $font")
+        }
+        return fontCache.load(font).typeface!!
+    }
+}
+
+class FontLoadResult(val typeface: SkTypeface?, val aliases: List<String>)
+
+@OptIn(ExperimentalTextApi::class, InternalTextApi::class)
+internal class FontCache {
+    internal val fonts = FontCollection()
+    private val fontProvider = TypefaceFontProviderWithFallback()
+    private val registered: MutableSet<String> = HashSet()
+    private val typefacesCache = ExpireAfterAccessCache<String, SkTypeface>(
+        60_000_000_000, // 1 minute
+        ::currentNanoTime,
+    )
+
+    init {
+        fonts.setDefaultFontManager(FontMgrWithFallback(fontProvider))
+        fonts.setAssetFontManager(fontProvider)
+    }
+
+    internal fun load(font: PlatformFont): FontLoadResult {
+        val typeface = typefacesCache.getOrPut(font.cacheKey) {
+            loadTypeface(font)
+        }
+        ensureRegistered(typeface, font.cacheKey)
+        return FontLoadResult(typeface, listOf(font.cacheKey))
+    }
+
+    internal fun loadPlatformTypes(
+        fontFamily: FontFamily,
+        fontWeight: FontWeight = FontWeight.Normal,
+        fontStyle: FontStyle = FontStyle.Normal
+    ): FontLoadResult {
+        val aliases = ensureRegistered(fontFamily)
+        val style = fontStyle.toSkFontStyle().withWeight(fontWeight.weight)
+        return FontLoadResult(fonts.findTypefaces(aliases.toTypedArray(), style).first(), aliases)
+    }
+
+    private fun ensureRegistered(typeface: SkTypeface, key: String) {
+        if (!registered.contains(key)) {
+            fontProvider.registerTypeface(typeface, key)
+            registered.add(key)
+            fonts.paragraphCache.reset()
+        }
+    }
+
+    private fun ensureRegistered(fontFamily: FontFamily): List<String> {
+        // FontFamily.Default is the only DefaultFontFamily instance (its type is commonMain-internal,
+        // so it is matched by identity through the public FontFamily.Default).
+        if (fontFamily == FontFamily.Default) return FontFamily.SansSerif.aliases
+        return when (fontFamily) {
+            is FontListFontFamily -> {
+                val fonts = fontFamily.fonts.fastMapNotNull {
+                    if (it is SystemFont) it.identity
+                    else null
+                }
+                if (fonts.size == fontFamily.fonts.size) {
+                    fonts
+                } else {
+                    // not supported
+                    throw IllegalArgumentException(
+                        "Don't load FontListFontFamily through ensureRegistered: $fontFamily"
+                    )
+                }
+            }
+            is LoadedFontFamily -> {
+                val typeface = fontFamily.typeface as SkiaBackedTypeface
+                ensureRegistered(typeface.nativeTypeface, typeface.alias)
+                listOf(typeface.alias)
+            }
+            is GenericFontFamily -> fontFamily.aliases
+            else -> error("Unsupported font family: $fontFamily")
+        }
+    }
+}
+
+internal expect fun loadTypeface(font: Font): SkTypeface
+
+internal val GenericFontFamily.aliases
+    get() = GenericFontFamiliesMapping[name]
+        ?: error("Unknown generic font family $name")
+
+private val GenericFontFamiliesMapping: Map<String, List<String>> by lazy {
+    when (currentPlatform()) {
+        Platform.Linux ->
+            mapOf(
+                FontFamily.SansSerif.name to listOf("Noto Sans", "DejaVu Sans", "Arial"),
+                FontFamily.Serif.name to listOf("Noto Serif", "DejaVu Serif", "Times New Roman"),
+                FontFamily.Monospace.name to listOf("Noto Sans Mono", "DejaVu Sans Mono", "Consolas"),
+                // better alternative?
+                FontFamily.Cursive.name to listOf("Comic Sans MS")
+            )
+        Platform.Windows ->
+            mapOf(
+                // Segoe UI is the Windows system font, so try it first.
+                // See https://learn.microsoft.com/en-us/windows/win32/uxguide/vis-fonts
+                FontFamily.SansSerif.name to listOf("Segoe UI", "Arial"),
+                FontFamily.Serif.name to listOf("Times New Roman"),
+                FontFamily.Monospace.name to listOf("Consolas"),
+                FontFamily.Cursive.name to listOf("Comic Sans MS")
+            )
+        Platform.MacOS, Platform.IOS, Platform.TvOS, Platform.WatchOS ->
+            mapOf(
+                // .AppleSystem* aliases is the only legal way to get default SF and NY fonts.
+                FontFamily.SansSerif.name to listOf(".AppleSystemUIFont", "Helvetica Neue", "Helvetica"),
+                FontFamily.Serif.name to listOf(".AppleSystemUIFontSerif", "Times", "Times New Roman"),
+                FontFamily.Monospace.name to listOf(".AppleSystemUIFontMonospaced", "Menlo", "Courier"),
+                // Safari "font-family: cursive" real font names from macOS and iOS.
+                FontFamily.Cursive.name to listOf("Apple Chancery", "Snell Roundhand")
+            )
+        Platform.Android -> // https://m3.material.io/styles/typography/fonts
+            mapOf(
+                FontFamily.SansSerif.name to listOf("Roboto", "Noto Sans"),
+                FontFamily.Serif.name to listOf("Roboto Serif", "Noto Serif"),
+                FontFamily.Monospace.name to listOf("Roboto Mono", "Noto Sans Mono"),
+                FontFamily.Cursive.name to listOf("Comic Sans MS")
+            )
+        Platform.Unknown ->
+            mapOf(
+                FontFamily.SansSerif.name to listOf("Arial"),
+                FontFamily.Serif.name to listOf("Times New Roman"),
+                FontFamily.Monospace.name to listOf("Consolas"),
+                FontFamily.Cursive.name to listOf("Comic Sans MS")
+            )
+    }
+}
+
+internal fun FontVariation.Settings.toSkiaFontVariationList(): List<SkFontVariation> {
+    return settings.fastMap { setting ->
+        SkFontVariation(setting.axisName, setting.toVariationValue(null))
+    }
+}
+
+/**
+ * Clones the SkTypeface with specified font variation settings.
+ *
+ * @param variationSettings Font variations to apply. If empty, returns the original typeface.
+ * @return A new SkTypeface with applied variations, or the original if no variations.
+ */
+internal fun SkTypeface.cloneWithVariationSettings(variationSettings: FontVariation.Settings): SkTypeface {
+    if (variationSettings.settings.isEmpty()) return this
+    val variations = variationSettings.toSkiaFontVariationList()
+    return makeClone(variations.toTypedArray())
+}

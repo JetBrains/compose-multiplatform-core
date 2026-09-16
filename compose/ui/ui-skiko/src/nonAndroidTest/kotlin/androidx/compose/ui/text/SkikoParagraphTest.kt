@@ -1,0 +1,518 @@
+/*
+ * Copyright 2023 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.compose.ui.text
+
+import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.clearSkikoComposeImplementation
+import androidx.compose.ui.platform.registerSkikoComposeImplementation
+import androidx.compose.ui.text.font.createFontFamilyResolver
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.text.style.TextIndent
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Ignore
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotEquals
+import kotlinx.test.IgnoreJsTarget
+import kotlinx.test.IgnoreWasmTarget
+
+// Adopted tests from text/text/src/androidTest/java/androidx/compose/ui/text/android/selection/WordBoundaryTest.kt
+@OptIn(InternalComposeUiApi::class)
+class SkikoParagraphTest {
+    @BeforeTest
+    fun setup() {
+        registerSkikoComposeImplementation()
+    }
+
+    @AfterTest
+    fun tearDown() {
+        clearSkikoComposeImplementation()
+    }
+
+    // Lazy so the registry is populated by [setup] before the resolver is created (the property
+    // initializer would otherwise run at construction time, before @BeforeTest).
+    private val fontFamilyResolver by lazy { createFontFamilyResolver() }
+    private val defaultDensity = Density(density = 1f)
+    private val maxWidthConstraint = 1000
+
+    @Test
+    fun getWordBoundary_out_of_boundary_too_small() {
+        val text = "text"
+        val paragraph = simpleParagraph(text)
+
+        assertFailsWith<IllegalArgumentException> {
+            paragraph.getWordBoundary(-1)
+        }
+    }
+
+    @Test
+    fun getWordBoundary_out_of_boundary_too_big() {
+        val text = "text"
+        val paragraph = simpleParagraph(text)
+
+        assertFailsWith<IllegalArgumentException> {
+            paragraph.getWordBoundary(text.length + 1)
+        }
+    }
+
+    @Test
+    fun getWordBoundary_length() {
+        val text = "text"
+        val paragraph = simpleParagraph(text)
+
+        assertEquals(
+            TextRange(0, text.length),
+            paragraph.getWordBoundary(text.length)
+        )
+    }
+
+    @Test
+    fun getWordBoundary_empty_string() {
+        val paragraph = simpleParagraph("")
+
+        assertEquals(
+            TextRange(0, 0),
+            paragraph.getWordBoundary(0)
+        )
+    }
+
+    @Test
+    fun getWordBoundary() {
+        val text = "abc def-ghi. jkl"
+        val paragraph = simpleParagraph(text)
+
+        assertEquals(
+            TextRange(text.indexOf('a'), text.indexOf(' ')),
+            paragraph.getWordBoundary(text.indexOf('a'))
+        )
+        assertEquals(
+            TextRange(text.indexOf('a'), text.indexOf(' ')),
+            paragraph.getWordBoundary(text.indexOf('c'))
+        )
+        assertEquals(
+            TextRange(text.indexOf('a'), text.indexOf(' ')),
+            paragraph.getWordBoundary(text.indexOf(' '))
+        )
+        assertEquals(
+            TextRange(text.indexOf('d'), text.indexOf('-')),
+            paragraph.getWordBoundary(text.indexOf('d'))
+        )
+        assertEquals(
+            TextRange(text.indexOf('g'), text.indexOf('.')),
+            paragraph.getWordBoundary(text.indexOf('i'))
+        )
+        assertEquals(
+            TextRange(text.indexOf('j'), text.indexOf('l') + 1),
+            paragraph.getWordBoundary(text.indexOf('k'))
+        )
+    }
+
+    @Test
+    fun getWordBoundary_spaces() {
+        val text = "ab cd  e"
+        val paragraph = simpleParagraph(text)
+
+        assertEquals(
+            TextRange(text.indexOf('a'), text.indexOf('b') + 1),
+            paragraph.getWordBoundary(text.indexOf('b') + 1)
+        )
+        assertEquals(
+            TextRange(text.indexOf('c'), text.indexOf('d') + 1),
+            paragraph.getWordBoundary(text.indexOf('c'))
+        )
+        assertEquals(
+            TextRange(text.indexOf('d') + 2, text.indexOf('d') + 2),
+            paragraph.getWordBoundary(text.indexOf('d') + 2)
+        )
+    }
+
+    @Test
+    fun getWordBoundary_no_break_space() {
+        val text = "abc\u00A0def\u202Fghi"
+        val paragraph = simpleParagraph(text)
+
+        assertEquals(
+            TextRange(text.indexOf('a'), text.indexOf('c') + 1),
+            paragraph.getWordBoundary(text.indexOf('b'))
+        )
+        assertEquals(
+            TextRange(text.indexOf('a'), text.indexOf('c') + 1),
+            paragraph.getWordBoundary(text.indexOf('\u00A0'))
+        )
+        assertEquals(
+            TextRange(text.indexOf('d'), text.length),
+            paragraph.getWordBoundary(text.indexOf('d'))
+        )
+        assertEquals(
+            TextRange(text.indexOf('d'), text.length),
+            paragraph.getWordBoundary(text.indexOf('\u202F'))
+        )
+        assertEquals(
+            TextRange(text.indexOf('d'), text.length),
+            paragraph.getWordBoundary(text.length)
+        )
+    }
+
+    @Test
+    fun getWordBoundary_RTL() { // Hebrew -- "אבג דה-וז. חט"
+        val text = "\u05d0\u05d1\u05d2 \u05d3\u05d4-\u05d5\u05d6. \u05d7\u05d8"
+        val paragraph = simpleParagraph(text)
+
+        assertEquals(
+            TextRange(text.indexOf('\u05d0'), text.indexOf(' ')),
+            paragraph.getWordBoundary(text.indexOf('\u05d0'))
+        )
+        assertEquals(
+            TextRange(text.indexOf('\u05d0'), text.indexOf(' ')),
+            paragraph.getWordBoundary(text.indexOf('\u05d2'))
+        )
+        assertEquals(
+            TextRange(text.indexOf('\u05d0'), text.indexOf(' ')),
+            paragraph.getWordBoundary(text.indexOf(' '))
+        )
+        assertEquals(
+            TextRange(text.indexOf('\u05d3'), text.indexOf('-')),
+            paragraph.getWordBoundary(text.indexOf('\u05d4'))
+        )
+        /*
+        TODO: Port punctuation handling from Android.
+        assertEquals(
+            TextRange(text.indexOf('\u05d3'), text.indexOf('-') + 1),
+            paragraph.getWordBoundary(text.indexOf('-'))
+        )
+        assertEquals(
+            TextRange(text.indexOf('-'), text.indexOf('.')),
+            paragraph.getWordBoundary(text.indexOf('\u05d5'))
+        )
+         */
+        assertEquals(
+            TextRange(text.indexOf('\u05d5'), text.indexOf('.')),
+            paragraph.getWordBoundary(text.indexOf('\u05d6'))
+        )
+        assertEquals(
+            TextRange(text.indexOf('\u05d7'), text.length),
+            paragraph.getWordBoundary(text.indexOf('\u05d7'))
+        )
+    }
+
+    @Test
+    fun getWordBoundary_CJK() { // Japanese HIRAGANA letter + KATAKANA letters
+        val text = "\u3042\u30A2\u30A3\u30A4"
+        val paragraph = simpleParagraph(text)
+
+        assertEquals(
+            TextRange(text.indexOf('\u3042'), text.indexOf('\u3042') + 1),
+            paragraph.getWordBoundary(text.indexOf('\u3042'))
+        )
+        /*
+        TODO: figure out why skia's ICU split words this way
+        assertEquals(
+            TextRange(text.indexOf('\u3042'), text.indexOf('\u30A4') + 1),
+            paragraph.getWordBoundary(text.indexOf('\u30A2'))
+        )
+         */
+        assertEquals(
+            TextRange(text.indexOf('\u30A2'), text.indexOf('\u30A4') + 1),
+            paragraph.getWordBoundary(text.indexOf('\u30A4'))
+        )
+        /*
+        TODO: figure out why skia's ICU split words this way
+        assertEquals(
+            TextRange(text.indexOf('\u30A2'), text.indexOf('\u30A4') + 1),
+            paragraph.getWordBoundary(text.length)
+        )
+         */
+    }
+
+    @Test
+    fun getWordBoundary_apostropheMiddleOfWord() {
+        // These tests confirm that the word "isn't" is treated like one word.
+        val text = "isn't he"
+        val paragraph = simpleParagraph(text)
+
+        assertEquals(
+            TextRange(text.indexOf('i'), text.indexOf('t') + 1),
+            paragraph.getWordBoundary(text.indexOf('i'))
+        )
+        assertEquals(
+            TextRange(text.indexOf('i'), text.indexOf('t') + 1),
+            paragraph.getWordBoundary(text.indexOf('n'))
+        )
+        assertEquals(
+            TextRange(text.indexOf('i'), text.indexOf('t') + 1),
+            paragraph.getWordBoundary(text.indexOf('\''))
+        )
+        assertEquals(
+            TextRange(text.indexOf('i'), text.indexOf('t') + 1),
+            paragraph.getWordBoundary(text.indexOf('t'))
+        )
+        assertEquals(
+            TextRange(text.indexOf('i'), text.indexOf('t') + 1),
+            paragraph.getWordBoundary(text.indexOf('t') + 1)
+        )
+        assertEquals(
+            TextRange(text.indexOf('h'), text.indexOf('e') + 1),
+            paragraph.getWordBoundary(text.indexOf('h'))
+        )
+    }
+
+    @Test
+    @Ignore // TODO: Port punctuation handling from Android.
+    fun getWordBoundary_isOnPunctuation() {
+        val text = "abc!? (^^;) def"
+        val paragraph = simpleParagraph(text)
+
+        assertEquals(
+            TextRange(text.indexOf('a'), text.indexOf('!')),
+            paragraph.getWordBoundary(text.indexOf('a'))
+        )
+        assertEquals(
+            TextRange(text.indexOf('a'), text.indexOf('?') + 1),
+            paragraph.getWordBoundary(text.indexOf('!'))
+        )
+        assertEquals(
+            TextRange(text.indexOf('!'), text.indexOf('?') + 1),
+            paragraph.getWordBoundary(text.indexOf('?') + 1)
+        )
+        assertEquals(
+            TextRange(text.indexOf('('), text.indexOf('(') + 1),
+            paragraph.getWordBoundary(text.indexOf('('))
+        )
+        assertEquals(
+            TextRange(text.indexOf('(') + 2, text.indexOf('(') + 2),
+            paragraph.getWordBoundary(text.indexOf('(') + 2)
+        )
+        assertEquals(
+            TextRange(text.indexOf(';'), text.indexOf(')') + 1),
+            paragraph.getWordBoundary(text.indexOf(';'))
+        )
+        assertEquals(
+            TextRange(text.indexOf(';'), text.indexOf(')') + 1),
+            paragraph.getWordBoundary(text.indexOf(')'))
+        )
+        assertEquals(
+            TextRange(text.indexOf(';'), text.indexOf(')') + 1),
+            paragraph.getWordBoundary(text.indexOf(')') + 1)
+        )
+        assertEquals(
+            TextRange(text.indexOf('d'), text.length),
+            paragraph.getWordBoundary(text.indexOf('d'))
+        )
+        assertEquals(
+            TextRange(text.indexOf('d'), text.length),
+            paragraph.getWordBoundary(text.length)
+        )
+    }
+
+    @Test
+    fun getWordBoundary_emoji() {
+        // "ab 🧑🏿‍🦰 cd" - example of complex emoji
+        //             | (offset=3)      | (offset=6)
+        val text = "ab \uD83E\uDDD1\uD83C\uDFFF\u200D\uD83E\uDDB0 cd"
+        val paragraph = simpleParagraph(text)
+
+        assertEquals(
+            TextRange(3, 10),
+            paragraph.getWordBoundary(6)
+        )
+    }
+
+    @Test
+    fun getWordBoundary_multichar() {
+        // "ab 𐐔𐐯𐑅𐐨𐑉𐐯𐐻 cd" - example of multi-char code units
+        //             | (offset=3)      | (offset=6)
+        val text =
+            "ab \uD801\uDC14\uD801\uDC2F\uD801\uDC45\uD801\uDC28\uD801\uDC49\uD801\uDC2F\uD801\uDC3B cd"
+        val paragraph = simpleParagraph(text)
+
+        assertEquals(
+            TextRange(3, 17),
+            paragraph.getWordBoundary(6)
+        )
+    }
+
+    @Test
+    fun getHorizontalPosition_cursor_empty_textfield_ltr_start_alignment() {
+        val paragraph = simpleParagraph("", TextStyle(textAlign = TextAlign.Start, textDirection = TextDirection.Ltr))
+        val cursorHorizontalPosition: Float = paragraph.getHorizontalPosition(0, false)
+        assertEquals(0f, cursorHorizontalPosition)
+    }
+
+    @Test
+    fun getHorizontalPosition_cursor_empty_textfield_ltr_end_alignment() {
+        val paragraph = simpleParagraph("", TextStyle(textAlign = TextAlign.End, textDirection = TextDirection.Ltr))
+        val cursorHorizontalPosition = paragraph.getHorizontalPosition(0, false)
+        assertEquals(maxWidthConstraint.toFloat(), cursorHorizontalPosition)
+    }
+
+    @Test
+    fun getHorizontalPosition_cursor_empty_textfield_center_alignment() {
+        val paragraph = simpleParagraph("", TextStyle(textAlign = TextAlign.Center))
+        val cursorHorizontalPosition = paragraph.getHorizontalPosition(0, false)
+        assertEquals((maxWidthConstraint / 2).toFloat(), cursorHorizontalPosition)
+    }
+
+    @Test
+    fun getHorizontalPosition_cursor_empty_textfield_rtl_start_alignment() {
+        val paragraph = simpleParagraph("", TextStyle(textAlign = TextAlign.Start, textDirection = TextDirection.Rtl))
+        val cursorHorizontalPosition: Float = paragraph.getHorizontalPosition(0, false)
+        assertEquals(maxWidthConstraint.toFloat(), cursorHorizontalPosition)
+    }
+
+    @Test
+    fun getHorizontalPosition_cursor_empty_textfield_rtl_end_alignment() {
+        val paragraph = simpleParagraph("", TextStyle(textAlign = TextAlign.End, textDirection = TextDirection.Rtl))
+        val cursorHorizontalPosition = paragraph.getHorizontalPosition(0, false)
+        assertEquals(0f, cursorHorizontalPosition)
+    }
+
+    @Test
+    fun getHorizontalPosition_cursor_empty_textfield_left_alignment() {
+        val paragraph = simpleParagraph("", TextStyle(textAlign = TextAlign.Start))
+        val cursorHorizontalPosition: Float = paragraph.getHorizontalPosition(0, false)
+        assertEquals(0f, cursorHorizontalPosition)
+    }
+
+    @Test
+    fun getHorizontalPosition_cursor_empty_textfield_right_alignment() {
+        val paragraph = simpleParagraph("", TextStyle(textAlign = TextAlign.End))
+        val cursorHorizontalPosition = paragraph.getHorizontalPosition(0, false)
+        assertEquals(maxWidthConstraint.toFloat(), cursorHorizontalPosition)
+    }
+
+    @Test
+    // Ignored on web: skiko shapes the cluster with an inflated advance there (see note below),
+    // which moves the box midpoint and breaks this check. A stable web run needs a bundled font.
+    // TODO: CMP-10342
+    @IgnoreJsTarget
+    @IgnoreWasmTarget
+    fun getOffsetForPosition_midpointOfComplexCharacter_snapsToClusterStart() {
+        val text = "abca\u030B abc" // "abc" + 'a' + U+030B (combining double acute) + " abc"
+        val paragraph = simpleParagraph(text)
+
+        val complexCharStart = 3 // Index of the base 'a'; the 'a' + U+030B cluster spans indices 3..4
+        val complexCharBox = paragraph.getBoundingBox(complexCharStart)
+
+        // On web the default font shapes 'a' + U+030B with an inflated cluster advance (the
+        // combining acute consumes width), so getBoundingBox returns a much wider box than on
+        // desktop and this midpoint check would resolve to the cluster end. A deterministic web
+        // run would require an explicitly bundled font.
+
+        // Click exactly in the middle of the complex character's box.
+        val insideOffset =
+            Offset(complexCharBox.left + complexCharBox.width / 2, complexCharBox.center.y)
+        val position = paragraph.getOffsetForPosition(insideOffset)
+
+        // A midpoint click is a tie between the two valid caret positions (before the
+        // cluster = 3, after it = 5). Matching Android's Layout.getOffsetForHorizontal,
+        // the exact-midpoint tie resolves to the before-char side, i.e. the cluster start.
+        // The caret must never land on the internal code-unit index (4).
+        assertEquals(
+            3, // start of the 'a' + U+030B cluster (before-char), Android-compatible midpoint tie-break
+            position,
+            message = "A midpoint click on a complex cluster should snap to the cluster start (before-char)"
+        )
+    }
+
+    /**
+     * Test that the caret can be placed at the end of a line when a complex character
+     * is the last character in the line.
+     */
+    @Test
+    fun getOffsetForPosition_endOfLineWithComplexCharacter_shouldPositionCorrectly() {
+        val text = "abc\u0915\u094D" // "abcक्"
+        val paragraph = simpleParagraph(text)
+
+        val complexCharStart = 3
+        val complexCharBox = paragraph.getBoundingBox(complexCharStart)
+
+        val afterOffset = Offset(complexCharBox.right + 5, complexCharBox.center.y)
+        val position = paragraph.getOffsetForPosition(afterOffset)
+
+
+        assertEquals(
+            5,
+            position,
+            message = "The position should be at the end of the text"
+        )
+    }
+
+
+    @Test
+    fun bullet_withEmUnits_shouldNotCrash() {
+        // Regression test for bug where Bullet with Em units caused crash:
+        // "Only Sp can convert to Px" when textIndent used Em units
+        val text = "First item"
+
+        // Create a simple paragraph with textIndent using Em units (like Bullet.DefaultIndentation)
+        val paragraph = Paragraph(
+            text = text,
+            style = TextStyle(
+                textIndent = TextIndent(1.em, 1.em)
+            ),
+            constraints = Constraints(maxWidth = maxWidthConstraint),
+            density = defaultDensity,
+            fontFamilyResolver = fontFamilyResolver
+        )
+
+        // Verify paragraph was created successfully without crashing
+        assertEquals(1, paragraph.lineCount)
+    }
+
+    // Regression test for https://youtrack.jetbrains.com/issue/CMP-10034
+    @Test
+    fun getCursorRect_doesNotCrash_inRtlParagraphsWithNewlinesAndSpecialCharacters() {
+        val problemTexts = listOf(
+            // Arabic with diacritics across a newline: "اّ\nبَ"
+            "\u0627\u0651\n\u0628\u064E",
+            // Hebrew followed by newline and emoji: "אב\n😀"
+            "\u05D0\u05D1\n\uD83D\uDE00",
+            // RTL with multiple newlines and combining marks: "א\nבְ\nג"
+            "\u05D0\n\u05D1\u05B0\n\u05D2",
+            // Newline at start: "\nאב"
+            "\n\u05D0\u05D1",
+            // Newline followed by combining mark: "א\nְב"
+            "\u05D0\n\u05B0\u05D1",
+        )
+
+        for (text in problemTexts) {
+            val paragraph = simpleParagraph(
+                text = text,
+                textStyle = TextStyle(textDirection = TextDirection.Rtl, fontSize = 20.sp)
+            )
+            for (offset in 0..text.length) {
+                paragraph.getCursorRect(offset)
+            }
+        }
+    }
+
+    private fun simpleParagraph(text: String, textStyle: TextStyle = TextStyle()) = Paragraph(
+        text = text,
+        style = textStyle,
+        constraints = Constraints(maxWidth = maxWidthConstraint),
+        density = defaultDensity,
+        fontFamilyResolver = fontFamilyResolver
+    )
+}

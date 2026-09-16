@@ -34,6 +34,7 @@ import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.WindowInfoImpl
+import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.scene.ComposeScene
@@ -47,6 +48,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toDpSize
+import androidx.compose.ui.unit.toMaxConstraints
 import androidx.compose.ui.unit.toSize
 import kotlin.coroutines.CoroutineContext
 import kotlin.jvm.JvmName
@@ -186,6 +188,10 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
             get() = _windowInfo
     }
 
+    init {
+        registerSkikoComposeImplementation()
+    }
+
     private val scene = CanvasLayersComposeScene(
         frameRecomposer = frameRecomposer,
         density = density,
@@ -231,7 +237,7 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
      * Constraints used to measure and layout content.
      */
     var constraints: Constraints
-        get() = scene.size?.toConstraints() ?: Constraints()
+        get() = scene.size.toMaxConstraints()
         set(value) { scene.size = value.toIntSize() }
 
     /**
@@ -403,5 +409,3 @@ private fun Constraints.toIntSize() =
     } else {
         null
     }
-
-private fun IntSize.toConstraints() = Constraints(maxWidth = width, maxHeight = height)

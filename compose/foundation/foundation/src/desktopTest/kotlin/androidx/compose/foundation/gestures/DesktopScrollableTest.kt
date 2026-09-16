@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -64,6 +63,7 @@ class DesktopScrollableTest {
     private fun scrollPage(bounds: Dp) = bounds.value * density.density
 
     @Ignore("Flaky https://youtrack.jetbrains.com/issue/CMP-9422")
+    @Suppress("DEPRECATION")
     @Test
     fun `linux, scroll vertical`() = runSkikoComposeUiTest(
         size = size,
@@ -108,6 +108,7 @@ class DesktopScrollableTest {
     }
 
     @Ignore("Flaky https://youtrack.jetbrains.com/issue/CMP-9422")
+    @Suppress("DEPRECATION")
     @Test
     fun `windows, scroll vertical`() = runSkikoComposeUiTest(
         size = size,
@@ -151,6 +152,7 @@ class DesktopScrollableTest {
         assertThat(context.offset).isWithin(0.1f).of(-2 * scrollLineWindows(20.dp))
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun `windows, scroll one page vertical`() = runSkikoComposeUiTest(
         size = size,
@@ -184,6 +186,7 @@ class DesktopScrollableTest {
         assertThat(context.offset).isWithin(0.1f).of(-scrollPage(20.dp))
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun `macOS, scroll vertical`() = runSkikoComposeUiTest(
         size = size,
@@ -217,6 +220,7 @@ class DesktopScrollableTest {
         assertThat(context.offset).isWithin(0.1f).of(5.5f * scrollLineMacOs())
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun `scroll with different orientation`() = runSkikoComposeUiTest(
         size = size,
@@ -251,6 +255,7 @@ class DesktopScrollableTest {
     }
 
     @Ignore("Flaky https://youtrack.jetbrains.com/issue/CMP-9422")
+    @Suppress("DEPRECATION")
     @Test
     fun multipleScrollingModifiers() = runSkikoComposeUiTest(
         size = size,
@@ -300,6 +305,7 @@ class DesktopScrollableTest {
         assertThat(horizontalContext.offset).isWithin(0.1f).of(5f * scrollLineLinux(10.dp))
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun smoothScrollingDisabled() = runSkikoComposeUiTest(
         size = size,
@@ -342,6 +348,7 @@ class DesktopScrollableTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollableDisabled() = runSkikoComposeUiTest(
         size = size,

@@ -44,6 +44,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.text
+import androidx.compose.ui.test.ComposeUiTestConfig
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertHeightIsEqualTo
@@ -61,6 +62,7 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.LinkAnnotation.Url
@@ -78,7 +80,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.max
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -90,16 +91,21 @@ class BoundsAssertionsTest {
         private const val tag = "box"
     }
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
-    private fun composeBox() {
+    private fun composeBox(
+        start: Dp = 50.dp,
+        top: Dp = 100.dp,
+        width: Dp = 80.dp,
+        height: Dp = 100.dp,
+    ) {
         rule.setContent {
             Box(modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.TopStart)) {
-                Box(modifier = Modifier.padding(start = 50.dp, top = 100.dp)) {
+                Box(modifier = Modifier.padding(start = start, top = top)) {
                     Box(
                         modifier =
                             Modifier.testTag(tag)
-                                .requiredSize(80.dp, 100.dp)
+                                .requiredSize(width, height)
                                 .background(color = Color.Black)
                     )
                 }
@@ -107,12 +113,19 @@ class BoundsAssertionsTest {
         }
     }
 
+    private fun composeBoxWithPixelBounds() {
+        with(rule.density) {
+            composeBox(start = 50.toDp(), top = 100.toDp(), width = 80.toDp(), height = 100.toDp())
+        }
+    }
+
     @Composable
-    private fun SmallBox(modifier: Modifier = Modifier, tag: String = BoundsAssertionsTest.tag) {
-        Box(
-            modifier =
-                modifier.testTag(tag).requiredSize(10.dp, 10.dp).background(color = Color.Black)
-        )
+    private fun SmallBox(
+        modifier: Modifier = Modifier,
+        tag: String = BoundsAssertionsTest.tag,
+        size: Dp = 10.dp,
+    ) {
+        Box(modifier = modifier.testTag(tag).requiredSize(size).background(color = Color.Black))
     }
 
     @Test
@@ -141,6 +154,42 @@ class BoundsAssertionsTest {
         expectError<AssertionError> { rule.onNodeWithTag(tag).assertWidthIsEqualTo(70.dp) }
 
         expectError<AssertionError> { rule.onNodeWithTag(tag).assertHeightIsEqualTo(90.dp) }
+    }
+
+    @Test
+    fun assertWidthIsEqualTo_withCustomTolerance() {
+        val density = rule.density
+        composeBoxWithPixelBounds()
+
+        val expectedWidth = with(density) { 81.toDp() }
+        val toleranceSuccess = with(density) { 1.1f.toDp() }
+        val toleranceFailure = with(density) { 0.9f.toDp() }
+
+        rule.onNodeWithTag(tag).assertWidthIsEqualTo(expectedWidth, tolerance = toleranceSuccess)
+
+        expectError<AssertionError> {
+            rule
+                .onNodeWithTag(tag)
+                .assertWidthIsEqualTo(expectedWidth, tolerance = toleranceFailure)
+        }
+    }
+
+    @Test
+    fun assertHeightIsEqualTo_withCustomTolerance() {
+        val density = rule.density
+        composeBoxWithPixelBounds()
+
+        val expectedHeight = with(density) { 101.toDp() }
+        val toleranceSuccess = with(density) { 1.1f.toDp() }
+        val toleranceFailure = with(density) { 0.9f.toDp() }
+
+        rule.onNodeWithTag(tag).assertHeightIsEqualTo(expectedHeight, tolerance = toleranceSuccess)
+
+        expectError<AssertionError> {
+            rule
+                .onNodeWithTag(tag)
+                .assertHeightIsEqualTo(expectedHeight, tolerance = toleranceFailure)
+        }
     }
 
     @Test
@@ -173,6 +222,66 @@ class BoundsAssertionsTest {
     }
 
     @Test
+    fun assertTouchWidthIsEqualTo_withCustomTolerance() {
+        val density = rule.density
+
+        val targetSizePx = 20
+        val boxSizePx = 10
+        val targetSizeDp = with(density) { targetSizePx.toDp() }
+        val boxSizeDp = with(density) { boxSizePx.toDp() }
+
+        rule.setContent {
+            WithMinimumTouchTargetSize(DpSize(targetSizeDp, targetSizeDp)) {
+                SmallBox(Modifier.clickable {}, size = boxSizeDp)
+            }
+        }
+
+        val expectedWidth = with(density) { 21.toDp() }
+        val toleranceSuccess = with(density) { 1.1f.toDp() }
+        val toleranceFailure = with(density) { 0.9f.toDp() }
+
+        rule
+            .onNodeWithTag(tag)
+            .assertTouchWidthIsEqualTo(expectedWidth, tolerance = toleranceSuccess)
+
+        expectError<AssertionError> {
+            rule
+                .onNodeWithTag(tag)
+                .assertTouchWidthIsEqualTo(expectedWidth, tolerance = toleranceFailure)
+        }
+    }
+
+    @Test
+    fun assertTouchHeightIsEqualTo_withCustomTolerance() {
+        val density = rule.density
+
+        val targetSizePx = 20
+        val boxSizePx = 10
+        val targetSizeDp = with(density) { targetSizePx.toDp() }
+        val boxSizeDp = with(density) { boxSizePx.toDp() }
+
+        rule.setContent {
+            WithMinimumTouchTargetSize(DpSize(targetSizeDp, targetSizeDp)) {
+                SmallBox(Modifier.clickable {}, size = boxSizeDp)
+            }
+        }
+
+        val expectedHeight = with(density) { 21.toDp() }
+        val toleranceSuccess = with(density) { 1.1f.toDp() }
+        val toleranceFailure = with(density) { 0.9f.toDp() }
+
+        rule
+            .onNodeWithTag(tag)
+            .assertTouchHeightIsEqualTo(expectedHeight, tolerance = toleranceSuccess)
+
+        expectError<AssertionError> {
+            rule
+                .onNodeWithTag(tag)
+                .assertTouchHeightIsEqualTo(expectedHeight, tolerance = toleranceFailure)
+        }
+    }
+
+    @Test
     fun assertPosition() {
         composeBox()
 
@@ -197,6 +306,75 @@ class BoundsAssertionsTest {
             rule
                 .onNodeWithTag(tag)
                 .assertPositionInRootIsEqualTo(expectedLeft = 49.dp, expectedTop = 99.dp)
+        }
+    }
+
+    @Test
+    fun assertPositionInRootIsEqualTo_withCustomTolerance() {
+        val density = rule.density
+        composeBoxWithPixelBounds()
+
+        val expectedLeft = with(density) { 51.toDp() }
+        val expectedTop = with(density) { 101.toDp() }
+        val toleranceSuccess = with(density) { 1.1f.toDp() }
+        val toleranceFailure = with(density) { 0.9f.toDp() }
+
+        rule
+            .onNodeWithTag(tag)
+            .assertPositionInRootIsEqualTo(
+                expectedLeft = expectedLeft,
+                expectedTop = expectedTop,
+                tolerance = toleranceSuccess,
+            )
+
+        expectError<AssertionError> {
+            rule
+                .onNodeWithTag(tag)
+                .assertPositionInRootIsEqualTo(
+                    expectedLeft = expectedLeft,
+                    expectedTop = expectedTop,
+                    tolerance = toleranceFailure,
+                )
+        }
+    }
+
+    @Test
+    fun assertLeftPositionInRootIsEqualTo_withCustomTolerance() {
+        val density = rule.density
+        composeBoxWithPixelBounds()
+
+        val expectedLeft = with(density) { 51.toDp() }
+        val toleranceSuccess = with(density) { 1.1f.toDp() }
+        val toleranceFailure = with(density) { 0.9f.toDp() }
+
+        rule
+            .onNodeWithTag(tag)
+            .assertLeftPositionInRootIsEqualTo(expectedLeft, tolerance = toleranceSuccess)
+
+        expectError<AssertionError> {
+            rule
+                .onNodeWithTag(tag)
+                .assertLeftPositionInRootIsEqualTo(expectedLeft, tolerance = toleranceFailure)
+        }
+    }
+
+    @Test
+    fun assertTopPositionInRootIsEqualTo_withCustomTolerance() {
+        val density = rule.density
+        composeBoxWithPixelBounds()
+
+        val expectedTop = with(density) { 101.toDp() }
+        val toleranceSuccess = with(density) { 1.1f.toDp() }
+        val toleranceFailure = with(density) { 0.9f.toDp() }
+
+        rule
+            .onNodeWithTag(tag)
+            .assertTopPositionInRootIsEqualTo(expectedTop, tolerance = toleranceSuccess)
+
+        expectError<AssertionError> {
+            rule
+                .onNodeWithTag(tag)
+                .assertTopPositionInRootIsEqualTo(expectedTop, tolerance = toleranceFailure)
         }
     }
 
@@ -686,16 +864,30 @@ class BoundsAssertionsTest {
         }
 
         val textNode = rule.onNodeWithTag("tag")
-        val expectedBounds =
-            textLayoutResult.run {
-                val right = getBoundingBox(1).right
-                val top = getBoundingBox(1).top
-                val left = getBoundingBox(3).left
-                val bottom = getBoundingBox(3).bottom
-                Rect(left, top, right, bottom)
-            }
+        val expectedBounds = textLayoutResult.run {
+            val right = getBoundingBox(1).right
+            val top = getBoundingBox(1).top
+            val left = getBoundingBox(3).left
+            val bottom = getBoundingBox(3).bottom
+            Rect(left, top, right, bottom)
+        }
         assertThat(textNode.getFirstLinkBounds { true }).isEqualTo(expectedBounds)
     }
+
+    @Test
+    fun assertBounds_withConfiguredTolerance() =
+        runComposeUiTest(ComposeUiTestConfig(boundsAssertionTolerance = 2.dp)) {
+            val tag = "box"
+            setContent { Box(Modifier.testTag(tag).size(100.dp)) }
+
+            // Actual size is 100.dp. Expecting 101.5.dp (delta 1.5.dp).
+            onNodeWithTag(tag).assertWidthIsEqualTo(101.5.dp)
+            onNodeWithTag(tag).assertHeightIsEqualTo(101.5.dp)
+            onNodeWithTag(tag).assertPositionInRootIsEqualTo(1.5.dp, 1.5.dp)
+
+            // Expecting 103.dp (delta 3.dp > 2.dp tolerance) fails.
+            expectError<AssertionError> { onNodeWithTag(tag).assertWidthIsEqualTo(103.dp) }
+        }
 
     private val DpRect.topLeft: DpOffset
         get() = DpOffset(left, top)

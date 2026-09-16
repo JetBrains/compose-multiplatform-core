@@ -34,6 +34,7 @@ import kotlin.test.Test
 
 @OptIn(ExperimentalTestApi::class)
 class TextFieldFocusTest {
+    @Suppress("DEPRECATION")
     @Test
     fun shouldRequestFocusOnClick() = runComposeUiTest {
         setContent {
@@ -56,6 +57,7 @@ class TextFieldFocusTest {
     }
 
     // bug https://github.com/JetBrains/compose-multiplatform/issues/3526
+    @Suppress("DEPRECATION")
     @Test
     fun shouldRequestFocusOnClickInLazyList() = runComposeUiTest {
         val size = 1000

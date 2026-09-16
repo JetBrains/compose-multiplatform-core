@@ -79,6 +79,7 @@ class BorderTest {
     private var shape: Shape? = null
 
     private val sceneSize = Size(40f, 40f)
+    @Suppress("DEPRECATION")
     private fun runParametrizedTest(test: SkikoComposeUiTest.() -> Unit) =
         runSkikoComposeUiTest(sceneSize) {
             params.forEach {
@@ -230,6 +231,7 @@ class BorderTest {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun border_triangle_shape() = runSkikoComposeUiTest(Size(100f, 100f)) {
         val testTag = "testTag"
@@ -267,6 +269,7 @@ class BorderTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun border_non_simple_rounded_rect() = runSkikoComposeUiTest(Size(50f, 50f)) {
         val topleft = 0f
@@ -393,6 +396,7 @@ class BorderTest {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun border_generic_shape_color_to_brush() = runSkikoComposeUiTest(Size(20f, 20f)) {
         // Verify that rendering with a solid color initially then with a gradient
@@ -483,6 +487,7 @@ class BorderTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun border_test_with_fixed_size_generic_shape() = runSkikoComposeUiTest(Size(80f, 40f)) {
         val testTag = "testTag"

@@ -253,6 +253,35 @@ internal fun String.isWhitespaceOrPunctuation(offset: Int): Boolean {
 }
 
 /**
+ * Returns whether iOS cursor placement should remain at the character boundary instead of
+ * applying Cupertino's Latin word adjustment. This helper lives in `skikoMain` alongside the
+ * shared Cupertino cursor adjustment, but its production callers are iOS-only. Whitespace is
+ * excluded so that Cupertino's existing whitespace placement remains unchanged.
+ */
+internal fun String.requiresCharacterLevelCursorPlacement(index: Int): Boolean {
+    if (index !in indices) return false
+
+    val codePoint = codePointAt(index)
+    if (codePoint.isWhitespace()) return false
+
+    return when (codePoint) {
+        in 0x2E80..0x312F, // CJK radicals, punctuation, Hiragana, Katakana, and Bopomofo.
+        in 0x3130..0x318F, // Hangul compatibility jamo.
+        in 0x31A0..0x31FF, // Bopomofo extended and Katakana phonetic extensions.
+        in 0x3400..0x4DBF, // CJK unified ideographs extension A.
+        in 0x4E00..0x9FFF, // CJK unified ideographs.
+        in 0xAC00..0xD7AF, // Hangul syllables and jamo extensions.
+        in 0xF900..0xFAFF, // CJK compatibility ideographs.
+        in 0xFE30..0xFE4F, // CJK compatibility forms.
+        in 0xFF00..0xFFEF, // Half-width and full-width forms.
+        in 0x20000..0x3134F, // Supplementary CJK ideographs.
+        -> true
+
+        else -> false
+    }
+}
+
+/**
  * Returns the midpoint position in the string considering Unicode symbols.
  *
  * This function calculates the midpoint position in the given string, taking into account Unicode symbols.

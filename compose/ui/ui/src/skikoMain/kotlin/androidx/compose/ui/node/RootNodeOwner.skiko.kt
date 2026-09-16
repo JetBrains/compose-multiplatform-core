@@ -25,12 +25,13 @@ import androidx.compose.runtime.retain.ForgetfulRetainedValuesStore
 import androidx.compose.runtime.retain.RetainedValuesStore
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.SessionMutex
+import androidx.compose.ui.UiMediaScope
 import androidx.compose.ui.areWindowInsetsRulersEnabled
 import androidx.compose.ui.autofill.AutofillManager
 import androidx.compose.ui.focus.FocusDirection
@@ -72,9 +73,10 @@ import androidx.compose.ui.platform.PlatformRootForTest
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.PlatformWindowInsets
-import androidx.compose.ui.platform.PlatformWindowInsetsProviderNode
+import androidx.compose.ui.platform.TaskDispatchers
 import androidx.compose.ui.platform.createPlatformClipboard
 import androidx.compose.ui.platform.createPlatformClipboardManager
+import androidx.compose.ui.platform.createPlatformUriHandler
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.ComposeSceneInputHandler
 import androidx.compose.ui.scene.ComposeScenePointer
@@ -91,10 +93,13 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.bounds
 import androidx.compose.ui.unit.round
+import androidx.compose.ui.unit.toMaxConstraints
 import androidx.compose.ui.unit.toRect
-import androidx.compose.ui.useLegacyRenderNodeLayers
+import androidx.compose.ui.useSnapshotCache
 import androidx.compose.ui.util.fastAll
+import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.trace
 import androidx.compose.ui.viewinterop.InteropPointerInputModifier
 import androidx.compose.ui.viewinterop.InteropView
@@ -132,7 +137,10 @@ internal class RootNodeOwner(
 
     private val rootSemanticsNode = EmptySemanticsModifier()
     private val snapshotObserver = OwnerSnapshotObserver(onChangedExecutor)
-    private val graphicsContext = SkiaGraphicsContext(platformContext.measureDrawLayerBounds)
+    private val graphicsContext = SkiaGraphicsContext(
+        measureDrawBounds = platformContext.measureDrawLayerBounds,
+        snapshotCache = ComposeUiFlags.useSnapshotCache,
+    )
     private val coroutineScope =
         CoroutineScope(coroutineContext + Job(parent = coroutineContext[Job]))
 
@@ -197,7 +205,7 @@ internal class RootNodeOwner(
         coroutineScope.cancel()
         platformContext.rootForTestListener?.onRootForTestDisposed(rootForTest)
         snapshotObserver.stopObserving()
-        graphicsContext.dispose()
+        graphicsContext.close()
         _owner.dispose()
         // we don't need to call root.detach() because root will be garbage collected
         isDisposed = true
@@ -393,7 +401,7 @@ internal class RootNodeOwner(
     }
 
     private fun isInBounds(localPosition: Offset): Boolean =
-        size?.toRect()?.contains(localPosition) ?: true
+        size?.bounds(localPosition) ?: true
 
     private fun calculateBoundsInWindow(): Rect? {
         val rect = size?.toRect() ?: return null
@@ -437,7 +445,6 @@ internal class RootNodeOwner(
         override val focusOwner: FocusOwner = FocusOwnerImpl(platformFocusOwner, this)
 
         val rootModifier = Modifier
-            .then(RootWindowInsetsProviderModifierElement(platformContext.windowInsets))
             .rulerProvider(platformContext.windowInsets)
             .then(EmptySemanticsElement(rootSemanticsNode))
             .focusProperties {
@@ -537,8 +544,14 @@ internal class RootNodeOwner(
             PointerIconServiceImpl()
         }
 
+        override val uriHandler by lazy(LazyThreadSafetyMode.NONE) { createPlatformUriHandler() }
+
         override val semanticsOwner = SemanticsOwner(root, rootSemanticsNode, layoutNodes)
         override val windowInfo get() = platformContext.windowInfo
+        override val taskDispatchers: TaskDispatchers get() = platformContext.taskDispatchers
+
+        @ExperimentalMediaQueryApi
+        override val uiMediaScope: UiMediaScope get() = platformContext.mediaScope
         override val retainedValuesStore: RetainedValuesStore get() = ForgetfulRetainedValuesStore
         override val rectManager = RectManager(layoutNodes)
 
@@ -908,29 +921,13 @@ internal class RootNodeOwner(
             drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
             invalidateParentLayer: () -> Unit,
             explicitLayer: GraphicsLayer?
-        ) = if (explicitLayer != null || !ComposeUiFlags.useLegacyRenderNodeLayers) {
-            GraphicsLayerOwnerLayer(
-                graphicsLayer = explicitLayer ?: graphicsContext.createGraphicsLayer(),
-                context = if (explicitLayer != null) null else graphicsContext,
-                layerManager = this,
-                drawBlock = drawBlock,
-                invalidateParentLayer = invalidateParentLayer,
-            )
-        } else {
-            LegacyRenderNodeLayer(
-                density = Snapshot.withoutReadObservation {
-                    // density is a mutable state that is observed whenever layer is created. the layer
-                    // is updated manually on draw, so not observing the density changes here helps with
-                    // performance in layout.
-                    density
-                },
-                measureDrawBounds = platformContext.measureDrawLayerBounds,
-                layerManager = this,
-                requiresStateWorkaround = { graphicsContext.activeGraphicsLayersCount > 0 },
-                invalidateParentLayer = invalidateParentLayer,
-                drawBlock = drawBlock,
-            )
-        }
+        ) = GraphicsLayerOwnerLayer(
+            graphicsLayer = explicitLayer ?: graphicsContext.createGraphicsLayer(),
+            context = if (explicitLayer != null) null else graphicsContext,
+            layerManager = this,
+            drawBlock = drawBlock,
+            invalidateParentLayer = invalidateParentLayer,
+        )
 
         override fun recycle(layer: OwnedLayer): Boolean {
             needClearObservations = true
@@ -972,12 +969,11 @@ internal class RootNodeOwner(
             // So, we applying it before drawing to reflect the changes from previous phases.
             // Changes that requires another round of invalidation will be scheduled to next frame.
             if (dirtyLayers.isNotEmpty()) {
-                for (i in 0 until dirtyLayers.size) {
-                    val layer = dirtyLayers[i]
+                dirtyLayers.fastForEach { layer ->
                     layer.updateDisplayList()
                 }
+                dirtyLayers.clear()
             }
-            dirtyLayers.clear()
 
             // Draw root node
             owner.root.draw(
@@ -1001,9 +997,6 @@ internal class RootNodeOwner(
         }
     }
 }
-
-private fun IntSize?.toMaxConstraints() =
-    if (this == null) Constraints() else Constraints(maxWidth = width, maxHeight = height)
 
 private object IdentityPositionCalculator : PositionCalculator {
     override fun screenToLocal(positionOnScreen: Offset): Offset = positionOnScreen

@@ -1,0 +1,116 @@
+/*
+ * Copyright 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import androidx.build.SoftwareType
+import androidx.build.PlatformIdentifier
+
+plugins {
+    id("AndroidXPlugin")
+    id("AndroidXComposePlugin")
+    id("JetBrainsAndroidXPlugin")
+}
+
+androidXMultiplatform {
+    androidLibrary {
+        compileSdk = 35
+        namespace = "androidx.compose.ui.skiko"
+    }
+    desktop()
+    mac()
+    ios()
+    js()
+    wasmJs()
+
+    defaultPlatform(PlatformIdentifier.ANDROID)
+
+    sourceSets {
+        commonMain.dependencies {
+            api(project(":compose:ui:ui-graphics"))
+            api(project(":compose:ui:ui-text"))
+            implementation(project(":compose:runtime:runtime"))
+            implementation(project(":compose:ui:ui-util"))
+        }
+
+        commonTest.dependencies {
+            implementation(libs.kotlinTest)
+        }
+
+        nonAndroidMain {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.atomicFu)
+                api(libs.skiko)
+            }
+        }
+
+        nonAndroidTest {
+            dependsOn(commonTest)
+            dependencies {
+                implementation(project(":kruth:kruth"))
+                implementation(project(":compose:ui:ui-test"))
+            }
+        }
+
+        nonAndroidExcludingWebMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        desktopMain {
+            dependsOn(nonAndroidMain)
+            dependsOn(nonAndroidExcludingWebMain)
+            dependencies {
+                runtimeOnly(libs.skikoAwtRuntime)
+            }
+        }
+
+        desktopTest {
+            dependsOn(nonAndroidTest)
+            dependencies {
+                implementation(libs.skikoAwtRuntime)
+                implementation(libs.junit)
+                implementation(libs.truth)
+                implementation(project(":internal-testutils-fonts"))
+                implementation(project(":compose:foundation:foundation"))
+                implementation(project(":compose:ui:ui-test-junit4"))
+            }
+        }
+
+        nonJvmMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        nonJvmTest {
+            dependsOn(nonAndroidTest)
+        }
+
+        nativeMain {
+            dependsOn(nonJvmMain)
+            dependsOn(nonAndroidExcludingWebMain)
+        }
+
+        nativeTest {
+            dependsOn(nonJvmTest)
+        }
+    }
+}
+
+androidx {
+    name = "Compose UI Skiko"
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    inceptionYear = "2026"
+    description = "Skiko-backed runtime implementations for Compose UI"
+    legacyDisableKotlinStrictApiMode = true
+}

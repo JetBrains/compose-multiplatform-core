@@ -332,6 +332,7 @@ class MouseMoveTest {
         collector.assertPositions(move = Offset(2f, 0f))
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun `hover on scroll`() = runSkikoComposeUiTest(
         size = Size(100f, 100f),
@@ -370,6 +371,7 @@ class MouseMoveTest {
         collector2.assertCounts(enter = 1, exit = 1)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun `hover on scroll in lazy list`() = runSkikoComposeUiTest(
         size = Size(100f, 100f),

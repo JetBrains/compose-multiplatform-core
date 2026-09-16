@@ -67,6 +67,11 @@ internal class RenderingTestScope(
 
     val surface: Surface = Surface.makeRasterN32Premul(width, height)
     private val canvas = surface.canvas.asComposeCanvas()
+
+    init {
+        registerSkikoComposeImplementation()
+    }
+
     val scene = CanvasLayersComposeScene(
         frameRecomposer = frameRecomposer,
         invalidateLayout = sceneRenderingScope::onSceneInvalidation,

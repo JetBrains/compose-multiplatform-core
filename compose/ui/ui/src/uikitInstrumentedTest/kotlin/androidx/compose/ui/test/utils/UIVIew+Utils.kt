@@ -21,18 +21,24 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.unit.toCGSize
 import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.size
+import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.convert
 import kotlinx.cinterop.usePinned
 import org.jetbrains.skia.Image
+import platform.Foundation.NSStringFromClass
 import platform.UIKit.UIGraphicsBeginImageContextWithOptions
 import platform.UIKit.UIGraphicsEndImageContext
 import platform.UIKit.UIGraphicsGetImageFromCurrentImageContext
 import platform.UIKit.UIImagePNGRepresentation
 import platform.UIKit.UIScreen
 import platform.UIKit.UIView
+import platform.darwin.NSObject
 import platform.posix.memcpy
+
+@OptIn(BetaInteropApi::class)
+internal fun objcClassName(nsObject: NSObject): String? = nsObject.`class`()?.let { NSStringFromClass(it) }
 
 @OptIn(ExperimentalForeignApi::class)
 internal fun UIView.captureToImage(): ImageBitmap {

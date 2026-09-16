@@ -53,7 +53,6 @@ import kotlin.test.assertNotEquals
 import kotlinx.test.IgnoreJsTarget
 import kotlinx.test.IgnoreWasmTarget
 
-@Suppress("DEPRECATION")
 @OptIn(ExperimentalTestApi::class)
 class BasicTextFieldSelectionHandleTest {
     private val textPadding = 30.dp
@@ -72,6 +71,7 @@ class BasicTextFieldSelectionHandleTest {
         .padding(textPadding)
         .fillMaxSize()
 
+    @Suppress("DEPRECATION")
     @Test
     fun basicTextFieldSelectionHandles() = runSkikoComposeUiTest(size = Size(100f, 100f)) {
         val textState = TextFieldState(initialText = "TextText")
@@ -125,6 +125,7 @@ class BasicTextFieldSelectionHandleTest {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     // FIXME https://youtrack.jetbrains.com/issue/CMP-8803
     @IgnoreJsTarget

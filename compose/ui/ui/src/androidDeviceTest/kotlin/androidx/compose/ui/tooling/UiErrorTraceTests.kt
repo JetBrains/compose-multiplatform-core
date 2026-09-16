@@ -42,6 +42,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.node.RootForTest
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewRootForTest
+import androidx.compose.ui.test.ComposeUiTestConfig
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -52,7 +53,6 @@ import kotlin.test.assertNull
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Assume.assumeFalse
 import org.junit.Before
@@ -76,8 +76,7 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
     @get:Rule
     val rule =
         createAndroidComposeRule<ComponentActivity>(
-            CoroutineExceptionHandler { _, e -> exceptionHandler.invoke(e) } +
-                StandardTestDispatcher()
+            ComposeUiTestConfig(CoroutineExceptionHandler { _, e -> exceptionHandler.invoke(e) })
         )
 
     @Before
@@ -92,8 +91,9 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
 
     @Test
     fun initialLayoutMeasure() {
-        val traceContext =
-            rule.testContent { Layout(measurePolicy = { _, _ -> throwTestException() }) }
+        val traceContext = rule.testContent {
+            Layout(measurePolicy = { _, _ -> throwTestException() })
+        }
 
         rule.waitForIdle()
 
@@ -102,10 +102,9 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
 
     @Test
     fun initialLayoutPlace() {
-        val traceContext =
-            rule.testContent {
-                Layout(measurePolicy = { _, _ -> layout(10, 10) { throwTestException() } })
-            }
+        val traceContext = rule.testContent {
+            Layout(measurePolicy = { _, _ -> layout(10, 10) { throwTestException() } })
+        }
 
         rule.waitForIdle()
 
@@ -115,18 +114,16 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
     @Test
     fun initialModifierDraw() {
         var drawn = false
-        val traceContext =
-            rule.testContent {
-                val drawModifier =
-                    Modifier.drawBehind {
-                        try {
-                            throwTestException()
-                        } finally {
-                            drawn = true
-                        }
-                    }
-                Box(Modifier.size(10.dp).then(drawModifier))
+        val traceContext = rule.testContent {
+            val drawModifier = Modifier.drawBehind {
+                try {
+                    throwTestException()
+                } finally {
+                    drawn = true
+                }
             }
+            Box(Modifier.size(10.dp).then(drawModifier))
+        }
 
         rule.waitUntil(1000) { drawn }
 
@@ -135,11 +132,10 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
 
     @Test
     fun initialModifierMeasure() {
-        val traceContext =
-            rule.testContent {
-                val modifier = Modifier.layout { _, _ -> throwTestException() }
-                Box(Modifier.size(10.dp).then(modifier))
-            }
+        val traceContext = rule.testContent {
+            val modifier = Modifier.layout { _, _ -> throwTestException() }
+            Box(Modifier.size(10.dp).then(modifier))
+        }
 
         rule.waitForIdle()
 
@@ -148,11 +144,10 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
 
     @Test
     fun initialModifierLayout() {
-        val traceContext =
-            rule.testContent {
-                val modifier = Modifier.layout { _, _ -> layout(10, 10) { throwTestException() } }
-                Box(Modifier.size(10.dp).then(modifier))
-            }
+        val traceContext = rule.testContent {
+            val modifier = Modifier.layout { _, _ -> layout(10, 10) { throwTestException() } }
+            Box(Modifier.size(10.dp).then(modifier))
+        }
 
         rule.waitForIdle()
 
@@ -164,16 +159,15 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
         assumeFalse(lookahead) // todo figure out how to bail out of main pass in lookahead
 
         var state by mutableStateOf(false)
-        val traceContext =
-            rule.testContent {
-                val modifier =
-                    if (state) {
-                        Modifier.layout { _, _ -> layout(10, 10) { throwTestException() } }
-                    } else {
-                        Modifier
-                    }
-                Box(Modifier.size(10.dp).then(modifier))
-            }
+        val traceContext = rule.testContent {
+            val modifier =
+                if (state) {
+                    Modifier.layout { _, _ -> layout(10, 10) { throwTestException() } }
+                } else {
+                    Modifier
+                }
+            Box(Modifier.size(10.dp).then(modifier))
+        }
 
         rule.waitForIdle()
 
@@ -190,16 +184,15 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
         assumeFalse(lookahead) // todo figure out how to bail out of main pass in lookahead
 
         var state by mutableStateOf(false)
-        val context =
-            rule.testContent {
-                val modifier =
-                    if (state) {
-                        Modifier.layout { _, _ -> throwTestException() }
-                    } else {
-                        Modifier
-                    }
-                Box(Modifier.size(10.dp).then(modifier))
-            }
+        val context = rule.testContent {
+            val modifier =
+                if (state) {
+                    Modifier.layout { _, _ -> throwTestException() }
+                } else {
+                    Modifier
+                }
+            Box(Modifier.size(10.dp).then(modifier))
+        }
 
         rule.waitForIdle()
 
@@ -214,16 +207,15 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
     @Test
     fun recomposeModifierDraw() {
         var state by mutableStateOf(false)
-        val context =
-            rule.testContent {
-                val modifier =
-                    if (state) {
-                        Modifier.drawBehind { throwTestException() }
-                    } else {
-                        Modifier
-                    }
-                Box(Modifier.size(10.dp).then(modifier))
-            }
+        val context = rule.testContent {
+            val modifier =
+                if (state) {
+                    Modifier.drawBehind { throwTestException() }
+                } else {
+                    Modifier
+                }
+            Box(Modifier.size(10.dp).then(modifier))
+        }
 
         rule.waitForIdle()
 
@@ -240,18 +232,16 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
         assumeFalse(lookahead) // todo figure out how to bail out of main pass in lookahead
 
         var state by mutableStateOf(false)
-        val context =
-            rule.testContent {
-                val modifier =
-                    Modifier.layout { m, c ->
-                        val p = m.measure(c)
-                        layout(p.width, p.height) {
-                            if (state) throwTestException()
-                            p.place(0, 0)
-                        }
-                    }
-                Box(Modifier.size(10.dp).then(modifier))
+        val context = rule.testContent {
+            val modifier = Modifier.layout { m, c ->
+                val p = m.measure(c)
+                layout(p.width, p.height) {
+                    if (state) throwTestException()
+                    p.place(0, 0)
+                }
             }
+            Box(Modifier.size(10.dp).then(modifier))
+        }
 
         rule.waitForIdle()
 
@@ -268,16 +258,14 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
         assumeFalse(lookahead) // todo figure out how to bail out of main pass in lookahead
 
         var state by mutableStateOf(false)
-        val context =
-            rule.testContent {
-                val modifier =
-                    Modifier.layout { m, c ->
-                        if (state) throwTestException()
-                        val p = m.measure(c)
-                        layout(p.width, p.height) { p.place(0, 0) }
-                    }
-                Box(Modifier.size(10.dp).then(modifier))
+        val context = rule.testContent {
+            val modifier = Modifier.layout { m, c ->
+                if (state) throwTestException()
+                val p = m.measure(c)
+                layout(p.width, p.height) { p.place(0, 0) }
             }
+            Box(Modifier.size(10.dp).then(modifier))
+        }
 
         rule.waitForIdle()
 
@@ -292,11 +280,10 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
     @Test
     fun modifierRedraw() {
         var state by mutableStateOf(false)
-        val context =
-            rule.testContent {
-                val modifier = Modifier.drawBehind { if (state) throwTestException() }
-                Box(Modifier.size(10.dp).then(modifier))
-            }
+        val context = rule.testContent {
+            val modifier = Modifier.drawBehind { if (state) throwTestException() }
+            Box(Modifier.size(10.dp).then(modifier))
+        }
 
         rule.waitForIdle()
 
@@ -310,13 +297,12 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
 
     @Test
     fun initialSubcomposeLayoutMeasure() {
-        val traceContext =
-            rule.testContent {
-                SubcomposeLayout { c ->
-                    val p = subcompose(Unit) { throwTestException() }.map { it.measure(c) }
-                    layout(10, 10) { p.forEach { it.place(0, 0) } }
-                }
+        val traceContext = rule.testContent {
+            SubcomposeLayout { c ->
+                val p = subcompose(Unit) { throwTestException() }.map { it.measure(c) }
+                layout(10, 10) { p.forEach { it.place(0, 0) } }
             }
+        }
 
         assertFirstContentFrame(traceContext) { it.name == "SubcomposeLayout" }
         assertTrace(traceContext) {
@@ -326,15 +312,14 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
 
     @Test
     fun initialSubcomposeLayoutPlace() {
-        val traceContext =
-            rule.testContent {
-                SubcomposeLayout { c ->
-                    layout(10, 10) {
-                        val p = subcompose(Unit) { throwTestException() }.map { it.measure(c) }
-                        p.forEach { it.place(0, 0) }
-                    }
+        val traceContext = rule.testContent {
+            SubcomposeLayout { c ->
+                layout(10, 10) {
+                    val p = subcompose(Unit) { throwTestException() }.map { it.measure(c) }
+                    p.forEach { it.place(0, 0) }
                 }
             }
+        }
 
         assertFirstContentFrame(traceContext) { it.name == "SubcomposeLayout" }
         assertTrace(traceContext) {
@@ -347,23 +332,22 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
         assumeFalse(lookahead) // todo figure out how to bail out of main pass in lookahead
 
         var state by mutableStateOf(false)
-        val traceContext =
-            rule.testContent {
-                SubcomposeLayout { c ->
-                    val value = state
-                    val p =
-                        subcompose(Unit) {
-                                // technically not exact recomposition, but we want to throw it on
-                                // measure path
-                                // recompositions + subcompose layout are tested in runtime
-                                if (value) throwTestException()
-                                Box(Modifier.size(10.dp))
-                            }
-                            .map { it.measure(c) }
+        val traceContext = rule.testContent {
+            SubcomposeLayout { c ->
+                val value = state
+                val p =
+                    subcompose(Unit) {
+                            // technically not exact recomposition, but we want to throw it on
+                            // measure path
+                            // recompositions + subcompose layout are tested in runtime
+                            if (value) throwTestException()
+                            Box(Modifier.size(10.dp))
+                        }
+                        .map { it.measure(c) }
 
-                    layout(10, 10) { p.forEach { it.place(0, 0) } }
-                }
+                layout(10, 10) { p.forEach { it.place(0, 0) } }
             }
+        }
 
         assertNull(traceContext.trace, "No initial crash expected")
 
@@ -391,8 +375,9 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
 
     @Test()
     fun launchedEffectLaunch() {
-        val traceContext =
-            rule.testContent { LaunchedEffect(Unit) { launch { throwTestException() } } }
+        val traceContext = rule.testContent {
+            LaunchedEffect(Unit) { launch { throwTestException() } }
+        }
 
         assertTrace(traceContext) {
             it[0].name == "remember" &&
@@ -405,14 +390,13 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
 
     @Test
     fun rememberCoroutine() {
-        val traceContext =
-            rule.testContent {
-                val scope = rememberCoroutineScope()
-                DisposableEffect(Unit) {
-                    scope.launch { throwTestException() }
-                    onDispose { scope.cancel() }
-                }
+        val traceContext = rule.testContent {
+            val scope = rememberCoroutineScope()
+            DisposableEffect(Unit) {
+                scope.launch { throwTestException() }
+                onDispose { scope.cancel() }
             }
+        }
 
         assertTrace(traceContext) {
             it[0].name == "remember" &&
@@ -426,15 +410,14 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
     @Test
     fun layerCrash() {
         var shouldCrash by mutableStateOf(false)
-        val traceContext =
-            rule.testContent {
-                Box(
-                    Modifier.graphicsLayer {
-                        alpha = if (shouldCrash) 0f else 1f
-                        if (shouldCrash) throwTestException()
-                    }
-                )
-            }
+        val traceContext = rule.testContent {
+            Box(
+                Modifier.graphicsLayer {
+                    alpha = if (shouldCrash) 0f else 1f
+                    if (shouldCrash) throwTestException()
+                }
+            )
+        }
 
         shouldCrash = true
         Snapshot.sendApplyNotifications()

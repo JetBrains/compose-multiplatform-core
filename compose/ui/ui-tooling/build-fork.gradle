@@ -50,36 +50,6 @@ androidXMultiplatform {
             api(project(":compose:ui:ui"))
             api(project(":compose:ui:ui-tooling-data"))
         }
-
-        androidMain.dependencies {
-            api("androidx.annotation:annotation:1.8.1")
-            implementation(project(":compose:animation:animation"))
-            implementation("androidx.savedstate:savedstate-ktx:1.2.1")
-            implementation("androidx.compose.material3:material3:1.3.1")
-            implementation("androidx.activity:activity-compose:1.7.0")
-            implementation("androidx.lifecycle:lifecycle-common:2.6.1")
-
-            // kotlin-reflect and tooling-animation-internal are provided by Studio at runtime
-            compileOnly(project(":compose:animation:animation-tooling-internal"))
-            compileOnly(libs.kotlinReflect)
-        }
-
-        androidDeviceTest.dependencies {
-            implementation(project(":compose:ui:ui-test-junit4"))
-
-            implementation(libs.junit)
-            implementation(libs.testRunner)
-            implementation(libs.testRules)
-            implementation("androidx.compose.material:material-icons-core:1.6.7")
-            implementation(project(":compose:foundation:foundation-layout"))
-            implementation(project(":compose:foundation:foundation"))
-            implementation(project(":compose:test-utils"))
-            implementation(libs.truth)
-            implementation(libs.kotlinReflect)
-            implementation(project(":compose:animation:animation-tooling-internal"))
-            implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
-            implementation(project(":compose:runtime:runtime-livedata"))
-        }
     }
 }
 
@@ -89,6 +59,4 @@ androidx {
     inceptionYear = "2019"
     description = "Compose tooling library. This library exposes information to our tools for better IDE support."
     legacyDisableKotlinStrictApiMode = true
-    samples(project(":compose:animation:animation:animation-samples"))
-    // samples(project(":compose:animation:animation-core:animation-core-samples")) TODO(b/318840087)
 }

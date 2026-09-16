@@ -104,4 +104,4 @@ abstract class BlankProguardFileGenerator : DefaultTask() {
 }
 
 private fun Project.blankProguardRules(): File =
-    project.getSupportRootFolder().resolve("buildSrc/blank-proguard-rules/proguard-rules.pro")
+    project.getSupportRootFolder().resolve("buildSrc-fork/blank-proguard-rules/proguard-rules.pro")

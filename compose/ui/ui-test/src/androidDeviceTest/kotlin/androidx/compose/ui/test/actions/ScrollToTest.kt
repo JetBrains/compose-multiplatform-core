@@ -56,7 +56,6 @@ import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.LayoutDirection
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -168,7 +167,7 @@ class ScrollToTest(private val config: TestConfig) {
         }
     }
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun scrollToTarget() {
@@ -238,23 +237,21 @@ class ScrollToTest(private val config: TestConfig) {
 
     private fun DpRect.toPx(): Rect = with(rule.density) { toRect() }
 
-    private fun rowModifier(scrollState: ScrollState): Modifier =
-        Modifier.composed {
-            with(LocalDensity.current) {
-                Modifier.testTag(containerTag)
-                    .requiredSize(config.viewportSizePx.toDp(), itemSizePx.toDp())
-                    .horizontalScroll(scrollState, reverseScrolling = config.reverseScrolling)
-            }
+    private fun rowModifier(scrollState: ScrollState): Modifier = Modifier.composed {
+        with(LocalDensity.current) {
+            Modifier.testTag(containerTag)
+                .requiredSize(config.viewportSizePx.toDp(), itemSizePx.toDp())
+                .horizontalScroll(scrollState, reverseScrolling = config.reverseScrolling)
         }
+    }
 
-    private fun columnModifier(scrollState: ScrollState): Modifier =
-        Modifier.composed {
-            with(LocalDensity.current) {
-                Modifier.testTag(containerTag)
-                    .requiredSize(itemSizePx.toDp(), config.viewportSizePx.toDp())
-                    .verticalScroll(scrollState, reverseScrolling = config.reverseScrolling)
-            }
+    private fun columnModifier(scrollState: ScrollState): Modifier = Modifier.composed {
+        with(LocalDensity.current) {
+            Modifier.testTag(containerTag)
+                .requiredSize(itemSizePx.toDp(), config.viewportSizePx.toDp())
+                .verticalScroll(scrollState, reverseScrolling = config.reverseScrolling)
         }
+    }
 
     @Composable
     private fun Boxes() {

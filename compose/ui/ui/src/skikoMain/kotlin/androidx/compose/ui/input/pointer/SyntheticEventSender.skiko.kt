@@ -17,13 +17,14 @@
 package androidx.compose.ui.input.pointer
 
 import androidx.collection.LongLongMap
+import androidx.collection.MutableLongList
+import androidx.collection.MutableLongSet
 import androidx.collection.buildLongLongMap
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.scene.merging
 import androidx.compose.ui.util.fastAny
-import androidx.compose.ui.util.fastFilteredMap
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
@@ -139,7 +140,7 @@ internal class SyntheticEventSender(
         // modifiers as the previous event.
         // Note that missing move events for this event should have already been sent
         fun areSameParams(e1: PointerInputEvent, e2: PointerInputEvent): Boolean {
-            if (e1.pressedIds().toSet() != e2.pressedIds().toSet()) return false
+            if (e1.pressedIdsAsSet() != e2.pressedIdsAsSet()) return false
             if (e1.buttons != e2.buttons) return false
             if (e1.keyboardModifiers != e2.keyboardModifiers) return false
             return true
@@ -223,9 +224,10 @@ internal class SyntheticEventSender(
     private fun sendMissingReleases(currentEvent: PointerInputEvent): PointerEventResult {
         val previousEvent = previousEvent ?: return UnconsumedEventResult
         val previousPressed = previousEvent.pressedIds()
-        val currentPressed = currentEvent.pressedIds()
-        val newReleased = (previousPressed - currentPressed.toSet()).toList()
-        val sendingAsUp = HashSet<PointerId>(newReleased.size)
+        val currentPressed = currentEvent.pressedIdsAsSet()
+        val newReleased = previousPressed - currentPressed
+        if (newReleased.isEmpty()) return UnconsumedEventResult
+        val sendingAsUp = PointerIdSet(newReleased.size)
 
         var result = UnconsumedEventResult
         val lastIndex = when (currentEvent.eventType) {
@@ -253,10 +255,11 @@ internal class SyntheticEventSender(
     }
 
     private fun sendMissingPresses(currentEvent: PointerInputEvent): PointerEventResult {
-        val previousPressed = previousEvent?.pressedIds().orEmpty().toSet()
+        val previousPressed = previousEvent?.pressedIdsAsSet()
         val currentPressed = currentEvent.pressedIds()
-        val newPressed = (currentPressed - previousPressed).toList()
-        val sendingAsDown = HashSet<PointerId>(newPressed.size)
+        val newPressed = currentPressed - previousPressed
+        if (newPressed.isEmpty()) return UnconsumedEventResult
+        val sendingAsDown = PointerIdSet(newPressed.size)
 
         var result = UnconsumedEventResult
         val lastIndex = when (currentEvent.eventType) {
@@ -272,7 +275,7 @@ internal class SyntheticEventSender(
                     type = PointerEventType.Press,
                     copyPointer = {
                         it.copySynthetic(
-                            down = previousPressed.contains(it.id) || sendingAsDown.contains(it.id)
+                            down = previousPressed?.contains(it.id) == true || sendingAsDown.contains(it.id)
                         )
                     }
                 )
@@ -282,10 +285,6 @@ internal class SyntheticEventSender(
         }
         return result
     }
-
-    private fun PointerInputEvent.pressedIds(): List<PointerId> =
-        pointers.fastFilteredMap(PointerInputEventData::down, PointerInputEventData::id)
-
 
     private fun sendInternal(event: PointerInputEvent): PointerEventResult {
         when (event.eventType) {
@@ -413,6 +412,41 @@ internal class SyntheticEventSender(
 }
 
 private typealias PointerToPositionMap = LongLongMap
+
+private typealias PointerIdSet = MutableLongSet
+
+private typealias PointerIdList = MutableLongList
+
+private fun PointerInputEvent.pressedIds(): PointerIdList {
+    val target = MutableLongList(pointers.size)
+    pointers.fastForEach {
+        if (it.down) target += it.id.value
+    }
+    return target
+}
+
+private fun PointerInputEvent.pressedIdsAsSet(): PointerIdSet {
+    val target = MutableLongSet(pointers.size)
+    pointers.fastForEach {
+        if (it.down) target += it.id.value
+    }
+    return target
+}
+
+private inline fun PointerIdList.filter(predicate: (Long) -> Boolean): PointerIdList {
+    val target = MutableLongList(size)
+    forEach { if (predicate(it)) target += it }
+    return target
+}
+
+@Suppress("NOTHING_TO_INLINE")
+private inline operator fun PointerIdSet.contains(id: PointerId): Boolean = contains(id.value)
+
+internal operator fun PointerIdList.minus(elements: PointerIdSet?): PointerIdList {
+    if (elements == null) return this
+    if (elements.isEmpty()) return this
+    return filter { it !in elements }
+}
 
 private fun List<PointerInputEventData>.mapPointersToPosition(): PointerToPositionMap =
     buildLongLongMap(size) {

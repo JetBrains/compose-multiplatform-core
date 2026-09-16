@@ -109,13 +109,9 @@ internal class AndroidParagraphIntrinsics(
      * single-line optimization.
      */
     private var _mayHaveNewLine = -1
-    @OptIn(ExperimentalTextApi::class)
     internal val mayHaveNewLine: Boolean
         get() {
-            if (
-                AndroidComposeUiTextFlags.isSingleLineLineHeightOptimizationEnabled &&
-                    _mayHaveNewLine == -1
-            ) {
+            if (_mayHaveNewLine == -1) {
                 _mayHaveNewLine =
                     if (text.length > MaxSingleLineLengthThreshold || text.contains('\n')) {
                         1
@@ -147,7 +143,8 @@ internal class AndroidParagraphIntrinsics(
                 style = style.toSpanStyle(),
                 resolveTypeface = resolveTypeface,
                 density = density,
-                requiresLetterSpacing = annotations.fastFirstOrNull { it.item is SpanStyle } != null,
+                requiresLetterSpacing =
+                    annotations.fastFirstOrNull { it.item is SpanStyle } != null,
             )
 
         val finalSpanStyles =
@@ -174,6 +171,7 @@ internal class AndroidParagraphIntrinsics(
                 contextFontSize = textPaint.textSize,
                 contextTextStyle = style,
                 annotations = finalSpanStyles,
+                userAnnotations = annotations,
                 placeholders = placeholders,
                 density = density,
                 resolveTypeface = resolveTypeface,
@@ -221,7 +219,7 @@ internal fun resolveTextDirectionHeuristics(
         "androidx.compose.ui.text.font.createFontFamilyResolver",
     ),
 )
-actual fun ParagraphIntrinsics(
+public actual fun ParagraphIntrinsics(
     text: String,
     style: TextStyle,
     spanStyles: List<AnnotatedString.Range<SpanStyle>>,
@@ -245,7 +243,7 @@ actual fun ParagraphIntrinsics(
         "ParagraphIntrinsics(text, style, spanStyles, density, fontFamilyResolver, placeholders, true)"
     ),
 )
-actual fun ParagraphIntrinsics(
+public actual fun ParagraphIntrinsics(
     text: String,
     style: TextStyle,
     spanStyles: List<AnnotatedString.Range<SpanStyle>>,
@@ -269,7 +267,7 @@ actual fun ParagraphIntrinsics(
         "ParagraphIntrinsics(text, style, annotations, density, fontFamilyResolver, listOf(), true)"
     ),
 )
-actual fun ParagraphIntrinsics(
+public actual fun ParagraphIntrinsics(
     text: String,
     style: TextStyle,
     annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
@@ -287,7 +285,7 @@ actual fun ParagraphIntrinsics(
         softWrap = true,
     )
 
-actual fun ParagraphIntrinsics(
+public actual fun ParagraphIntrinsics(
     text: String,
     style: TextStyle,
     annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,

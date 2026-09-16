@@ -48,25 +48,13 @@ androidXMultiplatform {
 
     sourceSets {
         commonMain.dependencies {
-            implementation("androidx.collection:collection:1.5.0")
+            implementation("androidx.collection:collection:1.6.0")
             implementation(project(":compose:runtime:runtime"))
         }
 
         commonTest.dependencies {
             implementation(libs.kotlinTest)
             implementation(project(":kruth:kruth"))
-        }
-
-        androidMain.dependencies {
-            api("androidx.annotation:annotation-experimental:1.4.1")
-        }
-
-        androidDeviceTest.dependencies {
-            implementation(libs.testRunner)
-        }
-
-        androidHostTest.dependencies {
-            implementation(libs.truth)
         }
 
         nonJvmMain {

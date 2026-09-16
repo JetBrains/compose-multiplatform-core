@@ -54,7 +54,7 @@ import androidx.compose.ui.util.fastMap
  * @see MeasurePolicy
  */
 @Stable
-fun interface MultiContentMeasurePolicy {
+public fun interface MultiContentMeasurePolicy {
     /**
      * The function that defines the measurement and layout. Each [Measurable] in the [measurables]
      * lists corresponds to a layout child of the layout, and children can be measured using the
@@ -88,7 +88,7 @@ fun interface MultiContentMeasurePolicy {
      * takes the calculated size of this layout, its alignment lines, and a block defining the
      * positioning of the children layouts.
      */
-    fun MeasureScope.measure(
+    public fun MeasureScope.measure(
         measurables: List<List<Measurable>>,
         constraints: Constraints,
     ): MeasureResult
@@ -103,16 +103,15 @@ fun interface MultiContentMeasurePolicy {
      * differently. Such list has the same size as the list of contents passed into [Layout] and
      * contains the list of [Measurable]s of the corresponding content lambda in the same order.
      */
-    fun IntrinsicMeasureScope.minIntrinsicWidth(
+    public fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurables: List<List<IntrinsicMeasurable>>,
         height: Int,
     ): Int {
-        val mapped =
-            measurables.fastMap { list ->
-                list.fastMap {
-                    DefaultIntrinsicMeasurable(it, IntrinsicMinMax.Min, IntrinsicWidthHeight.Width)
-                }
+        val mapped = measurables.fastMap { list ->
+            list.fastMap {
+                DefaultIntrinsicMeasurable(it, IntrinsicMinMax.Min, IntrinsicWidthHeight.Width)
             }
+        }
         val constraints = Constraints(maxHeight = height)
         val layoutReceiver = IntrinsicsMeasureScope(this, layoutDirection)
         val layoutResult = layoutReceiver.measure(mapped, constraints)
@@ -129,16 +128,15 @@ fun interface MultiContentMeasurePolicy {
      * differently. Such list has the same size as the list of contents passed into [Layout] and
      * contains the list of [Measurable]s of the corresponding content lambda in the same order.
      */
-    fun IntrinsicMeasureScope.minIntrinsicHeight(
+    public fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurables: List<List<IntrinsicMeasurable>>,
         width: Int,
     ): Int {
-        val mapped =
-            measurables.fastMap { list ->
-                list.fastMap {
-                    DefaultIntrinsicMeasurable(it, IntrinsicMinMax.Min, IntrinsicWidthHeight.Height)
-                }
+        val mapped = measurables.fastMap { list ->
+            list.fastMap {
+                DefaultIntrinsicMeasurable(it, IntrinsicMinMax.Min, IntrinsicWidthHeight.Height)
             }
+        }
         val constraints = Constraints(maxWidth = width)
         val layoutReceiver = IntrinsicsMeasureScope(this, layoutDirection)
         val layoutResult = layoutReceiver.measure(mapped, constraints)
@@ -154,16 +152,15 @@ fun interface MultiContentMeasurePolicy {
      * differently. Such list has the same size as the list of contents passed into [Layout] and
      * contains the list of [Measurable]s of the corresponding content lambda in the same order.
      */
-    fun IntrinsicMeasureScope.maxIntrinsicWidth(
+    public fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurables: List<List<IntrinsicMeasurable>>,
         height: Int,
     ): Int {
-        val mapped =
-            measurables.fastMap { list ->
-                list.fastMap {
-                    DefaultIntrinsicMeasurable(it, IntrinsicMinMax.Max, IntrinsicWidthHeight.Width)
-                }
+        val mapped = measurables.fastMap { list ->
+            list.fastMap {
+                DefaultIntrinsicMeasurable(it, IntrinsicMinMax.Max, IntrinsicWidthHeight.Width)
             }
+        }
         val constraints = Constraints(maxHeight = height)
         val layoutReceiver = IntrinsicsMeasureScope(this, layoutDirection)
         val layoutResult = layoutReceiver.measure(mapped, constraints)
@@ -179,16 +176,15 @@ fun interface MultiContentMeasurePolicy {
      * differently. Such list has the same size as the list of contents passed into [Layout] and
      * contains the list of [Measurable]s of the corresponding content lambda in the same order.
      */
-    fun IntrinsicMeasureScope.maxIntrinsicHeight(
+    public fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurables: List<List<IntrinsicMeasurable>>,
         width: Int,
     ): Int {
-        val mapped =
-            measurables.fastMap { list ->
-                list.fastMap {
-                    DefaultIntrinsicMeasurable(it, IntrinsicMinMax.Max, IntrinsicWidthHeight.Height)
-                }
+        val mapped = measurables.fastMap { list ->
+            list.fastMap {
+                DefaultIntrinsicMeasurable(it, IntrinsicMinMax.Max, IntrinsicWidthHeight.Height)
             }
+        }
         val constraints = Constraints(maxWidth = width)
         val layoutReceiver = IntrinsicsMeasureScope(this, layoutDirection)
         val layoutResult = layoutReceiver.measure(mapped, constraints)

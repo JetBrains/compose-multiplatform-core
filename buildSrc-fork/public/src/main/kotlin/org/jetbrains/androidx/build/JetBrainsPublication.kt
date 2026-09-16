@@ -48,6 +48,7 @@ object JetBrainsPublication {
                 supportedPlatforms = ComposePlatforms.SKIKO_SUPPORT,
             ),
             ComposeComponent(":compose:ui:ui-graphics"),
+            ComposeComponent(":compose:ui:ui-skiko"),
             ComposeComponent(":compose:ui:ui-test"),
             ComposeComponent(
                 ":compose:ui:ui-test-junit4",
@@ -85,31 +86,13 @@ object JetBrainsPublication {
             ComposeComponent(":compose:material3:material3"),
             ComposeComponent(":compose:material3:material3-window-size-class"),
             ComposeComponent(":compose:material3:material3-adaptive-navigation-suite"),
+            ComposeComponent(":compose:material3:material3-ripple"),
         ),
         "COMPOSE_MATERIAL3_ADAPTIVE" to listOf(
             ComposeComponent(":compose:material3:adaptive:adaptive"),
             ComposeComponent(":compose:material3:adaptive:adaptive-layout"),
             ComposeComponent(":compose:material3:adaptive:adaptive-navigation"),
             ComposeComponent(":compose:material3:adaptive:adaptive-navigation3"),
-        ),
-        "LIFECYCLE" to listOf(
-            ComposeComponent(
-                path = ":lifecycle:lifecycle-common",
-                // No android target here - jvm artefact will be used for android apps as well
-                supportedPlatforms = ComposePlatforms.ALL - ComposePlatforms.ANDROID
-            ),
-            ComposeComponent(
-                path = ":lifecycle:lifecycle-runtime",
-                supportedPlatforms = ComposePlatforms.ALL
-            ),
-            ComposeComponent(
-                path = ":lifecycle:lifecycle-viewmodel",
-                supportedPlatforms = ComposePlatforms.ALL
-            ),
-            ComposeComponent(":lifecycle:lifecycle-viewmodel-savedstate", supportedPlatforms = ComposePlatforms.ALL),
-            ComposeComponent(":lifecycle:lifecycle-runtime-compose", supportedPlatforms = ComposePlatforms.ALL),
-            ComposeComponent(":lifecycle:lifecycle-viewmodel-compose", supportedPlatforms = ComposePlatforms.ALL),
-            ComposeComponent(":lifecycle:lifecycle-viewmodel-navigation3", supportedPlatforms = ComposePlatforms.ALL),
         ),
         "NAVIGATION" to listOf(
             ComposeComponent(":navigation:navigation-compose"),
@@ -118,13 +101,6 @@ object JetBrainsPublication {
         ),
         "NAVIGATION_3" to listOf(
             ComposeComponent(":navigation3:navigation3-ui"),
-        ),
-        "NAVIGATION_EVENT" to listOf(
-            ComposeComponent(":navigationevent:navigationevent-compose", supportedPlatforms = ComposePlatforms.ALL),
-        ),
-        "SAVEDSTATE" to listOf(
-            ComposeComponent(":savedstate:savedstate", supportedPlatforms = ComposePlatforms.ALL),
-            ComposeComponent(":savedstate:savedstate-compose", supportedPlatforms = ComposePlatforms.ALL),
         ),
     )
 
@@ -200,8 +176,8 @@ class JetBrainsVersions(val libraryToVersion: Map<String, String>) : Serializabl
         }
     }
 
-    fun versionOf(libraryName: String): String {
-        return libraryToVersion[libraryName] ?: "9999.0.0-SNAPSHOT"
+    fun versionOf(libraryName: String?): String {
+        return libraryName?.let(libraryToVersion::get) ?: "9999.0.0-SNAPSHOT"
     }
 }
 

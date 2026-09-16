@@ -40,11 +40,11 @@ public actual fun <T : Any> defaultTransitionSpec():
     AnimatedContentTransitionScope<Scene<T>>.() -> ContentTransform = {
     ContentTransform(
         slideIntoContainer(
-            towards = AnimatedContentTransitionScope.SlideDirection.Left,
+            towards = AnimatedContentTransitionScope.SlideDirection.Start,
             animationSpec = tween(DEFAULT_TRANSITION_DURATION_MILLISECOND, easing = IosTransitionEasing),
         ),
         slideOutOfContainer(
-            towards = AnimatedContentTransitionScope.SlideDirection.Left,
+            towards = AnimatedContentTransitionScope.SlideDirection.Start,
             targetOffset = { it / 4 },
             animationSpec = tween(DEFAULT_TRANSITION_DURATION_MILLISECOND, easing = IosTransitionEasing),
         ) + veilOut(
@@ -58,14 +58,14 @@ public actual fun <T : Any> defaultPopTransitionSpec():
     AnimatedContentTransitionScope<Scene<T>>.() -> ContentTransform = {
     ContentTransform(
         slideIntoContainer(
-            towards = AnimatedContentTransitionScope.SlideDirection.Right,
+            towards = AnimatedContentTransitionScope.SlideDirection.End,
             initialOffset = { it / 4 },
             animationSpec = tween(DEFAULT_TRANSITION_DURATION_MILLISECOND, easing = IosTransitionEasing),
         ) + unveilIn(
             animationSpec = tween(DEFAULT_TRANSITION_DURATION_MILLISECOND, easing = IosTransitionEasing)
         ),
         slideOutOfContainer(
-            towards = AnimatedContentTransitionScope.SlideDirection.Right,
+            towards = AnimatedContentTransitionScope.SlideDirection.End,
             animationSpec = tween(DEFAULT_TRANSITION_DURATION_MILLISECOND, easing = IosTransitionEasing),
         ),
     )

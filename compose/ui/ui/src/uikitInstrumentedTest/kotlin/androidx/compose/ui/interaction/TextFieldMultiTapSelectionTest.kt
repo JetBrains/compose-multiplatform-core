@@ -20,160 +20,172 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
-import androidx.compose.ui.test.utils.center
-import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.test.utils.BasicTextFieldType
 import androidx.compose.ui.test.utils.findFirstDescendant
 import androidx.compose.ui.test.utils.isLoupeView
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.PlatformImeOptions
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import platform.UIKit.endEditing
 
 class TextFieldMultiTapSelectionTest {
 
-    private val tfOptions = listOf(TextFieldFactory.BTF1, TextFieldFactory.BTF2)
+    // Each field on both text input paths: the Compose one and the native one.
+    private val tfOptions = listOf(false, true).flatMap { nativeInput ->
+        BasicTextFieldType.entries.map { TextFieldFactory(it, nativeInput) }
+    }
 
     @Test
     fun double_tap_selects_word() = runUIKitInstrumentedTest(params = tfOptions) { textFieldOption ->
-        textFieldOption.setup(this, MULTI_WORD_TEXT, TAG)
-        findNodeWithTag(TAG).focusThenDoubleTap()
-        assertFalse(textFieldOption.selection.collapsed, "[${textFieldOption.name}] Expected a word to be selected after double tap")
-        assertTrue(
-            textFieldOption.selection.length < MULTI_WORD_TEXT.length,
-            "[${textFieldOption.name}] Expected only a word to be selected, not the entire text, but got: ${textFieldOption.selection}"
+        textFieldOption.setup(this, TEXT, TAG)
+        findNodeWithTag(TAG).multiTapCharacter(offset = WORD_OFFSET, count = 2)
+        waitForIdle()
+        assertEquals(
+            WORD_RANGE,
+            textFieldOption.selection,
+            "[${textFieldOption.name}] Expected double tap inside '$WORD' to select it, but got: ${textFieldOption.selection}"
         )
+        if (textFieldOption.nativeInput) dropNativeSelection()
     }
 
     @Test
     fun triple_tap_selects_all_text() = runUIKitInstrumentedTest(params = tfOptions) { textFieldOption ->
-        textFieldOption.setup(this, MULTI_WORD_TEXT, TAG)
-        focusThenTripleTap(TAG)
-        assertTrue(
-            textFieldOption.selection.start == 0 && textFieldOption.selection.end == MULTI_WORD_TEXT.length,
+        textFieldOption.setup(this, TEXT, TAG)
+        findNodeWithTag(TAG).multiTapCharacter(offset = WORD_OFFSET, count = 3)
+        waitForIdle()
+        assertEquals(
+            TextRange(0, TEXT.length),
+            textFieldOption.selection,
             "[${textFieldOption.name}] Expected all text to be selected after triple tap, but got: ${textFieldOption.selection}"
         )
+        if (textFieldOption.nativeInput) dropNativeSelection()
     }
 
     @Test
     fun multitap_does_not_show_magnifier() = runUIKitInstrumentedTest(params = tfOptions) { textFieldOption ->
-        textFieldOption.setup(this, MULTI_WORD_TEXT, TAG)
-        findNodeWithTag(TAG).focusThenDoubleTap() // double tap is enough
+        textFieldOption.setup(this, TEXT, TAG)
+        findNodeWithTag(TAG).multiTapCharacter(offset = WORD_OFFSET, count = 2) // double tap is enough
         delay(200)
         assertEquals(
             findFirstDescendant { it.isLoupeView },
             null,
             "[${textFieldOption.name}] Magnifier should not appear during multi-tap selection"
         )
+        if (textFieldOption.nativeInput) dropNativeSelection()
     }
 
     @Test
-    fun BTF2_triple_tap_then_double_tap_selects_word() = runUIKitInstrumentedTest(params = listOf(TextFieldFactory.BTF2)) { textFieldOption ->
-        textFieldOption.setup(this, MULTI_WORD_TEXT, TAG)
+    fun BTF2_triple_tap_then_double_tap_selects_word() = runUIKitInstrumentedTest(params = listOf(TextFieldFactory(BasicTextFieldType.V2, nativeInput = false))) { textFieldOption ->
+        textFieldOption.setup(this, TEXT, TAG)
 
-        focusThenTripleTap(TAG)
-        assertTrue(
-            textFieldOption.selection.start == 0 && textFieldOption.selection.end == MULTI_WORD_TEXT.length,
-            "BTF2: triple tap should select all text"
+        findNodeWithTag(TAG).multiTapCharacter(offset = WORD_OFFSET, count = 3)
+        waitForIdle()
+        assertEquals(
+            TextRange(0, TEXT.length),
+            textFieldOption.selection,
+            "BTF2: triple tap should select all text, but got: ${textFieldOption.selection}"
         )
 
         // After triple tap selects all, a subsequent double tap should re-select only a word.
         // This exercises the clearSelection fix that allows selection to be updated by repeated taps.
         delay(400)
-        findNodeWithTag(TAG).doubleTap()
+        findNodeWithTag(TAG).multiTapCharacter(offset = WORD_OFFSET, count = 2)
         waitForIdle()
 
-        val afterDoubleTap = textFieldOption.selection
-        assertFalse(afterDoubleTap.collapsed, "BTF2: Expected a word to be selected after double tap")
-        assertTrue(
-            afterDoubleTap.length < MULTI_WORD_TEXT.length,
-            "BTF2: Expected only a word to be selected after double tap, but got: $afterDoubleTap"
+        assertEquals(
+            WORD_RANGE,
+            textFieldOption.selection,
+            "BTF2: Expected only '$WORD' to be selected after double tap, but got: ${textFieldOption.selection}"
         )
     }
 
-    private fun UIKitInstrumentedTest.focusThenDoubleTap(tag: String) {
-        findNodeWithTag(tag).tap()
-        delay(400)
-        findNodeWithTag(tag).doubleTap()
-        waitForIdle()
-    }
-
-    private fun UIKitInstrumentedTest.focusThenTripleTap(tag: String) {
-        findNodeWithTag(tag).tap()
-        delay(400)
-        // Tap at 10% from left to stay inside the first word on any screen width.
-        // Tapping at the frame center might be failed because the frame center
-        // might be near the edge of the double-tapped word's selection handle.
-        val frame = findNodeWithTag(tag).frame!!
-        val tapPoint = DpOffset(frame.left + (frame.right - frame.left) * 0.1f, frame.center().y)
-        tap(tapPoint)
-        delay(50)
-        tap(tapPoint)
-        delay(50)
-        tap(tapPoint)
-        waitForIdle()
+    /** Ends the native editing session, so its selection does not outlive the test. */
+    private fun UIKitInstrumentedTest.dropNativeSelection() {
+        viewController.view.endEditing(force = true)
+        // TODO: CMP-10641
+        delay(500)
     }
 
     companion object {
         private const val TAG = "textField"
-        private const val MULTI_WORD_TEXT = "accomplishment extraordinary magnificent establishment"
+        private const val TEXT = "The quick brown fox"
+        /** The word the tests tap on, and the selection a double tap on it should produce. */
+        private const val WORD = "quick"
+        private val WORD_RANGE = TextRange(TEXT.indexOf(WORD), TEXT.indexOf(WORD) + WORD.length)
+        /** The middle of [WORD], so that a tap lands inside it rather than on either edge. */
+        private val WORD_OFFSET = WORD_RANGE.min + WORD.length / 2
     }
 }
 
-private sealed class TextFieldFactory(val name: String) {
+private class TextFieldFactory(val type: BasicTextFieldType, val nativeInput: Boolean) {
     private var _selection: (() -> TextRange)? = null
+
     val selection: TextRange get() = _selection!!()
 
+    val name: String get() {
+        val field = when (type) {
+            BasicTextFieldType.V1 -> "BasicTextField(value)"
+            BasicTextFieldType.V2 -> "BasicTextField(state)"
+        }
+        return if (nativeInput) "$field, native input" else field
+    }
+
     fun setup(test: UIKitInstrumentedTest, text: String, tag: String) {
-        _selection = setupTextFieldAndFetchSelection(test, text, tag)
-    }
+        val focusRequester = FocusRequester()
+        val keyboardOptions = KeyboardOptions(
+            autoCorrectEnabled = false,
+            platformImeOptions = PlatformImeOptions { usingNativeTextInput(nativeInput) }
+        )
+        val modifier = Modifier
+            .focusRequester(focusRequester)
+            .testTag(tag)
+            .padding(16.dp)
 
-    protected abstract fun setupTextFieldAndFetchSelection(test: UIKitInstrumentedTest, text: String, tag: String): () -> TextRange
-
-    object BTF1 : TextFieldFactory("BasicTextField(value)") {
-        override fun setupTextFieldAndFetchSelection(test: UIKitInstrumentedTest, text: String, tag: String): () -> TextRange {
-            val valueState = mutableStateOf(TextFieldValue(text))
-            test.setContent {
-                Box(Modifier.fillMaxSize()) {
-                    BasicTextField(
-                        value = valueState.value,
-                        onValueChange = { valueState.value = it },
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .testTag(tag)
-                            .padding(16.dp)
-                    )
+        _selection = when (type) {
+            BasicTextFieldType.V1 -> {
+                val valueState = mutableStateOf(TextFieldValue(text))
+                test.setContent {
+                    Box(Modifier.fillMaxSize()) {
+                        BasicTextField(
+                            value = valueState.value,
+                            onValueChange = { valueState.value = it },
+                            keyboardOptions = keyboardOptions,
+                            modifier = Modifier.align(Alignment.Center).then(modifier)
+                        )
+                    }
                 }
+                ({ valueState.value.selection })
             }
-            return { valueState.value.selection }
-        }
-    }
-
-    object BTF2 : TextFieldFactory("BasicTextField(state)") {
-        override fun setupTextFieldAndFetchSelection(test: UIKitInstrumentedTest, text: String, tag: String): () -> TextRange {
-            val state = TextFieldState(text)
-            test.setContent {
-                Box(Modifier.fillMaxSize()) {
-                    BasicTextField(
-                        state = state,
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .testTag(tag)
-                            .padding(16.dp)
-                    )
+            BasicTextFieldType.V2 -> {
+                val state = TextFieldState(text)
+                test.setContent {
+                    Box(Modifier.fillMaxSize()) {
+                        BasicTextField(
+                            state = state,
+                            keyboardOptions = keyboardOptions,
+                            modifier = Modifier.align(Alignment.Center).then(modifier)
+                        )
+                    }
                 }
+                ({ state.selection })
             }
-            return { state.selection }
         }
+        // Focused programmatically, so no focus-tap is fed to UIKit's multi-tap recognizer.
+        focusRequester.requestFocus()
+        test.waitForIdle()
     }
 }

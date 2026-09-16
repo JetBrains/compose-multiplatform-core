@@ -21,6 +21,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.HistoricalChange
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerButtons
+import androidx.compose.ui.input.pointer.PointerClassification
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerInputChange
@@ -117,6 +118,9 @@ internal fun PointerInputEvent(
     changedButton: PointerButton?,
     scaleGestureFactor: Float,
     panGestureOffset: Offset,
+    activeGesture: PointerClassification,
+    isGestureStart: Boolean,
+    isGestureEnd: Boolean,
 ) = PointerInputEvent(
     eventType = eventType,
     uptime = timeMillis,
@@ -140,7 +144,10 @@ internal fun PointerInputEvent(
     buttons = buttons,
     keyboardModifiers = keyboardModifiers,
     nativeEvent = nativeEvent,
-    button = changedButton
+    button = changedButton,
+    activeGesture = activeGesture,
+    isGestureStart = isGestureStart,
+    isGestureEnd = isGestureEnd,
 )
 
 /**

@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.text.intl
 
+import androidx.compose.ui.InternalComposeUiApi
 import java.awt.ComponentOrientation
 import java.util.Locale as JavaLocale
 
@@ -24,6 +25,7 @@ internal actual fun createPlatformLocaleDelegate() = object : PlatformLocaleDele
         get() = LocaleList(listOf(Locale(JavaLocale.getDefault())))
 }
 
-internal actual fun Locale.isRtl(): Boolean =
+@InternalComposeUiApi
+actual fun Locale.isRtl(): Boolean =
     // TODO Get rid of AWT reference here
     !ComponentOrientation.getOrientation(this.platformLocale).isLeftToRight

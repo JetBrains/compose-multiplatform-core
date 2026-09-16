@@ -1,0 +1,620 @@
+/*
+ * Copyright 2024 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#import "CMPEditMenuView.h"
+
+@interface CMPEditMenuViewRegister: NSObject
+
+@property (nonatomic, strong) NSMutableSet<CMPEditMenuView *> *trackedMenus;
+
+@end
+
+@implementation CMPEditMenuViewRegister
+
++ (instancetype)shared {
+    static CMPEditMenuViewRegister *sharedInstance = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        sharedInstance = [[self alloc] init];
+    });
+    return sharedInstance;
+}
+
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        _trackedMenus = [NSMutableSet new];
+    }
+    return self;
+}
+
+- (void)addEditMenu:(CMPEditMenuView *)editMenu {
+    [self.trackedMenus addObject:editMenu];
+}
+
+- (void)removeEditMenu:(CMPEditMenuView *)editMenu {
+    [self.trackedMenus removeObject:editMenu];
+}
+
+- (void)hideAllMenusSkipping:(CMPEditMenuView *)skipEditMenuView {
+    [self.trackedMenus enumerateObjectsUsingBlock:^(CMPEditMenuView * _Nonnull menuView, BOOL * _Nonnull stop) {
+        if (menuView != skipEditMenuView) {
+            [menuView hideEditMenu];
+        }
+    }];
+}
+
+@end
+
+typedef enum : NSUInteger {
+    CMPEditMenuStateHidden = 0,
+    CMPEditMenuStatePresenting,
+    CMPEditMenuStatePresented,
+    CMPEditMenuStateHiding,
+} CMPEditMenuState;
+
+@interface CMPEditMenuView() <UIEditMenuInteractionDelegate>
+
+@property (weak, nonatomic, nullable) UIView *rootView;
+
+// Used for context menu
+@property (copy, nonatomic, nullable) void (^copyBlock)(void);
+@property (copy, nonatomic, nullable) void (^cutBlock)(void);
+@property (copy, nonatomic, nullable) void (^pasteBlock)(void);
+@property (copy, nonatomic, nullable) void (^selectBlock)(void);
+@property (copy, nonatomic, nullable) void (^selectAllBlock)(void);
+@property (copy, nonatomic, nullable) NSArray<CMPEditMenuCustomAction *> *customActions;
+
+// Used for hotkeys
+@property (copy, nonatomic, nullable) void (^systemCopyBlock)(void);
+@property (copy, nonatomic, nullable) void (^systemCutBlock)(void);
+@property (copy, nonatomic, nullable) void (^systemPasteBlock)(void);
+@property (copy, nonatomic, nullable) void (^systemSelectBlock)(void);
+@property (copy, nonatomic, nullable) void (^systemSelectAllBlock)(void);
+
+@property (strong, nonatomic, nullable) dispatch_block_t showContextMenuBlock;
+@property (strong, nonatomic, nullable) dispatch_block_t presentInteractionBlock;
+
+@property (assign, nonatomic) CGRect targetRect;
+@property (assign, nonatomic) CMPEditMenuState editMenuState;
+
+@property (readwrite) UIEditMenuInteraction* editInteraction API_AVAILABLE(ios(16.0));
+
+- (void)dismissEditMenu;
+
+/// Donor text field backing the `UITextField` masquerade below, or `nil` when secure text entry is off.
+- (nullable UITextField *)cmp_proxyTextField;
+
+@end
+
+@implementation CMPEditMenuView {
+    UITextField *_textField;
+    BOOL _isDeallocating;
+}
+
+id _editInteraction;
+
+- (void)showEditMenuAtRect:(CGRect)targetRect
+                      copy:(void (^)(void))copyBlock
+                       cut:(void (^)(void))cutBlock
+                     paste:(void (^)(void))pasteBlock
+                    select:(void (^)(void))selectBlock
+                 selectAll:(void (^)(void))selectAllBlock
+             customActions:(NSArray<CMPEditMenuCustomAction *> *)customActions {
+    BOOL contextMenuItemsChanged = [self contextMenuItemsChangedCopy:copyBlock
+                                                                 cut:cutBlock
+                                                               paste:pasteBlock
+                                                              select:selectBlock
+                                                           selectAll:selectAllBlock
+                                                       customActions:customActions];
+    BOOL positionChanged = !CGRectEqualToRect(self.targetRect, targetRect);
+    BOOL isTargetVisible = CGRectIntersectsRect(self.bounds, targetRect);
+    
+    if (!isTargetVisible) {
+        [self hideEditMenu];
+        return;
+    }
+
+    self.targetRect = targetRect;
+    self.copyBlock = copyBlock;
+    self.cutBlock = cutBlock;
+    self.pasteBlock = pasteBlock;
+    self.selectBlock = selectBlock;
+    self.selectAllBlock = selectAllBlock;
+    self.customActions = customActions;
+
+    if (@available(iOS 16, *)) {
+        [[CMPEditMenuViewRegister shared] hideAllMenusSkipping:self];
+
+        switch (self.editMenuState) {
+            case CMPEditMenuStateHidden:
+            case CMPEditMenuStateHiding:
+                [self cancelPresentEditMenuInteraction];
+                [self schedulePresentEditMenuInteractionWithDelay:[self editMenuDelay]];
+                self.editMenuState = CMPEditMenuStatePresenting;
+                break;
+
+            case CMPEditMenuStatePresenting:
+                if (contextMenuItemsChanged) {
+                    [self cancelPresentEditMenuInteraction];
+                    [self schedulePresentEditMenuInteractionWithDelay:[self editMenuDelay]];
+                } else if (positionChanged) {
+                    if (self.presentInteractionBlock == nil) {
+                        // View appearance already started - jsut set the new locaiton.
+                        [self.editInteraction updateVisibleMenuPositionAnimated:NO];
+                    } else {
+                        [self cancelPresentEditMenuInteraction];
+                        [self schedulePresentEditMenuInteractionWithDelay:[self editMenuDelay]];
+                    }
+                }
+                break;
+
+            case CMPEditMenuStatePresented:
+                if (contextMenuItemsChanged) {
+                    [self cancelPresentEditMenuInteraction];
+                    [self schedulePresentEditMenuInteractionWithDelay:0];
+                    self.editMenuState = CMPEditMenuStatePresenting;
+                } else if (positionChanged) {
+                    [self.editInteraction updateVisibleMenuPositionAnimated:NO];
+                    self.editMenuState = CMPEditMenuStatePresented;
+                }
+                break;
+        }
+    } else {
+        if (contextMenuItemsChanged || positionChanged) {
+            [self dismissEditMenu];
+            [self scheduleShowMenuController];
+        }
+        self.editMenuState = CMPEditMenuStatePresenting;
+    }
+}
+
+- (void)setEditMenuState:(CMPEditMenuState)editMenuState {
+    if (_editMenuState == editMenuState) {
+        return;
+    }
+
+    _editMenuState = editMenuState;
+}
+
+- (void)updateAvailableSystemActions:(void (^)(void))copyBlock
+                                 cut:(void (^)(void))cutBlock
+                               paste:(void (^)(void))pasteBlock
+                              select:(void (^)(void))selectBlock
+                           selectAll:(void (^)(void))selectAllBlock {
+    self.systemCopyBlock = copyBlock;
+    self.systemCutBlock = cutBlock;
+    self.systemPasteBlock = pasteBlock;
+    self.systemSelectBlock = selectBlock;
+    self.systemSelectAllBlock = selectAllBlock;
+}
+
+- (BOOL)isSecureTextEntry {
+    CMP_ABSTRACT_FUNCTION_CALLED
+}
+
+- (UITextField *)cmp_proxyTextField {
+    if (![self isSecureTextEntry]) {
+        return nil;
+    }
+    if (!_textField) {
+        _textField = [[UITextField alloc] init];
+    }
+    return _textField;
+}
+
+/// `-[UIView dealloc]` still queries the view while tearing it down (`-isKindOfClass:` from
+/// `-_removeAllGestureRecognizers`, for example). The Kotlin subclass releases its state in its own
+/// `-dealloc` before `super` runs, so from here on the subclass can no longer be asked anything.
+- (void)dealloc {
+    _isDeallocating = YES;
+}
+
+- (BOOL)isKindOfClass:(Class)aClass {
+    if ([super isKindOfClass:aClass]) {
+        return YES;
+    }
+    if (_isDeallocating) {
+        return NO;
+    }
+    UITextField *proxyTextField = [self cmp_proxyTextField];
+    return proxyTextField != nil && [proxyTextField isKindOfClass:aClass];
+}
+
+- (NSMethodSignature*)methodSignatureForSelector:(SEL)aSelector {
+    NSMethodSignature* signature = [super methodSignatureForSelector:aSelector];
+    if (!signature) {
+        signature = [[self cmp_proxyTextField] methodSignatureForSelector:aSelector];
+    }
+    return signature;
+}
+
+- (void)forwardInvocation:(NSInvocation*)anInvocation {
+    UITextField *proxyTextField = [self cmp_proxyTextField];
+    if (proxyTextField != nil) {
+        [anInvocation invokeWithTarget:proxyTextField];
+    } else {
+        [super forwardInvocation:anInvocation];
+    }
+}
+
+- (nullable NSString *)text {
+    NSAssert([self conformsToProtocol:@protocol(UITextInput)],
+             @"-text requires a subclass conforming to UITextInput");
+
+    id<UITextInput> textInput = (id<UITextInput>)self;
+    UITextRange *range = [textInput textRangeFromPosition:textInput.beginningOfDocument
+                                               toPosition:textInput.endOfDocument];
+    return range != nil ? [textInput textInRange:range] : nil;
+}
+
+- (BOOL)isEditMenuShown {
+    if (@available(iOS 16, *)) {
+        return _editMenuState == CMPEditMenuStatePresenting || _editMenuState == CMPEditMenuStatePresented;
+    } else {
+        return _editMenuState == CMPEditMenuStatePresenting ||
+        (_editMenuState == CMPEditMenuStatePresented && [UIMenuController sharedMenuController].menuVisible);
+    }
+}
+
+- (void)didMoveToWindow {
+    [super didMoveToWindow];
+    
+    if (self.window != nil) {
+        [[CMPEditMenuViewRegister shared] addEditMenu:self];
+    } else {
+        [self hideEditMenu];
+        [[CMPEditMenuViewRegister shared] removeEditMenu:self];
+    }
+}
+
+- (void)scheduleShowMenuController {
+    [self cancelShowMenuController];
+
+    __weak __auto_type weak_self = self;
+    self.showContextMenuBlock = dispatch_block_create(0 ,^{
+        __auto_type self = weak_self;
+        UIMenuController *controller = [UIMenuController sharedMenuController];
+        controller.menuItems = [self makeCustomMenuItems];
+        [self becomeFirstResponder];
+        self.editMenuState = CMPEditMenuStatePresented;
+        [controller showMenuFromView:self rect:self.targetRect];
+
+        self.showContextMenuBlock = nil;
+    });
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)([self editMenuDelay] * NSEC_PER_SEC)),
+                   dispatch_get_main_queue(),
+                   self.showContextMenuBlock);
+}
+
+- (NSArray<UIMenuItem *> *)makeCustomMenuItems {
+    if (self.customActions.count == 0) {
+        return @[];
+    }
+    
+    SEL selectorsArray[] = {
+        @selector(customAction0:),
+        @selector(customAction1:),
+        @selector(customAction2:),
+        @selector(customAction3:),
+        @selector(customAction4:),
+        @selector(customAction5:),
+        @selector(customAction6:),
+        @selector(customAction7:),
+        @selector(customAction8:),
+        @selector(customAction9:)
+    };
+    SEL *selectorsPtr = selectorsArray;
+    
+    NSMutableArray<UIMenuItem *> *items = [NSMutableArray new];
+    [self.customActions enumerateObjectsUsingBlock:^(CMPEditMenuCustomAction *item, NSUInteger index, BOOL * _Nonnull stop) {
+        if (index >= customActionsMaxCount) {
+            *stop = YES;
+            return;
+        }
+        [items addObject:[[UIMenuItem alloc] initWithTitle:self.customActions[index].title action:selectorsPtr[index]]];
+    }];
+
+    return items;
+}
+
+- (NSArray<UIMenuElement *> *)makeCustomMenuElements {
+    if (self.customActions.count == 0) {
+        return @[];
+    }
+    
+    NSMutableArray<UIMenuElement *> *items = [NSMutableArray new];
+    [self.customActions enumerateObjectsUsingBlock:^(CMPEditMenuCustomAction *item, NSUInteger index, BOOL * _Nonnull stop) {
+        [items addObject:[UIAction actionWithTitle:self.customActions[index].title
+                                             image:nil
+                                        identifier:nil
+                                           handler:^(__kindof UIAction * _Nonnull action) {
+            item.actionBlock();
+        }]];
+    }];
+    
+    return items;
+}
+
+- (void)cancelShowMenuController {
+    if (self.showContextMenuBlock != nil) {
+        dispatch_block_cancel(self.showContextMenuBlock);
+        self.showContextMenuBlock = nil;
+    }
+}
+
+- (NSTimeInterval)editMenuDelay {
+    return 0.25;
+}
+
+- (UIEditMenuInteraction *)editInteraction API_AVAILABLE(ios(16.0)) {
+    return _editInteraction;
+}
+
+- (void)setEditInteraction:(UIEditMenuInteraction *)editInteraction API_AVAILABLE(ios(16.0)) {
+    _editInteraction = editInteraction;
+}
+
+- (void)schedulePresentEditMenuInteractionWithDelay:(NSTimeInterval)delay API_AVAILABLE(ios(16.0)) {
+    __weak __auto_type weak_self = self;
+    self.presentInteractionBlock = dispatch_block_create(0 ,^{
+        __auto_type self = weak_self;
+        self.presentInteractionBlock = nil;
+        self.editInteraction = [[UIEditMenuInteraction alloc] initWithDelegate:self];
+        [self addInteraction:self.editInteraction];
+        UIEditMenuConfiguration *config = [UIEditMenuConfiguration configurationWithIdentifier:nil
+                                                                                   sourcePoint:self.targetRect.origin];
+        [self.editInteraction presentEditMenuWithConfiguration:config];
+    });
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)),
+                   dispatch_get_main_queue(),
+                   self.presentInteractionBlock);
+}
+
+- (void)cancelPresentEditMenuInteraction API_AVAILABLE(ios(16.0)) {
+    if (self.presentInteractionBlock != nil) {
+        dispatch_block_cancel(self.presentInteractionBlock);
+        self.presentInteractionBlock = nil;
+    }
+}
+
+- (BOOL)canBecomeFirstResponder {
+    return YES;
+}
+
+- (void)dismissEditMenu {
+    if (@available(iOS 16, *)) {
+        [self cancelPresentEditMenuInteraction];
+        switch (self.editMenuState) {
+            case CMPEditMenuStateHidden:
+            case CMPEditMenuStateHiding:
+                break;
+
+            case CMPEditMenuStatePresenting:
+            case CMPEditMenuStatePresented:
+                self.editMenuState = CMPEditMenuStateHiding;
+
+                if (self.editInteraction != nil) {
+                    UIEditMenuInteraction *interaction = self.editInteraction;
+                    [interaction dismissMenu];
+                    self.editInteraction = nil;
+                    [self removeInteraction:interaction];
+                }
+        }
+    } else {
+        [self cancelShowMenuController];
+        self.editMenuState = CMPEditMenuStateHidden;
+        [[UIMenuController sharedMenuController] hideMenu];
+    }
+}
+
+- (void)hideEditMenu {
+    [self dismissEditMenu];
+
+    self.copyBlock = nil;
+    self.cutBlock = nil;
+    self.pasteBlock = nil;
+    self.selectBlock = nil;
+    self.selectAllBlock = nil;
+    self.customActions = @[];
+}
+
+- (BOOL)contextMenuItemsChangedCopy:(void (^)(void))copyBlock
+                                cut:(void (^)(void))cutBlock
+                              paste:(void (^)(void))pasteBlock
+                             select:(void (^)(void))selectBlock
+                          selectAll:(void (^)(void))selectAllBlock
+                      customActions:(NSArray<CMPEditMenuCustomAction *> *)customActions {
+    return ((self.copyBlock == nil) != (copyBlock == nil) ||
+            (self.cutBlock == nil) != (cutBlock == nil) ||
+            (self.pasteBlock == nil) != (pasteBlock == nil) ||
+            (self.selectBlock == nil) != (selectBlock == nil) ||
+            (self.selectAllBlock == nil) != (selectAllBlock == nil) ||
+            (![self.customActions isEqualToArray:customActions]));
+}
+
+- (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
+    if (@selector(copy:) == action) {
+        return self.copyBlock != nil || self.systemCopyBlock != nil;
+    }
+    if (@selector(paste:) == action) {
+        return self.pasteBlock != nil || self.systemPasteBlock != nil;
+    }
+    if (@selector(cut:) == action) {
+        return self.cutBlock != nil || self.systemCutBlock != nil;
+    }
+    if (@selector(select:) == action) {
+        return self.selectBlock != nil;
+    }
+    if (@selector(selectAll:) == action) {
+        return self.selectAllBlock != nil || self.systemSelectAllBlock != nil;
+    }
+
+    if (@selector(customAction0:) == action) return self.customActions.count > 0;
+    if (@selector(customAction1:) == action) return self.customActions.count > 1;
+    if (@selector(customAction2:) == action) return self.customActions.count > 2;
+    if (@selector(customAction3:) == action) return self.customActions.count > 3;
+    if (@selector(customAction4:) == action) return self.customActions.count > 4;
+    if (@selector(customAction5:) == action) return self.customActions.count > 5;
+    if (@selector(customAction6:) == action) return self.customActions.count > 6;
+    if (@selector(customAction7:) == action) return self.customActions.count > 7;
+    if (@selector(customAction8:) == action) return self.customActions.count > 8;
+    if (@selector(customAction9:) == action) return self.customActions.count > 9;
+
+    return NO;
+}
+
+- (void)copy:(id)sender {
+    if (self.copyBlock != nil) {
+        self.copyBlock();
+    } else if (self.systemCopyBlock != nil) {
+        self.systemCopyBlock();
+    }
+}
+
+- (void)paste:(id)sender {
+    if (self.pasteBlock != nil) {
+        self.pasteBlock();
+    } else if (self.systemPasteBlock != nil) {
+        self.systemPasteBlock();
+    }
+}
+
+- (void)cut:(id)sender {
+    if (self.cutBlock != nil) {
+        self.cutBlock();
+    } else if (self.systemCutBlock != nil) {
+        self.systemCutBlock();
+    }
+}
+
+- (void)select:(id)sender {
+    if (self.selectBlock != nil) {
+        self.selectBlock();
+    } else if (self.systemSelectBlock != nil) {
+        self.systemSelectBlock();
+    }
+}
+
+- (void)selectAll:(id)sender {
+    if (self.selectAllBlock != nil) {
+        self.selectAllBlock();
+    } else if (self.systemSelectAllBlock != nil) {
+        self.systemSelectAllBlock();
+    }
+}
+
+const NSInteger customActionsMaxCount = 10;
+
+- (void)customAction0:(id)sender {
+    [self performCustomActionAtIndex:0];
+}
+
+- (void)customAction1:(id)sender {
+    [self performCustomActionAtIndex:1];
+}
+
+- (void)customAction2:(id)sender {
+    [self performCustomActionAtIndex:2];
+}
+
+- (void)customAction3:(id)sender {
+    [self performCustomActionAtIndex:3];
+}
+
+- (void)customAction4:(id)sender {
+    [self performCustomActionAtIndex:4];
+}
+
+- (void)customAction5:(id)sender {
+    [self performCustomActionAtIndex:5];
+}
+
+- (void)customAction6:(id)sender {
+    [self performCustomActionAtIndex:6];
+}
+
+- (void)customAction7:(id)sender {
+    [self performCustomActionAtIndex:7];
+}
+
+- (void)customAction8:(id)sender {
+    [self performCustomActionAtIndex:8];
+}
+
+- (void)customAction9:(id)sender {
+    [self performCustomActionAtIndex:9];
+}
+
+- (void)performCustomActionAtIndex:(NSInteger)index {
+    if (index >= self.customActions.count) {
+        return;
+    }
+    self.customActions[index].actionBlock();
+}
+
+- (CGRect)editMenuInteraction:(UIEditMenuInteraction *)interaction
+   targetRectForConfiguration:(UIEditMenuConfiguration *)configuration API_AVAILABLE(ios(16.0)) {
+    return self.targetRect;
+}
+
+- (void)editMenuInteraction:(UIEditMenuInteraction *)interaction
+willDismissMenuForConfiguration:(UIEditMenuConfiguration *)configuration
+                   animator:(id<UIEditMenuInteractionAnimating>)animator API_AVAILABLE(ios(16.0)) {
+    if (self.editInteraction != interaction) {
+        return;
+    }
+    self.editInteraction = nil;
+    self.editMenuState = CMPEditMenuStateHiding;
+    __weak __auto_type weak_self = self;
+    [animator addCompletion:^{
+        __auto_type self = weak_self;
+        if (self.editInteraction == nil) {
+            self.editMenuState = CMPEditMenuStateHidden;
+        }
+    }];
+}
+
+- (void)editMenuInteraction:(UIEditMenuInteraction *)interaction
+willPresentMenuForConfiguration:(UIEditMenuConfiguration *)configuration
+                   animator:(id<UIEditMenuInteractionAnimating>)animator API_AVAILABLE(ios(16.0)) {
+    __weak __auto_type weak_self = self;
+    [animator addCompletion:^{
+        __auto_type self = weak_self;
+        if (self.editInteraction == interaction) {
+            self.editMenuState = CMPEditMenuStatePresented;
+        }
+    }];
+}
+
+- (UIMenu *)editMenuInteraction:(UIEditMenuInteraction *)interaction
+            menuForConfiguration:(UIEditMenuConfiguration *)configuration
+               suggestedActions:(NSArray<UIMenuElement *> *)suggestedActions API_AVAILABLE(ios(16.0)){
+    
+    NSArray *allActions = [suggestedActions arrayByAddingObjectsFromArray:[self makeCustomMenuElements]];
+    
+    return [UIMenu menuWithTitle:@"" children:allActions];
+}
+
+- (UIView *)inputView {
+    return nil;
+}
+
+- (UIView *)inputAccessoryView {
+    return nil;
+}
+
+@end

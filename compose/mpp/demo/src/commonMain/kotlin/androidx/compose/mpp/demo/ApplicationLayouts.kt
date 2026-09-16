@@ -367,15 +367,16 @@ fun <T> SwitchEnumState(values: Array<T>, state: MutableState<T>, modifier: Modi
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBarBasic() {
+    val accentColor = topBarAccentColor()
     CenterAlignedTopAppBar(
         navigationIcon = {
-            Text("Text", color = Color.Blue)
+            Text("Text", color = accentColor)
         },
         title = { Text("Chats", fontWeight = FontWeight.Bold) },
         actions = {
             val modifier = Modifier.padding(horizontal = 10.dp)
-            Icon(Icons.Outlined.Phone, null, modifier, Color.Blue)
-            Icon(Icons.Outlined.Edit, null, modifier, Color.Blue)
+            Icon(Icons.Outlined.Phone, null, modifier, accentColor)
+            Icon(Icons.Outlined.Edit, null, modifier, accentColor)
         }
     )
 }
@@ -384,6 +385,7 @@ fun TopBarBasic() {
 @Composable
 fun TopBarWithGradient() {
     val bgColor = MaterialTheme.colorScheme.background
+    val accentColor = topBarAccentColor()
     val green = Color.Green.copy(0.5f).compositeOver(bgColor)
     val blue = Color.Blue.copy(0.5f).compositeOver(bgColor)
     Box(
@@ -392,8 +394,8 @@ fun TopBarWithGradient() {
         CenterAlignedTopAppBar(
             navigationIcon = {
                 Row {
-                    Icon(Icons.Default.ArrowBack, null, tint = Color.Blue)
-                    Text("Back", color = Color.Blue)
+                    Icon(Icons.Default.ArrowBack, null, tint = accentColor)
+                    Text("Back", color = accentColor)
                 }
             },
             title = {
@@ -404,8 +406,8 @@ fun TopBarWithGradient() {
             },
             actions = {
                 val modifier = Modifier.padding(horizontal = 10.dp)
-                Icon(Icons.Outlined.Phone, null, modifier, Color.Blue)
-                Icon(Icons.Outlined.Edit, null, modifier, Color.Blue)
+                Icon(Icons.Outlined.Phone, null, modifier, accentColor)
+                Icon(Icons.Outlined.Edit, null, modifier, accentColor)
             },
             colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                 containerColor = Color.Transparent
@@ -413,3 +415,7 @@ fun TopBarWithGradient() {
         )
     }
 }
+
+@Composable
+private fun topBarAccentColor(): Color =
+    if (isSystemInDarkTheme()) Color(0xFF8AB4F8) else Color.Blue

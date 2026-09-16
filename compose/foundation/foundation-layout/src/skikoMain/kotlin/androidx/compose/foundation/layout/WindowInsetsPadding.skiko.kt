@@ -21,13 +21,16 @@ package androidx.compose.foundation.layout
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
+import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.ObserverModifierNode
+import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.node.observeReads
 import androidx.compose.ui.node.traverseAncestors
 import androidx.compose.ui.platform.InspectorInfo
+import androidx.compose.ui.platform.LocalPlatformWindowInsets
 import androidx.compose.ui.platform.PlatformWindowInsets
-import androidx.compose.ui.platform.PlatformWindowInsetsProviderNode
 import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.platform.safeContent
 import androidx.compose.ui.platform.safeDrawing
@@ -178,18 +181,15 @@ private class PlatformWindowInsetsPaddingModifierElement(
 
 private class PlatformWindowInsetsPaddingModifierNode(
     private var insetsGetter: PlatformWindowInsets.() -> WindowInsets,
-): PlatformWindowInsetsProviderNode(), ObserverModifierNode {
-
+): Modifier.Node(), CompositionLocalConsumerModifierNode, ObserverModifierNode {
     private var insetsPaddingNode: PlatformInsetsPaddingModifierNode? = null
 
     fun update(insetsGetter: (PlatformWindowInsets) -> WindowInsets) {
         if (this.insetsGetter !== insetsGetter) {
             this.insetsGetter = insetsGetter
-            windowInsetsInvalidated()
+            onObservedReadsChanged()
         }
     }
-
-    override fun calculatePlatformInsets(ancestorWindowInsets: PlatformWindowInsets): PlatformWindowInsets = ancestorWindowInsets
 
     override fun onAttach() {
         super.onAttach()
@@ -214,14 +214,9 @@ private class PlatformWindowInsetsPaddingModifierNode(
         super.onDetach()
     }
 
-    override fun windowInsetsInvalidated() {
-        super.windowInsetsInvalidated()
-
-        onObservedReadsChanged()
-    }
-
     override fun onObservedReadsChanged() {
         observeReads {
+            val windowInsets = currentValueOf(LocalPlatformWindowInsets)
             insetsPaddingNode?.update(windowInsets.insetsGetter())
         }
     }

@@ -79,7 +79,7 @@ import kotlin.math.roundToInt
  *   before drawing it if the platform effect is a glow effect, otherwise ignored.
  */
 @Composable
-fun rememberPlatformOverscrollFactory(
+public fun rememberPlatformOverscrollFactory(
     glowColor: Color = DefaultGlowColor,
     glowDrawPadding: PaddingValues = DefaultGlowPaddingValues,
 ): OverscrollFactory {
@@ -218,7 +218,13 @@ private class StretchOverscrollNode(
             drawContent()
             return
         }
-        val maxElevation = MaxSupportedElevation.toPx()
+        @OptIn(ExperimentalFoundationApi::class)
+        val maxElevation =
+            if (AndroidComposeFoundationFlags.isOverscrollPixelRoundingEnabled) {
+                MaxSupportedElevation.roundToPx().toFloat()
+            } else {
+                MaxSupportedElevation.toPx()
+            }
         var needsInvalidate = false
         with(edgeEffectWrapper) {
             val shouldDrawVerticalStretch = shouldDrawVerticalStretch()
@@ -1073,5 +1079,6 @@ private fun destretchMultiplier(source: NestedScrollSource): Float =
 private const val FlingDestretchFactor = 4f
 
 /** From [EdgeEffect] defaults */
-private val DefaultGlowColor = Color(0xff666666)
+private val DefaultGlowColor
+    get() = Color(0xff666666)
 private val DefaultGlowPaddingValues = PaddingValues()

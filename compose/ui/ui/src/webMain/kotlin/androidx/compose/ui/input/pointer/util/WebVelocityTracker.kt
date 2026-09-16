@@ -31,7 +31,6 @@ import androidx.compose.ui.util.fastForEach
  * It is required for better fling gesture handling because Browsers send touch events
  * not so often than other targets.
  */
-@OptIn(ExperimentalVelocityTrackerApi::class)
 internal class WebVelocityTracker : PlatformVelocityTracker {
     private val xVelocityTracker = PointerVelocityTracker1D()
     private val yVelocityTracker = PointerVelocityTracker1D()

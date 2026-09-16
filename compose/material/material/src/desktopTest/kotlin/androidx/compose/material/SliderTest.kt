@@ -18,7 +18,6 @@ package androidx.compose.material
 
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
@@ -45,6 +44,7 @@ import org.junit.Test
 @OptIn(InternalComposeUiApi::class)
 class SliderTest {
 
+    @Suppress("DEPRECATION")
     @get:Rule
     val rule = createComposeRule()
 
@@ -53,7 +53,6 @@ class SliderTest {
         rule.mainClock.autoAdvance = true
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun `slider(0 steps, ltr) changes values when arrows pressed`() {
         val state = mutableStateOf(0.5f)
@@ -137,7 +136,6 @@ class SliderTest {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun `slider(0 steps, rtl) changes values when arrows pressed`() {
         val state = mutableStateOf(0.5f)
@@ -179,7 +177,6 @@ class SliderTest {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun `slider(29 steps, ltr) changes values when arrows pressed`() {
         val state = mutableStateOf(15f)

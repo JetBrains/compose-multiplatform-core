@@ -28,14 +28,14 @@ import androidx.compose.runtime.Immutable
  * @sample androidx.compose.ui.text.samples.TextMotionSample
  */
 @Immutable
-actual class TextMotion
+public actual class TextMotion
 internal constructor(
     internal val linearity: Linearity,
     internal val subpixelTextPositioning: Boolean,
 ) {
-    actual companion object {
-        actual val Static: TextMotion = TextMotion(Linearity.FontHinting, false)
-        actual val Animated: TextMotion = TextMotion(Linearity.Linear, true)
+    public actual companion object {
+        public actual val Static: TextMotion = TextMotion(Linearity.FontHinting, false)
+        public actual val Animated: TextMotion = TextMotion(Linearity.Linear, true)
     }
 
     internal fun copy(
@@ -79,17 +79,20 @@ internal constructor(
             /**
              * Equal to applying [android.graphics.Paint.LINEAR_TEXT_FLAG] and turning hinting off.
              */
-            val Linear = Linearity(1)
+            val Linear
+                get() = Linearity(1)
 
             /**
              * Equal to removing [android.graphics.Paint.LINEAR_TEXT_FLAG] and turning hinting on.
              */
-            val FontHinting = Linearity(2)
+            val FontHinting
+                get() = Linearity(2)
 
             /**
              * Equal to removing [android.graphics.Paint.LINEAR_TEXT_FLAG] and turning hinting off.
              */
-            val None = Linearity(3)
+            val None
+                get() = Linearity(3)
         }
 
         override fun toString(): String =

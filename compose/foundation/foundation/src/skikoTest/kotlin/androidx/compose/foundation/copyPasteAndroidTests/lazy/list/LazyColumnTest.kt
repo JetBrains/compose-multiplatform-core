@@ -24,7 +24,6 @@ import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.isEqualTo
 import androidx.compose.foundation.isFalse
 import androidx.compose.foundation.isLessThan
-import androidx.compose.foundation.isNotEqualTo
 import androidx.compose.foundation.isTrue
 import androidx.compose.foundation.isWithin1PixelFrom
 import androidx.compose.foundation.layout.Box
@@ -89,6 +88,7 @@ class LazyColumnTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun compositionsAreDisposed_whenDataIsChanged() = runSkikoComposeUiTest {
         var composed = 0
@@ -133,6 +133,7 @@ class LazyColumnTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun compositionsAreDisposed_whenLazyListIsDisposed() = runSkikoComposeUiTest {
         var emitLazyList by mutableStateOf(true)
@@ -174,6 +175,7 @@ class LazyColumnTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun removeItemsTest() = runSkikoComposeUiTest {
         var itemCount by mutableStateOf(3)
@@ -201,6 +203,7 @@ class LazyColumnTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun changeItemsCountAndScrollImmediately() = runSkikoComposeUiTest {
         lateinit var state: LazyListState
@@ -233,6 +236,7 @@ class LazyColumnTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun changingDataTest() = runSkikoComposeUiTest {
         val dataLists = listOf(
@@ -299,6 +303,7 @@ class LazyColumnTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun lazyColumnAlignmentCenterHorizontally() = runSkikoComposeUiTest {
         prepareLazyColumnsItemsAlignment(Alignment.CenterHorizontally)
@@ -310,6 +315,7 @@ class LazyColumnTest {
             .assertPositionInRootIsEqualTo(15.dp, 50.dp)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun lazyColumnAlignmentStart() = runSkikoComposeUiTest {
         prepareLazyColumnsItemsAlignment(Alignment.Start)
@@ -321,6 +327,7 @@ class LazyColumnTest {
             .assertPositionInRootIsEqualTo(0.dp, 50.dp)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun lazyColumnAlignmentEnd() = runSkikoComposeUiTest {
         prepareLazyColumnsItemsAlignment(Alignment.End)
@@ -332,6 +339,7 @@ class LazyColumnTest {
             .assertPositionInRootIsEqualTo(30.dp, 50.dp)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun flingAnimationStopsOnFingerDown() = runSkikoComposeUiTest {
         val items by mutableStateOf((1..20).toList())
@@ -375,6 +383,7 @@ class LazyColumnTest {
         assertThat(state.firstVisibleItemScrollOffset).isEqualTo(itemOffsetWhenInterrupting)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun removalWithMutableStateListOf() = runSkikoComposeUiTest {
         val items = mutableStateListOf("1", "2", "3")
@@ -403,6 +412,7 @@ class LazyColumnTest {
             .assertIsNotPlaced()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun recompositionOrder() = runSkikoComposeUiTest {
         val outerState = mutableStateOf(0)
@@ -431,6 +441,7 @@ class LazyColumnTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrolledAwayItemIsNotDisplayedAnymore() = runSkikoComposeUiTest(Size(10f, 10f)) {
         lateinit var state: LazyListState
@@ -477,6 +488,7 @@ class LazyColumnTest {
             }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun wrappedNestedLazyRowDisplayCorrectContent() = runSkikoComposeUiTest {
         lateinit var state: LazyListState

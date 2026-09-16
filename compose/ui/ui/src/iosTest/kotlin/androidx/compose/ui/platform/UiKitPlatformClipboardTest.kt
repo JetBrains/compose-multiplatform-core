@@ -29,6 +29,7 @@ class UiKitPlatformClipboardTest {
     // The unit tests can't use (copy/paste) the native UIPasteboard:
     // "Cannot connect to pasteboard server" - an error at runtime
 
+    @Suppress("DEPRECATION")
     @Test
     fun canGetLocalClipboard() = runComposeUiTest {
         var clipboard: Clipboard? = null
@@ -45,6 +46,7 @@ class UiKitPlatformClipboardTest {
         assertNotNull(nativeClipboard)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun smokeTestUseClipboardMethods() = runComposeUiTest {
         var clipboard: Clipboard? = null

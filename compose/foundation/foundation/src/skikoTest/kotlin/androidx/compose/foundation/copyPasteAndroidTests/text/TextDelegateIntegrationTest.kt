@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.copyPasteAndroidTests.text
 
+import androidx.compose.foundation.SkikoComposeTestBase
 import androidx.compose.foundation.assertThat
 import androidx.compose.foundation.isEqualTo
 import androidx.compose.foundation.isTrue
@@ -36,7 +37,7 @@ import kotlin.test.Ignore
 import kotlin.test.Test
 
 @OptIn(InternalFoundationTextApi::class)
-class TextDelegateIntegrationTest {
+class TextDelegateIntegrationTest : SkikoComposeTestBase() {
 
     @Test
     @Ignore // TODO: test is failing

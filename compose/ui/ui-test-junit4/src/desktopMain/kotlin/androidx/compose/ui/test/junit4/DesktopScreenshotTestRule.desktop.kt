@@ -16,6 +16,8 @@
 package androidx.compose.ui.test.junit4
 
 import androidx.annotation.FloatRange
+import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.test.InternalTestApi
 import androidx.compose.ui.test.junit4.ScreenshotResultProto.Status
 import androidx.compose.ui.test.junit4.matchers.BitmapMatcher
@@ -57,10 +59,14 @@ private data class ScreenshotResultProto(
 }
 
 @InternalTestApi
+@OptIn(InternalComposeUiApi::class)
 fun DesktopScreenshotTestRule(
     modulePath: String,
     fsGoldenPath: String = System.getProperty("GOLDEN_PATH")
 ): ScreenshotTestRule {
+    // Register here (at rule construction) so the backend is available before tests that create
+    // graphics primitives in field initializers — e.g. DesktopGraphicsTest's paint properties.
+    registerSkikoComposeImplementation()
     return ScreenshotTestRule(fsGoldenPath, modulePath)
 }
 
@@ -77,6 +83,8 @@ class ScreenshotTestRule internal constructor(
             override fun evaluate() {
                 testIdentifier = "${description!!.className}_${description.methodName}"
                     .replace(".", "_").replace(",", "_").replace(" ", "_").replace("__", "_")
+                // TODO: re-enable cleanup (see ComposeUiTest.skiko.kt) once async-registration tests
+                //  no longer rely on the backend registration persisting across tests.
                 base.evaluate()
             }
         }
