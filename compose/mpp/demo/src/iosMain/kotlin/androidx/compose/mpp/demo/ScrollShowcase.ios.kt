@@ -128,14 +128,14 @@ private fun BoxScope.SafeAreaFade(colors: ShowcaseColors) {
             .align(Alignment.TopCenter)
             .fillMaxWidth()
             .height(safeDrawing.calculateTopPadding())
-            .background(Brush.verticalGradient(listOf(colors.background, Color.Transparent)))
+            .background(Brush.verticalGradient(listOf(colors.background, colors.background.copy(alpha = 0.95f), Color.Transparent)))
     )
     Spacer(
         Modifier
             .align(Alignment.BottomCenter)
             .fillMaxWidth()
             .height(safeDrawing.calculateBottomPadding())
-            .background(Brush.verticalGradient(listOf(Color.Transparent, colors.background)))
+            .background(Brush.verticalGradient(listOf(Color.Transparent, colors.background.copy(alpha = 0.95f), colors.background)))
     )
 }
 
