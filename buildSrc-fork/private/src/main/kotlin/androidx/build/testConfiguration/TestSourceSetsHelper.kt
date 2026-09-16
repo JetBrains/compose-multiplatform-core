@@ -33,6 +33,7 @@ internal fun Project.getTestSourceSetsForAndroid(variant: Variant?): List<FileCo
                 testSourceFileCollections.add(files(sourceSet))
             }
             // Add kotlin-android main source set
+            @Suppress("DEPRECATION")
             extensions
                 .findByType(KotlinAndroidProjectExtension::class.java)
                 ?.sourceSets
@@ -49,6 +50,7 @@ internal fun Project.getTestSourceSetsForAndroid(variant: Variant?): List<FileCo
     }
 
     // Add kotlin-android androidTest source set
+    @Suppress("DEPRECATION")
     extensions
         .findByType(KotlinAndroidProjectExtension::class.java)
         ?.sourceSets
