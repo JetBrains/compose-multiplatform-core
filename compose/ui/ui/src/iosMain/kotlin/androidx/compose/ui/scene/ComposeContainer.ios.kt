@@ -456,6 +456,7 @@ internal class ComposeContainer(
 
                 layer.rootForTestListener = rootForTestListener
                 layersHolder.getLayersViewController().attach(layer)
+                onFontScaleChanged(fontScaleProvider.fontScale)
                 onFocusConditionsChanged()
 
                 return layer
