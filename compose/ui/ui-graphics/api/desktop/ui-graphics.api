@@ -439,6 +439,7 @@ public final class androidx/compose/ui/graphics/IntervalTree {
 public final class androidx/compose/ui/graphics/LayerOutsets {
 	public static final field $stable I
 	public static final field Companion Landroidx/compose/ui/graphics/LayerOutsets$Companion;
+	public fun <init> ()V
 	public synthetic fun <init> (FFFFILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (FFFFLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
@@ -987,6 +988,7 @@ public final class androidx/compose/ui/graphics/ShaderKt {
 public final class androidx/compose/ui/graphics/Shadow {
 	public static final field $stable I
 	public static final field Companion Landroidx/compose/ui/graphics/Shadow$Companion;
+	public fun <init> ()V
 	public synthetic fun <init> (JJFILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (JJFLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun copy-qcb84PM (JJF)Landroidx/compose/ui/graphics/Shadow;
@@ -1407,6 +1409,7 @@ public final class androidx/compose/ui/graphics/drawscope/CanvasDrawScope : andr
 
 public final class androidx/compose/ui/graphics/drawscope/CanvasDrawScope$DrawParams {
 	public static final field $stable I
+	public fun <init> ()V
 	public synthetic fun <init> (Landroidx/compose/ui/unit/Density;Landroidx/compose/ui/unit/LayoutDirection;Landroidx/compose/ui/graphics/Canvas;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Landroidx/compose/ui/unit/Density;Landroidx/compose/ui/unit/LayoutDirection;Landroidx/compose/ui/graphics/Canvas;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Landroidx/compose/ui/unit/Density;
@@ -1638,6 +1641,7 @@ public final class androidx/compose/ui/graphics/drawscope/Stroke : androidx/comp
 	public static final field Companion Landroidx/compose/ui/graphics/drawscope/Stroke$Companion;
 	public static final field DefaultMiter F
 	public static final field HairlineWidth F
+	public fun <init> ()V
 	public synthetic fun <init> (FFIILandroidx/compose/ui/graphics/PathEffect;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (FFIILandroidx/compose/ui/graphics/PathEffect;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
