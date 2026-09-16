@@ -23,7 +23,6 @@ import android.text.SpannableStringBuilder
 import android.text.style.BackgroundColorSpan
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.internal.readText
@@ -79,7 +78,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties.TextSelectionRange
 import androidx.compose.ui.semantics.getOrNull
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotFocused
@@ -135,7 +133,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalTestApi::class)
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 internal class BasicTextFieldTest {
@@ -1305,7 +1302,7 @@ internal class BasicTextFieldTest {
 
     @Test
     fun changingInputTransformation_doesNotRestartInput() {
-        var inputTransformation by mutableStateOf(InputTransformation.maxLength(10))
+        var inputTransformation by mutableStateOf(InputTransformation.maxLengthTrim(10))
         inputMethodInterceptor.setTextFieldTestContent {
             val state = remember { TextFieldState() }
             BasicTextField(
@@ -1319,7 +1316,7 @@ internal class BasicTextFieldTest {
         inputMethodInterceptor.assertSessionActive()
         inputMethodInterceptor.assertThatSessionCount().isEqualTo(1)
 
-        inputTransformation = InputTransformation.maxLength(15)
+        inputTransformation = InputTransformation.maxLengthTrim(15)
 
         inputMethodInterceptor.assertSessionActive()
         inputMethodInterceptor.assertThatSessionCount().isEqualTo(1)
@@ -1578,7 +1575,7 @@ internal class BasicTextFieldTest {
     fun whenWindowFocusGained_unfocusedTextFieldStateIsNotRecomposed() {
         val state = TextFieldState("Hello")
         var isWindowFocused by mutableStateOf(false)
-        var windowInfo =
+        val windowInfo =
             object : WindowInfo {
                 override val isWindowFocused: Boolean
                     get() = isWindowFocused
@@ -1745,6 +1742,7 @@ internal class BasicTextFieldTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun whenCursorOutOfView_bringCursorIntoView_withCoreTextField() {
         val tag = "textField"
         val scrollState = ScrollState(0)

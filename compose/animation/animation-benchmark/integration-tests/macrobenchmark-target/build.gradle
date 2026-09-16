@@ -22,16 +22,16 @@ plugins {
 
 android {
     namespace = "androidx.compose.animation.benchmark.target"
-    compileSdk { version = release(37) }
+    compileSdk { version = release(37) { minorApiLevel = 1 } }
     buildTypes {
         release {
             minifyEnabled = true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt")
         }
         benchmark {
             initWith release
             signingConfig = signingConfigs.debug
-            matchingFallbacks = ['release']
+            matchingFallbacks = ["release"]
             debuggable = false
         }
     }

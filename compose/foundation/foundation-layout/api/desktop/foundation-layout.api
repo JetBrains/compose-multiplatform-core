@@ -131,9 +131,6 @@ public final class androidx/compose/foundation/layout/ColumnScopeInstance : andr
 	public fun weight (Landroidx/compose/ui/Modifier;FZ)Landroidx/compose/ui/Modifier;
 }
 
-public abstract interface annotation class androidx/compose/foundation/layout/ExperimentalGridApi : java/lang/annotation/Annotation {
-}
-
 public abstract interface annotation class androidx/compose/foundation/layout/ExperimentalLayoutApi : java/lang/annotation/Annotation {
 }
 

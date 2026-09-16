@@ -1100,6 +1100,21 @@ internal fun UIKitInstrumentedTest.findFocusedUITextInput(): UITextInputProtocol
     } as? UITextInputProtocol
 }
 
+internal fun UIKitInstrumentedTest.findAllUITextInputViews(): List<UIView> {
+    val windowScene = viewController.view.window?.windowScene ?: return emptyList()
+
+    fun collect(view: UIView, into: MutableList<UIView>) {
+        if (view is UITextInputProtocol) {
+            into.add(view)
+        }
+        view.subviews.forEach { collect(it as UIView, into) }
+    }
+
+    return buildList {
+        windowScene.windows.reversed().forEach { collect(it as UIView, this) }
+    }
+}
+
 /**
  * A registry to track roots for testing purposes in the context of the platform UI.
  * Implements the `PlatformContext.RootForTestListener` interface to manage the lifecycle

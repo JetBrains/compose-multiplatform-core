@@ -51,7 +51,6 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalAutofillManager
 import androidx.compose.ui.semantics.contentType
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
@@ -174,6 +173,7 @@ fun BasicSecureTextFieldAutofillDemo() {
     }
 }
 
+@Suppress("DEPRECATION")
 @RequiresApi(Build.VERSION_CODES.O)
 @Preview
 @Composable
@@ -205,6 +205,7 @@ fun LegacyTextFieldAutofillDemo() {
     }
 }
 
+@Suppress("DEPRECATION")
 @RequiresApi(Build.VERSION_CODES.O)
 @Preview
 @Composable
@@ -239,6 +240,7 @@ fun OutlinedTextFieldAutofillDemo() {
 @RequiresApi(Build.VERSION_CODES.O)
 @Preview
 @Composable
+@Suppress("DEPRECATION") // b/552879150
 fun OutlinedTextFieldVisualTransformationAutofillDemo() {
     var usernameInput by remember { mutableStateOf("") }
     var passwordInput by remember { mutableStateOf("") }
@@ -260,7 +262,7 @@ fun OutlinedTextFieldVisualTransformationAutofillDemo() {
             onValueChange = { passwordInput = it },
             label = { Text("Enter password here") },
             modifier = Modifier.semantics { contentType = ContentType.Password },
-            visualTransformation = PasswordVisualTransformation(),
+            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
         )
 
         // Submit button
