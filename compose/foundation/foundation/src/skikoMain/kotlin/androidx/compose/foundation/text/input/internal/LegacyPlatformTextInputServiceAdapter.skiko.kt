@@ -67,7 +67,8 @@ internal actual fun createLegacyPlatformTextInputServiceAdapter():
                     makeRequest(
                         imeOptions = imeOptions,
                         onEditCommand = onEditCommand,
-                        onImeActionPerformed = onImeActionPerformed
+                        onImeActionPerformed = onImeActionPerformed,
+                        editorToken = node.legacyTextFieldState,
                     )
                 )
             }
@@ -107,7 +108,8 @@ internal actual fun createLegacyPlatformTextInputServiceAdapter():
         private fun makeRequest(
             imeOptions: ImeOptions,
             onEditCommand: (List<EditCommand>) -> Unit,
-            onImeActionPerformed: (ImeAction) -> Unit
+            onImeActionPerformed: (ImeAction) -> Unit,
+            editorToken: Any?,
         ): SkikoPlatformTextInputMethodRequest {
             val textEditorState = object : TextEditorState {
                 override val selection: TextRange get() = textFieldValue.selection
@@ -138,7 +140,8 @@ internal actual fun createLegacyPlatformTextInputServiceAdapter():
                 textFieldRectInRoot = { textFieldRectInRoot },
                 textClippingRectInRoot = { textClippingRectInRoot },
                 unclippedTextOffsetInRoot = { unclippedTextOffsetInRoot },
-                editText = editBlock
+                editText = editBlock,
+                editorToken = editorToken,
             )
         }
     }

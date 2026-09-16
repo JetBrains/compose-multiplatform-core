@@ -308,7 +308,7 @@ private constructor(
         composeViewContext?.sharedDrawScope ?: LayoutNodeDrawScope()
 
     /** [WindowInfo] provide by [LocalWindowInfo]. */
-    internal val windowInfo: LazyWindowInfo = LazyWindowInfo()
+    internal val windowInfo: LazyWindowInfo = LazyWindowInfo(view.context)
 
     /**
      * A [CanvasHolder] that can be used for all AndroidComposeViews using this
@@ -409,6 +409,7 @@ private constructor(
         windowInfo.isWindowFocused = view.hasWindowFocus()
         windowInfo.setOnInitializeContainerSize(calculateWindowSizeLambda)
         windowInfo.updateContainerSizeIfObserved(calculateWindowSizeLambda)
+        windowInfo.observeCrossWindowBlurState()
         view.viewTreeObserver.addOnWindowFocusChangeListener(callback)
         view.viewTreeObserver.addOnGlobalLayoutListener(callback)
         pendingWindowInfoUpdate = false
@@ -425,6 +426,7 @@ private constructor(
     private fun stopObserving() {
         view.context.unregisterComponentCallbacks(callback)
         windowInfo.setOnInitializeContainerSize(null)
+        windowInfo.stopObservingCrossWindowBlurState()
         view.viewTreeObserver.removeOnWindowFocusChangeListener(callback)
         view.viewTreeObserver.removeOnGlobalLayoutListener(callback)
         pendingWindowInfoUpdate = false
@@ -559,17 +561,22 @@ private constructor(
                 LocalLifecycleOwner provides lifecycleOwner,
                 LocalSavedStateRegistryOwner provides savedStateRegistryOwner,
                 LocalInspectionTables provides inspectionTable,
+                LocalContext provides owner.context,
+                LocalConfiguration provides owner.configuration,
                 LocalSaveableStateRegistry providesComputed { owner.savedStateRegistry },
                 LocalProvidableScrollCaptureInProgress providesComputed
                     {
                         owner.scrollCaptureInProgress
                     },
                 LocalHostDefaultProvider providesComputed { owner.hostDefaultProvider },
+                LocalView provides owner.view,
+                LocalViewConfiguration provides owner.viewConfiguration,
             ) {
                 ProvideCommonCompositionLocals(owner = owner, content = content)
             }
         } else {
             CompositionLocalProvider(
+                LocalAndroidComposeView provides owner,
                 LocalLifecycleOwner provides lifecycleOwner,
                 LocalSavedStateRegistryOwner provides savedStateRegistryOwner,
                 LocalImageVectorCache provides imageVectorCache,
@@ -580,6 +587,7 @@ private constructor(
                 LocalConfiguration provides owner.configuration,
                 LocalSaveableStateRegistry providesComputed { owner.savedStateRegistry },
                 LocalView provides owner.view,
+                LocalWindow providesComputed { owner.window },
                 LocalProvidableScrollCaptureInProgress providesComputed
                     {
                         owner.scrollCaptureInProgress

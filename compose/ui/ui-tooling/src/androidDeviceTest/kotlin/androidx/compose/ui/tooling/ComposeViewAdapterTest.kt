@@ -301,7 +301,8 @@ class ComposeViewAdapterTest {
         checkAnimationsAreSubscribed(
             "AllAnimations",
             unsupported = listOf("animateContentSize", "TargetBasedAnimation", "DecayAnimation"),
-            supported = listOf("checkBoxAnim", "Crossfade", "InfiniteTransition", "AnimatedContent"),
+            supported =
+                listOf("checkBoxAnim", "Crossfade", "InfiniteTransition", "AnimatedContent"),
         )
         AnimateXAsStateComposeAnimation.testOverrideAvailability(true)
     }
@@ -867,6 +868,10 @@ class ComposeViewAdapterTest {
                 "onForwardPressProgress(float,String): void",
                 "onForwardPressCompleted(): void",
                 "onForwardPressCancelled(): void",
+                // History navigation APIs
+                "getHistory(): List",
+                "getCurrentIndex(): int",
+                "backToState(Object): boolean",
             )
 
         for (expectedMethod in expectedMethods) {

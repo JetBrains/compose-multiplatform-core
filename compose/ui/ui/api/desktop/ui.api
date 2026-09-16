@@ -204,6 +204,10 @@ public final class androidx/compose/ui/ImageComposeScene_skikoMainKt {
 	public static final fun use (Landroidx/compose/ui/ImageComposeScene;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 }
 
+public final class androidx/compose/ui/InteractionBarrierKt {
+	public static final fun interactionBarrier (Landroidx/compose/ui/Modifier;)Landroidx/compose/ui/Modifier;
+}
+
 public final class androidx/compose/ui/KeepScreenOnKt {
 	public static final fun keepScreenOn (Landroidx/compose/ui/Modifier;)Landroidx/compose/ui/Modifier;
 }
@@ -748,10 +752,23 @@ public final class androidx/compose/ui/draw/AlphaKt {
 }
 
 public final class androidx/compose/ui/draw/BlurKt {
+	public static final fun blur (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
 	public static final fun blur-1fqS-gw (Landroidx/compose/ui/Modifier;FFLandroidx/compose/ui/graphics/Shape;)Landroidx/compose/ui/Modifier;
 	public static synthetic fun blur-1fqS-gw$default (Landroidx/compose/ui/Modifier;FFLandroidx/compose/ui/draw/BlurredEdgeTreatment;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
 	public static final fun blur-F8QBwvs (Landroidx/compose/ui/Modifier;FLandroidx/compose/ui/graphics/Shape;)Landroidx/compose/ui/Modifier;
 	public static synthetic fun blur-F8QBwvs$default (Landroidx/compose/ui/Modifier;FLandroidx/compose/ui/draw/BlurredEdgeTreatment;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
+	public static final fun blur-d3-LrFo (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;Landroidx/compose/ui/graphics/Shape;F)Landroidx/compose/ui/Modifier;
+	public static synthetic fun blur-d3-LrFo$default (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;Landroidx/compose/ui/draw/BlurredEdgeTreatment;FILjava/lang/Object;)Landroidx/compose/ui/Modifier;
+}
+
+public abstract interface class androidx/compose/ui/draw/BlurScope : androidx/compose/ui/unit/Density {
+	public abstract fun getAlpha ()F
+	public abstract fun getEdgeTreatment---Goahg ()Landroidx/compose/ui/graphics/Shape;
+	public abstract fun getRadius ()Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;
+	public abstract fun getSize-MYxV2XQ ()J
+	public abstract fun setAlpha (F)V
+	public abstract fun setEdgeTreatment-JyGir4Q (Landroidx/compose/ui/graphics/Shape;)V
+	public abstract fun setRadius (Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;)V
 }
 
 public final class androidx/compose/ui/draw/BlurredEdgeTreatment {
@@ -3373,6 +3390,7 @@ public final class androidx/compose/ui/layout/WindowInsetsRulers$Companion {
 }
 
 public final class androidx/compose/ui/layout/WindowInsetsRulersKt {
+	public static final fun disable (Landroidx/compose/ui/layout/WindowInsetsRulers$Companion;)V
 	public static final fun getDisplayCutoutBounds (Landroidx/compose/ui/layout/Placeable$PlacementScope;)Ljava/util/List;
 }
 

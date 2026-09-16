@@ -334,30 +334,31 @@ internal class ComposeViewAdapter : FrameLayout {
     private fun findDesignInfoProviders() {
         val slotTrees = slotTableRecord.store.map { it.asTree() }
 
-        designInfoList =
-            slotTrees.flatMap { rootGroup ->
-                rootGroup
-                    .findAll { group ->
-                        (group.name != REMEMBER && group.hasDesignInfo()) ||
-                            group.children.any { child ->
-                                child.name == REMEMBER && child.hasDesignInfo()
-                            }
-                    }
-                    .mapNotNull { group ->
-                        // Get the DesignInfoProviders from the group or one of its children
-                        group.getDesignInfoOrNull(group.box)
-                            ?: group.children.firstNotNullOfOrNull {
-                                it.getDesignInfoOrNull(group.box)
-                            }
-                    }
-            }
+        designInfoList = slotTrees.flatMap { rootGroup ->
+            rootGroup
+                .findAll { group ->
+                    (group.name != REMEMBER && group.hasDesignInfo()) ||
+                        group.children.any { child ->
+                            child.name == REMEMBER && child.hasDesignInfo()
+                        }
+                }
+                .mapNotNull { group ->
+                    // Get the DesignInfoProviders from the group or one of its children
+                    group.getDesignInfoOrNull(group.box)
+                        ?: group.children.firstNotNullOfOrNull {
+                            it.getDesignInfoOrNull(group.box)
+                        }
+                }
+        }
     }
 
-    private fun Group.hasDesignInfo(): Boolean =
-        data.any { it?.getDesignInfoMethodOrNull() != null }
+    private fun Group.hasDesignInfo(): Boolean = data.any {
+        it?.getDesignInfoMethodOrNull() != null
+    }
 
-    private fun Group.getDesignInfoOrNull(box: IntRect): String? =
-        data.firstNotNullOfOrNull { it?.invokeGetDesignInfo(box.left, box.right) }
+    private fun Group.getDesignInfoOrNull(box: IntRect): String? = data.firstNotNullOfOrNull {
+        it?.invokeGetDesignInfo(box.left, box.right)
+    }
 
     /**
      * Check if the object supports the method call for [DESIGN_INFO_METHOD], which is expected to
@@ -839,6 +840,55 @@ internal class ComposeViewAdapter : FrameLayout {
             /** Cancels forward navigation progress. */
             fun onForwardPressCancelled() {
                 directNavigationEventInput.forwardCancelled()
+            }
+
+            fun getHistory(): List<Any> {
+                return navigationEventDispatcher.history.value.mergedHistory
+            }
+
+            fun getCurrentIndex(): Int {
+                return navigationEventDispatcher.history.value.currentIndex
+            }
+
+            /**
+             * Pops the back stack until reaching the specified [navigationState] in history.
+             *
+             * @param navigationState the target state in history to navigate back to
+             * @return `true` if navigation was performed to reach [navigationState], `false`
+             *   otherwise
+             */
+            fun backToState(navigationState: Any): Boolean {
+                val history = navigationEventDispatcher.history.value
+                if (history.currentIndex <= 0) return false
+
+                // mergedHistory contains past (0 until currentIndex), current (currentIndex), and
+                // forward (currentIndex + 1 until size) states. We only search the back stack
+                // (past states) to ensure we do not match the active state or future/forward
+                // states.
+                val backStack = history.mergedHistory.take(history.currentIndex)
+                val targetIndex =
+                    backStack.indexOfFirst { it === navigationState }.takeIf { it >= 0 }
+                        ?: backStack.lastIndexOf(navigationState)
+
+                if (targetIndex < 0) {
+                    return false
+                }
+
+                val maxSteps = history.currentIndex - targetIndex
+                repeat(maxSteps) {
+                    // Stop if we have reached the root or back navigation is no longer possible
+                    // to prevent popping past the root and triggering the fallback dispatcher.
+                    if (!canBackPress()) {
+                        return true
+                    }
+                    onBackPressCompleted()
+                    // Stop early if a multi-pop back press already reached or passed the target
+                    // index.
+                    if (navigationEventDispatcher.history.value.currentIndex <= targetIndex) {
+                        return true
+                    }
+                }
+                return true
             }
 
             private fun getNavigationEdgeFromString(edge: String): Int =

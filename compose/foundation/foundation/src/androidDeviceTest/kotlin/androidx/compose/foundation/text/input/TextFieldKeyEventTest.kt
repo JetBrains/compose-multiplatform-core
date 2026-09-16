@@ -917,6 +917,7 @@ class TextFieldKeyEventTest {
     }
 
     @Test
+    @Suppress("DEPRECATION") // b/552879150
     fun textField_keyEvent_functionReference() {
         val state = mutableIntStateOf(0)
         var handled = -1
@@ -933,7 +934,8 @@ class TextFieldKeyEventTest {
             BasicTextField(
                 value = "text",
                 onValueChange = {},
-                modifier = Modifier.focusRequester(focusRequester).testTag(tag).onKeyEvent(::handle),
+                modifier =
+                    Modifier.focusRequester(focusRequester).testTag(tag).onKeyEvent(::handle),
             )
         }
 
