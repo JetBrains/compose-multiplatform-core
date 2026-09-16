@@ -91,15 +91,18 @@ import platform.CoreGraphics.CGRectGetHeight
 import platform.CoreGraphics.CGRectGetWidth
 import platform.CoreGraphics.CGRectZero
 import platform.CoreGraphics.CGSizeMake
+import platform.Foundation.NSNumber
 import platform.Foundation.NSSelectorFromString
+import platform.Foundation.numberWithBool
 import platform.UIKit.NSDirectionalRectEdgeAll
-import platform.UIKit.NSDirectionalRectEdgeTop
 import platform.UIKit.NSLayoutConstraint
 import platform.UIKit.UIScrollView
 import platform.UIKit.UIScrollViewContentInsetAdjustmentBehavior
 import platform.UIKit.UIScrollViewDecelerationRateNormal
 import platform.UIKit.UIScrollViewDelegateProtocol
 import platform.UIKit.UIView
+import platform.darwin.dispatch_async
+import platform.darwin.dispatch_get_main_queue
 
 private enum class NavigationScrollSource {
     DRAG, FLING
@@ -146,7 +149,7 @@ internal class NavigationOverscrollEffect(
             overscrollOffsetState.value = value
             drawCallScheduledByOffsetChange = true
 
-            overscrollNode.updateAdjustedOffset((-visibleOverscrollOffset / density.density).toDouble(), force = !insetsAdjusted)
+            overscrollNode.updateAdjustedOffset((-visibleOverscrollOffset / density.density).toDouble(), additionalOffset = 0.0, force = !insetsAdjusted)
         }
 
     /*
@@ -280,6 +283,8 @@ internal class NavigationOverscrollEffect(
 
         return Offset(delta.x, y)
     }
+
+    var approximateContentOffset: CGFloat = 0.0
 
     /*
      * Semantics of this method match the [OverscrollEffect.applyToScroll] one,
@@ -652,25 +657,36 @@ private class NavigationOverscrollNode(
 
     var pointersDown by mutableStateOf(0)
 
-    private var offsetValue by mutableStateOf(0.0)
-    fun applyContentOffset() {
-        if (scrollView.respondsToSelector(NSSelectorFromString("_scrollViewWillBeginDragging"))) {
-            scrollView.performSelector(NSSelectorFromString("_scrollViewWillBeginDragging"))
+    var isDragging = false
+        set(value) {
+            if (field == value) return
+            field = value
+
+            scrollView.isScrollDragging = value
+
+            if (value) {
+                if (scrollView.respondsToSelector(NSSelectorFromString("_scrollViewWillBeginDragging"))) {
+                    scrollView.performSelector(NSSelectorFromString("_scrollViewWillBeginDragging"))
+                }
+            } else {
+                if (scrollView.respondsToSelector(NSSelectorFromString("_scrollViewDidEndDragging:"))) {
+                    scrollView.performSelector(NSSelectorFromString("_scrollViewDidEndDragging:"), NSNumber.numberWithBool(false))
+                }
+            }
         }
 
-        //val topOffset = scrollView.safeAreaInsets.useContents { top }
-
-        scrollView.contentOffset = CGPointMake(0.0, offsetValue)
-    }
+    private var offsetValue by mutableStateOf(0.0)
 
     @OptIn(InternalComposeUiApi::class)
-    fun updateAdjustedOffset(value: CGFloat, force: Boolean) {
-        offsetValue = value
-        if (force) {
-            applyContentOffset()
+    fun updateAdjustedOffset(offset: CGFloat, additionalOffset: CGFloat, force: Boolean) {
+        if (offsetValue == offset) return
+        offsetValue = offset + additionalOffset
+
+        if (offset == 0.0) {
+            scrollView.contentOffset = CGPointMake(0.0, additionalOffset)
         } else {
-            currentValueOf(LocalTaskScheduleProvider)!!.scheduleTask {
-                applyContentOffset()
+            dispatch_async(dispatch_get_main_queue()) {
+                scrollView.contentOffset = CGPointMake(0.0, offsetValue)
             }
         }
     }
@@ -690,10 +706,12 @@ private class NavigationOverscrollNode(
             }
             assert(pointersDown >= 0) { "pointersDown cannot be negative" }
         }
+        isDragging = pointersDown > 0
     }
 
     override fun onCancelPointerInput() {
         pointersDown = 0
+        isDragging = pointersDown > 0
     }
 
     override fun ContentDrawScope.draw() {
@@ -765,28 +783,32 @@ private fun UIView.addLayoutConstraintsToMatch(other: UIView) {
         leftAnchor.constraintEqualToAnchor(other.leftAnchor),
         rightAnchor.constraintEqualToAnchor(other.rightAnchor),
         topAnchor.constraintEqualToAnchor(other.topAnchor),
-        bottomAnchor.constraintEqualToAnchor(other.bottomAnchor)
+//        bottomAnchor.constraintEqualToAnchor(other.bottomAnchor)
     ).also {
         NSLayoutConstraint.activateConstraints(it)
     }
+    heightAnchor.constraintEqualToConstant(168.0).setActive(true)
 }
 
 class CustomScrollView(val onScrollToTop: () -> Unit): UIScrollView(frame = CGRectZero.readValue()), UIScrollViewDelegateProtocol {
     init {
+        val width = CGRectGetWidth(bounds)
+        setContentSize(CGSizeMake(width, 1000000.0))
+
         userInteractionEnabled = false
         showsVerticalScrollIndicator = false
         contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentBehavior.UIScrollViewContentInsetAdjustmentAlways
     }
 
+    var isScrollDragging = false
+
     override fun isTracking(): Boolean {
-        return true
+        return isScrollDragging
     }
 
-    override fun isDecelerating(): Boolean {
-        return true
+    override fun isDragging(): Boolean {
+        return isScrollDragging
     }
-//    override var isTracking: Bool { true }
-//    override var isDragging: Bool { true }
 
     override fun layoutSubviews() {
         super.layoutSubviews()
@@ -798,12 +820,10 @@ class CustomScrollView(val onScrollToTop: () -> Unit): UIScrollView(frame = CGRe
         val width = CGRectGetWidth(bounds)
         val height = CGRectGetHeight(bounds)
 
-        setContentSize(CGSizeMake(width, 1000000.0))
-
         setContentSize(
             CGSizeMake(
                 width,
-                height * 1000000.0 + max(topBottomInsets.first, topBottomInsets.second)
+                height + max(topBottomInsets.first, topBottomInsets.second) + 100000
             )
         )
     }
