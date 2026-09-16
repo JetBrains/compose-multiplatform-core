@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.areWindowInsetsRulersEnabled
 import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -40,7 +39,7 @@ class DisableWindowInsetsRulersTest {
 
     @Test
     fun disableWindowInsetsRulers() {
-        androidx.compose.ui.disableWindowInsetsRulers()
+        WindowInsetsRulers.disable()
 
         runInternalSkikoComposeUiTest(
             windowInsets = TestWindowInsets(systemBarsInsets = mutableStateOf(PlatformInsets(top = 100)))

@@ -22,9 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.areWindowInsetsRulersEnabled
 import androidx.compose.ui.layout.Placeable.PlacementScope
 import androidx.compose.ui.layout.WindowInsetsRulers.Companion.DisplayCutout
 import androidx.compose.ui.layout.WindowInsetsRulers.Companion.StatusBars
@@ -48,7 +46,7 @@ import platform.UIKit.UIInterfaceOrientationPortrait
 import platform.UIKit.UIInterfaceOrientationPortraitUpsideDown
 import platform.UIKit.UIView
 
-@OptIn(ExperimentalForeignApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalForeignApi::class)
 class WindowInsetsRulersTest {
 
     private var contentSize: IntSize = IntSize.Zero
@@ -221,7 +219,7 @@ class WindowInsetsRulersTest {
 
     @Test
     fun testDisableWindowInsetsRulers() = runUIKitInstrumentedTest {
-        androidx.compose.ui.disableWindowInsetsRulers()
+        WindowInsetsRulers.disable()
 
         var left = 0f
         var top = 0f
