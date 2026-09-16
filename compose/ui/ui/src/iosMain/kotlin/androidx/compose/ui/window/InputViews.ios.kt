@@ -685,10 +685,6 @@ internal class OverlayInputView(
         isHigherPriorityGestureTrackingTouches = isHigherPriorityGestureTrackingTouches
     )
 
-    override fun scrollsToTop(): Boolean {
-        return false
-    }
-
     private val scrollGestureRecognizer = ScrollGestureRecognizer(
         onScrollEvent = onScrollEvent,
         onCancelScroll = onCancelScroll

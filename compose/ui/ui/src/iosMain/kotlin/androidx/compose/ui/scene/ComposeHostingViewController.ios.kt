@@ -39,11 +39,9 @@ import kotlinx.cinterop.ExportObjCClass
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import platform.CoreGraphics.CGSize
-import platform.UIKit.UINavigationItemLargeTitleDisplayMode
 import platform.UIKit.UIStatusBarAnimation
 import platform.UIKit.UIStatusBarStyle
 import platform.UIKit.UIViewControllerTransitionCoordinatorProtocol
-import platform.UIKit.navigationItem
 
 @OptIn(BetaInteropApi::class)
 @ExportObjCClass

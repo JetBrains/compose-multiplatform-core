@@ -45,8 +45,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.layer.GraphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -64,9 +75,10 @@ internal fun ScrollShowcaseWithDefaultOverscroll() {
     // Unlike NavigationOverscrollEffect, the stock scrolling knows nothing about the navigation
     // chrome, so the content has to be inset past it by hand
     val safeDrawing = WindowInsets.safeDrawing.asPaddingValues()
+    val backdrop = rememberShowcaseBackdrop()
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize().background(colors.background),
+            modifier = Modifier.fillMaxSize().recordInto(backdrop).background(colors.background),
             contentPadding = PaddingValues(
                 top = safeDrawing.calculateTopPadding() + 12.dp,
                 bottom = safeDrawing.calculateBottomPadding() + 12.dp,
@@ -79,7 +91,7 @@ internal fun ScrollShowcaseWithDefaultOverscroll() {
                 colors = colors,
             )
         }
-        SafeAreaFade(colors)
+        SafeAreaFade(colors, backdrop)
     }
 }
 
@@ -96,12 +108,13 @@ internal fun ScrollShowcaseWithNavigationOverscroll() {
     val overscrollEffect = remember(density, scrollState) {
         NavigationOverscrollEffect(density = density, scrollableState = scrollState)
     }
+    val backdrop = rememberShowcaseBackdrop()
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
             state = scrollState,
             overscrollEffect = overscrollEffect,
             flingBehavior = overscrollEffect,
-            modifier = Modifier.fillMaxSize().background(colors.background),
+            modifier = Modifier.fillMaxSize().recordInto(backdrop).background(colors.background),
             contentPadding = PaddingValues(vertical = 12.dp),
         ) {
             scrollShowcaseContent(
@@ -111,33 +124,102 @@ internal fun ScrollShowcaseWithNavigationOverscroll() {
                 colors = colors,
             )
         }
-        SafeAreaFade(colors)
+        SafeAreaFade(colors, backdrop)
     }
 }
 
 /**
+ * The scrolling content of the showcase, recorded so that [SafeAreaFade] can draw it a second time,
+ * blurred, without the blur ever reaching the content itself. [topBand] and [bottomBand] hold the
+ * blurred copy of the strip each of the two bands covers.
+ */
+private class ShowcaseBackdrop(
+    val content: GraphicsLayer,
+    val topBand: GraphicsLayer,
+    val bottomBand: GraphicsLayer,
+)
+
+@Composable
+private fun rememberShowcaseBackdrop() = ShowcaseBackdrop(
+    content = rememberGraphicsLayer(),
+    topBand = rememberGraphicsLayer(),
+    bottomBand = rememberGraphicsLayer(),
+)
+
+/** Records everything this node draws into [backdrop], and then draws it as usual. */
+private fun Modifier.recordInto(backdrop: ShowcaseBackdrop) = drawWithContent {
+    backdrop.content.record { this@drawWithContent.drawContent() }
+    drawLayer(backdrop.content)
+}
+
+/** How far the content under a safe area band is blurred where that band is at its most opaque. */
+private val SafeAreaBlurRadius = 24.dp
+
+/**
  * Fades the content out into the screen background behind the translucent navigation bar and tab
  * bar, so the rows do not show through the chrome while they scroll past it. Each band is exactly
- * as tall as the safe drawing inset it covers.
+ * as tall as the safe drawing inset it covers, and blurs what it covers by as much as its own tint
+ * is opaque, so the blur ramps in along with the tint instead of starting at a hard frosted edge.
  */
 @Composable
-private fun BoxScope.SafeAreaFade(colors: ShowcaseColors) {
+private fun BoxScope.SafeAreaFade(colors: ShowcaseColors, backdrop: ShowcaseBackdrop) {
     val safeDrawing = WindowInsets.safeDrawing.asPaddingValues()
+    // One brush per band, used twice: once to tint the band, and once as the mask that makes the
+    // blur behind it follow that very same ramp
+    val topRamp = Brush.verticalGradient(listOf(colors.background, Color.Transparent))
+    val bottomRamp = Brush.verticalGradient(listOf(Color.Transparent, colors.background))
     Spacer(
         Modifier
             .align(Alignment.TopCenter)
             .fillMaxWidth()
             .height(safeDrawing.calculateTopPadding())
-            .background(Brush.verticalGradient(listOf(colors.background, colors.background.copy(alpha = 0.95f), Color.Transparent)))
+            .progressiveBlur(backdrop.content, backdrop.topBand, topRamp, alignToBottom = false)
+            .background(topRamp)
     )
     Spacer(
         Modifier
             .align(Alignment.BottomCenter)
             .fillMaxWidth()
             .height(safeDrawing.calculateBottomPadding())
-            .background(Brush.verticalGradient(listOf(Color.Transparent, colors.background.copy(alpha = 0.95f), colors.background)))
+            .progressiveBlur(backdrop.content, backdrop.bottomBand, bottomRamp, alignToBottom = true)
+            .background(bottomRamp)
     )
 }
+
+/**
+ * Draws the strip of [content] that sits under this node into [band], blurred, and masks the result
+ * with [ramp] — the brush that tints the band — so that the blur is at full strength exactly where
+ * the tint is opaque and gone where the tint is.
+ *
+ * Doing it this way, rather than with a [Modifier.blur] on the content, keeps the scrolling rows
+ * themselves sharp: only the copy drawn inside the band is ever blurred.
+ */
+private fun Modifier.progressiveBlur(
+    content: GraphicsLayer,
+    band: GraphicsLayer,
+    ramp: Brush,
+    alignToBottom: Boolean,
+) = this
+    .graphicsLayer {
+        // Isolates the band, so that masking the blur with BlendMode.DstIn below cannot punch a
+        // hole through the content this band is drawn over
+        compositingStrategy = CompositingStrategy.Offscreen
+    }
+    .drawBehind {
+        val radius = SafeAreaBlurRadius.toPx()
+        band.renderEffect = BlurEffect(radius, radius, TileMode.Clamp)
+        band.record {
+            // The recording is only as tall as the band, so the content has to be shifted to bring
+            // the strip this band covers into it: the top band covers the start of the content, the
+            // bottom one its very end
+            val top = if (alignToBottom) size.height - content.size.height.toFloat() else 0f
+            translate(top = top) {
+                drawLayer(content)
+            }
+        }
+        drawLayer(band)
+        drawRect(brush = ramp, blendMode = BlendMode.DstIn)
+    }
 
 private const val ShowcaseItemCount = 60
 
