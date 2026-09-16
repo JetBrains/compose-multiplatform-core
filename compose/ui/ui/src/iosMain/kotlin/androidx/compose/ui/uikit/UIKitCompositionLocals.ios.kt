@@ -52,3 +52,11 @@ val LocalUIView = staticCompositionLocalOf<UIView> {
 @InternalComposeUiApi
 val LocalTextInputContainer =
     staticCompositionLocalOf<TextInputContainer> { EmptyTextInputContainer }
+
+@InternalComposeUiApi
+val LocalTaskScheduleProvider =
+    staticCompositionLocalOf<TaskScheduleProvider?> { null }
+
+interface TaskScheduleProvider {
+    fun scheduleTask(task: () -> Unit)
+}

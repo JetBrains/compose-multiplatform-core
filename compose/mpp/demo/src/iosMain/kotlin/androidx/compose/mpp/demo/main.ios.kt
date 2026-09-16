@@ -1,11 +1,16 @@
 // Use `xcodegen` first, then `open ./SkikoSample.xcodeproj` and then Run button in XCode.
 package androidx.compose.mpp.demo
 
-import androidx.compose.mpp.demo.bugs.IosBugs
-import androidx.compose.mpp.demo.bugs.StartRecompositionCheck
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ComposeUIViewController
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.autoreleasepool
@@ -17,6 +22,8 @@ import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationDelegateProtocol
 import platform.UIKit.UIApplicationDelegateProtocolMeta
 import platform.UIKit.UIApplicationMain
+import platform.UIKit.UINavigationController
+import platform.UIKit.UINavigationItemLargeTitleDisplayMode
 import platform.UIKit.UIResponder
 import platform.UIKit.UIResponderMeta
 import platform.UIKit.UIScene
@@ -29,6 +36,7 @@ import platform.UIKit.UIViewController
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
 import platform.UIKit.UIWindowSceneDelegateProtocol
+import platform.UIKit.navigationItem
 
 /**
  * To run the demo project:
@@ -38,14 +46,27 @@ import platform.UIKit.UIWindowSceneDelegateProtocol
  * - XCode will open this project automatically
  * - press the Run (Cmd+R) button in the XCode
  */
+@OptIn(ExperimentalComposeUiApi::class)
 fun main(vararg args: String) {
     androidx.compose.ui.util.enableTraceOSLog()
 
     val arg = args.firstOrNull() ?: ""
     UIKitMain {
-        ComposeUIViewController {
+        val root = ComposeUIViewController(
+//            configure = {
+//                opaque = false
+//            }
+        ) {
             IosDemo(arg)
         }
+
+        val controller = UINavigationController(rootViewController = root)
+        controller.navigationBar.prefersLargeTitles = true
+        root.navigationItem.title = "Compose Multiplatform Demo"
+        root.navigationItem.largeTitleDisplayMode =
+            UINavigationItemLargeTitleDisplayMode.UINavigationItemLargeTitleDisplayModeAlways
+
+        controller
     }
 }
 
@@ -54,20 +75,12 @@ fun IosDemo(
     arg: String,
     viewControllerFactory: IosDemoViewControllerFactory? = null,
 ) {
-    val app = remember {
-        App(
-            extraScreens = listOf(
-                IosBugs,
-                IosSpecificFeatures,
-            ) + viewControllerFactory?.extraScreens().orEmpty()
-        )
-    }
-    when (arg) {
-        "demo=StartRecompositionCheck" ->
-            // The issue tested by this demo can be properly reproduced/tested only right after app
-            // start
-            StartRecompositionCheck.content()
-        else -> app.Content()
+    val density = LocalDensity.current
+    val overscrollEffect = remember(density) { NavigationOverscrollEffect(density) }
+    LazyColumn(overscrollEffect = overscrollEffect) {
+        items(200) {
+            Text("Item $it", modifier = Modifier.fillMaxWidth().padding(24.dp))
+        }
     }
 }
 
