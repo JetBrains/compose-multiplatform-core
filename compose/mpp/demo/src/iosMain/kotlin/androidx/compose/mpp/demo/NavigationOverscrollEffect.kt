@@ -25,8 +25,14 @@ import androidx.compose.animation.core.animateTo
 import androidx.compose.animation.core.generateDecayAnimationSpec
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.OverscrollEffect
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollScope
+import androidx.compose.foundation.gestures.ScrollableState
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,7 +67,6 @@ import androidx.compose.ui.node.ObserverModifierNode
 import androidx.compose.ui.node.PointerInputModifierNode
 import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.node.observeReads
-import androidx.compose.ui.uikit.LocalTaskScheduleProvider
 import androidx.compose.ui.uikit.LocalUIViewController
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -78,14 +83,18 @@ import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 import kotlin.math.sign
 import kotlin.native.ref.WeakReference
+import kotlinx.cinterop.CValue
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
 import platform.CoreGraphics.CGFloat
+import platform.CoreGraphics.CGPoint
 import platform.CoreGraphics.CGPointMake
 import platform.CoreGraphics.CGRectGetHeight
 import platform.CoreGraphics.CGRectGetWidth
@@ -96,6 +105,7 @@ import platform.Foundation.NSSelectorFromString
 import platform.Foundation.numberWithBool
 import platform.UIKit.NSDirectionalRectEdgeAll
 import platform.UIKit.NSLayoutConstraint
+import platform.UIKit.UIEvent
 import platform.UIKit.UIScrollView
 import platform.UIKit.UIScrollViewContentInsetAdjustmentBehavior
 import platform.UIKit.UIScrollViewDecelerationRateNormal
@@ -125,9 +135,16 @@ private data class NavigationOverscrollAvailableDelta(
     val newOverscrollValue: Float
 )
 
+/*
+ * The extra vertical space of the helper [CustomScrollView] beyond its own height. It defines the
+ * range of the content offset which can be reported to it, see
+ * [NavigationOverscrollEffect.approximateContentOffset]
+ */
+private const val EXTRA_SCROLLABLE_HEIGHT: CGFloat = 100_000.0
+
 internal class NavigationOverscrollEffect(
     private val density: Density,
-    private val onScrollToTop: () -> Unit,
+    private val scrollableState: ScrollableState? = null,
 ) : OverscrollEffect, FlingBehavior {
     /*
      * Size of container is taking into consideration when computing rubber banding
@@ -149,16 +166,18 @@ internal class NavigationOverscrollEffect(
             overscrollOffsetState.value = value
             drawCallScheduledByOffsetChange = true
 
-            overscrollNode.updateAdjustedOffset((-visibleOverscrollOffset / density.density).toDouble(), additionalOffset = 0.0, force = !insetsAdjusted)
+            // Overscroll only becomes non-zero once the content refuses to scroll any further,
+            // so the edge it rests against is known
+            if (value != 0f) {
+                snapApproximateContentOffsetToEdge(value)
+            }
+            updateContentOffset()
         }
 
-    /*
-     * Edges in pixels where the actual overscroll starts, i.e. where the content starts to meet
-     * resistance and bounces back from.
-     * The maximum observed insets are used instead of the current ones, because the latter change
-     * while the navigation bar is collapsing/expanding, which would move the edge during
-     * a single fling or spring animation
-     */
+    private fun updateContentOffset() {
+        overscrollNode.updateAdjustedOffset((-visibleOverscrollOffset / density.density).toDouble(), additionalOffset = approximateContentOffset)
+    }
+
     private var topMaxSafeInset: Float = 0f
     private var bottonMaxSafeInset: Float = 0f
 
@@ -217,7 +236,7 @@ internal class NavigationOverscrollEffect(
             resetMaxInsets()
         },
         onDraw = ::onDraw,
-        onScrollToTop = onScrollToTop
+        onScrollToTop = ::scrollToTop
     )
     override val node: DelegatableNode get() = overscrollNode
 
@@ -284,13 +303,26 @@ internal class NavigationOverscrollEffect(
         return Offset(delta.x, y)
     }
 
-    var approximateContentOffset: CGFloat = 0.0
+    private var approximateContentOffset: CGFloat = 0.0
+        set(value) {
+            field = value.coerceIn(0.0, EXTRA_SCROLLABLE_HEIGHT)
 
-    /*
-     * Semantics of this method match the [OverscrollEffect.applyToScroll] one,
-     * The only difference is NestedScrollSource being remapped to NavigationScrollSource to narrow
-     * processed states invariant
-     */
+            updateContentOffset()
+        }
+
+    private fun snapApproximateContentOffsetToEdge(deltaTowardsEdge: Float) {
+        approximateContentOffset =
+            if (deltaTowardsEdge > 0f) 0.0 else EXTRA_SCROLLABLE_HEIGHT
+    }
+
+    private fun onContentScrolled(consumedDelta: Float, unconsumedDelta: Float) {
+        if (unconsumedDelta != 0f) {
+            snapApproximateContentOffsetToEdge(unconsumedDelta)
+        } else {
+            approximateContentOffset -= consumedDelta / density.density
+        }
+    }
+
     private fun applyToScroll(
         delta: Offset,
         source: NavigationScrollSource,
@@ -304,6 +336,12 @@ internal class NavigationOverscrollEffect(
 
         // Delta which is left after `performScroll` was invoked with availableDelta
         val unconsumedDelta = deltaLeftForPerformScroll - deltaConsumedByPerformScroll
+
+        // The content has been moved by the consumed delta, so the approximation follows it
+        onContentScrolled(
+            consumedDelta = deltaConsumedByPerformScroll.y,
+            unconsumedDelta = unconsumedDelta.y
+        )
 
         return when (source) {
             NavigationScrollSource.DRAG -> {
@@ -338,6 +376,12 @@ internal class NavigationOverscrollEffect(
 
         springAnimationScope?.cancel()
         springAnimationScope = null
+
+        maxOffsetAnimationJob?.cancel()
+        maxOffsetAnimationJob = null
+
+        scrollToTopJob?.cancel()
+        scrollToTopJob = null
 
         return source.toNavigationScrollSource()?.let {
             applyToScroll(delta, it, performScroll)
@@ -457,6 +501,73 @@ internal class NavigationOverscrollEffect(
         return currentVelocity
     }
 
+    private var scrollToTopJob: Job? = null
+
+    /*
+     * Brings both the content and the overscroll area back to the very top, the way the status bar
+     * tap does on a native UIScrollView.
+     */
+    private fun scrollToTop() {
+        animateOverscrollToMaxOffset()
+
+        val scrollableState = scrollableState ?: return
+        scrollToTopJob?.cancel()
+        scrollToTopJob = overscrollNode.coroutineScope.launch {
+            try {
+                scrollableState.animateScrollToStart()
+            } finally {
+                scrollToTopJob = null
+            }
+        }
+    }
+
+    private var maxOffsetAnimationJob: Job? = null
+
+    /*
+     * Expands the overscroll area up to [topMaxSafeInset], the resting offset the content sits at
+     * when the large navigation title is fully expanded.
+     *
+     * The status bar "scroll to top" tap moves the content itself through [LazyListState], which
+     * bypasses [applyToScroll] entirely, so the overscroll offset has to be brought back to the
+     * top edge separately.
+     */
+    private fun animateOverscrollToMaxOffset() {
+        adjustMaxInsets()
+
+        val targetValue = topMaxSafeInset
+        val initialValue = overscrollOffset
+        if (initialValue == targetValue) {
+            return
+        }
+
+        // A spring left over from a previous fling writes into the same offset
+        springAnimationScope?.cancel()
+        springAnimationScope = null
+
+        maxOffsetAnimationJob?.cancel()
+        maxOffsetAnimationJob = overscrollNode.coroutineScope.launch {
+            try {
+                AnimationState(
+                    Float.VectorConverter,
+                    initialValue / density.density,
+                    0f
+                ).animateTo(
+                    targetValue = targetValue / density.density,
+                    animationSpec = spring(
+                        stiffness = 300f,
+                        visibilityThreshold = 0.5f / density.density
+                    )
+                ) {
+                    overscrollOffset = value * density.density
+                }
+
+                overscrollOffset = targetValue
+            } finally {
+                maxOffsetAnimationJob = null
+            }
+        }
+    }
+
     /*
      * Repeats the default iOS fling behavior (see CupertinoFlingBehavior, which is internal to the
      * foundation module) and relies on [applyToScroll] to keep the deceleration going while the
@@ -551,6 +662,34 @@ internal class NavigationOverscrollEffect(
          * any fling at all, value is approx and reverse-engineered from iOS 16 UIScrollView blackbox
          */
         private const val FLING_VELOCITY_THRESHOLD = 500f
+    }
+}
+
+/*
+ * Animates [this] state back to the very start of its content.
+ *
+ * [ScrollableState] itself has no notion of items or indices - its whole surface is a scroll
+ * session, a raw delta and a few flags - so there is no single call that covers every subclass.
+ * Each built-in state that does expose an index based API is therefore handled explicitly, and
+ * anything else falls back to the one generic measure of "how far the content is from its start"
+ * that every state can report, [ScrollIndicatorState.scrollOffset].
+ */
+private suspend fun ScrollableState.animateScrollToStart() {
+    when (this) {
+        is ScrollState -> animateScrollTo(0)
+        is LazyListState -> animateScrollToItem(0)
+        is LazyGridState -> animateScrollToItem(0)
+        is LazyStaggeredGridState -> animateScrollToItem(0)
+        is PagerState -> animateScrollToPage(0)
+        else -> {
+            // Lazy layouts only estimate this value, which is why they are special cased above.
+            // Int.MAX_VALUE means the state doesn't know its offset yet, and a null indicator
+            // state means it cannot express one at all - neither is scrollable to a start
+            val offset = scrollIndicatorState?.scrollOffset ?: return
+            if (offset != 0 && offset != Int.MAX_VALUE) {
+                scroll { scrollBy(-offset.toFloat()) }
+            }
+        }
     }
 }
 
@@ -678,15 +817,21 @@ private class NavigationOverscrollNode(
     private var offsetValue by mutableStateOf(0.0)
 
     @OptIn(InternalComposeUiApi::class)
-    fun updateAdjustedOffset(offset: CGFloat, additionalOffset: CGFloat, force: Boolean) {
-        if (offsetValue == offset) return
-        offsetValue = offset + additionalOffset
+    fun updateAdjustedOffset(offset: CGFloat, additionalOffset: CGFloat) {
+        val newOffset = if (offset != 0.0) {
+            offset
+        } else {
+            additionalOffset
+        }
+
+        if (offsetValue == newOffset) return
+        offsetValue = newOffset
 
         if (offset == 0.0) {
-            scrollView.contentOffset = CGPointMake(0.0, additionalOffset)
+            scrollView.contentOffset = CGPointMake(0.0, newOffset)
         } else {
             dispatch_async(dispatch_get_main_queue()) {
-                scrollView.contentOffset = CGPointMake(0.0, offsetValue)
+                scrollView.contentOffset = CGPointMake(0.0, newOffset)
             }
         }
     }
@@ -783,11 +928,11 @@ private fun UIView.addLayoutConstraintsToMatch(other: UIView) {
         leftAnchor.constraintEqualToAnchor(other.leftAnchor),
         rightAnchor.constraintEqualToAnchor(other.rightAnchor),
         topAnchor.constraintEqualToAnchor(other.topAnchor),
-//        bottomAnchor.constraintEqualToAnchor(other.bottomAnchor)
+        bottomAnchor.constraintEqualToAnchor(other.bottomAnchor)
     ).also {
         NSLayoutConstraint.activateConstraints(it)
     }
-    heightAnchor.constraintEqualToConstant(168.0).setActive(true)
+//    heightAnchor.constraintEqualToConstant(168.0).setActive(true)
 }
 
 class CustomScrollView(val onScrollToTop: () -> Unit): UIScrollView(frame = CGRectZero.readValue()), UIScrollViewDelegateProtocol {
@@ -795,9 +940,15 @@ class CustomScrollView(val onScrollToTop: () -> Unit): UIScrollView(frame = CGRe
         val width = CGRectGetWidth(bounds)
         setContentSize(CGSizeMake(width, 1000000.0))
 
-        userInteractionEnabled = false
+        userInteractionEnabled = true
         showsVerticalScrollIndicator = false
         contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentBehavior.UIScrollViewContentInsetAdjustmentAlways
+
+        delegate = this
+    }
+
+    override fun hitTest(point: CValue<CGPoint>, withEvent: UIEvent?): UIView? {
+        return null
     }
 
     var isScrollDragging = false
@@ -808,6 +959,10 @@ class CustomScrollView(val onScrollToTop: () -> Unit): UIScrollView(frame = CGRe
 
     override fun isDragging(): Boolean {
         return isScrollDragging
+    }
+
+    override fun isDecelerating(): Boolean {
+        return true
     }
 
     override fun layoutSubviews() {
@@ -823,7 +978,8 @@ class CustomScrollView(val onScrollToTop: () -> Unit): UIScrollView(frame = CGRe
         setContentSize(
             CGSizeMake(
                 width,
-                height + max(topBottomInsets.first, topBottomInsets.second) + 100000
+                height + max(topBottomInsets.first, topBottomInsets.second) +
+                    EXTRA_SCROLLABLE_HEIGHT
             )
         )
     }
@@ -834,7 +990,7 @@ class CustomScrollView(val onScrollToTop: () -> Unit): UIScrollView(frame = CGRe
 
     override fun scrollViewShouldScrollToTop(scrollView: UIScrollView): Boolean {
         onScrollToTop()
-        return scrollsToTop()
+        return false
     }
 
     override fun safeAreaInsetsDidChange() {

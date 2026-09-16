@@ -93,10 +93,6 @@ internal class ComposeHostingViewController(
     override fun viewDidLoad() {
         super.viewDidLoad()
 
-        navigationItem.title = "Compose Multiplatform Demo"
-        navigationItem.largeTitleDisplayMode =
-            UINavigationItemLargeTitleDisplayMode.UINavigationItemLargeTitleDisplayModeAlways
-
         configuration.delegate.viewDidLoad()
         container.updateUserInterfaceStyle(traitCollection.userInterfaceStyle)
     }

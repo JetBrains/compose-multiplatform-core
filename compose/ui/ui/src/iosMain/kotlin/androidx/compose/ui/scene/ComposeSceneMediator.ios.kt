@@ -73,11 +73,9 @@ import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.uikit.InterfaceOrientation
-import androidx.compose.ui.uikit.LocalTaskScheduleProvider
 import androidx.compose.ui.uikit.LocalTextInputContainer
 import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.OnFocusBehavior
-import androidx.compose.ui.uikit.TaskScheduleProvider
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
@@ -753,12 +751,6 @@ internal class ComposeSceneMediator(
     fun retrievePendingViewUpdatesInteropTransaction(): InteropSyncTransaction =
         interopContainer.retrievePendingViewUpdatesTransaction()
 
-    val scheduleProvider = object: TaskScheduleProvider {
-        override fun scheduleTask(task: () -> Unit) {
-            interopContainer.scheduleUpdate(task)
-        }
-    }
-
     @OptIn(InternalComposeUiApi::class)
     @Composable
     private fun ProvideComposeSceneMediatorCompositionLocals(content: @Composable () -> Unit) =
@@ -766,7 +758,6 @@ internal class ComposeSceneMediator(
             LocalInteropContainer provides interopContainer,
             LocalUIView provides _overlayView,
             LocalTextInputContainer provides textInputService.textInputContainer,
-            LocalTaskScheduleProvider provides scheduleProvider,
             content = content
         )
 
