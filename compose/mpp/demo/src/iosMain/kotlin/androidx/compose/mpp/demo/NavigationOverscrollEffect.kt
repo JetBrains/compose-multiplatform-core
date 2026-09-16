@@ -17,10 +17,16 @@
 package androidx.compose.mpp.demo
 
 import androidx.compose.animation.core.AnimationState
+import androidx.compose.animation.core.DecayAnimationSpec
+import androidx.compose.animation.core.FloatDecayAnimationSpec
 import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.animateDecay
 import androidx.compose.animation.core.animateTo
+import androidx.compose.animation.core.generateDecayAnimationSpec
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.OverscrollEffect
+import androidx.compose.foundation.gestures.FlingBehavior
+import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.geometry.toRect
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.drawscope.clipRect
@@ -38,12 +45,16 @@ import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.DrawModifierNode
+import androidx.compose.ui.node.GlobalPositionAwareModifierNode
 import androidx.compose.ui.node.LayoutAwareModifierNode
 import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.node.ObserverModifierNode
@@ -60,28 +71,34 @@ import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.toSize
 import kotlin.math.abs
+import kotlin.math.ln
+import kotlin.math.max
+import kotlin.math.pow
 import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 import kotlin.math.sign
 import kotlin.native.ref.WeakReference
-import kotlinx.cinterop.CValue
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
 import platform.CoreGraphics.CGFloat
 import platform.CoreGraphics.CGPointMake
+import platform.CoreGraphics.CGRectGetHeight
 import platform.CoreGraphics.CGRectGetWidth
 import platform.CoreGraphics.CGRectZero
 import platform.CoreGraphics.CGSizeMake
 import platform.Foundation.NSSelectorFromString
+import platform.UIKit.NSDirectionalRectEdgeAll
 import platform.UIKit.NSDirectionalRectEdgeTop
 import platform.UIKit.NSLayoutConstraint
-import platform.UIKit.UIColor
-import platform.UIKit.UIEdgeInsets
 import platform.UIKit.UIScrollView
 import platform.UIKit.UIScrollViewContentInsetAdjustmentBehavior
+import platform.UIKit.UIScrollViewDecelerationRateNormal
+import platform.UIKit.UIScrollViewDelegateProtocol
 import platform.UIKit.UIView
 
 private enum class NavigationScrollSource {
@@ -107,7 +124,8 @@ private data class NavigationOverscrollAvailableDelta(
 
 internal class NavigationOverscrollEffect(
     private val density: Density,
-) : OverscrollEffect {
+    private val onScrollToTop: () -> Unit,
+) : OverscrollEffect, FlingBehavior {
     /*
      * Size of container is taking into consideration when computing rubber banding
      */
@@ -125,20 +143,51 @@ internal class NavigationOverscrollEffect(
     private var overscrollOffset: Float
         get () = overscrollOffsetState.value
         set(value) {
-            println(">> Overscroll: $value")
             overscrollOffsetState.value = value
             drawCallScheduledByOffsetChange = true
+
+            overscrollNode.updateAdjustedOffset((-visibleOverscrollOffset / density.density).toDouble(), force = !insetsAdjusted)
         }
+
+    /*
+     * Edges in pixels where the actual overscroll starts, i.e. where the content starts to meet
+     * resistance and bounces back from.
+     * The maximum observed insets are used instead of the current ones, because the latter change
+     * while the navigation bar is collapsing/expanding, which would move the edge during
+     * a single fling or spring animation
+     */
+    private var topMaxSafeInset: Float = 0f
+    private var bottonMaxSafeInset: Float = 0f
+
+    private var insetsAdjusted: Boolean = false
+
+    private fun adjustMaxInsets() {
+        insetsAdjusted = true
+        topMaxSafeInset = max(topMaxSafeInset, currentTopSafeInsets)
+        bottonMaxSafeInset = max(bottonMaxSafeInset, currentBottomSafeInsets)
+    }
+
+    private fun resetMaxInsets() {
+        // insetsAdjusted = false
+        topMaxSafeInset = 0f
+        bottonMaxSafeInset = 0f
+        topMaxSafeInset = max(topMaxSafeInset, currentTopSafeInsets)
+        bottonMaxSafeInset = max(bottonMaxSafeInset, currentBottomSafeInsets)
+    }
 
     /*
      * Safe area insets in pixels. Overscroll within these insets is not rubber banded.
      */
-    private val topSafeInsets: Float
+    private val currentTopSafeInsets: Float
         get() = overscrollNode.scrollView.safeAreaInsets.useContents { top.toFloat() } * density.density
-    private val bottomSafeInsets: Float
+    private val currentBottomSafeInsets: Float
         get() = overscrollNode.scrollView.safeAreaInsets.useContents { bottom.toFloat() } * density.density
 
+    private val flingDecaySpec: DecayAnimationSpec<Float> =
+        CupertinoScrollDecaySpec().generateDecayAnimationSpec()
+
     private var drawCallScheduledByOffsetChange = true
+
 
     private var lastFlingUnconsumedDelta: Float = 0f
     private val visibleOverscrollOffset: Float
@@ -152,8 +201,20 @@ internal class NavigationOverscrollEffect(
 
     private val overscrollNode = NavigationOverscrollNode(
         offset = { IntOffset(0, visibleOverscrollOffset.roundToInt()) },
-        onNodeRemeasured = { scrollSize = it.toSize() },
+        onNodeRemeasured = {
+            scrollSize = it.toSize()
+            if (!insetsAdjusted) {
+                resetMaxInsets()
+                overscrollOffset = max(topMaxSafeInset, currentTopSafeInsets)
+            }
+       },
+        // Safe area insets of a node with a changed size or position on screen have nothing to do
+        // with the previously observed ones
+        onNodeGeometryChanged = {
+            resetMaxInsets()
+        },
         onDraw = ::onDraw,
+        onScrollToTop = onScrollToTop
     )
     override val node: DelegatableNode get() = overscrollNode
 
@@ -183,13 +244,6 @@ internal class NavigationOverscrollEffect(
         overscroll: Float,
         source: NavigationScrollSource
     ): NavigationOverscrollAvailableDelta {
-        // if source is fling:
-        // 1. no delta will be consumed
-        // 2. overscroll will stay the same
-        if (source == NavigationScrollSource.FLING) {
-            return NavigationOverscrollAvailableDelta(delta, overscroll)
-        }
-
         val newOverscroll = overscroll + delta
 
         return if (delta >= 0f && overscroll <= 0f) {
@@ -204,6 +258,12 @@ internal class NavigationOverscrollEffect(
             } else {
                 NavigationOverscrollAvailableDelta(0f, newOverscroll)
             }
+        } else if (source == NavigationScrollSource.FLING) {
+            // The delta goes in the same direction as the current overscroll.
+            // A fling is not allowed to grow the overscroll on its own: the delta is offered to the
+            // content first and only what is left of it goes into the overscroll area
+            // within the safe area insets (see [applyToScroll])
+            NavigationOverscrollAvailableDelta(delta, overscroll)
         } else {
             NavigationOverscrollAvailableDelta(0f, newOverscroll)
         }
@@ -250,10 +310,16 @@ internal class NavigationOverscrollEffect(
             }
 
             NavigationScrollSource.FLING -> {
-                // If unconsumedDelta is not Zero, [NavigationOverscrollEffect] will cancel fling and
-                // start spring animation instead
-                lastFlingUnconsumedDelta = unconsumedDelta.y
-                delta - unconsumedDelta
+                // Within the safe area insets the fling meets no resistance: [unconsumedDelta] moves
+                // the overscroll offset and is reported back as consumed, so the deceleration
+                // continues seamlessly.
+                // If something is left after that, the actual overscroll starts: it is reported as
+                // unconsumed to stop the fling, and [applyToFling] plays the spring animation instead
+                val deltaWithinSafeInsets = unconsumedDelta.y.limitedBySafeInsets()
+                overscrollOffset += deltaWithinSafeInsets
+                lastFlingUnconsumedDelta = unconsumedDelta.y - deltaWithinSafeInsets
+
+                delta - Offset(unconsumedDelta.x, lastFlingUnconsumedDelta)
             }
         }
     }
@@ -263,6 +329,8 @@ internal class NavigationOverscrollEffect(
         source: NestedScrollSource,
         performScroll: (Offset) -> Offset
     ): Offset {
+        adjustMaxInsets()
+
         springAnimationScope?.cancel()
         springAnimationScope = null
 
@@ -275,6 +343,8 @@ internal class NavigationOverscrollEffect(
         velocity: Velocity,
         performFling: suspend (Velocity) -> Velocity
     ) {
+        adjustMaxInsets()
+
         val availableFlingVelocity = playInitialSpringAnimationIfNeeded(velocity)
         val velocityConsumedByFling = performFling(availableFlingVelocity)
         val postFlingVelocity = availableFlingVelocity - velocityConsumedByFling
@@ -383,18 +453,66 @@ internal class NavigationOverscrollEffect(
     }
 
     /*
+     * Repeats the default iOS fling behavior (see CupertinoFlingBehavior, which is internal to the
+     * foundation module) and relies on [applyToScroll] to keep the deceleration going while the
+     * overscroll offset is still within the safe area insets
+     */
+    override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
+        if (abs(initialVelocity) < FLING_VELOCITY_THRESHOLD) {
+            return 0f
+        }
+
+        var velocityLeft = initialVelocity
+        var lastValue = 0f
+
+        AnimationState(
+            initialValue = 0f,
+            initialVelocity = initialVelocity
+        ).animateDecay(flingDecaySpec) {
+            adjustMaxInsets()
+            
+            val delta = value - lastValue
+            val consumed = try {
+                scrollBy(delta)
+            } catch (_: CancellationException) {
+                0f
+            }
+            lastValue = value
+            velocityLeft = this.velocity
+
+            // Avoid rounding errors and stop if anything is unconsumed, i.e. the actual overscroll
+            // has started and the spring animation has to take the rest of the velocity over
+            if (abs(delta - consumed) > 0.5f) {
+                cancelAnimation()
+            }
+        }
+
+        return velocityLeft
+    }
+
+    /*
      * Overscroll starts beyond the safe area insets, so any offset within
-     * [-bottomSafeInsets, topSafeInsets] range is a valid resting position:
+     * [-bottonMaxSafeInset, topMaxSafeInset] range is a valid resting position:
      * it doesn't meet resistance and doesn't spring back.
      */
     private fun Float.restingOverscrollOffset(): Float =
-        coerceIn(-bottomSafeInsets, topSafeInsets)
+        coerceIn(-bottonMaxSafeInset, topMaxSafeInset)
 
     /*
      * The part of the offset which is an actual overscroll, i.e. the one beyond the safe area insets
      */
     private val Float.overscrollBeyondSafeInsets: Float
         get() = this - restingOverscrollOffset()
+
+    /*
+     * The part of this delta which still fits into the safe area insets when applied to the current
+     * [overscrollOffset]. Never moves the offset backwards or beyond the insets
+     */
+    private fun Float.limitedBySafeInsets(): Float = when {
+        this > 0f -> (topMaxSafeInset - overscrollOffset).coerceIn(0f, this)
+        this < 0f -> (-bottonMaxSafeInset - overscrollOffset).coerceIn(this, 0f)
+        else -> 0f
+    }
 
     /*
      * Rubber bands only the part of the offset that goes beyond the safe area insets
@@ -422,29 +540,117 @@ internal class NavigationOverscrollEffect(
 
     companion object Companion {
         private const val RUBBER_BAND_COEFFICIENT = 0.55f
+
+        /*
+         * Post-drag inertia with velocity below this value will be consumed entirely and not trigger
+         * any fling at all, value is approx and reverse-engineered from iOS 16 UIScrollView blackbox
+         */
+        private const val FLING_VELOCITY_THRESHOLD = 500f
     }
 }
+
+/*
+ * iOS-style scroll deceleration, a copy of [CupertinoScrollDecayAnimationSpec] which is internal
+ * to the foundation module
+ *
+ * @property decelerationRate The rate at which the velocity decelerates over time.
+ * Default value is equal to one used by default UIScrollView behavior.
+ */
+private class CupertinoScrollDecaySpec(
+    private val decelerationRate: Float = UIScrollViewDecelerationRateNormal.toFloat()
+) : FloatDecayAnimationSpec {
+    private val coefficient: Float = 1000f * ln(decelerationRate)
+
+    override val absVelocityThreshold: Float = 0.5f // Half pixel
+
+    override fun getTargetValue(initialValue: Float, initialVelocity: Float): Float =
+        initialValue - initialVelocity / coefficient
+
+    override fun getValueFromNanos(
+        playTimeNanos: Long,
+        initialValue: Float,
+        initialVelocity: Float
+    ): Float {
+        val playTimeSeconds = playTimeNanos.nanosToSeconds()
+        val initialVelocityOverTimeIntegral =
+            (decelerationRate.pow(1000f * playTimeSeconds) - 1f) / coefficient * initialVelocity
+        return initialValue + initialVelocityOverTimeIntegral
+    }
+
+    override fun getDurationNanos(initialValue: Float, initialVelocity: Float): Long {
+        val absVelocity = abs(initialVelocity)
+
+        if (absVelocity < absVelocityThreshold) {
+            return 0
+        }
+
+        val seconds = ln(-coefficient * absVelocityThreshold / absVelocity) / coefficient
+
+        return seconds.secondsToNanos()
+    }
+
+    override fun getVelocityFromNanos(
+        playTimeNanos: Long,
+        initialValue: Float,
+        initialVelocity: Float
+    ): Float = initialVelocity * decelerationRate.pow(1000f * playTimeNanos.nanosToSeconds())
+}
+
+private const val SecondsToNanos: Long = 1_000_000_000L
+
+private fun Float.secondsToNanos(): Long = (toDouble() * SecondsToNanos).roundToLong()
+
+private fun Long.nanosToSeconds(): Float = (toDouble() / SecondsToNanos).toFloat()
 
 private class NavigationOverscrollNode(
     val offset: Density.() -> IntOffset,
     val onNodeRemeasured: (IntSize) -> Unit,
+    val onNodeGeometryChanged: () -> Unit,
     val onDraw: () -> Unit,
+    onScrollToTop: () -> Unit,
 ) : Modifier.Node(),
     LayoutModifierNode,
     LayoutAwareModifierNode,
+    GlobalPositionAwareModifierNode,
     DrawModifierNode,
     PointerInputModifierNode,
     CompositionLocalConsumerModifierNode,
     ObserverModifierNode {
-    override fun onRemeasured(size: IntSize) = onNodeRemeasured(size)
+    private var lastSize: IntSize? = null
+    private var lastPosition: Offset? = null
 
-    val scrollView = CustomScrollView()
+    override fun onRemeasured(size: IntSize) {
+        onNodeRemeasured(size)
+        updateGeometry(size, lastPosition)
+    }
+
+    override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
+        val positionOnScreen = coordinates.positionOnScreen()
+        updateGeometry(
+            size = coordinates.size,
+            position = if (positionOnScreen.isSpecified) {
+                positionOnScreen
+            } else {
+                coordinates.positionInWindow()
+            }
+        )
+    }
+
+    private fun updateGeometry(size: IntSize, position: Offset?) {
+        if (size == lastSize && position == lastPosition) {
+            return
+        }
+
+        lastSize = size
+        lastPosition = position
+        onNodeGeometryChanged()
+    }
+
+    val scrollView = CustomScrollView(onScrollToTop)
 
     private var detachCallback = {}
 
     var pointersDown by mutableStateOf(0)
-
-    //var maxSafeAreaOffset by mutableStateOf(168.0)
 
     private var offsetValue by mutableStateOf(0.0)
     fun applyContentOffset() {
@@ -458,10 +664,14 @@ private class NavigationOverscrollNode(
     }
 
     @OptIn(InternalComposeUiApi::class)
-    fun updateAdjustedOffset(value: CGFloat) {
+    fun updateAdjustedOffset(value: CGFloat, force: Boolean) {
         offsetValue = value
-        currentValueOf(LocalTaskScheduleProvider)!!.scheduleTask {
+        if (force) {
             applyContentOffset()
+        } else {
+            currentValueOf(LocalTaskScheduleProvider)!!.scheduleTask {
+                applyContentOffset()
+            }
         }
     }
 
@@ -506,7 +716,7 @@ private class NavigationOverscrollNode(
             val viewController = currentValueOf(LocalUIViewController)
             scrollView.removeFromSuperview()
             viewController.view.embedSubview(scrollView)
-            viewController.setContentScrollView(scrollView, forEdge = NSDirectionalRectEdgeTop)
+            viewController.setContentScrollView(scrollView, forEdge = NSDirectionalRectEdgeAll)
         }
     }
 
@@ -517,11 +727,11 @@ private class NavigationOverscrollNode(
         scrollView.removeFromSuperview()
         detachCallback()
         viewController.view.embedSubview(scrollView)
-        viewController.setContentScrollView(scrollView, forEdge = NSDirectionalRectEdgeTop)
+        viewController.setContentScrollView(scrollView, forEdge = NSDirectionalRectEdgeAll)
 
         val weakRef = WeakReference(viewController)
         detachCallback = {
-            weakRef.get()?.setContentScrollView(null, forEdge = NSDirectionalRectEdgeTop)
+            weakRef.get()?.setContentScrollView(null, forEdge = NSDirectionalRectEdgeAll)
         }
     }
 
@@ -561,47 +771,56 @@ private fun UIView.addLayoutConstraintsToMatch(other: UIView) {
     }
 }
 
-class CustomScrollView: UIScrollView(frame = CGRectZero.readValue()) {
+class CustomScrollView(val onScrollToTop: () -> Unit): UIScrollView(frame = CGRectZero.readValue()), UIScrollViewDelegateProtocol {
     init {
-        val width = CGRectGetWidth(bounds)
-        setContentSize(CGSizeMake(width, 1000000.0))
-
         userInteractionEnabled = false
         showsVerticalScrollIndicator = false
         contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentBehavior.UIScrollViewContentInsetAdjustmentAlways
-
-        layer.borderColor = UIColor.orangeColor().CGColor
-        layer.borderWidth = 2.0
     }
+
+    override fun isTracking(): Boolean {
+        return true
+    }
+
+    override fun isDecelerating(): Boolean {
+        return true
+    }
+//    override var isTracking: Bool { true }
+//    override var isDragging: Bool { true }
 
     override fun layoutSubviews() {
         super.layoutSubviews()
+        updateContentSize()
+    }
+
+    private fun updateContentSize() {
+        val topBottomInsets = safeAreaInsets.useContents { top to bottom }
         val width = CGRectGetWidth(bounds)
-        if (contentSize.useContents { this.width } != width) {
-            setContentSize(CGSizeMake(width, 1000000.0))
-        }
+        val height = CGRectGetHeight(bounds)
+
+        setContentSize(CGSizeMake(width, 1000000.0))
+
+        setContentSize(
+            CGSizeMake(
+                width,
+                height * 1000000.0 + max(topBottomInsets.first, topBottomInsets.second)
+            )
+        )
+    }
+
+    override fun scrollsToTop(): Boolean {
+        return true
+    }
+
+    override fun scrollViewShouldScrollToTop(scrollView: UIScrollView): Boolean {
+        onScrollToTop()
+        return scrollsToTop()
     }
 
     override fun safeAreaInsetsDidChange() {
         super.safeAreaInsetsDidChange()
 
-//        println(">> safeAreaInsets: ${NSStringFromUIEdgeInsets(safeAreaInsets)}")
-    }
-
-    override fun adjustedContentInsetDidChange() {
-        super.adjustedContentInsetDidChange()
-
-//        println(">> adjustedContentInsetDidChange: ${NSStringFromUIEdgeInsets(adjustedContentInset)}")
-    }
-
-    override fun contentInset(): CValue<UIEdgeInsets> {
-        return super.contentInset()
-    }
-
-    override fun setContentInset(contentInset: CValue<UIEdgeInsets>) {
-        super.setContentInset(contentInset)
-
-//        println(">> setContentInset: ${NSStringFromUIEdgeInsets(contentInset)}")
+        updateContentSize()
     }
 }
 
