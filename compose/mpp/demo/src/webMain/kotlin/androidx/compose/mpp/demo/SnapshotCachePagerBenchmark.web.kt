@@ -325,6 +325,7 @@ private suspend fun runPagerBenchmark(
     }
     setPagerBenchmarkAttribute("data-benchmark-state", "running")
     onProfilerPhaseChange(PagerProfilerPhase.Running)
+    markPagerBenchmarkStart()
     var previousFrameNanos = withFrameNanos { it }
     val frameDurationsMillis = DoubleArray(configuration.frames)
     var absoluteScrollDistance = 0f
@@ -336,6 +337,7 @@ private suspend fun runPagerBenchmark(
         previousFrameNanos = frameNanos
     }
     repeat(2) { withFrameNanos {} }
+    markPagerBenchmarkEnd()
     if (configuration.waitForProfiler) {
         setPagerBenchmarkAttribute("data-benchmark-state", "measurement-complete")
         onProfilerPhaseChange(PagerProfilerPhase.MeasurementComplete)
@@ -450,3 +452,7 @@ private fun setPagerBenchmarkAttribute(name: String, value: String) {
 
 private fun pagerBenchmarkAttribute(name: String): String? =
     document.documentElement?.getAttribute(name)
+
+internal expect fun markPagerBenchmarkStart()
+
+internal expect fun markPagerBenchmarkEnd()
