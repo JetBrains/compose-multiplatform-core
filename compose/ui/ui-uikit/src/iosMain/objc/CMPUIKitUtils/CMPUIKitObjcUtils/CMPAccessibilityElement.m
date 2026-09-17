@@ -25,6 +25,14 @@ NS_ASSUME_NONNULL_BEGIN
     return [object accessibilityContainer];
 }
 
+- (instancetype)initWithAccessibilityContainer:(id)container {
+    self = [super initWithAccessibilityContainer:container];
+    if (self) {
+        _isInitialized = YES;
+    }
+    return self;
+}
+
 - (NSArray<UIAccessibilityCustomAction *> *)accessibilityCustomActions {
     return [super accessibilityCustomActions];
 }
@@ -130,7 +138,7 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 - (void)dealloc {
-    _isDisposed = TRUE;
+    _isInitialized = NO;
 }
 
 @end

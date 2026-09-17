@@ -135,8 +135,11 @@ class A11yScrollTest : OnCanvasTests {
                 "scrollHeight=${element.scrollHeight}, clientHeight=${element.clientHeight}"
         )
 
-        // Content: 10 items x 50dp in a 100dp viewport => 500dp total content extent
-        val expectedContentHeightCssPx = 500
+        // Content: 10 items x 50dp in a 100dp viewport => ~500dp total content extent.
+        // Compose rounds each item to whole physical pixels, so on fractional-density screens
+        // the reported extent differs from 500 (e.g. 504 css px at density 1.25). Derive the
+        // expected extent from the scroll state instead of hardcoding it.
+        val expectedContentHeightCssPx = scrollState.maxValue / density + element.clientHeight
         assertTrue(
             abs(element.scrollHeight - expectedContentHeightCssPx) <= 2,
             "Scrollable extent must match the content size reported by Compose, " +
@@ -175,8 +178,10 @@ class A11yScrollTest : OnCanvasTests {
         element.scrollTop = 50.0
 
         val expectedComposePx = (50f * density).toInt()
+        // Also await the settled state: scrolling again while the ScrollBy-initiated animation
+        // is still in flight would interrupt it, losing its remaining delta.
         awaitCondition("Compose scroll state must follow the DOM scroll offset") {
-            abs(scrollState.value - expectedComposePx) <= 1
+            !scrollState.isScrollInProgress && abs(scrollState.value - expectedComposePx) <= 1
         }
 
         // Scroll further: the second delta must be computed against the new offset (not doubled)
