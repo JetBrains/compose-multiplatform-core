@@ -62,6 +62,7 @@ fun main() {
         "embedded" -> embeddedScrollDemo(composeScroll = false)
         "embeddedWithScroll" -> embeddedScrollDemo(composeScroll = true)
         "snapshotCacheBenchmark" -> snapshotCacheLazyListBenchmark(queryParams, snapshotCache)
+        "snapshotCachePagerBenchmark" -> snapshotCachePagerBenchmark(queryParams, snapshotCache)
     }
 }
 
