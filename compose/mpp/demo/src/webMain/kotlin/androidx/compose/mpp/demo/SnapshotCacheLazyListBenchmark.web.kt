@@ -52,6 +52,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ComposeViewport
@@ -75,7 +76,7 @@ private val BenchmarkColors =
  * A deterministic browser benchmark for comparing RenderNode snapshot caching while a LazyList
  * scrolls. Open with:
  *
- * `?demo=snapshotCacheBenchmark&snapshotCache=true&scenario=fast&autoRun=true`
+ * `?demo=snapshotCacheBenchmark&snapshotCache=true&scenario=move&layerDepth=24&autoRun=true`
  *
  * Automation can add `waitForProfiler=true`, wait for `data-benchmark-state=measurement-ready`,
  * sample cumulative browser CPU metrics, set `data-benchmark-command=start`, and wait for
@@ -147,7 +148,8 @@ private fun SnapshotCacheLazyListBenchmark(
         Text("LazyList snapshot-cache benchmark", style = MaterialTheme.typography.h6)
         Text(
             "useSnapshotCache=$snapshotCache; ${configuration.frames} measured frames; " +
-                "${configuration.warmupFrames} warm-up frames"
+                "${configuration.warmupFrames} warm-up frames; " +
+                "${configuration.layerDepth} nested layers per item"
         )
         if (configuration.waitForProfiler) {
             ProfilerControls(profilerPhase)
@@ -174,7 +176,7 @@ private fun SnapshotCacheLazyListBenchmark(
             }
         )
         Box(Modifier.weight(1f).fillMaxWidth().border(1.dp, MaterialTheme.colors.onSurface)) {
-            BenchmarkList(listState, drawCounter)
+            BenchmarkList(listState, drawCounter, configuration.layerDepth)
         }
     }
 }
@@ -209,17 +211,17 @@ private fun ProfilerControls(phase: ProfilerPhase) {
 }
 
 @Composable
-private fun BenchmarkList(state: LazyListState, drawCounter: DrawCounter) {
+private fun BenchmarkList(state: LazyListState, drawCounter: DrawCounter, layerDepth: Int) {
     LazyColumn(state = state, modifier = Modifier.fillMaxSize()) {
         items(count = BenchmarkItemCount, key = { it }, contentType = { "benchmark-row" }) { index
             ->
-            BenchmarkRow(index, drawCounter)
+            BenchmarkRow(index, drawCounter, layerDepth)
         }
     }
 }
 
 @Composable
-private fun BenchmarkRow(index: Int, drawCounter: DrawCounter) {
+private fun BenchmarkRow(index: Int, drawCounter: DrawCounter, layerDepth: Int) {
     Row(
         Modifier.fillMaxWidth()
             .height(BenchmarkItemHeight)
@@ -232,20 +234,7 @@ private fun BenchmarkRow(index: Int, drawCounter: DrawCounter) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Canvas(Modifier.size(72.dp)) {
-            val color = BenchmarkColors[index % BenchmarkColors.size]
-            drawRect(color.copy(alpha = 0.15f), size = size)
-            repeat(8) { shapeIndex ->
-                val inset = shapeIndex * size.minDimension / 20f
-                drawRect(
-                    color = color.copy(alpha = 0.25f + shapeIndex * 0.08f),
-                    topLeft = Offset(inset, inset),
-                    size = Size(size.width - inset * 2, size.height - inset * 2),
-                    style = Stroke(width = 1f + shapeIndex / 2f),
-                )
-            }
-            drawCircle(color, radius = size.minDimension / 7f)
-        }
+        Box(Modifier.size(72.dp)) { NestedGraphicsLayers(layerDepth) { BenchmarkDrawing(index) } }
         Column {
             Text("Item $index", style = MaterialTheme.typography.subtitle1)
             Spacer(Modifier.height(4.dp))
@@ -254,6 +243,33 @@ private fun BenchmarkRow(index: Int, drawCounter: DrawCounter) {
                 style = MaterialTheme.typography.body2,
             )
         }
+    }
+}
+
+@Composable
+private fun NestedGraphicsLayers(depth: Int, content: @Composable () -> Unit) {
+    if (depth == 0) {
+        content()
+    } else {
+        Box(Modifier.fillMaxSize().graphicsLayer()) { NestedGraphicsLayers(depth - 1, content) }
+    }
+}
+
+@Composable
+private fun BenchmarkDrawing(index: Int) {
+    Canvas(Modifier.fillMaxSize()) {
+        val color = BenchmarkColors[index % BenchmarkColors.size]
+        drawRect(color.copy(alpha = 0.15f), size = size)
+        repeat(8) { shapeIndex ->
+            val inset = shapeIndex * size.minDimension / 20f
+            drawRect(
+                color = color.copy(alpha = 0.25f + shapeIndex * 0.08f),
+                topLeft = Offset(inset, inset),
+                size = Size(size.width - inset * 2, size.height - inset * 2),
+                style = Stroke(width = 1f + shapeIndex / 2f),
+            )
+        }
+        drawCircle(color, radius = size.minDimension / 7f)
     }
 }
 
@@ -316,6 +332,7 @@ private suspend fun runBenchmark(
         maxFrameMillis = sortedDurations.last(),
         itemsTraversed = abs(state.firstVisibleItemIndex - firstItemBefore),
         itemDisplayListRecordings = drawCounter.count,
+        layerDepth = configuration.layerDepth,
     )
 }
 
@@ -359,6 +376,7 @@ private data class BenchmarkConfiguration(
     val warmupFrames: Int,
     val autoRun: Boolean,
     val waitForProfiler: Boolean,
+    val layerDepth: Int,
 ) {
     companion object {
         fun from(queryParams: Map<String, String>) =
@@ -369,6 +387,7 @@ private data class BenchmarkConfiguration(
                     queryParams["warmupFrames"]?.toIntOrNull()?.coerceIn(0, 1_000) ?: 180,
                 autoRun = queryParams["autoRun"] == "true",
                 waitForProfiler = queryParams["waitForProfiler"] == "true",
+                layerDepth = queryParams["layerDepth"]?.toIntOrNull()?.coerceIn(0, 64) ?: 24,
             )
     }
 }
@@ -383,16 +402,17 @@ private data class BenchmarkResult(
     val maxFrameMillis: Double,
     val itemsTraversed: Int,
     val itemDisplayListRecordings: Int,
+    val layerDepth: Int,
 ) {
     fun summary(snapshotCache: Boolean): String =
         "${scenario.displayName}, cache=$snapshotCache: median=${medianFrameMillis.oneDecimal()} ms, " +
             "p95=${p95FrameMillis.oneDecimal()} ms, p99=${p99FrameMillis.oneDecimal()} ms, " +
             "max=${maxFrameMillis.oneDecimal()} ms; $itemsTraversed items traversed; " +
-            "$itemDisplayListRecordings item display-list recordings"
+            "$itemDisplayListRecordings item display-list recordings; layerDepth=$layerDepth"
 
     fun toJson(snapshotCache: Boolean): String =
         """
-        {"snapshotCache":$snapshotCache,"scenario":"${scenario.queryName}","frames":$frames,"elapsedMillis":${elapsedMillis.oneDecimal()},"medianFrameMillis":${medianFrameMillis.oneDecimal()},"p95FrameMillis":${p95FrameMillis.oneDecimal()},"p99FrameMillis":${p99FrameMillis.oneDecimal()},"maxFrameMillis":${maxFrameMillis.oneDecimal()},"itemsTraversed":$itemsTraversed,"itemDisplayListRecordings":$itemDisplayListRecordings}
+        {"snapshotCache":$snapshotCache,"scenario":"${scenario.queryName}","frames":$frames,"elapsedMillis":${elapsedMillis.oneDecimal()},"medianFrameMillis":${medianFrameMillis.oneDecimal()},"p95FrameMillis":${p95FrameMillis.oneDecimal()},"p99FrameMillis":${p99FrameMillis.oneDecimal()},"maxFrameMillis":${maxFrameMillis.oneDecimal()},"itemsTraversed":$itemsTraversed,"itemDisplayListRecordings":$itemDisplayListRecordings,"layerDepth":$layerDepth}
     """
             .trimIndent()
 }
