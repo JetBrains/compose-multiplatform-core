@@ -40,6 +40,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -72,7 +73,8 @@ private const val PagerBenchmarkInitialPage = 50
  * `?demo=snapshotCachePagerBenchmark&snapshotCache=true&complexity=400&autoRun=true`
  *
  * `complexity` is the number of flat Canvas draw groups per page. `retainedPages` controls
- * `beyondViewportPageCount`, and `shadows` adds elevation to the app bars and cards. With
+ * `beyondViewportPageCount`, `shadows` adds elevation to the app bars and cards, and
+ * `invalidateContent` changes every page's Canvas display list on each frame. With
  * `waitForProfiler=true`, start the measured run and finish it using the buttons shown on the page.
  * Automation can use the same `data-benchmark-*` DOM attributes as the LazyList benchmark.
  */
@@ -92,6 +94,7 @@ private fun SnapshotCachePagerBenchmark(
     val pagerState =
         rememberPagerState(initialPage = PagerBenchmarkInitialPage) { PagerBenchmarkPageCount }
     val drawCounter = remember { PagerDrawCounter() }
+    val animationTick = remember { mutableIntStateOf(0) }
     var runId by remember { mutableIntStateOf(if (configuration.autoRun) 1 else 0) }
     var isRunning by remember { mutableStateOf(false) }
     var profilerPhase by remember { mutableStateOf(PagerProfilerPhase.Idle) }
@@ -112,6 +115,7 @@ private fun SnapshotCachePagerBenchmark(
                     state = pagerState,
                     configuration = configuration,
                     drawCounter = drawCounter,
+                    onFrame = { animationTick.intValue++ },
                     onProfilerPhaseChange = { profilerPhase = it },
                 )
             result = measured
@@ -134,6 +138,7 @@ private fun SnapshotCachePagerBenchmark(
         Text(
             "useSnapshotCache=$snapshotCache; complexity=${configuration.complexity}; " +
                 "retainedPages=${configuration.retainedPages}; shadows=${configuration.shadows}; " +
+                "invalidateContent=${configuration.invalidateContent}; " +
                 "${configuration.frames} measured frames"
         )
         if (configuration.waitForProfiler) {
@@ -153,7 +158,12 @@ private fun SnapshotCachePagerBenchmark(
                 beyondViewportPageCount = configuration.retainedPages,
                 modifier = Modifier.fillMaxSize(),
             ) { page ->
-                PagerBenchmarkPage(page, configuration, drawCounter)
+                PagerBenchmarkPage(
+                    page,
+                    configuration,
+                    drawCounter,
+                    animationTick.takeIf { configuration.invalidateContent },
+                )
             }
         }
     }
@@ -197,6 +207,7 @@ private fun PagerBenchmarkPage(
     page: Int,
     configuration: PagerBenchmarkConfiguration,
     drawCounter: PagerDrawCounter,
+    animationTick: State<Int>?,
 ) {
     val elevation = if (configuration.shadows) 4.dp else 0.dp
     Scaffold(
@@ -226,7 +237,7 @@ private fun PagerBenchmarkPage(
                     drawContent()
                 }
         ) {
-            FlatPagerDrawing(page, configuration.complexity)
+            FlatPagerDrawing(page, configuration.complexity, animationTick)
             Column(
                 Modifier.fillMaxWidth().padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -268,9 +279,10 @@ private fun PagerBenchmarkPage(
 }
 
 @Composable
-private fun FlatPagerDrawing(page: Int, complexity: Int) {
+private fun FlatPagerDrawing(page: Int, complexity: Int, animationTick: State<Int>?) {
     Canvas(Modifier.fillMaxSize()) {
         if (complexity == 0) return@Canvas
+        val tick = animationTick?.value ?: 0
         val columns = ceil(sqrt(complexity.toDouble())).toInt().coerceAtLeast(1)
         val rows = ((complexity + columns - 1) / columns).coerceAtLeast(1)
         val cellWidth = size.width / columns
@@ -278,7 +290,7 @@ private fun FlatPagerDrawing(page: Int, complexity: Int) {
         repeat(complexity) { index ->
             val column = index % columns
             val row = index / columns
-            val inset = 1f + index % 3
+            val inset = 1f + (index + tick) % 3
             val color = if ((index + page) % 2 == 0) Color(0xFF2F6E9E) else Color(0xFF789C63)
             val topLeft = Offset(column * cellWidth + inset, row * cellHeight + inset)
             val shapeSize =
@@ -301,6 +313,7 @@ private suspend fun runPagerBenchmark(
     state: PagerState,
     configuration: PagerBenchmarkConfiguration,
     drawCounter: PagerDrawCounter,
+    onFrame: () -> Unit,
     onProfilerPhaseChange: (PagerProfilerPhase) -> Unit,
 ): PagerBenchmarkResult {
     state.scrollToPage(PagerBenchmarkInitialPage)
@@ -310,6 +323,7 @@ private suspend fun runPagerBenchmark(
     repeat(3) { withFrameNanos {} }
 
     repeat(configuration.warmupFrames) { frame ->
+        onFrame()
         state.dispatchRawDelta(pagerDelta(frame, state.layoutInfo.pageSize, configuration))
         withFrameNanos {}
     }
@@ -330,6 +344,7 @@ private suspend fun runPagerBenchmark(
     val frameDurationsMillis = DoubleArray(configuration.frames)
     var absoluteScrollDistance = 0f
     repeat(configuration.frames) { frame ->
+        onFrame()
         absoluteScrollDistance +=
             abs(state.dispatchRawDelta(pagerDelta(frame, state.layoutInfo.pageSize, configuration)))
         val frameNanos = withFrameNanos { it }
@@ -361,6 +376,7 @@ private suspend fun runPagerBenchmark(
         complexity = configuration.complexity,
         retainedPages = configuration.retainedPages,
         shadows = configuration.shadows,
+        invalidateContent = configuration.invalidateContent,
     )
 }
 
@@ -394,6 +410,7 @@ private data class PagerBenchmarkConfiguration(
     val complexity: Int,
     val retainedPages: Int,
     val shadows: Boolean,
+    val invalidateContent: Boolean,
     val autoRun: Boolean,
     val waitForProfiler: Boolean,
 ) {
@@ -408,6 +425,7 @@ private data class PagerBenchmarkConfiguration(
                 complexity = queryParams["complexity"]?.toIntOrNull()?.coerceIn(0, 2_000) ?: 400,
                 retainedPages = queryParams["retainedPages"]?.toIntOrNull()?.coerceIn(0, 5) ?: 1,
                 shadows = queryParams["shadows"] == "true",
+                invalidateContent = queryParams["invalidateContent"] == "true",
                 autoRun = queryParams["autoRun"] == "true",
                 waitForProfiler = queryParams["waitForProfiler"] == "true",
             )
@@ -426,6 +444,7 @@ private data class PagerBenchmarkResult(
     val complexity: Int,
     val retainedPages: Int,
     val shadows: Boolean,
+    val invalidateContent: Boolean,
 ) {
     fun summary(snapshotCache: Boolean): String =
         "cache=$snapshotCache: median=${medianFrameMillis.pagerOneDecimal()} ms, " +
@@ -437,7 +456,7 @@ private data class PagerBenchmarkResult(
 
     fun toJson(snapshotCache: Boolean): String =
         """
-        {"snapshotCache":$snapshotCache,"frames":$frames,"elapsedMillis":${elapsedMillis.pagerOneDecimal()},"medianFrameMillis":${medianFrameMillis.pagerOneDecimal()},"p95FrameMillis":${p95FrameMillis.pagerOneDecimal()},"p99FrameMillis":${p99FrameMillis.pagerOneDecimal()},"maxFrameMillis":${maxFrameMillis.pagerOneDecimal()},"pageWidthsScrolled":${pageWidthsScrolled.toDouble().pagerOneDecimal()},"composeDisplayListRecordings":$composeDisplayListRecordings,"complexity":$complexity,"retainedPages":$retainedPages,"shadows":$shadows}
+        {"snapshotCache":$snapshotCache,"frames":$frames,"elapsedMillis":${elapsedMillis.pagerOneDecimal()},"medianFrameMillis":${medianFrameMillis.pagerOneDecimal()},"p95FrameMillis":${p95FrameMillis.pagerOneDecimal()},"p99FrameMillis":${p99FrameMillis.pagerOneDecimal()},"maxFrameMillis":${maxFrameMillis.pagerOneDecimal()},"pageWidthsScrolled":${pageWidthsScrolled.toDouble().pagerOneDecimal()},"composeDisplayListRecordings":$composeDisplayListRecordings,"complexity":$complexity,"retainedPages":$retainedPages,"shadows":$shadows,"invalidateContent":$invalidateContent}
     """
             .trimIndent()
 }
