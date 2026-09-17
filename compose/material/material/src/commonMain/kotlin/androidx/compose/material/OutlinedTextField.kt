@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // b/552879150
+
 package androidx.compose.material
 
 import androidx.compose.foundation.ScrollState
@@ -315,6 +317,9 @@ public fun OutlinedTextField(
  *   (including label, placeholder, leading and trailing icons, border) for this text field in
  *   different states. See [TextFieldDefaults.outlinedTextFieldColors]
  */
+@Deprecated(
+    "This overload of OutlinedTextField is deprecated in favor of the overload that uses TextFieldState to hoist its state."
+)
 @Composable
 public fun OutlinedTextField(
     value: String,
@@ -522,6 +527,9 @@ public fun OutlinedTextField(
  *   (including label, placeholder, leading and trailing icons, border) for this text field in
  *   different states. See [TextFieldDefaults.outlinedTextFieldColors]
  */
+@Deprecated(
+    "This overload of OutlinedTextField is deprecated in favor of the overload that uses TextFieldState to hoist its state."
+)
 @Composable
 public fun OutlinedTextField(
     value: TextFieldValue,

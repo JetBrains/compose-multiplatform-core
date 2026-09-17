@@ -32,7 +32,6 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.SessionMutex
 import androidx.compose.ui.UiMediaScope
-import androidx.compose.ui.areWindowInsetsRulersEnabled
 import androidx.compose.ui.autofill.AutofillManager
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusOwner
@@ -65,6 +64,7 @@ import androidx.compose.ui.input.pointer.PositionCalculator
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.layout.RootMeasurePolicy
 import androidx.compose.ui.layout.RulerProviderModifierElement
+import androidx.compose.ui.layout.areWindowInsetsRulersEnabled
 import androidx.compose.ui.modifier.ModifierLocalManager
 import androidx.compose.ui.platform.DefaultAccessibilityManager
 import androidx.compose.ui.platform.DelegatingSoftwareKeyboardController
@@ -1004,4 +1004,4 @@ private object IdentityPositionCalculator : PositionCalculator {
 }
 
 private fun Modifier.rulerProvider(windowInsets: PlatformWindowInsets) =
-    if (ComposeUiFlags.areWindowInsetsRulersEnabled) then(RulerProviderModifierElement(windowInsets)) else this
+    if (areWindowInsetsRulersEnabled) then(RulerProviderModifierElement(windowInsets)) else this

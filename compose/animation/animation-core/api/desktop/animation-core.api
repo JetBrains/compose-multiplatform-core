@@ -352,9 +352,6 @@ public final class androidx/compose/animation/core/EasingKt {
 public abstract interface annotation class androidx/compose/animation/core/ExperimentalAnimationSpecApi : java/lang/annotation/Annotation {
 }
 
-public abstract interface annotation class androidx/compose/animation/core/ExperimentalDeferredTransitionApi : java/lang/annotation/Annotation {
-}
-
 public abstract interface annotation class androidx/compose/animation/core/ExperimentalTransitionApi : java/lang/annotation/Annotation {
 }
 
