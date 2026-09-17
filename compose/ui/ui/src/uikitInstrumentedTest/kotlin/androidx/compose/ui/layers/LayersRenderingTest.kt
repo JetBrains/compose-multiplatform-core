@@ -18,24 +18,73 @@ package androidx.compose.ui.layers
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.background
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.test.captureScreenshot
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.forEachPixel
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import platform.UIKit.UIImage
+import platform.darwin.dispatch_async
+import platform.darwin.dispatch_get_main_queue
 
 class LayersRenderingTest {
+    @Test
+    fun testPopupDoesNotDrawAtOriginBeforeParentAnchor() = runUIKitInstrumentedTest {
+        var showPopup by mutableStateOf(false)
+        var captureNextParentDraw by mutableStateOf(false)
+        var firstPopupFrame: UIImage? = null
+
+        setContent {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Blue)
+                    .drawBehind {
+                        if (captureNextParentDraw) {
+                            dispatch_async(dispatch_get_main_queue()) {
+                                firstPopupFrame = captureScreenshot()
+                            }
+                            captureNextParentDraw = false
+                        }
+                    }
+            )
+            if (showPopup) {
+                Popup(
+                    alignment = Alignment.Center,
+                    onDismissRequest = {},
+                    properties = PopupProperties(usePlatformInsets = false),
+                ) {
+                    Box(Modifier.size(20.dp).background(Color.Red))
+                }
+            }
+        }
+
+        captureNextParentDraw = true
+        showPopup = true
+        waitUntil("First popup frame should be captured") { firstPopupFrame != null }
+
+        firstPopupFrame!!.forEachPixel(step = 4) { x, y, color ->
+            if (x < 40 && y < 40) {
+                assertEquals(Color.Blue, color, "Popup content was drawn at the window origin")
+            }
+        }
+    }
+
     @Test
     fun testLayerContentAfterParentAnchorIsAvailable() = runUIKitInstrumentedTest {
         var showRed by mutableStateOf(false)

@@ -23,6 +23,7 @@ import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.currentCompositeKeyHashCode
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,6 +31,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -470,8 +472,10 @@ private fun PopupLayout(
     onOutsidePointerEvent: ((eventType: PointerEventType, button: PointerButton?) -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
-    // Use a MutableState directly to avoid recomposing when the value changes
     val parentBoundsInWindow: MutableState<IntRect?> = remember { mutableStateOf(null) }
+    // The measure policy reads the bounds directly. The composition only needs to update when the
+    // popup becomes positioned or unpositioned, rather than whenever its anchor moves.
+    val canCalculatePosition by remember { derivedStateOf { parentBoundsInWindow.value != null } }
     EmptyLayout(Modifier.onPlaced { childCoordinates ->
         // For a layer in the same scene, this runs before its popup measure policy calculates a
         // position, so the policy observes the parent bounds in the first frame.
@@ -511,7 +515,9 @@ private fun PopupLayout(
         ) {
             Layout(
                 content = currentContent,
-                modifier = modifier,
+                // Compose and measure the popup before it can be positioned, but do not show it
+                // until its anchor bounds are available.
+                modifier = modifier.alpha(if (canCalculatePosition) 1f else 0f),
                 measurePolicy = measurePolicy
             )
         }
