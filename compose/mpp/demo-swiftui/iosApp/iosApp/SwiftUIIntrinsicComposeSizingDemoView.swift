@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import shared
 
 func makeComposeInSwiftUIIntrinsicSizingDemoViewController(
     composeView: UIView,
