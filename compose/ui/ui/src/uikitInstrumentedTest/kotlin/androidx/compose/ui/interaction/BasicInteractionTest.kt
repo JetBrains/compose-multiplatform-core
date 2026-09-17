@@ -23,6 +23,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.runUIKitInstrumentedTestInPrimaryContainer
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
@@ -67,7 +68,7 @@ class BasicInteractionTest {
     }
 
     @Test
-    fun testScroll() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun testScroll() = runUIKitInstrumentedTestInPrimaryContainer {
         val state = ScrollState(0)
         var boxRect = DpRect(DpOffset.Zero, DpSize.Zero)
         setContent {

@@ -22,6 +22,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.runUIKitInstrumentedTestInPrimaryContainer
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.window.ComposeUIView
@@ -35,7 +36,7 @@ private val LocalTestValue = staticCompositionLocalOf { "default" }
 class CompositionContextTest {
 
     @Test
-    fun compositionLocalPropagatedIntoPopup() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun compositionLocalPropagatedIntoPopup() = runUIKitInstrumentedTestInPrimaryContainer {
         val providedValue = "root-value"
         var valueInsidePopup: String? = null
 
@@ -75,7 +76,7 @@ class CompositionContextTest {
     }
 
     @Test
-    fun compositionLocalCanBeOverriddenInNestedComposeUIView() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun compositionLocalCanBeOverriddenInNestedComposeUIView() = runUIKitInstrumentedTestInPrimaryContainer {
         val rootValue = "root-value"
         val overriddenValue = "overridden-value"
         var valueAtLevel1: String? = null

@@ -40,6 +40,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.runUIKitInstrumentedTestInPrimaryContainer
 import androidx.compose.ui.test.utils.hold
 import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.text.input.TextFieldValue
@@ -92,7 +93,7 @@ class HapticFeedbackSelectionTest {
     }
 
     @Test
-    fun testBasicTextFieldValue_LongPress_TriggersHapticFeedback() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun testBasicTextFieldValue_LongPress_TriggersHapticFeedback() = runUIKitInstrumentedTestInPrimaryContainer {
         val hapticFeedback = TestHapticFeedback()
         var textFieldValue by mutableStateOf(TextFieldValue("Hello World"))
 
@@ -126,7 +127,7 @@ class HapticFeedbackSelectionTest {
     }
 
     @Test
-    fun testBasicTextFieldValue_DoubleTap_DoesNotTriggerHaptic() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun testBasicTextFieldValue_DoubleTap_DoesNotTriggerHaptic() = runUIKitInstrumentedTestInPrimaryContainer {
         val hapticFeedback = TestHapticFeedback()
         var textFieldValue by mutableStateOf(TextFieldValue("Hello-LongLongLongLongLongLong-text"))
         val focusRequester = FocusRequester()
@@ -194,7 +195,7 @@ class HapticFeedbackSelectionTest {
     }
 
     @Test
-    fun testBasicTextFieldState_DoubleTap_DoesNotTriggerHaptic() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun testBasicTextFieldState_DoubleTap_DoesNotTriggerHaptic() = runUIKitInstrumentedTestInPrimaryContainer {
         val hapticFeedback = TestHapticFeedback()
         val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
         val focusRequester = FocusRequester()
@@ -227,7 +228,7 @@ class HapticFeedbackSelectionTest {
     }
 
     @Test
-    fun testSelectionContainer_LongPress_TriggersHapticFeedback() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun testSelectionContainer_LongPress_TriggersHapticFeedback() = runUIKitInstrumentedTestInPrimaryContainer {
         val hapticFeedback = TestHapticFeedback()
 
         setContent {
@@ -262,7 +263,7 @@ class HapticFeedbackSelectionTest {
     }
 
     @Test
-    fun testSelectionContainer_DoubleTap_DoesNotTriggerHaptic() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun testSelectionContainer_DoubleTap_DoesNotTriggerHaptic() = runUIKitInstrumentedTestInPrimaryContainer {
         val hapticFeedback = TestHapticFeedback()
 
         setContent {

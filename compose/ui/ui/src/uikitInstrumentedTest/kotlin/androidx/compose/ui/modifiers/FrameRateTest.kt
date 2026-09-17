@@ -34,6 +34,7 @@ import androidx.compose.ui.preferredFrameRate
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.runUIKitInstrumentedTestInPrimaryContainer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -41,7 +42,7 @@ import kotlin.test.assertNotNull
 internal class FrameRateTest {
 
     @Test
-    fun testLowFrameRates() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun testLowFrameRates() = runUIKitInstrumentedTestInPrimaryContainer {
         val frameRates = listOf(5f, 10f, 30f, 60f)
 
         animationSpeed = UIKitInstrumentedTest.RealAnimationSpeed

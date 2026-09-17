@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.runUIKitInstrumentedTestInPrimaryContainer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -54,7 +55,7 @@ class FrameChoreographerTest {
     }
 
     @Test
-    fun testOngoingInteractionEventsKeepChoreographerTicking() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun testOngoingInteractionEventsKeepChoreographerTicking() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent { Box(Modifier.fillMaxSize()) }
         val choreographer = frameChoreographer
         assertNotNull(choreographer, "frameChoreographer is null")
@@ -88,7 +89,7 @@ class FrameChoreographerTest {
     }
 
     @Test
-    fun testDisplayLinkAndOutOfFrameCallbacksArePaired() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun testDisplayLinkAndOutOfFrameCallbacksArePaired() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent { Box(Modifier.fillMaxSize()) }
         val choreographer = frameChoreographer
         assertNotNull(choreographer, "frameChoreographer is null")
@@ -118,7 +119,7 @@ class FrameChoreographerTest {
     }
 
     @Test
-    fun testRemovedListenerStopsReceivingCallbacks() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun testRemovedListenerStopsReceivingCallbacks() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent { Box(Modifier.fillMaxSize()) }
         val choreographer = frameChoreographer
         assertNotNull(choreographer, "frameChoreographer is null")

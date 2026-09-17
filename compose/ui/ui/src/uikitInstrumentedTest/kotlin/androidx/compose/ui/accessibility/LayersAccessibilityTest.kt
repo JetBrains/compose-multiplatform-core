@@ -20,6 +20,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertAccessibilityTree
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.runUIKitInstrumentedTestInPrimaryContainer
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
@@ -28,7 +29,7 @@ import kotlin.test.Test
 class LayersAccessibilityTest {
 
     @Test
-    fun testNodesCoveredByPopup() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun testNodesCoveredByPopup() = runUIKitInstrumentedTestInPrimaryContainer {
         val topPopup = mutableStateOf(false)
         val bottomPopup = mutableStateOf(false)
         val topPopupFocusable = mutableStateOf(false)
@@ -133,7 +134,7 @@ class LayersAccessibilityTest {
     }
 
     @Test
-    fun testLayersAppearanceOrder() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun testLayersAppearanceOrder() = runUIKitInstrumentedTestInPrimaryContainer {
         val bottomLayer = mutableStateOf(false)
         val middleLayers = mutableStateOf(false)
         setContent {

@@ -21,7 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.findNodeWithTag
-import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.runUIKitInstrumentedTestInPrimaryContainer
 import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.UIKitInteropInteractionMode
@@ -142,7 +142,7 @@ internal class InteropInteractionModeTest {
     }
 
     @Test
-    fun testUIButtonNonInteractive() = runUIKitInstrumentedTest(useHostingView = false) { // overlay ->
+    fun testUIButtonNonInteractive() = runUIKitInstrumentedTestInPrimaryContainer { // overlay ->
         var beganCount = 0
         var endedCount = 0
 

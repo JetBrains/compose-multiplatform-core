@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.runUIKitInstrumentedTestInPrimaryContainer
 import androidx.compose.ui.test.utils.DpRectZero
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
@@ -76,7 +77,7 @@ class LocalDensityTest {
     }
 
     @Test
-    fun testCustomDensityPropagatedToPopup() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun testCustomDensityPropagatedToPopup() = runUIKitInstrumentedTestInPrimaryContainer {
         val customDensity = Density(density = 5f)
         var density = -1f
 
@@ -93,7 +94,7 @@ class LocalDensityTest {
     }
 
     @Test
-    fun testCustomDensityPropagatedInDialogContent() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun testCustomDensityPropagatedInDialogContent() = runUIKitInstrumentedTestInPrimaryContainer {
         val outerDensity = Density(density = 5f)
         val innerDensity = Density(density = 10f)
         var actualOuterDensity = -1f
@@ -118,7 +119,7 @@ class LocalDensityTest {
     }
 
     @Test
-    fun testCustomDensityPropagatedInPopupContent() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun testCustomDensityPropagatedInPopupContent() = runUIKitInstrumentedTestInPrimaryContainer {
         val outerDensity = Density(density = 5f)
         val innerDensity = Density(density = 10f)
         var actualOuterDensity = -1f
@@ -143,7 +144,7 @@ class LocalDensityTest {
     }
 
     @Test
-    fun testTapInteractionsInDialogWithOuterCustomDensity() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun testTapInteractionsInDialogWithOuterCustomDensity() = runUIKitInstrumentedTestInPrimaryContainer {
         val density = Density(density = 5f)
         val interactionButtonNumber = 8
         var interactionCount = 0
@@ -171,7 +172,7 @@ class LocalDensityTest {
     }
 
     @Test
-    fun testTapInteractionsInPopupWithOuterCustomDensity() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun testTapInteractionsInPopupWithOuterCustomDensity() = runUIKitInstrumentedTestInPrimaryContainer {
         val density = Density(density = 5f)
         val targetButtonIndex = 8
         var tappedButtonIndex = -1
@@ -199,7 +200,7 @@ class LocalDensityTest {
     }
 
     @Test
-    fun testTapInteractionsInDialogWithInnerCustomDensity() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun testTapInteractionsInDialogWithInnerCustomDensity() = runUIKitInstrumentedTestInPrimaryContainer {
         val density = Density(density = 5f)
         val targetButtonIndex = 8
         var tappedButtonIndex = -1
@@ -227,7 +228,7 @@ class LocalDensityTest {
     }
 
     @Test
-    fun testTapInteractionsInPopupWithInnerCustomDensity() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun testTapInteractionsInPopupWithInnerCustomDensity() = runUIKitInstrumentedTestInPrimaryContainer {
         val density = Density(density = 5f)
         val targetButtonIndex = 8
         var tappedButtonIndex = -1
@@ -292,7 +293,7 @@ class LocalDensityTest {
 
     @OptIn(ExperimentalForeignApi::class)
     @Test
-    fun testInteropViewPositionForCustomDensity() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun testInteropViewPositionForCustomDensity() = runUIKitInstrumentedTestInPrimaryContainer {
         val interopHeight = 100.dp
         val padding = 10.dp
         var densityScale by mutableFloatStateOf(1f)

@@ -38,6 +38,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.test.MockAppDelegate
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.runUIKitInstrumentedTestInPrimaryContainer
 import androidx.compose.ui.test.utils.beginPress
 import androidx.compose.ui.test.utils.cancel
 import androidx.compose.ui.test.utils.release
@@ -181,7 +182,7 @@ class KeyboardEventsTest {
     }
 
     @Test
-    fun textFieldTypesHelloFromPresses() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun textFieldTypesHelloFromPresses() = runUIKitInstrumentedTestInPrimaryContainer {
         val requester = FocusRequester()
         var value by mutableStateOf("")
 
@@ -204,7 +205,7 @@ class KeyboardEventsTest {
     }
 
     @Test
-    fun simulateInterruptedKeyPressEvent() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun simulateInterruptedKeyPressEvent() = runUIKitInstrumentedTestInPrimaryContainer {
         val textFieldRequester = FocusRequester()
         val boxRequester = FocusRequester()
         val keyEvents = mutableListOf<Pair<KeyEventType, Key>>()
@@ -254,7 +255,7 @@ class KeyboardEventsTest {
     }
 
     @Test
-    fun testMultipleKeyDownSimultaneously() = runUIKitInstrumentedTest(useHostingView = false) {
+    fun testMultipleKeyDownSimultaneously() = runUIKitInstrumentedTestInPrimaryContainer {
         val requester = FocusRequester()
         val keyEvents = mutableListOf<Pair<KeyEventType, Key>>()
 
