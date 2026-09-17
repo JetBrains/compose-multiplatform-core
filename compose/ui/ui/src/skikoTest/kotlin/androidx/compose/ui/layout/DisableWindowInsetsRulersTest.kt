@@ -28,6 +28,7 @@ import androidx.compose.ui.test.v2.runInternalSkikoComposeUiTest
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertTrue
+import kotlinx.coroutines.test.TestResult
 
 @OptIn(ExperimentalTestApi::class, InternalTestApi::class)
 class DisableWindowInsetsRulersTest {
@@ -38,10 +39,10 @@ class DisableWindowInsetsRulersTest {
     }
 
     @Test
-    fun disableWindowInsetsRulers() {
+    fun disableWindowInsetsRulers(): TestResult {
         WindowInsetsRulers.disable()
 
-        runInternalSkikoComposeUiTest(
+        return runInternalSkikoComposeUiTest(
             windowInsets = TestWindowInsets(systemBarsInsets = mutableStateOf(PlatformInsets(top = 100)))
         ) {
             var left = 0f
