@@ -37,7 +37,7 @@ import androidx.compose.ui.desktop.ApplicationSession
 import androidx.compose.ui.desktop.CaptionButtonKind
 import androidx.compose.ui.desktop.CaptionButtonsHostWindow
 import androidx.compose.ui.desktop.ClipboardItemsEntry
-import androidx.compose.ui.desktop.DefaultCustomTitleBarHeightForAir
+import androidx.compose.ui.window.WindowFrame
 import androidx.compose.ui.desktop.FrameDispatcher
 import androidx.compose.ui.desktop.FramePacer
 import androidx.compose.ui.desktop.IconDecoratedWindow
@@ -375,21 +375,26 @@ class WindowsWindow internal constructor(
     }
 
     @ExperimentalComposeUiApi
-    override val decoration: WindowDecoration =
-        WindowDecoration.CustomTitleBar(DefaultCustomTitleBarHeightForAir)
+    override val decoration: WindowDecoration = WindowDecoration.Undecorated(
+        frame = null,
+        tiling = null,
+        titleBarLayoutLeft = listOf(WindowDecoration.TitleBarElement.AppMenu),
+        titleBarLayoutRight = listOf(
+            WindowDecoration.TitleBarElement.MinimizeButton,
+            WindowDecoration.TitleBarElement.MaximizeButton,
+            WindowDecoration.TitleBarElement.CloseButton,
+        ),
+    )
 
     @ExperimentalComposeUiApi
-    override fun requestDecoration(vararg decorations: WindowDecoration) {
+    override fun setDecorationPreferences(
+        preferDecorated: Boolean,
+        customTitleBarHeight: Dp,
+        roundedWindowCorners: Boolean,
+        undecoratedWindowFrame: WindowFrame,
+    ) {
         // TODO
     }
-
-    @OptIn(ExperimentalComposeUiApi::class)
-    override val customTitleBarInsets: Pair<Dp, Dp>?
-        get() = when (decoration) {
-            is WindowDecoration.CustomTitleBar ->
-                0.dp to 0.dp
-            else -> null
-        }
 
     private var overriddenSystemTheme by mutableStateOf<SystemTheme?>(null)
     override val systemTheme: SystemTheme

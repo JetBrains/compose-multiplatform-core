@@ -80,6 +80,7 @@ import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.takeOrElse
 import androidx.compose.ui.unit.width
 import androidx.compose.ui.window.WindowDecoration
+import androidx.compose.ui.window.WindowFrame
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.desktop.logging.logger
 import androidx.compose.ui.scene.CanvasLayersComposeScene
@@ -316,41 +317,45 @@ class MacOsWindow internal constructor(
         }
     }
 
-    @ExperimentalComposeUiApi
-    override var decoration: WindowDecoration by mutableStateOf(WindowDecoration.Decorated)
-        private set
+    private var customTitleBarHeight: Dp? by mutableStateOf(null)
 
     @ExperimentalComposeUiApi
-    override fun requestDecoration(vararg decorations: WindowDecoration) {
-        for (decoration in decorations) {
-            if (decoration == this.decoration) break
-            if (!decoration.isDecorated) continue // Not supported for now
+    override val decoration: WindowDecoration
+        get() = customTitleBarHeight?.let { height ->
+            val insetLeft = if (placement != WindowPlacement.Fullscreen) {
+                40.dp + height
+            } else 0.dp
+            WindowDecoration.CustomTitleBar(
+                height = height,
+                insetLeft = insetLeft,
+                insetRight = 0.dp,
+            )
+        } ?: WindowDecoration.Decorated
 
-            val titlebarConfiguration = when (decoration) {
-                WindowDecoration.Decorated -> TitlebarConfiguration.Regular
-                is WindowDecoration.CustomTitleBar ->
-                    TitlebarConfiguration.Custom(decoration.height.value.toDouble(),
-                        largeCornerRadius = decoration.roundedWindowCorners)
-                is WindowDecoration.Undecorated ->
-                    throw UnsupportedOperationException(
-                        "Undecorated windows are not supported on macOS",
+    @ExperimentalComposeUiApi
+    override fun setDecorationPreferences(
+        preferDecorated: Boolean,
+        customTitleBarHeight: Dp,
+        roundedWindowCorners: Boolean,
+        undecoratedWindowFrame: WindowFrame,
+    ) {
+        if (!isDisposed) {
+            if (preferDecorated) {
+                if (this.customTitleBarHeight != null) {
+                    this.customTitleBarHeight = null
+                    nativeWindow.setTitlebarConfiguration(TitlebarConfiguration.Regular)
+                }
+            } else if (this.customTitleBarHeight != customTitleBarHeight) {
+                this.customTitleBarHeight = customTitleBarHeight
+                nativeWindow.setTitlebarConfiguration(
+                    TitlebarConfiguration.Custom(
+                        customTitleBarHeight.value.toDouble(),
+                        largeCornerRadius = roundedWindowCorners,
                     )
+                )
             }
-            if (!isDisposed) {
-                nativeWindow.setTitlebarConfiguration(titlebarConfiguration)
-            }
-            this.decoration = decoration
-            break
         }
     }
-
-    @OptIn(ExperimentalComposeUiApi::class)
-    override val customTitleBarInsets: Pair<Dp, Dp>?
-        get() = when (val decoration = decoration) {
-            is WindowDecoration.CustomTitleBar if placement != WindowPlacement.Fullscreen ->
-                (40.dp + decoration.height) to 0.dp
-            else -> null
-        }
 
     private var systemThemeBackingField by mutableStateOf(
         nativeWindow.overriddenAppearance?.toSystemTheme(),

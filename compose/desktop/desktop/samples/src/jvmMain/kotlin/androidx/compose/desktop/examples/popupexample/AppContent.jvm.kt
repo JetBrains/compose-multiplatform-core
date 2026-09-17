@@ -67,6 +67,7 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.window.TrayState
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowDecoration
+import androidx.compose.ui.window.WindowFrame
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowScope
 import androidx.compose.ui.window.WindowState
@@ -566,7 +567,15 @@ fun SwingActionButton(text: String, action: (() -> Unit)? = null) {
 fun SecondaryWindow(onCloseRequest: () -> Unit) = Window(
     onCloseRequest = onCloseRequest,
     initialSize = DpSize(400.dp, 200.dp),
-    decoration = WindowDecoration.Undecorated(),
+    decoration = WindowDecoration.Undecorated(
+        frame = WindowFrame(
+            padding = WindowFrame.Padding.default(),
+            resizerThickness = WindowFrame.ResizerThickness.default(),
+        ),
+        tiling = null,
+        titleBarLayoutLeft = emptyList(),
+        titleBarLayoutRight = emptyList(),
+    ),
 ) {
     WindowContent(
         amount = AppState.amount,

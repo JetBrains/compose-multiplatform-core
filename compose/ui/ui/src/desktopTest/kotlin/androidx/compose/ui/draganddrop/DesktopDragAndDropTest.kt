@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowDecoration
+import androidx.compose.ui.window.windowDecorationFromFlag
 import androidx.compose.ui.window.runApplicationTest
 import java.awt.Component
 import java.awt.Container
@@ -76,7 +76,7 @@ class DesktopDragAndDropTest {
         launchTestApplication {
             Window(
                 onCloseRequest = ::exitApplication,
-                decoration = WindowDecoration.Undecorated(),
+                decoration = windowDecorationFromFlag(undecorated = true),
                 initialSize = DpSize(200.dp, 100.dp)
             ) {
                 window = this.window
@@ -130,7 +130,7 @@ class DesktopDragAndDropTest {
         launchTestApplication {
             Window(
                 onCloseRequest = ::exitApplication,
-                decoration = WindowDecoration.Undecorated(),
+                decoration = windowDecorationFromFlag(undecorated = true),
                 initialSize = DpSize(200.dp, 100.dp)
             ) {
                 window = this.window

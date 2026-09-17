@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowDecoration
+import androidx.compose.ui.window.WindowFrame
 import androidx.compose.ui.window.WindowPlacement
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.test.assertEquals
@@ -291,7 +292,15 @@ class HeadlessDataSourceProtocolTest {
         app.awaitIdle()
         val afterFirstFrame = source.protocol.size
 
-        val undecorated = WindowDecoration.Undecorated()
+        val undecorated = WindowDecoration.Undecorated(
+            frame = WindowFrame(
+                padding = WindowFrame.Padding.default(),
+                resizerThickness = WindowFrame.ResizerThickness.default(),
+            ),
+            tiling = null,
+            titleBarLayoutLeft = emptyList(),
+            titleBarLayoutRight = emptyList(),
+        )
         val secondScreen = HeadlessScreen(
             name = "Second",
             size = DpSize(2560.dp, 1440.dp),
@@ -306,7 +315,7 @@ class HeadlessDataSourceProtocolTest {
             app.sendWindowPlacementChange(window.id, WindowPlacement.Maximized)
             app.sendDensityChange(window.id, devicePixelRatio = 2.0f)
             app.sendScreenChange(window.id, secondScreen)
-            app.sendWindowDecorationChange(window.id, undecorated, 12.dp to 4.dp)
+            app.sendWindowDecorationChange(window.id, undecorated)
             app.sendThemeChange(window.id, SystemTheme.Dark)
         }
         app.awaitIdle()
@@ -319,7 +328,6 @@ class HeadlessDataSourceProtocolTest {
         assertEquals("Second", window.screen.name, "screen change did not apply")
         assertEquals(1.5f, window.density.density, "density did not follow the screen")
         assertEquals(undecorated, window.decoration, "decoration did not apply")
-        assertEquals(12.dp to 4.dp, window.customTitleBarInsets, "title bar insets did not apply")
         assertEquals(SystemTheme.Dark, window.systemTheme, "theme change did not apply")
 
         val fromWindowEvents = source.protocol.drop(afterFirstFrame)

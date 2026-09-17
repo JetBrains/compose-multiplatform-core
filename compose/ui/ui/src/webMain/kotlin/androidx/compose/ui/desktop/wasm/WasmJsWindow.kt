@@ -511,11 +511,22 @@ class WasmJsWindow internal constructor(
         requestFocus()
     }
 
-    override val decoration: WindowDecoration = WindowDecoration.Undecorated(WindowFrame.default())
+    override val decoration: WindowDecoration = WindowDecoration.Undecorated(
+        frame = WindowFrame(
+            padding = WindowFrame.Padding.default(),
+            resizerThickness = WindowFrame.ResizerThickness.default(),
+        ),
+        tiling = null,
+        titleBarLayoutLeft = emptyList(),
+        titleBarLayoutRight = emptyList(),
+    )
 
-    override fun requestDecoration(vararg decorations: WindowDecoration) {}
-
-    override val customTitleBarInsets: Pair<Dp, Dp> = 8.dp to 0.dp
+    override fun setDecorationPreferences(
+        preferDecorated: Boolean,
+        customTitleBarHeight: Dp,
+        roundedWindowCorners: Boolean,
+        undecoratedWindowFrame: WindowFrame,
+    ) {}
 
     override val systemTheme: SystemTheme
         get() = systemThemeObserver.currentSystemTheme.value

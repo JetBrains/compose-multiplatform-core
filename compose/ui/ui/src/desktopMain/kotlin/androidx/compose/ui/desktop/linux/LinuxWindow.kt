@@ -133,7 +133,6 @@ private constructor(
 
     private var titleField by mutableStateOf("")
     private var overriddenSystemTheme by mutableStateOf<SystemTheme?>(null)
-    private var windowCapabilities by mutableStateOf<WindowCapabilities?>(null)
     private var clientSideDecorationFrame: WindowFrame? = null
 
     /**
@@ -160,7 +159,6 @@ private constructor(
         newWindow.contentSize = contentSize
         newWindow.isFocused = isFocused
         newWindow.placement = placement
-        newWindow.windowCapabilities = windowCapabilities
         newWindow.decoration = decoration
         newWindow.density = density
         newWindow.screen = screen
@@ -275,30 +273,20 @@ private constructor(
         private set
 
     @ExperimentalComposeUiApi
-    override fun requestDecoration(vararg decorations: WindowDecoration) {
+    override fun setDecorationPreferences(
+        preferDecorated: Boolean,
+        customTitleBarHeight: Dp,
+        roundedWindowCorners: Boolean,
+        undecoratedWindowFrame: WindowFrame,
+    ) {
         onNativeWindowAsync {
-            decorations
-                .firstNotNullOfOrNull { (it as? WindowDecoration.Undecorated)?.frame }
-                ?.let { frame ->
-                    if (clientSideDecorationFrame != frame) {
-                        clientSideDecorationFrame = frame
-                        setClientSideDecorationFrame(frame.toLinuxWindowFrame())
-                    }
-                }
-
-            decorations
-                .firstOrNull { it !is WindowDecoration.CustomTitleBar }
-                ?.let { setPreferClientSideDecoration(!it.isDecorated) }
+            if (clientSideDecorationFrame != undecoratedWindowFrame) {
+                clientSideDecorationFrame = undecoratedWindowFrame
+                setClientSideDecorationFrame(undecoratedWindowFrame.toLinuxWindowFrame())
+            }
+            setPreferClientSideDecoration(!preferDecorated)
         }
     }
-
-    override val customTitleBarInsets: Pair<Dp, Dp>?
-        get() = null
-
-    @ExperimentalComposeUiApi
-    override val customTitleBarLayout:
-        Pair<List<WindowDecoration.TitleBarElement>, List<WindowDecoration.TitleBarElement>>?
-        get() = application.customTitleBarLayout?.forCapabilities(windowCapabilities)
 
     override val systemTheme: SystemTheme
         get() = overriddenSystemTheme ?: application.systemTheme
@@ -652,12 +640,13 @@ private constructor(
                     event.maximized -> WindowPlacement.Maximized
                     else -> WindowPlacement.Floating
                 }
-            windowCapabilities = event.capabilities
             decoration =
                 when (val decorationMode = event.decorationMode) {
                     WindowDecorationMode.Server -> WindowDecoration.Decorated
                     is WindowDecorationMode.Client ->
-                        WindowDecoration.Undecorated(decorationMode.frame.toWindowFrame())
+                        decorationMode.toWindowDecoration(
+                            application.customTitleBarLayout.forCapabilities(event.capabilities),
+                        )
                 }
             composeScene.size = contentSizeInPx()
         }
@@ -1093,7 +1082,10 @@ private constructor(
                         size = LogicalSize.makeWH(800, 600),
                         preferClientSideDecoration = true,
                         renderingMode = RenderingMode.Auto,
-                        clientSideDecorationFrame = WindowFrame.default().toLinuxWindowFrame(),
+                        clientSideDecorationFrame = WindowFrame(
+                            padding = WindowFrame.Padding.default(),
+                            resizerThickness = WindowFrame.ResizerThickness.default(),
+                        ).toLinuxWindowFrame(),
                     )
                 )
             val id = LightweightWindowId(nativeWindow.windowId)
