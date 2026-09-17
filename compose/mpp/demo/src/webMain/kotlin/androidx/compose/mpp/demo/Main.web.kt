@@ -18,20 +18,18 @@ package androidx.compose.mpp.demo
 
 import androidx.compose.mpp.demo.bugs.BugsScreen
 import androidx.compose.mpp.demo.components.text.loadResource
-import androidx.compose.mpp.demo.interops.HtmlInteropDemos
-import androidx.compose.mpp.demo.webgl.PlainWebGlScreen
-import androidx.compose.mpp.demo.webgl.ThreeJsTextureAdoptionScreen
-import androidx.compose.mpp.demo.webgl.VideoWebGlScreen
-import androidx.compose.mpp.demo.webgl.HtmlInCanvasWebGlScreen
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.mpp.demo.embedded.embeddedScrollDemo
+import androidx.compose.mpp.demo.interops.HtmlInteropDemos
 import androidx.compose.mpp.demo.webgl.WebGLDemoScreen
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.platform.Font
+import androidx.compose.ui.useSnapshotCache
 import androidx.compose.ui.window.ComposeViewport
 import androidx.navigation.ExperimentalBrowserHistoryApi
 import androidx.navigation.bindToBrowserNavigation
@@ -47,50 +45,56 @@ private fun queryParams(): Map<String, String> {
         .removePrefix("?")
         .split("&")
         .filter { it.contains("=") }
-        .associate { val (k, v) = it.split("=", limit = 2); k to v }
+        .associate {
+            val (k, v) = it.split("=", limit = 2)
+            k to v
+        }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 fun main() {
-    val demo = queryParams()["demo"] ?: "default"
+    val queryParams = queryParams()
+    val demo = queryParams["demo"] ?: "default"
+    val snapshotCache = queryParams["snapshotCache"]?.toBooleanStrictOrNull() ?: true
+    ComposeUiFlags.useSnapshotCache = snapshotCache
     when (demo) {
         "default" -> defaultComposeDemo()
         "embedded" -> embeddedScrollDemo(composeScroll = false)
         "embeddedWithScroll" -> embeddedScrollDemo(composeScroll = true)
+        "snapshotCacheBenchmark" -> snapshotCacheLazyListBenchmark(queryParams, snapshotCache)
     }
 }
 
-@OptIn(
-    ExperimentalComposeUiApi::class,
-    ExperimentalBrowserHistoryApi::class
-)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalBrowserHistoryApi::class)
 fun defaultComposeDemo() {
     ComposeViewport {
         val navController = rememberNavController()
         val fontFamilyResolver = LocalFontFamilyResolver.current
         val fontsLoaded = remember { mutableStateOf(false) }
-        val app = remember { App(
-            extraScreens = listOf(
-                WebGLDemoScreen,
-                BugsScreen,
-                Screen.Example("Web Clipboard API example") {
-                    WebClipboardDemo()
-                },
-                HtmlInteropDemos,
-                HapticFeedbackExample,
+        val app = remember {
+            App(
+                extraScreens =
+                    listOf(
+                        WebGLDemoScreen,
+                        BugsScreen,
+                        Screen.Example("Web Clipboard API example") { WebClipboardDemo() },
+                        HtmlInteropDemos,
+                        HapticFeedbackExample,
+                    )
             )
-        ) }
+        }
 
         if (fontsLoaded.value) {
             app.Content(navController)
 
-            // TODO: possibly suboptimal workaround for https://youtrack.jetbrains.com/issue/CMP-7136/web-Its-non-trivial-to-bind-to-navigation-if-NavHost-is-called-asynchronously
-            LaunchedEffect(Unit) {
-                navController.bindToBrowserNavigation()
-            }
+            // TODO: possibly suboptimal workaround for
+            // https://youtrack.jetbrains.com/issue/CMP-7136/web-Its-non-trivial-to-bind-to-navigation-if-NavHost-is-called-asynchronously
+            LaunchedEffect(Unit) { navController.bindToBrowserNavigation() }
         }
 
         LaunchedEffect(Unit) {
-            val manifestString = async { loadResource("./fonts-manifest.json") !! }.await().decodeToString()
+            val manifestString =
+                async { loadResource("./fonts-manifest.json")!! }.await().decodeToString()
 
             val manifest = Json.decodeFromString<FontsManifest>(manifestString)
 
@@ -103,11 +107,8 @@ fun defaultComposeDemo() {
             fontsLoaded.value = true
         }
 
-        LaunchedEffect(Unit) {
-            setupBackingTextAreaDebugHints()
-        }
+        LaunchedEffect(Unit) { setupBackingTextAreaDebugHints() }
     }
 }
 
-@Serializable
-private data class FontsManifest(val fonts: List<String>)
+@Serializable private data class FontsManifest(val fonts: List<String>)
