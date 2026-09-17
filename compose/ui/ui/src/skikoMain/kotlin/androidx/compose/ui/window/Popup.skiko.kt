@@ -472,9 +472,8 @@ private fun PopupLayout(
     onOutsidePointerEvent: ((eventType: PointerEventType, button: PointerButton?) -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
+    // Use a MutableState directly to avoid recomposing when the value changes
     val parentBoundsInWindow: MutableState<IntRect?> = remember { mutableStateOf(null) }
-    // The measure policy reads the bounds directly. The composition only needs to update when the
-    // popup becomes positioned or unpositioned, rather than whenever its anchor moves.
     val canCalculatePosition by remember { derivedStateOf { parentBoundsInWindow.value != null } }
     EmptyLayout(Modifier.onPlaced { childCoordinates ->
         // For a layer in the same scene, this runs before its popup measure policy calculates a

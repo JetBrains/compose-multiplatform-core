@@ -32,7 +32,12 @@ import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.test.captureScreenshot
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.forEachPixel
+import androidx.compose.ui.test.utils.forEachPixelInRect
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.DpRect
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import kotlin.test.Test
@@ -45,9 +50,11 @@ import platform.darwin.dispatch_get_main_queue
 class LayersRenderingTest {
     @Test
     fun testPopupDoesNotDrawAtOriginBeforeParentAnchor() = runUIKitInstrumentedTest {
+        val popupSize = 20.dp
         var showPopup by mutableStateOf(false)
         var captureNextParentDraw by mutableStateOf(false)
         var firstPopupFrame: UIImage? = null
+        var popupContentPlaced by mutableStateOf(false)
 
         setContent {
             Box(
@@ -69,7 +76,12 @@ class LayersRenderingTest {
                     onDismissRequest = {},
                     properties = PopupProperties(usePlatformInsets = false),
                 ) {
-                    Box(Modifier.size(20.dp).background(Color.Red))
+                    Box(
+                        Modifier
+                            .size(popupSize)
+                            .background(Color.Red)
+                            .onPlaced { popupContentPlaced = true }
+                    )
                 }
             }
         }
@@ -78,10 +90,24 @@ class LayersRenderingTest {
         showPopup = true
         waitUntil("First popup frame should be captured") { firstPopupFrame != null }
 
-        firstPopupFrame!!.forEachPixel(step = 4) { x, y, color ->
-            if (x < 40 && y < 40) {
-                assertEquals(Color.Blue, color, "Popup content was drawn at the window origin")
-            }
+        firstPopupFrame!!.forEachPixel(step = 4) { _, _, color ->
+            assertEquals(Color.Blue, color, "Popup content appeared before its anchor was available")
+        }
+
+        waitUntil("Popup content should be placed") { popupContentPlaced }
+        waitForIdle()
+        val settledPopupFrame = assertNotNull(captureScreenshot())
+        val expectedPopupBounds = with(density) {
+            DpRect(
+                origin = DpOffset(
+                    x = (screenSize.width - popupSize) / 2,
+                    y = (screenSize.height - popupSize) / 2,
+                ),
+                size = DpSize(popupSize, popupSize),
+            ).toRect().roundToIntRect()
+        }
+        settledPopupFrame.forEachPixelInRect(expectedPopupBounds, step = 4) { _, _, color ->
+            assertEquals(Color.Red, color, "Popup content was not drawn at its expected position")
         }
     }
 
