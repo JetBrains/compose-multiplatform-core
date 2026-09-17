@@ -18,4 +18,3 @@ package = androidx.compose.ui.uikit.utils
 language = Objective-C
 compilerOpts = -D_Float16=short
 headerFilter = CMP*
-linkerOpts = -ObjC -rpath /usr/lib/swift -framework Foundation -lc++ -lswiftCore -lswiftFoundation -lswiftCoreFoundation -lswiftDispatch -lswiftObjectiveC -lswiftXPC -lswift_Builtin_float -lswift_Concurrency
