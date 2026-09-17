@@ -17,6 +17,7 @@
 package androidx.compose.mpp.demo
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -64,7 +65,13 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.LinearGradientShader
+import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ComposeViewport
 import androidx.compose.ui.zIndex
@@ -92,9 +99,11 @@ private val PixelixColors =
  *
  * `?demo=snapshotCachePixelixBenchmark&snapshotCache=true&autoRun=true`
  *
- * `dynamicMedia=true` animates one visible media item per timeline. `clips=false` removes the
- * numerous rounded clips, while `nestedPager=false` replaces each post's media pager with one media
- * node. With `waitForProfiler=true`, use the on-page buttons to delimit the measured run.
+ * `dynamicMedia=true` animates media in the first `dynamicPosts` posts per timeline. `clips=false`
+ * removes the numerous rounded clips, while `nestedPager=false` replaces each post's media pager
+ * with one media node. `imageBitmapSize=1024` gives each visible media node a retained raster
+ * image, and `offscreenMedia=true` forces the media through a saveLayer-like offscreen buffer. With
+ * `waitForProfiler=true`, use the on-page buttons to delimit the measured run.
  */
 @OptIn(ExperimentalComposeUiApi::class)
 internal fun snapshotCachePixelixBenchmark(
@@ -157,8 +166,11 @@ private fun PixelixBenchmark(configuration: PixelixBenchmarkConfiguration, snaps
                 "posts=${configuration.posts}; columns=${configuration.columns}; " +
                 "detailRows=${configuration.detailRows}; " +
                 "imageComplexity=${configuration.imageComplexity}; " +
-                "dynamicMedia=${configuration.dynamicMedia}; clips=${configuration.clips}; " +
-                "nestedPager=${configuration.nestedPager}; ${configuration.frames} frames"
+                "imageBitmapSize=${configuration.imageBitmapSize}; " +
+                "dynamicMedia=${configuration.dynamicMedia}; " +
+                "dynamicPosts=${configuration.dynamicPosts}; clips=${configuration.clips}; " +
+                "nestedPager=${configuration.nestedPager}; " +
+                "offscreenMedia=${configuration.offscreenMedia}; ${configuration.frames} frames"
         )
         if (configuration.waitForProfiler) {
             PixelixProfilerControls(profilerPhase)
@@ -387,7 +399,10 @@ private fun PixelixMedia(
                 post = post,
                 mediaPage = mediaPage,
                 configuration = configuration,
-                animationTick = animationTick.takeIf { configuration.dynamicMedia && post == 0 },
+                animationTick =
+                    animationTick.takeIf {
+                        configuration.dynamicMedia && post < configuration.dynamicPosts
+                    },
                 drawCounter = drawCounter,
             )
         }
@@ -397,7 +412,10 @@ private fun PixelixMedia(
             post = post,
             mediaPage = 0,
             configuration = configuration,
-            animationTick = animationTick.takeIf { configuration.dynamicMedia && post == 0 },
+            animationTick =
+                animationTick.takeIf {
+                    configuration.dynamicMedia && post < configuration.dynamicPosts
+                },
             drawCounter = drawCounter,
             modifier = Modifier.fillMaxWidth().height((190 + post % 3 * 24).dp),
         )
@@ -415,13 +433,34 @@ private fun PixelixMediaTile(
     modifier: Modifier = Modifier.fillMaxSize(),
 ) {
     val shape = RoundedCornerShape(16.dp)
+    val imageBitmap =
+        if (configuration.imageBitmapSize > 0) {
+            remember(timeline, post, mediaPage, configuration.imageBitmapSize) {
+                createPixelixImageBitmap(
+                    size = configuration.imageBitmapSize,
+                    startColor = pixelixColor(timeline + mediaPage, post),
+                    endColor = pixelixColor(timeline + mediaPage + 2, post + 1),
+                )
+            }
+        } else {
+            null
+        }
     Box(
         modifier
             .padding(horizontal = 12.dp)
             .zIndex(2f)
+            .pixelixOffscreen(configuration.offscreenMedia)
             .pixelixClip(configuration.clips, shape)
             .background(Color(0xFFCDD8DF))
     ) {
+        if (imageBitmap != null) {
+            Image(
+                bitmap = imageBitmap,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
         Canvas(
             Modifier.fillMaxSize().drawWithContent {
                 drawCounter.mediaRecordings++
@@ -429,7 +468,9 @@ private fun PixelixMediaTile(
             }
         ) {
             val tick = animationTick?.value ?: 0
-            drawRect(pixelixColor(timeline + mediaPage, post))
+            if (imageBitmap == null) {
+                drawRect(pixelixColor(timeline + mediaPage, post))
+            }
             repeat(configuration.imageComplexity) { index ->
                 val stripeHeight = size.height / configuration.imageComplexity
                 val phase = if (animationTick == null) 0 else (tick + index) % 7
@@ -568,6 +609,34 @@ private fun pixelixPercentile(sortedValues: DoubleArray, percentile: Double): Do
 private fun Modifier.pixelixClip(enabled: Boolean, shape: Shape): Modifier =
     if (enabled) clip(shape) else this
 
+private fun Modifier.pixelixOffscreen(enabled: Boolean): Modifier =
+    if (enabled) {
+        graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+    } else {
+        this
+    }
+
+private fun createPixelixImageBitmap(size: Int, startColor: Color, endColor: Color): ImageBitmap =
+    ImageBitmap(size, size).apply {
+        androidx.compose.ui.graphics
+            .Canvas(this)
+            .drawRect(
+                left = 0f,
+                top = 0f,
+                right = size.toFloat(),
+                bottom = size.toFloat(),
+                paint =
+                    Paint().apply {
+                        shader =
+                            LinearGradientShader(
+                                from = Offset.Zero,
+                                to = Offset(size.toFloat(), size.toFloat()),
+                                colors = listOf(startColor, endColor),
+                            )
+                    },
+            )
+    }
+
 private fun pixelixColor(first: Int, second: Int): Color {
     return PixelixColors[(first * 7 + second * 3).mod(PixelixColors.size)]
 }
@@ -590,9 +659,12 @@ private data class PixelixBenchmarkConfiguration(
     val columns: Int,
     val detailRows: Int,
     val imageComplexity: Int,
+    val imageBitmapSize: Int,
     val dynamicMedia: Boolean,
+    val dynamicPosts: Int,
     val clips: Boolean,
     val nestedPager: Boolean,
+    val offscreenMedia: Boolean,
     val autoRun: Boolean,
     val waitForProfiler: Boolean,
 ) {
@@ -610,9 +682,13 @@ private data class PixelixBenchmarkConfiguration(
                 detailRows = queryParams["detailRows"]?.toIntOrNull()?.coerceIn(0, 20) ?: 4,
                 imageComplexity =
                     queryParams["imageComplexity"]?.toIntOrNull()?.coerceIn(1, 200) ?: 12,
+                imageBitmapSize =
+                    queryParams["imageBitmapSize"]?.toIntOrNull()?.coerceIn(0, 2_048) ?: 0,
                 dynamicMedia = queryParams["dynamicMedia"] == "true",
+                dynamicPosts = queryParams["dynamicPosts"]?.toIntOrNull()?.coerceIn(1, 500) ?: 1,
                 clips = queryParams["clips"] != "false",
                 nestedPager = queryParams["nestedPager"] != "false",
+                offscreenMedia = queryParams["offscreenMedia"] == "true",
                 autoRun = queryParams["autoRun"] == "true",
                 waitForProfiler = queryParams["waitForProfiler"] == "true",
             )
@@ -643,7 +719,7 @@ private data class PixelixBenchmarkResult(
 
     fun toJson(snapshotCache: Boolean): String =
         """
-        {"snapshotCache":$snapshotCache,"frames":$frames,"elapsedMillis":${elapsedMillis.pixelixOneDecimal()},"medianFrameMillis":${medianFrameMillis.pixelixOneDecimal()},"p95FrameMillis":${p95FrameMillis.pixelixOneDecimal()},"p99FrameMillis":${p99FrameMillis.pixelixOneDecimal()},"maxFrameMillis":${maxFrameMillis.pixelixOneDecimal()},"pageWidthsScrolled":${pageWidthsScrolled.toDouble().pixelixOneDecimal()},"timelineRecordings":$timelineRecordings,"postRecordings":$postRecordings,"mediaRecordings":$mediaRecordings,"retainedPages":${configuration.retainedPages},"posts":${configuration.posts},"columns":${configuration.columns},"detailRows":${configuration.detailRows},"imageComplexity":${configuration.imageComplexity},"dynamicMedia":${configuration.dynamicMedia},"clips":${configuration.clips},"nestedPager":${configuration.nestedPager}}
+        {"snapshotCache":$snapshotCache,"frames":$frames,"elapsedMillis":${elapsedMillis.pixelixOneDecimal()},"medianFrameMillis":${medianFrameMillis.pixelixOneDecimal()},"p95FrameMillis":${p95FrameMillis.pixelixOneDecimal()},"p99FrameMillis":${p99FrameMillis.pixelixOneDecimal()},"maxFrameMillis":${maxFrameMillis.pixelixOneDecimal()},"pageWidthsScrolled":${pageWidthsScrolled.toDouble().pixelixOneDecimal()},"timelineRecordings":$timelineRecordings,"postRecordings":$postRecordings,"mediaRecordings":$mediaRecordings,"retainedPages":${configuration.retainedPages},"posts":${configuration.posts},"columns":${configuration.columns},"detailRows":${configuration.detailRows},"imageComplexity":${configuration.imageComplexity},"imageBitmapSize":${configuration.imageBitmapSize},"dynamicMedia":${configuration.dynamicMedia},"dynamicPosts":${configuration.dynamicPosts},"clips":${configuration.clips},"nestedPager":${configuration.nestedPager},"offscreenMedia":${configuration.offscreenMedia}}
         """
             .trimIndent()
 }
