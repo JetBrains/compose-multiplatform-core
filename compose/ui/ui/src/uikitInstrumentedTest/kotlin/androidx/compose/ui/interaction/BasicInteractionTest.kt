@@ -67,7 +67,7 @@ class BasicInteractionTest {
     }
 
     @Test
-    fun testScroll() = runUIKitInstrumentedTest {
+    fun testScroll() = runUIKitInstrumentedTest(useHostingView = false) {
         val state = ScrollState(0)
         var boxRect = DpRect(DpOffset.Zero, DpSize.Zero)
         setContent {

@@ -74,7 +74,7 @@ class DialogInteractionTest {
     }
 
     @Test
-    fun testDialogDismissOnClickOutsideDisabled() = runUIKitInstrumentedTest {
+    fun testDialogDismissOnClickOutsideDisabled() = runUIKitInstrumentedTest(useHostingView = false) {
         var dismissTriggered = false
         setContent {
             Dialog(
@@ -94,7 +94,7 @@ class DialogInteractionTest {
     }
 
     @Test
-    fun testManyDialogsDismissOnClickOutside() = runUIKitInstrumentedTest {
+    fun testManyDialogsDismissOnClickOutside() = runUIKitInstrumentedTest(useHostingView = false) {
         val showDialog1 = mutableStateOf(true)
         val showDialog2 = mutableStateOf(true)
         setContent {
@@ -134,7 +134,7 @@ class DialogInteractionTest {
     }
 
     @Test
-    fun testTextInputFocusInDialog() = runUIKitInstrumentedTest {
+    fun testTextInputFocusInDialog() = runUIKitInstrumentedTest(useHostingView = false) {
         setContent {
             Dialog(onDismissRequest = {}) {
                 TextField("", {}, modifier = Modifier.testTag("TextField"))
@@ -150,7 +150,7 @@ class DialogInteractionTest {
     }
 
     @Test
-    fun testKeyboardHideWhenDialogOpens() = runUIKitInstrumentedTest {
+    fun testKeyboardHideWhenDialogOpens() = runUIKitInstrumentedTest(useHostingView = false) {
         val requester = FocusRequester()
         val showDialog = mutableStateOf(false)
         setContent {
@@ -180,7 +180,7 @@ class DialogInteractionTest {
     }
 
     @Test
-    fun testDialogWithPopupCoexistence() = runUIKitInstrumentedTest {
+    fun testDialogWithPopupCoexistence() = runUIKitInstrumentedTest(useHostingView = false) {
         var showPopup by mutableStateOf(true)
         var showDialog by mutableStateOf(true)
         setContent {
@@ -219,7 +219,7 @@ class DialogInteractionTest {
     }
 
     @Test
-    fun testDialogAbsorbsTouchesWhenDismissDisabled() = runUIKitInstrumentedTest {
+    fun testDialogAbsorbsTouchesWhenDismissDisabled() = runUIKitInstrumentedTest(useHostingView = false) {
         var backgroundButtonClicked = false
         setContent {
             Button(

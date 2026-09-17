@@ -37,7 +37,7 @@ internal class KeepScreenOnModifierTest {
     val isKeepScreenOnEnabled: Boolean get() = UIApplication.sharedApplication.idleTimerDisabled
 
     @Test
-    fun testFlagOnWhenModifierAdded() = runUIKitInstrumentedTest {
+    fun testFlagOnWhenModifierAdded() = runUIKitInstrumentedTest(useHostingView = false) {
         cleanupMemory()
 
         setContent {
@@ -48,7 +48,7 @@ internal class KeepScreenOnModifierTest {
     }
 
     @Test
-    fun testFlagOnWhenModifierAddedAfterInitialComposition() = runUIKitInstrumentedTest {
+    fun testFlagOnWhenModifierAddedAfterInitialComposition() = runUIKitInstrumentedTest(useHostingView = false) {
         cleanupMemory()
 
         var attach by mutableStateOf(false)
@@ -69,7 +69,7 @@ internal class KeepScreenOnModifierTest {
     }
 
     @Test
-    fun testFlagOffWhenModifierRemoved() = runUIKitInstrumentedTest {
+    fun testFlagOffWhenModifierRemoved() = runUIKitInstrumentedTest(useHostingView = false) {
         cleanupMemory()
 
         var attach by mutableStateOf(true)
@@ -90,7 +90,7 @@ internal class KeepScreenOnModifierTest {
     }
 
     @Test
-    fun testFlagOffWhenModifierRemovedWithoutRecreatingElement() = runUIKitInstrumentedTest {
+    fun testFlagOffWhenModifierRemovedWithoutRecreatingElement() = runUIKitInstrumentedTest(useHostingView = false) {
         cleanupMemory()
 
         var enabled by mutableStateOf(true)
@@ -115,7 +115,7 @@ internal class KeepScreenOnModifierTest {
     }
 
     @Test
-    fun testFlagOnWhenModifierReattachedAfterRemoval() = runUIKitInstrumentedTest {
+    fun testFlagOnWhenModifierReattachedAfterRemoval() = runUIKitInstrumentedTest(useHostingView = false) {
         cleanupMemory()
 
         var attach by mutableStateOf(true)
@@ -142,7 +142,7 @@ internal class KeepScreenOnModifierTest {
     }
 
     @Test
-    fun testFlagOffWhenParentRemovedAndModifierInChild() = runUIKitInstrumentedTest {
+    fun testFlagOffWhenParentRemovedAndModifierInChild() = runUIKitInstrumentedTest(useHostingView = false) {
         cleanupMemory()
 
         var attach by mutableStateOf(true)
@@ -167,7 +167,7 @@ internal class KeepScreenOnModifierTest {
     }
 
     @Test
-    fun testFlagOnWhenParentRemovedAndModifierInSibling() = runUIKitInstrumentedTest {
+    fun testFlagOnWhenParentRemovedAndModifierInSibling() = runUIKitInstrumentedTest(useHostingView = false) {
         cleanupMemory()
 
         var attach by mutableStateOf(true)
@@ -193,7 +193,7 @@ internal class KeepScreenOnModifierTest {
     }
 
     @Test
-    fun testFlagOnWhenModifierRemovedInChild() = runUIKitInstrumentedTest {
+    fun testFlagOnWhenModifierRemovedInChild() = runUIKitInstrumentedTest(useHostingView = false) {
         cleanupMemory()
 
         var attach by mutableStateOf(true)
@@ -219,7 +219,7 @@ internal class KeepScreenOnModifierTest {
     }
 
     @Test
-    fun testFlagOnWhenModifierRemovedInSibling() = runUIKitInstrumentedTest {
+    fun testFlagOnWhenModifierRemovedInSibling() = runUIKitInstrumentedTest(useHostingView = false) {
         cleanupMemory()
 
         var attach by mutableStateOf(true)
@@ -243,7 +243,7 @@ internal class KeepScreenOnModifierTest {
     }
 
     @Test
-    fun testFlagOffWhenAllModifiersRemoved() = runUIKitInstrumentedTest {
+    fun testFlagOffWhenAllModifiersRemoved() = runUIKitInstrumentedTest(useHostingView = false) {
         cleanupMemory()
 
         var attach by mutableStateOf(true)
@@ -286,7 +286,7 @@ internal class KeepScreenOnModifierTest {
     }
 
     @Test
-    fun testKeepScreenOnInDialog() = runUIKitInstrumentedTest {
+    fun testKeepScreenOnInDialog() = runUIKitInstrumentedTest(useHostingView = false) {
         cleanupMemory()
 
         var showDialog by mutableStateOf(false)

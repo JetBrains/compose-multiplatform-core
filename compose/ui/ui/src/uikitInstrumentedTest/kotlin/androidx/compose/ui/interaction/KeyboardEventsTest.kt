@@ -181,7 +181,7 @@ class KeyboardEventsTest {
     }
 
     @Test
-    fun textFieldTypesHelloFromPresses() = runUIKitInstrumentedTest {
+    fun textFieldTypesHelloFromPresses() = runUIKitInstrumentedTest(useHostingView = false) {
         val requester = FocusRequester()
         var value by mutableStateOf("")
 
@@ -204,7 +204,7 @@ class KeyboardEventsTest {
     }
 
     @Test
-    fun simulateInterruptedKeyPressEvent() = runUIKitInstrumentedTest {
+    fun simulateInterruptedKeyPressEvent() = runUIKitInstrumentedTest(useHostingView = false) {
         val textFieldRequester = FocusRequester()
         val boxRequester = FocusRequester()
         val keyEvents = mutableListOf<Pair<KeyEventType, Key>>()
@@ -254,7 +254,7 @@ class KeyboardEventsTest {
     }
 
     @Test
-    fun testMultipleKeyDownSimultaneously() = runUIKitInstrumentedTest {
+    fun testMultipleKeyDownSimultaneously() = runUIKitInstrumentedTest(useHostingView = false) {
         val requester = FocusRequester()
         val keyEvents = mutableListOf<Pair<KeyEventType, Key>>()
 

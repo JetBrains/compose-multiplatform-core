@@ -65,7 +65,7 @@ import platform.UIKit.UIInterfaceOrientationPortraitUpsideDown
 
 class WindowInsetsPaddingTest {
     @Test
-    fun testComposableNotRecomposedOnWindowInsetsImeChange() = runUIKitInstrumentedTest {
+    fun testComposableNotRecomposedOnWindowInsetsImeChange() = runUIKitInstrumentedTest(useHostingView = false) {
         var compositionCount = 0
 
         setContent {
@@ -188,7 +188,7 @@ class WindowInsetsPaddingTest {
     }
 
     @Test
-    fun testContentNotRecomposedWhenContainerRecomposed() = runUIKitInstrumentedTest {
+    fun testContentNotRecomposedWhenContainerRecomposed() = runUIKitInstrumentedTest(useHostingView = false) {
         var forceRecomposition by mutableStateOf(0)
         val recomposed = mutableStateOf(false)
 

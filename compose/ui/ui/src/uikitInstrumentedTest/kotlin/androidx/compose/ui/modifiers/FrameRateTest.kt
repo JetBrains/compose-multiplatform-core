@@ -41,7 +41,7 @@ import kotlin.test.assertNotNull
 internal class FrameRateTest {
 
     @Test
-    fun testLowFrameRates() = runUIKitInstrumentedTest {
+    fun testLowFrameRates() = runUIKitInstrumentedTest(useHostingView = false) {
         val frameRates = listOf(5f, 10f, 30f, 60f)
 
         animationSpeed = UIKitInstrumentedTest.RealAnimationSpeed

@@ -83,7 +83,7 @@ class SelectionContainerInteractionTest {
     }
 
     @Test
-    fun testSelectionContainer_DoubleTapSelectsWord() = runUIKitInstrumentedTest {
+    fun testSelectionContainer_DoubleTapSelectsWord() = runUIKitInstrumentedTest(useHostingView = false) {
         val selectionState = SelectionState()
         val text = "accomplishment"
 
@@ -138,7 +138,7 @@ class SelectionContainerInteractionTest {
 
     @Test
     fun testSelectionContainer_LongPressDragExtendsSelectionAcrossLines() =
-        runUIKitInstrumentedTest {
+        runUIKitInstrumentedTest(useHostingView = false) {
             val selectionState = SelectionState()
             val firstLine = "accomplishment"
 
@@ -172,7 +172,7 @@ class SelectionContainerInteractionTest {
 
     @Test
     fun testSelectionContainer_LongPressDragExtendsSelectionAcrossMultipleBasicTexts() =
-        runUIKitInstrumentedTest {
+        runUIKitInstrumentedTest(useHostingView = false) {
             val selectionState = SelectionState()
             val firstText = "accomplishment"
             val secondText = "magnificent"
@@ -209,7 +209,7 @@ class SelectionContainerInteractionTest {
 
     @Test
     fun testSelectionContainer_LongPressDragSkipsDisableSelectionSubtree() =
-        runUIKitInstrumentedTest {
+        runUIKitInstrumentedTest(useHostingView = false) {
             val selectionState = SelectionState()
             val textBeforeDisabled = "accomplishment"
             val textAfterDisabled = "remarkable"

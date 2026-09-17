@@ -134,7 +134,7 @@ internal class ScrollTest {
     }
 
     @Test
-    fun testExactTouchSlopDragWithCustomDensityInDialog() = runUIKitInstrumentedTest {
+    fun testExactTouchSlopDragWithCustomDensityInDialog() = runUIKitInstrumentedTest(useHostingView = false) {
         val state = ScrollState(0)
         var boxRect = DpRectZero()
 
@@ -185,7 +185,7 @@ internal class ScrollTest {
      * in a vertically scrollable Column.
      **/
     @Test
-    fun testJustOverTouchSlopDrag() = runUIKitInstrumentedTest {
+    fun testJustOverTouchSlopDrag() = runUIKitInstrumentedTest(useHostingView = false) {
         val state = ScrollState(0)
         var boxRect = DpRectZero()
 
@@ -218,7 +218,7 @@ internal class ScrollTest {
     }
 
     @Test
-    fun testJustOverTouchSlopDragWithCustomDensityInDialog() = runUIKitInstrumentedTest {
+    fun testJustOverTouchSlopDragWithCustomDensityInDialog() = runUIKitInstrumentedTest(useHostingView = false) {
         val state = ScrollState(0)
         var boxRect = DpRectZero()
 
@@ -266,7 +266,7 @@ internal class ScrollTest {
     }
 
     @Test
-    fun testTopOverscrollDragResistance() = runUIKitInstrumentedTest {
+    fun testTopOverscrollDragResistance() = runUIKitInstrumentedTest(useHostingView = false) {
         val state = ScrollState(0)
         var boxRect = DpRectZero()
 
@@ -320,7 +320,7 @@ internal class ScrollTest {
     }
 
     @Test
-    fun testBottomOverscrollDragResistance() = runUIKitInstrumentedTest {
+    fun testBottomOverscrollDragResistance() = runUIKitInstrumentedTest(useHostingView = false) {
         val state = ScrollState(0)
         val boxHeight = 100.dp
         var boxRect = DpRectZero()
@@ -381,7 +381,7 @@ internal class ScrollTest {
     }
 
     @Test
-    fun testOverscrollAndFling() = runUIKitInstrumentedTest {
+    fun testOverscrollAndFling() = runUIKitInstrumentedTest(useHostingView = false) {
         val state = ScrollState(0)
         val boxHeight = 100.0
         var boxRect = DpRectZero()
@@ -435,7 +435,7 @@ internal class ScrollTest {
      * don't trigger scrolling behavior in a vertically scrollable Column.
      */
     @Test
-    fun testNotScrollingForSmallDrag() = runUIKitInstrumentedTest {
+    fun testNotScrollingForSmallDrag() = runUIKitInstrumentedTest(useHostingView = false) {
         val state = ScrollState(0)
         var boxRect = DpRectZero()
 
@@ -481,7 +481,7 @@ internal class ScrollTest {
     }
 
     @Test
-    fun testOverscrollForContentSmallerThanScreenSize() = runUIKitInstrumentedTest {
+    fun testOverscrollForContentSmallerThanScreenSize() = runUIKitInstrumentedTest(useHostingView = false) {
         val state = ScrollState(0)
         var boxRect = DpRectZero()
 
@@ -513,7 +513,7 @@ internal class ScrollTest {
     }
 
     @Test
-    fun testOverscrollForContentSizeOfScreenSize() = runUIKitInstrumentedTest {
+    fun testOverscrollForContentSizeOfScreenSize() = runUIKitInstrumentedTest(useHostingView = false) {
         val state = ScrollState(0)
         var boxRect = DpRectZero()
 
@@ -540,7 +540,7 @@ internal class ScrollTest {
     }
 
     @Test
-    fun testHorizontalScrollWithRTL() = runUIKitInstrumentedTest {
+    fun testHorizontalScrollWithRTL() = runUIKitInstrumentedTest(useHostingView = false) {
         val itemSize = 150
         val lazyRowState = LazyListState()
         val totalScrollOffset = { lazyRowState.firstVisibleItemIndex * itemSize + lazyRowState.firstVisibleItemScrollOffset }
@@ -564,7 +564,7 @@ internal class ScrollTest {
     }
 
     @Test
-    fun testHorizontalScrollWithLTR() = runUIKitInstrumentedTest {
+    fun testHorizontalScrollWithLTR() = runUIKitInstrumentedTest(useHostingView = false) {
         val itemSize = 150
         val lazyRowState = LazyListState()
         val totalScrollOffset = { lazyRowState.firstVisibleItemIndex * itemSize + lazyRowState.firstVisibleItemScrollOffset }
@@ -588,7 +588,7 @@ internal class ScrollTest {
     }
 
     @Test
-    fun testHorizontalOverscrollWithRTL() = runUIKitInstrumentedTest {
+    fun testHorizontalOverscrollWithRTL() = runUIKitInstrumentedTest(useHostingView = false) {
         val itemSize = 150
         val itemCount = 20
         val lazyRowState = LazyListState()
@@ -620,7 +620,7 @@ internal class ScrollTest {
     }
 
     @Test
-    fun testHorizontalOverscrollWithLTR() = runUIKitInstrumentedTest {
+    fun testHorizontalOverscrollWithLTR() = runUIKitInstrumentedTest(useHostingView = false) {
         val itemSize = 150
         val lazyRowState = LazyListState()
         val totalScrollOffset = { lazyRowState.firstVisibleItemIndex * itemSize + lazyRowState.firstVisibleItemScrollOffset }
@@ -988,7 +988,7 @@ internal class ScrollTest {
     }
 
     @Test
-    fun testMultiTouchScroll() = runUIKitInstrumentedTest {
+    fun testMultiTouchScroll() = runUIKitInstrumentedTest(useHostingView = false) {
         val state1 = ScrollState(0)
         val state2 = ScrollState(0)
         setContent {

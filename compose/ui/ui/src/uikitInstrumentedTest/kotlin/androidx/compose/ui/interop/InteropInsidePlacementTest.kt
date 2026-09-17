@@ -77,7 +77,7 @@ class InteropInsidePlacementTest {
     }
 
     @Test
-    fun testInteropViewsOverlayOrder() = runUIKitInstrumentedTest {
+    fun testInteropViewsOverlayOrder() = runUIKitInstrumentedTest(useHostingView = false) {
         val overlayInteropView = UIView()
         val dynamicInteropView = UIView()
         val backgroundInteropView = UIView()

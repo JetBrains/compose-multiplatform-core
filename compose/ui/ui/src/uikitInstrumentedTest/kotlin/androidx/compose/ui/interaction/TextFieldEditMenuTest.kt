@@ -157,7 +157,7 @@ class TextFieldEditMenuTest {
     }
 
     @Test
-    fun testBasicTextFieldToolbarInteraction() = runUIKitInstrumentedTest {
+    fun testBasicTextFieldToolbarInteraction() = runUIKitInstrumentedTest(useHostingView = false) {
         val textFieldValue = mutableStateOf(TextFieldValue("Hello-LongLongLongLongLongLong-text"))
         setContent {
             val focusRequester = remember { FocusRequester() }
@@ -217,7 +217,7 @@ class TextFieldEditMenuTest {
     }
 
     @Test
-    fun testBasicTextFieldLongPressShowsContextMenu() = runUIKitInstrumentedTest {
+    fun testBasicTextFieldLongPressShowsContextMenu() = runUIKitInstrumentedTest(useHostingView = false) {
         UIPasteboard.generalPasteboard().string = "Paste text"
         val textFieldValue = mutableStateOf(TextFieldValue("Text", TextRange(4,4)))
         setContent {
@@ -252,7 +252,7 @@ class TextFieldEditMenuTest {
     }
 
     @Test
-    fun testBasicTextField2LongPressShowsContextMenu() = runUIKitInstrumentedTest {
+    fun testBasicTextField2LongPressShowsContextMenu() = runUIKitInstrumentedTest(useHostingView = false) {
         UIPasteboard.generalPasteboard().string = "Paste text"
         val textFieldState = TextFieldState("Text", TextRange(4,4))
         setContent {
@@ -459,7 +459,7 @@ class TextFieldEditMenuTest {
         }
 
     @Test
-    fun testTapsCountingWithMultiTouch() = runUIKitInstrumentedTest {
+    fun testTapsCountingWithMultiTouch() = runUIKitInstrumentedTest(useHostingView = false) {
         var touchesDown = 0
         var touchesUp = 0
 
@@ -517,7 +517,7 @@ class TextFieldEditMenuTest {
     }
 
     @Test
-    fun testComposePanelClearFocusOnMouseDownEnabledFlag() = runUIKitInstrumentedTest {
+    fun testComposePanelClearFocusOnMouseDownEnabledFlag() = runUIKitInstrumentedTest(useHostingView = false) {
         val focusRequester = FocusRequester()
         var textFieldIsFocused = false
 
@@ -556,7 +556,7 @@ class TextFieldEditMenuTest {
     }
 
     @Test
-    fun testComposePanelClearFocusOnMouseDownDisabledFlag() = runUIKitInstrumentedTest {
+    fun testComposePanelClearFocusOnMouseDownDisabledFlag() = runUIKitInstrumentedTest(useHostingView = false) {
         val focusRequester = FocusRequester()
         var textFieldIsFocused = false
 

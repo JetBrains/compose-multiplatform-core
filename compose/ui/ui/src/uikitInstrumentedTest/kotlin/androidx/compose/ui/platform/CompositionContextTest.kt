@@ -35,7 +35,7 @@ private val LocalTestValue = staticCompositionLocalOf { "default" }
 class CompositionContextTest {
 
     @Test
-    fun compositionLocalPropagatedIntoPopup() = runUIKitInstrumentedTest {
+    fun compositionLocalPropagatedIntoPopup() = runUIKitInstrumentedTest(useHostingView = false) {
         val providedValue = "root-value"
         var valueInsidePopup: String? = null
 
@@ -75,7 +75,7 @@ class CompositionContextTest {
     }
 
     @Test
-    fun compositionLocalCanBeOverriddenInNestedComposeUIView() = runUIKitInstrumentedTest {
+    fun compositionLocalCanBeOverriddenInNestedComposeUIView() = runUIKitInstrumentedTest(useHostingView = false) {
         val rootValue = "root-value"
         val overriddenValue = "overridden-value"
         var valueAtLevel1: String? = null

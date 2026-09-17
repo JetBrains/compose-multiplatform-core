@@ -142,7 +142,7 @@ internal class InteropInteractionModeTest {
     }
 
     @Test
-    fun testUIButtonNonInteractive() = runUIKitInstrumentedTest { // overlay ->
+    fun testUIButtonNonInteractive() = runUIKitInstrumentedTest(useHostingView = false) { // overlay ->
         var beganCount = 0
         var endedCount = 0
 

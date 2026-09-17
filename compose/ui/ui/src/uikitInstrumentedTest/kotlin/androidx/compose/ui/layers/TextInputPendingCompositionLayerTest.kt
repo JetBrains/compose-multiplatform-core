@@ -102,7 +102,7 @@ class TextInputPendingCompositionLayerTest {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Test
-    fun modalBottomSheetCanOpenWhenPendingTextIsCommitted() = runUIKitInstrumentedTest {
+    fun modalBottomSheetCanOpenWhenPendingTextIsCommitted() = runUIKitInstrumentedTest(useHostingView = false) {
         var text by mutableStateOf("")
         var showSheet by mutableStateOf(false)
         var textInput: UITextInputProtocol? = null

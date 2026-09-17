@@ -28,7 +28,7 @@ import kotlin.test.Test
 class LayersAccessibilityTest {
 
     @Test
-    fun testNodesCoveredByPopup() = runUIKitInstrumentedTest {
+    fun testNodesCoveredByPopup() = runUIKitInstrumentedTest(useHostingView = false) {
         val topPopup = mutableStateOf(false)
         val bottomPopup = mutableStateOf(false)
         val topPopupFocusable = mutableStateOf(false)
@@ -133,7 +133,7 @@ class LayersAccessibilityTest {
     }
 
     @Test
-    fun testLayersAppearanceOrder() = runUIKitInstrumentedTest {
+    fun testLayersAppearanceOrder() = runUIKitInstrumentedTest(useHostingView = false) {
         val bottomLayer = mutableStateOf(false)
         val middleLayers = mutableStateOf(false)
         setContent {

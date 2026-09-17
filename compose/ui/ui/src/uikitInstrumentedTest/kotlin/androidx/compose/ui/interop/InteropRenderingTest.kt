@@ -38,7 +38,7 @@ import platform.UIKit.UIView
 
 class InteropRenderingTest {
     @Test
-    fun testUIKitViewUpdateInPopupIsRenderedWithoutComposeDraw() = runUIKitInstrumentedTest {
+    fun testUIKitViewUpdateInPopupIsRenderedWithoutComposeDraw() = runUIKitInstrumentedTest(useHostingView = false) {
         val view = UIView()
         val backgroundColor = mutableStateOf(UIColor.redColor)
         var popupDraws = 0

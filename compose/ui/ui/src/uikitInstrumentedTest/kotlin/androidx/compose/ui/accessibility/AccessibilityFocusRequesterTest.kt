@@ -76,7 +76,7 @@ class AccessibilityFocusRequesterTest {
     }
 
     @Test
-    fun testFocusRequesterSelectsFirstFocusableElement() = runUIKitInstrumentedTest {
+    fun testFocusRequesterSelectsFirstFocusableElement() = runUIKitInstrumentedTest(useHostingView = false) {
         val focusRequester = FocusRequester()
 
         setContent {

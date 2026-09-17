@@ -29,7 +29,7 @@ import platform.UIKit.UIUserInterfaceStyle
 class SystemThemeTest {
 
     @Test
-    fun testInitialOverrideUserInterfaceStyleLight() = runUIKitInstrumentedTest {
+    fun testInitialOverrideUserInterfaceStyleLight() = runUIKitInstrumentedTest(useHostingView = false) {
         appDelegate.window?.overrideUserInterfaceStyle = UIUserInterfaceStyle.UIUserInterfaceStyleLight
         var systemTheme: SystemTheme? = null
         setContent {

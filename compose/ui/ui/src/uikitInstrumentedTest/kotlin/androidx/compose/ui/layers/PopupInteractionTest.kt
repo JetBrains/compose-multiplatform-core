@@ -76,7 +76,7 @@ class PopupInteractionTest {
     }
 
     @Test
-    fun testPopupDismissOnClickOutsideDisabled() = runUIKitInstrumentedTest {
+    fun testPopupDismissOnClickOutsideDisabled() = runUIKitInstrumentedTest(useHostingView = false) {
         var dismissTriggered = false
         setContent {
             Popup(
@@ -95,7 +95,7 @@ class PopupInteractionTest {
     }
 
     @Test
-    fun testPopupDismissOnClickOutsideEnabledAndFocusable() = runUIKitInstrumentedTest {
+    fun testPopupDismissOnClickOutsideEnabledAndFocusable() = runUIKitInstrumentedTest(useHostingView = false) {
         var dismissTriggered = false
         setContent {
             Popup(
@@ -117,7 +117,7 @@ class PopupInteractionTest {
     }
 
     @Test
-    fun testPopupDismissOnClickOutsideDisabledAndFocusable() = runUIKitInstrumentedTest {
+    fun testPopupDismissOnClickOutsideDisabledAndFocusable() = runUIKitInstrumentedTest(useHostingView = false) {
         var dismissTriggered = false
         setContent {
             Popup(
@@ -139,7 +139,7 @@ class PopupInteractionTest {
     }
 
     @Test
-    fun testManyPopupsDismissOnClickOutside() = runUIKitInstrumentedTest {
+    fun testManyPopupsDismissOnClickOutside() = runUIKitInstrumentedTest(useHostingView = false) {
         var dismiss1Triggered = false
         var dismiss2Triggered = false
         var dismiss3Triggered = false
@@ -170,7 +170,7 @@ class PopupInteractionTest {
     }
 
     @Test
-    fun testManyPopupsBelowFocusableDismissOnClickOutside() = runUIKitInstrumentedTest {
+    fun testManyPopupsBelowFocusableDismissOnClickOutside() = runUIKitInstrumentedTest(useHostingView = false) {
         var dismiss1Triggered = false
         var dismiss2Triggered = false
         var dismiss3Triggered = false
@@ -236,7 +236,7 @@ class PopupInteractionTest {
     }
 
     @Test
-    fun testNonFocusablePopupInteraction() = runUIKitInstrumentedTest {
+    fun testNonFocusablePopupInteraction() = runUIKitInstrumentedTest(useHostingView = false) {
         var contentButtonClicked = false
         var popupButtonClicked = false
         setContent {
@@ -265,7 +265,7 @@ class PopupInteractionTest {
     }
 
     @Test
-    fun testBlockingNonFocusablePopupBlocksContentInteraction() = runUIKitInstrumentedTest {
+    fun testBlockingNonFocusablePopupBlocksContentInteraction() = runUIKitInstrumentedTest(useHostingView = false) {
         var contentButtonClicked = false
         var popupButtonClicked = false
         setContent {
@@ -299,7 +299,7 @@ class PopupInteractionTest {
     }
 
     @Test
-    fun testNonBlockingFocusablePopupAllowsContentInteraction() = runUIKitInstrumentedTest {
+    fun testNonBlockingFocusablePopupAllowsContentInteraction() = runUIKitInstrumentedTest(useHostingView = false) {
         var contentButtonClicked = false
         var popupButtonClicked = false
         setContent {
@@ -332,7 +332,7 @@ class PopupInteractionTest {
     }
 
     @Test
-    fun testTextInputFocusInPopup() = runUIKitInstrumentedTest {
+    fun testTextInputFocusInPopup() = runUIKitInstrumentedTest(useHostingView = false) {
         setContent {
             Popup(alignment = Alignment.Center, properties = PopupProperties(focusable = true)) {
                 TextField("", {}, modifier = Modifier.testTag("TextField"))
@@ -348,7 +348,7 @@ class PopupInteractionTest {
     }
 
     @Test
-    fun testKeyboardHidesWhenFocusablePopupOpens() = runUIKitInstrumentedTest {
+    fun testKeyboardHidesWhenFocusablePopupOpens() = runUIKitInstrumentedTest(useHostingView = false) {
         val requester = FocusRequester()
         val showDialog = mutableStateOf(false)
         setContent {
@@ -379,7 +379,7 @@ class PopupInteractionTest {
     }
 
     @Test
-    fun testKeyboardNotHidesWhenNonFocusablePopupOpens() = runUIKitInstrumentedTest {
+    fun testKeyboardNotHidesWhenNonFocusablePopupOpens() = runUIKitInstrumentedTest(useHostingView = false) {
         val requester = FocusRequester()
         val showDialog = mutableStateOf(false)
         setContent {
@@ -411,7 +411,7 @@ class PopupInteractionTest {
     }
 
     @Test
-    fun testPopupDismissByClickingOnAnotherPopup() = runUIKitInstrumentedTest {
+    fun testPopupDismissByClickingOnAnotherPopup() = runUIKitInstrumentedTest(useHostingView = false) {
         var showPopup1 by mutableStateOf(true)
         var showPopup2 by mutableStateOf(false)
         setContent {
@@ -465,7 +465,7 @@ class PopupInteractionTest {
     }
 
     @Test
-    fun testTapInsidePopupDoesNotDismiss() = runUIKitInstrumentedTest {
+    fun testTapInsidePopupDoesNotDismiss() = runUIKitInstrumentedTest(useHostingView = false) {
         var dismissTriggered = false
         setContent {
             Popup(
@@ -484,7 +484,7 @@ class PopupInteractionTest {
     }
 
     @Test
-    fun testNonFocusablePopupDoesNotBlockFocusablePopupDismiss() = runUIKitInstrumentedTest {
+    fun testNonFocusablePopupDoesNotBlockFocusablePopupDismiss() = runUIKitInstrumentedTest(useHostingView = false) {
         var dismissFocusableTriggered = false
         var dismissNonFocusableTriggered = false
         setContent {

@@ -36,7 +36,7 @@ import platform.UIKit.UITextInputProtocol
 
 class TextFieldFocusOrderTest {
     @Test
-    fun testModalTextFieldsFocusOnDialogAppear() = runUIKitInstrumentedTest {
+    fun testModalTextFieldsFocusOnDialogAppear() = runUIKitInstrumentedTest(useHostingView = false) {
         val dialogFocusRequester = FocusRequester()
 
         setContent {
@@ -54,7 +54,7 @@ class TextFieldFocusOrderTest {
     }
 
     @Test
-    fun testModalTextFieldsRefocus() = runUIKitInstrumentedTest {
+    fun testModalTextFieldsRefocus() = runUIKitInstrumentedTest(useHostingView = false) {
         val showDialog1 = mutableStateOf(false)
         val showDialog2 = mutableStateOf(false)
         val focusRequester0 = FocusRequester()
@@ -162,7 +162,7 @@ class TextFieldFocusOrderTest {
     }
 
     @Test
-    fun testFocusReleaseWhenDialogOnTop() = runUIKitInstrumentedTest {
+    fun testFocusReleaseWhenDialogOnTop() = runUIKitInstrumentedTest(useHostingView = false) {
         val focusRequester1 = FocusRequester()
         val focusRequester2 = FocusRequester()
         val showDialog = mutableStateOf(false)

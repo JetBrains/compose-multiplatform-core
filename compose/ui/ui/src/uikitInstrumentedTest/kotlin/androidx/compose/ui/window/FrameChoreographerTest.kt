@@ -54,7 +54,7 @@ class FrameChoreographerTest {
     }
 
     @Test
-    fun testOngoingInteractionEventsKeepChoreographerTicking() = runUIKitInstrumentedTest {
+    fun testOngoingInteractionEventsKeepChoreographerTicking() = runUIKitInstrumentedTest(useHostingView = false) {
         setContent { Box(Modifier.fillMaxSize()) }
         val choreographer = frameChoreographer
         assertNotNull(choreographer, "frameChoreographer is null")
@@ -88,7 +88,7 @@ class FrameChoreographerTest {
     }
 
     @Test
-    fun testDisplayLinkAndOutOfFrameCallbacksArePaired() = runUIKitInstrumentedTest {
+    fun testDisplayLinkAndOutOfFrameCallbacksArePaired() = runUIKitInstrumentedTest(useHostingView = false) {
         setContent { Box(Modifier.fillMaxSize()) }
         val choreographer = frameChoreographer
         assertNotNull(choreographer, "frameChoreographer is null")
@@ -118,7 +118,7 @@ class FrameChoreographerTest {
     }
 
     @Test
-    fun testRemovedListenerStopsReceivingCallbacks() = runUIKitInstrumentedTest {
+    fun testRemovedListenerStopsReceivingCallbacks() = runUIKitInstrumentedTest(useHostingView = false) {
         setContent { Box(Modifier.fillMaxSize()) }
         val choreographer = frameChoreographer
         assertNotNull(choreographer, "frameChoreographer is null")

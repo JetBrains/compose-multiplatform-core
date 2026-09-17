@@ -92,7 +92,7 @@ class HapticFeedbackSelectionTest {
     }
 
     @Test
-    fun testBasicTextFieldValue_LongPress_TriggersHapticFeedback() = runUIKitInstrumentedTest {
+    fun testBasicTextFieldValue_LongPress_TriggersHapticFeedback() = runUIKitInstrumentedTest(useHostingView = false) {
         val hapticFeedback = TestHapticFeedback()
         var textFieldValue by mutableStateOf(TextFieldValue("Hello World"))
 
@@ -126,7 +126,7 @@ class HapticFeedbackSelectionTest {
     }
 
     @Test
-    fun testBasicTextFieldValue_DoubleTap_DoesNotTriggerHaptic() = runUIKitInstrumentedTest {
+    fun testBasicTextFieldValue_DoubleTap_DoesNotTriggerHaptic() = runUIKitInstrumentedTest(useHostingView = false) {
         val hapticFeedback = TestHapticFeedback()
         var textFieldValue by mutableStateOf(TextFieldValue("Hello-LongLongLongLongLongLong-text"))
         val focusRequester = FocusRequester()
@@ -194,7 +194,7 @@ class HapticFeedbackSelectionTest {
     }
 
     @Test
-    fun testBasicTextFieldState_DoubleTap_DoesNotTriggerHaptic() = runUIKitInstrumentedTest {
+    fun testBasicTextFieldState_DoubleTap_DoesNotTriggerHaptic() = runUIKitInstrumentedTest(useHostingView = false) {
         val hapticFeedback = TestHapticFeedback()
         val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
         val focusRequester = FocusRequester()
@@ -227,7 +227,7 @@ class HapticFeedbackSelectionTest {
     }
 
     @Test
-    fun testSelectionContainer_LongPress_TriggersHapticFeedback() = runUIKitInstrumentedTest {
+    fun testSelectionContainer_LongPress_TriggersHapticFeedback() = runUIKitInstrumentedTest(useHostingView = false) {
         val hapticFeedback = TestHapticFeedback()
 
         setContent {
@@ -262,7 +262,7 @@ class HapticFeedbackSelectionTest {
     }
 
     @Test
-    fun testSelectionContainer_DoubleTap_DoesNotTriggerHaptic() = runUIKitInstrumentedTest {
+    fun testSelectionContainer_DoubleTap_DoesNotTriggerHaptic() = runUIKitInstrumentedTest(useHostingView = false) {
         val hapticFeedback = TestHapticFeedback()
 
         setContent {
