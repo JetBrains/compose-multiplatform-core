@@ -620,7 +620,7 @@ class WindowTest {
             Window(
                 onCloseRequest = { },
                 initialSize = DpSize(Dp.Unspecified, Dp.Unspecified),
-                decoration = WindowDecoration.Undecorated(),
+                decoration = windowDecorationFromFlag(undecorated = true),
                 resizable = true,
             ) {
                 window = this.window

@@ -254,10 +254,18 @@ object LinuxApplication : Application {
 
     @ExperimentalComposeUiApi
     internal var customTitleBarLayout:
-        Pair<List<WindowDecoration.TitleBarElement>, List<WindowDecoration.TitleBarElement>>? by mutableStateOf(
-        null,
+        Pair<List<WindowDecoration.TitleBarElement>, List<WindowDecoration.TitleBarElement>> by mutableStateOf(
+        Pair(
+            listOf(WindowDecoration.TitleBarElement.Icon),
+            listOf(
+                WindowDecoration.TitleBarElement.MinimizeButton,
+                WindowDecoration.TitleBarElement.MaximizeButton,
+                WindowDecoration.TitleBarElement.CloseButton,
+            ),
+        ),
     )
         private set
+
     internal var titleBarDoubleClickAction: DesktopTitlebarAction by mutableStateOf(
         DesktopTitlebarAction.ToggleMaximize,
     )

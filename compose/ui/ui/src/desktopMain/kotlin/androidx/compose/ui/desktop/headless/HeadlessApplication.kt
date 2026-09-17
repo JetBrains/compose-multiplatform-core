@@ -556,9 +556,8 @@ object HeadlessApplication : Application {
     fun sendWindowDecorationChange(
         windowId: LightweightWindowId,
         decoration: WindowDecoration,
-        customTitleBarInsets: Pair<Dp, Dp>? = null,
     ) {
-        sendWindowEvent(Event.WindowDecorationChange(windowId, decoration, customTitleBarInsets))
+        sendWindowEvent(Event.WindowDecorationChange(windowId, decoration))
     }
 
     fun sendThemeChange(windowId: LightweightWindowId, systemTheme: SystemTheme) {
