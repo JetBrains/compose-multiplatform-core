@@ -83,7 +83,6 @@ import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.SubcomposeLayoutState
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -159,7 +158,6 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 import kotlin.test.assertIs
 import kotlin.test.assertNull
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.hamcrest.CoreMatchers.endsWith
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.instanceOf
@@ -175,7 +173,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class AndroidViewTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     private val setDurationScale =
         ValueAnimator::class.java.getDeclaredMethod("setDurationScale", Float::class.java).apply {
@@ -240,7 +238,7 @@ class AndroidViewTest {
             )
         }
         // the first drawn was not caused by invalidation, thus add it to expected draw count.
-        var expectedDraws = timesToInvalidate + 1
+        val expectedDraws = timesToInvalidate + 1
         repeat(expectedDraws) { rule.mainClock.advanceTimeByFrame() }
 
         // Ensure we wait until the time advancement actually happened as sometimes we can race if
@@ -1838,7 +1836,6 @@ class AndroidViewTest {
         var topInset = 0
         var outerTopInset = 0
         var latch = CountDownLatch(1)
-        var isAnimating = false
         lateinit var composeView: ComposeView
 
         rule.setContent {
@@ -1860,11 +1857,14 @@ class AndroidViewTest {
                         ComposeView(context).apply {
                             setContent {
                                 val systemBars = WindowInsets.systemBars
-                                val density = LocalDensity.current
                                 Box(
-                                    Modifier.fillMaxSize().onPlaced {
-                                        topInset = systemBars.getTop(density)
-                                        latch.countDown()
+                                    Modifier.fillMaxSize().layout { m, c ->
+                                        val p = m.measure(c)
+                                        layout(p.width, p.height) {
+                                            p.place(0, 0)
+                                            topInset = systemBars.getTop(this)
+                                            latch.countDown()
+                                        }
                                     }
                                 )
                                 Box(Modifier.fillMaxSize().systemBarsPadding())
@@ -1874,31 +1874,6 @@ class AndroidViewTest {
                 )
                 Box(Modifier.fillMaxSize().background(Color.White).safeContentPadding())
             }
-        }
-
-        rule.runOnIdle {
-            ViewCompat.setWindowInsetsAnimationCallback(
-                composeView.parent as View,
-                object : Callback(DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
-                    override fun onProgress(
-                        insets: WindowInsetsCompat,
-                        runningAnimations: MutableList<WindowInsetsAnimationCompat>,
-                    ): WindowInsetsCompat = insets
-
-                    override fun onStart(
-                        animation: WindowInsetsAnimationCompat,
-                        bounds: BoundsCompat,
-                    ): BoundsCompat {
-                        isAnimating = true
-                        return super.onStart(animation, bounds)
-                    }
-
-                    override fun onEnd(animation: WindowInsetsAnimationCompat) {
-                        isAnimating = false
-                        super.onEnd(animation)
-                    }
-                },
-            )
         }
 
         rule.waitForIdle()
@@ -1915,8 +1890,7 @@ class AndroidViewTest {
 
         // For some reason, the status bar insets animate to the target
         // value on older SDKs
-        rule.waitForIdle()
-        rule.waitUntil { !isAnimating }
+        rule.waitUntil { topInset == outerTopInset - 5 }
 
         rule.runOnIdle { assertThat(topInset).isEqualTo(outerTopInset - 5) }
     }
@@ -1956,7 +1930,6 @@ class AndroidViewTest {
                         ComposeView(context).apply {
                             setContent {
                                 val systemBars = WindowInsets.systemBars
-                                val density = LocalDensity.current
                                 val sizeModifier =
                                     if (childUsesMaxSize) {
                                         Modifier.fillMaxSize()
@@ -1965,10 +1938,14 @@ class AndroidViewTest {
                                     }
                                 Box(
                                     sizeModifier
-                                        .onPlaced {
-                                            topInset = systemBars.getTop(density)
-                                            bottomInset = systemBars.getBottom(density)
-                                            latch.countDown()
+                                        .layout { m, c ->
+                                            val p = m.measure(c)
+                                            layout(p.width, p.height) {
+                                                p.place(0, 0)
+                                                topInset = systemBars.getTop(this)
+                                                bottomInset = systemBars.getBottom(this)
+                                                latch.countDown()
+                                            }
                                         }
                                         .background(Color.White)
                                 )
@@ -2057,11 +2034,14 @@ class AndroidViewTest {
                                 ComposeView(context).apply {
                                     setContent {
                                         val systemBars = WindowInsets.systemBars
-                                        val density = LocalDensity.current
                                         Box(
-                                            Modifier.fillMaxSize().onPlaced {
-                                                topInset = systemBars.getTop(density)
-                                                latch.countDown()
+                                            Modifier.fillMaxSize().layout { m, c ->
+                                                val p = m.measure(c)
+                                                layout(p.width, p.height) {
+                                                    p.place(0, 0)
+                                                    topInset = systemBars.getTop(this)
+                                                    latch.countDown()
+                                                }
                                             }
                                         )
                                         Box(Modifier.fillMaxSize().systemBarsPadding())

@@ -37,6 +37,7 @@ import kotlin.test.Test
 @OptIn(ExperimentalTestApi::class)
 class LazyGridsIndexedTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun lazyVerticalGridShowsIndexedItems() = runSkikoComposeUiTest {
         val items = (1..4).map { it.toString() }
@@ -64,6 +65,7 @@ class LazyGridsIndexedTest {
             .assertDoesNotExist()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun verticalGridWithIndexesComposedWithCorrectIndexAndItem() = runSkikoComposeUiTest {
         val items = (0..1).map { it.toString() }

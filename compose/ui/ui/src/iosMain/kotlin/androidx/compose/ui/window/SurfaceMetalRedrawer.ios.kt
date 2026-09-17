@@ -20,8 +20,8 @@ import androidx.collection.IntIntPair
 import androidx.compose.ui.uikit.utils.CMPDrawable
 import androidx.compose.ui.uikit.utils.CMPMetalLayer
 import androidx.compose.ui.util.trace
-import androidx.compose.ui.viewinterop.UIKitInteropAction
-import androidx.compose.ui.viewinterop.UIKitInteropTransaction
+import androidx.compose.ui.viewinterop.InteropSyncAction
+import androidx.compose.ui.viewinterop.InteropSyncTransaction
 import kotlin.math.roundToInt
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.autoreleasepool
@@ -64,7 +64,7 @@ import platform.posix.QOS_CLASS_USER_INTERACTIVE
 // All changes made here must also be implemented in the `LegacyMetalRedrawer`.
 internal class SurfaceMetalRedrawer(
     private val metalLayer: CMPMetalLayer,
-    private var retrieveInteropTransaction: () -> UIKitInteropTransaction,
+    private var retrieveInteropTransaction: () -> InteropSyncTransaction,
     private var draw: (Canvas) -> Unit,
 ): MetalRedrawer {
     private val device = metalLayer.device as? MTLDeviceProtocol
@@ -151,12 +151,7 @@ internal class SurfaceMetalRedrawer(
         check(!isDisposed) { "MetalRedrawer.dispose() was called more than once" }
         isDisposed = true
 
-        retrieveInteropTransaction = {
-            object : UIKitInteropTransaction {
-                override val isInteropActive: Boolean = false
-                override val actions = emptyList<UIKitInteropAction>()
-            }
-        }
+        retrieveInteropTransaction = { InteropSyncTransaction.Empty }
 
         draw = { _ -> }
 
@@ -249,6 +244,15 @@ internal class SurfaceMetalRedrawer(
                 isDrawRecursiveCall = false
             }
         }
+
+    override fun performTransaction(transaction: InteropSyncTransaction) {
+        check(NSThread.isMainThread) {
+            "SurfaceMetalRedrawer.performTransaction() must be called on main thread"
+        }
+        // Preserve ordering with transactions scheduled by previously rendered frames.
+        val index = transactionQueue.scheduleTransaction(transaction)
+        transactionQueue.performScheduledTransactions(index)
+    }
 
     private class Frame(
         val picture: Picture,
@@ -455,7 +459,7 @@ internal class SurfaceMetalRedrawer(
     }
 
     /**
-     * A ring-buffer queue that preserves the order of [UIKitInteropTransaction.performTransaction]
+     * A ring-buffer queue that preserves the order of [InteropSyncTransaction.performTransaction]
      * calls relative to the draw order, even when GPU frames are presented out of order or dropped.
      *
      * When a frame is presented, [performScheduledTransactions] executes all transactions scheduled
@@ -468,10 +472,10 @@ internal class SurfaceMetalRedrawer(
         private val bufferLength = 16
         private var firstScheduledIndex: Long = 0
         private var lastScheduledIndex: Long = 0
-        private val scheduledInteropTransactions = Array<UIKitInteropTransaction?>(bufferLength) { null }
+        private val scheduledInteropSyncTransactions = Array<InteropSyncTransaction?>(bufferLength) { null }
 
-        fun scheduleTransaction(transaction: UIKitInteropTransaction): Long {
-            if (transaction.actions.isEmpty()) {
+        fun scheduleTransaction(transaction: InteropSyncTransaction): Long {
+            if (!transaction.hasPendingActions) {
                 return lastScheduledIndex - 1
             }
             val index = lastScheduledIndex
@@ -480,7 +484,7 @@ internal class SurfaceMetalRedrawer(
                 // Overflow detected. Perform old transactions anyway
                 performScheduledTransactions(firstScheduledIndex)
             }
-            scheduledInteropTransactions[(index % bufferLength).toInt()] = transaction
+            scheduledInteropSyncTransactions[(index % bufferLength).toInt()] = transaction
             return index
         }
 
@@ -488,8 +492,8 @@ internal class SurfaceMetalRedrawer(
             while (firstScheduledIndex <= index && firstScheduledIndex < lastScheduledIndex) {
                 val arrayIndex = (firstScheduledIndex % bufferLength).toInt()
                 firstScheduledIndex++
-                scheduledInteropTransactions[arrayIndex]?.performTransaction()
-                scheduledInteropTransactions[arrayIndex] = null
+                scheduledInteropSyncTransactions[arrayIndex]?.performTransaction()
+                scheduledInteropSyncTransactions[arrayIndex] = null
             }
         }
     }

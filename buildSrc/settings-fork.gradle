@@ -46,4 +46,4 @@ include ":jetpad-integration"
 includeProject(":plugins", "../buildSrc-fork/plugins")
 includeProject(":private", "../buildSrc-fork/private")
 includeProject(":public", "../buildSrc-fork/public")
-
+includeProject(":tests", "../buildSrc-fork/tests")

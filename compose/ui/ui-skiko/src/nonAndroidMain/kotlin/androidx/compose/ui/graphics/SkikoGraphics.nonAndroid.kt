@@ -213,8 +213,9 @@ internal object SkikoGraphics : PlatformGraphics {
         paint.skiaPaint.maskFilter = blur?.maskFilter
     }
 
-    override fun createTintColorFilter(color: Color, blendMode: BlendMode): PlatformColorFilter =
-        SkikoColorFilter(SkColorFilter.makeBlend(color.toArgb(), blendMode.toSkia()))
+    override fun createTintColorFilter(color: Color, blendMode: BlendMode): PlatformColorFilter {
+        return SkikoColorFilter(SkColorFilter.makeBlend(color.toArgb(), blendMode.toSkia()) ?: PassThroughColorFilter)
+    }
 
     override fun createColorMatrixColorFilter(colorMatrix: ColorMatrix): PlatformColorFilter {
         // Skia applies the color-matrix translation column unscaled (0..1) while Compose uses
@@ -307,4 +308,18 @@ private fun validateColorStops(colors: List<Color>, colorStops: List<Float>?) {
             "colors and colorStops arguments must have equal length."
         }
     }
+}
+
+/** Passes every channel through unchanged. */
+private val PassThroughColorFilter by lazy {
+    SkColorFilter.makeMatrix(
+        SkColorMatrix(
+            floatArrayOf(
+                1f, 0f, 0f, 0f, 0f,
+                0f, 1f, 0f, 0f, 0f,
+                0f, 0f, 1f, 0f, 0f,
+                0f, 0f, 0f, 1f, 0f,
+            )
+        )
+    )
 }

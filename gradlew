@@ -67,13 +67,13 @@
 ##############################################################################
 
 # --------- androidx specific code needed for build server. ------------------
-if [ "$PROJECT_MODE" == "AOSP" ]; then
+if [ "$PROJECT_MODE" = "AOSP" ]; then
     SCRIPT_PATH="$(cd $(dirname $0) && pwd -P)"
     if [ -n "$OUT_DIR" ] ; then
         mkdir -p "$OUT_DIR"
         OUT_DIR="$(cd $OUT_DIR && pwd -P)"
         export TMPDIR="$OUT_DIR/tmp"
-    elif [[ $SCRIPT_PATH == /google/cog/* ]] ; then
+    elif [[ $SCRIPT_PATH = /google/cog/* ]] ; then
         export OUT_DIR="$HOME/androidxout"
     else
         CHECKOUT_ROOT="$(cd $SCRIPT_PATH/../.. && pwd -P)"

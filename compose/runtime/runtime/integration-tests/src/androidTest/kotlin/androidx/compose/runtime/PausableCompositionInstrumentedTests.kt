@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,7 +41,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class PausableCompositionInstrumentedTests {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun changeTheKeyUsedInPrecomposition() {
@@ -61,23 +60,22 @@ class PausableCompositionInstrumentedTests {
             }
         }
 
-        val precomposition =
-            rule.runOnIdle {
-                val precomposition =
-                    state.createPausedPrecomposition("precomposition") {
-                        holder.SaveableStateProvider(precompositionKey) {}
-                    }
-
-                while (!precomposition.isComplete) {
-                    precomposition.resume { false }
+        val precomposition = rule.runOnIdle {
+            val precomposition =
+                state.createPausedPrecomposition("precomposition") {
+                    holder.SaveableStateProvider(precompositionKey) {}
                 }
 
-                precompositionKey = "2"
-
-                addSlot = true
-
-                precomposition
+            while (!precomposition.isComplete) {
+                precomposition.resume { false }
             }
+
+            precompositionKey = "2"
+
+            addSlot = true
+
+            precomposition
+        }
 
         rule.runOnIdle {
             while (!precomposition.isComplete) {
@@ -95,21 +93,20 @@ class PausableCompositionInstrumentedTests {
 
         rule.setContent { SubcomposeLayout(state) { layout(10, 10) {} } }
 
-        val precomposition =
-            rule.runOnIdle {
-                val precomposition = state.createPausedPrecomposition(Unit) { composed.add(key) }
-                while (!precomposition.isComplete) {
-                    precomposition.resume { false }
-                }
-
-                assertThat(composed).isEqualTo(listOf("1"))
-                composed.clear()
-
-                // recompose just composed composable (which wasn't yet applied)
-                key = "2"
-
-                precomposition
+        val precomposition = rule.runOnIdle {
+            val precomposition = state.createPausedPrecomposition(Unit) { composed.add(key) }
+            while (!precomposition.isComplete) {
+                precomposition.resume { false }
             }
+
+            assertThat(composed).isEqualTo(listOf("1"))
+            composed.clear()
+
+            // recompose just composed composable (which wasn't yet applied)
+            key = "2"
+
+            precomposition
+        }
 
         rule.runOnIdle {
             // check that recomposition didn't happen on its own.
@@ -133,21 +130,20 @@ class PausableCompositionInstrumentedTests {
         var modifier by mutableStateOf<Modifier>(Modifier)
 
         rule.setContent { SubcomposeLayout(state) { layout(10, 10) {} } }
-        val precomposition =
-            rule.runOnIdle {
-                active = true
-                val precomposition =
-                    state.createPausedPrecomposition(Unit) {
-                        ReusableContentHost(active) {
-                            Layout(modifier) { _, _ -> layout(10, 10) {} }
-                        }
+        val precomposition = rule.runOnIdle {
+            active = true
+            val precomposition =
+                state.createPausedPrecomposition(Unit) {
+                    ReusableContentHost(active) {
+                        Layout(modifier) { _, _ -> layout(10, 10) {} }
                     }
-                precomposition.resume { false }
+                }
+            precomposition.resume { false }
 
-                active = false
+            active = false
 
-                precomposition
-            }
+            precomposition
+        }
 
         rule.runOnIdle {
             precomposition.resume { false }
@@ -185,20 +181,19 @@ class PausableCompositionInstrumentedTests {
             something
             SubcomposeLayout(state) { layout(10, 10) {} }
         }
-        val precomposition =
-            rule.runOnIdle {
-                val precomposition =
-                    state.createPausedPrecomposition(Unit) {
-                        if (emitMovable) {
-                            movableContent()
-                        }
+        val precomposition = rule.runOnIdle {
+            val precomposition =
+                state.createPausedPrecomposition(Unit) {
+                    if (emitMovable) {
+                        movableContent()
                     }
-                precomposition.resume { false }
+                }
+            precomposition.resume { false }
 
-                emitMovable = false
+            emitMovable = false
 
-                precomposition
-            }
+            precomposition
+        }
 
         rule.runOnIdle {
             while (!precomposition.isComplete) {
@@ -219,27 +214,26 @@ class PausableCompositionInstrumentedTests {
                 Box(if (flag) Modifier.background(Color.Red) else Modifier)
             }
         rule.setContent { SubcomposeLayout(state) { layout(10, 10) {} } }
-        val precomposition =
-            rule.runOnIdle {
-                val precomposition =
-                    state.createPausedPrecomposition(Unit) {
+        val precomposition = rule.runOnIdle {
+            val precomposition =
+                state.createPausedPrecomposition(Unit) {
+                    Box {}
+                    if (emitMovable) {
                         Box {}
-                        if (emitMovable) {
+                        movableContent(emitMovable)
+                    } else {
+                        Row {
                             Box {}
                             movableContent(emitMovable)
-                        } else {
-                            Row {
-                                Box {}
-                                movableContent(emitMovable)
-                            }
                         }
                     }
-                precomposition.resume { false }
+                }
+            precomposition.resume { false }
 
-                emitMovable = false
+            emitMovable = false
 
-                precomposition
-            }
+            precomposition
+        }
 
         rule.runOnIdle {
             while (!precomposition.isComplete) {
@@ -272,28 +266,27 @@ class PausableCompositionInstrumentedTests {
         var applyCalls = 0
         var recompositionTrigger by mutableStateOf(Unit, neverEqualPolicy())
 
-        val precomposition =
-            rule.runOnIdle {
-                val precomposition =
-                    state.createPausedPrecomposition(Unit) {
-                        outerCompositionHappened = true
-                        DisposableEffectWrapper(
-                            onComposed = { recompositionTrigger },
-                            onApplied = { applyCalls++ },
-                        )
-                    }
+        val precomposition = rule.runOnIdle {
+            val precomposition =
+                state.createPausedPrecomposition(Unit) {
+                    outerCompositionHappened = true
+                    DisposableEffectWrapper(
+                        onComposed = { recompositionTrigger },
+                        onApplied = { applyCalls++ },
+                    )
+                }
 
-                // resume and pause before composing DisposableEffectWrapper
-                precomposition.resume { outerCompositionHappened }
+            // resume and pause before composing DisposableEffectWrapper
+            precomposition.resume { outerCompositionHappened }
 
-                // continue after the pause
-                precomposition.resume { false }
+            // continue after the pause
+            precomposition.resume { false }
 
-                // trigger recomposition
-                recompositionTrigger = Unit
+            // trigger recomposition
+            recompositionTrigger = Unit
 
-                precomposition
-            }
+            precomposition
+        }
 
         rule.runOnIdle {
             while (!precomposition.isComplete) {
@@ -317,25 +310,24 @@ class PausableCompositionInstrumentedTests {
         var applyCalls = 0
         var key by mutableStateOf("A")
 
-        val precomposition =
-            rule.runOnIdle {
-                val precomposition =
-                    state.createPausedPrecomposition(Unit) {
-                        outerCompositionHappened = true
-                        ReusableContent(key) {
-                            DisposableEffectWrapper(onComposed = {}, onApplied = { applyCalls++ })
-                        }
+        val precomposition = rule.runOnIdle {
+            val precomposition =
+                state.createPausedPrecomposition(Unit) {
+                    outerCompositionHappened = true
+                    ReusableContent(key) {
+                        DisposableEffectWrapper(onComposed = {}, onApplied = { applyCalls++ })
                     }
-                // resume and pause before composing DisposableEffectWrapper
-                precomposition.resume { outerCompositionHappened }
-                // continue after the pause
-                precomposition.resume { false }
+                }
+            // resume and pause before composing DisposableEffectWrapper
+            precomposition.resume { outerCompositionHappened }
+            // continue after the pause
+            precomposition.resume { false }
 
-                // trigger recomposition
-                key = "B"
+            // trigger recomposition
+            key = "B"
 
-                precomposition
-            }
+            precomposition
+        }
 
         rule.runOnIdle {
             while (!precomposition.isComplete) {
@@ -368,28 +360,27 @@ class PausableCompositionInstrumentedTests {
         var recompositionTrigger by mutableStateOf(Unit, neverEqualPolicy())
         var rememberCalls = 0
 
-        val precomposition =
-            rule.runOnIdle {
-                val precomposition =
-                    state.createPausedPrecomposition(Unit) {
-                        outerCompositionHappened = true
-                        RememberWrapper(
-                            onComposed = { recompositionTrigger },
-                            onRemembered = { rememberCalls++ },
-                        )
-                    }
+        val precomposition = rule.runOnIdle {
+            val precomposition =
+                state.createPausedPrecomposition(Unit) {
+                    outerCompositionHappened = true
+                    RememberWrapper(
+                        onComposed = { recompositionTrigger },
+                        onRemembered = { rememberCalls++ },
+                    )
+                }
 
-                // resume and pause before composing DisposableEffectWrapper
-                precomposition.resume { outerCompositionHappened }
+            // resume and pause before composing DisposableEffectWrapper
+            precomposition.resume { outerCompositionHappened }
 
-                // continue after the pause
-                precomposition.resume { false }
+            // continue after the pause
+            precomposition.resume { false }
 
-                // trigger recomposition
-                recompositionTrigger = Unit
+            // trigger recomposition
+            recompositionTrigger = Unit
 
-                precomposition
-            }
+            precomposition
+        }
 
         rule.runOnIdle {
             while (!precomposition.isComplete) {
@@ -448,18 +439,17 @@ class PausableCompositionInstrumentedTests {
         }
         rule.runOnIdle { addSlot = false }
 
-        val precomposition =
-            rule.runOnIdle {
-                val precomposition = state.createPausedPrecomposition(Unit, content)
+        val precomposition = rule.runOnIdle {
+            val precomposition = state.createPausedPrecomposition(Unit, content)
 
-                // resume and pause before composing Wrapper
-                precomposition.resume { true }
+            // resume and pause before composing Wrapper
+            precomposition.resume { true }
 
-                // trigger recomposition
-                modifier = Modifier
+            // trigger recomposition
+            modifier = Modifier
 
-                precomposition
-            }
+            precomposition
+        }
 
         rule.runOnIdle {
             while (!precomposition.isComplete) {
@@ -492,5 +482,5 @@ fun RememberWrapper(onComposed: () -> Unit, onRemembered: () -> Unit) {
 
 @Composable
 fun LayoutWrapper(modifier: Modifier) {
-    Layout(modifier) { measurables, constraints -> layout(10, 10) {} }
+    Layout(modifier) { _, _ -> layout(10, 10) {} }
 }

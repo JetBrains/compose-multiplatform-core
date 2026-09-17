@@ -17,7 +17,7 @@
 package androidx.compose.foundation.lazy
 
 import androidx.collection.IntList
-import androidx.compose.foundation.ComposeFoundationFlags.isSkipItemPlacementAnimationFixEnabled
+import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.internal.checkPrecondition
@@ -25,6 +25,7 @@ import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.foundation.internal.requirePreconditionNotNull
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.layout.LazyLayoutItemAnimator
+import androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState
 import androidx.compose.foundation.lazy.layout.ObservableScopeInvalidator
 import androidx.compose.foundation.lazy.layout.StickyItemsPlacement
 import androidx.compose.foundation.lazy.layout.applyStickyItems
@@ -77,6 +78,8 @@ internal fun measureLazyList(
     stickyItemsPlacement: StickyItemsPlacement?,
     shouldRunItemAnimation: Boolean,
     layout: (Int, Int, Placeable.PlacementScope.() -> Unit) -> MeasureResult,
+    prefetchState: LazyLayoutPrefetchState?,
+    @Suppress("DEPRECATION") prefetchStrategy: LazyListPrefetchStrategy?,
 ): LazyListMeasureResult {
     requirePrecondition(beforeContentPadding >= 0) { "invalid beforeContentPadding" }
     requirePrecondition(afterContentPadding >= 0) { "invalid afterContentPadding" }
@@ -100,6 +103,7 @@ internal fun measureLazyList(
             layoutMaxOffset = 0,
             coroutineScope = coroutineScope,
             graphicsContext = graphicsContext,
+            shouldRunItemAnimation = true,
         )
 
         if (!isLookingAhead) {
@@ -129,6 +133,8 @@ internal fun measureLazyList(
             density = density,
             childConstraints = measuredItemProvider.childConstraints,
             stickingItemsCombinedSize = 0,
+            prefetchState = prefetchState,
+            prefetchStrategy = prefetchStrategy,
         )
     } else {
         var currentFirstItemIndex = firstVisibleItemIndex
@@ -364,24 +370,30 @@ internal fun measureLazyList(
                 density = density,
             )
 
-        if (!isSkipItemPlacementAnimationFixEnabled || shouldRunItemAnimation) {
-            itemAnimator.onMeasured(
-                consumedScroll = consumedScroll.toInt(),
-                layoutWidth = layoutWidth,
-                layoutHeight = layoutHeight,
-                positionedItems = positionedItems,
-                keyIndexMap = measuredItemProvider.keyIndexMap,
-                itemProvider = measuredItemProvider,
-                isVertical = isVertical,
-                laneCount = 1,
-                isLookingAhead = isLookingAhead,
-                hasLookaheadOccurred = hasLookaheadOccurred,
-                coroutineScope = coroutineScope,
-                layoutMinOffset = currentFirstItemScrollOffset,
-                layoutMaxOffset = currentMainAxisOffset,
-                graphicsContext = graphicsContext,
-            )
-        }
+        var firstVisibleIndex =
+            if (noExtraItems) positionedItems.firstOrNull()?.index ?: 0
+            else visibleItems.firstOrNull()?.index ?: 0
+        var lastVisibleIndex =
+            if (noExtraItems) positionedItems.lastOrNull()?.index ?: 0
+            else visibleItems.lastOrNull()?.index ?: 0
+
+        itemAnimator.onMeasured(
+            consumedScroll = consumedScroll.toInt(),
+            layoutWidth = layoutWidth,
+            layoutHeight = layoutHeight,
+            positionedItems = positionedItems,
+            keyIndexMap = measuredItemProvider.keyIndexMap,
+            itemProvider = measuredItemProvider,
+            isVertical = isVertical,
+            laneCount = 1,
+            isLookingAhead = isLookingAhead,
+            hasLookaheadOccurred = hasLookaheadOccurred,
+            coroutineScope = coroutineScope,
+            layoutMinOffset = currentFirstItemScrollOffset,
+            layoutMaxOffset = currentMainAxisOffset,
+            graphicsContext = graphicsContext,
+            shouldRunItemAnimation = shouldRunItemAnimation,
+        )
 
         if (!isLookingAhead) {
             val disappearingItemsSize = itemAnimator.minSizeToFitDisappearingItems
@@ -414,12 +426,14 @@ internal fun measureLazyList(
                 measuredItemProvider.getAndMeasure(it)
             }
 
-        val firstVisibleIndex =
-            if (noExtraItems) positionedItems.firstOrNull()?.index
-            else visibleItems.firstOrNull()?.index
-        val lastVisibleIndex =
-            if (noExtraItems) positionedItems.lastOrNull()?.index
-            else visibleItems.lastOrNull()?.index
+        if (!ComposeFoundationFlags.isLazyListItemAnimatorVisibleBoundsFixEnabled) {
+            firstVisibleIndex =
+                if (noExtraItems) positionedItems.firstOrNull()?.index ?: 0
+                else visibleItems.firstOrNull()?.index ?: 0
+            lastVisibleIndex =
+                if (noExtraItems) positionedItems.lastOrNull()?.index ?: 0
+                else visibleItems.lastOrNull()?.index ?: 0
+        }
 
         return LazyListMeasureResult(
             firstVisibleItem = firstItem,
@@ -446,8 +460,8 @@ internal fun measureLazyList(
             scrollBackAmount = scrollBackAmount,
             visibleItemsInfo =
                 updatedVisibleItems(
-                    firstVisibleIndex = firstVisibleIndex ?: 0,
-                    lastVisibleIndex = lastVisibleIndex ?: 0,
+                    firstVisibleIndex = firstVisibleIndex,
+                    lastVisibleIndex = lastVisibleIndex,
                     positionedItems = positionedItems,
                     stickingItems = stickingItems,
                 ),
@@ -463,6 +477,8 @@ internal fun measureLazyList(
             density = density,
             childConstraints = measuredItemProvider.childConstraints,
             stickingItemsCombinedSize = stickingItems.fastSumBy { it.size },
+            prefetchState = prefetchState,
+            prefetchStrategy = prefetchStrategy,
         )
     }
 }

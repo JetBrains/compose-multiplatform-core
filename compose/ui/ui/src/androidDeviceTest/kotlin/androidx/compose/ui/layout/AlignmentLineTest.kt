@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import kotlin.math.min
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -43,7 +42,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class AlignmentLineTest {
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     @Test
     fun queryingLinesOfUnmeasuredChild() {
@@ -1156,12 +1155,11 @@ class AlignmentLineTest {
     ) {
         Layout(content, modifier) { measurables, constraints ->
             onMeasure()
-            val placeables =
-                measurables.map {
-                    it.measure(constraints).also {
-                        if (readDuringMeasure()) assertEquals(linePosition, it[TestLine])
-                    }
+            val placeables = measurables.map {
+                it.measure(constraints).also {
+                    if (readDuringMeasure()) assertEquals(linePosition, it[TestLine])
                 }
+            }
             layout(constraints.maxWidth, constraints.maxHeight) {
                 onLayout()
                 placeables.forEach { placeable ->

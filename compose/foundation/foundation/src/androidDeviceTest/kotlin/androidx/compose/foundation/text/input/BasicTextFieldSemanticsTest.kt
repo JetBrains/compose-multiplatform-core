@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.text.input
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.internal.readText
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.text.BasicText
@@ -72,17 +71,15 @@ import androidx.compose.ui.text.intl.Locale
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalFoundationApi::class)
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class BasicTextFieldSemanticsTest : FocusedWindowTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val Tag = "TextField"
 
@@ -745,7 +742,7 @@ class BasicTextFieldSemanticsTest : FocusedWindowTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                inputTransformation = InputTransformation.maxLength(10),
+                inputTransformation = InputTransformation.maxLengthTrim(10),
             )
         }
         rule.onNodeWithTag(Tag).assertKey(10, SemanticsProperties.MaxTextLength)

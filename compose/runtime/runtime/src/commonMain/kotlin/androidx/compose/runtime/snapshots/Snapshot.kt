@@ -282,8 +282,9 @@ public sealed class Snapshot(
         }
     }
 
-    internal fun takeoverPinnedSnapshot(): Int =
-        pinningTrackingHandle.also { pinningTrackingHandle = -1 }
+    internal fun takeoverPinnedSnapshot(): Int = pinningTrackingHandle.also {
+        pinningTrackingHandle = -1
+    }
 
     public companion object {
         /**
@@ -2424,9 +2425,9 @@ public inline fun <T : StateRecord, R> T.writable(
 public inline fun <T : StateRecord, R> T.writable(state: StateObject, block: T.() -> R): R {
     val snapshot: Snapshot
     return sync {
-            snapshot = Snapshot.current
-            this.writableRecord(state, snapshot).block()
-        }
+        snapshot = Snapshot.current
+        this.writableRecord(state, snapshot).block()
+    }
         .also { notifyWrite(snapshot, state) }
 }
 
@@ -2451,9 +2452,9 @@ internal inline fun <T : StateRecord, R> T.overwritable(
 ): R {
     val snapshot: Snapshot
     return sync {
-            snapshot = Snapshot.current
-            this.overwritableRecord(state, snapshot, candidate).block()
-        }
+        snapshot = Snapshot.current
+        this.overwritableRecord(state, snapshot, candidate).block()
+    }
         .also { notifyWrite(snapshot, state) }
 }
 
@@ -2531,12 +2532,47 @@ internal fun <T : StateRecord> current(r: T): T =
             ?: readError()
     }
 
+@PublishedApi
+internal fun <T : StateRecord> current(r: T, state: StateObject): T =
+    Snapshot.current.let { snapshot ->
+        readable(r, snapshot.snapshotId, snapshot.invalid)
+            ?: sync {
+                Snapshot.current.let { syncSnapshot ->
+                    @Suppress("UNCHECKED_CAST")
+                    readable(
+                        state.firstStateRecord as T,
+                        syncSnapshot.snapshotId,
+                        syncSnapshot.invalid,
+                    )
+                }
+            }
+            ?: readError()
+    }
+
 /**
  * Provides a [block] with the current record, without notifying any read observers.
  *
  * @see readable
  */
+@Deprecated(
+    "Use the overload that has a StateObject parameter instead; for example, " +
+        "next.withCurrent(this) { ... }"
+)
 public inline fun <T : StateRecord, R> T.withCurrent(block: (r: T) -> R): R = block(current(this))
+
+/**
+ * Provides a [block] with the current record, without notifying any read observers.
+ *
+ * @param state the state object for which the receiver is a state record. It is assumed that [this]
+ *   is the first record of [state] (e.g. `next.withCurrent(this) { ... }`).
+ * @param block a block to be evaluated with the current state record as its parameter. The result
+ *   of [block] is the result of [withCurrent]. It is expected, but not required, that the result of
+ *   block is either [Unit] or derives it value from the content of the state record.
+ * @return the result returned by the [block] lambda.
+ * @see readable
+ */
+public inline fun <T : StateRecord, R> T.withCurrent(state: StateObject, block: (r: T) -> R): R =
+    block(current(this, state))
 
 /** Helper routine to add a range of values ot a snapshot set */
 internal fun SnapshotIdSet.addRange(from: SnapshotId, until: SnapshotId): SnapshotIdSet {

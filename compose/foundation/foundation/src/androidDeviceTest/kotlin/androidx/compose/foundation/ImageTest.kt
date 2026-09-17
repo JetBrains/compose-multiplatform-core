@@ -71,7 +71,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -94,7 +93,7 @@ class ImageTest {
     val bgColor = Color.Blue
     val pathColor = Color.Red
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private fun createImageBitmap(): ImageBitmap {
         val image = ImageBitmap(imageWidth, imageHeight)
@@ -492,7 +491,7 @@ class ImageTest {
     @LargeTest
     fun testPainterResourceWithImage() {
         val testTag = "testTag"
-        var imageColor = Color(0.023529412f, 0.0f, 1.0f, 1.0f) // ic_image_test color
+        val imageColor = Color(0.023529412f, 0.0f, 1.0f, 1.0f) // ic_image_test color
 
         rule.setContent {
             val painterId = remember { mutableStateOf(R.drawable.ic_vector_square_asset_test) }

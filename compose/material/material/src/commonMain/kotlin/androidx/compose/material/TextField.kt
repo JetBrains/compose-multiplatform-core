@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // b/552879150
+
 package androidx.compose.material
 
 import androidx.compose.foundation.BorderStroke
@@ -175,7 +177,7 @@ import kotlin.math.roundToInt
  *   interactions will still happen internally.
  */
 @Composable
-fun TextField(
+public fun TextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -320,8 +322,11 @@ fun TextField(
  *   (including label, placeholder, leading and trailing icons, indicator line) and background for
  *   this text field in different states. See [TextFieldDefaults.textFieldColors]
  */
+@Deprecated(
+    "This overload of TextField is deprecated in favor of the overload that uses TextFieldState to hoist its state."
+)
 @Composable
-fun TextField(
+public fun TextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -398,7 +403,7 @@ fun TextField(
     level = DeprecationLevel.HIDDEN,
 )
 @Composable
-fun TextField(
+public fun TextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -510,8 +515,11 @@ fun TextField(
  *   (including label, placeholder, leading and trailing icons, indicator line) and background for
  *   this text field in different states. See [TextFieldDefaults.textFieldColors]
  */
+@Deprecated(
+    "This overload of TextField is deprecated in favor of the overload that uses TextFieldState to hoist its state."
+)
 @Composable
-fun TextField(
+public fun TextField(
     value: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
@@ -588,7 +596,7 @@ fun TextField(
     level = DeprecationLevel.HIDDEN,
 )
 @Composable
-fun TextField(
+public fun TextField(
     value: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
@@ -1103,11 +1111,14 @@ internal fun Modifier.drawIndicatorLine(indicatorBorder: BorderStroke): Modifier
 }
 
 /** Padding from the label's baseline to the top */
-internal val FirstBaselineOffset = 20.dp
+internal val FirstBaselineOffset
+    get() = 20.dp
 
 /** Padding from input field to the bottom */
-internal val TextFieldBottomPadding = 10.dp
+internal val TextFieldBottomPadding
+    get() = 10.dp
 
 /** Padding from label's baseline (or FirstBaselineOffset) to the input field */
 /*@VisibleForTesting*/
-internal val TextFieldTopPadding = 2.dp
+internal val TextFieldTopPadding
+    get() = 2.dp

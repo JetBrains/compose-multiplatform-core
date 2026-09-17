@@ -17,7 +17,6 @@
 package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.ExperimentalComposeUiApi
 import kotlin.js.js
 import kotlinx.browser.document
 import org.w3c.dom.Element
@@ -29,8 +28,6 @@ import org.w3c.dom.ShadowRootInit
 import org.w3c.dom.ShadowRootMode
 
 /**
- * EXPERIMENTAL! Might be deleted or changed in the future!
- *
  * Creates the composition in HTML canvas created in parent container identified by [viewportContainerId] id.
  * This size of canvas is adjusted with the size of the container
  *
@@ -40,7 +37,6 @@ import org.w3c.dom.ShadowRootMode
  * See [ComposeViewportConfiguration] for available options.
  * @param content - The Composable content to be rendered on the `<canvas>` element.
  */
-@ExperimentalComposeUiApi
 fun ComposeViewport(
     viewportContainerId: String? = null,
     configure: ComposeViewportConfiguration.() -> Unit = {},
@@ -58,10 +54,8 @@ fun ComposeViewport(
 }
 
 /**
- * EXPERIMENTAL! Might be deleted or changed in the future!
- *
  * Creates the composition in HTML canvas created in parent container identified by [viewportContainer] Element.
- * This size of canvas is adjusted with the size of the container
+ * This size of canvas is adjusted with the size of the container which must have definite dimensions.
  *
  * <container>
  *   <positioning_container>
@@ -78,7 +72,6 @@ fun ComposeViewport(
  *
  * Note: The viewportContainer will be cleared on composition creation.
  */
-@ExperimentalComposeUiApi
 fun ComposeViewport(
     viewportContainer: Element,
     configure: ComposeViewportConfiguration.() -> Unit = {},
@@ -100,6 +93,9 @@ fun ComposeViewport(
     val positioningContainer = ComposeWindow.createComposeComponent()
     positioningContainer.style.apply {
         position = "relative"
+        display = "block" // inline by default for custom elements; 'block' - is the default for <div>
+        width = "100%"
+        height = "100%"
     }
     viewportContainer.appendChild(positioningContainer)
 
@@ -107,6 +103,8 @@ fun ComposeViewport(
     val shadowContainer = document.createElement("div") as HTMLDivElement
     shadowContainer.style.apply {
         position = "relative"
+        width = "100%"
+        height = "100%"
     }
     positioningContainer.appendChild(shadowContainer)
 
@@ -161,6 +159,8 @@ fun ComposeViewport(
     val appContainer = document.createElement("div") as HTMLElement
     appContainer.style.apply {
         position = "relative"
+        width = "100%"
+        height = "100%"
     }
     shadowRoot.appendChild(appContainer)
 

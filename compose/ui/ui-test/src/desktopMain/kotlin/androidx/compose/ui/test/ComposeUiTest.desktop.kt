@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.Density
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.time.Duration
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 /**
  * Variant of [runComposeUiTest] that allows you to specify the size of the surface.
@@ -62,7 +61,7 @@ fun runDesktopComposeUiTest(
     }
 }
 
-@OptIn(ExperimentalCoroutinesApi::class, InternalTestApi::class)
+@OptIn(InternalTestApi::class)
 @ExperimentalTestApi
 class DesktopComposeUiTest(
     width: Int = 1024,

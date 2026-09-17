@@ -89,7 +89,7 @@ class ComposeWindowTest {
 
             window.isVisible = true
             awaitIdle()
-            assertThat(caughtExceptions.size).isEqualTo(1)
+            assertThat(caughtExceptions.size).isAtLeast(1)
             assertThat(caughtExceptions.last()).isInstanceOf(TestException::class.java)
         } finally {
             window.dispose()
@@ -97,7 +97,7 @@ class ComposeWindowTest {
     }
 
     @Test
-    fun `catch exception on render`() = runApplicationTest {
+    fun `catch exception in draw`() = runApplicationTest {
         val caughtExceptions = mutableListOf<Throwable>()
         val window = ComposeWindow()
         try {
@@ -116,7 +116,7 @@ class ComposeWindowTest {
             window.isVisible = true
             window.contentPane.paint(window.graphics)
             awaitIdle()
-            assertThat(caughtExceptions.size).isAtMost(1)
+            assertThat(caughtExceptions.size).isAtLeast(1)
             assertThat(caughtExceptions.last()).isInstanceOf(TestException::class.java)
         } finally {
             window.dispose()

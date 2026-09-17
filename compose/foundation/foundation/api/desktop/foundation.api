@@ -948,10 +948,12 @@ public final class androidx/compose/foundation/interaction/PressInteractionKt {
 
 public final class androidx/compose/foundation/lazy/LazyDslKt {
 	public static final synthetic fun LazyColumn (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/LazyListState;Landroidx/compose/foundation/layout/PaddingValues;ZLandroidx/compose/foundation/layout/Arrangement$Vertical;Landroidx/compose/ui/Alignment$Horizontal;Landroidx/compose/foundation/gestures/FlingBehavior;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
-	public static final fun LazyColumn (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/LazyListState;Landroidx/compose/foundation/layout/PaddingValues;ZLandroidx/compose/foundation/layout/Arrangement$Vertical;Landroidx/compose/ui/Alignment$Horizontal;Landroidx/compose/foundation/gestures/FlingBehavior;ZLandroidx/compose/foundation/OverscrollEffect;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
+	public static final fun LazyColumn (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/LazyListState;Landroidx/compose/foundation/layout/PaddingValues;ZLandroidx/compose/foundation/layout/Arrangement$Vertical;Landroidx/compose/ui/Alignment$Horizontal;Landroidx/compose/foundation/gestures/FlingBehavior;ZLandroidx/compose/foundation/OverscrollEffect;Landroidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;III)V
+	public static final synthetic fun LazyColumn (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/LazyListState;Landroidx/compose/foundation/layout/PaddingValues;ZLandroidx/compose/foundation/layout/Arrangement$Vertical;Landroidx/compose/ui/Alignment$Horizontal;Landroidx/compose/foundation/gestures/FlingBehavior;ZLandroidx/compose/foundation/OverscrollEffect;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
 	public static final synthetic fun LazyColumn (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/LazyListState;Landroidx/compose/foundation/layout/PaddingValues;ZLandroidx/compose/foundation/layout/Arrangement$Vertical;Landroidx/compose/ui/Alignment$Horizontal;Landroidx/compose/foundation/gestures/FlingBehavior;ZLkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
 	public static final synthetic fun LazyRow (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/LazyListState;Landroidx/compose/foundation/layout/PaddingValues;ZLandroidx/compose/foundation/layout/Arrangement$Horizontal;Landroidx/compose/ui/Alignment$Vertical;Landroidx/compose/foundation/gestures/FlingBehavior;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
-	public static final fun LazyRow (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/LazyListState;Landroidx/compose/foundation/layout/PaddingValues;ZLandroidx/compose/foundation/layout/Arrangement$Horizontal;Landroidx/compose/ui/Alignment$Vertical;Landroidx/compose/foundation/gestures/FlingBehavior;ZLandroidx/compose/foundation/OverscrollEffect;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
+	public static final fun LazyRow (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/LazyListState;Landroidx/compose/foundation/layout/PaddingValues;ZLandroidx/compose/foundation/layout/Arrangement$Horizontal;Landroidx/compose/ui/Alignment$Vertical;Landroidx/compose/foundation/gestures/FlingBehavior;ZLandroidx/compose/foundation/OverscrollEffect;Landroidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;III)V
+	public static final synthetic fun LazyRow (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/LazyListState;Landroidx/compose/foundation/layout/PaddingValues;ZLandroidx/compose/foundation/layout/Arrangement$Horizontal;Landroidx/compose/ui/Alignment$Vertical;Landroidx/compose/foundation/gestures/FlingBehavior;ZLandroidx/compose/foundation/OverscrollEffect;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
 	public static final synthetic fun LazyRow (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/LazyListState;Landroidx/compose/foundation/layout/PaddingValues;ZLandroidx/compose/foundation/layout/Arrangement$Horizontal;Landroidx/compose/ui/Alignment$Vertical;Landroidx/compose/foundation/gestures/FlingBehavior;ZLkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
 	public static final fun items (Landroidx/compose/foundation/lazy/LazyListScope;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function4;)V
 	public static final synthetic fun items (Landroidx/compose/foundation/lazy/LazyListScope;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function4;)V
@@ -988,6 +990,12 @@ public final class androidx/compose/foundation/lazy/LazyItemScope$DefaultImpls {
 	public static synthetic fun fillParentMaxHeight$default (Landroidx/compose/foundation/lazy/LazyItemScope;Landroidx/compose/ui/Modifier;FILjava/lang/Object;)Landroidx/compose/ui/Modifier;
 	public static synthetic fun fillParentMaxSize$default (Landroidx/compose/foundation/lazy/LazyItemScope;Landroidx/compose/ui/Modifier;FILjava/lang/Object;)Landroidx/compose/ui/Modifier;
 	public static synthetic fun fillParentMaxWidth$default (Landroidx/compose/foundation/lazy/LazyItemScope;Landroidx/compose/ui/Modifier;FILjava/lang/Object;)Landroidx/compose/ui/Modifier;
+}
+
+public final class androidx/compose/foundation/lazy/LazyListDefaults {
+	public static final field $stable I
+	public static final field INSTANCE Landroidx/compose/foundation/lazy/LazyListDefaults;
+	public final fun cacheWindow (Landroidx/compose/foundation/lazy/LazyListState;Landroidx/compose/runtime/Composer;I)Landroidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow;
 }
 
 public abstract interface class androidx/compose/foundation/lazy/LazyListItemInfo {
@@ -1131,10 +1139,18 @@ public final class androidx/compose/foundation/lazy/grid/GridItemSpan {
 	public final synthetic fun unbox-impl ()J
 }
 
+public final class androidx/compose/foundation/lazy/grid/LazyGridDefaults {
+	public static final field $stable I
+	public static final field INSTANCE Landroidx/compose/foundation/lazy/grid/LazyGridDefaults;
+	public final fun cacheWindow (Landroidx/compose/foundation/lazy/grid/LazyGridState;Landroidx/compose/runtime/Composer;I)Landroidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow;
+}
+
 public final class androidx/compose/foundation/lazy/grid/LazyGridDslKt {
-	public static final fun LazyHorizontalGrid (Landroidx/compose/foundation/lazy/grid/GridCells;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/grid/LazyGridState;Landroidx/compose/foundation/layout/PaddingValues;ZLandroidx/compose/foundation/layout/Arrangement$Horizontal;Landroidx/compose/foundation/layout/Arrangement$Vertical;Landroidx/compose/foundation/gestures/FlingBehavior;ZLandroidx/compose/foundation/OverscrollEffect;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;III)V
+	public static final fun LazyHorizontalGrid (Landroidx/compose/foundation/lazy/grid/GridCells;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/grid/LazyGridState;Landroidx/compose/foundation/layout/PaddingValues;ZLandroidx/compose/foundation/layout/Arrangement$Horizontal;Landroidx/compose/foundation/layout/Arrangement$Vertical;Landroidx/compose/foundation/gestures/FlingBehavior;ZLandroidx/compose/foundation/OverscrollEffect;Landroidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;III)V
+	public static final synthetic fun LazyHorizontalGrid (Landroidx/compose/foundation/lazy/grid/GridCells;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/grid/LazyGridState;Landroidx/compose/foundation/layout/PaddingValues;ZLandroidx/compose/foundation/layout/Arrangement$Horizontal;Landroidx/compose/foundation/layout/Arrangement$Vertical;Landroidx/compose/foundation/gestures/FlingBehavior;ZLandroidx/compose/foundation/OverscrollEffect;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;III)V
 	public static final synthetic fun LazyHorizontalGrid (Landroidx/compose/foundation/lazy/grid/GridCells;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/grid/LazyGridState;Landroidx/compose/foundation/layout/PaddingValues;ZLandroidx/compose/foundation/layout/Arrangement$Horizontal;Landroidx/compose/foundation/layout/Arrangement$Vertical;Landroidx/compose/foundation/gestures/FlingBehavior;ZLkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
-	public static final fun LazyVerticalGrid (Landroidx/compose/foundation/lazy/grid/GridCells;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/grid/LazyGridState;Landroidx/compose/foundation/layout/PaddingValues;ZLandroidx/compose/foundation/layout/Arrangement$Vertical;Landroidx/compose/foundation/layout/Arrangement$Horizontal;Landroidx/compose/foundation/gestures/FlingBehavior;ZLandroidx/compose/foundation/OverscrollEffect;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;III)V
+	public static final fun LazyVerticalGrid (Landroidx/compose/foundation/lazy/grid/GridCells;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/grid/LazyGridState;Landroidx/compose/foundation/layout/PaddingValues;ZLandroidx/compose/foundation/layout/Arrangement$Vertical;Landroidx/compose/foundation/layout/Arrangement$Horizontal;Landroidx/compose/foundation/gestures/FlingBehavior;ZLandroidx/compose/foundation/OverscrollEffect;Landroidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;III)V
+	public static final synthetic fun LazyVerticalGrid (Landroidx/compose/foundation/lazy/grid/GridCells;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/grid/LazyGridState;Landroidx/compose/foundation/layout/PaddingValues;ZLandroidx/compose/foundation/layout/Arrangement$Vertical;Landroidx/compose/foundation/layout/Arrangement$Horizontal;Landroidx/compose/foundation/gestures/FlingBehavior;ZLandroidx/compose/foundation/OverscrollEffect;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;III)V
 	public static final synthetic fun LazyVerticalGrid (Landroidx/compose/foundation/lazy/grid/GridCells;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/grid/LazyGridState;Landroidx/compose/foundation/layout/PaddingValues;ZLandroidx/compose/foundation/layout/Arrangement$Vertical;Landroidx/compose/foundation/layout/Arrangement$Horizontal;Landroidx/compose/foundation/gestures/FlingBehavior;ZLkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
 	public static final fun items (Landroidx/compose/foundation/lazy/grid/LazyGridScope;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function4;)V
 	public static final fun items (Landroidx/compose/foundation/lazy/grid/LazyGridScope;[Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function4;)V
@@ -1254,6 +1270,19 @@ public final class androidx/compose/foundation/lazy/layout/IntervalList$Interval
 	public final fun getSize ()I
 	public final fun getStartIndex ()I
 	public final fun getValue ()Ljava/lang/Object;
+}
+
+public abstract interface class androidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow {
+	public fun calculateAheadWindow (Landroidx/compose/ui/unit/Density;I)I
+	public fun calculateBehindWindow (Landroidx/compose/ui/unit/Density;I)I
+	public fun isNonScrollCachingEnabled ()Z
+}
+
+public final class androidx/compose/foundation/lazy/layout/LazyLayoutCacheWindowKt {
+	public static final fun LazyLayoutCacheWindow (FFZ)Landroidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow;
+	public static synthetic fun LazyLayoutCacheWindow$default (FFZILjava/lang/Object;)Landroidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow;
+	public static final fun LazyLayoutCacheWindow-Md-fbLM (FFZ)Landroidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow;
+	public static synthetic fun LazyLayoutCacheWindow-Md-fbLM$default (FFZILjava/lang/Object;)Landroidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow;
 }
 
 public abstract class androidx/compose/foundation/lazy/layout/LazyLayoutIntervalContent {
@@ -1387,10 +1416,18 @@ public final class androidx/compose/foundation/lazy/layout/MutableIntervalList :
 	public fun getSize ()I
 }
 
+public final class androidx/compose/foundation/lazy/staggeredgrid/LazyStaggeredGridDefaults {
+	public static final field $stable I
+	public static final field INSTANCE Landroidx/compose/foundation/lazy/staggeredgrid/LazyStaggeredGridDefaults;
+	public final fun cacheWindow (Landroidx/compose/foundation/lazy/staggeredgrid/LazyStaggeredGridState;Landroidx/compose/runtime/Composer;I)Landroidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow;
+}
+
 public final class androidx/compose/foundation/lazy/staggeredgrid/LazyStaggeredGridDslKt {
 	public static final fun LazyHorizontalStaggeredGrid-121YqSk (Landroidx/compose/foundation/lazy/staggeredgrid/StaggeredGridCells;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/staggeredgrid/LazyStaggeredGridState;Landroidx/compose/foundation/layout/PaddingValues;ZLandroidx/compose/foundation/layout/Arrangement$Vertical;FLandroidx/compose/foundation/gestures/FlingBehavior;ZLandroidx/compose/foundation/OverscrollEffect;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;III)V
+	public static final fun LazyHorizontalStaggeredGrid-8u0NR3k (Landroidx/compose/foundation/lazy/staggeredgrid/StaggeredGridCells;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/staggeredgrid/LazyStaggeredGridState;Landroidx/compose/foundation/layout/PaddingValues;ZLandroidx/compose/foundation/layout/Arrangement$Vertical;FLandroidx/compose/foundation/gestures/FlingBehavior;ZLandroidx/compose/foundation/OverscrollEffect;Landroidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;III)V
 	public static final synthetic fun LazyHorizontalStaggeredGrid-cJHQLPU (Landroidx/compose/foundation/lazy/staggeredgrid/StaggeredGridCells;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/staggeredgrid/LazyStaggeredGridState;Landroidx/compose/foundation/layout/PaddingValues;ZLandroidx/compose/foundation/layout/Arrangement$Vertical;FLandroidx/compose/foundation/gestures/FlingBehavior;ZLkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
 	public static final fun LazyVerticalStaggeredGrid-6qCrX9Q (Landroidx/compose/foundation/lazy/staggeredgrid/StaggeredGridCells;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/staggeredgrid/LazyStaggeredGridState;Landroidx/compose/foundation/layout/PaddingValues;ZFLandroidx/compose/foundation/layout/Arrangement$Horizontal;Landroidx/compose/foundation/gestures/FlingBehavior;ZLandroidx/compose/foundation/OverscrollEffect;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;III)V
+	public static final fun LazyVerticalStaggeredGrid-lYrZsNM (Landroidx/compose/foundation/lazy/staggeredgrid/StaggeredGridCells;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/staggeredgrid/LazyStaggeredGridState;Landroidx/compose/foundation/layout/PaddingValues;ZFLandroidx/compose/foundation/layout/Arrangement$Horizontal;Landroidx/compose/foundation/gestures/FlingBehavior;ZLandroidx/compose/foundation/OverscrollEffect;Landroidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;III)V
 	public static final synthetic fun LazyVerticalStaggeredGrid-zadm560 (Landroidx/compose/foundation/lazy/staggeredgrid/StaggeredGridCells;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/staggeredgrid/LazyStaggeredGridState;Landroidx/compose/foundation/layout/PaddingValues;ZFLandroidx/compose/foundation/layout/Arrangement$Horizontal;Landroidx/compose/foundation/gestures/FlingBehavior;ZLkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
 	public static final fun items (Landroidx/compose/foundation/lazy/staggeredgrid/LazyStaggeredGridScope;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function4;)V
 	public static final fun items (Landroidx/compose/foundation/lazy/staggeredgrid/LazyStaggeredGridScope;[Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function4;)V
@@ -1540,14 +1577,17 @@ public final class androidx/compose/foundation/pager/PagerDefaults {
 	public static final field $stable I
 	public static final field BeyondViewportPageCount I
 	public static final field INSTANCE Landroidx/compose/foundation/pager/PagerDefaults;
+	public final fun bringIntoViewSpec (Landroidx/compose/foundation/pager/PagerState;Landroidx/compose/runtime/Composer;I)Landroidx/compose/foundation/gestures/BringIntoViewSpec;
 	public final fun flingBehavior (Landroidx/compose/foundation/pager/PagerState;Landroidx/compose/foundation/pager/PagerSnapDistance;Landroidx/compose/animation/core/DecayAnimationSpec;Landroidx/compose/animation/core/AnimationSpec;FLandroidx/compose/runtime/Composer;II)Landroidx/compose/foundation/gestures/TargetedFlingBehavior;
 	public final fun pageNestedScrollConnection (Landroidx/compose/foundation/pager/PagerState;Landroidx/compose/foundation/gestures/Orientation;Landroidx/compose/runtime/Composer;I)Landroidx/compose/ui/input/nestedscroll/NestedScrollConnection;
 }
 
 public final class androidx/compose/foundation/pager/PagerKt {
-	public static final fun HorizontalPager--8jOkeI (Landroidx/compose/foundation/pager/PagerState;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/layout/PaddingValues;Landroidx/compose/foundation/pager/PageSize;IFLandroidx/compose/ui/Alignment$Vertical;Landroidx/compose/foundation/gestures/TargetedFlingBehavior;ZZLkotlin/jvm/functions/Function1;Landroidx/compose/ui/input/nestedscroll/NestedScrollConnection;Landroidx/compose/foundation/gestures/snapping/SnapPosition;Landroidx/compose/foundation/OverscrollEffect;Lkotlin/jvm/functions/Function4;Landroidx/compose/runtime/Composer;III)V
+	public static final synthetic fun HorizontalPager--8jOkeI (Landroidx/compose/foundation/pager/PagerState;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/layout/PaddingValues;Landroidx/compose/foundation/pager/PageSize;IFLandroidx/compose/ui/Alignment$Vertical;Landroidx/compose/foundation/gestures/TargetedFlingBehavior;ZZLkotlin/jvm/functions/Function1;Landroidx/compose/ui/input/nestedscroll/NestedScrollConnection;Landroidx/compose/foundation/gestures/snapping/SnapPosition;Landroidx/compose/foundation/OverscrollEffect;Lkotlin/jvm/functions/Function4;Landroidx/compose/runtime/Composer;III)V
+	public static final fun HorizontalPager-IOMxRjY (Landroidx/compose/foundation/pager/PagerState;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/layout/PaddingValues;Landroidx/compose/foundation/pager/PageSize;IFLandroidx/compose/ui/Alignment$Vertical;Landroidx/compose/foundation/gestures/TargetedFlingBehavior;ZZLkotlin/jvm/functions/Function1;Landroidx/compose/ui/input/nestedscroll/NestedScrollConnection;Landroidx/compose/foundation/gestures/snapping/SnapPosition;Landroidx/compose/foundation/OverscrollEffect;Landroidx/compose/foundation/gestures/BringIntoViewSpec;Lkotlin/jvm/functions/Function4;Landroidx/compose/runtime/Composer;III)V
 	public static final synthetic fun HorizontalPager-oI3XNZo (Landroidx/compose/foundation/pager/PagerState;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/layout/PaddingValues;Landroidx/compose/foundation/pager/PageSize;IFLandroidx/compose/ui/Alignment$Vertical;Landroidx/compose/foundation/gestures/TargetedFlingBehavior;ZZLkotlin/jvm/functions/Function1;Landroidx/compose/ui/input/nestedscroll/NestedScrollConnection;Landroidx/compose/foundation/gestures/snapping/SnapPosition;Lkotlin/jvm/functions/Function4;Landroidx/compose/runtime/Composer;III)V
-	public static final fun VerticalPager--8jOkeI (Landroidx/compose/foundation/pager/PagerState;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/layout/PaddingValues;Landroidx/compose/foundation/pager/PageSize;IFLandroidx/compose/ui/Alignment$Horizontal;Landroidx/compose/foundation/gestures/TargetedFlingBehavior;ZZLkotlin/jvm/functions/Function1;Landroidx/compose/ui/input/nestedscroll/NestedScrollConnection;Landroidx/compose/foundation/gestures/snapping/SnapPosition;Landroidx/compose/foundation/OverscrollEffect;Lkotlin/jvm/functions/Function4;Landroidx/compose/runtime/Composer;III)V
+	public static final synthetic fun VerticalPager--8jOkeI (Landroidx/compose/foundation/pager/PagerState;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/layout/PaddingValues;Landroidx/compose/foundation/pager/PageSize;IFLandroidx/compose/ui/Alignment$Horizontal;Landroidx/compose/foundation/gestures/TargetedFlingBehavior;ZZLkotlin/jvm/functions/Function1;Landroidx/compose/ui/input/nestedscroll/NestedScrollConnection;Landroidx/compose/foundation/gestures/snapping/SnapPosition;Landroidx/compose/foundation/OverscrollEffect;Lkotlin/jvm/functions/Function4;Landroidx/compose/runtime/Composer;III)V
+	public static final fun VerticalPager-IOMxRjY (Landroidx/compose/foundation/pager/PagerState;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/layout/PaddingValues;Landroidx/compose/foundation/pager/PageSize;IFLandroidx/compose/ui/Alignment$Horizontal;Landroidx/compose/foundation/gestures/TargetedFlingBehavior;ZZLkotlin/jvm/functions/Function1;Landroidx/compose/ui/input/nestedscroll/NestedScrollConnection;Landroidx/compose/foundation/gestures/snapping/SnapPosition;Landroidx/compose/foundation/OverscrollEffect;Landroidx/compose/foundation/gestures/BringIntoViewSpec;Lkotlin/jvm/functions/Function4;Landroidx/compose/runtime/Composer;III)V
 	public static final synthetic fun VerticalPager-oI3XNZo (Landroidx/compose/foundation/pager/PagerState;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/layout/PaddingValues;Landroidx/compose/foundation/pager/PageSize;IFLandroidx/compose/ui/Alignment$Horizontal;Landroidx/compose/foundation/gestures/TargetedFlingBehavior;ZZLkotlin/jvm/functions/Function1;Landroidx/compose/ui/input/nestedscroll/NestedScrollConnection;Landroidx/compose/foundation/gestures/snapping/SnapPosition;Lkotlin/jvm/functions/Function4;Landroidx/compose/runtime/Composer;III)V
 }
 
@@ -1773,6 +1813,99 @@ public final class androidx/compose/foundation/shape/GenericShape : androidx/com
 	public fun hashCode ()I
 }
 
+public final class androidx/compose/foundation/shape/MorphPolygonShapeKt {
+	public static final fun MorphPolygonShape (Landroidx/compose/foundation/shape/PolygonShape;Landroidx/compose/foundation/shape/PolygonShape;Lkotlin/jvm/functions/Function0;)Landroidx/compose/ui/graphics/Shape;
+}
+
+public abstract class androidx/compose/foundation/shape/PolygonShape : androidx/compose/ui/graphics/Shape {
+	public static final field $stable I
+	public static final field Companion Landroidx/compose/foundation/shape/PolygonShape$Companion;
+}
+
+public final class androidx/compose/foundation/shape/PolygonShape$Companion {
+	public final fun absoluteRectangle (Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;)Landroidx/compose/foundation/shape/PolygonShape;
+	public static synthetic fun absoluteRectangle$default (Landroidx/compose/foundation/shape/PolygonShape$Companion;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
+	public final fun circle (I)Landroidx/compose/foundation/shape/PolygonShape;
+	public static synthetic fun circle$default (Landroidx/compose/foundation/shape/PolygonShape$Companion;IILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
+	public final fun pill (F)Landroidx/compose/foundation/shape/PolygonShape;
+	public static synthetic fun pill$default (Landroidx/compose/foundation/shape/PolygonShape$Companion;FILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
+	public final fun pillStar (IFFFLandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;)Landroidx/compose/foundation/shape/PolygonShape;
+	public static synthetic fun pillStar$default (Landroidx/compose/foundation/shape/PolygonShape$Companion;IFFFLandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
+	public final fun rectangle (Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;)Landroidx/compose/foundation/shape/PolygonShape;
+	public final fun rectangle (Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;)Landroidx/compose/foundation/shape/PolygonShape;
+	public static synthetic fun rectangle$default (Landroidx/compose/foundation/shape/PolygonShape$Companion;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
+	public final fun regularPolygon (ILandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;)Landroidx/compose/foundation/shape/PolygonShape;
+	public static synthetic fun regularPolygon$default (Landroidx/compose/foundation/shape/PolygonShape$Companion;ILandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
+	public final fun star (IFLandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;)Landroidx/compose/foundation/shape/PolygonShape;
+	public static synthetic fun star$default (Landroidx/compose/foundation/shape/PolygonShape$Companion;IFLandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
+}
+
+public final class androidx/compose/foundation/shape/PolygonShapeGeometry {
+	public static final field $stable I
+	public static final field Companion Landroidx/compose/foundation/shape/PolygonShapeGeometry$Companion;
+	public synthetic fun <init> (Ljava/util/List;JLandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/util/List;JLandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Ljava/util/List;Landroidx/compose/ui/geometry/Size;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/util/List;JLandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/util/List;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/util/List;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCenter-F1C5BW0 ()J
+	public final fun getPerVertexRounding ()Ljava/util/List;
+	public final fun getRounding ()Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;
+	public final fun getVertices ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class androidx/compose/foundation/shape/PolygonShapeGeometry$Companion {
+	public final fun CornerRounding (FF)Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;
+	public final fun CornerRounding (IF)Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;
+	public static synthetic fun CornerRounding$default (Landroidx/compose/foundation/shape/PolygonShapeGeometry$Companion;FFILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;
+	public static synthetic fun CornerRounding$default (Landroidx/compose/foundation/shape/PolygonShapeGeometry$Companion;IFILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;
+	public final fun CornerRounding-D5KLDUw (FF)Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;
+	public static synthetic fun CornerRounding-D5KLDUw$default (Landroidx/compose/foundation/shape/PolygonShapeGeometry$Companion;FFILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;
+}
+
+public final class androidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding {
+	public static final field $stable I
+	public static final field Companion Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding$Companion;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class androidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding$Companion {
+	public final fun getUnrounded ()Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;
+}
+
+public final class androidx/compose/foundation/shape/PolygonShapeKt {
+	public static final fun PolygonShape (Landroidx/compose/foundation/shape/PolygonShapeGeometry;)Landroidx/compose/foundation/shape/PolygonShape;
+	public static final fun PolygonShape (Lkotlin/jvm/functions/Function1;)Landroidx/compose/foundation/shape/PolygonShape;
+	public static final fun scaledToFit (Landroidx/compose/foundation/shape/PolygonShape;Landroidx/compose/ui/layout/ContentScale;Landroidx/compose/ui/Alignment;)Landroidx/compose/foundation/shape/PolygonShape;
+	public static synthetic fun scaledToFit$default (Landroidx/compose/foundation/shape/PolygonShape;Landroidx/compose/ui/layout/ContentScale;Landroidx/compose/ui/Alignment;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
+	public static final fun toPolygonShape (Landroidx/compose/foundation/shape/AbsoluteCutCornerShape;)Landroidx/compose/foundation/shape/PolygonShape;
+	public static final fun toPolygonShape (Landroidx/compose/foundation/shape/AbsoluteRoundedCornerShape;)Landroidx/compose/foundation/shape/PolygonShape;
+	public static final fun toPolygonShape (Landroidx/compose/foundation/shape/CutCornerShape;)Landroidx/compose/foundation/shape/PolygonShape;
+	public static final fun toPolygonShape (Landroidx/compose/foundation/shape/RoundedCornerShape;)Landroidx/compose/foundation/shape/PolygonShape;
+	public static final fun transformed-38CYSgM (Landroidx/compose/foundation/shape/PolygonShape;FJLandroidx/compose/ui/layout/ContentScale;Landroidx/compose/ui/Alignment;)Landroidx/compose/foundation/shape/PolygonShape;
+	public static synthetic fun transformed-38CYSgM$default (Landroidx/compose/foundation/shape/PolygonShape;FJLandroidx/compose/ui/layout/ContentScale;Landroidx/compose/ui/Alignment;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
+	public static final fun transformed-V2T6pWw (Landroidx/compose/foundation/shape/PolygonShape;[FLandroidx/compose/ui/layout/ContentScale;Landroidx/compose/ui/Alignment;)Landroidx/compose/foundation/shape/PolygonShape;
+	public static synthetic fun transformed-V2T6pWw$default (Landroidx/compose/foundation/shape/PolygonShape;[FLandroidx/compose/ui/layout/ContentScale;Landroidx/compose/ui/Alignment;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
+}
+
+public abstract interface class androidx/compose/foundation/shape/PolygonShapeScope : androidx/compose/ui/unit/Density {
+	public abstract fun getLayoutDirection ()Landroidx/compose/ui/unit/LayoutDirection;
+	public abstract fun getSize-NH-jbRc ()J
+	public abstract fun polygon-0AR0LA0 (Ljava/util/List;Ljava/util/List;J)Landroidx/compose/foundation/shape/PolygonShapeGeometry;
+	public static synthetic fun polygon-0AR0LA0$default (Landroidx/compose/foundation/shape/PolygonShapeScope;Ljava/util/List;Ljava/util/List;JILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShapeGeometry;
+	public abstract fun polygon-Rg1IO4c (IFJLandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;)Landroidx/compose/foundation/shape/PolygonShapeGeometry;
+	public static synthetic fun polygon-Rg1IO4c$default (Landroidx/compose/foundation/shape/PolygonShapeScope;IFJLandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShapeGeometry;
+	public abstract fun polygon-d-4ec7I (Ljava/util/List;JLandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;)Landroidx/compose/foundation/shape/PolygonShapeGeometry;
+	public static synthetic fun polygon-d-4ec7I$default (Landroidx/compose/foundation/shape/PolygonShapeScope;Ljava/util/List;JLandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShapeGeometry;
+	public abstract fun polygon-moWRBKg (ILjava/util/List;FJ)Landroidx/compose/foundation/shape/PolygonShapeGeometry;
+	public static synthetic fun polygon-moWRBKg$default (Landroidx/compose/foundation/shape/PolygonShapeScope;ILjava/util/List;FJILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShapeGeometry;
+}
+
 public final class androidx/compose/foundation/shape/RoundedCornerShape : androidx/compose/foundation/shape/CornerBasedShape {
 	public static final field $stable I
 	public fun <init> (Landroidx/compose/foundation/shape/CornerSize;Landroidx/compose/foundation/shape/CornerSize;Landroidx/compose/foundation/shape/CornerSize;Landroidx/compose/foundation/shape/CornerSize;)V
@@ -1807,6 +1940,30 @@ public abstract interface class androidx/compose/foundation/style/AnimateStyleSc
 	public abstract fun animate (Landroidx/compose/animation/core/AnimationSpec;Landroidx/compose/animation/core/AnimationSpec;Lkotlin/jvm/functions/Function0;)V
 }
 
+public final class androidx/compose/foundation/style/AppearanceKt {
+	public static final fun appearance (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
+	public static final fun styleAppearance (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/style/StyleResolver;)Landroidx/compose/ui/Modifier;
+}
+
+public final class androidx/compose/foundation/style/AppearanceScope {
+	public static final field $stable I
+	public fun <init> ()V
+	public final fun getBackground ()Landroidx/compose/foundation/style/Fill;
+	public final fun getBorder ()Landroidx/compose/foundation/style/Fill;
+	public final fun getBorderWidth-D9Ej5fM ()F
+	public final fun getDropShadow ()Landroidx/compose/foundation/style/Shadows;
+	public final fun getForeground ()Landroidx/compose/foundation/style/Fill;
+	public final fun getInnerShadow ()Landroidx/compose/foundation/style/Shadows;
+	public final fun getShape ()Landroidx/compose/ui/graphics/Shape;
+	public final fun setBackground (Landroidx/compose/foundation/style/Fill;)V
+	public final fun setBorder (Landroidx/compose/foundation/style/Fill;)V
+	public final fun setBorderWidth-0680j_4 (F)V
+	public final fun setDropShadow (Landroidx/compose/foundation/style/Shadows;)V
+	public final fun setForeground (Landroidx/compose/foundation/style/Fill;)V
+	public final fun setInnerShadow (Landroidx/compose/foundation/style/Shadows;)V
+	public final fun setShape (Landroidx/compose/ui/graphics/Shape;)V
+}
+
 public abstract interface class androidx/compose/foundation/style/BackgroundScope {
 	public abstract fun background (Landroidx/compose/ui/graphics/Brush;)V
 	public abstract fun background-8_81llA (J)V
@@ -1822,6 +1979,38 @@ public abstract interface class androidx/compose/foundation/style/BorderScope {
 	public abstract fun borderWidth-0680j_4 (F)V
 }
 
+public abstract class androidx/compose/foundation/style/Breadth : androidx/compose/ui/graphics/Interpolatable {
+	public static final field $stable I
+	public static final field Companion Landroidx/compose/foundation/style/Breadth$Companion;
+	public fun lerp (Ljava/lang/Object;F)Ljava/lang/Object;
+}
+
+public final class androidx/compose/foundation/style/Breadth$Companion {
+	public final fun getNone ()Landroidx/compose/foundation/style/Breadth;
+}
+
+public final class androidx/compose/foundation/style/Breadth$Distance : androidx/compose/foundation/style/Breadth {
+	public static final field $stable I
+	public synthetic fun <init> (FLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue-D9Ej5fM ()F
+	public fun hashCode ()I
+}
+
+public final class androidx/compose/foundation/style/Breadth$Fraction : androidx/compose/foundation/style/Breadth {
+	public static final field $stable I
+	public fun <init> (F)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()F
+	public fun hashCode ()I
+}
+
+public final class androidx/compose/foundation/style/Breadth$None : androidx/compose/foundation/style/Breadth {
+	public static final field $stable I
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+}
+
 public abstract interface class androidx/compose/foundation/style/ClipScope {
 	public abstract fun clip (Z)V
 	public static synthetic fun clip$default (Landroidx/compose/foundation/style/ClipScope;ZILjava/lang/Object;)V
@@ -1829,6 +2018,24 @@ public abstract interface class androidx/compose/foundation/style/ClipScope {
 
 public abstract interface class androidx/compose/foundation/style/ColorFilterScope {
 	public abstract fun colorFilter (Landroidx/compose/ui/graphics/ColorFilter;)V
+}
+
+public abstract interface class androidx/compose/foundation/style/CommonStyle : androidx/compose/foundation/style/CustomStyle {
+	public static final field Companion Landroidx/compose/foundation/style/CommonStyle$Companion;
+}
+
+public final class androidx/compose/foundation/style/CommonStyle$Companion : androidx/compose/foundation/style/CommonStyle {
+	public fun applyStyle (Landroidx/compose/foundation/style/CommonStyleScope;)V
+	public synthetic fun applyStyle (Landroidx/compose/foundation/style/CustomStyleScope;)V
+}
+
+public final class androidx/compose/foundation/style/CommonStyleKt {
+	public static final fun CommonStyle (Landroidx/compose/foundation/style/CommonStyle;Landroidx/compose/foundation/style/CommonStyle;)Landroidx/compose/foundation/style/CommonStyle;
+	public static final fun CommonStyle (Landroidx/compose/foundation/style/CommonStyle;Landroidx/compose/foundation/style/CommonStyle;[Landroidx/compose/foundation/style/CommonStyle;)Landroidx/compose/foundation/style/CommonStyle;
+	public static final fun then (Landroidx/compose/foundation/style/CommonStyle;Landroidx/compose/foundation/style/CommonStyle;)Landroidx/compose/foundation/style/CommonStyle;
+}
+
+public abstract interface class androidx/compose/foundation/style/CommonStyleScope : androidx/compose/foundation/style/AnimateStyleScope, androidx/compose/foundation/style/CustomStyleScope, androidx/compose/foundation/style/NestedStyleConsumerStyleScope, androidx/compose/foundation/style/NestedStyleProviderStyleScope, androidx/compose/foundation/style/StyleStateScope {
 }
 
 public abstract interface class androidx/compose/foundation/style/ContentColorScope {
@@ -1847,7 +2054,7 @@ public abstract interface class androidx/compose/foundation/style/CustomStyle {
 	public abstract fun applyStyle (Landroidx/compose/foundation/style/CustomStyleScope;)V
 }
 
-public abstract interface class androidx/compose/foundation/style/CustomStyleScope : androidx/compose/runtime/CompositionLocalAccessorScope, androidx/compose/ui/unit/Density {
+public abstract interface class androidx/compose/foundation/style/CustomStyleScope : androidx/compose/foundation/style/StylePropertyProviderScope, androidx/compose/runtime/CompositionLocalAccessorScope, androidx/compose/ui/unit/Density {
 }
 
 public abstract interface class androidx/compose/foundation/style/DrawStyleScope : androidx/compose/foundation/style/BackgroundScope, androidx/compose/foundation/style/BorderScope, androidx/compose/foundation/style/ForegroundScope, androidx/compose/foundation/style/ShadowScope, androidx/compose/foundation/style/ShapeScope {
@@ -1861,6 +2068,46 @@ public abstract interface class androidx/compose/foundation/style/ExternalPaddin
 	public abstract fun externalPaddingEnd-0680j_4 (F)V
 	public abstract fun externalPaddingStart-0680j_4 (F)V
 	public abstract fun externalPaddingTop-0680j_4 (F)V
+}
+
+public abstract class androidx/compose/foundation/style/Fill : androidx/compose/ui/graphics/Interpolatable {
+	public static final field $stable I
+	public static final field Companion Landroidx/compose/foundation/style/Fill$Companion;
+	public abstract fun asBrush ()Landroidx/compose/ui/graphics/Brush;
+	public abstract fun asColor-0d7_KjU ()J
+	public fun lerp (Ljava/lang/Object;F)Ljava/lang/Object;
+}
+
+public final class androidx/compose/foundation/style/Fill$Brush : androidx/compose/foundation/style/Fill {
+	public static final field $stable I
+	public fun <init> (Landroidx/compose/ui/graphics/Brush;)V
+	public fun asBrush ()Landroidx/compose/ui/graphics/Brush;
+	public fun asColor-0d7_KjU ()J
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBrush ()Landroidx/compose/ui/graphics/Brush;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class androidx/compose/foundation/style/Fill$Color : androidx/compose/foundation/style/Fill {
+	public static final field $stable I
+	public synthetic fun <init> (JLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun asBrush ()Landroidx/compose/ui/graphics/Brush;
+	public fun asColor-0d7_KjU ()J
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getColor-0d7_KjU ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class androidx/compose/foundation/style/Fill$Companion {
+	public final fun getNone ()Landroidx/compose/foundation/style/Fill;
+}
+
+public final class androidx/compose/foundation/style/Fill$None : androidx/compose/foundation/style/Fill {
+	public static final field $stable I
+	public fun asBrush ()Landroidx/compose/ui/graphics/Brush;
+	public fun asColor-0d7_KjU ()J
 }
 
 public abstract interface class androidx/compose/foundation/style/FontFamilyScope {
@@ -1942,11 +2189,60 @@ public final class androidx/compose/foundation/style/MutableStyleState : android
 	public fun setTriStateToggle (Landroidx/compose/ui/state/ToggleableState;)V
 }
 
+public abstract interface class androidx/compose/foundation/style/NestedStyleConsumerStyleScope {
+	public abstract fun applyNestedStyle (Landroidx/compose/foundation/style/NestedStyleKey;)V
+}
+
+public final class androidx/compose/foundation/style/NestedStyleKey {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/String;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class androidx/compose/foundation/style/NestedStyleProviderStyleScope {
+	public abstract fun provideNestedStyle (Landroidx/compose/foundation/style/NestedStyleKey;Landroidx/compose/foundation/style/CommonStyle;)V
+}
+
+public final class androidx/compose/foundation/style/PlacementKt {
+	public static final fun placement (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
+	public static final fun stylePlacement (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/style/StyleResolver;)Landroidx/compose/ui/Modifier;
+}
+
+public final class androidx/compose/foundation/style/PlacementModifierScope {
+	public static final field $stable I
+	public fun <init> ()V
+	public final fun getBottom-D9Ej5fM ()F
+	public final fun getHeight ()Landroidx/compose/foundation/style/Breadth;
+	public final fun getLeft-D9Ej5fM ()F
+	public final fun getMaxHeight-D9Ej5fM ()F
+	public final fun getMaxWidth-D9Ej5fM ()F
+	public final fun getMinHeight-D9Ej5fM ()F
+	public final fun getMinWidth-D9Ej5fM ()F
+	public final fun getRight-D9Ej5fM ()F
+	public final fun getTop-D9Ej5fM ()F
+	public final fun getWidth ()Landroidx/compose/foundation/style/Breadth;
+	public final fun setBottom-0680j_4 (F)V
+	public final fun setHeight (Landroidx/compose/foundation/style/Breadth;)V
+	public final fun setLeft-0680j_4 (F)V
+	public final fun setMaxHeight-0680j_4 (F)V
+	public final fun setMaxWidth-0680j_4 (F)V
+	public final fun setMinHeight-0680j_4 (F)V
+	public final fun setMinWidth-0680j_4 (F)V
+	public final fun setRight-0680j_4 (F)V
+	public final fun setTop-0680j_4 (F)V
+	public final fun setWidth (Landroidx/compose/foundation/style/Breadth;)V
+}
+
 public abstract interface class androidx/compose/foundation/style/PositionScope {
 	public abstract fun bottom-0680j_4 (F)V
 	public abstract fun left-0680j_4 (F)V
 	public abstract fun right-0680j_4 (F)V
 	public abstract fun top-0680j_4 (F)V
+}
+
+public class androidx/compose/foundation/style/ProvidableStyleProperty : androidx/compose/foundation/style/StyleProperty {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/String;ZLkotlin/jvm/functions/Function0;)V
 }
 
 public abstract interface class androidx/compose/foundation/style/RotationScope {
@@ -1965,6 +2261,33 @@ public abstract interface class androidx/compose/foundation/style/ShadowScope {
 	public abstract fun dropShadow ([Landroidx/compose/ui/graphics/shadow/Shadow;)V
 	public abstract fun innerShadow (Landroidx/compose/ui/graphics/shadow/Shadow;)V
 	public abstract fun innerShadow ([Landroidx/compose/ui/graphics/shadow/Shadow;)V
+}
+
+public abstract class androidx/compose/foundation/style/Shadows : androidx/compose/ui/graphics/Interpolatable {
+	public static final field $stable I
+	public static final field Companion Landroidx/compose/foundation/style/Shadows$Companion;
+	public fun lerp (Ljava/lang/Object;F)Ljava/lang/Object;
+}
+
+public final class androidx/compose/foundation/style/Shadows$Companion {
+	public final fun getNone ()Landroidx/compose/foundation/style/Shadows;
+}
+
+public final class androidx/compose/foundation/style/Shadows$Compound : androidx/compose/foundation/style/Shadows {
+	public static final field $stable I
+	public fun <init> ([Landroidx/compose/ui/graphics/shadow/Shadow;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getShadows ()[Landroidx/compose/ui/graphics/shadow/Shadow;
+	public fun hashCode ()I
+}
+
+public final class androidx/compose/foundation/style/Shadows$Simple : androidx/compose/foundation/style/Shadows {
+	public static final field $stable I
+	public fun <init> (Landroidx/compose/ui/graphics/shadow/Shadow;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public synthetic fun getLerpTarget$foundation ()Ljava/lang/Object;
+	public final fun getShadow ()Landroidx/compose/ui/graphics/shadow/Shadow;
+	public fun hashCode ()I
 }
 
 public abstract interface class androidx/compose/foundation/style/ShapeScope {
@@ -1987,18 +2310,96 @@ public final class androidx/compose/foundation/style/Style$Companion : androidx/
 	public fun applyStyle (Landroidx/compose/foundation/style/StyleScope;)V
 }
 
+public final class androidx/compose/foundation/style/StyleGraphicsLayerModifierKt {
+	public static final fun graphicsLayer (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
+	public static synthetic fun graphicsLayer$default (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
+	public static final fun styleGraphicsLayer (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/style/StyleResolver;)Landroidx/compose/ui/Modifier;
+}
+
 public final class androidx/compose/foundation/style/StyleKt {
 	public static final fun Style (Landroidx/compose/foundation/style/Style;Landroidx/compose/foundation/style/Style;)Landroidx/compose/foundation/style/Style;
 	public static final fun Style (Landroidx/compose/foundation/style/Style;Landroidx/compose/foundation/style/Style;Landroidx/compose/foundation/style/Style;)Landroidx/compose/foundation/style/Style;
 	public static final fun Style ([Landroidx/compose/foundation/style/Style;)Landroidx/compose/foundation/style/Style;
 	public static final fun then (Landroidx/compose/foundation/style/Style;Landroidx/compose/foundation/style/Style;)Landroidx/compose/foundation/style/Style;
+	public static final fun toCommonStyle (Landroidx/compose/foundation/style/Style;)Landroidx/compose/foundation/style/CommonStyle;
 }
 
 public final class androidx/compose/foundation/style/StyleModifierKt {
+	public static final fun styleable (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/style/StyleResolver;)Landroidx/compose/ui/Modifier;
 	public static final fun styleable (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/style/StyleState;)Landroidx/compose/ui/Modifier;
 	public static final fun styleable (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/style/StyleState;Landroidx/compose/foundation/style/Style;)Landroidx/compose/ui/Modifier;
 	public static final fun styleable (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/style/StyleState;[Landroidx/compose/foundation/style/Style;)Landroidx/compose/ui/Modifier;
 	public static synthetic fun styleable$default (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/style/StyleState;Landroidx/compose/foundation/style/Style;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
+}
+
+public final class androidx/compose/foundation/style/StylePaddingKt {
+	public static final fun styleBorderPadding (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/style/StyleResolver;)Landroidx/compose/ui/Modifier;
+	public static final fun styleContentPadding (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/style/StyleResolver;)Landroidx/compose/ui/Modifier;
+	public static final fun styleExternalPadding (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/style/StyleResolver;)Landroidx/compose/ui/Modifier;
+}
+
+public final class androidx/compose/foundation/style/StylePropertiesKt {
+	public static final fun getContentBrush (Landroidx/compose/foundation/style/StylePropertyAccessorScope;)Landroidx/compose/ui/graphics/Brush;
+	public static final fun getContentColor (Landroidx/compose/foundation/style/StylePropertyAccessorScope;)J
+	public static final fun getContentFill (Landroidx/compose/foundation/style/StylePropertyAccessorScope;)Landroidx/compose/foundation/style/Fill;
+}
+
+public class androidx/compose/foundation/style/StyleProperty {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/String;ZLkotlin/jvm/functions/Function0;)V
+	public final fun getDefaultValue ()Lkotlin/jvm/functions/Function0;
+	public final fun getName ()Ljava/lang/String;
+	public final fun isLocal ()Z
+	public fun lerp (Ljava/lang/Object;Ljava/lang/Object;F)Ljava/lang/Object;
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class androidx/compose/foundation/style/StylePropertyAccessorScope {
+	public abstract fun anySet (Ljava/util/Set;)Z
+	public abstract fun getOrNull (Landroidx/compose/foundation/style/StyleProperty;)Ljava/lang/Object;
+	public abstract fun getValue (Landroidx/compose/foundation/style/StyleProperty;)Ljava/lang/Object;
+	public abstract fun isSet (Landroidx/compose/foundation/style/StyleProperty;)Z
+}
+
+public final class androidx/compose/foundation/style/StylePropertyKt {
+	public static final fun Breadth (F)Landroidx/compose/foundation/style/Breadth;
+	public static final fun Breadth-0680j_4 (F)Landroidx/compose/foundation/style/Breadth;
+	public static final fun Fill (Landroidx/compose/ui/graphics/Brush;)Landroidx/compose/foundation/style/Fill;
+	public static final fun Fill (Ljava/lang/Object;)Landroidx/compose/foundation/style/Fill;
+	public static final fun Fill-8_81llA (J)Landroidx/compose/foundation/style/Fill;
+	public static final fun Shadows (Landroidx/compose/ui/graphics/shadow/Shadow;)Landroidx/compose/foundation/style/Shadows;
+	public static final fun Shadows (Ljava/lang/Object;)Landroidx/compose/foundation/style/Shadows;
+	public static final fun Shadows ([Landroidx/compose/ui/graphics/shadow/Shadow;)Landroidx/compose/foundation/style/Shadows;
+	public static final fun getOrElse (Landroidx/compose/foundation/style/StylePropertyAccessorScope;Landroidx/compose/foundation/style/StyleProperty;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public static final fun ifSet (Landroidx/compose/foundation/style/StylePropertyAccessorScope;Landroidx/compose/foundation/style/StyleProperty;Lkotlin/jvm/functions/Function1;)V
+	public static final fun lerp-C3pnCVY (JJF)J
+	public static final fun lerp-Md-fbLM (FFF)F
+	public static final fun styleLocalOf (Ljava/lang/String;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function0;)Landroidx/compose/foundation/style/ProvidableStyleProperty;
+	public static synthetic fun styleLocalOf$default (Ljava/lang/String;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Landroidx/compose/foundation/style/ProvidableStyleProperty;
+	public static final fun stylePropertyOf (Ljava/lang/String;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function0;)Landroidx/compose/foundation/style/ProvidableStyleProperty;
+	public static synthetic fun stylePropertyOf$default (Ljava/lang/String;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Landroidx/compose/foundation/style/ProvidableStyleProperty;
+}
+
+public abstract interface class androidx/compose/foundation/style/StylePropertyProviderScope {
+	public abstract fun provide (Landroidx/compose/foundation/style/ProvidableStyleProperty;Ljava/lang/Object;)V
+}
+
+public final class androidx/compose/foundation/style/StyleResolver : androidx/compose/runtime/RememberObserver {
+	public static final field $stable I
+	public fun <init> (Landroidx/compose/foundation/style/CommonStyle;Landroidx/compose/foundation/style/StyleState;)V
+	public synthetic fun <init> (Landroidx/compose/foundation/style/CommonStyle;Landroidx/compose/foundation/style/StyleState;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAccessorScope ()Landroidx/compose/foundation/style/StyleResolverScope;
+	public fun onAbandoned ()V
+	public fun onForgotten ()V
+	public fun onRemembered ()V
+	public final fun resolve (Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+}
+
+public final class androidx/compose/foundation/style/StyleResolverNodeKt {
+	public static final fun styleResolver (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/style/StyleResolver;)Landroidx/compose/ui/Modifier;
+}
+
+public abstract interface class androidx/compose/foundation/style/StyleResolverScope : androidx/compose/foundation/style/StylePropertyAccessorScope, androidx/compose/runtime/CompositionLocalAccessorScope, androidx/compose/ui/unit/Density {
 }
 
 public abstract interface class androidx/compose/foundation/style/StyleScope : androidx/compose/foundation/style/AnimateStyleScope, androidx/compose/foundation/style/CustomStyleScope, androidx/compose/foundation/style/DrawStyleScope, androidx/compose/foundation/style/LayerStyleScope, androidx/compose/foundation/style/LayoutStyleScope, androidx/compose/foundation/style/StyleStateScope, androidx/compose/foundation/style/TextStyleStyleScope {
@@ -2039,6 +2440,9 @@ public final class androidx/compose/foundation/style/StyleScopeKt {
 	public static final fun transformOrigin-DV65GgE (Landroidx/compose/foundation/style/TransformOriginScope;J)V
 	public static final fun translation (Landroidx/compose/foundation/style/TranslationScope;FF)V
 	public static final fun translation-Uv8p0NA (Landroidx/compose/foundation/style/TranslationScope;J)V
+}
+
+public abstract interface annotation class androidx/compose/foundation/style/StyleScopeMarker : java/lang/annotation/Annotation {
 }
 
 public abstract class androidx/compose/foundation/style/StyleState {
@@ -2391,6 +2795,8 @@ public final class androidx/compose/foundation/text/input/InputTransformationKt 
 	public static final fun allCaps (Landroidx/compose/foundation/text/input/InputTransformation;Landroidx/compose/ui/text/intl/Locale;)Landroidx/compose/foundation/text/input/InputTransformation;
 	public static final fun byValue (Landroidx/compose/foundation/text/input/InputTransformation;Lkotlin/jvm/functions/Function2;)Landroidx/compose/foundation/text/input/InputTransformation;
 	public static final fun maxLength (Landroidx/compose/foundation/text/input/InputTransformation;I)Landroidx/compose/foundation/text/input/InputTransformation;
+	public static final fun maxLengthReject (Landroidx/compose/foundation/text/input/InputTransformation;I)Landroidx/compose/foundation/text/input/InputTransformation;
+	public static final fun maxLengthTrim (Landroidx/compose/foundation/text/input/InputTransformation;I)Landroidx/compose/foundation/text/input/InputTransformation;
 	public static final fun then (Landroidx/compose/foundation/text/input/InputTransformation;Landroidx/compose/foundation/text/input/InputTransformation;)Landroidx/compose/foundation/text/input/InputTransformation;
 }
 
@@ -2413,6 +2819,7 @@ public final class androidx/compose/foundation/text/input/TextFieldBuffer : java
 	public fun append (Ljava/lang/CharSequence;II)Ljava/lang/Appendable;
 	public final fun asCharSequence ()Ljava/lang/CharSequence;
 	public final fun charAt (I)C
+	public final fun getChanges ()Landroidx/compose/foundation/text/input/TextFieldBuffer$ChangeList;
 	public final fun getExpandPolicy-DIMv-cw (Landroidx/compose/foundation/text/input/TrackedRange;)I
 	public final fun getLength ()I
 	public final fun getOriginalSelection-d9O1mEE ()J
@@ -2446,6 +2853,8 @@ public abstract interface class androidx/compose/foundation/text/input/TextField
 
 public final class androidx/compose/foundation/text/input/TextFieldBufferKt {
 	public static final fun delete (Landroidx/compose/foundation/text/input/TextFieldBuffer;II)V
+	public static final fun forEachChange (Landroidx/compose/foundation/text/input/TextFieldBuffer$ChangeList;Lkotlin/jvm/functions/Function2;)V
+	public static final fun forEachChangeReversed (Landroidx/compose/foundation/text/input/TextFieldBuffer$ChangeList;Lkotlin/jvm/functions/Function2;)V
 	public static final fun insert (Landroidx/compose/foundation/text/input/TextFieldBuffer;ILjava/lang/String;)V
 	public static final fun placeCursorAtEnd (Landroidx/compose/foundation/text/input/TextFieldBuffer;)V
 	public static final fun selectAll (Landroidx/compose/foundation/text/input/TextFieldBuffer;)V
@@ -2492,6 +2901,7 @@ public final class androidx/compose/foundation/text/input/TextFieldState {
 	public final fun getSelection-d9O1mEE ()J
 	public final fun getText ()Ljava/lang/CharSequence;
 	public final fun getTextStyles ()Landroidx/compose/foundation/text/input/TextFieldTextStyles;
+	public final fun getUndoState ()Landroidx/compose/foundation/text/input/UndoState;
 	public final fun startEdit ()Landroidx/compose/foundation/text/input/TextFieldBuffer;
 	public fun toString ()Ljava/lang/String;
 }

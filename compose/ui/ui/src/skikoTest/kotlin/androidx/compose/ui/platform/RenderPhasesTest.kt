@@ -296,6 +296,7 @@ class RenderPhasesTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun stateWriteDuringLayoutDoesNotRemeasureBeforeDraw() = runSkikoComposeUiTest {
         // A write made during layout updates this draw, but its measure invalidation is handled by
@@ -326,6 +327,7 @@ class RenderPhasesTest {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun measurementInvalidatedSettlesBeforeDraw() = runSkikoComposeUiTest {
         val events = mutableListOf<String>()

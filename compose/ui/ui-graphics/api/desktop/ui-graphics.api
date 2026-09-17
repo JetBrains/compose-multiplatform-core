@@ -532,6 +532,23 @@ public final class androidx/compose/ui/graphics/MatrixKt {
 	public static final fun isIdentity-58bKbWc ([F)Z
 }
 
+public final class androidx/compose/ui/graphics/MeshGradientPainter : androidx/compose/ui/graphics/painter/Painter {
+	public static final field $stable I
+	public fun <init> (IIZLkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (IIZLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getIntrinsicSize-NH-jbRc ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class androidx/compose/ui/graphics/MeshGradientScope {
+	public abstract fun getColumns ()I
+	public abstract fun getRows ()I
+	public abstract fun setVertex-6uS4IUQ (IIJJJJJJ)V
+	public static synthetic fun setVertex-6uS4IUQ$default (Landroidx/compose/ui/graphics/MeshGradientScope;IIJJJJJJILjava/lang/Object;)V
+}
+
 public final class androidx/compose/ui/graphics/OffsetEffect : androidx/compose/ui/graphics/RenderEffect {
 	public static final field $stable I
 	public synthetic fun <init> (Landroidx/compose/ui/graphics/RenderEffect;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -844,6 +861,7 @@ public final class androidx/compose/ui/graphics/PathOperationKt {
 
 public final class androidx/compose/ui/graphics/PathSegment {
 	public static final field $stable I
+	public fun <init> (Landroidx/compose/ui/graphics/PathSegment$Type;[FF)V
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getPoints ()[F
 	public final fun getType ()Landroidx/compose/ui/graphics/PathSegment$Type;
@@ -1117,11 +1135,44 @@ public final class androidx/compose/ui/graphics/VertexMode$Companion {
 public final class androidx/compose/ui/graphics/Vertices {
 	public static final field $stable I
 	public synthetic fun <init> (ILjava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (I[F[F[I[SLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getColors ()[I
 	public final fun getIndices ()[S
 	public final fun getPositions ()[F
 	public final fun getTextureCoordinates ()[F
 	public final fun getVertexMode-c2xauaI ()I
+}
+
+public abstract interface class androidx/compose/ui/graphics/blur/BlurRadiusSpec {
+	public static final field Companion Landroidx/compose/ui/graphics/blur/BlurRadiusSpec$Companion;
+	public abstract fun createRenderEffect-aIZFzLM (JLandroidx/compose/ui/unit/Density;I)Landroidx/compose/ui/graphics/RenderEffect;
+	public static synthetic fun createRenderEffect-aIZFzLM$default (Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;JLandroidx/compose/ui/unit/Density;IILjava/lang/Object;)Landroidx/compose/ui/graphics/RenderEffect;
+}
+
+public final class androidx/compose/ui/graphics/blur/BlurRadiusSpec$Companion {
+	public final fun horizontalGradient (Ljava/util/List;)Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;
+	public final fun horizontalGradient-YgX7TsA (FF)Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;
+	public final fun linearGradient-W9idHKA (JJFF)Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;
+	public final fun linearGradient-xhh869w (JJLjava/util/List;)Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;
+	public final fun radialGradient-3s42-ZE (Ljava/util/List;JF)Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;
+	public static synthetic fun radialGradient-3s42-ZE$default (Landroidx/compose/ui/graphics/blur/BlurRadiusSpec$Companion;Ljava/util/List;JFILjava/lang/Object;)Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;
+	public final fun radialGradient-xnJUiNE (FFJF)Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;
+	public static synthetic fun radialGradient-xnJUiNE$default (Landroidx/compose/ui/graphics/blur/BlurRadiusSpec$Companion;FFJFILjava/lang/Object;)Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;
+	public final fun shader-D5KLDUw (FLkotlin/jvm/functions/Function2;)Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;
+	public final fun uniform-0680j_4 (F)Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;
+	public final fun verticalGradient (Ljava/util/List;)Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;
+	public final fun verticalGradient-YgX7TsA (FF)Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;
+}
+
+public final class androidx/compose/ui/graphics/blur/BlurStop {
+	public static final field $stable I
+	public static final field MaxStops I
+	public synthetic fun <init> (FFLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFraction ()F
+	public final fun getRadius-D9Ej5fM ()F
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public abstract class androidx/compose/ui/graphics/colorspace/Adaptation {

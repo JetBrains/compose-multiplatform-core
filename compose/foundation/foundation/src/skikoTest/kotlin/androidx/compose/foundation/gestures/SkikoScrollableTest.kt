@@ -50,6 +50,7 @@ import org.jetbrains.skiko.hostOs
 
 @OptIn(ExperimentalTestApi::class)
 class SkikoScrollableTest {
+    @Suppress("DEPRECATION")
     @Test
     fun properDefaultFlingBehavior() = runComposeUiTest {
         val state by mutableStateOf(LazyListState())
@@ -75,6 +76,7 @@ class SkikoScrollableTest {
     }
 
     // bug https://github.com/JetBrains/compose-multiplatform/issues/3551 (mouse didn't work)
+    @Suppress("DEPRECATION")
     @Test
     fun recreatingListStateShouldNotBreakMouseScrolling() = runComposeUiTest {
         var state by mutableStateOf(LazyListState())
@@ -103,6 +105,7 @@ class SkikoScrollableTest {
     }
 
     // bug https://github.com/JetBrains/compose-multiplatform/issues/3551 (touch always worked)
+    @Suppress("DEPRECATION")
     @Test
     fun recreatingListStateShouldNotBreakTouchScrolling() = runComposeUiTest {
         var state by mutableStateOf(LazyListState())
@@ -131,6 +134,7 @@ class SkikoScrollableTest {
     }
 
     @OptIn(InternalComposeUiApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun closeSceneDuringScrollAnimation() = runSkikoComposeUiTest(
         size = Size(100f, 100f),

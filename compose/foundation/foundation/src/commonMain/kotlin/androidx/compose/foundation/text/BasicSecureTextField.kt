@@ -50,6 +50,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.password
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
@@ -69,6 +70,7 @@ import kotlinx.coroutines.flow.consumeAsFlow
  * appropriate for entering secure content. Additionally, some context menu actions like cut, copy,
  * and drag are disabled for added security.
  *
+ * @sample androidx.compose.foundation.samples.PinCodeEntryRowSample
  * @param state [TextFieldState] object that holds the internal state of a [BasicSecureTextField].
  * @param modifier optional [Modifier] for this text field.
  * @param enabled controls the enabled state of the [BasicSecureTextField]. When `false`, the text
@@ -120,7 +122,7 @@ import kotlinx.coroutines.flow.consumeAsFlow
 // This takes a composable lambda, but it is not primarily a container.
 @Suppress("ComposableLambdaParameterPosition")
 @Composable
-fun BasicSecureTextField(
+public fun BasicSecureTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -185,7 +187,10 @@ fun BasicSecureTextField(
 
     val secureTextFieldModifier =
         modifier
-            .semantics { contentType = ContentType.Password }
+            .semantics {
+                contentType = ContentType.Password
+                password(isPasswordObfuscated = textObfuscationMode != TextObfuscationMode.Visible)
+            }
             .onPreviewKeyEvent { keyEvent ->
                 // BasicTextField uses this static mapping
                 val command = platformDefaultKeyMapping.map(keyEvent)
@@ -249,8 +254,9 @@ internal class SecureTextFieldController(
         }
     }
 
-    val focusChangeModifier =
-        Modifier.onFocusChanged { if (!it.isFocused) passwordInputTransformation.hide() }
+    val focusChangeModifier = Modifier.onFocusChanged {
+        if (!it.isFocused) passwordInputTransformation.hide()
+    }
 
     private val resetTimerSignal = Channel<Unit>(Channel.UNLIMITED)
 
@@ -391,7 +397,7 @@ internal expect fun rememberPlatformPasswordVisibilitySettingsState(): SplitVisi
 )
 @Suppress("ComposableLambdaParameterPosition")
 @Composable
-fun BasicSecureTextField(
+public fun BasicSecureTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -405,7 +411,7 @@ fun BasicSecureTextField(
     decorator: TextFieldDecorator? = null,
     // Last parameter must not be a function unless it's intended to be commonly used as a trailing
     // lambda.
-    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.RevealLastTyped,
+    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.System,
     textObfuscationCharacter: Char = DefaultObfuscationCharacter,
 ) {
     BasicSecureTextField(
@@ -432,7 +438,7 @@ fun BasicSecureTextField(
 )
 @Suppress("ComposableLambdaParameterPosition")
 @Composable
-fun BasicSecureTextField(
+public fun BasicSecureTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -447,7 +453,7 @@ fun BasicSecureTextField(
     decorator: TextFieldDecorator? = null,
     // Last parameter must not be a function unless it's intended to be commonly used as a trailing
     // lambda.
-    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.RevealLastTyped,
+    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.System,
     textObfuscationCharacter: Char = DefaultObfuscationCharacter,
 ) {
     BasicSecureTextField(

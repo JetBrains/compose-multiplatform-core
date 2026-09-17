@@ -17,7 +17,6 @@
 package androidx.compose.foundation.copyPasteAndroidTests
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.assertPixelColor
 import androidx.compose.foundation.assertShape
 import androidx.compose.foundation.background
@@ -52,6 +51,7 @@ class CanvasTest {
     private val boxHeight = 100
     private val containerSize = boxWidth
 
+    @Suppress("DEPRECATION")
     @Test
     fun testCanvas() = runSkikoComposeUiTest(Size(containerSize * 2f, containerSize * 2f)) {
         val strokeWidth = 5.0f
@@ -154,7 +154,7 @@ class CanvasTest {
         }
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun canvas_contentDescription() = runSkikoComposeUiTest {
         val testTag = "canvas"
@@ -168,6 +168,7 @@ class CanvasTest {
         onNodeWithTag(testTag).assertContentDescriptionEquals(contentDescription)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun canvas_noSize_emptyCanvas() = runSkikoComposeUiTest {
         setContentForSizeAssertions {
@@ -179,6 +180,7 @@ class CanvasTest {
             .assertWidthIsEqualTo(0.dp)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun canvas_exactSizes() = runSkikoComposeUiTest {
         setContentForSizeAssertions {
@@ -199,6 +201,7 @@ class CanvasTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun canvas_exactSizes_drawCircle() = runSkikoComposeUiTest(Size(100f, 100f)) {
         setContentForSizeAssertions {

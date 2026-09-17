@@ -18,19 +18,22 @@ package androidx.compose.foundation.text.input.internal
 
 import android.os.Build
 import android.text.InputType
-import android.view.View
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.ExtractedText
+import android.view.inputmethod.ExtractedTextRequest
+import android.view.inputmethod.InputConnection
 import androidx.compose.foundation.content.internal.ReceiveContentConfiguration
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.input.FakeInputMethodManager
+import androidx.compose.foundation.text.input.InputMethodInterceptor
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.TextHighlightType
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.node.ModifierNodeElement
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformTextInputModifierNode
 import androidx.compose.ui.platform.PlatformTextInputSession
 import androidx.compose.ui.platform.establishTextInputSession
@@ -50,7 +53,6 @@ import com.google.common.truth.Truth
 import kotlin.test.assertFalse
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -60,17 +62,16 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AndroidTextInputSessionTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
+    private val inputMethodInterceptor = InputMethodInterceptor(rule)
     private lateinit var coroutineScope: CoroutineScope
-    private lateinit var hostView: View
     private lateinit var textInputNode: PlatformTextInputModifierNode
 
     @Before
     fun setup() {
-        rule.setContent {
+        inputMethodInterceptor.setContent {
             coroutineScope = rememberCoroutineScope()
-            hostView = LocalView.current
             Box(modifier = Modifier.size(1.dp).testTag("tag").then(TestTextElement()).focusable())
         }
         rule.onNodeWithTag("tag").requestFocus()
@@ -81,24 +82,24 @@ class AndroidTextInputSessionTest {
     fun createInputConnection_modifiesEditorInfo() {
         val state = TextFieldState("hello", initialSelection = TextRange(0, 5))
         launchInputSessionWithDefaultsForTest(state)
-        val editorInfo = EditorInfo()
-        rule.runOnIdle { hostView.onCreateInputConnection(editorInfo) }
 
-        Truth.assertThat(editorInfo.initialSelStart).isEqualTo(0)
-        Truth.assertThat(editorInfo.initialSelEnd).isEqualTo(5)
-        Truth.assertThat(editorInfo.inputType)
-            .isEqualTo(
-                InputType.TYPE_CLASS_TEXT or
-                    InputType.TYPE_TEXT_FLAG_MULTI_LINE or
-                    InputType.TYPE_TEXT_FLAG_AUTO_CORRECT or
-                    if (Build.VERSION.SDK_INT >= 37) {
-                        InputType.TYPE_TEXT_FLAG_ENABLE_TEXT_SUGGESTION_SELECTED
-                    } else {
-                        0
-                    }
-            )
-        Truth.assertThat(editorInfo.imeOptions)
-            .isEqualTo(EditorInfo.IME_FLAG_NO_FULLSCREEN or EditorInfo.IME_FLAG_NO_ENTER_ACTION)
+        inputMethodInterceptor.withEditorInfo {
+            Truth.assertThat(initialSelStart).isEqualTo(0)
+            Truth.assertThat(initialSelEnd).isEqualTo(5)
+            Truth.assertThat(inputType)
+                .isEqualTo(
+                    InputType.TYPE_CLASS_TEXT or
+                        InputType.TYPE_TEXT_FLAG_MULTI_LINE or
+                        InputType.TYPE_TEXT_FLAG_AUTO_CORRECT or
+                        if (Build.VERSION.SDK_INT >= 37) {
+                            InputType.TYPE_TEXT_FLAG_ENABLE_TEXT_SUGGESTION_SELECTED
+                        } else {
+                            0
+                        }
+                )
+            Truth.assertThat(imeOptions)
+                .isEqualTo(EditorInfo.IME_FLAG_NO_FULLSCREEN or EditorInfo.IME_FLAG_NO_ENTER_ACTION)
+        }
     }
 
     @Test
@@ -107,18 +108,18 @@ class AndroidTextInputSessionTest {
         val state2 = TextFieldState()
         launchInputSessionWithDefaultsForTest(state1)
 
-        rule.runOnIdle {
-            hostView.onCreateInputConnection(EditorInfo()).commitText("hello", 1)
+        inputMethodInterceptor.withInputConnection { commitText("hello", 1) }
 
+        rule.runOnIdle {
             Truth.assertThat(state1.text.toString()).isEqualTo("hello")
             Truth.assertThat(state2.text.toString()).isEqualTo("")
         }
 
         launchInputSessionWithDefaultsForTest(state2)
 
-        rule.runOnIdle {
-            hostView.onCreateInputConnection(EditorInfo()).commitText("world", 1)
+        inputMethodInterceptor.withInputConnection { commitText("world", 1) }
 
+        rule.runOnIdle {
             Truth.assertThat(state1.text.toString()).isEqualTo("hello")
             Truth.assertThat(state2.text.toString()).isEqualTo("world")
         }
@@ -134,11 +135,11 @@ class AndroidTextInputSessionTest {
             onImeAction = { imeActionFromOne = it },
         )
 
-        rule.runOnIdle {
-            hostView
-                .onCreateInputConnection(EditorInfo())
-                .performEditorAction(EditorInfo.IME_ACTION_DONE)
+        inputMethodInterceptor.withInputConnection {
+            performEditorAction(EditorInfo.IME_ACTION_DONE)
+        }
 
+        rule.runOnIdle {
             Truth.assertThat(imeActionFromOne).isEqualTo(ImeAction.Done)
             Truth.assertThat(imeActionFromTwo).isNull()
         }
@@ -148,11 +149,9 @@ class AndroidTextInputSessionTest {
             onImeAction = { imeActionFromTwo = it },
         )
 
-        rule.runOnIdle {
-            hostView
-                .onCreateInputConnection(EditorInfo())
-                .performEditorAction(EditorInfo.IME_ACTION_GO)
+        inputMethodInterceptor.withInputConnection { performEditorAction(EditorInfo.IME_ACTION_GO) }
 
+        rule.runOnIdle {
             Truth.assertThat(imeActionFromOne).isEqualTo(ImeAction.Done)
             Truth.assertThat(imeActionFromTwo).isEqualTo(ImeAction.Go)
         }
@@ -170,23 +169,22 @@ class AndroidTextInputSessionTest {
                     capitalization = KeyboardCapitalization.Words,
                 )
         )
-        val editorInfo = EditorInfo()
 
-        rule.runOnIdle { hostView.onCreateInputConnection(editorInfo) }
-
-        Truth.assertThat(editorInfo.inputType)
-            .isEqualTo(
-                InputType.TYPE_CLASS_TEXT or
-                    InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS or
-                    InputType.TYPE_TEXT_FLAG_CAP_WORDS or
-                    if (Build.VERSION.SDK_INT >= 37) {
-                        InputType.TYPE_TEXT_FLAG_ENABLE_TEXT_SUGGESTION_SELECTED
-                    } else {
-                        0
-                    }
-            )
-        Truth.assertThat(editorInfo.imeOptions)
-            .isEqualTo(EditorInfo.IME_ACTION_SEARCH or EditorInfo.IME_FLAG_NO_FULLSCREEN)
+        inputMethodInterceptor.withEditorInfo {
+            Truth.assertThat(inputType)
+                .isEqualTo(
+                    InputType.TYPE_CLASS_TEXT or
+                        InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS or
+                        InputType.TYPE_TEXT_FLAG_CAP_WORDS or
+                        if (Build.VERSION.SDK_INT >= 37) {
+                            InputType.TYPE_TEXT_FLAG_ENABLE_TEXT_SUGGESTION_SELECTED
+                        } else {
+                            0
+                        }
+                )
+            Truth.assertThat(imeOptions)
+                .isEqualTo(EditorInfo.IME_ACTION_SEARCH or EditorInfo.IME_FLAG_NO_FULLSCREEN)
+        }
     }
 
     @Test
@@ -200,6 +198,76 @@ class AndroidTextInputSessionTest {
         }
 
         composeImm.expectNoMoreCalls()
+    }
+
+    @Test
+    fun getExtractedText_enablesExtractedTextUpdates() {
+        val state = TextFieldState("hello")
+        val composeImm =
+            object : FakeInputMethodManager() {
+                var lastToken: Int = -1
+                var lastExtractedText: ExtractedText? = null
+
+                override fun updateExtractedText(token: Int, extractedText: ExtractedText) {
+                    super.updateExtractedText(token, extractedText)
+                    lastToken = token
+                    lastExtractedText = extractedText
+                }
+            }
+        launchInputSessionWithDefaultsForTest(state, composeImm = composeImm)
+
+        inputMethodInterceptor.withInputConnection {
+            // Calling getExtractedText without MONITOR flag should NOT trigger updateExtractedText
+            // on text change
+            val request1 = ExtractedTextRequest().apply { token = 11 }
+            val extractedText1 = getExtractedText(request1, 0)
+
+            Truth.assertThat(extractedText1.text.toString()).isEqualTo("hello")
+        }
+
+        // Change the text, updateExtractedText should NOT be called
+        state.editAsUser(inputTransformation = null) { replace(0, length, "world") }
+
+        rule.runOnIdle {
+            composeImm.expectNoCall("updateExtractedText")
+            composeImm.resetCalls()
+        }
+
+        // Now request with MONITOR flag
+        inputMethodInterceptor.withInputConnection {
+            val request2 = ExtractedTextRequest().apply { token = 22 }
+            val extractedText2 =
+                getExtractedText(request2, InputConnection.GET_EXTRACTED_TEXT_MONITOR)
+
+            Truth.assertThat(extractedText2.text.toString()).isEqualTo("world")
+        }
+
+        // Change the text again
+        state.editAsUser(inputTransformation = null) { replace(0, length, "hello again") }
+
+        rule.runOnIdle {
+            composeImm.expectCall("updateExtractedText")
+            Truth.assertThat(composeImm.lastToken).isEqualTo(22)
+            Truth.assertThat(composeImm.lastExtractedText?.text.toString()).isEqualTo("hello again")
+        }
+
+        // Restart the InputConnection (simulate IME recreation)
+        // Recreating the input connection should reset the monitor mode
+        inputMethodInterceptor.withCurrentRequest<PlatformTextInputMethodRequest> {
+            createInputConnection(EditorInfo())
+        }
+
+        rule.runOnIdle { composeImm.resetCalls() }
+
+        // Change the text again
+        state.editAsUser(inputTransformation = null) { replace(0, length, "world") }
+
+        rule.runOnIdle {
+            // Update extracted text should NOT be called because monitor mode is reset on new
+            // connection
+            composeImm.expectCall("updateSelection(5, 5, -1, -1)")
+            composeImm.expectNoCall("updateExtractedText")
+        }
     }
 
     @Test
@@ -256,7 +324,7 @@ class AndroidTextInputSessionTest {
             updateSelectionState = null,
             stylusHandwritingTrigger = null,
             viewConfiguration = null,
-            updateTouchMode = {},
+            updateDirectTouchInteraction = {},
         )
 
     private inner class TestTextElement : ModifierNodeElement<TestTextNode>() {

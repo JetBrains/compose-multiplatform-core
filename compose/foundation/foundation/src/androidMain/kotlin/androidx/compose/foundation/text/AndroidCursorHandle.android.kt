@@ -41,8 +41,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
 
 private const val Sqrt2 = 1.41421356f
-internal val CursorHandleHeight = 25.dp
-internal val CursorHandleWidth = CursorHandleHeight * 2f / (1 + Sqrt2)
+internal val CursorHandleHeight
+    get() = 25.dp
+internal val CursorHandleWidth
+    get() = CursorHandleHeight * 2f / (1 + Sqrt2)
 
 @Composable
 internal actual fun CursorHandle(
@@ -50,16 +52,15 @@ internal actual fun CursorHandle(
     modifier: Modifier,
     minTouchTargetSize: DpSize,
 ) {
-    val finalModifier =
-        modifier.semantics {
-            this[SelectionHandleInfoKey] =
-                SelectionHandleInfo(
-                    handle = Handle.Cursor,
-                    position = offsetProvider.provide(),
-                    anchor = SelectionHandleAnchor.Middle,
-                    visible = true,
-                )
-        }
+    val finalModifier = modifier.semantics {
+        this[SelectionHandleInfoKey] =
+            SelectionHandleInfo(
+                handle = Handle.Cursor,
+                position = offsetProvider.provide(),
+                anchor = SelectionHandleAnchor.Middle,
+                visible = true,
+            )
+    }
     HandlePopup(positionProvider = offsetProvider, handleReferencePoint = Alignment.TopCenter) {
         if (minTouchTargetSize.isSpecified) {
             Box(

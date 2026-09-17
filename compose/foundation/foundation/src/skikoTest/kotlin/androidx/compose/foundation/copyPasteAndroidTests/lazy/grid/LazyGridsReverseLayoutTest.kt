@@ -52,6 +52,7 @@ class LazyGridsReverseLayoutTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun verticalGrid_reverseLayout() = runSkikoComposeUiTest {
         setContent {
@@ -80,6 +81,7 @@ class LazyGridsReverseLayoutTest {
             .assertLeftPositionInRootIsEqualTo(itemSize)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun column_emitTwoElementsAsOneItem() = runSkikoComposeUiTest {
         setContent {
@@ -121,6 +123,7 @@ class LazyGridsReverseLayoutTest {
             .assertLeftPositionInRootIsEqualTo(itemSize)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun verticalGrid_whenParameterChanges() = runSkikoComposeUiTest {
         var reverse by mutableStateOf(true)

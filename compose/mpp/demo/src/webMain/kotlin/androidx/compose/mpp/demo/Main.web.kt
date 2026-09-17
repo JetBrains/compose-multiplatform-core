@@ -19,8 +19,13 @@ package androidx.compose.mpp.demo
 import androidx.compose.mpp.demo.bugs.BugsScreen
 import androidx.compose.mpp.demo.components.text.loadResource
 import androidx.compose.mpp.demo.interops.HtmlInteropDemos
+import androidx.compose.mpp.demo.webgl.PlainWebGlScreen
+import androidx.compose.mpp.demo.webgl.ThreeJsTextureAdoptionScreen
+import androidx.compose.mpp.demo.webgl.VideoWebGlScreen
+import androidx.compose.mpp.demo.webgl.HtmlInCanvasWebGlScreen
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.mpp.demo.embedded.embeddedScrollDemo
+import androidx.compose.mpp.demo.webgl.WebGLDemoScreen
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -65,6 +70,7 @@ fun defaultComposeDemo() {
         val fontsLoaded = remember { mutableStateOf(false) }
         val app = remember { App(
             extraScreens = listOf(
+                WebGLDemoScreen,
                 BugsScreen,
                 Screen.Example("Web Clipboard API example") {
                     WebClipboardDemo()

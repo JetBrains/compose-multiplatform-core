@@ -54,7 +54,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import junit.framework.TestCase.assertEquals
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -65,7 +64,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class LazyLayoutTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun recompositionWithTheSameInputDoesntCauseRemeasure() {
@@ -321,12 +320,11 @@ class LazyLayoutTest {
         val constraints = Constraints.fixed(50, 50)
         var measureCount = 0
         @Suppress("NAME_SHADOWING")
-        val modifier =
-            Modifier.layout { measurable, constraints ->
-                measureCount++
-                val placeable = measurable.measure(constraints)
-                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
-            }
+        val modifier = Modifier.layout { measurable, constraints ->
+            measureCount++
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+        }
         val itemProvider =
             itemProvider({ 1 }) { index ->
                 Box(Modifier.fillMaxSize().testTag("$index").then(modifier))
@@ -370,12 +368,11 @@ class LazyLayoutTest {
         val constraints = Constraints.fixed(50, 50)
         var measureCount = 0
         @Suppress("NAME_SHADOWING")
-        val modifier =
-            Modifier.layout { measurable, constraints ->
-                measureCount++
-                val placeable = measurable.measure(constraints)
-                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
-            }
+        val modifier = Modifier.layout { measurable, constraints ->
+            measureCount++
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+        }
         val itemProvider =
             itemProvider({ 1 }) { index ->
                 Box(Modifier.fillMaxSize().testTag("$index").then(modifier))
@@ -414,12 +411,11 @@ class LazyLayoutTest {
         val constraints = Constraints.fixed(50, 50)
         var measureCount = 0
         @Suppress("NAME_SHADOWING")
-        val modifier =
-            Modifier.layout { measurable, constraints ->
-                measureCount++
-                val placeable = measurable.measure(constraints)
-                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
-            }
+        val modifier = Modifier.layout { measurable, constraints ->
+            measureCount++
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+        }
         val itemProvider =
             itemProvider({ 1 }, true) { index ->
                 Box(Modifier.fillMaxSize().testTag("$index").then(modifier))
@@ -508,7 +504,6 @@ class LazyLayoutTest {
     }
 
     @Test
-    @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
     fun changingKeyForPrefetchingItemInTheMiddleOfRequest() {
         var composed = false
         var measured = false
@@ -543,7 +538,7 @@ class LazyLayoutTest {
         }
 
         rule.runOnIdle {
-            prefetchState.prefetchHandleProvider.shouldPauseBetweenPrecompositionAndPremeasure =
+            prefetchState.prefetchHandleProvider?.shouldPauseBetweenPrecompositionAndPremeasure =
                 true
 
             prefetchState.schedulePrecompositionAndPremeasure(0, Constraints.fixed(50, 50))

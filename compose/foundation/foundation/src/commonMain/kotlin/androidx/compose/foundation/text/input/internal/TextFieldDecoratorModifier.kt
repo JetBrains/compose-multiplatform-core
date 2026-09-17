@@ -250,7 +250,9 @@ internal class TextFieldDecoratorModifierNode(
                     with(textFieldSelectionState) {
                         val requestFocus = { if (!isWindowAndTextFieldFocused) requestFocus() }
 
-                        launch(start = CoroutineStart.UNDISPATCHED) { detectTouchMode() }
+                        launch(start = CoroutineStart.UNDISPATCHED) {
+                            detectDirectTouchInteraction()
+                        }
                         launch(start = CoroutineStart.UNDISPATCHED) {
                             detectTextFieldTapGestures(
                                 requestFocus = requestFocus,
@@ -511,10 +513,9 @@ internal class TextFieldDecoratorModifierNode(
 
                 if (isFocused && toolbarAndHandlesVisibilityObserverJob != null) {
                     toolbarAndHandlesVisibilityObserverJob?.cancel()
-                    toolbarAndHandlesVisibilityObserverJob =
-                        coroutineScope.launch {
-                            textFieldSelectionState.startToolbarAndHandlesVisibilityObserver()
-                        }
+                    toolbarAndHandlesVisibilityObserverJob = coroutineScope.launch {
+                        textFieldSelectionState.startToolbarAndHandlesVisibilityObserver()
+                    }
                 }
             }
             textFieldSelectionState.requestAutofillAction = { requestAutofill() }
@@ -706,10 +707,9 @@ internal class TextFieldDecoratorModifierNode(
         textFieldSelectionState.isWindowAndTextFieldFocused = this.isFocused
         if (isFocused && toolbarAndHandlesVisibilityObserverJob == null) {
             // only start a new job is there's not an ongoing one.
-            toolbarAndHandlesVisibilityObserverJob =
-                coroutineScope.launch {
-                    textFieldSelectionState.startToolbarAndHandlesVisibilityObserver()
-                }
+            toolbarAndHandlesVisibilityObserverJob = coroutineScope.launch {
+                textFieldSelectionState.startToolbarAndHandlesVisibilityObserver()
+            }
         } else if (!isFocused) {
             toolbarAndHandlesVisibilityObserverJob?.cancel()
             toolbarAndHandlesVisibilityObserverJob = null
@@ -736,10 +736,6 @@ internal class TextFieldDecoratorModifierNode(
 
     override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
         textLayoutState.decoratorNodeCoordinates = coordinates
-
-        if (enabled) {
-            focusableNode.onGloballyPositioned(coordinates)
-        }
     }
 
     override fun onPointerEvent(
@@ -804,7 +800,7 @@ internal class TextFieldDecoratorModifierNode(
 
     private fun applyCurrentInputMode() {
         if (currentValueOf(LocalInputModeManager).inputMode != InputMode.Touch) {
-            textFieldSelectionState.isInTouchMode = false
+            textFieldSelectionState.isDirectTouchInteraction = false
         }
     }
 
@@ -831,7 +827,9 @@ internal class TextFieldDecoratorModifierNode(
                         },
                         stylusHandwritingTrigger = stylusHandwritingTrigger,
                         viewConfiguration = currentValueOf(LocalViewConfiguration),
-                        updateTouchMode = { textFieldSelectionState.isInTouchMode = it },
+                        updateDirectTouchInteraction = {
+                            textFieldSelectionState.isDirectTouchInteraction = it
+                        },
                     )
                 }
             }
@@ -898,5 +896,5 @@ internal expect suspend fun PlatformTextInputSession.platformSpecificTextInputSe
     updateSelectionState: (() -> Unit)? = null,
     stylusHandwritingTrigger: MutableSharedFlow<Unit>? = null,
     viewConfiguration: ViewConfiguration? = null,
-    updateTouchMode: (Boolean) -> Unit,
+    updateDirectTouchInteraction: (Boolean) -> Unit,
 ): Nothing

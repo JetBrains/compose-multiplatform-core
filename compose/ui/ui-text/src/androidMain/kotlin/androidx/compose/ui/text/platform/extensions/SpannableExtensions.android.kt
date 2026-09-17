@@ -66,6 +66,7 @@ import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.text.style.TextIndent
+import androidx.compose.ui.text.style.isApplicable
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
@@ -199,8 +200,8 @@ internal fun Spannable.setLineHeight(
                     lineHeight = resolvedLineHeight,
                     startIndex = 0,
                     endIndex = endIndex,
-                    trimFirstLineTop = lineHeightStyle.trim.isTrimFirstLineTop(),
-                    trimLastLineBottom = lineHeightStyle.trim.isTrimLastLineBottom(),
+                    trimFirstLineTop = lineHeightStyle.trim.trimsFirstLineTop,
+                    trimLastLineBottom = lineHeightStyle.trim.trimsLastLineBottom,
                     topRatio = lineHeightStyle.alignment.topRatio,
                     mode = lineHeightStyle.mode,
                 ),
@@ -571,7 +572,9 @@ internal fun Spannable.setColor(color: Color, start: Int, end: Int) {
 
 @OptIn(InternalPlatformTextApi::class)
 private fun Spannable.setBaselineShift(baselineShift: BaselineShift?, start: Int, end: Int) {
-    baselineShift?.let { setSpan(BaselineShiftSpan(it.multiplier), start, end) }
+    if (baselineShift?.isApplicable == true) {
+        setSpan(BaselineShiftSpan(baselineShift.multiplier), start, end)
+    }
 }
 
 private fun Spannable.setBrush(brush: Brush?, alpha: Float, start: Int, end: Int) {

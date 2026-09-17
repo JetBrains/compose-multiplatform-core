@@ -94,7 +94,7 @@ class ComposeDialog : JDialog, ComposeDesktopEntryPoint {
         coroutineContext: CoroutineContext = EmptyCoroutineContext,
     ) : super(owner, "", modalityType, graphicsConfiguration) {
         composePanel = createComposePanel(skiaLayerAnalytics, savedState, coroutineContext)
-        contentPane.add(composePanel)
+        init()
     }
 
     /**
@@ -120,7 +120,7 @@ class ComposeDialog : JDialog, ComposeDesktopEntryPoint {
         coroutineContext: CoroutineContext = EmptyCoroutineContext,
     ) : super(owner, "", modal, graphicsConfiguration) {
         composePanel = createComposePanel(skiaLayerAnalytics, savedState, coroutineContext)
-        contentPane.add(composePanel)
+        init()
     }
 
     /**
@@ -202,6 +202,11 @@ class ComposeDialog : JDialog, ComposeDesktopEntryPoint {
     constructor() : this(
         owner = null as Frame?,
     )
+
+    private fun init() {
+        disableDoubleBuffering()  // To reduce memory use
+        contentPane.add(composePanel)
+    }
 
     internal var rootForTestListener
         get() = composePanel.rootForTestListener

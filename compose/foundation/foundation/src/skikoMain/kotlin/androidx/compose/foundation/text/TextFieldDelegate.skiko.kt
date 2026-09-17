@@ -93,6 +93,8 @@ internal fun determineCursorDesiredOffset(
             textLayoutResult.getLineEnd(lineNumber)
         }
 
+        currentText.requiresCharacterLevelCursorPlacement(offset) -> offset
+
         currentText.isWhitespaceOrPunctuation(offset) -> findNextNonWhitespaceSymbolsSubsequenceStartOffset(
             offset,
             currentText

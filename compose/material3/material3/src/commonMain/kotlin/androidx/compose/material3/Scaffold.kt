@@ -84,7 +84,7 @@ import androidx.compose.ui.util.fastMaxBy
  *   of the scroll, and not on the scroll itself.
  */
 @Composable
-fun Scaffold(
+public fun Scaffold(
     modifier: Modifier = Modifier,
     topBar: @Composable () -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
@@ -275,66 +275,78 @@ private fun ScaffoldLayout(
                 .fastMap { it.measure(looseConstraints) }
 
         layout(layoutWidth, layoutHeight) {
-            // Placing to control drawing order to match default elevation of each placeable
-            bodyContentPlaceables.fastForEach { it.place(0, 0) }
-            topBarPlaceables.fastForEach { it.place(0, 0) }
+            // Placing to have correct keyboard focus order and setting zIndex to control drawing
+            // order to match default elevation of each placeable.
+            topBarPlaceables.fastForEach { it.place(0, 0, zIndex = TopBarZIndex) }
+            bodyContentPlaceables.fastForEach { it.place(0, 0, zIndex = ContentZIndex) }
             snackbarPlaceables.fastForEach {
                 it.place(
                     (layoutWidth - snackbarWidth +
                         contentWindowInsets.getLeft(this@SubcomposeLayout, layoutDirection) -
                         contentWindowInsets.getRight(this@SubcomposeLayout, layoutDirection)) / 2,
                     layoutHeight - snackbarOffsetFromBottom,
+                    zIndex = SnackbarZIndex,
                 )
             }
-            // The bottom bar is always at the bottom of the layout
-            bottomBarPlaceables.fastForEach { it.place(0, layoutHeight - (bottomBarHeight ?: 0)) }
             // Explicitly not using placeRelative here as `leftOffset` already accounts for RTL
             fabPlacement?.let { placement ->
                 fabPlaceables.fastForEach {
-                    it.place(placement.left, layoutHeight - fabOffsetFromBottom!!)
+                    it.place(
+                        placement.left,
+                        layoutHeight - fabOffsetFromBottom!!,
+                        zIndex = FabZIndex,
+                    )
                 }
+            }
+            // The bottom bar is always at the bottom of the layout
+            bottomBarPlaceables.fastForEach {
+                it.place(0, layoutHeight - (bottomBarHeight ?: 0), zIndex = BottomBarZIndex)
             }
         }
     }
 }
 
 /** Object containing various default values for [Scaffold] component. */
-object ScaffoldDefaults {
+public object ScaffoldDefaults {
     /** Default insets to be used and consumed by the scaffold content slot */
-    val contentWindowInsets: WindowInsets
+    public val contentWindowInsets: WindowInsets
         @Composable get() = WindowInsets.systemBarsForVisualComponents
 }
 
 /** The possible positions for a [FloatingActionButton] attached to a [Scaffold]. */
 @kotlin.jvm.JvmInline
-value class FabPosition internal constructor(@Suppress("unused") private val value: Int) {
-    companion object {
+public value class FabPosition internal constructor(@Suppress("unused") private val value: Int) {
+    public companion object {
         /**
          * Position FAB at the bottom of the screen at the start, above the [NavigationBar] (if it
          * exists)
          */
-        val Start = FabPosition(0)
+        public val Start: FabPosition
+            get() = FabPosition(0)
 
         /**
          * Position FAB at the bottom of the screen in the center, above the [NavigationBar] (if it
          * exists)
          */
-        val Center = FabPosition(1)
+        public val Center: FabPosition
+            get() = FabPosition(1)
 
         /**
          * Position FAB at the bottom of the screen at the end, above the [NavigationBar] (if it
          * exists)
          */
-        val End = FabPosition(2)
+        public val End: FabPosition
+            get() = FabPosition(2)
 
         /**
          * Position FAB at the bottom of the screen at the end, overlaying the [NavigationBar] (if
          * it exists)
          */
-        val EndOverlay = FabPosition(3)
+        public val EndOverlay: FabPosition
+            get() = FabPosition(3)
     }
 
-    override fun toString(): String {
+    public override fun toString(): String {
         return when (this) {
             Start -> "FabPosition.Start"
             Center -> "FabPosition.Center"
@@ -355,7 +367,15 @@ value class FabPosition internal constructor(@Suppress("unused") private val val
 @Immutable internal class FabPlacement(val left: Int, val width: Int, val height: Int)
 
 // FAB spacing above the bottom bar / bottom of the Scaffold
-private val FabSpacing = 16.dp
+private val FabSpacing
+    get() = 16.dp
+
+// Z-indices for the different scaffold layout contents
+private const val ContentZIndex = 0f
+private const val TopBarZIndex = 1f
+private const val SnackbarZIndex = 2f
+private const val BottomBarZIndex = 3f
+private const val FabZIndex = 4f
 
 private enum class ScaffoldLayoutContent {
     TopBar,

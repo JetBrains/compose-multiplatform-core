@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // b/552879150
+
 package androidx.compose.foundation.text.selection
 
 import androidx.annotation.VisibleForTesting
@@ -1216,7 +1218,9 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
                         ?.localToRoot(
                             Offset(
                                 x = 0f,
-                                y = it.layoutResult?.value?.getCursorRect(transformedEnd)?.top ?: 0f,
+                                y =
+                                    it.layoutResult?.value?.getCursorRect(transformedEnd)?.top
+                                        ?: 0f,
                             )
                         )
                         ?.y ?: 0f

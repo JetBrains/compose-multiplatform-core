@@ -337,9 +337,9 @@ fun interface WindowPositionProvider {
         val Current = WindowPositionProvider { windowMetrics.bounds.topLeft }
 
         /**
-         * Centers the window within the screen.
+         * Centers the window on the screen.
          */
-        val CenteredOnScreen = AlignedToScreen(alignment = Alignment.Center)
+        val CenteredInScreenBounds = CenteredInScreenBounds()
 
         /**
          * Centers the window within its parent window.
@@ -368,12 +368,38 @@ fun interface WindowPositionProvider {
         fun Absolute(x: Dp, y: Dp): WindowPositionProvider = Absolute(DpOffset(x, y))
 
         /**
-         * Aligns the window within the screen according to [alignment] and [offset].
+         * Centers the window on the screen.
+         *
+         * Note that unlike [AlignedToScreenAvailableBounds], this position provider does not take
+         * into account the screen's insets. If the resulting position overlaps the insets, the
+         * operating system's window manager may move the window to avoid the insets.
+         *
+         * @param offset An additional absolute offset added after aligning.
+         */
+        fun CenteredInScreenBounds(
+            offset: DpOffset = DpOffset.Zero,
+        ): WindowPositionProvider = WindowPositionProvider { size ->
+            val bounds = windowMetrics.screen.bounds
+
+            val position = Alignment.Center.align(
+                size = size.roundToIntSize(),
+                space = bounds.size.roundToIntSize(),
+                layoutDirection = LayoutDirection.Ltr
+            )
+            DpOffset(
+                x = bounds.left + position.x.dp + offset.x,
+                y = bounds.top + position.y.dp + offset.y
+            )
+        }
+
+        /**
+         * Aligns the window within the screen's available bounds (excluding [Screen.insets])
+         * according to [alignment] and [offset].
          *
          * @param alignment The alignment of the window relative to the screen.
          * @param offset An additional absolute offset added after aligning.
          */
-        fun AlignedToScreen(
+        fun AlignedToScreenAvailableBounds(
             alignment: Alignment,
             offset: DpOffset = DpOffset.Zero,
         ): WindowPositionProvider = WindowPositionProvider { size ->

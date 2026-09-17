@@ -122,6 +122,7 @@ class TextFieldScrollTest : FocusedWindowTest {
         isDebugInspectorInfoEnabled = false
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textFieldScroll_horizontal_scrollable_withLongInput() = runComposeUiTest {
         val scrollerPosition = TextFieldScrollerPosition(Orientation.Horizontal)
@@ -138,6 +139,7 @@ class TextFieldScrollTest : FocusedWindowTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textFieldScroll_vertical_scrollable_withLongInput() = runComposeUiTest {
         val scrollerPosition = TextFieldScrollerPosition()
@@ -154,6 +156,7 @@ class TextFieldScrollTest : FocusedWindowTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textFieldScroll_vertical_scrollable_withLongInput_whenMaxLinesProvided() = runComposeUiTest {
         val scrollerPosition = TextFieldScrollerPosition()
@@ -171,6 +174,7 @@ class TextFieldScrollTest : FocusedWindowTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textFieldScroll_horizontal_notScrollable_withShortInput() = runComposeUiTest {
         val scrollerPosition = TextFieldScrollerPosition(Orientation.Horizontal)
@@ -184,6 +188,7 @@ class TextFieldScrollTest : FocusedWindowTest {
         runOnIdle { assertThat(scrollerPosition.maximum).isEqualTo(0f) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textFieldScroll_vertical_notScrollable_withShortInput() = runComposeUiTest {
         val scrollerPosition = TextFieldScrollerPosition()
@@ -197,6 +202,7 @@ class TextFieldScrollTest : FocusedWindowTest {
         runOnIdle { assertThat(scrollerPosition.maximum).isEqualTo(0f) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textField_singleLine_scrolledAndClipped() = runComposeUiTest {
         val parentSize = 200
@@ -225,6 +231,7 @@ class TextFieldScrollTest : FocusedWindowTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textField_multiline_scrolledAndClipped() = runComposeUiTest {
         val parentSize = 200
@@ -253,6 +260,7 @@ class TextFieldScrollTest : FocusedWindowTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textFieldScroll_horizontal_swipe_whenLongInput() = runComposeUiTest {
         val scrollerPosition = TextFieldScrollerPosition(Orientation.Horizontal)
@@ -274,6 +282,7 @@ class TextFieldScrollTest : FocusedWindowTest {
         runOnIdle { assertThat(scrollerPosition.offset).isLessThan(firstSwipePosition) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textFieldScroll_vertical_swipe_whenLongInput() = runComposeUiTest {
         val scrollerPosition = TextFieldScrollerPosition()
@@ -295,6 +304,7 @@ class TextFieldScrollTest : FocusedWindowTest {
         runOnIdle { assertThat(scrollerPosition.offset).isLessThan(firstSwipePosition) }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textFieldScrollable_testInspectorValue() = runComposeUiTest {
         val position = TextFieldScrollerPosition(Orientation.Vertical, 10f)
@@ -313,6 +323,7 @@ class TextFieldScrollTest : FocusedWindowTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textFieldScroll_horizontal_withNarrowerChild_measureWithOriginalConstraints() = runComposeUiTest {
         val scrollerPosition = TextFieldScrollerPosition(Orientation.Horizontal)
@@ -364,6 +375,7 @@ class TextFieldScrollTest : FocusedWindowTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textFieldScroll_horizontal_withWiderChild_measureWithInfinityWidthConstraints() = runComposeUiTest {
         val scrollerPosition = TextFieldScrollerPosition(Orientation.Horizontal)
@@ -423,6 +435,7 @@ class TextFieldScrollTest : FocusedWindowTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     @Ignore // TODO: selectionHandles can be applied for targets supporting touch
     fun textField_cursorHandle_hidden_whenScrolledOutOfView() = runComposeUiTest {
@@ -462,6 +475,7 @@ class TextFieldScrollTest : FocusedWindowTest {
         onNode(isSelectionHandle(Handle.Cursor)).assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     @Ignore // TODO: selectionHandles can be applied for targets supporting touch
     fun textField_selectionHandles_hidden_whenScrolledOutOfView() = runComposeUiTest {
@@ -510,6 +524,7 @@ class TextFieldScrollTest : FocusedWindowTest {
         onNode(isSelectionHandle(Handle.SelectionEnd)).assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textFieldScroll_horizontal_overscroll() = runComposeUiTest {
         val scrollerPosition = TextFieldScrollerPosition(Orientation.Horizontal)
@@ -530,6 +545,7 @@ class TextFieldScrollTest : FocusedWindowTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textFieldScroll_vertical_overscroll() = runComposeUiTest {
         val scrollerPosition = TextFieldScrollerPosition()

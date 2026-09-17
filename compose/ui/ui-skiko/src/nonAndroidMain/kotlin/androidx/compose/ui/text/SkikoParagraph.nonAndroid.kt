@@ -632,8 +632,7 @@ private fun LineMetrics.trimFirstAscent(
 ): LineMetrics {
     if (textStyle.lineHeight.isUnspecified) return this
     val style = textStyle.lineHeightStyle ?: LineHeightStyle.Default
-    @Suppress("INVISIBLE_REFERENCE") // FIXME: Make [isTrimFirstLineTop] public
-    val ascent = if (style.trim.isTrimFirstLineTop()) {
+    val ascent = if (style.trim.trimsFirstLineTop) {
         -fontMetrics.ascent.toDouble()
     } else {
         ascent
@@ -647,8 +646,7 @@ private fun LineMetrics.trimLastDescent(
 ): LineMetrics {
     if (textStyle.lineHeight.isUnspecified) return this
     val style = textStyle.lineHeightStyle ?: LineHeightStyle.Default
-    @Suppress("INVISIBLE_REFERENCE") // FIXME: Make [isTrimLastLineBottom] public
-    val descent = if (style.trim.isTrimLastLineBottom()) {
+    val descent = if (style.trim.trimsLastLineBottom) {
         fontMetrics.descent.toDouble()
     } else {
         descent

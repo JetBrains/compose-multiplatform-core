@@ -67,6 +67,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalTestApi::class)
 class ClickableFocusTest {
+    @Suppress("DEPRECATION")
     @Test
     fun focus_is_requested_when_click_with_mouse_on_clickable() = runComposeUiTest {
         if (!isRequestFocusOnClickEnabled()) return@runComposeUiTest
@@ -88,6 +89,7 @@ class ClickableFocusTest {
         onNodeWithTag("box1").assertIsFocused()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun focus_is_requested_when_click_with_mouse_on_toggleable() = runComposeUiTest {
         if (!isRequestFocusOnClickEnabled()) return@runComposeUiTest
@@ -109,6 +111,7 @@ class ClickableFocusTest {
         onNodeWithTag("box1").assertIsFocused()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun focus_is_requested_when_click_with_mouse_on_selectable() = runComposeUiTest {
         if (!isRequestFocusOnClickEnabled()) return@runComposeUiTest
@@ -130,6 +133,7 @@ class ClickableFocusTest {
         onNodeWithTag("box1").assertIsFocused()
     }
 
+    @Suppress("DEPRECATION")
     private fun focus_indication_is_hidden_when_click_with_mouse_and_shown_after_Tab(
         content: @Composable (indication1: TestFocusIndicationNodeFactory, indication2: TestFocusIndicationNodeFactory) -> Unit
     ) = runComposeUiTest {
@@ -275,6 +279,7 @@ class ClickableFocusTest {
     }
 
     @OptIn(ExperimentalComposeUiApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun mouseClickOutsideClearsFocusWithClearFocusOnMouseDownEnabled() {
         val prevClearFocusOnMouseDownEnabled = ComposeUiFlags.isClearFocusOnMouseDownEnabled

@@ -37,7 +37,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runSkikoComposeUiTest
@@ -45,11 +44,9 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.test.IgnoreJsTarget
 
 @OptIn(ExperimentalTestApi::class)
 class LazyGridSlotsReuseTest {
@@ -58,6 +55,7 @@ class LazyGridSlotsReuseTest {
     private val itemsSizePx = 30f
     private val itemsSizeDp = with(density) { itemsSizePx.toDp() }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scroll1ItemScrolledOffItemIsKeptForReuse() = runSkikoComposeUiTest {
         lateinit var state: LazyGridState
@@ -79,6 +77,7 @@ class LazyGridSlotsReuseTest {
         onNodeWithTag("1").assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scroll2ItemsScrolledOffItemsAreKeptForReuse() = runSkikoComposeUiTest {
         lateinit var state: LazyGridState
@@ -103,6 +102,7 @@ class LazyGridSlotsReuseTest {
         onNodeWithTag("2").assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun checkMaxItemsKeptForReuse() = runSkikoComposeUiTest {
         lateinit var state: LazyGridState
@@ -132,6 +132,7 @@ class LazyGridSlotsReuseTest {
         onNodeWithTag("${DefaultMaxItemsToRetain + 1}").assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scroll3Items2OfScrolledOffItemsAreKeptForReuse() = runSkikoComposeUiTest {
         lateinit var state: LazyGridState
@@ -172,6 +173,7 @@ class LazyGridSlotsReuseTest {
         onNodeWithTag("4").assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun doMultipleScrollsOneByOne() = runSkikoComposeUiTest {
         lateinit var state: LazyGridState
@@ -213,6 +215,7 @@ class LazyGridSlotsReuseTest {
         onNodeWithTag("5").assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollBackwardOnce() = runSkikoComposeUiTest {
         lateinit var state: LazyGridState
@@ -243,6 +246,7 @@ class LazyGridSlotsReuseTest {
         onNodeWithTag("9").assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollBackwardOneByOne() = runSkikoComposeUiTest {
         lateinit var state: LazyGridState
@@ -276,6 +280,7 @@ class LazyGridSlotsReuseTest {
         onNodeWithTag("7").assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun scrollingBackReusesTheSameSlot() = runSkikoComposeUiTest {
         lateinit var state: LazyGridState
@@ -346,6 +351,7 @@ class LazyGridSlotsReuseTest {
         onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(id3)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun differentContentTypes() = runSkikoComposeUiTest {
         lateinit var state: LazyGridState
@@ -388,6 +394,7 @@ class LazyGridSlotsReuseTest {
         onNodeWithTag("${startOfType1 + DefaultMaxItemsToRetain}").assertDoesNotExist()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun differentTypesFromDifferentItemCalls() = runSkikoComposeUiTest {
         lateinit var state: LazyGridState
@@ -447,4 +454,4 @@ class LazyGridSlotsReuseTest {
     }
 }
 
-private val DefaultMaxItemsToRetain = 7
+private const val DefaultMaxItemsToRetain = 7

@@ -85,6 +85,17 @@ public final class androidx/navigation/compose/DialogNavigatorDestinationBuilder
 	public synthetic fun instantiateDestination ()Landroidx/navigation/NavDestination;
 }
 
+public final class androidx/navigation/compose/NavBackStackEntryInfo : androidx/navigationevent/NavigationEventInfo {
+	public static final field $stable I
+	public fun <init> ()V
+	public fun <init> (Landroidx/navigation/NavBackStackEntry;)V
+	public synthetic fun <init> (Landroidx/navigation/NavBackStackEntry;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getVisibleEntry ()Landroidx/navigation/NavBackStackEntry;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class androidx/navigation/compose/NavBackStackEntryProviderKt {
 	public static final fun LocalOwnersProvider (Landroidx/navigation/NavBackStackEntry;Landroidx/compose/runtime/saveable/SaveableStateHolder;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)V
 }

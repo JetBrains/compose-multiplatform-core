@@ -93,7 +93,7 @@ import kotlin.math.max
  */
 @ExperimentalMaterialApi
 @Composable
-fun ExposedDropdownMenuBox(
+public fun ExposedDropdownMenuBox(
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -159,7 +159,7 @@ fun ExposedDropdownMenuBox(
 
 /** Scope for [ExposedDropdownMenuBox]. */
 @ExperimentalMaterialApi
-abstract class ExposedDropdownMenuBoxScope {
+public abstract class ExposedDropdownMenuBoxScope {
     /**
      * Modifier which should be applied to an [ExposedDropdownMenu] placed inside the scope. It's
      * responsible for setting the width of the [ExposedDropdownMenu], which will match the width of
@@ -170,7 +170,7 @@ abstract class ExposedDropdownMenuBoxScope {
      * @param matchTextFieldWidth Whether menu should match the width of the text field to which
      *   it's attached. If set to true the width will match the width of the text field.
      */
-    abstract fun Modifier.exposedDropdownSize(matchTextFieldWidth: Boolean = true): Modifier
+    public abstract fun Modifier.exposedDropdownSize(matchTextFieldWidth: Boolean = true): Modifier
 
     /**
      * Popup which contains content for Exposed Dropdown Menu. Should be used inside the content of
@@ -184,7 +184,7 @@ abstract class ExposedDropdownMenuBoxScope {
      * @param content The content of the [ExposedDropdownMenu]
      */
     @Composable
-    fun ExposedDropdownMenu(
+    public fun ExposedDropdownMenu(
         expanded: Boolean,
         onDismissRequest: () -> Unit,
         modifier: Modifier = Modifier,
@@ -229,7 +229,7 @@ abstract class ExposedDropdownMenuBoxScope {
 
 /** Contains default values used by Exposed Dropdown Menu. */
 @ExperimentalMaterialApi
-object ExposedDropdownMenuDefaults {
+public object ExposedDropdownMenuDefaults {
     /**
      * Default trailing icon for Exposed Dropdown Menu.
      *
@@ -239,7 +239,7 @@ object ExposedDropdownMenuDefaults {
      */
     @ExperimentalMaterialApi
     @Composable
-    fun TrailingIcon(expanded: Boolean, onIconClick: () -> Unit = {}) {
+    public fun TrailingIcon(expanded: Boolean, onIconClick: () -> Unit = {}) {
         // Clear semantics here as otherwise icon will be a11y focusable but without an
         // action. When there's an API to check if Talkback is on, developer will be able to
         // expand the menu on icon click in a11y mode only esp. if using their own custom
@@ -295,7 +295,7 @@ object ExposedDropdownMenuDefaults {
      *   it's disabled.
      */
     @Composable
-    fun textFieldColors(
+    public fun textFieldColors(
         textColor: Color = LocalContentColor.current.copy(LocalContentAlpha.current),
         disabledTextColor: Color = textColor.copy(ContentAlpha.disabled),
         backgroundColor: Color =
@@ -393,7 +393,7 @@ object ExposedDropdownMenuDefaults {
      *   it's disabled.
      */
     @Composable
-    fun outlinedTextFieldColors(
+    public fun outlinedTextFieldColors(
         textColor: Color = LocalContentColor.current.copy(LocalContentAlpha.current),
         disabledTextColor: Color = textColor.copy(ContentAlpha.disabled),
         backgroundColor: Color = Color.Transparent,

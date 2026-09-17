@@ -16,8 +16,19 @@
 
 package androidx.compose.mpp.demo
 
+import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 
 class SwiftHelper {
-    fun getViewController(makeHostingViewController: (Int) -> UIViewController): UIViewController = getViewControllerWithCompose(makeHostingViewController)
+    fun getViewController(
+        makeHostingViewController: (Int) -> UIViewController,
+        makeSwiftUISizeThatFitsSizingDemoViewController: (UIView, SwiftUISizeThatFitsSizingExample) -> UIViewController,
+        makeSwiftUIIntrinsicSizingDemoViewController: (UIView, SwiftUIIntrinsicSizingExample) -> UIViewController,
+        makeUIKitSizingDemoViewController: (UIView, UIKitSizingExample) -> UIViewController,
+    ): UIViewController = getViewControllerWithCompose(
+        makeHostingViewController = makeHostingViewController,
+        makeSwiftUISizeThatFitsSizingDemoViewController = makeSwiftUISizeThatFitsSizingDemoViewController,
+        makeSwiftUIIntrinsicSizingDemoViewController = makeSwiftUIIntrinsicSizingDemoViewController,
+        makeUIKitSizingDemoViewController = makeUIKitSizingDemoViewController,
+    )
 }

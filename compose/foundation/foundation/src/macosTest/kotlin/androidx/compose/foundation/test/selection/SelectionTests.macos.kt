@@ -20,7 +20,6 @@ import androidx.compose.foundation.assertThat
 import androidx.compose.foundation.isEqualTo
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
@@ -39,7 +38,8 @@ import kotlin.test.Test
 
 class SelectionMacosTests {
 
-    @OptIn(ExperimentalTestApi::class, ExperimentalComposeUiApi::class)
+    @OptIn(ExperimentalTestApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun `select using Shift_End and Shift_Home combinations`() = runSkikoComposeUiTest {
         val state = mutableStateOf(TextFieldValue("line 1\nline 2\nline 3\nline 4\nline 5"))
@@ -82,7 +82,8 @@ class SelectionMacosTests {
         assertThat(state.value.selection).isEqualTo(TextRange(1, 0))
     }
 
-    @OptIn(ExperimentalTestApi::class, ExperimentalComposeUiApi::class)
+    @OptIn(ExperimentalTestApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun `Ctrl + Backspace on an empty line`() = runSkikoComposeUiTest {
         val state = mutableStateOf(TextFieldValue(""))

@@ -51,8 +51,9 @@ abstract class UpdateTranslationsTask : DefaultTask() {
     }
 
     /**
-     * The URL of the repository to check out.
+     * The URL of the repository to check out, or `null` to use the current working directory.
      */
+    @get:Optional
     @get:Input
     abstract val gitRepo: Property<String>
 
@@ -119,15 +120,21 @@ abstract class UpdateTranslationsTask : DefaultTask() {
         dir.deleteOnExit()
 
         val targetDirectory = targetDirectory.get().asFile
+        val copyrightBlocksByFileName = targetDirectory.listFiles().orEmpty().associate {
+            it.name to it.readCopyrightBlock()
+        }
         if (targetDirectory.isDirectory && !targetDirectory.deleteRecursively())
             throw IOException("Unable to delete directory $targetDirectory")
 
         if (!targetDirectory.isDirectory && !targetDirectory.mkdirs())
             throw IOException("Unable to create directory $targetDirectory")
 
-        // The directory into which the repo will be cloned
-        val repoDir = File(dir, gitRepo.get().substringAfterLast('/'))
-        repoDir.deleteRecursively()
+        val gitRepoUrl = gitRepo.orNull
+        val repoDir = if (gitRepoUrl != null) {
+            File(dir, gitRepoUrl.substringAfterLast('/')).also { it.deleteRecursively() }
+        } else {
+            project.rootDir
+        }
 
         // The directories in the repo to check out.
         // For each locale, there could be several values directories.
@@ -140,36 +147,45 @@ abstract class UpdateTranslationsTask : DefaultTask() {
             locale to valuesDirs
         }
 
-        val gitCommand = git.getOrElse("git")
+        if (gitRepoUrl != null) {
+            val gitCommand = git.getOrElse("git")
 
-        // Clone the repo, but don't check out any files
-        execCommand(dir, gitCommand, "clone", "-n", "--depth=1", "--filter=tree:0", gitRepo.get())
+            // Clone the repo, but don't check out any files
+            execCommand(dir, gitCommand, "clone", "-n", "--depth=1", "--filter=tree:0", gitRepoUrl)
 
-        // Set a sparse checkout to download only the directories we need
-        val allValuesDirs = valuesDirsByLocale.values.flatten()
-        execCommand(repoDir, gitCommand, "sparse-checkout", "set", "--no-cone",
-            *allValuesDirs.toTypedArray())
+            // Set a sparse checkout to download only the directories we need
+            val allValuesDirs = valuesDirsByLocale.values.flatten()
+            execCommand(repoDir, gitCommand, "sparse-checkout", "set", "--no-cone",
+                *allValuesDirs.toTypedArray())
 
-        // Actually download them
-        execCommand(repoDir, gitCommand, "checkout")
+            // Actually download them
+            execCommand(repoDir, gitCommand, "checkout")
+        }
 
         val docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
 
         // Write the per-language translation files
         val localesGroupedByLanguage = valuesDirsByLocale.keys.groupBy { it.language }
         for ((language, locales) in localesGroupedByLanguage) {
+            val kotlinFileName = language.replaceFirstChar { it.uppercase() } + ".kt"
             writeLanguageFile(
-                language = language,
+                kotlinFileName = kotlinFileName,
                 locales = locales,
                 stringByResourceName = stringByResourceName.get(),
                 repoDir = repoDir,
                 valuesDirsByLocale = valuesDirsByLocale,
                 docBuilder = docBuilder,
+                copyrightBlock = copyrightBlocksByFileName[kotlinFileName],
             )
         }
 
         // Write the Translations.kt file
-        writeTranslationsFile(localesGroupedByLanguage.values.flatten())
+        val kotlinFileName = "Translations.kt"
+        writeTranslationsFile(
+            kotlinFileName = kotlinFileName,
+            locales = localesGroupedByLanguage.values.flatten(),
+            copyrightBlock = copyrightBlocksByFileName[kotlinFileName],
+        )
     }
 
     /**
@@ -185,18 +201,18 @@ abstract class UpdateTranslationsTask : DefaultTask() {
      * directories in the repository.
      */
     private fun writeLanguageFile(
-        language: String,
+        kotlinFileName: String,
         locales: List<Locale>,
         stringByResourceName: Map<String, String>,
         repoDir: File,
         valuesDirsByLocale: Map<Locale, List<String>>,
         docBuilder: DocumentBuilder,
+        copyrightBlock: String?,
     ) {
-        val kotlinFileName = language.replaceFirstChar { it.uppercase() } + ".kt"
         println("Writing $kotlinFileName for locales ${locales.joinToString()}")
 
         File(targetDirectory.get().asFile, kotlinFileName).bufferedWriter().use {
-            it.write(kotlinFilePreamble())
+            it.write(kotlinFilePreamble(copyrightBlock))
             val className = kotlinStringsClassName.orNull ?: "Strings"
             it.appendLine("import ${kotlinStringsPackageName.get()}.$className")
             it.appendLine("import ${kotlinStringsPackageName.get()}.Translations")
@@ -249,9 +265,13 @@ abstract class UpdateTranslationsTask : DefaultTask() {
     /**
      * Writes the `Translations.kt` file which maps all locales to the actual translations.
      */
-    private fun writeTranslationsFile(locales: List<Locale>) {
-        File(targetDirectory.asFile.get(), "Translations.kt").bufferedWriter().use {
-            it.write(kotlinFilePreamble())
+    private fun writeTranslationsFile(
+        kotlinFileName: String,
+        locales: List<Locale>,
+        copyrightBlock: String?,
+    ) {
+        File(targetDirectory.asFile.get(), kotlinFileName).bufferedWriter().use {
+            it.write(kotlinFilePreamble(copyrightBlock))
             it.appendLine("import ${kotlinStringsPackageName.get()}.Translations")
             it.appendLine()
             it.appendLine("""
@@ -282,7 +302,15 @@ abstract class UpdateTranslationsTask : DefaultTask() {
      * The preamble of any Kotlin source files we write.
      */
     @Suppress("HttpUrlsUsage")
-    private fun kotlinFilePreamble() = """
+    private fun kotlinFilePreamble(copyrightBlock: String?) =
+        (copyrightBlock ?: newCopyrightBlock()) + "\n\n" + """
+        package ${targetPackageName.get()}
+        
+        
+    """.trimIndent()
+
+    @Suppress("HttpUrlsUsage")
+    private fun newCopyrightBlock() = """
         /*
          * Copyright ${Calendar.getInstance().get(Calendar.YEAR)} The Android Open Source Project
          *
@@ -298,11 +326,10 @@ abstract class UpdateTranslationsTask : DefaultTask() {
          * See the License for the specific language governing permissions and
          * limitations under the License.
          */
-
-        package ${targetPackageName.get()}
-        
-        
     """.trimIndent()
+
+    private fun File.readCopyrightBlock() =
+        readText().substringBefore("\npackage ").trimEnd()
 
     /**
      * Executes the given command and waits for it to complete.

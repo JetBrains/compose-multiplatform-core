@@ -16,7 +16,7 @@
 
 package androidx.compose.foundation
 
-import android.os.SystemClock
+import androidx.compose.foundation.ComposeFoundationFlags.isDraggableZeroDeltaConsumptionEnabled
 import androidx.compose.foundation.gestures.DraggableGestureConnection
 import androidx.compose.foundation.gestures.DraggableState
 import androidx.compose.foundation.gestures.Orientation
@@ -67,7 +67,11 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.sendIndirectPointerInput
 import androidx.compose.ui.test.swipe
+import androidx.compose.ui.test.swipeDown
+import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.test.swipeWithVelocity
 import androidx.compose.ui.unit.dp
@@ -81,10 +85,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert
+import org.junit.Assert.assertThrows
+import org.junit.Assume
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -94,8 +100,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class DraggableTest {
 
-    val testDispatcher = StandardTestDispatcher()
-    @get:Rule val rule = createComposeRule(testDispatcher)
+    @get:Rule val rule = createComposeRule()
 
     private val draggableBoxTag = "dragTag"
 
@@ -122,11 +127,10 @@ class DraggableTest {
                 durationMillis = 100,
             )
         }
-        val lastTotal =
-            rule.runOnIdle {
-                assertThat(total).isGreaterThan(0)
-                total
-            }
+        val lastTotal = rule.runOnIdle {
+            assertThat(total).isGreaterThan(0)
+            total
+        }
         rule.onNodeWithTag(draggableBoxTag).performTouchInput {
             this.swipe(
                 start = this.center,
@@ -156,11 +160,10 @@ class DraggableTest {
                 durationMillis = 100,
             )
         }
-        val lastTotal =
-            rule.runOnIdle {
-                assertThat(total).isGreaterThan(0)
-                total
-            }
+        val lastTotal = rule.runOnIdle {
+            assertThat(total).isGreaterThan(0)
+            total
+        }
         rule.onNodeWithTag(draggableBoxTag).performTouchInput {
             this.swipe(
                 start = this.center,
@@ -187,23 +190,24 @@ class DraggableTest {
             Modifier.draggable(orientation) { total += it }
         }
 
-        rule
-            .onNodeWithTag(draggableBoxTag)
-            .sendIndirectSwipeEvent(
-                rule,
-                Offset(TouchPadStart, 0f),
-                Offset(TouchPadEnd, 0f),
-                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.X,
-            )
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = horizontalExternalInputDeviceSize,
+        ) {
+            swipeRight(startX = TouchPadStart, endX = TouchPadEnd)
+        }
+
         rule.runOnIdle { assertThat(total).isGreaterThan(0) }
-        rule
-            .onNodeWithTag(draggableBoxTag)
-            .sendIndirectSwipeEvent(
-                rule,
-                Offset(TouchPadEnd, 0f),
-                Offset(TouchPadStart, 0f),
-                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.X,
-            )
+
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = horizontalExternalInputDeviceSize,
+        ) {
+            swipeLeft(startX = TouchPadEnd, endX = TouchPadStart)
+        }
+
         rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
 
         rule.runOnIdle {
@@ -211,23 +215,24 @@ class DraggableTest {
             total = 0f
         }
 
-        rule
-            .onNodeWithTag(draggableBoxTag)
-            .sendIndirectSwipeEvent(
-                rule,
-                Offset(TouchPadStart, 0f),
-                Offset(TouchPadEnd, 0f),
-                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.X,
-            )
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = horizontalExternalInputDeviceSize,
+        ) {
+            swipeRight(startX = TouchPadStart, endX = TouchPadEnd)
+        }
+
         rule.runOnIdle { assertThat(total).isGreaterThan(0) }
-        rule
-            .onNodeWithTag(draggableBoxTag)
-            .sendIndirectSwipeEvent(
-                rule,
-                Offset(TouchPadEnd, 0f),
-                Offset(TouchPadStart, 0f),
-                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.X,
-            )
+
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = horizontalExternalInputDeviceSize,
+        ) {
+            swipeLeft(startX = TouchPadEnd, endX = TouchPadStart)
+        }
+
         rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
     }
 
@@ -239,23 +244,24 @@ class DraggableTest {
             Modifier.draggable(orientation) { total += it }
         }
 
-        rule
-            .onNodeWithTag(draggableBoxTag)
-            .sendIndirectSwipeEvent(
-                rule,
-                Offset(0f, TouchPadStart),
-                Offset(0f, TouchPadEnd),
-                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.Y,
-            )
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.Y,
+            inputDeviceSize = verticalExternalInputDeviceSize,
+        ) {
+            swipeDown(startY = TouchPadStart, endY = TouchPadEnd)
+        }
+
         rule.runOnIdle { assertThat(total).isGreaterThan(0) }
-        rule
-            .onNodeWithTag(draggableBoxTag)
-            .sendIndirectSwipeEvent(
-                rule,
-                Offset(0f, TouchPadEnd),
-                Offset(0f, TouchPadStart),
-                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.Y,
-            )
+
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.Y,
+            inputDeviceSize = verticalExternalInputDeviceSize,
+        ) {
+            swipeUp(startY = TouchPadEnd, endY = TouchPadStart)
+        }
+
         rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
 
         rule.runOnIdle {
@@ -263,23 +269,24 @@ class DraggableTest {
             total = 0f
         }
 
-        rule
-            .onNodeWithTag(draggableBoxTag)
-            .sendIndirectSwipeEvent(
-                rule,
-                Offset(0f, TouchPadStart),
-                Offset(0f, TouchPadEnd),
-                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.Y,
-            )
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.Y,
+            inputDeviceSize = verticalExternalInputDeviceSize,
+        ) {
+            swipeDown(startY = TouchPadStart, endY = TouchPadEnd)
+        }
+
         rule.runOnIdle { assertThat(total).isGreaterThan(0) }
-        rule
-            .onNodeWithTag(draggableBoxTag)
-            .sendIndirectSwipeEvent(
-                rule,
-                Offset(0f, TouchPadEnd),
-                Offset(0f, TouchPadStart),
-                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.Y,
-            )
+
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.Y,
+            inputDeviceSize = verticalExternalInputDeviceSize,
+        ) {
+            swipeUp(startY = TouchPadEnd, endY = TouchPadStart)
+        }
+
         rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
     }
 
@@ -291,23 +298,24 @@ class DraggableTest {
             Modifier.draggable(orientation) { total += it }
         }
 
-        rule
-            .onNodeWithTag(draggableBoxTag)
-            .sendIndirectSwipeEvent(
-                rule,
-                Offset(TouchPadStart, 0f),
-                Offset(TouchPadEnd, 0f),
-                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.None,
-            )
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.None,
+            inputDeviceSize = squareExternalInputDeviceSize,
+        ) {
+            swipeRight(startX = TouchPadStart, endX = TouchPadEnd)
+        }
+
         rule.runOnIdle { assertThat(total).isGreaterThan(0) }
-        rule
-            .onNodeWithTag(draggableBoxTag)
-            .sendIndirectSwipeEvent(
-                rule,
-                Offset(TouchPadEnd, 0f),
-                Offset(TouchPadStart, 0f),
-                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.None,
-            )
+
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.None,
+            inputDeviceSize = squareExternalInputDeviceSize,
+        ) {
+            swipeLeft(startX = TouchPadEnd, endX = TouchPadStart)
+        }
+
         rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
 
         rule.runOnIdle {
@@ -315,23 +323,24 @@ class DraggableTest {
             total = 0f
         }
 
-        rule
-            .onNodeWithTag(draggableBoxTag)
-            .sendIndirectSwipeEvent(
-                rule,
-                Offset(0f, TouchPadStart),
-                Offset(0f, TouchPadEnd),
-                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.None,
-            )
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.None,
+            inputDeviceSize = squareExternalInputDeviceSize,
+        ) {
+            swipeDown(startY = TouchPadStart, endY = TouchPadEnd)
+        }
+
         rule.runOnIdle { assertThat(total).isGreaterThan(0) }
-        rule
-            .onNodeWithTag(draggableBoxTag)
-            .sendIndirectSwipeEvent(
-                rule,
-                Offset(0f, TouchPadEnd),
-                Offset(0f, TouchPadStart),
-                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.None,
-            )
+
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.None,
+            inputDeviceSize = squareExternalInputDeviceSize,
+        ) {
+            swipeUp(startY = TouchPadEnd, endY = TouchPadStart)
+        }
+
         rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
     }
 
@@ -343,9 +352,32 @@ class DraggableTest {
             Modifier.draggable(orientation) { total += it }
         }
 
-        rule.onNodeWithTag(draggableBoxTag).sendIndirectSwipeForward(rule)
+        val exceptionSwipeRight =
+            assertThrows(AssertionError::class.java) {
+                rule.sendIndirectPointerInput(
+                    indirectPointerEventPrimaryDirectionalMotionAxis =
+                        IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+                    inputDeviceSize = horizontalExternalInputDeviceSize,
+                ) {
+                    swipeRight(startX = TouchPadStart, endX = TouchPadEnd)
+                }
+            }
+        assertThat(exceptionSwipeRight.message)
+            .isEqualTo("No focused nodes within a focused window!")
         rule.runOnIdle { assertThat(total).isEqualTo(0.0f) }
-        rule.onNodeWithTag(draggableBoxTag).sendIndirectSwipeBackward(rule)
+
+        val exceptionSwipeLeft =
+            assertThrows(AssertionError::class.java) {
+                rule.sendIndirectPointerInput(
+                    indirectPointerEventPrimaryDirectionalMotionAxis =
+                        IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+                    inputDeviceSize = horizontalExternalInputDeviceSize,
+                ) {
+                    swipeLeft(startX = TouchPadEnd, endX = TouchPadStart)
+                }
+            }
+        assertThat(exceptionSwipeLeft.message)
+            .isEqualTo("No focused nodes within a focused window!")
         rule.runOnIdle { assertThat(total).isEqualTo(0.0f) }
     }
 
@@ -360,11 +392,10 @@ class DraggableTest {
                 durationMillis = 100,
             )
         }
-        val lastTotal =
-            rule.runOnIdle {
-                assertThat(total).isGreaterThan(0)
-                total
-            }
+        val lastTotal = rule.runOnIdle {
+            assertThat(total).isGreaterThan(0)
+            total
+        }
         rule.onNodeWithTag(draggableBoxTag).performTouchInput {
             this.swipe(
                 start = this.center,
@@ -426,7 +457,14 @@ class DraggableTest {
             assertThat(startTrigger).isEqualTo(0)
             assertThat(stopTrigger).isEqualTo(0)
         }
-        rule.onNodeWithTag(draggableBoxTag).sendIndirectSwipeBackward(rule)
+
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = horizontalExternalInputDeviceSize,
+        ) {
+            swipeLeft(startX = TouchPadEnd, endX = TouchPadStart)
+        }
 
         rule.runOnIdle {
             assertThat(startTrigger).isEqualTo(1)
@@ -450,7 +488,14 @@ class DraggableTest {
             assertThat(startTrigger).isEqualTo(0)
             assertThat(stopTrigger).isEqualTo(0)
         }
-        rule.onNodeWithTag(draggableBoxTag).sendIndirectSwipeBackward(rule)
+
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = horizontalExternalInputDeviceSize,
+        ) {
+            swipeLeft(startX = TouchPadEnd, endX = TouchPadStart)
+        }
 
         rule.runOnIdle {
             assertThat(startTrigger).isEqualTo(1)
@@ -459,7 +504,15 @@ class DraggableTest {
 
         startTrigger = 0
         stopTrigger = 0
-        rule.onNodeWithTag(draggableBoxTag).sendIndirectSwipeEvent(rule, sendReleaseEvent = false)
+
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = horizontalExternalInputDeviceSize,
+        ) {
+            down(startOffsetForXAxisMovement)
+            moveBy(delta = defaultForwardMovementAlongXAxis)
+        }
 
         rule.runOnIdle {
             assertThat(startTrigger).isEqualTo(1)
@@ -485,12 +538,11 @@ class DraggableTest {
                 durationMillis = 100,
             )
         }
-        val prevTotal =
-            rule.runOnIdle {
-                assertThat(total).isGreaterThan(0f)
-                enabled.value = false
-                total
-            }
+        val prevTotal = rule.runOnIdle {
+            assertThat(total).isGreaterThan(0f)
+            enabled.value = false
+            total
+        }
         rule.onNodeWithTag(draggableBoxTag).performTouchInput {
             this.swipe(
                 start = this.center,
@@ -508,15 +560,26 @@ class DraggableTest {
         setDraggableContent(enableInitialFocus = true) {
             Modifier.draggable(Orientation.Horizontal, enabled = enabled.value) { total += it }
         }
-        rule.onNodeWithTag(draggableBoxTag).sendIndirectSwipeForward(rule)
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = horizontalExternalInputDeviceSize,
+        ) {
+            swipeRight(startX = TouchPadStart, endX = TouchPadEnd)
+        }
 
-        val prevTotal =
-            rule.runOnIdle {
-                assertThat(total).isGreaterThan(0f)
-                enabled.value = false
-                total
-            }
-        rule.onNodeWithTag(draggableBoxTag).sendIndirectSwipeForward(rule)
+        val prevTotal = rule.runOnIdle {
+            assertThat(total).isGreaterThan(0f)
+            enabled.value = false
+            total
+        }
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = horizontalExternalInputDeviceSize,
+        ) {
+            swipeRight(startX = TouchPadStart, endX = TouchPadEnd)
+        }
         rule.runOnIdle { assertThat(total).isEqualTo(prevTotal) }
     }
 
@@ -549,7 +612,13 @@ class DraggableTest {
                 onDragStopped = { velocityTriggered = it },
             ) {}
         }
-        rule.onNodeWithTag(draggableBoxTag).sendIndirectSwipeForward(rule)
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = horizontalExternalInputDeviceSize,
+        ) {
+            swipeRight(startX = TouchPadStart, endX = TouchPadEnd)
+        }
         rule.runOnIdle { assertThat(velocityTriggered).isGreaterThan(0.0f) }
     }
 
@@ -609,7 +678,15 @@ class DraggableTest {
                 total += it
             }
         }
-        rule.onNodeWithTag(draggableBoxTag).sendIndirectPointerCancelEvent(rule)
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = horizontalExternalInputDeviceSize,
+        ) {
+            down(startOffsetForXAxisMovement) // Start the gesture
+            moveBy(delta = defaultForwardMovementAlongXAxis) // Make sure it's "dragged"
+            cancel() // Now cancel it
+        }
 
         rule.runOnIdle {
             assertThat(total).isGreaterThan(0f)
@@ -827,7 +904,7 @@ class DraggableTest {
 
     @Test
     fun draggable_resumesNormally_whenInterruptedWithHigherPriority() =
-        runTest(testDispatcher) {
+        runTest(rule.mainClock.scheduler) {
             var total = 0f
             var dragStopped = 0f
             val state = DraggableState { total += it }
@@ -844,12 +921,11 @@ class DraggableTest {
                 down(center)
                 moveBy(Offset(100f, 100f))
             }
-            val prevTotal =
-                rule.runOnIdle {
-                    assertThat(dragStopped).isEqualTo(0f)
-                    assertThat(total).isGreaterThan(0f)
-                    total
-                }
+            val prevTotal = rule.runOnIdle {
+                assertThat(dragStopped).isEqualTo(0f)
+                assertThat(total).isGreaterThan(0f)
+                total
+            }
             state.drag(MutatePriority.PreventUserInput) { dragBy(123f) }
             rule.runOnIdle {
                 assertThat(total).isEqualTo(prevTotal + 123f)
@@ -866,7 +942,7 @@ class DraggableTest {
 
     @Test
     fun draggable_resumesNormally_whenInterruptedWithHigherPriority_indirectPointer() =
-        runTest(testDispatcher) {
+        runTest(rule.mainClock.scheduler) {
             var total = 0f
             var dragStopped = 0f
             val state = DraggableState { total += it }
@@ -881,52 +957,34 @@ class DraggableTest {
                 } else Modifier
             }
 
-            val stepSize = Offset((TouchPadEnd - TouchPadStart) / 10, 0f)
-            var currentTime = SystemClock.uptimeMillis()
-            var currentValue = Offset(TouchPadStart, 0f)
+            rule.sendIndirectPointerInput(
+                indirectPointerEventPrimaryDirectionalMotionAxis =
+                    IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+                inputDeviceSize = horizontalExternalInputDeviceSize,
+            ) {
+                down(startOffsetForXAxisMovement)
+                repeat(5) { moveBy(delta = defaultForwardMovementAlongXAxis) }
+            }
 
-            val downEvent =
-                rule
-                    .onNodeWithTag(draggableBoxTag)
-                    .sendIndirectPointerPressEvent(rule, currentTime, currentValue)
-            currentTime += 16L
-            currentValue += stepSize
-
-            val (newCurrentTime, newCurrentValue, lastMove) =
-                rule
-                    .onNodeWithTag(draggableBoxTag)
-                    .sendIndirectPointerMoveEvents(
-                        rule,
-                        5,
-                        currentTime,
-                        currentValue,
-                        16L,
-                        stepSize,
-                        IndirectPointerEventPrimaryDirectionalMotionAxis.X,
-                        previousEvent = downEvent,
-                    )
-
-            val prevTotal =
-                rule.runOnIdle {
-                    assertThat(dragStopped).isEqualTo(0f)
-                    assertThat(total).isGreaterThan(0f)
-                    total
-                }
+            val prevTotal = rule.runOnIdle {
+                assertThat(dragStopped).isEqualTo(0f)
+                assertThat(total).isGreaterThan(0f)
+                total
+            }
             state.drag(MutatePriority.PreventUserInput) { dragBy(123f) }
             rule.runOnIdle {
                 assertThat(total).isEqualTo(prevTotal + 123f)
                 assertThat(dragStopped).isEqualTo(1f)
             }
 
-            rule
-                .onNodeWithTag(draggableBoxTag)
-                .sendIndirectPointerReleaseEvent(
-                    rule,
-                    newCurrentTime,
-                    newCurrentValue,
-                    previousEvent = lastMove,
-                )
-            rule.onNodeWithTag(draggableBoxTag).sendIndirectSwipeForward(rule)
+            rule.sendIndirectPointerInput(
+                indirectPointerEventPrimaryDirectionalMotionAxis =
+                    IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+                inputDeviceSize = horizontalExternalInputDeviceSize,
+            ) {
+                up()
+                swipeRight(startX = TouchPadStart, endX = TouchPadEnd)
+            }
             rule.runOnIdle { assertThat(total).isGreaterThan(prevTotal + 123f) }
         }
 
@@ -1022,44 +1080,27 @@ class DraggableTest {
 
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
-        val stepSize = Offset((TouchPadEnd - TouchPadStart) / 10, 0f)
-        var currentTime = SystemClock.uptimeMillis()
-        var currentValue = Offset(TouchPadStart, 0f)
-
-        val downEvent =
-            rule
-                .onNodeWithTag(draggableBoxTag)
-                .sendIndirectPointerPressEvent(rule, currentTime, currentValue)
-        currentTime += 16L
-        currentValue += stepSize
-
-        val (newCurrentTime, newCurrentValue, lastMove) =
-            rule
-                .onNodeWithTag(draggableBoxTag)
-                .sendIndirectPointerMoveEvents(
-                    rule,
-                    5,
-                    currentTime,
-                    currentValue,
-                    16L,
-                    stepSize,
-                    IndirectPointerEventPrimaryDirectionalMotionAxis.X,
-                    previousEvent = downEvent,
-                )
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = horizontalExternalInputDeviceSize,
+        ) {
+            down(startOffsetForXAxisMovement)
+            repeat(5) { moveBy(delta = defaultForwardMovementAlongXAxis) }
+        }
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(1)
             assertThat(interactions.first()).isInstanceOf(DragInteraction.Start::class.java)
         }
 
-        rule
-            .onNodeWithTag(draggableBoxTag)
-            .sendIndirectPointerReleaseEvent(
-                rule,
-                newCurrentTime,
-                newCurrentValue,
-                previousEvent = lastMove,
-            )
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = horizontalExternalInputDeviceSize,
+        ) {
+            up()
+        }
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(2)
@@ -1230,7 +1271,13 @@ class DraggableTest {
 
         rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
 
-        rule.onNodeWithTag(draggableBoxTag).sendIndirectSwipeForward(rule)
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = horizontalExternalInputDeviceSize,
+        ) {
+            swipeRight(startX = TouchPadStart, endX = TouchPadEnd)
+        }
         rule.runOnIdle { assertThat(latestVelocity).isEqualTo(maxVelocity) }
     }
 
@@ -1334,7 +1381,7 @@ class DraggableTest {
         rule.onNodeWithTag(draggableBoxTag).performTouchInput {
             down(center)
             // generate various move events
-            repeat(30) { moveBy(Offset(0f, delta), delayMillis = 16L) }
+            repeat(30) { moveBy(Offset(0f, delta), delayMillis = defaultPeriodBetweenEventsMillis) }
             // stop for a moment
             advanceEventTime(3000L)
             up()
@@ -1704,7 +1751,13 @@ class DraggableTest {
             )
         }
         rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
-        rule.onRoot().sendIndirectSwipeForward(rule)
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = horizontalExternalInputDeviceSize,
+        ) {
+            swipeRight(startX = TouchPadStart, endX = TouchPadEnd)
+        }
         rule.waitForIdle()
     }
 
@@ -2533,6 +2586,257 @@ class DraggableTest {
         rule.runOnIdle {
             assertThat(node.getParentDraggableGestureConnection()?.orientation)
                 .isEqualTo(Orientation.Horizontal)
+        }
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Test
+    fun draggable_nestedDraggable_parentConsumesInitially_childDoesNotSteal() {
+        assumeTrue(ComposeFoundationFlags.isDraggableInitialPassConsumptionFixEnabled)
+        var parentConsumed = 0f
+        var childConsumed = 0f
+        val touchSlop = 10f
+
+        rule.setContent {
+            WithTouchSlop(touchSlop) {
+                Box(
+                    Modifier.draggable(Orientation.Horizontal, startDragImmediately = true) { delta
+                        ->
+                        parentConsumed += delta
+                    }
+                ) {
+                    Box(
+                        Modifier.draggable(Orientation.Horizontal, startDragImmediately = false) {
+                                delta ->
+                                childConsumed += delta
+                            }
+                            .testTag(draggableBoxTag)
+                            .size(100.dp)
+                    )
+                }
+            }
+        }
+
+        rule.onNodeWithTag(draggableBoxTag).performTouchInput {
+            swipe(start = center, end = Offset(center.x + 100f, center.y), durationMillis = 100)
+        }
+
+        rule.runOnIdle {
+            assertThat(parentConsumed).isGreaterThan(0f)
+            assertThat(childConsumed).isEqualTo(0f)
+        }
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Test
+    fun draggable_nestedDraggable_parentConsumesInitially_childDoesNotSteal_crossAxis() {
+        assumeTrue(ComposeFoundationFlags.isDraggableInitialPassConsumptionFixEnabled)
+        var parentConsumed = 0f
+        var childConsumed = 0f
+        val touchSlop = 10f
+
+        rule.setContent {
+            WithTouchSlop(touchSlop) {
+                Box(
+                    Modifier.draggable(Orientation.Horizontal, startDragImmediately = true) { delta
+                        ->
+                        parentConsumed += delta
+                    }
+                ) {
+                    Box(
+                        Modifier.draggable(Orientation.Vertical, startDragImmediately = false) {
+                                delta ->
+                                childConsumed += delta
+                            }
+                            .testTag(draggableBoxTag)
+                            .size(100.dp)
+                    )
+                }
+            }
+        }
+
+        rule.onNodeWithTag(draggableBoxTag).performTouchInput {
+            // vertical swipe
+            down(center)
+            moveBy(Offset(0f, 100f)) // move vertically
+            moveBy(Offset(100f, 0f)) // move horizontally
+            up()
+        }
+
+        rule.runOnIdle {
+            assertThat(parentConsumed).isGreaterThan(0f)
+            assertThat(childConsumed).isEqualTo(0f)
+        }
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Test
+    fun draggable_nestedDraggable_childConsumesInitially_parentDoesNotSteal() {
+        assumeTrue(ComposeFoundationFlags.isDraggableInitialPassConsumptionFixEnabled)
+        var parentConsumed = 0f
+        var childConsumed = 0f
+        val touchSlop = 10f
+
+        rule.setContent {
+            WithTouchSlop(touchSlop) {
+                Box(
+                    Modifier.draggable(Orientation.Horizontal, startDragImmediately = false) { delta
+                        ->
+                        parentConsumed += delta
+                    }
+                ) {
+                    Box(
+                        Modifier.draggable(Orientation.Horizontal, startDragImmediately = true) {
+                                delta ->
+                                childConsumed += delta
+                            }
+                            .testTag(draggableBoxTag)
+                            .size(100.dp)
+                    )
+                }
+            }
+        }
+
+        rule.onNodeWithTag(draggableBoxTag).performTouchInput {
+            swipe(start = center, end = Offset(center.x + 100f, center.y), durationMillis = 100)
+        }
+
+        rule.runOnIdle {
+            assertThat(childConsumed).isGreaterThan(0f)
+            assertThat(parentConsumed).isEqualTo(0f)
+        }
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Test
+    fun drag_zeroDeltas_shouldConsumeEvents() {
+        Assume.assumeTrue(isDraggableZeroDeltaConsumptionEnabled)
+        var outerDrag = 0f
+        var innerDrag = 0f
+        var touchSlop = 0f
+        rule.setContent {
+            touchSlop = LocalViewConfiguration.current.touchSlop
+            Box(
+                modifier =
+                    Modifier.size(300.dp)
+                        .pointerInput(Unit) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    val event = awaitPointerEvent(pass = PointerEventPass.Final)
+                                    val change = event.changes.first()
+                                    if (
+                                        !change.changedToUpIgnoreConsumed() &&
+                                            !change.changedToDownIgnoreConsumed()
+                                    ) {
+                                        assertThat(change.isConsumed).isTrue()
+                                    }
+                                }
+                            }
+                        }
+                        .draggable(orientation = Orientation.Vertical) { outerDrag += it }
+            ) {
+                Box(
+                    modifier =
+                        Modifier.size(300.dp).draggable(orientation = Orientation.Vertical) {
+                            innerDrag += it
+                        }
+                )
+            }
+        }
+
+        rule.onRoot().performTouchInput {
+            down(center)
+            moveBy(Offset(0f, 2 * touchSlop))
+        }
+
+        rule.runOnIdle {
+            assertThat(innerDrag).isNonZero()
+            assertThat(outerDrag).isZero()
+            innerDrag = 0f
+            outerDrag = 0f
+        }
+
+        rule.onRoot().performTouchInput {
+            moveBy(Offset(0f, 0f))
+            moveBy(Offset(0f, 0f))
+            moveBy(Offset(0f, touchSlop))
+        }
+
+        rule.runOnIdle {
+            assertThat(innerDrag).isNonZero()
+            assertThat(outerDrag).isZero()
+        }
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Test
+    fun drag_zeroDeltas_shouldConsumeEvents_indirectTouch() {
+        Assume.assumeTrue(isDraggableZeroDeltaConsumptionEnabled)
+        var outerDrag = 0f
+        var innerDrag = 0f
+        var touchSlop = 0f
+        rule.setContent {
+            touchSlop = LocalViewConfiguration.current.touchSlop
+            Box(
+                modifier =
+                    Modifier.size(300.dp)
+                        .pointerInput(Unit) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    val event = awaitPointerEvent(pass = PointerEventPass.Final)
+                                    val change = event.changes.first()
+                                    if (
+                                        !change.changedToUpIgnoreConsumed() &&
+                                            !change.changedToDownIgnoreConsumed()
+                                    ) {
+                                        assertThat(change.isConsumed).isTrue()
+                                    }
+                                }
+                            }
+                        }
+                        .draggable(orientation = Orientation.Vertical) { outerDrag += it }
+            ) {
+                Box(
+                    modifier =
+                        Modifier.size(300.dp)
+                            .draggable(orientation = Orientation.Vertical) { innerDrag += it }
+                            .focusRequester(focusRequester)
+                            .focusTarget()
+                )
+            }
+        }
+
+        rule.runOnIdle { assertTrue(focusRequester.requestFocus()) }
+
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = horizontalExternalInputDeviceSize,
+        ) {
+            down(0, Offset(0f, 0f))
+            moveBy(Offset(2 * touchSlop, 0f))
+        }
+
+        rule.runOnIdle {
+            assertThat(innerDrag).isNonZero()
+            assertThat(outerDrag).isZero()
+            innerDrag = 0f
+            outerDrag = 0f
+        }
+
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = horizontalExternalInputDeviceSize,
+        ) {
+            moveBy(Offset(0f, 0f))
+            moveBy(Offset(0f, 0f))
+            moveBy(Offset(2 * touchSlop, 0f))
+        }
+
+        rule.runOnIdle {
+            assertThat(innerDrag).isNonZero()
+            assertThat(outerDrag).isZero()
         }
     }
 

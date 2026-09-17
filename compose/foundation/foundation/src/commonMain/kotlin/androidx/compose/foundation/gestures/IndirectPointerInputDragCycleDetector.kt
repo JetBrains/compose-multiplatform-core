@@ -16,11 +16,8 @@
 
 package androidx.compose.foundation.gestures
 
-import androidx.collection.LongList
-import androidx.collection.ObjectList
-import androidx.collection.mutableLongListOf
-import androidx.collection.mutableObjectListOf
 import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ComposeFoundationFlags.isDraggableZeroDeltaConsumptionEnabled
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.GestureState
 import androidx.compose.foundation.gestures.DragEvent.DragCancelled
@@ -37,6 +34,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.util.VelocityTracker
+import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.node.requireLayoutCoordinates
@@ -93,9 +91,9 @@ internal class IndirectPointerInputDragCycleDetector(val node: DragGestureNode) 
 
     private var velocityTracker: VelocityTracker? = null
     private var previousPositionOnScreen = Offset.Unspecified
+    private var rootOffset = Offset.Zero
+    private var previousRootPositionOnScreen = Offset.Unspecified
     private var touchSlopDetector: TouchSlopDetector? = null
-    private val touchSmooth = IndirectPointerInputEventSmoother()
-    private val offsetSmoother = OffsetSmoother()
 
     /**
      * Accumulated position offset of this [Modifier.Node] that happened during a drag cycle. This
@@ -139,7 +137,6 @@ internal class IndirectPointerInputDragCycleDetector(val node: DragGestureNode) 
         moveToAwaitDownState()
         if (node.isListeningForEvents) sendDragCancelled()
         velocityTracker = null
-        offsetSmoother.reset()
     }
 
     private fun moveToAwaitTouchSlopState(
@@ -148,18 +145,17 @@ internal class IndirectPointerInputDragCycleDetector(val node: DragGestureNode) 
         initialTouchSlopPositionChange: Offset = Offset.Zero,
         verifyConsumptionInFinalPass: Boolean = false,
     ) {
-        currentDragState =
-            awaitTouchSlopState.apply {
-                this.initialDown = initialDown
-                this.pointerId = pointerId
-                if (touchSlopDetector == null) {
-                    touchSlopDetector = TouchSlopDetector(node.orientation)
-                } else {
-                    touchSlopDetector?.orientation = node.orientation
-                    touchSlopDetector?.reset(initialTouchSlopPositionChange)
-                }
-                this.verifyConsumptionInFinalPass = verifyConsumptionInFinalPass
+        currentDragState = awaitTouchSlopState.apply {
+            this.initialDown = initialDown
+            this.pointerId = pointerId
+            if (touchSlopDetector == null) {
+                touchSlopDetector = TouchSlopDetector(node.orientation)
+            } else {
+                touchSlopDetector?.orientation = node.orientation
+                touchSlopDetector?.reset(initialTouchSlopPositionChange)
             }
+            this.verifyConsumptionInFinalPass = verifyConsumptionInFinalPass
+        }
     }
 
     private fun moveToDraggingState(pointerId: PointerId) {
@@ -167,12 +163,11 @@ internal class IndirectPointerInputDragCycleDetector(val node: DragGestureNode) 
     }
 
     private fun moveToAwaitDownState() {
-        currentDragState =
-            awaitDownState.apply {
-                awaitTouchSlop = DragDetectionState.AwaitDown.AwaitTouchSlop.NotInitialized
-                consumedOnInitial = false
-                hasSeenInitialEvent = false
-            }
+        currentDragState = awaitDownState.apply {
+            awaitTouchSlop = DragDetectionState.AwaitDown.AwaitTouchSlop.NotInitialized
+            consumedOnInitial = false
+            hasSeenInitialEvent = false
+        }
     }
 
     private fun moveToAwaitGesturePickupState(
@@ -180,12 +175,11 @@ internal class IndirectPointerInputDragCycleDetector(val node: DragGestureNode) 
         pointerId: PointerId,
         touchSlopDetector: TouchSlopDetector,
     ) {
-        currentDragState =
-            awaitGesturePickupState.apply {
-                this.initialDown = initialDown
-                this.pointerId = pointerId
-                this.touchSlopDetector = touchSlopDetector.also { it.reset() }
-            }
+        currentDragState = awaitGesturePickupState.apply {
+            this.initialDown = initialDown
+            this.pointerId = pointerId
+            this.touchSlopDetector = touchSlopDetector.also { it.reset() }
+        }
     }
 
     private fun processInitialDownState(
@@ -419,6 +413,7 @@ internal class IndirectPointerInputDragCycleDetector(val node: DragGestureNode) 
         }
     }
 
+    @OptIn(ExperimentalFoundationApi::class)
     private fun processDraggingState(
         indirectPointerInputEvent: IndirectPointerEvent,
         pass: PointerEventPass,
@@ -449,18 +444,7 @@ internal class IndirectPointerInputDragCycleDetector(val node: DragGestureNode) 
             if (dragEvent.isConsumed) {
                 sendDragCancelled()
             } else {
-                val positionChange =
-                    dragEvent.positionChangeIgnoreConsumed(
-                        node.orientation,
-                        indirectPointerInputEvent.primaryDirectionalMotionAxis,
-                    )
-
-                /**
-                 * During the gesture pickup we can pickup events at any direction so disable the
-                 * orientation lock.
-                 */
-                val motionChange = positionChange.getDistance()
-                if (motionChange != 0.0f) {
+                if (isDraggableZeroDeltaConsumptionEnabled) {
                     val positionChange =
                         dragEvent.positionChange(
                             node.orientation,
@@ -472,6 +456,31 @@ internal class IndirectPointerInputDragCycleDetector(val node: DragGestureNode) 
                         positionChange,
                     )
                     dragEvent.consume()
+                } else {
+                    val positionChange =
+                        dragEvent.positionChangeIgnoreConsumed(
+                            node.orientation,
+                            indirectPointerInputEvent.primaryDirectionalMotionAxis,
+                        )
+
+                    /**
+                     * During the gesture pickup we can pickup events at any direction so disable
+                     * the orientation lock.
+                     */
+                    val motionChange = positionChange.getDistance()
+                    if (motionChange != 0.0f) {
+                        val positionChange =
+                            dragEvent.positionChange(
+                                node.orientation,
+                                indirectPointerInputEvent.primaryDirectionalMotionAxis,
+                            )
+                        sendDragEvent(
+                            dragEvent,
+                            indirectPointerInputEvent.primaryDirectionalMotionAxis,
+                            positionChange,
+                        )
+                        dragEvent.consume()
+                    }
                 }
             }
         }
@@ -487,6 +496,8 @@ internal class IndirectPointerInputDragCycleDetector(val node: DragGestureNode) 
         if (velocityTracker == null) velocityTracker = VelocityTracker()
         if (!ComposeFoundationFlags.isDragNodeOffsetDoubleCountingFixEnabled) {
             nodeOffset = Offset.Zero // restart node offset
+        } else {
+            rootOffset = Offset.Zero
         }
         if (!ComposeFoundationFlags.isDragNodeOffsetDoubleCountingFixEnabled) {
             requireVelocityTracker()
@@ -494,7 +505,6 @@ internal class IndirectPointerInputDragCycleDetector(val node: DragGestureNode) 
                     down,
                     node.orientation,
                     primaryDirectionalMotionAxis,
-                    touchSmooth,
                     nodeOffset,
                 )
         } else {
@@ -503,7 +513,7 @@ internal class IndirectPointerInputDragCycleDetector(val node: DragGestureNode) 
                     down,
                     node.orientation,
                     primaryDirectionalMotionAxis,
-                    touchSmooth,
+                    rootOffset,
                 )
         }
         val dragStartedOffset =
@@ -515,10 +525,12 @@ internal class IndirectPointerInputDragCycleDetector(val node: DragGestureNode) 
         if (node.canDrag(PointerType.Touch)) {
             if (!ComposeFoundationFlags.isDragNodeOffsetDoubleCountingFixEnabled) {
                 previousPositionOnScreen = node.requireLayoutCoordinates().positionOnScreen()
+            } else {
+                previousRootPositionOnScreen =
+                    node.requireLayoutCoordinates().findRootCoordinates().positionOnScreen()
             }
             node.onDragEvent(DragStarted(dragStartedOffset))
         }
-        offsetSmoother.reset()
     }
 
     @OptIn(ExperimentalFoundationApi::class)
@@ -538,6 +550,17 @@ internal class IndirectPointerInputDragCycleDetector(val node: DragGestureNode) 
                 nodeOffset += delta
             }
             previousPositionOnScreen = currentPositionOnScreen
+        } else {
+            val currentRootPositionOnScreen =
+                node.requireLayoutCoordinates().findRootCoordinates().positionOnScreen()
+            if (
+                previousRootPositionOnScreen != Offset.Unspecified &&
+                    currentRootPositionOnScreen != previousRootPositionOnScreen
+            ) {
+                val delta = currentRootPositionOnScreen - previousRootPositionOnScreen
+                rootOffset += delta
+            }
+            previousRootPositionOnScreen = currentRootPositionOnScreen
         }
 
         if (dragAmount.toFloat(node.orientation!!).absoluteValue > PixelSensibility) {
@@ -547,7 +570,6 @@ internal class IndirectPointerInputDragCycleDetector(val node: DragGestureNode) 
                         event = change,
                         node.orientation,
                         primaryDirectionalMotionAxis,
-                        touchSmooth,
                         nodeOffset = nodeOffset,
                     )
             } else {
@@ -556,10 +578,10 @@ internal class IndirectPointerInputDragCycleDetector(val node: DragGestureNode) 
                         event = change,
                         node.orientation,
                         primaryDirectionalMotionAxis,
-                        touchSmooth,
+                        nodeOffset = rootOffset,
                     )
             }
-            node.onDragEvent(DragDelta(offsetSmoother.smoothEventPosition(dragAmount), true))
+            node.onDragEvent(DragDelta(dragAmount, true))
         }
     }
 
@@ -574,7 +596,6 @@ internal class IndirectPointerInputDragCycleDetector(val node: DragGestureNode) 
                     change,
                     node.orientation,
                     primaryDirectionalMotionAxis,
-                    touchSmooth,
                     nodeOffset,
                 )
         } else {
@@ -583,7 +604,7 @@ internal class IndirectPointerInputDragCycleDetector(val node: DragGestureNode) 
                     change,
                     node.orientation,
                     primaryDirectionalMotionAxis,
-                    touchSmooth,
+                    rootOffset,
                 )
         }
         val maximumVelocity = node.currentValueOf(LocalViewConfiguration).maximumFlingVelocity
@@ -658,8 +679,6 @@ private fun IndirectPointerInputChange.positionChangeIgnoreConsumed(
 
 private fun IndirectPointerInputChange.changedToUpIgnoreConsumed() = previousPressed && !pressed
 
-private fun IndirectPointerInputChange.changedToDown() = !isConsumed && !previousPressed && pressed
-
 internal fun IndirectPointerInputChange.changedToDownIgnoreConsumed() = !previousPressed && pressed
 
 private fun IndirectPointerInputChange.positionChangeInternal(
@@ -680,43 +699,22 @@ private fun IndirectPointerInputChange.positionChangeInternal(
 }
 
 /**
- * Returns a modified position for this [IndirectPointerEvent] accounting for
- * [IndirectPointerEvent.primaryDirectionalMotionAxis]. When we no longer need to smooth positions,
- * we should instead only use the primary axis to resolve delta changes, as changing the entire
- * event in this way will affect the start position we report to onDragStarted. Until we can remove
- * smoothing logic, it's complicated to manage primary axis as well as smoothed positions, so we
- * just make the change here for simplicity.
+ * Returns the input offset amount along the [primaryAxis], applied to the main-axis of the given
+ * [orientation].
+ *
+ * If either [orientation] or [primaryAxis] are null, the receiver [Offset] is returned.
  */
 private fun IndirectPointerInputChange.primaryAxisPosition(
     orientation: Orientation?,
-    primaryDirectionalMotionAxis: IndirectPointerEventPrimaryDirectionalMotionAxis?,
+    primaryAxis: IndirectPointerEventPrimaryDirectionalMotionAxis?,
 ): Offset {
     if (orientation == null) return position
     val delta =
-        when (primaryDirectionalMotionAxis) {
+        when (primaryAxis) {
             IndirectPointerEventPrimaryDirectionalMotionAxis.X -> position.x
             IndirectPointerEventPrimaryDirectionalMotionAxis.Y -> position.y
             // No primary axis, so don't change the offset
             else -> return position
-        }
-    return if (orientation == Orientation.Horizontal) {
-        Offset(x = delta, y = 0f)
-    } else {
-        Offset(x = 0f, y = delta)
-    }
-}
-
-private fun Offset.primaryAxisPosition(
-    orientation: Orientation?,
-    primaryDirectionalMotionAxis: IndirectPointerEventPrimaryDirectionalMotionAxis?,
-): Offset {
-    if (orientation == null) return this
-    val delta =
-        when (primaryDirectionalMotionAxis) {
-            IndirectPointerEventPrimaryDirectionalMotionAxis.X -> x
-            IndirectPointerEventPrimaryDirectionalMotionAxis.Y -> y
-            // No primary axis, so don't change the offset
-            else -> return this
         }
     return if (orientation == Orientation.Horizontal) {
         Offset(x = delta, y = 0f)
@@ -748,111 +746,19 @@ private fun VelocityTracker.addIndirectPointerInputChange(
     event: IndirectPointerInputChange,
     orientation: Orientation?,
     primaryDirectionalMotionAxis: IndirectPointerEventPrimaryDirectionalMotionAxis?,
-    smoother: IndirectPointerInputEventSmoother,
 ) {
-    val smoothedPosition =
-        smoother
-            .smoothEventPosition(event)
-            .primaryAxisPosition(orientation, primaryDirectionalMotionAxis)
-    addPosition(event.uptimeMillis, smoothedPosition)
+    val position = event.primaryAxisPosition(orientation, primaryDirectionalMotionAxis)
+    addPosition(event.uptimeMillis, position)
 }
 
 private fun VelocityTracker.addIndirectPointerInputChange(
     event: IndirectPointerInputChange,
     orientation: Orientation?,
     primaryDirectionalMotionAxis: IndirectPointerEventPrimaryDirectionalMotionAxis?,
-    smoother: IndirectPointerInputEventSmoother,
     nodeOffset: Offset,
 ) {
-    val smoothedPosition =
-        smoother
-            .smoothEventPosition(event)
-            .primaryAxisPosition(orientation, primaryDirectionalMotionAxis)
-    addPosition(event.uptimeMillis, smoothedPosition + nodeOffset)
+    val position = event.primaryAxisPosition(orientation, primaryDirectionalMotionAxis)
+    addPosition(event.uptimeMillis, position + nodeOffset)
 }
 
-// TODO(levima) Remove once ExperimentalIndirectPointerTypeApi stable b/426155641
-/**
- * Smoothes touch input events that are too frequent and noisy
- *
- * TODO(levima): Remove this once b/413645371 lands and events are dispatched less frequently.
- */
-internal class IndirectPointerInputEventSmoother() {
-    private var eventRotatingIndex = 0
-    private var eventRotatingArray = mutableObjectListOf<IndirectPointerInputChange>()
-
-    fun smoothEventPosition(change: IndirectPointerInputChange): Offset {
-
-        var xPosition = change.position.x
-        var yPosition = change.position.y
-
-        if (change.changedToDownIgnoreConsumed()) {
-            eventRotatingIndex = 0
-            eventRotatingArray.clear()
-        }
-
-        if (!change.changedToUpIgnoreConsumed() && !change.changedToDownIgnoreConsumed()) {
-            if (eventRotatingArray.size == SmoothingFactor) {
-                eventRotatingArray[eventRotatingIndex++] = change
-            } else {
-                eventRotatingArray.add(change)
-            }
-
-            if (eventRotatingIndex == SmoothingFactor) {
-                eventRotatingIndex = 0
-            }
-            fun <T> ObjectList<T>.averageBy(selector: (T) -> Float): Float {
-                var total = 0f
-                forEach { total += selector(it) }
-                return total / size
-            }
-            xPosition = eventRotatingArray.averageBy { it.position.x }
-            yPosition = eventRotatingArray.averageBy { it.position.y }
-        }
-
-        return Offset(xPosition, yPosition)
-    }
-
-    /**
-     * TODO(levima): Remove this once b/413645371 lands and events are dispatched less frequently.
-     */
-    companion object {
-        private const val SmoothingFactor = 3
-    }
-}
-
-@Suppress("PrimitiveInCollection")
-internal class OffsetSmoother() {
-    private var eventRotatingIndex = 0
-    private var eventRotatingArray = mutableLongListOf()
-
-    fun smoothEventPosition(offset: Offset): Offset {
-        if (eventRotatingArray.size == SmoothingFactor) {
-            eventRotatingArray[eventRotatingIndex++] = offset.packedValue
-        } else {
-            eventRotatingArray.add(offset.packedValue)
-        }
-
-        if (eventRotatingIndex == SmoothingFactor) {
-            eventRotatingIndex = 0
-        }
-        fun LongList.averageBy(selector: (Long) -> Float): Float {
-            var total = 0f
-            forEach { total += selector(it) }
-            return total / size
-        }
-        val xPosition: Float = eventRotatingArray.averageBy { Offset(it).x }
-        val yPosition: Float = eventRotatingArray.averageBy { Offset(it).y }
-
-        return Offset(xPosition, yPosition)
-    }
-
-    fun reset() {
-        eventRotatingIndex = 0
-        eventRotatingArray.clear()
-    }
-}
-
-/** TODO(levima): Remove this once b/413645371 lands and events are dispatched less frequently. */
-private const val SmoothingFactor = 3
 private const val PixelSensibility = 2

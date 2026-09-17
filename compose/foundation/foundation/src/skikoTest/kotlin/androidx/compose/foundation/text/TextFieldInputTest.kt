@@ -168,6 +168,7 @@ private class TextField2InputTestScope(
 }
 
 @OptIn(ExperimentalTestApi::class)
+@Suppress("DEPRECATION")
 private fun runTextFieldInputTest(
     scopeBuilders: List<(ComposeUiTest) -> TextFieldInputTestScope> = listOf(
         ::TextField1InputTestScope,

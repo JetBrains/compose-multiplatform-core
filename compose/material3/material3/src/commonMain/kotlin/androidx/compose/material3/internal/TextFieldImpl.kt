@@ -17,9 +17,12 @@
 package androidx.compose.material3.internal
 
 import androidx.compose.animation.animateColor
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Transition
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.updateTransition
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
@@ -53,6 +56,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,6 +81,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.text
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.lerp
 import androidx.compose.ui.unit.Constraints
@@ -256,6 +262,7 @@ internal fun CommonDecorationBox(
         CutoutTextFieldLayout(
             modifier = Modifier,
             textField = innerTextField,
+            visualText = visualText,
             placeholder = decoratedPlaceholder,
             label = decoratedLabel,
             leading = decoratedLeading,
@@ -289,6 +296,7 @@ internal fun CommonDecorationBox(
         InsideTextFieldLayout(
             modifier = Modifier,
             textField = innerTextField,
+            visualText = visualText,
             placeholder = decoratedPlaceholder,
             label = decoratedLabel,
             leading = decoratedLeading,
@@ -315,6 +323,7 @@ internal fun CommonDecorationBox(
 internal fun InsideTextFieldLayout(
     modifier: Modifier,
     textField: @Composable () -> Unit,
+    visualText: CharSequence,
     label: @Composable (() -> Unit)?,
     placeholder: @Composable ((Modifier) -> Unit)?,
     leading: @Composable (() -> Unit)?,
@@ -450,7 +459,10 @@ internal fun InsideTextFieldLayout(
                 placeholder(Modifier.layoutId(PlaceholderId).then(textPadding))
             }
             Box(
-                modifier = Modifier.layoutId(TextFieldId).then(textPadding),
+                modifier =
+                    Modifier.layoutId(TextFieldId)
+                        .visualTextSemantics(visualText, prefix != null || suffix != null)
+                        .then(textPadding),
                 propagateMinConstraints = true,
             ) {
                 textField()
@@ -480,6 +492,7 @@ internal fun InsideTextFieldLayout(
 internal fun CutoutTextFieldLayout(
     modifier: Modifier,
     textField: @Composable () -> Unit,
+    visualText: CharSequence,
     placeholder: @Composable ((Modifier) -> Unit)?,
     label: @Composable (() -> Unit)?,
     leading: @Composable (() -> Unit)?,
@@ -592,7 +605,10 @@ internal fun CutoutTextFieldLayout(
             }
 
             Box(
-                modifier = Modifier.layoutId(TextFieldId).then(textPadding),
+                modifier =
+                    Modifier.layoutId(TextFieldId)
+                        .visualTextSemantics(visualText, prefix != null || suffix != null)
+                        .then(textPadding),
                 propagateMinConstraints = true,
             ) {
                 textField()
@@ -2099,6 +2115,37 @@ private fun Transition<InputPhase>.labelContentColor(labelColor: Color): State<C
     )
 }
 
+@Composable
+internal fun animateBorderStrokeAsState(
+    enabled: Boolean,
+    isError: Boolean,
+    focused: Boolean,
+    colors: TextFieldColors,
+    focusedBorderThickness: Dp,
+    unfocusedBorderThickness: Dp,
+): State<BorderStroke> {
+    // TODO Load the motionScheme tokens from the component tokens file
+    val targetColor = colors.indicatorColor(enabled, isError, focused)
+    val colorAnimationSpec = MotionSchemeKeyTokens.FastEffects.value<Color>()
+    val indicatorColor =
+        if (enabled) {
+            animateColorAsState(targetColor, colorAnimationSpec)
+        } else {
+            rememberUpdatedState(targetColor)
+        }
+
+    val thicknessAnimationSpec = MotionSchemeKeyTokens.FastSpatial.value<Dp>()
+    val thickness =
+        if (enabled) {
+            val targetThickness = if (focused) focusedBorderThickness else unfocusedBorderThickness
+            animateDpAsState(targetThickness, thicknessAnimationSpec)
+        } else {
+            rememberUpdatedState(unfocusedBorderThickness)
+        }
+
+    return rememberUpdatedState(BorderStroke(thickness.value, indicatorColor.value))
+}
+
 /** An internal state used to animate a label and an indicator. */
 private enum class InputPhase {
     // Text field is focused
@@ -2172,11 +2219,36 @@ private fun Modifier.topPaddingForLabelCutout(
     )
 }
 
-internal val TextFieldPadding = 16.dp
-internal val AboveLabelHorizontalPadding = 4.dp
-internal val AboveLabelBottomPadding = 4.dp
-internal val SupportingTopPadding = 4.dp
-internal val PrefixSuffixTextPadding = 2.dp
-internal val MinTextLineHeight = 24.dp
-internal val MinFocusedLabelLineHeight = 16.dp
-internal val MinSupportingTextLineHeight = 16.dp
+/**
+ * When prefix or suffix is present, BasicTextField's inner text is excluded from merged
+ * SemanticsProperties.Text due to isMergingSemanticsOfDescendants = true. We attach visualText
+ * semantics directly to this wrapper Box (which is explicitly placed between prefix and suffix) so
+ * TalkBack announces prefix, visualText, and suffix.
+ */
+private fun Modifier.visualTextSemantics(visualText: CharSequence, hasAffix: Boolean): Modifier =
+    this.then(
+        if (hasAffix && visualText.isNotEmpty()) {
+            Modifier.semantics {
+                this.text = visualText as? AnnotatedString ?: AnnotatedString(visualText.toString())
+            }
+        } else {
+            Modifier
+        }
+    )
+
+internal val TextFieldPadding
+    get() = 16.dp
+internal val AboveLabelHorizontalPadding
+    get() = 4.dp
+internal val AboveLabelBottomPadding
+    get() = 4.dp
+internal val SupportingTopPadding
+    get() = 4.dp
+internal val PrefixSuffixTextPadding
+    get() = 2.dp
+internal val MinTextLineHeight
+    get() = 24.dp
+internal val MinFocusedLabelLineHeight
+    get() = 16.dp
+internal val MinSupportingTextLineHeight
+    get() = 16.dp

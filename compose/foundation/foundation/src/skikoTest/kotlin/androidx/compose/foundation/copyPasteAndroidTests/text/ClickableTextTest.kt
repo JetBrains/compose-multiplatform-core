@@ -31,6 +31,7 @@ import kotlin.test.assertEquals
 @OptIn(ExperimentalTestApi::class)
 class ClickableTextTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun onclick_callback() = runSkikoComposeUiTest {
         mainClock.autoAdvance = false
@@ -53,6 +54,7 @@ class ClickableTextTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun onclick_callback_whenCallbackIsUpdated() = runSkikoComposeUiTest {
         mainClock.autoAdvance = false

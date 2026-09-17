@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE") // b/407927787
-
 package androidx.compose.foundation.lazy.list
 
 import android.os.Build
@@ -600,12 +597,11 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
     @Test
     fun itemFillingParentSizeParentRecomposed_noRemeasureOnReuse() {
         var counter = 0
-        val modifier =
-            Modifier.layout { measurable, constraints ->
-                counter++
-                val placeable = measurable.measure(constraints)
-                layout(placeable.width, placeable.height) { placeable.place(IntOffset.Zero) }
-            }
+        val modifier = Modifier.layout { measurable, constraints ->
+            counter++
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) { placeable.place(IntOffset.Zero) }
+        }
 
         lateinit var state: LazyListState
         rule.setContentWithTestViewConfiguration {
@@ -1626,12 +1622,11 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
     @Test
     fun recomposingWithNewComposedModifierObjectIsNotCausingRemeasure() {
         var remeasureCount = 0
-        val layoutModifier =
-            Modifier.layout { measurable, constraints ->
-                remeasureCount++
-                val placeable = measurable.measure(constraints)
-                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
-            }
+        val layoutModifier = Modifier.layout { measurable, constraints ->
+            remeasureCount++
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+        }
         val counter = mutableStateOf(0)
 
         rule.setContentWithTestViewConfiguration {
@@ -2393,7 +2388,8 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
                                 Modifier.animateItem(
                                         fadeInSpec = null,
                                         fadeOutSpec = null,
-                                        placementSpec = tween<IntOffset>(160, easing = LinearEasing),
+                                        placementSpec =
+                                            tween<IntOffset>(160, easing = LinearEasing),
                                     )
                                     .trackPositions(
                                         lookaheadPosition,
@@ -3192,11 +3188,12 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
         rule.mainClock.advanceTimeBy(100L)
 
         // swipe outer list
+        val velocity = with(rule.density) { 2000.dp.toPx() }
         rule.onNodeWithTag(LazyListTag).performTouchInput {
             if (vertical) {
-                swipeWithVelocity(center, topCenter, 5000f)
+                swipeWithVelocity(center, topCenter, velocity)
             } else {
-                swipeWithVelocity(center, centerLeft, 5000f)
+                swipeWithVelocity(center, centerLeft, velocity)
             }
         }
 

@@ -164,7 +164,7 @@ internal class XCTestCaseWrapper(val testCase: TestCase) : XCTestCase(dummyInvoc
                     callStackAddresses = throwable.getStackTraceAddresses(),
                     location = sourceLocation
                 ),
-                // pass the error through the XCTest to the NativeTestObserver
+                // pass the error through the XCTest to the XCTestObserver
                 associatedError = NSErrorWithKotlinException(throwable),
                 attachments = listOf(stackTraceAttachment)
             )
@@ -232,8 +232,8 @@ internal class XCTestCaseWrapper(val testCase: TestCase) : XCTestCase(dummyInvoc
 
 /**
  * This is a NSError-wrapper of Kotlin exception used to pass it through the XCTIssue
- * to the XCTestObservation protocol implementation [NativeTestObserver].
- * See [NativeTestObserver.testCase] for the usage.
+ * to the XCTestObservation protocol implementation [XCTestObserver].
+ * See [XCTestObserver.testCase] for the usage.
  */
 internal class NSErrorWithKotlinException(val kotlinException: Throwable) : NSError(NSCocoaErrorDomain, NSValidationErrorMinimum, null)
 

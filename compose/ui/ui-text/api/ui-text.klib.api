@@ -60,6 +60,8 @@ abstract interface androidx.compose.ui.text.font/Font { // androidx.compose.ui.t
         abstract fun <get-weight>(): androidx.compose.ui.text.font/FontWeight // androidx.compose.ui.text.font/Font.weight.<get-weight>|<get-weight>(){}[0]
     open val loadingStrategy // androidx.compose.ui.text.font/Font.loadingStrategy|{}loadingStrategy[0]
         open fun <get-loadingStrategy>(): androidx.compose.ui.text.font/FontLoadingStrategy // androidx.compose.ui.text.font/Font.loadingStrategy.<get-loadingStrategy>|<get-loadingStrategy>(){}[0]
+    open val variationSettings // androidx.compose.ui.text.font/Font.variationSettings|{}variationSettings[0]
+        open fun <get-variationSettings>(): androidx.compose.ui.text.font/FontVariation.Settings // androidx.compose.ui.text.font/Font.variationSettings.<get-variationSettings>|<get-variationSettings>(){}[0]
 
     abstract interface ResourceLoader { // androidx.compose.ui.text.font/Font.ResourceLoader|null[0]
         abstract fun load(androidx.compose.ui.text.font/Font): kotlin/Any // androidx.compose.ui.text.font/Font.ResourceLoader.load|load(androidx.compose.ui.text.font.Font){}[0]
@@ -636,6 +638,9 @@ final class androidx.compose.ui.text.style/LineHeightStyle { // androidx.compose
     final value class Alignment { // androidx.compose.ui.text.style/LineHeightStyle.Alignment|null[0]
         constructor <init>(kotlin/Float) // androidx.compose.ui.text.style/LineHeightStyle.Alignment.<init>|<init>(kotlin.Float){}[0]
 
+        final val topRatio // androidx.compose.ui.text.style/LineHeightStyle.Alignment.topRatio|{}topRatio[0]
+            final fun <get-topRatio>(): kotlin/Float // androidx.compose.ui.text.style/LineHeightStyle.Alignment.topRatio.<get-topRatio>|<get-topRatio>(){}[0]
+
         final fun equals(kotlin/Any?): kotlin/Boolean // androidx.compose.ui.text.style/LineHeightStyle.Alignment.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // androidx.compose.ui.text.style/LineHeightStyle.Alignment.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // androidx.compose.ui.text.style/LineHeightStyle.Alignment.toString|toString(){}[0]
@@ -662,12 +667,19 @@ final class androidx.compose.ui.text.style/LineHeightStyle { // androidx.compose
                 final fun <get-Fixed>(): androidx.compose.ui.text.style/LineHeightStyle.Mode // androidx.compose.ui.text.style/LineHeightStyle.Mode.Companion.Fixed.<get-Fixed>|<get-Fixed>(){}[0]
             final val Minimum // androidx.compose.ui.text.style/LineHeightStyle.Mode.Companion.Minimum|{}Minimum[0]
                 final fun <get-Minimum>(): androidx.compose.ui.text.style/LineHeightStyle.Mode // androidx.compose.ui.text.style/LineHeightStyle.Mode.Companion.Minimum.<get-Minimum>|<get-Minimum>(){}[0]
+            final val PerLine // androidx.compose.ui.text.style/LineHeightStyle.Mode.Companion.PerLine|{}PerLine[0]
+                final fun <get-PerLine>(): androidx.compose.ui.text.style/LineHeightStyle.Mode // androidx.compose.ui.text.style/LineHeightStyle.Mode.Companion.PerLine.<get-PerLine>|<get-PerLine>(){}[0]
             final val Tight // androidx.compose.ui.text.style/LineHeightStyle.Mode.Companion.Tight|{}Tight[0]
                 final fun <get-Tight>(): androidx.compose.ui.text.style/LineHeightStyle.Mode // androidx.compose.ui.text.style/LineHeightStyle.Mode.Companion.Tight.<get-Tight>|<get-Tight>(){}[0]
         }
     }
 
     final value class Trim { // androidx.compose.ui.text.style/LineHeightStyle.Trim|null[0]
+        final val trimsFirstLineTop // androidx.compose.ui.text.style/LineHeightStyle.Trim.trimsFirstLineTop|{}trimsFirstLineTop[0]
+            final fun <get-trimsFirstLineTop>(): kotlin/Boolean // androidx.compose.ui.text.style/LineHeightStyle.Trim.trimsFirstLineTop.<get-trimsFirstLineTop>|<get-trimsFirstLineTop>(){}[0]
+        final val trimsLastLineBottom // androidx.compose.ui.text.style/LineHeightStyle.Trim.trimsLastLineBottom|{}trimsLastLineBottom[0]
+            final fun <get-trimsLastLineBottom>(): kotlin/Boolean // androidx.compose.ui.text.style/LineHeightStyle.Trim.trimsLastLineBottom.<get-trimsLastLineBottom>|<get-trimsLastLineBottom>(){}[0]
+
         final fun equals(kotlin/Any?): kotlin/Boolean // androidx.compose.ui.text.style/LineHeightStyle.Trim.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // androidx.compose.ui.text.style/LineHeightStyle.Trim.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // androidx.compose.ui.text.style/LineHeightStyle.Trim.toString|toString(){}[0]
@@ -787,7 +799,12 @@ final class androidx.compose.ui.text/AnnotatedString : kotlin/CharSequence { // 
     final fun subSequence(kotlin/Int, kotlin/Int): androidx.compose.ui.text/AnnotatedString // androidx.compose.ui.text/AnnotatedString.subSequence|subSequence(kotlin.Int;kotlin.Int){}[0]
     final fun toString(): kotlin/String // androidx.compose.ui.text/AnnotatedString.toString|toString(){}[0]
 
-    sealed interface Annotation // androidx.compose.ui.text/AnnotatedString.Annotation|null[0]
+    sealed interface Annotation { // androidx.compose.ui.text/AnnotatedString.Annotation|null[0]
+        final object Companion { // androidx.compose.ui.text/AnnotatedString.Annotation.Companion|null[0]
+            final val Saver // androidx.compose.ui.text/AnnotatedString.Annotation.Companion.Saver|{}Saver[0]
+                final fun <get-Saver>(): androidx.compose.runtime.saveable/Saver<androidx.compose.ui.text/AnnotatedString.Annotation, kotlin/Any> // androidx.compose.ui.text/AnnotatedString.Annotation.Companion.Saver.<get-Saver>|<get-Saver>(){}[0]
+        }
+    }
 
     final class <#A1: kotlin/Any?> Range { // androidx.compose.ui.text/AnnotatedString.Range|null[0]
         constructor <init>(#A1, kotlin/Int, kotlin/Int) // androidx.compose.ui.text/AnnotatedString.Range.<init>|<init>(1:0;kotlin.Int;kotlin.Int){}[0]
@@ -1764,6 +1781,9 @@ sealed class androidx.compose.ui.text.platform/PlatformFont : androidx.compose.u
 sealed class androidx.compose.ui.text/TtsAnnotation : androidx.compose.ui.text/AnnotatedString.Annotation // androidx.compose.ui.text/TtsAnnotation|null[0]
 
 final object androidx.compose.ui.text.font/FontVariation { // androidx.compose.ui.text.font/FontVariation|null[0]
+    final val Empty // androidx.compose.ui.text.font/FontVariation.Empty|{}Empty[0]
+        final fun <get-Empty>(): androidx.compose.ui.text.font/FontVariation.Settings // androidx.compose.ui.text.font/FontVariation.Empty.<get-Empty>|<get-Empty>(){}[0]
+
     final fun Setting(kotlin/String, kotlin/Float): androidx.compose.ui.text.font/FontVariation.Setting // androidx.compose.ui.text.font/FontVariation.Setting|Setting(kotlin.String;kotlin.Float){}[0]
     final fun Settings(androidx.compose.ui.text.font/FontWeight, androidx.compose.ui.text.font/FontStyle, kotlin/Array<out androidx.compose.ui.text.font/FontVariation.Setting>...): androidx.compose.ui.text.font/FontVariation.Settings // androidx.compose.ui.text.font/FontVariation.Settings|Settings(androidx.compose.ui.text.font.FontWeight;androidx.compose.ui.text.font.FontStyle;kotlin.Array<out|androidx.compose.ui.text.font.FontVariation.Setting>...){}[0]
     final fun grade(kotlin/Int): androidx.compose.ui.text.font/FontVariation.Setting // androidx.compose.ui.text.font/FontVariation.grade|grade(kotlin.Int){}[0]
@@ -1790,6 +1810,8 @@ final object androidx.compose.ui.text.font/FontVariation { // androidx.compose.u
 
         final fun equals(kotlin/Any?): kotlin/Boolean // androidx.compose.ui.text.font/FontVariation.Settings.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // androidx.compose.ui.text.font/FontVariation.Settings.hashCode|hashCode(){}[0]
+        final fun merge(androidx.compose.ui.text.font/FontVariation.Settings?): androidx.compose.ui.text.font/FontVariation.Settings // androidx.compose.ui.text.font/FontVariation.Settings.merge|merge(androidx.compose.ui.text.font.FontVariation.Settings?){}[0]
+        final fun merge(kotlin/Array<out androidx.compose.ui.text.font/FontVariation.Setting>...): androidx.compose.ui.text.font/FontVariation.Settings // androidx.compose.ui.text.font/FontVariation.Settings.merge|merge(kotlin.Array<out|androidx.compose.ui.text.font.FontVariation.Setting>...){}[0]
         final fun toString(): kotlin/String // androidx.compose.ui.text.font/FontVariation.Settings.toString|toString(){}[0]
     }
 }

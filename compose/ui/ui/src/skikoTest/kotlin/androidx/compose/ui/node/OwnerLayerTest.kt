@@ -518,6 +518,7 @@ class OwnerLayerTest : SkikoComposeTestBase() {
     // it is currently hard to isolate Snapshot changes
     // because SnapshotStateObserver/sendApplyNotifications are coupled with global state
     @OptIn(ExperimentalTestApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun invalidate_on_state_change() = runComposeUiTest {
         runOnUiThread {

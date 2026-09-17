@@ -56,6 +56,7 @@ import androidx.compose.ui.test.WindowInsets as WindowInsetsOverride
 import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.isDialog
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -81,7 +82,6 @@ import com.google.common.truth.Truth.assertWithMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Ignore
 import org.junit.Rule
@@ -93,7 +93,7 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalMaterial3Api::class)
 class ModalBottomSheetTest {
 
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     private val sheetHeight = 256.dp
     private val dragHandleSize = 44.dp
@@ -725,6 +725,32 @@ class ModalBottomSheetTest {
         // If the sheet is NOT pushed up by the hardcoded imePadding, its bottom should be at the
         // root height.
         assertThat(sheetBounds.bottom.value).isWithin(1f).of(rootHeight.value)
+    }
+
+    @Test
+    fun modalBottomSheet_stateRestoration_preservesExpandedState() {
+        val restorationTester = StateRestorationTester(rule)
+        lateinit var sheetState: SheetState
+        lateinit var scope: CoroutineScope
+
+        restorationTester.setContent {
+            scope = rememberCoroutineScope()
+            sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
+            ModalBottomSheet(sheetState = sheetState, onDismissRequest = {}) {
+                Box(Modifier.fillMaxSize().testTag(sheetTag))
+            }
+        }
+
+        rule.waitForIdle()
+        assertThat(sheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
+
+        scope.launch { sheetState.expand() }
+        rule.waitForIdle()
+        assertThat(sheetState.currentValue).isEqualTo(SheetValue.Expanded)
+
+        restorationTester.emulateSavedInstanceStateRestore()
+        rule.waitForIdle()
+        assertThat(sheetState.currentValue).isEqualTo(SheetValue.Expanded)
     }
 
     private val Bundle.traversalBefore: Int

@@ -30,6 +30,7 @@ import kotlin.test.assertNull
 @OptIn(ExperimentalTestApi::class)
 class HostDefaultProviderTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun testHostDefaultProviderGetLocalViewModelStoreOwner() = runSkikoComposeUiTest {
         var owner: ViewModelStoreOwner? = null
@@ -44,6 +45,7 @@ class HostDefaultProviderTest {
     interface TestRegistry
     val TestRegistryKey = object : HostDefaultKey<TestRegistry?> {}
 
+    @Suppress("DEPRECATION")
     @Test
     fun testHostDefaultProviderNull() = runSkikoComposeUiTest {
         val LocalTestRegistry = compositionLocalWithHostDefaultOf(TestRegistryKey)

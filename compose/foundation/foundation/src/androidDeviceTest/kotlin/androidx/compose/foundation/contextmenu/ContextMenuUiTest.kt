@@ -67,7 +67,6 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.test.fail
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -88,7 +87,7 @@ private val TestColors =
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class ContextMenuUiTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val tag = "testTag"
     private val longText = "M ".repeat(200).trimEnd()
@@ -585,7 +584,9 @@ class ContextMenuUiTest {
             TestColumn(colors) {
                 testItem(
                     enabled = false,
-                    leadingIcon = { iconColor -> Box(Modifier.background(iconColor).fillMaxSize()) },
+                    leadingIcon = { iconColor ->
+                        Box(Modifier.background(iconColor).fillMaxSize())
+                    },
                 )
             }
         }
@@ -611,7 +612,9 @@ class ContextMenuUiTest {
                 testItem(
                     label = "M".repeat(5),
                     enabled = enabled,
-                    leadingIcon = { iconColor -> Box(Modifier.background(iconColor).fillMaxSize()) },
+                    leadingIcon = { iconColor ->
+                        Box(Modifier.background(iconColor).fillMaxSize())
+                    },
                 )
             }
         }
@@ -685,7 +688,9 @@ class ContextMenuUiTest {
                 testItem(
                     label = "M".repeat(10),
                     enabled = enabled,
-                    leadingIcon = { iconColor -> Box(Modifier.background(iconColor).fillMaxSize()) },
+                    leadingIcon = { iconColor ->
+                        Box(Modifier.background(iconColor).fillMaxSize())
+                    },
                 )
             }
         }

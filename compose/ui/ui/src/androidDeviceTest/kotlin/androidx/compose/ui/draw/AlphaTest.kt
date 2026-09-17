@@ -39,7 +39,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import kotlin.math.max
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
@@ -50,7 +49,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AlphaTest {
 
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
     private lateinit var activity: TestActivity
 
     @Before
@@ -129,7 +128,8 @@ class AlphaTest {
         rule.setContent {
             AtLeastSize(
                 size = 10,
-                modifier = Modifier.background(Color.White).alpha(1f).alpha(alpha).background(color),
+                modifier =
+                    Modifier.background(Color.White).alpha(1f).alpha(alpha).background(color),
             ) {}
         }
 

@@ -40,6 +40,7 @@ class TextActionsTest {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testPerformTextClearance() = runComposeUiTest {
         setContent {
@@ -53,6 +54,7 @@ class TextActionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testPerformTextReplacement() = runComposeUiTest {
         setContent {
@@ -66,6 +68,7 @@ class TextActionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testPerformTextInput() = runComposeUiTest {
         setContent {
@@ -79,6 +82,7 @@ class TextActionsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testPerformTextInputSelection() = runComposeUiTest  {
         setContent {

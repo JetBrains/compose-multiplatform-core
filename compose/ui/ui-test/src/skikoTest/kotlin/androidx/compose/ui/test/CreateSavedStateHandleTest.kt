@@ -30,6 +30,7 @@ class CreateSavedStateHandleTest {
         var intState by savedStateHandle.saved("state") { 0 }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testCreateSavedStateHandle() = runComposeUiTest {
         setContent {
