@@ -32,3 +32,20 @@ internal actual fun markPagerBenchmarkEnd() {
             "'snapshot-cache-pager-start','snapshot-cache-pager-end')"
     )
 }
+
+internal actual fun markPixelixBenchmarkStart() {
+    js(
+        "performance.clearMarks('snapshot-cache-pixelix-start');" +
+            "performance.clearMarks('snapshot-cache-pixelix-end');" +
+            "performance.clearMeasures('snapshot-cache-pixelix-measured-run');" +
+            "performance.mark('snapshot-cache-pixelix-start')"
+    )
+}
+
+internal actual fun markPixelixBenchmarkEnd() {
+    js(
+        "performance.mark('snapshot-cache-pixelix-end');" +
+            "performance.measure('snapshot-cache-pixelix-measured-run'," +
+            "'snapshot-cache-pixelix-start','snapshot-cache-pixelix-end')"
+    )
+}
