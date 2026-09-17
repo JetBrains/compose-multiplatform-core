@@ -21,7 +21,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -50,8 +49,6 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.boundsInWindow
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.assertVisibleInContainer
@@ -69,12 +66,10 @@ import androidx.compose.ui.test.utils.isLoupeView
 import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.test.utils.verticalDistanceTo
 import androidx.compose.ui.test.waitForContextMenu
-import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
-import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.dp
 import kotlin.test.Ignore
 import kotlin.test.Test
@@ -267,89 +262,42 @@ class TextFieldEditMenuTest {
     @Test
     @Ignore // CMP-10315: Context menu is positioned far from the caret for BTF1.
     fun testBasicTextFieldContextMenuIsPositionedNearCaret() =
-        runTextFieldContextMenuPositionTest(EditableTextFieldKind.BasicTextField)
+        runTextFieldContextMenuPositionTest(BasicTextFieldType.V1)
 
     @Test
     fun testBasicTextField2ContextMenuIsPositionedNearCaret() =
-        runTextFieldContextMenuPositionTest(EditableTextFieldKind.BasicTextField2)
+        runTextFieldContextMenuPositionTest(BasicTextFieldType.V2)
 
-    private fun runTextFieldContextMenuPositionTest(textFieldKind: EditableTextFieldKind) {
+    private fun runTextFieldContextMenuPositionTest(textFieldKind: BasicTextFieldType) {
+        val caretOffset = CARET_POSITION_TEXT.length
         for (newContextMenuEnabled in arrayOf(false, true)) {
             runContextMenuTest(newContextMenuEnabled) {
                 UIPasteboard.generalPasteboard().string = "Paste text"
-                val layoutInfo = setOffsetTextFieldContent(textFieldKind)
+                setTextFieldContent(
+                    textFieldKind = textFieldKind,
+                    initialValue = TextFieldValue(CARET_POSITION_TEXT, TextRange(caretOffset)),
+                    readOnly = false,
+                    // Keep the text field off both screen edges and the screen center, so that a
+                    // menu positioned relative to anything but the caret is measurably off.
+                    modifier = Modifier
+                        .padding(start = 80.dp, top = 48.dp)
+                        .width(160.dp)
+                        .height(24.dp)
+                )
 
-                waitUntil("Text field should be laid out") {
-                    layoutInfo.textFieldFrame != null && layoutInfo.textLayoutResult != null
-                }
-
-                longPressNodeWithTagAndAwaitContextMenu("TextField")
+                val textField = findNodeWithTag("TextField")
+                // Unlike a tap, a long press leaves the caret exactly at the pressed character
+                // and, on release, reveals the context menu.
+                textField.longPressCharacter(caretOffset)
+                waitForContextMenu()
 
                 assertContextMenuNearCaret(
-                    caretFrame = layoutInfo.caretFrameInWindow(density),
+                    caretPosition = textField.characterPosition(caretOffset),
                     textFieldKind = textFieldKind,
                     newContextMenuEnabled = newContextMenuEnabled
                 )
             }
         }
-    }
-
-    private fun UIKitInstrumentedTest.setOffsetTextFieldContent(
-        textFieldKind: EditableTextFieldKind,
-    ): TextFieldLayoutInfo {
-        val text = "I am a TextField"
-        val focusRequester = FocusRequester()
-
-        fun offsetTextFieldModifier(layoutInfo: TextFieldLayoutInfo): Modifier =
-            Modifier
-                .width(160.dp)
-                .height(24.dp)
-                .onGloballyPositioned { coordinates ->
-                    layoutInfo.textFieldFrame = coordinates.boundsInWindow().toDpRect(density)
-                }
-                .then(textFieldModifier(focusRequester))
-
-        val initialSelection = TextRange(text.length, text.length)
-        val textFieldValue = mutableStateOf(TextFieldValue(text, initialSelection))
-        val textFieldState = TextFieldState(text, initialSelection)
-
-        val layoutInfo = when (textFieldKind) {
-            EditableTextFieldKind.BasicTextField -> TextFieldLayoutInfo(
-                selectionOffset = { textFieldValue.value.selection.start }
-            )
-            EditableTextFieldKind.BasicTextField2 -> TextFieldLayoutInfo(
-                selectionOffset = { textFieldState.selection.start }
-            )
-        }
-
-        setContent {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .safeDrawingPadding()
-                    .padding(start = 80.dp, top = 48.dp)
-            ) {
-                when (textFieldKind) {
-                    EditableTextFieldKind.BasicTextField -> BasicTextField(
-                        value = textFieldValue.value,
-                        onValueChange = { textFieldValue.value = it },
-                        modifier = offsetTextFieldModifier(layoutInfo),
-                        onTextLayout = { layoutInfo.textLayoutResult = it }
-                    )
-                    EditableTextFieldKind.BasicTextField2 -> BasicTextField(
-                        state = textFieldState,
-                        modifier = offsetTextFieldModifier(layoutInfo),
-                        onTextLayout = { getResult ->
-                            layoutInfo.textLayoutResult = getResult()
-                        }
-                    )
-                }
-            }
-        }
-
-        focusRequester.requestFocus()
-        waitForIdle()
-        return layoutInfo
     }
 
     @Test
@@ -902,13 +850,13 @@ class TextFieldEditMenuTest {
         findFirstDescendant { it.isLoupeView } != null
 
     private fun UIKitInstrumentedTest.assertContextMenuNearCaret(
-        caretFrame: DpRect,
-        textFieldKind: EditableTextFieldKind,
+        caretPosition: DpOffset,
+        textFieldKind: BasicTextFieldType,
         newContextMenuEnabled: Boolean,
     ) {
         val menuFrame = findContextMenuFrame()
-        val horizontalDistance = menuFrame.horizontalDistanceTo(caretFrame)
-        val verticalDistance = menuFrame.verticalDistanceTo(caretFrame)
+        val horizontalDistance = menuFrame.horizontalDistanceTo(caretPosition)
+        val verticalDistance = menuFrame.verticalDistanceTo(caretPosition)
         val contextMenu = if (newContextMenuEnabled) "new menu" else "old menu"
 
         assertTrue(
@@ -939,34 +887,11 @@ class TextFieldEditMenuTest {
         return contextMenuFrameNode.frame ?: error("Context menu frame is null")
     }
 
-    private fun TextLayoutResult.cursorFrameInWindow(
-        textFieldFrame: DpRect,
-        offset: Int,
-        density: Density,
-    ): DpRect {
-        val cursorFrame = getCursorRect(offset).toDpRect(density)
-        return DpRect(
-            left = textFieldFrame.left + cursorFrame.left,
-            top = textFieldFrame.top + cursorFrame.top,
-            right = textFieldFrame.left + cursorFrame.right,
-            bottom = textFieldFrame.top + cursorFrame.bottom
-        )
-    }
-
-    private fun TextFieldLayoutInfo.caretFrameInWindow(density: Density): DpRect {
-        val textFieldFrame = textFieldFrame ?: error("TextField frame is null")
-        val textLayoutResult = textLayoutResult ?: error("TextLayoutResult is null")
-        return textLayoutResult.cursorFrameInWindow(
-            textFieldFrame = textFieldFrame,
-            offset = selectionOffset(),
-            density = density
-        )
-    }
-
     private fun UIKitInstrumentedTest.setTextFieldContent(
         textFieldKind: BasicTextFieldType,
         initialValue: TextFieldValue,
         readOnly: Boolean,
+        modifier: Modifier = Modifier,
     ) {
         setContent {
             val focusRequester = remember { FocusRequester() }
@@ -979,7 +904,7 @@ class TextFieldEditMenuTest {
                         BasicTextField(
                             value = textFieldValue.value,
                             onValueChange = { textFieldValue.value = it },
-                            modifier = textFieldModifier(focusRequester),
+                            modifier = modifier.then(textFieldModifier(focusRequester)),
                             readOnly = readOnly
                         )
                     }
@@ -989,7 +914,7 @@ class TextFieldEditMenuTest {
                         }
                         BasicTextField(
                             state = textFieldState,
-                            modifier = textFieldModifier(focusRequester),
+                            modifier = modifier.then(textFieldModifier(focusRequester)),
                             readOnly = readOnly
                         )
                     }
@@ -1001,24 +926,18 @@ class TextFieldEditMenuTest {
         }
     }
 
-    private enum class EditableTextFieldKind {
-        BasicTextField,
-        BasicTextField2
-    }
-
-    private class TextFieldLayoutInfo(
-        val selectionOffset: () -> Int,
-    ) {
-        var textFieldFrame: DpRect? = null
-        var textLayoutResult: TextLayoutResult? = null
-    }
-
     private companion object {
         private const val SELECTION_CONTAINER_MIDDLE_WORD = "LongLongLongLongLongLong"
         private const val SELECTION_CONTAINER_TEXT = "Hello-$SELECTION_CONTAINER_MIDDLE_WORD-text"
         private const val PARTIAL_SELECTION_TEXT = "accomplishment extraordinary magnificent establishment"
+        private const val CARET_POSITION_TEXT = "I am a TextField"
 
-        private val CARET_N_CONTEXT_MENU_MAX_DIST = 16.dp
+        /**
+         * Distances are measured from the caret center reported by
+         * [UIKitInstrumentedTest.characterPosition], so the tolerance has to cover half of the
+         * caret height on top of the gap the menu keeps from the caret.
+         */
+        private val CARET_N_CONTEXT_MENU_MAX_DIST = 32.dp
     }
 
     @OptIn(ExperimentalFoundationApi::class)
