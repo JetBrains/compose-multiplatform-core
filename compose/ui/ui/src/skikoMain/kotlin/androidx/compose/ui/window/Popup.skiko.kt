@@ -23,11 +23,11 @@ import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.currentCompositeKeyHashCode
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -474,7 +474,7 @@ private fun PopupLayout(
 ) {
     // Use a MutableState directly to avoid recomposing when the value changes
     val parentBoundsInWindow: MutableState<IntRect?> = remember { mutableStateOf(null) }
-    val canCalculatePosition by remember { derivedStateOf { parentBoundsInWindow.value != null } }
+    var canCalculatePosition by remember { mutableStateOf(false) }
     EmptyLayout(Modifier.onPlaced { childCoordinates ->
         // For a layer in the same scene, this runs before its popup measure policy calculates a
         // position, so the policy observes the parent bounds in the first frame.
@@ -484,6 +484,7 @@ private fun PopupLayout(
             val layoutPosition = it.positionInWindow().round()
             val layoutSize = it.size
             parentBoundsInWindow.value = IntRect(layoutPosition, layoutSize)
+            canCalculatePosition = true
         }
     })
 
