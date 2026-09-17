@@ -107,6 +107,7 @@ private fun SnapshotCacheLazyListBenchmark(
     var runId by remember { mutableIntStateOf(if (initialConfiguration.autoRun) 1 else 0) }
     var isRunning by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<BenchmarkResult?>(null) }
+    var profilerPhase by remember { mutableStateOf(ProfilerPhase.Idle) }
 
     LaunchedEffect(Unit) { setBenchmarkAttribute("data-benchmark-state", "ready") }
 
@@ -114,7 +115,9 @@ private fun SnapshotCacheLazyListBenchmark(
         if (runId == 0) return@LaunchedEffect
         isRunning = true
         result = null
+        profilerPhase = ProfilerPhase.WarmingUp
         setBenchmarkAttribute("data-benchmark-state", "warming-up")
+        setBenchmarkAttribute("data-benchmark-command", "")
         setBenchmarkAttribute("data-benchmark-result", "")
         try {
             val measured =
@@ -123,6 +126,7 @@ private fun SnapshotCacheLazyListBenchmark(
                     configuration = configuration,
                     itemHeightPx = with(density) { BenchmarkItemHeight.roundToPx() },
                     drawCounter = drawCounter,
+                    onProfilerPhaseChange = { profilerPhase = it },
                 )
             result = measured
             setBenchmarkAttribute("data-benchmark-result", measured.toJson(snapshotCache))
@@ -146,9 +150,7 @@ private fun SnapshotCacheLazyListBenchmark(
                 "${configuration.warmupFrames} warm-up frames"
         )
         if (configuration.waitForProfiler) {
-            Text(
-                "Profiler handshake enabled; waiting for data-benchmark-command=start after warm-up"
-            )
+            ProfilerControls(profilerPhase)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             BenchmarkScenario.entries.forEach { scenario ->
@@ -173,6 +175,35 @@ private fun SnapshotCacheLazyListBenchmark(
         )
         Box(Modifier.weight(1f).fillMaxWidth().border(1.dp, MaterialTheme.colors.onSurface)) {
             BenchmarkList(listState, drawCounter)
+        }
+    }
+}
+
+@Composable
+private fun ProfilerControls(phase: ProfilerPhase) {
+    val instructions =
+        when (phase) {
+            ProfilerPhase.Idle,
+            ProfilerPhase.WarmingUp -> "Warming up before the measured run…"
+            ProfilerPhase.MeasurementReady ->
+                "Start recording in Chrome Performance, then click Start measured run."
+            ProfilerPhase.Running -> "Measured run in progress…"
+            ProfilerPhase.MeasurementComplete ->
+                "Measured run complete. Stop Chrome recording, then click Finish benchmark."
+            ProfilerPhase.Finished -> "Profiler measurement finished."
+        }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(instructions)
+        when (phase) {
+            ProfilerPhase.MeasurementReady ->
+                Button(onClick = { setBenchmarkAttribute("data-benchmark-command", "start") }) {
+                    Text("Start measured run")
+                }
+            ProfilerPhase.MeasurementComplete ->
+                Button(onClick = { setBenchmarkAttribute("data-benchmark-command", "finish") }) {
+                    Text("Finish benchmark")
+                }
+            else -> Unit
         }
     }
 }
@@ -231,6 +262,7 @@ private suspend fun runBenchmark(
     configuration: BenchmarkConfiguration,
     itemHeightPx: Int,
     drawCounter: DrawCounter,
+    onProfilerPhaseChange: (ProfilerPhase) -> Unit,
 ): BenchmarkResult {
     val initialOffset =
         if (configuration.scenario == BenchmarkScenario.MoveOnly) itemHeightPx / 2 else 0
@@ -246,12 +278,14 @@ private suspend fun runBenchmark(
     val firstItemBefore = state.firstVisibleItemIndex
     if (configuration.waitForProfiler) {
         setBenchmarkAttribute("data-benchmark-state", "measurement-ready")
+        onProfilerPhaseChange(ProfilerPhase.MeasurementReady)
         while (benchmarkAttribute("data-benchmark-command") != "start") {
             withFrameNanos {}
         }
         setBenchmarkAttribute("data-benchmark-command", "")
     }
     setBenchmarkAttribute("data-benchmark-state", "running")
+    onProfilerPhaseChange(ProfilerPhase.Running)
     var previousFrameNanos = withFrameNanos { it }
     val frameDurationsMillis = DoubleArray(configuration.frames)
     repeat(configuration.frames) { frame ->
@@ -263,11 +297,13 @@ private suspend fun runBenchmark(
     repeat(2) { withFrameNanos {} }
     if (configuration.waitForProfiler) {
         setBenchmarkAttribute("data-benchmark-state", "measurement-complete")
+        onProfilerPhaseChange(ProfilerPhase.MeasurementComplete)
         while (benchmarkAttribute("data-benchmark-command") != "finish") {
             withFrameNanos {}
         }
         setBenchmarkAttribute("data-benchmark-command", "")
     }
+    onProfilerPhaseChange(ProfilerPhase.Finished)
 
     val sortedDurations = frameDurationsMillis.sortedArray()
     return BenchmarkResult(
@@ -306,6 +342,15 @@ private enum class BenchmarkScenario(val queryName: String, val displayName: Str
         fun fromQuery(value: String?): BenchmarkScenario =
             entries.firstOrNull { it.queryName == value } ?: Normal
     }
+}
+
+private enum class ProfilerPhase {
+    Idle,
+    WarmingUp,
+    MeasurementReady,
+    Running,
+    MeasurementComplete,
+    Finished,
 }
 
 private data class BenchmarkConfiguration(
