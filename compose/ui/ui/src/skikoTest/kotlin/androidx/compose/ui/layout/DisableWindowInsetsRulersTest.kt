@@ -28,6 +28,7 @@ import androidx.compose.ui.test.v2.runInternalSkikoComposeUiTest
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertTrue
+import kotlinx.coroutines.test.TestResult
 
 @OptIn(ExperimentalTestApi::class, InternalTestApi::class)
 class DisableWindowInsetsRulersTest {
@@ -38,39 +39,37 @@ class DisableWindowInsetsRulersTest {
     }
 
     @Test
-    fun disableWindowInsetsRulers() {
+    fun disableWindowInsetsRulers() = runInternalSkikoComposeUiTest(
+        windowInsets = TestWindowInsets(systemBarsInsets = mutableStateOf(PlatformInsets(top = 100)))
+    ) {
         WindowInsetsRulers.disable()
 
-        runInternalSkikoComposeUiTest(
-            windowInsets = TestWindowInsets(systemBarsInsets = mutableStateOf(PlatformInsets(top = 100)))
-        ) {
-            var left = 0f
-            var top = 0f
-            var right = 0f
-            var bottom = 0f
+        var left = 0f
+        var top = 0f
+        var right = 0f
+        var bottom = 0f
 
-            setContent {
-                Box(
-                    Modifier.fillMaxSize().layout { measurable, constraints ->
-                        val placeable = measurable.measure(constraints)
-                        layout(placeable.width, placeable.height) {
-                            placeable.place(0, 0)
-                            left = WindowInsetsRulers.StatusBars.current.left.current(Float.NaN)
-                            top = WindowInsetsRulers.StatusBars.current.top.current(Float.NaN)
-                            right = WindowInsetsRulers.StatusBars.current.right.current(Float.NaN)
-                            bottom = WindowInsetsRulers.StatusBars.current.bottom.current(Float.NaN)
-                        }
+        setContent {
+            Box(
+                Modifier.fillMaxSize().layout { measurable, constraints ->
+                    val placeable = measurable.measure(constraints)
+                    layout(placeable.width, placeable.height) {
+                        placeable.place(0, 0)
+                        left = WindowInsetsRulers.StatusBars.current.left.current(Float.NaN)
+                        top = WindowInsetsRulers.StatusBars.current.top.current(Float.NaN)
+                        right = WindowInsetsRulers.StatusBars.current.right.current(Float.NaN)
+                        bottom = WindowInsetsRulers.StatusBars.current.bottom.current(Float.NaN)
                     }
-                )
-            }
-
-            waitForIdle()
-
-            assertTrue(left.isNaN())
-            assertTrue(top.isNaN())
-            assertTrue(right.isNaN())
-            assertTrue(bottom.isNaN())
+                }
+            )
         }
+
+        waitForIdle()
+
+        assertTrue(left.isNaN())
+        assertTrue(top.isNaN())
+        assertTrue(right.isNaN())
+        assertTrue(bottom.isNaN())
     }
 }
 
