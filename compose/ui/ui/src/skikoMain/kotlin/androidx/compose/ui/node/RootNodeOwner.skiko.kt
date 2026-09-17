@@ -75,6 +75,7 @@ import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.platform.SoundEffect
 import androidx.compose.ui.platform.TaskDispatchers
 import androidx.compose.ui.platform.UriHandler
+import androidx.compose.ui.platform.createPlatformClipboardManager
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.ComposeSceneInputHandler
 import androidx.compose.ui.scene.ComposeScenePointer
@@ -474,18 +475,18 @@ internal class RootNodeOwner(
         override val rootForTest get() = this@RootNodeOwner.rootForTest
         override val hapticFeedBack get() = platformContext.hapticFeedback
         override val inputModeManager get() = platformContext.inputModeManager
-        override val clipboardManager get() = platformContext.clipboardManager
+        override val clipboardManager = createPlatformClipboardManager()
         override val clipboard get() = platformContext.clipboard
         override val accessibilityManager get() = platformContext.accessibilityManager
         override val graphicsContext get() = this@RootNodeOwner.graphicsContext
         override val textToolbar get() = platformContext.textToolbar
 
         @Suppress("DEPRECATION")
-        override val autofillTree get() = platformContext.autofillTree
+        override val autofillTree = androidx.compose.ui.autofill.AutofillTree()
 
         @Suppress("DEPRECATION")
         override val autofill: androidx.compose.ui.autofill.Autofill?
-            get() = platformContext.autofill
+            get() = null
 
         // TODO https://youtrack.jetbrains.com/issue/CMP-7485
         override val autofillManager: AutofillManager? get() = platformContext.autofillManager
@@ -553,7 +554,7 @@ internal class RootNodeOwner(
         override val retainedValuesStore: RetainedValuesStore get() = ForgetfulRetainedValuesStore
         override val rectManager = RectManager(layoutNodes)
         @Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
-        override val fontLoader: FontLoader get() = platformContext.fontLoader
+        override val fontLoader = FontLoader()
         override val fontFamilyResolver: FontFamily.Resolver get() = platformContext.fontFamilyResolver
         override val layoutDirection get() = _layoutDirection
         override val localeList get() = platformContext.localeList
