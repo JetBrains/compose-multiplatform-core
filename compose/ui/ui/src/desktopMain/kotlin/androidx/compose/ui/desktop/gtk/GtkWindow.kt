@@ -19,7 +19,7 @@ import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.desktop.ClipboardItemsEntry
 import androidx.compose.ui.desktop.LocalTextInputSessionOwner
-import androidx.compose.ui.desktop.DefaultCustomTitleBarHeightForAir
+import androidx.compose.ui.window.WindowFrame
 import androidx.compose.ui.desktop.InteractiveMoveInitiator
 import androidx.compose.ui.desktop.KdtDragAndDropManager
 import androidx.compose.ui.desktop.KdtDragAndDropTransferable
@@ -180,7 +180,6 @@ class GtkWindow private constructor(
         newWindow.contentSize = contentSize
         newWindow.isFocused = isFocused
         newWindow.placement = placement
-        newWindow.customTitleBarInsets = customTitleBarInsets
         newWindow.decoration = decoration
         newWindow.density = density
         newWindow.screen = screen
@@ -271,19 +270,19 @@ class GtkWindow private constructor(
 
     @ExperimentalComposeUiApi
     override var decoration: WindowDecoration by mutableStateOf(
-        WindowDecoration.CustomTitleBar(
-            DefaultCustomTitleBarHeightForAir,
-        ),
+        WindowDecoration.Decorated,
     )
         private set
 
     @ExperimentalComposeUiApi
-    override fun requestDecoration(vararg decorations: WindowDecoration) {
+    override fun setDecorationPreferences(
+        preferDecorated: Boolean,
+        customTitleBarHeight: Dp,
+        roundedWindowCorners: Boolean,
+        undecoratedWindowFrame: WindowFrame,
+    ) {
         // TODO
     }
-
-    override var customTitleBarInsets: Pair<Dp, Dp>? by mutableStateOf(null)
-        private set
 
     override val systemTheme: SystemTheme
         get() = overriddenSystemTheme ?: application.systemTheme
@@ -620,17 +619,14 @@ class GtkWindow private constructor(
                         event.maximized -> WindowPlacement.Maximized
                         else -> WindowPlacement.Floating
                     }
-                    customTitleBarInsets = if (
-                        event.insetStart.width.rawLogical == 0 && event.insetEnd.width.rawLogical == 0
-                    ) {
-                        null
-                    } else {
-                        event.insetStart.width.toDp() to event.insetEnd.width.toDp()
-                    }
                     decoration = when (val nativeDecoration = event.decorationMode) {
                         WindowDecorationMode.Server -> WindowDecoration.Decorated
                         is WindowDecorationMode.CustomTitlebar ->
-                            WindowDecoration.CustomTitleBar(nativeDecoration.height.toDp())
+                            WindowDecoration.CustomTitleBar(
+                                nativeDecoration.height.toDp(),
+                                insetLeft = event.insetStart.width.toDp(),
+                                insetRight = event.insetEnd.width.toDp(),
+                            )
                     }
                     composeScene.size = contentSizeInPx()
                 }
@@ -989,7 +985,7 @@ class GtkWindow private constructor(
                         size = LogicalSize.makeWH(800, 600),
                         minSize = null,
                         decorationMode = WindowDecorationMode.CustomTitlebar(
-                            DefaultCustomTitleBarHeightForAir.roundToLogicalPixelsInt(),
+                            44.dp.roundToLogicalPixelsInt(),
                         ),
                         renderingMode = RenderingMode.Auto,
                     ),

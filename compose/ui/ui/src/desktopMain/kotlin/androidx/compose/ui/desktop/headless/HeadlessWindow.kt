@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowDecoration
+import androidx.compose.ui.window.WindowFrame
 import androidx.compose.ui.window.WindowPlacement
 import kotlin.concurrent.Volatile
 import kotlin.concurrent.atomics.AtomicLong
@@ -182,12 +183,23 @@ class HeadlessWindow internal constructor(
     override var decoration: WindowDecoration by mutableStateOf(WindowDecoration.Decorated)
         private set
 
-    override fun requestDecoration(vararg decorations: WindowDecoration) {
-        decorations.firstOrNull()?.let { decoration = it }
+    @ExperimentalComposeUiApi
+    override fun setDecorationPreferences(
+        preferDecorated: Boolean,
+        customTitleBarHeight: Dp,
+        roundedWindowCorners: Boolean,
+        undecoratedWindowFrame: WindowFrame,
+    ) {
+        decoration = if (preferDecorated) {
+            WindowDecoration.Decorated
+        } else {
+            WindowDecoration.CustomTitleBar(
+                customTitleBarHeight,
+                insetLeft = 0.dp,
+                insetRight = 0.dp,
+            )
+        }
     }
-
-    override var customTitleBarInsets: Pair<Dp, Dp>? by mutableStateOf(null)
-        private set
 
     override var systemTheme: SystemTheme by mutableStateOf(SystemTheme.Light)
         private set
@@ -530,7 +542,6 @@ class HeadlessWindow internal constructor(
             }
             is Event.WindowDecorationChange -> composeScene.withFrameTransaction {
                 decoration = event.decoration
-                customTitleBarInsets = event.customTitleBarInsets
             }
             is Event.WindowThemeChange -> composeScene.withFrameTransaction {
                 systemTheme = event.systemTheme

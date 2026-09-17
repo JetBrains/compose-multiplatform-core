@@ -28,8 +28,9 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
+import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowFrame
-import androidx.compose.ui.window.WindowFrameSide
+import androidx.compose.ui.window.WindowFrameTiling
 import kotlin.math.roundToInt
 import org.jetbrains.desktop.linux.DragAndDropAction
 import org.jetbrains.desktop.linux.LogicalPixels
@@ -37,8 +38,8 @@ import org.jetbrains.desktop.linux.LogicalPixelsInt
 import org.jetbrains.desktop.linux.LogicalPoint
 import org.jetbrains.desktop.linux.LogicalRect
 import org.jetbrains.desktop.linux.LogicalSize
+import org.jetbrains.desktop.linux.WindowDecorationMode as LinuxWindowDecorationMode
 import org.jetbrains.desktop.linux.WindowFrame as LinuxWindowFrame
-import org.jetbrains.desktop.linux.WindowFrameSide as LinuxWindowFrameSide
 
 internal fun LogicalPixels.toDp(): Dp {
     return rawLogical.dp
@@ -91,47 +92,47 @@ internal fun DragAndDropTransferAction.toLinuxAction(): DragAndDropAction? {
 @OptIn(ExperimentalComposeUiApi::class)
 internal fun WindowFrame.toLinuxWindowFrame(): LinuxWindowFrame {
     return LinuxWindowFrame(
-        left = LinuxWindowFrameSide(
-            padding = left.padding.roundToLogicalPixelsInt(),
-            resizerThickness = left.resizerThickness.roundToLogicalPixelsInt(),
+        padding = LinuxWindowFrame.Padding(
+            left = padding.left.roundToLogicalPixelsInt(),
+            top = padding.top.roundToLogicalPixelsInt(),
+            right = padding.right.roundToLogicalPixelsInt(),
+            bottom = padding.bottom.roundToLogicalPixelsInt(),
         ),
-        top = LinuxWindowFrameSide(
-            padding = top.padding.roundToLogicalPixelsInt(),
-            resizerThickness = top.resizerThickness.roundToLogicalPixelsInt(),
-        ),
-        right = LinuxWindowFrameSide(
-            padding = right.padding.roundToLogicalPixelsInt(),
-            resizerThickness = right.resizerThickness.roundToLogicalPixelsInt(),
-        ),
-        bottom = LinuxWindowFrameSide(
-            padding = bottom.padding.roundToLogicalPixelsInt(),
-            resizerThickness = bottom.resizerThickness.roundToLogicalPixelsInt(),
+        resizerThickness = LinuxWindowFrame.ResizerThickness(
+            left = resizerThickness.left.roundToLogicalPixelsInt(),
+            top = resizerThickness.top.roundToLogicalPixelsInt(),
+            right = resizerThickness.right.roundToLogicalPixelsInt(),
+            bottom = resizerThickness.bottom.roundToLogicalPixelsInt(),
         ),
     )
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
-internal fun LinuxWindowFrame.toWindowFrame(): WindowFrame {
-    return WindowFrame(
-        left = WindowFrameSide(
-            padding = left.padding.toDp(),
-            resizerThickness = left.resizerThickness.toDp(),
-            tiled = left.tiled,
+internal fun LinuxWindowDecorationMode.Client.toWindowDecoration(
+    titleBarLayout: Pair<List<WindowDecoration.TitleBarElement>, List<WindowDecoration.TitleBarElement>>,
+): WindowDecoration.Undecorated {
+    return WindowDecoration.Undecorated(
+        frame = WindowFrame(
+            padding = WindowFrame.Padding(
+                left = frame.padding.left.toDp(),
+                top = frame.padding.top.toDp(),
+                right = frame.padding.right.toDp(),
+                bottom = frame.padding.bottom.toDp(),
+            ),
+            resizerThickness = WindowFrame.ResizerThickness(
+                left = frame.resizerThickness.left.toDp(),
+                top = frame.resizerThickness.top.toDp(),
+                right = frame.resizerThickness.right.toDp(),
+                bottom = frame.resizerThickness.bottom.toDp(),
+            ),
         ),
-        top = WindowFrameSide(
-            padding = top.padding.toDp(),
-            resizerThickness = top.resizerThickness.toDp(),
-            tiled = top.tiled,
+        tiling = WindowFrameTiling(
+            left = tiled.left,
+            top = tiled.top,
+            right = tiled.right,
+            bottom = tiled.bottom,
         ),
-        right = WindowFrameSide(
-            padding = right.padding.toDp(),
-            resizerThickness = right.resizerThickness.toDp(),
-            tiled = right.tiled,
-        ),
-        bottom = WindowFrameSide(
-            padding = bottom.padding.toDp(),
-            resizerThickness = bottom.resizerThickness.toDp(),
-            tiled = bottom.tiled,
-        ),
+        titleBarLayoutLeft = titleBarLayout.first,
+        titleBarLayoutRight = titleBarLayout.second,
     )
 }

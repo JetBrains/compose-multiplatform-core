@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowDecoration
+import androidx.compose.ui.window.windowDecorationFromFlag
 import androidx.compose.ui.window.runApplicationTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
@@ -87,7 +87,7 @@ class DesktopWindowInfoTest {
             Window(
                 onCloseRequest = {},
                 // Undecorated to match the size without a title bar.
-                decoration = WindowDecoration.Undecorated(),
+                decoration = windowDecorationFromFlag(undecorated = true),
                 initialSize = DpSize(234.dp, 432.dp),
             ) {
                 windowInfo = LocalWindowInfo.current

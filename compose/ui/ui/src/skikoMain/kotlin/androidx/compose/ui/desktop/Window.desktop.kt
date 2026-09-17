@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowDecoration
+import androidx.compose.ui.window.WindowFrame
 import androidx.compose.ui.window.WindowPlacement
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.io.files.Path
@@ -93,13 +94,12 @@ interface Window {
 
     @MainThread
     @ExperimentalComposeUiApi
-    fun requestDecoration(vararg decorations: WindowDecoration)
-
-    val customTitleBarInsets: Pair<Dp, Dp>?
-
-    @ExperimentalComposeUiApi
-    val customTitleBarLayout: Pair<List<WindowDecoration.TitleBarElement>, List<WindowDecoration.TitleBarElement>>?
-        get() = null
+    fun setDecorationPreferences(
+        preferDecorated: Boolean,
+        customTitleBarHeight: Dp,
+        roundedWindowCorners: Boolean,
+        undecoratedWindowFrame: WindowFrame,
+    )
 
     val systemTheme: SystemTheme
 
@@ -350,5 +350,3 @@ fun Window(
     }
     window.Content(onLayout)
 }
-
-internal val DefaultCustomTitleBarHeightForAir = 44.dp

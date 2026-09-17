@@ -161,11 +161,7 @@ internal class WindowTestScope(
            onCloseRequest = ::exitApplication,
            initialSize = state.size,
            initialPosition = state.position,
-           decoration = if (undecorated) {
-               WindowDecoration.Undecorated()
-           } else {
-               WindowDecoration.Decorated
-           }
+           decoration = windowDecorationFromFlag(undecorated)
        ) {
            this@WindowTestScope.window = window
            content()

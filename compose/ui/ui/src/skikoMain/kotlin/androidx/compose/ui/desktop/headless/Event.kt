@@ -134,7 +134,6 @@ internal sealed class Event {
     internal data class WindowDecorationChange(
         override val windowId: LightweightWindowId,
         val decoration: WindowDecoration,
-        val customTitleBarInsets: Pair<Dp, Dp>?,
     ) : Event(),
         WindowEvent
 
