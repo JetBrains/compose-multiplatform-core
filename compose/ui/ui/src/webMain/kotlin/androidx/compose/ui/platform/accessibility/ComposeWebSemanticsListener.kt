@@ -521,15 +521,13 @@ internal class ComposeWebSemanticsListener(
             htmlNode.removeAttribute("aria-checked")
         }
 
-        val isCollection =
-            roleId == AriaRoleId.List || roleId == AriaRoleId.Grid
+        val ariaLive = config.getAriaLive(roleId)
 
-        if (isCollection) {
-            // Prevent VoiceOver from announcing every child added as a lazy collection scrolls.
+        if (ariaLive != null) {
             // Avoid rewriting the attribute during every sync because that can itself invalidate
             // the focused accessibility object.
-            if (htmlNode.getAttribute("aria-live") != "off") {
-                htmlNode.setAttribute("aria-live", "off")
+            if (htmlNode.getAttribute("aria-live") != ariaLive) {
+                htmlNode.setAttribute("aria-live", ariaLive)
             }
         } else if (htmlNode.hasAttribute("aria-live")) {
             htmlNode.removeAttribute("aria-live")

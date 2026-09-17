@@ -46,7 +46,9 @@ import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -835,6 +837,36 @@ class CfWA11YTest : OnCanvasTests {
         switch.click()
         awaitA11YChanges()
         assertEquals("true", switch.getAttribute("aria-checked"))
+    }
+
+    @Test
+    fun liveRegionModesAreMappedToAriaLive() = runApplicationTest {
+        createComposeWindow {
+            Column {
+                Text(
+                    "Polite",
+                    modifier = Modifier
+                        .testTag("politeLiveRegion")
+                        .semantics { liveRegion = LiveRegionMode.Polite },
+                )
+                Text(
+                    "Assertive",
+                    modifier = Modifier
+                        .testTag("assertiveLiveRegion")
+                        .semantics { liveRegion = LiveRegionMode.Assertive },
+                )
+            }
+        }
+
+        awaitA11YChanges()
+
+        val polite = getShadowRoot().getElementById("politeLiveRegion") as? HTMLElement
+        assertNotNull(polite)
+        assertEquals("polite", polite.getAttribute("aria-live"))
+
+        val assertive = getShadowRoot().getElementById("assertiveLiveRegion") as? HTMLElement
+        assertNotNull(assertive)
+        assertEquals("assertive", assertive.getAttribute("aria-live"))
     }
 
     @Test
