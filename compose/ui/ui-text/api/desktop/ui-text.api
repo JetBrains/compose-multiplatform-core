@@ -1697,6 +1697,7 @@ public final class androidx/compose/ui/text/style/LineHeightStyle$Mode {
 public final class androidx/compose/ui/text/style/LineHeightStyle$Mode$Companion {
 	public final fun getFixed-lzQqcRY ()I
 	public final fun getMinimum-lzQqcRY ()I
+	public final fun getPerLine-lzQqcRY ()I
 	public final fun getTight-lzQqcRY ()I
 }
 
@@ -1706,10 +1707,10 @@ public final class androidx/compose/ui/text/style/LineHeightStyle$Trim {
 	public fun equals (Ljava/lang/Object;)Z
 	public static fun equals-impl (ILjava/lang/Object;)Z
 	public static final fun equals-impl0 (II)Z
+	public static final fun getTrimsFirstLineTop-impl (I)Z
+	public static final fun getTrimsLastLineBottom-impl (I)Z
 	public fun hashCode ()I
 	public static fun hashCode-impl (I)I
-	public static final fun isTrimFirstLineTop-impl (I)Z
-	public static final fun isTrimLastLineBottom-impl (I)Z
 	public fun toString ()Ljava/lang/String;
 	public static fun toString-impl (I)Ljava/lang/String;
 	public final synthetic fun unbox-impl ()I

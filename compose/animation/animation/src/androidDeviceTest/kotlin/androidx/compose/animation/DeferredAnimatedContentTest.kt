@@ -17,7 +17,6 @@
 package androidx.compose.animation
 
 import androidx.compose.animation.core.DeferredTransitionState
-import androidx.compose.animation.core.ExperimentalDeferredTransitionApi
 import androidx.compose.animation.core.ExperimentalTransitionApi
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
@@ -57,7 +56,7 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @LargeTest
-@OptIn(ExperimentalDeferredTransitionApi::class, ExperimentalTransitionApi::class)
+@OptIn(ExperimentalTransitionApi::class)
 class DeferredAnimatedContentTest {
     @get:Rule val rule = createComposeRule()
 
@@ -334,7 +333,6 @@ class DeferredAnimatedContentTest {
         rule.mainClock.advanceTimeBy(50) // Halfway (50ms)
 
         // Size should be halfway between 100 and 200
-        val midSize = (sizeA + sizeB) / 2
         rule.runOnIdle {
             // Check approximate size
             assertTrue(containerSize.width > sizeA && containerSize.width < sizeB)
@@ -474,7 +472,6 @@ class DeferredAnimatedContentTest {
         // Initial A (100dp)
         rule.waitForIdle()
         val sizeA = with(rule.density) { 100.dp.roundToPx() }
-        val sizeB = with(rule.density) { 200.dp.roundToPx() }
 
         // Start A -> B
         rule.runOnIdle { state.animateTo("B") }
@@ -1425,7 +1422,6 @@ class DeferredAnimatedContentTest {
         val state = DeferredTransitionState("A")
         var previewScale by mutableStateOf(1f)
         var measuredWidthA = 0f
-        var measuredWidthB = 0f
 
         rule.setContent {
             val transition = rememberDeferredTransition(state)
@@ -1445,7 +1441,6 @@ class DeferredAnimatedContentTest {
                     Modifier.size(100.dp).testTag("content_$target").onGloballyPositioned { coords
                         ->
                         if (target == "A") measuredWidthA = coords.boundsInRoot().width
-                        if (target == "B") measuredWidthB = coords.boundsInRoot().width
                     }
                 )
             }
@@ -1486,7 +1481,6 @@ class DeferredAnimatedContentTest {
 
         // Now, while animating, start a manual mutation back to A to scale A to 0.5.
         // It should spring (catch up), NOT snap!
-        val currentWidthA = measuredWidthA
         rule.runOnIdle {
             state.defer("A")
             previewScale = 0.5f

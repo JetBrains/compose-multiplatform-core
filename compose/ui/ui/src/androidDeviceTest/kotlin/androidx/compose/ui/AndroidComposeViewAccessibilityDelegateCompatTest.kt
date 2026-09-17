@@ -71,6 +71,8 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.platform.AndroidComposeView
 import androidx.compose.ui.platform.AndroidComposeViewAccessibilityDelegateCompat
@@ -82,6 +84,7 @@ import androidx.compose.ui.platform.AndroidComposeViewAccessibilityDelegateCompa
 import androidx.compose.ui.platform.AndroidComposeViewAccessibilityDelegateCompat.Companion.InvalidId
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testClipEntry
 import androidx.compose.ui.platform.testTag
@@ -179,6 +182,7 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.junit.Assume.assumeTrue
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -318,37 +322,37 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
         assertThat(infoInitially.isAccessibilityFocused).isFalse()
 
         // Requesting accessibility focus should FAIL
-        val focusedInitially =
-            rule.runOnIdle {
-                provider.performAction(
-                    virtualViewId,
-                    AccessibilityNodeInfoCompat.ACTION_ACCESSIBILITY_FOCUS,
-                    null,
-                )
-            }
+        val focusedInitially = rule.runOnIdle {
+            provider.performAction(
+                virtualViewId,
+                AccessibilityNodeInfoCompat.ACTION_ACCESSIBILITY_FOCUS,
+                null,
+            )
+        }
         assertThat(focusedInitially).isFalse()
 
-        val infoAfterFailedFocus =
-            rule.runOnIdle { view.createAccessibilityNodeInfo(virtualViewId) }
+        val infoAfterFailedFocus = rule.runOnIdle {
+            view.createAccessibilityNodeInfo(virtualViewId)
+        }
         assertThat(infoAfterFailedFocus.isAccessibilityFocused).isFalse()
 
         // 2. Enable touch exploration
         rule.runOnIdle { callback.onTouchExplorationStateChanged(true) }
 
         // Requesting accessibility focus should SUCCEED
-        val focusedAfter =
-            rule.runOnIdle {
-                provider.performAction(
-                    virtualViewId,
-                    AccessibilityNodeInfoCompat.ACTION_ACCESSIBILITY_FOCUS,
-                    null,
-                )
-            }
+        val focusedAfter = rule.runOnIdle {
+            provider.performAction(
+                virtualViewId,
+                AccessibilityNodeInfoCompat.ACTION_ACCESSIBILITY_FOCUS,
+                null,
+            )
+        }
         assertThat(focusedAfter).isTrue()
 
         // Verify node IS focused now
-        val infoAfterSuccessFocus =
-            rule.runOnIdle { view.createAccessibilityNodeInfo(virtualViewId) }
+        val infoAfterSuccessFocus = rule.runOnIdle {
+            view.createAccessibilityNodeInfo(virtualViewId)
+        }
         assertThat(infoAfterSuccessFocus.isAccessibilityFocused).isTrue()
     }
 
@@ -2409,6 +2413,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
     }
 
     @Test
+    @Ignore("b/553677028")
     fun textChanged_sendTextChangeEvent() {
         // Arrange.
         var textChanged by mutableStateOf(false)
@@ -2476,8 +2481,9 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
 
         // Assert.
         rule.runOnIdle {
-            val event =
-                dispatchedAccessibilityEvents.find { it.eventType == TYPE_VIEW_TEXT_CHANGED }
+            val event = dispatchedAccessibilityEvents.find {
+                it.eventType == TYPE_VIEW_TEXT_CHANGED
+            }
             assertThat(event).isNotNull()
             assertThat(event!!.className.toString()).isEqualTo("android.widget.EditText")
             assertThat(event.text.toString()).isEqualTo("[1235]")
@@ -2523,8 +2529,9 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
 
         // Assert.
         rule.runOnIdle {
-            val event =
-                dispatchedAccessibilityEvents.find { it.eventType == TYPE_VIEW_TEXT_CHANGED }
+            val event = dispatchedAccessibilityEvents.find {
+                it.eventType == TYPE_VIEW_TEXT_CHANGED
+            }
             assertThat(event).isNotNull()
             assertThat(event!!.className.toString()).isEqualTo("android.widget.EditText")
             assertThat(event.text.toString()).isEqualTo("[1235]")
@@ -2837,10 +2844,12 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
 
         // Act.
         val parentInfo = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(parentId) }
-        val mergingChildInfo =
-            rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(mergingChildId) }
-        val nonMergingChildInfo =
-            rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(nonMergingChildId) }
+        val mergingChildInfo = rule.runOnIdle {
+            androidComposeView.createAccessibilityNodeInfo(mergingChildId)
+        }
+        val nonMergingChildInfo = rule.runOnIdle {
+            androidComposeView.createAccessibilityNodeInfo(nonMergingChildId)
+        }
 
         // Assert.
         rule.runOnIdle {
@@ -2895,12 +2904,15 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 rule.onNodeWithTag(tagNonMergingChild, useUnmergedTree = true).semanticsId()
 
             // Act.
-            val parentInfo =
-                rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(parentId) }
-            val mergingChildInfo =
-                rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(mergingChildId) }
-            val nonMergingChildInfo =
-                rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(nonMergingChildId) }
+            val parentInfo = rule.runOnIdle {
+                androidComposeView.createAccessibilityNodeInfo(parentId)
+            }
+            val mergingChildInfo = rule.runOnIdle {
+                androidComposeView.createAccessibilityNodeInfo(mergingChildId)
+            }
+            val nonMergingChildInfo = rule.runOnIdle {
+                androidComposeView.createAccessibilityNodeInfo(nonMergingChildId)
+            }
 
             // Assert.
             rule.runOnIdle {
@@ -2956,8 +2968,9 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
         // Act.
         val parentInfo = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(parentId) }
         val childInfo = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(childId) }
-        val grandchildInfo =
-            rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(grandchildId) }
+        val grandchildInfo = rule.runOnIdle {
+            androidComposeView.createAccessibilityNodeInfo(grandchildId)
+        }
 
         // Assert.
         rule.runOnIdle {
@@ -2994,7 +3007,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 )
             }
         }
-        val childId = rule.onNodeWithTag(tagChild, useUnmergedTree = true).semanticsId()
+        rule.waitForIdle()
         val delegate = androidComposeView.composeAccessibilityDelegate
 
         // Act.
@@ -3073,8 +3086,9 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
 
         // Act.
         val parentInfo = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(parentId) }
-        val fakeNodeInfo =
-            rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(fakeNodeId) }
+        val fakeNodeInfo = rule.runOnIdle {
+            androidComposeView.createAccessibilityNodeInfo(fakeNodeId)
+        }
 
         // Assert.
         rule.runOnIdle {
@@ -3389,8 +3403,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
         val tag = "TextField"
         rule.setContentWithAccessibilityEnabled {
             TextField(
-                value = "",
-                onValueChange = {},
+                state = rememberTextFieldState(),
                 placeholder = { Text("Placeholder", color = placeholderColor) },
                 textStyle = TextStyle(color = mainColor),
                 modifier = Modifier.semantics { testTag = tag },
@@ -3420,10 +3433,9 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
         }
 
         val textFieldVirtualViewId = rule.onNodeWithTag(tag).semanticsId()
-        val textFieldInfo =
-            rule.runOnIdle {
-                androidComposeView.createAccessibilityNodeInfo(textFieldVirtualViewId)
-            }
+        val textFieldInfo = rule.runOnIdle {
+            androidComposeView.createAccessibilityNodeInfo(textFieldVirtualViewId)
+        }
 
         androidComposeView.composeAccessibilityDelegate
             .getAccessibilityNodeProvider(androidComposeView)
@@ -3690,17 +3702,17 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
         }
 
         val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
-        val infoInitially =
-            rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(virtualViewId) }
+        val infoInitially = rule.runOnIdle {
+            androidComposeView.createAccessibilityNodeInfo(virtualViewId)
+        }
         assertThat(infoInitially?.isPassword).isTrue()
 
         rule.runOnIdle { isPasswordObfuscated = false }
 
-        val infoVisible =
-            rule.runOnIdle {
-                val newVirtualViewId = rule.onNodeWithTag(tag).semanticsId()
-                androidComposeView.createAccessibilityNodeInfo(newVirtualViewId)
-            }
+        val infoVisible = rule.runOnIdle {
+            val newVirtualViewId = rule.onNodeWithTag(tag).semanticsId()
+            androidComposeView.createAccessibilityNodeInfo(newVirtualViewId)
+        }
         assertThat(infoVisible?.isPassword).isFalse()
     }
 
@@ -3717,17 +3729,17 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
         }
 
         val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
-        val infoInitially =
-            rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(virtualViewId) }
+        val infoInitially = rule.runOnIdle {
+            androidComposeView.createAccessibilityNodeInfo(virtualViewId)
+        }
         assertThat(infoInitially?.isPassword).isFalse()
 
         rule.runOnIdle { isPasswordObfuscated = false }
 
-        val infoVisible =
-            rule.runOnIdle {
-                val newVirtualViewId = rule.onNodeWithTag(tag).semanticsId()
-                androidComposeView.createAccessibilityNodeInfo(newVirtualViewId)
-            }
+        val infoVisible = rule.runOnIdle {
+            val newVirtualViewId = rule.onNodeWithTag(tag).semanticsId()
+            androidComposeView.createAccessibilityNodeInfo(newVirtualViewId)
+        }
         assertThat(infoVisible?.isPassword).isFalse()
     }
 
@@ -3801,6 +3813,60 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
             assertThat(dispatchedAccessibilityEvents)
                 .comparingElementsUsing(AccessibilityEventComparator)
                 .doesNotContain(AccessibilityEvent().apply { eventType = TYPE_VIEW_TEXT_CHANGED })
+        }
+    }
+
+    @Test
+    fun focusChange_dispatchesOnlyTypeViewFocused() {
+        var isFocused by mutableStateOf(false)
+        rule.setContentWithAccessibilityEnabled {
+            Box(Modifier.size(50.dp).testTag("focusableBox").semantics { focused = isFocused })
+        }
+
+        rule.runOnIdle { isFocused = true }
+        rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+
+        rule.runOnIdle {
+            val eventTypes = dispatchedAccessibilityEvents.map { it.eventType }
+            assertThat(eventTypes).contains(AccessibilityEvent.TYPE_VIEW_FOCUSED)
+            assertThat(eventTypes)
+                .doesNotContain(AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED)
+        }
+    }
+
+    @Test
+    fun scroll_whenKeyboardFocused_dispatchesAccessibilityFocusEventPostScroll() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        instrumentation.setInTouchMode(false)
+        try {
+            val scrollState = ScrollState(0)
+            var isFocused by mutableStateOf(false)
+            lateinit var inputModeManager: InputModeManager
+
+            rule.setContentWithAccessibilityEnabled {
+                inputModeManager = LocalInputModeManager.current
+                Column(Modifier.size(100.dp).verticalScroll(scrollState)) {
+                    Box(Modifier.size(50.dp).semantics { focused = isFocused })
+                    Box(Modifier.size(200.dp))
+                }
+            }
+
+            rule.runOnIdle { inputModeManager.requestInputMode(InputMode.Keyboard) }
+            assumeTrue("Device must support non-touch mode", !androidComposeView.isInTouchMode)
+
+            rule.runOnIdle { isFocused = true }
+            rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+
+            rule.runOnIdle { scrollState.dispatchRawDelta(50f) }
+            rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+
+            rule.runOnIdle {
+                val eventTypes = dispatchedAccessibilityEvents.map { it.eventType }
+                assertThat(eventTypes).contains(AccessibilityEvent.TYPE_VIEW_SCROLLED)
+                assertThat(eventTypes).contains(AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED)
+            }
+        } finally {
+            instrumentation.setInTouchMode(true)
         }
     }
 

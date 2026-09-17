@@ -28,13 +28,16 @@ import android.content.res.Configuration
 import android.graphics.Point
 import android.graphics.Rect
 import android.hardware.input.InputManager
+import android.os.Build
 import android.os.Build.VERSION.SDK_INT
+import android.os.Build.VERSION_CODES.CINNAMON_BUN
 import android.os.Build.VERSION_CODES.M
 import android.os.Build.VERSION_CODES.N
 import android.os.Build.VERSION_CODES.O
 import android.os.Build.VERSION_CODES.Q
 import android.os.Build.VERSION_CODES.S
 import android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM
+import android.os.Build.VERSION_CODES_FULL.CINNAMON_BUN_1
 import android.os.Handler
 import android.os.Looper
 import android.os.StrictMode
@@ -62,9 +65,11 @@ import android.view.MotionEvent.TOOL_TYPE_STYLUS
 import android.view.ScrollCaptureTarget
 import android.view.SoundEffectConstants
 import android.view.View
+import android.view.ViewConfiguration as AndroidViewConfiguration
 import android.view.ViewGroup
 import android.view.ViewStructure
 import android.view.ViewTreeObserver
+import android.view.Window
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.animation.AnimationUtils
 import android.view.autofill.AutofillValue
@@ -187,6 +192,7 @@ import androidx.compose.ui.layout.WindowInsetsRulerProvider
 import androidx.compose.ui.layout.WindowInsetsRulersProvider
 import androidx.compose.ui.layout.WindowInsetsWatcher
 import androidx.compose.ui.layout.WindowWindowInsetsAnimationValues
+import androidx.compose.ui.layout.areWindowInsetsRulersEnabled
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.provideWindowInsetsRulers
@@ -263,6 +269,7 @@ import java.util.concurrent.Executor
 import java.util.function.Consumer
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.abs
+import kotlin.math.sign
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -501,6 +508,10 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         get() = composeViewContext.windowInfo
 
     override val taskDispatchers: TaskDispatchers = AndroidTaskDispatchers
+
+    /** The [Window] hosting this view, if available. */
+    internal val window: Window?
+        get() = findDialogWindow(this) ?: findActivityWindow(this)
 
     // This is only needed because the existing XR implementation is lacking. It is currently
     // relying on the derivedStateOf() notification change. This can be removed when
@@ -817,7 +828,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
 
     override val snapshotObserver = OwnerSnapshotObserver { command ->
         val exceptionHandler = uncaughtExceptionHandler
-        var command =
+        val command =
             if (exceptionHandler != null) {
                 {
                     try {
@@ -1041,6 +1052,20 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
      */
     private var previousMotionEvent: MotionEvent? = null
 
+    /**
+     * Accumulated scroll amount for rotary focus navigation. Used to determine when the scroll has
+     * exceeded the threshold required to trigger a focus change.
+     */
+    private var rotaryFocusNavigationAccumulatedScroll: Float = 0f
+
+    /**
+     * The timestamp of the last rotary event used for focus navigation. Used to reset the
+     * accumulated scroll [rotaryFocusNavigationAccumulatedScroll] if the time between events
+     * exceeds a timeout.
+     */
+    // TODO(b/515536704): Add detail when the specific API lands.
+    private var lastRotaryFocusNavigationEventTime: Long = -1L
+
     /** The time of the last layout. This is used to send a synthetic MotionEvent. */
     private var relayoutTime = 0L
 
@@ -1138,7 +1163,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
 
     // Determines scroll/swipe to next or previous focusable element for indirect pointer events.
     private val indirectPointerNavigationGestureDetector =
-        IndirectPointerNavigationGestureDetector(context) {
+        IndirectPointerNavigationGestureDetector(this) {
             focusOwner.moveFocus(focusDirection = it, wrapAroundForOneDimensionalFocus = false)
         }
 
@@ -2781,6 +2806,12 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             ACTION_SCROLL ->
                 if (motionEvent.isFromSource(SOURCE_ROTARY_ENCODER)) {
                     handleRotaryEvent(motionEvent)
+                } else if (
+                    motionEvent.source == InputDevice.SOURCE_UNKNOWN &&
+                        ComposeUiFlags.isHardwareNavigationHandlingEnabled
+                ) {
+                    // TODO(b/520330616): Move this block to proper dispatching callback.
+                    handleRotaryFocusNavigationEvent(motionEvent)
                 } else {
                     handleMotionEvent(motionEvent).anyChangeConsumed
                 }
@@ -2896,7 +2927,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
     }
 
     private fun handleRotaryEvent(event: MotionEvent): Boolean {
-        val config = android.view.ViewConfiguration.get(context)
+        val config = AndroidViewConfiguration.get(context)
         val axisValue = -event.getAxisValue(AXIS_SCROLL)
         val rotaryEvent =
             RotaryScrollEvent(
@@ -2908,6 +2939,90 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             )
         return focusOwner.dispatchRotaryEvent(rotaryEvent) {
             super.dispatchGenericMotionEvent(event)
+        }
+    }
+
+    private fun handleRotaryFocusNavigationEvent(event: MotionEvent): Boolean {
+        if (isInTouchMode) {
+            // Reject navigation events during touch mode to let ViewRootImpl handle
+            // accumulation to exit touch mode. Once touch mode is off, Compose will
+            // start processing the events.
+            return false
+        }
+
+        val axisValue = event.getAxisValue(AXIS_SCROLL)
+        if (axisValue == 0f) return false
+
+        val config = AndroidViewConfiguration.get(context)
+        val threshold =
+            if (SDK_INT >= CINNAMON_BUN && Build.VERSION.SDK_INT_FULL >= CINNAMON_BUN_1) {
+                Api37_1Impl.getFocusTraversalThreshold(
+                        config,
+                        event.deviceId,
+                        MotionEvent.AXIS_SCROLL,
+                        InputDevice.SOURCE_ROTARY_ENCODER,
+                    )
+                    .toFloat()
+            } else {
+                -1f
+            }
+        // Don't consume if there is no valid threshold.
+        if (threshold <= 0f) {
+            return false
+        }
+
+        // TODO(b/520096728): whether reversing direction should be determined by device.
+        val direction = if (axisValue > 0f) FocusDirection.Previous else FocusDirection.Next
+
+        val hasNext =
+            focusOwner.focusSearch(
+                focusDirection = direction,
+                focusedRect = null,
+                onFound = { true },
+            ) == true
+
+        if (!hasNext) {
+            // In this Compose hierarchy, there is no next item to focus in this direction.
+            // Therefore, instead of further processing the navigation events, Compose should
+            // directly return false here to notify ViewRootImpl to take over the navigation.
+            rotaryFocusNavigationAccumulatedScroll = 0f
+            return false
+        }
+
+        val time = event.eventTime
+        // TODO(b/515536704): Replace timeout with specific API in 26Q4.
+        if (
+            rotaryFocusNavigationAccumulatedScroll != 0f &&
+                (sign(axisValue) != sign(rotaryFocusNavigationAccumulatedScroll) ||
+                    time - lastRotaryFocusNavigationEventTime >
+                        AndroidViewConfiguration.getKeyRepeatTimeout())
+        ) {
+            rotaryFocusNavigationAccumulatedScroll = 0f
+        }
+
+        rotaryFocusNavigationAccumulatedScroll += axisValue
+        lastRotaryFocusNavigationEventTime = time
+
+        val isThresholdExceeded = abs(rotaryFocusNavigationAccumulatedScroll) >= threshold
+
+        if (!isThresholdExceeded) {
+            return true
+        }
+
+        if (
+            focusOwner.moveFocus(
+                focusDirection = direction,
+                wrapAroundForOneDimensionalFocus = false,
+            )
+        ) {
+            playNavigationSoundEffect(direction, false)
+            rotaryFocusNavigationAccumulatedScroll = 0f
+            return true
+        } else {
+            // This should theoretically not happen because we checked `hasTarget` ahead of time.
+            // But if it does, return false.
+            rotaryFocusNavigationAccumulatedScroll = 0f
+            return false
         }
     }
 
@@ -2959,8 +3074,6 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
                     ) {
                         sendHoverEventsBeforeAndAfterScroll = true
                     }
-
-                    lastEvent?.recycle()
 
                     // If the previous MotionEvent was an ACTION_HOVER_EXIT, we need to check if it
                     // was a synthetic MotionEvent generated by the platform for an ACTION_DOWN
@@ -3025,6 +3138,9 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
                         }
                     }
 
+                    // Recycle the previous MotionEvent only after all inspections of it are
+                    // finished to avoid use-after-free.
+                    lastEvent?.recycle()
                     previousMotionEvent = MotionEvent.obtainNoHistory(motionEvent)
 
                     if (sendHoverEventsBeforeAndAfterScroll) {
@@ -3808,7 +3924,11 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
                         StrictMode.setVmPolicy(origPolicy)
                     }
                 }
-                synchronized(composeViews) { composeViews += composeView }
+                synchronized(composeViews) {
+                    if (composeView !in composeViews) {
+                        composeViews += composeView
+                    }
+                }
             }
         }
 
@@ -4397,8 +4517,21 @@ private object Api35Impl {
     }
 }
 
+@RequiresApi(CINNAMON_BUN)
+private object Api37_1Impl {
+    @JvmStatic
+    @DoNotInline
+    @SuppressLint("NewApi")
+    fun getFocusTraversalThreshold(
+        config: AndroidViewConfiguration,
+        deviceId: Int,
+        axis: Int,
+        source: Int,
+    ): Int = config.getFocusTraversalThreshold(deviceId, axis, source)
+}
+
 internal class IndirectPointerNavigationGestureDetector(
-    context: Context,
+    private val view: View,
     private val onMoveFocus: (FocusDirection) -> Unit,
 ) {
     var primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.None
@@ -4407,59 +4540,65 @@ internal class IndirectPointerNavigationGestureDetector(
     // This is set if a move event is consumed by another component.
     private var ignoreCurrentGestureStream = false
 
-    private val gestureDetector: GestureDetector =
-        GestureDetector(
-            context,
-            object : GestureDetector.OnGestureListener {
-                override fun onDown(e: MotionEvent) = true
+    private var _gestureDetector: GestureDetector? = null
 
-                override fun onShowPress(e: MotionEvent) {}
+    private fun getOrCreateGestureDetector(): GestureDetector {
+        return _gestureDetector
+            ?: GestureDetector(view.context, gestureListener, view.handler).also {
+                _gestureDetector = it
+            }
+    }
 
-                override fun onSingleTapUp(e: MotionEvent): Boolean = true
+    private val gestureListener =
+        object : GestureDetector.OnGestureListener {
+            override fun onDown(e: MotionEvent) = true
 
-                override fun onScroll(
-                    e1: MotionEvent?,
-                    e2: MotionEvent,
-                    distanceX: Float,
-                    distanceY: Float,
-                ) = true
+            override fun onShowPress(e: MotionEvent) {}
 
-                override fun onLongPress(e: MotionEvent) {}
+            override fun onSingleTapUp(e: MotionEvent): Boolean = true
 
-                override fun onFling(
-                    e1: MotionEvent?,
-                    e2: MotionEvent,
-                    velocityX: Float,
-                    velocityY: Float,
-                ): Boolean {
-                    if (ignoreCurrentGestureStream) return true
+            override fun onScroll(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                distanceX: Float,
+                distanceY: Float,
+            ) = true
 
-                    if (
-                        primaryDirectionalMotionAxis ==
-                            IndirectPointerEventPrimaryDirectionalMotionAxis.X
-                    ) {
-                        if (abs(velocityX) > abs(velocityY)) {
-                            val direction =
-                                if (velocityX > 0f) FocusDirection.Next else FocusDirection.Previous
-                            onMoveFocus(direction)
-                        }
-                    } else if (
-                        primaryDirectionalMotionAxis ==
-                            IndirectPointerEventPrimaryDirectionalMotionAxis.Y
-                    ) {
-                        if (abs(velocityY) > abs(velocityX)) {
-                            val direction =
-                                if (velocityY > 0f) FocusDirection.Next else FocusDirection.Previous
-                            onMoveFocus(direction)
-                        }
+            override fun onLongPress(e: MotionEvent) {}
+
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float,
+            ): Boolean {
+                if (ignoreCurrentGestureStream) return true
+
+                if (
+                    primaryDirectionalMotionAxis ==
+                        IndirectPointerEventPrimaryDirectionalMotionAxis.X
+                ) {
+                    if (abs(velocityX) > abs(velocityY)) {
+                        val direction =
+                            if (velocityX > 0f) FocusDirection.Next else FocusDirection.Previous
+                        onMoveFocus(direction)
                     }
-                    // If it gets here, it means there isn't a primary axis specified, which means
-                    // the event will be translated by system to key up, down, left, and right.
-
-                    return true
+                } else if (
+                    primaryDirectionalMotionAxis ==
+                        IndirectPointerEventPrimaryDirectionalMotionAxis.Y
+                ) {
+                    if (abs(velocityY) > abs(velocityX)) {
+                        val direction =
+                            if (velocityY > 0f) FocusDirection.Next else FocusDirection.Previous
+                        onMoveFocus(direction)
+                    }
                 }
-            },
-        )
+                // If it gets here, it means there isn't a primary axis specified, which means
+                // the event will be translated by system to key up, down, left, and right.
+
+                return true
+            }
+        }
 
     fun onIndirectPointerEvent(
         indirectPointerEvent: IndirectPointerEvent,
@@ -4481,7 +4620,7 @@ internal class IndirectPointerNavigationGestureDetector(
                 }
             }
         }
-        return gestureDetector.onTouchEvent(motionEvent)
+        return getOrCreateGestureDetector().onTouchEvent(motionEvent)
     }
 
     /**
@@ -4507,17 +4646,19 @@ internal class IndirectPointerNavigationGestureDetector(
     fun dispose() {
         primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.None
         ignoreCurrentGestureStream = true
-        val cancelEvent =
-            MotionEvent.obtain(
-                /* downTime = */ 0L,
-                /* eventTime = */ 0L,
-                MotionEvent.ACTION_CANCEL,
-                /* x = */ 0f,
-                /* y = */ 0f,
-                /* metaState = */ 0,
-            )
-        gestureDetector.onTouchEvent(cancelEvent)
-        cancelEvent.recycle()
+        _gestureDetector?.let { detector ->
+            val cancelEvent =
+                MotionEvent.obtain(
+                    /* downTime = */ 0L,
+                    /* eventTime = */ 0L,
+                    MotionEvent.ACTION_CANCEL,
+                    /* x = */ 0f,
+                    /* y = */ 0f,
+                    /* metaState = */ 0,
+                )
+            detector.onTouchEvent(cancelEvent)
+            cancelEvent.recycle()
+        }
     }
 }
 
