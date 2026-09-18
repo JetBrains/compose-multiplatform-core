@@ -45,6 +45,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.runUIKitInstrumentedTestInPrimaryContainer
 import androidx.compose.ui.test.utils.DpRectZero
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
@@ -65,7 +66,7 @@ import platform.UIKit.UIInterfaceOrientationPortraitUpsideDown
 
 class WindowInsetsPaddingTest {
     @Test
-    fun testComposableNotRecomposedOnWindowInsetsImeChange() = runUIKitInstrumentedTest {
+    fun testComposableNotRecomposedOnWindowInsetsImeChange() = runUIKitInstrumentedTestInPrimaryContainer {
         var compositionCount = 0
 
         setContent {
@@ -188,7 +189,7 @@ class WindowInsetsPaddingTest {
     }
 
     @Test
-    fun testContentNotRecomposedWhenContainerRecomposed() = runUIKitInstrumentedTest {
+    fun testContentNotRecomposedWhenContainerRecomposed() = runUIKitInstrumentedTestInPrimaryContainer {
         var forceRecomposition by mutableStateOf(0)
         val recomposed = mutableStateOf(false)
 

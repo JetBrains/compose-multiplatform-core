@@ -38,6 +38,7 @@ import androidx.compose.ui.test.findFocusedUITextInput
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.findNodeWithTagOrNull
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.runUIKitInstrumentedTestInPrimaryContainer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import kotlin.test.Test
@@ -102,7 +103,7 @@ class TextInputPendingCompositionLayerTest {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Test
-    fun modalBottomSheetCanOpenWhenPendingTextIsCommitted() = runUIKitInstrumentedTest {
+    fun modalBottomSheetCanOpenWhenPendingTextIsCommitted() = runUIKitInstrumentedTestInPrimaryContainer {
         var text by mutableStateOf("")
         var showSheet by mutableStateOf(false)
         var textInput: UITextInputProtocol? = null

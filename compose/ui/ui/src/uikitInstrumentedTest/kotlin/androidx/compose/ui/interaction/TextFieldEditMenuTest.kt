@@ -54,6 +54,7 @@ import androidx.compose.ui.test.findNodeWithLabelOrNull
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.isContextMenuVisible
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.runUIKitInstrumentedTestInPrimaryContainer
 import androidx.compose.ui.test.tapContextMenuButton
 import androidx.compose.ui.test.utils.BasicTextFieldType
 import androidx.compose.ui.test.utils.findFirstDescendant
@@ -157,7 +158,7 @@ class TextFieldEditMenuTest {
     }
 
     @Test
-    fun testBasicTextFieldToolbarInteraction() = runUIKitInstrumentedTest {
+    fun testBasicTextFieldToolbarInteraction() = runUIKitInstrumentedTestInPrimaryContainer {
         val textFieldValue = mutableStateOf(TextFieldValue("Hello-LongLongLongLongLongLong-text"))
         setContent {
             val focusRequester = remember { FocusRequester() }
@@ -217,7 +218,7 @@ class TextFieldEditMenuTest {
     }
 
     @Test
-    fun testBasicTextFieldLongPressShowsContextMenu() = runUIKitInstrumentedTest {
+    fun testBasicTextFieldLongPressShowsContextMenu() = runUIKitInstrumentedTestInPrimaryContainer {
         UIPasteboard.generalPasteboard().string = "Paste text"
         val textFieldValue = mutableStateOf(TextFieldValue("Text", TextRange(4,4)))
         setContent {
@@ -252,7 +253,7 @@ class TextFieldEditMenuTest {
     }
 
     @Test
-    fun testBasicTextField2LongPressShowsContextMenu() = runUIKitInstrumentedTest {
+    fun testBasicTextField2LongPressShowsContextMenu() = runUIKitInstrumentedTestInPrimaryContainer {
         UIPasteboard.generalPasteboard().string = "Paste text"
         val textFieldState = TextFieldState("Text", TextRange(4,4))
         setContent {
@@ -459,7 +460,7 @@ class TextFieldEditMenuTest {
         }
 
     @Test
-    fun testTapsCountingWithMultiTouch() = runUIKitInstrumentedTest {
+    fun testTapsCountingWithMultiTouch() = runUIKitInstrumentedTestInPrimaryContainer {
         var touchesDown = 0
         var touchesUp = 0
 
@@ -517,7 +518,7 @@ class TextFieldEditMenuTest {
     }
 
     @Test
-    fun testComposePanelClearFocusOnMouseDownEnabledFlag() = runUIKitInstrumentedTest {
+    fun testComposePanelClearFocusOnMouseDownEnabledFlag() = runUIKitInstrumentedTestInPrimaryContainer {
         val focusRequester = FocusRequester()
         var textFieldIsFocused = false
 
@@ -556,7 +557,7 @@ class TextFieldEditMenuTest {
     }
 
     @Test
-    fun testComposePanelClearFocusOnMouseDownDisabledFlag() = runUIKitInstrumentedTest {
+    fun testComposePanelClearFocusOnMouseDownDisabledFlag() = runUIKitInstrumentedTestInPrimaryContainer {
         val focusRequester = FocusRequester()
         var textFieldIsFocused = false
 

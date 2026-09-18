@@ -63,6 +63,7 @@ import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.assertAccessibilityTree
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.runUIKitInstrumentedTestInPrimaryContainer
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.LinkInteractionListener
@@ -190,7 +191,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testToggleAndCheckboxSemantic() = runUIKitInstrumentedTest {
+    fun testToggleAndCheckboxSemantic() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Column {
                 Switch(false, {})
@@ -235,7 +236,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testToggleAndCheckboxAction() = runUIKitInstrumentedTest {
+    fun testToggleAndCheckboxAction() = runUIKitInstrumentedTestInPrimaryContainer {
         var switch by mutableStateOf(false)
         var checkbox by mutableStateOf(false)
         var triStateCheckbox by mutableStateOf(ToggleableState.Off)
@@ -277,7 +278,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testRadioButtonSelection() = runUIKitInstrumentedTest {
+    fun testRadioButtonSelection() = runUIKitInstrumentedTestInPrimaryContainer {
         var selectedIndex by mutableStateOf(0)
 
         setContent {
@@ -350,7 +351,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testImageSemantics() = runUIKitInstrumentedTest {
+    fun testImageSemantics() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Column {
                 Image(
@@ -392,7 +393,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testTextSemantics() = runUIKitInstrumentedTest {
+    fun testTextSemantics() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Column {
                 Text("Static Text", modifier = Modifier.testTag("Text 1"))
@@ -417,7 +418,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testDisabledSemantics() = runUIKitInstrumentedTest {
+    fun testDisabledSemantics() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Column {
                 Button({}, enabled = false) {}
@@ -484,7 +485,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testHeadingSemantics() = runUIKitInstrumentedTest {
+    fun testHeadingSemantics() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Scaffold(topBar = {
                 TopAppBar {
@@ -512,7 +513,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testSelectionContainer() = runUIKitInstrumentedTest {
+    fun testSelectionContainer() = runUIKitInstrumentedTestInPrimaryContainer {
         @Composable
         fun LabeledInfo(label: String, data: String) {
             Text(
@@ -623,7 +624,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testAccessibilityTraversalGrouping() = runUIKitInstrumentedTest {
+    fun testAccessibilityTraversalGrouping() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Column {
                 Column(modifier = Modifier.semantics {
@@ -774,7 +775,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testTextFieldLabelSemantics() = runUIKitInstrumentedTest {
+    fun testTextFieldLabelSemantics() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             TextField(
                 value = "",
@@ -792,7 +793,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testTextPlaceholderSemantics() = runUIKitInstrumentedTest {
+    fun testTextPlaceholderSemantics() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             TextField(
                 value = "",
@@ -809,7 +810,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testTextFieldWithValueSemantics() = runUIKitInstrumentedTest {
+    fun testTextFieldWithValueSemantics() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             TextField(
                 value = "Text",
@@ -904,7 +905,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testReplacedTextContent() = runUIKitInstrumentedTest {
+    fun testReplacedTextContent() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Text("Text", modifier = Modifier.semantics {
                 text = AnnotatedString("Replaced")
@@ -917,7 +918,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testReplacedContentWithMergedSemantics() = runUIKitInstrumentedTest {
+    fun testReplacedContentWithMergedSemantics() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Box(modifier = Modifier.size(50.dp).semantics(mergeDescendants = true) {
                 text = AnnotatedString("Text")
@@ -938,7 +939,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testReplacedContentWithoutMergedSemantics() = runUIKitInstrumentedTest {
+    fun testReplacedContentWithoutMergedSemantics() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Box(modifier = Modifier.size(50.dp).semantics {
                 contentDescription = "Description"
@@ -960,7 +961,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testContentReplacedSemanticsWithChildElement() = runUIKitInstrumentedTest {
+    fun testContentReplacedSemanticsWithChildElement() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Box(modifier = Modifier.semantics(mergeDescendants = true) {
                 text = AnnotatedString("Text")
@@ -980,7 +981,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testEnclosedSemanticsContainersOrder() = runUIKitInstrumentedTest {
+    fun testEnclosedSemanticsContainersOrder() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Box(modifier = Modifier.semantics { contentDescription = "Box 1" }) {
                 Box(modifier = Modifier.semantics { contentDescription = "Box 2" }) {
@@ -1019,7 +1020,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testMergedTextContentWithMergeDescendants() = runUIKitInstrumentedTest {
+    fun testMergedTextContentWithMergeDescendants() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Column(
                 modifier = Modifier.semantics(mergeDescendants = true) {
@@ -1048,7 +1049,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testMergedTextContentWithoutMergeDescendants() = runUIKitInstrumentedTest {
+    fun testMergedTextContentWithoutMergeDescendants() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Column(
                 modifier = Modifier.semantics(mergeDescendants = false) {
@@ -1079,7 +1080,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testEnclosedComplexContentWithMergedSemantics() = runUIKitInstrumentedTest {
+    fun testEnclosedComplexContentWithMergedSemantics() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Column(modifier = Modifier.semantics(mergeDescendants = true) {
                 text = AnnotatedString("Text")
@@ -1140,7 +1141,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testTestTagsHierarchy() = runUIKitInstrumentedTest {
+    fun testTestTagsHierarchy() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Column(
                 modifier = Modifier.semantics {
@@ -1170,7 +1171,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testTraversalGroupWithSemantics() = runUIKitInstrumentedTest {
+    fun testTraversalGroupWithSemantics() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Column(
                 modifier = Modifier.semantics {
@@ -1208,7 +1209,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testMergeDescendantsWithButton() = runUIKitInstrumentedTest {
+    fun testMergeDescendantsWithButton() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Column(
                 modifier = Modifier
@@ -1310,7 +1311,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testSemanticsMergingWithFocusableNodes() = runUIKitInstrumentedTest {
+    fun testSemanticsMergingWithFocusableNodes() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Column(modifier = Modifier.clickable {}) {
                 Text("Line 1")
@@ -1344,7 +1345,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testSemanticsMergingInsideFocusableNodes() = runUIKitInstrumentedTest {
+    fun testSemanticsMergingInsideFocusableNodes() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Column(modifier = Modifier.clickable {}) {
                 Text("Line 1")
@@ -1384,7 +1385,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testSemanticsWithoutMergingInsideFocusableNodes() = runUIKitInstrumentedTest {
+    fun testSemanticsWithoutMergingInsideFocusableNodes() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Column(
                 modifier = Modifier
@@ -1457,7 +1458,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testSemanticsMergingWithComplexHierarchy() = runUIKitInstrumentedTest {
+    fun testSemanticsMergingWithComplexHierarchy() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Column(
                 modifier = Modifier.clickable {}
@@ -1513,7 +1514,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testVerbatimTtsAnnotationInAttributedLabel() = runUIKitInstrumentedTest {
+    fun testVerbatimTtsAnnotationInAttributedLabel() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Text(
                 text = buildAnnotatedString {
@@ -1540,7 +1541,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testLanguageSpanInAttributedLabel() = runUIKitInstrumentedTest {
+    fun testLanguageSpanInAttributedLabel() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Text(
                 text = buildAnnotatedString {

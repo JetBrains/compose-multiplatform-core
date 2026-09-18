@@ -20,7 +20,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.runUIKitInstrumentedTestInPrimaryContainer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
@@ -77,7 +77,7 @@ class InteropInsidePlacementTest {
     }
 
     @Test
-    fun testInteropViewsOverlayOrder() = runUIKitInstrumentedTest {
+    fun testInteropViewsOverlayOrder() = runUIKitInstrumentedTestInPrimaryContainer {
         val overlayInteropView = UIView()
         val dynamicInteropView = UIView()
         val backgroundInteropView = UIView()

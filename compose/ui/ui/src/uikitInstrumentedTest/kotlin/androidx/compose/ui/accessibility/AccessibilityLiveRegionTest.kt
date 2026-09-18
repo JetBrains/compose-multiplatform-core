@@ -29,6 +29,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.test.getAccessibilityTree
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.runUIKitInstrumentedTestInPrimaryContainer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -61,7 +62,7 @@ class AccessibilityLiveRegionTest {
     }
 
     @Test
-    fun testLiveRegionAssertiveAnnouncesOnContentChange() = runUIKitInstrumentedTest {
+    fun testLiveRegionAssertiveAnnouncesOnContentChange() = runUIKitInstrumentedTestInPrimaryContainer {
         var text by mutableStateOf("Initial")
 
         setContent {
@@ -82,7 +83,7 @@ class AccessibilityLiveRegionTest {
     }
 
     @Test
-    fun testLiveRegionAnnouncesWhenNodeAppearsWithContent() = runUIKitInstrumentedTest {
+    fun testLiveRegionAnnouncesWhenNodeAppearsWithContent() = runUIKitInstrumentedTestInPrimaryContainer {
         var showLiveRegion by mutableStateOf(false)
 
         setContent {
@@ -108,7 +109,7 @@ class AccessibilityLiveRegionTest {
     }
 
     @Test
-    fun testLiveRegionDoesNotAnnounceWhenContentDoesNotChange() = runUIKitInstrumentedTest {
+    fun testLiveRegionDoesNotAnnounceWhenContentDoesNotChange() = runUIKitInstrumentedTestInPrimaryContainer {
         var unrelatedState by mutableStateOf(0)
 
         setContent {
@@ -136,7 +137,7 @@ class AccessibilityLiveRegionTest {
     }
 
     @Test
-    fun testLiveRegionAnnouncesMultipleUpdates() = runUIKitInstrumentedTest {
+    fun testLiveRegionAnnouncesMultipleUpdates() = runUIKitInstrumentedTestInPrimaryContainer {
         var text by mutableStateOf("First")
 
         setContent {
@@ -164,7 +165,7 @@ class AccessibilityLiveRegionTest {
     }
 
     @Test
-    fun testNoAnnouncementWithoutLiveRegion() = runUIKitInstrumentedTest {
+    fun testNoAnnouncementWithoutLiveRegion() = runUIKitInstrumentedTestInPrimaryContainer {
         var text by mutableStateOf("Initial")
 
         setContent {
@@ -182,7 +183,7 @@ class AccessibilityLiveRegionTest {
     }
 
     @Test
-    fun testLiveRegionNoAnnouncementWhenNodeDisappears() = runUIKitInstrumentedTest {
+    fun testLiveRegionNoAnnouncementWhenNodeDisappears() = runUIKitInstrumentedTestInPrimaryContainer {
         var showLiveRegion by mutableStateOf(true)
 
         setContent {
@@ -207,7 +208,7 @@ class AccessibilityLiveRegionTest {
     }
 
     @Test
-    fun testLiveRegionAnnouncesOnInitialTreeBuild() = runUIKitInstrumentedTest {
+    fun testLiveRegionAnnouncesOnInitialTreeBuild() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Text("Live content", modifier = Modifier.semantics {
                 liveRegion = LiveRegionMode.Polite
@@ -225,7 +226,7 @@ class AccessibilityLiveRegionTest {
     }
 
     @Test
-    fun testLiveRegionAnnouncementContainsLabelBeforeValue() = runUIKitInstrumentedTest {
+    fun testLiveRegionAnnouncementContainsLabelBeforeValue() = runUIKitInstrumentedTestInPrimaryContainer {
         var label by mutableStateOf("Label")
         var value by mutableStateOf("Value")
 
