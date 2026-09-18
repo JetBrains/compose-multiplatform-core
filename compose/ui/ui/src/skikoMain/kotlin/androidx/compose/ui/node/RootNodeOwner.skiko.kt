@@ -88,7 +88,6 @@ import androidx.compose.ui.spatial.RectManager
 import androidx.compose.ui.text.InternalTextApi
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextInputService
-import androidx.compose.ui.text.platform.FontLoader
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
@@ -554,7 +553,7 @@ internal class RootNodeOwner(
         override val retainedValuesStore: RetainedValuesStore get() = ForgetfulRetainedValuesStore
         override val rectManager = RectManager(layoutNodes)
         @Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
-        override val fontLoader = FontLoader()
+        override val fontLoader = androidx.compose.ui.text.platform.FontLoader()
         override val fontFamilyResolver: FontFamily.Resolver get() = platformContext.fontFamilyResolver
         override val layoutDirection get() = _layoutDirection
         override val localeList get() = platformContext.localeList
