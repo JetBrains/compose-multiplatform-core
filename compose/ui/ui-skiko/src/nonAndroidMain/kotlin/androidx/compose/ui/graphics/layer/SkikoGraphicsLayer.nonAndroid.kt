@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.graphics.layer
 
-import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.isUnspecified
@@ -71,7 +70,6 @@ internal class SkikoGraphicsLayer(
     // Temporary value holders to reuse an object (not part of a state):
     private var radii: FloatArray? = null
 
-    @OptIn(InternalComposeApi::class)
     private val canvasHolder : SkiaCanvasHolder = SkiaCanvasHolder()
 
     override var compositingStrategy: CompositingStrategy = CompositingStrategy.Auto
@@ -249,7 +247,6 @@ internal class SkikoGraphicsLayer(
             path
         }.materializeSkiaPath()
 
-    @OptIn(InternalComposeApi::class)
     override fun record(
         density: Density,
         layoutDirection: LayoutDirection,

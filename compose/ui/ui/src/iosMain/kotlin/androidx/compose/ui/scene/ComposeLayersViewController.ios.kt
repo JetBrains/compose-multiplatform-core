@@ -16,11 +16,8 @@
 
 package androidx.compose.ui.scene
 
-import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.graphics.SkiaCanvasHolder
-import androidx.compose.ui.platform.PlatformWindowContext
-import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.uikit.addLayoutConstraintsToMatch
 import androidx.compose.ui.uikit.embedSubview
@@ -91,7 +88,6 @@ internal class ComposeLayersViewController(
         )
     }
 
-    @OptIn(InternalComposeApi::class)
     private val canvasHolder = SkiaCanvasHolder()
     private val layoutInvalidationHandler = LayoutInvalidationHandler(coroutineContext) {
         composeContainerView.setNeedsLayout()

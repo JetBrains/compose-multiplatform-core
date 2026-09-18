@@ -17,7 +17,6 @@
 package androidx.compose.ui.test
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.draganddrop.DragAndDropTransferData
@@ -229,7 +228,6 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
 
     // Lazy on purpose: on JS Skia is only usable after onSkikoReady
     private val surface by lazy { Surface.makeRasterN32Premul(width, height) }
-    @OptIn(InternalComposeApi::class)
     private val canvasHolder : SkiaCanvasHolder = SkiaCanvasHolder(surface.canvas)
     
     private val size = IntSize(width, height)
@@ -332,7 +330,6 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
      * so a capture reflects the latest state. Draw is decoupled from idle, so producing
      * an up-to-date image is the capture's responsibility rather than the idle loop's.
      */
-    @OptIn(InternalComposeApi::class)
     private fun redraw() = runOnUiThread {
         scene.measureAndLayout()
         with(surface.canvas) {

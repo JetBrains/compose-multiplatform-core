@@ -19,7 +19,6 @@
 package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.SkiaCanvasHolder
 import androidx.compose.ui.input.key.KeyEvent
@@ -144,9 +143,7 @@ private class ComposeWindow(
         invalidateDraw = sceneRenderingScope::onSceneInvalidation,
     )
 
-    @OptIn(InternalComposeApi::class)
     private val canvasHolder = SkiaCanvasHolder()
-    @OptIn(InternalComposeApi::class)
     private val renderDelegate = object : SkikoRenderDelegate {
         override fun onRender(canvas: Canvas, width: Int, height: Int, nanoTime: Long) {
             val sizeInPx = IntSize(width, height)

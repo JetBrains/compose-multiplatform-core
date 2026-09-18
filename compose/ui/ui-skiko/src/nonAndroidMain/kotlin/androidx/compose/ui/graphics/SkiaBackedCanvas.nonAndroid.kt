@@ -19,7 +19,6 @@
 
 package androidx.compose.ui.graphics
 
-import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.ui.InternalComposeUiApi
 import kotlin.jvm.JvmName
 import androidx.compose.ui.geometry.Offset

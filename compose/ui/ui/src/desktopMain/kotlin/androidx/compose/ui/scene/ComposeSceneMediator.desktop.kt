@@ -18,7 +18,6 @@ package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
-import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.ComposeUiFlags
@@ -197,7 +196,6 @@ internal class ComposeSceneMediator(
     val renderApi by skiaLayerComponent::renderApi
     val semanticsOwners: Collection<SemanticsOwner> by semanticsOwnerManager::semanticsOwners
 
-    @OptIn(InternalComposeApi::class)
     private val canvasHolder: SkiaCanvasHolder = SkiaCanvasHolder()
     /**
      * @see ComposeFeatureFlags.useInteropBlending
@@ -752,7 +750,6 @@ internal class ComposeSceneMediator(
         }
     }
 
-    @OptIn(InternalComposeApi::class)
     private inline fun SkCanvas.withSceneOffset(crossinline block: Canvas.() -> Unit) {
         // Offset of scene relative to [container]
         val sceneBoundsOffset = sceneBoundsInPx?.topLeft ?: Offset.Zero

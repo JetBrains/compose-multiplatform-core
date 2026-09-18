@@ -409,7 +409,6 @@ internal class ComposeWindow(
                 get() = configuration.isClearFocusOnMouseDownEnabled
         }
 
-    @InternalComposeApi
     private val canvasHolder = SkiaCanvasHolder()
 
     internal val htmlCanvas: HTMLCanvasElement get() = canvas

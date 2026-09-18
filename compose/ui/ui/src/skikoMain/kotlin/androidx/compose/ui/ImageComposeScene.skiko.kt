@@ -19,7 +19,6 @@
 package androidx.compose.ui
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -164,7 +163,6 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
         containerDpSize = imageSize.toSize().toDpSize(density)
     }
 
-    @OptIn(InternalComposeApi::class)
     private val canvasHolder = SkiaCanvasHolder(surface.canvas)
 
     private val frameRecomposer = FrameRecomposer(coroutineContext)
@@ -294,7 +292,6 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
      * Render the current content into an image. [nanoTime] will be used to drive all
      * animations in the content (or any other code, which uses [withFrameNanos]
      */
-    @OptIn(InternalComposeApi::class)
     fun render(nanoTime: Long = 0): Image {
         surface.canvas.clear(Color.TRANSPARENT)
         frameRecomposer.performFrame(nanoTime)
