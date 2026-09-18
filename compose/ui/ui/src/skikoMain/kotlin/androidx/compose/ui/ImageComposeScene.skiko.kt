@@ -297,9 +297,7 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
         frameRecomposer.performFrame(nanoTime)
         scene.measureAndLayout()
         @Suppress("INVISIBLE_REFERENCE")
-        canvasHolder.drawInto(surface.canvas){
-            scene.draw(this@drawInto)
-        }
+        canvasHolder.drawInto(surface.canvas, scene::draw)
         return surface.makeImageSnapshot()
     }
 

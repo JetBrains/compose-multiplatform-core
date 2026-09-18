@@ -762,9 +762,7 @@ internal class ComposeSceneMediator(
         save()
         translate(sceneOffset.x, sceneOffset.y)
         @Suppress("INVISIBLE_REFERENCE")
-        canvasHolder.drawInto(this){
-            block(this@drawInto)
-        }
+        canvasHolder.drawInto(this, block)
         restore()
     }
 
