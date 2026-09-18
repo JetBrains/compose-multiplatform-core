@@ -23,8 +23,8 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
+import androidx.compose.ui.graphics.SkiaCanvasHolder
 import androidx.compose.ui.asComposeSystemTheme
-import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.FrameChoreographer
@@ -171,6 +171,8 @@ internal class ComposeContainer(
 
     private val focusedViewsList = FocusedViewsList()
 
+    private val canvasHolder = SkiaCanvasHolder()
+
     val currentLifecycleState: Lifecycle.State get() =
         architectureComponentsOwner.lifecycle.currentState
 
@@ -261,7 +263,7 @@ internal class ComposeContainer(
         systemThemeState.value = style.asComposeSystemTheme()
     }
 
-    fun initializeComposeScene() {
+ fun initializeComposeScene() {
         sceneJob = Job()
         val frameChoreographer = view.window?.windowScene
             ?.let(FrameChoreographer::choreographerForScene)
@@ -282,9 +284,11 @@ internal class ComposeContainer(
             },
             useSeparateRenderThreadWhenPossible = configuration.parallelRendering,
             draw = { canvas ->
+             canvasHolder.drawInto(canvas) {
                 layoutInvalidationHandler.postponeLayoutInvalidationCalls {
-                    mediator?.draw(canvas.asComposeCanvas())
+                    mediator?.draw(this@drawInto)
                 }
+              }
             }
         )
         metalView.canBeOpaque = configuration.opaque

@@ -35,7 +35,7 @@ import androidx.compose.ui.draganddrop.WebDragAndDropManager
 import androidx.compose.ui.events.EventTargetListener
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.graphics.SkiaCanvasHolder
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
@@ -409,6 +409,8 @@ internal class ComposeWindow(
                 get() = configuration.isClearFocusOnMouseDownEnabled
         }
 
+    private val canvasHolder = SkiaCanvasHolder()
+
     internal val htmlCanvas: HTMLCanvasElement get() = canvas
 
     /**
@@ -423,8 +425,10 @@ internal class ComposeWindow(
             if (skiaDirectContext == null) {
                 skiaDirectContext = canvas.recordingContext
             }
-            with(sceneRenderingScope) {
-                scene.render(frameRecomposer, canvas.asComposeCanvas(), nanoTime)
+            canvasHolder.drawInto(canvas) {
+                with(sceneRenderingScope) {
+                    scene.render(frameRecomposer, this@drawInto, nanoTime)
+                }
             }
         }
     }
