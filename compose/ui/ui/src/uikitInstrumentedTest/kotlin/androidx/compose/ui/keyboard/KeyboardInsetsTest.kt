@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.keyboard
 
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -43,6 +44,8 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -77,6 +80,8 @@ import kotlin.test.assertTrue
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.CoreGraphics.CGRect
+import platform.UIKit.UIInterfaceOrientationLandscapeRight
+import platform.UIKit.UIInterfaceOrientationPortrait
 import platform.UIKit.UIView
 import platform.UIKit.UIViewAnimationOptions
 
@@ -87,6 +92,85 @@ internal class KeyboardInsetsInHostingViewTest : KeyboardInsetsTest(
 internal class KeyboardInsetsInHostingViewControllerTest : KeyboardInsetsTest(
     runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = false, it) }
 )
+
+/**
+ * Rotation-related keyboard tests. Kept out of [KeyboardInsetsTest] so that the test runs both
+ * container variants within a single test case.
+ */
+internal class KeyboardInsetsRotationTest {
+    @Test
+    fun testFocusableAboveKeyboardSurvivesRotation() = runUIKitInstrumentedTest {
+        var isFocused = false
+        var textFieldRectInWindow: DpRect? = null
+
+        setContent({
+            onFocusBehavior = OnFocusBehavior.FocusableAboveKeyboard
+        }) {
+            val focusManager = LocalFocusManager.current
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTapGestures { focusManager.clearFocus(force = true) }
+                    }
+            ) {
+                TextField(
+                    value = "",
+                    onValueChange = {},
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 50.dp)
+                        .onFocusChanged { isFocused = it.isFocused }
+                        .onGloballyPositioned {
+                            textFieldRectInWindow = it.boundsInWindow().toDpRect(density)
+                        }
+                        .testTag("TextField")
+                )
+            }
+        }
+
+        fun tapTextField() {
+            findNodeWithTag("TextField").tap()
+            waitForIdle()
+        }
+
+        // Any tap outside of the text field is handled by the box behind it and clears the focus.
+        fun tapOutsideTextField() {
+            tap(DpOffset(screenSize.width / 2, screenSize.height / 4))
+            waitForIdle()
+        }
+
+        fun assertFocusedAboveKeyboard(step: String) {
+            assertTrue(isFocused, "Text field must be focused $step")
+            assertEquals(
+                expected = screenSize.height - keyboardHeight,
+                actual = textFieldRectInWindow?.bottom,
+                message = "Focused text field must be offset above the keyboard $step"
+            )
+        }
+
+        tapTextField()
+        assertFocusedAboveKeyboard("after tapping it")
+
+        rotateTo(UIInterfaceOrientationLandscapeRight)
+        assertFocusedAboveKeyboard("after rotating to landscape")
+
+        tapOutsideTextField()
+        assertFalse(isFocused, "Focus must be cleared by a tap outside the text field in landscape")
+
+        tapTextField()
+        assertFocusedAboveKeyboard("after refocusing it in landscape")
+
+        rotateTo(UIInterfaceOrientationPortrait)
+        assertFocusedAboveKeyboard("after rotating back to portrait")
+
+        tapOutsideTextField()
+        assertFalse(
+            isFocused,
+            "Focus must be cleared by a tap outside the text field after rotating back"
+        )
+    }
+}
 
 internal abstract class KeyboardInsetsTest(
     private val runUIKitInstrumentedTest: (UIKitInstrumentedTest.() -> Unit) -> Unit
