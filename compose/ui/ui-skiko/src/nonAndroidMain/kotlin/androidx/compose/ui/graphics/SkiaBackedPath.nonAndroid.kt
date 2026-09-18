@@ -308,7 +308,7 @@ internal class SkiaBackedPath(
         replaceWith = ReplaceWith("addRoundRect(roundRect)"),
         level = DeprecationLevel.HIDDEN
     )
-    override fun addRoundRect(roundRect: RoundRect) = addRoundRect(roundRect)
+    override fun addRoundRect(roundRect: RoundRect) = addRoundRect(roundRect, Path.Direction.CounterClockwise)
 
     override fun addRoundRect(roundRect: RoundRect, direction: Path.Direction) = mutatePath {
         if (radii == null) radii = FloatArray(8)
