@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import org.jetbrains.skia.IRect
 import org.jetbrains.skia.Surface
+import org.jetbrains.skia.gpu.ganesh.flushAndSubmit
 
 const val TEST_WIDTH = 600
 const val TEST_HEIGHT = 400
