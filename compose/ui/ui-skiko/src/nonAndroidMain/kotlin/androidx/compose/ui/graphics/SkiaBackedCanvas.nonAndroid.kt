@@ -72,15 +72,18 @@ private val EmptyCanvas = Surface.makeNull(1,1).canvas
  * Holder class that is used to issue scoped calls to a [Canvas]
  * without having to allocate a SkiaBackedCanvas on each draw call.
  */
-@InternalComposeApi
+@InternalComposeUiApi
 class SkiaCanvasHolder(skiaCanvas : SkCanvas? = null) {
     internal val skiaBackedCanvas = SkiaBackedCanvas().apply { internalSkiaCanvas = skiaCanvas ?: EmptyCanvas }
 
-    internal inline fun drawInto(targetCanvas: SkCanvas, crossinline block: Canvas.() -> Unit) {
+    inline fun drawInto(targetCanvas: SkCanvas, crossinline block: Canvas.() -> Unit) {
         val previousCanvas = skiaBackedCanvas.internalSkiaCanvas
         skiaBackedCanvas.internalSkiaCanvas = targetCanvas
-        skiaBackedCanvas.block()
-        skiaBackedCanvas.internalSkiaCanvas = previousCanvas
+        try {
+            skiaBackedCanvas.block()
+        } finally {
+            skiaBackedCanvas.internalSkiaCanvas = previousCanvas
+        }
     }
 }
 
@@ -88,7 +91,7 @@ internal class SkiaBackedCanvas : Canvas {
 
     // Keep the internal canvas as a var prevent having to allocate an AndroidCanvas
     // instance on each draw call
-   internal var internalSkiaCanvas: SkCanvas = EmptyCanvas
+    internal var internalSkiaCanvas: SkCanvas = EmptyCanvas
     override fun save() {
         internalSkiaCanvas.save()
     }

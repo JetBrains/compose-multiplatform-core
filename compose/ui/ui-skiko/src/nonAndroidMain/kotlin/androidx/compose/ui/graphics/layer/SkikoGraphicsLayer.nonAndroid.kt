@@ -226,10 +226,10 @@ internal class SkikoGraphicsLayer(
                         this[7] = outline.roundRect.bottomLeftCornerRadius.y
                     }
                     renderNode.setClipRRect(
-                        outline.roundRect.left,
-                        outline.roundRect.top,
-                        outline.roundRect.right,
-                        outline.roundRect.bottom,
+                        outline.roundRect.left + dx,
+                        outline.roundRect.top + dy,
+                        outline.roundRect.right + dx,
+                        outline.roundRect.bottom + dy,
                         radii!!,
                         antiAlias = true
                     )
