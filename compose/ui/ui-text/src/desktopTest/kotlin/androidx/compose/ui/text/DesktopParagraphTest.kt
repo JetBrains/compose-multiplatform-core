@@ -89,8 +89,7 @@ class DesktopParagraphTest : SkikoComposeTestBase() {
             val fontSizeInPx = fontSize.toPx()
 
             for (lineHeightMultiplier in listOf(
-                // 0f, // TODO https://youtrack.jetbrains.com/issue/CMP-7963
-                0.1f, 0.5f, 1f, 1.5f, 2f, 10f,
+                0f, 0.1f, 0.5f, 1f, 1.5f, 2f, 10f,
             )) {
                 val paragraph = simpleParagraph(
                     text = text,
