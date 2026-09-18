@@ -70,6 +70,9 @@ private val EmptyCanvas = Surface.makeNull(1,1).canvas
 /**
  * Holder class that is used to issue scoped calls to a [Canvas]
  * without having to allocate a SkiaBackedCanvas on each draw call.
+ *
+ * **Do not use in functions that can be called concurrently
+ * from different threads** The methods are not thread safe.
  */
 @InternalComposeUiApi
 class SkiaCanvasHolder(skiaCanvas : SkCanvas? = null) {
