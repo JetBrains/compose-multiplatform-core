@@ -355,7 +355,6 @@ internal class ComposeLayersViewController(
 
     private fun draw(canvas: Canvas) {
         layoutInvalidationHandler.postponeLayoutInvalidationCalls {
-        @Suppress("INVISIBLE_REFERENCE")
         canvasHolder.drawInto(canvas) { 
             // Some layers may be removed during rendering, because recomposition will happen in the
             // process, so we need to make a temporary copy of the list

@@ -76,6 +76,7 @@ private val EmptyCanvas = Surface.makeNull(1,1).canvas
  */
 @InternalComposeUiApi
 class SkiaCanvasHolder(skiaCanvas : SkCanvas? = null) {
+    @PublishedApi
     internal val skiaBackedCanvas = SkiaBackedCanvas().apply { internalSkiaCanvas = skiaCanvas ?: EmptyCanvas }
 
     inline fun drawInto(targetCanvas: SkCanvas, crossinline block: Canvas.() -> Unit) {
@@ -89,10 +90,12 @@ class SkiaCanvasHolder(skiaCanvas : SkCanvas? = null) {
     }
 }
 
+@PublishedApi
 internal class SkiaBackedCanvas : Canvas {
 
     // Keep the internal canvas as a var prevent having to allocate a SkiaBackedCanvas
     // instance on each draw call
+    @PublishedApi
     internal var internalSkiaCanvas: SkCanvas = EmptyCanvas
     override fun save() {
         internalSkiaCanvas.save()

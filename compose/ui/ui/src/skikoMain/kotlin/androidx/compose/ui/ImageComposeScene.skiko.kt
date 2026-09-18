@@ -296,7 +296,6 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
         surface.canvas.clear(Color.TRANSPARENT)
         frameRecomposer.performFrame(nanoTime)
         scene.measureAndLayout()
-        @Suppress("INVISIBLE_REFERENCE")
         canvasHolder.drawInto(surface.canvas, scene::draw)
         return surface.makeImageSnapshot()
     }

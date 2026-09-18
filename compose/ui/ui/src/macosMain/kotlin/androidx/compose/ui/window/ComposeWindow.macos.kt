@@ -151,7 +151,6 @@ private class ComposeWindow(
             _windowInfo.containerDpSize = sizeInPx.toSize().toDpSize(scene.density)
             scene.size = sizeInPx // TODO: Move it out from onRender to avoid extra invalidation
             with(sceneRenderingScope) {
-                @Suppress("INVISIBLE_REFERENCE")
                 canvasHolder.drawInto(canvas) {
                     scene.render(frameRecomposer, this@drawInto, nanoTime)
                 }

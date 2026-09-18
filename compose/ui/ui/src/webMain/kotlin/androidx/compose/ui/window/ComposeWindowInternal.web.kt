@@ -425,7 +425,6 @@ internal class ComposeWindow(
             if (skiaDirectContext == null) {
                 skiaDirectContext = canvas.recordingContext
             }
-            @Suppress("INVISIBLE_REFERENCE")
             canvasHolder.drawInto(canvas) {
                 with(sceneRenderingScope) {
                     scene.render(frameRecomposer, this@drawInto, nanoTime)

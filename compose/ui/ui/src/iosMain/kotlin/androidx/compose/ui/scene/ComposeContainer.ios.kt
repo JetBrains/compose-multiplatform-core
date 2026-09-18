@@ -284,8 +284,7 @@ internal class ComposeContainer(
             },
             useSeparateRenderThreadWhenPossible = configuration.parallelRendering,
             draw = { canvas ->
-              @Suppress("INVISIBLE_REFERENCE")
-              canvasHolder.drawInto(canvas) {
+             canvasHolder.drawInto(canvas) {
                 layoutInvalidationHandler.postponeLayoutInvalidationCalls {
                     mediator?.draw(this@drawInto)
                 }

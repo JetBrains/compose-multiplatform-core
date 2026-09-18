@@ -256,7 +256,6 @@ internal class SkikoGraphicsLayer(
         val renderNode = renderNode ?: return
         val recordingCanvas = renderNode.beginRecording()
         try {
-            @Suppress("INVISIBLE_REFERENCE")
             canvasHolder.drawInto(recordingCanvas) {
                 if (outsetLeft > 0 || outsetTop > 0) {
                     save()

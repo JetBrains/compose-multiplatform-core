@@ -761,7 +761,6 @@ internal class ComposeSceneMediator(
         val sceneOffset = sceneBoundsOffset - contentOffset
         save()
         translate(sceneOffset.x, sceneOffset.y)
-        @Suppress("INVISIBLE_REFERENCE")
         canvasHolder.drawInto(this, block)
         restore()
     }

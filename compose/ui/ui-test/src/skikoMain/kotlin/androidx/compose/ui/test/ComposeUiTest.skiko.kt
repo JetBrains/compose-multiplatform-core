@@ -334,7 +334,6 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         scene.measureAndLayout()
         with(surface.canvas) {
             clear(Color.TRANSPARENT)
-            @Suppress("INVISIBLE_REFERENCE")
             canvasHolder.drawInto(this, scene::draw)
         }
     }
