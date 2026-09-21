@@ -20,6 +20,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ComposeUIDispatcher
 import androidx.compose.ui.HeadlessTest
 import androidx.compose.ui.desktop.Window
 import androidx.compose.ui.desktop.runSession
@@ -29,6 +30,7 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Before
@@ -109,13 +111,17 @@ class HeadlessSessionTest(private val frameIsolation: Boolean) {
         }
         withTimeout(10_000) {
             val window = ready.await()
-            window.render(nanoTime = 1L)
-            while (window.isFrameRequested) { window.render(nanoTime = 2L) }
+            // On the Compose UI thread: see HeadlessWindowTest for why a caller-thread render
+            // races the isolation catch-up frame.
+            withContext(ComposeUIDispatcher) {
+                window.render(nanoTime = 1L)
+                while (window.isFrameRequested) { window.render(nanoTime = 2L) }
+            }
             color = 1
             // The write must eventually mark the scene dirty…
             while (!window.isFrameRequested) kotlinx.coroutines.yield()
             // …and rendering consumes the request.
-            window.render(nanoTime = 3L)
+            withContext(ComposeUIDispatcher) { window.render(nanoTime = 3L) }
         }
         sessionDone.complete(Unit)
         withTimeout(10_000) { sessionJob.join() }
