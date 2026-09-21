@@ -86,6 +86,7 @@ abstract class JetBrainsVerifyDependencyVersionsTask : DefaultTask() {
     }
 
     private fun releasePhase(versionString: String): Int {
+        if (versionString == "unspecified") return 1
         val version = Version(versionString)
         return when {
             version.isStable() -> 4
@@ -131,7 +132,7 @@ internal fun Project.configureDependencyVerification() {
                     .map { project.configurations.getByName(it) }
                     .flatMap { configuration ->
                         configuration.allDependencies.asSequence()
-                            .filter { it.group != null && it.version != null }
+                            .filter { it.group?.startsWith("androidx.") == true && it.version != null }
                             .map { dependency ->
                                 AndroidXDependency(
                                     dependency.group!!,
@@ -143,7 +144,9 @@ internal fun Project.configureDependencyVerification() {
                             .plus(
                                 configuration.allDependencyConstraints
                                     .asSequence()
-                                    .filter { it.version != null }
+                                    .filter {
+                                        it.group.startsWith("androidx.") && it.version != null
+                                    }
                                     .map { constraint ->
                                         AndroidXDependency(
                                             constraint.group,
