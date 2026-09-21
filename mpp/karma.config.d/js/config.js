@@ -75,7 +75,7 @@ config.frameworks.push("webpack-output");
 
 config.files.push(
     {pattern: path.resolve(basePath, "kotlin", "skiko.wasm"), included: false, served: true, watched: false},
-    {pattern: path.resolve(basePath, "kotlin", "skiko.mjs"), included: true, served: true, watched: false, type: 'module'},
+    {pattern: path.resolve(basePath, "kotlin", "skiko.mjs"), included: false, served: true, watched: false, type: 'module'},
     {pattern: path.resolve(basePath, "kotlin", "js-skiko-reexport-symbols.mjs"), included: false, served: true, watched: false, type: 'module'},
 );
 
