@@ -71,6 +71,7 @@ import androidx.lifecycle.enableSavedStateHandles
 import kotlinx.browser.document
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.skia.DirectContext
+import org.jetbrains.skia.gpu.ganesh.recordingContext
 import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkikoRenderDelegate
 import org.w3c.dom.Element
