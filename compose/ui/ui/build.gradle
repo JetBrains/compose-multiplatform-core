@@ -531,3 +531,17 @@ tasks.named("desktopTest").configure {
             layout.buildDirectory.file("kdt-test-logs").get().asFile.absolutePath)
     jvmArgs("--enable-native-access=ALL-UNNAMED")
 }
+
+// Drives the frame-isolation A/B from the command line:
+//   ./gradlew :compose:ui:ui:desktopHeadlessTest -PframeIsolation=true
+// A scene fixes its isolation mode at construction from
+// ComposeSceneFeatureFlags.isFrameIsolationEnabled, which the desktop Application (and
+// HeadlessApplication) initializes from this property. Tests that set the flag themselves are
+// unaffected. Absent the property the value is false, i.e. the shipping default.
+[tasks.named("desktopTest"), tasks.named("desktopHeadlessTest")].each { taskProvider ->
+    taskProvider.configure {
+        if (project.hasProperty("frameIsolation")) {
+            systemProperty("compose.frameIsolation", project.property("frameIsolation"))
+        }
+    }
+}
