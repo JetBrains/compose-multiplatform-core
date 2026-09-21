@@ -611,6 +611,7 @@ public final class androidx/compose/foundation/gestures/PressGestureScope$Defaul
 	public static fun toDp-GaN1DYA (Landroidx/compose/foundation/gestures/PressGestureScope;J)F
 	public static fun toDp-u2uoSUM (Landroidx/compose/foundation/gestures/PressGestureScope;F)F
 	public static fun toDp-u2uoSUM (Landroidx/compose/foundation/gestures/PressGestureScope;I)F
+	public static fun toDpOffset-RL8oJKU (Landroidx/compose/foundation/gestures/PressGestureScope;J)J
 	public static fun toDpSize-k-rfVVM (Landroidx/compose/foundation/gestures/PressGestureScope;J)J
 	public static fun toPx--R2X_6o (Landroidx/compose/foundation/gestures/PressGestureScope;J)F
 	public static fun toPx-0680j_4 (Landroidx/compose/foundation/gestures/PressGestureScope;F)F
@@ -623,6 +624,16 @@ public final class androidx/compose/foundation/gestures/PressGestureScope$Defaul
 
 public abstract interface class androidx/compose/foundation/gestures/Scroll2DScope {
 	public abstract fun scrollBy-MK-Hz9U (J)J
+}
+
+public abstract interface class androidx/compose/foundation/gestures/ScrollConfig {
+	public abstract fun calculateMouseWheelScroll-8xgXZGE (Landroidx/compose/ui/unit/Density;Landroidx/compose/ui/input/pointer/PointerEvent;J)J
+	public fun isPreciseWheelScroll (Landroidx/compose/ui/input/pointer/PointerEvent;)Z
+	public fun isSmoothScrollingEnabled ()Z
+}
+
+public final class androidx/compose/foundation/gestures/ScrollConfig_skikoKt {
+	public static final fun getLocalScrollConfig ()Landroidx/compose/runtime/ProvidableCompositionLocal;
 }
 
 public final class androidx/compose/foundation/gestures/ScrollExtensionsKt {
@@ -715,6 +726,11 @@ public final class androidx/compose/foundation/gestures/TapGestureDetectorKt {
 
 public final class androidx/compose/foundation/gestures/TapGestureDetector_skikoKt {
 	public static final fun isDeepPress (Landroidx/compose/ui/input/pointer/PointerEvent;)Z
+}
+
+public final class androidx/compose/foundation/gestures/TapGesturesDetector_skikoKt {
+	public static final fun awaitPress (Landroidx/compose/ui/input/pointer/AwaitPointerEventScope;Lkotlin/jvm/functions/Function1;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun awaitPress$default (Landroidx/compose/ui/input/pointer/AwaitPointerEventScope;Lkotlin/jvm/functions/Function1;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public abstract interface class androidx/compose/foundation/gestures/TargetedFlingBehavior : androidx/compose/foundation/gestures/FlingBehavior {
@@ -1313,6 +1329,10 @@ public final class androidx/compose/foundation/lazy/layout/LazyLayoutPinnedItemL
 	public synthetic fun add (Ljava/lang/Object;)Z
 	public fun addAll (ILjava/util/Collection;)Z
 	public fun addAll (Ljava/util/Collection;)Z
+	public fun addFirst (Landroidx/compose/foundation/lazy/layout/LazyLayoutPinnedItemList$PinnedItem;)V
+	public synthetic fun addFirst (Ljava/lang/Object;)V
+	public fun addLast (Landroidx/compose/foundation/lazy/layout/LazyLayoutPinnedItemList$PinnedItem;)V
+	public synthetic fun addLast (Ljava/lang/Object;)V
 	public fun clear ()V
 	public fun contains (Landroidx/compose/foundation/lazy/layout/LazyLayoutPinnedItemList$PinnedItem;)Z
 	public final fun contains (Ljava/lang/Object;)Z
@@ -1332,6 +1352,10 @@ public final class androidx/compose/foundation/lazy/layout/LazyLayoutPinnedItemL
 	public synthetic fun remove (I)Ljava/lang/Object;
 	public fun remove (Ljava/lang/Object;)Z
 	public fun removeAll (Ljava/util/Collection;)Z
+	public fun removeFirst ()Landroidx/compose/foundation/lazy/layout/LazyLayoutPinnedItemList$PinnedItem;
+	public synthetic fun removeFirst ()Ljava/lang/Object;
+	public fun removeLast ()Landroidx/compose/foundation/lazy/layout/LazyLayoutPinnedItemList$PinnedItem;
+	public synthetic fun removeLast ()Ljava/lang/Object;
 	public fun replaceAll (Ljava/util/function/UnaryOperator;)V
 	public fun retainAll (Ljava/util/Collection;)Z
 	public fun set (ILandroidx/compose/foundation/lazy/layout/LazyLayoutPinnedItemList$PinnedItem;)Landroidx/compose/foundation/lazy/layout/LazyLayoutPinnedItemList$PinnedItem;
@@ -2184,6 +2208,15 @@ public final class androidx/compose/foundation/text/ComposableSingletons$CoreTex
 	public final fun getLambda$559628295$foundation ()Lkotlin/jvm/functions/Function3;
 }
 
+public final class androidx/compose/foundation/text/Handle : java/lang/Enum {
+	public static final field Cursor Landroidx/compose/foundation/text/Handle;
+	public static final field SelectionEnd Landroidx/compose/foundation/text/Handle;
+	public static final field SelectionStart Landroidx/compose/foundation/text/Handle;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Landroidx/compose/foundation/text/Handle;
+	public static fun values ()[Landroidx/compose/foundation/text/Handle;
+}
+
 public final class androidx/compose/foundation/text/InlineTextContent {
 	public static final field $stable I
 	public fun <init> (Landroidx/compose/ui/text/Placeholder;Lkotlin/jvm/functions/Function3;)V
@@ -2285,6 +2318,15 @@ public final class androidx/compose/foundation/text/TextAutoSizeDefaults {
 }
 
 public final class androidx/compose/foundation/text/TextContextMenu$Companion {
+}
+
+public abstract interface class androidx/compose/foundation/text/TextDragObserver {
+	public abstract fun onCancel ()V
+	public abstract fun onDown-k-4lQ0M (J)V
+	public abstract fun onDrag-k-4lQ0M (J)V
+	public abstract fun onStart-3MmeM6k (JLandroidx/compose/foundation/text/selection/SelectionAdjustment;)V
+	public abstract fun onStop ()V
+	public abstract fun onUp ()V
 }
 
 public final class androidx/compose/foundation/text/contextmenu/builder/TextContextMenuBuilderScope {
@@ -2556,10 +2598,240 @@ public abstract interface class androidx/compose/foundation/text/modifiers/TextA
 	public abstract fun performLayout-5ZSfY2I (JLandroidx/compose/ui/text/AnnotatedString;J)Landroidx/compose/ui/text/TextLayoutResult;
 }
 
+public final class androidx/compose/foundation/text/selection/CrossStatus : java/lang/Enum {
+	public static final field COLLAPSED Landroidx/compose/foundation/text/selection/CrossStatus;
+	public static final field CROSSED Landroidx/compose/foundation/text/selection/CrossStatus;
+	public static final field NOT_CROSSED Landroidx/compose/foundation/text/selection/CrossStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Landroidx/compose/foundation/text/selection/CrossStatus;
+	public static fun values ()[Landroidx/compose/foundation/text/selection/CrossStatus;
+}
+
+public final class androidx/compose/foundation/text/selection/Direction : java/lang/Enum {
+	public static final field AFTER Landroidx/compose/foundation/text/selection/Direction;
+	public static final field BEFORE Landroidx/compose/foundation/text/selection/Direction;
+	public static final field ON Landroidx/compose/foundation/text/selection/Direction;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Landroidx/compose/foundation/text/selection/Direction;
+	public static fun values ()[Landroidx/compose/foundation/text/selection/Direction;
+}
+
+public abstract interface class androidx/compose/foundation/text/selection/Selectable {
+	public abstract fun appendSelectableInfoToBuilder (Landroidx/compose/foundation/text/selection/SelectionLayoutBuilder;)V
+	public abstract fun getBoundingBox (I)Landroidx/compose/ui/geometry/Rect;
+	public abstract fun getBringIntoViewRequester ()Landroidx/compose/foundation/relocation/BringIntoViewRequester;
+	public abstract fun getCenterYForOffset (I)F
+	public abstract fun getHandlePosition-dBAh8RU (Landroidx/compose/foundation/text/selection/Selection;Z)J
+	public abstract fun getLastVisibleOffset ()I
+	public abstract fun getLayoutCoordinates ()Landroidx/compose/ui/layout/LayoutCoordinates;
+	public abstract fun getLineHeight (I)F
+	public abstract fun getLineLeft (I)F
+	public abstract fun getLineRight (I)F
+	public abstract fun getPinnableContainer ()Landroidx/compose/ui/layout/PinnableContainer;
+	public abstract fun getRangeOfLineContaining--jx7JFs (I)J
+	public abstract fun getSelectAllSelection ()Landroidx/compose/foundation/text/selection/Selection;
+	public abstract fun getSelectableId ()J
+	public abstract fun getText ()Landroidx/compose/ui/text/AnnotatedString;
+	public abstract fun textLayoutResult ()Landroidx/compose/ui/text/TextLayoutResult;
+}
+
+public final class androidx/compose/foundation/text/selection/SelectableInfo {
+	public static final field $stable I
+	public fun <init> (JIIIILandroidx/compose/ui/text/TextLayoutResult;)V
+	public final fun anchorForOffset (I)Landroidx/compose/foundation/text/selection/Selection$AnchorInfo;
+	public final fun getInputText ()Ljava/lang/String;
+	public final fun getRawCrossStatus ()Landroidx/compose/foundation/text/selection/CrossStatus;
+	public final fun getRawEndHandleOffset ()I
+	public final fun getRawPreviousHandleOffset ()I
+	public final fun getRawStartHandleOffset ()I
+	public final fun getSelectableId ()J
+	public final fun getSlot ()I
+	public final fun getTextLayoutResult ()Landroidx/compose/ui/text/TextLayoutResult;
+	public final fun getTextLength ()I
+	public final fun makeSingleLayoutSelection (II)Landroidx/compose/foundation/text/selection/Selection;
+	public final fun shouldRecomputeSelection (Landroidx/compose/foundation/text/selection/SelectableInfo;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class androidx/compose/foundation/text/selection/Selection {
+	public static final field $stable I
+	public fun <init> (Landroidx/compose/foundation/text/selection/Selection$AnchorInfo;Landroidx/compose/foundation/text/selection/Selection$AnchorInfo;Z)V
+	public synthetic fun <init> (Landroidx/compose/foundation/text/selection/Selection$AnchorInfo;Landroidx/compose/foundation/text/selection/Selection$AnchorInfo;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Landroidx/compose/foundation/text/selection/Selection$AnchorInfo;
+	public final fun component2 ()Landroidx/compose/foundation/text/selection/Selection$AnchorInfo;
+	public final fun component3 ()Z
+	public final fun copy (Landroidx/compose/foundation/text/selection/Selection$AnchorInfo;Landroidx/compose/foundation/text/selection/Selection$AnchorInfo;Z)Landroidx/compose/foundation/text/selection/Selection;
+	public static synthetic fun copy$default (Landroidx/compose/foundation/text/selection/Selection;Landroidx/compose/foundation/text/selection/Selection$AnchorInfo;Landroidx/compose/foundation/text/selection/Selection$AnchorInfo;ZILjava/lang/Object;)Landroidx/compose/foundation/text/selection/Selection;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEnd ()Landroidx/compose/foundation/text/selection/Selection$AnchorInfo;
+	public final fun getHandlesCrossed ()Z
+	public final fun getStart ()Landroidx/compose/foundation/text/selection/Selection$AnchorInfo;
+	public fun hashCode ()I
+	public final fun merge (Landroidx/compose/foundation/text/selection/Selection;)Landroidx/compose/foundation/text/selection/Selection;
+	public fun toString ()Ljava/lang/String;
+	public final fun toTextRange-d9O1mEE ()J
+}
+
+public final class androidx/compose/foundation/text/selection/Selection$AnchorInfo {
+	public static final field $stable I
+	public fun <init> (Landroidx/compose/ui/text/style/ResolvedTextDirection;IJ)V
+	public final fun component1 ()Landroidx/compose/ui/text/style/ResolvedTextDirection;
+	public final fun component2 ()I
+	public final fun component3 ()J
+	public final fun copy (Landroidx/compose/ui/text/style/ResolvedTextDirection;IJ)Landroidx/compose/foundation/text/selection/Selection$AnchorInfo;
+	public static synthetic fun copy$default (Landroidx/compose/foundation/text/selection/Selection$AnchorInfo;Landroidx/compose/ui/text/style/ResolvedTextDirection;IJILjava/lang/Object;)Landroidx/compose/foundation/text/selection/Selection$AnchorInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDirection ()Landroidx/compose/ui/text/style/ResolvedTextDirection;
+	public final fun getOffset ()I
+	public final fun getSelectableId ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class androidx/compose/foundation/text/selection/SelectionAdjustment {
+	public static final field Companion Landroidx/compose/foundation/text/selection/SelectionAdjustment$Companion;
+	public abstract fun adjust (Landroidx/compose/foundation/text/selection/SelectionLayout;)Landroidx/compose/foundation/text/selection/Selection;
+}
+
+public final class androidx/compose/foundation/text/selection/SelectionAdjustment$Companion {
+	public final fun getCharacter ()Landroidx/compose/foundation/text/selection/SelectionAdjustment;
+	public final fun getCharacterWithWordAccelerate ()Landroidx/compose/foundation/text/selection/SelectionAdjustment;
+	public final fun getNone ()Landroidx/compose/foundation/text/selection/SelectionAdjustment;
+	public final fun getParagraph ()Landroidx/compose/foundation/text/selection/SelectionAdjustment;
+	public final fun getWord ()Landroidx/compose/foundation/text/selection/SelectionAdjustment;
+}
+
 public final class androidx/compose/foundation/text/selection/SelectionContainerKt {
 	public static final fun DisableSelection (Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)V
 	public static final fun SelectionContainer (Landroidx/compose/foundation/text/selection/SelectionState;Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+	public static final fun SelectionContainer (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/text/selection/SelectionState;Lkotlin/jvm/functions/Function1;Landroidx/compose/foundation/text/selection/SelectionRegistrarImpl;Landroidx/compose/foundation/text/selection/SelectionManager;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
 	public static final fun SelectionContainer (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+}
+
+public abstract interface class androidx/compose/foundation/text/selection/SelectionLayout {
+	public abstract fun createSubSelections (Landroidx/compose/foundation/text/selection/Selection;)Landroidx/collection/LongObjectMap;
+	public abstract fun forEachMiddleInfo (Lkotlin/jvm/functions/Function1;)V
+	public abstract fun getCrossStatus ()Landroidx/compose/foundation/text/selection/CrossStatus;
+	public abstract fun getCurrentInfo ()Landroidx/compose/foundation/text/selection/SelectableInfo;
+	public abstract fun getEndInfo ()Landroidx/compose/foundation/text/selection/SelectableInfo;
+	public abstract fun getEndSlot ()I
+	public abstract fun getFirstInfo ()Landroidx/compose/foundation/text/selection/SelectableInfo;
+	public abstract fun getLastInfo ()Landroidx/compose/foundation/text/selection/SelectableInfo;
+	public abstract fun getPreviousSelection ()Landroidx/compose/foundation/text/selection/Selection;
+	public abstract fun getSize ()I
+	public abstract fun getStartInfo ()Landroidx/compose/foundation/text/selection/SelectableInfo;
+	public abstract fun getStartSlot ()I
+	public abstract fun infoForSelectable (J)Landroidx/compose/foundation/text/selection/SelectableInfo;
+	public abstract fun isStartHandle ()Z
+	public abstract fun shouldRecomputeSelection (Landroidx/compose/foundation/text/selection/SelectionLayout;)Z
+}
+
+public final class androidx/compose/foundation/text/selection/SelectionLayoutBuilder {
+	public static final field $stable I
+	public synthetic fun <init> (JJLandroidx/compose/ui/layout/LayoutCoordinates;ZLandroidx/compose/foundation/text/selection/Selection;Landroidx/compose/foundation/text/selection/SelectionLayout;Ljava/util/Comparator;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (JJLandroidx/compose/ui/layout/LayoutCoordinates;ZLandroidx/compose/foundation/text/selection/Selection;Landroidx/compose/foundation/text/selection/SelectionLayout;Ljava/util/Comparator;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun appendInfo (JILandroidx/compose/foundation/text/selection/Direction;Landroidx/compose/foundation/text/selection/Direction;ILandroidx/compose/foundation/text/selection/Direction;Landroidx/compose/foundation/text/selection/Direction;ILandroidx/compose/ui/text/TextLayoutResult;)Landroidx/compose/foundation/text/selection/SelectableInfo;
+	public final fun build ()Landroidx/compose/foundation/text/selection/SelectionLayout;
+	public final fun getAllowSelectionBetweenSelectables ()Z
+	public final fun getContainerCoordinates ()Landroidx/compose/ui/layout/LayoutCoordinates;
+	public final fun getCurrentPosition-F1C5BW0 ()J
+	public final fun getPreviousHandlePosition-F1C5BW0 ()J
+	public final fun getPreviousLayout ()Landroidx/compose/foundation/text/selection/SelectionLayout;
+	public final fun getPreviousSelection ()Landroidx/compose/foundation/text/selection/Selection;
+	public final fun getSelectableIdOrderingComparator ()Ljava/util/Comparator;
+	public final fun isStartHandle ()Z
+}
+
+public final class androidx/compose/foundation/text/selection/SelectionManager : androidx/compose/runtime/RememberObserver {
+	public static final field $stable I
+	public fun <init> (Landroidx/compose/foundation/text/selection/SelectionRegistrarImpl;)V
+	public final fun copy ()V
+	public final fun endDrag ()V
+	public final fun getContainerLayoutCoordinates ()Landroidx/compose/ui/layout/LayoutCoordinates;
+	public final fun getContextMenuAreaModifier ()Landroidx/compose/ui/Modifier;
+	public final fun getCurrentDragPosition-_m7T9-E ()Landroidx/compose/ui/geometry/Offset;
+	public final fun getDraggingHandle ()Landroidx/compose/foundation/text/Handle;
+	public final fun getEndHandleLineHeight ()F
+	public final fun getEndHandlePosition-_m7T9-E ()Landroidx/compose/ui/geometry/Offset;
+	public final fun getFocusRequester ()Landroidx/compose/ui/focus/FocusRequester;
+	public final fun getHapticFeedBack ()Landroidx/compose/ui/hapticfeedback/HapticFeedback;
+	public final fun getHasFocus ()Z
+	public final fun getModifier ()Landroidx/compose/ui/Modifier;
+	public final fun getOnCopyHandler ()Lkotlin/jvm/functions/Function1;
+	public final fun getOnSelectionChange ()Lkotlin/jvm/functions/Function1;
+	public final fun getSelectedText ()Landroidx/compose/ui/text/AnnotatedString;
+	public final fun getSelection ()Landroidx/compose/foundation/text/selection/Selection;
+	public final fun getStartHandleLineHeight ()F
+	public final fun getStartHandlePosition-_m7T9-E ()Landroidx/compose/ui/geometry/Offset;
+	public final fun getTextToolbar ()Landroidx/compose/ui/platform/TextToolbar;
+	public final fun handleDragObserver (Z)Landroidx/compose/foundation/text/TextDragObserver;
+	public final fun isInTouchMode ()Z
+	public fun onAbandoned ()V
+	public fun onForgotten ()V
+	public final fun onRelease ()V
+	public fun onRemembered ()V
+	public final fun refreshSelectionAfterScroll ()V
+	public final fun refreshSelectionAtCurrentPosition ()V
+	public final fun selectAll ()V
+	public final fun selectLinkAtPositionIfAny-k-4lQ0M (J)Z
+	public final fun selectWordAtPositionIfNotAlreadySelected-k-4lQ0M (J)V
+	public final fun setContainerLayoutCoordinates (Landroidx/compose/ui/layout/LayoutCoordinates;)V
+	public final fun setFocusRequester (Landroidx/compose/ui/focus/FocusRequester;)V
+	public final fun setHapticFeedBack (Landroidx/compose/ui/hapticfeedback/HapticFeedback;)V
+	public final fun setHasFocus (Z)V
+	public final fun setInTouchMode (Z)V
+	public final fun setOnCopyHandler (Lkotlin/jvm/functions/Function1;)V
+	public final fun setOnSelectionChange (Lkotlin/jvm/functions/Function1;)V
+	public final fun setSelection (Landroidx/compose/foundation/text/selection/Selection;)V
+	public final fun setTextToolbar (Landroidx/compose/ui/platform/TextToolbar;)V
+	public final fun updateDragPosition-k-4lQ0M (J)V
+}
+
+public abstract interface class androidx/compose/foundation/text/selection/SelectionRegistrar {
+	public static final field Companion Landroidx/compose/foundation/text/selection/SelectionRegistrar$Companion;
+	public static final field InvalidSelectableId J
+	public abstract fun getSubselections ()Landroidx/collection/LongObjectMap;
+	public abstract fun nextSelectableId ()J
+	public abstract fun notifyPositionChange (J)V
+	public abstract fun notifySelectableChange (J)V
+	public abstract fun notifySelectionUpdate-njBpvok (Landroidx/compose/ui/layout/LayoutCoordinates;JJZLandroidx/compose/foundation/text/selection/SelectionAdjustment;Z)Z
+	public abstract fun notifySelectionUpdateEnd ()V
+	public abstract fun notifySelectionUpdateSelectAll (JZ)V
+	public abstract fun notifySelectionUpdateStart-ubNVwUQ (Landroidx/compose/ui/layout/LayoutCoordinates;JLandroidx/compose/foundation/text/selection/SelectionAdjustment;Z)V
+	public abstract fun subscribe (Landroidx/compose/foundation/text/selection/Selectable;)Landroidx/compose/foundation/text/selection/Selectable;
+	public abstract fun unsubscribe (Landroidx/compose/foundation/text/selection/Selectable;)V
+}
+
+public final class androidx/compose/foundation/text/selection/SelectionRegistrar$Companion {
+	public static final field InvalidSelectableId J
+}
+
+public final class androidx/compose/foundation/text/selection/SelectionRegistrarImpl : androidx/compose/foundation/text/selection/SelectionRegistrar {
+	public static final field $stable I
+	public static final field Companion Landroidx/compose/foundation/text/selection/SelectionRegistrarImpl$Companion;
+	public fun <init> ()V
+	public final fun getContainerHandlesDragEnd ()Z
+	public fun getSubselections ()Landroidx/collection/LongObjectMap;
+	public fun nextSelectableId ()J
+	public fun notifyPositionChange (J)V
+	public fun notifySelectableChange (J)V
+	public fun notifySelectionUpdate-njBpvok (Landroidx/compose/ui/layout/LayoutCoordinates;JJZLandroidx/compose/foundation/text/selection/SelectionAdjustment;Z)Z
+	public fun notifySelectionUpdateEnd ()V
+	public fun notifySelectionUpdateSelectAll (JZ)V
+	public fun notifySelectionUpdateStart-ubNVwUQ (Landroidx/compose/ui/layout/LayoutCoordinates;JLandroidx/compose/foundation/text/selection/SelectionAdjustment;Z)V
+	public final fun setContainerHandlesDragEnd (Z)V
+	public fun setSubselections (Landroidx/collection/LongObjectMap;)V
+	public final fun sort (Landroidx/compose/ui/layout/LayoutCoordinates;)Ljava/util/List;
+	public fun subscribe (Landroidx/compose/foundation/text/selection/Selectable;)Landroidx/compose/foundation/text/selection/Selectable;
+	public fun unsubscribe (Landroidx/compose/foundation/text/selection/Selectable;)V
+}
+
+public final class androidx/compose/foundation/text/selection/SelectionRegistrarImpl$Companion {
+	public final fun getSaver ()Landroidx/compose/runtime/saveable/Saver;
+}
+
+public final class androidx/compose/foundation/text/selection/SelectionRegistrarKt {
+	public static final fun getLocalSelectionRegistrar ()Landroidx/compose/runtime/ProvidableCompositionLocal;
 }
 
 public final class androidx/compose/foundation/text/selection/SelectionState {
@@ -2615,5 +2887,203 @@ public final class androidx/compose/foundation/window/ComposableSingletons$Windo
 
 public final class androidx/compose/foundation/window/WindowDraggableArea_desktopKt {
 	public static final fun WindowDraggableArea (Landroidx/compose/ui/window/WindowScope;Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+}
+
+public final class noria/foundation/ScrollAnchor {
+	public static final field $stable I
+	public synthetic fun <init> (Ljava/lang/Object;JLandroidx/compose/runtime/State;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun component2-RKDOV3M ()J
+	public final fun component3 ()Landroidx/compose/runtime/State;
+	public final fun copy-MOpCEqE (Ljava/lang/Object;JLandroidx/compose/runtime/State;)Lnoria/foundation/ScrollAnchor;
+	public static synthetic fun copy-MOpCEqE$default (Lnoria/foundation/ScrollAnchor;Ljava/lang/Object;JLandroidx/compose/runtime/State;ILjava/lang/Object;)Lnoria/foundation/ScrollAnchor;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCoordinates ()Landroidx/compose/runtime/State;
+	public final fun getId ()Ljava/lang/Object;
+	public final fun getPoint-RKDOV3M ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class noria/foundation/ScrollCoreKt {
+	public static final fun mouseWheelInput (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/gestures/ScrollConfig;Lnoria/foundation/ScrollHandlingPolicy;Lnoria/foundation/ScrollDirection;Lkotlin/jvm/functions/Function2;)Landroidx/compose/ui/Modifier;
+	public static synthetic fun mouseWheelInput$default (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/gestures/ScrollConfig;Lnoria/foundation/ScrollHandlingPolicy;Lnoria/foundation/ScrollDirection;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
+	public static final fun scrollPropagationBlocker (Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)V
+}
+
+public final class noria/foundation/ScrollDirection : java/lang/Enum {
+	public static final field BOTH Lnoria/foundation/ScrollDirection;
+	public static final field HORIZONTAL Lnoria/foundation/ScrollDirection;
+	public static final field VERTICAL Lnoria/foundation/ScrollDirection;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lnoria/foundation/ScrollDirection;
+	public static fun values ()[Lnoria/foundation/ScrollDirection;
+}
+
+public final class noria/foundation/ScrollHandlingPolicy : java/lang/Enum {
+	public static final field ALWAYS_HORIZONTAL Lnoria/foundation/ScrollHandlingPolicy;
+	public static final field ALWAYS_VERTICAL Lnoria/foundation/ScrollHandlingPolicy;
+	public static final field DEFAULT Lnoria/foundation/ScrollHandlingPolicy;
+	public final fun actualDelta-dBAh8RU (FF)J
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun isCompatibleWith (Lnoria/foundation/ScrollDirection;)Z
+	public static fun valueOf (Ljava/lang/String;)Lnoria/foundation/ScrollHandlingPolicy;
+	public static fun values ()[Lnoria/foundation/ScrollHandlingPolicy;
+}
+
+public abstract class noria/foundation/ScrollKind {
+	public static final field $stable I
+}
+
+public final class noria/foundation/ScrollKind$Center : noria/foundation/ScrollKind {
+	public static final field $stable I
+	public fun <init> (Z)V
+	public final fun component1 ()Z
+	public final fun copy (Z)Lnoria/foundation/ScrollKind$Center;
+	public static synthetic fun copy$default (Lnoria/foundation/ScrollKind$Center;ZILjava/lang/Object;)Lnoria/foundation/ScrollKind$Center;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCenterIfInViewport ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class noria/foundation/ScrollKind$Exact : noria/foundation/ScrollKind {
+	public static final field $stable I
+	public static final field INSTANCE Lnoria/foundation/ScrollKind$Exact;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class noria/foundation/ScrollKind$FixedPartOfTarget : noria/foundation/ScrollKind {
+	public static final field $stable I
+	public synthetic fun <init> (FLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-D9Ej5fM ()F
+	public final fun copy-0680j_4 (F)Lnoria/foundation/ScrollKind$FixedPartOfTarget;
+	public static synthetic fun copy-0680j_4$default (Lnoria/foundation/ScrollKind$FixedPartOfTarget;FILjava/lang/Object;)Lnoria/foundation/ScrollKind$FixedPartOfTarget;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPart-D9Ej5fM ()F
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class noria/foundation/ScrollKind$Gravitate : noria/foundation/ScrollKind {
+	public static final field $stable I
+	public static final field INSTANCE Lnoria/foundation/ScrollKind$Gravitate;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class noria/foundation/ScrollKind$None : noria/foundation/ScrollKind {
+	public static final field $stable I
+	public static final field INSTANCE Lnoria/foundation/ScrollKind$None;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class noria/foundation/ScrollKind$Padded : noria/foundation/ScrollKind {
+	public static final field $stable I
+	public synthetic fun <init> (FFLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-D9Ej5fM ()F
+	public final fun component2-D9Ej5fM ()F
+	public final fun copy-YgX7TsA (FF)Lnoria/foundation/ScrollKind$Padded;
+	public static synthetic fun copy-YgX7TsA$default (Lnoria/foundation/ScrollKind$Padded;FFILjava/lang/Object;)Lnoria/foundation/ScrollKind$Padded;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPadAfter-D9Ej5fM ()F
+	public final fun getPadBefore-D9Ej5fM ()F
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class noria/foundation/ScrollKind$Ratio : noria/foundation/ScrollKind {
+	public static final field $stable I
+	public fun <init> (ZF)V
+	public synthetic fun <init> (ZFILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()F
+	public final fun copy (ZF)Lnoria/foundation/ScrollKind$Ratio;
+	public static synthetic fun copy$default (Lnoria/foundation/ScrollKind$Ratio;ZFILjava/lang/Object;)Lnoria/foundation/ScrollKind$Ratio;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCenterIfInViewport ()Z
+	public final fun getRatio ()F
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class noria/foundation/ScrollKind$Smallest : noria/foundation/ScrollKind {
+	public static final field $stable I
+	public static final field INSTANCE Lnoria/foundation/ScrollKind$Smallest;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class noria/foundation/layout/AnchorPressPolicy : java/lang/Enum {
+	public static final field Ignore Lnoria/foundation/layout/AnchorPressPolicy;
+	public static final field Notify Lnoria/foundation/layout/AnchorPressPolicy;
+	public static final field NotifyAndConsume Lnoria/foundation/layout/AnchorPressPolicy;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lnoria/foundation/layout/AnchorPressPolicy;
+	public static fun values ()[Lnoria/foundation/layout/AnchorPressPolicy;
+}
+
+public final class noria/foundation/layout/LocalRepaintHighlightKt {
+	public static final fun getLocalRepaintHighlight ()Landroidx/compose/runtime/ProvidableCompositionLocal;
+}
+
+public final class noria/foundation/layout/OutsidePressKt {
+	public static final fun outsidePressListener (Landroidx/compose/runtime/ProvidableCompositionLocal;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lnoria/foundation/layout/AnchorPressPolicy;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;I)V
+}
+
+public final class noria/foundation/layout/OverlayHandle {
+	public static final field $stable I
+	public final fun getAnchorNode ()Landroidx/compose/ui/node/DelegatableNode;
+	public final fun getContentNode ()Landroidx/compose/ui/node/DelegatableNode;
+	public final fun setAnchorNode (Landroidx/compose/ui/node/DelegatableNode;)V
+	public final fun setContentNode (Landroidx/compose/ui/node/DelegatableNode;)V
+}
+
+public final class noria/foundation/layout/OverlayHostKt {
+	public static final fun OverlayHost (Landroidx/compose/runtime/ProvidableCompositionLocal;Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+	public static final fun OverlayHostKey ()Landroidx/compose/runtime/ProvidableCompositionLocal;
+	public static final fun getLocalOverlayLinkStrategy ()Landroidx/compose/runtime/ProvidableCompositionLocal;
+	public static final fun getMainOverlayHostKey ()Landroidx/compose/runtime/ProvidableCompositionLocal;
+	public static final fun roundToIntRect (Landroidx/compose/ui/geometry/Rect;)Landroidx/compose/ui/unit/IntRect;
+}
+
+public final class noria/foundation/layout/OverlayHostState {
+	public static final field $stable I
+	public fun <init> ()V
+}
+
+public final class noria/foundation/layout/OverlayKt {
+	public static final fun overlay (Landroidx/compose/ui/Modifier;Landroidx/compose/runtime/ProvidableCompositionLocal;ILkotlin/jvm/functions/Function3;)Landroidx/compose/ui/Modifier;
+	public static synthetic fun overlay$default (Landroidx/compose/ui/Modifier;Landroidx/compose/runtime/ProvidableCompositionLocal;ILkotlin/jvm/functions/Function3;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
+}
+
+public abstract interface class noria/foundation/layout/OverlayLinkStrategy {
+	public fun anchorModifier (Lnoria/foundation/layout/OverlayHandle;)Landroidx/compose/ui/Modifier;
+	public fun contentModifier (Lnoria/foundation/layout/OverlayHandle;)Landroidx/compose/ui/Modifier;
+}
+
+public abstract interface class noria/foundation/layout/OverlayScope : androidx/compose/foundation/layout/BoxScope {
+	public abstract fun alignByAnchor (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/Alignment$Horizontal;Landroidx/compose/ui/Alignment$Vertical;)Landroidx/compose/ui/Modifier;
+	public abstract fun alignByAnchor (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/Alignment$Vertical;Landroidx/compose/ui/Alignment$Horizontal;)Landroidx/compose/ui/Modifier;
+	public abstract fun alignByAnchor (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/Alignment;)Landroidx/compose/ui/Modifier;
+	public abstract fun alignInAnchor (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/Alignment;)Landroidx/compose/ui/Modifier;
+	public abstract fun getAnchorBounds ()Landroidx/compose/ui/unit/IntRect;
+}
+
+public final class noria/foundation/lazy/CullingLayoutKt {
+	public static final fun CullingLayout (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+	public static final fun extractLayoutCoordinates (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
+	public static final fun recursivelyClippedBounds (Landroidx/compose/ui/layout/LayoutCoordinates;)Landroidx/compose/ui/geometry/Rect;
+}
+
+public abstract interface class noria/foundation/lazy/CullingLayoutMeasureScope : androidx/compose/ui/layout/IntrinsicMeasureScope {
+	public abstract fun layout (IILjava/util/Map;Lkotlin/jvm/functions/Function3;)Landroidx/compose/ui/layout/MeasureResult;
+	public static synthetic fun layout$default (Lnoria/foundation/lazy/CullingLayoutMeasureScope;IILjava/util/Map;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)Landroidx/compose/ui/layout/MeasureResult;
 }
 
