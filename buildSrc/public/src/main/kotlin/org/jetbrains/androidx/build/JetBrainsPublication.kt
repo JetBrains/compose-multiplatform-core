@@ -29,6 +29,15 @@ object JetBrainsPublication {
     private const val JETBRAINS_COMPOSE_GROUP_PREFIX = "org.jetbrains.fleet.compose."
     private const val JETBRAINS_FORK_GROUP_PREFIX = "org.jetbrains.fleet.androidx."
 
+    // The groups this fork published under before it was renamed to `org.jetbrains.fleet.*`.
+    // Used only when *consuming*: upstream's redirect stubs still declare the pre-rename
+    // coordinates directly ("Keep direct references to fork versions to correctly resolve new
+    // redirections to Google's artifacts"), and without recognising them those artifacts land on
+    // the classpath next to the projects that replaced them — same packages, duplicate classes.
+    // Deliberately NOT used by `mavenGroupFor`: this fork publishes under the new groups only.
+    private const val LEGACY_JETBRAINS_COMPOSE_GROUP_PREFIX = "org.jetbrains.compose."
+    private const val LEGACY_JETBRAINS_FORK_GROUP_PREFIX = "org.jetbrains.androidx."
+
     val libraryToComponents = mapOf(
         "COMPOSE" to listOf(
             ComposeComponent(":compose:animation:animation"),
@@ -171,13 +180,20 @@ object JetBrainsPublication {
             ":compose:${group.removePrefix(JETBRAINS_COMPOSE_GROUP_PREFIX).replace(".", ":")}:$name"
         group.startsWith(JETBRAINS_FORK_GROUP_PREFIX) ->
             ":${group.removePrefix(JETBRAINS_FORK_GROUP_PREFIX).replace(".", ":")}:$name"
+        group.startsWith(LEGACY_JETBRAINS_COMPOSE_GROUP_PREFIX) ->
+            ":compose:${group.removePrefix(LEGACY_JETBRAINS_COMPOSE_GROUP_PREFIX).replace(".", ":")}:$name"
+        group.startsWith(LEGACY_JETBRAINS_FORK_GROUP_PREFIX) ->
+            ":${group.removePrefix(LEGACY_JETBRAINS_FORK_GROUP_PREFIX).replace(".", ":")}:$name"
         else -> null
     }
 
     fun isAndroidXGroup(group: String): Boolean = group.startsWith(ANDROIDX_GROUP_PREFIX)
 
     fun isJetBrainsForkGroup(group: String): Boolean =
-        group.startsWith(JETBRAINS_FORK_GROUP_PREFIX) || group.startsWith(JETBRAINS_COMPOSE_GROUP_PREFIX)
+        group.startsWith(JETBRAINS_FORK_GROUP_PREFIX) ||
+            group.startsWith(JETBRAINS_COMPOSE_GROUP_PREFIX) ||
+            group.startsWith(LEGACY_JETBRAINS_FORK_GROUP_PREFIX) ||
+            group.startsWith(LEGACY_JETBRAINS_COMPOSE_GROUP_PREFIX)
 
     val projectPathToComponent: Map<String, ComposeComponent> = libraryToComponents.values
         .flatten().associateBy { it.path }

@@ -23,6 +23,7 @@ import androidx.build.ProjectLayoutType.Companion.isJetBrainsFork
 import javax.inject.Inject
 import kotlinx.validation.ApiValidationExtension
 import kotlinx.validation.ExperimentalBCVApi
+import kotlinx.validation.WorkerAwareTaskBase
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.component.SoftwareComponentFactory
@@ -92,9 +93,51 @@ private fun enableBinaryCompatibilityValidator(project: Project) {
                 klib.enabled = true
                 nonPublicMarkers += NON_PUBLIC_MARKERS
             }
+            project.useJdk25CapableAsmForApiTasks()
         }
     }
 }
+
+/**
+ * Puts an ASM that understands Java 25 on the binary-compatibility-validator's worker classpath.
+ *
+ * BCV's API tasks read `inputDependencies` (not just this project's own classes) to resolve
+ * supertypes and annotations, and ten of the jars on that input are Java 25 bytecode (class file
+ * major 69): `kotlin-desktop-toolkit-common`, AOSP's `runtime-annotation-jvm`, and the fork's own
+ * published `*-fleet-SNAPSHOT` artifacts. The ASM bundled with BCV rejects major 69 outright, so
+ * every `*ApiDump` / `*ApiCheck` fails with "Unsupported class file major version 69". Filtering
+ * the offenders out is not an option — that list includes artifacts whose ABI genuinely matters.
+ *
+ * ASM 9.8 is the first release that knows Java 24 and 9.9 the first that knows Java 25; 9.10.1 is
+ * pinned here. It is prepended to `runtimeClasspath` and the bundled `asm-*` jars are dropped, so
+ * the worker resolves `org.objectweb.asm.ClassReader` from the newer one deterministically rather
+ * than depending on classpath order.
+ *
+ * Remove this once BCV ships a new enough ASM, or when the fork moves to Kotlin's built-in ABI
+ * validation (CMP-9512).
+ */
+private fun Project.useJdk25CapableAsmForApiTasks() {
+    // All five: the filter below drops every bundled `asm-*` jar, so each one BCV might use has
+    // to be supplied again at the newer version. Re-adding only `asm` and `asm-tree` leaves the
+    // worker without asm-commons/-util/-analysis, which does not crash — it silently produces an
+    // incomplete dump (public classes such as `ComposePanel` simply go missing).
+    val asm = configurations.detachedConfiguration(
+        dependencies.create("org.ow2.asm:asm:$ASM_VERSION_FOR_API_TASKS"),
+        dependencies.create("org.ow2.asm:asm-tree:$ASM_VERSION_FOR_API_TASKS"),
+        dependencies.create("org.ow2.asm:asm-commons:$ASM_VERSION_FOR_API_TASKS"),
+        dependencies.create("org.ow2.asm:asm-util:$ASM_VERSION_FOR_API_TASKS"),
+        dependencies.create("org.ow2.asm:asm-analysis:$ASM_VERSION_FOR_API_TASKS"),
+    )
+    tasks.withType(WorkerAwareTaskBase::class.java).configureEach { task ->
+        val withoutBundledAsm = task.runtimeClasspath.filter { file ->
+            !file.name.startsWith("asm-") && file.name != "asm.jar"
+        }
+        task.runtimeClasspath.setFrom(asm, withoutBundledAsm)
+    }
+}
+
+private const val ASM_VERSION_FOR_API_TASKS = "9.10.1"
+
 
 // Not ideal to have a list instead of a pattern to match but this is all the API supports right now
 // https://github.com/Kotlin/binary-compatibility-validator/issues/280

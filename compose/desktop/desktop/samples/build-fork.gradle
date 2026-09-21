@@ -43,6 +43,12 @@ kotlin {
                 }
             }
         }
+
+        jvmTest {
+            dependencies {
+                implementation(libs.kotlinTest)
+            }
+        }
     }
 }
 
@@ -113,16 +119,6 @@ tasks.register('runMouseClicks', JavaExec) {
                     compilation.runtimeDependencyFiles
 }
 
-tasks.register('runVsync', JavaExec) {
-    dependsOn(":compose:desktop:desktop:jvmJar")
-    mainClass = "androidx.compose.desktop.examples.vsynctest.Main_jvmKt"
-    jvmArgs("-verbose:gc")
-    def compilation = kotlin.jvm().compilations["main"]
-    classpath =
-            compilation.output.allOutputs +
-                    compilation.runtimeDependencyFiles
-}
-
 tasks.register('runWindowApi', JavaExec) {
     dependsOn(":compose:desktop:desktop:jvmJar")
     mainClass = "androidx.compose.desktop.examples.windowapi.Main_jvmKt"
@@ -162,6 +158,178 @@ tasks.register('runFont', JavaExec) {
     classpath =
             compilation.output.allOutputs +
                     compilation.runtimeDependencyFiles
+}
+
+// Intrinsic-remeasure livelock reproduction (see examples/livelockrepro/Main.jvm.kt):
+// prints a VERDICT: LIVELOCK/QUIET line and exits on its own.
+[runLivelockRepro: false, runLivelockReproIsolated: true].each { taskName, isolationEnabled ->
+    tasks.register(taskName, JavaExec) {
+        dependsOn(":compose:desktop:desktop:jvmJar", "downloadAndUnpackKdt")
+        mainClass = "androidx.compose.desktop.examples.livelockrepro.Main_jvmKt"
+        def logFolder = layout.buildDirectory.file("test-logs")
+        def kdtExtractedDir = layout.buildDirectory.dir("kdt-extracted")
+        jvmArgs("-ea",
+                "--add-opens",
+                "java.desktop/sun.font=ALL-UNNAMED",
+                "--enable-preview",
+                "--enable-native-access=ALL-UNNAMED",
+                "-Dkdt.native.log.path=${logFolder.get().asFile.absolutePath}",
+                "-Dkdt.library.folder.path=${kdtExtractedDir.get().asFile.absolutePath}",
+                "-Dkdt.debug=false",
+                "-Dcompose.frameIsolation=${isolationEnabled}")
+        def compilation = kotlin.jvm().compilations["main"]
+        classpath =
+                compilation.output.allOutputs +
+                        compilation.runtimeDependencyFiles
+    }
+}
+
+tasks.register('runVsync', JavaExec) {
+    dependsOn(":compose:desktop:desktop:jvmJar")
+    mainClass = "androidx.compose.desktop.examples.vsynctest.Main_jvmKt"
+    environment("MTL_HUD_ENABLED", "1")
+    jvmArgs("-ea", "-verbose:gc")
+    def compilation = kotlin.jvm().compilations["main"]
+    classpath =
+            compilation.output.allOutputs +
+                    compilation.runtimeDependencyFiles
+}
+
+tasks.register('runVsyncKdt', JavaExec) {
+    dependsOn(":compose:desktop:desktop:jvmJar", "downloadAndUnpackKdt")
+    mainClass = "androidx.compose.desktop.examples.kdt.Main_jvmKt"
+    def logFolder = layout.buildDirectory.file("test-logs")
+    def kdtExtractedDir = layout.buildDirectory.dir("kdt-extracted")
+    environment("MTL_HUD_ENABLED", "1")
+    jvmArgs("-ea",
+            "--add-opens",
+            "java.desktop/sun.font=ALL-UNNAMED",
+            "--enable-preview",
+            "--enable-native-access=ALL-UNNAMED",
+            "-Dkdt.native.log.path=${logFolder.get().asFile.absolutePath}",
+            "-Dkdt.library.folder.path=${kdtExtractedDir.get().asFile.absolutePath}",
+            "-Dkdt.debug=false")
+    def compilation = kotlin.jvm().compilations["main"]
+    classpath =
+            compilation.output.allOutputs +
+                    compilation.runtimeDependencyFiles
+}
+
+// Recovery from an exception thrown out of a composable, see
+// androidx.compose.desktop.examples.errorrecovery.Main.jvm.kt.
+tasks.register('runErrorRecovery', JavaExec) {
+    dependsOn(":compose:desktop:desktop:jvmJar", "downloadAndUnpackKdt")
+    mainClass = "androidx.compose.desktop.examples.errorrecovery.Main_jvmKt"
+    def logFolder = layout.buildDirectory.file("test-logs")
+    def kdtExtractedDir = layout.buildDirectory.dir("kdt-extracted")
+    jvmArgs("-ea",
+            "--add-opens",
+            "java.desktop/sun.font=ALL-UNNAMED",
+            "--enable-preview",
+            "--enable-native-access=ALL-UNNAMED",
+            "-Dkdt.native.log.path=${logFolder.get().asFile.absolutePath}",
+            "-Dkdt.library.folder.path=${kdtExtractedDir.get().asFile.absolutePath}",
+            "-Dkdt.debug=false")
+    def compilation = kotlin.jvm().compilations["main"]
+    classpath =
+            compilation.output.allOutputs +
+                    compilation.runtimeDependencyFiles
+}
+
+// The frame-consistency sample: the same app with frame isolation off and on. Off, the
+// tear counters climb continuously; on ("Isolated"), every counter must stay at zero.
+// Pass -Pframeconsistency.windows=2 for two windows with scene-local sources each.
+// See androidx.compose.desktop.examples.frameconsistency.FrameConsistencyApp.
+[runFrameConsistency: false, runFrameConsistencyIsolated: true].each { taskName, isolationEnabled ->
+    tasks.register(taskName, JavaExec) {
+        dependsOn(":compose:desktop:desktop:jvmJar", "downloadAndUnpackKdt")
+        mainClass = "androidx.compose.desktop.examples.frameconsistency.Main_jvmKt"
+        def logFolder = layout.buildDirectory.file("test-logs")
+        def kdtExtractedDir = layout.buildDirectory.dir("kdt-extracted")
+        environment("MTL_HUD_ENABLED", "1")
+        jvmArgs("-ea",
+                "--add-opens",
+                "java.desktop/sun.font=ALL-UNNAMED",
+                "--enable-preview",
+                "--enable-native-access=ALL-UNNAMED",
+                "-Dkdt.native.log.path=${logFolder.get().asFile.absolutePath}",
+                "-Dkdt.library.folder.path=${kdtExtractedDir.get().asFile.absolutePath}",
+                "-Dkdt.debug=false",
+                "-Dcompose.frameIsolation=${isolationEnabled}")
+        def windowCount = providers.gradleProperty("frameconsistency.windows").getOrNull()
+        if (windowCount != null) {
+            jvmArgs("-Dframeconsistency.windows=${windowCount}")
+        }
+        def compilation = kotlin.jvm().compilations["main"]
+        classpath =
+                compilation.output.allOutputs +
+                        compilation.runtimeDependencyFiles
+    }
+}
+
+// Selects the kotlin-desktop-toolkit native library variant(s) for the host OS/arch.
+def kdtArch = {
+    def osArch = System.getProperty("os.arch").toLowerCase(Locale.ROOT)
+    (osArch in ["aarch64", "arm64"]) ? "arm64" : "x64"
+}()
+
+def kdtPlatforms = {
+    def osName = System.getProperty("os.name").toLowerCase(Locale.ROOT)
+    if (osName.contains("mac") || osName.contains("darwin")) {
+        ["macos-${kdtArch}"]
+    } else if (osName.contains("win")) {
+        ["windows-${kdtArch}"]
+    } else {
+        // On Linux the Wayland and GTK backends are picked at runtime, so make
+        // the natives for both available.
+        ["linux-${kdtArch}", "gtk-linux-${kdtArch}"]
+    }
+}()
+
+def kdtLibByPlatform = [
+        "macos-arm64"    : libs.kotlinDesktopToolkitMacOsArm64,
+        "macos-x64"      : libs.kotlinDesktopToolkitMacOsX64,
+        "windows-arm64"  : libs.kotlinDesktopToolkitWindowsArm64,
+        "windows-x64"    : libs.kotlinDesktopToolkitWindowsX64,
+        "linux-arm64"    : libs.kotlinDesktopToolkitLinuxArm64,
+        "linux-x64"      : libs.kotlinDesktopToolkitLinuxX64,
+        "gtk-linux-arm64": libs.kotlinDesktopToolkitGtkLinuxArm64,
+        "gtk-linux-x64"  : libs.kotlinDesktopToolkitGtkLinuxX64,
+]
+
+configurations {
+    kdtDownload {
+        canBeConsumed = false
+        canBeResolved = true
+    }
+}
+
+dependencies {
+    kdtPlatforms.each { platform ->
+        def lib = kdtLibByPlatform[platform]
+        if (lib == null) {
+            throw new GradleException("No kotlin-desktop-toolkit native library available for platform '${platform}'")
+        }
+        kdtDownload(lib)
+    }
+}
+
+tasks.register('downloadAndUnpackKdt', Sync) {
+    description = "Downloads the kotlin-desktop-toolkit native library jar(s) for the host OS/arch and unpacks their contents"
+    group = "build"
+
+    // Multiple jars (e.g. linux + gtk-linux) may share META-INF entries.
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    def kdtFiles = configurations.kdtDownload
+    from {
+        def jars = kdtFiles.files
+        if (jars.isEmpty()) {
+            throw new GradleException("Could not resolve any kotlin-desktop-toolkit native library jars for platforms ${kdtPlatforms}")
+        }
+        jars.collect { zipTree(it) }
+    }
+    into(layout.buildDirectory.dir("kdt-extracted"))
 }
 
 tasks.register('run') {
