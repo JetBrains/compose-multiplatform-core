@@ -393,8 +393,11 @@ internal class CupertinoOverscrollEffect(
                 } else {
                     tween(
                         durationMillis = easeOutReturnDurationMillis(overscrollDp),
-                        easing = Easing { fraction -> 1f - exp(-6.625f * fraction) }
-                    ) }
+                        easing = Easing { fraction ->
+                            1f - exp(-EASE_OUT_RETURN_DECAY_RATE * fraction)
+                        }
+                    )
+                }
             }
 
             CupertinoSpringAnimationReason.POSSIBLE_SPRING_IN_THE_END -> {
@@ -482,6 +485,7 @@ internal class CupertinoOverscrollEffect(
         private const val EASE_OUT_RETURN_FULL_DURATION_DP = 120f
         private const val EASE_OUT_RETURN_MIN_DURATION_MILLIS = 200f
         private const val EASE_OUT_RETURN_MAX_DURATION_MILLIS = 400f
+        private const val EASE_OUT_RETURN_DECAY_RATE = 6.625f
     }
 }
 
