@@ -117,6 +117,7 @@ internal class UIKitTextInputService(
                 coroutineScope = coroutineScope,
                 focusedViewsList = focusedViewsList,
                 focusManager = focusManager,
+                currentFrameSnapshot = currentFrameSnapshot,
             )
         } else {
             ComposeTextInputConnection(
@@ -125,7 +126,8 @@ internal class UIKitTextInputService(
                 coroutineScope = coroutineScope,
                 viewConfiguration = viewConfiguration,
                 focusedViewsList = focusedViewsList,
-                focusManager = focusManager
+                focusManager = focusManager,
+                currentFrameSnapshot = currentFrameSnapshot,
             )
         }
         currentInputConnection?.start(request)
@@ -173,7 +175,8 @@ internal class UIKitTextInputService(
                         view = view,
                         coroutineScope = coroutineScope,
                         viewConfiguration = viewConfiguration,
-                        focusManager = focusManager
+                        focusManager = focusManager,
+                        currentFrameSnapshot = currentFrameSnapshot,
                     )
                     currentInputConnection?.start(
                         object : PlatformTextInputMethodRequest {
@@ -194,6 +197,9 @@ internal class UIKitTextInputService(
                             override val textFieldRectInRoot: () -> Rect? get() = { null }
                             override val textClippingRectInRoot: () -> Rect? get() = { null }
                             override val unclippedTextOffsetInRoot: () -> Offset? get() = { null }
+                            override val firstTextRangeAndRectInRoot: (TextRange) -> Pair<TextRange, Rect>
+                                get() = { it to Rect.Zero }
+                            override val characterIndexAtOffsetInRoot: (Offset) -> Int get() = { 0 }
                             override val editText: (block: TextEditingScope.() -> Unit) -> Unit get() = { _ -> }
                         }
                     )

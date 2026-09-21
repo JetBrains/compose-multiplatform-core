@@ -16,6 +16,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.SystemTheme
+import androidx.compose.ui.desktop.asSkikoSystemTheme
 import androidx.compose.ui.desktop.ApplicationSession
 import androidx.compose.ui.desktop.ClipboardItemsEntry
 import androidx.compose.ui.desktop.InteractiveMoveInitiator
@@ -59,6 +60,8 @@ import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
+import androidx.compose.ui.platform.FrameRecomposer
+import androidx.compose.ui.scene.SingleComposeSceneRenderingScope
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.PointerEventResult
@@ -180,6 +183,9 @@ private constructor(
         // lives on, inside the sibling that just registered itself in application.windows.
         isDisposed = true
         composeScene.close()
+        // The host frame driver goes with the scene it feeds: it owns a Job, the
+        // Recomposer and a GlobalSnapshotManager registration.
+        frameRecomposer.close()
         architectureComponentsOwner.setLifecycleState(Lifecycle.State.DESTROYED)
 
         return newWindow
@@ -441,15 +447,29 @@ private constructor(
             override fun onLayoutChange(semanticsOwner: SemanticsOwner, semanticsNodeId: Int) = Unit
         }
 
+    // The host frame driver: upstream split the scene into phases, so the recomposer and
+    // frame clock now live outside the scene and the host advances them per frame.
+    private val frameRecomposer = FrameRecomposer(
+        coroutineContext = session.coroutineScope.coroutineContext + KdtMainDispatcher.INSTANCE,
+        invalidate = { isFrameRequested = true },
+    )
+
+    // Upstream's migration shim: bundles performFrame + measureAndLayout + draw into one
+    // render() and folds the scene's layout/draw invalidations into a single scheduled frame.
+    private val sceneRenderingScope = SingleComposeSceneRenderingScope(
+        scheduleFrame = { isFrameRequested = true },
+    )
+
     private val composeScene: ComposeScene =
         CanvasLayersComposeScene(
+            frameRecomposer = frameRecomposer,
             density = density,
             layoutDirection = layoutDirection,
             size = contentSizeInPx(),
-            coroutineContext = session.coroutineScope.coroutineContext + KdtMainDispatcher.INSTANCE,
             platformContext = platformContext,
             dataSourceContext = session.dataSourceContext,
-            invalidate = { isFrameRequested = true },
+            invalidateLayout = sceneRenderingScope::onSceneInvalidation,
+            invalidateDraw = sceneRenderingScope::onSceneInvalidation,
         )
 
     // The registration init block lives at the BOTTOM of the class; see there.
@@ -584,7 +604,9 @@ private constructor(
         val height = maxOf(1, density.run { contentSize.height.roundToPx() })
         return Surface.makeRasterN32Premul(width, height).use { surface ->
             surface.canvas.clear(Color.TRANSPARENT)
-            composeScene.render(surface.canvas.asComposeCanvas(), System.nanoTime())
+            with(sceneRenderingScope) {
+                composeScene.render(frameRecomposer, surface.canvas.asComposeCanvas(), System.nanoTime())
+            }
             surface.makeImageSnapshot().toComposeImageBitmap()
         }
     }
@@ -599,6 +621,9 @@ private constructor(
         isDisposed = true
         application.windows.remove(id)
         composeScene.close()
+        // The host frame driver goes with the scene it feeds: it owns a Job, the
+        // Recomposer and a GlobalSnapshotManager registration.
+        frameRecomposer.close()
         architectureComponentsOwner.setLifecycleState(Lifecycle.State.DESTROYED)
         // dispose() removes this window from application.windows BEFORE the native WindowClosed
         // arrives, so the onClosed() drain below is unreachable on this path — in-flight file
@@ -908,7 +933,7 @@ private constructor(
                 )
                 .use { surface ->
                     surface.canvas.clear(Color.TRANSPARENT)
-                    composeScene.render(surface.canvas.asComposeCanvas(), now)
+                    with(sceneRenderingScope) { composeScene.render(frameRecomposer, surface.canvas.asComposeCanvas(), now) }
                     surface.flushAndSubmit()
                 }
             return
@@ -933,7 +958,7 @@ private constructor(
                     )!!
                     .use { surface ->
                         surface.canvas.clear(Color.TRANSPARENT)
-                        composeScene.render(surface.canvas.asComposeCanvas(), now)
+                        with(sceneRenderingScope) { composeScene.render(frameRecomposer, surface.canvas.asComposeCanvas(), now) }
                         surface.flushAndSubmit()
                     }
             }
@@ -961,7 +986,7 @@ private constructor(
             }
         composeScene.setContent {
             CompositionLocalProvider(
-                LocalSystemTheme provides systemTheme,
+                LocalSystemTheme provides systemTheme.asSkikoSystemTheme(),
                 LocalTextToolbar provides remember { DefaultTextToolbar() },
                 LocalWindow provides this,
                 LocalTextInputSessionOwner provides linuxTextInputSessionOwner,

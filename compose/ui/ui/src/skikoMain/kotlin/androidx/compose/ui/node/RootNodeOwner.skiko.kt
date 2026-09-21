@@ -25,6 +25,7 @@ import androidx.compose.runtime.retain.ForgetfulRetainedValuesStore
 import androidx.compose.runtime.retain.RetainedValuesStore
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.internal.SnapshotHolder
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -126,12 +127,19 @@ internal class RootNodeOwner(
     private val inputHandler: ComposeSceneInputHandler,
     private val invalidate: () -> Unit,
     onChangedExecutor: (callback: () -> Unit) -> Unit,
+    /**
+     * The owning scene's frame domain, threaded through so this owner's [SnapshotStateObserver]
+     * registers as a *domain-scoped* apply observer rather than a global one. Null when frame
+     * isolation is off, which is the stock behaviour.
+     */
+    deliveryDomain: SnapshotHolder? = null,
 ) {
     val focusOwner: FocusOwner get() = _owner.focusOwner
     val dragAndDropOwner = DragAndDropOwner(platformContext.dragAndDropManager)
 
     private val rootSemanticsNode = EmptySemanticsModifier()
-    private val snapshotObserver = OwnerSnapshotObserver(onChangedExecutor)
+    private val snapshotObserver =
+        OwnerSnapshotObserver(deliveryDomain = deliveryDomain, onChangedExecutor = onChangedExecutor)
     private val graphicsContext = SkiaGraphicsContext(platformContext.measureDrawLayerBounds)
     private val coroutineScope =
         CoroutineScope(coroutineContext + Job(parent = coroutineContext[Job]))

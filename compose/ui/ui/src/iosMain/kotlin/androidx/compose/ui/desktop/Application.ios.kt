@@ -37,6 +37,9 @@ internal actual fun currentApplication(): Application {
     error(NOT_SUPPORTED_MESSAGE)
 }
 
+// The desktop Application API has no uikit implementation, so one is never active here.
+internal actual fun hasActiveComposeApplication(): Boolean = false
+
 internal actual fun defaultUriHandler(): UriHandler {
     error(NOT_SUPPORTED_MESSAGE)
 }

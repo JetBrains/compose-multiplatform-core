@@ -19,6 +19,7 @@
 
 package androidx.compose.ui.desktop.windows
 
+import androidx.compose.ui.desktop.asSkikoSystemTheme
 import androidx.compose.ui.desktop.KdtMainDispatcher
 import androidx.annotation.MainThread
 import androidx.compose.runtime.Composable
@@ -77,6 +78,9 @@ import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
+import androidx.compose.ui.platform.FrameRecomposer
+import androidx.compose.ui.scene.hasInvalidations
+import androidx.compose.ui.scene.SingleComposeSceneRenderingScope
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.withFrameTransaction
@@ -583,15 +587,29 @@ class WindowsWindow internal constructor(
         }
     }
 
+    // The host frame driver: upstream split the scene into phases, so the recomposer and
+    // frame clock now live outside the scene and the host advances them per frame.
+    private val frameRecomposer = FrameRecomposer(
+        coroutineContext = session.coroutineScope.coroutineContext +
+            KdtMainDispatcher.INSTANCE,
+        invalidate = { frameDispatcher.scheduleFrame() },
+    )
+
+    // Upstream's migration shim: bundles performFrame + measureAndLayout + draw into one
+    // render() and folds the scene's layout/draw invalidations into a single scheduled frame.
+    private val sceneRenderingScope = SingleComposeSceneRenderingScope(
+        scheduleFrame = { frameDispatcher.scheduleFrame() },
+    )
+
     internal val composeScene: ComposeScene = CanvasLayersComposeScene(
+        frameRecomposer = frameRecomposer,
         density = density,
         layoutDirection = layoutDirection,
         size = contentSizeInPx(),
-        coroutineContext = session.coroutineScope.coroutineContext +
-            KdtMainDispatcher.INSTANCE,
         platformContext = platformContext,
         dataSourceContext = session.dataSourceContext,
-        invalidate = { frameDispatcher.scheduleFrame() },
+        invalidateLayout = sceneRenderingScope::onSceneInvalidation,
+        invalidateDraw = sceneRenderingScope::onSceneInvalidation,
     )
 
     private val windowsDragAndDropManager = WindowsDragAndDropManager(
@@ -810,6 +828,9 @@ class WindowsWindow internal constructor(
             // wrapper, the sibling re-registers its own drop target on it (Noria's ordering).
             dragDropManager.revokeDropTarget()
             composeScene.close()
+            // The host frame driver goes with the scene it feeds: it owns a Job, the
+            // Recomposer and a GlobalSnapshotManager registration.
+            frameRecomposer.close()
             architectureComponentsOwner.setLifecycleState(Lifecycle.State.DESTROYED)
             // When the native window is being handed off for reuse, keep its HWND, lightweight id,
             // and angle view context alive; disposeReusableNativeWindowResources owns their teardown.
@@ -839,7 +860,9 @@ class WindowsWindow internal constructor(
         if (!sceneContentInstalled) return false
         val physicalSize = latestPhysicalSize ?: return false
         angleViewContext.renderFrame(physicalSize, pixelGeometry) {
-            composeScene.render(asComposeCanvas(), System.nanoTime())
+            with(sceneRenderingScope) {
+                composeScene.render(frameRecomposer, asComposeCanvas(), System.nanoTime())
+            }
         }
         return true
     }
@@ -1109,7 +1132,7 @@ class WindowsWindow internal constructor(
         }
         composeScene.setContent {
             CompositionLocalProvider(
-                LocalSystemTheme provides systemTheme,
+                LocalSystemTheme provides systemTheme.asSkikoSystemTheme(),
                 LocalTextToolbar provides remember { DefaultTextToolbar() },
                 LocalWindow provides this,
                 LocalTextInputSessionOwner provides windowsTextInputSessionOwner,

@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.text.input
 
+import androidx.compose.runtime.DataSource
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import kotlinx.coroutines.CoroutineScope
@@ -26,14 +27,16 @@ internal class SelectionContainerConnection(
     view: UIView,
     coroutineScope: CoroutineScope,
     viewConfiguration: ViewConfiguration,
-    focusManager: () -> ComposeSceneFocusManager?
+    focusManager: () -> ComposeSceneFocusManager?,
+    currentFrameSnapshot: () -> DataSource.Snapshot? = { null },
 ) : ComposeTextInputConnection(
     {},
     view,
     coroutineScope,
     viewConfiguration,
     null,
-    focusManager
+    focusManager,
+    currentFrameSnapshot,
 ) {
     override fun showKeyboard() {
         // Does nothing. Keyboard is not needed for the selection container

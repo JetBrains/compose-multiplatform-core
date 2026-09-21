@@ -18,6 +18,7 @@
 
 package androidx.compose.ui.desktop.macos
 
+import androidx.compose.ui.desktop.asSkikoSystemTheme
 import androidx.compose.ui.desktop.KdtMainDispatcher
 import androidx.annotation.MainThread
 import androidx.compose.runtime.Composable
@@ -64,6 +65,8 @@ import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
+import androidx.compose.ui.platform.FrameRecomposer
+import androidx.compose.ui.scene.SingleComposeSceneRenderingScope
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.withFrameTransaction
 import androidx.compose.ui.semantics.SemanticsOwner
@@ -515,15 +518,29 @@ class MacOsWindow internal constructor(
     // internal (not private): MacOsApplication's DragAndDropHandler source callbacks need to open
     // a frame transaction on this window's scene around AIR-6419-sensitive user-callback dispatch
     // (see onDragSourceSessionEndedAt in MacOsApplication.kt).
+    // The host frame driver: upstream split the scene into phases, so the recomposer and
+    // frame clock now live outside the scene and the host advances them per frame.
+    private val frameRecomposer = FrameRecomposer(
+        coroutineContext = session.coroutineScope.coroutineContext +
+            KdtMainDispatcher.INSTANCE,
+        invalidate = { isFrameRequested = true },
+    )
+
+    // Upstream's migration shim: bundles performFrame + measureAndLayout + draw into one
+    // render() and folds the scene's layout/draw invalidations into a single scheduled frame.
+    private val sceneRenderingScope = SingleComposeSceneRenderingScope(
+        scheduleFrame = { isFrameRequested = true },
+    )
+
     internal val composeScene: ComposeScene = CanvasLayersComposeScene(
+        frameRecomposer = frameRecomposer,
         density = density,
         layoutDirection = layoutDirection,
         size = contentSizeInPx(),
-        coroutineContext = session.coroutineScope.coroutineContext +
-            KdtMainDispatcher.INSTANCE,
         platformContext = this@MacOsWindow.platformContext,
         dataSourceContext = session.dataSourceContext,
-        invalidate = { isFrameRequested = true },
+        invalidateLayout = sceneRenderingScope::onSceneInvalidation,
+        invalidateDraw = sceneRenderingScope::onSceneInvalidation,
     )
 
     private val macOsTextInputSessionOwner =
@@ -732,6 +749,9 @@ class MacOsWindow internal constructor(
             displayLink = null
             application.windows -= id
             composeScene.close()
+            // The host frame driver goes with the scene it feeds: it owns a Job, the
+            // Recomposer and a GlobalSnapshotManager registration.
+            frameRecomposer.close()
             architectureComponentsOwner.setLifecycleState(Lifecycle.State.DESTROYED)
             if (!application.reusableNativeWindowResources.peekContains(id)) {
                 nativeWindow.close()
@@ -781,7 +801,7 @@ class MacOsWindow internal constructor(
         val canvas = pictureRecorder.beginRecording(bounds)
         canvas.clear(org.jetbrains.skia.Color.TRANSPARENT)
         val now = System.nanoTime()
-        composeScene.render(canvas.asComposeCanvas(), now)
+        with(sceneRenderingScope) { composeScene.render(frameRecomposer, canvas.asComposeCanvas(), now) }
         return PresentablePicture(pictureRecorder.finishRecordingAsPicture(), size)
     }
 
@@ -1028,7 +1048,7 @@ class MacOsWindow internal constructor(
         }
         composeScene.setContent {
             CompositionLocalProvider(
-                LocalSystemTheme provides systemTheme,
+                LocalSystemTheme provides systemTheme.asSkikoSystemTheme(),
                 LocalTextToolbar provides remember { DefaultTextToolbar() },
                 LocalWindow provides this,
                 LocalTextInputSessionOwner provides macOsTextInputSessionOwner,

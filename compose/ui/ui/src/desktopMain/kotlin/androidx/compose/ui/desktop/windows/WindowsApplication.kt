@@ -267,7 +267,7 @@ object WindowsApplication : Application, Clipboard by WindowsClipboard() {
             LocalUriHandler provides this@WindowsApplication,
             LocalClipboard provides this@WindowsApplication,
             LocalFontFamilyResolver provides fontFamilyResolver,
-            LocalHapticFeedback provides remember { DefaultHapticFeedback() },
+            LocalHapticFeedback provides DefaultHapticFeedback,
         ) {
             content()
         }

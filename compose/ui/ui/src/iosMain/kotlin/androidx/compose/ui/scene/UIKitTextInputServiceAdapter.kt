@@ -144,6 +144,10 @@ internal class UIKitTextInputServiceAdapter(
                 get() = { this@UIKitTextInputServiceAdapter.textClippingRectInRoot }
             override val unclippedTextOffsetInRoot: () -> Offset?
                 get() = { this@UIKitTextInputServiceAdapter.unclippedTextOffsetInRoot }
+            override val firstTextRangeAndRectInRoot: (TextRange) -> Pair<TextRange, Rect>
+                get() = unsupportedOnUIKit("firstTextRangeAndRectInRoot")
+            override val characterIndexAtOffsetInRoot: (Offset) -> Int
+                get() = unsupportedOnUIKit("characterIndexAtOffsetInRoot")
             override val editText: (block: TextEditingScope.() -> Unit) -> Unit
                 get() = { block ->
                     val commands = mutableListOf<EditCommand>()
@@ -166,6 +170,14 @@ private fun TextEditingScope(commands: MutableList<EditCommand>) = object : Text
         commands.add(SetSelectionCommand(start, end))
     }
 
+    override fun setSelection(selection: TextRange) {
+        commands.add(SetSelectionCommand(selection.start, selection.end))
+    }
+
+    override fun setComposition(composition: TextRange) {
+        commands.add(SetComposingRegionCommand(composition.start, composition.end))
+    }
+
     override fun commitText(text: CharSequence, newCursorPosition: Int) {
         commands.add(CommitTextCommand(text.toString(), newCursorPosition))
     }
@@ -182,3 +194,14 @@ private fun TextEditingScope(commands: MutableList<EditCommand>) = object : Text
         commands.add(FinishComposingTextCommand())
     }
 }
+
+/**
+ * These request members back macOS's `firstRectForCharacterRange` / `characterIndexForPoint`.
+ * UIKit drives IME through its own protocol and never reaches them, so fail loudly instead of
+ * inventing a geometry that would silently mis-place candidate windows.
+ */
+private fun unsupportedOnUIKit(member: String): Nothing =
+    throw UnsupportedOperationException(
+        "$member is not supported on the UIKit text input request; " +
+            "UIKit drives IME through UITextInput instead."
+    )

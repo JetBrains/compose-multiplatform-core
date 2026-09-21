@@ -43,7 +43,6 @@ import androidx.compose.ui.util.setUndecoratedSafely
 import androidx.compose.ui.util.windowListenerRef
 import androidx.compose.ui.util.windowStateListenerRef
 import androidx.compose.ui.window.FrameWindowScope
-import androidx.compose.ui.window.UndecoratedWindowDecoration
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowLocationTracker
 import androidx.compose.ui.window.WindowPlacement
@@ -109,7 +108,7 @@ fun SwingWindow(
     visible: Boolean = true,
     title: String = "Untitled",
     icon: Painter? = null,
-    decoration: WindowDecoration = WindowDecoration.SystemDefault,
+    decoration: WindowDecoration = WindowDecoration.Decorated,
     transparent: Boolean = false,
     resizable: Boolean = true,
     enabled: Boolean = true,
@@ -234,7 +233,7 @@ fun SwingWindow(
             updater.update {
                 set(currentTitle, window::setTitle)
                 set(currentIcon, window::setIcon)
-                set(currentDecoration is UndecoratedWindowDecoration, window::setUndecoratedSafely)
+                set(currentDecoration is WindowDecoration.Undecorated, window::setUndecoratedSafely)
                 set(currentTransparent, window::isTransparent::set)
                 set(currentResizable, window::setResizable)
                 set(currentEnabled, window::setEnabled)

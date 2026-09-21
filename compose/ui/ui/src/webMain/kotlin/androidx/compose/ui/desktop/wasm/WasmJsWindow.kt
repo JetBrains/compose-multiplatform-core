@@ -60,10 +60,13 @@ import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WebTextInputService
 import androidx.compose.ui.platform.WebTextToolbar
 import androidx.compose.ui.platform.WindowInfoImpl
+import androidx.compose.ui.desktop.asComposeSystemTheme
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
 import androidx.compose.ui.scene.ComposeScenePointer
+import androidx.compose.ui.scene.SingleComposeSceneRenderingScope
 import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -95,6 +98,7 @@ import kotlin.js.toList
 import kotlin.math.absoluteValue
 import kotlinx.browser.document
 import kotlinx.browser.window as browserWindow
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.io.files.Path
 import androidx.compose.ui.desktop.LocalWindow
@@ -221,18 +225,36 @@ class WasmJsWindow internal constructor(
             override fun textInputSessionOwner() = this@WasmJsWindow.textInputSessionOwner
         }
 
+    // The host frame driver: upstream split the scene into phases, so the recomposer and frame
+    // clock live outside the scene and the host advances them per frame. Dispatchers.Main is the
+    // web main queue, the same one the sibling ComposeWindowInternal uses; the session's own
+    // context carries no interceptor of its own.
+    private val frameRecomposer = FrameRecomposer(
+        coroutineContext = session.coroutineScope.coroutineContext + Dispatchers.Main,
+        invalidate = { skiaLayer.needRender() },
+    )
+
+    // Upstream's migration shim: bundles performFrame + measureAndLayout + draw into one render()
+    // and folds the scene's layout and draw invalidations into a single scheduled frame.
+    private val sceneRenderingScope = SingleComposeSceneRenderingScope { skiaLayer.needRender() }
+
     private val skiaLayer: SkiaLayer = SkiaLayer().apply {
         renderDelegate = SkikoRenderDelegate { canvas, _, _, nanoTime ->
-            scene.render(canvas.asComposeCanvas(), nanoTime)
+            with(sceneRenderingScope) {
+                scene.render(frameRecomposer, canvas.asComposeCanvas(), nanoTime)
+            }
         }
     }
 
     private val scene: ComposeScene = CanvasLayersComposeScene(
+        frameRecomposer = frameRecomposer,
         density = density,
-        coroutineContext = session.coroutineScope.coroutineContext,
         platformContext = platformContext,
         dataSourceContext = session.dataSourceContext,
-        invalidate = skiaLayer::needRender,
+        // The web host has one redraw path, so both invalidations fold into the same scheduled
+        // frame, as on every other single-surface backend.
+        invalidateLayout = sceneRenderingScope::onSceneInvalidation,
+        invalidateDraw = sceneRenderingScope::onSceneInvalidation,
     )
 
     init {
@@ -529,7 +551,7 @@ class WasmJsWindow internal constructor(
     ) {}
 
     override val systemTheme: SystemTheme
-        get() = systemThemeObserver.currentSystemTheme.value
+        get() = systemThemeObserver.currentSystemTheme.value.asComposeSystemTheme()
 
     override fun requestSystemTheme(systemTheme: SystemTheme?) {}
 
@@ -606,6 +628,9 @@ class WasmJsWindow internal constructor(
         architectureComponentsOwner.setLifecycleState(Lifecycle.State.DESTROYED)
         textInputSessionOwner.dispose()
         scene.close()
+        // The host frame driver goes with the scene it feeds: it owns a Job, the Recomposer and a
+        // GlobalSnapshotManager registration.
+        frameRecomposer.close()
         skiaLayer.detach()
         systemThemeObserver.dispose()
         canvasEvents.dispose()

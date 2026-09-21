@@ -33,6 +33,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.SystemTheme
+import androidx.compose.ui.desktop.asSkikoSystemTheme
 import androidx.compose.ui.desktop.ApplicationSession
 import androidx.compose.ui.desktop.LightweightWindowId
 import androidx.compose.ui.desktop.LocalTextInputSessionOwner
@@ -54,6 +55,8 @@ import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
+import androidx.compose.ui.platform.FrameRecomposer
+import androidx.compose.ui.scene.SingleComposeSceneRenderingScope
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.withFrameTransaction
@@ -290,15 +293,29 @@ class HeadlessWindow internal constructor(
      */
     private var contentState = mutableStateOf<(@Composable WindowScope.() -> Unit)?>(null)
 
+    // The host frame driver: upstream split the scene into phases, so the recomposer and
+    // frame clock now live outside the scene and the host advances them per frame.
+    private val frameRecomposer = FrameRecomposer(
+        coroutineContext = session.coroutineScope.coroutineContext +
+            HeadlessMainDispatcher(application.eventLoop), // NON-immediate, like every backend,
+        invalidate = { isFrameRequestedState = true },
+    )
+
+    // Upstream's migration shim: bundles performFrame + measureAndLayout + draw into one
+    // render() and folds the scene's layout/draw invalidations into a single scheduled frame.
+    private val sceneRenderingScope = SingleComposeSceneRenderingScope(
+        scheduleFrame = { isFrameRequestedState = true },
+    )
+
     private val composeScene: ComposeScene = CanvasLayersComposeScene(
+        frameRecomposer = frameRecomposer,
         density = density,
         layoutDirection = LayoutDirection.Ltr,
         size = contentSizeInPx(),
-        coroutineContext = session.coroutineScope.coroutineContext +
-            HeadlessMainDispatcher(application.eventLoop), // NON-immediate, like every backend
         platformContext = platformContext,
         dataSourceContext = session.dataSourceContext,
-        invalidate = { isFrameRequestedState = true },
+        invalidateLayout = sceneRenderingScope::onSceneInvalidation,
+        invalidateDraw = sceneRenderingScope::onSceneInvalidation,
     )
 
     // ----- Rendering into an in-memory raster surface -----
@@ -337,7 +354,7 @@ class HeadlessWindow internal constructor(
         isFrameRequestedState = false
         val target = surfaceForCurrentSize()
         target.canvas.clear(Color.TRANSPARENT)
-        composeScene.render(target.canvas.asComposeCanvas(), nanoTime)
+        with(sceneRenderingScope) { composeScene.render(frameRecomposer, target.canvas.asComposeCanvas(), nanoTime) }
     }
 
     override fun captureScreenshot(): ImageBitmap {
@@ -396,6 +413,9 @@ class HeadlessWindow internal constructor(
         if (isDisposed) return
         isDisposed = true
         composeScene.close()
+        // The host frame driver goes with the scene it feeds: it owns a Job, the
+        // Recomposer and a GlobalSnapshotManager registration.
+        frameRecomposer.close()
         surface?.close()
         surface = null
         application.removeWindow(id)
@@ -420,7 +440,7 @@ class HeadlessWindow internal constructor(
         }
         composeScene.setContent {
             CompositionLocalProvider(
-                LocalSystemTheme provides systemTheme,
+                LocalSystemTheme provides systemTheme.asSkikoSystemTheme(),
                 LocalWindow provides this,
                 LocalTextInputSessionOwner provides this@HeadlessWindow,
             ) {
