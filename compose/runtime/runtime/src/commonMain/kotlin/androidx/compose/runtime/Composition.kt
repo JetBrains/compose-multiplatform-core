@@ -520,6 +520,34 @@ internal class CompositionImpl(
     internal var parentDrivenRecomposeGate: (() -> Boolean)? = null
 
     /**
+     * The composition that created this one, or `null` when a [Recomposer] created it.
+     *
+     * Walks the composition context chain upward. This composition points at its parent
+     * context, and that context answers with its own composition. A root composition's parent is
+     * the [Recomposer], which answers `null`, so the walk stops there.
+     */
+    internal val parentComposition: CompositionImpl?
+        get() = parent.composition as? CompositionImpl
+
+    /**
+     * How many consecutive frames the deferral propagation re-armed this composition.
+     *
+     * A frame without a deferral ends the run of re-arms. Composing by either path also
+     * resets the count to zero. [composeContent] and [recompose] do that reset. See
+     * `Recomposer.reArmDeferred`.
+     *
+     * [composeContent] and [recompose] write this count inside the composition's lock.
+     * `reArmDeferred` writes it with no lock, so the cap is best-effort.
+     */
+    internal var consecutiveDeferralReArms: Int = 0
+
+    /**
+     * The frame ordinal of the last deferral. `reArmDeferred` compares it against the current
+     * frame to test adjacency.
+     */
+    internal var lastDeferralFrame: Long = -1L
+
+    /**
      * A set of remember observers that were potentially abandoned between [composeContent] or
      * [recompose] and [applyChanges]. When inserting new content any newly remembered
      * [RememberObserver]s are added to this set and then removed as [RememberObserver.onRemembered]
@@ -916,6 +944,9 @@ internal class CompositionImpl(
         //   to halt and return
         guardChanges {
             synchronized(lock) {
+                // This composition refreshes the content, so the deferral run ends here.
+                // See Recomposer.reArmDeferred.
+                consecutiveDeferralReArms = 0
                 drainPendingModificationsForCompositionLocked()
                 guardInvalidationsLocked { invalidations ->
                     composer.composeContent(invalidations, content, shouldPause)
@@ -1196,6 +1227,9 @@ internal class CompositionImpl(
                 pendingPausedComposition.pausableApplier.markRecomposePending()
                 return false
             }
+            // This composition refreshes the content, so the deferral run ends here.
+            // See Recomposer.reArmDeferred.
+            consecutiveDeferralReArms = 0
             drainPendingModificationsForCompositionLocked()
             guardChanges {
                 guardInvalidationsLocked { invalidations ->

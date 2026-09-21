@@ -610,6 +610,17 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             val modifiedValuesSet = modifiedValues.wrapIntoSet()
             val alreadyComposed = mutableScatterSetOf<ControlledComposition>()
             val skippedParentDriven = mutableScatterSetOf<ControlledComposition>()
+            // Wave 2 defers every composition in this set. A composition's own gate causes
+            // the deferral, or the propagation from an enclosing composition causes it.
+            // hasDeferredAncestor below reads this set.
+            val deferredParentDriven = mutableScatterSetOf<ControlledComposition>()
+            // The propagation defers every composition in this list. The re-arm covers only
+            // these. A gate schedules its own refresh, so a gate-deferred composition needs
+            // no re-arm.
+            val toReArmAfterDeferral = mutableListOf<ControlledComposition>()
+            // Counts frames so reArmDeferred can test adjacency. It ticks once per frame, at the
+            // top of the frame body, so every composition's re-arm test uses the same value.
+            var deferralFrameOrdinal = 0L
 
             fun enqueueForRecompose(composition: ControlledComposition) {
                 if (composition !in toRecompose && composition !in skippedParentDriven) {
@@ -621,13 +632,18 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             // in two phases. The recompose pass DEFERS all of them: a standalone
             // recomposition would pair the captures baked into their content lambda by the
             // parent with fresh direct reads, and whether the parent is about to refresh
-            // those captures is not knowable yet - the refreshed content (e.g. a
-            // SubcomposeLayout measure policy capturing new values) is only installed, and
-            // the host's measure only marked pending, by applyChanges. AFTER the apply stage
+            // those captures is not knowable yet. applyChanges installs the refreshed
+            // content, for example a new SubcomposeLayout measure policy that captures new
+            // values, and then marks the host's measure pending. AFTER the apply stage
             // the gate is exact: gated compositions are left to the pending measure pass
             // (which recomposes them with fresh captures), and the rest recompose in a
-            // second wave - same frame, with captures that are provably current (had any
-            // value they capture changed, the parent's body or measure would be dirty).
+            // second wave. The second wave runs in the same frame, with captures that are
+            // provably current. A changed value would have already made the parent's body
+            // or measure dirty.
+            // A composition with a gate installed also waits when an enclosing one is
+            // deferred. The re-arm keeps its invalidation alive. Wave 2 sees only
+            // compositions with a gate installed. A nested composition with no gate
+            // recomposes in wave 1, before wave 2 evaluates any ancestor.
             fun isParentDrivenComposition(composition: ControlledComposition): Boolean =
                 (composition as? CompositionImpl)?.parentDrivenRecomposeGate != null
 
@@ -635,6 +651,22 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                 composition: ControlledComposition
             ): Boolean =
                 (composition as? CompositionImpl)?.parentDrivenRecomposeGate?.invoke() == true
+
+            // An enclosing composition's recompose and apply is what REMOVES a nested composition.
+            // So a nested composition must not recompose while its remover is still due. Wave 2
+            // visits compositions in the order in which each initial composition FINISHED, which
+            // addKnownCompositionLocked records. A parent finishes before the sub-composition that
+            // it hosts. So every ancestor is already classified when this runs. The known
+            // exception is a composition that recordFailedCompositionLocked removed and a later
+            // setContent re-added at the end of the list.
+            fun hasDeferredAncestor(composition: ControlledComposition): Boolean {
+                var enclosing = (composition as? CompositionImpl)?.parentComposition
+                while (enclosing != null) {
+                    if (enclosing in deferredParentDriven) return true
+                    enclosing = enclosing.parentComposition
+                }
+                return false
+            }
 
             fun clearRecompositionState() {
                 synchronized(stateLock) {
@@ -658,6 +690,8 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
 
                     modifiedValues.clear()
                     skippedParentDriven.clear()
+                    deferredParentDriven.clear()
+                    toReArmAfterDeferral.clear()
 
                     alreadyComposed.forEach {
                         it.abandonChanges()
@@ -688,6 +722,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                 // each time, but because we've installed the broadcastFrameClock as the scope
                 // clock above for user code to locate.
                 parentFrameClock.withFrameNanos { frameTime ->
+                    deferralFrameOrdinal++
                     // Dispatch MonotonicFrameClock frames first; this may produce new
                     // composer invalidations that we must handle during the same frame.
                     if (hasBroadcastFrameClockAwaiters) {
@@ -833,60 +868,90 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                                     }
                                 }
 
-                                // The second wave for the deferred parent-driven
-                                // compositions: the apply stage above has installed any
-                                // refreshed parent content and marked the affected hosts'
-                                // measure pending, so the gate is exact here (see the note
-                                // at its declaration). Still-gated compositions are left to
-                                // the pending measure pass; the rest recompose and apply
-                                // now, within the same frame.
+                                // The second wave is for the deferred parent-driven
+                                // compositions. The apply stage above installed any refreshed
+                                // parent content. It also marked the affected hosts' measure
+                                // pending. The gate is now exact. See the note at its
+                                // declaration. A composition the gate still defers is left to
+                                // the pending measure pass. A composition with a gate
+                                // installed also waits when an enclosing one is deferred. The
+                                // re-arm keeps its invalidation alive. The rest recompose and
+                                // apply now, in the same frame.
                                 if (skippedParentDriven.isNotEmpty()) {
                                     // Recompose the deferred parent-driven compositions in ANCESTRY
-                                    // (creation) order. An outer composition's recompose+apply can
-                                    // DISPOSE a nested parent-driven composition - e.g. a gate
-                                    // scope that drops an overlay/dialog whose content
-                                    // subcomposition is itself pending - and that removal must run
-                                    // BEFORE the nested composition is recomposed. In an unordered
-                                    // pass the nested subcomposition could recompose against
-                                    // just-deleted state ahead of its remover. _knownCompositions
-                                    // is in creation order and a subcomposition is always created
-                                    // after its parent, so filtering it yields outer-before-inner;
-                                    // the isDisposed guard below then skips any nested composition
-                                    // an earlier apply already removed.
+                                    // order. An outer composition's recompose+apply can DISPOSE a
+                                    // nested parent-driven composition. A gate scope that drops an
+                                    // overlay or a dialog whose content subcomposition is itself
+                                    // pending is one example. That removal must run BEFORE the
+                                    // nested composition is recomposed. In an unordered pass the
+                                    // nested subcomposition could recompose against just-deleted
+                                    // state ahead of its remover. _knownCompositions records the
+                                    // order in which each initial composition FINISHED, and a
+                                    // parent finishes before the sub-composition that it hosts, so
+                                    // filtering it yields outer-before-inner. Two paths invert
+                                    // that. A composition that recordFailedCompositionLocked
+                                    // removed and a later setContent re-added sits at the end. The
+                                    // defensive tail below appends in hash order. The isDisposed
+                                    // guard below then skips any nested composition an earlier
+                                    // apply already removed.
                                     val orderedParentDriven = synchronized(stateLock) {
                                         val out = mutableListOf<ControlledComposition>()
                                         knownCompositionsLocked().fastForEach {
                                             if (it in skippedParentDriven) out += it
                                         }
                                         // Defensive: include any pending one not in the known list.
+                                        // This tail is a last resort. It appends in hash order, so
+                                        // it can put an ancestor after its descendant.
                                         skippedParentDriven.forEach { if (it !in out) out += it }
                                         out
                                     }
+                                    deferredParentDriven.clear()
+                                    toReArmAfterDeferral.clear()
                                     orderedParentDriven.fastForEach { composition ->
+                                        if (composition.isDisposed) return@fastForEach
+                                        if (shouldSkipParentDrivenComposition(composition)) {
+                                            // The host's pending measure re-runs the content, so
+                                            // this invalidation is consumed by design.
+                                            deferredParentDriven.add(composition)
+                                            return@fastForEach
+                                        }
                                         if (
-                                            !composition.isDisposed &&
-                                            !shouldSkipParentDrivenComposition(composition)
+                                            deferredParentDriven.isNotEmpty() &&
+                                                hasDeferredAncestor(composition)
                                         ) {
-                                            val needsApply =
-                                                try {
-                                                    performRecompose(composition, modifiedValues)
-                                                } catch (e: Throwable) {
-                                                    processCompositionError(e, recoverable = true)
-                                                    clearRecompositionState()
-                                                    return@withFrameNanos
-                                                }
-                                            if (needsApply != null) {
-                                                toComplete.add(needsApply)
-                                                try {
-                                                    needsApply.applyChanges()
-                                                    needsApply.applyLateChanges()
-                                                } catch (e: Throwable) {
-                                                    processCompositionError(e)
-                                                    clearRecompositionState()
-                                                    return@withFrameNanos
-                                                }
+                                            // Nothing refreshes this one, so its invalidation has
+                                            // to survive the pass.
+                                            deferredParentDriven.add(composition)
+                                            toReArmAfterDeferral += composition
+                                            return@fastForEach
+                                        }
+                                        val needsApply =
+                                            try {
+                                                performRecompose(composition, modifiedValues)
+                                            } catch (e: Throwable) {
+                                                processCompositionError(e, recoverable = true)
+                                                clearRecompositionState()
+                                                return@withFrameNanos
                                             }
-                                            alreadyComposed.add(composition)
+                                        if (needsApply != null) {
+                                            toComplete.add(needsApply)
+                                            try {
+                                                needsApply.applyChanges()
+                                                needsApply.applyLateChanges()
+                                            } catch (e: Throwable) {
+                                                processCompositionError(e)
+                                                clearRecompositionState()
+                                                return@withFrameNanos
+                                            }
+                                        }
+                                        alreadyComposed.add(composition)
+                                    }
+
+                                    // Re-arm the invalidation of each composition that the
+                                    // propagation deferred above.
+                                    toReArmAfterDeferral.fastForEach { composition ->
+                                        if (!composition.isDisposed) {
+                                            reArmDeferred(composition, deferralFrameOrdinal)
                                         }
                                     }
                                 }
@@ -914,6 +979,8 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                         }
                         alreadyComposed.clear()
                         skippedParentDriven.clear()
+                        deferredParentDriven.clear()
+                        toReArmAfterDeferral.clear()
                         modifiedValues.clear()
                         compositionsRemoved = null
                     }
@@ -1452,6 +1519,46 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
         else null
     }
 
+    /**
+     * Re-arms the invalidation of a composition that the deferral propagation deferred.
+     *
+     * Such a composition has no refresh of its own scheduled. Its own gate said it was ready. So
+     * the pass must re-arm it. If it does not, the content stays stale until an unrelated change
+     * arrives.
+     *
+     * Never call this for a composition that its own gate deferred. Its host's pending measure
+     * re-runs the content. Re-arming it would ask for a new frame every frame.
+     *
+     * [CompositionImpl.consecutiveDeferralReArms] bounds a runaway. It counts the consecutive
+     * frames that deferred this composition. Composing by either path resets the count to zero.
+     * [CompositionImpl.composeContent] and [CompositionImpl.recompose] do that reset. So the cap
+     * trips only after 60 consecutive deferrals that no refresh interrupted. An enclosing
+     * composition that holds a nested one back that long points at a layout fault.
+     *
+     * Past the cap this stops re-arming. A later change delivers only when a subscribed scope
+     * reports it and the propagation does not defer this composition again in that frame.
+     * Otherwise the content stays stale until the host's next measure refreshes it.
+     *
+     * The trip is silent on purpose. The one logger in `commonMain` is `logError`. It carries the
+     * error severity, and it demands a [Throwable]. A "this looks like a loop" hint is neither an
+     * error nor a throw. A made-up [Throwable] would be worse than silence. So a reader sees
+     * stale content with no signal.
+     *
+     * The ordinal counts processed frames, not wall-clock time. So an idle period does not break
+     * an unbroken run. Only a processed frame that does not defer this composition breaks it.
+     */
+    private fun reArmDeferred(composition: ControlledComposition, frameOrdinal: Long) {
+        val impl = composition as? CompositionImpl ?: return
+        // Count only an unbroken run of frames. A frame in which the propagation did not defer
+        // this composition ends the run. Noria tests the same adjacency against its epoch.
+        impl.consecutiveDeferralReArms =
+            if (impl.lastDeferralFrame == frameOrdinal - 1) impl.consecutiveDeferralReArms + 1
+            else 1
+        impl.lastDeferralFrame = frameOrdinal
+        if (impl.consecutiveDeferralReArms > MAX_CONSECUTIVE_DEFERRAL_RE_ARMS) return
+        invalidate(composition)
+    }
+
     @OptIn(ExperimentalComposeApi::class)
     private fun performInsertValues(
         references: List<MovableContentStateReference>,
@@ -1957,6 +2064,16 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
 /** Sentinel used by [ProduceFrameSignal] */
 private val ProduceAnotherFrame = Any()
 private val FramePending = Any()
+
+/**
+ * The deferral propagation can re-arm a composition in this many consecutive frames. Past that
+ * count, treat it as a loop between the composition and an enclosing composition whose host never
+ * settles. A legitimate chain needs as many frames as it is deep. So a generous cap catches a
+ * runaway without touching a converging deferral. Noria uses the same count for the same class of
+ * loop. Its behavior past the cap differs, because it keeps delivering and suppresses only the
+ * frame request.
+ */
+private const val MAX_CONSECUTIVE_DEFERRAL_RE_ARMS: Int = 60
 
 /**
  * Multiple producer, single consumer conflated signal that tells concurrent composition when it
