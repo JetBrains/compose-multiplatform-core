@@ -23,6 +23,7 @@ package androidx.compose.ui.platform.a11y
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -114,6 +115,29 @@ class CfWA11YTest : OnCanvasTests {
             button1.click()
             assertEquals(it + 1, clickCounter)
         }
+    }
+
+    @Test
+    fun mergeDescendantsMergesText() = runApplicationTest {
+        createComposeWindow {
+            Column(
+                modifier = Modifier
+                    .testTag("mergedItem")
+                    .semantics(mergeDescendants = true) {}
+            ) {
+                Row { Text("Hello") }
+                Row { Text("World") }
+            }
+        }
+
+        awaitA11YChanges()
+
+        val mergedNode = assertNotNull(
+            getShadowRoot().getElementById("mergedItem") as? HTMLElement,
+            "The merged semantics node must be present in the a11y tree",
+        )
+        assertEquals("Hello\nWorld", mergedNode.textContent)
+        assertEquals(0, mergedNode.children.length, "Merged text must not expose child nodes")
     }
 
     @Test
