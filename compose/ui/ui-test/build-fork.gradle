@@ -111,6 +111,8 @@ androidXMultiplatform {
             dependsOn(skikoTest)
             dependencies {
                 implementation(libs.skikoAwtRuntime)
+                implementation(libs.skikoGaneshAwtRuntime)
+                implementation(libs.skikoRenderingAwtRuntime)
             }
         }
 
