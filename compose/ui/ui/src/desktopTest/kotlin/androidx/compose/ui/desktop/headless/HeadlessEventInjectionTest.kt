@@ -17,6 +17,7 @@
 package androidx.compose.ui.desktop.headless
 
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.ComposeUIDispatcher
 import androidx.compose.ui.HeadlessTest
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.desktop.ApplicationSession
@@ -32,6 +33,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -54,7 +56,7 @@ class HeadlessEventInjectionTest {
     }
 
     @Test
-    fun injectedClickReachesComposeContent() {
+    fun injectedClickReachesComposeContent() = runBlocking {
         val received = mutableListOf<PointerEventType>()
         val window = app.createWindow(ApplicationSession(scope)) { }
         window.setContent(onPreviewKeyEvent = { false }, onKeyEvent = { false }) {
@@ -64,7 +66,9 @@ class HeadlessEventInjectionTest {
                     .onPointerEvent(PointerEventType.Release) { received += PointerEventType.Release },
             )
         }
-        window.render(nanoTime = 1L) // layout must exist before hit testing
+        // On the Compose UI thread: see HeadlessWindowTest for why a caller-thread render
+        // races the isolation catch-up frame.
+        withContext(ComposeUIDispatcher) { window.render(nanoTime = 1L) } // layout before hit testing
         app.sendMouseEnter(window.id, DpOffset(5.dp, 5.dp))
         app.sendMouseDown(window.id, PointerButton.Primary, DpOffset(5.dp, 5.dp))
         app.sendMouseUp(window.id, PointerButton.Primary, DpOffset(5.dp, 5.dp))
@@ -73,10 +77,10 @@ class HeadlessEventInjectionTest {
     }
 
     @Test
-    fun reuseWindowRebindsTheCloseRequestHandler() {
+    fun reuseWindowRebindsTheCloseRequestHandler() = runBlocking {
         val reasons = mutableListOf<String>()
         val window = app.createWindow(ApplicationSession(scope)) { reasons += "first:$it" }
-        window.render(nanoTime = 1L)
+        withContext(ComposeUIDispatcher) { window.render(nanoTime = 1L) }
         val reused = app.reuseWindow(window.id, ApplicationSession(scope)) { reasons += "second:$it" }
         assertTrue(reused === window)
         window.requestClose(WindowCloseRequestReason.UserRequest)

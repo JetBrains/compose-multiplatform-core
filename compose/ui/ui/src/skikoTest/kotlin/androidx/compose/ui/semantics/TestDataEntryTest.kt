@@ -103,7 +103,7 @@ class TestDataEntryTest {
     }
 
     @Test
-    fun `entries on one chain are published together, outermost first`() = withScene(
+    fun `entries on one chain are published together with the outermost first`() = withScene(
         content = { Box(Modifier.size(10.dp).payload("k", "a").payload("k2", "b")) }
     ) { owners ->
         assertEquals(
@@ -195,7 +195,7 @@ class TestDataEntryTest {
     }
 
     @Test
-    fun `values are carried by reference, not copied`() {
+    fun `values are carried by reference and not copied`() {
         val live = object {}
         withScene(content = { Box(Modifier.size(10.dp).payload("live", live)) }) { owners ->
             val found = owners.flattened().filterIsInstance<Payload>().single().value
