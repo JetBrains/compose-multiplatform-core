@@ -18,6 +18,7 @@ package org.jetbrains.androidx.build
 
 import java.io.File
 import org.gradle.api.Project
+import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
@@ -27,7 +28,7 @@ import org.jetbrains.kotlin.konan.target.KonanTarget
 fun Project.configureSwiftCompatibilityLinking() {
     plugins.withId("org.jetbrains.kotlin.multiplatform") {
         extensions
-            .getByType(KotlinMultiplatformExtension::class.java)
+            .getByType<KotlinMultiplatformExtension>()
             .targets
             .withType<KotlinNativeTarget>()
             .all { target -> target.configureSwiftCompatibilityLinking() }
