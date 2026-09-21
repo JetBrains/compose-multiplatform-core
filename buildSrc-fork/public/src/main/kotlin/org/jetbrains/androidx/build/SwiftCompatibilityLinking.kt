@@ -18,8 +18,10 @@ package org.jetbrains.androidx.build
 
 import java.io.File
 import org.gradle.api.Project
+import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBinary
 import org.jetbrains.kotlin.konan.target.KonanTarget
 
 fun Project.configureSwiftCompatibilityLinking() {
@@ -53,7 +55,7 @@ private fun KotlinNativeTarget.configureSwiftCompatibilityLinking() {
                     .absolutePath
             }
 
-    binaries.all { binary ->
+    binaries.withType<NativeBinary>().all { binary ->
         binary.linkTaskProvider.configure { linkTask ->
             linkTask.toolOptions.freeCompilerArgs.addAll(
                 swiftCompatibilityLibraryDir.map { libraryDir ->
