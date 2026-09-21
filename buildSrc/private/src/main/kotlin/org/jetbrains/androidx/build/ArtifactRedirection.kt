@@ -17,7 +17,6 @@
 package org.jetbrains.androidx.build
 
 import androidx.build.AndroidXMultiplatformExtension
-import androidx.build.lazyReadFile
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
@@ -27,86 +26,6 @@ import org.gradle.api.tasks.compile.JavaCompile
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.tomlj.Toml
 import org.tomlj.TomlTable
-
-/**
- * Loads the artifact-redirection version registry from `redirectversions.toml` (repo root) once per
- * build. The `[versions]` table maps a redirect-coordinate group prefix (e.g. `androidx.compose`) to
- * the `androidx.*` version the redirect points at.
- */
-abstract class RedirectVersionsService : BuildService<RedirectVersionsService.Parameters> {
-    interface Parameters : BuildServiceParameters {
-        var tomlFileName: String
-        var tomlFileContents: Provider<String>
-    }
-
-    /** Group prefix (e.g. `androidx.compose`) -> redirect version. */
-    val versions: Map<String, String> by lazy {
-        val parsed = Toml.parse(parameters.tomlFileContents.get())
-        if (parsed.hasErrors()) {
-            val issues =
-                parsed.errors().joinToString("\n") {
-                    "${parameters.tomlFileName}:${it.position()}: ${it.message}"
-                }
-            throw GradleException("${parameters.tomlFileName} has issues.\n$issues")
-        }
-        val table: TomlTable =
-            parsed.getTable("versions")
-                ?: throw GradleException("${parameters.tomlFileName} is missing the [versions] table")
-        // tomlj treats a dotted String key as a path lookup, so the dotted group keys must be read
-        // via the literal single-segment List overload (getString(listOf(key))), not getString(key).
-        table.keySet().associateWith { key ->
-            table.getString(listOf(key))
-                ?: throw GradleException(
-                    "${parameters.tomlFileName}: [versions] \"$key\" must be a string",
-                )
-        }
-    }
-
-    companion object {
-        private const val TOML_FILE_NAME = "redirectversions.toml"
-
-        internal fun registerOrGet(project: Project): Provider<RedirectVersionsService> {
-            val contents = project.lazyReadFile(TOML_FILE_NAME)
-            return project.gradle.sharedServices.registerIfAbsent(
-                "redirectVersionsService",
-                RedirectVersionsService::class.java,
-            ) { spec ->
-                spec.parameters.tomlFileName = TOML_FILE_NAME
-                spec.parameters.tomlFileContents = contents
-            }
-        }
-    }
-}
-
-/**
- * Project extension exposing the `redirectversions.toml` registry to build scripts (Groovy):
- * `project.redirectVersions.get("androidx.navigationevent")`. The key is an **exact** group; a
- * missing key fails fast — a build script asking for a redirect version it never registered is
- * always a bug.
- */
-open class RedirectVersions(private val service: Provider<RedirectVersionsService>) {
-    /** Exact lookup; throws if [key] is not in `redirectversions.toml`. */
-    fun get(key: String): String =
-        service.get().versions[key]
-            ?: throw GradleException(
-                "[artifactRedirection] no redirect version for '$key'. Add it to the [versions] " +
-                    "table in redirectversions.toml.",
-            )
-
-    /** Exact lookup; null if [key] is not registered. */
-    fun findOrNull(key: String): String? = service.get().versions[key]
-}
-
-/** Registers the [RedirectVersions] extension (`project.redirectVersions`). Idempotent. */
-internal fun Project.registerRedirectVersionsExtension() {
-    if (extensions.findByName("redirectVersions") == null) {
-        extensions.create(
-            "redirectVersions",
-            RedirectVersions::class.java,
-            RedirectVersionsService.registerOrGet(this),
-        )
-    }
-}
 
 /**
  * Look up an artifact-redirection version hierarchically from the most specific
