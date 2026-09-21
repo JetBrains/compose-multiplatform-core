@@ -90,6 +90,8 @@ androidXMultiplatform {
             dependsOn(nonAndroidMain)
             dependencies {
                 api(libs.skiko)
+                api(libs.skikoRendering)
+                api(libs.skikoGanesh)
             }
         }
         skikoTest.dependsOn(nonAndroidTest)
@@ -115,6 +117,8 @@ androidXMultiplatform {
                 implementation(libs.junit)
                 implementation(libs.truth)
                 implementation(libs.skikoAwtRuntime)
+                implementation(libs.skikoGaneshAwtRuntime)
+                implementation(libs.skikoRenderingAwtRuntime)
                 implementation(project(":compose:ui:ui-test-junit4"))
             }
         }

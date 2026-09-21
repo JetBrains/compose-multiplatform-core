@@ -73,6 +73,8 @@ androidXMultiplatform {
             dependsOn(nonAndroidExcludingWebMain)
             dependencies {
                 runtimeOnly(libs.skikoAwtRuntime)
+                runtimeOnly(libs.skikoGaneshAwtRuntime)
+                runtimeOnly(libs.skikoRenderingAwtRuntime)
             }
         }
 
@@ -80,6 +82,8 @@ androidXMultiplatform {
             dependsOn(nonAndroidTest)
             dependencies {
                 implementation(libs.skikoAwtRuntime)
+                implementation(libs.skikoGaneshAwtRuntime)
+                implementation(libs.skikoRenderingAwtRuntime)
                 implementation(libs.junit)
                 implementation(libs.truth)
                 implementation(project(":internal-testutils-fonts"))
