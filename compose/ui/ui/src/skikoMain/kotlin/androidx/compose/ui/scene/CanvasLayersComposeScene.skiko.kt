@@ -134,6 +134,7 @@ private class CanvasLayersComposeSceneImpl(
         inputHandler = inputHandler,
         invalidate = ::invokeInvalidationCallbacks,
         onChangedExecutor = frameRecomposer::runOnComposeThread,
+            deliveryDomain = frameSnapshotHolder,
     )
 
     override val composeSceneContext: ComposeSceneContext
@@ -257,6 +258,7 @@ private class CanvasLayersComposeSceneImpl(
     ): Composition = mainOwner.setContent(
         parent = parentCompositionContext,
         getCompositionLocalContext = { compositionLocalContext },
+        frameDomain = frameSnapshotHolder,
         content = content,
     )
 
@@ -592,6 +594,7 @@ private class CanvasLayersComposeSceneImpl(
             inputHandler = inputHandler,
             invalidate = ::invokeInvalidationCallbacks,
             onChangedExecutor = frameRecomposer::runOnComposeThread,
+            deliveryDomain = frameSnapshotHolder,
         )
         private var composition: Composition? = null
         private var outsidePointerCallback: ((
