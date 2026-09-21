@@ -172,7 +172,7 @@ internal class WindowTestScope(
 
     fun launchTestWindowV2Application(
         state: androidx.compose.ui.window.v2.WindowState = androidx.compose.ui.window.v2.WindowState(),
-        decoration: WindowDecoration = WindowDecoration.SystemDefault,
+        decoration: WindowDecoration = WindowDecoration.Decorated,
         content: @Composable FrameWindowScope.() -> Unit
     ) = launchTestApplication {
         Window(

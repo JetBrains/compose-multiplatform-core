@@ -16,10 +16,13 @@
 
 package androidx.compose.ui.scene
 
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.StandardTestDispatcher
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.DataSource
 import androidx.compose.runtime.DataSourceContext
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.SchedulingDispatcherFixture
@@ -216,10 +219,13 @@ class DataSourceReadScopeSceneTest {
      * which reaches Fleet's shortcut matching through this helper and threw `OutOfDbContext`.
      */
     @Test
-    fun theFrameHelperBindsAReadViewAndNotOnlyATransaction() {
+    fun theFrameHelperBindsAReadViewAndNotOnlyATransaction() = runTest(StandardTestDispatcher()) {
         val source = ViewRequiringSource(bindsViewInTransaction = false)
         source.write("k", 7)
-        val scene = CanvasLayersComposeScene(dataSourceContext = DataSourceContext(source))
+        val scene = CanvasLayersComposeScene(
+            frameRecomposer = FrameRecomposer(coroutineContext),
+            dataSourceContext = DataSourceContext(source),
+        )
         try {
             scene.setContent { Box(Modifier.fillMaxSize()) }
             source.strict = true

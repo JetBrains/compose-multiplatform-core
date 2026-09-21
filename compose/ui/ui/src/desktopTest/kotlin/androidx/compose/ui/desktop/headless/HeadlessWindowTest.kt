@@ -57,17 +57,24 @@ class HeadlessWindowTest {
     }
 
     @Test
-    fun windowRegistersRendersContentAndDisposesIdempotently() {
+    fun windowRegistersRendersContentAndDisposesIdempotently() = runBlocking {
         val window = app.createWindow(ApplicationSession(scope)) { }
         assertTrue(app.windows.containsKey(window.id))
         window.setContent(onPreviewKeyEvent = { false }, onKeyEvent = { false }) {
             androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().background(Color.Red))
         }
         assertTrue(window.isFrameRequested)
-        window.render(nanoTime = 1L)
-        assertFalse(window.isFrameRequested)
-        val shot = window.captureScreenshot()
-        val pixels = shot.toPixelMap()
+        val pixels = withContext(ComposeUIDispatcher) {
+            // On the Compose UI thread, like every other render in this suite: render()
+            // drives a thread-affine ComposeScene, and with frame isolation on setContent
+            // also schedules a catch-up frame onto that thread - a caller-thread render
+            // then overlaps it and trips SingleComposeSceneRenderingScope's guard.
+            window.render(nanoTime = 1L)
+            assertFalse(window.isFrameRequested)
+            // captureScreenshot renders on demand when nothing has rendered yet, so it belongs
+            // on this thread too.
+            window.captureScreenshot().toPixelMap()
+        }
         assertEquals(Color.Red, pixels[pixels.width / 2, pixels.height / 2])
         window.dispose()
         assertFalse(app.windows.containsKey(window.id))
@@ -93,7 +100,9 @@ class HeadlessWindowTest {
             // than composing synchronously, so the content arrives with that frame, not with a
             // hand-driven render.
             app.awaitIdle()
-            val pixels = window.captureScreenshot().toPixelMap()
+            val pixels = withContext(ComposeUIDispatcher) {
+                window.captureScreenshot().toPixelMap()
+            }
             assertEquals(Color.Red, pixels[pixels.width / 2, pixels.height / 2])
             window.dispose()
         } finally {
@@ -142,10 +151,10 @@ class HeadlessWindowTest {
     }
 
     @Test
-    fun requestCloseDeliversTheReasonToTheHandler() {
+    fun requestCloseDeliversTheReasonToTheHandler() = runBlocking {
         var reason: WindowCloseRequestReason? = null
         val window = app.createWindow(ApplicationSession(scope)) { reason = it }
-        window.render(nanoTime = 1L)
+        withContext(ComposeUIDispatcher) { window.render(nanoTime = 1L) }
         window.requestClose(WindowCloseRequestReason.ApplicationQuit)
         assertEquals(WindowCloseRequestReason.ApplicationQuit, reason)
         window.dispose()

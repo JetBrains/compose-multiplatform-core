@@ -16,10 +16,14 @@
 
 package androidx.compose.ui.scene
 
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.StandardTestDispatcher
+import androidx.compose.ui.scene.SingleComposeSceneRenderingScope
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.DataSource
 import androidx.compose.runtime.DataSourceContext
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asComposeCanvas
@@ -38,10 +42,16 @@ import org.jetbrains.skia.Surface
  * End-to-end coverage for the scene wiring that drains a scene's [DataSourceContext] at every
  * scene-entry boundary and folds a still-pending advance into the "do I need a frame?" decision.
  *
- * Until this file existed, that wiring -
- * `SnapshotInvalidationTracker.sendAndPerformSnapshotChanges` draining `context` unconditionally,
- * and `BaseComposeScene.updateInvalidations` folding in `context.hasPendingAdvance` - had zero
+ * Until this file existed, that wiring - the unconditional drain of `context`, and
+ * `BaseComposeScene.updateInvalidations` folding in `context.hasPendingAdvance` - had zero
  * automated coverage, and every prior I2 test ran with frame isolation off.
+ *
+ * The drain used to live in `SnapshotInvalidationTracker.sendAndPerformSnapshotChanges`, called at
+ * every scene ingress. Upstream deleted that tracker along with its inter-phase applies, and the
+ * drain moved to `FrameRecomposer.performFrame`, just before the pin swap: upstream advances the
+ * global snapshot at no ingress at all, and a write still buffered when the pins swap is not in
+ * the new frame's view. Every entry point this file drives is a render, so it goes through
+ * `performFrame` either way.
  * [aStoreOnlyChangeRequestsAFrame] is the direct regression guard for the originally reported bug:
  * a change to a custom data source with no accompanying snapshot write used to request no frame at
  * all, leaving the UI stale.
@@ -84,11 +94,9 @@ class DataSourceSceneWiringTest {
             source.write("k", 42)
             assertNull(source.publishedValue("k"), "the write must still be buffered")
 
-            // No explicit context.advanceGlobalSnapshot() call here: entering a scene entry
-            // point (render, in this case) must drain the context on its own -
-            // SnapshotInvalidationTracker.sendAndPerformSnapshotChanges (called from
-            // BaseComposeScene.postponeInvalidation around every entry point) does that
-            // unconditionally, independent of whether anything reads the source.
+            // No explicit context.advanceGlobalSnapshot() call here: rendering must drain the
+            // context on its own - FrameRecomposer.performFrame does that unconditionally, before
+            // the pin swap, independent of whether anything reads the source.
             scene.render()
 
             assertEquals(42, source.publishedValue("k"))
@@ -98,15 +106,18 @@ class DataSourceSceneWiringTest {
     }
 
     @Test
-    fun aStoreOnlyChangeRequestsAFrame() {
+    fun aStoreOnlyChangeRequestsAFrame() = runTest(StandardTestDispatcher()) {
         var invalidateCount = 0
         val context = DataSourceContext()
         val size = IntSize(10, 10)
+        val frameRecomposer = FrameRecomposer(coroutineContext)
         val scene =
             CanvasLayersComposeScene(
                 size = size,
+                frameRecomposer = frameRecomposer,
                 dataSourceContext = context,
-                invalidate = { invalidateCount++ },
+                invalidateLayout = { invalidateCount++ },
+                invalidateDraw = { invalidateCount++ },
             )
         try {
             scene.setContent {}
@@ -116,7 +127,13 @@ class DataSourceSceneWiringTest {
             // canvas is needed only for this - the render itself is not what this test is
             // about.
             val surface = Surface.makeRasterN32Premul(size.width, size.height)
-            scene.render(surface.canvas.asComposeCanvas(), nanoTime = 0L)
+            with(SingleComposeSceneRenderingScope(scheduleFrame = {})) {
+                scene.render(
+                    frameRecomposer = frameRecomposer,
+                    canvas = surface.canvas.asComposeCanvas(),
+                    nanoTime = 0L,
+                )
+            }
             val before = invalidateCount
 
             // No snapshot state is written anywhere - this is exactly a foreign source
@@ -155,10 +172,11 @@ class DataSourceSceneWiringTest {
                 scene.render()
                 assertNull(composed)
 
-                // Buffered, no explicit advance: the drain that BaseComposeScene.render()
-                // performs on entry (via sendAndPerformSnapshotChanges) must both publish
-                // this and deliver the invalidation to the composition that read it, so the
-                // very next render sees the new value.
+                // Buffered, no explicit advance: the drain the render performs (in
+                // FrameRecomposer.performFrame, before the pin swap) must both publish this and
+                // deliver the invalidation to the composition that read it, so the very next
+                // render sees the new value. The composition only records that dependency if its
+                // frame domain was bound before it first composed - see Wrapper.setContent.
                 source.write("k", 42)
                 scene.render(nanoTime = 16_000_000L)
 
@@ -172,15 +190,31 @@ class DataSourceSceneWiringTest {
     }
 
     @Test
-    fun flagOffWithNoForeignSourcesBehavesAsBefore() {
+    fun flagOffWithNoForeignSourcesBehavesAsBefore() = runTest(StandardTestDispatcher()) {
         ComposeSceneFeatureFlags.isFrameIsolationEnabled = false
-        var invalidateCount = 0
+        // The assertion is about how many FRAMES the scene asks for, not how many callbacks it
+        // invokes. The scene has two invalidation callbacks (layout and draw) where it used to
+        // have one, and a state change legitimately invalidates both - so counting callbacks
+        // would count the API's arity, not the scene's behavior. Every host coalesces the two
+        // into a single scheduled frame (that is all SingleComposeSceneRenderingScope does), so
+        // the counter does too, and `frameRequested` is cleared below where a host would have
+        // consumed the frame by rendering it.
+        var frameRequested = false
+        var frameRequestCount = 0
+        val requestFrame = {
+            if (!frameRequested) {
+                frameRequested = true
+                frameRequestCount++
+            }
+        }
         val context = DataSourceContext()
         val scene =
             CanvasLayersComposeScene(
                 size = IntSize(100, 100),
+                frameRecomposer = FrameRecomposer(coroutineContext),
                 dataSourceContext = context,
-                invalidate = { invalidateCount++ },
+                invalidateLayout = requestFrame,
+                invalidateDraw = requestFrame,
             )
         try {
             // Same shape as CanvasLayersComposeSceneTest.sceneSizeChangeTriggersInvalidation:
@@ -188,11 +222,12 @@ class DataSourceSceneWiringTest {
             // updateInvalidations must not add any extra renders over the pre-existing
             // (flag-off) behavior.
             scene.setContent { Box(Modifier.fillMaxSize()) }
-            assertEquals(1, invalidateCount)
+            assertEquals(1, frameRequestCount)
             assertFalse(context.hasPendingAdvance)
 
+            frameRequested = false
             scene.size = IntSize(120, 120)
-            assertEquals(2, invalidateCount)
+            assertEquals(2, frameRequestCount)
             assertFalse(context.hasPendingAdvance)
         } finally {
             scene.close()

@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -56,7 +57,7 @@ class ComposeSceneHotReloadTest {
         var disposals = 0
         CanvasLayersComposeScene(
             size = IntSize(100, 100),
-            coroutineContext = coroutineContext,
+            frameRecomposer = FrameRecomposer(coroutineContext),
         ).use { scene ->
             scene.setContent {
                 compositions++
@@ -85,11 +86,11 @@ class ComposeSceneHotReloadTest {
         var untouchedCompositions = 0
         CanvasLayersComposeScene(
             size = IntSize(100, 100),
-            coroutineContext = coroutineContext,
+            frameRecomposer = FrameRecomposer(coroutineContext),
         ).use { reloadedScene ->
             CanvasLayersComposeScene(
                 size = IntSize(100, 100),
-                coroutineContext = coroutineContext,
+                frameRecomposer = FrameRecomposer(coroutineContext),
             ).use { untouchedScene ->
                 reloadedScene.setContent {
                     reloadedCompositions++
@@ -114,8 +115,8 @@ class ComposeSceneHotReloadTest {
         var clicks = 0
         CanvasLayersComposeScene(
             size = IntSize(100, 100),
-            coroutineContext = coroutineContext,
-            invalidate = { invalidationCount++ }
+            frameRecomposer = FrameRecomposer(coroutineContext),
+            invalidateDraw = { invalidationCount++ }
         ).use { scene ->
             scene.setContent {
                 Box(Modifier.fillMaxSize().clickable { clicks++ })
@@ -139,7 +140,7 @@ class ComposeSceneHotReloadTest {
         var dialogCompositions = 0
         CanvasLayersComposeScene(
             size = IntSize(100, 100),
-            coroutineContext = coroutineContext,
+            frameRecomposer = FrameRecomposer(coroutineContext),
         ).use { scene ->
             scene.setContent {
                 Dialog(onDismissRequest = {}, properties = DialogProperties()) {
