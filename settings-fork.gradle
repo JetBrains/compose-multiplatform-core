@@ -361,8 +361,19 @@ includeProject(":compose:material:material-lint")
 includeProject(":compose:material:material-navigation")
 includeProject(":compose:material:material-ripple")
 includeProject(":compose:runtime:runtime")
+includeProject(":compose:runtime:runtime-annotation")
+includeProject(":compose:runtime:runtime-annotation:runtime-annotation-samples", "compose/runtime/runtime-annotation/samples")
 includeProject(":compose:runtime:runtime-lint")
+// The fork builds Compose runtime from source, unlike upstream, which redirects it to AOSP's
+// published artifacts. These projects are what that build (its tests, and the AOSP build of
+// runtime-retain) depends on, so they stay included here even though upstream dropped them.
+includeProject(":annotation:annotation-sampled")
+includeProject(":compose:runtime:runtime-retain")
+includeProject(":compose:runtime:runtime-retain-lint")
+includeProject(":compose:runtime:runtime-retain:runtime-retain-samples", "compose/runtime/runtime-retain/samples")
 includeProject(":compose:runtime:runtime-saveable")
+includeProject(":compose:runtime:runtime-test-utils")
+includeProject(":compose:runtime:runtime-all-desktop")
 includeProject(":compose:ui:ui")
 includeProject(":compose:ui:ui-geometry")
 includeProject(":compose:ui:ui-graphics")
@@ -380,11 +391,14 @@ includeProject(":compose:ui:ui-unit")
 includeProject(":compose:ui:ui-util")
 includeProject(":compose:ui:ui-uikit")
 includeProject(":compose:ui:ui-backhandler")
+includeProject(":compose:ui:ui-all-desktop")
+includeProject(":compose:kdt-dispatcher")
 
 includeProject(":kruth:kruth")
 
 includeProject(":lint-checks")
 
+includeProject(":lifecycle:lifecycle-all-desktop")
 includeProject(":navigation:navigation-common")
 includeProject(":navigation:navigation-compose")
 includeProject(":navigation:navigation-runtime")
@@ -399,6 +413,11 @@ includeProject(":internal-testutils-xctest", "testutils/testutils-xctest")
 includeBuild("placeholder-fork")
 
 includeProject(":mpp")
+
+include(":fleet:compose:runtime:runtime-all-desktop")
+include(":fleet:compose:ui:ui-all-desktop")
+include(":fleet:lifecycle:lifecycle-all-desktop")
+include(":fleet:navigationevent:navigationevent-all-desktop")
 
 // ---------------------------------------------------------------------
 // --- there should be no includeProject additions after this line -----
