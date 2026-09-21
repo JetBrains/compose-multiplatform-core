@@ -39,14 +39,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
-import platform.UIKit.UIWindowScene
+import platform.UIKit.UIWindow
 
 class ComposeSceneMediatorUnitTest {
     @Test
     fun testDisposedMediatorShouldNotCrash() {
         runBlocking {
             val context = Dispatchers.Main + Job()
-            val frameChoreographer = FrameChoreographer.choreographerForScene(UIWindowScene())
+            val frameChoreographer = FrameChoreographer.choreographerForWindow(UIWindow())
             val mediator = makeMediator(
                 coroutineContext = context,
                 frameChoreographer = frameChoreographer,
@@ -92,7 +92,7 @@ class ComposeSceneMediatorUnitTest {
 
     private fun makeMediator(
         coroutineContext: CoroutineContext,
-        frameChoreographer: FrameChoreographer = FrameChoreographer.choreographerForScene(UIWindowScene()),
+        frameChoreographer: FrameChoreographer = FrameChoreographer.choreographerForWindow(UIWindow()),
     ): ComposeSceneMediator = ComposeSceneMediator(
         frameChoreographer = frameChoreographer,
         onFocusBehavior = OnFocusBehavior.DoNothing,

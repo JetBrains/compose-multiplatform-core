@@ -25,8 +25,11 @@ import androidx.compose.ui.test.runUIKitInstrumentedTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNotSame
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import platform.Foundation.NSTimeInterval
+import platform.UIKit.UIWindow
 
 class FrameChoreographerTest {
 
@@ -50,6 +53,30 @@ class FrameChoreographerTest {
             )
         } finally {
             choreographer.removeListener(listener)
+        }
+    }
+
+    @Test
+    fun testChoreographerIsCreatedPerWindow() = runUIKitInstrumentedTest {
+        setContent { Box(Modifier.fillMaxSize()) }
+        val choreographer = frameChoreographer
+        assertNotNull(choreographer, "frameChoreographer is null")
+
+        val anotherWindow = UIWindow()
+        val anotherChoreographer = FrameChoreographer.choreographerForWindow(anotherWindow)
+        try {
+            assertNotSame(
+                choreographer,
+                anotherChoreographer,
+                "Each window must get its own choreographer"
+            )
+            assertSame(
+                anotherChoreographer,
+                FrameChoreographer.choreographerForWindow(anotherWindow),
+                "The choreographer must be reused for the same window"
+            )
+        } finally {
+            anotherChoreographer.dispose()
         }
     }
 

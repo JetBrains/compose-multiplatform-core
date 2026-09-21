@@ -19,6 +19,7 @@ import XCTest
 
 final class CMPViewControllerTests: XCTestCase {
     var appDelegate: MockAppDelegate!
+    private var additionalWindows: [UIWindow] = []
     var rootViewController: UIViewController {
         get {
             appDelegate.window!.rootViewController!
@@ -40,8 +41,36 @@ final class CMPViewControllerTests: XCTestCase {
     override func tearDownWithError() throws {
         super.tearDown()
 
+        for window in additionalWindows {
+            window.rootViewController = nil
+            window.isHidden = true
+        }
+        additionalWindows.removeAll()
+
         appDelegate?.cleanUp()
         appDelegate = nil
+    }
+
+    private func makeAdditionalWindow() -> UIWindow {
+        let window = UIWindow(frame: UIScreen.main.bounds)
+        window.backgroundColor = .systemBackground
+        window.rootViewController = UIViewController()
+        window.makeKeyAndVisible()
+
+        additionalWindows.append(window)
+
+        return window
+    }
+
+    @MainActor
+    private func move(_ viewController: UIViewController, to parent: UIViewController) {
+        viewController.willMove(toParent: nil)
+        viewController.view.removeFromSuperview()
+        viewController.removeFromParent()
+
+        parent.addChild(viewController)
+        parent.view.addSubview(viewController.view)
+        viewController.didMove(toParent: parent)
     }
         
     @MainActor
@@ -306,6 +335,90 @@ final class CMPViewControllerTests: XCTestCase {
     }
 
     @MainActor
+    public func testTransferToAnotherWindowRestartsContainer() async {
+        let viewController = TestViewController()
+        move(viewController, to: rootViewController)
+
+        await expect(viewController: viewController, toBeInHierarchy: true)
+        XCTAssertEqual(viewController.didEnterWindowHierarchyCallsCount, 1)
+        XCTAssertEqual(viewController.didLeaveWindowHierarchyCallsCount, 0)
+
+        let secondWindow = makeAdditionalWindow()
+        move(viewController, to: secondWindow.rootViewController!)
+
+        await expect { viewController.didEnterWindowHierarchyCallsCount == 2 }
+        XCTAssertEqual(viewController.didLeaveWindowHierarchyCallsCount, 1)
+        await expect(viewController: viewController, toBeInHierarchy: true)
+    }
+
+    @MainActor
+    public func testDirectViewTransferToAnotherWindowRestartsContainer() async {
+        let viewController = TestViewController()
+        move(viewController, to: rootViewController)
+        await expect(viewController: viewController, toBeInHierarchy: true)
+
+        let secondWindow = makeAdditionalWindow()
+        secondWindow.rootViewController!.view.addSubview(viewController.view)
+
+        await expect { viewController.didEnterWindowHierarchyCallsCount == 2 }
+        XCTAssertEqual(viewController.didLeaveWindowHierarchyCallsCount, 1)
+        await expect(viewController: viewController, toBeInHierarchy: true)
+    }
+
+    @MainActor
+    public func testMoveWithinSameWindowKeepsContainerStarted() async {
+        let firstContainer = UIView()
+        let secondContainer = UIView()
+        rootViewController.view.addSubview(firstContainer)
+        rootViewController.view.addSubview(secondContainer)
+
+        let viewController = TestViewController()
+        rootViewController.addChild(viewController)
+        firstContainer.addSubview(viewController.view)
+        viewController.didMove(toParent: rootViewController)
+
+        await expect(viewController: viewController, toBeInHierarchy: true)
+        XCTAssertEqual(viewController.didEnterWindowHierarchyCallsCount, 1)
+
+        secondContainer.addSubview(viewController.view)
+
+        try? await Task.sleep(nanoseconds: 1_000_000_000) // 1s, a couple of check periods
+
+        // The window did not change, so the container must stay started.
+        XCTAssertTrue(viewController.viewIsInWindowHierarchy)
+        XCTAssertEqual(viewController.didEnterWindowHierarchyCallsCount, 1)
+        XCTAssertEqual(viewController.didLeaveWindowHierarchyCallsCount, 0)
+    }
+
+    @MainActor
+    public func testRepeatedWindowTransfersKeepCallbacksBalanced() async {
+        let viewController = TestViewController()
+        move(viewController, to: rootViewController)
+        await expect(viewController: viewController, toBeInHierarchy: true)
+
+        for transfer in 1...3 {
+            let window = makeAdditionalWindow()
+            move(viewController, to: window.rootViewController!)
+
+            await expect { viewController.didEnterWindowHierarchyCallsCount == transfer + 1 }
+            XCTAssertEqual(viewController.didLeaveWindowHierarchyCallsCount, transfer)
+        }
+
+        viewController.willMove(toParent: nil)
+        viewController.view.removeFromSuperview()
+        viewController.removeFromParent()
+
+        await expect(viewController: viewController, toBeInHierarchy: false)
+
+        // Every restart leaves a single pending hierarchy check behind, so detaching the container
+        // for good delivers exactly one more leave callback.
+        try? await Task.sleep(nanoseconds: 2_000_000_000)
+
+        XCTAssertEqual(viewController.didEnterWindowHierarchyCallsCount, 4)
+        XCTAssertEqual(viewController.didLeaveWindowHierarchyCallsCount, 4)
+    }
+
+    @MainActor
     public func testLifecycleDelegate() async {
         let delegate = LifecycleDelegate()
 
@@ -361,6 +474,8 @@ private class TestViewController: CMPViewController {
     private let id: Int
     
     public var viewIsInWindowHierarchy: Bool = false
+    public private(set) var didEnterWindowHierarchyCallsCount = 0
+    public private(set) var didLeaveWindowHierarchyCallsCount = 0
 
     init(delegate: CMPComposeContainerLifecycleDelegate? = nil) {
         id = TestViewController.counter
@@ -376,12 +491,14 @@ private class TestViewController: CMPViewController {
         print("TestViewController_\(id) didEnterWindowHierarchy")
         XCTAssertFalse(viewIsInWindowHierarchy)
         viewIsInWindowHierarchy = true
+        didEnterWindowHierarchyCallsCount += 1
     }
 
     override func viewControllerDidLeaveWindowHierarchy() {
         print("TestViewController_\(id) didLeaveWindowHierarchy")
         XCTAssertTrue(viewIsInWindowHierarchy)
         viewIsInWindowHierarchy = false
+        didLeaveWindowHierarchyCallsCount += 1
     }
     
     override func userInterfaceStyleDidChange() {}

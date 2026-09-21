@@ -19,6 +19,7 @@ import XCTest
 
 final class CMPViewTests: XCTestCase {
     var appDelegate: MockAppDelegate!
+    private var additionalWindows: [UIWindow] = []
     var rootView: UIView? {
         get {
             appDelegate.window!.rootViewController?.view.subviews.first
@@ -46,8 +47,26 @@ final class CMPViewTests: XCTestCase {
     override func tearDownWithError() throws {
         super.tearDown()
 
+        for window in additionalWindows {
+            window.rootViewController = nil
+            window.isHidden = true
+        }
+        additionalWindows.removeAll()
+
         appDelegate?.cleanUp()
         appDelegate = nil
+    }
+
+    private func makeAdditionalWindow() -> UIWindow {
+        let window = UIWindow(frame: UIScreen.main.bounds)
+        window.backgroundColor = .systemBackground
+        window.layer.speed = 10000
+        window.rootViewController = UIViewController()
+        window.makeKeyAndVisible()
+
+        additionalWindows.append(window)
+
+        return window
     }
         
     @MainActor
@@ -105,6 +124,93 @@ final class CMPViewTests: XCTestCase {
     }
 
     @MainActor
+    public func testTransferToAnotherWindowRestartsContainer() async {
+        let view = TestView()
+        rootView = view
+
+        await expect(view: view, toBeInHierarchy: true)
+        XCTAssertEqual(view.didEnterWindowHierarchyCallsCount, 1)
+        XCTAssertEqual(view.didLeaveWindowHierarchyCallsCount, 0)
+
+        let secondWindow = makeAdditionalWindow()
+        secondWindow.rootViewController!.view.addSubview(view)
+
+        // Moving the view to another window must force-stop the container and start it again
+        // against the new window.
+        await expect { view.didEnterWindowHierarchyCallsCount == 2 }
+        XCTAssertEqual(view.didLeaveWindowHierarchyCallsCount, 1)
+        await expect(view: view, toBeInHierarchy: true)
+
+        // The view never left a window hierarchy, so its appearance state is untouched.
+        XCTAssertTrue(view.isViewAppeared)
+    }
+
+    @MainActor
+    public func testTransferToAnotherWindowKeepsContainerStartedAfterwards() async {
+        let view = TestView()
+        rootView = view
+        await expect(view: view, toBeInHierarchy: true)
+
+        let secondWindow = makeAdditionalWindow()
+        secondWindow.rootViewController!.view.addSubview(view)
+
+        await expect { view.didEnterWindowHierarchyCallsCount == 2 }
+
+        // The pending hierarchy containment check must not stop the restarted container.
+        try? await Task.sleep(nanoseconds: 2_000_000_000) // 2s, several check periods
+
+        XCTAssertTrue(view.viewIsInWindowHierarchy)
+        XCTAssertEqual(view.didEnterWindowHierarchyCallsCount, 2)
+        XCTAssertEqual(view.didLeaveWindowHierarchyCallsCount, 1)
+    }
+
+    @MainActor
+    public func testMoveWithinSameWindowKeepsContainerStarted() async {
+        let firstSuperview = UIView()
+        let secondSuperview = UIView()
+        rootView = firstSuperview
+        appDelegate.window!.rootViewController!.view.addSubview(secondSuperview)
+
+        let view = TestView()
+        firstSuperview.addSubview(view)
+
+        await expect(view: view, toBeInHierarchy: true)
+        XCTAssertEqual(view.didEnterWindowHierarchyCallsCount, 1)
+
+        secondSuperview.addSubview(view)
+
+        try? await Task.sleep(nanoseconds: 1_000_000_000) // 1s, a couple of check periods
+
+        // The window did not change, so the container must stay started.
+        XCTAssertTrue(view.viewIsInWindowHierarchy)
+        XCTAssertEqual(view.didEnterWindowHierarchyCallsCount, 1)
+        XCTAssertEqual(view.didLeaveWindowHierarchyCallsCount, 0)
+    }
+
+    @MainActor
+    public func testRepeatedWindowTransfersKeepCallbacksBalanced() async {
+        let view = TestView()
+        rootView = view
+        await expect(view: view, toBeInHierarchy: true)
+
+        for transfer in 1...3 {
+            let window = makeAdditionalWindow()
+            window.rootViewController!.view.addSubview(view)
+
+            await expect { view.didEnterWindowHierarchyCallsCount == transfer + 1 }
+            XCTAssertEqual(view.didLeaveWindowHierarchyCallsCount, transfer)
+        }
+
+        view.removeFromSuperview()
+
+        await expect(view: view, toBeInHierarchy: false)
+        try? await Task.sleep(nanoseconds: 2_000_000_000)
+
+        XCTAssertEqual(view.didEnterWindowHierarchyCallsCount, 4)
+        XCTAssertEqual(view.didLeaveWindowHierarchyCallsCount, 4)
+    }
+
+    @MainActor
     public func testLifecycleDelegate() async {
         let delegate = LifecycleDelegate()
 
@@ -140,6 +246,8 @@ private class TestView: CMPView {
     
     public var viewIsInWindowHierarchy: Bool = false
     public var isViewAppeared: Bool = false
+    public private(set) var didEnterWindowHierarchyCallsCount = 0
+    public private(set) var didLeaveWindowHierarchyCallsCount = 0
 
     init(delegate: CMPComposeContainerLifecycleDelegate? = nil) {
         id = TestView.counter
@@ -163,12 +271,14 @@ private class TestView: CMPView {
         print("TestView_\(id) didEnterWindowHierarchy")
         XCTAssertFalse(viewIsInWindowHierarchy)
         viewIsInWindowHierarchy = true
+        didEnterWindowHierarchyCallsCount += 1
     }
 
     override func viewDidLeaveWindowHierarchy() {
         print("TestView_\(id) didLeaveWindowHierarchy")
         XCTAssertTrue(viewIsInWindowHierarchy)
         viewIsInWindowHierarchy = false
+        didLeaveWindowHierarchyCallsCount += 1
     }
     
     override func userInterfaceStyleDidChange() {}
