@@ -29,6 +29,7 @@ import androidx.compose.runtime.composer.RememberManager
 import androidx.compose.runtime.composer.gapbuffer.SlotTable
 import androidx.compose.runtime.composer.gapbuffer.asGapBufferSlotTable
 import androidx.compose.runtime.composer.linkbuffer.asLinkBufferSlotTable
+import androidx.compose.runtime.internal.SnapshotHolder
 import androidx.compose.runtime.internal.AtomicReference
 import androidx.compose.runtime.internal.RememberEventDispatcher
 import androidx.compose.runtime.internal.trace
@@ -516,6 +517,19 @@ internal class CompositionImpl(
 
     // Held when making changes to self or composer
     private val lock = makeSynchronizedObject()
+
+    /**
+     * Set on a scene's root composition by [bindFrameDomain]; `null` everywhere else, including on
+     * every sub-composition - those inherit through [parent], so a `SubcomposeLayout` inside a
+     * popup composes in the popup's frame domain without anyone having to bind it.
+     */
+    private var boundFrameSnapshotHolder: SnapshotHolder? = null
+
+    internal var frameSnapshotHolder: SnapshotHolder?
+        get() = boundFrameSnapshotHolder ?: parent.frameSnapshotHolder
+        set(value) {
+            boundFrameSnapshotHolder = value
+        }
 
     internal var parentDrivenRecomposeGate: (() -> Boolean)? = null
 

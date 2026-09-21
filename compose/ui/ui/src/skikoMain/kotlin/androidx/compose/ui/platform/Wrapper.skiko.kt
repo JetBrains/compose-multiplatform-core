@@ -17,6 +17,8 @@ package androidx.compose.ui.platform
 
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.runtime.internal.SnapshotHolder
+import androidx.compose.runtime.internal.bindFrameDomain
 import androidx.compose.ui.node.RootNodeOwner
 
 /**
@@ -26,15 +28,21 @@ import androidx.compose.ui.node.RootNodeOwner
  *        If null then default root composition will be used.
  * @param getCompositionLocalContext getter for retrieving the top-level composition local context.
  * Can be backed by `mutableStateOf` to dynamically change top-level locals.
+ * @param frameDomain The frame domain the composition belongs to, or null when it is in none.
+ * Bound before the content is composed, because the initial composition is part of what has to run
+ * in the domain: reads it performs outside one record dependencies against the substrate only, and
+ * nothing would ever invalidate them.
  * @param content A `@Composable` function declaring the UI contents
  */
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, InternalComposeApi::class)
 internal fun RootNodeOwner.setContent(
     parent: CompositionContext,
     getCompositionLocalContext: () -> CompositionLocalContext? = { null },
+    frameDomain: SnapshotHolder? = null,
     content: @Composable () -> Unit
 ): Composition {
     val composition = Composition(DefaultUiApplier(owner.root), parent)
+    if (frameDomain != null) composition.bindFrameDomain(frameDomain)
     composition.setContent {
         getCompositionLocalContext().provide {
             ProvideCommonCompositionLocals(
