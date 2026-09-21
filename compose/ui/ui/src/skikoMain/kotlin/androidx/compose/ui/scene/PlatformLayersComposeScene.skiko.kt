@@ -114,6 +114,7 @@ private class PlatformLayersComposeSceneImpl(
             inputHandler = inputHandler,
             invalidate = ::invokeInvalidationCallbacks,
             onChangedExecutor = frameRecomposer::runOnComposeThread,
+            deliveryDomain = frameSnapshotHolder,
         )
     }
 
@@ -186,6 +187,7 @@ private class PlatformLayersComposeSceneImpl(
     ): Composition = mainOwner.setContent(
         parent = parentCompositionContext,
         getCompositionLocalContext = { compositionLocalContext },
+        frameDomain = frameSnapshotHolder,
         content = content,
     )
 

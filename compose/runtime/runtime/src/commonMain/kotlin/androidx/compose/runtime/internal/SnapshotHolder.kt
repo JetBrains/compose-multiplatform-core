@@ -16,8 +16,11 @@
 
 package androidx.compose.runtime.internal
 
+import androidx.compose.runtime.Composition
+import androidx.compose.runtime.CompositionImpl
 import androidx.compose.runtime.DataSource
 import androidx.compose.runtime.DataSourceContext
+import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.enter
 import androidx.compose.runtime.platform.makeSynchronizedObject
 import androidx.compose.runtime.platform.synchronized
@@ -238,3 +241,21 @@ internal fun committerAndOtherDomains(
         }
         committer to others
     }
+
+/**
+ * Binds [holder] as the frame domain of this composition, so the runtime composes, applies and
+ * routes invalidations for it - and for every sub-composition below it - in that domain.
+ *
+ * A domain belongs to a scene, while a host recomposer drives several of them (a window's scene
+ * plus one per popup/layer, all on the host's recomposer), so the domain cannot be declared in the
+ * recomposer's coroutine context the way a scene-less
+ * [androidx.compose.runtime.DataSourceCompositionDomain] declares its own. It is bound here
+ * instead, to the root composition the scene owns.
+ *
+ * Call this immediately after creating the composition and before composing it: reads performed by
+ * a composition that has not been bound resolve against the substrate only.
+ */
+@InternalComposeApi
+fun Composition.bindFrameDomain(holder: SnapshotHolder?) {
+    (this as? CompositionImpl)?.frameSnapshotHolder = holder
+}

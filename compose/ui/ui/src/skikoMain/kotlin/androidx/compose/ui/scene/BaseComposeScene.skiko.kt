@@ -69,7 +69,7 @@ internal abstract class BaseComposeScene(
      * the host [FrameRecomposer] at the start of each frame), and the pending invalidations
      * delivered at that rotation.
      */
-    private val frameSnapshotHolder: SnapshotHolder =
+    protected val frameSnapshotHolder: SnapshotHolder =
         SnapshotHolder(dataSourceContext, isolating = isFrameIsolationEnabled)
 
     /**

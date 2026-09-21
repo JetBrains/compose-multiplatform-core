@@ -18,6 +18,7 @@ package androidx.compose.ui.platform
 
 import androidx.compose.runtime.BroadcastFrameClock
 import androidx.compose.runtime.CompositionContext
+import androidx.compose.runtime.DataSourceContext
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.runtime.Recomposer
@@ -29,6 +30,7 @@ import androidx.compose.runtime.tooling.ComposeToolingApi
 import androidx.compose.runtime.withTransaction
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.internal.getCurrentThreadId
+import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.trace
 import kotlin.coroutines.ContinuationInterceptor
@@ -81,9 +83,17 @@ class FrameRecomposer(
      */
     private val frameDomains = mutableListOf<SnapshotHolder>()
 
+    @OptIn(InternalComposeApi::class)
     internal fun registerFrameDomain(holder: SnapshotHolder): AutoCloseable {
         frameDomains.add(holder)
-        return AutoCloseable { frameDomains.remove(holder) }
+        // The recomposer needs the same registry: it drives the compositions of every scene here,
+        // and the work that spans all of them at once (its animation pump, its recompose+apply
+        // pass, apply-observer routing) has to slice against each domain rather than against one.
+        val recomposerRegistration = recomposer.registerFrameDomain(holder)
+        return AutoCloseable {
+            frameDomains.remove(holder)
+            recomposerRegistration.dispose()
+        }
     }
 
     /**
@@ -229,6 +239,7 @@ class FrameRecomposer(
      * Performs one host frame. Platforms call this once from their native frame callback before
      * running [androidx.compose.ui.scene.ComposeScene] measure/layout and draw phases.
      */
+    @OptIn(InternalComposeApi::class)
     fun performFrame(frameTimeNanos: Long) {
         postponeFrameInvalidation {
             composeThreadId = getCurrentThreadId()
@@ -236,6 +247,17 @@ class FrameRecomposer(
             // Inter-frame work - coroutine dispatch and composition effects - belongs to the
             // PREVIOUS frame and must run before the pin swap, on the pin it was scheduled under.
             performTrampolineDispatch()
+
+            // Publish what the world buffered since the previous frame, BEFORE the pin swap
+            // below: a foreign write that is still buffered when the pins swap is not in the new
+            // frame's view, so the frame that should have observed it cannot. This is the
+            // DataSource generalization of the `Snapshot.sendApplyNotifications()` upstream
+            // performs inside `draw()` - a context's advance drains every member and ends in that
+            // same substrate flush - and it sits here, once per host frame, rather than at every
+            // scene ingress: upstream advances the global snapshot at no ingress at all, and
+            // Android applies once per frame on the main looper (which is exactly what the FIXME
+            // on upstream's between-phase apply in `BaseComposeScene.draw` says).
+            drainFrameDomainContexts()
 
             // Scene-less domains (e.g. an application-level composition) can only rotate through
             // the platform's async main-thread queue, which starves under sustained rendering.
@@ -257,6 +279,29 @@ class FrameRecomposer(
         }
         if (frameClock.hasAwaiters) {
             invalidate()
+        }
+    }
+
+    /**
+     * Drains every registered domain's [androidx.compose.runtime.DataSourceContext] once per
+     * frame. Scenes on one host commonly share a single context (the application session's), so
+     * the contexts are de-duplicated by identity: a context's advance delivers its union to every
+     * consumer that recorded a dependency, and running it twice would flush the substrate twice
+     * for nothing.
+     */
+    private fun drainFrameDomainContexts() {
+        if (frameDomains.isEmpty()) return
+        var drained: MutableList<DataSourceContext>? = null
+        frameDomains.fastForEach { holder ->
+            val context = holder.context
+            val seen = drained
+            if (seen == null) {
+                drained = mutableListOf(context)
+            } else {
+                if (seen.fastAny { it === context }) return@fastForEach
+                seen.add(context)
+            }
+            context.advanceGlobalSnapshot()
         }
     }
 

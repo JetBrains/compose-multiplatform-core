@@ -341,7 +341,57 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
      * The scene-owned cell carrying the current frame-cycle [DataSource.Snapshot], when frame
      * isolation is enabled. `null` on hosts that don't isolate frames.
      */
-    private val frameSnapshotHolder: SnapshotHolder? = this.effectCoroutineContext[SnapshotHolder]
+    /**
+     * The domain declared in this recomposer's OWN coroutine context, inherited by every root
+     * composition whose parent is this recomposer. That is the scene-less
+     * [DataSourceCompositionDomain] shape: one recomposer, one domain, every composition in it.
+     *
+     * A host recomposer that drives scenes declares none here - it drives several domains at once
+     * (a window's scene plus one per popup/layer) and a composition's domain is resolved from the
+     * composition instead, via [domainOf].
+     */
+    internal override val frameSnapshotHolder: SnapshotHolder? =
+        this.effectCoroutineContext[SnapshotHolder]
+
+    /**
+     * Every domain this recomposer drives, for the work spanning all of its compositions at once:
+     * the pass-level slices below, and apply-observer routing. Seeded with the context-declared
+     * domain above; hosts add and remove scenes' domains through [registerFrameDomain].
+     *
+     * Its own lock, not `stateLock`: this is taken on the paths that register snapshot observers,
+     * and `stateLock` is taken by the apply observer they register, so sharing one lock would
+     * couple those two orders.
+     */
+    private val frameDomainLock = makeSynchronizedObject()
+    private val frameDomains: MutableList<SnapshotHolder> =
+        mutableListOf<SnapshotHolder>().also { domains ->
+            frameSnapshotHolder?.let { domains.add(it) }
+        }
+
+    /**
+     * Registers a host-driven scene domain. A host recomposer exists before any scene does, and
+     * gains and loses domains as scenes and their popups come and go, so apply routing is
+     * re-derived on every change rather than decided once at startup.
+     */
+    @InternalComposeApi
+    fun registerFrameDomain(holder: SnapshotHolder): ObserverHandle {
+        synchronized(frameDomainLock) { frameDomains.add(holder) }
+        syncFrameDomainApplyObservers()
+        return ObserverHandle {
+            synchronized(frameDomainLock) { frameDomains.remove(holder) }
+            syncFrameDomainApplyObservers()
+        }
+    }
+
+    /**
+     * The domain [composition] belongs to. Resolved from the composition - which inherits it from
+     * its parent chain - rather than from this recomposer, because one host recomposer drives
+     * several. Falls back to the context-declared domain for a [ControlledComposition] that is not
+     * a [CompositionImpl], i.e. a test double.
+     */
+    private fun domainOf(composition: ControlledComposition): SnapshotHolder? =
+        if (composition is CompositionImpl) composition.frameSnapshotHolder
+        else frameSnapshotHolder
 
     private val hasBroadcastFrameClockAwaitersLocked: Boolean
         get() = !frameClockPaused && broadcastFrameClock.hasAwaiters
@@ -1377,7 +1427,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
         }
 
         // TODO(b/143755743)
-        if (!composerWasComposing && frameSnapshotHolder == null) {
+        if (!composerWasComposing && domainOf(composition) == null) {
             Snapshot.notifyObjectsInitialized()
         }
 
@@ -1396,7 +1446,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             return
         }
 
-        if (!composerWasComposing && frameSnapshotHolder == null) {
+        if (!composerWasComposing && domainOf(composition) == null) {
             // Ensure that any state objects created during applyChanges are seen as changed
             // if modified after this call.
             Snapshot.notifyObjectsInitialized()
@@ -1657,15 +1707,63 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     }
 
     /**
-     * Domain routing: with an isolating frame domain, invalidations are delivered at the
-     * domain's own pin rotations (per-consumer delivery); otherwise stock global timing.
+     * Domain routing: with an isolating frame domain, invalidations are delivered at the domain's
+     * own pin rotations (per-consumer delivery); otherwise stock global timing.
+     *
+     * [frameDomainApplyObserver] is held while the recomposition runner is live, and the handles
+     * are re-derived by [syncFrameDomainApplyObservers] whenever [frameDomains] changes: a host
+     * recomposer starts with no domains at all and gains one per scene afterwards, so deciding
+     * this once at startup would leave every scene on the global path.
      */
+    private var frameDomainApplyObserver: ((Set<Any>, Snapshot) -> Unit)? = null
+    private val frameDomainApplyHandles = mutableListOf<Pair<SnapshotHolder, ObserverHandle>>()
+    private var globalApplyHandle: ObserverHandle? = null
+
     private fun registerFrameDomainApplyObserver(
         observer: (Set<Any>, Snapshot) -> Unit
     ): ObserverHandle {
-        val holder = frameSnapshotHolder
-        return if (holder != null && holder.isolating) holder.registerApplyObserver(observer)
-        else Snapshot.registerApplyObserver(observer)
+        synchronized(frameDomainLock) { frameDomainApplyObserver = observer }
+        syncFrameDomainApplyObservers()
+        return ObserverHandle {
+            synchronized(frameDomainLock) { frameDomainApplyObserver = null }
+            syncFrameDomainApplyObservers()
+        }
+    }
+
+    private fun syncFrameDomainApplyObservers() {
+        synchronized(frameDomainLock) {
+            val observer = frameDomainApplyObserver
+            if (observer == null) {
+                frameDomainApplyHandles.fastForEach { it.second.dispose() }
+                frameDomainApplyHandles.clear()
+                globalApplyHandle?.dispose()
+                globalApplyHandle = null
+                return
+            }
+            val isolating = frameDomains.filter { it.isolating }
+            frameDomainApplyHandles.fastForEach { entry ->
+                if (!isolating.fastAny { it === entry.first }) entry.second.dispose()
+            }
+            frameDomainApplyHandles.retainAll { entry ->
+                isolating.fastAny { it === entry.first }
+            }
+            isolating.fastForEach { holder ->
+                if (!frameDomainApplyHandles.fastAny { it.first === holder }) {
+                    frameDomainApplyHandles.add(holder to holder.registerApplyObserver(observer))
+                }
+            }
+            // The global observer covers whatever is NOT routed through an isolating domain. With
+            // at least one isolating domain it would hand that domain's changes over ahead of its
+            // pin rotation, which is the early delivery per-consumer routing exists to prevent.
+            if (isolating.isEmpty()) {
+                if (globalApplyHandle == null) {
+                    globalApplyHandle = Snapshot.registerApplyObserver(observer)
+                }
+            } else {
+                globalApplyHandle?.dispose()
+                globalApplyHandle = null
+            }
+        }
     }
 
     private fun writeObserverOf(
@@ -1683,7 +1781,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
         modifiedValues: MutableScatterSet<Any>?,
         noinline block: () -> T,
     ): T {
-        val holder = frameSnapshotHolder
+        val holder = domainOf(composition)
         val frameSnapshot = holder?.checkedCurrent
         return when {
             // Frame isolation on: compose in a nested transaction of the cycle unit,
@@ -1724,13 +1822,45 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
         }
     }
 
+    /**
+     * The frame-cycle unit to run this recomposer's pass-level work in: the single domain's unit
+     * when it drives one (the overwhelmingly common case - one window, one scene), a composite
+     * over all of them when it drives several, and `null` when none of them currently has one.
+     *
+     * A composite rather than nesting `enter`/`withTransaction` per domain, because the callers
+     * are `inline` and their blocks return non-locally out of the enclosing function: one inline
+     * enter+transaction preserves that, a recursive helper cannot.
+     *
+     * `checkedCurrent` is null once a holder is closed, so work still queued when a scene closed
+     * runs on the stock path instead of failing.
+     */
+    private fun currentFrameUnit(): DataSource.Snapshot? {
+        val domains =
+            synchronized(frameDomainLock) {
+                if (frameDomains.isEmpty()) return null
+                frameDomains.toList()
+            }
+        var first: DataSource.Snapshot? = null
+        var rest: MutableList<DataSource.Snapshot>? = null
+        for (i in domains.indices) {
+            val unit = domains[i].checkedCurrent ?: continue
+            val previous = first
+            if (previous == null) {
+                first = unit
+            } else {
+                val list = rest ?: mutableListOf(previous).also { rest = it }
+                list.add(unit)
+            }
+        }
+        val all = rest
+        return if (all != null) CompositeFrameUnit(all) else first
+    }
+
     private inline fun withTransactionOrApplyNotifications(block: () -> Unit) {
-        // checkedCurrent is null once the holder is closed: work already queued when the
-        // scene closed runs on the stock path instead of failing.
-        val frameSnapshot = frameSnapshotHolder?.checkedCurrent
-        if (frameSnapshot != null) {
+        val unit = currentFrameUnit()
+        if (unit != null) {
             // See composing(): the read view has to be bound, not just a transaction opened.
-            frameSnapshot.enter { frameSnapshot.withTransaction(block) }
+            unit.enter { unit.withTransaction(block) }
         } else {
             block()
             // Ensure any global changes are observed
@@ -1739,11 +1869,10 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     }
 
     private inline fun withIsolationOrNotifyObjectsInitialized(block: () -> Unit) {
-        // See withTransactionOrApplyNotifications for the null-after-close semantics.
-        val frameSnapshot = frameSnapshotHolder?.checkedCurrent
-        if (frameSnapshot != null) {
+        val unit = currentFrameUnit()
+        if (unit != null) {
             // See composing(): the read view has to be bound, not just a transaction opened.
-            frameSnapshot.enter { frameSnapshot.withTransaction(block) }
+            unit.enter { unit.withTransaction(block) }
         } else {
             block()
             // Ensure any state objects that were written during apply changes, e.g.
@@ -2151,3 +2280,58 @@ private class NestedMovableContent(
     val content: MovableContentStateReference,
     val container: MovableContentStateReference,
 )
+
+/**
+ * One frame-cycle unit standing for several: binds and transacts every unit in [units], so a host
+ * recomposer driving more than one scene can slice its pass-level work against all of their
+ * domains through a single [DataSource.Snapshot].
+ *
+ * Domains are entered in order and left in reverse, matching the nesting this replaces. A failure
+ * part-way through binding unwinds what it already bound: a half-bound thread would otherwise keep
+ * a superseded view current for the rest of the frame.
+ */
+private class CompositeFrameUnit(private val units: List<DataSource.Snapshot>) :
+    DataSource.Snapshot {
+    override fun makeCurrent(): Any? {
+        val previous = arrayOfNulls<Any?>(units.size)
+        var bound = 0
+        try {
+            while (bound < units.size) {
+                previous[bound] = units[bound].makeCurrent()
+                bound++
+            }
+        } catch (e: Throwable) {
+            for (i in bound - 1 downTo 0) units[i].restoreCurrent(previous[i])
+            throw e
+        }
+        return previous
+    }
+
+    override fun restoreCurrent(previous: Any?) {
+        @Suppress("UNCHECKED_CAST") val saved = previous as Array<Any?>
+        for (i in units.indices.reversed()) units[i].restoreCurrent(saved[i])
+    }
+
+    override fun beginTransaction(): Any? {
+        val frames = arrayOfNulls<Any?>(units.size)
+        var opened = 0
+        try {
+            while (opened < units.size) {
+                frames[opened] = units[opened].beginTransaction()
+                opened++
+            }
+        } catch (e: Throwable) {
+            for (i in opened - 1 downTo 0) units[i].endTransaction(frames[i], e)
+            throw e
+        }
+        return frames
+    }
+
+    override fun endTransaction(frame: Any?, cause: Throwable?) {
+        @Suppress("UNCHECKED_CAST") val frames = frame as Array<Any?>
+        for (i in units.indices.reversed()) units[i].endTransaction(frames[i], cause)
+    }
+
+    /** The units belong to their holders, which rotate and dispose them. */
+    override fun dispose() = Unit
+}

@@ -17,6 +17,7 @@
 package androidx.compose.runtime
 
 import androidx.collection.ScatterSet
+import androidx.compose.runtime.internal.SnapshotHolder
 import androidx.compose.runtime.internal.persistentCompositionLocalHashMapOf
 import androidx.compose.runtime.tooling.CompositionData
 import kotlin.coroutines.CoroutineContext
@@ -44,6 +45,21 @@ public abstract class CompositionContext internal constructor() {
     internal abstract val stackTraceEnabled: Boolean
     internal open val observerHolder: CompositionObserverHolder?
         get() = null
+
+    /**
+     * The frame domain the compositions created under this context belong to, or `null` when they
+     * are not in one.
+     *
+     * A domain is per *scene*, while a host [Recomposer] drives several of them - a window's scene
+     * plus a scene per popup/layer, all sharing the host's recomposer. So the domain cannot be a
+     * property of the recomposer: it is bound to the root composition the scene creates (see
+     * `bindFrameDomain`) and reached from anywhere below it through this chain, which walks
+     * sub-composition -> its parent context -> that context's own composition -> ... up to the
+     * [Recomposer], whose override answers with the domain declared in its own coroutine context
+     * (the scene-less `DataSourceCompositionDomain` case).
+     */
+    internal open val frameSnapshotHolder: SnapshotHolder?
+        get() = (composition as? CompositionImpl)?.frameSnapshotHolder
 
     /** The [CoroutineContext] with which effects for the composition will be executed in. */
     public abstract val effectCoroutineContext: CoroutineContext
