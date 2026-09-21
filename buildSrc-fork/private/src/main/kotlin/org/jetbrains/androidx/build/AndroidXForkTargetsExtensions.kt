@@ -106,7 +106,7 @@ fun <T: KotlinTarget> AndroidXMultiplatformExtension.configureForkWebTarget(
                 it.from(skikoWasm.map { artifact ->
                     project.zipTree(artifact)
                         .matching { pattern ->
-                            pattern.include("skiko.wasm", "skiko.mjs", "js-skiko-reexport-symbols.mjs")
+                            pattern.include("*.wasm", "*.mjs")
                         }
                 })
             }
@@ -127,7 +127,7 @@ fun <T: KotlinTarget> AndroidXMultiplatformExtension.configureForkWebTarget(
                 it.from(skikoWasm.map { artifact ->
                     project.zipTree(artifact)
                         .matching { pattern ->
-                            pattern.include("skiko.wasm", "skiko.mjs")
+                            pattern.include("*.wasm", "*.mjs")
                         }
                 })
             }
