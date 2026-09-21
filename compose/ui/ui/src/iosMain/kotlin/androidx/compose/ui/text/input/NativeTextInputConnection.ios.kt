@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.text.input
 
+import androidx.compose.runtime.DataSource
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -51,12 +52,14 @@ internal class NativeTextInputConnection(
     updateView: () -> Unit,
     coroutineScope: CoroutineScope,
     focusedViewsList: FocusedViewsList?,
-    focusManager: () -> ComposeSceneFocusManager?
+    focusManager: () -> ComposeSceneFocusManager?,
+    currentFrameSnapshot: () -> DataSource.Snapshot? = { null },
 ) : TextInputConnection(
     updateView = updateView,
     coroutineScope = coroutineScope,
     focusedViewsList = focusedViewsList,
-    focusManager = focusManager
+    focusManager = focusManager,
+    currentFrameSnapshot = currentFrameSnapshot,
 ), NativeTextEditingDelegate {
     override val isInteractive: Boolean = true
 

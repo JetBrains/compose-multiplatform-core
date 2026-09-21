@@ -33,7 +33,7 @@ import androidx.compose.ui.desktop.activateApplication
 import androidx.compose.ui.desktop.deactivateApplication
 import androidx.compose.ui.desktop.removeApplication
 import androidx.compose.ui.platform.Clipboard
-import androidx.compose.ui.platform.DefaultHapticFeedback
+import androidx.compose.ui.platform.NoOpHapticFeedback
 import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalFontFamilyResolver
@@ -183,7 +183,7 @@ object WasmJsApplication : Application, Clipboard by createPlatformClipboard() {
             LocalUriHandler provides this,
             LocalClipboard provides this,
             LocalFontFamilyResolver provides fontFamilyResolver,
-            LocalHapticFeedback provides remember { DefaultHapticFeedback() },
+            LocalHapticFeedback provides NoOpHapticFeedback,
             LocalInputModeManager provides remember { DefaultInputModeManager() },
         ) {
             content()

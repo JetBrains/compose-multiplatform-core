@@ -69,6 +69,8 @@ import androidx.compose.ui.platform.PlatformTextInputSession
 import androidx.compose.ui.platform.PlatformTextInputInterceptor
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
+import androidx.compose.ui.platform.FrameRecomposer
+import androidx.compose.ui.scene.SingleComposeSceneRenderingScope
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.PointerEventResult
@@ -200,6 +202,9 @@ class GtkWindow private constructor(
         // lives on, inside the sibling that just registered itself in application.windows.
         isDisposed = true
         composeScene.close()
+        // The host frame driver goes with the scene it feeds: it owns a Job, the
+        // Recomposer and a GlobalSnapshotManager registration.
+        frameRecomposer.close()
         architectureComponentsOwner.setLifecycleState(Lifecycle.State.DESTROYED)
 
         return newWindow
@@ -408,15 +413,29 @@ class GtkWindow private constructor(
         override fun onLayoutChange(semanticsOwner: SemanticsOwner, semanticsNodeId: Int) = Unit
     }
 
+    // The host frame driver: upstream split the scene into phases, so the recomposer and
+    // frame clock now live outside the scene and the host advances them per frame.
+    private val frameRecomposer = FrameRecomposer(
+        coroutineContext = session.coroutineScope.coroutineContext +
+            KdtMainDispatcher.INSTANCE,
+        invalidate = { isFrameRequested = true },
+    )
+
+    // Upstream's migration shim: bundles performFrame + measureAndLayout + draw into one
+    // render() and folds the scene's layout/draw invalidations into a single scheduled frame.
+    private val sceneRenderingScope = SingleComposeSceneRenderingScope(
+        scheduleFrame = { isFrameRequested = true },
+    )
+
     private val composeScene: ComposeScene = CanvasLayersComposeScene(
+        frameRecomposer = frameRecomposer,
         density = density,
         layoutDirection = layoutDirection,
         size = contentSizeInPx(),
-        coroutineContext = session.coroutineScope.coroutineContext +
-            KdtMainDispatcher.INSTANCE,
         platformContext = platformContext,
         dataSourceContext = session.dataSourceContext,
-        invalidate = { isFrameRequested = true },
+        invalidateLayout = sceneRenderingScope::onSceneInvalidation,
+        invalidateDraw = sceneRenderingScope::onSceneInvalidation,
     )
 
     // KDT's file chooser is asynchronous: showOpenFileDialog/showSaveFileDialog only ISSUE a
@@ -544,7 +563,9 @@ class GtkWindow private constructor(
         val height = maxOf(1, density.run { contentSize.height.roundToPx() })
         return Surface.makeRasterN32Premul(width, height).use { surface ->
             surface.canvas.clear(Color.TRANSPARENT)
-            composeScene.render(surface.canvas.asComposeCanvas(), System.nanoTime())
+            with(sceneRenderingScope) {
+                composeScene.render(frameRecomposer, surface.canvas.asComposeCanvas(), System.nanoTime())
+            }
             surface.makeImageSnapshot().toComposeImageBitmap()
         }
     }
@@ -563,6 +584,9 @@ class GtkWindow private constructor(
         fileDialogResponses.values.forEach { it.cancel() }
         fileDialogResponses.clear()
         composeScene.close()
+        // The host frame driver goes with the scene it feeds: it owns a Job, the
+        // Recomposer and a GlobalSnapshotManager registration.
+        frameRecomposer.close()
         architectureComponentsOwner.setLifecycleState(Lifecycle.State.DESTROYED)
         application.onEventLoopAsync {
             nativeWindow.close()
@@ -883,7 +907,7 @@ class GtkWindow private constructor(
                 surfaceProps = null,
             )!!.use { surface ->
                 surface.canvas.clear(Color.TRANSPARENT)
-                composeScene.render(surface.canvas.asComposeCanvas(), now)
+                with(sceneRenderingScope) { composeScene.render(frameRecomposer, surface.canvas.asComposeCanvas(), now) }
                 surface.flushAndSubmit()
             }
         }

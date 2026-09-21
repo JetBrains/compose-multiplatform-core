@@ -1024,7 +1024,7 @@ class WindowV2StateTest {
                 // On Linux, insets are not known until the window is visible, but we set the
                 // bounds taking them into account before that
                 decoration =
-                    if (isLinux) WindowDecoration.Undecorated() else WindowDecoration.SystemDefault,
+                    if (isLinux) WindowDecoration.Undecorated() else WindowDecoration.Decorated,
                 title = testName
             ) {
                 window = this.window

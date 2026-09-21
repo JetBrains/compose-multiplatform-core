@@ -473,7 +473,7 @@ internal class DelegateRootForTestListener : PlatformContext.RootForTestListener
     }
 }
 
-private object NoOpHapticFeedback : HapticFeedback {
+internal object NoOpHapticFeedback : HapticFeedback {
     override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) = Unit
 }
 

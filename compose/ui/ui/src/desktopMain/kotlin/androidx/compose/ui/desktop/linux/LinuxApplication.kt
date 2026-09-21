@@ -31,7 +31,7 @@ import androidx.compose.ui.desktop.logging.KLoggers
 import androidx.compose.ui.desktop.logging.logger
 import androidx.compose.ui.desktop.removeApplication
 import androidx.compose.ui.platform.ClipEntry
-import androidx.compose.ui.platform.DefaultHapticFeedback
+import androidx.compose.ui.platform.NoOpHapticFeedback
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -203,7 +203,7 @@ object LinuxApplication : Application {
             LocalUriHandler provides this@LinuxApplication,
             LocalClipboard provides this@LinuxApplication,
             LocalFontFamilyResolver provides fontFamilyResolver,
-            LocalHapticFeedback provides remember { DefaultHapticFeedback() },
+            LocalHapticFeedback provides NoOpHapticFeedback,
         ) {
             content()
         }

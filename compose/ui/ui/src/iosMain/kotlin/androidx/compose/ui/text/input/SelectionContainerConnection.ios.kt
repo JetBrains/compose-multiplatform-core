@@ -18,6 +18,7 @@ package androidx.compose.ui.text.input
 
 import androidx.compose.ui.platform.DetachedTextEditingDelegate
 import androidx.compose.ui.platform.SkikoUITextInputTraits
+import androidx.compose.runtime.DataSource
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import kotlinx.cinterop.readValue
@@ -29,14 +30,16 @@ import platform.UIKit.UIView
 internal class SelectionContainerConnection(
     coroutineScope: CoroutineScope,
     viewConfiguration: ViewConfiguration,
-    focusManager: () -> ComposeSceneFocusManager?
+    focusManager: () -> ComposeSceneFocusManager?,
+    currentFrameSnapshot: () -> DataSource.Snapshot? = { null },
 ) : ComposeTextInputConnection(
     inactiveTextEditingDelegate = DetachedTextEditingDelegate(),
     updateView = {},
     coroutineScope = coroutineScope,
     viewConfiguration = viewConfiguration,
     focusedViewsList = null,
-    focusManager = focusManager
+    focusManager = focusManager,
+    currentFrameSnapshot = currentFrameSnapshot,
 ) {
     private val keyboardlessInputTraits = object : SkikoUITextInputTraits {
         val emptyInputView = UIView(frame = CGRectZero.readValue())

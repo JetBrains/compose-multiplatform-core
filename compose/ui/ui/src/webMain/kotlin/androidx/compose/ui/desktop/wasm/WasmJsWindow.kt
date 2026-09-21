@@ -20,7 +20,7 @@ package androidx.compose.ui.desktop.wasm
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
@@ -60,10 +60,13 @@ import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WebTextInputService
 import androidx.compose.ui.platform.WebTextToolbar
 import androidx.compose.ui.platform.WindowInfoImpl
+import androidx.compose.ui.asComposeSystemTheme
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
 import androidx.compose.ui.scene.ComposeScenePointer
+import androidx.compose.ui.scene.SingleComposeSceneRenderingScope
 import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -95,6 +98,7 @@ import kotlin.js.toList
 import kotlin.math.absoluteValue
 import kotlinx.browser.document
 import kotlinx.browser.window as browserWindow
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.io.files.Path
 import androidx.compose.ui.desktop.LocalWindow
@@ -152,7 +156,7 @@ class WasmJsWindow internal constructor(
     private val interopContainer = WebInteropContainer(InteropViewGroup(interopContainerElement))
 
     private var actualActivePointerButtons: PointerButtons? = null
-    private var activeTouchOffset: Offset? = null
+    private var activeTouchOffset: Offset = Offset.Unspecified
 
     private val architectureComponentsOwner = DefaultArchitectureComponentsOwner().apply {
         enableSavedStateHandles()
@@ -167,7 +171,7 @@ class WasmJsWindow internal constructor(
     )
 
     private val textInputService = object : WebTextInputService() {
-        override val currentTouchOffset: Offset?
+        override val currentTouchOffset: Offset
             get() = activeTouchOffset
 
         override val backingDomInputContainer: HTMLElement
@@ -188,7 +192,7 @@ class WasmJsWindow internal constructor(
             override val architectureComponentsOwner = this@WasmJsWindow.architectureComponentsOwner
 
             override val dragAndDropManager: PlatformDragAndDropManager = object :
-                WebDragAndDropManager(rootElement, canvasEvents, state.globalEvents, density) {
+                WebDragAndDropManager(rootElement, canvasEvents, state.globalEvents, { density }) {
                 override val rootDragAndDropNode: ComposeSceneDragAndDropNode
                     get() = scene.rootDragAndDropNode
             }
@@ -221,29 +225,55 @@ class WasmJsWindow internal constructor(
             override fun textInputSessionOwner() = this@WasmJsWindow.textInputSessionOwner
         }
 
+    // The host frame driver: upstream split the scene into phases, so the recomposer and frame
+    // clock live outside the scene and the host advances them per frame. Dispatchers.Main is the
+    // web main queue, the same one the sibling ComposeWindowInternal uses; the session's own
+    // context carries no interceptor of its own.
+    private val frameRecomposer = FrameRecomposer(
+        coroutineContext = session.coroutineScope.coroutineContext + Dispatchers.Main,
+        invalidate = { skiaLayer.needRender() },
+    )
+
+    // Upstream's migration shim: bundles performFrame + measureAndLayout + draw into one render()
+    // and folds the scene's layout and draw invalidations into a single scheduled frame.
+    private val sceneRenderingScope = SingleComposeSceneRenderingScope { skiaLayer.needRender() }
+
     private val skiaLayer: SkiaLayer = SkiaLayer().apply {
         renderDelegate = SkikoRenderDelegate { canvas, _, _, nanoTime ->
-            scene.render(canvas.asComposeCanvas(), nanoTime)
+            with(sceneRenderingScope) {
+                scene.render(frameRecomposer, canvas.asComposeCanvas(), nanoTime)
+            }
         }
     }
 
     private val scene: ComposeScene = CanvasLayersComposeScene(
+        frameRecomposer = frameRecomposer,
         density = density,
-        coroutineContext = session.coroutineScope.coroutineContext,
         platformContext = platformContext,
         dataSourceContext = session.dataSourceContext,
-        invalidate = skiaLayer::needRender,
+        // The web host has one redraw path, so both invalidations fold into the same scheduled
+        // frame, as on every other single-surface backend.
+        invalidateLayout = sceneRenderingScope::onSceneInvalidation,
+        invalidateDraw = sceneRenderingScope::onSceneInvalidation,
     )
 
     init {
         initEvents()
         state.init()
+        // The current size up front, outside composition; changes follow through the observer
+        // installed with the content.
+        resizeToCurrentSize()
         canvas.setAttribute("tabindex", "0")
         canvas.setAttribute("draggable", "true")
         application.windows += id to this
     }
 
     // ----- Rendering and sizing -----
+
+    private fun resizeToCurrentSize() {
+        val size = state.currentSize()
+        resize(DpSize(size.width.dp, size.height.dp))
+    }
 
     private fun resize(boxSize: DpSize) {
         val density = density
@@ -392,7 +422,7 @@ class WasmJsWindow internal constructor(
                 )
             }
 
-            activeTouchOffset = null
+            activeTouchOffset = Offset.Unspecified
 
             if (eventType == PointerEventType.Release) {
                 activeTouchPointers.remove(event.pointerId)
@@ -529,7 +559,7 @@ class WasmJsWindow internal constructor(
     ) {}
 
     override val systemTheme: SystemTheme
-        get() = systemThemeObserver.currentSystemTheme.value
+        get() = systemThemeObserver.currentSystemTheme.value.asComposeSystemTheme()
 
     override fun requestSystemTheme(systemTheme: SystemTheme?) {}
 
@@ -606,6 +636,9 @@ class WasmJsWindow internal constructor(
         architectureComponentsOwner.setLifecycleState(Lifecycle.State.DESTROYED)
         textInputSessionOwner.dispose()
         scene.close()
+        // The host frame driver goes with the scene it feeds: it owns a Job, the Recomposer and a
+        // GlobalSnapshotManager registration.
+        frameRecomposer.close()
         skiaLayer.detach()
         systemThemeObserver.dispose()
         canvasEvents.dispose()
@@ -639,7 +672,8 @@ class WasmJsWindow internal constructor(
         }
         scene.setContent {
             CompositionLocalProvider(
-                LocalSystemTheme provides systemThemeObserver.currentSystemTheme.value,
+                @Suppress("DEPRECATION")
+                LocalSystemTheme provides systemThemeObserver.currentSystemTheme.value.asComposeSystemTheme(),
                 LocalWindow provides this,
                 LocalTextInputSessionOwner provides textInputSessionOwner,
                 LocalInteropContainer provides interopContainer,
@@ -647,10 +681,12 @@ class WasmJsWindow internal constructor(
                 interopContainer.TrackInteropPlacementContainer {
                     contentState.value?.invoke(windowScope)
                 }
-                LaunchedEffect(Unit) {
-                    state.sizeFlow().collect { size ->
-                        resize(DpSize(size.width.dp, size.height.dp))
-                    }
+                DisposableEffect(state) {
+                    // Apply size changes eagerly, as they arrive, rather than from a collected flow,
+                    // which ran the canvas/scene resize while the recomposer drained composition
+                    // effects (CMP-10751).
+                    val stopObservingSize = state.observeSizeAndScaleChanges { resizeToCurrentSize() }
+                    onDispose(stopObservingSize)
                 }
             }
         }

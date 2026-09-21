@@ -216,7 +216,8 @@ internal class TextInputService(
                 val connection = SelectionContainerConnection(
                     coroutineScope = coroutineScope,
                     viewConfiguration = viewConfiguration,
-                    focusManager = focusManager
+                    focusManager = focusManager,
+                    currentFrameSnapshot = currentFrameSnapshot,
                 ).also {
                     it.rootView.setFrame(view.bounds)
                     view.addSubview(it.rootView)
@@ -241,6 +242,9 @@ internal class TextInputService(
                         override val textFieldRectInRoot: () -> Rect? get() = { null }
                         override val textClippingRectInRoot: () -> Rect? get() = { null }
                         override val unclippedTextOffsetInRoot: () -> Offset? get() = { null }
+                        override val firstTextRangeAndRectInRoot: (TextRange) -> Pair<TextRange, Rect>
+                            get() = { it to Rect.Zero }
+                        override val characterIndexAtOffsetInRoot: (Offset) -> Int get() = { 0 }
                         override val editText: (block: TextEditingScope.() -> Unit) -> Unit get() = { _ -> }
                     }
                 )
@@ -260,6 +264,7 @@ internal class TextInputService(
                         coroutineScope = coroutineScope,
                         focusedViewsList = focusedViewsList,
                         focusManager = focusManager,
+                        currentFrameSnapshot = currentFrameSnapshot,
                     )
                 } else {
                     ComposeTextInputConnection(
@@ -268,7 +273,8 @@ internal class TextInputService(
                         coroutineScope = coroutineScope,
                         viewConfiguration = viewConfiguration,
                         focusedViewsList = focusedViewsList,
-                        focusManager = focusManager
+                        focusManager = focusManager,
+                        currentFrameSnapshot = currentFrameSnapshot,
                     )
                 }
 
@@ -289,7 +295,8 @@ internal class TextInputService(
                 val connection = SelectionContainerConnection(
                     coroutineScope = coroutineScope,
                     viewConfiguration = viewConfiguration,
-                    focusManager = focusManager
+                    focusManager = focusManager,
+                    currentFrameSnapshot = currentFrameSnapshot,
                 )
                 view.addSubview(connection.rootView)
                 val holder = TextInputHolder(

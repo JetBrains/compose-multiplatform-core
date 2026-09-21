@@ -17,7 +17,7 @@
 package androidx.compose.ui.util
 
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.awt.toAwtColor
+import androidx.compose.ui.graphics.awt.toAwtColor
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified

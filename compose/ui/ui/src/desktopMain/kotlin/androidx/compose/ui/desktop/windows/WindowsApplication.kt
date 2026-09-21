@@ -38,7 +38,7 @@ import androidx.compose.ui.desktop.logging.logger
 import androidx.compose.ui.desktop.removeApplication
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.platform.Clipboard
-import androidx.compose.ui.platform.DefaultHapticFeedback
+import androidx.compose.ui.platform.NoOpHapticFeedback
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -267,7 +267,7 @@ object WindowsApplication : Application, Clipboard by WindowsClipboard() {
             LocalUriHandler provides this@WindowsApplication,
             LocalClipboard provides this@WindowsApplication,
             LocalFontFamilyResolver provides fontFamilyResolver,
-            LocalHapticFeedback provides remember { DefaultHapticFeedback() },
+            LocalHapticFeedback provides NoOpHapticFeedback,
         ) {
             content()
         }
