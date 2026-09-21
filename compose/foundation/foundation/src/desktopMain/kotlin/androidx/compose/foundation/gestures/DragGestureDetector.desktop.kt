@@ -16,9 +16,13 @@
 
 package androidx.compose.foundation.gestures
 
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.desktop.Application
 import androidx.compose.ui.unit.Dp
 
+@OptIn(InternalComposeUiApi::class)
 internal actual fun mouseSlop(): Dp {
-    return Application.current.dragThreshold
+    // Gesture code runs in hosts with no Compose application (window-less ImageComposeScene,
+    // test-built scenes), so fall back to the platform default rather than failing.
+    return Application.currentDragThresholdOrDefault
 }

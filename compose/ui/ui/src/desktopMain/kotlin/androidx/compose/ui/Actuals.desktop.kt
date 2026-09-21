@@ -17,12 +17,14 @@
 package androidx.compose.ui
 
 import androidx.compose.ui.desktop.KdtMainDispatcher
+import androidx.compose.ui.desktop.hasActiveComposeApplication
 import kotlin.concurrent.Volatile
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Delay
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.MainCoroutineDispatcher
+import org.jetbrains.skiko.MainUIDispatcher as SwingDispatcher
 import kotlinx.coroutines.Runnable
 
 /**
@@ -55,8 +57,30 @@ import kotlinx.coroutines.Runnable
 actual val ComposeUIDispatcher: MainCoroutineDispatcher
     get() = ComposeUIDispatcherOverride ?: KdtMainDispatcher.INSTANCE
 
+/**
+ * The dispatcher Compose's internal scheduling posts to — the global snapshot manager's
+ * apply-notification coalescing and RectManager's relayout debounce.
+ *
+ * Normally this *is* [ComposeUIDispatcher]: the work must run on the thread that mutates
+ * `LayoutNode` state, so there is one seam and not two. But scheduling is also reached from hosts
+ * that have no Compose UI thread at all — most obviously [androidx.compose.ui.ImageComposeScene],
+ * whose whole purpose is headless rendering, and any test that constructs a scene directly.
+ * `RectManager`'s debounce is armed from `LayoutNode.attach`, i.e. inside
+ * `RootNodeOwner.<init>`, so resolving [ComposeUIDispatcher] there would throw
+ * "No active Application has been initialized for this JVM process" before the scene even exists.
+ *
+ * So: use the Compose UI dispatcher whenever one is actually established — a set
+ * [ComposeUIDispatcherOverride] (headless / AWT / tests) or a live KDT application — and otherwise
+ * fall back to the AWT event dispatch thread. That is the same thread every non-KDT desktop host
+ * points the override at anyway, so the fallback changes nothing for a configured host; it only
+ * stops an *unconfigured* one from failing to construct a scene.
+ *
+ * [ComposeUIDispatcher] itself is deliberately left strict: asking for the Compose UI thread when
+ * there is none is a real error, and should still fail loudly.
+ */
 internal actual val PostDelayedDispatcher: CoroutineContext
-    get() = ComposeUIDispatcher
+    get() = ComposeUIDispatcherOverride
+        ?: if (hasActiveComposeApplication()) ComposeUIDispatcher else SwingDispatcher
 
 /**
  * Views [this] plain dispatcher as a [MainCoroutineDispatcher] so it can back

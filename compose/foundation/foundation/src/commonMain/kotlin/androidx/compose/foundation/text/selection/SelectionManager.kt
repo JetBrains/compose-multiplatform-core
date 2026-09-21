@@ -1652,6 +1652,22 @@ import kotlinx.coroutines.launch
     * race with the gesture-end callback and keep the auto-scroll loop alive after the user
     * releases the pointer.
     */
+    /**
+     * The shared tail of a selection change: haptics, sub-selection recomputation and the change
+     * callback. Upstream inlined this into `updateSelection` (which additionally clears
+     * `isLongPressOrClickSelection`, so that copy stays inline); the two auto-scroll refresh paths
+     * below need the same sequence, so it lives on as a helper.
+     */
+    private fun selectionChanged(selectionLayout: SelectionLayout, newSelection: Selection) {
+        // Any selection that isn't the link we right-clicked on invalidates the copy-the-url intent.
+        contextMenuLinkUrl = null
+        if (shouldPerformHaptics()) {
+            hapticFeedBack?.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        }
+        selectionRegistrar.subselections = selectionLayout.createSubSelections(newSelection)
+        onSelectionChange(newSelection)
+    }
+
     fun refreshSelectionAfterScroll() {
         val position = currentDragPosition ?: return
         val handle = draggingHandle ?: return
