@@ -97,16 +97,14 @@ androidXMultiplatform {
             implementation(project(":compose:ui:ui-test"))
         }
 
-        // jbVerifyForkDependencies: suppress
-        jvmAndAndroidMain.dependencies {
-        }
-
         def lifecycleVersion = project.redirectVersions.get('androidx.lifecycle')
         // TODO: Align naming: nonAndroidMain
         skikoMain {
             dependsOn(commonMain)
             dependencies {
                 api(project(":compose:ui:ui-skiko"))
+                implementation(libs.skikoRendering)
+                implementation(libs.skikoGanesh)
                 implementation(libs.atomicFu)
 
                 implementation("org.jetbrains.androidx.navigationevent:navigationevent-compose:1.1.0")
@@ -139,6 +137,8 @@ androidXMultiplatform {
                 implementation(libs.mockitoKotlin)
                 implementation(libs.mockitoKotlin4)
                 implementation(libs.skikoAwtRuntime)
+                implementation(libs.skikoGaneshAwtRuntime)
+                implementation(libs.skikoRenderingAwtRuntime)
                 implementation(libs.kotlinCoroutinesSwing)
                 implementation(libs.kotlinCoroutinesTest)
                 implementation(project(":compose:material:material"))
@@ -189,10 +189,6 @@ androidXMultiplatform {
 
         webMain.dependencies {
             api(libs.kotlinXw3c)
-        }
-
-        wasmJsMain.dependencies {
-            implementation(libs.skikoWasmJs)
         }
 
         // TODO: Align it with AOSP or make explicit
