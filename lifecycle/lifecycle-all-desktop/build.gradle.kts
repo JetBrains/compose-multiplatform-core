@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import org.jetbrains.androidx.build.registerRedirectVersionsExtension
+
 plugins {
     id("java")
     id("maven-publish")
@@ -21,8 +23,16 @@ plugins {
     id("JetbrainsUnsplitPackagePlugin")
 }
 
+// The upstream `androidx.*` versions the split-package modules below are pulled from. These used to
+// come from `artifactRedirection.version.*` project properties; the artifact-redirection rework
+// replaced those with the [versions] table of `redirectversions.toml`, read through this extension.
+// Registered explicitly because this is a plain java/shadow project: it does not apply
+// JetBrainsAndroidXImplPlugin, which is what registers the extension for AndroidX modules.
+registerRedirectVersionsExtension()
+val redirectVersions = extensions.getByType<org.jetbrains.androidx.build.RedirectVersions>()
+
 unsplitPackage {
-    val originalLifecycleVersion = properties["artifactRedirection.version.androidx.lifecycle"]
+    val originalLifecycleVersion = redirectVersions.get("androidx.lifecycle")
     splitPackageModule("androidx.lifecycle:lifecycle-common:$originalLifecycleVersion")
     splitPackageModule("androidx.lifecycle:lifecycle-runtime:$originalLifecycleVersion")
     splitPackageModule(project(":lifecycle:lifecycle-runtime-compose"))
