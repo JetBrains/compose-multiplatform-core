@@ -29,7 +29,7 @@ fun Project.configureSwiftCompatibilityLinking() {
         extensions
             .getByType(KotlinMultiplatformExtension::class.java)
             .targets
-            .withType(KotlinNativeTarget::class.java)
+            .withType<KotlinNativeTarget>()
             .all { target -> target.configureSwiftCompatibilityLinking() }
     }
 }
