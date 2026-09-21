@@ -295,6 +295,8 @@ rxjava3 = { module = "io.reactivex.rxjava3:rxjava", version = "3.0.0" }
 sdklib = { module = "com.android.tools:sdklib", version.ref = "androidLint" }
 shadow = { module = "com.gradleup.shadow:shadow-gradle-plugin", version = "8.3.7" }
 skiko = { module = "org.jetbrains.skiko:skiko", version.ref = "skiko" }
+skikoGanesh = { module = "org.jetbrains.skiko:skiko-ganesh", version.ref = "skiko" }
+skikoRendering = { module = "org.jetbrains.skiko:skiko-rendering", version.ref = "skiko" }
 skikoAwt = { module = "org.jetbrains.skiko:skiko-awt", version.ref = "skiko" }
 skikoAwtRuntimeMacOsArm64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-macos-arm64", version.ref = "skiko" }
 skikoAwtRuntimeMacOsX64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-macos-x64", version.ref = "skiko" }
@@ -303,6 +305,8 @@ skikoAwtRuntimeWindowsArm64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-
 skikoAwtRuntimeLinuxX64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-linux-x64", version.ref = "skiko" }
 skikoAwtRuntimeLinuxArm64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-linux-arm64", version.ref = "skiko" }
 skikoAwtRuntime = { module = "org.jetbrains.skiko:skiko-awt-runtime-all", version.ref = "skiko" }
+skikoGaneshAwtRuntime = { module = "org.jetbrains.skiko:skiko-ganesh-awt-runtime-all", version.ref = "skiko" }
+skikoRenderingAwtRuntime = { module = "org.jetbrains.skiko:skiko-rendering-awt-runtime-all", version.ref = "skiko" }
 skikoWasmJs = { module = "org.jetbrains.skiko:skiko-wasm-js", version.ref = "skiko" }
 skiko-skottie = { module = "org.jetbrains.skiko:skiko-skottie", version.ref = "skiko" }
 skikoSkottieAwtRuntime = { module = "org.jetbrains.skiko:skiko-skottie-awt-runtime-all", version.ref = "skiko" }
