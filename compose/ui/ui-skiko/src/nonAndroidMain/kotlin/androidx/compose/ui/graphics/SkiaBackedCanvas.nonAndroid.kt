@@ -91,6 +91,7 @@ class SkiaCanvasHolder(skiaCanvas : SkCanvas? = null) {
 }
 
 @PublishedApi
+@InternalComposeUiApi
 internal class SkiaBackedCanvas : Canvas {
 
     // Keep the internal canvas as a var prevent having to allocate a SkiaBackedCanvas
