@@ -158,6 +158,10 @@ internal class OverlayState(
  * anchor-based ("logical") parentage for those subsystems can reconstruct it from these two nodes;
  * see [OverlayLinkStrategy].
  *
+ * An overlay is expected to operate within a single scene, so its anchor is always a
+ * composition-descendant of its host. [OverlayHostKey] has no default value, and [OverlayHost] is
+ * its only provider.
+ *
  * Both properties are plain vars rather than snapshot state: they are meant to be read from
  * modifier-node traversal, not from composition.
  */

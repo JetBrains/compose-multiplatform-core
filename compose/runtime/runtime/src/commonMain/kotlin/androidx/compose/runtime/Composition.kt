@@ -530,6 +530,24 @@ internal class CompositionImpl(
         get() = parent.composition as? CompositionImpl
 
     /**
+     * How many compositions enclose this one. A root composition has depth zero.
+     *
+     * Wave 2 sorts by this. An ancestor always has a smaller depth than a composition nested inside
+     * it, so ascending depth puts a remover before what it removes. Two siblings can tie, which is
+     * correct, because a sibling never removes a sibling.
+     */
+    internal val compositionDepth: Int
+        get() {
+            var depth = 0
+            var enclosing = parentComposition
+            while (enclosing != null) {
+                depth++
+                enclosing = enclosing.parentComposition
+            }
+            return depth
+        }
+
+    /**
      * How many consecutive frames the deferral propagation re-armed this composition.
      *
      * A frame without a deferral ends the run of re-arms. Composing by either path also

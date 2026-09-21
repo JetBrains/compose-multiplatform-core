@@ -617,4 +617,64 @@ class ParentDrivenRecomposeGateTests {
             runner.join()
         }
     }
+
+    @Test
+    fun waveTwoVisitsAnAncestorBeforeItsDescendant(): Unit = runBlocking {
+        // Wave 2 must visit an enclosing composition before one nested inside it, because the
+        // enclosing one is what removes the nested one. This pins that invariant across the change
+        // from registration order to depth order.
+        val frameClock = BroadcastFrameClock()
+        val recomposer = Recomposer(coroutineContext + Dispatchers.Unconfined + frameClock)
+        val runner =
+            launch(Dispatchers.Unconfined + frameClock, start = CoroutineStart.UNDISPATCHED) {
+                recomposer.runRecomposeAndApplyChanges()
+            }
+        val state = mutableStateOf(0)
+        val order = mutableListOf<String>()
+        val ancestorHolder = arrayOfNulls<Composition>(1)
+        val midHolder = arrayOfNulls<Composition>(1)
+        val leafHolder = arrayOfNulls<Composition>(1)
+        val ancestorContext = arrayOfNulls<CompositionContext>(1)
+        val midContext = arrayOfNulls<CompositionContext>(1)
+
+        try {
+            val ancestor = Composition(UnitApplier(), recomposer).also { ancestorHolder[0] = it }
+            ancestor.setParentDrivenRecomposeGate { false }
+            ancestor.setContent {
+                order += "ancestor"
+                state.value
+                ancestorContext[0] = rememberCompositionContext()
+            }
+            val mid = Composition(UnitApplier(), ancestorContext[0]!!).also { midHolder[0] = it }
+            mid.setParentDrivenRecomposeGate { false }
+            mid.setContent {
+                order += "mid"
+                state.value
+                midContext[0] = rememberCompositionContext()
+            }
+            val leaf = Composition(UnitApplier(), midContext[0]!!).also { leafHolder[0] = it }
+            leaf.setParentDrivenRecomposeGate { false }
+            leaf.setContent {
+                order += "leaf"
+                state.value
+            }
+
+            order.clear()
+            state.value = 1
+            Snapshot.sendApplyNotifications()
+            frameClock.sendFrame(1L)
+
+            assertEquals(
+                listOf("ancestor", "mid", "leaf"),
+                order,
+                "wave 2 must visit each composition before the ones nested inside it",
+            )
+        } finally {
+            leafHolder[0]?.dispose()
+            midHolder[0]?.dispose()
+            ancestorHolder[0]?.dispose()
+            recomposer.cancel()
+            runner.join()
+        }
+    }
 }

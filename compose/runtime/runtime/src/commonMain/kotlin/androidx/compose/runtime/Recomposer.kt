@@ -652,13 +652,11 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             ): Boolean =
                 (composition as? CompositionImpl)?.parentDrivenRecomposeGate?.invoke() == true
 
-            // An enclosing composition's recompose and apply is what REMOVES a nested composition.
+            // An enclosing composition's recompose and apply removes a nested composition.
             // So a nested composition must not recompose while its remover is still due. Wave 2
-            // visits compositions in the order in which each initial composition FINISHED, which
-            // addKnownCompositionLocked records. A parent finishes before the sub-composition that
-            // it hosts. So every ancestor is already classified when this runs. The known
-            // exception is a composition that recordFailedCompositionLocked removed and a later
-            // setContent re-added at the end of the list.
+            // visits compositions in ascending depth order. A parent has a lower depth than the
+            // sub-composition it hosts. So every ancestor is already classified by the time this
+            // function runs. There is no exception to this order.
             fun hasDeferredAncestor(composition: ControlledComposition): Boolean {
                 var enclosing = (composition as? CompositionImpl)?.parentComposition
                 while (enclosing != null) {
@@ -878,33 +876,19 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                                 // re-arm keeps its invalidation alive. The rest recompose and
                                 // apply now, in the same frame.
                                 if (skippedParentDriven.isNotEmpty()) {
-                                    // Recompose the deferred parent-driven compositions in ANCESTRY
-                                    // order. An outer composition's recompose+apply can DISPOSE a
-                                    // nested parent-driven composition. A gate scope that drops an
-                                    // overlay or a dialog whose content subcomposition is itself
-                                    // pending is one example. That removal must run BEFORE the
-                                    // nested composition is recomposed. In an unordered pass the
-                                    // nested subcomposition could recompose against just-deleted
-                                    // state ahead of its remover. _knownCompositions records the
-                                    // order in which each initial composition FINISHED, and a
-                                    // parent finishes before the sub-composition that it hosts, so
-                                    // filtering it yields outer-before-inner. Two paths invert
-                                    // that. A composition that recordFailedCompositionLocked
-                                    // removed and a later setContent re-added sits at the end. The
-                                    // defensive tail below appends in hash order. The isDisposed
-                                    // guard below then skips any nested composition an earlier
-                                    // apply already removed.
-                                    val orderedParentDriven = synchronized(stateLock) {
-                                        val out = mutableListOf<ControlledComposition>()
-                                        knownCompositionsLocked().fastForEach {
-                                            if (it in skippedParentDriven) out += it
-                                        }
-                                        // Defensive: include any pending one not in the known list.
-                                        // This tail is a last resort. It appends in hash order, so
-                                        // it can put an ancestor after its descendant.
-                                        skippedParentDriven.forEach { if (it !in out) out += it }
-                                        out
-                                    }
+                                    // Visit an enclosing composition before one nested inside it.
+                                    // An enclosing composition's recompose and apply is what
+                                    // removes a nested one, so the remover must run first. Depth
+                                    // gives that directly. Registration order only approximated it,
+                                    // and two error paths could invert it. The isDisposed guard
+                                    // below then skips any nested composition an earlier apply
+                                    // already removed.
+                                    val orderedParentDriven =
+                                        skippedParentDriven
+                                            .asSet()
+                                            .sortedBy {
+                                                (it as? CompositionImpl)?.compositionDepth ?: 0
+                                            }
                                     deferredParentDriven.clear()
                                     toReArmAfterDeferral.clear()
                                     orderedParentDriven.fastForEach { composition ->
