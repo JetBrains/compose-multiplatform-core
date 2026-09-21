@@ -25,6 +25,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import org.jetbrains.skia.Surface
+import org.jetbrains.skia.gpu.ganesh.flushAndSubmit
 
 @OptIn(InternalComposeUiApi::class)
 class SkikoColorFilterTest {

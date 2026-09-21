@@ -56,6 +56,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.jetbrains.skia.IRect
 import org.jetbrains.skia.Surface
+import org.jetbrains.skia.gpu.ganesh.flushAndSubmit
 
 // Adopted copy from AndroidGraphicsLayerTest
 @OptIn(InternalComposeUiApi::class)

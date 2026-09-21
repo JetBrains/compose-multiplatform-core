@@ -23,6 +23,8 @@ import androidx.compose.ui.viewinterop.InteropSyncTransaction
 import kotlin.math.roundToInt
 import kotlinx.cinterop.*
 import org.jetbrains.skia.*
+import org.jetbrains.skia.gpu.ganesh.flushAndSubmit
+import org.jetbrains.skia.gpu.ganesh.makeFromBackendRenderTarget
 import platform.Foundation.NSThread
 import platform.QuartzCore.*
 import platform.darwin.*
