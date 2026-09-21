@@ -97,7 +97,16 @@ fun Project.configureJetBrainsCapabilityResolution() {
         }
 
         configuration.resolutionStrategy.capabilitiesResolution.all { details ->
-            if (JetBrainsPublication.isAndroidXGroup(details.capability.group)) {
+            // Fork groups are resolved here too, not just `androidx.*`: this fork publishes as
+            // `org.jetbrains.fleet.*`, so a *previously* published `org.jetbrains.compose.*` /
+            // `org.jetbrains.androidx.*` artifact (which upstream's redirect stubs still declare
+            // directly) is a different coordinate carrying the very same packages. Without a
+            // resolution rule for those capabilities the conflict would be unresolvable rather
+            // than resolved in the project's favour.
+            val group = details.capability.group
+            if (JetBrainsPublication.isAndroidXGroup(group) ||
+                JetBrainsPublication.isJetBrainsForkGroup(group)
+            ) {
                 details.selectPreferredAndroidXCandidate()
             }
         }

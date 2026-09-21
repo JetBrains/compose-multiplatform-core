@@ -26,8 +26,17 @@ import org.gradle.api.Project
  */
 object JetBrainsPublication {
     private const val ANDROIDX_GROUP_PREFIX = "androidx."
-    private const val JETBRAINS_COMPOSE_GROUP_PREFIX = "org.jetbrains.compose."
-    private const val JETBRAINS_FORK_GROUP_PREFIX = "org.jetbrains.androidx."
+    private const val JETBRAINS_COMPOSE_GROUP_PREFIX = "org.jetbrains.fleet.compose."
+    private const val JETBRAINS_FORK_GROUP_PREFIX = "org.jetbrains.fleet.androidx."
+
+    // The groups this fork published under before it was renamed to `org.jetbrains.fleet.*`.
+    // Used only when *consuming*: upstream's redirect stubs still declare the pre-rename
+    // coordinates directly ("Keep direct references to fork versions to correctly resolve new
+    // redirections to Google's artifacts"), and without recognising them those artifacts land on
+    // the classpath next to the projects that replaced them — same packages, duplicate classes.
+    // Deliberately NOT used by `mavenGroupFor`: this fork publishes under the new groups only.
+    private const val LEGACY_JETBRAINS_COMPOSE_GROUP_PREFIX = "org.jetbrains.compose."
+    private const val LEGACY_JETBRAINS_FORK_GROUP_PREFIX = "org.jetbrains.androidx."
 
     val libraryToComponents = mapOf(
         "COMPOSE" to listOf(
@@ -40,6 +49,7 @@ object JetBrainsPublication {
             ComposeComponent(":compose:material:material-navigation"),
             ComposeComponent(":compose:material:material-ripple"),
             ComposeComponent(":compose:runtime:runtime", supportedPlatforms = ComposePlatforms.ALL),
+            ComposeComponent(":compose:runtime:runtime-retain", supportedPlatforms = ComposePlatforms.ALL),
             ComposeComponent(":compose:runtime:runtime-saveable", supportedPlatforms = ComposePlatforms.ALL),
             ComposeComponent(":compose:ui:ui"),
             ComposeComponent(":compose:ui:ui-geometry"),
@@ -79,6 +89,11 @@ object JetBrainsPublication {
                     "Jvmwindows-x64",
                     "Jvmwindows-arm64",
                 )
+            ),
+            ComposeComponent(
+                ":compose:kdt-dispatcher",
+                supportedPlatforms = setOf(ComposePlatforms.Desktop),
+                customTasks = listOf("KotlinMultiplatform", "Jvm"),
             ),
         ),
         "COMPOSE_MATERIAL3" to listOf(
@@ -141,6 +156,8 @@ object JetBrainsPublication {
     }
 
     fun mavenGroupFor(projectPath: String): String = when {
+        projectPath == ":compose:kdt-dispatcher" ->
+            "org.jetbrains.fleet.compose"
         projectPath.startsWith(":compose:") ->
             JETBRAINS_COMPOSE_GROUP_PREFIX + projectPath
                 .removePrefix(":compose:")
@@ -157,17 +174,26 @@ object JetBrainsPublication {
     fun projectPathForCoordinates(group: String, name: String): String? = when {
         isAndroidXGroup(group) ->
             ":${group.removePrefix(ANDROIDX_GROUP_PREFIX).replace(".", ":")}:$name"
+        group == "org.jetbrains.fleet.compose" && name == "kdt-dispatcher" ->
+            ":compose:kdt-dispatcher"
         group.startsWith(JETBRAINS_COMPOSE_GROUP_PREFIX) ->
             ":compose:${group.removePrefix(JETBRAINS_COMPOSE_GROUP_PREFIX).replace(".", ":")}:$name"
         group.startsWith(JETBRAINS_FORK_GROUP_PREFIX) ->
             ":${group.removePrefix(JETBRAINS_FORK_GROUP_PREFIX).replace(".", ":")}:$name"
+        group.startsWith(LEGACY_JETBRAINS_COMPOSE_GROUP_PREFIX) ->
+            ":compose:${group.removePrefix(LEGACY_JETBRAINS_COMPOSE_GROUP_PREFIX).replace(".", ":")}:$name"
+        group.startsWith(LEGACY_JETBRAINS_FORK_GROUP_PREFIX) ->
+            ":${group.removePrefix(LEGACY_JETBRAINS_FORK_GROUP_PREFIX).replace(".", ":")}:$name"
         else -> null
     }
 
     fun isAndroidXGroup(group: String): Boolean = group.startsWith(ANDROIDX_GROUP_PREFIX)
 
     fun isJetBrainsForkGroup(group: String): Boolean =
-        group.startsWith(JETBRAINS_FORK_GROUP_PREFIX) || group.startsWith(JETBRAINS_COMPOSE_GROUP_PREFIX)
+        group.startsWith(JETBRAINS_FORK_GROUP_PREFIX) ||
+            group.startsWith(JETBRAINS_COMPOSE_GROUP_PREFIX) ||
+            group.startsWith(LEGACY_JETBRAINS_FORK_GROUP_PREFIX) ||
+            group.startsWith(LEGACY_JETBRAINS_COMPOSE_GROUP_PREFIX)
 
     val projectPathToComponent: Map<String, ComposeComponent> = libraryToComponents.values
         .flatten().associateBy { it.path }

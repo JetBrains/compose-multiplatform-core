@@ -28,7 +28,7 @@ annotationVersion = "1.9.1"
 atomicFu = "0.28.0"
 autoService = "1.0-rc6"
 autoValue = "1.6.3"
-binaryCompatibilityValidator = "0.17.0"
+binaryCompatibilityValidator = "0.18.0"
 builder = "8.6.0-alpha05"
 byteBuddy = "1.14.9"
 asm = "9.7"
@@ -60,6 +60,8 @@ kotlinGradlePluginAnnotations = "2.3.10"
 kotlinGradlePluginApi = "2.3.0"
 kotlinCompileTesting = "1.4.9"
 kotlinCoroutines = "1.9.0"
+kotlinDesktopToolkit = "0.0.90"
+kotlinxIo = "0.6.0"
 kotlinNativeUtils = "2.3.10"
 kotlinSerialization = "1.8.0"
 kotlinToolingCore = "2.3.10"
@@ -215,6 +217,18 @@ kotlinCompileTestingKsp = { module = "com.github.tschuchortdev:kotlin-compile-te
 kotlinCoroutinesAndroid = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinCoroutines" }
 kotlinCoroutinesSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinCoroutines" }
 kotlinCoroutinesCore = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinCoroutines" }
+kotlinDaemonEmbeddable = { module = "org.jetbrains.kotlin:kotlin-daemon-embeddable" }
+kotlinDesktopToolkitCommon = { module = "org.jetbrains.kotlin-desktop-toolkit:kotlin-desktop-toolkit-common", version.ref = "kotlinDesktopToolkit" }
+kotlinDesktopToolkitGtkLinuxArm64 = { module = "org.jetbrains.kotlin-desktop-toolkit:kotlin-desktop-toolkit-gtk-linux-arm64", version.ref = "kotlinDesktopToolkit" }
+kotlinDesktopToolkitGtkLinuxX64 = { module = "org.jetbrains.kotlin-desktop-toolkit:kotlin-desktop-toolkit-gtk-linux-x64", version.ref = "kotlinDesktopToolkit" }
+kotlinDesktopToolkitLinuxArm64 = { module = "org.jetbrains.kotlin-desktop-toolkit:kotlin-desktop-toolkit-linux-arm64", version.ref = "kotlinDesktopToolkit" }
+kotlinDesktopToolkitLinuxX64 = { module = "org.jetbrains.kotlin-desktop-toolkit:kotlin-desktop-toolkit-linux-x64", version.ref = "kotlinDesktopToolkit" }
+kotlinDesktopToolkitMacOsArm64 = { module = "org.jetbrains.kotlin-desktop-toolkit:kotlin-desktop-toolkit-macos-arm64", version.ref = "kotlinDesktopToolkit" }
+kotlinDesktopToolkitMacOsX64 = { module = "org.jetbrains.kotlin-desktop-toolkit:kotlin-desktop-toolkit-macos-x64", version.ref = "kotlinDesktopToolkit" }
+kotlinDesktopToolkitWindowsArm64 = { module = "org.jetbrains.kotlin-desktop-toolkit:kotlin-desktop-toolkit-windows-arm64", version.ref = "kotlinDesktopToolkit" }
+kotlinDesktopToolkitWindowsX64 = { module = "org.jetbrains.kotlin-desktop-toolkit:kotlin-desktop-toolkit-windows-x64", version.ref = "kotlinDesktopToolkit" }
+kotlinKlibCommonizer = { module = "org.jetbrains.kotlin:kotlin-klib-commonizer" }
+kotlinxIo = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinxIo" }
 kotlinCoroutinesGuava = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-guava", version.ref = "kotlinCoroutines" }
 kotlinCoroutinesPlayServices = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinCoroutines" }
 kotlinCoroutinesTest = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinCoroutines" }
