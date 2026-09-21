@@ -156,6 +156,14 @@ private fun initializeJvmApplication(
 
 private fun currentJvmApplication(): Application = JvmApplicationRegistry.current()
 
+/**
+ * Whether a KDT [Application] is active in this JVM, i.e. whether
+ * [androidx.compose.ui.ComposeUIDispatcher] can resolve a Compose UI thread without throwing.
+ * Used by `PostDelayedDispatcher` to pick a scheduling dispatcher instead of failing in hosts that
+ * have no Compose application at all (headless `ImageComposeScene`, direct scene construction).
+ */
+internal actual fun hasActiveComposeApplication(): Boolean = JvmApplicationRegistry.hasActive()
+
 private object JvmApplicationRegistry {
     private val lock = Any()
     private val retainedApplications = LinkedHashSet<Application>()
@@ -194,4 +202,6 @@ private object JvmApplicationRegistry {
         synchronized(lock) {
             checkNotNull(activeApplication) { "No active Application has been initialized for this JVM process" }
         }
+
+    fun hasActive(): Boolean = synchronized(lock) { activeApplication != null }
 }

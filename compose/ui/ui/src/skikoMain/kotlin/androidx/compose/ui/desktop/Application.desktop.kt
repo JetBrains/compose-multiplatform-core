@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.runtime.Recomposer
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.ComposeUIDispatcher
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.platform.Clipboard
@@ -111,6 +112,12 @@ expect fun initializeApplication(
 
 internal expect fun currentApplication(): Application
 
+/**
+ * Whether an [Application] is active, i.e. whether [currentApplication] would succeed. A
+ * non-throwing probe for code that has a sensible default when no application is hosting it.
+ */
+internal expect fun hasActiveComposeApplication(): Boolean
+
 internal expect fun defaultUriHandler(): UriHandler
 
 internal expect fun activateApplication(application: Application)
@@ -123,6 +130,19 @@ interface Application : Clipboard, UriHandler, AutoCloseable {
     companion object {
         val current: Application
             get() = currentApplication()
+
+        /**
+         * The active application's [dragThreshold], or [DefaultDragThreshold] when no application
+         * is active.
+         *
+         * Pointer-slop is queried from gesture code that runs in any host, including ones with no
+         * Compose application at all (a window-less `ImageComposeScene`, a test-built scene). Those
+         * hosts should get the platform default — the same value every [Application] implementation
+         * is seeded with — rather than [current]'s "No active Application" failure.
+         */
+        @InternalComposeUiApi
+        val currentDragThresholdOrDefault: Dp
+            get() = if (hasActiveComposeApplication()) current.dragThreshold else DefaultDragThreshold
     }
 
     /**

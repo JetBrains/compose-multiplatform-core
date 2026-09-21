@@ -41,6 +41,7 @@ import kotlinx.coroutines.awaitCancellation
  */
 @InternalComposeUiApi
 @OptIn(ExperimentalComposeUiApi::class)
+@Suppress("UNCHECKED_CAST") // the generic-session branch; see the comment there
 suspend fun PlatformTextInputSession<*>.startComposeTextInputMethod(
     request: PlatformTextInputMethodRequest,
 ): Nothing {
@@ -48,7 +49,15 @@ suspend fun PlatformTextInputSession<*>.startComposeTextInputMethod(
         is PlatformTextInputSessionMacOs -> startInputMethod(request.toMacOsRequest(density))
         is PlatformTextInputSessionLinux -> startInputMethod(request.toLinuxRequest())
         is PlatformTextInputSessionWindows -> startInputMethod(request.toWindowsRequest(density))
-        else -> error("Unexpected desktop text input session: $this")
+        // No platform session: `PlatformContext.textInputSessionOwner()` returned null, so
+        // `RootNodeOwner` handed out its generic session — the documented fallback for a host with
+        // no platform text-input owner (a window-less `ImageComposeScene`, a test-built scene, and
+        // the web/uikit targets). That session accepts the generic request directly and routes it
+        // through `PlatformContext.startInputMethod`, exactly as the web and native actuals of
+        // `startPlatformTextInputMethod` do. Erroring here instead left every window-less desktop
+        // host unable to focus a text field.
+        else -> (this as PlatformTextInputSession<PlatformTextInputMethodRequest>)
+            .startInputMethod(request)
     }
 }
 
