@@ -72,10 +72,10 @@ interface DragAndDropTransferable
 @JvmInline
 value class DragAndDropTransferAction private constructor(private val id: Int) {
     override fun toString(): String {
-        return when (id) {
-            0 -> "Copy"
-            1 -> "Move"
-            2 -> "Link"
+        return when (this) {
+            Copy -> "Copy"
+            Move -> "Move"
+            Link -> "Link"
             else -> "Unknown"
         }
     }
@@ -84,18 +84,21 @@ value class DragAndDropTransferAction private constructor(private val id: Int) {
         /**
          * Indicates the dragged object should be copied into the target.
          */
+        @ExperimentalComposeUiApi
         val Copy: DragAndDropTransferAction
             get() = DragAndDropTransferAction(0)
 
         /**
          * Indicates the dragged object should be moved ("cut" and "pasted") into the target.
          */
+        @ExperimentalComposeUiApi
         val Move: DragAndDropTransferAction
             get() = DragAndDropTransferAction(1)
 
         /**
          * Indicates the dragged object should be linked to at the target.
          */
+        @ExperimentalComposeUiApi
         val Link: DragAndDropTransferAction
             get() = DragAndDropTransferAction(2)
     }
