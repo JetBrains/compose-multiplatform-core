@@ -37,6 +37,7 @@ import androidx.compose.ui.asComposeUiMainDispatcher
 import androidx.compose.ui.awt.ComposePanel
 import androidx.compose.ui.configureSwingGlobalsForCompose
 import androidx.compose.ui.platform.GlobalSnapshotManager
+import androidx.compose.ui.platform.GlobalSnapshotManagerDispatcher
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import kotlin.system.exitProcess

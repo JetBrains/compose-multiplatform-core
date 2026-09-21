@@ -97,10 +97,10 @@ sealed interface WindowDecoration {
     @ExperimentalComposeUiApi
     @Immutable
     data class Undecorated(
-        val frame: WindowFrame?,
-        val tiling: WindowFrameTiling?,
-        val titleBarLayoutLeft: List<TitleBarElement>,
-        val titleBarLayoutRight: List<TitleBarElement>,
+        val frame: WindowFrame? = null,
+        val tiling: WindowFrameTiling? = null,
+        val titleBarLayoutLeft: List<TitleBarElement> = emptyList(),
+        val titleBarLayoutRight: List<TitleBarElement> = emptyList(),
     ) : WindowDecoration
 
     enum class TitleBarElement {

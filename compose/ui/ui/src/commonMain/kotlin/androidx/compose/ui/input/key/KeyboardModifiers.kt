@@ -16,11 +16,10 @@
 
 package androidx.compose.ui.input.key
 
-import androidx.compose.ui.input.pointer.EmptyPointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 
 typealias KeyboardModifiers = PointerKeyboardModifiers
 
-internal fun EmptyKeyboardModifiers(): KeyboardModifiers = EmptyPointerKeyboardModifiers()
+internal fun EmptyKeyboardModifiers(): KeyboardModifiers = PointerKeyboardModifiers()
 
 expect val KeyEvent.keyboardModifiers: KeyboardModifiers

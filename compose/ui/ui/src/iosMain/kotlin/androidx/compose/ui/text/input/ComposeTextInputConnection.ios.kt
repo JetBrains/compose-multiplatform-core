@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.text.input
 
+import androidx.compose.runtime.DataSource
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.TextToolbarStatus
 import androidx.compose.ui.platform.UIKitNativeTextInputContextMenuCustomAction
@@ -44,13 +45,15 @@ internal open class ComposeTextInputConnection(
     coroutineScope: CoroutineScope,
     viewConfiguration: ViewConfiguration,
     focusedViewsList: FocusedViewsList?,
-    focusManager: () -> ComposeSceneFocusManager?
+    focusManager: () -> ComposeSceneFocusManager?,
+    currentFrameSnapshot: () -> DataSource.Snapshot? = { null },
 ) : TextInputConnection(
     updateView,
     view,
     coroutineScope,
     focusedViewsList,
-    focusManager
+    focusManager,
+    currentFrameSnapshot,
 ) {
     // Fixes a problem where the menu is shown before the textInputView gets its final layout.
     private var showMenuOrUpdatePosition = {}

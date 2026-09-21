@@ -731,25 +731,21 @@ private class AccessibilityElement(
         getCachedIfAlive(CachedAccessibilityPropertyKeys.accessibilityIdentifier) {
             node.accessibilityIdentifier
         }
-    }
 
     override fun accessibilityHint(): String? =
         getCachedIfAlive(CachedAccessibilityPropertyKeys.accessibilityHint) {
             node.accessibilityHint
         }
-    }
 
     override fun accessibilityCustomActions(): List<UIAccessibilityCustomAction> =
         getCachedIfAlive(CachedAccessibilityPropertyKeys.accessibilityCustomActions, emptyList()) {
             node.accessibilityCustomActions
         }
-    }
 
     override fun accessibilityTraits(): UIAccessibilityTraits =
         getCachedIfAlive(CachedAccessibilityPropertyKeys.accessibilityTraits, UIAccessibilityTraitNone) {
             node.accessibilityTraits
         }
-    }
 
     override fun accessibilityPerformEscape(): Boolean = getIfAlive {
         if (node.accessibilityPerformEscape()) {

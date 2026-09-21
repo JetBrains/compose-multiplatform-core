@@ -183,7 +183,7 @@ object WasmJsApplication : Application, Clipboard by createPlatformClipboard() {
             LocalUriHandler provides this,
             LocalClipboard provides this,
             LocalFontFamilyResolver provides fontFamilyResolver,
-            LocalHapticFeedback provides remember { DefaultHapticFeedback() },
+            LocalHapticFeedback provides DefaultHapticFeedback,
             LocalInputModeManager provides remember { DefaultInputModeManager() },
         ) {
             content()

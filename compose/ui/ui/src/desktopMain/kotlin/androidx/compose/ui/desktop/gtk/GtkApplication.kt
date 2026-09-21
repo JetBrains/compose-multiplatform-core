@@ -158,7 +158,7 @@ object GtkApplication : Application {
             LocalUriHandler provides this@GtkApplication,
             LocalClipboard provides this@GtkApplication,
             LocalFontFamilyResolver provides fontFamilyResolver,
-            LocalHapticFeedback provides remember { DefaultHapticFeedback() },
+            LocalHapticFeedback provides DefaultHapticFeedback,
         ) {
             content()
         }

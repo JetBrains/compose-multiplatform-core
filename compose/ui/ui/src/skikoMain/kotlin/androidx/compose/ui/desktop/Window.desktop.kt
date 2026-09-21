@@ -350,3 +350,20 @@ fun Window(
     }
     window.Content(onLayout)
 }
+
+/**
+ * Upstream deprecated the public `androidx.compose.ui.SystemTheme` enum and re-typed
+ * `LocalSystemTheme` to skiko's, but this fork's `Window`/`Application` surface still exposes the
+ * Compose one. These two map between them at the boundary, so the fork's public API is unchanged.
+ */
+internal fun SystemTheme.asSkikoSystemTheme(): org.jetbrains.skiko.SystemTheme = when (this) {
+    SystemTheme.Dark -> org.jetbrains.skiko.SystemTheme.DARK
+    SystemTheme.Light -> org.jetbrains.skiko.SystemTheme.LIGHT
+    SystemTheme.Unknown -> org.jetbrains.skiko.SystemTheme.UNKNOWN
+}
+
+internal fun org.jetbrains.skiko.SystemTheme.asComposeSystemTheme(): SystemTheme = when (this) {
+    org.jetbrains.skiko.SystemTheme.DARK -> SystemTheme.Dark
+    org.jetbrains.skiko.SystemTheme.LIGHT -> SystemTheme.Light
+    org.jetbrains.skiko.SystemTheme.UNKNOWN -> SystemTheme.Unknown
+}

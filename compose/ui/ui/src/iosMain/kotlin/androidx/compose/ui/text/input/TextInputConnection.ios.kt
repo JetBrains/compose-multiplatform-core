@@ -16,6 +16,9 @@
 
 package androidx.compose.ui.text.input
 
+import androidx.compose.runtime.withTransaction
+import androidx.compose.runtime.enter
+import androidx.compose.runtime.DataSource
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
@@ -53,7 +56,26 @@ internal abstract class TextInputConnection(
     protected val coroutineScope: CoroutineScope,
     protected val focusedViewsList: FocusedViewsList?,
     private var focusManager: () -> ComposeSceneFocusManager?,
+    /**
+     * The owning scene's current frame-cycle unit, or `null` when frame isolation is off.
+     * Supplied as a lambda because the unit is rotated once per frame.
+     */
+    private val currentFrameSnapshot: () -> DataSource.Snapshot? = { null },
 ): TextEditingDelegate {
+
+    /**
+     * Runs a UIKit text-input ingress as one slice of the scene's frame cycle: reads observe the
+     * frame's pinned generation and writes publish atomically when the block ends.
+     *
+     * UIKit calls into this class from its own event loop, outside any frame, so the ingresses have
+     * to open their own slice. Enter *and* transact, in that order: a transaction alone is not a
+     * read scope, so a data source that binds its view in `makeCurrent` would be blind inside it.
+     * Nests freely — an inner slice folds into an enclosing one.
+     */
+    private inline fun <T> withFrameTransaction(block: () -> T): T {
+        val frame = currentFrameSnapshot() ?: return block()
+        return frame.enter { frame.withTransaction(block) }
+    }
 
     private var textInputServiceInvalidationsCount = 0
     val hasInvalidations: Boolean
@@ -206,16 +228,18 @@ internal abstract class TextInputConnection(
         requireUpdateView: Boolean = true,
         performCommand: TextEditingScope.() -> Unit
     ) {
-        currentRequest?.let {
-            postponeSelectionUpdate = true
-            it.editText {
-                performCommand()
+        withFrameTransaction {
+            currentRequest?.let {
+                postponeSelectionUpdate = true
+                it.editText {
+                    performCommand()
+                }
+                if (requireUpdateView) {
+                    updateView()
+                }
+                onTextFieldValueUpdated(it.stateSnapshot())
+                postponeSelectionUpdate = false
             }
-            if (requireUpdateView) {
-                updateView()
-            }
-            onTextFieldValueUpdated(it.stateSnapshot())
-            postponeSelectionUpdate = false
         }
     }
 
@@ -301,7 +325,8 @@ internal abstract class TextInputConnection(
         floatingCursorTranslation = null
     }
 
-    override fun hasText(): Boolean = currentTextFieldValue?.text?.isNotEmpty() ?: false
+    override fun hasText(): Boolean =
+        withFrameTransaction { currentTextFieldValue?.text?.isNotEmpty() ?: false }
 
     override fun insertText(text: String) {
         if (text == "\n") {
@@ -326,9 +351,11 @@ internal abstract class TextInputConnection(
         }
     }
 
-    override fun endOfDocument(): Int = currentTextFieldValue?.text?.length ?: 0
+    override fun endOfDocument(): Int =
+        withFrameTransaction { currentTextFieldValue?.text?.length ?: 0 }
 
-    override fun getSelectedTextRange(): TextRange? = currentTextFieldValue?.selection
+    override fun getSelectedTextRange(): TextRange? =
+        withFrameTransaction { currentTextFieldValue?.selection }
 
     override fun setSelectedTextRange(range: TextRange?) {
         edit(requireUpdateView = false) {
@@ -370,8 +397,8 @@ internal abstract class TextInputConnection(
         }
     }
 
-    override fun markedTextRange(): TextRange? {
-        return currentTextFieldValue?.composition
+    override fun markedTextRange(): TextRange? = withFrameTransaction {
+        currentTextFieldValue?.composition
     }
 
     override fun unmarkText() {

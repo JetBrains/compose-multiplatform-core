@@ -203,7 +203,7 @@ object LinuxApplication : Application {
             LocalUriHandler provides this@LinuxApplication,
             LocalClipboard provides this@LinuxApplication,
             LocalFontFamilyResolver provides fontFamilyResolver,
-            LocalHapticFeedback provides remember { DefaultHapticFeedback() },
+            LocalHapticFeedback provides DefaultHapticFeedback,
         ) {
             content()
         }

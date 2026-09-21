@@ -449,7 +449,7 @@ object MacOsApplication : Application,
             LocalUriHandler provides this@MacOsApplication,
             LocalClipboard provides this@MacOsApplication,
             LocalFontFamilyResolver provides fontFamilyResolver,
-            LocalHapticFeedback provides remember { DefaultHapticFeedback() },
+            LocalHapticFeedback provides DefaultHapticFeedback,
             LocalPointerIconService provides pointerIconService,
             LocalInputModeManager provides inputModeManager,
         ) {

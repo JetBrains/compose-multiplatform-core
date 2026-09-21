@@ -24,6 +24,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
+import androidx.compose.ui.desktop.asComposeSystemTheme
+import androidx.compose.ui.desktop.asSkikoSystemTheme
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.awt.SwingWindow
@@ -126,7 +128,7 @@ fun Window(
     enabled: Boolean = true,
     focusable: Boolean = true,
     alwaysOnTop: Boolean = false,
-    systemTheme: SystemTheme = LocalSystemTheme.current,
+    systemTheme: SystemTheme = LocalSystemTheme.current.asComposeSystemTheme(),
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
     onLayout: (WindowData) -> Unit = {},
@@ -347,7 +349,7 @@ fun singleWindowApplication(
         enabled = enabled,
         focusable = focusable,
         alwaysOnTop = alwaysOnTop,
-        systemTheme = LocalSystemTheme.current,
+        systemTheme = LocalSystemTheme.current.asComposeSystemTheme(),
         onPreviewKeyEvent = onPreviewKeyEvent,
         onKeyEvent = onKeyEvent,
         onLayout = onLayout,

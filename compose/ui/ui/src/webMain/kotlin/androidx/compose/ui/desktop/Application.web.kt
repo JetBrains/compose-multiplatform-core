@@ -38,6 +38,8 @@ actual fun initializeApplication(
 internal actual fun currentApplication(): Application =
     checkNotNull(activeApplication) { "No active Application has been initialized for this page" }
 
+internal actual fun hasActiveComposeApplication(): Boolean = activeApplication != null
+
 internal actual fun defaultUriHandler(): UriHandler = WasmJsUriHandler()
 
 internal actual fun activateApplication(application: Application) {
