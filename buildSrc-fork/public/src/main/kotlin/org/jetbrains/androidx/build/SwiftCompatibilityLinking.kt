@@ -18,6 +18,7 @@ package org.jetbrains.androidx.build
 
 import java.io.File
 import org.gradle.api.Project
+import org.gradle.internal.os.OperatingSystem
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -36,7 +37,7 @@ fun Project.configureSwiftCompatibilityLinking() {
 }
 
 private fun KotlinNativeTarget.configureSwiftCompatibilityLinking() {
-    if (System.getProperty("os.name") != "Mac OS X") return
+    if (!OperatingSystem.current().isMacOsX) return
 
     val sdkName =
         when (konanTarget) {
