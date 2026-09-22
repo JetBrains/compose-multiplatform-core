@@ -38,7 +38,9 @@ class ForkPublicationVersionsTest {
 
     @Test
     fun catalogValueIsUsedWhenThereIsNoOverride() {
-        assertEquals("1.12.0-beta01", resolve("COMPOSE"))
+        // COMPOSE comes from PUBLICATION_BASELINES, not the catalog: its catalog entry is the
+        // androidx redirect target, not the version org.jetbrains.compose.* publishes under.
+        assertEquals("1.13.0-alpha01", resolve("COMPOSE"))
         assertEquals("2.11.0", resolve("LIFECYCLE"))
         assertEquals("1.5.0-alpha01", resolve("SAVEDSTATE"))
     }
@@ -50,13 +52,13 @@ class ForkPublicationVersionsTest {
 
     @Test
     fun overrideWinsOverTheCatalog() {
-        assertEquals("1.12.0-beta02", resolve("COMPOSE", override = "1.12.0-beta02"))
+        assertEquals("1.13.0-alpha02", resolve("COMPOSE", override = "1.13.0-alpha02"))
         assertEquals("2.11.1", resolve("LIFECYCLE", override = "2.11.1"))
     }
 
     @Test
     fun snapshotReplacesThePreReleaseRatherThanAppending() {
-        assertEquals("1.12.0-SNAPSHOT", resolve("COMPOSE", snapshot = true))
+        assertEquals("1.13.0-SNAPSHOT", resolve("COMPOSE", snapshot = true))
         assertEquals("1.5.0-SNAPSHOT", resolve("SAVEDSTATE", snapshot = true))
     }
 
@@ -92,7 +94,7 @@ class ForkPublicationVersionsTest {
     @Test
     fun overrideOutsideTheHouseGrammarFails() {
         assertFailsWith("followed by a number only") {
-            resolve("COMPOSE", override = "1.12.0-beta01.1")
+            resolve("COMPOSE", override = "1.13.0-alpha01.1")
         }
     }
 
@@ -104,9 +106,11 @@ class ForkPublicationVersionsTest {
     }
 
     @Test
-    fun overrideBelowTheCatalogValueFails() {
+    fun overrideBelowTheBaselineFails() {
+        // Same major.minor as the baseline, so the line check passes and the ordering check is
+        // what must reject it: a pre-release sorts below the stable version it precedes.
         assertFailsWith("is below the branch's version") {
-            resolve("COMPOSE", override = "1.12.0-alpha09")
+            resolve("LIFECYCLE", override = "2.11.0-alpha01")
         }
     }
 
@@ -115,6 +119,22 @@ class ForkPublicationVersionsTest {
         assertFailsWith("outside the branch's 2.11 line") {
             resolve("LIFECYCLE", override = "2.12.0")
         }
+    }
+
+    @Test
+    fun composeIsCheckedAgainstItsPublicationLineNotTheCatalog() {
+        // The catalog says 1.12.0-beta01 for COMPOSE, but that is the androidx redirect target.
+        // The published line is 1.13.x, so a 1.13 override must be accepted and a 1.12 one refused.
+        assertEquals("1.13.0-alpha05", resolve("COMPOSE", override = "1.13.0-alpha05"))
+        assertFailsWith("outside the branch's 1.13 line") {
+            resolve("COMPOSE", override = "1.12.0-beta02")
+        }
+    }
+
+    @Test
+    fun theGuardNamesTheRegisterItCheckedAgainst() {
+        assertFailsWith("PUBLICATION_BASELINES") { resolve("COMPOSE", override = "1.9.0") }
+        assertFailsWith("libraryversions.toml") { resolve("LIFECYCLE", override = "2.12.0") }
     }
 
     private fun assertFailsWith(expectedInMessage: String, block: () -> Unit) {
