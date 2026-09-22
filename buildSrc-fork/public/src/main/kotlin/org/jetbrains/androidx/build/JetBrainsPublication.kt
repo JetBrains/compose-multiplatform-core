@@ -201,10 +201,6 @@ class JetBrainsVersions(val libraryToVersion: Map<String, String>) : Serializabl
             "Libraries $nonRegisteredLibraries are not registered in the JetBrainsPublication class"
         }
     }
-
-    fun versionOf(libraryName: String?): String {
-        return libraryName?.let(libraryToVersion::get) ?: "9999.0.0-SNAPSHOT"
-    }
 }
 
 fun ComposeComponent.library() = requireNotNull(projectPathToLibrary[path]) {

@@ -20,11 +20,14 @@ import androidx.build.Version
 import org.gradle.api.Project
 
 fun Project.changeMavenCoordinatesToJetBrains() {
+    // Every project gets JetBrains coordinates, not only what we publish: an unpublished module
+    // (e.g. navigation-testing) would otherwise resolve against redirected artifacts.
     val component = JetBrainsPublication.projectPathToComponent[path]
-    val versions = JetBrainsVersionsService.versions(project)
 
     val group = JetBrainsPublication.mavenGroupFor(path)
-    val version = Version(versions.versionOf(component?.library()))
+    // An unpublished module keeps upstream's placeholder version; it is never released, it only
+    // needs JetBrains coordinates so it resolves against its sibling projects.
+    val version = Version(component?.let { forkPublicationVersion(it.library()) } ?: "9999.0.0-SNAPSHOT")
     this.group = group
     this.version = version
 

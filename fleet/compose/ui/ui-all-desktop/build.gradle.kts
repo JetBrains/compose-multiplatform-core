@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+import org.jetbrains.androidx.build.forkPublicationVersion
+
+import org.jetbrains.androidx.build.registerRedirectVersionsExtension
+
 plugins {
     id("java")
     id("maven-publish")
@@ -21,11 +25,19 @@ plugins {
     id("JetbrainsUnsplitPackagePlugin")
 }
 
+// The upstream `androidx.*` version of savedstate, which this aggregate's dependencies name. Read
+// through the redirect registry because the fork no longer builds savedstate from source.
+// Registered explicitly because this is a plain java/shadow project: it does not apply
+// JetBrainsAndroidXImplPlugin, which is what registers the extension for AndroidX modules.
+registerRedirectVersionsExtension()
+val redirectVersions = extensions.getByType<org.jetbrains.androidx.build.RedirectVersions>()
+
 unsplitPackage {
     splitPackageModule(project(":compose:ui:ui"))
     splitPackageModule(project(":compose:ui:ui-backhandler"))
     splitPackageModule(project(":compose:ui:ui-geometry"))
     splitPackageModule(project(":compose:ui:ui-graphics"))
+    splitPackageModule(project(":compose:ui:ui-skiko"))
     splitPackageModule(project(":compose:ui:ui-text"))
     splitPackageModule(project(":compose:ui:ui-unit"))
     splitPackageModule(project(":compose:ui:ui-util"))
@@ -36,26 +48,21 @@ unsplitPackage {
     dependency(libs.kotlinCoroutinesCore)
     dependency(libs.kotlinSerializationJson)
 
-    dependency(libs.skiko)
+    dependency(libs.skiko.asProvider())
     dependency(libs.atomicFu)
     dependency("org.jetbrains.kotlinx:kotlinx-io-core-jvm:${libs.versions.kotlinxIo.get()}")
 
     dependency(project(":compose:runtime:runtime"))
     dependency(project(":compose:runtime:runtime-retain"))
     dependency(project(":compose:runtime:runtime-saveable"))
-    dependency(project(":savedstate:savedstate-compose"))
-    dependency(project(":lifecycle:lifecycle-common"))
-    dependency(project(":lifecycle:lifecycle-runtime"))
-    dependency(project(":lifecycle:lifecycle-runtime-compose"))
-    dependency(project(":lifecycle:lifecycle-viewmodel"))
-    dependency(project(":lifecycle:lifecycle-viewmodel-savedstate"))
+    dependency("androidx.savedstate:savedstate-compose:${redirectVersions.get("androidx.savedstate")}")
+    // Fleet loads lifecycle from this one aggregate, which carries all five modules.
+    dependency(project(":fleet:lifecycle:lifecycle-all-desktop"))
 }
 
 configure<PublishingExtension> {
     publications.withType<MavenPublication> {
         groupId = "org.jetbrains.fleet.compose.ui"
-        version = providers.environmentVariable("COMPOSE_CUSTOM_VERSION").getOrNull()
-            ?: properties["jetbrains.publication.version.COMPOSE"] as String?
-                ?: "0.0.0-SNAPSHOT"
+        version = forkPublicationVersion("COMPOSE")
     }
 }

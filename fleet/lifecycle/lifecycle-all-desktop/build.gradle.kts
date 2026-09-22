@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import org.jetbrains.androidx.build.forkPublicationVersion
 import org.jetbrains.androidx.build.registerRedirectVersionsExtension
 
 plugins {
@@ -54,14 +55,13 @@ unsplitPackage {
     dependency(project(":compose:runtime:runtime-saveable"))
     dependency(project(":compose:ui:ui"))
 //    dependency(project(":navigation:navigation3"))
-    dependency(project(":savedstate:savedstate"))
+    dependency("androidx.savedstate:savedstate:${redirectVersions.get("androidx.savedstate")}")
     dependency(libs.jspecify)
 }
 
 configure<PublishingExtension> {
     publications.withType<MavenPublication> {
         groupId = "org.jetbrains.fleet.androidx.lifecycle"
-        version = properties["jetbrains.publication.version.LIFECYCLE"] as String?
-                ?: "0.0.0-SNAPSHOT"
+        version = forkPublicationVersion("LIFECYCLE")
     }
 }
