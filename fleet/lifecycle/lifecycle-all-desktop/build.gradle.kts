@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import org.jetbrains.androidx.build.forkPublicationVersion
 import org.jetbrains.androidx.build.registerRedirectVersionsExtension
 
 plugins {
@@ -61,7 +62,6 @@ unsplitPackage {
 configure<PublishingExtension> {
     publications.withType<MavenPublication> {
         groupId = "org.jetbrains.fleet.androidx.lifecycle"
-        version = properties["jetbrains.publication.version.LIFECYCLE"] as String?
-                ?: "0.0.0-SNAPSHOT"
+        version = forkPublicationVersion("LIFECYCLE")
     }
 }

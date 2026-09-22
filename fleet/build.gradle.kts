@@ -27,6 +27,11 @@ tasks.register("publish") {
     )
 }
 
+// Same name as the Gradle `publishToMavenLocal` lifecycle task, but not the same result as
+// `./fleet/publishToMavenLocal.sh`: the script passes -Pjetbrains.publication.snapshot=true,
+// which this task has no way to set for itself, so running it through `./gradlew` writes
+// RELEASE-versioned artifacts while the script writes snapshots. Use the script; it's the
+// intended entry point.
 tasks.register("publishToMavenLocal") {
     group = "publishing"
 
