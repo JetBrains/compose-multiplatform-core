@@ -33,10 +33,12 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.mandatorySystemGestures
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContent
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.safeGestures
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.systemGestures
@@ -59,13 +61,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.Placeable.PlacementScope
+import androidx.compose.ui.layout.RectRulers
 import androidx.compose.ui.layout.WindowInsetsRulers
+import androidx.compose.ui.layout.getDisplayCutoutBounds
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 
 val WindowInsetsDemos = Screen.Selection(
     "Window Insets",
     Screen.Fullscreen("Window Insets Padding") { WindowInsetsPaddingDemo(it) },
     Screen.Fullscreen("Window Insets Rulers") { WindowInsetsRulersDemo(it) },
+    Screen.Fullscreen("Display Cutouts") { DisplayCutoutsDemo(it) },
 )
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -98,6 +109,37 @@ private fun WindowInsetsRulersDemo(back: () -> Unit) {
                 .border(4.dp, overlay.color)
                 .background(overlay.color.copy(alpha = OverlayAlpha)),
         )
+    }
+}
+
+@Composable
+private fun DisplayCutoutsDemo(back: () -> Unit) {
+    var cutoutBounds by remember { mutableStateOf(emptyList<IntRect>()) }
+    val density = LocalDensity.current
+
+    MaterialTheme {
+        Box(
+            Modifier.fillMaxSize()
+                .background(Color(0xFFF8F9FA))
+                .captureDisplayCutoutBounds { bounds ->
+                    if (cutoutBounds != bounds) {
+                        cutoutBounds = bounds
+                    }
+                },
+        ) {
+            cutoutBounds.forEachIndexed { index, bounds ->
+                val width = with(density) { bounds.width.toDp() }
+                val height = with(density) { bounds.height.toDp() }
+                val color = OverlayColors[index % OverlayColors.size]
+                Box(
+                    Modifier.offset { IntOffset(bounds.left, bounds.top) }
+                        .size(width, height)
+                        .border(4.dp, color)
+                        .background(color.copy(alpha = OverlayAlpha)),
+                )
+            }
+            DisplayCutoutsControls(back, cutoutBounds.size)
+        }
     }
 }
 
@@ -177,6 +219,47 @@ private fun InsetOverlayControls(
             }
         }
     }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun DisplayCutoutsControls(back: () -> Unit, cutoutCount: Int) {
+    Column(
+        modifier = Modifier.fillMaxWidth()
+            .windowInsetsPadding(WindowInsets.safeContent)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Button(onClick = back) {
+                Text("Back")
+            }
+            Spacer(Modifier.width(12.dp))
+            Text("Display Cutouts", style = MaterialTheme.typography.h6)
+        }
+        Text("Reported cutouts: $cutoutCount")
+    }
+}
+
+private fun Modifier.captureDisplayCutoutBounds(
+    onBoundsChange: (List<IntRect>) -> Unit,
+): Modifier = layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints)
+    layout(placeable.width, placeable.height) {
+        placeable.place(0, 0)
+        onBoundsChange(getDisplayCutoutBounds().mapNotNull(::readRect))
+    }
+}
+
+private fun PlacementScope.readRect(rulers: RectRulers): IntRect? {
+    val left = rulers.left.current(Float.NaN)
+    val top = rulers.top.current(Float.NaN)
+    val right = rulers.right.current(Float.NaN)
+    val bottom = rulers.bottom.current(Float.NaN)
+    if (left.isNaN() || top.isNaN() || right.isNaN() || bottom.isNaN()) {
+        return null
+    }
+    return IntRect(left.roundToInt(), top.roundToInt(), right.roundToInt(), bottom.roundToInt())
 }
 
 private interface InsetOverlay {
