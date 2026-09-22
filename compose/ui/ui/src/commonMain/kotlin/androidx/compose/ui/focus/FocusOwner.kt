@@ -122,6 +122,9 @@ internal interface FocusOwner : FocusManager {
     /** Reset focus to the default focused item based on the focus direction. */
     fun resetFocus(focusDirection: FocusDirection): Boolean
 
+    /** Sends focus back into the hierarchy, after the frame that left it with none. */
+    fun scheduleFocusReentry()
+
     /**
      * Clear focus from the owner.
      *

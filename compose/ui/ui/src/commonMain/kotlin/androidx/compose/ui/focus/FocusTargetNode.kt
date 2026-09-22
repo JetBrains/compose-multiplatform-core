@@ -180,6 +180,7 @@ internal class FocusTargetNode(
                     focusDirection = Exit,
                     isAutomatic = true,
                 )
+            requireOwner().focusOwner.scheduleFocusReentry()
         }
     }
 
@@ -224,6 +225,7 @@ internal class FocusTargetNode(
                 // logic and calls clearFocus() on the owner after all the nodes in the hierarchy
                 // are invalidated.
                 focusOwner.scheduleInvalidationForOwner()
+                focusOwner.scheduleFocusReentry()
             }
             ActiveParent -> {
                 val focusOwner = requireOwner().focusOwner
