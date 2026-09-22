@@ -46,7 +46,7 @@ class ComposeSceneMediatorUnitTest {
     fun testDisposedMediatorShouldNotCrash() {
         runBlocking {
             val context = Dispatchers.Main + Job()
-            val frameChoreographer = FrameChoreographer.choreographerForWindow(UIWindow())
+            val frameChoreographer = makeFrameChoreographer()
             val mediator = makeMediator(
                 coroutineContext = context,
                 frameChoreographer = frameChoreographer,
@@ -92,7 +92,7 @@ class ComposeSceneMediatorUnitTest {
 
     private fun makeMediator(
         coroutineContext: CoroutineContext,
-        frameChoreographer: FrameChoreographer = FrameChoreographer.choreographerForWindow(UIWindow()),
+        frameChoreographer: FrameChoreographer = makeFrameChoreographer(),
     ): ComposeSceneMediator = ComposeSceneMediator(
         frameChoreographer = frameChoreographer,
         onFocusBehavior = OnFocusBehavior.DoNothing,
@@ -122,4 +122,19 @@ class ComposeSceneMediatorUnitTest {
             )
         },
     )
+
+    private companion object {
+        /**
+         * Windows the tests created, kept alive for the whole test process.
+         */
+        private val retainedWindows = mutableListOf<UIWindow>()
+
+        /** Returns a fresh choreographer, bound to a window that is never released. */
+        fun makeFrameChoreographer(): FrameChoreographer {
+            val window = UIWindow()
+            retainedWindows.add(window)
+
+            return FrameChoreographer.choreographerForWindow(window)
+        }
+    }
 }
