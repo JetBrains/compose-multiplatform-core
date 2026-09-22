@@ -306,27 +306,46 @@ internal enum class CustomDestinationResult {
     RedirectCancelled,
 }
 
+/**
+ * Notifies the ancestors of a node which is about to take the focus.
+ *
+ * @param requestOrigin the node the request started at. The descent already offered an automatic
+ *   enter to every level from it down to this node, so those hear no second one. `null` asks every
+ *   ancestor, which is what a flattened search needs.
+ */
 internal fun FocusTargetNode.performCustomRequestFocus(
     focusDirection: FocusDirection,
-    isAutomatic: Boolean,
+    requestOrigin: FocusTargetNode?,
 ): CustomDestinationResult {
     when (focusState) {
         Active,
         Captured -> return None
-        ActiveParent -> return requireActiveChild().performCustomClearFocus(focusDirection, isAutomatic)
+        ActiveParent -> return requireActiveChild().performCustomClearFocus(focusDirection, false)
         Inactive -> {
             val focusParent = nearestAncestor(Nodes.FocusTarget) ?: return None
+            // Nothing is notified until the walk reaches the origin. Below it, the descent asked.
+            val askParent = requestOrigin == null || this === requestOrigin
+            val originAbove = if (this === requestOrigin) null else requestOrigin
             return when (focusParent.focusState) {
                 Captured -> Cancelled
-                ActiveParent -> focusParent.performCustomRequestFocus(focusDirection, isAutomatic)
-                Active -> focusParent.performCustomEnter(focusDirection, isAutomatic)
+                ActiveParent -> focusParent.performCustomRequestFocus(focusDirection, originAbove)
+                Active -> focusParent.performCustomEnterIf(askParent, focusDirection)
                 Inactive ->
-                    focusParent.performCustomRequestFocus(focusDirection, isAutomatic).takeUnless { it == None }
-                        ?: focusParent.performCustomEnter(focusDirection, isAutomatic)
+                    focusParent
+                        .performCustomRequestFocus(focusDirection, originAbove)
+                        .takeUnless { it == None }
+                        ?: focusParent.performCustomEnterIf(askParent, focusDirection)
             }
         }
     }
 }
+
+/** An enter on an ancestor of the receiver of a focus request is never automatic. */
+private fun FocusTargetNode.performCustomEnterIf(
+    ask: Boolean,
+    focusDirection: FocusDirection,
+): CustomDestinationResult =
+    if (ask) performCustomEnter(focusDirection, isAutomatic = false) else None
 
 internal fun FocusTargetNode.performCustomClearFocus(
     focusDirection: FocusDirection,

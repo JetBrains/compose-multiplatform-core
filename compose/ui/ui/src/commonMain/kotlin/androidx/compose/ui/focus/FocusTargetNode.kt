@@ -24,7 +24,10 @@ import androidx.compose.ui.focus.CustomDestinationResult.Cancelled
 import androidx.compose.ui.focus.CustomDestinationResult.None
 import androidx.compose.ui.focus.CustomDestinationResult.RedirectCancelled
 import androidx.compose.ui.focus.CustomDestinationResult.Redirected
+import androidx.compose.ui.focus.FocusDirection.Companion.Enter
 import androidx.compose.ui.focus.FocusDirection.Companion.Exit
+import androidx.compose.ui.focus.FocusDirection.Companion.Next
+import androidx.compose.ui.focus.FocusDirection.Companion.Previous
 import androidx.compose.ui.focus.FocusProperties.Companion.UnsetFocusRect
 import androidx.compose.ui.focus.FocusRequester.Companion.Cancel
 import androidx.compose.ui.focus.FocusRequester.Companion.Redirect
@@ -106,27 +109,57 @@ internal class FocusTargetNode(
 
     override fun requestFocus(focusDirection: FocusDirection): Boolean {
         trace("FocusTransactions:requestFocus") {
-            if (fetchFocusProperties().canFocus) {
-                return assignFocus(focusDirection)
-            }
-            // This node cannot hold focus itself, so the destination below it is chosen by the
-            // focus system rather than by the caller. Offer this node's custom enter the choice
-            // before searching, and tell it that the choice is automatic - that is the whole
-            // distinction a custom enter needs in order to only steer focus it was not handed.
-            when (performCustomEnter(focusDirection, isAutomatic = true)) {
-                Redirected -> return true
-                Cancelled,
-                RedirectCancelled -> return false
-                None -> {}
-            }
-            return findChildCorrespondingToFocusEnter(focusDirection) {
-                it.assignFocus(focusDirection)
-            }
+            return enterFocus(focusDirection, requestOrigin = this) == true
         }
     }
 
-    private fun assignFocus(focusDirection: FocusDirection): Boolean {
-        return when (performCustomRequestFocus(focusDirection, isAutomatic = false)) {
+    /**
+     * Gives the focus to this node, or to one level below it when this node cannot hold the focus.
+     *
+     * @param requestOrigin the node the request started at, at or above this node. Every level from
+     *   it down to this node already heard its automatic enter, so [performCustomRequestFocus] asks
+     *   none of them again.
+     * @return `true` when a node took the focus, `false` when none did, `null` when a custom enter
+     *   cancelled it. A caller which tries the siblings in order must stop on `null`.
+     */
+    private fun enterFocus(
+        focusDirection: FocusDirection,
+        requestOrigin: FocusTargetNode?,
+    ): Boolean? {
+        if (fetchFocusProperties().canFocus) {
+            return assignFocus(focusDirection, requestOrigin)
+        }
+        // The focus system chooses the destination below this node, not the caller. So offer this
+        // node's custom enter the choice first, and tell it that the choice is automatic.
+        when (performCustomEnter(focusDirection, isAutomatic = true)) {
+            Redirected -> return true
+            Cancelled,
+            RedirectCancelled -> return null
+            None -> {}
+        }
+        return when (focusDirection) {
+            // No geometry, so the choice is the first or the last child. One level at a time,
+            // so that every level hears its own enter.
+            Enter,
+            Next,
+            Previous ->
+                offerFocusToChildrenInOrder(focusDirection) { child ->
+                    child.enterFocus(focusDirection, requestOrigin)
+                }
+            // A 2-D search needs the bounds of the real candidates, so it keeps the flattened
+            // list. The groups it flattens hear a non-automatic enter only.
+            else ->
+                findChildCorrespondingToFocusEnter(focusDirection) {
+                    it.assignFocus(focusDirection, requestOrigin = null)
+                }
+        }
+    }
+
+    private fun assignFocus(
+        focusDirection: FocusDirection,
+        requestOrigin: FocusTargetNode?,
+    ): Boolean {
+        return when (performCustomRequestFocus(focusDirection, requestOrigin)) {
             None -> performRequestFocus()
             Redirected -> true
             Cancelled,
