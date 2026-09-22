@@ -159,6 +159,37 @@ internal fun FocusTargetNode.findChildCorrespondingToFocusEnter(
     return nextCandidate?.let { onFound.invoke(it) } ?: false
 }
 
+/**
+ * Offers each immediate child to [onFound], in the traversal order, until one takes the focus.
+ *
+ * [collectAccessibleChildren] flattens the non-focusable groups, so a custom enter on one of them
+ * never hears the delegated entry. A caller which descends through this one level at a time gives
+ * every level its own offer, the way Noria's `delegateFocusToFirstValidTarget` does.
+ *
+ * @return `true` when a child took the focus, `false` when none did, `null` when a custom enter
+ *   cancelled it. The caller must not try another sibling after a cancel.
+ */
+internal fun FocusTargetNode.offerFocusToChildrenInOrder(
+    direction: FocusDirection,
+    onFound: (FocusTargetNode) -> Boolean?,
+): Boolean? {
+    val children = MutableVector<FocusTargetNode>()
+    visitChildren(Nodes.FocusTarget) {
+        // TODO(b/278765590): Find the root issue why visitChildren returns unattached nodes.
+        if (it.isAttached && !it.requireLayoutNode().isDeactivated) children.add(it)
+    }
+    val indices =
+        when (direction) {
+            Previous -> children.lastIndex downTo 0
+            else -> 0..children.lastIndex
+        }
+    for (index in indices) {
+        val result = onFound(children[index]) ?: return null
+        if (result) return true
+    }
+    return false
+}
+
 // Search among your children for the next child.
 // If the next child is not found, generate more children by requesting a beyondBoundsLayout.
 private fun FocusTargetNode.generateAndSearchChildren(
