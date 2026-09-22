@@ -179,6 +179,7 @@ private def configureSwiftUtils(target, xcodeProjectDir, sdkName, destination, a
     def headersPath = new File(buildDir, "/Products/usr/local/include/${libraryName}")
     def generatedHeaderPath = new File(headersPath, "${libraryName}-Swift.h")
     def sourceDefPath = new File(project.projectDir, "src/nativeInterop/cinterop/swiftUtils.def")
+    def interopHeaderPath = new File(headersPath, "${libraryName}-ImportBridge.h")
     def compilerArgs = [
             "-include-binary", libraryPath.toString(),
     ]
@@ -226,7 +227,8 @@ private def configureSwiftUtils(target, xcodeProjectDir, sdkName, destination, a
                 def cinteropTask = tasks[interopProcessingTaskName]
                 cinteropTask.dependsOn(libTask)
                 cinteropTask.inputs.file(generatedHeaderPath)
-                extraOpts("-header", generatedHeaderPath.name)
+                cinteropTask.inputs.file(interopHeaderPath)
+                extraOpts("-header", interopHeaderPath.name)
                 compilerOpts("-I${headersPath}")
                 defFile(sourceDefPath)
             }
