@@ -165,6 +165,8 @@ internal class FocusOwnerImpl(
      * component.
      */
     override fun clearFocus(force: Boolean) {
+        // Read before the clear: a hierarchy that had no focus has lost none.
+        val hadFocus = activeFocusTargetNode != null
         clearFocus(
             force,
             refreshFocusEvents = true,
@@ -172,6 +174,7 @@ internal class FocusOwnerImpl(
             focusDirection = Exit,
             isAutomatic = false
         )
+        if (hadFocus) scheduleFocusReentry()
     }
 
     override fun clearFocus(
@@ -225,6 +228,33 @@ internal class FocusOwnerImpl(
         if (!successfulReset) clearOwnerFocus(isAutomatic = false)
 
         return successfulReset
+    }
+
+    private var isFocusReentryScheduled = false
+
+    /**
+     * Re-enters the focus root once the frame has measured and placed its content.
+     *
+     * A lazy layout composes its content while it is measured, so the target which replaces the one
+     * that left does not exist at onApplyChanges. A re-entry there would search an empty subtree.
+     * Noria defers the same work past the frame.
+     */
+    private val reenterFocusAfterLayout =
+        object : Owner.OnLayoutCompletedListener {
+            override fun onLayoutComplete() {
+                isFocusReentryScheduled = false // A later frame may schedule again.
+                if (activeFocusTargetNode != null) return
+                if (!rootFocusNode.node.isAttached) return
+                rootFocusNode.requestFocus(FocusDirection.Enter)
+            }
+        }
+
+    // The owner requests a measure and layout pass for the listener, so the re-entry always runs.
+    // An end of apply changes listener would wait for the next composition instead.
+    override fun scheduleFocusReentry() {
+        if (isFocusReentryScheduled) return
+        isFocusReentryScheduled = true
+        owner.registerOnLayoutCompletedListener(reenterFocusAfterLayout)
     }
 
     private fun clearFocus(forced: Boolean = false, refreshFocusEvents: Boolean): Boolean {
