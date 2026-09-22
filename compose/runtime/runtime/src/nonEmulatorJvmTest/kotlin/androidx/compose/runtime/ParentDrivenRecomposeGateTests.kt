@@ -677,4 +677,243 @@ class ParentDrivenRecomposeGateTests {
             runner.join()
         }
     }
+
+    @Test
+    fun aGatelessDescendantWaitsForItsGatedAncestor(): Unit = runBlocking {
+        // A gated composition recomposes in wave 2. A gate-less one recomposes in wave 1, which runs
+        // first. So a gate-less composition nested inside a gated one recomposes before it. The
+        // nested composition then runs a content lambda that its ancestor has not refreshed.
+        val frameClock = BroadcastFrameClock()
+        val recomposer = Recomposer(coroutineContext + Dispatchers.Unconfined + frameClock)
+        val runner =
+            launch(Dispatchers.Unconfined + frameClock, start = CoroutineStart.UNDISPATCHED) {
+                recomposer.runRecomposeAndApplyChanges()
+            }
+        val state = mutableStateOf(0)
+        val order = mutableListOf<String>()
+        val ancestorHolder = arrayOfNulls<Composition>(1)
+        val nestedHolder = arrayOfNulls<Composition>(1)
+        val ancestorContext = arrayOfNulls<CompositionContext>(1)
+
+        try {
+            val ancestor = Composition(UnitApplier(), recomposer).also { ancestorHolder[0] = it }
+            ancestor.setParentDrivenRecomposeGate { false } // gated, but the gate never closes
+            ancestor.setContent {
+                order += "ancestor"
+                state.value
+                ancestorContext[0] = rememberCompositionContext()
+            }
+            // No gate here, so this one recomposes in wave 1.
+            val nested =
+                Composition(UnitApplier(), ancestorContext[0]!!).also { nestedHolder[0] = it }
+            nested.setContent {
+                order += "nested"
+                state.value
+            }
+
+            order.clear()
+            state.value = 1
+            Snapshot.sendApplyNotifications()
+            frameClock.sendFrame(1L)
+
+            assertEquals(
+                listOf("ancestor", "nested"),
+                order,
+                "a gate-less composition must not recompose before the composition that encloses it",
+            )
+        } finally {
+            nestedHolder[0]?.dispose()
+            ancestorHolder[0]?.dispose()
+            recomposer.cancel()
+            runner.join()
+        }
+    }
+
+    @Test
+    fun aGatelessDescendantRecomposesInTheSameFrameAsItsGatedAncestor(): Unit = runBlocking {
+        // Wave 1 sends a gate-less composition to wave 2 when its ancestor is gated. The
+        // ancestor's gate returns false here, so the ancestor recomposes in the same pass.
+        // The nested composition must recompose in the same frame, not one frame later.
+        val frameClock = BroadcastFrameClock()
+        val recomposer = Recomposer(coroutineContext + Dispatchers.Unconfined + frameClock)
+        val runner =
+            launch(Dispatchers.Unconfined + frameClock, start = CoroutineStart.UNDISPATCHED) {
+                recomposer.runRecomposeAndApplyChanges()
+            }
+        val state = mutableStateOf(0)
+        var ancestorComposed = 0
+        var nestedComposed = 0
+        val ancestorContext = arrayOfNulls<CompositionContext>(1)
+        val ancestorHolder = arrayOfNulls<Composition>(1)
+        val nestedHolder = arrayOfNulls<Composition>(1)
+
+        try {
+            val ancestor = Composition(UnitApplier(), recomposer).also { ancestorHolder[0] = it }
+            ancestor.setParentDrivenRecomposeGate { false } // gated, but the gate never closes
+            ancestor.setContent {
+                ancestorComposed++
+                state.value
+                ancestorContext[0] = rememberCompositionContext()
+            }
+            // No gate here, so this one enters wave 1 unless its ancestor sends it to wave 2.
+            val nested =
+                Composition(UnitApplier(), ancestorContext[0]!!).also { nestedHolder[0] = it }
+            nested.setContent {
+                nestedComposed++
+                state.value
+            }
+            assertEquals(1, ancestorComposed)
+            assertEquals(1, nestedComposed)
+
+            state.value = 1
+            Snapshot.sendApplyNotifications()
+            frameClock.sendFrame(1L)
+
+            assertEquals(2, ancestorComposed, "the settled ancestor recomposes in this frame")
+            assertEquals(
+                2,
+                nestedComposed,
+                "the gate-less nested composition must recompose in the same frame, not the " +
+                    "next one",
+            )
+        } finally {
+            nestedHolder[0]?.dispose()
+            ancestorHolder[0]?.dispose()
+            recomposer.cancel()
+            runner.join()
+        }
+    }
+
+    @Test
+    fun aGatelessDescendantDeferredByItsAncestorArrivesOnTheNextFrame(): Unit = runBlocking {
+        // Wave 1 sends this gate-less composition to wave 2 because its ancestor is gated.
+        // The ancestor defers this frame, so the nested composition must defer with it.
+        // The re-arm must still deliver the nested composition on the next frame.
+        val frameClock = BroadcastFrameClock()
+        val recomposer = Recomposer(coroutineContext + Dispatchers.Unconfined + frameClock)
+        val runner =
+            launch(Dispatchers.Unconfined + frameClock, start = CoroutineStart.UNDISPATCHED) {
+                recomposer.runRecomposeAndApplyChanges()
+            }
+        val state = mutableStateOf(0)
+        var ancestorMeasurePending = false
+        var nestedComposed = 0
+        var nestedSaw = -1
+        val contextHolder = arrayOfNulls<CompositionContext>(1)
+        val ancestorHolder = arrayOfNulls<Composition>(1)
+        val nestedHolder = arrayOfNulls<Composition>(1)
+
+        try {
+            val ancestor = Composition(UnitApplier(), recomposer).also { ancestorHolder[0] = it }
+            ancestor.setParentDrivenRecomposeGate { ancestorMeasurePending }
+            val ancestorContent: @Composable () -> Unit = {
+                state.value
+                contextHolder[0] = rememberCompositionContext()
+            }
+            ancestor.setContent(ancestorContent)
+            // No gate here, so this one enters wave 1 unless its ancestor sends it to wave 2.
+            val nested =
+                Composition(UnitApplier(), contextHolder[0]!!).also { nestedHolder[0] = it }
+            nested.setContent {
+                nestedComposed++
+                nestedSaw = state.value
+            }
+            assertEquals(1, nestedComposed)
+            assertEquals(0, nestedSaw)
+
+            ancestorMeasurePending = true
+            state.value = 1
+            Snapshot.sendApplyNotifications()
+            frameClock.sendFrame(1L)
+            assertEquals(
+                1,
+                nestedComposed,
+                "the gate-less nested composition must defer with its gated ancestor",
+            )
+            assertTrue(recomposer.hasPendingWork, "the deferred invalidation must survive")
+
+            // The ancestor's pending measure re-runs its content. That is what the gate promised.
+            ancestorMeasurePending = false
+            ancestor.setContent(ancestorContent)
+            frameClock.sendFrame(2L)
+            assertEquals(2, nestedComposed, "the nested composition delivers on the next frame")
+            assertEquals(1, nestedSaw, "and it sees the new value")
+        } finally {
+            nestedHolder[0]?.let { if (!it.isDisposed) it.dispose() }
+            ancestorHolder[0]?.dispose()
+            recomposer.cancel()
+            runner.join()
+        }
+    }
+
+    @Test
+    fun aGatelessDescendantRecomposesAfterItsGatelessAncestorInWaveOne(): Unit = runBlocking {
+        // This is D1 from the design. Both compositions here have no gate. Both run in wave 1.
+        // Wave 1 sorts by depth. The ancestor must run before the composition nested inside it.
+        //
+        // `RecomposeScope.invalidate()` reaches the recomposer directly. It never touches the
+        // snapshot system. This test calls it on the nested composition's own scope first.
+        // It then writes a state read only by the ancestor. The intent is to make the nested
+        // composition's invalidation arrive at the recomposer before the ancestor's.
+        //
+        // The attempt does not build a red-green test. `CompositionContextImpl.invalidate`
+        // invalidates the enclosing composition before the nested one. Both composer
+        // implementations, `GapComposer.kt` and `LinkComposer.kt`, share this behavior. A
+        // direct call on the nested composition's own scope still enqueues the ancestor first.
+        // The nested composition still arrives second. The ancestor recomposes first here, with
+        // or without the depth sort in `Recomposer.kt`.
+        //
+        // The test still pins the invariant. A future change must not break it silently. The
+        // sibling test `aGatelessDescendantWaitsForItsGatedAncestor` covers the deterministic
+        // shape, D2. There a gate-less descendant sits under a gated ancestor. That shape is a
+        // real red-green test.
+        val frameClock = BroadcastFrameClock()
+        val recomposer = Recomposer(coroutineContext + Dispatchers.Unconfined + frameClock)
+        val runner =
+            launch(Dispatchers.Unconfined + frameClock, start = CoroutineStart.UNDISPATCHED) {
+                recomposer.runRecomposeAndApplyChanges()
+            }
+        val ancestorState = mutableStateOf(0)
+        val order = mutableListOf<String>()
+        val ancestorHolder = arrayOfNulls<Composition>(1)
+        val nestedHolder = arrayOfNulls<Composition>(1)
+        val ancestorContext = arrayOfNulls<CompositionContext>(1)
+        val nestedScopeHolder = arrayOfNulls<RecomposeScope>(1)
+
+        try {
+            // Neither composition has a gate. Both recompose in wave 1.
+            val ancestor = Composition(UnitApplier(), recomposer).also { ancestorHolder[0] = it }
+            ancestor.setContent {
+                order += "ancestor"
+                ancestorState.value
+                ancestorContext[0] = rememberCompositionContext()
+            }
+            val nested =
+                Composition(UnitApplier(), ancestorContext[0]!!).also { nestedHolder[0] = it }
+            nested.setContent {
+                order += "nested"
+                nestedScopeHolder[0] = currentRecomposeScope
+            }
+
+            order.clear()
+            // A direct call on the nested composition's own scope, made before any state
+            // write, tests whether call order alone can invert arrival at the recomposer.
+            nestedScopeHolder[0]!!.invalidate()
+            // Only the ancestor reads this state.
+            ancestorState.value = 1
+            Snapshot.sendApplyNotifications()
+            frameClock.sendFrame(1L)
+
+            assertEquals(
+                listOf("ancestor", "nested"),
+                order,
+                "the ancestor must recompose before the composition nested inside it",
+            )
+        } finally {
+            nestedHolder[0]?.dispose()
+            ancestorHolder[0]?.dispose()
+            recomposer.cancel()
+            runner.join()
+        }
+    }
 }

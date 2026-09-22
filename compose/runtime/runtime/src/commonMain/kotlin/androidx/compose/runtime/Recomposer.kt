@@ -691,9 +691,10 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             // provably current. A changed value would have already made the parent's body
             // or measure dirty.
             // A composition with a gate installed also waits when an enclosing one is
-            // deferred. The re-arm keeps its invalidation alive. Wave 2 sees only
-            // compositions with a gate installed. A nested composition with no gate
-            // recomposes in wave 1, before wave 2 evaluates any ancestor.
+            // deferred. The re-arm keeps its invalidation alive. Wave 2 receives a
+            // composition with a gate installed. Wave 2 also receives a composition
+            // that wave 1 sends there. Wave 1 sends a composition there if an
+            // enclosing composition already waits in wave 2.
             fun isParentDrivenComposition(composition: ControlledComposition): Boolean =
                 (composition as? CompositionImpl)?.parentDrivenRecomposeGate != null
 
@@ -702,19 +703,29 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             ): Boolean =
                 (composition as? CompositionImpl)?.parentDrivenRecomposeGate?.invoke() == true
 
-            // An enclosing composition's recompose and apply removes a nested composition.
-            // So a nested composition must not recompose while its remover is still due. Wave 2
-            // visits compositions in ascending depth order. A parent has a lower depth than the
-            // sub-composition it hosts. So every ancestor is already classified by the time this
-            // function runs. There is no exception to this order.
-            fun hasDeferredAncestor(composition: ControlledComposition): Boolean {
+            // An enclosing composition re-executes and supplies fresh values to a nested
+            // composition. A nested composition must not run first with values captured in
+            // an earlier pass. Wave 1 sorts toRecompose by depth before it calls this
+            // function. Wave 2 sorts skippedParentDriven by depth before it calls this
+            // function. A parent has a lower depth than the sub-composition it hosts.
+            // Ascending depth order classifies every ancestor before this function runs on
+            // it. There is no exception to this order.
+            // Tests whether any composition enclosing [composition] is in [set]. The walk climbs
+            // parentComposition, so a root ends it.
+            fun hasAncestorIn(
+                composition: ControlledComposition,
+                set: ScatterSet<ControlledComposition>,
+            ): Boolean {
                 var enclosing = (composition as? CompositionImpl)?.parentComposition
                 while (enclosing != null) {
-                    if (enclosing in deferredParentDriven) return true
+                    if (enclosing in set) return true
                     enclosing = enclosing.parentComposition
                 }
                 return false
             }
+
+            fun hasDeferredAncestor(composition: ControlledComposition): Boolean =
+                hasAncestorIn(composition, deferredParentDriven)
 
             fun clearRecompositionState() {
                 synchronized(stateLock) {
@@ -799,16 +810,29 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                         alreadyComposed.clear()
                         withIsolationOrNotifyObjectsInitialized {while (toRecompose.isNotEmpty() || toInsert.isNotEmpty()) {
                             try {
-                                toRecompose.fastForEach { composition ->
-                                    if (isParentDrivenComposition(composition)) {
-                                        skippedParentDriven.add(composition)
-                                    } else {
-                                        performRecompose(composition, modifiedValues)?.let {
-                                            toApply += it
+                                // Visit an enclosing composition before one nested inside it.
+                                // Wave 2 visits compositions in the same order. Wave 1 also
+                                // skips a composition when an enclosing one is already skipped.
+                                // Without the skip, the nested composition would recompose with
+                                // a lambda the enclosing composition has not refreshed yet.
+                                // Ascending depth classifies every ancestor first. This order is
+                                // what makes the second test correct.
+                                toRecompose
+                                    .sortedBy { (it as? CompositionImpl)?.compositionDepth ?: 0 }
+                                    .fastForEach { composition ->
+                                        if (
+                                            isParentDrivenComposition(composition) ||
+                                                (skippedParentDriven.isNotEmpty() &&
+                                                    hasAncestorIn(composition, skippedParentDriven))
+                                        ) {
+                                            skippedParentDriven.add(composition)
+                                        } else {
+                                            performRecompose(composition, modifiedValues)?.let {
+                                                toApply += it
+                                            }
+                                            alreadyComposed.add(composition)
                                         }
-                                        alreadyComposed.add(composition)
                                     }
-                                }
                             } catch (e: Throwable) {
                                 processCompositionError(e, recoverable = true)
                                 clearRecompositionState()
@@ -927,12 +951,13 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                                 // apply now, in the same frame.
                                 if (skippedParentDriven.isNotEmpty()) {
                                     // Visit an enclosing composition before one nested inside it.
-                                    // An enclosing composition's recompose and apply is what
-                                    // removes a nested one, so the remover must run first. Depth
-                                    // gives that directly. Registration order only approximated it,
-                                    // and two error paths could invert it. The isDisposed guard
-                                    // below then skips any nested composition an earlier apply
-                                    // already removed.
+                                    // An enclosing composition's recompose and apply supplies
+                                    // fresh values to the nested one. The nested composition
+                                    // must not run first with stale values. Depth gives that
+                                    // order directly. Registration order only approximated it.
+                                    // Two error paths could still invert registration order. The
+                                    // isDisposed guard below then skips any nested composition an
+                                    // earlier apply already removed.
                                     val orderedParentDriven =
                                         skippedParentDriven
                                             .asSet()
