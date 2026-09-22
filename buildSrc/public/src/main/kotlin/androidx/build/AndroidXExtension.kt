@@ -242,40 +242,6 @@ abstract class AndroidXExtension(
         versionIsSet = true
     }
 
-    private fun verifyVersionFormat(version: Version) {
-        val ALLOWED_PRERELEASE_PREFIXES = listOf("alpha", "beta", "rc", "dev")
-        if (version.buildMetadata != null) {
-            throw IllegalArgumentException(
-                "Version $version is not a proper version, " +
-                    "explicitly specifying metadata is not allowed"
-            )
-        }
-        val preRelease = version.preRelease
-        if (preRelease == null || version.isSnapshot()) {
-            return
-        }
-        if (ALLOWED_PRERELEASE_PREFIXES.any { preRelease.startsWith(it) }) {
-            for (potentialPrefix in ALLOWED_PRERELEASE_PREFIXES) {
-                if (preRelease.startsWith(potentialPrefix)) {
-                    val secondExtraPart = preRelease.removePrefix(potentialPrefix)
-                    if (secondExtraPart.toIntOrNull() == null) {
-                        throw IllegalArgumentException(
-                            "Version $version is not" +
-                                " a properly formatted version, please ensure that " +
-                                "$potentialPrefix is followed by a number only"
-                        )
-                    }
-                }
-            }
-        } else {
-            throw IllegalArgumentException(
-                "Version $version is not a proper " +
-                    "version, version suffixes following major.minor.patch should " +
-                    "be one of ${ALLOWED_PRERELEASE_PREFIXES.joinToString(", ")}"
-            )
-        }
-    }
-
     private fun isGroupVersionOverrideAllowed(): Boolean {
         // Grant an exception to the same-version-group policy for artifacts that haven't shipped a
         // stable API surface, e.g. 1.0.0-alphaXX, to allow for rapid early-stage development.
@@ -488,6 +454,49 @@ abstract class AndroidXExtension(
             // project is not included in that playground.
             playgroundProjectOrArtifact(project.rootProject, name)
         }
+    }
+}
+
+/**
+ * The version grammar this fork publishes under: `major.minor.patch`, an optional pre-release of
+ * `alpha|beta|rc|dev` followed by digits only, and no build metadata.
+ *
+ * Top level rather than a member of [AndroidXExtension] so that fork publication versions
+ * ([org.jetbrains.androidx.build.ForkPublicationVersions]) are held to the same grammar. Fork
+ * artifacts never reach [AndroidXExtension.chooseProjectVersion] — it returns early for them — so
+ * until now nothing checked their format.
+ */
+fun verifyVersionFormat(version: Version) {
+    val ALLOWED_PRERELEASE_PREFIXES = listOf("alpha", "beta", "rc", "dev")
+    if (version.buildMetadata != null) {
+        throw IllegalArgumentException(
+            "Version $version is not a proper version, " +
+                "explicitly specifying metadata is not allowed"
+        )
+    }
+    val preRelease = version.preRelease
+    if (preRelease == null || version.isSnapshot()) {
+        return
+    }
+    if (ALLOWED_PRERELEASE_PREFIXES.any { preRelease.startsWith(it) }) {
+        for (potentialPrefix in ALLOWED_PRERELEASE_PREFIXES) {
+            if (preRelease.startsWith(potentialPrefix)) {
+                val secondExtraPart = preRelease.removePrefix(potentialPrefix)
+                if (secondExtraPart.toIntOrNull() == null) {
+                    throw IllegalArgumentException(
+                        "Version $version is not" +
+                            " a properly formatted version, please ensure that " +
+                            "$potentialPrefix is followed by a number only"
+                    )
+                }
+            }
+        }
+    } else {
+        throw IllegalArgumentException(
+            "Version $version is not a proper " +
+                "version, version suffixes following major.minor.patch should " +
+                "be one of ${ALLOWED_PRERELEASE_PREFIXES.joinToString(", ")}"
+        )
     }
 }
 

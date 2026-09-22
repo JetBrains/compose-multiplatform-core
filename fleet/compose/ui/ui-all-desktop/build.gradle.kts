@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import org.jetbrains.androidx.build.forkPublicationVersion
+
 plugins {
     id("java")
     id("maven-publish")
@@ -54,8 +56,6 @@ unsplitPackage {
 configure<PublishingExtension> {
     publications.withType<MavenPublication> {
         groupId = "org.jetbrains.fleet.compose.ui"
-        version = providers.environmentVariable("COMPOSE_CUSTOM_VERSION").getOrNull()
-            ?: properties["jetbrains.publication.version.COMPOSE"] as String?
-                ?: "0.0.0-SNAPSHOT"
+        version = forkPublicationVersion("COMPOSE")
     }
 }

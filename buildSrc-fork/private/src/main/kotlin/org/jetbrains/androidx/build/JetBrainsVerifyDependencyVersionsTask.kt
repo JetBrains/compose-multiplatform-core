@@ -61,6 +61,19 @@ abstract class JetBrainsVerifyDependencyVersionsTask : DefaultTask() {
     }
 
     private fun verifyDependencyVersion(dependency: AndroidXDependency) {
+        // AOSP's stability rule models independent release trains: a beta artifact taking an
+        // alpha dependency is depending on something whose owners might still break it out from
+        // under you. This fork isn't a set of independent trains, it's one coherent cut of one
+        // branch, republished under honest versions. savedstate sits at alpha and Compose at beta
+        // in the same cut because that's where upstream has them *right now* - there's no
+        // separate savedstate release that could regress relative to this Compose release, so
+        // there's no inversion for this rule to catch. Keep enforcing it against genuine external
+        // dependencies, where the AOSP reasoning still applies.
+        //
+        // This branch was unreachable as long as every fork artifact was `*-fleet-SNAPSHOT`
+        // (`releasePhase` short-circuits snapshots to 0 either way); it only started firing once
+        // fork versions became real version strings.
+        if (JetBrainsPublication.isJetBrainsForkGroup(dependency.group)) return
         val projectVersion = version.get()
         val dependencyVersion = dependency.version
         val projectReleasePhase = releasePhase(projectVersion)
