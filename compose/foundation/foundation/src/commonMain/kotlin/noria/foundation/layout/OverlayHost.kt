@@ -65,51 +65,59 @@ fun OverlayHost(
                     SubcomposeLayout(
                         compositionContext = overlay.compositionContext,
                     ) { constraints ->
-                        val measurables = subcompose(overlay) {
-                            val overlayScope = remember(overlay) {
-                                object : OverlayScope {
-                                    override val anchorBounds: IntRect
-                                        get() = overlay.anchorBounds!!
+                        // isLive is read here, in measure, so its anchor-driven write reschedules
+                        // this measure and empties the slot in the same frame. See the design at
+                        // docs/superpowers/specs/2026-09-18-overlay-same-frame-removal-design.md.
+                        val slotContent: @Composable () -> Unit = if (overlay.isLive) {
+                            {
+                                val overlayScope = remember(overlay) {
+                                    object : OverlayScope {
+                                        override val anchorBounds: IntRect
+                                            get() = overlay.anchorBounds!!
 
-                                    override fun Modifier.align(alignment: Alignment): Modifier =
-                                        this then AlignModifier(alignment)
+                                        override fun Modifier.align(alignment: Alignment): Modifier =
+                                            this then AlignModifier(alignment)
 
-                                    override fun Modifier.matchParentSize(): Modifier =
-                                        this then MatchParentSize
+                                        override fun Modifier.matchParentSize(): Modifier =
+                                            this then MatchParentSize
 
-                                    override fun Modifier.alignInAnchor(alignment: Alignment): Modifier =
-                                        this then AlignInAnchorModifier(alignment)
+                                        override fun Modifier.alignInAnchor(alignment: Alignment): Modifier =
+                                            this then AlignInAnchorModifier(alignment)
 
-                                    override fun Modifier.alignByAnchor(alignment: Alignment): Modifier =
-                                        this then AlignByAnchorModifier(alignment)
+                                        override fun Modifier.alignByAnchor(alignment: Alignment): Modifier =
+                                            this then AlignByAnchorModifier(alignment)
 
-                                    override fun Modifier.alignByAnchor(
-                                        anchor: Alignment.Horizontal,
-                                        side: Alignment.Vertical,
-                                    ): Modifier =
-                                        this then AlignByAnchorHorizontalModifier(anchor, side)
+                                        override fun Modifier.alignByAnchor(
+                                            anchor: Alignment.Horizontal,
+                                            side: Alignment.Vertical,
+                                        ): Modifier =
+                                            this then AlignByAnchorHorizontalModifier(anchor, side)
 
-                                    override fun Modifier.alignByAnchor(
-                                        anchor: Alignment.Vertical,
-                                        side: Alignment.Horizontal,
-                                    ): Modifier =
-                                        this then AlignByAnchorVerticalModifier(anchor, side)
+                                        override fun Modifier.alignByAnchor(
+                                            anchor: Alignment.Vertical,
+                                            side: Alignment.Horizontal,
+                                        ): Modifier =
+                                            this then AlignByAnchorVerticalModifier(anchor, side)
+                                    }
                                 }
+                                // Resolved against the anchor's composition, because the
+                                // subcomposition's parent is the anchor's CompositionContext.
+                                val linkStrategy = LocalOverlayLinkStrategy.current
+                                Layout(
+                                    { overlay.content(overlayScope) },
+                                    Modifier.sizeIn(
+                                        overlayHostState.coordinates!!.size.width.toDp(),
+                                        overlayHostState.coordinates!!.size.height.toDp(),
+                                        overlayHostState.coordinates!!.size.width.toDp(),
+                                        overlayHostState.coordinates!!.size.height.toDp(),
+                                    ) then linkStrategy.contentModifier(overlay.handle),
+                                    remember(overlay) { OverlayBoxMeasurePolicy(overlay) }
+                                )
                             }
-                            // Resolved against the anchor's composition, because the
-                            // subcomposition's parent is the anchor's CompositionContext.
-                            val linkStrategy = LocalOverlayLinkStrategy.current
-                            Layout(
-                                { overlay.content(overlayScope) },
-                                Modifier.sizeIn(
-                                    overlayHostState.coordinates!!.size.width.toDp(),
-                                    overlayHostState.coordinates!!.size.height.toDp(),
-                                    overlayHostState.coordinates!!.size.width.toDp(),
-                                    overlayHostState.coordinates!!.size.height.toDp(),
-                                ) then linkStrategy.contentModifier(overlay.handle),
-                                remember(overlay) { OverlayBoxMeasurePolicy(overlay) }
-                            )
+                        } else {
+                            EmptyOverlayContent
                         }
+                        val measurables = subcompose(overlay, slotContent)
                         val placeables = measurables.map { measurable ->
                             measurable.measure(constraints)
                         }
@@ -147,7 +155,22 @@ internal class OverlayState(
     var content by mutableStateOf(content)
     var anchorBounds by mutableStateOf<IntRect?>(null)
     val handle = OverlayHandle()
+
+    /**
+     * True while the anchor is attached. The anchor's `onDispose` sets this to false before it
+     * removes the overlay from the host, so the host's measure pass can empty the slot in the
+     * same frame. See the design at
+     * docs/superpowers/specs/2026-09-18-overlay-same-frame-removal-design.md.
+     */
+    internal var isLive by mutableStateOf(true)
 }
+
+/**
+ * The content the host subcomposes once an overlay's anchor is gone. It is one stable instance,
+ * held here as a top-level val, so the slot stops changing identity once it goes empty. A fresh
+ * lambda per frame would make the slot recompose every frame for nothing.
+ */
+private val EmptyOverlayContent: @Composable () -> Unit = {}
 
 /**
  * The two live modifier-node endpoints of a single [Modifier.overlay] call site.

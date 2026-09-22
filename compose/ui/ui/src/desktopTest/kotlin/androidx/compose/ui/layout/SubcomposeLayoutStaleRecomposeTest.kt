@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.layout
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -25,6 +26,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -35,6 +37,8 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import noria.foundation.layout.MainOverlayHostKey
 import noria.foundation.layout.OverlayHost
 import noria.foundation.layout.overlay
@@ -469,6 +473,206 @@ class SubcomposeLayoutStaleRecomposeTest {
                 "anchor value",
                 seenValue,
                 "an overlay must resolve the composition local from the anchor, not the host",
+            )
+        } finally {
+            scene.close()
+            scheduling.uninstall()
+        }
+    }
+
+    /**
+     * Guards the design at
+     * docs/superpowers/specs/2026-09-18-overlay-same-frame-removal-design.md, section 4: the
+     * overlay content must stop rendering in the same frame its anchor is disposed.
+     *
+     * The anchor sits in its own gate, independent of any entity the overlay content reads. Its
+     * removal is a structural change to [OverlayHost]'s own [Box], so the [Box] remeasures every
+     * child, including this overlay's [SubcomposeLayout]. Before the fix, that remeasure always
+     * re-subcomposes the slot, because the content lambda is a fresh instance every measure call.
+     * The structure has not changed, so the render count goes up again on this very frame, before
+     * [OverlayHost]'s own composition ever sees the removal.
+     */
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Test
+    fun `overlay content stops rendering in the same frame its anchor is removed`() {
+        val scheduling = SchedulingDispatcherFixture().apply { install() }
+        var showAnchor by mutableStateOf(true)
+        val renderCount = intArrayOf(0)
+        val scene = ImageComposeScene(width = 100, height = 100)
+        try {
+            scene.setContent {
+                OverlayHost(MainOverlayHostKey, modifier = Modifier.fillMaxSize()) {
+                    if (showAnchor) {
+                        Spacer(
+                            Modifier.size(20.dp).overlay(MainOverlayHostKey) {
+                                renderCount[0]++
+                            }
+                        )
+                    }
+                }
+            }
+
+            // The overlay does not exist until the host reports coordinates, which onPlaced sets
+            // on the first layout pass. The overlay composes one frame later.
+            scene.render(0)
+            scene.render(16_000_000)
+            assertEquals(1, renderCount[0], "sanity: the overlay content must have rendered once")
+
+            Snapshot.withMutableSnapshot { showAnchor = false }
+            scene.render(32_000_000)
+
+            assertEquals(
+                1,
+                renderCount[0],
+                "the overlay content must not render again once its anchor is removed, not even " +
+                    "on the same frame the removal happens",
+            )
+        } finally {
+            scene.close()
+            scheduling.uninstall()
+        }
+    }
+
+    /**
+     * Guards the design's second promise: the overlay content's remembered state is forgotten in
+     * the frame the anchor is disposed, not one frame later.
+     *
+     * Before the fix, only [OverlayHost]'s own composition disposes the slot's content, and it
+     * needs a later pass to see the anchor's removal, so this needs a second [scene.render] call.
+     * After the fix, measure empties the slot in this same frame, so one render call is enough.
+     */
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Test
+    fun `overlay content's remembered state is forgotten in the same frame its anchor is removed`() {
+        val scheduling = SchedulingDispatcherFixture().apply { install() }
+        var showAnchor by mutableStateOf(true)
+        val forgottenCount = intArrayOf(0)
+        val scene = ImageComposeScene(width = 100, height = 100)
+        try {
+            scene.setContent {
+                OverlayHost(MainOverlayHostKey, modifier = Modifier.fillMaxSize()) {
+                    if (showAnchor) {
+                        Spacer(
+                            Modifier.size(20.dp).overlay(MainOverlayHostKey) {
+                                remember { Any() }
+                                DisposableEffect(Unit) { onDispose { forgottenCount[0]++ } }
+                            }
+                        )
+                    }
+                }
+            }
+
+            scene.render(0)
+            scene.render(16_000_000)
+            assertEquals(0, forgottenCount[0], "sanity: the overlay content is still live")
+
+            Snapshot.withMutableSnapshot { showAnchor = false }
+            scene.render(32_000_000)
+
+            assertEquals(
+                1,
+                forgottenCount[0],
+                "the overlay content's remembered state must be forgotten on the same frame the " +
+                    "anchor is removed, not one frame later",
+            )
+        } finally {
+            scene.close()
+            scheduling.uninstall()
+        }
+    }
+
+    /**
+     * Guards section 6 against the new isLive branch in [OverlayHost]: the live path must keep
+     * resolving composition locals from the anchor, not the host, across more than one measure
+     * pass. [LocalOverlayTestValue] gets a different value at the host and at the anchor, so a
+     * regression to host resolution would fail this test.
+     */
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Test
+    fun `an overlay resolves the anchor's composition local across repeated measures while live`() {
+        val scheduling = SchedulingDispatcherFixture().apply { install() }
+        var overlayComposes = 0
+        var seenValue: String? = null
+        val scene = ImageComposeScene(width = 100, height = 100)
+        try {
+            scene.setContent {
+                CompositionLocalProvider(LocalOverlayTestValue provides "host value") {
+                    OverlayHost(MainOverlayHostKey, modifier = Modifier.fillMaxSize()) {
+                        CompositionLocalProvider(LocalOverlayTestValue provides "anchor value") {
+                            Spacer(
+                                Modifier.size(20.dp).overlay(MainOverlayHostKey) {
+                                    overlayComposes++
+                                    seenValue = LocalOverlayTestValue.current
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Three frames force the per-overlay SubcomposeLayout's measure to run more than
+            // once, exercising the isLive branch repeatedly while the anchor stays live.
+            scene.render(0)
+            scene.render(16_000_000)
+            scene.render(32_000_000)
+
+            assertTrue(overlayComposes >= 1, "sanity: the overlay content must have run")
+            assertEquals(
+                "anchor value",
+                seenValue,
+                "the isLive-gated live branch must still resolve the composition local from the " +
+                    "anchor, not the host",
+            )
+        } finally {
+            scene.close()
+            scheduling.uninstall()
+        }
+    }
+
+    /**
+     * Guards the design end to end: an overlay whose anchor is added and removed leaves no node
+     * behind, in the same frame the removal happens.
+     *
+     * [Modifier.onGloballyPositioned] captures the overlay content's own coordinates.
+     * [LayoutCoordinates.isAttached] must be false as soon as the frame that disposes the anchor
+     * completes, not one frame later.
+     */
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Test
+    fun `an overlay added and removed in the same frame leaves no node behind`() {
+        val scheduling = SchedulingDispatcherFixture().apply { install() }
+        var showAnchor by mutableStateOf(true)
+        var contentCoordinates: LayoutCoordinates? = null
+        val scene = ImageComposeScene(width = 100, height = 100)
+        try {
+            scene.setContent {
+                OverlayHost(MainOverlayHostKey, modifier = Modifier.fillMaxSize()) {
+                    if (showAnchor) {
+                        Spacer(
+                            Modifier.size(20.dp).overlay(MainOverlayHostKey) {
+                                Box(
+                                    Modifier.size(10.dp).onGloballyPositioned {
+                                        contentCoordinates = it
+                                    }
+                                )
+                            }
+                        )
+                    }
+                }
+            }
+
+            scene.render(0)
+            scene.render(16_000_000)
+            val coordinates = contentCoordinates
+            assertTrue(coordinates?.isAttached == true, "sanity: the overlay content is attached")
+
+            Snapshot.withMutableSnapshot { showAnchor = false }
+            scene.render(32_000_000)
+
+            assertFalse(
+                coordinates?.isAttached == true,
+                "the overlay content's own node must be detached in the same frame the anchor " +
+                    "is removed, so it leaves no node behind",
             )
         } finally {
             scene.close()

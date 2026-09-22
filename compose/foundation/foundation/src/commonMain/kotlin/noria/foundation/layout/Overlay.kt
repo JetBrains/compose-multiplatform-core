@@ -46,6 +46,10 @@ fun Modifier.overlay(
         DisposableEffect(overlay) {
             overlayHostState.overlays += overlay
             onDispose {
+                // Order matters: this write must land before the removal below. It invalidates
+                // the host's measure, which empties the slot in the same frame. See the design
+                // at docs/superpowers/specs/2026-09-18-overlay-same-frame-removal-design.md.
+                overlay.isLive = false
                 overlayHostState.overlays -= overlay
             }
         }
