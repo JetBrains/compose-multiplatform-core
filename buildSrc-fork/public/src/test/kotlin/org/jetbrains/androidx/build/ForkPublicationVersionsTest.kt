@@ -40,7 +40,7 @@ class ForkPublicationVersionsTest {
     fun catalogValueIsUsedWhenThereIsNoOverride() {
         // COMPOSE comes from PUBLICATION_BASELINES, not the catalog: its catalog entry is the
         // androidx redirect target, not the version org.jetbrains.compose.* publishes under.
-        assertEquals("1.13.0-alpha01", resolve("COMPOSE"))
+        assertEquals("1.13.0-alpha02", resolve("COMPOSE"))
         assertEquals("2.11.0", resolve("LIFECYCLE"))
         assertEquals("1.5.0-alpha01", resolve("SAVEDSTATE"))
     }
@@ -52,7 +52,7 @@ class ForkPublicationVersionsTest {
 
     @Test
     fun overrideWinsOverTheCatalog() {
-        assertEquals("1.13.0-alpha02", resolve("COMPOSE", override = "1.13.0-alpha02"))
+        assertEquals("1.13.0-alpha03", resolve("COMPOSE", override = "1.13.0-alpha03"))
         assertEquals("2.11.1", resolve("LIFECYCLE", override = "2.11.1"))
     }
 
@@ -99,13 +99,6 @@ class ForkPublicationVersionsTest {
     }
 
     @Test
-    fun overrideWithBuildMetadataFails() {
-        assertFailsWith("metadata is not allowed") {
-            resolve("LIFECYCLE", override = "2.11.0+fleet.1")
-        }
-    }
-
-    @Test
     fun overrideBelowTheBaselineFails() {
         // Same major.minor as the baseline, so the line check passes and the ordering check is
         // what must reject it: a pre-release sorts below the stable version it precedes.
@@ -135,6 +128,23 @@ class ForkPublicationVersionsTest {
     fun theGuardNamesTheRegisterItCheckedAgainst() {
         assertFailsWith("PUBLICATION_BASELINES") { resolve("COMPOSE", override = "1.9.0") }
         assertFailsWith("libraryversions.toml") { resolve("LIFECYCLE", override = "2.12.0") }
+    }
+
+    @Test
+    fun ciBuildMetadataIsAccepted() {
+        // TeamCity's DEV and SNAPSHOT formats from generateVersion.kts.
+        assertEquals("1.13.0-alpha02+dev1234", resolve("COMPOSE", override = "1.13.0-alpha02+dev1234"))
+        assertEquals(
+            "2.11.0+snapshot.main",
+            resolve("LIFECYCLE", override = "2.11.0+snapshot.main"),
+        )
+    }
+
+    @Test
+    fun buildMetadataDoesNotExcuseAMalformedPreRelease() {
+        assertFailsWith("should be one of alpha, beta, rc, dev") {
+            resolve("COMPOSE", override = "1.13.0-0-fleet-SNAPSHOT+dev1")
+        }
     }
 
     private fun assertFailsWith(expectedInMessage: String, block: () -> Unit) {
