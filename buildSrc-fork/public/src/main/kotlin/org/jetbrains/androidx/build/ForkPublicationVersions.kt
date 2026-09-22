@@ -53,7 +53,7 @@ object ForkPublicationVersions {
      * `jb-main`** — nothing derives it, because there is nothing in the tree to derive it from.
      */
     private val PUBLICATION_BASELINES = mapOf(
-        "COMPOSE" to "1.13.0-alpha01",
+        "COMPOSE" to "1.13.0-alpha02",
     )
 
     /**
@@ -124,7 +124,14 @@ object ForkPublicationVersions {
         baselineSource: String,
     ): Version {
         val version = Version(override)
-        verifyVersionFormat(version)
+        // The grammar is checked without the build-metadata segment, which is deliberately
+        // tolerated here even though `verifyVersionFormat` bans it outright. TeamCity composes the
+        // CI version as `<base>+dev<counter>` or `<base>+snapshot.<branch>` (generateVersion.kts in
+        // fleet-compose-teamcity-config), so rejecting metadata would fail every DEV and SNAPSHOT
+        // publish. `Version.compareTo` ignores it, so it cannot smuggle a version past the
+        // ordering check either; what still gets caught is a malformed pre-release such as the
+        // `1.11.0-0-fleet-SNAPSHOT` this scheme replaced.
+        verifyVersionFormat(version.copy(buildMetadata = null))
         if (version.major != baseline.major || version.minor != baseline.minor) {
             throw IllegalArgumentException(
                 "Fork publication version '$override' for $library is outside the branch's " +
