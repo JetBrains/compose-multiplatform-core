@@ -512,6 +512,7 @@
 			inputPaths = (
 				"$(DERIVED_SOURCES_DIR)/$(PRODUCT_MODULE_NAME)-Swift.h",
 				"$(SRCROOT)/$(PRODUCT_MODULE_NAME)/$(PRODUCT_MODULE_NAME)-ImportBridge.h",
+				"$(SRCROOT)/BuildPhases/CopySwiftObjCHeaders.sh",
 			);
 			name = "Copy Swift ObjC Headers";
 			outputFileListPaths = (
@@ -524,7 +525,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -euo pipefail\nSWIFT_HEADER_NAME=\"${PRODUCT_MODULE_NAME}-Swift.h\"\nSWIFT_SOURCE_HEADER=\"${DERIVED_SOURCES_DIR}/${SWIFT_HEADER_NAME}\"\nBRIDGE_HEADER_NAME=\"${PRODUCT_MODULE_NAME}-ImportBridge.h\"\nBRIDGE_SOURCE_HEADER=\"${SRCROOT}/${PRODUCT_MODULE_NAME}/${BRIDGE_HEADER_NAME}\"\nfor header in \"${SWIFT_SOURCE_HEADER}\" \"${BRIDGE_SOURCE_HEADER}\"; do\n  if [ ! -f \"${header}\" ]; then\n    echo \"error: Header was not found at ${header}\" >&2\n    exit 1\n  fi\ndone\ncopy_headers() {\n  mkdir -p \"$1\"\n  cp \"${SWIFT_SOURCE_HEADER}\" \"$1/${SWIFT_HEADER_NAME}\"\n  cp \"${BRIDGE_SOURCE_HEADER}\" \"$1/${BRIDGE_HEADER_NAME}\"\n}\ncopy_headers \"${BUILT_PRODUCTS_DIR}/include/${PRODUCT_MODULE_NAME}\"\nif [ \"${ACTION:-}\" = \"install\" ] && [ -n \"${DSTROOT:-}\" ]; then\n  copy_headers \"${DSTROOT}${PUBLIC_HEADERS_FOLDER_PATH}/${PRODUCT_MODULE_NAME}\"\nfi\n";
+			shellScript = "\"${SRCROOT}/BuildPhases/CopySwiftObjCHeaders.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
