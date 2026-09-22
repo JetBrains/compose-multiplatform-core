@@ -27,7 +27,6 @@ import org.jetbrains.skia.Data
 import org.jetbrains.skia.FontMgr
 import org.jetbrains.skia.FontSlant
 import org.jetbrains.skia.FontStyle as SkFontStyle
-import org.jetbrains.skia.FontWeight as SkFontWeight
 import org.jetbrains.skia.FontWidth
 import org.jetbrains.skia.Typeface as SkTypeface
 
@@ -231,7 +230,7 @@ private fun typefaceResource(resourceName: String): SkTypeface {
 
 private val Font.skFontStyle: SkFontStyle
     get() = SkFontStyle(
-        weight = SkFontWeight(weight.weight),
+        weight = weight.weight,
         width = FontWidth.NORMAL,
         slant = if (style == FontStyle.Italic) FontSlant.ITALIC else FontSlant.UPRIGHT
     )
