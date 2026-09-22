@@ -38,9 +38,7 @@ final class CMPViewTests: XCTestCase {
     override func setUpWithError() throws {
         super.setUp()
 
-        appDelegate = MockAppDelegate()
-        UIApplication.shared.delegate = appDelegate
-        appDelegate.setUpClearWindow()
+        appDelegate = MockAppDelegate.installWithClearWindow()
         TestView.counter = 1
     }
 
