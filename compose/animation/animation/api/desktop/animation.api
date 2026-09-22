@@ -106,7 +106,7 @@ public final class androidx/compose/animation/ColorVectorConverterKt {
 public final class androidx/compose/animation/ComposableSingletons$CapturedAnimatedVisibilityKt {
 	public static final field INSTANCE Landroidx/compose/animation/ComposableSingletons$CapturedAnimatedVisibilityKt;
 	public fun <init> ()V
-	public final fun getLambda$-649244732$animation ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-649244732$org_jetbrains_compose_animation_animation ()Lkotlin/jvm/functions/Function2;
 }
 
 public final class androidx/compose/animation/ContentTransform {

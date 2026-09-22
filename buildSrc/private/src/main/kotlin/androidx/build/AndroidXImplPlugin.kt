@@ -521,6 +521,9 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                     args
                 }
             task.compilerOptions.freeCompilerArgs.addAll(kotlinCompilerArgs)
+            task.compilerOptions.freeCompilerArgs.addAll(
+                androidXExtension.getKotlinVersionDependentArgProvider()
+            )
         }
         if (plugin is KotlinMultiplatformPluginWrapper) {
             KonanPrebuiltsSetup.configureKonanDirectory(project)
@@ -1214,6 +1217,9 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 // (see https://youtrack.jetbrains.com/issue/KT-61573)
                 compilation.compileTaskProvider.configure { task ->
                     task.compilerOptions.freeCompilerArgs.add("-Xexpect-actual-classes")
+                    task.compilerOptions.freeCompilerArgs.addAll(
+                        androidXExtension.getKotlinVersionDependentArgProvider()
+                    )
                     androidXConfiguration.kotlinApiVersion.let {
                         task.compilerOptions.apiVersion.set(it)
                         task.compilerOptions.languageVersion.set(it)
@@ -1658,4 +1664,11 @@ internal fun KotlinMultiplatformExtension.hasJvmTarget(): Boolean =
 
 internal fun String.camelCase() = replaceFirstChar {
     if (it.isLowerCase()) it.titlecase() else it.toString()
+}
+
+private fun AndroidXExtension.getKotlinVersionDependentArgProvider(): Provider<List<String>> {
+    return kotlinApiVersion.map {
+        if (it < KotlinVersion.KOTLIN_2_4) listOf("-Xannotation-default-target=param-property")
+        else emptyList()
+    }
 }
