@@ -23,6 +23,7 @@ import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.utils.CMPLayoutRegion
 import androidx.compose.ui.uikit.utils.CMPLayoutRegionAdaptivityAxisVertical
+import androidx.compose.ui.uikit.utils.CMPReservedRegion
 import androidx.compose.ui.uikit.utils.CMPReservedRegionFactory
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toDpRect
@@ -119,7 +120,7 @@ internal class WindowInsetsManager(
                 if (CMPReservedRegionFactory.supportsReservedRegions()) {
                     windowInsetsViews.firstNotNullOfOrNull { it() }?.let { view ->
                         return CMPReservedRegionFactory.occlusionRegionsInView(view).map { region ->
-                            region.frame.toDpRect().toRect(view.density)
+                            (region as CMPReservedRegion).frame.toDpRect().toRect(view.density)
                         }
                     }
                 }
