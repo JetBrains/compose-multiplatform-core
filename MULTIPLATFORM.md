@@ -104,10 +104,13 @@ Compose Multiplatform core libraries can be published to local Maven with the fo
    `-Pjetbrains.publication.version.SAVEDSTATE`,
    `-Pjetbrains.publication.version.WINDOW`,
 
-   The default value for each library's version is the version this branch is on, from
-   `libraryversions.toml`. An override must stay within that version's `major.minor` line and
-   must not sort below it. Pass `-Pjetbrains.publication.snapshot=true` to publish snapshots
-   instead.
+   The default for most libraries is the version this branch is on, from `libraryversions.toml`.
+   Compose is the exception: its `libraryversions.toml` entry is the artifact-redirection target
+   (which AOSP `androidx.compose` release the redirects point at), not the version
+   `org.jetbrains.compose.*` publishes under, so its default comes from
+   `ForkPublicationVersions.PUBLICATION_BASELINES` instead. An override must stay within its
+   baseline's `major.minor` line and must not sort below it. Pass
+   `-Pjetbrains.publication.snapshot=true` to publish snapshots instead.
 
    And library groups:
    `-Pjetbrains.publication.libraries=COMPOSE,COMPOSE_MATERIAL3_ADAPTIVE,LIFECYCLE,NAVIGATION,NAVIGATION_3,NAVIGATION_EVENT,SAVEDSTATE,WINDOW`
@@ -117,7 +120,7 @@ Compose Multiplatform core libraries can be published to local Maven with the fo
 2. Publish core libraries
 
    ```bash
-   ./gradlew :mpp:publishComposeJbToMavenLocal -Pcompose.platforms=all -Pjetbrains.publication.version.COMPOSE=1.12.0-beta02 -Pjetbrains.publication.version.LIFECYCLE=2.11.1
+   ./gradlew :mpp:publishComposeJbToMavenLocal -Pcompose.platforms=all -Pjetbrains.publication.version.COMPOSE=1.13.0-alpha02 -Pjetbrains.publication.version.LIFECYCLE=2.11.1
    ```
 
    `-Pcompose.platforms=all` could be replace with comma-separated list of platforms, such as `js,jvm,androidDebug,androidRelease,macosx64,ios`.
