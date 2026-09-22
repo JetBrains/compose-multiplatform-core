@@ -55,6 +55,7 @@
 		99D97A882BF73A9B0035552B /* CMPEditMenuView.m in Sources */ = {isa = PBXBuildFile; fileRef = 99D97A872BF73A9B0035552B /* CMPEditMenuView.m */; };
 		99DCAB0E2BD00F5C002E6AC7 /* CMPTextLoupeSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 99DCAB0D2BD00F5C002E6AC7 /* CMPTextLoupeSession.m */; };
 		A01609822EB42A3300FB9790 /* CMPLayoutRegion.m in Sources */ = {isa = PBXBuildFile; fileRef = A01609812EB42A3300FB9790 /* CMPLayoutRegion.m */; };
+		A0B803B13061835300F25EFE /* CMPReservedRegion.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B803B03061835300F25EFE /* CMPReservedRegion.swift */; };
 		A0CEE0303006417800F0D942 /* CMPUIKitSwiftUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0CEE02E3006417800F0D942 /* CMPUIKitSwiftUtils.swift */; };
 		AABB11112F5A0000000000A3 /* CMPUIWindowSceneExtensions.m in Sources */ = {isa = PBXBuildFile; fileRef = AABB11112F5A0000000000A2 /* CMPUIWindowSceneExtensions.m */; };
 		C4C07E892F57037300A9DC94 /* CMPTextInputView.m in Sources */ = {isa = PBXBuildFile; fileRef = C4C07E882F57037300A9DC94 /* CMPTextInputView.m */; };
@@ -157,7 +158,8 @@
 		99DCAB0C2BD00F5C002E6AC7 /* CMPTextLoupeSession.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPTextLoupeSession.h; sourceTree = "<group>"; };
 		99DCAB0D2BD00F5C002E6AC7 /* CMPTextLoupeSession.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPTextLoupeSession.m; sourceTree = "<group>"; };
 		A01609812EB42A3300FB9790 /* CMPLayoutRegion.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPLayoutRegion.m; sourceTree = "<group>"; };
-		A0B803B43062000000F25EFE /* CMPUIKitSwiftUtils-ImportBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "CMPUIKitSwiftUtils-ImportBridge.h"; sourceTree = "<group>"; };
+			A0B803B03061835300F25EFE /* CMPReservedRegion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CMPReservedRegion.swift; sourceTree = "<group>"; };
+			A0B803B43062000000F25EFE /* CMPUIKitSwiftUtils-ImportBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "CMPUIKitSwiftUtils-ImportBridge.h"; sourceTree = "<group>"; };
 		A0CEE0273006417400F0D942 /* libCMPUIKitSwiftUtils.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libCMPUIKitSwiftUtils.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		A0CEE02E3006417800F0D942 /* CMPUIKitSwiftUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CMPUIKitSwiftUtils.swift; sourceTree = "<group>"; };
 		A0E69B242EB4227A0049B20F /* CMPLayoutRegion.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPLayoutRegion.h; sourceTree = "<group>"; };
@@ -353,10 +355,11 @@
 		};
 		A0CEE02F3006417800F0D942 /* CMPUIKitSwiftUtils */ = {
 			isa = PBXGroup;
-			children = (
-				A0CEE02E3006417800F0D942 /* CMPUIKitSwiftUtils.swift */,
-				A0B803B43062000000F25EFE /* CMPUIKitSwiftUtils-ImportBridge.h */,
-			);
+				children = (
+					A0CEE02E3006417800F0D942 /* CMPUIKitSwiftUtils.swift */,
+					A0B803B03061835300F25EFE /* CMPReservedRegion.swift */,
+					A0B803B43062000000F25EFE /* CMPUIKitSwiftUtils-ImportBridge.h */,
+				);
 			path = CMPUIKitSwiftUtils;
 			sourceTree = "<group>";
 		};
@@ -622,6 +625,7 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+				A0B803B13061835300F25EFE /* CMPReservedRegion.swift in Sources */,
 
 /* Begin PBXTargetDependency section */
 		997DFCE92B18D99E000B56B5 /* PBXTargetDependency */ = {
