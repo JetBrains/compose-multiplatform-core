@@ -35,6 +35,27 @@ import androidx.build.verifyVersionFormat
  */
 object ForkPublicationVersions {
 
+
+    /**
+     * Libraries whose `libraryversions.toml` entry is NOT the version they publish under.
+     *
+     * For most of what this fork publishes the catalog entry *is* the publication version:
+     * `org.jetbrains.androidx.lifecycle` tracks androidx one-for-one, so catalog `2.11.0` and
+     * published `2.11.0` are the same number. Compose is the exception. Its catalog entry is the
+     * **artifact-redirection target** — the AOSP `androidx.compose` release the redirects point at,
+     * bumped by commits literally titled `artifactRedirection.version.androidx.compose=…` — while
+     * `org.jetbrains.compose.*` is a product line of its own that upstream's release tooling
+     * supplies through `-Pjetbrains.publication.version.COMPOSE`. The two run close enough together
+     * to look interchangeable and are not: with the catalog at `1.12.0-beta01`, the published line
+     * was already at `1.13.0-alpha01`.
+     *
+     * So Compose gets its baseline here instead. **Bump it when the branch rebases onto a newer
+     * `jb-main`** — nothing derives it, because there is nothing in the tree to derive it from.
+     */
+    private val PUBLICATION_BASELINES = mapOf(
+        "COMPOSE" to "1.13.0-alpha01",
+    )
+
     /**
      * Publication library name -> `libraryversions.toml` `[versions]` key.
      *
@@ -75,8 +96,16 @@ object ForkPublicationVersions {
                 "libraryversions.toml has no [versions] entry '$catalogKey', needed to version " +
                     "publication library '$library'."
             )
-        val catalog = Version(catalogValue)
-        val base = if (override == null) catalog else checkedOverride(library, override, catalog)
+        // The baseline is what this library's published line is on: its catalog entry, unless the
+        // catalog entry means something else for it (see PUBLICATION_BASELINES).
+        val declared = PUBLICATION_BASELINES[library]
+        val baseline = Version(declared ?: catalogValue)
+        val baselineSource =
+            if (declared != null) "ForkPublicationVersions.PUBLICATION_BASELINES"
+            else "libraryversions.toml"
+        val base =
+            if (override == null) baseline
+            else checkedOverride(library, override, baseline, baselineSource)
         // AndroidX's own convention: a snapshot replaces the pre-release rather than extending it,
         // which keeps the coordinate stable across pre-release bumps and inside the grammar.
         // preReleaseIteration and buildMetadata are cleared so the copy does not keep a stale
@@ -88,22 +117,27 @@ object ForkPublicationVersions {
         }
     }
 
-    private fun checkedOverride(library: String, override: String, catalog: Version): Version {
+    private fun checkedOverride(
+        library: String,
+        override: String,
+        baseline: Version,
+        baselineSource: String,
+    ): Version {
         val version = Version(override)
         verifyVersionFormat(version)
-        if (version.major != catalog.major || version.minor != catalog.minor) {
+        if (version.major != baseline.major || version.minor != baseline.minor) {
             throw IllegalArgumentException(
                 "Fork publication version '$override' for $library is outside the branch's " +
-                    "${catalog.major}.${catalog.minor} line — libraryversions.toml says " +
-                    "'$catalog'. Move the override onto the current upstream line, or drop it to " +
-                    "publish the branch's own version."
+                    "${baseline.major}.${baseline.minor} line — $baselineSource says " +
+                    "'$baseline'. Move the override onto the current line, or drop it to publish " +
+                    "the branch's own version."
             )
         }
-        if (version < catalog) {
+        if (version < baseline) {
             throw IllegalArgumentException(
                 "Fork publication version '$override' for $library is below the branch's version " +
-                    "'$catalog' from libraryversions.toml. A fork release continues upstream's " +
-                    "line, it never precedes it."
+                    "'$baseline' from $baselineSource. A fork release continues the line, it " +
+                    "never precedes it."
             )
         }
         return version
