@@ -174,6 +174,14 @@ interface PlatformContext {
 
     val textToolbar: TextToolbar get() = EmptyTextToolbar
     val hapticFeedback: HapticFeedback get() = NoOpHapticFeedback
+
+    /**
+     * The legacy [ClipboardManager] this owner's clipboard operations go through.
+     *
+     * Read from the context rather than built in the owner, like [clipboard], so a host with no
+     * real platform to talk to (e.g. the headless test backend) can supply its own.
+     */
+    val clipboardManager: ClipboardManager get() = createPlatformClipboardManager()
     fun setPointerIcon(pointerIcon: PointerIcon) = Unit
 
     val parentFocusManager: FocusManager get() = EmptyFocusManager

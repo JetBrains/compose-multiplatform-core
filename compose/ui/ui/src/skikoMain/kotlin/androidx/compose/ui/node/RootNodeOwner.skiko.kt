@@ -76,7 +76,6 @@ import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.platform.SoundEffect
 import androidx.compose.ui.platform.TaskDispatchers
 import androidx.compose.ui.platform.UriHandler
-import androidx.compose.ui.platform.createPlatformClipboardManager
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.ComposeSceneInputHandler
 import androidx.compose.ui.scene.ComposeScenePointer
@@ -481,7 +480,7 @@ internal class RootNodeOwner(
         override val rootForTest get() = this@RootNodeOwner.rootForTest
         override val hapticFeedBack get() = platformContext.hapticFeedback
         override val inputModeManager get() = platformContext.inputModeManager
-        override val clipboardManager = createPlatformClipboardManager()
+        override val clipboardManager = platformContext.clipboardManager
         override val clipboard get() = platformContext.clipboard
         override val accessibilityManager get() = platformContext.accessibilityManager
         override val graphicsContext get() = this@RootNodeOwner.graphicsContext
