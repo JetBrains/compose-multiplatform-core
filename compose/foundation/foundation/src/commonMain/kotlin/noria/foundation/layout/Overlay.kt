@@ -50,6 +50,11 @@ fun Modifier.overlay(
                 // the host's measure, which empties the slot in the same frame. See the design
                 // at docs/superpowers/specs/2026-09-18-overlay-same-frame-removal-design.md.
                 overlay.isLive = false
+                // The write above closes the host's gate only once snapshot apply notifications
+                // arrive. This closes it now, so the overlay's composition cannot recompose
+                // standalone in the meantime, for example when the anchor's row is deactivated
+                // for reuse rather than removed.
+                overlay.hostMeasure?.invalidate()
                 overlayHostState.overlays -= overlay
             }
         }

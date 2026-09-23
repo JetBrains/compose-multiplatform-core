@@ -34,6 +34,7 @@ import androidx.compose.runtime.internal.SnapshotHolder
 import androidx.compose.runtime.internal.SnapshotThreadLocal
 import androidx.compose.runtime.snapshots.SnapshotDataSource
 import androidx.compose.runtime.internal.logError
+import androidx.compose.runtime.internal.logWarning
 import androidx.compose.runtime.internal.trace
 import androidx.compose.runtime.platform.SynchronizedObject
 import androidx.compose.runtime.platform.makeSynchronizedObject
@@ -259,6 +260,60 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     private var snapshotInvalidations = MutableScatterSet<Any>()
     private val compositionInvalidations = mutableVectorOf<ControlledComposition>()
     private val compositionsAwaitingApply = mutableListOf<ControlledComposition>()
+
+    /**
+     * The compositions wave 2 held back in the current frame that have not composed yet.
+     *
+     * Wave 2 fills this set. The measure pass that follows the frame reads it, and delivery
+     * removes from it. The next frame's recompose clears it. Guarded by [stateLock].
+     *
+     * This assumes the host's pipeline: the measure pass that consumes the set runs after this
+     * recomposer's recompose block and before its next one, on the thread that runs both. A
+     * scene renders that way. A pipeline that measures before the frame's recompose, or on
+     * another thread, is outside what this set orders. There the fallback re-arm is what still
+     * delivers.
+     */
+    private val pendingParentDriven = mutableScatterSetOf<ControlledComposition>()
+
+    /**
+     * For each composition in [pendingParentDriven], the compositions that wait for it to
+     * compose. Guarded by [stateLock].
+     */
+    private var waitersByEnclosing =
+        mutableScatterMapOf<ControlledComposition, MutableList<ControlledComposition>>()
+
+    /**
+     * Counts processed frames, so [reArmDeferred] can test adjacency. It ticks once per frame at
+     * the top of the frame body. Guarded by [stateLock].
+     */
+    private var currentDeferralFrame = 0L
+
+    /**
+     * How many held-back compositions a host composed without reporting them current, counted at
+     * the start of the frame after. See [ParentDrivenHosting.reportCurrent]. Guarded by [stateLock].
+     */
+    internal var deferralProtocolViolations = 0
+        private set
+
+    /**
+     * How many frames started while the record still held a composition that its own gate had
+     * held back, with no host call since the record was published and its host still
+     * measure-pending. See [countUnconsumed]. Guarded by [stateLock].
+     */
+    internal var deferralPipelineViolations = 0
+        private set
+
+    /**
+     * The published compositions that their own gate held back, rather than an enclosing one.
+     * Their host is measure-pending, so a measure pass must reach them. Guarded by [stateLock].
+     */
+    private val heldByOwnGate = mutableScatterSetOf<ControlledComposition>()
+
+    /** Host calls into the record since it was last published. Guarded by [stateLock]. */
+    private var hostCallsSincePublish = 0
+
+    /** Reused by [collectUnconsumedLocked] and [countUnconsumed]. Only the frame loop uses it. */
+    private val unconsumedCandidates = mutableListOf<ControlledComposition>()
     private val movableContentAwaitingInsert = mutableListOf<MovableContentStateReference>()
     private val movableContentRemoved =
         MultiValueMap<MovableContent<Any?>, MovableContentStateReference>()
@@ -652,6 +707,9 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     public suspend fun runRecomposeAndApplyChanges(): Unit =
         recompositionRunner { parentFrameClock ->
             val toRecompose = mutableListOf<ControlledComposition>()
+            // Reused each frame: the depth-ordered copies wave 1 and wave 2 iterate.
+            val waveOneOrder = mutableListOf<ControlledComposition>()
+            val waveTwoOrder = mutableListOf<ControlledComposition>()
             val toInsert = mutableListOf<MovableContentStateReference>()
             val toApply = mutableListOf<ControlledComposition>()
             val toLateApply = mutableScatterSetOf<ControlledComposition>()
@@ -662,15 +720,20 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             val skippedParentDriven = mutableScatterSetOf<ControlledComposition>()
             // Wave 2 defers every composition in this set. A composition's own gate causes
             // the deferral, or the propagation from an enclosing composition causes it.
-            // hasDeferredAncestor below reads this set.
+            // nearestDeferredAncestor below reads this set to find the nearest held-back
+            // ancestor of a propagation-deferred composition, so it can be recorded as that
+            // ancestor's waiter. The end of wave 2 publishes this set into pendingParentDriven.
             val deferredParentDriven = mutableScatterSetOf<ControlledComposition>()
-            // The propagation defers every composition in this list. The re-arm covers only
-            // these. A gate schedules its own refresh, so a gate-deferred composition needs
-            // no re-arm.
+            // The propagation defers every composition in this list, and wave 2 re-arms these
+            // as the fallback. A gate schedules its own refresh, so a gate-deferred composition
+            // needs no re-arm. A host's measure-time hold re-arms its slot on its own.
             val toReArmAfterDeferral = mutableListOf<ControlledComposition>()
-            // Counts frames so reArmDeferred can test adjacency. It ticks once per frame, at the
-            // top of the frame body, so every composition's re-arm test uses the same value.
-            var deferralFrameOrdinal = 0L
+            // The compositions wave 2 held back by their own gate. Published into heldByOwnGate.
+            val heldByOwnGateThisFrame = mutableScatterSetOf<ControlledComposition>()
+            // Wave 2 records here which held-back composition each propagation-deferred one waits
+            // for. The end of wave 2 publishes it by trading places with waitersByEnclosing.
+            var deferralWaiters =
+                mutableScatterMapOf<ControlledComposition, MutableList<ControlledComposition>>()
 
             fun enqueueForRecompose(composition: ControlledComposition) {
                 if (composition !in toRecompose && composition !in skippedParentDriven) {
@@ -690,11 +753,12 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             // second wave. The second wave runs in the same frame, with captures that are
             // provably current. A changed value would have already made the parent's body
             // or measure dirty.
-            // A composition with a gate installed also waits when an enclosing one is
-            // deferred. The re-arm keeps its invalidation alive. Wave 2 receives a
-            // composition with a gate installed. Wave 2 also receives a composition
-            // that wave 1 sends there. Wave 1 sends a composition there if an
-            // enclosing composition already waits in wave 2.
+            // A composition also waits when an enclosing one is deferred, even if its own
+            // gate lets it through. It waits for the nearest deferred enclosing composition.
+            // That one releases it once its own host has re-run it in this frame's measure
+            // pass. A re-arm is the fallback for a frame in which that does not happen. Wave 2
+            // receives every composition with a gate installed, and every composition wave 1
+            // sends there because an enclosing composition already waits.
             fun isParentDrivenComposition(composition: ControlledComposition): Boolean =
                 (composition as? CompositionImpl)?.parentDrivenRecomposeGate != null
 
@@ -724,13 +788,25 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                 return false
             }
 
-            fun hasDeferredAncestor(composition: ControlledComposition): Boolean =
-                hasAncestorIn(composition, deferredParentDriven)
+            // The nearest composition enclosing [composition] that wave 2 already held back, or
+            // null. Wave 2 visits in ascending depth, so every ancestor is classified first.
+            fun nearestDeferredAncestor(
+                composition: ControlledComposition
+            ): ControlledComposition? {
+                var enclosing = (composition as? CompositionImpl)?.parentComposition
+                while (enclosing != null) {
+                    if (enclosing in deferredParentDriven) return enclosing
+                    enclosing = enclosing.parentComposition
+                }
+                return null
+            }
 
             fun clearRecompositionState() {
                 synchronized(stateLock) {
                     toRecompose.clear()
                     toInsert.clear()
+                    waveOneOrder.clear()
+                    waveTwoOrder.clear()
 
                     toApply.fastForEach {
                         it.abandonChanges()
@@ -751,6 +827,9 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                     skippedParentDriven.clear()
                     deferredParentDriven.clear()
                     toReArmAfterDeferral.clear()
+                    deferralWaiters.clear()
+                    heldByOwnGateThisFrame.clear()
+                    clearDeferralRecordLocked()
 
                     alreadyComposed.forEach {
                         it.abandonChanges()
@@ -781,7 +860,20 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                 // each time, but because we've installed the broadcastFrameClock as the scope
                 // clock above for user code to locate.
                 parentFrameClock.withFrameNanos { frameTime ->
-                    deferralFrameOrdinal++
+                    val deferralFrameOrdinal =
+                        synchronized(stateLock) {
+                            // Before the protocol check, which clears the marks this one
+                            // reads as proof that a host ran.
+                            collectUnconsumedLocked()
+                            countUnreportedComposesLocked()
+                            clearDeferralRecordLocked()
+                            // A skip recorded after the last recompose block, in a measure pass
+                            // or outside any frame, belongs to that turn. Its compositions can
+                            // still be alive, so it must not swallow this frame's changes.
+                            compositionsRemoved = null
+                            ++currentDeferralFrame
+                        }
+                    countUnconsumed()
                     // Dispatch MonotonicFrameClock frames first; this may produce new
                     // composer invalidations that we must handle during the same frame.
                     if (hasBroadcastFrameClockAwaiters) {
@@ -801,7 +893,10 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                         // composers to work on
                         recordComposerModifications()
                         synchronized(stateLock) {
-                            compositionInvalidations.forEach(::enqueueForRecompose)
+                            compositionInvalidations.forEach { composition ->
+                                enqueueForRecompose(composition)
+                                (composition as? CompositionImpl)?.deferralReArmPending = false
+                            }
                             compositionInvalidations.clear()
                         }
 
@@ -815,30 +910,36 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                                 // skips a composition when an enclosing one is already skipped.
                                 // Without the skip, the nested composition would recompose with
                                 // a lambda the enclosing composition has not refreshed yet.
-                                // Ascending depth classifies every ancestor first. This order is
-                                // what makes the second test correct.
-                                toRecompose
-                                    .sortedBy { (it as? CompositionImpl)?.compositionDepth ?: 0 }
-                                    .fastForEach { composition ->
-                                        if (
-                                            isParentDrivenComposition(composition) ||
-                                                (skippedParentDriven.isNotEmpty() &&
-                                                    hasAncestorIn(composition, skippedParentDriven))
-                                        ) {
-                                            skippedParentDriven.add(composition)
-                                        } else {
-                                            performRecompose(composition, modifiedValues)?.let {
-                                                toApply += it
-                                            }
-                                            alreadyComposed.add(composition)
-                                        }
+                                // Ascending depth classifies every ancestor first, so the skip
+                                // sees an enclosing composition before the ones nested in it.
+                                waveOneOrder.clear()
+                                waveOneOrder.addAll(toRecompose)
+                                if (waveOneOrder.size > 1) {
+                                    waveOneOrder.sortBy {
+                                        (it as? CompositionImpl)?.compositionDepth ?: 0
                                     }
+                                }
+                                waveOneOrder.fastForEach { composition ->
+                                    if (
+                                        isParentDrivenComposition(composition) ||
+                                            (skippedParentDriven.isNotEmpty() &&
+                                                hasAncestorIn(composition, skippedParentDriven))
+                                    ) {
+                                        skippedParentDriven.add(composition)
+                                    } else {
+                                        performRecompose(composition, modifiedValues)?.let {
+                                            toApply += it
+                                        }
+                                        alreadyComposed.add(composition)
+                                    }
+                                }
                             } catch (e: Throwable) {
                                 processCompositionError(e, recoverable = true)
                                 clearRecompositionState()
                                 return@withFrameNanos
                             } finally {
                                 toRecompose.clear()
+                                waveOneOrder.clear()
                             }
 
                                 // Find any trailing recompositions that need to be composed because
@@ -870,6 +971,8 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                                                 value !in toRecompose
                                             ) {
                                                 enqueueForRecompose(value)
+                                                (value as? CompositionImpl)?.deferralReArmPending =
+                                                    false
                                                 true
                                             } else {
                                                 false
@@ -945,10 +1048,10 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                                 // parent content. It also marked the affected hosts' measure
                                 // pending. The gate is now exact. See the note at its
                                 // declaration. A composition the gate still defers is left to
-                                // the pending measure pass. A composition with a gate
-                                // installed also waits when an enclosing one is deferred. The
-                                // re-arm keeps its invalidation alive. The rest recompose and
-                                // apply now, in the same frame.
+                                // the pending measure pass. A composition that an enclosing
+                                // deferred composition holds back waits for it to compose, and
+                                // is re-armed as the fallback. The rest recompose and apply now,
+                                // in the same frame.
                                 if (skippedParentDriven.isNotEmpty()) {
                                     // Visit an enclosing composition before one nested inside it.
                                     // An enclosing composition's recompose and apply supplies
@@ -958,29 +1061,37 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                                     // Two error paths could still invert registration order. The
                                     // isDisposed guard below then skips any nested composition an
                                     // earlier apply already removed.
-                                    val orderedParentDriven =
-                                        skippedParentDriven
-                                            .asSet()
-                                            .sortedBy {
-                                                (it as? CompositionImpl)?.compositionDepth ?: 0
-                                            }
+                                    waveTwoOrder.clear()
+                                    skippedParentDriven.forEach { waveTwoOrder += it }
+                                    if (waveTwoOrder.size > 1) {
+                                        waveTwoOrder.sortBy {
+                                            (it as? CompositionImpl)?.compositionDepth ?: 0
+                                        }
+                                    }
                                     deferredParentDriven.clear()
                                     toReArmAfterDeferral.clear()
-                                    orderedParentDriven.fastForEach { composition ->
+                                    waveTwoOrder.fastForEach { composition ->
                                         if (composition.isDisposed) return@fastForEach
                                         if (shouldSkipParentDrivenComposition(composition)) {
                                             // The host's pending measure re-runs the content, so
                                             // this invalidation is consumed by design.
                                             deferredParentDriven.add(composition)
+                                            heldByOwnGateThisFrame.add(composition)
                                             return@fastForEach
                                         }
-                                        if (
-                                            deferredParentDriven.isNotEmpty() &&
-                                                hasDeferredAncestor(composition)
-                                        ) {
-                                            // Nothing refreshes this one, so its invalidation has
-                                            // to survive the pass.
+                                        val enclosing =
+                                            if (deferredParentDriven.isNotEmpty()) {
+                                                nearestDeferredAncestor(composition)
+                                            } else null
+                                        if (enclosing != null) {
+                                            // The enclosing composition releases this one once
+                                            // its host has re-run it in this frame's measure
+                                            // pass. The re-arm is the fallback for a frame in
+                                            // which that does not happen.
                                             deferredParentDriven.add(composition)
+                                            deferralWaiters
+                                                .getOrPut(enclosing) { mutableListOf() }
+                                                .add(composition)
                                             toReArmAfterDeferral += composition
                                             return@fastForEach
                                         }
@@ -1006,11 +1117,40 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                                         alreadyComposed.add(composition)
                                     }
 
-                                    // Re-arm the invalidation of each composition that the
-                                    // propagation deferred above.
+                                    waveTwoOrder.clear()
+
+                                    // Re-arm each composition the propagation deferred above. The
+                                    // re-arm is the fallback for a frame in which its enclosing
+                                    // composition does not compose and release it.
                                     toReArmAfterDeferral.fastForEach { composition ->
                                         if (!composition.isDisposed) {
                                             reArmDeferred(composition, deferralFrameOrdinal)
+                                        }
+                                    }
+
+                                    // Publish what wave 2 held back, for the measure pass that
+                                    // follows this frame.
+                                    synchronized(stateLock) {
+                                        deferredParentDriven.forEach {
+                                            pendingParentDriven += it
+                                            (it as? CompositionImpl)?.composedSinceReport = false
+                                        }
+                                        heldByOwnGate += heldByOwnGateThisFrame
+                                        hostCallsSincePublish = 0
+                                        // The frame start emptied waitersByEnclosing, and no host
+                                        // records a waiter before this, so the maps trade places
+                                        // instead of copying. The copy stays as the fallback.
+                                        if (waitersByEnclosing.isEmpty()) {
+                                            val published = deferralWaiters
+                                            deferralWaiters = waitersByEnclosing
+                                            waitersByEnclosing = published
+                                        } else {
+                                            deferralWaiters.forEach { enclosing, waiters ->
+                                                waitersByEnclosing
+                                                    .getOrPut(enclosing) { mutableListOf() }
+                                                    .addAll(waiters)
+                                            }
+                                            deferralWaiters.clear()
                                         }
                                     }
                                 }
@@ -1040,6 +1180,8 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                         skippedParentDriven.clear()
                         deferredParentDriven.clear()
                         toReArmAfterDeferral.clear()
+                        deferralWaiters.clear()
+                        heldByOwnGateThisFrame.clear()
                         modifiedValues.clear()
                         compositionsRemoved = null
                     }
@@ -1067,6 +1209,10 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                 movableContentRemoved.clear()
                 movableContentStatesAvailable.clear()
 
+                // Recovery recomposes everything, and every pending invalidation is dropped above,
+                // so nothing may stay held behind a composition this frame recorded.
+                clearDeferralRecordLocked()
+
                 errorState.value = RecomposerErrorState(isRecoverable = recoverable, cause = e)
 
                 if (failedInitialComposition != null) {
@@ -1089,6 +1235,9 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             // won't be recorded.
             synchronized(stateLock) {
                 logError("Error was captured in composition.", e)
+                // The error state stops all further frames, so no frame start would clear the
+                // record, and every slot under a stale entry would stay held.
+                clearDeferralRecordLocked()
                 val errorState = errorState.value
                 if (errorState == null) {
                     // Record exception if current error state is empty.
@@ -1579,43 +1728,257 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     }
 
     /**
+     * Counts the held-back compositions a host composed without reporting them current, before
+     * the record is cleared. Such a host breaks the protocol of [ParentDrivenHosting.reportCurrent]: the
+     * compositions nested in it then wait for their fallback, or starve under a busy host. The
+     * first one is logged. Must hold [stateLock].
+     */
+    private fun countUnreportedComposesLocked() {
+        pendingParentDriven.forEach { composition ->
+            val impl = composition as? CompositionImpl ?: return@forEach
+            if (!impl.composedSinceReport || impl.isDisposed) return@forEach
+            impl.composedSinceReport = false
+            if (deferralProtocolViolations++ == 0) {
+                logWarning(
+                    "A host composed a composition the recomposer held back, without reporting " +
+                        "it current. The compositions that wait for it fall back to a later frame."
+                )
+            }
+        }
+    }
+
+    /**
+     * Collects the candidates for a record that no measure pass consumed. The record assumes the
+     * host's pipeline: the measure pass that follows this recomposer's recompose block reads it
+     * before the next block. A composition that its own gate held back has a measure-pending
+     * host, so that measure pass services the host. A candidate is such a composition, still
+     * held, in a frame in which no host called in at all. [countUnconsumed] then asks each
+     * candidate's gate. Must hold [stateLock].
+     */
+    private fun collectUnconsumedLocked() {
+        unconsumedCandidates.clear()
+        if (hostCallsSincePublish != 0) return
+        // A host that composed a held composition without reporting it did run a measure pass.
+        // countUnreportedComposesLocked counts that host instead.
+        if (pendingParentDriven.any { (it as? CompositionImpl)?.composedSinceReport == true }) {
+            return
+        }
+        heldByOwnGate.forEach {
+            if (it in pendingParentDriven && !it.isDisposed) unconsumedCandidates += it
+        }
+    }
+
+    /**
+     * Counts a record that no measure pass consumed, and logs the first one. A candidate whose
+     * gate is still true has a host that is still measure-pending, so no measure pass serviced
+     * it, and only the fallback re-arm delivers. A candidate whose gate is false was measured,
+     * and its host simply no longer uses it, for example a removed lazy item. The gates are host
+     * code, so they run outside [stateLock].
+     */
+    private fun countUnconsumed() {
+        if (unconsumedCandidates.isEmpty()) return
+        val unconsumed =
+            unconsumedCandidates.fastAny {
+                (it as? CompositionImpl)?.parentDrivenRecomposeGate?.invoke() == true
+            }
+        unconsumedCandidates.clear()
+        if (!unconsumed) return
+        val first = synchronized(stateLock) { deferralPipelineViolations++ == 0 }
+        if (first) {
+            logWarning(
+                "A frame started before the measure pass that should follow the previous frame's " +
+                    "recompose. Compositions held back for that measure pass fall back to a " +
+                    "later frame."
+            )
+        }
+    }
+
+    /** Empties the deferral record. Must hold [stateLock]. */
+    private fun clearDeferralRecordLocked() {
+        pendingParentDriven.clear()
+        waitersByEnclosing.clear()
+        heldByOwnGate.clear()
+    }
+
+    /**
      * Re-arms the invalidation of a composition that the deferral propagation deferred.
      *
      * Such a composition has no refresh of its own scheduled. Its own gate said it was ready. So
      * the pass must re-arm it. If it does not, the content stays stale until an unrelated change
      * arrives.
      *
+     * The re-arm is a fallback. An enclosing composition that composes in the same frame releases
+     * this composition through [deliverDeferral], and delivery removes the re-arm again. The
+     * re-arm delivers only on a frame in which this composition is not delivered, for example
+     * because its enclosing composition does not compose. The re-arm's standalone recompose
+     * replays the content this composition already has. So for a slot that its host held only
+     * because the host supplied new content, the new content lands when the host measures again,
+     * not through the re-arm.
+     *
      * Never call this for a composition that its own gate deferred. Its host's pending measure
      * re-runs the content. Re-arming it would ask for a new frame every frame.
      *
-     * [CompositionImpl.consecutiveDeferralReArms] bounds a runaway. It counts the consecutive
-     * frames that deferred this composition. Composing by either path resets the count to zero.
+     * [CompositionImpl.consecutiveDeferralReArms] bounds the re-arm. It counts consecutive frames
+     * in which this composition was re-armed and not delivered. A second re-arm in the same frame
+     * does not change the count. Composing by either path resets the count to zero:
      * [CompositionImpl.composeContent] and [CompositionImpl.recompose] do that reset. So the cap
-     * trips only after 60 consecutive deferrals that no refresh interrupted. An enclosing
-     * composition that holds a nested one back that long points at a layout fault.
+     * trips after 60 consecutive frames in which this composition was never delivered. That
+     * happens, for example, when its enclosing composition never composes, when its refresh
+     * request is swallowed because its host is mid-measure, or when its host belongs to another
+     * owner whose measure pass does not follow the enclosing composition's.
      *
      * Past the cap this stops re-arming. A later change delivers only when a subscribed scope
      * reports it and the propagation does not defer this composition again in that frame.
      * Otherwise the content stays stale until the host's next measure refreshes it.
      *
-     * The trip is silent on purpose. The one logger in `commonMain` is `logError`. It carries the
-     * error severity, and it demands a [Throwable]. A "this looks like a loop" hint is neither an
-     * error nor a throw. A made-up [Throwable] would be worse than silence. So a reader sees
-     * stale content with no signal.
+     * The trip logs once, on the frame the run first passes the cap. A waiter that is never
+     * delivered is a fault, and without a signal it shows only as stale content. The one logger
+     * in `commonMain` is `logError`, which takes a [Throwable], so the log carries an
+     * [IllegalStateException] that holds the same message.
      *
      * The ordinal counts processed frames, not wall-clock time. So an idle period does not break
      * an unbroken run. Only a processed frame that does not defer this composition breaks it.
      */
     private fun reArmDeferred(composition: ControlledComposition, frameOrdinal: Long) {
         val impl = composition as? CompositionImpl ?: return
+        val firstReArmThisFrame = impl.lastDeferralFrame != frameOrdinal
         // Count only an unbroken run of frames. A frame in which the propagation did not defer
         // this composition ends the run. Noria tests the same adjacency against its epoch.
         impl.consecutiveDeferralReArms =
-            if (impl.lastDeferralFrame == frameOrdinal - 1) impl.consecutiveDeferralReArms + 1
-            else 1
+            when (impl.lastDeferralFrame) {
+                // Wave 2 and the host's hold can both re-arm it in one frame.
+                frameOrdinal -> impl.consecutiveDeferralReArms
+                frameOrdinal - 1 -> impl.consecutiveDeferralReArms + 1
+                else -> 1
+            }
         impl.lastDeferralFrame = frameOrdinal
-        if (impl.consecutiveDeferralReArms > MAX_CONSECUTIVE_DEFERRAL_RE_ARMS) return
+        if (impl.consecutiveDeferralReArms > MAX_CONSECUTIVE_DEFERRAL_RE_ARMS) {
+            if (
+                firstReArmThisFrame &&
+                    impl.consecutiveDeferralReArms == MAX_CONSECUTIVE_DEFERRAL_RE_ARMS + 1
+            ) {
+                val message =
+                    "A composition was held back behind an enclosing composition for " +
+                        "$MAX_CONSECUTIVE_DEFERRAL_RE_ARMS consecutive frames without being " +
+                        "delivered. Its re-arm stops, and its pending change waits for a later " +
+                        "change or its host's next measure."
+                logWarning(message)
+            }
+            return
+        }
+        impl.deferralReArmPending = true
         invalidate(composition)
+    }
+
+    /**
+     * Marks [composition] as brought up to date by its host, or gone, for the deferral record, and
+     * releases the compositions that wait for it.
+     *
+     * A released waiter with a refresh request asks its host to re-run it. The measure pass that is
+     * running then re-runs it after [composition], at any node depth. A released waiter without a
+     * request is recomposed directly, but only when [releaseWithoutRequest] is true. A dispose
+     * passes false, because it runs inside another composition's apply. Such a waiter keeps its
+     * fallback re-arm instead.
+     *
+     * Delivery removes the re-arm's entry from [compositionInvalidations], so a delivered
+     * composition leaves no frame request behind. The entry can also carry a real invalidation,
+     * because [invalidate] de-duplicates, for example from a `SideEffect` that invalidates its own
+     * scope during the compose that just delivered it, or from another thread. So once the entry
+     * is removed, a composition that still has invalidations is queued again. The check comes
+     * after the removal, so an invalidation that arrives in between is never lost.
+     * [ControlledComposition.hasInvalidations] takes the composition's own lock, and no code path
+     * here may hold both locks at once, so the check runs after [stateLock] is released. The flag
+     * is read without the lock first, as it is written, so the common case takes no extra lock.
+     */
+    private fun deliverDeferral(
+        composition: ControlledComposition,
+        releaseWithoutRequest: Boolean,
+    ) {
+        val impl = composition as? CompositionImpl
+        val reArmPending = impl?.deferralReArmPending == true
+        var removedReArm = false
+        val released =
+            synchronized(stateLock) {
+                if (reArmPending && impl?.deferralReArmPending == true) {
+                    impl.deferralReArmPending = false
+                    compositionInvalidations -= composition
+                    removedReArm = true
+                }
+                takeWaitersLocked(composition)
+            }
+        if (removedReArm && composition.hasInvalidations) invalidate(composition)
+        if (released != null) releaseWaiters(released, releaseWithoutRequest)
+    }
+
+    /**
+     * Takes [composition] out of the deferral record and returns the compositions that waited for
+     * it, or null. Must hold [stateLock].
+     */
+    private fun takeWaitersLocked(
+        composition: ControlledComposition
+    ): MutableList<ControlledComposition>? {
+        pendingParentDriven.remove(composition)
+        return waitersByEnclosing.remove(composition)
+    }
+
+    /**
+     * Releases [waiters], as [deliverDeferral] describes. Runs outside [stateLock], because it calls
+     * into hosts and can recompose.
+     */
+    private fun releaseWaiters(
+        waiters: List<ControlledComposition>,
+        releaseWithoutRequest: Boolean,
+    ) {
+        for (index in waiters.indices) {
+            // A waiter that failed to recompose in recovery mode leaves the recomposer in its
+            // error state, and recovery recomposes everything. So the release stops there. The
+            // check also covers a failure deeper in a chain, released from inside this one.
+            if (errorState.value != null) return
+            val waiter = waiters[index]
+            if (waiter.isDisposed) continue
+            val refresh = (waiter as? CompositionImpl)?.parentDrivenRefreshRequest
+            when {
+                refresh != null -> refresh()
+                releaseWithoutRequest -> recomposeReleasedWaiter(waiter)
+            }
+        }
+    }
+
+    /**
+     * Recomposes a released waiter that no host re-runs, then delivers it.
+     *
+     * It runs inside the report that the enclosing composition's host makes with
+     * [ParentDrivenHosting.reportCurrent], so inside the measure pass. An error here is reported the same
+     * way as one in [composeInitial]: in recovery mode it is recorded and does not escape;
+     * otherwise it is rethrown, out of the host's measure. A waiter released after the error falls
+     * back to its own re-arm. A waiter that is composing right now keeps its fallback re-arm.
+     */
+    private fun recomposeReleasedWaiter(composition: ControlledComposition) {
+        if (composition.isDisposed || composition.isComposing) return
+        val needsApply =
+            try {
+                performRecompose(composition, null)
+            } catch (e: Throwable) {
+                processCompositionError(e, composition, recoverable = true)
+                return
+            }
+        if (needsApply != null) {
+            try {
+                performInitialMovableContentInserts(composition)
+                needsApply.applyChanges()
+                needsApply.applyLateChanges()
+                needsApply.changesApplied()
+            } catch (e: Throwable) {
+                processCompositionError(e)
+                return
+            }
+            if (domainOf(composition) == null) {
+                // Ensure that any state objects created during applyChanges are seen as changed
+                // if modified after this call.
+                Snapshot.notifyObjectsInitialized()
+            }
+        }
+        deliverDeferral(composition, releaseWithoutRequest = true)
     }
 
     @OptIn(ExperimentalComposeApi::class)
@@ -2016,11 +2379,61 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     }
 
     internal override fun unregisterComposition(composition: ControlledComposition) {
+        val released =
+            synchronized(stateLock) {
+                removeKnownCompositionLocked(composition)
+                compositionInvalidations -= composition
+                compositionsAwaitingApply -= composition
+                (composition as? CompositionImpl)?.deferralReArmPending = false
+                takeWaitersLocked(composition)
+            }
+        // A dispose runs inside another composition's apply. So only waiters with a refresh
+        // request are released here. The others keep their fallback re-arm.
+        if (released != null) releaseWaiters(released, releaseWithoutRequest = false)
+    }
+
+    internal override fun deferToEnclosing(composition: ControlledComposition): Boolean {
+        val frameOrdinal =
+            synchronized(stateLock) {
+                hostCallsSincePublish++
+                if (pendingParentDriven.isEmpty()) return false
+                if (!waitForPendingEnclosingLocked(composition)) return false
+                currentDeferralFrame
+            }
+        // The fallback, for a frame in which the enclosing composition does not compose.
+        reArmDeferred(composition, frameOrdinal)
+        return true
+    }
+
+    /**
+     * A host brought [composition] up to date at measure time. See [ParentDrivenHosting.reportCurrent].
+     * If wave 2 held it back, it is now delivered, unless a composition enclosing it is still
+     * pending. Then it waits for that one instead. It needs no fallback re-arm for that wait: the
+     * host just ran it, and its own waiters keep their re-arms.
+     */
+    internal override fun reportCurrent(composition: ControlledComposition) {
+        (composition as? CompositionImpl)?.composedSinceReport = false
         synchronized(stateLock) {
-            removeKnownCompositionLocked(composition)
-            compositionInvalidations -= composition
-            compositionsAwaitingApply -= composition
+            hostCallsSincePublish++
+            if (composition !in pendingParentDriven) return
+            if (waitForPendingEnclosingLocked(composition)) return
         }
+        deliverDeferral(composition, releaseWithoutRequest = true)
+    }
+
+    /**
+     * Records [composition] as a waiter of the nearest composition enclosing it that is in
+     * [pendingParentDriven], and returns whether there is one. Must hold [stateLock].
+     */
+    private fun waitForPendingEnclosingLocked(composition: ControlledComposition): Boolean {
+        var enclosing = (composition as? CompositionImpl)?.parentComposition
+        while (enclosing != null && enclosing !in pendingParentDriven) {
+            enclosing = enclosing.parentComposition
+        }
+        if (enclosing == null) return false
+        val waiters = waitersByEnclosing.getOrPut(enclosing) { mutableListOf() }
+        if (composition !in waiters) waiters += composition
+        return true
     }
 
     internal override fun invalidate(composition: ControlledComposition) {
@@ -2205,11 +2618,17 @@ private val FramePending = Any()
 
 /**
  * The deferral propagation can re-arm a composition in this many consecutive frames. Past that
- * count, treat it as a loop between the composition and an enclosing composition whose host never
- * settles. A legitimate chain needs as many frames as it is deep. So a generous cap catches a
- * runaway without touching a converging deferral. Noria uses the same count for the same class of
- * loop. Its behavior past the cap differs, because it keeps delivering and suppresses only the
- * frame request.
+ * count the re-arm stops, which ends the frame requests of a waiter that is never delivered.
+ *
+ * The cap counts consecutive frames in which the waiter was not delivered at all. A frame in
+ * which the enclosing composition composes normally delivers the waiter and resets the count, so
+ * a busy enclosing host, one that is measure-pending on nearly every frame, does not reach the
+ * cap on that account. The cap trips when the waiter is never delivered: for example its
+ * enclosing composition never composes, its refresh request is swallowed because its host is
+ * mid-measure, or its host belongs to another owner whose measure does not follow the enclosing
+ * one. The invalidation is then lost. See [Recomposer.reArmDeferred]. Noria uses the same count
+ * for the same class of loop. Its behavior past the cap differs, because it keeps delivering and
+ * suppresses only the frame request.
  */
 private const val MAX_CONSECUTIVE_DEFERRAL_RE_ARMS: Int = 60
 

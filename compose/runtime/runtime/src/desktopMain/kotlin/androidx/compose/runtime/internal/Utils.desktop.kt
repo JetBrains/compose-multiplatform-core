@@ -20,3 +20,7 @@ internal actual fun logError(message: String, e: Throwable) {
     System.err.println(message)
     e.printStackTrace(System.err)
 }
+
+internal actual fun logWarning(message: String) {
+    System.err.println(message)
+}

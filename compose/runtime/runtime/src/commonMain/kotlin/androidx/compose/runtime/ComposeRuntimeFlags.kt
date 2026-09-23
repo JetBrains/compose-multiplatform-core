@@ -58,4 +58,22 @@ public object ComposeRuntimeFlags {
     @JvmField
     @field:Suppress("MutableBareField")
     public var isLinkBufferComposerEnabled: Boolean = false
+
+    /**
+     * Whether deactivating content for reuse makes the recomposer skip, for the rest of the turn,
+     * every composition created from a composition context in that content. Removing content
+     * already does this. The fork extends it to deactivation, for compositions hosted outside the
+     * deactivated content, such as an overlay anchored in a lazy list row.
+     *
+     * Deactivated content keeps its composition contexts for reuse. Deactivation forgets the
+     * remembered state and effects that own the compositions created from them, and those owners
+     * tear the compositions down or empty them. Until then a skipped composition cannot compose
+     * against the state that deactivated its creator.
+     *
+     * This flag is **enabled** by default.
+     */
+    @InternalComposeApi
+    @JvmField
+    @field:Suppress("MutableBareField")
+    public var isNestedCompositionSkipOnDeactivationEnabled: Boolean = true
 }

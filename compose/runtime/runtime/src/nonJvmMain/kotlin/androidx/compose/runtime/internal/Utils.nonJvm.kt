@@ -28,3 +28,7 @@ internal actual fun logError(message: String, e: Throwable) {
     println(message)
     println(e.stackTraceToString())
 }
+
+internal actual fun logWarning(message: String) {
+    println(message)
+}

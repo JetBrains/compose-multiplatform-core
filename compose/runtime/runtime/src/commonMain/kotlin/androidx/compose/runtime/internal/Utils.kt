@@ -22,3 +22,6 @@ import androidx.compose.runtime.Composer
 internal expect fun invokeComposable(composer: Composer, composable: @Composable () -> Unit)
 
 internal expect fun logError(message: String, e: Throwable)
+
+/** Logs a diagnostic that is not an error, without a stack trace. */
+internal expect fun logWarning(message: String)

@@ -25,7 +25,11 @@ import androidx.collection.mutableScatterMapOf
 import androidx.compose.runtime.Applier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposeNodeLifecycleCallback
+import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionContext
+import androidx.compose.runtime.CompositionServices
+import androidx.compose.runtime.ParentDrivenHosting
+import androidx.compose.runtime.ParentDrivenHostingKey
 import androidx.compose.runtime.PausableComposition
 import androidx.compose.runtime.PausedComposition
 import androidx.compose.runtime.ReusableComposeNode
@@ -63,7 +67,6 @@ import androidx.compose.ui.node.TraversableNode.Companion.TraverseDescendantsAct
 import androidx.compose.ui.node.checkMeasuredSize
 import androidx.compose.ui.node.requireOwner
 import androidx.compose.ui.node.traverseDescendants
-import androidx.compose.runtime.setParentDrivenRecomposeGate
 import androidx.compose.ui.platform.createPausableSubcomposition
 import androidx.compose.ui.platform.createSubcomposition
 import androidx.compose.ui.unit.Constraints
@@ -547,6 +550,11 @@ fun SubcomposeSlotReusePolicy(maxSlotsToRetainForReuse: Int): SubcomposeSlotReus
  * SubcomposeLayout and even when the SubcomposeLayout's LayoutNode is reused via the
  * ReusableComposeNode mechanism.
  */
+/** This composition's side of the [ParentDrivenHosting] protocol, or null if it has none. */
+@OptIn(androidx.compose.runtime.InternalComposeApi::class)
+private val Composition.hosting: ParentDrivenHosting?
+    get() = (this as? CompositionServices)?.getCompositionService(ParentDrivenHostingKey)
+
 @OptIn(ExperimentalComposeUiApi::class, androidx.compose.runtime.InternalComposeApi::class)
 internal class LayoutNodeSubcompositionsState(
     private val root: LayoutNode,
@@ -690,9 +698,39 @@ internal class LayoutNodeSubcompositionsState(
         }
         val hasPendingChanges = nodeState.composition?.hasInvalidations ?: true
         if (contentChanged || hasPendingChanges || nodeState.forceRecompose) {
+            val existing = nodeState.composition
+            // A reused slot composes for its new slot id like a new composition, so it is not
+            // held.
+            if (
+                !pausable &&
+                    !nodeState.forceReuse &&
+                    existing != null &&
+                    !existing.isDisposed &&
+                    existing.hosting?.deferToEnclosingComposition() == true
+            ) {
+                // A composition enclosing this slot has not composed yet in this frame. The
+                // recomposer refreshes this host once it has. Keep the old content until then, so
+                // the next call still sees the change.
+                return
+            }
             nodeState.content = content
             subcompose(node, nodeState, pausable)
             nodeState.forceRecompose = false
+        }
+        // The slot is current now, composed above or with nothing to compose.
+        if (!pausable) nodeState.reportCurrent()
+    }
+
+    /**
+     * Reports this slot's composition current to the recomposer. The report delivers it if the
+     * recomposer held it back, and releases the compositions that wait for it, unless it has to
+     * wait for an enclosing composition itself. A released waiter can recompose right here, so
+     * its reads must not become dependencies of the measure that calls this.
+     */
+    private fun NodeState.reportCurrent() {
+        val composition = composition
+        if (composition != null && !composition.isDisposed) {
+            Snapshot.withoutReadObservation { composition.hosting?.reportCurrent() }
         }
     }
 
@@ -735,9 +773,22 @@ internal class LayoutNodeSubcompositionsState(
                         // The host is the SubcomposeLayout's own node (root) - the slot node's
                         // measure never re-supplies content. Measure-not-pending proves the
                         // captured values are current (the measure read them), so the
-                        // standalone pass is coherent.
-                        created.setParentDrivenRecomposeGate {
+                        // standalone pass is coherent. subcompose() also holds this composition
+                        // directly, through deferToEnclosingComposition(), while a composition
+                        // enclosing this slot is pending.
+                        val hosting = created.hosting
+                        hosting?.setRecomposeGate {
                             root.measurePending || root.lookaheadMeasurePending
+                        }
+                        // The recomposer calls this once an enclosing composition that held this
+                        // slot back has composed. Marking the host's measure pending re-subcomposes
+                        // the held slot in this measure pass, after the enclosing one.
+                        hosting?.setRefreshRequest {
+                            if (root.lookaheadRoot != null) {
+                                if (!root.lookaheadMeasurePending) root.requestLookaheadRemeasure()
+                            } else {
+                                if (!root.measurePending) root.requestRemeasure()
+                            }
                         }
                         created
                     } else {
@@ -1356,6 +1407,9 @@ internal class LayoutNodeSubcompositionsState(
                     this.pausedComposition = null
                 }
             }
+            // The apply brought the slot up to date, as a compose would have. A prefetch and an
+            // approach pass apply outside the measure's report, so report here.
+            reportCurrent()
         }
     }
 

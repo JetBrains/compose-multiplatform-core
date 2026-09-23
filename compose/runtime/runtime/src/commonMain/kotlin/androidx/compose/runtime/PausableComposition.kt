@@ -342,6 +342,11 @@ internal class PausedCompositionImpl(
                     pausableApplier.playTo(applier as Applier<Any?>, rememberManager)
                     rememberManager.dispatchRememberObservers()
                     rememberManager.dispatchSideEffects()
+                    // The apply is what brings a host's paused re-run up to date, so it counts
+                    // as the host's compose for Recomposer.reportCurrent's protocol check.
+                    if (composition.parentDrivenRecomposeGate != null) {
+                        composition.composedSinceReport = true
+                    }
                 } finally {
                     rememberManager.dispatchAbandons()
                     composition.pausedCompositionFinished(null)

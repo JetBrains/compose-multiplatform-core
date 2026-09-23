@@ -390,17 +390,98 @@ public fun ControlledComposition(
 ): ControlledComposition = CompositionImpl(parent, applier)
 
 /**
- * Installs a gate consulted when this composition is due for a standalone recomposition:
- * returning true means its content is about to be refreshed by its host's pending measure
- * pass (which re-runs the content lambda with fresh captures), so the standalone pass is
- * skipped - it would pair stale captured values with fresh reads. null (the default) never
- * skips. The gate must only return true when that refresh is genuinely scheduled: a skipped
- * invalidation is consumed, and only re-arms via the refresh or a new change.
+ * The protocol between a composition and the host that re-runs it at measure time, such as a
+ * `SubcomposeLayout`. Find it with [CompositionServices.getCompositionService] and
+ * [ParentDrivenHostingKey].
+ *
+ * The recomposer can hold a hosted composition back in wave 2, in two ways. Its own gate can say
+ * that the host's pending measure re-runs it. Or a composition enclosing it can be held back
+ * itself. The host then takes part at measure time:
+ * 1. Right before it composes the composition, it calls [deferToEnclosingComposition]. On true it
+ *    must not compose it now.
+ * 2. After each pass over the composition that it did not hold, whether the pass composed or
+ *    found nothing to compose, it calls [reportCurrent]. The report, not the compose, is what
+ *    releases the compositions that wait for this one.
+ * 3. When the recomposer releases this composition, it calls the request set with
+ *    [setRefreshRequest]. The host must then re-run the composition in the current frame.
+ *
+ * A host that composes a held-back composition without reporting it breaks the protocol, and the
+ * compositions that wait for it fall back to a later frame. The recomposer counts such a host at
+ * the start of the next frame and logs the first one.
  */
 @InternalComposeApi
-public fun Composition.setParentDrivenRecomposeGate(gate: (() -> Boolean)?) {
-    (this as? CompositionImpl)?.parentDrivenRecomposeGate = gate
+public interface ParentDrivenHosting {
+    /**
+     * Installs a gate consulted when this composition is due for a standalone recomposition.
+     * Returning true means its content is about to be refreshed by its host's pending measure
+     * pass, which re-runs the content lambda with fresh captures. So the standalone pass is
+     * skipped, because it would pair stale captured values with fresh reads. null, the default,
+     * never skips. The gate must only return true when that refresh is genuinely scheduled: a
+     * skipped invalidation is consumed, and only re-arms through the refresh or a new change. A
+     * composition the gate lets through can still be held back behind an enclosing composition,
+     * see [deferToEnclosingComposition].
+     *
+     * The recomposer asks the gate in wave 2. For a composition the gate held back, it may ask
+     * again at the start of the next frame, to check that a measure pass serviced the host. So
+     * the gate must be cheap and free of side effects. It runs outside the recomposer's lock.
+     */
+    public fun setRecomposeGate(gate: (() -> Boolean)?)
+
+    /**
+     * Installs a request that makes this composition's host re-run it.
+     *
+     * The recomposer can hold this composition back while a composition enclosing it has not
+     * composed yet in the frame. It calls this request once the enclosing composition's host
+     * reports it current with [reportCurrent], or once the enclosing composition is disposed. The
+     * request should mark the host for a refresh in the current frame, for example by marking the
+     * host's measure pending. The recomposer does not check that the host then re-runs this
+     * composition. If it does not, the fallback re-arm recomposes it on a later frame.
+     *
+     * null, the default, makes the recomposer recompose this composition directly instead, inside
+     * that report. That is right for a composition that no host re-runs. A dispose of the
+     * enclosing composition does not recompose it directly, because the dispose runs inside
+     * another composition's apply. It then waits for its fallback re-arm.
+     */
+    public fun setRefreshRequest(request: (() -> Unit)?)
+
+    /**
+     * Holds this composition back if a composition enclosing it has not composed yet in this
+     * frame, and returns whether it did.
+     *
+     * Only a composition that the recomposer held back in this frame's recompose, and that has
+     * not been reported current or disposed since, counts as not composed yet. An enclosing
+     * composition that is merely invalid does not.
+     *
+     * On true, the recomposer has recorded this composition as a waiter of the nearest such
+     * enclosing composition, and the host must not compose it now. The recomposer also queues a
+     * fallback recomposition for a later frame, unless this composition has already been held
+     * back for `MAX_CONSECUTIVE_DEFERRAL_RE_ARMS` consecutive frames without being delivered.
+     * Once the enclosing composition's host reports it current, the recomposer calls the request
+     * set with [setRefreshRequest], and the host's refresh then composes this one in the right
+     * order. That holds even when the host is shallower in the node tree than the enclosing
+     * composition's host, as an overlay's host is.
+     */
+    public fun deferToEnclosingComposition(): Boolean
+
+    /**
+     * Reports that the host re-ran this composition at measure time and brought it up to date,
+     * whether it composed or found nothing to compose.
+     *
+     * If the recomposer held this composition back in this frame, the report delivers it, and
+     * releases the compositions nested in it that wait for it. A composition can be held back
+     * with nothing to compose of its own, because every invalidation of a composition nested in
+     * it climbs the composition-context chain. If a composition enclosing this one has not
+     * composed yet in this frame, this one keeps waiting for it instead, and the request set with
+     * [setRefreshRequest] brings the host back once it has. The report does nothing for a
+     * composition the recomposer did not hold back.
+     */
+    public fun reportCurrent()
 }
+
+/** Finds a composition's [ParentDrivenHosting] through [CompositionServices]. */
+@InternalComposeApi
+public val ParentDrivenHostingKey: CompositionServiceKey<ParentDrivenHosting> =
+    object : CompositionServiceKey<ParentDrivenHosting> {}
 
 private val PendingApplyNoModifications = Any()
 
@@ -505,7 +586,8 @@ internal class CompositionImpl(
     RecomposeScopeOwner,
     CompositionServices,
     PausableComposition,
-    ObservableComposition {
+    ObservableComposition,
+    ParentDrivenHosting {
 
     /**
      * `null` if a composition isn't pending to apply. `Set<Any>` or `Array<Set<Any>>` if there are
@@ -533,6 +615,8 @@ internal class CompositionImpl(
 
     internal var parentDrivenRecomposeGate: (() -> Boolean)? = null
 
+    internal var parentDrivenRefreshRequest: (() -> Unit)? = null
+
     /**
      * The composition that created this one, or `null` when a [Recomposer] created it.
      *
@@ -552,14 +636,21 @@ internal class CompositionImpl(
      */
     internal val compositionDepth: Int
         get() {
+            val cached = cachedCompositionDepth
+            if (cached >= 0) return cached
             var depth = 0
             var enclosing = parentComposition
             while (enclosing != null) {
                 depth++
                 enclosing = enclosing.parentComposition
             }
+            cachedCompositionDepth = depth
             return depth
         }
+
+    // The context chain never changes after construction: [parent] is fixed, and a context's
+    // composition is fixed. So the depth is computed once. Wave 1 and wave 2 sort by it.
+    private var cachedCompositionDepth = -1
 
     /**
      * How many consecutive frames the deferral propagation re-armed this composition.
@@ -578,6 +669,19 @@ internal class CompositionImpl(
      * frame to test adjacency.
      */
     internal var lastDeferralFrame: Long = -1L
+
+    /**
+     * Whether the deferral re-armed this composition and the re-arm is still queued. Delivery
+     * removes the queued entry again, because a composition that composed has nothing left for it
+     * to deliver. See `Recomposer.deliverDeferral`.
+     */
+    internal var deferralReArmPending: Boolean = false
+
+    /**
+     * Whether a host composed this gated composition through [setContent] since the recomposer
+     * last published it as held back, without reporting it current. See `Recomposer.reportCurrent`.
+     */
+    internal var composedSinceReport: Boolean = false
 
     /**
      * A set of remember observers that were potentially abandoned between [composeContent] or
@@ -808,6 +912,7 @@ internal class CompositionImpl(
 
     private fun composeInitial(content: @Composable () -> Unit) {
         this.composable = content
+        if (parentDrivenRecomposeGate != null) composedSinceReport = true
         parent.composeInitial(this, composable)
     }
 
@@ -1469,7 +1574,25 @@ internal class CompositionImpl(
 
     @Suppress("UNCHECKED_CAST")
     override fun <T> getCompositionService(key: CompositionServiceKey<T>): T? =
-        if (key == ObservableCompositionServiceKey) this as T else null
+        when (key) {
+            ObservableCompositionServiceKey,
+            ParentDrivenHostingKey -> this as T
+            else -> null
+        }
+
+    override fun setRecomposeGate(gate: (() -> Boolean)?) {
+        parentDrivenRecomposeGate = gate
+    }
+
+    override fun setRefreshRequest(request: (() -> Unit)?) {
+        parentDrivenRefreshRequest = request
+    }
+
+    override fun deferToEnclosingComposition(): Boolean = parent.deferToEnclosing(this)
+
+    override fun reportCurrent() {
+        parent.reportCurrent(this)
+    }
 
     private fun tryImminentInvalidation(scope: RecomposeScopeImpl, instance: Any?): Boolean =
         isComposing && composer.tryImminentInvalidation(scope, instance)

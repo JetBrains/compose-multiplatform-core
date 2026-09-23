@@ -72,6 +72,19 @@ public abstract class CompositionContext internal constructor() {
         content: @Composable () -> Unit,
     )
 
+    /**
+     * Whether a composition enclosing [composition] has not composed yet in this frame. See
+     * [ParentDrivenHosting.deferToEnclosingComposition]. Only the [Recomposer] keeps that record. A
+     * context forwards the question to its parent.
+     */
+    internal open fun deferToEnclosing(composition: ControlledComposition): Boolean = false
+
+    /**
+     * Marks [composition] as brought up to date by its host. See [ParentDrivenHosting.reportCurrent].
+     * Only the [Recomposer] acts on it. A context forwards the report to its parent.
+     */
+    internal open fun reportCurrent(composition: ControlledComposition) {}
+
     internal abstract fun composeInitialPaused(
         composition: ControlledComposition,
         shouldPause: ShouldPauseCallback,

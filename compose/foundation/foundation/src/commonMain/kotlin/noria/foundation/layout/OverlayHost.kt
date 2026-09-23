@@ -34,10 +34,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.ParentDataModifier
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.node.DelegatableNode
+import androidx.compose.ui.node.LayoutModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.invalidateMeasurement
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntRect
 import kotlin.math.roundToInt
@@ -64,6 +71,7 @@ fun OverlayHost(
                 overlayHostState.overlays.forEach { overlay ->
                     SubcomposeLayout(
                         compositionContext = overlay.compositionContext,
+                        modifier = OverlayHostMeasureElement(overlay),
                     ) { constraints ->
                         // isLive is read here, in measure, so its anchor-driven write reschedules
                         // this measure and empties the slot in the same frame. See the design at
@@ -163,6 +171,68 @@ internal class OverlayState(
      * docs/superpowers/specs/2026-09-18-overlay-same-frame-removal-design.md.
      */
     internal var isLive by mutableStateOf(true)
+
+    /**
+     * The node that marks this overlay's host measure-pending, while the host is attached.
+     *
+     * The write to [isLive] reaches the host's measure only through a snapshot apply
+     * notification, which can arrive after the recomposer has already decided about this
+     * overlay's composition in the same frame. The anchor's `onDispose` therefore also calls
+     * this, so the host's gate is closed at once and the composition waits for the measure that
+     * empties it.
+     */
+    internal var hostMeasure: OverlayHostMeasureNode? = null
+}
+
+/** Attaches an [OverlayHostMeasureNode] for [overlay] to the overlay's host. */
+private class OverlayHostMeasureElement(
+    private val overlay: OverlayState,
+) : ModifierNodeElement<OverlayHostMeasureNode>() {
+    override fun create() = OverlayHostMeasureNode(overlay)
+
+    override fun update(node: OverlayHostMeasureNode) {
+        node.update(overlay)
+    }
+
+    override fun equals(other: Any?): Boolean =
+        other is OverlayHostMeasureElement && other.overlay === overlay
+
+    override fun hashCode(): Int = overlay.hashCode()
+}
+
+/**
+ * A pass-through layout node that lets an overlay's anchor mark the overlay's host
+ * measure-pending. See [OverlayState.hostMeasure].
+ */
+internal class OverlayHostMeasureNode(private var overlay: OverlayState) :
+    Modifier.Node(), LayoutModifierNode {
+
+    fun update(overlay: OverlayState) {
+        if (overlay === this.overlay) return
+        if (isAttached) {
+            if (this.overlay.hostMeasure === this) this.overlay.hostMeasure = null
+            overlay.hostMeasure = this
+        }
+        this.overlay = overlay
+    }
+
+    /** Marks the host's measure pending. Does nothing once the host is detached. */
+    fun invalidate() {
+        if (isAttached) invalidateMeasurement()
+    }
+
+    override fun onAttach() {
+        overlay.hostMeasure = this
+    }
+
+    override fun onDetach() {
+        if (overlay.hostMeasure === this) overlay.hostMeasure = null
+    }
+
+    override fun MeasureScope.measure(measurable: Measurable, constraints: Constraints): MeasureResult {
+        val placeable = measurable.measure(constraints)
+        return layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+    }
 }
 
 /**

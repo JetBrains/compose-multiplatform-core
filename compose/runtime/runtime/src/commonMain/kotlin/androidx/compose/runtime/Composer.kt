@@ -1001,6 +1001,15 @@ internal abstract class InternalComposer : Composer {
 
     internal abstract fun deactivate()
 
+    /**
+     * Reports every composition created from a composition context in this composer's content as
+     * removed, including the compositions nested in those. The recomposer then skips them for the
+     * rest of the turn. Removing a group already does this for the removed group. Deactivating
+     * content does it through this composer's own walk, which calls this on each nested composer.
+     * See [ComposeRuntimeFlags.isNestedCompositionSkipOnDeactivationEnabled].
+     */
+    internal abstract fun reportNestedCompositionsRemoved()
+
     internal abstract fun verifyConsistent()
 
     internal abstract fun stacksSize(): Int
