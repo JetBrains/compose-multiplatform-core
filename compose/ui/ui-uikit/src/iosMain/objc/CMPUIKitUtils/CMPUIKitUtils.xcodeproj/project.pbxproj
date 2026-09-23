@@ -621,11 +621,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				A0CEE0303006417800F0D942 /* CMPUIKitSwiftUtils.swift in Sources */,
+				A0B803B13061835300F25EFE /* CMPReservedRegion.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
-				A0B803B13061835300F25EFE /* CMPReservedRegion.swift in Sources */,
 
 /* Begin PBXTargetDependency section */
 		997DFCE92B18D99E000B56B5 /* PBXTargetDependency */ = {
