@@ -160,6 +160,16 @@ interface PlatformContext {
 
     val textToolbar: TextToolbar get() = EmptyTextToolbar
     val hapticFeedback: HapticFeedback get() = DefaultHapticFeedback
+
+    /**
+     * The [Clipboard] this owner's clipboard operations read and write.
+     *
+     * Defaults to the real platform clipboard, matching every other backend. A host with no real
+     * platform to talk to (e.g. the headless test backend) overrides this with its own
+     * implementation instead of touching OS clipboard state that does not exist there.
+     */
+    val clipboard: Clipboard get() = createPlatformClipboard()
+    val clipboardManager: ClipboardManager get() = createPlatformClipboardManager()
     fun setPointerIcon(pointerIcon: PointerIcon) = Unit
 
     val parentFocusManager: FocusManager get() = EmptyFocusManager

@@ -362,7 +362,6 @@ object HeadlessApplication : Application {
     override fun getClipEntrySync(): ClipEntry? = clipboardContent
 
     override suspend fun setClipEntry(clipEntry: ClipEntry?) {
-        clipEntry ?: return
         clipboardContent = clipEntry
     }
 

@@ -51,6 +51,7 @@ import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.node.InternalCoreApi
+import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.ViewConfiguration
@@ -265,6 +266,15 @@ class HeadlessWindow internal constructor(
         override val inputModeManager: InputModeManager
             get() = application.inputModeManager
 
+        // The real platform clipboard (GtkApplication/LinuxApplication/WindowsApplication/
+        // MacOsClipboard) is only available once one of those has been initialized, which never
+        // happens under this backend. HeadlessApplication already implements Clipboard (an
+        // in-memory ClipEntry, per HeadlessApplication.kt) for exactly this reason; route through
+        // it instead of RootNodeOwner's default, which would otherwise eagerly touch a platform
+        // clipboard that does not exist here and throw on construction.
+        override val clipboard: Clipboard
+            get() = application
+
         override fun textInputSessionOwner() = this@HeadlessWindow
 
         override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener?
@@ -307,16 +317,25 @@ class HeadlessWindow internal constructor(
         scheduleFrame = { isFrameRequestedState = true },
     )
 
-    private val composeScene: ComposeScene = CanvasLayersComposeScene(
-        frameRecomposer = frameRecomposer,
-        density = density,
-        layoutDirection = LayoutDirection.Ltr,
-        size = contentSizeInPx(),
-        platformContext = platformContext,
-        dataSourceContext = session.dataSourceContext,
-        invalidateLayout = sceneRenderingScope::onSceneInvalidation,
-        invalidateDraw = sceneRenderingScope::onSceneInvalidation,
-    )
+    private val composeScene: ComposeScene = try {
+        CanvasLayersComposeScene(
+            frameRecomposer = frameRecomposer,
+            density = density,
+            layoutDirection = LayoutDirection.Ltr,
+            size = contentSizeInPx(),
+            platformContext = platformContext,
+            dataSourceContext = session.dataSourceContext,
+            invalidateLayout = sceneRenderingScope::onSceneInvalidation,
+            invalidateDraw = sceneRenderingScope::onSceneInvalidation,
+        )
+    } catch (e: Throwable) {
+        // frameRecomposer above already has a running Recomposer registered with both
+        // GlobalSnapshotManager and Compose's global apply-observer list. If scene construction
+        // fails, nothing else can ever reach this HeadlessWindow to close it, so without this the
+        // Recomposer -- and everything it retains -- leaks for the life of the process.
+        frameRecomposer.close()
+        throw e
+    }
 
     // ----- Rendering into an in-memory raster surface -----
 
