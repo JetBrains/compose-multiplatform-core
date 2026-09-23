@@ -167,7 +167,7 @@ internal class DomInputStrategy(
     }
 
     @OptIn(ExperimentalWasmJsInterop::class)
-    private fun isInputActive(): Boolean {
+    internal fun isInputActive(): Boolean {
         val root = htmlInput.unsafeCast<NodeWithRootNode>().getRootNode()
         val rootActive = root?.activeElement
         return rootActive == htmlInput
