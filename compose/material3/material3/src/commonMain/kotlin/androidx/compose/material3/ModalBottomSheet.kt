@@ -89,6 +89,7 @@ import kotlinx.coroutines.launch
  *   `Modifier.imePadding` should be applied to the [modifier] parameter.
  * @param properties [ModalBottomSheetProperties] for further customization of this modal bottom
  *   sheet's window behavior.
+ * @param blurBehindRadius Blur radius for content behind the sheet. Zero disables blur.
  * @param content The content to be displayed inside the bottom sheet.
  */
 @Composable
@@ -107,6 +108,7 @@ public fun ModalBottomSheet(
     dragHandle: @Composable (() -> Unit)? = { BottomSheetDefaults.DragHandle() },
     contentWindowInsets: @Composable () -> WindowInsets = { BottomSheetDefaults.modalWindowInsets },
     properties: ModalBottomSheetProperties = ModalBottomSheetProperties(),
+    blurBehindRadius: Dp = Dp.Unspecified,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -135,6 +137,7 @@ public fun ModalBottomSheet(
 
     ModalBottomSheetDialog(
         properties = properties,
+        blurBehindRadius = blurBehindRadius,
         contentColor = contentColor,
         onDismissRequest = settleToDismiss,
     ) {
@@ -299,5 +302,6 @@ internal expect fun ModalBottomSheetDialog(
     onDismissRequest: () -> Unit = {},
     contentColor: Color = contentColorFor(BottomSheetDefaults.ContainerColor),
     properties: ModalBottomSheetProperties = ModalBottomSheetProperties(),
+    blurBehindRadius: Dp = Dp.Unspecified,
     content: @Composable () -> Unit,
 )
