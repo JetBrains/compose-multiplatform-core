@@ -468,6 +468,7 @@ internal class ComposeWebSemanticsListener(
             }
 
             if (justCreated) {
+                htmlNode.style.setProperty("touch-action", "none")
                 htmlNode.addEventListener("focus") {
                     htmlNode.click()
                 }
