@@ -751,6 +751,10 @@ internal class ComposeSceneMediator(
         scene.measureAndLayout()
     }
 
+    fun updateKeyboardOverlap() {
+        keyboardManager.updateOverlapForCurrentGeometry()
+    }
+
     fun draw(canvas: Canvas) {
         didDrawSinceDisplayLink = true
         scene.draw(canvas)
@@ -781,7 +785,6 @@ internal class ComposeSceneMediator(
             OffsetToFocusedRect(
                 insets = windowInsetsManager.windowInsets.ime,
                 getFocusedRect = ::getFocusedRect,
-                size = scene.size,
                 animationDuration = if (animateKeyboardOffsetChanges) {
                     FOCUS_CHANGE_ANIMATION_DURATION
                 } else {

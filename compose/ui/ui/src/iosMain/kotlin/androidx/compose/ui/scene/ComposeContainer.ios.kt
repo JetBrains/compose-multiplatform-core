@@ -211,6 +211,7 @@ internal class ComposeContainer(
     private fun onLayoutSubviews() {
         windowContext.updateWindowContainerSize()
 
+        mediator?.updateKeyboardOverlap()
         mediator?.measureAndLayout()
         sceneSizing.onLayout()
     }
