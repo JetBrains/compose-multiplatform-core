@@ -56,6 +56,12 @@
 		99DCAB0E2BD00F5C002E6AC7 /* CMPTextLoupeSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 99DCAB0D2BD00F5C002E6AC7 /* CMPTextLoupeSession.m */; };
 		A01609822EB42A3300FB9790 /* CMPLayoutRegion.m in Sources */ = {isa = PBXBuildFile; fileRef = A01609812EB42A3300FB9790 /* CMPLayoutRegion.m */; };
 		A0CEE0303006417800F0D942 /* CMPUIKitSwiftUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0CEE02E3006417800F0D942 /* CMPUIKitSwiftUtils.swift */; };
+		A0CEE0313009000100F0D942 /* CMPAppEntityDescriptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0CEE0363009000100F0D942 /* CMPAppEntityDescriptor.swift */; };
+		A0CEE03B3009000100F0D942 /* CMPAppEntityUIElementProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0CEE03C3009000100F0D942 /* CMPAppEntityUIElementProvider.swift */; };
+		A0CEE0423009000100F0D942 /* CMPAppIntentsEntityIdentifierResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0CEE0413009000100F0D942 /* CMPAppIntentsEntityIdentifierResolver.swift */; };
+		A0CEE0433009000100F0D942 /* CMPAppEntityUIElementProviderImplementation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0CEE0443009000100F0D942 /* CMPAppEntityUIElementProviderImplementation.swift */; };
+		A0CEE0473009000100F0D942 /* CMPAppEntityUIElementProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0CEE0483009000100F0D942 /* CMPAppEntityUIElementProviderTests.swift */; };
+		A0CEE0493009000100F0D942 /* libCMPUIKitSwiftUtils.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A0CEE0273006417400F0D942 /* libCMPUIKitSwiftUtils.a */; };
 		AABB11112F5A0000000000A3 /* CMPUIWindowSceneExtensions.m in Sources */ = {isa = PBXBuildFile; fileRef = AABB11112F5A0000000000A2 /* CMPUIWindowSceneExtensions.m */; };
 		C4C07E892F57037300A9DC94 /* CMPTextInputView.m in Sources */ = {isa = PBXBuildFile; fileRef = C4C07E882F57037300A9DC94 /* CMPTextInputView.m */; };
 		C4C07E8A2F57037300A9DC94 /* CMPEditMenuCustomAction.m in Sources */ = {isa = PBXBuildFile; fileRef = C4C07E842F57037300A9DC94 /* CMPEditMenuCustomAction.m */; };
@@ -88,6 +94,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 997DFCF92B18E5D3000B56B5;
 			remoteInfo = CMPUIKitUtilsTestApp;
+		};
+		A0CEE04A3009000100F0D942 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9975AAC12AEABB5600AF155F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A0CEE0263006417400F0D942;
+			remoteInfo = CMPUIKitSwiftUtils;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -160,6 +173,11 @@
 		A0B803B43062000000F25EFE /* CMPUIKitSwiftUtils-ImportBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "CMPUIKitSwiftUtils-ImportBridge.h"; sourceTree = "<group>"; };
 		A0CEE0273006417400F0D942 /* libCMPUIKitSwiftUtils.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libCMPUIKitSwiftUtils.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		A0CEE02E3006417800F0D942 /* CMPUIKitSwiftUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CMPUIKitSwiftUtils.swift; sourceTree = "<group>"; };
+		A0CEE0363009000100F0D942 /* CMPAppEntityDescriptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CMPAppEntityDescriptor.swift; sourceTree = "<group>"; };
+		A0CEE03C3009000100F0D942 /* CMPAppEntityUIElementProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CMPAppEntityUIElementProvider.swift; sourceTree = "<group>"; };
+		A0CEE0413009000100F0D942 /* CMPAppIntentsEntityIdentifierResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CMPAppIntentsEntityIdentifierResolver.swift; sourceTree = "<group>"; };
+		A0CEE0443009000100F0D942 /* CMPAppEntityUIElementProviderImplementation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CMPAppEntityUIElementProviderImplementation.swift; sourceTree = "<group>"; };
+		A0CEE0483009000100F0D942 /* CMPAppEntityUIElementProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CMPAppEntityUIElementProviderTests.swift; sourceTree = "<group>"; };
 		A0E69B242EB4227A0049B20F /* CMPLayoutRegion.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPLayoutRegion.h; sourceTree = "<group>"; };
 		AABB11112F5A0000000000A1 /* CMPUIWindowSceneExtensions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPUIWindowSceneExtensions.h; sourceTree = "<group>"; };
 		AABB11112F5A0000000000A2 /* CMPUIWindowSceneExtensions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPUIWindowSceneExtensions.m; sourceTree = "<group>"; };
@@ -201,6 +219,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A0CEE0493009000100F0D942 /* libCMPUIKitSwiftUtils.a in Frameworks */,
 				997DFCE72B18D99E000B56B5 /* libCMPUIKitObjcUtils.a in Frameworks */,
 				997DFCE72B18D99E000B56B5 /* libCMPUIKitObjcUtils.a in Frameworks */,
 				99D71BAB304604D90012EEB8 /* IOKit.framework in Frameworks */,
@@ -324,6 +343,7 @@
 		997DFCE42B18D99E000B56B5 /* CMPUIKitUtilsTests */ = {
 			isa = PBXGroup;
 			children = (
+				A0CEE0483009000100F0D942 /* CMPAppEntityUIElementProviderTests.swift */,
 				99A83D592F2CC4FB00BB5698 /* CMPMetalLayerTests.swift */,
 				997DFCF02B18DBF2000B56B5 /* CMPUIKitUtilsTests-Bridging-Header.h */,
 				997DFCE52B18D99E000B56B5 /* CMPViewControllerTests.swift */,
@@ -354,10 +374,30 @@
 		A0CEE02F3006417800F0D942 /* CMPUIKitSwiftUtils */ = {
 			isa = PBXGroup;
 			children = (
+				A0CEE0453009000100F0D942 /* AppIntents */,
 				A0CEE02E3006417800F0D942 /* CMPUIKitSwiftUtils.swift */,
 				A0B803B43062000000F25EFE /* CMPUIKitSwiftUtils-ImportBridge.h */,
 			);
 			path = CMPUIKitSwiftUtils;
+			sourceTree = "<group>";
+		};
+		A0CEE0453009000100F0D942 /* AppIntents */ = {
+			isa = PBXGroup;
+			children = (
+				A0CEE0363009000100F0D942 /* CMPAppEntityDescriptor.swift */,
+				A0CEE03C3009000100F0D942 /* CMPAppEntityUIElementProvider.swift */,
+				A0CEE0463009000100F0D942 /* Internal */,
+			);
+			path = AppIntents;
+			sourceTree = "<group>";
+		};
+		A0CEE0463009000100F0D942 /* Internal */ = {
+			isa = PBXGroup;
+			children = (
+				A0CEE0413009000100F0D942 /* CMPAppIntentsEntityIdentifierResolver.swift */,
+				A0CEE0443009000100F0D942 /* CMPAppEntityUIElementProviderImplementation.swift */,
+			);
+			path = Internal;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -393,6 +433,7 @@
 			dependencies = (
 				997DFCE92B18D99E000B56B5 /* PBXTargetDependency */,
 				997DFD092B18E5DC000B56B5 /* PBXTargetDependency */,
+				A0CEE04B3009000100F0D942 /* PBXTargetDependency */,
 			);
 			name = CMPUIKitUtilsTests;
 			productName = CMPUIKitUtilsTests;
@@ -568,6 +609,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A0CEE0473009000100F0D942 /* CMPAppEntityUIElementProviderTests.swift in Sources */,
 				99A83D5A2F2CC4FB00BB5698 /* CMPMetalLayerTests.swift in Sources */,
 				99CC4B2F2ECE0838007C5C44 /* CMPView.m in Sources */,
 				99CC4B322ECE16C8007C5C44 /* CMPViewTests.swift in Sources */,
@@ -617,6 +659,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A0CEE03B3009000100F0D942 /* CMPAppEntityUIElementProvider.swift in Sources */,
+				A0CEE0313009000100F0D942 /* CMPAppEntityDescriptor.swift in Sources */,
+				A0CEE0423009000100F0D942 /* CMPAppIntentsEntityIdentifierResolver.swift in Sources */,
+				A0CEE0433009000100F0D942 /* CMPAppEntityUIElementProviderImplementation.swift in Sources */,
 				A0CEE0303006417800F0D942 /* CMPUIKitSwiftUtils.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -633,6 +679,11 @@
 			isa = PBXTargetDependency;
 			target = 997DFCF92B18E5D3000B56B5 /* CMPUIKitUtilsTestApp */;
 			targetProxy = 997DFD082B18E5DC000B56B5 /* PBXContainerItemProxy */;
+		};
+		A0CEE04B3009000100F0D942 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A0CEE0263006417400F0D942 /* CMPUIKitSwiftUtils */;
+			targetProxy = A0CEE04A3009000100F0D942 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
