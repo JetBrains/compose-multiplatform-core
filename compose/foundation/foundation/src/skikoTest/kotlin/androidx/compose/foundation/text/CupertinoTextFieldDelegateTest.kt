@@ -23,6 +23,7 @@ import androidx.compose.ui.text.TextLayoutInput
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.createFontFamilyResolver
+import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -42,6 +43,17 @@ class CupertinoTextFieldDelegateTest : SkikoComposeTestBase() {
             "Emoji sequence: \uD83D\uDE02\uD83D\uDE02\uD83D\uDE02\uD83D\uDE02\uD83D\uDE02\uD83D\uDE02\uD83D\uDE02\uD83D\uDE02\uD83D\uDE02\uD83D\uDE02\uD83D\uDE02\n"
     private val defaultDensity = Density(density = 1f)
     private val fontFamilyResolver = createFontFamilyResolver()
+
+    private val groupedDigits = "1234567812345678"
+    private val groupedDigitsTransformed = "1234 5678 1234 5678"
+
+    // Inserts a separator after every 4 digits, as in "1234 5678 1234 5678"
+    private val groupedDigitsOffsetMapping = object : OffsetMapping {
+        override fun originalToTransformed(offset: Int): Int =
+            offset + (offset - 1).coerceAtLeast(0) / 4
+
+        override fun transformedToOriginal(offset: Int): Int = offset - offset / 5
+    }
 
     fun testDetermineCursorDesiredOffset(
         givenOffset: Int,
@@ -207,6 +219,60 @@ class CupertinoTextFieldDelegateTest : SkikoComposeTestBase() {
         val desiredOffset = 96
 
         testDetermineCursorDesiredOffset(givenOffset, desiredOffset, sampleText)
+    }
+
+    @Test
+    fun determineCursorDesiredOffsetForTap_inside_group_with_visual_transformation() {
+        // https://youtrack.jetbrains.com/issue/CMP-10713
+        // Tap between "6" and "7": "1234 56|78 1234 5678"
+        val actual = determineCursorDesiredOffsetForTap(
+            transformedOffset = 7,
+            offsetMapping = groupedDigitsOffsetMapping,
+            textLayoutResult = createSimpleTextLayoutResult(groupedDigitsTransformed),
+            untransformedText = groupedDigits
+        )
+
+        assertEquals(6, actual)
+    }
+
+    @Test
+    fun determineCursorDesiredOffsetForTap_after_separator_with_visual_transformation() {
+        // Tap right after the separator: "1234 |5678 1234 5678"
+        val actual = determineCursorDesiredOffsetForTap(
+            transformedOffset = 5,
+            offsetMapping = groupedDigitsOffsetMapping,
+            textLayoutResult = createSimpleTextLayoutResult(groupedDigitsTransformed),
+            untransformedText = groupedDigits
+        )
+
+        assertEquals(4, actual)
+    }
+
+    @Test
+    fun determineCursorDesiredOffsetForTap_at_the_end_with_visual_transformation() {
+        val actual = determineCursorDesiredOffsetForTap(
+            transformedOffset = groupedDigitsTransformed.length,
+            offsetMapping = groupedDigitsOffsetMapping,
+            textLayoutResult = createSimpleTextLayoutResult(groupedDigitsTransformed),
+            untransformedText = groupedDigits
+        )
+
+        assertEquals(groupedDigits.length, actual)
+    }
+
+    @Test
+    fun determineCursorDesiredOffsetForTap_without_visual_transformation_keeps_word_placement() {
+        val text = "aaaa bbb"
+
+        // Tap on the second half of the word moves the cursor to the end of the word: "aaaa| bbb"
+        val actual = determineCursorDesiredOffsetForTap(
+            transformedOffset = 3,
+            offsetMapping = OffsetMapping.Identity,
+            textLayoutResult = createSimpleTextLayoutResult(text),
+            untransformedText = text
+        )
+
+        assertEquals(4, actual)
     }
 
     private fun createSimpleTextLayoutResult(text: String) = TextLayoutResult(
