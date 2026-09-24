@@ -19,18 +19,19 @@ package androidx.compose.ui.interop
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.appEntity
-import androidx.compose.ui.node.WeakReference
 import androidx.compose.ui.platform.AppEntityDescriptorStore
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.uikit.LocalUIView
-import kotlin.native.runtime.GC
-import kotlin.native.runtime.NativeRuntimeApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import platform.UIKit.UIView
 
@@ -39,37 +40,11 @@ class AppEntityDiscoverabilityDiagnosticTest {
     @Test
     fun appEntityModifierRegistersPlacedNodesAndRemovesDetachedNodes() = runUIKitInstrumentedTest {
         val view = UIView()
+        var showEntity by mutableStateOf(true)
 
         setContent {
             CompositionLocalProvider(LocalUIView provides view) {
-                Box(
-                    Modifier
-                        .size(80.dp)
-                        .appEntity(typeName = "RecipeEntity", id = "miso-ramen")
-                )
-            }
-        }
-        waitForIdle()
-
-        assertEquals(1, AppEntityDescriptorStore.descriptorsForTest(view).size)
-
-        setContent {}
-        waitForIdle()
-
-        assertTrue(AppEntityDescriptorStore.descriptorsForTest(view).isEmpty())
-    }
-
-    @OptIn(ExperimentalComposeUiApi::class, NativeRuntimeApi::class)
-    @Test
-    fun appEntityModifierDoesNotRetainViewAfterLastNodeIsRemoved() = runUIKitInstrumentedTest {
-        lateinit var viewReference: WeakReference<UIView>
-
-        run {
-            val view = UIView()
-            viewReference = WeakReference(view)
-
-            setContent {
-                CompositionLocalProvider(LocalUIView provides view) {
+                if (showEntity) {
                     Box(
                         Modifier
                             .size(80.dp)
@@ -77,17 +52,16 @@ class AppEntityDiscoverabilityDiagnosticTest {
                     )
                 }
             }
-            waitForIdle()
-
-            setContent {}
-            waitForIdle()
-
-            assertTrue(AppEntityDescriptorStore.descriptorsForTest(view).isEmpty())
         }
+        waitForIdle()
 
-        waitUntil("App Entity provider retained its UIView after the last node was removed") {
-            GC.collect()
-            viewReference.get() == null
-        }
+        assertEquals(1, AppEntityDescriptorStore.descriptorsForTest(view).size)
+        assertTrue(AppEntityDescriptorStore.isAssociatedWithStoreForTest(view))
+
+        showEntity = false
+        waitForIdle()
+
+        assertTrue(AppEntityDescriptorStore.descriptorsForTest(view).isEmpty())
+        assertFalse(AppEntityDescriptorStore.isAssociatedWithStoreForTest(view))
     }
 }

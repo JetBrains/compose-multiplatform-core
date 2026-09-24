@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.platform
 
+import androidx.compose.runtime.TestOnly
 import androidx.compose.runtime.collection.MutableVector
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.ui.AppEntityReference
@@ -103,9 +104,12 @@ internal class AppEntityDescriptorStore private constructor(
                 view.appEntityDescriptorStore = null
             }
         }
-
+        @TestOnly
         fun descriptorsForTest(view: UIView): List<CMPAppEntityDescriptor> =
             view.appEntityDescriptorStore?.appEntityDescriptors() ?: emptyList()
+        @TestOnly
+        fun isAssociatedWithStoreForTest(view: UIView): Boolean =
+            view.appEntityDescriptorStore != null
 
     }
 }
