@@ -219,6 +219,11 @@ private def configureSwiftUtils(target, xcodeProjectDir, sdkName, destination, a
         }
 
         tasks[compileTaskProvider.name].dependsOn(libTask)
+        // -include-binary copies the archive into the KLIB, so Kotlin compilation must rerun when
+        // Swift implementation changes even when its generated ObjC header is unchanged.
+        tasks[compileTaskProvider.name].inputs.file(libraryPath)
+                .withPropertyName("${libraryName}-${sdkName}-included-archive")
+                .withPathSensitivity(PathSensitivity.RELATIVE)
 
         // Generate Kotlin bindings from the installed Swift ObjC header. The consuming iOS build
         // supplies the compatibility-library search path.
