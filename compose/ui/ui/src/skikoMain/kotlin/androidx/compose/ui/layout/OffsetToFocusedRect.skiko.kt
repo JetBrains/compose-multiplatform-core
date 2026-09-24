@@ -233,7 +233,7 @@ private class OffsetToFocusedRectNode(
 
         val settledOffset = calculatedOffset()
         if (settledOffset != currentOffset) {
-            currentOffset = settledOffset
+            // Keep the offset that matches the placed focus rect until the next measure.
             isSettlingOffset = true
             invalidateMeasurement()
         }
