@@ -92,6 +92,11 @@ interface ComposeSceneLayer {
      */
     var scrimColor: Color?
 
+    /** Blur radius applied to content already drawn behind this layer. */
+    var backdropBlurRadius: Dp
+        get() = Dp.Unspecified
+        set(_) {}
+
     /**
      * Indicates if the layer is able to receive focus. When set to true, it can process IME events and key presses,
      * for example, the pressing of the back button.
