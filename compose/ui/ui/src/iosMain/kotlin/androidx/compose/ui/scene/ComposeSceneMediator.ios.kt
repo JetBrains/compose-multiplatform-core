@@ -431,7 +431,7 @@ internal class ComposeSceneMediator(
 
                 down || up
             },
-            onScreenReaderActive = { platformScreenReader.isActive = it },
+            onScreenReaderActive = { platformScreenReader.isActive = it }
         )
     }
 
@@ -804,6 +804,7 @@ internal class ComposeSceneMediator(
         frameChoreographer.removeListener(frameChoreographerListener)
         prefetchScheduler.dispose()
         activitiesHandler.dispose()
+
         _overlayView.dispose()
         keyboardManager.dispose()
         _backgroundView.dispose()
