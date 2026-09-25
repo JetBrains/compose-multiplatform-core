@@ -1,62 +1,20 @@
-# Project: Jetpack Compose (General)
+# Project: Compose Multiplatform Core
 
-This directory contains the libraries that make up Jetpack Compose. All code
-generated or modified must follow standard AndroidX Compose guidelines.
+This directory contains the libraries that make up Compose Multiplatform Core.
 
 ## Project Structure Map
-- **Runtime (`compose:runtime`):** The core engine for state management and the
-  composition tree.
-- **UI (`compose:ui`):** Orchestration layer for layout, input, graphics, and
-  text primitives.
-- **Foundation (`compose:foundation`):** Design-system-agnostic building blocks
-  (e.g., `LazyColumn`, gestures).
-- **Material/Material3 (`compose:material`):** Design-system-specific
-  components implementing Material Design.
+- **Runtime (`compose:runtime`):** The core engine for state management and the composition tree.
+- **UI (`compose:ui`):** Orchestration layer for layout, input, graphics, and text primitives.
+- **Foundation (`compose:foundation`):** Design-system-agnostic building blocks (e.g., `LazyColumn`, gestures).
+- **Material/Material3 (`compose:material`, `compose:material3`):** Design-system-specific components implementing Material Design.
 
 ## General Instructions
-- **Formatting:** Ensure all modified `.kt` files are formatted using
-  `./gradlew :ktCheckFile --format --file <file>` before committing or calling
-  a change done. Multiple files can be formatted by appending more
-  `--file <path>` arguments.
-- **API Updates:** Run `./gradlew <project>:updateApi` (and
-  `<project>:updateAbiNative` where applicable) after any public API change.
-- **Context:** Always execute commands from the `frameworks/support` directory.
-- **Git:** Use `git mv` when moving files to preserve history. Do not create
-  git commits unless explicitly requested.
-- **Build Verification:** Ensure changes compile by running
-  `./gradlew <project>:compileDebugKotlinAndroid`.
+- **Changes Verification:** 
+  - Running the tests every time might take too long. Compile the tests before running. Choose the relevant task: `compileTestKotlinIosArm64`, `compileTestDevelopmentExecutableKotlinJs`, `compileTestDevelopmentExecutableKotlinWasmJs`, `desktopTestClasses`
+- When to run the tests: when working on the tests, or fixing the implementation, or when asked explicitly.
+- Which tests to run: for platform-specific changes run only platform tests. Otherwise, run the tests for all affected platforms.
 
-## Coding & Performance Standards
-- **Multiplatform:** Jetpack Compose is a multiplatform project. Implement
-  logic in `commonMain` whenever possible. Use `androidMain` or other
-  platform-specific directories only for platform-specific API implementations.
-- **Modifiers:** Prefer `Modifier.Node` implementations for high-performance
-  modifiers. Avoid `composed {}`.
-- **API Visibility:** Prefer **Public APIs** where possible. Use
-  `@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)` only when an API is strictly
-  internal to AndroidX and would be difficult or dangerous for external
-  developers to use correctly.
-- **Opt-in APIs:** Use `@Experimental...Api` annotations only when introducing
-  new API surfaces that are likely to remain unstable. When in doubt, don't use
-  them.
-- **Dependencies:** Avoid introducing new dependencies without verifying their
-  stability and usage elsewhere in the project. Consult `libraryversions.toml`
-  for version management. Always check with the user when adding a new
-  dependency.
 
-## Testing & Documentation
-- **Bug Investigations:** Always consider whether we can create a test to
-  reproduce the issue described in the bug as closely as possible without making
-  assumptions on what the solution is. Only after we have a test case that
-  represents the bug and is failing should we start trying to fix the code.
-- **Samples:** Every new public API should have a corresponding sample in the
-  project's `samples` module. Link it in the KDoc using the `@sample` tag.
-- **Screenshot Tests:** Use `androidDeviceTest` for rendering verification.
-  Screenshot tests must use `AndroidXScreenshotTestRule` and should be
-  restricted to a specific SDK version (typically
-  `SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)`) to ensure
-  deterministic output.
-- **JVM Tests:** Use standard unit tests in the `test` directory for non-UI
-  logic.
-- **Test Naming:** Test classes should be named `*Test` and placed in the same
-  package as the code they test.
+## Testing
+- We do not add tests in the `commonTest` folder. When it's possible, we add multiplatform tests to `skikoTest`.  Platform-specific tests should be added in the corresponding folder: `webTest`, `desktopTest`, `jvmTest`, `iosTest`, `iosInstrumentedTest`.
+- When applicable, use platform-specific gradle tasks to run the tests: `desktopTest`,  `iosSimulatorArm64Test`, `wasmJsBrowserTest`, `jsBrowserTest`. Also clean the tests results before running. Example: `./gradlew :compose:ui:ui:cleanAllTests :compose:ui:ui:deskopTest --no-build-cache | tail -n 10`. Allow a reasonable timeout (at least 5 minutes).
