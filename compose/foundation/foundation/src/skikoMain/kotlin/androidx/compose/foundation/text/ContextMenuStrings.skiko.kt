@@ -27,11 +27,16 @@ import kotlin.jvm.JvmInline
 @JvmInline
 internal actual value class ContextMenuStrings actual constructor(actual val value: Int) {
     actual companion object {
-        actual val Cut = ContextMenuStrings(0)
-        actual val Copy = ContextMenuStrings(1)
-        actual val Paste = ContextMenuStrings(2)
-        actual val SelectAll = ContextMenuStrings(3)
-        actual val Autofill = ContextMenuStrings(4)
+        actual inline val Cut: ContextMenuStrings
+            get() = ContextMenuStrings(0)
+        actual inline val Copy: ContextMenuStrings
+            get() = ContextMenuStrings(1)
+        actual inline val Paste: ContextMenuStrings
+            get() = ContextMenuStrings(2)
+        actual inline val SelectAll: ContextMenuStrings
+            get() = ContextMenuStrings(3)
+        actual inline val Autofill: ContextMenuStrings
+            get() = ContextMenuStrings(4)
     }
 }
 
