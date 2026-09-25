@@ -179,6 +179,7 @@ private def configureSwiftUtils(target, xcodeProjectDir, sdkName, destination, a
     def headersPath = new File(buildDir, "/Products/usr/local/include/${libraryName}")
     def generatedHeaderPath = new File(headersPath, "${libraryName}-Swift.h")
     def sourceDefPath = new File(project.projectDir, "src/nativeInterop/cinterop/swiftUtils.def")
+    def interopHeaderPath = new File(headersPath, "${libraryName}-ImportBridge.h")
     def compilerArgs = [
             "-include-binary", libraryPath.toString(),
     ]
@@ -218,6 +219,11 @@ private def configureSwiftUtils(target, xcodeProjectDir, sdkName, destination, a
         }
 
         tasks[compileTaskProvider.name].dependsOn(libTask)
+        // -include-binary copies the archive into the KLIB, so Kotlin compilation must rerun when
+        // Swift implementation changes even when its generated ObjC header is unchanged.
+        tasks[compileTaskProvider.name].inputs.file(libraryPath)
+                .withPropertyName("${libraryName}-${sdkName}-included-archive")
+                .withPathSensitivity(PathSensitivity.RELATIVE)
 
         // Generate Kotlin bindings from the installed Swift ObjC header. The consuming iOS build
         // supplies the compatibility-library search path.
@@ -226,7 +232,8 @@ private def configureSwiftUtils(target, xcodeProjectDir, sdkName, destination, a
                 def cinteropTask = tasks[interopProcessingTaskName]
                 cinteropTask.dependsOn(libTask)
                 cinteropTask.inputs.file(generatedHeaderPath)
-                extraOpts("-header", generatedHeaderPath.name)
+                cinteropTask.inputs.file(interopHeaderPath)
+                extraOpts("-header", interopHeaderPath.name)
                 compilerOpts("-I${headersPath}")
                 defFile(sourceDefPath)
             }
