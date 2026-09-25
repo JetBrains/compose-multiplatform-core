@@ -66,6 +66,28 @@ internal fun DpRect.intersect(other: DpRect): DpRect {
     )
 }
 
+/**
+ * Returns the horizontal gap between this rectangle and [point],
+ * or `0.dp` if [point] is within the horizontal range of this rectangle.
+ */
+internal fun DpRect.horizontalDistanceTo(point: DpOffset): Dp =
+    when {
+        right < point.x -> point.x - right
+        left > point.x -> left - point.x
+        else -> 0.dp
+    }
+
+/**
+ * Returns the vertical gap between this rectangle and [point],
+ * or `0.dp` if [point] is within the vertical range of this rectangle.
+ */
+internal fun DpRect.verticalDistanceTo(point: DpOffset): Dp =
+    when {
+        bottom < point.y -> point.y - bottom
+        top > point.y -> top - point.y
+        else -> 0.dp
+    }
+
 @OptIn(ExperimentalForeignApi::class)
 internal fun UIView.dpRectInWindow() = convertRect(bounds, toView = null).toDpRect()
 internal fun<T> List<T>.forEachWithPrevious(block: (T, T) -> Unit) {
