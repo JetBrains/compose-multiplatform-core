@@ -23,7 +23,6 @@ import androidx.compose.runtime.State
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.graphics.skiaCanvas
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -38,8 +37,6 @@ import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.embedSubview
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.isSpecified
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.LayoutDirection
@@ -51,9 +48,6 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.Job
 import platform.UIKit.UIView
 import platform.UIKit.UIWindow
-import org.jetbrains.skia.Canvas.SaveLayerRec
-import org.jetbrains.skia.FilterTileMode
-import org.jetbrains.skia.ImageFilter
 
 internal class IosComposeSceneLayer(
     private val frameChoreographer: FrameChoreographer,
@@ -181,7 +175,7 @@ internal class IosComposeSceneLayer(
         set(value) {
             if (field != value) {
                 field = value
-                invalidateDraw()
+                layersViewController.updateBackdropBlur()
             }
         }
 
@@ -197,30 +191,12 @@ internal class IosComposeSceneLayer(
     fun doMeasureAndLayout() = mediator.measureAndLayout()
 
     fun draw(canvas: Canvas) {
-        val blurEnabled = backdropBlurRadius.isSpecified && backdropBlurRadius > 0.dp
-        val skiaCanvas = canvas.skiaCanvas
-        val filter = if (blurEnabled) {
-            val radius = with(windowContext.screenDensity) { backdropBlurRadius.toPx() }
-            ImageFilter.makeBlur(radius, radius, FilterTileMode.CLAMP)
-        } else {
-            null
+        if (scrimColor != null) {
+            val density = windowContext.screenDensity
+            val rect = layersViewController.metalView.view.bounds.toDpRect().toRect(density)
+            canvas.drawRect(rect, scrimPaint)
         }
-        val saveCount = if (filter != null) {
-            skiaCanvas.saveLayer(SaveLayerRec(backdrop = filter))
-        } else {
-            null
-        }
-        try {
-            if (scrimColor != null) {
-                val density = windowContext.screenDensity
-                val rect = layersViewController.metalView.view.bounds.toDpRect().toRect(density)
-                canvas.drawRect(rect, scrimPaint)
-            }
-            mediator.draw(canvas)
-        } finally {
-            if (saveCount != null) skiaCanvas.restoreToCount(saveCount)
-            filter?.close()
-        }
+        mediator.draw(canvas)
     }
 
     fun retrieveInteropTransaction() = mediator.retrieveInteropTransaction()
