@@ -17,9 +17,22 @@
 import UIKit
 
 class MockAppDelegate: NSObject, UIApplicationDelegate {
+    private static let shared = MockAppDelegate()
+
     var window: UIWindow?
 
-    func setUpClearWindow() {
+    private override init() {
+        super.init()
+    }
+
+    static func installWithClearWindow() -> MockAppDelegate {
+        UIApplication.shared.delegate = shared
+        shared.setUpClearWindow()
+
+        return shared
+    }
+
+    private func setUpClearWindow() {
         window = UIWindow(frame: UIScreen.main.bounds)
         window?.backgroundColor = .systemBackground
 
@@ -31,7 +44,8 @@ class MockAppDelegate: NSObject, UIApplicationDelegate {
     }
 
     func cleanUp() {
+        window?.rootViewController = nil
+        window?.isHidden = true
         window = nil
-        UIWindow(frame: UIScreen.main.bounds).makeKeyAndVisible()
     }
 }

@@ -326,7 +326,7 @@ internal class UIKitInstrumentedTest(
     }
 
     val frameChoreographer: FrameChoreographer? get() =
-        appDelegate.window()?.windowScene?.let { FrameChoreographer.choreographerForScene(it) }
+        appDelegate.window()?.let { FrameChoreographer.choreographerForWindow(it) }
 
     fun setContent(
         configure: ComposeContainerConfiguration.() -> Unit = {},
@@ -951,7 +951,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
             throw CancellationException("Infinite animations are disabled on tests")
         }
     }
-    private var sceneJob = Job()
+    private var choreographerJob = Job()
 
     fun setUpWindow(viewController: UIViewController) {
         UIApplication.sharedApplication().setDelegate(this)
@@ -959,14 +959,19 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         val scene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
             ?: error("No window scene found")
 
-        sceneJob.cancel()
-        sceneJob = Job()
-        FrameChoreographer.configureForScene(scene, Dispatchers.Main + infiniteAnimationPolicy + sceneJob)
-
         val allWindows = scene.windows - _window
 
         _window?.backgroundColor = UIColor.systemBackgroundColor
         _window?.windowScene = scene
+
+        choreographerJob.cancel()
+        choreographerJob = Job()
+        _window?.let {
+            FrameChoreographer.configureForWindow(
+                window = it,
+                coroutineContext = Dispatchers.Main + infiniteAnimationPolicy + choreographerJob
+            )
+        }
 
         // Must be applied before the Compose container is attached to the window: it picks the
         // window layer speed up in `onDidMoveToWindow` to derive its `MotionDurationScale`.
@@ -988,7 +993,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
 
     fun cleanUp() {
         stopObservingWindowVisibility()
-        sceneJob.cancel()
+        choreographerJob.cancel()
         val scene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
         val allWindows = scene?.windows ?: emptyList<UIWindow>()
 
