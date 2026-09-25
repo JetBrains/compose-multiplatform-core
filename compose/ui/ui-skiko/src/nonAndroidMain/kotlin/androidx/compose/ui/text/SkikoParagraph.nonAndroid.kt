@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.skiaCanvas
 import androidx.compose.ui.graphics.toComposeRect
 import androidx.compose.ui.text.PlatformParagraph
+import androidx.compose.ui.text.platform.PlaceholderOffsetMapping
 import androidx.compose.ui.text.platform.SkikoParagraphIntrinsics
 import androidx.compose.ui.text.platform.cursorHorizontalPosition
 import androidx.compose.ui.text.style.LineHeightStyle
@@ -126,6 +127,40 @@ internal class SkikoParagraph(
     private val text: String
         get() = paragraphIntrinsics.text
 
+    /**
+     * Maps offsets between [text] (Compose offsets, used by the public API) and [paragraph] (Skia
+     * offsets, where every placeholder is a single U+FFFC). `null` when both coincide.
+     *
+     * Every offset handed to [paragraph] or its [lineMetrics] must be converted with [toSkia], and
+     * every offset received from them with [fromSkia].
+     * See https://youtrack.jetbrains.com/issue/CMP-9009.
+     */
+    private val offsetMapping: PlaceholderOffsetMapping?
+        get() = layouter.offsetMapping
+
+    /** Length of the Skia paragraph text; the upper bound of Skia offsets. */
+    private val skiaLength: Int
+        get() = offsetMapping?.skiaLength ?: text.length
+
+    private fun toSkia(offset: Int, inclusiveEnd: Boolean = false): Int =
+        offsetMapping?.toSkia(offset, inclusiveEnd) ?: offset
+
+    private fun fromSkia(skiaOffset: Int): Int = offsetMapping?.fromSkia(skiaOffset) ?: skiaOffset
+
+    /**
+     * The UTF-16 unit of the Skia paragraph text at [skiaOffset]: a U+FFFC at a placeholder, the
+     * Compose character otherwise. Without an [offsetMapping] every placeholder covers exactly one
+     * unit and its alternate text is returned instead, which is what this class always did.
+     */
+    private fun skiaCharAt(skiaOffset: Int): Char {
+        val mapping = offsetMapping ?: return text[skiaOffset]
+        return if (mapping.isPlaceholderStart(skiaOffset)) {
+            PlaceholderChar
+        } else {
+            text[mapping.fromSkia(skiaOffset)]
+        }
+    }
+
     override val width: Float
         get() = constraints.maxWidth.toFloat()
 
@@ -168,9 +203,12 @@ internal class SkikoParagraph(
                 " or start > end!"
         }
 
+        val skiaStart = toSkia(start)
+        // An empty range stays empty even inside a placeholder.
+        val skiaEnd = if (end == start) skiaStart else toSkia(end, inclusiveEnd = true)
         val boxes = paragraph.getRectsForRange(
-            start,
-            end,
+            skiaStart,
+            skiaEnd,
             RectHeightMode.MAX,
             RectWidthMode.TIGHT
         )
@@ -185,10 +223,11 @@ internal class SkikoParagraph(
         checkOffsetIsValid(offset)
         val horizontal = getHorizontalPosition(offset, true)
         val line = lineMetricsForOffset(offset)!!
+        val skiaOffset = toSkia(offset)
 
         // workaround for https://bugs.chromium.org/p/skia/issues/detail?id=11321 :(
         // Otherwise it shows a big cursor on a new empty line https://youtrack.jetbrains.com/issue/CMP-1895
-        val isNewEmptyLine = offset - 1 == line.startIndex && offset == text.length
+        val isNewEmptyLine = skiaOffset - 1 == line.startIndex && skiaOffset == skiaLength
         val metrics = defaultFont.metrics
 
         val asc = line.ascent.let {
@@ -241,10 +280,12 @@ internal class SkikoParagraph(
     override fun getLineDescent(lineIndex: Int): Float =
         lineMetrics.getOrNull(lineIndex)?.descent?.toFloat() ?: 0f
 
+    /** Line metrics for a Compose [offset]; line metrics indices are Skia offsets. */
     private fun lineMetricsForOffset(offset: Int): LineMetrics? =
         if (offset in 0..text.length) {
+            val skiaOffset = toSkia(offset)
             lineMetrics.binarySearchFirstMatchingOrLast {
-                offset < it.endIncludingNewline
+                skiaOffset < it.endIncludingNewline
             }
         } else null
 
@@ -255,18 +296,18 @@ internal class SkikoParagraph(
         lineMetrics.getOrNull(lineIndex)?.width?.toFloat() ?: 0f
 
     override fun getLineStart(lineIndex: Int) =
-        lineMetrics.getOrNull(lineIndex)?.startIndex ?: 0
+        lineMetrics.getOrNull(lineIndex)?.let { fromSkia(it.startIndex) } ?: 0
 
     override fun getLineEnd(lineIndex: Int, visibleEnd: Boolean): Int {
         val metrics = lineMetrics.getOrNull(lineIndex) ?: return 0
-        return if (visibleEnd) {
+        val skiaEnd = if (visibleEnd) {
             // workarounds for https://bugs.chromium.org/p/skia/issues/detail?id=11321 :(
             // we are waiting for fixes
             if (lineIndex > 0 && metrics.startIndex < lineMetrics[lineIndex - 1].endIndex) {
                 metrics.endIndex
             } else if (
-                metrics.startIndex < text.length &&
-                text[metrics.startIndex] == '\n'
+                metrics.startIndex < skiaLength &&
+                skiaCharAt(metrics.startIndex) == '\n'
             ) {
                 metrics.startIndex
             } else {
@@ -275,6 +316,7 @@ internal class SkikoParagraph(
         } else {
             metrics.endIndex
         }
+        return fromSkia(skiaEnd)
     }
 
     override fun isLineEllipsized(lineIndex: Int) = false
@@ -295,8 +337,9 @@ internal class SkikoParagraph(
     }
 
     override fun getHorizontalPosition(offset: Int, usePrimaryDirection: Boolean): Float {
-        val prevBox = getBoxBackwardByOffset(offset)
-        val nextBox = getBoxForwardByOffset(offset)
+        val skiaOffset = toSkia(offset)
+        val prevBox = getBoxBackwardByOffset(skiaOffset)
+        val nextBox = getBoxForwardByOffset(skiaOffset)
         val isRtl = paragraphIntrinsics.textDirection == ResolvedTextDirection.Rtl
         val isLtr = !isRtl
         return when {
@@ -352,12 +395,14 @@ internal class SkikoParagraph(
         return lineMetrics
     }
 
-    private fun getBoxForwardByOffset(offset: Int): TextBox? {
-        if (offset !in 0..text.length) return null
-        var to = offset + 1 // TODO: Use unicode code points (CodePoint.charCount() instead of +1)
-        while (to <= text.length) {
+    /** Box of the first glyph at or after the Skia offset [skiaOffset]. */
+    private fun getBoxForwardByOffset(skiaOffset: Int): TextBox? {
+        if (skiaOffset !in 0..skiaLength) return null
+        // TODO: Use unicode code points (CodePoint.charCount() instead of +1)
+        var to = skiaOffset + 1
+        while (to <= skiaLength) {
             val box = paragraph.getRectsForRange(
-                offset, to,
+                skiaOffset, to,
                 RectHeightMode.STRUT, RectWidthMode.TIGHT
             ).firstOrNull()
             if (box != null) {
@@ -368,9 +413,10 @@ internal class SkikoParagraph(
         return null
     }
 
-    private fun getBoxBackwardByOffset(offset: Int, end: Int = offset): TextBox? {
-        if (offset !in 0..text.length) return null
-        var from = offset - 1
+    /** Box of the first glyph before the Skia offset [skiaOffset]; [end] is a Skia offset too. */
+    private fun getBoxBackwardByOffset(skiaOffset: Int, end: Int = skiaOffset): TextBox? {
+        if (skiaOffset !in 0..skiaLength) return null
+        var from = skiaOffset - 1
         val isRtl = paragraphIntrinsics.textDirection == ResolvedTextDirection.Rtl
         while (from >= 0) {
             val box = paragraph.getRectsForRange(
@@ -379,7 +425,7 @@ internal class SkikoParagraph(
             ).firstOrNull()
             when {
                 (box == null) -> from -= 1
-                (text[from] == '\n') -> {
+                (skiaCharAt(from) == '\n') -> {
                     return if (!isRtl) {
                         val bottom = box.rect.bottom + box.rect.bottom - box.rect.top
                         val rect = SkRect(0f, box.rect.bottom, 0f, bottom)
@@ -396,14 +442,14 @@ internal class SkikoParagraph(
                         // _________________abc   <- '\n' new line here
                         // _________________|qw   <- cursor is before the box ('q') following the new line
 
-                        if (from == text.lastIndex) {
+                        if (from == skiaLength - 1) {
                             val bottom = box.rect.bottom + box.rect.bottom - box.rect.top
                             val rect = SkRect(width, box.rect.bottom, width, bottom)
                             TextBox(rect, box.direction)
                         } else {
                             // TODO: Use unicode code points (CodePoint.charCount() instead of +1)
                             val nextBox = paragraph.getRectsForRange(
-                                offset, offset + 1,
+                                skiaOffset, skiaOffset + 1,
                                 RectHeightMode.STRUT, RectWidthMode.TIGHT
                             ).firstOrNull() ?: return null
                             val rect = SkRect(
@@ -425,13 +471,22 @@ internal class SkikoParagraph(
         paragraphIntrinsics.textDirection
 
     override fun getBidiRunDirection(offset: Int): ResolvedTextDirection =
-        when (getBoxForwardByOffset(offset)?.direction) {
+        when (getBoxForwardByOffset(toSkia(offset))?.direction) {
             Direction.RTL -> ResolvedTextDirection.Rtl
             Direction.LTR -> ResolvedTextDirection.Ltr
             null -> ResolvedTextDirection.Ltr
         }
 
-    override fun getOffsetForPosition(position: Offset): Int {
+    /**
+     * A hit inside a placeholder resolves to the Skia offset of the placeholder or the one right
+     * after it, depending on which half was hit; [fromSkia] turns these into the Compose start or
+     * end of the placeholder range, matching Android's `ReplacementSpan` behaviour.
+     */
+    override fun getOffsetForPosition(position: Offset): Int =
+        fromSkia(getSkiaOffsetForPosition(position))
+
+    /** [getOffsetForPosition] in Skia offsets. */
+    private fun getSkiaOffsetForPosition(position: Offset): Int {
         val glyphPosition = paragraph.getGlyphPositionAtCoordinate(position.x, position.y).position
 
         // Below we apply a workaround for skiko/skia issue:
@@ -503,7 +558,9 @@ internal class SkikoParagraph(
         require(offset in text.indices) {
             "offset($offset) is out of bounds [0,${text.length})"
         }
-        val box = getBoxForwardByOffset(offset) ?: getBoxBackwardByOffset(offset, text.length)!!
+        val skiaOffset = toSkia(offset)
+        val box = getBoxForwardByOffset(skiaOffset)
+            ?: getBoxBackwardByOffset(skiaOffset, skiaLength)!!
         return box.rect.toComposeRect()
     }
 
@@ -530,17 +587,20 @@ internal class SkikoParagraph(
         // Android uses `isLetterOrDigit` for codepoints, but we have it only for chars.
         // Using `Char.isWhitespace` instead because whitespaces are not supplementary code units.
         // TODO: Replace chars to code units to make this code future proof.
-        if (offset < text.length && text[offset].isWhitespace() || offset == text.length) {
+        // Everything below is in Skia offsets, where a placeholder is a single (non-whitespace)
+        // unit regardless of its alternate text.
+        val skiaOffset = toSkia(offset)
+        if (skiaOffset == skiaLength || skiaCharAt(skiaOffset).isWhitespace()) {
             // If it's whitespace, we're sure that it's not surrogate.
-            return if (offset > 0 && !text[offset - 1].isWhitespace()) {
-                paragraph.getWordBoundary(offset - 1).toTextRange()
+            return if (skiaOffset > 0 && !skiaCharAt(skiaOffset - 1).isWhitespace()) {
+                paragraph.getWordBoundary(skiaOffset - 1).toTextRange()
             } else TextRange(offset, offset)
         }
 
         // Skia paragraph should handle unicode correctly, but it doesn't match Android behavior.
         // It uses ICU's BreakIterator under the hood, so we can use
         // `BreakIterator.makeWordInstance()` without calling skia's `getWordBoundary` at all.
-        return paragraph.getWordBoundary(offset).toTextRange()
+        return paragraph.getWordBoundary(skiaOffset).toTextRange()
     }
 
     override fun paint(
@@ -624,7 +684,13 @@ internal class SkikoParagraph(
             "offset($offset) is out of bounds [0,${text.length}]"
         }
     }
+
+    /** Converts a Skia range to a Compose [TextRange]. */
+    private fun IRange.toTextRange() = TextRange(fromSkia(start), fromSkia(end))
 }
+
+/** The UTF-16 unit Skia uses to represent a placeholder (OBJECT REPLACEMENT CHARACTER). */
+private const val PlaceholderChar = '\uFFFC'
 
 private fun LineMetrics.trimFirstAscent(
     fontMetrics: FontMetrics,
@@ -690,8 +756,6 @@ private fun SkikoParagraph.numberOfLinesThatFitMaxHeight(maxHeight: Int): Int {
     }
     return lineCount
 }
-
-private fun IRange.toTextRange() = TextRange(start, end)
 
 /**
  * Returns the first item satisfying [predicate], or the last item in the array if none satisfy it.

@@ -86,6 +86,14 @@ internal class ParagraphLayouter(
     private var updateForeground = false
     private var width: Float = Float.NaN
 
+    /**
+     * Maps offsets between [text] and the Skia paragraph built by [layoutParagraph], or `null`
+     * when they coincide (no placeholder covers a range whose length differs from 1).
+     * See [PlaceholderOffsetMapping] and https://youtrack.jetbrains.com/issue/CMP-9009.
+     */
+    val offsetMapping: PlaceholderOffsetMapping? =
+        PlaceholderOffsetMapping.create(placeholders, text.length)
+
     private val unresolvedSymbolsRegistry = getUnresolvedSymbolsRegistry()
     private var unresolvedCodepoints = IntArray(0)
         set(value) {
