@@ -40,6 +40,7 @@ import androidx.compose.foundation.text.input.internal.selection.TextFieldSelect
 import androidx.compose.foundation.text.input.internal.selection.TextToolbarState.Cursor
 import androidx.compose.foundation.text.input.internal.selection.TextToolbarState.None
 import androidx.compose.foundation.text.input.internal.selection.TextToolbarState.Selection
+import androidx.compose.foundation.text.selection.IosWordSelectionAdjustment
 import androidx.compose.foundation.text.selection.MouseSelectionObserver
 import androidx.compose.foundation.text.selection.SelectionAdjustment
 import androidx.compose.foundation.text.selection.awaitSelectionGestures
@@ -243,12 +244,18 @@ private fun TextFieldSelectionState.doRepeatingTapSelection(
         position = touchPointOffset
     )
 
+    val effectiveAdjustment =
+        if (selectionAdjustment == SelectionAdjustment.Word) {
+            IosWordSelectionAdjustment
+        } else {
+            selectionAdjustment
+        }
     val newSelection = updateSelection(
         textFieldState.visualText,
         selectionOffset,
         selectionOffset,
         isStartHandle = false,
-        adjustment = selectionAdjustment,
+        adjustment = effectiveAdjustment,
         hapticFeedbackType = HapticFeedbackType.TextHandleMove,
     )
 
