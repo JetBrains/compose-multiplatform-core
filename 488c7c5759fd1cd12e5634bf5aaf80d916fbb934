@@ -1,1 +1,7 @@
 Merge script: conflict
+
+Merge solver: fixed in de7a0da2fc9a25124eacae93ea036c39882e96df
+
+Validation: ./gradlew assemble compileTests passed. Kotlin formatting and repository-wide conflict-marker checks passed.
+
+Produced by Air Automations. Name: AOSP Merges / Run: https://air.jetbrains.cloud/org/05cf1a7f-6ab5-713b-abd3-29d0c8a05e2d/automations/aeefe510-9f34-4bbe-b6f6-db539bf3d1bb?run=a7326115-ff77-48c0-bb78-565148c0fb7f
