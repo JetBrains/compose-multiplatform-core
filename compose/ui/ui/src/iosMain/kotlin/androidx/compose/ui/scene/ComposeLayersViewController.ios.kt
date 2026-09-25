@@ -21,8 +21,11 @@ import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.uikit.addLayoutConstraintsToMatch
 import androidx.compose.ui.uikit.embedSubview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.dpSize
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.viewinterop.InteropSyncTransaction
 import androidx.compose.ui.window.ComposeContainerView
@@ -87,6 +90,9 @@ internal class ComposeLayersViewController(
             },
         )
     }
+
+    var backdropBlurRadius: Dp = Dp.Unspecified
+        private set
 
     private val layoutInvalidationHandler = LayoutInvalidationHandler(coroutineContext) {
         composeContainerView.setNeedsLayout()
@@ -176,6 +182,15 @@ internal class ComposeLayersViewController(
         this.view.addSubview(composeContainerView)
     }
 
+    fun updateBackdropBlur() {
+        val radius = layers.mapNotNull { layer ->
+            layer.backdropBlurRadius.takeIf { it.isSpecified && it > 0.dp }
+        }.maxOrNull() ?: Dp.Unspecified
+        if (backdropBlurRadius == radius) return
+        backdropBlurRadius = radius
+        hostingComposeView.redrawer?.setNeedsRedraw()
+    }
+
     val hasInvalidations: Boolean get() = this.layers.any { it.hasInvalidations }
 
     private val layers = mutableListOf<IosComposeSceneLayer>()
@@ -252,6 +267,7 @@ internal class ComposeLayersViewController(
         // registering it for Compose measurement. Otherwise it can be measured with unbounded
         // constraints during that initial layout pass.
         layers.add(layer)
+        updateBackdropBlur()
 
         if (hasViewAppeared) {
             layer.sceneDidAppear()
@@ -265,6 +281,7 @@ internal class ComposeLayersViewController(
         }
 
         this.layers.remove(layer)
+        updateBackdropBlur()
 
         // Intercept the actions InteropTransaction from the layer
         val transaction = layer.retrieveInteropTransaction()
