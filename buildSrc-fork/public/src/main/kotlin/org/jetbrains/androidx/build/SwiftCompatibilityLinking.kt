@@ -34,11 +34,15 @@ import org.jetbrains.kotlin.konan.target.KonanTarget
  */
 fun Project.configureSwiftCompatibilityLinking() {
     plugins.withId("org.jetbrains.kotlin.multiplatform") {
-        extensions
-            .getByType<KotlinMultiplatformExtension>()
-            .targets
-            .withType<KotlinNativeTarget>()
-            .all { target -> target.configureSwiftCompatibilityLinking() }
+        // KMP target configuration may query native freeCompilerArgs. Register the xcrun-backed provider
+        // afterwards so configuring an unrelated target, such as Wasm, does not resolve the Xcode toolchain.
+        afterEvaluate {
+            extensions
+                .getByType<KotlinMultiplatformExtension>()
+                .targets
+                .withType<KotlinNativeTarget>()
+                .all { target -> target.configureSwiftCompatibilityLinking() }
+        }
     }
 }
 
