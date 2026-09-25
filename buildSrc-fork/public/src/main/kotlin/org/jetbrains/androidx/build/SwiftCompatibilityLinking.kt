@@ -33,8 +33,6 @@ import org.jetbrains.kotlin.konan.target.KonanTarget
  * toolchain at final link time; Swift auto-link metadata selects the needed runtime and compatibility libraries.
  */
 fun Project.configureSwiftCompatibilityLinking() {
-    if (!OperatingSystem.current().isMacOsX) return
-
     plugins.withId("org.jetbrains.kotlin.multiplatform") {
         // KMP target configuration may query native freeCompilerArgs. Register the xcrun-backed provider
         // afterwards so configuring an unrelated target, such as Wasm, does not resolve the Xcode toolchain.
@@ -49,6 +47,8 @@ fun Project.configureSwiftCompatibilityLinking() {
 }
 
 private fun KotlinNativeTarget.configureSwiftCompatibilityLinking() {
+    if (!OperatingSystem.current().isMacOsX) return
+
     val sdkName =
         when (konanTarget) {
             KonanTarget.IOS_ARM64 -> "iphoneos"
