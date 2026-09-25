@@ -149,6 +149,15 @@ import platform.darwin.dispatch_get_main_queue
  * Then tears down the test environment.
  * Use the methods on [UIKitInstrumentedTest] in the test to find compose content and make
  * assertions on it.
+ *
+ * Use this when the container may affect the result, for example:
+ * - UIKit view interop and layering;
+ * - VoiceOver navigation;
+ * - Dialog or Popup windows;
+ * - rotation, keyboard, dark mode, or RTL changes.
+ *
+ * Keep one test per class on [runUIKitInstrumentedTest] as a control.
+ *
  * @param [testBlock] The test function.
  */
 internal fun runUIKitInstrumentedTest(testBlock: UIKitInstrumentedTest.() -> Unit) {
@@ -165,6 +174,19 @@ internal fun runUIKitInstrumentedTest(useHostingView: Boolean, testBlock: UIKitI
             tearDown()
         }
     }
+}
+
+/**
+ * Sets up the iOS test environment, runs [testBlock] once with the UIViewController-based
+ * Compose container, and then tears down the environment.
+ *
+ * Use this for `ComposeContainer` or `ComposeSceneMediator` behavior unaffected by the
+ * surrounding UIKit container.
+ *
+ * @param [testBlock] The test to run.
+ */
+internal fun runUIKitInstrumentedTestInPrimaryContainer(testBlock: UIKitInstrumentedTest.() -> Unit) {
+    runUIKitInstrumentedTest(useHostingView = false, testBlock)
 }
 
 /**

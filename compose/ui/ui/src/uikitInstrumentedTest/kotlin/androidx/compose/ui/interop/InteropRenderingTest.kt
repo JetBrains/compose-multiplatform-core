@@ -24,7 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.captureScreenshot
-import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.runUIKitInstrumentedTestInPrimaryContainer
 import androidx.compose.ui.test.utils.forEachSampledPixel
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
@@ -38,7 +38,7 @@ import platform.UIKit.UIView
 
 class InteropRenderingTest {
     @Test
-    fun testUIKitViewUpdateInPopupIsRenderedWithoutComposeDraw() = runUIKitInstrumentedTest {
+    fun testUIKitViewUpdateInPopupIsRenderedWithoutComposeDraw() = runUIKitInstrumentedTestInPrimaryContainer {
         val view = UIView()
         val backgroundColor = mutableStateOf(UIColor.redColor)
         var popupDraws = 0

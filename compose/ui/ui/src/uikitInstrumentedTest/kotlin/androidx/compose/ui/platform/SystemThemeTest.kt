@@ -21,6 +21,7 @@ package androidx.compose.ui.platform
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.runUIKitInstrumentedTestInPrimaryContainer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -29,7 +30,7 @@ import platform.UIKit.UIUserInterfaceStyle
 class SystemThemeTest {
 
     @Test
-    fun testInitialOverrideUserInterfaceStyleLight() = runUIKitInstrumentedTest {
+    fun testInitialOverrideUserInterfaceStyleLight() = runUIKitInstrumentedTestInPrimaryContainer {
         appDelegate.window?.overrideUserInterfaceStyle = UIUserInterfaceStyle.UIUserInterfaceStyleLight
         var systemTheme: SystemTheme? = null
         setContent {

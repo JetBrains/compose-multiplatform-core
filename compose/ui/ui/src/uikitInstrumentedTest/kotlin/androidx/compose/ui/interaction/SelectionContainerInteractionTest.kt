@@ -39,6 +39,7 @@ import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.findNodeWithTagOrNull
 import androidx.compose.ui.test.firstNodeOrNull
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.runUIKitInstrumentedTestInPrimaryContainer
 import androidx.compose.ui.test.tapContextMenuButton
 import androidx.compose.ui.test.utils.TestHandle
 import androidx.compose.ui.test.utils.TestSelectionHandleAnchor
@@ -83,7 +84,7 @@ class SelectionContainerInteractionTest {
     }
 
     @Test
-    fun testSelectionContainer_DoubleTapSelectsWord() = runUIKitInstrumentedTest {
+    fun testSelectionContainer_DoubleTapSelectsWord() = runUIKitInstrumentedTestInPrimaryContainer {
         val selectionState = SelectionState()
         val text = "accomplishment"
 
@@ -138,7 +139,7 @@ class SelectionContainerInteractionTest {
 
     @Test
     fun testSelectionContainer_LongPressDragExtendsSelectionAcrossLines() =
-        runUIKitInstrumentedTest {
+        runUIKitInstrumentedTestInPrimaryContainer {
             val selectionState = SelectionState()
             val firstLine = "accomplishment"
 
@@ -172,7 +173,7 @@ class SelectionContainerInteractionTest {
 
     @Test
     fun testSelectionContainer_LongPressDragExtendsSelectionAcrossMultipleBasicTexts() =
-        runUIKitInstrumentedTest {
+        runUIKitInstrumentedTestInPrimaryContainer {
             val selectionState = SelectionState()
             val firstText = "accomplishment"
             val secondText = "magnificent"
@@ -209,7 +210,7 @@ class SelectionContainerInteractionTest {
 
     @Test
     fun testSelectionContainer_LongPressDragSkipsDisableSelectionSubtree() =
-        runUIKitInstrumentedTest {
+        runUIKitInstrumentedTestInPrimaryContainer {
             val selectionState = SelectionState()
             val textBeforeDisabled = "accomplishment"
             val textAfterDisabled = "remarkable"
