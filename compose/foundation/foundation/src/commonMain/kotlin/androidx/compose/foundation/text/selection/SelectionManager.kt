@@ -27,7 +27,7 @@ import androidx.compose.foundation.contextmenu.ContextMenuScope
 import androidx.compose.foundation.contextmenu.ContextMenuState
 import androidx.compose.foundation.gestures.awaitAllPointersUpWithSlopDetection
 import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitPrimaryFirstDown
 import androidx.compose.foundation.internal.checkPreconditionNotNull
 import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.foundation.internal.requirePreconditionNotNull
@@ -1356,7 +1356,7 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
             awaitEachGesture {
                 // Wait for primary pointer to be down. It's required to explicitly filter
                 // secondary mouse button to make context menu work correctly.
-                val primaryFirstDown = awaitFirstDown(requireUnconsumed = false)
+                val primaryFirstDown = awaitPrimaryFirstDown(requireUnconsumed = false)
 
                 // Wait for all pointers to be up, and if we're not dragging, clear the selection.
                 // Do it in the initial phase so that when this happens while dragging, we check
