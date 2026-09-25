@@ -30,6 +30,7 @@ import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.LocalSystemTheme
+import androidx.compose.ui.asComposeSystemTheme
 import androidx.compose.ui.draganddrop.WebDragAndDropManager
 import androidx.compose.ui.events.EventTargetListener
 import androidx.compose.ui.geometry.Offset
@@ -644,7 +645,8 @@ internal class ComposeWindow(
         }
         scene.setContent {
             CompositionLocalProvider(
-                LocalSystemTheme provides systemThemeObserver.currentSystemTheme.value,
+                @Suppress("DEPRECATION")
+                LocalSystemTheme provides systemThemeObserver.currentSystemTheme.value.asComposeSystemTheme(),
                 LocalInteropContainer provides interopContainer,
                 LocalActiveClipEventsTarget provides clipEventsTargetProvider,
                 LocalComposeWindow provides this,

@@ -102,6 +102,7 @@ class ComposeSceneMediatorUnitTest {
         architectureComponentsOwner = DefaultArchitectureComponentsOwner(),
         coroutineContext = coroutineContext,
         navigationEventInput = IosBackNavigationEventInput(
+            frameChoreographer = frameChoreographer,
             density = Density(1f),
             initialLayoutDirection = LayoutDirection.Ltr,
             getTopLeftOffsetInWindow = { IntOffset.Zero },

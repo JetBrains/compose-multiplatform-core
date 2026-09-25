@@ -16,8 +16,9 @@
 
 package androidx.compose.foundation.text.input.internal
 
+import androidx.compose.foundation.text.holder
 import androidx.compose.foundation.text.input.internal.selection.TextFieldSelectionState
-import androidx.compose.foundation.text.selection.DefaultTextSelectionColors
+import androidx.compose.foundation.text.nativeTintColor
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.graphics.Brush
@@ -25,7 +26,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.uikit.LocalNativeTextInputContext
+import androidx.compose.ui.uikit.LocalTextInputContainer
 
 @OptIn(InternalComposeUiApi::class)
 internal actual fun TextFieldCoreModifierNode.drawSelectionHighlight(
@@ -33,7 +34,8 @@ internal actual fun TextFieldCoreModifierNode.drawSelectionHighlight(
     selection: TextRange,
     textLayoutResult: TextLayoutResult,
 ) {
-    val usingNativeTextInput = currentValueOf(LocalNativeTextInputContext).usingNativeTextInput()
+    val usingNativeTextInput =
+        currentValueOf(LocalTextInputContainer).activeSessionUsesNativeTextInput()
     // iOS handles selection drawing itself in native text input mode
     if (!usingNativeTextInput) {
         drawDefaultSelectionHighlight(scope, selection, textLayoutResult)
@@ -48,16 +50,13 @@ internal actual fun TextFieldCoreModifierNode.drawCursor(
     cursorAnimation: CursorAnimationState?,
     textFieldSelectionState: TextFieldSelectionState,
 ) {
-    val nativeTextInputContext = currentValueOf(LocalNativeTextInputContext)
+    val holder = textFieldSelectionState.textFieldState.holder
     // iOS handles cursor drawing itself in native text input mode
-    if (nativeTextInputContext.usingNativeTextInput()) {
+    if (holder != null && holder.usingNativeTextInput()) {
         // iOS uses one color to draw the cursor and selection handles
         // If it's not user set, use the system default one
-        val selectionColors = currentValueOf(LocalTextSelectionColors)
-        nativeTextInputContext.updateNativeTextInputTintColor(
-            selectionColors.handleColor.takeIf {
-                it != DefaultTextSelectionColors.handleColor
-            }
+        holder.updateNativeTextInputTintColor(
+            currentValueOf(LocalTextSelectionColors).nativeTintColor
         )
     } else {
         drawDefaultCursor(scope, brush, showCursor, cursorAnimation, textFieldSelectionState)

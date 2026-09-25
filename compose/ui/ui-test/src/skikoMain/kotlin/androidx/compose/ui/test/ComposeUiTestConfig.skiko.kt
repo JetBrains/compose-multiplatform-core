@@ -33,21 +33,6 @@ actual constructor(
     actual val failurePolicy: TestFailurePolicy,
     actual val boundsAssertionTolerance: Dp,
 ) {
-    @Deprecated("Kept for binary compatibility", level = DeprecationLevel.HIDDEN)
-    constructor(
-        effectContext: CoroutineContext,
-        runTestContext: CoroutineContext,
-        testTimeout: Duration,
-        inputMode: InputMode,
-    ) : this(
-        effectContext = effectContext,
-        runTestContext = runTestContext,
-        testTimeout = testTimeout,
-        inputMode = inputMode,
-        failurePolicy = TestFailurePolicy(),
-        boundsAssertionTolerance = Dp.Unspecified,
-    )
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ComposeUiTestConfig) return false

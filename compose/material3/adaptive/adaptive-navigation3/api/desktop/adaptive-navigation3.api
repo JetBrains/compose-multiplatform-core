@@ -1,16 +1,16 @@
 public final class androidx/compose/material3/adaptive/navigation3/ComposableSingletons$ListDetailSceneStrategyKt {
 	public static final field INSTANCE Landroidx/compose/material3/adaptive/navigation3/ComposableSingletons$ListDetailSceneStrategyKt;
 	public fun <init> ()V
-	public final fun getLambda$1388680934$adaptive_navigation3 ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$239843482$adaptive_navigation3 ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$1388680934$org_jetbrains_compose_material3_adaptive_adaptive_navigation3 ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$239843482$org_jetbrains_compose_material3_adaptive_adaptive_navigation3 ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/material3/adaptive/navigation3/ComposableSingletons$ThreePaneScaffoldSceneKt {
 	public static final field INSTANCE Landroidx/compose/material3/adaptive/navigation3/ComposableSingletons$ThreePaneScaffoldSceneKt;
 	public fun <init> ()V
-	public final fun getLambda$-1834699219$adaptive_navigation3 ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$-827776530$adaptive_navigation3 ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$1316828981$adaptive_navigation3 ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-1834699219$org_jetbrains_compose_material3_adaptive_adaptive_navigation3 ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-827776530$org_jetbrains_compose_material3_adaptive_adaptive_navigation3 ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$1316828981$org_jetbrains_compose_material3_adaptive_adaptive_navigation3 ()Lkotlin/jvm/functions/Function3;
 }
 
 public abstract interface class androidx/compose/material3/adaptive/navigation3/ListDetailSceneScope {

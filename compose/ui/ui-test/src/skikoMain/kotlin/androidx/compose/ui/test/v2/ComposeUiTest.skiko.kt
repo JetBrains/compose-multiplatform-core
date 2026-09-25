@@ -212,12 +212,10 @@ private fun ComposeUiTestConfig.checkFieldIsNotSet(
 }
 
 private fun ComposeUiTestConfig.checkSupported() {
-    // TODO https://youtrack.jetbrains.com/issue/CMP-10712/Support-ComposeUiTestConfiginputMode
+    // TODO https://youtrack.jetbrains.com/issue/CMP-10712
     checkFieldIsNotSet("inputMode", ComposeUiTestConfig::inputMode)
-    // TODO https://youtrack.jetbrains.com/issue/CMP-10711/Support-ComposeUiTestConfigfailurePolicy
+    // TODO https://youtrack.jetbrains.com/issue/CMP-10711
     checkFieldIsNotSet("failurePolicy", ComposeUiTestConfig::failurePolicy)
-    // TODO(Merge) Minor, Implement after merging 341cbc1921d338ae5056873a0cf9f2be7a505ca2.
-    // Apply the configured tolerance to bounds assertions; non-default values are currently
-    // ignored.
+    // TODO https://youtrack.jetbrains.com/issue/CMP-10797
     checkFieldIsNotSet("boundsAssertionTolerance", ComposeUiTestConfig::boundsAssertionTolerance)
 }

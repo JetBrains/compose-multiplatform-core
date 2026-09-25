@@ -22,8 +22,7 @@ import androidx.compose.ui.graphics.RenderEffect
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.unit.Density
 
-// TODO(Merge) Major, Implement after merging 7e1430f6c57df22b6ceeaa66ff4e18b53a67edd9.
-// Implement progressive blur with platform render effects; this implementation is a no-op.
+// TODO https://youtrack.jetbrains.com/issue/CMP-10799
 private fun progressiveBlurNoOp(edgeTreatment: TileMode): RenderEffect =
     BlurEffect(null, 0f, 0f, edgeTreatment)
 

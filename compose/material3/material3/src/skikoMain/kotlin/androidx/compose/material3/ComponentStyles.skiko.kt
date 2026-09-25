@@ -18,8 +18,7 @@ package androidx.compose.material3
 
 import androidx.compose.runtime.Composable
 
-// TODO(Merge) Major, Implement after merging 566fc3ba8bdfc18241ca779298edd5e85d71ad1a.
-// Detect target media capabilities; adaptive checkbox styles currently use their defaults.
+// TODO https://youtrack.jetbrains.com/issue/CMP-10800
 @Composable
 internal actual fun mediaQueryInfo(): MediaQueryInfo =
     MediaQueryInfo(isLaptop = false, isTv = false, isAuto = false)

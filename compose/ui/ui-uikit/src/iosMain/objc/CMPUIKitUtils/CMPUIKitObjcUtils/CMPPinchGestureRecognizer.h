@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,22 @@
  * limitations under the License.
  */
 
-package androidx.compose.mpp.demo
+#import <UIKit/UIKit.h>
 
-val IosSpecificFeatures = Screen.Selection(
-    "iOS Features",
-    NativeModalWithNavigationExample,
-    NativePopupWithComposePopupExample,
-    HapticFeedbackExample,
-    IosPredictiveBackExample,
-    LazyColumnWithInteropViewsExample,
-    AccessibilityLiveRegionExample,
-    InteropViewAndSemanticsConfigMerge,
-    InteropExample,
-    ReusableMapsExample,
-    UpdatableInteropPropertiesExample,
-    IosImeOptionsExample,
-    NativeTextInputTextFields,
-)
+NS_ASSUME_NONNULL_BEGIN
+
+@interface CMPPinchGestureRecognizer : UIPinchGestureRecognizer
+
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event;
+
+- (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event;
+
+- (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event;
+
+- (void)touchesCancelled:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event;
+
+- (BOOL)shouldReceiveEvent:(UIEvent *)event;
+
+@end
+
+NS_ASSUME_NONNULL_END

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.platform
+package androidx.compose.foundation.text
 
-internal class DefaultAccessibilityManager : AccessibilityManager {
-    override fun calculateRecommendedTimeoutMillis(
-        originalTimeoutMillis: Long,
-        containsIcons: Boolean,
-        containsText: Boolean,
-        containsControls: Boolean
-    ): Long {
-        return originalTimeoutMillis
-    }
-}
+import androidx.compose.foundation.interaction.InteractionSource
+import androidx.compose.foundation.text.input.internal.TransformedTextFieldState
+import androidx.compose.ui.Modifier
+
+internal actual fun Modifier.textFieldOverlay(
+    transformedState: TransformedTextFieldState,
+    keyboardOptions: KeyboardOptions,
+    interactionSource: InteractionSource
+): Modifier = this

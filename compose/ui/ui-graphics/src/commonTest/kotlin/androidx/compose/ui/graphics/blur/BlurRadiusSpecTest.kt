@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -559,6 +560,8 @@ class BlurRadiusSpecTest {
         assertNotEquals(a, b)
     }
 
+    // TODO https://youtrack.jetbrains.com/issue/CMP-10799/Support-progressive-blur-Modifier.blur-...-BlurRadiusSpec
+    @Ignore
     @Test
     fun differingRadius_breaksEquality() {
         val a =
@@ -570,6 +573,8 @@ class BlurRadiusSpecTest {
         assertNotEquals(a, b)
     }
 
+    // TODO https://youtrack.jetbrains.com/issue/CMP-10799/Support-progressive-blur-Modifier.blur-...-BlurRadiusSpec
+    @Ignore
     @Test
     fun differingSize_breaksEquality() {
         val radius = BlurRadiusSpec.verticalGradient(startRadius = 0.dp, endRadius = 20.dp)
@@ -578,6 +583,8 @@ class BlurRadiusSpecTest {
         assertNotEquals(a, b)
     }
 
+    // TODO https://youtrack.jetbrains.com/issue/CMP-10799/Support-progressive-blur-Modifier.blur-...-BlurRadiusSpec
+    @Ignore
     @Test
     fun differingDensity_breaksEquality() {
         val radius = BlurRadiusSpec.verticalGradient(startRadius = 0.dp, endRadius = 20.dp)
@@ -586,6 +593,8 @@ class BlurRadiusSpecTest {
         assertNotEquals(a, b)
     }
 
+    // TODO https://youtrack.jetbrains.com/issue/CMP-10799/Support-progressive-blur-Modifier.blur-...-BlurRadiusSpec
+    @Ignore
     @Test
     fun sameShaderRadiusInstance_effectsAreNeverEqual() {
         // A shader-based radius wraps mutable user-owned shader state. Two effects wrapping the

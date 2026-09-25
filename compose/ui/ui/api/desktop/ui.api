@@ -131,8 +131,8 @@ public final class androidx/compose/ui/CombinedModifier : androidx/compose/ui/Mo
 public final class androidx/compose/ui/ComposableSingletons$ImageComposeScene_skikoKt {
 	public static final field INSTANCE Landroidx/compose/ui/ComposableSingletons$ImageComposeScene_skikoKt;
 	public fun <init> ()V
-	public final fun getLambda$-120220721$ui ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda$1296475654$ui ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-120220721$org_jetbrains_compose_ui_ui ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$1296475654$org_jetbrains_compose_ui_ui ()Lkotlin/jvm/functions/Function2;
 }
 
 public abstract interface class androidx/compose/ui/ComposeDesktopEntryPoint {
@@ -310,44 +310,8 @@ public abstract interface class androidx/compose/ui/UiMediaScope {
 	public abstract fun getPointerPrecision-fpxItnM ()I
 	public abstract fun getViewingDistance-tKro-MQ ()I
 	public abstract fun getWindowHeight-D9Ej5fM ()F
-	public abstract fun getWindowPosture ()Landroidx/compose/ui/UiMediaScope$WindowPosture;
+	public abstract fun getWindowPosture-m18o9QQ ()I
 	public abstract fun getWindowWidth-D9Ej5fM ()F
-}
-
-public final class androidx/compose/ui/UiMediaScope$FoldOrientation {
-	public static final field Companion Landroidx/compose/ui/UiMediaScope$FoldOrientation$Companion;
-	public static final synthetic fun box-impl (I)Landroidx/compose/ui/UiMediaScope$FoldOrientation;
-	public fun equals (Ljava/lang/Object;)Z
-	public static fun equals-impl (ILjava/lang/Object;)Z
-	public static final fun equals-impl0 (II)Z
-	public fun hashCode ()I
-	public static fun hashCode-impl (I)I
-	public fun toString ()Ljava/lang/String;
-	public static fun toString-impl (I)Ljava/lang/String;
-	public final synthetic fun unbox-impl ()I
-}
-
-public final class androidx/compose/ui/UiMediaScope$FoldOrientation$Companion {
-	public final fun getHorizontal-hIhEK1o ()I
-	public final fun getVertical-hIhEK1o ()I
-}
-
-public final class androidx/compose/ui/UiMediaScope$FoldState {
-	public static final field Companion Landroidx/compose/ui/UiMediaScope$FoldState$Companion;
-	public static final synthetic fun box-impl (I)Landroidx/compose/ui/UiMediaScope$FoldState;
-	public fun equals (Ljava/lang/Object;)Z
-	public static fun equals-impl (ILjava/lang/Object;)Z
-	public static final fun equals-impl0 (II)Z
-	public fun hashCode ()I
-	public static fun hashCode-impl (I)I
-	public fun toString ()Ljava/lang/String;
-	public static fun toString-impl (I)Ljava/lang/String;
-	public final synthetic fun unbox-impl ()I
-}
-
-public final class androidx/compose/ui/UiMediaScope$FoldState$Companion {
-	public final fun getFlat-O5fZRa0 ()I
-	public final fun getHalfOpened-O5fZRa0 ()I
 }
 
 public final class androidx/compose/ui/UiMediaScope$KeyboardKind {
@@ -389,6 +353,25 @@ public final class androidx/compose/ui/UiMediaScope$PointerPrecision$Companion {
 	public final fun getNone-fpxItnM ()I
 }
 
+public final class androidx/compose/ui/UiMediaScope$Posture {
+	public static final field Companion Landroidx/compose/ui/UiMediaScope$Posture$Companion;
+	public static final synthetic fun box-impl (I)Landroidx/compose/ui/UiMediaScope$Posture;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
+	public fun hashCode ()I
+	public static fun hashCode-impl (I)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
+}
+
+public final class androidx/compose/ui/UiMediaScope$Posture$Companion {
+	public final fun getBook-m18o9QQ ()I
+	public final fun getFlat-m18o9QQ ()I
+	public final fun getTabletop-m18o9QQ ()I
+}
+
 public final class androidx/compose/ui/UiMediaScope$ViewingDistance {
 	public static final field Companion Landroidx/compose/ui/UiMediaScope$ViewingDistance$Companion;
 	public static final synthetic fun box-impl (I)Landroidx/compose/ui/UiMediaScope$ViewingDistance;
@@ -406,27 +389,6 @@ public final class androidx/compose/ui/UiMediaScope$ViewingDistance$Companion {
 	public final fun getFar-tKro-MQ ()I
 	public final fun getMedium-tKro-MQ ()I
 	public final fun getNear-tKro-MQ ()I
-}
-
-public final class androidx/compose/ui/UiMediaScope$WindowFold {
-	public static final field $stable I
-	public synthetic fun <init> (IILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getOrientation-hIhEK1o ()I
-	public final fun getState-O5fZRa0 ()I
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class androidx/compose/ui/UiMediaScope$WindowPosture {
-	public static final field $stable I
-	public fun <init> (Ljava/util/List;)V
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getFolds ()Ljava/util/List;
-	public fun hashCode ()I
-	public final fun isFlat ()Z
-	public final fun isTabletop ()Z
-	public fun toString ()Ljava/lang/String;
 }
 
 public final class androidx/compose/ui/ZIndexModifierKt {
@@ -801,12 +763,12 @@ public final class androidx/compose/ui/draw/BlurKt {
 
 public abstract interface class androidx/compose/ui/draw/BlurScope : androidx/compose/ui/unit/Density {
 	public abstract fun getAlpha ()F
-	public abstract fun getBlurRadiusSpec ()Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;
 	public abstract fun getEdgeTreatment---Goahg ()Landroidx/compose/ui/graphics/Shape;
+	public abstract fun getRadius ()Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;
 	public abstract fun getSize-MYxV2XQ ()J
 	public abstract fun setAlpha (F)V
-	public abstract fun setBlurRadiusSpec (Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;)V
 	public abstract fun setEdgeTreatment-JyGir4Q (Landroidx/compose/ui/graphics/Shape;)V
+	public abstract fun setRadius (Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;)V
 }
 
 public final class androidx/compose/ui/draw/BlurredEdgeTreatment {
@@ -2786,7 +2748,7 @@ public abstract interface class androidx/compose/ui/layout/BeyondBoundsLayoutPro
 public final class androidx/compose/ui/layout/ComposableSingletons$SubcomposeLayoutKt {
 	public static final field INSTANCE Landroidx/compose/ui/layout/ComposableSingletons$SubcomposeLayoutKt;
 	public fun <init> ()V
-	public final fun getLambda$641200809$ui ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$641200809$org_jetbrains_compose_ui_ui ()Lkotlin/jvm/functions/Function2;
 }
 
 public abstract interface class androidx/compose/ui/layout/ContentScale {
@@ -4609,7 +4571,7 @@ public final class androidx/compose/ui/window/AwtWindow_desktopKt {
 public final class androidx/compose/ui/window/ComposableSingletons$Tray_desktopKt {
 	public static final field INSTANCE Landroidx/compose/ui/window/ComposableSingletons$Tray_desktopKt;
 	public fun <init> ()V
-	public final fun getLambda$-2071755610$ui ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-2071755610$org_jetbrains_compose_ui_ui ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/ui/window/DesktopPopup_desktopKt {

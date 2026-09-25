@@ -18,7 +18,10 @@ package androidx.compose.foundation.text
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.interaction.Interaction
+import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.internal.TransformedTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -320,3 +323,8 @@ fun BasicTextField(
     )
 }
 
+internal actual fun Modifier.textFieldOverlay(
+    transformedState: TransformedTextFieldState,
+    keyboardOptions: KeyboardOptions,
+    interactionSource: InteractionSource
+): Modifier = this

@@ -95,6 +95,7 @@ internal class IosComposeSceneLayer(
         get() = ownerProvider.navigationEventDispatcherOwner.navigationEventDispatcher
 
     private val navigationEventInput = IosBackNavigationEventInput(
+        frameChoreographer = frameChoreographer,
         density = interactionView.density,
         initialLayoutDirection = initialLayoutDirection,
         getTopLeftOffsetInWindow = { boundsInWindow.topLeft },

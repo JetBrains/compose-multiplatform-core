@@ -115,9 +115,9 @@ public abstract interface class androidx/compose/ui/test/ComposeUiTest : android
 
 public final class androidx/compose/ui/test/ComposeUiTestConfig {
 	public static final field $stable I
+	public fun <init> ()V
 	public synthetic fun <init> (Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JILandroidx/compose/ui/test/TestFailurePolicy;FILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JILandroidx/compose/ui/test/TestFailurePolicy;FLkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getBoundsAssertionTolerance-D9Ej5fM ()F
 	public final fun getEffectContext ()Lkotlin/coroutines/CoroutineContext;
@@ -807,6 +807,7 @@ public abstract interface class androidx/compose/ui/test/TestFailureHandler {
 
 public final class androidx/compose/ui/test/TestFailurePolicy {
 	public static final field $stable I
+	public fun <init> ()V
 	public synthetic fun <init> (IILjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (IILjava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z

@@ -18,16 +18,26 @@ package androidx.compose.ui.layers
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.background
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.test.captureScreenshot
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.forEachPixel
+import androidx.compose.ui.test.utils.forEachPixelInRect
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.DpRect
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import kotlin.test.Test
@@ -39,32 +49,90 @@ import platform.darwin.dispatch_get_main_queue
 
 class LayersRenderingTest {
     @Test
-    fun testLayerContentOnFirstRender() = runUIKitInstrumentedTest {
-        var showRed by mutableStateOf(false)
-        var showGreen by mutableStateOf(false)
-        var onRender = {}
-        var frameImage: UIImage? = null
+    fun testPopupDoesNotDrawAtOriginBeforeParentAnchor() = runUIKitInstrumentedTest {
+        val popupSize = 20.dp
+        var showPopup by mutableStateOf(false)
+        var captureNextParentDraw by mutableStateOf(false)
+        var firstPopupFrame: UIImage? = null
+        var popupContentPlaced by mutableStateOf(false)
 
-        fun prepareForCaptureNextFrame() {
-            frameImage = null
-            onRender = {
-                dispatch_async(dispatch_get_main_queue()) {
-                    frameImage = captureScreenshot()
+        setContent {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Blue)
+                    .drawBehind {
+                        if (captureNextParentDraw) {
+                            dispatch_async(dispatch_get_main_queue()) {
+                                firstPopupFrame = captureScreenshot()
+                            }
+                            captureNextParentDraw = false
+                        }
+                    }
+            )
+            if (showPopup) {
+                Popup(
+                    alignment = Alignment.Center,
+                    onDismissRequest = {},
+                    properties = PopupProperties(usePlatformInsets = false),
+                ) {
+                    Box(
+                        Modifier
+                            .size(popupSize)
+                            .background(Color.Red)
+                            .onPlaced { popupContentPlaced = true }
+                    )
                 }
-                onRender = {}
             }
         }
 
+        captureNextParentDraw = true
+        showPopup = true
+        waitUntil("First popup frame should be captured") { firstPopupFrame != null }
+
+        firstPopupFrame!!.forEachPixel(step = 4) { _, _, color ->
+            assertEquals(Color.Blue, color, "Popup content appeared before its anchor was available")
+        }
+
+        waitUntil("Popup content should be placed") { popupContentPlaced }
+        waitForIdle()
+        val settledPopupFrame = assertNotNull(captureScreenshot())
+        val expectedPopupBounds = with(density) {
+            DpRect(
+                origin = DpOffset(
+                    x = (screenSize.width - popupSize) / 2,
+                    y = (screenSize.height - popupSize) / 2,
+                ),
+                size = DpSize(popupSize, popupSize),
+            ).toRect().roundToIntRect()
+        }
+        settledPopupFrame.forEachPixelInRect(expectedPopupBounds, step = 4) { _, _, color ->
+            assertEquals(Color.Red, color, "Popup content was not drawn at its expected position")
+        }
+    }
+
+    @Test
+    fun testLayerContentAfterParentAnchorIsAvailable() = runUIKitInstrumentedTest {
+        var showRed by mutableStateOf(false)
+        var showGreen by mutableStateOf(false)
+        var popupContentPlaced by mutableStateOf(false)
+
         setContent {
-            Box(Modifier.fillMaxSize().background(Color.Blue).drawBehind {
-                onRender()
-            })
+            Box(Modifier.fillMaxSize().background(Color.Blue))
             if (showRed) {
                 Popup(
                     onDismissRequest = {},
                     properties = PopupProperties(usePlatformInsets = false)
                 ) {
-                    Box(Modifier.fillMaxSize().background(Color.Red))
+                    DisposableEffect(Unit) {
+                        onDispose { popupContentPlaced = false }
+                    }
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(Color.Red)
+                            .onPlaced { popupContentPlaced = true }
+                    )
                 }
             }
             if (showGreen) {
@@ -72,17 +140,22 @@ class LayersRenderingTest {
                     onDismissRequest = {},
                     properties = PopupProperties(usePlatformInsets = false)
                 ) {
-                    Box(Modifier.fillMaxSize().background(Color.Green))
+                    DisposableEffect(Unit) {
+                        onDispose { popupContentPlaced = false }
+                    }
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(Color.Green)
+                            .onPlaced { popupContentPlaced = true }
+                    )
                 }
             }
         }
 
-        fun assertNextFrameColor(expectedColor: Color) {
-            prepareForCaptureNextFrame()
+        fun assertFrameColor(expectedColor: Color) {
             waitForIdle()
-
-            assertNotNull(frameImage)
-            frameImage!!.forEachPixel(step = 4) { _, _, actualColor ->
+            assertNotNull(captureScreenshot()).forEachPixel(step = 4) { _, _, actualColor ->
                 assertEquals(
                     expectedColor,
                     actualColor,
@@ -91,16 +164,33 @@ class LayersRenderingTest {
             }
         }
 
+        fun awaitPopupContentPlacement() {
+            waitUntil("Popup content should be placed") { popupContentPlaced }
+            waitForIdle()
+        }
+
+        fun awaitPopupContentDisposal() {
+            waitUntil("Popup content should be disposed") { !popupContentPlaced }
+            waitForIdle()
+        }
+
+        // IosComposeSceneLayer owns a separate ComposeScene. Its first layout is not ordered
+        // after the parent scene's onPlaced callback, so this test only asserts the result once
+        // UIKit has processed both scenes, rather than requiring the popup in a particular frame.
         showRed = true
-        assertNextFrameColor(Color.Red)
+        awaitPopupContentPlacement()
+        assertFrameColor(Color.Red)
 
         showRed = false
-        assertNextFrameColor(Color.Blue)
+        awaitPopupContentDisposal()
+        assertFrameColor(Color.Blue)
 
         showGreen = true
-        assertNextFrameColor(Color.Green)
+        awaitPopupContentPlacement()
+        assertFrameColor(Color.Green)
 
         showGreen = false
-        assertNextFrameColor(Color.Blue)
+        awaitPopupContentDisposal()
+        assertFrameColor(Color.Blue)
     }
 }
