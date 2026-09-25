@@ -1,8 +1,7 @@
 # Project: Compose Multiplatform Core - Material3 
 
 This directory contains the core implementation of the Material 3 design system
-for Compose Multiplatform. All code generated or modified must strictly follow the
-Material 3 Spec and AOSP coding standards.
+for Compose Multiplatform.
 
 **Refer to [compose/AGENTS.md](../../AGENTS.md) for general Compose instructions.**
 
