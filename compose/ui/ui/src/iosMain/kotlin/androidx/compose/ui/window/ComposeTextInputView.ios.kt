@@ -81,9 +81,17 @@ internal class ComposeTextInputView(
     private var _inputDelegate: UITextInputDelegateProtocol? = null
     var input: TextEditingDelegate? = null
         set(value) {
-            field = value
-            if (value == null) {
-                hideTextMenu()
+            if (field != value) {
+                if (isFirstResponder) {
+                    field?.onResignFocus()
+                }
+                field = value
+                if (isFirstResponder) {
+                    field?.onFocus()
+                }
+                if (value == null) {
+                    hideTextMenu()
+                }
             }
         }
 
@@ -94,6 +102,11 @@ internal class ComposeTextInputView(
     override fun inputAccessoryView(): UIView? = inputTraits.inputAccessoryView()
 
     override fun canBecomeFirstResponder() = true
+
+    override fun becomeFirstResponder(): Boolean {
+        input?.onFocus()
+        return super.becomeFirstResponder()
+    }
 
     override fun resignFirstResponder(): Boolean {
         input?.onResignFocus()
