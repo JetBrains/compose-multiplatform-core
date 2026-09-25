@@ -19,17 +19,17 @@ package noria
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composer
 import androidx.compose.runtime.InternalComposeApi
-import androidx.compose.runtime.currentComposer
+import androidx.compose.runtime.RecomposeScope
+import androidx.compose.runtime.SnapshotMutationPolicy
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.currentRecomposeScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
-import kotlin.coroutines.CoroutineContext
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import noria.impl.EffectCoroutineContextCompositionLocal
+import androidx.compose.runtime.structuralEqualityPolicy
 import noria.impl.NoriaState
 
 fun interface Cell<out T> {
@@ -80,14 +80,18 @@ val WILDCARD: Any get() = Any()
     ReplaceWith("rememberCell(block)", "fleet.compose.runtime.rememberCell")
 )
 @Composable
-inline fun <T> cell(block: @Composable () -> T): Cell<T> {
-    return rememberLegacyCell(block)
+fun <T> cell(block: @Composable () -> T): Cell<T> {
+    val slot = remember { MemoSlot<T>() }
+    MemoScope(slot, block)
+    return slot
 }
 
 @Composable
-inline fun <T> activeCell(block: @Composable () -> T): Cell<T> {
+fun <T> activeCell(block: @Composable () -> T): Cell<T> {
     // TODO Some mechanism of always dirty involving a composition local that gets counted up every frame?
-    return rememberLegacyCell(block)
+    val slot = remember { MemoSlot<T>() }
+    MemoScope(slot, block)
+    return slot
 }
 
 @Composable
@@ -143,13 +147,19 @@ inline fun <T> stateCellNoRemember(
 /**
  * Memorizes result of compute adding a dependency to current context.
  *
- * Shortcut for `cell { ... }.read()`
+ * Shortcut for `cell { ... }.read()`.
  *
  * @see [cell]
  */
 @Composable
-inline fun <T> memo(crossinline block: @Composable () -> T): T {
-    return rememberLegacyCell(block).read()
+fun <T> memo(block: @Composable () -> T): T {
+    val slot = remember { MemoSlot<T>() }
+    // memo returns a value, so it has no restart group: this is the scope of the caller.
+    slot.owner = currentRecomposeScope
+    slot.ownerComposing = true
+    MemoScope(slot, block)
+    slot.ownerComposing = false
+    return slot.readUntracked()
 }
 
 /**
@@ -266,17 +276,46 @@ fun <T : Any> observe(cell: Cell<T>, onChange: (T, firstTime: Boolean) -> Unit) 
     }
 }
 
-@Composable
-@PublishedApi
-internal inline fun <T> rememberLegacyCell(block: @Composable () -> T): Cell<T> {
-    var result by remember { mutableStateOf<T?>(null) }
-    result = block()
-    return remember {
-        object : Cell<T> {
-            override fun read(): T {
-                @Suppress("UNCHECKED_CAST")
-                return result as T
-            }
+private val Unset = Any()
+
+/**
+ * Holds the result of a [cell] or a [memo] block. [MemoScope] writes it.
+ *
+ * [Cell.read] subscribes the reader through the snapshot state. The [owner] of a [memo] reads with
+ * [readUntracked] and gets an explicit invalidation instead. A write during the composition of the
+ * owner does not invalidate the owner, because the owner reads the new value after the write.
+ */
+@Stable
+internal class MemoSlot<T>(
+    private val policy: SnapshotMutationPolicy<Any?> = structuralEqualityPolicy(),
+) : Cell<T> {
+    // A snapshot state, so a discarded composition also discards the write.
+    private val state = mutableStateOf(Unset, policy)
+
+    var owner: RecomposeScope? = null
+
+    var ownerComposing: Boolean = false
+
+    fun publish(value: T) {
+        val previous = Snapshot.withoutReadObservation { state.value }
+        state.value = value
+        if (!ownerComposing && previous !== Unset && !policy.equivalent(previous, value)) {
+            // The block ran without the owner, for example after a change of its dependency.
+            owner?.invalidate()
         }
     }
+
+    @Suppress("UNCHECKED_CAST")
+    fun readUntracked(): T = Snapshot.withoutReadObservation { state.value } as T
+
+    @Suppress("UNCHECKED_CAST")
+    override fun read(): T = state.value as T
+}
+
+/**
+ * Runs [block] in its own recompose scope, so the reads of [block] do not subscribe the caller.
+ */
+@Composable
+private fun <T> MemoScope(slot: MemoSlot<T>, block: @Composable () -> T) {
+    slot.publish(block())
 }
