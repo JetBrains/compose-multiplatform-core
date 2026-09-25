@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-<<<<<<< HEAD
-=======
 // ExperimentalWasmJsInterop is only available in Kotlin 2.2 and newer versions.
 @file:Suppress("OPT_IN_USAGE")
 
->>>>>>> ac4962e87c9e70f5371ad52b15ed3d97d789d216
 package androidx.navigation
 
 import androidx.kruth.assertThat
@@ -29,20 +26,13 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlin.test.Test
 import kotlinx.browser.window
-<<<<<<< HEAD
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-=======
->>>>>>> ac4962e87c9e70f5371ad52b15ed3d97d789d216
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.w3c.dom.AddEventListenerOptions
 
-<<<<<<< HEAD
 @OptIn(ExperimentalBrowserHistoryApi::class, ExperimentalCoroutinesApi::class)
-=======
-@OptIn(ExperimentalBrowserHistoryApi::class)
->>>>>>> ac4962e87c9e70f5371ad52b15ed3d97d789d216
 class BrowserHistoryTest {
 
     private fun NavController.createGraph() =
@@ -60,30 +50,17 @@ class BrowserHistoryTest {
                 test("screen_6/{pathId}?q={queryId}") {
                     argument("pathId") { type = NavType.IntType }
                 }
-<<<<<<< HEAD
-                test("screen_7/{txt}") {
-                    argument("txt") { type = NavType.StringType }
-                }
-=======
                 test("screen_7/{txt}") { argument("txt") { type = NavType.StringType } }
->>>>>>> ac4962e87c9e70f5371ad52b15ed3d97d789d216
             }
         }
 
     @Test
     fun checkBrowserHistoryStateSynchronizedWithNavigation() = runTest {
-<<<<<<< HEAD
         // TODO(https://youtrack.jetbrains.com/issue/CMP-9676) Fix on Firefox
         if (isFirefox) return@runTest
         val initHistoryLength = goToBrowserRoot()
-        val navController = NavHostController().apply {
-            navigatorProvider.addNavigator(TestNavigator())
-        }
-=======
-        val initHistoryLength = goToBrowserRoot()
         val navController =
             NavHostController().apply { navigatorProvider.addNavigator(TestNavigator()) }
->>>>>>> ac4962e87c9e70f5371ad52b15ed3d97d789d216
         val appAddress = with(window.location) { origin + pathname }
 
         val bind = launch { navController.bindToBrowserNavigation() }
@@ -104,13 +81,7 @@ class BrowserHistoryTest {
             .inOrder()
         assertThat(window.location.toString()).isEqualTo("$appAddress#screen_4")
 
-<<<<<<< HEAD
-        navController.navigate("screen_5") {
-            popUpTo("screen_1") { inclusive = true }
-        }
-=======
         navController.navigate("screen_5") { popUpTo("screen_1") { inclusive = true } }
->>>>>>> ac4962e87c9e70f5371ad52b15ed3d97d789d216
         navController.navigate("screen_2")
         advanceUntilIdle()
 
@@ -134,18 +105,11 @@ class BrowserHistoryTest {
 
     @Test
     fun checkNavigationSynchronizedWithBrowserHistoryState() = runTest {
-<<<<<<< HEAD
         // TODO(https://youtrack.jetbrains.com/issue/CMP-9676) Fix on Firefox
         if (isFirefox) return@runTest
         val initHistoryLength = goToBrowserRoot()
-        val navController = NavHostController().apply {
-            navigatorProvider.addNavigator(TestNavigator())
-        }
-=======
-        val initHistoryLength = goToBrowserRoot()
         val navController =
             NavHostController().apply { navigatorProvider.addNavigator(TestNavigator()) }
->>>>>>> ac4962e87c9e70f5371ad52b15ed3d97d789d216
         navController.setGraph(navController.createGraph(), null)
 
         val appAddress = with(window.location) { origin + pathname }
@@ -162,13 +126,7 @@ class BrowserHistoryTest {
         navController.navigate("screen_4")
         advanceUntilIdle()
 
-<<<<<<< HEAD
-        navController.navigate("screen_5") {
-            popUpTo("screen_1") { inclusive = true }
-        }
-=======
         navController.navigate("screen_5") { popUpTo("screen_1") { inclusive = true } }
->>>>>>> ac4962e87c9e70f5371ad52b15ed3d97d789d216
         advanceUntilIdle()
 
         navController.navigate("screen_2")
@@ -194,13 +152,7 @@ class BrowserHistoryTest {
         browserBack()
 
         assertThat(window.history.length).isEqualTo(6)
-<<<<<<< HEAD
-        assertThat(window.history.state.toString().lines())
-            .containsExactly("screen_5")
-            .inOrder()
-=======
         assertThat(window.history.state.toString().lines()).containsExactly("screen_5").inOrder()
->>>>>>> ac4962e87c9e70f5371ad52b15ed3d97d789d216
         assertThat(window.location.toString()).isEqualTo("$appAddress#screen_5")
 
         browserBack()
@@ -249,18 +201,11 @@ class BrowserHistoryTest {
 
     @Test
     fun checkBrowserUrlCustomization() = runTest {
-<<<<<<< HEAD
         // TODO(https://youtrack.jetbrains.com/issue/CMP-9676) Fix on Firefox
         if (isFirefox) return@runTest
         val initHistoryLength = goToBrowserRoot()
-        val navController = NavHostController().apply {
-            navigatorProvider.addNavigator(TestNavigator())
-        }
-=======
-        val initHistoryLength = goToBrowserRoot()
         val navController =
             NavHostController().apply { navigatorProvider.addNavigator(TestNavigator()) }
->>>>>>> ac4962e87c9e70f5371ad52b15ed3d97d789d216
         navController.setGraph(navController.createGraph(), null)
 
         val appAddress = with(window.location) { origin + pathname }
@@ -283,18 +228,6 @@ class BrowserHistoryTest {
         browserBack()
 
         assertThat(window.history.length).isEqualTo(2)
-<<<<<<< HEAD
-        assertThat(window.history.state.toString().lines())
-            .containsExactly("screen_1")
-            .inOrder()
-        assertThat(window.location.toString()).isEqualTo(appAddress)
-
-        val nextAddress = "screen_6/123?q=456"
-        window.open("$appAddress#$nextAddress", "_self")!! //like a manual new url loading
-        advanceUntilIdle()
-
-        //compose navigation didn't happen
-=======
         assertThat(window.history.state.toString().lines()).containsExactly("screen_1").inOrder()
         assertThat(window.location.toString()).isEqualTo(appAddress)
 
@@ -303,7 +236,6 @@ class BrowserHistoryTest {
         advanceUntilIdle()
 
         // compose navigation didn't happen
->>>>>>> ac4962e87c9e70f5371ad52b15ed3d97d789d216
         assertThat(window.history.length).isEqualTo(2)
         assertThat(window.history.state).isNull()
         assertThat(window.location.toString()).isEqualTo("$appAddress#$nextAddress")
@@ -312,11 +244,7 @@ class BrowserHistoryTest {
         navController.navigate("screen_3")
         advanceUntilIdle()
 
-<<<<<<< HEAD
-        //and the state was rewritten by the next navigation
-=======
         // and the state was rewritten by the next navigation
->>>>>>> ac4962e87c9e70f5371ad52b15ed3d97d789d216
         assertThat(window.history.length).isEqualTo(2)
         assertThat(window.history.state.toString().lines())
             .containsExactly("screen_1", "screen_3")
@@ -326,13 +254,7 @@ class BrowserHistoryTest {
         browserBack()
 
         assertThat(window.history.length).isEqualTo(2)
-<<<<<<< HEAD
-        assertThat(window.history.state.toString().lines())
-            .containsExactly("screen_1")
-            .inOrder()
-=======
         assertThat(window.history.state.toString().lines()).containsExactly("screen_1").inOrder()
->>>>>>> ac4962e87c9e70f5371ad52b15ed3d97d789d216
         assertThat(window.location.toString()).isEqualTo(appAddress)
 
         browserForward()
@@ -348,18 +270,11 @@ class BrowserHistoryTest {
 
     @Test
     fun checkInitScreenAndDirectNavigation() = runTest {
-<<<<<<< HEAD
         // TODO(https://youtrack.jetbrains.com/issue/CMP-9676) Fix on Firefox
         if (isFirefox) return@runTest
         val initHistoryLength = goToBrowserRoot()
-        val navController = NavHostController().apply {
-            navigatorProvider.addNavigator(TestNavigator())
-        }
-=======
-        val initHistoryLength = goToBrowserRoot()
         val navController =
             NavHostController().apply { navigatorProvider.addNavigator(TestNavigator()) }
->>>>>>> ac4962e87c9e70f5371ad52b15ed3d97d789d216
         navController.setGraph(navController.createGraph(), null)
 
         val appAddress = with(window.location) { origin + pathname }
@@ -378,11 +293,7 @@ class BrowserHistoryTest {
 
         val nextAddress = "screen_6/123?q=4 5 6"
         val nextAddressWithEncoded = "screen_6/123?q=4%205%206"
-<<<<<<< HEAD
-        window.open("$appAddress#$nextAddress", "_self") //like a manual new url loading
-=======
         window.open("$appAddress#$nextAddress", "_self") // like a manual new url loading
->>>>>>> ac4962e87c9e70f5371ad52b15ed3d97d789d216
         advanceUntilIdle()
 
         assertThat(window.history.length).isEqualTo(2)
@@ -391,30 +302,19 @@ class BrowserHistoryTest {
             .inOrder()
         println("window.location.toString(): ${window.location}")
         assertThat(window.location.toString()).isEqualTo("$appAddress#${nextAddressWithEncoded}")
-<<<<<<< HEAD
-        assertThat(navController.currentDestination?.route.orEmpty()).isEqualTo("screen_6/{pathId}?q={queryId}")
-=======
         assertThat(navController.currentDestination?.route.orEmpty())
             .isEqualTo("screen_6/{pathId}?q={queryId}")
->>>>>>> ac4962e87c9e70f5371ad52b15ed3d97d789d216
 
         bind.cancel()
     }
 
     @Test
     fun checkBrowserNavigationWithEncodedParams() = runTest {
-<<<<<<< HEAD
         // TODO(https://youtrack.jetbrains.com/issue/CMP-9676) Fix on Firefox
         if (isFirefox) return@runTest
         val initHistoryLength = goToBrowserRoot()
-        val navController = NavHostController().apply {
-            navigatorProvider.addNavigator(TestNavigator())
-        }
-=======
-        val initHistoryLength = goToBrowserRoot()
         val navController =
             NavHostController().apply { navigatorProvider.addNavigator(TestNavigator()) }
->>>>>>> ac4962e87c9e70f5371ad52b15ed3d97d789d216
         navController.setGraph(navController.createGraph(), null)
 
         val appAddress = with(window.location) { origin + pathname }
@@ -477,17 +377,10 @@ class BrowserHistoryTest {
         window.addEventListener(
             type = "popstate",
             callback = { cont.resume(Unit) },
-<<<<<<< HEAD
-            options = AddEventListenerOptions(passive = false, once = true)
+            options = AddEventListenerOptions(passive = false, once = true),
         )
     }
 
     private val isFirefox: Boolean
         get() = window.navigator.userAgent.contains("Firefox")
 }
-=======
-            options = AddEventListenerOptions(passive = false, once = true),
-        )
-    }
-}
->>>>>>> ac4962e87c9e70f5371ad52b15ed3d97d789d216
