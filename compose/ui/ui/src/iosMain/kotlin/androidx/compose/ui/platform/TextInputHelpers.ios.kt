@@ -52,6 +52,8 @@ internal interface TextEditingDelegate {
 
     val inputTraits: SkikoUITextInputTraits
 
+    fun onFocus()
+
     fun onResignFocus()
 
     fun beginFloatingCursor(offset: DpOffset)
@@ -227,6 +229,8 @@ internal class DetachedTextEditingDelegate(
     override val inputTraits: SkikoUITextInputTraits = EmptyInputTraits,
 ) : NativeTextEditingDelegate {
     override val isInteractive: Boolean = false
+
+    override fun onFocus() = Unit
 
     override fun onResignFocus() = Unit
 
