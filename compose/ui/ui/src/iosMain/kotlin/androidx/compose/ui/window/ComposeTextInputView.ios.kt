@@ -28,7 +28,6 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.uikit.utils.CMPEditMenuView
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.toCGRect
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.DurationUnit
 import kotlinx.cinterop.CValue
@@ -36,7 +35,6 @@ import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
 import platform.CoreGraphics.CGPoint
 import platform.CoreGraphics.CGRect
-import platform.CoreGraphics.CGRectMake
 import platform.CoreGraphics.CGRectNull
 import platform.CoreGraphics.CGRectZero
 import platform.Foundation.NSComparisonResult
@@ -85,9 +83,17 @@ internal class ComposeTextInputView(
     private var _inputDelegate: UITextInputDelegateProtocol? = null
     var input: TextEditingDelegate = initialInput
         set(value) {
-            field = value
-            if (!value.isInteractive) {
-                hideTextMenu()
+            if (field != value) {
+                if (isFirstResponder) {
+                    field.onResignFocus()
+                }
+                field = value
+                if (isFirstResponder) {
+                    value.onFocus()
+                }
+                if (!value.isInteractive) {
+                    hideTextMenu()
+                }
             }
         }
 
@@ -95,6 +101,7 @@ internal class ComposeTextInputView(
 
     override fun becomeFirstResponder(): Boolean =
         if (input.isInteractive) {
+            input.onFocus()
             super.becomeFirstResponder()
         } else {
             false
