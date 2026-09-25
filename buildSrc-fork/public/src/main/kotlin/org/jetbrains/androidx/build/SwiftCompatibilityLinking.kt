@@ -34,11 +34,13 @@ import org.jetbrains.kotlin.konan.target.KonanTarget
  */
 fun Project.configureSwiftCompatibilityLinking() {
     plugins.withId("org.jetbrains.kotlin.multiplatform") {
-        extensions
-            .getByType<KotlinMultiplatformExtension>()
-            .targets
-            .withType<KotlinNativeTarget>()
-            .all { target -> target.configureSwiftCompatibilityLinking() }
+        afterEvaluate {
+            extensions
+                .getByType<KotlinMultiplatformExtension>()
+                .targets
+                .withType<KotlinNativeTarget>()
+                .all { target -> target.configureSwiftCompatibilityLinking() }
+        }
     }
 }
 
