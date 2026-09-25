@@ -1,1 +1,9 @@
 Merge script: conflict
+
+Merge solver: fixed in c3cb6b17fce7a02a0582830440648aac857791bf
+
+Resolved both HitPathTracker conflicts while retaining fork hover tracking.
+Validation: UI compilation passed for Desktop, JS, WasmJS, and Android; 21 desktop hover/pan tests passed.
+Full build remains unresolved: ./gradlew assemble compileTests failed twice on network downloads, then failed in the pre-existing :lint-checks:compileKotlin error (unresolved findPrecedingVersionCheckExitConstraints). Lint sources and fork dependency versions are unchanged from the first parent. Apple target compilation was not validated on this Linux host.
+
+Produced by Air Automations. Name: AOSP Merges / Run: https://air.jetbrains.cloud/org/05cf1a7f-6ab5-713b-abd3-29d0c8a05e2d/automations/aeefe510-9f34-4bbe-b6f6-db539bf3d1bb?run=743148c2-2515-4fb1-b735-feea934b62e2
