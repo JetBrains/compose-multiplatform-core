@@ -62,15 +62,14 @@ internal class BackingDomInput(
     }
 
     fun focus() {
-        if (!inputStrategy.isInputActive()) backingElement.focus()
-
-        // we focus twice to be sure that ios and non-ios browser both manage to focus
+        // we request focus twice to be sure that ios and non-ios browser both manage to focus
         // see https://youtrack.jetbrains.com/issue/CMP-8013
         // and https://youtrack.jetbrains.com/issue/CMP-7836/
-
         // Safari will ignore a focus request if it's called not during user interaction.
-        backingElement.focus()
+
+        if (!inputStrategy.isInputActive()) backingElement.focus()
         window.requestAnimationFrame {
+            // TODO: requesting focus in rAF is rather redundant; need to verify
             // A new focus request will replace the previous one in iOS Safari 27+.
             // A new request made in rAF will have userIsInteracting=false.
             // Such a request will be ignored and the software keyboard won't show up.
