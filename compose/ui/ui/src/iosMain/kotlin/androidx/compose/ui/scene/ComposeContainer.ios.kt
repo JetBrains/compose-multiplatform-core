@@ -296,14 +296,14 @@ internal class ComposeContainer(
                         val radiusPx = with(density) { blurRadius.toPx() }
                         val width = view.bounds.useContents { size.width.toFloat() } * density.density
                         val height = view.bounds.useContents { size.height.toFloat() } * density.density
-                        Paint().use { paint ->
-                            paint.imageFilter = BlurEffect(radiusPx, radiusPx, TileMode.Clamp).skiaImageFilter
-                            canvas.saveLayer(0f, 0f, width, height, paint)
-                            try {
-                                mediator?.draw(canvas.asComposeCanvas())
-                            } finally {
-                                canvas.restore()
-                            }
+                        val paint = Paint().apply {
+                            imageFilter = BlurEffect(radiusPx, radiusPx, TileMode.Clamp).skiaImageFilter
+                        }
+                        canvas.saveLayer(0f, 0f, width, height, paint)
+                        try {
+                            mediator?.draw(canvas.asComposeCanvas())
+                        } finally {
+                            canvas.restore()
                         }
                     } else {
                         mediator?.draw(canvas.asComposeCanvas())
