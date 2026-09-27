@@ -1387,8 +1387,6 @@ internal fun TextFieldSelectionHandle(
     )
 }
 
-// TODO: Upstream https://youtrack.jetbrains.com/issue/CMP-5772
-
 /** Whether the selection handle is in the visible bound of the TextField. */
 internal expect fun TextFieldSelectionManager.isSelectionHandleInVisibleBound(
     isStartHandle: Boolean
