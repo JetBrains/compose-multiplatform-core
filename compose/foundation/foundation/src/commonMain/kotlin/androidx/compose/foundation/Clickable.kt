@@ -298,6 +298,9 @@ public fun Modifier.clickable(
  * other overload and explicitly passing `LocalIndication.current` for improved performance. For
  * more information see the documentation on the other overload.
  *
+ * Note, if the modifier instance gets re-used between a key down and key up events, the ongoing
+ * input will be aborted.
+ *
  * ***Note*** Any removal operations on Android Views from `clickable` should wrap `onClick` in a
  * `post { }` block to guarantee the event dispatch completes before executing the removal. (You do
  * not need to do this when removing a composable because Compose guarantees it completes via the
@@ -614,10 +617,7 @@ internal inline fun Modifier.clickableWithIndicationIfNeeded(
     return this.then(
         when {
             // Fast path - indication is managed internally
-            indication is IndicationNodeFactory -> createClickable(
-                interactionSource,
-                indication
-            )
+            indication is IndicationNodeFactory -> createClickable(interactionSource, indication)
             // Fast path - no need for indication
             indication == null -> createClickable(interactionSource, null)
             // Non-null Indication (not IndicationNodeFactory) with a non-null InteractionSource
@@ -658,14 +658,14 @@ internal expect fun DelegatableNode.isComposeRootInScrollableContainer(): Boolea
  * Whether the specified [KeyEvent] should trigger a press for a clickable component, i.e. whether
  * it is associated with a press of an enter key or dpad centre.
  */
-internal val KeyEvent.isPress: Boolean
+private val KeyEvent.isPress: Boolean
     get() = type == KeyDown && isEnter
 
 /**
  * Whether the specified [KeyEvent] should trigger a click for a clickable component, i.e. whether
  * it is associated with a release of an enter key or dpad centre.
  */
-internal val KeyEvent.isClick: Boolean
+private val KeyEvent.isClick: Boolean
     get() = type == KeyUp && isEnter
 
 private val KeyEvent.isEnter: Boolean
@@ -2197,10 +2197,6 @@ private fun unsupportedIndicationExceptionMessage(indication: Indication): Strin
 private fun IndirectPointerInputChange.changedToUp() = !isConsumed && previousPressed && !pressed
 
 private fun IndirectPointerInputChange.changedToUpIgnoreConsumed() = previousPressed && !pressed
-
-private fun IndirectPointerInputChange.changedToDownIgnoreConsumed() = !previousPressed && pressed
-
-private fun IndirectPointerInputChange.isMovingIgnoreConsumed() = previousPressed && pressed
 
 private fun FocusRequesterModifierNode.requestFocusWhenInMouseInputMode() {
     if (isRequestFocusOnClickEnabled()) {
