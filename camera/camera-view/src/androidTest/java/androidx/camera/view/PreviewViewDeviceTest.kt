@@ -31,7 +31,6 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.widget.FrameLayout
 import androidx.annotation.GuardedBy
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
@@ -46,11 +45,10 @@ import androidx.camera.core.impl.utils.futures.Futures
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.fakes.FakeCamera
 import androidx.camera.testing.fakes.FakeCameraInfoInternal
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
-import androidx.camera.testing.impl.CoreAppTestUtil
 import androidx.camera.testing.impl.ParameterizedTestConfigUtil
+import androidx.camera.testing.impl.RequireForegroundRule
 import androidx.camera.testing.impl.fakes.FakeActivity
 import androidx.camera.view.PreviewView.ImplementationMode
 import androidx.camera.view.internal.compat.quirk.DeviceQuirks
@@ -61,7 +59,6 @@ import androidx.core.content.ContextCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiSelector
@@ -73,23 +70,19 @@ import java.util.concurrent.Executor
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-import org.junit.After
 import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import org.mockito.Mockito
 
 /** Instrumented tests for [PreviewView]. */
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class PreviewViewDeviceTest(private val implName: String, private val cameraConfig: CameraXConfig) {
-    @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
+
+    @get:Rule val requireForegroundRule = RequireForegroundRule()
 
     @get:Rule
     val useCamera =
@@ -105,22 +98,22 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
 
     @Before
     fun setUp() {
-        CoreAppTestUtil.prepareDeviceUI(instrumentation)
-        activityScenario = ActivityScenario.launch(FakeActivity::class.java)
         ProcessCameraProvider.configureInstance(cameraConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
-    }
 
-    @After
-    fun tearDown() {
-        for (surfaceRequest in surfaceRequestList) {
-            surfaceRequest.willNotProvideSurface()
-            // Ensure all successful requests have their returned future finish.
-            surfaceRequest.deferrableSurface.close()
+        requireForegroundRule.deferCleanup {
+            for (surfaceRequest in surfaceRequestList) {
+                surfaceRequest.willNotProvideSurface()
+                // Ensure all successful requests have their returned future finish.
+                surfaceRequest.deferrableSurface.close()
+            }
+            activityScenario?.close()
+            if (cameraProvider != null) {
+                cameraProvider!!.shutdownAsync()[10000, TimeUnit.MILLISECONDS]
+            }
         }
-        if (cameraProvider != null) {
-            cameraProvider!!.shutdownAsync()[10000, TimeUnit.MILLISECONDS]
-        }
+
+        activityScenario = ActivityScenario.launch(FakeActivity::class.java)
     }
 
     @Test
@@ -219,6 +212,7 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
         // Arrange.
         val countDownLatch = CountDownLatch(1)
         val semaphore = Semaphore(0)
+        var previewViewHashCode = ""
         val fakeController: CameraController =
             object : CameraController(context) {
                 public override fun onPinchToZoom(pinchToZoomScale: Float) {
@@ -233,6 +227,8 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
             fakeController.cameraSelector = cameraSelector
 
             val previewView = PreviewView(context)
+            previewViewHashCode = previewView.hashCode().toString()
+            previewView.contentDescription = previewViewHashCode
             previewView.controller = fakeController
             previewView.implementationMode = ImplementationMode.COMPATIBLE
             notifyLatchWhenLayoutReady(previewView, countDownLatch)
@@ -240,9 +236,10 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
         }
         // Wait for layout ready
         Truth.assertThat(countDownLatch.await(TIMEOUT_SECONDS.toLong(), TimeUnit.SECONDS)).isTrue()
+        uiDevice.waitForIdle()
 
         // Act: pinch-in 80% in 100 steps.
-        uiDevice.findObject(UiSelector().index(0)).pinchIn(80, 100)
+        uiDevice.findObject(UiSelector().descriptionContains(previewViewHashCode)).pinchIn(80, 100)
 
         // Assert: pinch-to-zoom is called.
         Truth.assertThat(semaphore.tryAcquire(TIMEOUT_SECONDS.toLong(), TimeUnit.SECONDS)).isTrue()
@@ -282,6 +279,7 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
         }
         // Wait for layout ready
         Truth.assertThat(countDownLatch.await(TIMEOUT_SECONDS.toLong(), TimeUnit.SECONDS)).isTrue()
+        uiDevice.waitForIdle()
 
         // Act: click on PreviewView
         clickEventHelper!!.performSingleClick(uiDevice, 3)
@@ -375,38 +373,41 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
         // Arrange.
         val semaphore = Semaphore(0)
         val countDownLatch = CountDownLatch(1)
+        var previewViewHashCode = ""
         instrumentation.runOnMainSync {
             val previewView = PreviewView(context)
+            previewViewHashCode = previewView.hashCode().toString()
+            previewView.contentDescription = previewViewHashCode
             previewView.setOnClickListener { semaphore.release() }
             notifyLatchWhenLayoutReady(previewView, countDownLatch)
             setContentView(previewView)
         }
         // Wait for layout ready
         Truth.assertThat(countDownLatch.await(TIMEOUT_SECONDS.toLong(), TimeUnit.SECONDS)).isTrue()
+        uiDevice.waitForIdle()
 
         // Act: click on PreviewView.
-        uiDevice.findObject(UiSelector().index(0)).click()
+        uiDevice.findObject(UiSelector().descriptionContains(previewViewHashCode)).click()
 
         // Assert: view is clicked.
         Truth.assertThat(semaphore.tryAcquire(TIMEOUT_SECONDS.toLong(), TimeUnit.SECONDS)).isTrue()
     }
 
     @Test
-    fun clearCameraController_controllerIsNull() =
-        instrumentation.runOnMainSync {
-            // Arrange.
-            val previewView = PreviewView(context)
-            setContentView(previewView)
-            val cameraController: CameraController = LifecycleCameraController(context)
-            previewView.controller = cameraController
-            Truth.assertThat(previewView.controller).isEqualTo(cameraController)
+    fun clearCameraController_controllerIsNull() = instrumentation.runOnMainSync {
+        // Arrange.
+        val previewView = PreviewView(context)
+        setContentView(previewView)
+        val cameraController: CameraController = LifecycleCameraController(context)
+        previewView.controller = cameraController
+        Truth.assertThat(previewView.controller).isEqualTo(cameraController)
 
-            // Act and Assert.
-            previewView.controller = null
+        // Act and Assert.
+        previewView.controller = null
 
-            // Assert
-            Truth.assertThat(previewView.controller).isNull()
-        }
+        // Assert
+        Truth.assertThat(previewView.controller).isNull()
+    }
 
     @Test
     fun setNewCameraController_oldControllerIsCleared() {
@@ -833,11 +834,11 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
     fun redrawsPreview_whenScaleTypeChanges() {
         instrumentation.runOnMainSync {
             val previewView = PreviewView(context)
-            val implementation: PreviewViewImplementation =
-                Mockito.mock(TestPreviewViewImplementation::class.java)
+            val implementation =
+                TestPreviewViewImplementation(previewView, previewView.mPreviewTransform)
             previewView.mImplementation = implementation
             previewView.scaleType = PreviewView.ScaleType.FILL_START
-            Mockito.verify(implementation, Mockito.times(1)).redrawPreview()
+            Truth.assertThat(implementation.redrawPreviewCount).isAtLeast(1)
         }
     }
 
@@ -845,11 +846,16 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
     fun redrawsPreview_whenLayoutResized() {
         val previewView = AtomicReference<PreviewView>()
         val container = AtomicReference<FrameLayout>()
-        val implementation: PreviewViewImplementation =
-            Mockito.mock(TestPreviewViewImplementation::class.java)
+        val implementation = AtomicReference<TestPreviewViewImplementation>()
         activityScenario!!.onActivity {
             previewView.set(PreviewView(context))
-            previewView.get().mImplementation = implementation
+            implementation.set(
+                TestPreviewViewImplementation(
+                    previewView.get(),
+                    previewView.get().mPreviewTransform,
+                )
+            )
+            previewView.get().mImplementation = implementation.get()
             container.set(FrameLayout(context))
             container.get().addView(previewView.get())
             setContentView(container.get())
@@ -859,18 +865,25 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
             params.width = params.width / 2
             container.get().requestLayout()
         }
-        Mockito.verify(implementation, Mockito.timeout(1000).times(1)).redrawPreview()
+        Truth.assertThat(implementation.get().redrawPreviewLatch.await(1000, TimeUnit.MILLISECONDS))
+            .isTrue()
+        Truth.assertThat(implementation.get().redrawPreviewCount).isAtLeast(1)
     }
 
     @Test
     fun doesNotRedrawPreview_whenDetachedFromWindow() {
         val previewView = AtomicReference<PreviewView>()
         val container = AtomicReference<FrameLayout>()
-        val implementation: PreviewViewImplementation =
-            Mockito.mock(TestPreviewViewImplementation::class.java)
+        val implementation = AtomicReference<TestPreviewViewImplementation>()
         activityScenario!!.onActivity {
             previewView.set(PreviewView(context))
-            previewView.get().mImplementation = implementation
+            implementation.set(
+                TestPreviewViewImplementation(
+                    previewView.get(),
+                    previewView.get().mPreviewTransform,
+                )
+            )
+            previewView.get().mImplementation = implementation.get()
             container.set(FrameLayout(context))
             container.get().addView(previewView.get())
             setContentView(container.get())
@@ -881,25 +894,32 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
             params.width = params.width / 2
             container.get().requestLayout()
         }
-        Mockito.verify(implementation, Mockito.never()).redrawPreview()
+        Truth.assertThat(implementation.get().redrawPreviewCount).isEqualTo(0)
     }
 
     @Test
     fun redrawsPreview_whenReattachedToWindow() {
         val previewView = AtomicReference<PreviewView>()
         val container = AtomicReference<FrameLayout>()
-        val implementation: PreviewViewImplementation =
-            Mockito.mock(TestPreviewViewImplementation::class.java)
+        val implementation = AtomicReference<TestPreviewViewImplementation>()
         activityScenario!!.onActivity {
             previewView.set(PreviewView(context))
-            previewView.get().mImplementation = implementation
+            implementation.set(
+                TestPreviewViewImplementation(
+                    previewView.get(),
+                    previewView.get().mPreviewTransform,
+                )
+            )
+            previewView.get().mImplementation = implementation.get()
             container.set(FrameLayout(context))
             container.get().addView(previewView.get())
             setContentView(container.get())
             container.get().removeView(previewView.get())
             container.get().addView(previewView.get())
         }
-        Mockito.verify(implementation, Mockito.timeout(1000).times(1)).redrawPreview()
+        Truth.assertThat(implementation.get().redrawPreviewLatch.await(1000, TimeUnit.MILLISECONDS))
+            .isTrue()
+        Truth.assertThat(implementation.get().redrawPreviewCount).isAtLeast(1)
     }
 
     @Test
@@ -996,7 +1016,23 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
     }
 
     private fun setContentView(view: View?) {
-        activityScenario!!.onActivity { activity: FakeActivity -> activity.setContentView(view) }
+        activityScenario!!.onActivity { activity: FakeActivity ->
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                activity.setShowWhenLocked(true)
+                activity.setTurnScreenOn(true)
+                activity.window.addFlags(
+                    android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                activity.window.addFlags(
+                    android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                        android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+                        android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                )
+            }
+            activity.setContentView(view)
+        }
     }
 
     private fun createSurfaceRequest(cameraInfo: CameraInfoInternal): SurfaceRequest {
@@ -1047,9 +1083,13 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
      * An empty implementation of [PreviewViewImplementation] used for testing. It allows mocking
      * [PreviewViewImplementation] since the latter is package private.
      */
-    internal open class TestPreviewViewImplementation
-    constructor(parent: FrameLayout, previewTransform: PreviewTransformation) :
-        PreviewViewImplementation(parent, previewTransform) {
+    private class TestPreviewViewImplementation(
+        parent: FrameLayout,
+        previewTransform: PreviewTransformation,
+    ) : PreviewViewImplementation(parent, previewTransform) {
+        val redrawPreviewLatch = CountDownLatch(1)
+        var redrawPreviewCount = 0
+
         override fun initializePreview() {}
 
         override fun getPreview(): View? {
@@ -1061,17 +1101,20 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
             onSurfaceNotInUseListener: OnSurfaceNotInUseListener?,
         ) {}
 
-        public override fun redrawPreview() {}
+        override fun redrawPreview() {
+            redrawPreviewCount++
+            redrawPreviewLatch.countDown()
+        }
 
-        public override fun onAttachedToWindow() {}
+        override fun onAttachedToWindow() {}
 
-        public override fun onDetachedFromWindow() {}
+        override fun onDetachedFromWindow() {}
 
-        public override fun waitForNextFrame(): ListenableFuture<Void> {
+        override fun waitForNextFrame(): ListenableFuture<Void> {
             return Futures.immediateFuture(null)
         }
 
-        public override fun getPreviewBitmap(): Bitmap? {
+        override fun getPreviewBitmap(): Bitmap? {
             return null
         }
     }

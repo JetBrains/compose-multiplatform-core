@@ -24,14 +24,15 @@ import androidx.compose.ui.input.key.KeyEventType.Companion.KeyUp
 import androidx.compose.ui.input.key.KeyEventType.Companion.Unknown
 
 /** The native Android [KeyEvent][NativeKeyEvent]. */
-actual typealias NativeKeyEvent = android.view.KeyEvent
+@Suppress("TypealiasDefinition")
+public actual typealias NativeKeyEvent = android.view.KeyEvent
 
 /**
  * The key that was pressed.
  *
  * @sample androidx.compose.ui.samples.KeyEventIsAltPressedSample
  */
-actual val KeyEvent.key: Key
+public actual val KeyEvent.key: Key
     get() = Key(nativeKeyEvent.keyCode)
 
 /**
@@ -54,7 +55,7 @@ actual val KeyEvent.key: Key
  * should be combined with another to actually produce a character -- see
  * [KeyCharacterMap.getDeadChar] -- after masking with [KeyCharacterMap.COMBINING_ACCENT_MASK].
  */
-actual val KeyEvent.utf16CodePoint: Int
+public actual val KeyEvent.utf16CodePoint: Int
     get() = nativeKeyEvent.unicodeChar
 
 /**
@@ -62,7 +63,7 @@ actual val KeyEvent.utf16CodePoint: Int
  *
  * @sample androidx.compose.ui.samples.KeyEventTypeSample
  */
-actual val KeyEvent.type: KeyEventType
+public actual val KeyEvent.type: KeyEventType
     get() =
         when (nativeKeyEvent.action) {
             ACTION_DOWN -> KeyDown
@@ -75,7 +76,7 @@ actual val KeyEvent.type: KeyEventType
  *
  * @sample androidx.compose.ui.samples.KeyEventIsAltPressedSample
  */
-actual val KeyEvent.isAltPressed: Boolean
+public actual val KeyEvent.isAltPressed: Boolean
     get() = nativeKeyEvent.isAltPressed
 
 /**
@@ -83,7 +84,7 @@ actual val KeyEvent.isAltPressed: Boolean
  *
  * @sample androidx.compose.ui.samples.KeyEventIsCtrlPressedSample
  */
-actual val KeyEvent.isCtrlPressed: Boolean
+public actual val KeyEvent.isCtrlPressed: Boolean
     get() = nativeKeyEvent.isCtrlPressed
 
 /**
@@ -91,7 +92,7 @@ actual val KeyEvent.isCtrlPressed: Boolean
  *
  * @sample androidx.compose.ui.samples.KeyEventIsMetaPressedSample
  */
-actual val KeyEvent.isMetaPressed: Boolean
+public actual val KeyEvent.isMetaPressed: Boolean
     get() = nativeKeyEvent.isMetaPressed
 
 /**
@@ -99,5 +100,5 @@ actual val KeyEvent.isMetaPressed: Boolean
  *
  * @sample androidx.compose.ui.samples.KeyEventIsShiftPressedSample
  */
-actual val KeyEvent.isShiftPressed: Boolean
+public actual val KeyEvent.isShiftPressed: Boolean
     get() = nativeKeyEvent.isShiftPressed

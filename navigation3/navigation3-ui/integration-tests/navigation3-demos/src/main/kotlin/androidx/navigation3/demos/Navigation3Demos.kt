@@ -18,8 +18,17 @@ package androidx.navigation3.demos
 
 import androidx.compose.integration.demos.common.ComposableDemo
 import androidx.compose.integration.demos.common.DemoCategory
+import androidx.navigation3.ui.samples.AnimatedBottomSheetSample
+import androidx.navigation3.ui.samples.ConcatenatedBackStackSample
+import androidx.navigation3.ui.samples.DeepLinkSerializerSample
+import androidx.navigation3.ui.samples.DialogSample
+import androidx.navigation3.ui.samples.ListTypeDeepLinkSerializerSample
+import androidx.navigation3.ui.samples.MultipleBackStackSample
+import androidx.navigation3.ui.samples.NonPrimitiveArgFlattenedSample
+import androidx.navigation3.ui.samples.SceneDefaultTransitionsSample
 import androidx.navigation3.ui.samples.SceneNav
 import androidx.navigation3.ui.samples.SceneNavSharedElementSample
+import androidx.navigation3.ui.samples.SceneOverrideEntryTransitionsSample
 
 val Navigation3Demos =
     DemoCategory(
@@ -27,5 +36,29 @@ val Navigation3Demos =
         listOf(
             ComposableDemo("Basic Nav3") { SceneNav() },
             ComposableDemo("Nav3 Shared Element Demo") { SceneNavSharedElementSample() },
+            ComposableDemo("Hierarchical Scene Strategy Demo") { HierarchicalSceneSample() },
+            ComposableDemo("Nav3 with Multiple BackStack") { MultipleBackStackSample() },
+            ComposableDemo("Nav3 with Concatenated BackStack") { ConcatenatedBackStackSample() },
+            ComposableDemo("Scene default Transitions") { SceneDefaultTransitionsSample() },
+            ComposableDemo("Scene override Entry Transitions") {
+                SceneOverrideEntryTransitionsSample()
+            },
+            ComposableDemo("Bottom Sheet Exit Animation") { AnimatedBottomSheetSample() },
+            ComposableDemo("Dialog Demo") { DialogSample() },
+            DemoCategory(
+                title = "Deep Link Demos",
+                demos =
+                    listOf(
+                        ComposableDemo("Non-Primitive Arg Flattened Arg Values") {
+                            NonPrimitiveArgFlattenedSample()
+                        },
+                        ComposableDemo("Non-Primitive Arg with DeepLinkSerializer") {
+                            DeepLinkSerializerSample()
+                        },
+                        ComposableDemo("List of Non-Primitive Args with DeepLinkSerializer") {
+                            ListTypeDeepLinkSerializerSample()
+                        },
+                    ),
+            ),
         ),
     )

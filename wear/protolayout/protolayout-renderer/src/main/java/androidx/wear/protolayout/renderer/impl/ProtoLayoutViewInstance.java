@@ -28,6 +28,7 @@ import static androidx.wear.protolayout.renderer.common.ProviderStatsLogger.INFL
 import static com.google.common.util.concurrent.Futures.immediateCancelledFuture;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.res.Resources;
 import android.util.Log;
@@ -51,6 +52,7 @@ import androidx.wear.protolayout.expression.pipeline.FixedQuotaManagerImpl;
 import androidx.wear.protolayout.expression.pipeline.PlatformDataProvider;
 import androidx.wear.protolayout.expression.pipeline.QuotaManager;
 import androidx.wear.protolayout.expression.pipeline.StateStore;
+import androidx.wear.protolayout.proto.ActionProto.PendingIntentAction;
 import androidx.wear.protolayout.proto.LayoutElementProto.ArcLayoutElement;
 import androidx.wear.protolayout.proto.LayoutElementProto.ArcLayoutElement.InnerCase;
 import androidx.wear.protolayout.proto.LayoutElementProto.Layout;
@@ -62,7 +64,6 @@ import androidx.wear.protolayout.renderer.ProtoLayoutTheme;
 import androidx.wear.protolayout.renderer.ProtoLayoutVisibilityState;
 import androidx.wear.protolayout.renderer.common.LoggingUtils;
 import androidx.wear.protolayout.renderer.common.NoOpProviderStatsLogger;
-import androidx.wear.protolayout.renderer.common.ProtoLayoutDiffer;
 import androidx.wear.protolayout.renderer.common.ProviderStatsLogger;
 import androidx.wear.protolayout.renderer.common.ProviderStatsLogger.InflaterStatsLogger;
 import androidx.wear.protolayout.renderer.common.RenderingArtifact;
@@ -127,6 +128,21 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
         void onClick(@NonNull State nextState);
     }
 
+    /**
+     * Listener for clicks on Clickable objects that have an action to perform the operation
+     * associated with a {@link PendingIntent}.
+     */
+    public interface PendingIntentActionListener {
+
+        /**
+         * Called when a Clickable that has a {@link PendingIntentAction} is clicked.
+         *
+         * @param source the {@link View} that received the click.
+         * @param id the id for retrieving the associated {@link PendingIntent}.
+         */
+        void onClick(@NonNull View source, @NonNull String id);
+    }
+
     private static final int DEFAULT_MAX_CONCURRENT_RUNNING_ANIMATIONS = 4;
     static final int MAX_LAYOUT_ELEMENT_DEPTH = 30;
     private static final @NonNull String TAG = "ProtoLayoutViewInstance";
@@ -137,6 +153,7 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
     private final @NonNull ProtoLayoutTheme mProtoLayoutTheme;
     private final @Nullable ProtoLayoutDynamicDataPipeline mDataPipeline;
     private final @NonNull LoadActionListener mLoadActionListener;
+    private final @NonNull PendingIntentActionListener mPendingIntentActionListener;
     private final @NonNull ListeningExecutorService mUiExecutorService;
     private final @NonNull ListeningExecutorService mBgExecutorService;
     private final @NonNull String mClickableIdExtra;
@@ -173,12 +190,6 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
      * For interactive layouts, the diffing should already handle this.
      */
     private @Nullable Layout mPrevLayout = null;
-
-    /**
-     * This field is used to avoid unnecessarily checking layout depth if the layout was previously
-     * failing the check.
-     */
-    private boolean mPrevLayoutAlreadyFailingDepthCheck = false;
 
     /**
      * This is used to make sure resource version changes invalidate the layout. Otherwise, this
@@ -366,6 +377,7 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
 
         private final @Nullable StateStore mStateStore;
         private final @NonNull LoadActionListener mLoadActionListener;
+        private final @NonNull PendingIntentActionListener mPendingIntentActionListener;
         private final @NonNull ListeningExecutorService mUiExecutorService;
         private final @NonNull ListeningExecutorService mBgExecutorService;
         private final @Nullable ProtoLayoutExtensionViewProvider mExtensionViewProvider;
@@ -387,6 +399,7 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
                 @NonNull Map<PlatformDataProvider, Set<PlatformDataKey<?>>> platformDataProviders,
                 @Nullable StateStore stateStore,
                 @NonNull LoadActionListener loadActionListener,
+                @NonNull PendingIntentActionListener pendingIntentActionListener,
                 @NonNull ListeningExecutorService uiExecutorService,
                 @NonNull ListeningExecutorService bgExecutorService,
                 @Nullable ProtoLayoutExtensionViewProvider extensionViewProvider,
@@ -404,6 +417,7 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
             this.mPlatformDataProviders = platformDataProviders;
             this.mStateStore = stateStore;
             this.mLoadActionListener = loadActionListener;
+            this.mPendingIntentActionListener = pendingIntentActionListener;
             this.mUiExecutorService = uiExecutorService;
             this.mBgExecutorService = bgExecutorService;
             this.mExtensionViewProvider = extensionViewProvider;
@@ -453,6 +467,11 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
         /** Returns listener for load actions. */
         public @NonNull LoadActionListener getLoadActionListener() {
             return mLoadActionListener;
+        }
+
+        /** Returns listener for pending intent actions. */
+        public @NonNull PendingIntentActionListener getPendingIntentActionListener() {
+            return mPendingIntentActionListener;
         }
 
         /** Returns ExecutorService for UI tasks. */
@@ -524,6 +543,7 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
 
             private @Nullable StateStore mStateStore;
             private @Nullable LoadActionListener mLoadActionListener;
+            private @Nullable PendingIntentActionListener mPendingIntentActionListener;
             private final @NonNull ListeningExecutorService mUiExecutorService;
             private final @NonNull ListeningExecutorService mBgExecutorService;
             private @Nullable ProtoLayoutExtensionViewProvider mExtensionViewProvider;
@@ -610,6 +630,13 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
                 return this;
             }
 
+            /** Sets the listener for clicks that will cause to launch a {@link PendingIntent}. */
+            public @NonNull Builder setPendingIntentActionListener(
+                    @Nullable PendingIntentActionListener pendingIntentActionListener) {
+                this.mPendingIntentActionListener = pendingIntentActionListener;
+                return this;
+            }
+
             /** Sets provider for the renderer extension. */
             @RestrictTo(Scope.LIBRARY)
             public @NonNull Builder setExtensionViewProvider(
@@ -671,6 +698,20 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
                 if (loadActionListener == null) {
                     loadActionListener = p -> {};
                 }
+                PendingIntentActionListener pendingIntentActionListener =
+                        mPendingIntentActionListener;
+                if (pendingIntentActionListener == null) {
+                    pendingIntentActionListener =
+                            (source, key) -> {
+                                Log.d(
+                                        TAG,
+                                        "ClickableId "
+                                                + key
+                                                + "is clicked for perform action of a"
+                                                + " PendingIntent, but no action will be taken due"
+                                                + " to no callback is provided.");
+                            };
+                }
                 if (mProtoLayoutTheme == null) {
                     mProtoLayoutTheme = ProtoLayoutThemeImpl.defaultTheme(mUiContext);
                 }
@@ -701,6 +742,7 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
                         mPlatformDataProviders,
                         mStateStore,
                         loadActionListener,
+                        pendingIntentActionListener,
                         mUiExecutorService,
                         mBgExecutorService,
                         mExtensionViewProvider,
@@ -721,6 +763,7 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
         this.mResourceResolversProvider = config.getResourceResolversProvider();
         this.mProtoLayoutTheme = config.getProtoLayoutTheme();
         this.mLoadActionListener = config.getLoadActionListener();
+        this.mPendingIntentActionListener = config.getPendingIntentActionListener();
         this.mUiExecutorService = config.getUiExecutorService();
         this.mBgExecutorService = config.getBgExecutorService();
         this.mExtensionViewProvider = config.getExtensionViewProvider();
@@ -790,25 +833,13 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
             return new FailedRenderResult();
         }
 
-        boolean sameFingerprint =
-                prevRenderedMetadata != null
-                        && ProtoLayoutDiffer.areSameFingerprints(
-                                prevRenderedMetadata.getTreeFingerprint(), layout.getFingerprint());
-
-        if (sameFingerprint) {
-            if (mPrevLayoutAlreadyFailingDepthCheck) {
-                handleLayoutDepthCheckFailure(inflaterStatsLogger);
-            }
-        } else {
-            checkLayoutDepth(layout.getRoot(), MAX_LAYOUT_ELEMENT_DEPTH, inflaterStatsLogger);
-        }
-
-        mPrevLayoutAlreadyFailingDepthCheck = false;
+        checkLayoutDepth(layout.getRoot(), MAX_LAYOUT_ELEMENT_DEPTH, inflaterStatsLogger);
 
         ProtoLayoutInflater.Config.Builder inflaterConfigBuilder =
                 new ProtoLayoutInflater.Config.Builder(mUiContext, layout, resolvers)
                         .setLoadActionExecutor(mUiExecutorService)
                         .setLoadActionListener(mLoadActionListener::onClick)
+                        .setPendingIntentActionListener(mPendingIntentActionListener::onClick)
                         .setRendererResources(mRendererResources)
                         .setProtoLayoutTheme(mProtoLayoutTheme)
                         .setAnimationEnabled(mAnimationEnabled)
@@ -1115,8 +1146,8 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
     }
 
     /**
-     * Notifies that the current layout is invalid and needs to be reinflated.
-     * This will clear any cached layout information and trigger a cache invalidation for resources.
+     * Notifies that the current layout is invalid and needs to be reinflated. This will clear any
+     * cached layout information and trigger a cache invalidation for resources.
      */
     public void invalidateLayout() {
         mPrevLayout = null;
@@ -1238,8 +1269,9 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
 
     /**
      * Detach this layout from a parent container. Note that it is safe to call this method while
-     * the layout is inflating; see the notes on {@link ProtoLayoutViewInstance#renderAndAttach} for
-     * more information.
+     * the layout is inflating; see the notes on {@link
+     * ProtoLayoutViewInstance#renderAndAttach(Layout, ResourceProto.Resources, ViewGroup)} for more
+     * information.
      */
     @UiThread
     public void detach(@NonNull ViewGroup parent) {
@@ -1318,6 +1350,15 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
         }
     }
 
+    /** Sets the state of interactive vs ambient display update. */
+    @RestrictTo(Scope.LIBRARY)
+    @UiThread
+    public void setAmbientModeStatus(boolean isInAmbientMode) {
+        if (mDataPipeline != null) {
+            mDataPipeline.setAmbientModeStatus(isInAmbientMode);
+        }
+    }
+
     /** Returns true if the layout element depth doesn't exceed the given {@code allowedDepth}. */
     private void checkLayoutDepth(
             LayoutElement layoutElement,
@@ -1366,7 +1407,6 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
 
     private void handleLayoutDepthCheckFailure(InflaterStatsLogger inflaterStatsLogger) {
         inflaterStatsLogger.logInflationFailed(INFLATION_FAILURE_REASON_LAYOUT_DEPTH_EXCEEDED);
-        mPrevLayoutAlreadyFailingDepthCheck = true;
         throw new IllegalStateException(
                 "Layout depth exceeds maximum allowed depth: " + MAX_LAYOUT_ELEMENT_DEPTH);
     }

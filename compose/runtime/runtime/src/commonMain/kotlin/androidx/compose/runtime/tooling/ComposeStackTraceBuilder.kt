@@ -16,13 +16,15 @@
 package androidx.compose.runtime.tooling
 
 import androidx.compose.runtime.Anchor
-import androidx.compose.runtime.ComposerImpl.CompositionContextHolder
+import androidx.compose.runtime.Composer
 import androidx.compose.runtime.CompositionContext
-import androidx.compose.runtime.GroupSourceInformation
+import androidx.compose.runtime.GapComposer.CompositionContextHolder
 import androidx.compose.runtime.RememberObserverHolder
-import androidx.compose.runtime.SlotReader
-import androidx.compose.runtime.SlotTable
-import androidx.compose.runtime.SlotWriter
+import androidx.compose.runtime.composer.GroupSourceInformation
+import androidx.compose.runtime.composer.gapbuffer.SlotReader
+import androidx.compose.runtime.composer.gapbuffer.SlotTable
+import androidx.compose.runtime.composer.gapbuffer.SlotWriter
+import androidx.compose.runtime.composer.gapbuffer.asGapAnchor
 import androidx.compose.runtime.defaultsKey
 import androidx.compose.runtime.reference
 import androidx.compose.runtime.referenceKey
@@ -30,16 +32,18 @@ import androidx.compose.runtime.snapshots.fastForEach
 
 internal class WriterTraceBuilder(private val writer: SlotWriter) : ComposeStackTraceBuilder() {
     override fun sourceInformationOf(anchor: Anchor): GroupSourceInformation? =
-        writer.sourceInformationOf(writer.anchorIndex(anchor))
+        writer.sourceInformationOf(writer.anchorIndex(anchor.asGapAnchor()))
 
-    override fun groupKeyOf(anchor: Anchor): Int = writer.groupKey(writer.anchorIndex(anchor))
+    override fun groupKeyOf(anchor: Anchor): Int =
+        writer.groupKey(writer.anchorIndex(anchor.asGapAnchor()))
 }
 
 internal class ReaderTraceBuilder(private val reader: SlotReader) : ComposeStackTraceBuilder() {
     override fun sourceInformationOf(anchor: Anchor): GroupSourceInformation? =
-        reader.table.sourceInformationOf(reader.table.anchorIndex(anchor))
+        reader.table.sourceInformationOf(reader.table.anchorIndex(anchor.asGapAnchor()))
 
-    override fun groupKeyOf(anchor: Anchor): Int = reader.groupKey(reader.table.anchorIndex(anchor))
+    override fun groupKeyOf(anchor: Anchor): Int =
+        reader.groupKey(reader.table.anchorIndex(anchor.asGapAnchor()))
 }
 
 internal abstract class ComposeStackTraceBuilder {
@@ -47,8 +51,12 @@ internal abstract class ComposeStackTraceBuilder {
 
     fun trace(): List<ComposeStackTraceFrame> = _trace
 
-    private fun appendTraceFrame(groupSourceInformation: GroupSourceInformation, child: Any?) {
-        val frame = extractTraceFrame(groupSourceInformation, child)
+    private fun appendTraceFrame(
+        groupKey: Int,
+        groupSourceInformation: GroupSourceInformation?,
+        child: Any?,
+    ) {
+        val frame = extractTraceFrame(groupKey, groupSourceInformation, child)
         if (frame != null) {
             _trace += frame
         }
@@ -56,14 +64,15 @@ internal abstract class ComposeStackTraceBuilder {
 
     @OptIn(ComposeToolingApi::class)
     private fun extractTraceFrame(
-        groupSourceInformation: GroupSourceInformation,
+        groupKey: Int,
+        groupSourceInformation: GroupSourceInformation?,
         targetChild: Any?,
     ): ComposeStackTraceFrame? {
-        val parsed = groupSourceInformation.sourceInformation?.let { parseSourceInformation(it) }
+        val parsed = groupSourceInformation?.sourceInformation?.let { parseSourceInformation(it) }
         if (parsed != null) {
             if (targetChild == null) {
                 // no child specified
-                return ComposeStackTraceFrame(parsed, null)
+                return ComposeStackTraceFrame(groupKey, parsed, null)
             }
             // calculate the call offset by checking source information of the children
             var callCount = 0
@@ -100,9 +109,9 @@ internal abstract class ComposeStackTraceBuilder {
                     }
                 }
             }
-            return ComposeStackTraceFrame(parsed, callCount)
+            return ComposeStackTraceFrame(groupKey, parsed, callCount)
         }
-        return null
+        return ComposeStackTraceFrame(groupKey, null, null)
     }
 
     private fun sourceInformationOf(group: Any) =
@@ -116,24 +125,32 @@ internal abstract class ComposeStackTraceBuilder {
         sourceInformation?.startsWith("C") == true
 
     fun processEdge(
+        groupKey: Int,
+        objectKey: Any?,
         sourceInformation: GroupSourceInformation?,
         childData: Any?, // (Anchor | Int | null)
     ) {
-        if (sourceInformation != null) {
-            if (childData == null) {
-                appendTraceFrame(sourceInformation, null)
-            } else {
-                val found = findInGroupSourceInformation(sourceInformation, childData)
+        when {
+            sourceInformation == null && objectKey != Composer.Empty -> {
+                // Ignore movable groups without source info
+                return
+            }
+            childData == null || sourceInformation == null -> {
+                appendTraceFrame(groupKey, sourceInformation, null)
+            }
+            else -> {
+                val found = appendGroupSourceInformation(groupKey, sourceInformation, childData)
                 if (!found && !sourceInformation.closed) {
                     // We found an incomplete group, very likely crash happened exactly
                     // at that location.
-                    appendTraceFrame(sourceInformation, null)
+                    appendTraceFrame(groupKey, sourceInformation, childData)
                 }
             }
         }
     }
 
-    private fun findInGroupSourceInformation(
+    private fun appendGroupSourceInformation(
+        groupKey: Int,
         sourceInformation: GroupSourceInformation,
         target: Any, // (Anchor | Int)
     ): Boolean {
@@ -142,7 +159,7 @@ internal abstract class ComposeStackTraceBuilder {
             if (!sourceInformation.closed) {
                 // We found an incomplete group, very likely crash happened exactly
                 // at that location.
-                appendTraceFrame(sourceInformation, null)
+                appendTraceFrame(groupKey, sourceInformation, null)
                 return true
             }
             // if the group is a leaf and we are searching for a data offset, check if it matches
@@ -154,7 +171,7 @@ internal abstract class ComposeStackTraceBuilder {
                     target in slotStart until slotEnd ||
                         (slotStart == slotEnd && slotStart == target)
                 if (found) {
-                    appendTraceFrame(sourceInformation, null)
+                    appendTraceFrame(sourceInformation.key, sourceInformation, null)
                 }
                 return found
             }
@@ -166,14 +183,14 @@ internal abstract class ComposeStackTraceBuilder {
                 is Anchor -> {
                     // edge found, return
                     if (child == target) {
-                        appendTraceFrame(sourceInformation, child)
+                        appendTraceFrame(sourceInformation.key, sourceInformation, child)
                         return true
                     }
                 }
                 is GroupSourceInformation -> {
-                    val found = findInGroupSourceInformation(child, target)
+                    val found = appendGroupSourceInformation(groupKey, child, target)
                     if (found) {
-                        appendTraceFrame(sourceInformation, child)
+                        appendTraceFrame(sourceInformation.key, sourceInformation, child)
                         return true
                     }
                 }
@@ -202,13 +219,37 @@ internal fun SlotWriter.buildTrace(
         var parentGroup =
             parent ?: if (writer.parent < 0) writer.parent(currentGroup) else writer.parent
         var childData: Any? = child ?: writer.groupSlotIndex(currentGroup)
+        var groupKey =
+            if (writer.isValid(currentGroup)) {
+                writer.groupKey(currentGroup)
+            } else {
+                // the writer did not manage to even record the group key
+                // so proceed from parent
+                currentGroup = parentGroup
+                if (currentGroup >= 0) {
+                    parentGroup = writer.parent(currentGroup)
+                }
+                writer.groupKey(currentGroup)
+            }
         while (currentGroup >= 0) {
-            traceBuilder.processEdge(writer.sourceInformationOf(currentGroup), childData)
+            val objectKey =
+                if (writer.hasObjectKey(currentGroup)) {
+                    writer.groupObjectKey(currentGroup)
+                } else {
+                    Composer.Empty
+                }
+            traceBuilder.processEdge(
+                groupKey,
+                objectKey,
+                writer.sourceInformationOf(currentGroup),
+                childData,
+            )
             childData = writer.anchor(currentGroup)
             currentGroup = parentGroup
 
             if (currentGroup >= 0) {
                 parentGroup = writer.parent(currentGroup)
+                groupKey = writer.groupKey(currentGroup)
             }
         }
         return traceBuilder.trace()
@@ -223,7 +264,18 @@ internal fun SlotReader.buildTrace(): List<ComposeStackTraceFrame> {
         var currentGroup = reader.parent
         var childAnchor: Any? = reader.slot
         while (currentGroup >= 0) {
-            traceBuilder.processEdge(reader.table.sourceInformationOf(currentGroup), childAnchor)
+            val objectKey =
+                if (reader.hasObjectKey(currentGroup)) {
+                    reader.groupObjectKey(currentGroup)
+                } else {
+                    Composer.Empty
+                }
+            traceBuilder.processEdge(
+                reader.groupKey(currentGroup),
+                objectKey,
+                reader.table.sourceInformationOf(currentGroup),
+                childAnchor,
+            )
             childAnchor = reader.anchor(currentGroup)
             val parentGroup = reader.parent(currentGroup)
             currentGroup = parentGroup
@@ -244,7 +296,18 @@ internal fun SlotReader.traceForGroup(
     var parentAnchor = reader.anchor(currentGroup)
     var childAnchor: Any? = child
     while (currentGroup >= 0) {
-        traceBuilder.processEdge(reader.table.sourceInformationOf(currentGroup), childAnchor)
+        val objectKey =
+            if (reader.hasObjectKey(currentGroup)) {
+                reader.groupObjectKey(currentGroup)
+            } else {
+                Composer.Empty
+            }
+        traceBuilder.processEdge(
+            reader.groupKey(currentGroup),
+            objectKey,
+            reader.table.sourceInformationOf(currentGroup),
+            childAnchor,
+        )
         currentGroup = parentGroup
         childAnchor = parentAnchor
         if (currentGroup >= 0) {

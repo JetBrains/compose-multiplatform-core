@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("FacadeClassJvmName") // Cannot be updated, the Kt name has been released
+
 package androidx.lifecycle
 
 import android.annotation.SuppressLint
@@ -162,12 +164,11 @@ internal class BlockRunner<T>(
         if (runningJob != null) {
             return
         }
-        runningJob =
-            scope.launch {
-                val liveDataScope = LiveDataScopeImpl(liveData, coroutineContext)
-                block(liveDataScope)
-                onDone()
-            }
+        runningJob = scope.launch {
+            val liveDataScope = LiveDataScopeImpl(liveData, coroutineContext)
+            block(liveDataScope)
+            onDone()
+        }
     }
 
     @MainThread

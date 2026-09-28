@@ -243,11 +243,12 @@ class PagerRemeasureTestCase(
         Assert.assertEquals(fraction, pagerState.currentPageOffsetFraction)
     }
 
-    override suspend fun programmaticScroll(amount: Int) {
-        pagerState.scrollBy(amount.toFloat())
+    override fun programmaticScroll(amount: Int) {
+        pagerState.dispatchRawDelta(amount.toFloat())
     }
 
     override fun setUp() {
+        pagerState.prefetchingEnabled = false
         runBlocking { pagerState.scrollToPage(0, 0.0f) }
     }
 
@@ -287,7 +288,9 @@ val NoOpInfoProvider =
 val VerticalPagerContent:
     @Composable
     PagerRemeasureTestCase.(
-        state: PagerState, useKeys: Boolean, beyondBoundsPageCount: Int,
+        state: PagerState,
+        useKeys: Boolean,
+        beyondBoundsPageCount: Int,
     ) -> Unit =
     { state, useKeys, beyondBoundsPageCount ->
         val flingBehavior = rememberSnapFlingBehavior(snapLayoutInfoProvider = NoOpInfoProvider)
@@ -311,7 +314,9 @@ val VerticalPagerContent:
 val HorizontalPagerContent:
     @Composable
     PagerRemeasureTestCase.(
-        state: PagerState, useKeys: Boolean, beyondBoundsPageCount: Int,
+        state: PagerState,
+        useKeys: Boolean,
+        beyondBoundsPageCount: Int,
     ) -> Unit =
     { state, useKeys, beyondBoundsPageCount ->
         val flingBehavior = rememberSnapFlingBehavior(snapLayoutInfoProvider = NoOpInfoProvider)

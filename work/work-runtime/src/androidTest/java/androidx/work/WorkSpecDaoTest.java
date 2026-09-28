@@ -22,6 +22,7 @@ import static android.net.NetworkCapabilities.TRANSPORT_CELLULAR;
 
 import static androidx.work.WorkInfo.State.BLOCKED;
 import static androidx.work.WorkInfo.State.FAILED;
+import static androidx.work.WorkInfo.State.RUNNING;
 import static androidx.work.WorkInfo.State.SUCCEEDED;
 import static androidx.work.impl.Scheduler.MAX_SCHEDULER_LIMIT;
 
@@ -46,6 +47,7 @@ import androidx.work.worker.TestWorker;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -189,6 +191,106 @@ public class WorkSpecDaoTest extends DatabaseTest {
 
     @Test
     @SmallTest
+    public void testIsWorkSpecScheduled_enqueuedWork() {
+        WorkSpecDao workSpecDao = mDatabase.workSpecDao();
+
+        long startTime = System.currentTimeMillis();
+        OneTimeWorkRequest enqueued = new OneTimeWorkRequest.Builder(TestWorker.class)
+                .setLastEnqueueTime(startTime, TimeUnit.MILLISECONDS)
+                .build();
+
+        insertWork(enqueued);
+
+        assertThat(workSpecDao.isWorkSpecScheduled(enqueued.getStringId()), is(false));
+    }
+
+    @Test
+    @SmallTest
+    public void testLatestUnscheduledWorkIds() {
+        WorkSpecDao workSpecDao = mDatabase.workSpecDao();
+
+        long startTime = System.currentTimeMillis();
+        OneTimeWorkRequest enqueued1 = new OneTimeWorkRequest.Builder(TestWorker.class)
+                .setLastEnqueueTime(startTime, TimeUnit.MILLISECONDS)
+                .build();
+        OneTimeWorkRequest enqueued2 = new OneTimeWorkRequest.Builder(TestWorker.class)
+                .setLastEnqueueTime(startTime + 1000, TimeUnit.MILLISECONDS)
+                .build();
+        OneTimeWorkRequest enqueued3 = new OneTimeWorkRequest.Builder(TestWorker.class)
+                .setLastEnqueueTime(startTime + 2000, TimeUnit.MILLISECONDS)
+                .build();
+        OneTimeWorkRequest scheduled = new OneTimeWorkRequest.Builder(TestWorker.class)
+                .setScheduleRequestedAt(startTime + 3000, TimeUnit.MILLISECONDS)
+                .setLastEnqueueTime(startTime + 3000, TimeUnit.MILLISECONDS)
+                .build();
+        OneTimeWorkRequest succeeded = new OneTimeWorkRequest.Builder(TestWorker.class)
+                .setLastEnqueueTime(startTime + 4000, TimeUnit.MILLISECONDS)
+                .setInitialState(SUCCEEDED)
+                .build();
+        OneTimeWorkRequest contentUriWork = new OneTimeWorkRequest.Builder(TestWorker.class)
+                .setConstraints(new Constraints.Builder()
+                        .addContentUriTrigger(android.net.Uri.parse("content://test"), false)
+                        .build())
+                .setLastEnqueueTime(startTime + 5000, TimeUnit.MILLISECONDS)
+                .build();
+
+        insertWork(enqueued1);
+        insertWork(enqueued2);
+        insertWork(enqueued3);
+        insertWork(scheduled);
+        insertWork(succeeded);
+        insertWork(contentUriWork);
+
+        // Fetch with limit 2 - should return enqueued3 and enqueued2 in descending
+        // enqueue time order
+        List<String> latestUnscheduled = workSpecDao.getLatestUnscheduledWorkIds(2);
+        assertThat(latestUnscheduled.size(), is(2));
+        assertThat(latestUnscheduled.get(0), equalTo(enqueued3.getStringId()));
+        assertThat(latestUnscheduled.get(1), equalTo(enqueued2.getStringId()));
+
+        // Fetch with limit 10 - should return enqueued3, enqueued2, enqueued1
+        List<String> allUnscheduled = workSpecDao.getLatestUnscheduledWorkIds(10);
+        assertThat(allUnscheduled.size(), is(3));
+        assertThat(allUnscheduled.get(0), equalTo(enqueued3.getStringId()));
+        assertThat(allUnscheduled.get(1), equalTo(enqueued2.getStringId()));
+        assertThat(allUnscheduled.get(2), equalTo(enqueued1.getStringId()));
+    }
+
+    @Test
+    @SmallTest
+    public void testIsWorkSpecScheduled_scheduledWork() {
+        WorkSpecDao workSpecDao = mDatabase.workSpecDao();
+
+        long startTime = System.currentTimeMillis();
+        OneTimeWorkRequest scheduled = new OneTimeWorkRequest.Builder(TestWorker.class)
+                .setScheduleRequestedAt(startTime, TimeUnit.MILLISECONDS)
+                .setLastEnqueueTime(startTime, TimeUnit.MILLISECONDS)
+                .build();
+
+        insertWork(scheduled);
+
+        assertThat(workSpecDao.isWorkSpecScheduled(scheduled.getStringId()), is(true));
+    }
+
+    @Test
+    @SmallTest
+    public void testIsWorkSpecScheduled_runningWork() {
+        WorkSpecDao workSpecDao = mDatabase.workSpecDao();
+
+        long startTime = System.currentTimeMillis();
+        OneTimeWorkRequest running = new OneTimeWorkRequest.Builder(TestWorker.class)
+                .setScheduleRequestedAt(startTime, TimeUnit.MILLISECONDS)
+                .setLastEnqueueTime(startTime, TimeUnit.MILLISECONDS)
+                .setInitialState(RUNNING)
+                .build();
+
+        insertWork(running);
+
+        assertThat(workSpecDao.isWorkSpecScheduled(running.getStringId()), is(false));
+    }
+
+    @Test
+    @SmallTest
     public void testResetScheduledState() {
         WorkSpecDao workSpecDao = mDatabase.workSpecDao();
 
@@ -286,6 +388,85 @@ public class WorkSpecDaoTest extends DatabaseTest {
 
     @Test
     @SmallTest
+    public void testGetScheduledWork() {
+        long startTime = System.currentTimeMillis();
+        OneTimeWorkRequest runningScheduled =
+                new OneTimeWorkRequest.Builder(TestWorker.class)
+                        .setInitialState(RUNNING)
+                        .build();
+        OneTimeWorkRequest enqueuedScheduled =
+                new OneTimeWorkRequest.Builder(TestWorker.class)
+                        .build();
+        OneTimeWorkRequest runningNotScheduled =
+                new OneTimeWorkRequest.Builder(TestWorker.class)
+                        .setInitialState(RUNNING)
+                        .build();
+        OneTimeWorkRequest blockedScheduled =
+                new OneTimeWorkRequest.Builder(TestWorker.class)
+                        .setInitialState(BLOCKED)
+                        .build();
+        OneTimeWorkRequest succeededScheduled =
+                new OneTimeWorkRequest.Builder(TestWorker.class)
+                        .setInitialState(SUCCEEDED)
+                        .build();
+
+        WorkSpecDao workSpecDao = mDatabase.workSpecDao();
+        insertWork(runningScheduled);
+        insertWork(enqueuedScheduled);
+        insertWork(runningNotScheduled);
+        insertWork(blockedScheduled);
+        insertWork(succeededScheduled);
+
+        workSpecDao.markWorkSpecScheduled(runningScheduled.getStringId(), startTime);
+        workSpecDao.markWorkSpecScheduled(enqueuedScheduled.getStringId(), startTime);
+        workSpecDao.markWorkSpecScheduled(blockedScheduled.getStringId(), startTime);
+        workSpecDao.markWorkSpecScheduled(succeededScheduled.getStringId(), startTime);
+
+        List<WorkSpec> scheduled = workSpecDao.getScheduledWork();
+        assertThat(workSpecIds(scheduled), containsInAnyOrder(
+                runningScheduled.getStringId(),
+                enqueuedScheduled.getStringId()));
+
+        List<WorkSpec> scheduledWithUris = workSpecDao.getScheduledWorkWithContentUris();
+        assertThat(workSpecIds(scheduledWithUris), containsInAnyOrder(
+                runningScheduled.getStringId(),
+                enqueuedScheduled.getStringId()));
+    }
+
+    @SdkSuppress(minSdkVersion = 24)
+    @Test
+    @SmallTest
+    public void testGetScheduledWorkWithContentUris() {
+        long startTime = System.currentTimeMillis();
+        Constraints constraints = new Constraints.Builder().addContentUriTrigger(
+                Media.EXTERNAL_CONTENT_URI, true).build();
+        OneTimeWorkRequest scheduledNoUris =
+                new OneTimeWorkRequest.Builder(TestWorker.class)
+                        .build();
+        OneTimeWorkRequest scheduledWithUris =
+                new OneTimeWorkRequest.Builder(TestWorker.class)
+                        .setConstraints(constraints)
+                        .build();
+
+        WorkSpecDao workSpecDao = mDatabase.workSpecDao();
+        insertWork(scheduledNoUris);
+        insertWork(scheduledWithUris);
+
+        workSpecDao.markWorkSpecScheduled(scheduledNoUris.getStringId(), startTime);
+        workSpecDao.markWorkSpecScheduled(scheduledWithUris.getStringId(), startTime);
+
+        // Content URI triggered work is scheduled independently of representative jobs, so it is
+        // excluded from getScheduledWork().
+        assertThat(workSpecIds(workSpecDao.getScheduledWork()),
+                containsInAnyOrder(scheduledNoUris.getStringId()));
+        assertThat(workSpecIds(workSpecDao.getScheduledWorkWithContentUris()),
+                containsInAnyOrder(
+                        scheduledNoUris.getStringId(),
+                        scheduledWithUris.getStringId()));
+    }
+
+    @Test
+    @SmallTest
     public void checkSetCancelled() {
         OneTimeWorkRequest request1 = new OneTimeWorkRequest.Builder(TestWorker.class)
                 .setInitialState(WorkInfo.State.RUNNING)
@@ -307,20 +488,14 @@ public class WorkSpecDaoTest extends DatabaseTest {
     @SmallTest
     public void insertWithNetworkRequest() {
         Constraints constraints;
-        if (Build.VERSION.SDK_INT >= 21) {
-            NetworkRequest request = new NetworkRequest.Builder()
-                    .addCapability(NET_CAPABILITY_MMS)
-                    .addCapability(NET_CAPABILITY_NOT_VPN)
-                    .addTransportType(TRANSPORT_CELLULAR)
-                    .build();
-            constraints = new Constraints.Builder()
-                    .setRequiredNetworkRequest(request, NetworkType.CONNECTED)
-                    .build();
-        } else {
-            constraints = new Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
-                    .build();
-        }
+        NetworkRequest request = new NetworkRequest.Builder()
+                .addCapability(NET_CAPABILITY_MMS)
+                .addCapability(NET_CAPABILITY_NOT_VPN)
+                .addTransportType(TRANSPORT_CELLULAR)
+                .build();
+        constraints = new Constraints.Builder()
+                .setRequiredNetworkRequest(request, NetworkType.CONNECTED)
+                .build();
 
         OneTimeWorkRequest workRequest = new OneTimeWorkRequest.Builder(TestWorker.class)
                 .setConstraints(constraints)
@@ -340,5 +515,13 @@ public class WorkSpecDaoTest extends DatabaseTest {
         } else {
             assertThat(newConstraints.getRequiredNetworkType(), is(NetworkType.CONNECTED));
         }
+    }
+
+    private static List<String> workSpecIds(List<WorkSpec> workSpecs) {
+        List<String> ids = new ArrayList<>(workSpecs.size());
+        for (WorkSpec workSpec : workSpecs) {
+            ids.add(workSpec.id);
+        }
+        return ids;
     }
 }

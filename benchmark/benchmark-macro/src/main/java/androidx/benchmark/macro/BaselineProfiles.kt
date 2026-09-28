@@ -39,7 +39,7 @@ import java.io.File
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RequiresApi(28)
-fun collect(
+public fun collect(
     uniqueName: String,
     packageName: String,
     stableIterations: Int,
@@ -282,15 +282,14 @@ private fun profmanGetProfileRules(apkPath: String, pathOptions: List<String>): 
     // When compiling with CompilationMode.SpeedProfile, ART stores the profile in one of
     // 2 locations. The `ref` profile path, or the `current` path.
     // The `current` path is eventually merged  into the `ref` path after background dexopt.
-    val profiles =
-        pathOptions.mapNotNull { currentPath ->
-            Log.d(TAG, "Using profile location: $currentPath")
-            val profile =
-                Shell.executeScriptCaptureStdout(
-                    "profman --dump-classes-and-methods --profile-file=$currentPath --apk=$apkPath"
-                )
-            profile.ifBlank { null }
-        }
+    val profiles = pathOptions.mapNotNull { currentPath ->
+        Log.d(TAG, "Using profile location: $currentPath")
+        val profile =
+            Shell.executeScriptCaptureStdout(
+                "profman --dump-classes-and-methods --profile-file=$currentPath --apk=$apkPath"
+            )
+        profile.ifBlank { null }
+    }
     if (profiles.isEmpty()) {
         Log.d(TAG, "No profiles found for $apkPath")
         return ""
@@ -390,7 +389,7 @@ private data class Summary(
 /** A container for the results of collecting Baseline Profiles using the [collect] API. */
 public class BaselineProfileResult(
     /** A list of absolute file paths to the generated baseline profiles. */
-    val baselineProfiles: List<String> = emptyList(),
+    public val baselineProfiles: List<String> = emptyList(),
     /** A list of absolute file paths to the generated startup profiles. */
-    val startupProfiles: List<String> = emptyList(),
+    public val startupProfiles: List<String> = emptyList(),
 )

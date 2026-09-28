@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.compose.foundation.lazy.list
 
 import androidx.compose.foundation.AutoTestFrameClock
@@ -42,7 +44,6 @@ import androidx.compose.ui.unit.dp
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -221,7 +222,6 @@ class LazyListCacheWindowParityTest(orientation: Orientation) :
         rule.onNodeWithTag("${prefetchIndex + 3}").assertDoesNotExist()
     }
 
-    @Ignore("b/430081898 - prefetchingForwardAndBackwardWithContentPadding")
     @Test
     fun prefetchingForwardAndBackwardWithContentPadding() {
         val halfItemSize = itemsSizeDp / 2f

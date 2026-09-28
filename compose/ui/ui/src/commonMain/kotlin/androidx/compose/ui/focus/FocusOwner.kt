@@ -17,10 +17,11 @@
 package androidx.compose.ui.focus
 
 import androidx.collection.MutableObjectList
-import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
+import androidx.compose.runtime.collection.MutableVector
+import androidx.compose.ui.InteractionBarrierNode
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.input.indirect.IndirectTouchEvent
+import androidx.compose.ui.input.indirect.IndirectPointerEvent
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
 
@@ -62,6 +63,19 @@ internal interface FocusOwner : FocusManager {
         focusedRect: Rect?,
         onFound: (FocusTargetNode) -> Boolean,
     ): Boolean?
+
+    /**
+     * Moves focus in the specified [direction][FocusDirection].
+     *
+     * @param focusDirection the direction to search for the next focus target.
+     * @param wrapAroundForOneDimensionalFocus Whether we should wrap focus around while performing
+     *   a one-dimensional focus search.
+     * @return true if focus was moved successfully. false if the focused item is unchanged.
+     */
+    fun moveFocus(
+        focusDirection: FocusDirection,
+        wrapAroundForOneDimensionalFocus: Boolean,
+    ): Boolean
 
     /**
      * The [Owner][androidx.compose.ui.node.Owner] calls this function when it gains focus. This
@@ -157,12 +171,14 @@ internal interface FocusOwner : FocusManager {
         onFocusedItem: () -> Boolean = { false },
     ): Boolean
 
-    /** Dispatches an indirect touch event through the compose hierarchy. */
-    @OptIn(ExperimentalIndirectTouchTypeApi::class)
-    fun dispatchIndirectTouchEvent(
-        event: IndirectTouchEvent,
-        onFocusedItem: () -> Boolean = { false },
-    ): Boolean
+    /** Dispatches an indirect pointer event through the compose hierarchy. */
+    fun dispatchIndirectPointerEvent(event: IndirectPointerEvent): Boolean
+
+    /** Dispatches an indirect pointer cancel event through the compose hierarchy. */
+    fun dispatchIndirectPointerCancel()
+
+    /** Lets the FocusOwner know that a focus target is placed. */
+    fun focusTargetAvailable()
 
     /** Schedule a FocusTarget node to be invalidated after onApplyChanges. */
     fun scheduleInvalidation(node: FocusTargetNode)
@@ -184,4 +200,19 @@ internal interface FocusOwner : FocusManager {
 
     /** Whether the active focus target node has requested focus capture. */
     var isFocusCaptured: Boolean
+
+    /** Active interaction barriers currently in the hierarchy. */
+    val activeInteractionBarriers: MutableVector<InteractionBarrierNode>?
+        get() = null
+
+    /** Registers an [InteractionBarrierNode] to block focus traversal and key input. */
+    fun registerInteractionBarrier(node: InteractionBarrierNode) {}
+
+    /** Unregisters an [InteractionBarrierNode] when it is detached. */
+    fun unregisterInteractionBarrier(node: InteractionBarrierNode) {}
+
+    /**
+     * Notifies the FocusOwner that an [InteractionBarrierNode]'s layout rect or position changed.
+     */
+    fun onBarrierPositionChanged() {}
 }

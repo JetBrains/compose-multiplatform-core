@@ -28,7 +28,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.Dp
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
@@ -47,6 +47,7 @@ import org.junit.Test
 @MediumTest
 // @RunWith(Parameterized::class)
 class LazyScrollTest { // (private val orientation: Orientation)
+
     @get:Rule val rule = createComposeRule()
 
     private val vertical: Boolean
@@ -390,7 +391,7 @@ class LazyScrollTest { // (private val orientation: Orientation)
     fun overScrollingBackShouldIgnoreBeforeContentPadding() =
         testScroll(beforeContentPaddingPx = 5) {
             val floatItemSize = itemSizePx.toFloat()
-            var consumed: Float
+            val consumed: Float
             withContext(Dispatchers.Main) {
                 // scroll to next item
                 state.scrollBy(floatItemSize)
@@ -418,6 +419,8 @@ class LazyScrollTest { // (private val orientation: Orientation)
         rule.mainClock.autoAdvance = false
 
         scope.launch { state.animateScrollToItem(toIndex, toOffset) }
+
+        rule.mainClock.scheduler.runCurrent()
 
         while (!state.isScrollInProgress) {
             Thread.sleep(5)

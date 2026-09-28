@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.Constraints
  * [LazyLayoutMeasureScope.compose].
  *
  * This is a low level API for building efficient complex layouts, for a ready-to-use linearly
- * scrollable lazy layout implementation see [androidx.compose.foundation.lazy.LazyRow] and
+ * scrollable lazy layout implementation see [androidx.compose.foundation.lazy.LazyColumn] and
  * [androidx.compose.foundation.lazy.LazyRow]. For a grid-like scrollable lazy layout, see
  * [androidx.compose.foundation.lazy.grid.LazyVerticalGrid] and
  * [androidx.compose.foundation.lazy.grid.LazyHorizontalGrid]. For a pager-like lazy layout, see
@@ -61,12 +61,12 @@ import androidx.compose.ui.unit.Constraints
 @Deprecated("Please use overload with LazyLayoutMeasurePolicy", level = DeprecationLevel.HIDDEN)
 @ExperimentalFoundationApi
 @Composable
-fun LazyLayout(
+public fun LazyLayout(
     itemProvider: () -> LazyLayoutItemProvider,
     modifier: Modifier = Modifier,
     prefetchState: LazyLayoutPrefetchState? = null,
     measurePolicy: LazyLayoutMeasureScope.(Constraints) -> MeasureResult,
-) = LazyLayout(itemProvider, modifier, prefetchState, LazyLayoutMeasurePolicy(measurePolicy))
+): Unit = LazyLayout(itemProvider, modifier, prefetchState, LazyLayoutMeasurePolicy(measurePolicy))
 
 /**
  * A layout that only composes and lays out currently needed items. Can be used to build efficient
@@ -77,7 +77,7 @@ fun LazyLayout(
  * [LazyLayoutMeasureScope.compose].
  *
  * This is a low level API for building efficient complex layouts, for a ready-to-use linearly
- * scrollable lazy layout implementation see [androidx.compose.foundation.lazy.LazyRow] and
+ * scrollable lazy layout implementation see [androidx.compose.foundation.lazy.LazyColumn] and
  * [androidx.compose.foundation.lazy.LazyRow]. For a grid-like scrollable lazy layout, see
  * [androidx.compose.foundation.lazy.grid.LazyVerticalGrid] and
  * [androidx.compose.foundation.lazy.grid.LazyHorizontalGrid]. For a pager-like lazy layout, see
@@ -104,7 +104,7 @@ fun LazyLayout(
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun LazyLayout(
+public fun LazyLayout(
     itemProvider: () -> LazyLayoutItemProvider,
     modifier: Modifier = Modifier,
     prefetchState: LazyLayoutPrefetchState? = null,

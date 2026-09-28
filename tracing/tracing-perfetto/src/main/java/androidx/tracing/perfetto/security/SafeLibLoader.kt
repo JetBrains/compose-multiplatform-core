@@ -18,7 +18,6 @@ package androidx.tracing.perfetto.security
 
 import android.content.Context
 import android.os.Build
-import androidx.annotation.RequiresApi
 import java.io.File
 import java.io.FileNotFoundException
 import java.security.MessageDigest
@@ -30,6 +29,7 @@ internal class SafeLibLoader(context: Context) {
     fun loadLib(file: File, abiToSha256Map: Map<String, String>) {
         // ensure the file is in an approved location (and if not, copy it over to one)
         val safeLocationFile = copyToSafeLocation(file)
+        safeLocationFile.setReadOnly()
 
         // verify checksum of the file
         verifyChecksum(safeLocationFile, findAbiAwareSha(abiToSha256Map))
@@ -44,8 +44,9 @@ internal class SafeLibLoader(context: Context) {
      */
     private fun copyToSafeLocation(file: File): File {
         if (!file.exists()) throw FileNotFoundException("Cannot locate library file: $file")
-        val isInApprovedLocation =
-            approvedLocations.any { approvedLocation -> file.isDescendantOf(approvedLocation) }
+        val isInApprovedLocation = approvedLocations.any { approvedLocation ->
+            file.isDescendantOf(approvedLocation)
+        }
         return if (isInApprovedLocation) file
         else file.copyTo(approvedLocations.first().resolve(file.name), overwrite = true)
     }
@@ -60,13 +61,7 @@ internal class SafeLibLoader(context: Context) {
     }
 
     private fun findAbiAwareSha(abiToShaMap: Map<String, String>): String {
-        @Suppress("DEPRECATION")
-        val abi =
-            when {
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ->
-                    Build.SUPPORTED_ABIS.first()
-                else -> Build.CPU_ABI
-            }
+        val abi = Build.SUPPORTED_ABIS.first()
         return abiToShaMap.getOrElse(abi) {
             throw MissingChecksumException("Cannot locate checksum for ABI: $abi in $abiToShaMap")
         }
@@ -90,10 +85,8 @@ internal class SafeLibLoader(context: Context) {
     private fun File.isDescendantOf(ancestor: File) =
         generateSequence(this.parentFile) { it.parentFile }.any { it == ancestor }
 
-    private fun getCodeCacheDir(context: Context): File? =
-        if (Build.VERSION.SDK_INT >= 21) Impl21.getCodeCacheDir(context) else null
+    private fun getCodeCacheDir(context: Context): File? = Impl21.getCodeCacheDir(context)
 
-    @RequiresApi(21)
     private object Impl21 {
         fun getCodeCacheDir(context: Context): File? = context.codeCacheDir
     }

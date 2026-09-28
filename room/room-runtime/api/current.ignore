@@ -1,5 +1,0 @@
-// Baseline format: 1.0
-RemovedDeprecatedMethod: androidx.room.RoomDatabase#getMDatabase():
-    Binary breaking change: Removed deprecated method androidx.room.RoomDatabase.getMDatabase()
-RemovedDeprecatedMethod: androidx.room.RoomDatabase#setMDatabase(androidx.sqlite.db.SupportSQLiteDatabase):
-    Binary breaking change: Removed deprecated method androidx.room.RoomDatabase.setMDatabase(androidx.sqlite.db.SupportSQLiteDatabase)

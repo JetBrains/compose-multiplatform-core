@@ -20,6 +20,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
@@ -33,6 +34,7 @@ import androidx.work.impl.constraints.NetworkRequestConstraintController
 import androidx.work.impl.constraints.WorkConstraintsTracker
 import androidx.work.impl.model.WorkSpec
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import kotlin.coroutines.resume
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
@@ -81,6 +83,22 @@ class NetworkRequestConstraintControllerTest {
         }
 
     @Test
+    fun testMultipleTrackers() =
+        runBlockingWithWifi(enabled = true) {
+            val states =
+                List(5) {
+                    val spec = createWorkSpecWithWifiConstraint("$it")
+                    val workConstraintsTracker = WorkConstraintsTracker(listOf(controller))
+                    async(Dispatchers.IO) { workConstraintsTracker.track(spec).first() }
+                }
+            states.awaitAll().forEachIndexed { index, state ->
+                assertWithMessage("Tracker $index did not have constraints met")
+                    .that(state)
+                    .isEqualTo(ConstraintsState.ConstraintsMet)
+            }
+        }
+
+    @Test
     fun testTooManyTrackers() =
         runBlockingWithWifi(enabled = true) {
             // Current OS limit of network callback is 100 per app, we register more to test
@@ -126,16 +144,39 @@ class NetworkRequestConstraintControllerTest {
             suspendCancellableCoroutine<Unit> { cont ->
                 val callback =
                     object : ConnectivityManager.NetworkCallback() {
+                        var isBlocked = if (Build.VERSION.SDK_INT >= 29) null else false
+                        var isAvailable: Boolean? = null
+
                         override fun onAvailable(network: Network) {
-                            if (enable && cont.isActive) cont.resume(Unit)
+                            isAvailable = true
+                            maybeContinue()
+                        }
+
+                        override fun onBlockedStatusChanged(network: Network, blocked: Boolean) {
+                            isBlocked = blocked
+                            maybeContinue()
                         }
 
                         override fun onLost(network: Network) {
-                            if (!enable && cont.isActive) cont.resume(Unit)
+                            isAvailable = false
+                            maybeContinue()
+                        }
+
+                        private fun maybeContinue() {
+                            if (!cont.isActive) {
+                                return
+                            }
+                            if (isAvailable == null || isBlocked == null) {
+                                return
+                            }
+                            val hasConnectivity = isAvailable!! && !isBlocked!!
+                            if (enable == hasConnectivity) {
+                                cont.resume(Unit)
+                            }
                         }
                     }
                 connectivityManager.registerNetworkCallback(createWifiNetworkRequest(), callback)
-                if (enable == isWifiConnected() && cont.isActive) {
+                if (Build.VERSION.SDK_INT < 29 && enable == isWifiConnected() && cont.isActive) {
                     // already enabled / disabled
                     cont.resume(Unit)
                 }

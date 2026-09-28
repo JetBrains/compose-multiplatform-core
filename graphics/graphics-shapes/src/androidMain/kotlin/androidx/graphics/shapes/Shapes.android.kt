@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("FacadeClassJvmName") // Cannot be updated, the Kt name has been released
+
 package androidx.graphics.shapes
 
 import android.graphics.Matrix
@@ -24,7 +26,7 @@ import android.graphics.Path
  *
  * @param matrix The matrix by which the polygon is to be transformed
  */
-fun RoundedPolygon.transformed(matrix: Matrix): RoundedPolygon {
+public fun RoundedPolygon.transformed(matrix: Matrix): RoundedPolygon {
     val tempArray = FloatArray(2)
     return transformed { x, y ->
         tempArray[0] = x
@@ -45,13 +47,55 @@ fun RoundedPolygon.transformed(matrix: Matrix): RoundedPolygon {
  *   create a new [Path] object
  */
 @JvmOverloads
-fun RoundedPolygon.toPath(path: Path = Path()): Path {
+public fun RoundedPolygon.toPath(path: Path = Path()): Path {
     pathFromCubics(path, cubics)
     return path
 }
 
-fun Morph.toPath(progress: Float, path: Path = Path()): Path {
-    pathFromCubics(path, asCubics(progress))
+public fun Morph.toPath(progress: Float, path: Path = Path()): Path {
+    // The first/last mechanism here ensures that the final anchor point in the shape
+    // exactly matches the first anchor point. There can be rendering artifacts introduced
+    // by those points being slightly off, even by much less than a pixel
+    path.rewind()
+
+    var firstX = 0f
+    var firstY = 0f
+    var prevControl0X = 0f
+    var prevControl0Y = 0f
+    var prevControl1X = 0f
+    var prevControl1Y = 0f
+    var prevAnchor1X = 0f
+    var prevAnchor1Y = 0f
+    var first = true
+    forEachCubic(progress) {
+        if (first) {
+            path.moveTo(it.anchor0X, it.anchor0Y)
+            firstX = it.anchor0X
+            firstY = it.anchor0Y
+            first = false
+        } else {
+            // We delay using the current cubic, because we need to do something special for the
+            // last one and we can't detect it is the last one until the loop ends.
+            path.cubicTo(
+                prevControl0X,
+                prevControl0Y,
+                prevControl1X,
+                prevControl1Y,
+                prevAnchor1X,
+                prevAnchor1Y,
+            )
+        }
+        prevControl0X = it.control0X
+        prevControl0Y = it.control0Y
+        prevControl1X = it.control1X
+        prevControl1Y = it.control1Y
+        prevAnchor1X = it.anchor1X
+        prevAnchor1Y = it.anchor1Y
+    }
+    if (!first) {
+        path.cubicTo(prevControl0X, prevControl0Y, prevControl1X, prevControl1Y, firstX, firstY)
+    }
+    path.close()
     return path
 }
 

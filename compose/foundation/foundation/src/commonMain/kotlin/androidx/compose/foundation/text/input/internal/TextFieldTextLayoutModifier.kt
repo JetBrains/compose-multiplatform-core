@@ -34,6 +34,7 @@ import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.LocalFontFamilyResolver
+import androidx.compose.ui.platform.LocalLocaleList
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Constraints
@@ -176,6 +177,7 @@ internal class TextFieldTextLayoutModifierNode(
                 density = this,
                 layoutDirection = layoutDirection,
                 fontFamilyResolver = currentValueOf(LocalFontFamilyResolver),
+                defaultLocaleList = currentValueOf(LocalLocaleList),
                 constraints = constraints,
             )
 
@@ -189,11 +191,11 @@ internal class TextFieldTextLayoutModifierNode(
                 )
             )
 
-        // calculate the min height for single line text to prevent text cuts.
+        // calculate the height for single line text to prevent text cuts.
         // for single line text maxLines puts in max height constraint based on
         // constant characters therefore if the user enters a character that is
         // longer (i.e. emoji or a tall script) the text is cut
-        textLayoutState.minHeightForSingleLineField =
+        textLayoutState.heightForSingleLineField =
             if (singleLine) {
                 result.getLineBottom(0).ceilToIntPx().toDp()
             } else {

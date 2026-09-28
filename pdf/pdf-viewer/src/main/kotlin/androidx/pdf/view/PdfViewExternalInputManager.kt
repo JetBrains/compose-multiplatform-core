@@ -49,7 +49,14 @@ internal class PdfViewExternalInputManager(pdfView: PdfView) {
             KeyEvent.KEYCODE_0,
             KeyEvent.KEYCODE_NUMPAD_0 -> {
                 if (event.isCtrlPressed) {
-                    keyboardActionHandler.zoomToDefault()
+                    keyboardActionHandler.zoomFitToWidth()
+                    return true
+                }
+                false
+            }
+            KeyEvent.KEYCODE_A -> {
+                if (event.isCtrlPressed) {
+                    keyboardActionHandler.selectAllText()
                     return true
                 }
                 false
@@ -67,28 +74,32 @@ internal class PdfViewExternalInputManager(pdfView: PdfView) {
                 true
             }
             KeyEvent.KEYCODE_DPAD_LEFT -> {
-                keyboardActionHandler.scrollLeft()
-                true
+                keyboardActionHandler.scrollLeftOrScrollToPreviousPage()
             }
             KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                keyboardActionHandler.scrollRight()
+                keyboardActionHandler.scrollRightOrScrollToNextPage()
                 true
             }
             KeyEvent.KEYCODE_DPAD_UP -> {
                 keyboardActionHandler.scrollUp()
                 true
             }
-            KeyEvent.KEYCODE_MINUS -> {
+            KeyEvent.KEYCODE_ESCAPE -> {
+                keyboardActionHandler.clearSelection()
+            }
+            KeyEvent.KEYCODE_EQUALS,
+            KeyEvent.KEYCODE_PLUS,
+            KeyEvent.KEYCODE_NUMPAD_ADD -> {
                 if (event.isCtrlPressed) {
-                    keyboardActionHandler.zoomOut()
+                    keyboardActionHandler.zoomIn()
                     return true
                 }
                 false
             }
-            KeyEvent.KEYCODE_EQUALS,
-            KeyEvent.KEYCODE_PLUS -> {
+            KeyEvent.KEYCODE_MINUS,
+            KeyEvent.KEYCODE_NUMPAD_SUBTRACT -> {
                 if (event.isCtrlPressed) {
-                    keyboardActionHandler.zoomIn()
+                    keyboardActionHandler.zoomOut()
                     return true
                 }
                 false
@@ -105,8 +116,14 @@ internal class PdfViewExternalInputManager(pdfView: PdfView) {
      * @return `true` if the key event was handled, `false` otherwise.
      */
     fun handleMouseEvent(event: MotionEvent): Boolean {
-        if (event.source != InputDevice.SOURCE_MOUSE) {
+        if (
+            event.source != InputDevice.SOURCE_MOUSE && event.source != InputDevice.SOURCE_TOUCHPAD
+        ) {
             return false
+        }
+
+        if (event.buttonState == MotionEvent.BUTTON_PRIMARY) {
+            return mouseActionHandler.dragSelection(event)
         }
 
         if (event.action == MotionEvent.ACTION_SCROLL) {

@@ -1,0 +1,192 @@
+/*
+ * Copyright 2024 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.compose.material3.samples
+
+import androidx.annotation.Sampled
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material3.ElevatedToggleButton
+import androidx.compose.material3.FilledTonalToggleButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedToggleButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ToggleButtonSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.tooling.preview.Preview
+
+@Preview
+@Sampled
+@Composable
+fun ToggleButtonSample() {
+    var checked by rememberSaveable { mutableStateOf(false) }
+    ToggleButton(checked = checked, onCheckedChange = { checked = it }) { Text("Button") }
+}
+
+@Preview
+@Sampled
+@Composable
+fun ElevatedToggleButtonSample() {
+    var checked by rememberSaveable { mutableStateOf(false) }
+    ElevatedToggleButton(checked = checked, onCheckedChange = { checked = it }) {
+        Text("Elevated Button")
+    }
+}
+
+@Preview
+@Sampled
+@Composable
+fun FilledTonalToggleButtonSample() {
+    var checked by rememberSaveable { mutableStateOf(false) }
+    FilledTonalToggleButton(checked = checked, onCheckedChange = { checked = it }) {
+        Text("Tonal Button")
+    }
+}
+
+@Preview
+@Sampled
+@Composable
+fun OutlinedToggleButtonSample() {
+    var checked by rememberSaveable { mutableStateOf(false) }
+    OutlinedToggleButton(checked = checked, onCheckedChange = { checked = it }) {
+        Text("Outlined Button")
+    }
+}
+
+@Preview
+@Sampled
+@Composable
+fun ToggleButtonWithIconSample() {
+    var checked by rememberSaveable { mutableStateOf(false) }
+    ToggleButton(
+        checked = checked,
+        onCheckedChange = { checked = it },
+        icon = {
+            Icon(
+                if (checked) Icons.Filled.Edit else Icons.Outlined.Edit,
+                contentDescription = "Localized description",
+            )
+        },
+    ) {
+        Text("Edit")
+    }
+}
+
+@Preview
+@Sampled
+@Composable
+fun XSmallToggleButtonWithIconSample() {
+    var checked by rememberSaveable { mutableStateOf(false) }
+    ToggleButton(
+        checked = checked,
+        onCheckedChange = { checked = it },
+        buttonSize = ToggleButtonSize.ExtraSmall,
+        icon = {
+            Icon(
+                if (checked) Icons.Filled.Edit else Icons.Outlined.Edit,
+                contentDescription = "Localized description",
+            )
+        },
+    ) {
+        Text("Label")
+    }
+}
+
+@Preview
+@Sampled
+@Composable
+fun MediumToggleButtonWithIconSample() {
+    var checked by rememberSaveable { mutableStateOf(false) }
+    ToggleButton(
+        checked = checked,
+        onCheckedChange = { checked = it },
+        buttonSize = ToggleButtonSize.Medium,
+        icon = {
+            Icon(
+                if (checked) Icons.Filled.Edit else Icons.Outlined.Edit,
+                contentDescription = "Localized description",
+            )
+        },
+    ) {
+        Text("Label")
+    }
+}
+
+@Preview
+@Sampled
+@Composable
+fun LargeToggleButtonWithIconSample() {
+    var checked by rememberSaveable { mutableStateOf(false) }
+    ToggleButton(
+        checked = checked,
+        onCheckedChange = { checked = it },
+        buttonSize = ToggleButtonSize.Large,
+        icon = {
+            Icon(
+                if (checked) Icons.Filled.Edit else Icons.Outlined.Edit,
+                contentDescription = "Localized description",
+            )
+        },
+    ) {
+        Text("Label")
+    }
+}
+
+@Preview
+@Sampled
+@Composable
+fun XLargeToggleButtonWithIconSample() {
+    var checked by rememberSaveable { mutableStateOf(false) }
+    ToggleButton(
+        checked = checked,
+        onCheckedChange = { checked = it },
+        buttonSize = ToggleButtonSize.ExtraLarge,
+        icon = {
+            Icon(
+                if (checked) Icons.Filled.Edit else Icons.Outlined.Edit,
+                contentDescription = "Localized description",
+            )
+        },
+    ) {
+        Text("Label")
+    }
+}
+
+@Preview
+@Sampled
+@Composable
+fun ToggleButtonWithButtonSizeSample() {
+    var checked by rememberSaveable { mutableStateOf(false) }
+    ToggleButton(
+        checked = checked,
+        onCheckedChange = { checked = it },
+        buttonSize = ToggleButtonSize.Small,
+        icon = {
+            Icon(
+                if (checked) Icons.Filled.Edit else Icons.Outlined.Edit,
+                contentDescription = "Localized description",
+            )
+        },
+    ) {
+        Text("Label")
+    }
+}

@@ -119,8 +119,11 @@ internal open class CarouselSwipeableState<T>(
 
     internal var anchors by mutableStateOf(emptyMap<Float, T>())
 
-    private val latestNonEmptyAnchorsFlow: Flow<Map<Float, T>> =
-        snapshotFlow { anchors }.filter { it.isNotEmpty() }.take(1)
+    private val latestNonEmptyAnchorsFlow: Flow<Map<Float, T>> = snapshotFlow {
+        anchors
+    }
+        .filter { it.isNotEmpty() }
+        .take(1)
 
     internal var minBound = Float.NEGATIVE_INFINITY
     internal var maxBound = Float.POSITIVE_INFINITY
@@ -642,7 +645,7 @@ internal data class FractionalThreshold(
  *
  * The resistance basis is usually either the size of the component which [carouselSwipeable] is
  * applied to, or the distance between the minimum and maximum anchors. For a constructor in which
- * the resistance basis defaults to the latter, consider using [resistanceConfig].
+ * the resistance basis defaults to the latter, consider using [SwipeableDefaults.resistanceConfig].
  *
  * You may specify different resistance factors for each bound. Consider using one of the default
  * resistance factors in [SwipeableDefaults]: `StandardResistanceFactor` to convey that the user has

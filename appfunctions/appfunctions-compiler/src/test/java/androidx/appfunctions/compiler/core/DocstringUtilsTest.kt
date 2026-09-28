@@ -42,6 +42,12 @@ class DocstringUtilsTest {
     }
 
     @Test
+    fun getPropertyDescriptionsFromKDoc_multipleTags() {
+        assertThat(getPropertyDescriptionsFromKDoc(MULTI_TAG_DOCSTRING))
+            .containsExactly("property", "description.")
+    }
+
+    @Test
     fun getParamDescriptionsFromKDoc_noParams() {
         assertThat(getParamDescriptionsFromKDoc(NO_PARAMS_DOCSTRING)).isEmpty()
     }
@@ -75,9 +81,10 @@ class DocstringUtilsTest {
         assertThat(sanitizeKDoc(CUSTOM_TAG_DOCSTRING))
             .isEqualTo(
                 """
-                    Fake docstring to test param descriptions.
-                    
-                    @customTag Custom tag content."""
+                Fake docstring to test param descriptions.
+
+                @customTag Custom tag content.
+                """
                     .trimIndent()
             )
     }
@@ -92,6 +99,20 @@ class DocstringUtilsTest {
     fun sanitizeKDoc_nonTagAtUsage() {
         assertThat(sanitizeKDoc(NON_TAG_AT_USAGE_DOCSTRING))
             .isEqualTo(NON_TAG_AT_USAGE_DOCSTRING.trim())
+    }
+
+    @Test
+    fun getResponseDescriptionFromKDoc_multipleTags() {
+        assertThat(getResponseDescriptionFromKDoc(MULTI_TAG_DOCSTRING))
+            .isEqualTo("The response description.")
+    }
+
+    @Test
+    fun getResponseDescriptionFromKDoc_multiLineDescription() {
+        assertThat(getResponseDescriptionFromKDoc(MULTI_LINE_RESPONSE_DESCRIPTION_DOCSTRING))
+            .isEqualTo(
+                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
+            )
     }
 
     companion object {
@@ -152,8 +173,15 @@ Second parameter.
 
         private const val NON_TAG_AT_USAGE_DOCSTRING =
             """Fake SendEmail app function description.
-        
+
 Sends an email to email address in format xx@gmail.com
     """
+
+        private const val MULTI_LINE_RESPONSE_DESCRIPTION_DOCSTRING =
+            """Fake docstring to test response description.
+
+@return Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+ullamco laboris nisi ut aliquip ex ea commodo consequat."""
     }
 }

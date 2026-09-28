@@ -29,7 +29,6 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
-import org.junit.Ignore
 import org.junit.Test
 
 /**
@@ -145,7 +144,6 @@ class FakeHealthConnectClientClockTest {
         assertThat(records.records.first().title).isEqualTo(record1.title)
     }
 
-    @Ignore // b/424868728
     @Test
     fun timeRangeFilterLocalTime_noEndTime() = runTest {
 
@@ -156,7 +154,9 @@ class FakeHealthConnectClientClockTest {
                     record1::class,
                     // No endTime, defaults to clock
                     timeRangeFilter =
-                        TimeRangeFilter(localStartTime = LocalDateTime.of(2000, 1, 1, 9, 59, 30, 1)),
+                        TimeRangeFilter(
+                            localStartTime = LocalDateTime.of(2000, 1, 1, 9, 59, 30, 1)
+                        ),
                 )
             )
 
@@ -203,7 +203,6 @@ class FakeHealthConnectClientClockTest {
         assertThat(recordsExcluding.records).hasSize(0)
     }
 
-    @Ignore // b/424868728
     @Test
     fun timeRangeFilterLocalTime_noEndTimeInstant() = runTest {
         // Given a record with a fixed time, before the clock.
@@ -225,7 +224,9 @@ class FakeHealthConnectClientClockTest {
                     heightRecord::class,
                     // No endTime, defaults to clock
                     timeRangeFilter =
-                        TimeRangeFilter(localStartTime = LocalDateTime.of(2000, 1, 1, 9, 59, 30, 1)),
+                        TimeRangeFilter(
+                            localStartTime = LocalDateTime.of(2000, 1, 1, 9, 59, 30, 1)
+                        ),
                 )
             )
         // Records that start after the record.
@@ -235,7 +236,9 @@ class FakeHealthConnectClientClockTest {
                     heightRecord::class,
                     // No endTime, defaults to clock
                     timeRangeFilter =
-                        TimeRangeFilter(localStartTime = LocalDateTime.of(2000, 1, 1, 9, 59, 31, 1)),
+                        TimeRangeFilter(
+                            localStartTime = LocalDateTime.of(2000, 1, 1, 9, 59, 31, 1)
+                        ),
                 )
             )
 

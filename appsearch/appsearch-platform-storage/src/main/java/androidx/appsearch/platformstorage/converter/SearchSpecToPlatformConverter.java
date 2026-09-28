@@ -25,25 +25,27 @@ import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresExtension;
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.app.EmbeddingVector;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.Features;
 import androidx.appsearch.app.JoinSpec;
 import androidx.appsearch.app.SearchSpec;
+import androidx.appsearch.platformstorage.PlatformConversionAdapter;
 import androidx.appsearch.platformstorage.util.AppSearchVersionUtil;
 import androidx.core.os.BuildCompat;
 import androidx.core.util.Preconditions;
 
 import org.jspecify.annotations.NonNull;
 
+
 import java.util.List;
 import java.util.Map;
 
 /**
  * Translates between Platform and Jetpack versions of {@link SearchSpec}.
- *
- * @exportToFramework:hide
  */
+@HideInPlatform
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RequiresApi(Build.VERSION_CODES.S)
 public final class SearchSpecToPlatformConverter {
@@ -57,7 +59,8 @@ public final class SearchSpecToPlatformConverter {
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public static android.app.appsearch.@NonNull SearchSpec toPlatformSearchSpec(
             @NonNull Context context,
-            @NonNull SearchSpec jetpackSearchSpec) {
+            @NonNull SearchSpec jetpackSearchSpec,
+            @NonNull PlatformConversionAdapter adapter) {
         Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(jetpackSearchSpec);
 
@@ -65,12 +68,12 @@ public final class SearchSpecToPlatformConverter {
                 new android.app.appsearch.SearchSpec.Builder();
 
         if (!jetpackSearchSpec.getAdvancedRankingExpression().isEmpty()) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.U_BASE) {
                 throw new UnsupportedOperationException(
                         Features.SEARCH_SPEC_ADVANCED_RANKING_EXPRESSION
                                 + " is not available on this AppSearch implementation.");
             }
-            ApiHelperForU.setRankingStrategy(
+            ApiHelperForSdkExtensionUBase.setRankingStrategy(
                     platformBuilder, jetpackSearchSpec.getAdvancedRankingExpression());
         } else {
             platformBuilder.setRankingStrategy(jetpackSearchSpec.getRankingStrategy());
@@ -89,7 +92,8 @@ public final class SearchSpecToPlatformConverter {
         if (jetpackSearchSpec.getResultGroupingTypeFlags() != 0) {
             if ((jetpackSearchSpec.getResultGroupingTypeFlags()
                     & SearchSpec.GROUPING_TYPE_PER_SCHEMA) != 0
-                    && Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                    && BuildCompat.T_EXTENSION_INT
+                    < AppSearchVersionUtil.TExtensionVersions.V_BASE) {
                 throw new UnsupportedOperationException(
                         Features.SEARCH_SPEC_GROUPING_TYPE_PER_SCHEMA
                                 + " is not available on this AppSearch implementation.");
@@ -102,9 +106,7 @@ public final class SearchSpecToPlatformConverter {
         // Only translate projection for versions after Android U.
         // Projection will be manually applied for earlier versions in SearchResultsImpl.
         // This is a workaround in Jetpack code for a pre-existing projection bug.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
-                || AppSearchVersionUtil.getAppSearchVersionCode(context)
-                >= AppSearchVersionUtil.APPSEARCH_U_BASE_VERSION_CODE) {
+        if (BuildCompat.T_EXTENSION_INT >= AppSearchVersionUtil.TExtensionVersions.U_BASE) {
             for (Map.Entry<String, List<String>> projection :
                     jetpackSearchSpec.getProjections().entrySet()) {
                 platformBuilder.addProjection(projection.getKey(), projection.getValue());
@@ -112,59 +114,72 @@ public final class SearchSpecToPlatformConverter {
         }
 
         if (!jetpackSearchSpec.getPropertyWeights().isEmpty()) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.U_BASE) {
                 throw new UnsupportedOperationException(
                         "Property weights are not supported with this backend/Android API level "
                                 + "combination.");
             }
-            ApiHelperForU.setPropertyWeights(platformBuilder,
+            ApiHelperForSdkExtensionUBase.setPropertyWeights(platformBuilder,
                     jetpackSearchSpec.getPropertyWeights());
         }
 
         if (!jetpackSearchSpec.getEnabledFeatures().isEmpty()) {
-            // Copy U features
+            // Copy U-base sdk extension features
             if (jetpackSearchSpec.isNumericSearchEnabled()
                     || jetpackSearchSpec.isVerbatimSearchEnabled()
                     || jetpackSearchSpec.isListFilterQueryLanguageEnabled()) {
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.U_BASE) {
                     throw new UnsupportedOperationException(
                             "Advanced query features (NUMERIC_SEARCH, VERBATIM_SEARCH and "
                                     + "LIST_FILTER_QUERY_LANGUAGE) are not supported with this "
                                     + "backend/Android API level combination.");
                 }
-                ApiHelperForU.copyEnabledFeatures(platformBuilder, jetpackSearchSpec);
+                ApiHelperForSdkExtensionUBase.copyEnabledFeatures(platformBuilder,
+                        jetpackSearchSpec);
             }
-            // Copy V features
+
+            // Copy V-base sdk extension features
             if (jetpackSearchSpec.isListFilterHasPropertyFunctionEnabled()) {
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.V_BASE) {
                     throw new UnsupportedOperationException(
                             Features.LIST_FILTER_HAS_PROPERTY_FUNCTION
                                     + " is not available on this AppSearch implementation.");
                 }
-                ApiHelperForV.copyEnabledFeatures(platformBuilder, jetpackSearchSpec);
+                ApiHelperForSdkExtensionVBase.copyEnabledFeatures(platformBuilder,
+                        jetpackSearchSpec);
             }
 
+            // Copy B-base sdk extension features
             if (jetpackSearchSpec.isListFilterMatchScoreExpressionFunctionEnabled()) {
-                // TODO(b/377215223): Remove this once matchScoreExpression is supported.
-                throw new UnsupportedOperationException(
-                        Features.LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION
-                                + " is not available on this AppSearch implementation.");
+                if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.B_BASE) {
+                    throw new UnsupportedOperationException(
+                            Features.LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION
+                                    + " is not available on this AppSearch implementation.");
+                }
+                ApiHelperForSdkExtensionBBase.copyEnabledFeatures(platformBuilder,
+                        jetpackSearchSpec);
             }
         }
         if (!jetpackSearchSpec.getEmbeddingParameters().isEmpty()) {
-            if (!AppSearchVersionUtil.isAtLeastB()) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
                 throw new UnsupportedOperationException(Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG
                         + " is not available on this AppSearch implementation.");
             }
             ApiHelperForB.addEmbeddingParameters(platformBuilder,
-                    jetpackSearchSpec.getEmbeddingParameters());
+                    jetpackSearchSpec.getEmbeddingParameters(), adapter);
             ApiHelperForB.setDefaultEmbeddingSearchMetricType(platformBuilder,
                     jetpackSearchSpec.getDefaultEmbeddingSearchMetricType());
         }
         if (!jetpackSearchSpec.getSearchStringParameters().isEmpty()) {
             // TODO(b/332620561): Remove this once search parameter strings APIs is supported.
-            throw new UnsupportedOperationException(Features.SEARCH_SPEC_SEARCH_STRING_PARAMETERS
-                    + " is not available on this AppSearch implementation.");
+            adapter.setSearchStringParameters(
+                    platformBuilder, jetpackSearchSpec.getSearchStringParameters());
+        }
+        if (jetpackSearchSpec.getEmbeddingQueryProbeCount()
+                != SearchSpec.DEFAULT_EMBEDDING_QUERY_PROBE_COUNT) {
+            // TODO(b/448886757): Update once this feature is supported.
+            adapter.setEmbeddingQueryProbeCount(
+                    platformBuilder, jetpackSearchSpec.getEmbeddingQueryProbeCount());
         }
 
         if (jetpackSearchSpec.getJoinSpec() != null) {
@@ -173,50 +188,56 @@ public final class SearchSpecToPlatformConverter {
                         + "AppSearch implementation.");
             }
             ApiHelperForSdkExtensionUBase.setJoinSpec(
-                    context, platformBuilder, jetpackSearchSpec.getJoinSpec());
+                    context, platformBuilder, jetpackSearchSpec.getJoinSpec(), adapter);
         }
 
         if (!jetpackSearchSpec.getFilterProperties().isEmpty()) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.V_BASE) {
                 throw new UnsupportedOperationException(Features.SEARCH_SPEC_ADD_FILTER_PROPERTIES
                         + " is not available on this AppSearch implementation.");
             }
-            ApiHelperForV.addFilterProperties(
+            ApiHelperForSdkExtensionVBase.addFilterProperties(
                     platformBuilder, jetpackSearchSpec.getFilterProperties());
         }
 
         if (jetpackSearchSpec.getSearchSourceLogTag() != null) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.V_BASE) {
                 throw new UnsupportedOperationException(
                         Features.SEARCH_SPEC_SET_SEARCH_SOURCE_LOG_TAG
                                 + " is not available on this AppSearch implementation.");
             }
-            ApiHelperForV.setSearchSourceLogTag(
+            ApiHelperForSdkExtensionVBase.setSearchSourceLogTag(
                     platformBuilder, jetpackSearchSpec.getSearchSourceLogTag());
         }
 
         if (!jetpackSearchSpec.getInformationalRankingExpressions().isEmpty()) {
-            if (!AppSearchVersionUtil.isAtLeastB()) {
+            if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.B_BASE) {
                 throw new UnsupportedOperationException(
                         Features.SEARCH_SPEC_ADD_INFORMATIONAL_RANKING_EXPRESSIONS
                                 + " are not available on this AppSearch implementation.");
             }
-            ApiHelperForB.addInformationalRankingExpressions(platformBuilder,
+            ApiHelperForSdkExtensionBBase.addInformationalRankingExpressions(platformBuilder,
                     jetpackSearchSpec.getInformationalRankingExpressions());
         }
 
         if (!jetpackSearchSpec.getFilterDocumentIds().isEmpty()) {
-            // TODO(b/367464836): Remove this once document id filters are available.
-            throw new UnsupportedOperationException(
-                    Features.SEARCH_SPEC_ADD_FILTER_DOCUMENT_IDS
-                            + " is not available on this AppSearch implementation.");
+            if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.B_BASE) {
+                throw new UnsupportedOperationException(
+                        Features.SEARCH_SPEC_ADD_FILTER_DOCUMENT_IDS
+                                + " is not available on this AppSearch implementation.");
+            }
+            ApiHelperForSdkExtensionBBase.addFilterDocumentIds(
+                    platformBuilder, jetpackSearchSpec.getFilterDocumentIds());
         }
 
         if (jetpackSearchSpec.isScorablePropertyRankingEnabled()) {
-            // TODO(b/379743983): Remove once this feature is available.
-            throw new UnsupportedOperationException(
-                    Features.SCHEMA_SCORABLE_PROPERTY_CONFIG
-                            + " is not available on this AppSearch implementation.");
+            if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.B_BASE) {
+                throw new UnsupportedOperationException(
+                        Features.SCHEMA_SCORABLE_PROPERTY_CONFIG
+                                + " is not available on this AppSearch implementation.");
+            }
+            ApiHelperForSdkExtensionBBase.setScorablePropertyRankingEnabled(
+                    platformBuilder, jetpackSearchSpec.isScorablePropertyRankingEnabled());
         }
         return platformBuilder.build();
     }
@@ -231,24 +252,19 @@ public final class SearchSpecToPlatformConverter {
         }
 
         @DoNotInline
-        static void setJoinSpec(@NonNull Context context,
-                android.app.appsearch.SearchSpec.@NonNull Builder builder,
-                JoinSpec jetpackJoinSpec) {
-            builder.setJoinSpec(JoinSpecToPlatformConverter.toPlatformJoinSpec(context,
-                    jetpackJoinSpec));
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    private static class ApiHelperForU {
-        private ApiHelperForU() {
-            // This class is not instantiable.
-        }
-
-        @DoNotInline
         static void setRankingStrategy(android.app.appsearch.SearchSpec.@NonNull Builder builder,
                 @NonNull String rankingExpression) {
             builder.setRankingStrategy(rankingExpression);
+        }
+
+        @OptIn(markerClass = androidx.appsearch.app.ExperimentalAppSearchApi.class)
+        @DoNotInline
+        static void setJoinSpec(@NonNull Context context,
+                android.app.appsearch.SearchSpec.@NonNull Builder builder,
+                JoinSpec jetpackJoinSpec,
+                @NonNull PlatformConversionAdapter adapter) {
+            builder.setJoinSpec(JoinSpecToPlatformConverter.toPlatformJoinSpec(context,
+                    jetpackJoinSpec, adapter));
         }
 
         @DoNotInline
@@ -274,17 +290,11 @@ public final class SearchSpecToPlatformConverter {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
-    private static class ApiHelperForV {
-        private ApiHelperForV() {}
-
-        @DoNotInline
-        static void addFilterProperties(
-                android.app.appsearch.SearchSpec.@NonNull Builder platformBuilder,
-                Map<String, List<String>> properties) {
-            for (Map.Entry<String, List<String>> entry : properties.entrySet()) {
-                platformBuilder.addFilterProperties(entry.getKey(), entry.getValue());
-            }
+    @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU,
+            version = AppSearchVersionUtil.TExtensionVersions.V_BASE)
+    private static class ApiHelperForSdkExtensionVBase {
+        private ApiHelperForSdkExtensionVBase() {
+            // This class is not instantiable.
         }
 
         @DoNotInline
@@ -297,10 +307,58 @@ public final class SearchSpecToPlatformConverter {
         }
 
         @DoNotInline
+        static void addFilterProperties(
+                android.app.appsearch.SearchSpec.@NonNull Builder platformBuilder,
+                Map<String, List<String>> properties) {
+            for (Map.Entry<String, List<String>> entry : properties.entrySet()) {
+                platformBuilder.addFilterProperties(entry.getKey(), entry.getValue());
+            }
+        }
+
+        @DoNotInline
         static void setSearchSourceLogTag(
                 android.app.appsearch.SearchSpec.Builder platformBuilder,
                 String searchSourceLogTag) {
             platformBuilder.setSearchSourceLogTag(searchSourceLogTag);
+        }
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU,
+            version = AppSearchVersionUtil.TExtensionVersions.B_BASE)
+    private static class ApiHelperForSdkExtensionBBase {
+        private ApiHelperForSdkExtensionBBase() {
+            // This class is not instantiable.
+        }
+
+        @DoNotInline
+        static void setScorablePropertyRankingEnabled(
+                android.app.appsearch.SearchSpec.Builder platformBuilder,
+                boolean isScorablePropertyRankingEnabled) {
+            platformBuilder.setScorablePropertyRankingEnabled(isScorablePropertyRankingEnabled);
+        }
+
+        @DoNotInline
+        @OptIn(markerClass = ExperimentalAppSearchApi.class)
+        static void copyEnabledFeatures(
+                android.app.appsearch.SearchSpec.@NonNull Builder platformBuilder,
+                @NonNull SearchSpec jetpackSpec) {
+            if (jetpackSpec.isListFilterMatchScoreExpressionFunctionEnabled()) {
+                platformBuilder.setListFilterMatchScoreExpressionFunctionEnabled(true);
+            }
+        }
+
+        @DoNotInline
+        static void addInformationalRankingExpressions(
+                android.app.appsearch.SearchSpec.@NonNull Builder platformBuilder,
+                @NonNull List<String> informationalRankingExpressions) {
+            platformBuilder.addInformationalRankingExpressions(informationalRankingExpressions);
+        }
+
+        @DoNotInline
+        static void addFilterDocumentIds(
+                android.app.appsearch.SearchSpec.@NonNull Builder platformBuilder,
+                @NonNull List<String> documentIds) {
+            platformBuilder.addFilterDocumentIds(documentIds);
         }
     }
 
@@ -311,15 +369,26 @@ public final class SearchSpecToPlatformConverter {
         }
 
         @DoNotInline
+        @OptIn(markerClass = ExperimentalAppSearchApi.class)
         static void addEmbeddingParameters(
                 android.app.appsearch.SearchSpec.@NonNull Builder platformBuilder,
-                @NonNull List<EmbeddingVector> embeddingVectors) {
+                @NonNull List<EmbeddingVector> embeddingVectors,
+                @NonNull PlatformConversionAdapter adapter) {
+            Preconditions.checkNotNull(adapter);
             android.app.appsearch.EmbeddingVector[] platformEmbeddingVectors =
                     new android.app.appsearch.EmbeddingVector[embeddingVectors.size()];
             for (int i = 0; i < embeddingVectors.size(); i++) {
-                platformEmbeddingVectors[i] = new android.app.appsearch.EmbeddingVector(
-                        embeddingVectors.get(i).getValues(),
-                        embeddingVectors.get(i).getModelSignature());
+                EmbeddingVector jetpackEmbeddingVector = embeddingVectors.get(i);
+                // TODO(b/390450012): Update this once pre-quantized embedding vectors are
+                //  supported.
+                if (jetpackEmbeddingVector.getQuantizedData() != null) {
+                    platformEmbeddingVectors[i] =
+                            adapter.convertQuantizedEmbeddingVector(jetpackEmbeddingVector);
+                } else {
+                    platformEmbeddingVectors[i] = new android.app.appsearch.EmbeddingVector(
+                            jetpackEmbeddingVector.getValues(),
+                            jetpackEmbeddingVector.getModelSignature());
+                }
             }
             platformBuilder.addEmbeddingParameters(platformEmbeddingVectors);
         }
@@ -330,13 +399,6 @@ public final class SearchSpecToPlatformConverter {
                 android.app.appsearch.SearchSpec.@NonNull Builder platformBuilder,
                 @SearchSpec.EmbeddingSearchMetricType int defaultEmbeddingSearchMetricType) {
             platformBuilder.setDefaultEmbeddingSearchMetricType(defaultEmbeddingSearchMetricType);
-        }
-
-        @DoNotInline
-        static void addInformationalRankingExpressions(
-                android.app.appsearch.SearchSpec.@NonNull Builder platformBuilder,
-                @NonNull List<String> informationalRankingExpressions) {
-            platformBuilder.addInformationalRankingExpressions(informationalRankingExpressions);
         }
     }
 }

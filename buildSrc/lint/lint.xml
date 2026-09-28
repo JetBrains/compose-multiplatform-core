@@ -36,8 +36,8 @@
         <ignore path="**/src/test/**" />
         <ignore path="**/src/androidTest/**" />
         <!-- Required for Kotlin multi-platform tests. -->
-        <ignore path="**/src/androidInstrumentedTest/**" />
-        <ignore path="**/src/androidUnitTest/**" />
+        <ignore path="**/src/androidDeviceTest/**" />
+        <ignore path="**/src/androidHostTest/**" />
     </issue>
     <!-- Disable all lint checks on transformed classes by default. b/283812176 -->
     <issue id="all">
@@ -45,7 +45,12 @@
         <!-- playground builds have dependency files in "transformed" instead of ".transforms" -->
         <ignore path="**/.gradle/**/transforms*/**/transformed/**" />
     </issue>
+    <!-- Ensure this issue is always fatal even though it is reported on transformed paths -->
+    <issue id="ObsoleteLintCustomCheck" severity="fatal" />
     <issue id="AndroidXFlaggedApi">
-        <option name="allowlist" value="androidx.lint-checks,androidx.mediarouter" />
+        <!-- Comma-delimited list of libraries which are allowed to call flagged APIs, where
+             `groupId:artifactId` represents a single module and `groupId` represents an entire
+             group of modules. -->
+        <option name="allowlist" value="androidx.lint-checks,androidx.mediarouter,androidx.core:core,androidx.core.pip" />
     </issue>
 </lint>

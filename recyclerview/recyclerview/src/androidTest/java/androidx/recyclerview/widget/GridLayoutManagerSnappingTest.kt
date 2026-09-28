@@ -35,7 +35,7 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-internal class GridLayoutManagerSnappingTest(
+public class GridLayoutManagerSnappingTest(
     val mConfig: Config,
     private val mReverseScroll: Boolean,
     private val mApplyPadding: Boolean,
@@ -228,7 +228,7 @@ internal class GridLayoutManagerSnappingTest(
     }
 
     private suspend fun fling(velocityX: Int, velocityY: Int): Boolean {
-        var didStart: Boolean
+        val didStart: Boolean
         withContext(Dispatchers.Main.immediate) {
             didStart = mRecyclerView.fling(velocityX, velocityY)
         }

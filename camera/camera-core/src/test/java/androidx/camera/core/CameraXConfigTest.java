@@ -20,7 +20,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.mock;
 
-import android.os.Build;
 import android.util.Log;
 
 import androidx.camera.core.impl.CameraDeviceSurfaceManager;
@@ -39,7 +38,7 @@ import java.util.concurrent.Executor;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = {Config.ALL_SDKS})
 public class CameraXConfigTest {
 
     private CameraXConfig mCameraXConfig;

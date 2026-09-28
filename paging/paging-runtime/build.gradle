@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -27,7 +26,6 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
@@ -39,11 +37,10 @@ dependencies {
     // Ensure that the -ktx dependency graph mirrors the Java dependency graph
     api(project(":paging:paging-common-ktx"))
 
-    api("androidx.lifecycle:lifecycle-livedata-ktx:2.8.3")
-    api("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
-    api("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.3")
+    api("androidx.lifecycle:lifecycle-livedata-ktx:2.10.0")
+    api("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
+    api("androidx.lifecycle:lifecycle-viewmodel-ktx:2.10.0")
     api("androidx.recyclerview:recyclerview:1.2.1")
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
     implementation("androidx.core:core-ktx:1.7.0")
 
@@ -67,6 +64,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Paging-Runtime"
-    legacyDisableKotlinStrictApiMode = true
     samples(project(":paging:paging-samples"))
 }

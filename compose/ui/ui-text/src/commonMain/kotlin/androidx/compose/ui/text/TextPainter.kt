@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.util.fastRoundToInt
 import kotlin.math.ceil
 
-object TextPainter {
+public object TextPainter {
 
     // TODO(b/236964276): Deprecate when TextMeasurer and drawText are no longer Experimental
     /**
@@ -49,7 +49,7 @@ object TextPainter {
      * @param canvas a canvas to be drawn
      * @param textLayoutResult a result of text layout
      */
-    fun paint(canvas: Canvas, textLayoutResult: TextLayoutResult) {
+    public fun paint(canvas: Canvas, textLayoutResult: TextLayoutResult) {
         val needClipping =
             textLayoutResult.hasVisualOverflow &&
                 textLayoutResult.layoutInput.overflow != TextOverflow.Visible
@@ -140,7 +140,7 @@ object TextPainter {
  * @param blendMode Blending algorithm to be applied to the text
  * @sample androidx.compose.ui.text.samples.DrawTextAnnotatedStringSample
  */
-fun DrawScope.drawText(
+public fun DrawScope.drawText(
     textMeasurer: TextMeasurer,
     text: AnnotatedString,
     topLeft: Offset = Offset.Zero,
@@ -205,7 +205,7 @@ fun DrawScope.drawText(
  * @sample androidx.compose.ui.text.samples.DrawTextSample
  * @sample androidx.compose.ui.text.samples.DrawTextStyledSample
  */
-fun DrawScope.drawText(
+public fun DrawScope.drawText(
     textMeasurer: TextMeasurer,
     text: String,
     topLeft: Offset = Offset.Zero,
@@ -254,7 +254,7 @@ fun DrawScope.drawText(
  * @sample androidx.compose.ui.text.samples.DrawTextMeasureInLayoutSample
  * @sample androidx.compose.ui.text.samples.DrawTextDrawWithCacheSample
  */
-fun DrawScope.drawText(
+public fun DrawScope.drawText(
     textLayoutResult: TextLayoutResult,
     color: Color = Color.Unspecified,
     topLeft: Offset = Offset.Zero,
@@ -314,7 +314,7 @@ fun DrawScope.drawText(
  * @param drawStyle Whether or not the text is stroked or filled in.
  * @param blendMode Blending algorithm to be applied to the text
  */
-fun DrawScope.drawText(
+public fun DrawScope.drawText(
     textLayoutResult: TextLayoutResult,
     brush: Brush,
     topLeft: Offset = Offset.Zero,
@@ -365,7 +365,7 @@ private fun DrawScope.textLayoutConstraints(size: Size, topLeft: Offset): Constr
     val isWidthNaN = size.isUnspecified || size.width.isNaN()
     if (isWidthNaN) {
         minWidth = 0
-        maxWidth = ceil(this.size.width - topLeft.x).fastRoundToInt()
+        maxWidth = ceil(this.size.width - topLeft.x).fastRoundToInt().coerceAtLeast(minWidth)
     } else {
         val fixedWidth = ceil(size.width).fastRoundToInt()
         minWidth = fixedWidth
@@ -377,7 +377,7 @@ private fun DrawScope.textLayoutConstraints(size: Size, topLeft: Offset): Constr
     val isHeightNaN = size.isUnspecified || size.height.isNaN()
     if (isHeightNaN) {
         minHeight = 0
-        maxHeight = ceil(this.size.height - topLeft.y).fastRoundToInt()
+        maxHeight = ceil(this.size.height - topLeft.y).fastRoundToInt().coerceAtLeast(minHeight)
     } else {
         val fixedHeight = ceil(size.height).fastRoundToInt()
         minHeight = fixedHeight

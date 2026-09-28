@@ -42,10 +42,10 @@ public class WheelchairPushesRecord(
      * See b/400965398 for more context.
      */
     init {
-        require(startTime.isBefore(endTime)) { "startTime must be before endTime." }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             this.toPlatformRecord()
         } else {
+            require(startTime.isBefore(endTime)) { "startTime must be before endTime." }
             requireNonNegative(value = count, name = "count")
             count.requireNotMore(other = 1000_000, name = "count")
         }
@@ -79,13 +79,13 @@ public class WheelchairPushesRecord(
         return "WheelchairPushesRecord(startTime=$startTime, startZoneOffset=$startZoneOffset, endTime=$endTime, endZoneOffset=$endZoneOffset, count=$count, metadata=$metadata)"
     }
 
-    companion object {
+    public companion object {
         /**
          * Metric identifier to retrieve the total wheelchair push count from
          * [androidx.health.connect.client.aggregate.AggregationResult].
          */
         @JvmField
-        val COUNT_TOTAL: AggregateMetric<Long> =
+        public val COUNT_TOTAL: AggregateMetric<Long> =
             AggregateMetric.longMetric(
                 "WheelchairPushes",
                 AggregateMetric.AggregationType.TOTAL,

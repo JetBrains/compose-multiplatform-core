@@ -29,7 +29,6 @@ import androidx.benchmark.Outputs
 import androidx.benchmark.Profiler
 import androidx.benchmark.Shell
 import androidx.benchmark.macro.MacrobenchmarkScope.Companion.Api24ContextHelper.createDeviceProtectedStorageContextCompat
-import androidx.benchmark.macro.perfetto.forceTrace
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiAutomatorTestScope
 import androidx.tracing.trace
@@ -41,7 +40,7 @@ import java.io.File
  */
 public class MacrobenchmarkScope(
     /** ApplicationId / Package name of the app being tested. */
-    val packageName: String,
+    public val packageName: String,
     /**
      * Controls whether launches will automatically set [Intent.FLAG_ACTIVITY_CLEAR_TASK].
      *
@@ -50,6 +49,15 @@ public class MacrobenchmarkScope(
      */
     private val launchWithClearTask: Boolean,
 ) : UiAutomatorTestScope() {
+
+    /**
+     * When launching activities through UiAutomator APIs, perform a full startActivityAndWait,
+     * which includes Macrobenchmark's custom wait-for-frames logic which would be hard to
+     * reproduce/implement in UiAutomator.
+     */
+    override fun startIntentAndWait(intent: Intent) {
+        startActivityAndWait(intent)
+    }
 
     internal val context = instrumentation.context
 
@@ -144,7 +152,7 @@ public class MacrobenchmarkScope(
      * ahead of time.
      */
     @get:Suppress("AutoBoxing") // low frequency, non-perf-relevant part of test
-    var iteration: Int? = null
+    public var iteration: Int? = null
         internal set
 
     /**
@@ -167,15 +175,18 @@ public class MacrobenchmarkScope(
      * @throws IllegalStateException if unable to acquire intent for package.
      */
     @JvmOverloads
-    public fun startActivityAndWait(block: (Intent) -> Unit = {}) {
-        val intent =
-            context.packageManager.getLaunchIntentForPackage(packageName)
-                ?: context.packageManager.getLeanbackLaunchIntentForPackage(packageName)
-                ?: throw IllegalStateException("Unable to acquire intent for package $packageName")
+    public fun startActivityAndWait(block: (Intent) -> Unit = {}): Unit =
+        trace("startActivityAndWait") {
+            val intent =
+                context.packageManager.getLaunchIntentForPackage(packageName)
+                    ?: context.packageManager.getLeanbackLaunchIntentForPackage(packageName)
+                    ?: throw IllegalStateException(
+                        "Unable to acquire intent for package $packageName"
+                    )
 
-        block(intent)
-        startActivityAndWait(intent)
-    }
+            block(intent)
+            startActivityAndWait(intent)
+        }
 
     /**
      * Start an activity with the provided intent, and wait until its launch completes.
@@ -187,18 +198,17 @@ public class MacrobenchmarkScope(
      *
      * @param intent Specifies which app/Activity should be launched.
      */
-    public fun startActivityAndWait(intent: Intent): Unit =
-        forceTrace("startActivityAndWait") {
-            // Must launch with new task, as we're not launching from an existing task
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            if (launchWithClearTask) {
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            }
-
-            // Note: intent.toUri(0) produces a String that can't be parsed by `am start-activity`.
-            // intent.toUri(Intent.URI_ANDROID_APP_SCHEME) also works though.
-            startActivityImpl(intent.toUri(Intent.URI_INTENT_SCHEME))
+    public fun startActivityAndWait(intent: Intent) {
+        // Must launch with new task, as we're not launching from an existing task
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (launchWithClearTask) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
         }
+
+        // Note: intent.toUri(0) produces a String that can't be parsed by `am start-activity`.
+        // intent.toUri(Intent.URI_ANDROID_APP_SCHEME) also works though.
+        startActivityImpl(intent.toUri(Intent.URI_INTENT_SCHEME))
+    }
 
     private fun startActivityImpl(uri: String) {
         if (
@@ -341,21 +351,21 @@ public class MacrobenchmarkScope(
         replaceWith = ReplaceWith("killProcess()"),
     )
     @Suppress("UNUSED_PARAMETER")
-    fun killProcess(useKillAll: Boolean = false) {
+    public fun killProcess(useKillAll: Boolean = false) {
         killProcess()
     }
 
     /** Force-stop the process being measured. */
-    fun killProcess() {
+    public fun killProcess() {
         // Method traces are only flushed is a method tracing session is active.
         flushMethodTraces()
 
-        if (killMode.flushArtProfiles && Build.VERSION.SDK_INT >= 24) {
+        if (killMode.flushArtProfiles) {
             // Flushing ART profiles will also kill the process at the end.
             killProcessAndFlushArtProfiles()
         } else {
             killProcessImpl()
-            if (killMode.clearArtRuntimeImage && Build.VERSION.SDK_INT >= 24) {
+            if (killMode.clearArtRuntimeImage) {
                 if (DeviceInfo.verifyClearsRuntimeImage) {
                     // clear the runtime image
                     CompilationMode.cmdPackageCompile(packageName, "verify")
@@ -385,7 +395,7 @@ public class MacrobenchmarkScope(
      * @throws IllegalStateException if the device is not rooted, and the target app cannot be
      *   signalled to drop its shader cache.
      */
-    fun dropShaderCache() {
+    public fun dropShaderCache() {
         if (Arguments.dropShadersEnable) {
             Log.d(TAG, "Dropping shader cache for $packageName")
             val dropError = ProfileInstallBroadcast.dropShaderCache(packageName)
@@ -450,7 +460,6 @@ public class MacrobenchmarkScope(
         )
     }
 
-    @RequiresApi(24)
     internal fun killProcessAndFlushArtProfiles(allowFlushWithBroadcast: Boolean = true) {
         Log.d(TAG, "Flushing ART profiles for $packageName")
         // For speed profile compilation, ART team recommended to wait for 5 secs when app
@@ -476,13 +485,19 @@ public class MacrobenchmarkScope(
                         TAG,
                         "Unable to saveProfile with profileinstaller ($saveResult), trying kill",
                     )
-                    val response =
-                        Shell.executeScriptCaptureStdoutStderr("killall -s SIGUSR1 $packageName")
-                    check(response.isBlank()) {
-                        "Failed to dump profile for $packageName ($response),\n" +
-                            " and failed to save profile with broadcast: ${saveResult.error}"
+                    Shell.getRunningPidsAndProcessesForPackage(packageName).forEach { runningProcess
+                        ->
+                        val response =
+                            Shell.executeScriptCaptureStdoutStderr(
+                                "kill -s SIGUSR1 ${runningProcess.pid}"
+                            )
+                        check(response.isBlank()) {
+                            "Failed to dump profile for $runningProcess ($response),\n" +
+                                " and failed to save profile with broadcast: ${saveResult.error}"
+                        }
+                        @SuppressLint("BanThreadSleep")
+                        Thread.sleep(Arguments.saveProfileWaitMillis)
                     }
-                    @SuppressLint("BanThreadSleep") Thread.sleep(Arguments.saveProfileWaitMillis)
                 } else {
                     // unable to flush profiles, throw
                     throw RuntimeException(saveResult.error)
@@ -504,12 +519,18 @@ public class MacrobenchmarkScope(
                 throw IllegalStateException(errorMessage)
             }
         }
-        Shell.killProcessesAndWait(packageName, onFailure = onFailure) {
-            Log.d(TAG, "Force-stopping process $packageName")
-            Shell.executeScriptSilent("am force-stop $packageName")
+        val processes = Shell.getRunningPidsAndProcessesForPackage(packageName)
+        if (processes.isNotEmpty()) {
+            Shell.killProcessesAndWait(processes, onFailure = onFailure) {
+                Log.d(TAG, "Force-stopping process $packageName")
+                Shell.executeScriptSilent("am force-stop $packageName")
 
-            // System Apps need an additional Thread.sleep() to ensure that the process is killed.
-            @Suppress("BanThreadSleep") Thread.sleep(Arguments.killProcessDelayMillis)
+                // System Apps need an additional Thread.sleep() to ensure that the process is
+                // killed.
+                @Suppress("BanThreadSleep") Thread.sleep(Arguments.killProcessDelayMillis)
+            }
+        } else {
+            Log.d(TAG, "No processes for package $packageName, skipping kill")
         }
     }
 
@@ -633,7 +654,7 @@ public class MacrobenchmarkScope(
                 Shell.executeScriptSilent("am profile stop $packageName")
             }
             // unique label so source is clear, dateToFileName so each run of test is unique on host
-            val outputFileName = "$fileLabel-methodTracing-${Outputs.dateToFileName()}.trace"
+            val outputFileName = "$fileLabel-${Outputs.dateToFileName()}.trace"
             val stagingFile =
                 File.createTempFile("methodTrace", null, Outputs.dirUsableByAppAndShell)
             // Staging location before we write it again using Outputs.writeFile(...)
@@ -650,7 +671,7 @@ public class MacrobenchmarkScope(
                     stagingFile.delete()
                     Shell.rm(tracePath)
                 }
-            val traceLabel = "MethodTrace iteration ${iteration ?: 0}"
+            val traceLabel = "Method Trace Iteration ${iteration ?: 0}"
             // Keep track of the label and the corresponding output paths.
             methodTraces += traceLabel to outputPath
         }
@@ -665,13 +686,9 @@ public class MacrobenchmarkScope(
                 if (Build.VERSION.SDK_INT >= 34) {
                     // U switched to cache dir, so it's not deleted on each app update
                     context.createDeviceProtectedStorageContextCompat().cacheDir
-                } else if (Build.VERSION.SDK_INT >= 24) {
+                } else {
                     // shaders started using device protected storage context once it was added in N
                     context.createDeviceProtectedStorageContextCompat().codeCacheDir
-                } else {
-                    // getCodeCacheDir was added in L, but not used by platform for shaders until M
-                    // as M is minApi of this library, that's all we support here
-                    context.codeCacheDir
                 }
             return shaderDirectory.absolutePath.replace(context.packageName, packageName)
         }
@@ -681,7 +698,6 @@ public class MacrobenchmarkScope(
             return "/data/local/tmp/$packageName-method.trace"
         }
 
-        @RequiresApi(Build.VERSION_CODES.N)
         internal object Api24ContextHelper {
             fun Context.createDeviceProtectedStorageContextCompat(): Context =
                 createDeviceProtectedStorageContext()

@@ -32,7 +32,6 @@ import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.filters.FlakyTest
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.testutils.withActivity
 import com.google.common.truth.Truth
 import java.util.concurrent.CountDownLatch
@@ -44,7 +43,6 @@ import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
 
-@SdkSuppress(minSdkVersion = 21)
 @LargeTest
 public class WindowInsetsAnimationCompatActivityTest {
 

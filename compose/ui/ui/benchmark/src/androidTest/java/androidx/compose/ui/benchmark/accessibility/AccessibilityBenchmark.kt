@@ -39,7 +39,7 @@ import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.traversalIndex
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -74,7 +74,7 @@ class AccessibilityBenchmark {
         }
 
         // Parent AccessibilityNodeInfo must always be requested before their children
-        provider.createAccessibilityNodeInfo(HOST_VIEW_ID)
+        composeTestRule.runOnUiThread { provider.createAccessibilityNodeInfo(HOST_VIEW_ID) }
         nodesWithTag(container1Tag).forEach { provider.createAccessibilityNodeInfo(it.id) }
         nodesWithTag(container2Tag).forEach { provider.createAccessibilityNodeInfo(it.id) }
 

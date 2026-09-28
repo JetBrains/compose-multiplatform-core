@@ -35,9 +35,9 @@ import androidx.compose.ui.util.fastForEach
  * [AppBarColumnScope]. Each item provides a way to render itself in the column layout, and an
  * alternative way, to render inside of a dropdown menu, when there is overflow.
  *
+ * @param modifier The modifier to be applied to the column.
  * @param overflowIndicator A composable that is displayed at the end of the column when the content
  *   overflows. It receives an [AppBarMenuState] instance.
- * @param modifier The modifier to be applied to the column.
  * @param maxItemCount the max amount of items that should render in the column, before starting to
  *   use the overflow menu. Consider that using large items or small constraints, will reduce the
  *   effective maximum. Note: If the number of items supplied is bigger than max, at most max - 1
@@ -47,9 +47,11 @@ import androidx.compose.ui.util.fastForEach
  */
 @Composable
 @Suppress("ComposableLambdaParameterPosition", "KotlinDefaultParameterOrder")
-fun AppBarColumn(
-    overflowIndicator: @Composable (AppBarMenuState) -> Unit,
+public fun AppBarColumn(
     modifier: Modifier = Modifier,
+    overflowIndicator: @Composable (AppBarMenuState) -> Unit = { menuState ->
+        AppBarOverflowIndicator(menuState)
+    },
     maxItemCount: Int = Int.MAX_VALUE,
     content: AppBarColumnScope.() -> Unit,
 ) {
@@ -72,7 +74,7 @@ fun AppBarColumn(
                     Box {
                         overflowIndicator(menuState)
                         DropdownMenu(
-                            expanded = menuState.isExpanded,
+                            expanded = menuState.isShowing,
                             onDismissRequest = { menuState.dismiss() },
                         ) {
                             scope.items
@@ -90,8 +92,18 @@ fun AppBarColumn(
     )
 }
 
+@Deprecated(level = DeprecationLevel.HIDDEN, message = "Maintained for binary compatibility.")
+@Composable
+@Suppress("ComposableLambdaParameterPosition", "KotlinDefaultParameterOrder")
+public fun AppBarColumn(
+    overflowIndicator: @Composable (AppBarMenuState) -> Unit,
+    modifier: Modifier = Modifier,
+    maxItemCount: Int = Int.MAX_VALUE,
+    content: AppBarColumnScope.() -> Unit,
+): Unit = AppBarColumn(modifier, overflowIndicator, maxItemCount, content)
+
 /** DSL scope for building the content of an [AppBarColumn]. */
-interface AppBarColumnScope : AppBarScope
+public interface AppBarColumnScope : AppBarScope
 
 private class AppBarColumnScopeImpl(val impl: AppBarScopeImpl) :
     AppBarColumnScope, AppBarScope by impl, AppBarItemProvider by impl

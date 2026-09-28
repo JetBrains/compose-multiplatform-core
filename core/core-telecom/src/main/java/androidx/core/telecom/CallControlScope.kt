@@ -19,6 +19,7 @@ package androidx.core.telecom
 import android.os.ParcelUuid
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 /**
  * DSL interface to provide and receive updates about a call session. The CallControlScope should be
@@ -119,7 +120,12 @@ public interface CallControlScope : CoroutineScope {
      *     <li>[DisconnectCause#LOCAL]</li>
      *     <li>[DisconnectCause#REMOTE]</li>
      *     <li>[DisconnectCause#REJECTED]</li>
-     *     <li>[DisconnectCause#MISSED]</li> </ul>
+     *     <li>[DisconnectCause#MISSED]</li>
+     *     <li>[DisconnectCause#ERROR] (Starting in SDK 38, you can report this new ERROR option.
+     *       You should report [DisconnectCause#ERROR] if the call terminated unexpectedly due to an
+     *       error in your app (for example bad network connection, server error or a media error).
+     *       On devices running SDK versions less than 38, [DisconnectCause#ERROR] will be
+     *       automatically remapped to [DisconnectCause#LOCAL].)</li> </ul>
      *
      * @return [CallControlResult.Success] will be returned if Telecom is able to disconnect the
      *   call successfully. Otherwise [CallControlResult.Error] will be returned with an error code
@@ -142,6 +148,28 @@ public interface CallControlScope : CoroutineScope {
     public suspend fun requestEndpointChange(endpoint: CallEndpointCompat): CallControlResult
 
     /**
+     * Requests a change to the call type for the current call.
+     *
+     * Use this method to transition the call between different states, for example, to upgrade an
+     * audio-only call to a video call, or downgrade a video call to audio-only.
+     *
+     * @param callType The desired call type for the call. This must be one of the integer constants
+     *   defined in [CallAttributesCompat.Companion.CallType], such as
+     *   [CallAttributesCompat.CALL_TYPE_AUDIO_CALL] or [CallAttributesCompat.CALL_TYPE_VIDEO_CALL].
+     * @return A [CallControlResult] indicating the outcome of the request:
+     *     - [CallControlResult.Success]: The request to change the call type was successfully
+     *       processed by the Telecom framework.
+     *     - [CallControlResult.Error]: The request failed. The specific reason for the failure can
+     *       be determined by the error code within the [CallControlResult.Error]
+     */
+    public suspend fun requestCallType(
+        callType: @CallAttributesCompat.Companion.CallType Int
+    ): CallControlResult {
+        // Default implementation makes it non-breaking for implementers
+        return CallControlResult.Error(CallException.ERROR_UNKNOWN)
+    }
+
+    /**
      * Collect the new [CallEndpointCompat] through which call media flows (i.e. speaker, bluetooth,
      * etc.).
      */
@@ -155,4 +183,27 @@ public interface CallControlScope : CoroutineScope {
      * changes.
      */
     public val isMuted: Flow<Boolean>
+
+    /**
+     * Returns a [Flow] that emits the current call type state and subsequent updates.
+     *
+     * The emitted values are integers corresponding to the constants defined in
+     * [CallAttributesCompat.Companion.CallType], such as
+     * [CallAttributesCompat.CALL_TYPE_AUDIO_CALL] or [CallAttributesCompat.CALL_TYPE_VIDEO_CALL].
+     *
+     * Upon collection, the [Flow] will emit the current call type state immediately, and then emit
+     * new values whenever the call type changes (e.g., from audio to video). This is a cold Flow;
+     * emissions start only when the Flow is collected.
+     *
+     * @return A [Flow] of [Int] representing the current call type state. Collectors will receive
+     *   the latest state and any changes thereafter.
+     */
+    public fun callTypeFlow(): Flow<Int> {
+        // Default implementation to ensure binary compatibility for any other implementers.
+        return flow {
+            throw UnsupportedOperationException(
+                "callTypeFlow() is not provided by this default implementation."
+            )
+        }
+    }
 }

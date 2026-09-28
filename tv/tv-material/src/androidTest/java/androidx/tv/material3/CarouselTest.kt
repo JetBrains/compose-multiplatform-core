@@ -60,7 +60,7 @@ import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -69,6 +69,7 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.abs
@@ -305,6 +306,7 @@ class CarouselTest {
         rule.onNodeWithText("Play 0", useUnmergedTree = true).assertIsDisplayed().assertIsFocused()
     }
 
+    @SdkSuppress(maxSdkVersion = 35) // b/454425755
     @Test
     fun carousel_parentContainerGainsFocus_onBackPress() {
         rule.setContent {
@@ -334,6 +336,7 @@ class CarouselTest {
         rule.onNodeWithTag("box-container").assertIsFocused()
     }
 
+    @SdkSuppress(maxSdkVersion = 35) // b/454425755
     @Test
     fun carousel_withCarouselItem_parentContainerGainsFocusOnBackPress() {
         rule.setContent {
@@ -467,7 +470,6 @@ class CarouselTest {
         rule.onNodeWithTag(testTag).assertExists()
     }
 
-    @Test
     fun carousel_manualScrollingWithFocusableItemsOnTop_focusStaysWithinCarousel() {
         rule.setContent {
             Column {

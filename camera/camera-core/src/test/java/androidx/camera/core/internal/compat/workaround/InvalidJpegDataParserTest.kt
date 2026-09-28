@@ -280,7 +280,7 @@ private val invalidNoEoiData =
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class InvalidJpegDataParserTest(
     private val brand: String,
     private val model: String,

@@ -16,17 +16,18 @@
 
 package androidx.pdf.compose
 
+import android.R
 import android.content.Context
 import android.graphics.Point
 import android.graphics.PointF
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.click
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
@@ -34,15 +35,27 @@ import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
+import androidx.pdf.ExperimentalPdfApi
+import androidx.pdf.PdfFeature
 import androidx.pdf.PdfPoint
+import androidx.pdf.selection.PdfSelectionMenuKeys.CopyKey
+import androidx.pdf.selection.Selection
+import androidx.pdf.selection.model.TextSelection
 import androidx.pdf.view.PdfView
-import androidx.pdf.view.Selection
-import androidx.pdf.view.TextSelection
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
+import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.RootMatchers
+import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
@@ -51,6 +64,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
+@OptIn(ExperimentalPdfApi::class)
 @LargeTest
 class PdfViewerTest {
     @get:Rule val rule = createComposeRule()
@@ -61,7 +75,7 @@ class PdfViewerTest {
     fun pdfViewerState_noDocument_defaults() {
         lateinit var pdfViewerState: PdfViewerState
         rule.setContent {
-            pdfViewerState = remember { PdfViewerState() }
+            pdfViewerState = rememberPdfViewerState()
             PdfViewer(state = pdfViewerState, pdfDocument = null)
         }
 
@@ -76,7 +90,7 @@ class PdfViewerTest {
 
         lateinit var pdfViewerState: PdfViewerState
         rule.setContent {
-            pdfViewerState = remember { PdfViewerState() }
+            pdfViewerState = rememberPdfViewerState()
             PdfViewer(
                 modifier =
                     Modifier.requiredSize(width = 850.toDp(context), height = 1100.toDp(context)),
@@ -101,7 +115,7 @@ class PdfViewerTest {
 
         lateinit var pdfViewerState: PdfViewerState
         rule.setContent {
-            pdfViewerState = remember { PdfViewerState() }
+            pdfViewerState = rememberPdfViewerState()
             PdfViewer(
                 modifier =
                     Modifier.requiredSize(width = 850.toDp(context), height = 550.toDp(context))
@@ -140,12 +154,12 @@ class PdfViewerTest {
     @Test
     fun pdfViewerState_coordinateTranslation() {
         val pdfDocument = FakePdfDocument(List(10) { Point(425, 225) })
-        val topPageMarginPx = context.resources.getDimension(androidx.pdf.R.dimen.top_page_margin)
-        val pageSpacingPx = context.resources.getDimension(androidx.pdf.R.dimen.page_spacing)
+        val pageSpacingPx =
+            context.resources.getDimension(androidx.pdf.R.dimen.pdf_vertical_page_spacing)
 
         lateinit var pdfViewerState: PdfViewerState
         rule.setContent {
-            pdfViewerState = remember { PdfViewerState() }
+            pdfViewerState = rememberPdfViewerState()
             PdfViewer(
                 modifier =
                     Modifier.requiredSize(width = 850.toDp(context), height = 550.toDp(context))
@@ -158,10 +172,10 @@ class PdfViewerTest {
         rule.waitUntil { pdfViewerState.zoom == 2.0F }
 
         // 2 x top margin to account for zoom
-        val pageZeroTop = topPageMarginPx * 2
+        val pageZeroTop = 0f
         val pageZeroTopLeft = PdfPoint(pageNum = 0, pagePoint = PointF(0F, 0F))
         val pageZeroTopLeftCompose = Offset(0F, pageZeroTop)
-        // Cross check each page coordinate API against each other
+        // Cross-check each page coordinate API against each other
         assertThat(pdfViewerState.visibleOffsetToPdfPoint(pageZeroTopLeftCompose))
             .isEqualTo(pageZeroTopLeft)
         assertThat(pdfViewerState.pdfPointToVisibleOffset(pageZeroTopLeft))
@@ -185,7 +199,7 @@ class PdfViewerTest {
         val pdfDocument = FakePdfDocument(List(10) { Point(425, 225) })
         lateinit var pdfViewerState: PdfViewerState
         rule.setContent {
-            pdfViewerState = remember { PdfViewerState() }
+            pdfViewerState = rememberPdfViewerState()
             PdfViewer(
                 modifier =
                     Modifier.requiredSize(width = 850.toDp(context), height = 550.toDp(context))
@@ -209,7 +223,7 @@ class PdfViewerTest {
         val pdfDocument = FakePdfDocument(List(10) { Point(425, 225) })
         lateinit var pdfViewerState: PdfViewerState
         rule.setContent {
-            pdfViewerState = remember { PdfViewerState() }
+            pdfViewerState = rememberPdfViewerState()
             PdfViewer(
                 modifier =
                     Modifier.requiredSize(width = 850.toDp(context), height = 550.toDp(context))
@@ -239,7 +253,7 @@ class PdfViewerTest {
         val pdfDocument = FakePdfDocument(List(10) { Point(425, 225) })
         lateinit var pdfViewerState: PdfViewerState
         rule.setContent {
-            pdfViewerState = remember { PdfViewerState() }
+            pdfViewerState = rememberPdfViewerState()
             PdfViewer(
                 modifier =
                     Modifier.requiredSize(width = 850.toDp(context), height = 550.toDp(context))
@@ -266,7 +280,7 @@ class PdfViewerTest {
         val pdfDocument = FakePdfDocument(List(10) { Point(425, 225) })
         lateinit var pdfViewerState: PdfViewerState
         rule.setContent {
-            pdfViewerState = remember { PdfViewerState() }
+            pdfViewerState = rememberPdfViewerState()
             PdfViewer(
                 modifier =
                     Modifier.requiredSize(width = 850.toDp(context), height = 550.toDp(context))
@@ -296,7 +310,7 @@ class PdfViewerTest {
         val pdfDocument = FakePdfDocument(List(10) { Point(425, 225) })
         lateinit var pdfViewerState: PdfViewerState
         rule.setContent {
-            pdfViewerState = remember { PdfViewerState() }
+            pdfViewerState = rememberPdfViewerState()
             PdfViewer(
                 modifier =
                     Modifier.requiredSize(width = 850.toDp(context), height = 550.toDp(context))
@@ -316,7 +330,7 @@ class PdfViewerTest {
         val pdfDocument = FakePdfDocument(List(10) { Point(425, 225) })
         lateinit var pdfViewerState: PdfViewerState
         rule.setContent {
-            pdfViewerState = remember { PdfViewerState() }
+            pdfViewerState = rememberPdfViewerState()
             PdfViewer(
                 modifier =
                     Modifier.requiredSize(width = 850.toDp(context), height = 550.toDp(context))
@@ -357,7 +371,7 @@ class PdfViewerTest {
         val pdfDocument = FakePdfDocument(List(10) { Point(425, 225) })
         lateinit var pdfViewerState: PdfViewerState
         rule.setContent {
-            pdfViewerState = remember { PdfViewerState() }
+            pdfViewerState = rememberPdfViewerState()
             PdfViewer(
                 modifier =
                     Modifier.requiredSize(width = 850.toDp(context), height = 550.toDp(context))
@@ -393,7 +407,7 @@ class PdfViewerTest {
         val pdfDocument = FakePdfDocument(List(10) { Point(425, 225) })
         lateinit var pdfViewerState: PdfViewerState
         rule.setContent {
-            pdfViewerState = remember { PdfViewerState() }
+            pdfViewerState = rememberPdfViewerState()
             PdfViewer(
                 modifier =
                     Modifier.requiredSize(width = 850.toDp(context), height = 550.toDp(context))
@@ -426,7 +440,7 @@ class PdfViewerTest {
         val pdfDocument = FakePdfDocument(List(10) { Point(425, 225) })
         lateinit var pdfViewerState: PdfViewerState
         rule.setContent {
-            pdfViewerState = remember { PdfViewerState() }
+            pdfViewerState = rememberPdfViewerState()
             PdfViewer(
                 modifier =
                     Modifier.requiredSize(width = 850.toDp(context), height = 550.toDp(context))
@@ -442,12 +456,16 @@ class PdfViewerTest {
     @Test
     fun pdfViewerState_observeSelection() {
         val pdfDocument =
-            FakePdfDocument(List(10) { Point(425, 225) }, pageSelector = SIMPLE_SELECTOR)
+            FakePdfDocument(
+                List(10) { Point(425, 225) },
+                pageSelector = SIMPLE_SELECTOR,
+                supportedFeatures = setOf(PdfFeature.TEXT_SELECTION),
+            )
         val selections = mutableListOf<Selection?>()
 
         lateinit var pdfViewerState: PdfViewerState
         rule.setContent {
-            pdfViewerState = remember { PdfViewerState() }
+            pdfViewerState = rememberPdfViewerState()
             // Only record the selection state when that state changes. Don't log it on every
             // Composition
             LaunchedEffect(pdfViewerState.currentSelection) {
@@ -484,14 +502,18 @@ class PdfViewerTest {
     }
 
     @Test
-    fun pdfViewerState_clearSelection() {
+    fun pdfViewerState_clearCurrentSelection() {
         val pdfDocument =
-            FakePdfDocument(List(10) { Point(425, 225) }, pageSelector = SIMPLE_SELECTOR)
+            FakePdfDocument(
+                List(10) { Point(425, 225) },
+                pageSelector = SIMPLE_SELECTOR,
+                supportedFeatures = setOf(PdfFeature.TEXT_SELECTION),
+            )
         val selections = mutableListOf<Selection?>()
 
         lateinit var pdfViewerState: PdfViewerState
         rule.setContent {
-            pdfViewerState = remember { PdfViewerState() }
+            pdfViewerState = rememberPdfViewerState()
             // Only record the selection state when that state changes. Don't log it on every
             // Composition
             LaunchedEffect(pdfViewerState.currentSelection) {
@@ -514,7 +536,7 @@ class PdfViewerTest {
         rule.waitUntil { selections.size > 1 }
 
         // Step 2: Clear the selection
-        pdfViewerState.clearSelection()
+        pdfViewerState.clearCurrentSelection()
         rule.waitUntil { selections.size > 2 }
 
         assertThat(selections.size).isEqualTo(3)
@@ -545,6 +567,167 @@ class PdfViewerTest {
         val resIdsAndDpThumbBitmap =
             resIdsAndDpConfig.verticalThumbDrawable(context).toBitmap(width = 10, height = 10)
         assertThat(resIdsThumbBitmap.sameAs(resIdsAndDpThumbBitmap)).isTrue()
+    }
+
+    // On SDK < 25: Extra menu options collapses into an overflow menu.
+    // For SDK 25+: Full menu options are displayed by default.
+    @SdkSuppress(minSdkVersion = 25, maxSdkVersion = 35)
+    @Test
+    fun testCommentMenuItemAppended() {
+        val pdfDocument =
+            FakePdfDocument(
+                List(10) { Point(425, 225) },
+                pageSelector = SIMPLE_SELECTOR,
+                supportedFeatures = setOf(PdfFeature.TEXT_SELECTION),
+            )
+        val selections = mutableListOf<Selection?>()
+
+        lateinit var pdfViewerState: PdfViewerState
+        rule.setContent {
+            pdfViewerState = rememberPdfViewerState()
+            // Only record the selection state when that state changes. Don't log it on every
+            // Composition
+            LaunchedEffect(pdfViewerState.currentSelection) {
+                selections.add(pdfViewerState.currentSelection)
+            }
+            PdfViewer(
+                modifier =
+                    Modifier.requiredSize(width = 850.toDp(context), height = 550.toDp(context))
+                        .testTag(PDF_VIEW_TAG),
+                state = pdfViewerState,
+                pdfDocument = pdfDocument,
+                appendContextMenuComponents = {
+                    item(key = "Comment", label = "Comment", contentDescription = "Comment") {
+                        pdfViewerState.clearCurrentSelection()
+                        close()
+                    }
+                },
+            )
+        }
+
+        // PdfViewer will adjust zoom to fit the width of the content. Once this has happened we
+        // know the initial pages have been laid out.
+        rule.waitUntil { pdfViewerState.zoom == 2.0F }
+        // Somewhere around the middle of page 0
+        val longClickPosition =
+            requireNotNull(pdfViewerState.pdfPointToVisibleOffset(PdfPoint(0, PointF(212F, 112F))))
+        // b/418866416 - longClick() doesn't work w/ Android Views, so we send a down event without
+        // an up event and just wait.
+        rule.onNodeWithTag(PDF_VIEW_TAG).performTouchInput { down(longClickPosition) }
+        rule.waitUntil { selections.size > 1 }
+
+        // Assert comment item added to selection menu
+        onView(withText("Comment"))
+            .inRoot(RootMatchers.isPlatformPopup())
+            // Cheek comment menu item is added
+            .check(matches(isDisplayed()))
+            // Click comment menu item
+            .perform(click())
+    }
+
+    @Test
+    fun testCopyMenuItemFiltered() {
+        val pdfDocument =
+            FakePdfDocument(
+                List(10) { Point(425, 225) },
+                pageSelector = SIMPLE_SELECTOR,
+                supportedFeatures = setOf(PdfFeature.TEXT_SELECTION),
+            )
+        val selections = mutableListOf<Selection?>()
+
+        lateinit var pdfViewerState: PdfViewerState
+        rule.setContent {
+            pdfViewerState = rememberPdfViewerState()
+            // Only record the selection state when that state changes. Don't log it on every
+            // Composition
+            LaunchedEffect(pdfViewerState.currentSelection) {
+                selections.add(pdfViewerState.currentSelection)
+            }
+            PdfViewer(
+                modifier =
+                    Modifier.requiredSize(width = 850.toDp(context), height = 550.toDp(context))
+                        .testTag(PDF_VIEW_TAG),
+                state = pdfViewerState,
+                pdfDocument = pdfDocument,
+                appendContextMenuComponents = {
+                    item(key = "Comment", label = "Comment", contentDescription = "Comment") {}
+                },
+                filterContextMenuComponents = { it.key != CopyKey },
+            )
+        }
+
+        // PdfViewer will adjust zoom to fit the width of the content. Once this has happened we
+        // know the initial pages have been laid out.
+        rule.waitUntil { pdfViewerState.zoom == 2.0F }
+        // Somewhere around the middle of page 0
+        val longClickPosition =
+            requireNotNull(pdfViewerState.pdfPointToVisibleOffset(PdfPoint(0, PointF(212F, 112F))))
+        // b/418866416 - longClick() doesn't work w/ Android Views, so we send a down event without
+        // an up event and just wait.
+        rule.onNodeWithTag(PDF_VIEW_TAG).performTouchInput { down(longClickPosition) }
+        rule.waitUntil { selections.size > 1 }
+
+        // Assert copy item is removed from selection menu
+        onView(withText(R.string.copy))
+            .inRoot(RootMatchers.isPlatformPopup())
+            // Cheek copy item does not exist
+            .check(doesNotExist())
+    }
+
+    @Test
+    fun pdfViewer_contentPadding_appliedToPdfView() {
+        val leftPadding = 10.dp
+        val topPadding = 20.dp
+        val rightPadding = 30.dp
+        val bottomPadding = 40.dp
+        val contentPadding =
+            PaddingValues(
+                start = leftPadding,
+                top = topPadding,
+                end = rightPadding,
+                bottom = bottomPadding,
+            )
+
+        lateinit var pdfViewerState: PdfViewerState
+        rule.setContent {
+            pdfViewerState = rememberPdfViewerState()
+            PdfViewer(state = pdfViewerState, pdfDocument = null, contentPadding = contentPadding)
+        }
+
+        rule.runOnIdle {
+            val pdfView = pdfViewerState.pdfView
+            assertThat(pdfView).isNotNull()
+            pdfView?.let {
+                val density = context.resources.displayMetrics.density
+                assertThat(it.paddingLeft).isEqualTo((leftPadding.value * density).roundToInt())
+                assertThat(it.paddingTop).isEqualTo((topPadding.value * density).roundToInt())
+                assertThat(it.paddingRight).isEqualTo((rightPadding.value * density).roundToInt())
+                assertThat(it.paddingBottom).isEqualTo((bottomPadding.value * density).roundToInt())
+                assertThat(it.clipToPadding).isFalse()
+            }
+        }
+    }
+
+    @Test
+    fun pdfViewer_noContentPadding_defaultApplied() {
+        lateinit var pdfViewerState: PdfViewerState
+        rule.setContent {
+            pdfViewerState = rememberPdfViewerState()
+            PdfViewer(state = pdfViewerState, pdfDocument = null)
+        }
+
+        rule.runOnIdle {
+            val pdfView = pdfViewerState.pdfView
+            assertThat(pdfView).isNotNull()
+            pdfView?.let {
+                // Default padding should be 0 and clipToPadding should be true
+                assertThat(it.paddingLeft).isEqualTo(0)
+                assertThat(it.paddingTop).isEqualTo(0)
+                assertThat(it.paddingRight).isEqualTo(0)
+                assertThat(it.paddingBottom).isEqualTo(0)
+                assertThat(it.clipToPadding).isTrue()
+            }
+        }
     }
 }
 

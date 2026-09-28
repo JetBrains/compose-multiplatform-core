@@ -15,24 +15,43 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.gradle.api.attributes.java.TargetJvmEnvironment
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("org.jetbrains.kotlin.android")
     id("androidx.benchmark")
 }
 
+configurations {
+    // Configuration to access internal implementation of foundation library
+    // This removes need for suppressing INVISIBLE_REFERENCE and INVISIBLE_MEMBER in codebase
+    // IDE does not support this configuration yet, so you will still see references to internal
+    // members marked as an error. You can ignore them.
+    friends {
+        canBeResolved = true
+        canBeConsumed = false
+        transitive = false
+        attributes {
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_API))
+            attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE, objects.named(TargetJvmEnvironment, TargetJvmEnvironment.ANDROID))
+            attribute(Attribute.of("artifactType", String), "android-classes-jar")
+        }
+    }
+    androidTestImplementation.extendsFrom(friends)
+}
+
 dependencies {
+    friends(project(":compose:foundation:foundation"))
+    androidTestImplementation(project(":compose:material3:material3"))
     androidTestImplementation(project(":benchmark:benchmark-junit4"))
     androidTestImplementation(project(":compose:runtime:runtime"))
     androidTestImplementation(project(":compose:ui:ui-text:ui-text-benchmark"))
@@ -42,23 +61,23 @@ dependencies {
     androidTestImplementation(project(":compose:benchmark-utils"))
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.kotlinReflect)
-    androidTestImplementation(libs.kotlinTestCommon)
+    androidTestImplementation(libs.kotlinTest)
     androidTestImplementation(libs.truth)
 }
 
-tasks.withType(KotlinCompile).configureEach {
-    it.kotlinOptions {
-        freeCompilerArgs += [
+tasks.withType(KotlinCompile).configureEach { task ->
+    task.compilerOptions {
+        it.freeCompilerArgs.add(
                 // Enable experimental benchmark APIs internally
                 "-opt-in=androidx.benchmark.ExperimentalBenchmarkConfigApi",
-        ]
+        )
     }
+    task.friendPaths.from(configurations.friends.incoming.files)
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(37) }
     namespace = "androidx.compose.foundation.benchmark"
 
     // DO NOT CHECK IN! Enable experimental benchmarking with R8 - for local runs only

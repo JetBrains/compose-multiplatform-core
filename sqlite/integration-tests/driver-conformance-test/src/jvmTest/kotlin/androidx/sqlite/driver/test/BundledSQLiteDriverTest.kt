@@ -40,6 +40,10 @@ class BundledSQLiteDriverTest : BaseBundledConformanceTest() {
         return BundledSQLiteDriver()
     }
 
+    override fun getTestExtensionPath(): String {
+        return LoadableExtension.getExtensionFileName()
+    }
+
     @Test
     fun configurableLibraryPath() {
         val osName = System.getProperty("os.name").lowercase(Locale.US)

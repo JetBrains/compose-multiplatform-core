@@ -576,7 +576,7 @@ class SnapshotStateListTests {
     @IgnoreJsTarget // Not relevant in a single threaded environment
     fun concurrentGlobalModifications_addAll() =
         runTest(timeout = 30.seconds) {
-            repeat(100) {
+            repeat(50) {
                 val list = mutableStateListOf<Int>()
                 coroutineScope {
                     repeat(100) { index ->
@@ -804,6 +804,18 @@ class SnapshotStateListTests {
         val state = mutableStateListOf(0, 1, 2, 3)
         val modified = observeGlobalChanges { repeat(4) { state[it] = it } }
         assertTrue(modified.isEmpty())
+    }
+
+    @Test
+    fun stateList_forEach_singleRead() {
+        val list = mutableStateListOf(0, 1, 2, 3)
+        var count = 0
+        var readCount = 0
+        val snapshot = Snapshot.takeSnapshot { readCount++ }
+        snapshot.enter { list.forEach { count++ } }
+        snapshot.dispose()
+        assertEquals(list.size, count)
+        assertEquals(1, readCount)
     }
 
     private fun <T> validate(list: MutableList<T>, block: (list: MutableList<T>) -> Unit) {

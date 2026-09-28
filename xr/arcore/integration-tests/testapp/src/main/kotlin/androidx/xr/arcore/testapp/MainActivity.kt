@@ -59,10 +59,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat.getString
+import androidx.xr.arcore.testapp.capabilities.CapabilitiesActivity
 import androidx.xr.arcore.testapp.common.TestCaseButton
+import androidx.xr.arcore.testapp.depth.DepthActivity
+import androidx.xr.arcore.testapp.eyetracking.EyeTrackingActivity
+import androidx.xr.arcore.testapp.facetracking.FaceTrackingActivity
+import androidx.xr.arcore.testapp.geospatial.GeospatialActivity
 import androidx.xr.arcore.testapp.handtracking.HandTrackingActivity
-import androidx.xr.arcore.testapp.helloar.HelloArActivity
+import androidx.xr.arcore.testapp.helloar.HelloArAugmentedImageActivity
+import androidx.xr.arcore.testapp.helloar.HelloArObjectActivity
+import androidx.xr.arcore.testapp.helloar.HelloArPlaneActivity
+import androidx.xr.arcore.testapp.helloar.HelloArQrCodeActivity
+import androidx.xr.arcore.testapp.helloar.HelloArSpatialAnnotationActivity
+import androidx.xr.arcore.testapp.nativedata.NativeDataActivity
 import androidx.xr.arcore.testapp.persistentanchors.PersistentAnchorsActivity
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.arcore.testapp.ui.theme.JXRARCoreTestsTheme
@@ -91,8 +100,12 @@ class MainActivity : ComponentActivity() {
         requestUserPermissions(
             arrayOf(
                 SCENE_UNDERSTANDING_COARSE_PERMISSION,
+                SCENE_UNDERSTANDING_FINE_PERMISSION,
                 HAND_TRACKING_PERMISSION,
                 HEAD_TRACKING_PERMISSION,
+                FACE_TRACKING_PERMISSION,
+                EYE_TRACKING_COARSE_PERMISSION,
+                EYE_TRACKING_FINE_PERMISSION,
             )
         )
 
@@ -153,9 +166,13 @@ class MainActivity : ComponentActivity() {
     private fun TestCases() {
         Box(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(10.dp).verticalScroll(rememberScrollState())) {
-                TestCaseColumnRowItem(R.string.plane_tracking) { startTest<HelloArActivity>(it) }
-                TestCaseColumnRowItem(R.string.session_lifecycle) { startTest<HelloArActivity>(it) }
-                TestCaseColumnRowItem(R.string.hit_test) { startTest<HelloArActivity>(it) }
+                TestCaseColumnRowItem(R.string.plane_tracking) {
+                    startTest<HelloArPlaneActivity>(it)
+                }
+                TestCaseColumnRowItem(R.string.session_lifecycle) {
+                    startTest<HelloArPlaneActivity>(it)
+                }
+                TestCaseColumnRowItem(R.string.hit_test) { startTest<HelloArPlaneActivity>(it) }
                 TestCaseColumnRowItem(R.string.device_tracking_test) {
                     startTest<PersistentAnchorsActivity>(it)
                 }
@@ -171,6 +188,27 @@ class MainActivity : ComponentActivity() {
                 TestCaseColumnRowItem(R.string.hand_tracking) {
                     startTest<HandTrackingActivity>(it)
                 }
+                TestCaseColumnRowItem(R.string.face_tracking) {
+                    startTest<FaceTrackingActivity>(it)
+                }
+                TestCaseColumnRowItem(R.string.depth) { startTest<DepthActivity>(it) }
+                TestCaseColumnRowItem(R.string.object_tracking) {
+                    startTest<HelloArObjectActivity>(it)
+                }
+                TestCaseColumnRowItem(R.string.eye_tracking) { startTest<EyeTrackingActivity>(it) }
+                TestCaseColumnRowItem(R.string.blend_mode) { startTest<HelloArPlaneActivity>(it) }
+                TestCaseColumnRowItem(R.string.geospatial) { startTest<GeospatialActivity>(it) }
+                TestCaseColumnRowItem(R.string.capabilities) { startTest<CapabilitiesActivity>(it) }
+                TestCaseColumnRowItem(R.string.augmented_image_tracking) {
+                    startTest<HelloArAugmentedImageActivity>(it)
+                }
+                TestCaseColumnRowItem(R.string.spatial_annotations_tracking) {
+                    startTest<HelloArSpatialAnnotationActivity>(it)
+                }
+                TestCaseColumnRowItem(R.string.qr_code_tracking) {
+                    startTest<HelloArQrCodeActivity>(it)
+                }
+                TestCaseColumnRowItem(R.string.native_data) { startTest<NativeDataActivity>(it) }
             }
         }
     }
@@ -235,12 +273,15 @@ class MainActivity : ComponentActivity() {
         startActivity(intent)
     }
 
-    private inline fun <reified T> createIntent(): Intent = Intent(this@MainActivity, T::class.java)
-
     companion object {
         const val SCENE_UNDERSTANDING_COARSE_PERMISSION =
             "android.permission.SCENE_UNDERSTANDING_COARSE"
+        const val SCENE_UNDERSTANDING_FINE_PERMISSION =
+            "android.permission.SCENE_UNDERSTANDING_FINE"
         const val HAND_TRACKING_PERMISSION = "android.permission.HAND_TRACKING"
         const val HEAD_TRACKING_PERMISSION = "android.permission.HEAD_TRACKING"
+        const val FACE_TRACKING_PERMISSION = "android.permission.FACE_TRACKING"
+        const val EYE_TRACKING_COARSE_PERMISSION = "android.permission.EYE_TRACKING_COARSE"
+        const val EYE_TRACKING_FINE_PERMISSION = "android.permission.EYE_TRACKING_FINE"
     }
 }

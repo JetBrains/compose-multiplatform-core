@@ -21,69 +21,55 @@ import androidx.savedstate.SavedState
 import androidx.savedstate.SavedStateReader
 import androidx.savedstate.read
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.serializer
 
 /**
  * Utility object providing helper functions for encoding and decoding instances of `T` using
  * [SavedState]. It supports serialization, parcelization (on Android), and deserialization.
  */
 internal object SavedStateCodecTestUtils {
+    /**
+     * Test the following steps:
+     * 1. Encode `T` to a `SavedState`.
+     * 2. Simulates platform-specific transmission (only performed on Android).
+     * 3. Decode it back to a `T`.
+     */
+    inline fun <reified T> T.encodeDecode(
+        configuration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT,
+        doMarshalling: Boolean = true,
+        noinline checkDecoded: (T, T) -> Unit = { decoded, original ->
+            assertThat(decoded).isEqualTo(original)
+        },
+        noinline checkEncoded: SavedStateReader.() -> Unit = { assertThat(size()).isEqualTo(0) },
+    ) {
+        encodeDecode(
+            serializer = configuration.serializersModule.serializer<T>(),
+            configuration = configuration,
+            doMarshalling = doMarshalling,
+            checkDecoded = checkDecoded,
+            checkEncoded = checkEncoded,
+        )
+    }
 
     /**
-     * Test the following steps: 1. encode `T` to a `SavedState`, 2. parcelize it to a `Parcel`,
-     * 3. marshall it to a byte array, 4. unmarshall it back to a parcel, 5. un-parcelize it back to
-     *    a `SavedState`, and 6. decode it back to a `T`. Step 2 to 5 are only performed on Android.
-     *
-     * Here's the whole process:
-     *
-     * (A)Serializable -1-> (B)SavedState -2-> (C)Parcel -3-> (D)byte array -4-> (E)Parcel -5->
-     * (F)SavedState -6-> (G)Serializable
-     *
-     * @param doMarshalling Used to enable/disable step 3 and 4.
-     * @param checkEncoded Used to check the content of "B"
-     * @param checkDecoded Used to compare the instances of "G" and "A".
+     * Test the following steps:
+     * 1. Encode `T` to a `SavedState` using explicit [serializer].
+     * 2. Simulates platform-specific transmission (only performed on Android).
+     * 3. Decode it back to a `T`.
      */
-    inline fun <reified T : Any> T.encodeDecode(
-        serializer: KSerializer<T>? = null,
-        configuration: SavedStateConfiguration? = null,
+    fun <T> T.encodeDecode(
+        serializer: KSerializer<T>,
+        configuration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT,
         doMarshalling: Boolean = true,
         checkDecoded: (T, T) -> Unit = { decoded, original ->
             assertThat(decoded).isEqualTo(original)
         },
         checkEncoded: SavedStateReader.() -> Unit = { assertThat(size()).isEqualTo(0) },
     ) {
-        val encoded =
-            if (serializer == null) {
-                if (configuration == null) {
-                    encodeToSavedState(this)
-                } else {
-                    encodeToSavedState(this, configuration)
-                }
-            } else {
-                if (configuration == null) {
-                    encodeToSavedState(serializer, this)
-                } else {
-                    encodeToSavedState(serializer, this, configuration)
-                }
-            }
-        encoded.read { checkEncoded() }
-
+        val encoded = encodeToSavedState(serializer, value = this, configuration)
         val restored = platformEncodeDecode(encoded, doMarshalling)
-
-        val decoded =
-            if (serializer == null) {
-                if (configuration == null) {
-                    decodeFromSavedState(restored)
-                } else {
-                    decodeFromSavedState(restored, configuration)
-                }
-            } else {
-                if (configuration == null) {
-                    decodeFromSavedState(serializer, restored)
-                } else {
-                    decodeFromSavedState(serializer, restored, configuration)
-                }
-            }
-
+        val decoded = decodeFromSavedState(serializer, restored, configuration)
+        encoded.read { checkEncoded() }
         checkDecoded(decoded, this)
     }
 }

@@ -101,8 +101,7 @@ internal constructor(
                 listOf(
                     // TODO(dustinlam): This error string does not match the one from Truth.
                     simpleFact(
-                        "Expected ${actual.toStringForAssert()} to be the same instance  as " +
-                            "${expected.toStringForAssert()}, but was not"
+                        "actual: ${actual.toStringForAssert()} was not the same instance as expected: ${expected.toStringForAssert()}"
                     )
                 )
             )
@@ -242,7 +241,7 @@ internal constructor(
     /** Fails unless the subject is equal to any element in the given [iterable]. */
     open fun isIn(iterable: Iterable<*>?) {
         if (actual !in requireNonNull(iterable)) {
-            metadata.fail(listOf(simpleFact("Expected $actual to be in $iterable, but was not")))
+            metadata.fail(listOf(simpleFact("Element $actual was not in $iterable")))
         }
     }
 
@@ -469,22 +468,21 @@ internal constructor(
 }
 
 internal fun lenientFormat(template: String, args: Array<out Any?>): String {
-    val argsToLenientStrings =
-        args.map {
-            if (it == null) {
-                return@map "null"
-            }
-
-            try {
-                it.toString()
-            } catch (e: Exception) {
-                // Default toString() behavior - see Object.toString()
-                val className = it::class.simpleName
-                val exceptionClassName = e::class.simpleName
-                val hashCodeHexString = it.hashCode().toUInt().toString(16)
-                "<$$className@$hashCodeHexString threw $exceptionClassName>"
-            }
+    val argsToLenientStrings = args.map {
+        if (it == null) {
+            return@map "null"
         }
+
+        try {
+            it.toString()
+        } catch (e: Exception) {
+            // Default toString() behavior - see Object.toString()
+            val className = it::class.simpleName
+            val exceptionClassName = e::class.simpleName
+            val hashCodeHexString = it.hashCode().toUInt().toString(16)
+            "<$$className@$hashCodeHexString threw $exceptionClassName>"
+        }
+    }
 
     var i = 0
     val formattedString =

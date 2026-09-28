@@ -31,6 +31,7 @@ import android.view.Surface
 import androidx.annotation.GuardedBy
 import androidx.annotation.IntDef
 import androidx.annotation.RequiresApi
+import androidx.camera.viewfinder.core.impl.PixelCopyCompat.PixelCopyApi24Impl.KEEP_ALIVE_MILLIS
 import androidx.core.os.HandlerCompat
 import androidx.core.util.Consumer
 import androidx.tracing.Trace
@@ -41,16 +42,16 @@ import java.util.concurrent.TimeUnit
 import kotlinx.atomicfu.atomic
 
 /** Compat class for [PixelCopy] to avoid [VerifyError] */
-sealed interface PixelCopyCompat {
+public sealed interface PixelCopyCompat {
 
-    fun requestImpl(
+    public fun requestImpl(
         source: Surface,
         dest: Bitmap,
         executor: Executor,
         listener: Consumer<@CopyResultStatus Int>,
     )
 
-    companion object {
+    public companion object {
         /**
          * Requests that the contents of the source [Surface] be copied into the destination
          * [Bitmap]. The copy is performed synchronously, and the result of the copy is returned.
@@ -61,7 +62,7 @@ sealed interface PixelCopyCompat {
          */
         @JvmStatic
         @JvmOverloads
-        fun requestSync(
+        public fun requestSync(
             source: Surface,
             dest: Bitmap,
             timeoutMs: Long = -1,
@@ -94,7 +95,7 @@ sealed interface PixelCopyCompat {
          * @param executor The executor to run the listener on.
          */
         @JvmStatic
-        fun request(
+        public fun request(
             source: Surface,
             dest: Bitmap,
             executor: Executor,
@@ -234,5 +235,5 @@ sealed interface PixelCopyCompat {
             ]
     )
     @Retention(AnnotationRetention.SOURCE)
-    annotation class CopyResultStatus
+    public annotation class CopyResultStatus
 }

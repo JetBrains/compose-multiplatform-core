@@ -17,6 +17,7 @@
 package androidx.leanback.media;
 
 import static org.junit.Assert.assertNull;
+import static org.junit.Assume.assumeFalse;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -29,7 +30,6 @@ import android.os.SystemClock;
 import androidx.leanback.testutils.PollingCheck;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
-import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.jspecify.annotations.NonNull;
@@ -44,9 +44,9 @@ public class MediaPlayerGlueTest {
     /**
      * Mockito spy not working on API 19 if class has package private method (b/35387610)
      */
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     @Test
     public void mediaPlayer() {
+        assumeFalse("Test fails on cuttlefish b/465864210", Build.MODEL.contains("Cuttlefish"));
         // create a MediaPlayerGlue with updatePeriod = 100ms
         final Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         final MediaPlayerGlue[] result = new MediaPlayerGlue[1];

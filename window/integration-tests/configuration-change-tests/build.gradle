@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -26,7 +25,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
@@ -34,7 +32,6 @@ android {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
     // General dependencies to run tests.
     androidTestImplementation(libs.testCore)
@@ -43,7 +40,7 @@ dependencies {
     // Dependencies for coroutines.
     androidTestImplementation(libs.kotlinCoroutinesTest)
     // Project dependencies.
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.5.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
     implementation(project(":window:window"))
     implementation("androidx.core:core:1.8.0")
     implementation("androidx.activity:activity:1.5.0")

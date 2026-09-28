@@ -43,7 +43,7 @@ import java.util.Set;
 /**
  * A collection of {@link CameraInternal} instances.
  */
-public final class CameraRepository implements InternalCameraPresenceListener {
+public class CameraRepository implements InternalCameraPresenceListener {
     private static final String TAG = "CameraRepository";
     private final Object mCamerasLock = new Object();
     @GuardedBy("mCamerasLock")
@@ -60,6 +60,7 @@ public final class CameraRepository implements InternalCameraPresenceListener {
      *
      * <p>All cameras queried from the {@link CameraFactory} will be added to the repository.
      */
+    @SuppressWarnings("FutureReturnValueIgnored") // cameraToRemove.release()
     public void init(@NonNull CameraFactory cameraFactory) throws InitializationException {
         mCameraFactory = cameraFactory;
         synchronized (mCamerasLock) {

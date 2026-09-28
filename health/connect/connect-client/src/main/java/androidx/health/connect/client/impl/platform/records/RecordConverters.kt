@@ -85,6 +85,7 @@ import androidx.health.connect.client.records.WheelchairPushesRecord
 import androidx.health.connect.client.records.isAtLeastSdkExtension13
 import androidx.health.connect.client.records.isAtLeastSdkExtension15
 import androidx.health.connect.client.records.isAtLeastSdkExtension16
+import androidx.health.connect.client.records.isAtLeastSdkExtension21
 import java.time.Duration
 import kotlin.math.roundToInt
 import kotlin.reflect.KClass
@@ -97,6 +98,38 @@ internal fun KClass<out Record>.toPlatformRecordClass(): Class<out PlatformRecor
         ?: toPlatformRecordClassExt13()
         ?: SDK_TO_PLATFORM_RECORD_CLASS[this]
         ?: throw IllegalArgumentException("Unsupported record type $this")
+}
+
+@SuppressLint("NewApi") // Guarded by sdk extension check
+internal fun Class<out PlatformRecord>.toSdkRecordClass(): KClass<out Record>? {
+    return toSdkRecordClassExt16()
+        ?: toSdkRecordClassExt15()
+        ?: toSdkRecordClassExt13()
+        ?: PLATFORM_TO_SDK_RECORD_CLASS[this]
+}
+
+@SuppressLint("NewApi") // Guarded by sdk extension check
+private fun Class<out PlatformRecord>.toSdkRecordClassExt13(): KClass<out Record>? {
+    if (!isAtLeastSdkExtension13()) {
+        return null
+    }
+    return PLATFORM_TO_SDK_RECORD_CLASS_EXT_13[this]
+}
+
+@SuppressLint("NewApi") // Guarded by sdk extension check
+private fun Class<out PlatformRecord>.toSdkRecordClassExt15(): KClass<out Record>? {
+    if (!isAtLeastSdkExtension15()) {
+        return null
+    }
+    return PLATFORM_TO_SDK_RECORD_CLASS_EXT_15[this]
+}
+
+@SuppressLint("NewApi") // Guarded by sdk extension check
+private fun Class<out PlatformRecord>.toSdkRecordClassExt16(): KClass<out Record>? {
+    if (!isAtLeastSdkExtension16()) {
+        return null
+    }
+    return PLATFORM_TO_SDK_RECORD_CLASS_EXT_16[this]
 }
 
 @SuppressLint("NewApi") // Guarded by sdk extension check
@@ -124,7 +157,7 @@ private fun KClass<out Record>.toPlatformRecordClassExt16(): Class<out PlatformR
 }
 
 @SuppressLint("NewApi")
-fun Record.toPlatformRecord(): PlatformRecord {
+public fun Record.toPlatformRecord(): PlatformRecord {
     return toPlatformRecordExt16()
         ?: toPlatformRecordExt15()
         ?: toPlatformRecordExt13()
@@ -171,6 +204,7 @@ fun Record.toPlatformRecord(): PlatformRecord {
         }
 }
 
+@SuppressLint("NewApi") // Guarded by sdk extension check
 private fun Record.toPlatformRecordExt13(): PlatformRecord? {
     if (!isAtLeastSdkExtension13()) {
         return null
@@ -202,7 +236,7 @@ private fun Record.toPlatformRecordExt16(): PlatformRecord? {
     }
 }
 
-fun PlatformRecord.toSdkRecord(): Record {
+public fun PlatformRecord.toSdkRecord(): Record {
     return toSdkRecordExt16()
         ?: toSdkRecordExt15()
         ?: toSdkRecordExt13()
@@ -424,6 +458,12 @@ private fun PlatformExerciseSessionRecord.toSdkExerciseSessionRecord() =
         plannedExerciseSessionId =
             if (isAtLeastSdkExtension13()) {
                 plannedExerciseSessionId
+            } else {
+                null
+            },
+        rateOfPerceivedExertion =
+            if (isAtLeastSdkExtension21() && hasRateOfPerceivedExertion()) {
+                rateOfPerceivedExertion
             } else {
                 null
             },
@@ -865,7 +905,7 @@ private fun ElevationGainedRecord.toPlatformElevationGainedRecord() =
         .build()
 
 @SuppressLint("NewApi") // Guarded by sdk extension check
-private fun ExerciseSessionRecord.toPlatformExerciseSessionRecord() =
+private fun ExerciseSessionRecord.toPlatformExerciseSessionRecord(): PlatformExerciseSessionRecord =
     PlatformExerciseSessionRecordBuilder(
             metadata.toPlatformMetadata(),
             startTime,
@@ -882,7 +922,14 @@ private fun ExerciseSessionRecord.toPlatformExerciseSessionRecord() =
             if (exerciseRouteResult is ExerciseRouteResult.Data) {
                 setRoute(exerciseRouteResult.exerciseRoute.toPlatformExerciseRoute())
             }
-            plannedExerciseSessionId?.let { setPlannedExerciseSessionId(it) }
+            if (isAtLeastSdkExtension13()) {
+                plannedExerciseSessionId?.let { setPlannedExerciseSessionId(it) }
+            }
+            if (isAtLeastSdkExtension21()) {
+                rateOfPerceivedExertion?.let {
+                    @Suppress("UNUSED_VARIABLE") val unused = setRateOfPerceivedExertion(it)
+                }
+            }
         }
         .build()
 
@@ -910,9 +957,24 @@ private fun ExerciseRoute.toPlatformExerciseRoute() =
         }
     )
 
-private fun ExerciseSegment.toPlatformExerciseSegment() =
+@SuppressLint("NewApi") // Guarded by sdk extension check
+public fun ExerciseSegment.toPlatformExerciseSegment():
+    android.health.connect.datatypes.ExerciseSegment =
     PlatformExerciseSegmentBuilder(startTime, endTime, segmentType.toPlatformExerciseSegmentType())
         .setRepetitionsCount(repetitions)
+        .apply {
+            if (isAtLeastSdkExtension21()) {
+                weight?.let {
+                    @Suppress("UNUSED_VARIABLE") val unused = setWeight(it.toPlatformMass())
+                }
+                setIndex?.let {
+                    @Suppress("UNUSED_VARIABLE") val unused = setSetIndex(it)
+                }
+                rateOfPerceivedExertion?.let {
+                    @Suppress("UNUSED_VARIABLE") val unused = setRateOfPerceivedExertion(it)
+                }
+            }
+        }
         .build()
 
 private fun FloorsClimbedRecord.toPlatformFloorsClimbedRecord() =
@@ -1438,8 +1500,23 @@ internal fun PlatformExerciseRoute.toSdkExerciseRoute() =
 internal fun PlatformExerciseLap.toSdkExerciseLap() =
     ExerciseLap(startTime, endTime, length?.toSdkLength())
 
+@SuppressLint("NewApi") // Guarded by sdk extension check
+@RequiresExtension(Build.VERSION_CODES.UPSIDE_DOWN_CAKE, 13)
 internal fun PlatformExerciseSegment.toSdkExerciseSegment() =
-    ExerciseSegment(startTime, endTime, segmentType.toSdkExerciseSegmentType(), repetitionsCount)
+    ExerciseSegment(
+        startTime = startTime,
+        endTime = endTime,
+        segmentType = segmentType.toSdkExerciseSegmentType(),
+        repetitions = repetitionsCount,
+        weight = if (isAtLeastSdkExtension21()) weight?.toSdkMass() else null,
+        setIndex = if (isAtLeastSdkExtension21() && hasSetIndex()) setIndex else null,
+        rateOfPerceivedExertion =
+            if (isAtLeastSdkExtension21() && hasRateOfPerceivedExertion()) {
+                rateOfPerceivedExertion
+            } else {
+                null
+            },
+    )
 
 @SuppressLint("NewApi") // Guarded by sdk extension check
 internal fun PlatformMedicalResourceId.toSdkMedicalResourceId() =

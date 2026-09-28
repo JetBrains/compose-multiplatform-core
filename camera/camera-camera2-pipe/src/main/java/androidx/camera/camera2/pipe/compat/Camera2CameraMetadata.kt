@@ -25,10 +25,10 @@ import androidx.annotation.GuardedBy
 import androidx.camera.camera2.pipe.CameraExtensionMetadata
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
-import androidx.camera.camera2.pipe.Metadata
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.Log
-import kotlin.reflect.KClass
+import androidx.camera.common.Metadata
+import java.lang.Class
 
 /**
  * This implementation provides access to [CameraCharacteristics] and lazy caching of properties
@@ -48,12 +48,15 @@ internal class Camera2CameraMetadata(
     @GuardedBy("extensionCache")
     private val extensionCache = ArrayMap<Int, CameraExtensionMetadata>()
 
-    // TODO: b/299356087 - this here may need a switch statement on the key
-    @Suppress("UNCHECKED_CAST") override fun <T> get(key: Metadata.Key<T>): T? = metadata[key] as T?
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : Any> get(key: Metadata.Key<T>): T? = metadata[key] as T?
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T> getOrDefault(key: Metadata.Key<T>, default: T): T =
+    override fun <T : Any> getOrDefault(key: Metadata.Key<T>, default: T): T =
         metadata[key] as T? ?: default
+
+    override val metadataKeys: Set<Metadata.Key<*>>
+        get() = metadata.keys
 
     override fun <T> get(key: CameraCharacteristics.Key<T>): T? {
         if (cacheBlocklist.contains(key)) {
@@ -88,9 +91,9 @@ internal class Camera2CameraMetadata(
         get(key) ?: default
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+    override fun <T : Any> unwrapAs(type: Class<T>): T? =
         when (type) {
-            CameraCharacteristics::class -> characteristics as T
+            CameraCharacteristics::class.java -> characteristics as T
             else -> null
         }
 
@@ -105,6 +108,9 @@ internal class Camera2CameraMetadata(
 
     override val sessionKeys: Set<CaptureRequest.Key<*>>
         get() = _sessionKeys.value
+
+    override val sessionCharacteristicsKeys: Set<CameraCharacteristics.Key<*>>
+        get() = _sessionCharacteristicsKeys.value
 
     override val physicalCameraIds: Set<CameraId>
         get() = _physicalCameraIds.value
@@ -167,7 +173,7 @@ internal class Camera2CameraMetadata(
         lazy(LazyThreadSafetyMode.PUBLICATION) {
             try {
                 Debug.trace("$camera#keys") {
-                    @Suppress("UselessCallOnNotNull") // Untrusted API
+                    @Suppress("UselessCallOnNotNull", "USELESS_CALL_ON_NOT_NULL") // Untrusted API
                     characteristics.keys.orEmpty().toSet()
                 }
             } catch (e: AssertionError) {
@@ -180,7 +186,7 @@ internal class Camera2CameraMetadata(
         lazy(LazyThreadSafetyMode.PUBLICATION) {
             try {
                 Debug.trace("$camera#availableCaptureRequestKeys") {
-                    @Suppress("UselessCallOnNotNull") // Untrusted API
+                    @Suppress("UselessCallOnNotNull", "USELESS_CALL_ON_NOT_NULL") // Untrusted API
                     characteristics.availableCaptureRequestKeys.orEmpty().toSet()
                 }
             } catch (e: AssertionError) {
@@ -193,7 +199,7 @@ internal class Camera2CameraMetadata(
         lazy(LazyThreadSafetyMode.PUBLICATION) {
             try {
                 Debug.trace("$camera#availableCaptureResultKeys") {
-                    @Suppress("UselessCallOnNotNull") // Untrusted API
+                    @Suppress("UselessCallOnNotNull", "USELESS_CALL_ON_NOT_NULL") // Untrusted API
                     characteristics.availableCaptureResultKeys.orEmpty().toSet()
                 }
             } catch (e: AssertionError) {
@@ -212,7 +218,11 @@ internal class Camera2CameraMetadata(
                         val ids = Api28Compat.getPhysicalCameraIds(characteristics)
                         Log.info { "Loaded physicalCameraIds from $camera: $ids" }
 
-                        @Suppress("UselessCallOnNotNull") ids.orEmpty().map { CameraId(it) }.toSet()
+                        @Suppress(
+                            "UselessCallOnNotNull",
+                            "USELESS_CALL_ON_NOT_NULL",
+                        ) // Untrusted API
+                        ids.orEmpty().map { CameraId(it) }.toSet()
                     }
                 } catch (e: AssertionError) {
                     Log.warn(e) { "Failed to getPhysicalCameraIds from $camera" }
@@ -239,6 +249,26 @@ internal class Camera2CameraMetadata(
                     Log.warn(e) {
                         "Failed to getAvailablePhysicalCameraRequestKeys from " +
                             "Camera-${camera.value}"
+                    }
+                    emptySet()
+                }
+            }
+        }
+
+    private val _sessionCharacteristicsKeys: Lazy<Set<CameraCharacteristics.Key<*>>> =
+        lazy(LazyThreadSafetyMode.PUBLICATION) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                emptySet()
+            } else {
+                try {
+                    Debug.trace("Camera-${camera.value}#getAvailableSessionCharacteristicsKeys") {
+                        Api35Compat.getAvailableSessionCharacteristicsKeys(characteristics)
+                            .orEmpty()
+                            .toSet()
+                    }
+                } catch (e: AssertionError) {
+                    Log.warn(e) {
+                        "Failed to getAvailableSessionCharacteristicsKeys from Camera-${camera.value}"
                     }
                     emptySet()
                 }

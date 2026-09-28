@@ -37,7 +37,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher.Companion.expectValue
 import androidx.compose.ui.test.TouchInjectionScope
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTouchInput
@@ -663,6 +663,7 @@ class PickerTest {
     }
 
     @Test
+    @Suppress("FrequentlyChangingValue")
     fun rememberPickerState_updates_after_new_inputs() {
         val numberOfOptions = 10
         lateinit var selectedOption: MutableState<Int>

@@ -60,7 +60,7 @@ import androidx.compose.ui.semantics.semantics
  * @param contentDescription text used by accessibility services to describe what this image
  *   represents. This should always be provided unless this image is used for decorative purposes,
  *   and does not represent a meaningful action that a user can take. This text should be localized,
- *   such as by using [androidx.compose.ui.res.stringResource] or similar
+ *   such as by using `androidx.compose.ui.res.stringResource` or similar
  * @param modifier Modifier used to adjust the layout algorithm or draw decoration content (ex.
  *   background)
  * @param alignment Optional alignment parameter used to place the [ImageBitmap] in the given bounds
@@ -88,7 +88,7 @@ import androidx.compose.ui.semantics.semantics
         ),
 )
 @NonRestartableComposable
-fun Image(
+public fun Image(
     bitmap: ImageBitmap,
     contentDescription: String?,
     modifier: Modifier = Modifier,
@@ -129,7 +129,7 @@ fun Image(
  * @param contentDescription text used by accessibility services to describe what this image
  *   represents. This should always be provided unless this image is used for decorative purposes,
  *   and does not represent a meaningful action that a user can take. This text should be localized,
- *   such as by using [androidx.compose.ui.res.stringResource] or similar
+ *   such as by using `androidx.compose.ui.res.stringResource` or similar
  * @param modifier Modifier used to adjust the layout algorithm or draw decoration content (ex.
  *   background)
  * @param alignment Optional alignment parameter used to place the [ImageBitmap] in the given bounds
@@ -145,7 +145,7 @@ fun Image(
  */
 @Composable
 @NonRestartableComposable
-fun Image(
+public fun Image(
     bitmap: ImageBitmap,
     contentDescription: String?,
     modifier: Modifier = Modifier,
@@ -178,7 +178,7 @@ fun Image(
  * @param contentDescription text used by accessibility services to describe what this image
  *   represents. This should always be provided unless this image is used for decorative purposes,
  *   and does not represent a meaningful action that a user can take. This text should be localized,
- *   such as by using [androidx.compose.ui.res.stringResource] or similar
+ *   such as by using `androidx.compose.ui.res.stringResource` or similar
  * @param modifier Modifier used to adjust the layout algorithm or draw decoration content (ex.
  *   background)
  * @param alignment Optional alignment parameter used to place the [ImageVector] in the given bounds
@@ -191,7 +191,7 @@ fun Image(
  */
 @Composable
 @NonRestartableComposable
-fun Image(
+public fun Image(
     imageVector: ImageVector,
     contentDescription: String?,
     modifier: Modifier = Modifier,
@@ -199,7 +199,7 @@ fun Image(
     contentScale: ContentScale = ContentScale.Fit,
     alpha: Float = DefaultAlpha,
     colorFilter: ColorFilter? = null,
-) =
+): Unit =
     Image(
         painter = rememberVectorPainter(imageVector),
         contentDescription = contentDescription,
@@ -225,7 +225,7 @@ fun Image(
  * @param contentDescription text used by accessibility services to describe what this image
  *   represents. This should always be provided unless this image is used for decorative purposes,
  *   and does not represent a meaningful action that a user can take. This text should be localized,
- *   such as by using [androidx.compose.ui.res.stringResource] or similar
+ *   such as by using `androidx.compose.ui.res.stringResource` or similar
  * @param modifier Modifier used to adjust the layout algorithm or draw decoration content (ex.
  *   background)
  * @param alignment Optional alignment parameter used to place the [Painter] in the given bounds
@@ -237,7 +237,7 @@ fun Image(
  * @param colorFilter Optional colorFilter to apply for the [Painter] when it is rendered onscreen
  */
 @Composable
-fun Image(
+public fun Image(
     painter: Painter,
     contentDescription: String?,
     modifier: Modifier = Modifier,

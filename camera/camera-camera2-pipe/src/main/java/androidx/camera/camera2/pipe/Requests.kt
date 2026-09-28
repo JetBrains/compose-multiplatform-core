@@ -27,6 +27,8 @@ import androidx.annotation.RestrictTo
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.media.ImageWrapper
+import androidx.camera.common.Metadata
+import androidx.camera.common.UnsafeWrapper
 
 /**
  * A [RequestNumber] is an artificial identifier that is created for each request that is submitted
@@ -56,28 +58,28 @@ public value class RequestNumber(public val value: Long)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class Request(
     public val streams: List<StreamId>,
-    public val parameters: Map<CaptureRequest.Key<*>, Any> = emptyMap(),
-    public val extras: Map<Metadata.Key<*>, Any> = emptyMap(),
+    public val parameters: Map<CaptureRequest.Key<*>, Any?> = emptyMap(),
+    public val extras: Map<Metadata.Key<*>, Any?> = emptyMap(),
     public val listeners: List<Listener> = emptyList(),
     public val template: RequestTemplate? = null,
     public val inputRequest: InputRequest? = null,
 ) {
     public operator fun <T> get(key: CaptureRequest.Key<T>): T? = getUnchecked(key)
 
-    public operator fun <T> get(key: Metadata.Key<T>): T? = getUnchecked(key)
+    public operator fun <T : Any> get(key: Metadata.Key<T>): T? = getUnchecked(key)
 
     /**
      * This listener is used to observe the state and progress of a [Request] that has been issued
      * to the [CameraGraph]. Listeners will be invoked on background threads at high speed, and
      * should avoid blocking work or accessing synchronized resources if possible. [Listener]s used
      * in a repeating request may be issued multiple times within the same session, and should not
-     * rely on [onRequestSequenceSubmitted] from being invoked only once.
+     * rely on [onRequestSequenceSubmitted] being invoked only once.
      */
     @JvmDefaultWithCompatibility
     public interface Listener {
         /**
          * This event indicates that the camera sensor has started exposing the frame associated
-         * with this Request. The timestamp will either be the beginning or end of the sensors
+         * with this Request. The timestamp will either be the beginning or end of the sensor's
          * exposure time depending on the device, and may be in a different timebase from the
          * timestamps that are returned from the underlying buffers.
          *
@@ -100,7 +102,7 @@ public class Request(
          * @param requestMetadata the data about the camera2 request that was sent to the camera.
          * @param frameNumber the android frame number for this exposure
          * @param captureResult the current android capture result for this exposure
-         * @see android.hardware.camera2.CameraCaptureSession.CaptureCallback.onCaptureStarted
+         * @see android.hardware.camera2.CameraCaptureSession.CaptureCallback.onCaptureProgressed
          */
         public fun onPartialCaptureResult(
             requestMetadata: RequestMetadata,
@@ -130,13 +132,13 @@ public class Request(
         /**
          * This event indicates that all of the metadata associated with this frame has been
          * produced. If [onPartialCaptureResult] was invoked, the values returned in the
-         * totalCaptureResult map be a superset of the values produced from the
+         * totalCaptureResult may be a superset of the values produced from the
          * [onPartialCaptureResult] calls.
          *
          * @param requestMetadata the data about the camera2 request that was sent to the camera.
          * @param frameNumber the android frame number for this exposure
          * @param totalCaptureResult the final android capture result for this exposure
-         * @see android.hardware.camera2.CameraCaptureSession.CaptureCallback.onCaptureStarted
+         * @see android.hardware.camera2.CameraCaptureSession.CaptureCallback.onCaptureCompleted
          */
         public fun onTotalCaptureResult(
             requestMetadata: RequestMetadata,
@@ -145,11 +147,8 @@ public class Request(
         ) {}
 
         /**
-         * This is an artificial event that will be invoked after onTotalCaptureResult. This may be
-         * invoked several frames after onTotalCaptureResult due to incorrect HAL implementations
-         * that return metadata that get shifted several frames in the future. See b/154568653 for
-         * real examples of this. The actual amount of shifting and required transformations may
-         * vary per device.
+         * This is an artificial event that will be invoked after [onTotalCaptureResult]. Note that
+         * this may be fired before images have been produced for the frame.
          *
          * @param requestMetadata the data about the camera2 request that was sent to the camera.
          * @param frameNumber the android frame number for this exposure
@@ -165,7 +164,7 @@ public class Request(
          * onFailed occurs when a CaptureRequest failed in some way and the frame will not receive
          * the [onTotalCaptureResult] callback.
          *
-         * Surfaces may not received images if "wasImagesCaptured" is set to false.
+         * Surfaces may not receive images if [RequestFailure.wasImageCaptured] is set to false.
          *
          * @param requestMetadata the data about the camera2 request that was sent to the camera.
          * @param frameNumber the android frame number for this exposure
@@ -203,7 +202,10 @@ public class Request(
          * @param frameNumber the android frame number for this exposure
          * @param stream the internal stream that will not receive a buffer for this frame.
          * @see android.hardware.camera2.CameraCaptureSession.CaptureCallback.onCaptureBufferLost
+         *
+         * TODO(b/474658963): Remove this method once deprecated usages are removed.
          */
+        @Deprecated("Use the onBufferLost with OutputId.")
         public fun onBufferLost(
             requestMetadata: RequestMetadata,
             frameNumber: FrameNumber,
@@ -211,8 +213,27 @@ public class Request(
         ) {}
 
         /**
+         * onBufferLost occurs when a CaptureRequest failed to create an image for a given output
+         * stream. This method may be invoked multiple times per frame if multiple buffers were
+         * lost. This method may not be invoked when an image is lost in some situations.
+         *
+         * @param requestMetadata the data about the camera2 request that was sent to the camera.
+         * @param frameNumber the android frame number for this exposure
+         * @param streamId the internal stream that will not receive a buffer for this frame.
+         * @param outputId the specific internal output stream of the [streamId] that will not
+         *   receive a buffer for this frame.
+         * @see android.hardware.camera2.CameraCaptureSession.CaptureCallback.onCaptureBufferLost
+         */
+        public fun onBufferLost(
+            requestMetadata: RequestMetadata,
+            frameNumber: FrameNumber,
+            streamId: StreamId,
+            outputId: OutputId,
+        ) {}
+
+        /**
          * This is an artificial callback that will be invoked if a specific request was pending or
-         * had already been submitted to when an abort was requested. The behavior of the request is
+         * had already been submitted when an abort was requested. The behavior of the request is
          * undefined if this method is invoked and images or metadata may or may not be produced for
          * this request. Repeating requests will not receive onAborted. Failed reprocessing requests
          * will be aborted and removed from the queue.
@@ -265,7 +286,7 @@ public class Request(
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun <T> getUnchecked(key: Metadata.Key<T>): T? = this.extras[key] as T?
+    private fun <T : Any> getUnchecked(key: Metadata.Key<T>): T? = this.extras[key] as T?
 
     @Suppress("UNCHECKED_CAST")
     private fun <T> getUnchecked(key: CaptureRequest.Key<T>): T? = this.parameters[key] as T?
@@ -358,9 +379,6 @@ public data class InputRequest(val image: ImageWrapper, val frameInfo: FrameInfo
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface RequestMetadata : Metadata, UnsafeWrapper {
-    public operator fun <T> get(key: CaptureRequest.Key<T>): T?
-
-    public fun <T> getOrDefault(key: CaptureRequest.Key<T>, default: T): T
 
     /** The actual Camera2 template that was used when creating this [CaptureRequest] */
     public val template: RequestTemplate
@@ -380,6 +398,12 @@ public interface RequestMetadata : Metadata, UnsafeWrapper {
 
     /** An internal number used to identify a specific [CaptureRequest] */
     public val requestNumber: RequestNumber
+
+    public operator fun <T> get(key: CaptureRequest.Key<T>): T?
+
+    public fun <T> getOrDefault(key: CaptureRequest.Key<T>, default: T): T {
+        return get(key) ?: default
+    }
 }
 
 /**
@@ -398,15 +422,16 @@ public interface RequestMetadata : Metadata, UnsafeWrapper {
 public value class CameraTimestamp(public val value: Long)
 
 /**
- * This is a timestamp happen at start of readout for a regular request, or the timestamp at the
- * input image's start of readout for a reprocess request, in nanoseconds.
+ * This is a timestamp happening at the start of readout for a regular request, or the timestamp at
+ * the input image's start of readout for a reprocess request, in nanoseconds.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @JvmInline
 public value class SensorTimestamp(public val value: Long)
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public fun <T> Request.getOrDefault(key: Metadata.Key<T>, default: T): T = this[key] ?: default
+public fun <T : Any> Request.getOrDefault(key: Metadata.Key<T>, default: T): T =
+    this[key] ?: default
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun <T> Request.getOrDefault(key: CaptureRequest.Key<T>, default: T): T =
@@ -416,11 +441,11 @@ public fun <T> Request.getOrDefault(key: CaptureRequest.Key<T>, default: T): T =
 public fun Request.formatForLogs(): String = "Request($streams)@${Integer.toHexString(hashCode())}"
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public fun Map<Any, Any>.filterToCaptureRequestParameters(): Map<CaptureRequest.Key<*>, Any> =
+public fun Map<Any, Any?>.filterToCaptureRequestParameters(): Map<CaptureRequest.Key<*>, Any?> =
     this.filterKeys { it is CaptureRequest.Key<*> }.mapKeys { it.key as CaptureRequest.Key<*> }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public fun Map<Any, Any>.filterToMetadataParameters(): Map<Metadata.Key<*>, Any> =
+public fun Map<Any, Any?>.filterToMetadataParameters(): Map<Metadata.Key<*>, Any?> =
     this.filterKeys { it is Metadata.Key<*> }.mapKeys { it.key as Metadata.Key<*> }
 
 /** Utility function to help deal with the unsafe nature of the typed Key/Value pairs. */

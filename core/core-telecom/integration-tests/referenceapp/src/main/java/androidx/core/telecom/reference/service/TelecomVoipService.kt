@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(androidx.core.telecom.util.ExperimentalAppActions::class)
+
 package androidx.core.telecom.reference.service
 
 import android.app.Notification
@@ -61,7 +63,6 @@ import androidx.core.telecom.reference.model.toParticipant
 import androidx.core.telecom.reference.view.ExtensionSettings
 import androidx.core.telecom.reference.view.loadAllExtensionSettings
 import androidx.core.telecom.reference.view.loadPhoneNumberPrefix
-import androidx.core.telecom.util.ExperimentalAppActions
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import kotlin.collections.firstOrNull
@@ -84,7 +85,6 @@ import kotlinx.coroutines.selects.select
  * repository or ViewModel) via a [StateFlow]. It requires API level S (31) or higher.
  */
 @RequiresApi(Build.VERSION_CODES.S)
-@OptIn(ExperimentalAppActions::class)
 class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
     private val localBinder =
         object : LocalServiceBinder.Connector, Binder() {
@@ -154,8 +154,12 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
         _callDataList.value = emptyList()
     }
 
-    @OptIn(ExperimentalAppActions::class)
-    override fun addCall(callAttributes: CallAttributesCompat, notificationId: Int) {
+    override fun addCall(
+        callAttributes: CallAttributesCompat,
+        notificationId: Int,
+        isInitiallyMuted: Boolean,
+        canUserUpdateSilence: Boolean,
+    ) {
         val callId = notificationId.toString()
         Log.d(TAG, "[$callId] addCall")
         val callActions = CallActions()
@@ -209,6 +213,8 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
                                     callId = callId,
                                     settings = loadAllExtensionSettings(applicationContext),
                                     scope = this,
+                                    desiredInitialMuteState = isInitiallyMuted,
+                                    canUserUpdateSilenceState = canUserUpdateSilence,
                                 )
 
                             onCall {
@@ -258,6 +264,8 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
         callId: String,
         settings: ExtensionSettings,
         scope: ExtensionInitializationScope,
+        desiredInitialMuteState: Boolean,
+        canUserUpdateSilenceState: Boolean,
     ): InitializedExtensionsHolder {
         var localCallSilenceExt: LocalCallSilenceExtension? = null
         var callIconExt: CallIconExtension? = null
@@ -267,11 +275,19 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
         var participantsMgr: ParticipantsExtensionManager? = null
         // --- Local Call Silence Extension ---
         if (settings.localCallSilenceEnabled) {
+            Log.i(
+                TAG,
+                "LCS: Local Call Silence Extension Enabled: sending initial state: $desiredInitialMuteState",
+            )
             localCallSilenceExt =
-                scope.addLocalCallSilenceExtension(false) { isSilenced ->
+                scope.addLocalCallSilenceExtension(
+                    desiredInitialMuteState,
+                    canUserUpdateSilenceState,
+                ) { isSilenced ->
                     Log.i(
                         TAG,
-                        "[$callId] Local Silence Update Received" + " via Callback: $isSilenced",
+                        "LCS: [$callId] Local Silence Update Received" +
+                            " via Callback: $isSilenced",
                     )
                     updateCallDataInternal(callId) { it.copy(isLocallyMuted = isSilenced) }
                 }
@@ -297,14 +313,13 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
                         participantsMgr.participants.value.map { it.toParticipant() }
                 )
 
-            raiseHandExt =
-                participantsExt.addRaiseHandSupport { participantsWithHandsRaised ->
-                    Log.i(TAG, "[$callId] Raise Hand Update Received via Callback" + " hands up")
-                    participantsMgr.onRaisedHandStateChanged(participantsWithHandsRaised)
-                    updateCallDataInternal(callId) {
-                        it.copy(participants = participantsMgr.participants.value)
-                    }
+            raiseHandExt = participantsExt.addRaiseHandSupport { participantsWithHandsRaised ->
+                Log.i(TAG, "[$callId] Raise Hand Update Received via Callback" + " hands up")
+                participantsMgr.onRaisedHandStateChanged(participantsWithHandsRaised)
+                updateCallDataInternal(callId) {
+                    it.copy(participants = participantsMgr.participants.value)
                 }
+            }
 
             participantsExt.addKickParticipantSupport { participantToKick ->
                 Log.i(
@@ -326,6 +341,8 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
             participants = participantsExt,
             raiseHand = raiseHandExt,
             participantsManager = participantsMgr,
+            initialLocalMuteState = desiredInitialMuteState,
+            initialCanUserUpdateSilenceState = canUserUpdateSilenceState,
         )
     }
 
@@ -478,6 +495,8 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
             isParticipantExtensionEnabled = initializedExtensions.participants != null,
             isLocalCallSilenceEnabled = initializedExtensions.localCallSilence != null,
             isCallIconExtensionEnabled = initializedExtensions.callIcon != null,
+            isLocallyMuted = initializedExtensions.initialLocalMuteState,
+            canUserUpdateSilence = initializedExtensions.initialCanUserUpdateSilenceState,
         )
     }
 
@@ -560,7 +579,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
         when (result) {
             is CallControlResult.Success -> {
                 Log.i(TAG, "[$callId] Control action success.")
-                var dataToNotify: CallData? = null
+                val dataToNotify: CallData?
                 if (successState != null) {
                     dataToNotify =
                         updateCallDataInternal(callId) {
@@ -608,6 +627,14 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
         lifecycleScope.launch {
             callData?.localCallSilenceExtension?.updateIsLocallySilenced(isMuted)
             updateCallDataInternal(callId) { it.copy(isLocallyMuted = isMuted) }
+        }
+    }
+
+    override fun toggleCanUserUpdateSilence(callId: String, canUserUpdateSilence: Boolean) {
+        val callData = getCallDataById(callId)
+        lifecycleScope.launch {
+            callData?.localCallSilenceExtension?.updateCanUserUpdateSilence(canUserUpdateSilence)
+            updateCallDataInternal(callId) { it.copy(canUserUpdateSilence = canUserUpdateSilence) }
         }
     }
 
@@ -668,20 +695,17 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
         // Schedule removal job (if the call exists in the list)
         if (_callDataList.value.any { it.callId == callId }) {
             Log.i(TAG, "[$callId] scheduling delayed removal from the call data list.")
-            val removalJob =
-                lifecycleScope.launch {
-                    delay(CALL_REMOVE_DELAY)
-                    Log.i(TAG, "[$callId] Removing CallData after delay.")
-                    _callDataList.update { list -> list.filterNot { it.callId == callId } }
-                    // Cancel the main call handling job associated with this callId
-                    // This stops the handleCallActions loop and collectors for this specific call.
-                    // It's safe to cancel even if already completing.
-                    mActiveCalls[callId]
-                        ?.job
-                        ?.cancel("Call disconnected, cleaning up controller job")
-                    mActiveCalls.remove(callId) // Clean up controller map
-                    mDelayedRemovalJobs.remove(callId) // Clean up self
-                }
+            val removalJob = lifecycleScope.launch {
+                delay(CALL_REMOVE_DELAY)
+                Log.i(TAG, "[$callId] Removing CallData after delay.")
+                _callDataList.update { list -> list.filterNot { it.callId == callId } }
+                // Cancel the main call handling job associated with this callId
+                // This stops the handleCallActions loop and collectors for this specific call.
+                // It's safe to cancel even if already completing.
+                mActiveCalls[callId]?.job?.cancel("Call disconnected, cleaning up controller job")
+                mActiveCalls.remove(callId) // Clean up controller map
+                mDelayedRemovalJobs.remove(callId) // Clean up self
+            }
             mDelayedRemovalJobs[callId] = removalJob
         } else {
             Log.i(

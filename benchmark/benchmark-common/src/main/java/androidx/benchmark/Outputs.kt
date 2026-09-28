@@ -29,7 +29,7 @@ import java.util.Date
 import java.util.TimeZone
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-object Outputs {
+public object Outputs {
 
     private val formatter: SimpleDateFormat = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss")
 
@@ -43,22 +43,13 @@ object Outputs {
     private val sanitizerRegex = Regex("([^0-9a-zA-Z._-]+)")
 
     /** The intended output directory that respects the `additionalTestOutputDir`. */
-    val outputDirectory: File
+    public val outputDirectory: File
 
     /**
      * The usable output directory, given permission issues with `adb shell` on Android R. Both the
      * app and the shell have access to this output folder.
-     *
-     * This dir can be read/written by app This dir can be read by shell (see
-     * [forceFilesForShellAccessible] for API 21/22!)
      */
-    val dirUsableByAppAndShell: File
-
-    /**
-     * Any file created by this process for the shell to use must be explicitly made filesystem
-     * globally readable, as prior to API 23 the shell didn't have access by default.
-     */
-    val forceFilesForShellAccessible: Boolean = Build.VERSION.SDK_INT in 21..22
+    public val dirUsableByAppAndShell: File
 
     init {
         // Be explicit about the TimeZone for stable formatting
@@ -79,24 +70,12 @@ object Outputs {
                         Environment.getExternalStorageState(it) == Environment.MEDIA_MOUNTED
                     }
                 }
-                Build.VERSION.SDK_INT <= 22 -> {
-                    // prior to API 23, shell didn't have access to externalCacheDir
-                    context.cacheDir
-                }
                 else -> context.externalCacheDir
             }
                 ?: throw IllegalStateException(
                     "Unable to select a directory for writing files, " +
                         "additionalTestOutputDir argument required to declare output dir."
                 )
-
-        if (forceFilesForShellAccessible) {
-            // By default, shell doesn't have access to app dirs on 21/22 so we need to modify
-            // this so that the shell can output here too
-            dirUsableByAppAndShell.setReadable(true, false)
-            dirUsableByAppAndShell.setWritable(true, false)
-            dirUsableByAppAndShell.setExecutable(true, false)
-        }
 
         Log.d(BenchmarkState.TAG, "Usable output directory: $dirUsableByAppAndShell")
 
@@ -122,7 +101,7 @@ object Outputs {
      *
      * @return The absolute path of the output [File].
      */
-    fun writeFile(
+    public fun writeFile(
         fileName: String,
         reportOnRunEndOnly: Boolean = false,
         block: (file: File) -> Unit,
@@ -156,7 +135,7 @@ object Outputs {
         return destination.absolutePath
     }
 
-    fun sanitizeFilename(filename: String): String {
+    public fun sanitizeFilename(filename: String): String {
         require(filename.length < 200) {
             // Check length instead of sanitizing because in practice, names this long will
             // break AGP/Studio/Desktop side tooling as well, at least on Linux.
@@ -168,15 +147,15 @@ object Outputs {
         return filename.replace(sanitizerRegex, "_")
     }
 
-    fun testOutputFile(filename: String): File {
+    public fun testOutputFile(filename: String): File {
         return File(outputDirectory, filename)
     }
 
-    fun dateToFileName(date: Date = Date()): String {
+    public fun dateToFileName(date: Date = Date()): String {
         return formatter.format(date)
     }
 
-    fun relativePathFor(path: String): String {
+    public fun relativePathFor(path: String): String {
         val hasOutputDirectoryPrefix = path.startsWith(outputDirectory.absolutePath)
         val relativePath =
             when {

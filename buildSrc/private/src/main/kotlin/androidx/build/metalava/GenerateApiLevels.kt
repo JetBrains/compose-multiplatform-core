@@ -28,6 +28,29 @@ import org.gradle.api.attributes.Usage
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.named
 
+/** Returns the args needed to generate a version history JSON from the previous API files. */
+internal fun getGenerateApiLevelsArgs(
+    apiDir: File,
+    apiFiles: List<File>,
+    currentVersion: Version,
+    outputLocation: File,
+): List<String> {
+    return buildList {
+        add("--generate-api-version-history")
+        add(outputLocation.absolutePath)
+        add("--api-version-for-sources")
+        add(currentVersion.toString())
+        if (apiFiles.isNotEmpty()) {
+            add("--api-version-signature-files")
+            add(apiFiles.joinToString(":"))
+            add("--api-version-signature-pattern")
+            // Select the version from the files. The `*` wildcard matches and ignores any
+            // pre-release suffix.
+            add("$apiDir/{version:major.minor.patch}*.txt")
+        }
+    }
+}
+
 /**
  * Returns the API files that should be used to generate the API levels metadata. This will not
  * include the current version because the source is used as the current version.
@@ -90,8 +113,10 @@ internal val Project.versionMetadataUsage: Usage
 internal fun Project.registerVersionMetadataComponent(
     generateApiTask: TaskProvider<GenerateApiTask>
 ) {
-    configurations.register("libraryVersionMetadata") { configuration ->
-        configuration.isVisible = false
+    // This needs to non-eager because we call registerAsComponentForPublishing
+    // which has an enforced timing when we are allowed to add new artifacts
+    // https://github.com/gradle/gradle/issues/34570
+    configurations.create("libraryVersionMetadata") { configuration ->
         configuration.isCanBeResolved = false
 
         configuration.attributes.attribute(Usage.USAGE_ATTRIBUTE, project.versionMetadataUsage)
@@ -105,10 +130,9 @@ internal fun Project.registerVersionMetadataComponent(
         )
 
         // The generate API task has many output files, only add the version metadata as an artifact
-        val levelsFile =
-            generateApiTask.map { task ->
-                task.apiLocation.map { location -> location.apiLevelsFile }
-            }
+        val levelsFile = generateApiTask.map { task ->
+            task.apiLocation.map { location -> location.apiLevelsFile }
+        }
         configuration.outgoing.artifact(levelsFile) { it.classifier = "versionMetadata" }
 
         registerAsComponentForPublishing(configuration)

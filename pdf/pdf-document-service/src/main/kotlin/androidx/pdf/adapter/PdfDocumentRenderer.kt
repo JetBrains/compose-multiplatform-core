@@ -29,12 +29,15 @@ import androidx.annotation.RestrictTo
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public interface PdfDocumentRenderer : AutoCloseable {
     /**
-     * Indicates whether the PDF document is linearized.
+     * The linearization status of the PDF document.
      *
-     * A linearized PDF allows for faster initial display of the first page, as it optimizes the
-     * file structure for progressive loading.
+     * This value indicates whether the document is optimized for incremental loading over a network
+     * where the value indicates:
+     * - 0: NOT_LINEARIZED
+     * - 1: LINEARIZED
+     * - 2: UNKNOWN STATUS.
      */
-    public val isLinearized: Boolean
+    public val linearizationStatus: Int
 
     /** The total number of pages in the PDF document. */
     public val pageCount: Int
@@ -75,4 +78,28 @@ public interface PdfDocumentRenderer : AutoCloseable {
      * @param removePasswordProtection Whether to remove password protection from the document.
      */
     public fun write(destination: ParcelFileDescriptor, removePasswordProtection: Boolean)
+
+    public fun <T> withPage(pageNum: Int, block: (PdfPage) -> T): T? {
+        var page: PdfPage? = null
+        val results: T?
+
+        try {
+            page = this.openPage(pageNum, useCache = false)
+            results = block(page)
+        } catch (_: RendererClosedException) {
+            return null
+        } finally {
+            this.releasePage(page, pageNum)
+        }
+
+        return results
+    }
 }
+
+/**
+ * Exception thrown when an operation is attempted on a [PdfDocumentRenderer] that has already been
+ * closed.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public class RendererClosedException(message: String = "Document renderer is already closed") :
+    IllegalStateException(message)

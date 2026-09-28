@@ -24,7 +24,6 @@ import static org.junit.Assert.assertTrue;
 import android.graphics.Point;
 import android.graphics.Rect;
 
-import androidx.test.filters.SdkSuppress;
 import androidx.test.uiautomator.UiObject;
 import androidx.test.uiautomator.UiSelector;
 
@@ -98,7 +97,6 @@ public class UiObjectTest extends BaseTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 24)
     public void testDragTo_destObjAndSteps() throws Exception {
         launchTestActivity(DragTestActivity.class);
 
@@ -119,7 +117,6 @@ public class UiObjectTest extends BaseTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 24)
     public void testDragTo_destXAndDestYAndSteps() throws Exception {
         launchTestActivity(DragTestActivity.class);
 
@@ -551,7 +548,6 @@ public class UiObjectTest extends BaseTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23) // Bounds include invisible regions prior to API 23.
     public void testGetBounds() throws Exception {
         launchTestActivity(VisibleBoundsTestActivity.class);
 

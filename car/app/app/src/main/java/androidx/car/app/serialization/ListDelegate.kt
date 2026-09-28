@@ -16,18 +16,18 @@
 package androidx.car.app.serialization
 
 import android.annotation.SuppressLint
+import androidx.annotation.RestrictTo
 import androidx.car.app.OnDoneCallback
-import androidx.car.app.annotations.ExperimentalCarApi
 
 /**
  * A host-side interface, for querying portions of a long list.
  *
  * <p> Long lists are stored on the client for performance reasons.
  */
-@ExperimentalCarApi
-interface ListDelegate<out T> {
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public interface ListDelegate<out T> {
     /** The size of the underlying [List] */
-    val size: Int
+    public val size: Int
 
     /**
      * Host-side interface for requesting items in range `[startIndex, endIndex]` (both inclusive).
@@ -36,5 +36,5 @@ interface ListDelegate<out T> {
      * thread.
      */
     @SuppressLint("ExecutorRegistration")
-    fun requestItemRange(startIndex: Int, endIndex: Int, callback: OnDoneCallback)
+    public fun requestItemRange(startIndex: Int, endIndex: Int, callback: OnDoneCallback)
 }

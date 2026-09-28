@@ -75,13 +75,13 @@ import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.CameraInternal;
 import androidx.camera.core.impl.ImageOutputConfig;
 import androidx.camera.core.impl.utils.Threads;
-import androidx.camera.view.impl.ZoomGestureDetector;
 import androidx.camera.view.internal.ScreenFlashUiInfo;
 import androidx.camera.view.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.view.internal.compat.quirk.SurfaceViewNotCroppedByParentQuirk;
 import androidx.camera.view.internal.compat.quirk.SurfaceViewStretchedQuirk;
 import androidx.camera.view.transform.CoordinateTransform;
 import androidx.camera.view.transform.OutputTransform;
+import androidx.camera.viewfinder.core.ZoomGestureDetector;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
@@ -154,6 +154,8 @@ public final class PreviewView extends FrameLayout {
     @SuppressWarnings("WeakerAccess")
     CameraController mCameraController;
 
+    private boolean mIsAttachedToController = false;
+
     // Synthetic access
     @SuppressWarnings("WeakerAccess")
     @Nullable OnFrameUpdateListener mOnFrameUpdateListener;
@@ -182,6 +184,8 @@ public final class PreviewView extends FrameLayout {
                         right - left != oldRight - oldLeft || bottom - top != oldBottom - oldTop;
                 if (isSizeChanged) {
                     redrawPreview();
+                }
+                if (isSizeChanged || (mCameraController != null && !mIsAttachedToController)) {
                     attachToControllerIfReady(true);
                 }
             };
@@ -343,12 +347,25 @@ public final class PreviewView extends FrameLayout {
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        startListeningToDisplayChange();
+        // registerDisplayListener call might throw an IncompatibleClassChangeError and cause that
+        // the PreviewView can't be rendered in Android Studio's layout preview window. Therefore,
+        // do not invoke the startListeningToDisplayChange when in edit mode. (b/429098676)
+        if (!isInEditMode()) {
+            startListeningToDisplayChange();
+        }
         addOnLayoutChangeListener(mOnLayoutChangeListener);
         if (mImplementation != null) {
             mImplementation.onAttachedToWindow();
         }
         attachToControllerIfReady(true);
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+        if (mCameraController != null && !mIsAttachedToController) {
+            attachToControllerIfReady(true);
+        }
     }
 
     @Override
@@ -361,7 +378,10 @@ public final class PreviewView extends FrameLayout {
         if (mCameraController != null) {
             mCameraController.clearPreviewSurface();
         }
-        stopListeningToDisplayChange();
+        mIsAttachedToController = false;
+        if (!isInEditMode()) {
+            stopListeningToDisplayChange();
+        }
     }
 
     @Override
@@ -950,6 +970,7 @@ public final class PreviewView extends FrameLayout {
             setScreenFlashUiInfo(null);
         }
         mCameraController = cameraController;
+        mIsAttachedToController = false;
         attachToControllerIfReady(/*shouldFailSilently=*/false);
         setScreenFlashUiInfo(getScreenFlashInternal());
     }
@@ -1053,6 +1074,7 @@ public final class PreviewView extends FrameLayout {
         if (mCameraController != null && viewPort != null && isAttachedToWindow()) {
             try {
                 mCameraController.attachPreviewSurface(getSurfaceProvider(), viewPort);
+                mIsAttachedToController = true;
             } catch (IllegalStateException ex) {
                 if (shouldFailSilently) {
                     // Swallow the exception and fail silently if the method is invoked by View
@@ -1074,7 +1096,8 @@ public final class PreviewView extends FrameLayout {
                 ScreenFlashUiInfo.ProviderType.PREVIEW_VIEW, control));
     }
 
-    private void startListeningToDisplayChange() {
+    @VisibleForTesting
+    void startListeningToDisplayChange() {
         DisplayManager displayManager = getDisplayManager();
         if (displayManager == null) {
             return;
@@ -1083,7 +1106,8 @@ public final class PreviewView extends FrameLayout {
                 new Handler(Looper.getMainLooper()));
     }
 
-    private void stopListeningToDisplayChange() {
+    @VisibleForTesting
+    void stopListeningToDisplayChange() {
         DisplayManager displayManager = getDisplayManager();
         if (displayManager == null) {
             return;
@@ -1207,6 +1231,9 @@ public final class PreviewView extends FrameLayout {
     class DisplayRotationListener implements DisplayManager.DisplayListener {
         @Override
         public void onDisplayAdded(int displayId) {
+            if (mCameraController != null && !mIsAttachedToController) {
+                attachToControllerIfReady(true);
+            }
         }
 
         @Override
@@ -1218,6 +1245,9 @@ public final class PreviewView extends FrameLayout {
             Display display = getDefaultDisplay();
             if (display != null && display.getDisplayId() == displayId) {
                 redrawPreview();
+                if (mCameraController != null && !mIsAttachedToController) {
+                    attachToControllerIfReady(true);
+                }
             }
         }
     }

@@ -337,12 +337,11 @@ private class PopupLayout(
         val parentBounds = parentBounds ?: return
         val popupContentSize = popupContentSize ?: return
 
-        val windowSize =
-            previousWindowVisibleFrame.let {
-                composeView.getWindowVisibleDisplayFrame(it)
-                val bounds = it.toIntBounds()
-                IntSize(width = bounds.width, height = bounds.height)
-            }
+        val windowSize = previousWindowVisibleFrame.let {
+            composeView.getWindowVisibleDisplayFrame(it)
+            val bounds = it.toIntBounds()
+            IntSize(width = bounds.width, height = bounds.height)
+        }
 
         val popupPosition =
             positionProvider.calculatePosition(
@@ -442,6 +441,7 @@ private class PopupLayout(
 
             // accessibilityTitle is not exposed as a public API therefore we set popup window
             // title which is used as a fallback by a11y services
+            @Suppress("PrivateResource")
             title = composeView.context.resources.getString(R.string.default_popup_window_title)
         }
     }

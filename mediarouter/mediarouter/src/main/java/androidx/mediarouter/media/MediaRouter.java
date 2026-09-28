@@ -38,8 +38,6 @@ import android.view.Display;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.collection.ArrayMap;
 import androidx.core.util.ObjectsCompat;
@@ -51,6 +49,9 @@ import androidx.mediarouter.media.MediaRouteProvider.RouteController;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.WeakReference;
@@ -60,6 +61,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 /**
  * MediaRouter allows applications to control the routing of media channels
@@ -336,8 +338,7 @@ public final class MediaRouter {
      * a strong reference to this object as long as it is in use.
      */
     @MainThread
-    @NonNull
-    public static MediaRouter getInstance(@NonNull Context context) {
+    public static @NonNull MediaRouter getInstance(@NonNull Context context) {
         if (context == null) {
             throw new IllegalArgumentException("context must not be null");
         }
@@ -378,8 +379,7 @@ public final class MediaRouter {
 
     /** Gets the initialized global router. */
     @RestrictTo(LIBRARY_GROUP)
-    @NonNull
-    static GlobalMediaRouter getGlobalRouter() {
+    static @NonNull GlobalMediaRouter getGlobalRouter() {
         if (sGlobal == null) {
             throw new IllegalStateException(
                     "getGlobalRouter cannot be called when sGlobal is " + "null");
@@ -394,8 +394,7 @@ public final class MediaRouter {
      * <p>Must be called on the main thread.
      */
     @MainThread
-    @NonNull
-    public List<RouteInfo> getRoutes() {
+    public @NonNull List<RouteInfo> getRoutes() {
         checkCallingThread();
         return getGlobalRouter().getRoutes();
     }
@@ -407,8 +406,7 @@ public final class MediaRouter {
      * <p>Must be called on the main thread.
      */
     @MainThread
-    @NonNull
-    public List<ProviderInfo> getProviders() {
+    public @NonNull List<ProviderInfo> getProviders() {
         checkCallingThread();
         return getGlobalRouter().getProviders();
     }
@@ -424,8 +422,7 @@ public final class MediaRouter {
      * @return The default route, which is guaranteed to never be null.
      */
     @MainThread
-    @NonNull
-    public RouteInfo getDefaultRoute() {
+    public @NonNull RouteInfo getDefaultRoute() {
         checkCallingThread();
         return getGlobalRouter().getDefaultRoute();
     }
@@ -438,8 +435,7 @@ public final class MediaRouter {
      * @return A bluetooth route, if exist, otherwise null.
      */
     @MainThread
-    @Nullable
-    public RouteInfo getBluetoothRoute() {
+    public @Nullable RouteInfo getBluetoothRoute() {
         checkCallingThread();
         return getGlobalRouter().getBluetoothRoute();
     }
@@ -490,8 +486,7 @@ public final class MediaRouter {
      * @see RouteInfo#supportsControlRequest
      */
     @MainThread
-    @NonNull
-    public RouteInfo getSelectedRoute() {
+    public @NonNull RouteInfo getSelectedRoute() {
         checkCallingThread();
         return getGlobalRouter().getSelectedRoute();
     }
@@ -523,8 +518,7 @@ public final class MediaRouter {
      * @see RouteInfo#matchesSelector
      */
     @MainThread
-    @NonNull
-    public RouteInfo updateSelectedRoute(@NonNull MediaRouteSelector selector) {
+    public @NonNull RouteInfo updateSelectedRoute(@NonNull MediaRouteSelector selector) {
         if (selector == null) {
             throw new IllegalArgumentException("selector must not be null");
         }
@@ -540,6 +534,7 @@ public final class MediaRouter {
             globalRouter.selectRoute(
                     route,
                     MediaRouter.UNSELECT_REASON_ROUTE_CHANGED,
+                    SelectionInfo.SELECTION_SOURCE_APP,
                     /* syncMediaRoute1Provider= */ true);
         }
         return route;
@@ -586,7 +581,11 @@ public final class MediaRouter {
         GlobalMediaRouter globalRouter = getGlobalRouter();
         RouteInfo fallbackRoute = globalRouter.chooseFallbackRoute();
         if (globalRouter.getSelectedRoute() != fallbackRoute) {
-            globalRouter.selectRoute(fallbackRoute, reason, /* syncMediaRoute1Provider= */ true);
+            globalRouter.selectRoute(
+                    fallbackRoute,
+                    reason,
+                    SelectionInfo.SELECTION_SOURCE_APP,
+                    /* syncMediaRoute1Provider= */ true);
         }
     }
 
@@ -1014,8 +1013,7 @@ public final class MediaRouter {
         getGlobalRouter().setMediaSessionCompat(mediaSession);
     }
 
-    @Nullable
-    public MediaSessionCompat.Token getMediaSessionToken() {
+    public MediaSessionCompat.@Nullable Token getMediaSessionToken() {
         return sGlobal == null ? null : sGlobal.getMediaSessionToken();
         // Use sGlobal exceptionally due to unchecked thread.
     }
@@ -1027,8 +1025,7 @@ public final class MediaRouter {
      * <p>Must be called on the main thread.
      */
     @MainThread
-    @Nullable
-    public MediaRouterParams getRouterParams() {
+    public @Nullable MediaRouterParams getRouterParams() {
         checkCallingThread();
         return getGlobalRouter().getRouterParams();
     }
@@ -1083,6 +1080,104 @@ public final class MediaRouter {
     }
 
     /**
+     * Sets a list of suggested routes.
+     *
+     * <p>Use this method to advertise device suggestions for routing. UI elements in the system and
+     * within the app may use these suggestions to show one-tap transfer affordances to the user.
+     *
+     * <p>This feature requires Android 11 (API level 30) or higher and that the app has {@link
+     * MediaTransferReceiver media transfer enabled} (either declared in the manifest or enabled via
+     * {@link MediaRouterParams.Builder#setMediaTransferReceiverEnabled(boolean)}). On earlier
+     * platform versions, this method is a no-op and all suggestions are dropped.
+     *
+     * <p>Suggestions may be expired automatically by the system, at which point you should call
+     * this method again if the suggestion is still relevant and should still be surfaced.
+     *
+     * <p>Call this method with an empty list to explicitly recommend that no suggestions are
+     * appropriate.
+     *
+     * <p>MediaRouter will drop unsupported suggestions, including:
+     *
+     * <ul>
+     *   <li>System routes (such as the built-in speaker or Bluetooth routes).
+     *   <li>Routes that are not accessible to the Android platform (via {@link
+     *       android.media.MediaRouter2}). For example, custom in-process routes added via {@link
+     *       #addProvider(MediaRouteProvider)} without an exported {@link MediaRouteProviderService}
+     *       are not accessible to the platform and will be dropped.
+     * </ul>
+     *
+     * @param routes The {@link RouteInfo} routes the router suggests should be provided to the
+     *     user.
+     */
+    @MainThread
+    public void setDeviceSuggestions(@NonNull List<RouteInfo> routes) {
+        checkCallingThread();
+        getGlobalRouter().setDeviceSuggestions(routes);
+    }
+
+    /**
+     * Clears the {@link SuggestedDeviceInfo device suggestions} provided by this router.
+     *
+     * <p>If the router explicitly wants to recommend that no suggestions are appropriate, use
+     * {@link #setDeviceSuggestions} with an empty list.
+     */
+    @MainThread
+    public void clearDeviceSuggestions() {
+        checkCallingThread();
+        getGlobalRouter().clearDeviceSuggestions();
+    }
+
+    /**
+     * Gets the current suggested devices.
+     *
+     * <p>The suggestions returned by this method include suggestions coming from other packages.
+     * For example, the route provider itself may include suggestions based on the likelihood of the
+     * user selecting a given route.
+     *
+     * @return the suggested devices, keyed by the package name providing each suggestion list.
+     */
+    // Device suggestions can be provided by multiple apps, while setting the device suggestions
+    // is only done for the app calling this method.
+    @SuppressWarnings("KotlinPropertyAccess")
+    @MainThread
+    public @NonNull Map<String, List<SuggestedDeviceInfo>> getDeviceSuggestions() {
+        checkCallingThread();
+        return getGlobalRouter().getDeviceSuggestions();
+    }
+
+    /**
+     * Registers the given callback to be invoked when the {@link SuggestedDeviceInfo} of the router
+     * changes.
+     *
+     * @param deviceSuggestionsUpdatesCallback the callback to register.
+     * @param executor the executor to run the callback on. If the executor is passed in as null,
+     *     the callback will run on the main thread.
+     */
+    @MainThread
+    public void registerDeviceSuggestionsUpdatesCallback(
+            @NonNull DeviceSuggestionsUpdatesCallback deviceSuggestionsUpdatesCallback,
+            @Nullable Executor executor) {
+        checkCallingThread();
+        getGlobalRouter()
+                .registerDeviceSuggestionsUpdatesCallback(
+                        deviceSuggestionsUpdatesCallback, executor);
+    }
+
+    /**
+     * Unregisters the given callback to be invoked when the {@link SuggestedDeviceInfo} of the
+     * router changes.
+     *
+     * @param deviceSuggestionsUpdatesCallback the callback to unregister.
+     */
+    @MainThread
+    public void unregisterDeviceSuggestionsUpdatesCallback(
+            @NonNull DeviceSuggestionsUpdatesCallback deviceSuggestionsUpdatesCallback) {
+        checkCallingThread();
+        getGlobalRouter()
+                .unregisterDeviceSuggestionsUpdatesCallback(deviceSuggestionsUpdatesCallback);
+    }
+
+    /**
      * Throws an {@link IllegalStateException} if the calling thread is not the main thread.
      */
     static void checkCallingThread() {
@@ -1095,9 +1190,32 @@ public final class MediaRouter {
     /**
      * Returns whether the media transfer feature is enabled.
      *
-     * @see MediaRouter
+     * <p>Media transfer allows privileged apps such as SystemUI to control media routing for this
+     * application. This for example enables users to transfer media playback using SystemUI
+     * controls.
+     *
+     * <p>This feature requires Android 11 (API level 30) or higher and will always return {@code
+     * false} on earlier Android versions.
+     *
+     * <p>Media transfer is considered enabled if <em>either</em> of the following conditions is
+     * met:
+     *
+     * <ul>
+     *   <li>The application explicitly enables it by calling {@link
+     *       MediaRouterParams.Builder#setMediaTransferReceiverEnabled(boolean)} with {@code true}
+     *   <li>The application declares {@link MediaTransferReceiver} in its {@code
+     *       AndroidManifest.xml} and has not explicitly disabled it via {@link MediaRouterParams}.
+     * </ul>
+     *
+     * <p>Please note that this method returning {@code true} is a necessary but not sufficient
+     * condition for media transfer. Actual media transfer through SystemUI controls also depends on
+     * the presence of route providers that support this capability.
+     *
+     * @return {@code true} if media transfer is enabled; {@code false} otherwise.
+     * @see MediaRouterParams.Builder#setMediaTransferReceiverEnabled(boolean)
+     * @see MediaRouterParams#isMediaTransferReceiverEnabled()
+     * @see MediaTransferReceiver
      */
-    @RestrictTo(LIBRARY)
     public static boolean isMediaTransferEnabled() {
         if (sGlobal == null) {
             return false;
@@ -1164,8 +1282,7 @@ public final class MediaRouter {
         MediaRouteDescriptor mDescriptor;
 
         @RestrictTo(LIBRARY)
-        @NonNull
-        protected List<RouteInfo> mSelectedRoutesInGroup = new ArrayList<>();
+        protected @NonNull List<RouteInfo> mSelectedRoutesInGroup = new ArrayList<>();
 
         @IntDef({
             CONNECTION_STATE_DISCONNECTED,
@@ -1508,8 +1625,7 @@ public final class MediaRouter {
         /**
          * Gets information about the provider of this media route.
          */
-        @NonNull
-        public ProviderInfo getProvider() {
+        public @NonNull ProviderInfo getProvider() {
             return mProvider;
         }
 
@@ -1523,8 +1639,7 @@ public final class MediaRouter {
          *
          * @return The unique id of the route, never null.
          */
-        @NonNull
-        public String getId() {
+        public @NonNull String getId() {
             return mUniqueId;
         }
 
@@ -1538,8 +1653,7 @@ public final class MediaRouter {
          * @return The user-visible name of a media route.  This is the string presented
          * to users who may select this as the active route.
          */
-        @NonNull
-        public String getName() {
+        public @NonNull String getName() {
             return mName;
         }
 
@@ -1552,8 +1666,7 @@ public final class MediaRouter {
          *
          * @return The description of the route, or null if none.
          */
-        @Nullable
-        public String getDescription() {
+        public @Nullable String getDescription() {
             return mDescription;
         }
 
@@ -1565,8 +1678,7 @@ public final class MediaRouter {
          *
          * @return The URI of the icon representing this route, or null if none.
          */
-        @Nullable
-        public Uri getIconUri() {
+        public @Nullable Uri getIconUri() {
             return mIconUri;
         }
 
@@ -1688,8 +1800,7 @@ public final class MediaRouter {
          * @see #supportsControlCategory
          * @see #supportsControlRequest
          */
-        @NonNull
-        public List<IntentFilter> getControlFilters() {
+        public @NonNull List<IntentFilter> getControlFilters() {
             return mControlFilters;
         }
 
@@ -2009,8 +2120,7 @@ public final class MediaRouter {
          * @see android.app.Presentation
          */
         @MainThread
-        @Nullable
-        public Display getPresentationDisplay() {
+        public @Nullable Display getPresentationDisplay() {
             checkCallingThread();
             if (mPresentationDisplayId >= 0 && mPresentationDisplay == null) {
                 mPresentationDisplay = getGlobalRouter().getDisplay(mPresentationDisplayId);
@@ -2030,8 +2140,7 @@ public final class MediaRouter {
          * Gets a collection of extra properties about this route that were supplied by its media
          * route provider, or null if none.
          */
-        @Nullable
-        public Bundle getExtras() {
+        public @Nullable Bundle getExtras() {
             return mExtras;
         }
 
@@ -2039,8 +2148,7 @@ public final class MediaRouter {
          * Gets an intent sender for launching a settings activity for this
          * route.
          */
-        @Nullable
-        public IntentSender getSettingsIntent() {
+        public @Nullable IntentSender getSettingsIntent() {
             return mSettingsIntent;
         }
 
@@ -2063,6 +2171,7 @@ public final class MediaRouter {
                     .selectRoute(
                             this,
                             MediaRouter.UNSELECT_REASON_ROUTE_CHANGED,
+                            SelectionInfo.SELECTION_SOURCE_APP,
                             syncMediaRoute1Provider);
         }
 
@@ -2119,8 +2228,7 @@ public final class MediaRouter {
          * Returns a {@link GroupRouteInfo} if the route is a group route or {code null} otherwise.
          */
         @RestrictTo(LIBRARY)
-        @Nullable
-        public GroupRouteInfo asGroup() {
+        public @Nullable GroupRouteInfo asGroup() {
             return (this instanceof GroupRouteInfo) ? (GroupRouteInfo) this : null;
         }
 
@@ -2136,8 +2244,7 @@ public final class MediaRouter {
          * @return The list of the selected routes in this group
          */
         @RestrictTo(LIBRARY)
-        @NonNull
-        public List<RouteInfo> getSelectedRoutesInGroup() {
+        public @NonNull List<RouteInfo> getSelectedRoutesInGroup() {
             return Collections.unmodifiableList(mSelectedRoutesInGroup);
         }
 
@@ -2145,16 +2252,14 @@ public final class MediaRouter {
          * Returns the {@link MediaRouteDescriptor} of this media route info or {@code null} if it
          * is not updated by its provider yet.
          */
-        @Nullable
-        public MediaRouteDescriptor getMediaRouteDescriptor() {
+        public @Nullable MediaRouteDescriptor getMediaRouteDescriptor() {
             return mDescriptor;
         }
 
         /** */
         @MainThread
         @RestrictTo(LIBRARY)
-        @Nullable
-        public DynamicGroupRouteController getDynamicGroupController() {
+        public @Nullable DynamicGroupRouteController getDynamicGroupController() {
             checkCallingThread();
             //TODO: handle multiple controllers case
             RouteController controller = getGlobalRouter().mSelectedRouteController;
@@ -2165,8 +2270,7 @@ public final class MediaRouter {
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             StringBuilder sb = new StringBuilder();
 
             sb.append("MediaRouter.RouteInfo{ uniqueId=").append(mUniqueId)
@@ -2365,8 +2469,7 @@ public final class MediaRouter {
         }
 
         @RestrictTo(LIBRARY)
-        @NonNull
-        public MediaRouteProvider getProviderInstance() {
+        public @NonNull MediaRouteProvider getProviderInstance() {
             return mProvider.getProviderInstance();
         }
 
@@ -2526,11 +2629,10 @@ public final class MediaRouter {
         /* package */ static final int UPDATE_ROUTES_FAILED_REASON_NOT_AVAILABLE_ROUTE_CONNECTION =
                 4;
 
-        @NonNull private final List<RouteInfo> mRoutesInGroup = new ArrayList<>();
+        private final @NonNull List<RouteInfo> mRoutesInGroup = new ArrayList<>();
 
-        @NonNull
-        private final Map<String, DynamicRouteDescriptor> mRouteIdToDynamicRouteDescriptorMap =
-                new ArrayMap<>();
+        private final @NonNull Map<String, DynamicRouteDescriptor>
+                mRouteIdToDynamicRouteDescriptorMap = new ArrayMap<>();
 
         /* package */ GroupRouteInfo(ProviderInfo provider, String descriptorId, String uniqueId) {
             super(provider, descriptorId, uniqueId);
@@ -2599,8 +2701,7 @@ public final class MediaRouter {
         }
 
         /** Returns the list of {@link RouteInfo}s of the given dynamic group route. */
-        @NonNull
-        public List<RouteInfo> getRoutesInGroup() {
+        public @NonNull List<RouteInfo> getRoutesInGroup() {
             return Collections.unmodifiableList(mRoutesInGroup);
         }
 
@@ -2699,9 +2800,8 @@ public final class MediaRouter {
          *
          * <p>Must be called on the main thread.
          */
-        @NonNull
         @MainThread
-        public MediaRouteProvider getProviderInstance() {
+        public @NonNull MediaRouteProvider getProviderInstance() {
             checkCallingThread();
             return mProviderInstance;
         }
@@ -2709,16 +2809,14 @@ public final class MediaRouter {
         /**
          * Gets the package name of the media route provider.
          */
-        @NonNull
-        public String getPackageName() {
+        public @NonNull String getPackageName() {
             return mMetadata.getPackageName();
         }
 
         /**
          * Gets the component name of the media route provider.
          */
-        @NonNull
-        public ComponentName getComponentName() {
+        public @NonNull ComponentName getComponentName() {
             return mMetadata.getComponentName();
         }
 
@@ -2728,8 +2826,7 @@ public final class MediaRouter {
          * <p>Must be called on the main thread.
          */
         @MainThread
-        @NonNull
-        public List<RouteInfo> getRoutes() {
+        public @NonNull List<RouteInfo> getRoutes() {
             checkCallingThread();
             return Collections.unmodifiableList(mRoutes);
         }
@@ -2765,9 +2862,8 @@ public final class MediaRouter {
             return mDescriptor != null && mDescriptor.supportsDynamicGroupRoute();
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return "MediaRouter.RouteProviderInfo{ packageName=" + getPackageName() + " }";
         }
     }
@@ -2810,6 +2906,7 @@ public final class MediaRouter {
          * @param router The media router reporting the event.
          * @param route The route that has been selected.
          * @param reason The reason for unselecting the previous route.
+         * @see #onRouteSelected(MediaRouter, RouteInfo, RouteInfo, SelectionInfo)
          */
         public void onRouteSelected(
                 @NonNull MediaRouter router, @NonNull RouteInfo route, @UnselectReason int reason) {
@@ -2830,6 +2927,7 @@ public final class MediaRouter {
          * @param selectedRoute The route that has been selected.
          * @param reason The reason for unselecting the previous route.
          * @param requestedRoute The route that was requested to be selected.
+         * @see #onRouteSelected(MediaRouter, RouteInfo, RouteInfo, SelectionInfo)
          */
         public void onRouteSelected(
                 @NonNull MediaRouter router,
@@ -2837,6 +2935,35 @@ public final class MediaRouter {
                 @UnselectReason int reason,
                 @NonNull RouteInfo requestedRoute) {
             onRouteSelected(router, selectedRoute, reason);
+        }
+
+        /**
+         * Called when the selected route changes.
+         *
+         * <p>The {@code selectedRoute} and the {@code requestedRoute} may be different. For
+         * example, when dynamic group route controlling is enabled (see {@link
+         * MediaRouteProviderDescriptor#supportsDynamicGroupRoute()}). The requested route is the
+         * {@link RouteInfo} passed to {@link #selectRoute}. The selected route, on the other hand,
+         * represents the created dynamic group, whose composing routes are available via {@link
+         * GroupRouteInfo#getRoutesInGroup()}. This enables the client to add other routes (beyond
+         * the requested route) to the selected route group.
+         *
+         * <p>The selected route matches the requested route when dynamic groups are not {@link
+         * MediaRouteProviderDescriptor#supportsDynamicGroupRoute() enabled}.
+         *
+         * @param router The media router reporting the event.
+         * @param selectedRoute The selected route, which may differ from the requested route.
+         * @param requestedRoute The route that was requested to be selected (for example, using
+         *     {@link MediaRouter#selectRoute}).
+         * @param selectionInfo Information about the route selection.
+         */
+        public void onRouteSelected(
+                @NonNull MediaRouter router,
+                @NonNull RouteInfo selectedRoute,
+                @NonNull RouteInfo requestedRoute,
+                @NonNull SelectionInfo selectionInfo) {
+            onRouteSelected(
+                    router, selectedRoute, selectionInfo.getUnselectReason(), requestedRoute);
         }
 
         /**
@@ -3017,9 +3144,38 @@ public final class MediaRouter {
          *     previous route.
          */
         @MainThread
-        @Nullable
-        ListenableFuture<Void> onPrepareTransfer(
+        @Nullable ListenableFuture<Void> onPrepareTransfer(
                 @NonNull RouteInfo fromRoute, @NonNull RouteInfo toRoute);
+    }
+
+    /**
+     * Callback for receiving events about {@link MediaRouter#getDeviceSuggestions() device
+     * suggestions}.
+     *
+     * @see MediaRouter#registerDeviceSuggestionsUpdatesCallback
+     * @see MediaRouter#unregisterDeviceSuggestionsUpdatesCallback
+     */
+    public interface DeviceSuggestionsUpdatesCallback {
+
+        /**
+         * Called when suggestions are updated.
+         *
+         * @param suggestingPackageName the package that provided the suggestions.
+         * @param suggestedDeviceInfo the suggestions provided by the package.
+         */
+        void onSuggestionsUpdated(
+                @NonNull String suggestingPackageName,
+                @NonNull List<SuggestedDeviceInfo> suggestedDeviceInfo);
+
+        /**
+         * Called when suggestions are cleared.
+         *
+         * @param suggestingPackageName the package that cleared their provided suggestions.
+         */
+        void onSuggestionsCleared(@NonNull String suggestingPackageName);
+
+        /** Called when a router requests suggestions from suggestion providers. */
+        void onSuggestionsRequested();
     }
 
     /**
@@ -3088,12 +3244,12 @@ public final class MediaRouter {
 
         final RouteController mToRouteController;
         final @UnselectReason int mReason;
+        final @SelectionInfo.SelectionSource int mSelectionSource;
         private final boolean mSyncMediaRoute1Provider;
         private final RouteInfo mFromRoute;
         final RouteInfo mToRoute;
         private final RouteInfo mRequestedRoute;
-        @Nullable
-        final List<DynamicRouteDescriptor> mMemberRoutes;
+        final @Nullable List<DynamicRouteDescriptor> mMemberRoutes;
         private final WeakReference<GlobalMediaRouter> mRouter;
 
         private ListenableFuture<Void> mFuture = null;
@@ -3105,6 +3261,7 @@ public final class MediaRouter {
                 RouteInfo route,
                 @Nullable RouteController routeController,
                 @UnselectReason int reason,
+                @SelectionInfo.SelectionSource int selectionSource,
                 boolean syncMediaRoute1Provider,
                 @Nullable RouteInfo requestedRoute,
                 @Nullable Collection<DynamicRouteDescriptor> memberRoutes) {
@@ -3113,6 +3270,7 @@ public final class MediaRouter {
             mToRoute = route;
             mToRouteController = routeController;
             mReason = reason;
+            mSelectionSource = selectionSource;
             mSyncMediaRoute1Provider = syncMediaRoute1Provider;
             mFromRoute = router.mSelectedRoute;
             mRequestedRoute = requestedRoute;
@@ -3208,12 +3366,17 @@ public final class MediaRouter {
             router.mSelectedRoute = mToRoute;
             router.mSelectedRouteController = mToRouteController;
 
+            SelectionInfo selectionInfo =
+                    new SelectionInfo.Builder()
+                            .setUnselectReason(mReason)
+                            .setSelectionSource(mSelectionSource)
+                            .build();
             if (mRequestedRoute == null) {
                 router.mCallbackHandler.postRouteSelectedMessage(
-                        mFromRoute, mToRoute, mReason, mSyncMediaRoute1Provider);
+                        mFromRoute, mToRoute, selectionInfo, mSyncMediaRoute1Provider);
             } else {
                 router.mCallbackHandler.postAnotherRouteSelectedMessage(
-                        mRequestedRoute, mToRoute, mReason, mSyncMediaRoute1Provider);
+                        mRequestedRoute, mToRoute, selectionInfo, mSyncMediaRoute1Provider);
             }
 
             router.mRouteControllerMap.clear();

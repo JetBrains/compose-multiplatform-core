@@ -20,6 +20,7 @@ import android.content.Context
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
+import android.util.Base64
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.credentials.CreateCredentialRequest
@@ -50,7 +51,10 @@ import androidx.credentials.exceptions.publickeycredential.GetPublicKeyCredentia
 /** Take the create request's `credentialData` and add SDK specific values to it. */
 @RequiresApi(Build.VERSION_CODES.M)
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-fun getFinalCreateCredentialData(request: CreateCredentialRequest, context: Context): Bundle {
+public fun getFinalCreateCredentialData(
+    request: CreateCredentialRequest,
+    context: Context,
+): Bundle {
     val createCredentialData = request.credentialData
     val displayInfoBundle = request.displayInfo.toBundle()
     displayInfoBundle.putParcelable(
@@ -72,7 +76,10 @@ fun getFinalCreateCredentialData(request: CreateCredentialRequest, context: Cont
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-fun toJetpackGetException(errorType: String, errorMsg: CharSequence?): GetCredentialException {
+public fun toJetpackGetException(
+    errorType: String,
+    errorMsg: CharSequence?,
+): GetCredentialException {
 
     return when (errorType) {
         android.credentials.GetCredentialException.TYPE_NO_CREDENTIAL ->
@@ -103,7 +110,7 @@ fun toJetpackGetException(errorType: String, errorMsg: CharSequence?): GetCreden
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-fun toJetpackCreateException(
+public fun toJetpackCreateException(
     errorType: String,
     errorMsg: CharSequence? = null,
 ): CreateCredentialException {
@@ -137,7 +144,11 @@ fun toJetpackCreateException(
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-fun isValidBase64Url(s: String): Boolean {
-    val base64UrlRegex = Regex("^[A-Za-z0-9\\-_]*\$")
-    return s.matches(base64UrlRegex)
+public fun isValidBase64Url(s: String): Boolean {
+    return try {
+        Base64.decode(s, Base64.NO_WRAP or Base64.URL_SAFE or Base64.NO_PADDING)
+        true
+    } catch (e: IllegalArgumentException) {
+        false
+    }
 }

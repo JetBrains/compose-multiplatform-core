@@ -15,10 +15,8 @@
  */
 package androidx.recyclerview.widget
 
-import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
@@ -30,7 +28,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @LargeTest
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
 @RunWith(AndroidJUnit4::class)
 class RecyclerViewPrefetchTest : BaseRecyclerViewInstrumentationTest() {
     private inner class PrefetchLayoutManager : TestLayoutManager() {

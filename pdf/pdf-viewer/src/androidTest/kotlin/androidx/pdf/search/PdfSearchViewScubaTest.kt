@@ -19,7 +19,6 @@ package androidx.pdf.search
 import android.content.Context
 import android.content.Intent
 import android.view.ViewGroup.LayoutParams
-import android.widget.FrameLayout
 import androidx.pdf.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.pdf.SEARCH_VIEW_IN_LTR_MODE
 import androidx.pdf.SEARCH_VIEW_IN_RTL_MODE
@@ -81,12 +80,12 @@ class PdfSearchViewScubaTest {
 
     private fun setupPdfSearchView() {
         PdfViewTestActivity.onCreateCallback = { activity ->
-            val container = FrameLayout(activity)
-            container.addView(
-                PdfSearchView(activity).apply { id = PDF_SEARCH_VIEW_ID },
-                LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT),
-            )
-            activity.setContentView(container)
+            with(activity) {
+                container.addView(
+                    PdfSearchView(activity).apply { id = PDF_SEARCH_VIEW_ID },
+                    LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT),
+                )
+            }
         }
     }
 

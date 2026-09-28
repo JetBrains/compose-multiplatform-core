@@ -15,8 +15,10 @@
  */
 package androidx.compose.remote.core.operations.layout.animation;
 
+import static androidx.compose.remote.core.documentation.DocumentedOperation.FLOAT;
 import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
@@ -33,6 +35,7 @@ import org.jspecify.annotations.NonNull;
 import java.util.List;
 
 /** Basic component animation spec */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class AnimationSpec extends Operation implements ModifierOperation {
     public static final AnimationSpec DEFAULT = new AnimationSpec();
     public static final AnimationSpec DISABLED = new AnimationSpec(0);
@@ -43,6 +46,62 @@ public class AnimationSpec extends Operation implements ModifierOperation {
     int mVisibilityEasingType = GeneralEasing.CUBIC_STANDARD;
     @NonNull ANIMATION mEnterAnimation = ANIMATION.FADE_IN;
     @NonNull ANIMATION mExitAnimation = ANIMATION.FADE_OUT;
+    int mEnterFunctionId = -1;
+    int mExitFunctionId = -1;
+    @NonNull SEQUENCE mEnterSequence = SEQUENCE.CONCURRENT;
+    @NonNull SEQUENCE mExitSequence = SEQUENCE.CONCURRENT;
+
+    private static final int OP_CODE = Operations.ANIMATION_SPEC;
+    private static final String CLASS_NAME = "AnimationSpec";
+
+    public AnimationSpec(
+            int animationId,
+            float motionDuration,
+            int motionEasingType,
+            float visibilityDuration,
+            int visibilityEasingType,
+            @NonNull ANIMATION enterAnimation,
+            @NonNull ANIMATION exitAnimation,
+            int enterFunctionId,
+            int exitFunctionId,
+            @NonNull SEQUENCE enterSequence,
+            @NonNull SEQUENCE exitSequence) {
+        this.mAnimationId = animationId;
+        this.mMotionDuration = motionDuration;
+        this.mMotionEasingType = motionEasingType;
+        this.mVisibilityDuration = visibilityDuration;
+        this.mVisibilityEasingType = visibilityEasingType;
+        this.mEnterAnimation = enterAnimation;
+        this.mExitAnimation = exitAnimation;
+        this.mEnterFunctionId = enterFunctionId;
+        this.mExitFunctionId = exitFunctionId;
+        this.mEnterSequence = enterSequence;
+        this.mExitSequence = exitSequence;
+    }
+
+    public AnimationSpec(
+            int animationId,
+            float motionDuration,
+            int motionEasingType,
+            float visibilityDuration,
+            int visibilityEasingType,
+            @NonNull ANIMATION enterAnimation,
+            @NonNull ANIMATION exitAnimation,
+            int enterFunctionId,
+            int exitFunctionId) {
+        this(
+                animationId,
+                motionDuration,
+                motionEasingType,
+                visibilityDuration,
+                visibilityEasingType,
+                enterAnimation,
+                exitAnimation,
+                enterFunctionId,
+                exitFunctionId,
+                SEQUENCE.CONCURRENT,
+                SEQUENCE.CONCURRENT);
+    }
 
     public AnimationSpec(
             int animationId,
@@ -52,21 +111,26 @@ public class AnimationSpec extends Operation implements ModifierOperation {
             int visibilityEasingType,
             @NonNull ANIMATION enterAnimation,
             @NonNull ANIMATION exitAnimation) {
-        this.mAnimationId = animationId;
-        this.mMotionDuration = motionDuration;
-        this.mMotionEasingType = motionEasingType;
-        this.mVisibilityDuration = visibilityDuration;
-        this.mVisibilityEasingType = visibilityEasingType;
-        this.mEnterAnimation = enterAnimation;
-        this.mExitAnimation = exitAnimation;
+        this(
+                animationId,
+                motionDuration,
+                motionEasingType,
+                visibilityDuration,
+                visibilityEasingType,
+                enterAnimation,
+                exitAnimation,
+                -1,
+                -1,
+                SEQUENCE.CONCURRENT,
+                SEQUENCE.CONCURRENT);
     }
 
     public AnimationSpec() {
         this(
                 -1,
-                600,
+                300,
                 GeneralEasing.CUBIC_STANDARD,
-                500,
+                300,
                 GeneralEasing.CUBIC_STANDARD,
                 ANIMATION.FADE_IN,
                 ANIMATION.FADE_OUT);
@@ -111,6 +175,24 @@ public class AnimationSpec extends Operation implements ModifierOperation {
         return mExitAnimation;
     }
 
+    public int getEnterFunctionId() {
+        return mEnterFunctionId;
+    }
+
+    public int getExitFunctionId() {
+        return mExitFunctionId;
+    }
+
+    @NonNull
+    public SEQUENCE getEnterSequence() {
+        return mEnterSequence;
+    }
+
+    @NonNull
+    public SEQUENCE getExitSequence() {
+        return mExitSequence;
+    }
+
     @NonNull
     @Override
     public String toString() {
@@ -133,6 +215,14 @@ public class AnimationSpec extends Operation implements ModifierOperation {
                         + getEnterAnimation()
                         + ", "
                         + getExitAnimation()
+                        + (mEnterFunctionId != -1 ? ", enterFunction=" + mEnterFunctionId : "")
+                        + (mExitFunctionId != -1 ? ", exitFunction=" + mExitFunctionId : "")
+                        + (mEnterSequence != SEQUENCE.CONCURRENT
+                                ? ", enterSequence=" + mEnterSequence
+                                : "")
+                        + (mExitSequence != SEQUENCE.CONCURRENT
+                                ? ", exitSequence=" + mExitSequence
+                                : "")
                         + "]");
     }
 
@@ -147,6 +237,18 @@ public class AnimationSpec extends Operation implements ModifierOperation {
                 .add("visibilityEasingType", Easing.getString(getVisibilityEasingType()))
                 .add("enterAnimation", getEnterAnimation())
                 .add("exitAnimation", getExitAnimation());
+        if (mEnterFunctionId != -1) {
+            serializer.add("enterFunctionId", mEnterFunctionId);
+        }
+        if (mExitFunctionId != -1) {
+            serializer.add("exitFunctionId", mExitFunctionId);
+        }
+        if (mEnterSequence != SEQUENCE.CONCURRENT) {
+            serializer.add("enterSequence", mEnterSequence);
+        }
+        if (mExitSequence != SEQUENCE.CONCURRENT) {
+            serializer.add("exitSequence", mExitSequence);
+        }
     }
 
     public enum ANIMATION {
@@ -157,7 +259,14 @@ public class AnimationSpec extends Operation implements ModifierOperation {
         SLIDE_TOP,
         SLIDE_BOTTOM,
         ROTATE,
-        PARTICLE
+        PARTICLE,
+        CUSTOM
+    }
+
+    public enum SEQUENCE {
+        CONCURRENT,
+        BEFORE,
+        AFTER
     }
 
     @Override
@@ -169,8 +278,10 @@ public class AnimationSpec extends Operation implements ModifierOperation {
                 mMotionEasingType,
                 mVisibilityDuration,
                 mVisibilityEasingType,
-                mEnterAnimation,
-                mExitAnimation);
+                packAnimation(mEnterAnimation, mEnterSequence),
+                packAnimation(mExitAnimation, mExitSequence),
+                mEnterFunctionId,
+                mExitFunctionId);
     }
 
     @Override
@@ -214,6 +325,36 @@ public class AnimationSpec extends Operation implements ModifierOperation {
     }
 
     /**
+     * Packs an ANIMATION and SEQUENCE into a single wire int.
+     *
+     * @param animation the animation type
+     * @param sequence the sequence relative to layout changes
+     * @return the packed integer
+     */
+    public static int packAnimation(@NonNull ANIMATION animation, @NonNull SEQUENCE sequence) {
+        return (animation.ordinal() & 0xFF) | ((sequence.ordinal() & 0xFF) << 8);
+    }
+
+    /**
+     * Maps int value to the corresponding SEQUENCE enum values
+     *
+     * @param value int value mapped to the enum
+     * @return the corresponding SEQUENCE enum value
+     */
+    @NonNull
+    public static SEQUENCE intToSequence(int value) {
+        switch (value & 0xFF) {
+            case 1:
+                return SEQUENCE.BEFORE;
+            case 2:
+                return SEQUENCE.AFTER;
+            case 0:
+            default:
+                return SEQUENCE.CONCURRENT;
+        }
+    }
+
+    /**
      * Maps int value to the corresponding ANIMATION enum values
      *
      * @param value int value mapped to the enum
@@ -221,7 +362,7 @@ public class AnimationSpec extends Operation implements ModifierOperation {
      */
     @NonNull
     public static ANIMATION intToAnimation(int value) {
-        switch (value) {
+        switch (value & 0xFF) {
             case 0:
                 return ANIMATION.FADE_IN;
             case 1:
@@ -238,6 +379,8 @@ public class AnimationSpec extends Operation implements ModifierOperation {
                 return ANIMATION.ROTATE;
             case 7:
                 return ANIMATION.PARTICLE;
+            case 8:
+                return ANIMATION.CUSTOM;
             default:
                 return ANIMATION.FADE_IN;
         }
@@ -262,16 +405,61 @@ public class AnimationSpec extends Operation implements ModifierOperation {
             int motionEasingType,
             float visibilityDuration,
             int visibilityEasingType,
-            @NonNull ANIMATION enterAnimation,
-            @NonNull ANIMATION exitAnimation) {
+            int enterAnimation,
+            int exitAnimation) {
+        apply(
+                buffer,
+                animationId,
+                motionDuration,
+                motionEasingType,
+                visibilityDuration,
+                visibilityEasingType,
+                enterAnimation,
+                exitAnimation,
+                -1,
+                -1);
+    }
+
+    /**
+     * Write the operation to the buffer
+     *
+     * @param buffer a WireBuffer
+     * @param animationId the animation id
+     * @param motionDuration the duration of the motion animation
+     * @param motionEasingType the type of easing for the motion animation
+     * @param visibilityDuration the duration of the visibility animation
+     * @param visibilityEasingType the type of easing for the visibility animation
+     * @param enterAnimation the type of animation when "entering" (newly visible)
+     * @param exitAnimation the type of animation when "exiting" (newly gone)
+     * @param enterFunctionId the function id for custom enter animation
+     * @param exitFunctionId the function id for custom exit animation
+     */
+    public static void apply(
+            @NonNull WireBuffer buffer,
+            int animationId,
+            float motionDuration,
+            int motionEasingType,
+            float visibilityDuration,
+            int visibilityEasingType,
+            int enterAnimation,
+            int exitAnimation,
+            int enterFunctionId,
+            int exitFunctionId) {
         buffer.start(Operations.ANIMATION_SPEC);
         buffer.writeInt(animationId);
         buffer.writeFloat(motionDuration);
         buffer.writeInt(motionEasingType);
         buffer.writeFloat(visibilityDuration);
         buffer.writeInt(visibilityEasingType);
-        buffer.writeInt(animationToInt(enterAnimation));
-        buffer.writeInt(animationToInt(exitAnimation));
+        buffer.writeInt(enterAnimation);
+        buffer.writeInt(exitAnimation);
+        if ((enterAnimation & 0xFF) == ANIMATION.CUSTOM.ordinal()
+                || (exitAnimation & 0xFF) == ANIMATION.CUSTOM.ordinal()
+                || enterFunctionId != -1
+                || exitFunctionId != -1) {
+            buffer.writeInt(enterFunctionId);
+            buffer.writeInt(exitFunctionId);
+        }
     }
 
     /**
@@ -281,13 +469,23 @@ public class AnimationSpec extends Operation implements ModifierOperation {
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int animationId = buffer.readInt();
+        int animationId = buffer.readId();
         float motionDuration = buffer.readFloat();
         int motionEasingType = buffer.readInt();
         float visibilityDuration = buffer.readFloat();
         int visibilityEasingType = buffer.readInt();
-        ANIMATION enterAnimation = intToAnimation(buffer.readInt());
-        ANIMATION exitAnimation = intToAnimation(buffer.readInt());
+        int rawEnter = buffer.readInt();
+        int rawExit = buffer.readInt();
+        ANIMATION enterAnimation = intToAnimation(rawEnter);
+        ANIMATION exitAnimation = intToAnimation(rawExit);
+        SEQUENCE enterSequence = intToSequence(rawEnter >> 8);
+        SEQUENCE exitSequence = intToSequence(rawExit >> 8);
+        int enterFunctionId = -1;
+        int exitFunctionId = -1;
+        if (enterAnimation == ANIMATION.CUSTOM || exitAnimation == ANIMATION.CUSTOM) {
+            enterFunctionId = buffer.readId();
+            exitFunctionId = buffer.readId();
+        }
         AnimationSpec op =
                 new AnimationSpec(
                         animationId,
@@ -296,7 +494,11 @@ public class AnimationSpec extends Operation implements ModifierOperation {
                         visibilityDuration,
                         visibilityEasingType,
                         enterAnimation,
-                        exitAnimation);
+                        exitAnimation,
+                        enterFunctionId,
+                        exitFunctionId,
+                        enterSequence,
+                        exitSequence);
         operations.add(op);
     }
 
@@ -306,12 +508,15 @@ public class AnimationSpec extends Operation implements ModifierOperation {
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Layout Operations", id(), name())
-                .description("define the animation")
-                .field(INT, "animationId", "")
-                .field(INT, "motionDuration", "")
-                .field(INT, "motionEasingType", "")
-                .field(INT, "visibilityDuration", "")
-                .field(INT, "visibilityEasingType", "");
+        doc.operation("Animation & Particles Operations", OP_CODE, CLASS_NAME)
+                .additionalDocumentation("animation_spec")
+                .description("Define the animation specifications for a component")
+                .field(INT, "animationId", "The ID of the animation")
+                .field(FLOAT, "motionDuration", "Duration of the motion animation in ms")
+                .field(INT, "motionEasingType", "The type of easing for motion")
+                .field(FLOAT, "visibilityDuration", "Duration of visibility animation in ms")
+                .field(INT, "visibilityEasingType", "The type of easing for visibility")
+                .field(INT, "enterAnimation", "The entry animation type")
+                .field(INT, "exitAnimation", "The exit animation type");
     }
 }

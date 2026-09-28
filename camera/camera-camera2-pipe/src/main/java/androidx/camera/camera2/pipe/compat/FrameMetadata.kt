@@ -24,19 +24,21 @@ import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.FrameInfo
 import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.FrameNumber
-import androidx.camera.camera2.pipe.Metadata
 import androidx.camera.camera2.pipe.RequestMetadata
 import androidx.camera.camera2.pipe.core.Debug
-import kotlin.reflect.KClass
+import androidx.camera.common.Metadata
 
 /** An implementation of [FrameMetadata] that retrieves values from a [CaptureResult] object */
 internal class AndroidFrameMetadata(
     private val captureResult: CaptureResult,
     override val camera: CameraId,
 ) : FrameMetadata {
-    override fun <T> get(key: Metadata.Key<T>): T? = null
+    override fun <T : Any> get(key: Metadata.Key<T>): T? = null
 
-    override fun <T> getOrDefault(key: Metadata.Key<T>, default: T): T = default
+    override fun <T : Any> getOrDefault(key: Metadata.Key<T>, default: T): T = default
+
+    override val metadataKeys: Set<Metadata.Key<*>>
+        get() = emptySet()
 
     @Suppress("UNCHECKED_CAST")
     override fun <T> get(key: CaptureResult.Key<T>): T? =
@@ -47,13 +49,13 @@ internal class AndroidFrameMetadata(
     override val frameNumber: FrameNumber
         get() = FrameNumber(captureResult.frameNumber)
 
-    override val extraMetadata: Map<*, Any?> = emptyMap<Any, Any>()
+    override val extraMetadata: Map<*, Any?> = emptyMap<Any, Any?>()
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+    override fun <T : Any> unwrapAs(type: Class<T>): T? =
         when (type) {
-            CaptureResult::class -> captureResult as T
-            TotalCaptureResult::class -> captureResult as? T
+            CaptureResult::class.java -> captureResult as T
+            TotalCaptureResult::class.java -> captureResult as? T
             else -> null
         }
 
@@ -68,9 +70,16 @@ internal class CorrectedFrameMetadata(
 ) : FrameMetadata {
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T> get(key: Metadata.Key<T>): T? = extraMetadata[key] as T? ?: frameMetadata[key]
+    override fun <T : Any> get(key: Metadata.Key<T>): T? =
+        extraMetadata[key] as T? ?: frameMetadata[key]
 
-    override fun <T> getOrDefault(key: Metadata.Key<T>, default: T): T = get(key) ?: default
+    override fun <T : Any> getOrDefault(key: Metadata.Key<T>, default: T): T = get(key) ?: default
+
+    override val metadataKeys: Set<Metadata.Key<*>>
+        get() = buildSet {
+            addAll(frameMetadata.metadataKeys)
+            extraMetadata.keys.forEach { if (it is Metadata.Key<*>) add(it) }
+        }
 
     @Suppress("UNCHECKED_CAST")
     override fun <T> get(key: CaptureResult.Key<T>): T? =
@@ -84,7 +93,7 @@ internal class CorrectedFrameMetadata(
     override val frameNumber: FrameNumber
         get() = frameMetadata.frameNumber
 
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? = frameMetadata.unwrapAs(type)
+    override fun <T : Any> unwrapAs(type: Class<T>): T? = frameMetadata.unwrapAs(type)
 }
 
 /** An implementation of [FrameInfo] that retrieves values from a [TotalCaptureResult] object. */
@@ -132,10 +141,10 @@ internal class AndroidFrameInfo(
         get() = result.frameNumber
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+    override fun <T : Any> unwrapAs(type: Class<T>): T? =
         when (type) {
-            CaptureResult::class -> totalCaptureResult as T
-            TotalCaptureResult::class -> totalCaptureResult as? T
+            CaptureResult::class.java -> totalCaptureResult as T
+            TotalCaptureResult::class.java -> totalCaptureResult as? T
             else -> null
         }
 

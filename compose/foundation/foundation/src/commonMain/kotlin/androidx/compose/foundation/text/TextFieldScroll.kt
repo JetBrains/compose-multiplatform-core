@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // b/552879150
+
 package androidx.compose.foundation.text
 
+import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.gestures.rememberScrollableState
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.overscroll
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -53,11 +57,14 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastRoundToInt
 import kotlin.math.min
 
+@Composable internal expect fun rememberTextFieldOverscrollEffect(): OverscrollEffect?
+
 // Scrollable
 internal fun Modifier.textFieldScrollable(
     scrollerPosition: TextFieldScrollerPosition,
     interactionSource: MutableInteractionSource? = null,
     enabled: Boolean = true,
+    overscrollEffect: OverscrollEffect?,
 ) =
     composed(
         inspectorInfo =
@@ -99,6 +106,7 @@ internal fun Modifier.textFieldScrollable(
         val scroll =
             Modifier.scrollable(
                 orientation = scrollerPosition.orientation,
+                overscrollEffect = overscrollEffect,
                 reverseDirection = reverseDirection,
                 state = wrappedScrollableState,
                 interactionSource = interactionSource,
@@ -113,6 +121,7 @@ internal expect fun Modifier.textFieldScroll(
     scrollerPosition: TextFieldScrollerPosition,
     textFieldValue: TextFieldValue,
     visualTransformation: VisualTransformation,
+    overscrollEffect: OverscrollEffect?,
     textLayoutResultProvider: () -> TextLayoutResultProxy?,
 ): Modifier
 
@@ -120,6 +129,7 @@ internal fun Modifier.defaultTextFieldScroll(
     scrollerPosition: TextFieldScrollerPosition,
     textFieldValue: TextFieldValue,
     visualTransformation: VisualTransformation,
+    overscrollEffect: OverscrollEffect?,
     textLayoutResultProvider: () -> TextLayoutResultProxy?,
 ): Modifier {
     val orientation = scrollerPosition.orientation
@@ -145,7 +155,7 @@ internal fun Modifier.defaultTextFieldScroll(
                     textLayoutResultProvider,
                 )
         }
-    return this.clipToBounds().then(layout)
+    return this.overscroll(overscrollEffect).clipToBounds().then(layout)
 }
 
 private data class VerticalScrollLayoutModifier(

@@ -21,7 +21,7 @@ import android.graphics.ImageFormat.JPEG_R
 import android.graphics.ImageFormat.RAW_SENSOR
 import android.graphics.Matrix
 import android.graphics.Rect
-import android.os.Build
+import android.os.Looper.getMainLooper
 import android.util.Range
 import android.util.Rational
 import android.util.Size
@@ -33,7 +33,6 @@ import androidx.camera.core.CameraEffect.PREVIEW
 import androidx.camera.core.CameraEffect.VIDEO_CAPTURE
 import androidx.camera.core.CompositionSettings
 import androidx.camera.core.DynamicRange.HDR_UNSPECIFIED_10_BIT
-import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.FocusMeteringAction.FLAG_AE
 import androidx.camera.core.FocusMeteringAction.FLAG_AF
@@ -108,17 +107,17 @@ import org.mockito.ArgumentMatchers.isNull
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.internal.DoNotInstrument
 
 private const val CAMERA_ID = "0"
 private const val SECONDARY_CAMERA_ID = "1"
 
 /** Unit tests for [CameraUseCaseAdapter]. */
-@OptIn(ExperimentalSessionConfig::class)
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
 @org.robolectric.annotation.Config(
-    minSdk = Build.VERSION_CODES.LOLLIPOP,
+    sdk = [org.robolectric.annotation.Config.ALL_SDKS],
     instrumentedPackages = ["androidx.camera.core"],
 )
 class CameraUseCaseAdapterTest {
@@ -173,14 +172,36 @@ class CameraUseCaseAdapterTest {
         for (adapter in adaptersToDetach) {
             adapter.removeAllUseCases()
         }
+
+        // Process any pending looper updates to prevent leaks
+        shadowOf(getMainLooper()).idle()
     }
 
-    @Test(expected = CameraException::class)
-    fun attachTwoPreviews_streamSharingNotEnabled() {
-        // Arrange: bind 2 previews with an ImageCapture. Request fails without enabling
-        // StreamSharing because StreamSharing only allows one use case per type.
+    @Test
+    fun attachTwoPreviews_streamSharingEnabled() {
+        // Arrange: bind 2 previews with an ImageCapture. StreamSharing wraps the two previews.
         val preview2 = Preview.Builder().build()
         adapter.addUseCases(setOf(preview, preview2, image))
+        // Assert: StreamSharing is used for the two Previews.
+        adapter.cameraUseCases.hasExactTypes(StreamSharing::class.java, ImageCapture::class.java)
+    }
+
+    @Test
+    fun attachTwoPreviewsWithOverlayEffect_streamSharingEnabled() {
+        // Arrange: assign an effect with PREVIEW target and OUTPUT_OPTION_ONE_FOR_ALL_TARGETS (like
+        // OverlayEffect).
+        adapter.effects = listOf(previewEffect)
+
+        // Act: bind 2 previews.
+        val preview2 = Preview.Builder().build()
+        adapter.addUseCases(setOf(preview, preview2))
+
+        // Assert: StreamSharing is created to share the effect across both Previews.
+        val streamSharing = adapter.getStreamSharing()
+        assertThat(streamSharing.children).containsExactly(preview, preview2)
+        assertThat(streamSharing.effect).isEqualTo(previewEffect)
+        assertThat(preview.effect).isNull()
+        assertThat(preview2.effect).isNull()
     }
 
     @Test
@@ -465,7 +486,6 @@ class CameraUseCaseAdapterTest {
         assertThrows<CameraException> { adapter.addUseCases(setOf(imageCapture)) }
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun useRawWithExtensions_throwsException() {
         // Arrange: enable extensions.
@@ -589,10 +609,9 @@ class CameraUseCaseAdapterTest {
     @Test
     fun isUseCasesCombinationSupported_returnFalseWhenNotSupported() {
         // Arrange
-        val preview2 = Preview.Builder().build()
-        // Assert: double preview use cases should not be supported even with stream sharing.
-        assertThat(adapter.isUseCasesCombinationSupported(preview, preview2, video, image))
-            .isFalse()
+        val video2 = createFakeVideoCaptureUseCase()
+        // Assert: double video capture use cases should not be supported even with stream sharing.
+        assertThat(adapter.isUseCasesCombinationSupported(preview, video, video2, image)).isFalse()
     }
 
     @Test
@@ -696,7 +715,6 @@ class CameraUseCaseAdapterTest {
         assertThat(streamSharing.camera).isNull()
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun extensionEnabledAndVideoCaptureExisted_streamSharingOn() {
         // Arrange: enable extensions.
@@ -713,7 +731,6 @@ class CameraUseCaseAdapterTest {
         assertThat(streamSharing.camera).isNotNull()
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun extensionEnabledAndOnlyVideoCaptureAttached_streamSharingOn() {
         // Arrange: enable extensions.
@@ -1173,7 +1190,6 @@ class CameraUseCaseAdapterTest {
         return createCameraUseCaseAdapter(fakeCamera, cameraConfig)
     }
 
-    @org.robolectric.annotation.Config(minSdk = 23)
     @Test
     fun cameraControlFailed_whenNoCameraOperationsSupported(): Unit = runBlocking {
         // 1. Arrange
@@ -1208,7 +1224,6 @@ class CameraUseCaseAdapterTest {
             .build()
     }
 
-    @org.robolectric.annotation.Config(minSdk = 23)
     @Test
     fun zoomEnabled_whenZoomOperationsSupported(): Unit = runBlocking {
         // 1. Arrange
@@ -1224,7 +1239,6 @@ class CameraUseCaseAdapterTest {
         assertThat(fakeCameraControl.linearZoom).isEqualTo(1.0f)
     }
 
-    @org.robolectric.annotation.Config(minSdk = 23)
     @Test
     fun torchEnabled_whenTorchOperationSupported(): Unit = runBlocking {
         // 1. Arrange
@@ -1240,7 +1254,6 @@ class CameraUseCaseAdapterTest {
         assertThat(fakeCameraControl.torchEnabled).isEqualTo(true)
     }
 
-    @org.robolectric.annotation.Config(minSdk = 23)
     @Test
     fun focusMetering_afEnabled_whenAfOperationSupported(): Unit = runBlocking {
         // 1. Arrange
@@ -1264,7 +1277,6 @@ class CameraUseCaseAdapterTest {
         assertThat(fakeCameraControl.lastSubmittedFocusMeteringAction?.meteringPointsAwb).isEmpty()
     }
 
-    @org.robolectric.annotation.Config(minSdk = 23)
     @Test
     fun focusMetering_aeEnabled_whenAeOperationsSupported(): Unit = runBlocking {
         // 1. Arrange
@@ -1284,7 +1296,6 @@ class CameraUseCaseAdapterTest {
         assertThat(fakeCameraControl.lastSubmittedFocusMeteringAction?.meteringPointsAwb).isEmpty()
     }
 
-    @org.robolectric.annotation.Config(minSdk = 23)
     @Test
     fun focusMetering_awbEnabled_whenAwbOperationsSupported(): Unit = runBlocking {
         // 1. Arrange
@@ -1304,7 +1315,6 @@ class CameraUseCaseAdapterTest {
         assertThat(fakeCameraControl.lastSubmittedFocusMeteringAction?.meteringPointsAe).isEmpty()
     }
 
-    @org.robolectric.annotation.Config(minSdk = 23)
     @Test
     fun focusMetering_disabled_whenNoneIsSupported(): Unit = runBlocking {
         // 1. Arrange
@@ -1322,7 +1332,6 @@ class CameraUseCaseAdapterTest {
         assertThat(fakeCameraControl.lastSubmittedFocusMeteringAction).isNull()
     }
 
-    @org.robolectric.annotation.Config(minSdk = 23)
     @Test
     fun exposureEnabled_whenExposureOperationSupported(): Unit = runBlocking {
         // 1. Arrange
@@ -1338,7 +1347,6 @@ class CameraUseCaseAdapterTest {
         assertThat(fakeCameraControl.exposureCompensationIndex).isEqualTo(0)
     }
 
-    @org.robolectric.annotation.Config(minSdk = 23)
     @Test
     fun cameraInfo_returnsDisabledState_AllOpsDisabled(): Unit = runBlocking {
         // 1. Arrange
@@ -1376,7 +1384,6 @@ class CameraUseCaseAdapterTest {
             .isEqualTo(0)
     }
 
-    @org.robolectric.annotation.Config(minSdk = 23)
     @Test
     fun cameraInfo_zoomEnabled(): Unit = runBlocking {
         // 1. Arrange
@@ -1397,7 +1404,6 @@ class CameraUseCaseAdapterTest {
         assertThat(zoomState.linearZoom).isEqualTo(fakeZoomState.linearZoom)
     }
 
-    @org.robolectric.annotation.Config(minSdk = 23)
     @Test
     fun cameraInfo_torchEnabled(): Unit = runBlocking {
         // 1. Arrange
@@ -1412,7 +1418,6 @@ class CameraUseCaseAdapterTest {
             .isEqualTo(fakeCameraInfo.torchState.value)
     }
 
-    @org.robolectric.annotation.Config(minSdk = 23)
     @Test
     fun cameraInfo_afEnabled(): Unit = runBlocking {
         // 1. Arrange
@@ -1433,7 +1438,6 @@ class CameraUseCaseAdapterTest {
             .isTrue()
     }
 
-    @org.robolectric.annotation.Config(minSdk = 23)
     @Test
     fun cameraInfo_exposureExposureEnabled(): Unit = runBlocking {
         // 1. Arrange
@@ -1454,7 +1458,6 @@ class CameraUseCaseAdapterTest {
             .isEqualTo(fakeCameraInfo.exposureState.isExposureCompensationSupported)
     }
 
-    @org.robolectric.annotation.Config(minSdk = 23)
     @Test
     fun cameraInfo_flashEnabled(): Unit = runBlocking {
         // 1. Arrange
@@ -1492,7 +1495,6 @@ class CameraUseCaseAdapterTest {
         assertThat(cameraInfoInternal.isCaptureProcessProgressSupported).isTrue()
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun returnsCorrectSessionProcessorFromAdapterCameraControl() {
         val fakeSessionProcessor = FakeSessionProcessor()
@@ -1683,5 +1685,80 @@ class CameraUseCaseAdapterTest {
             )
         adaptersToDetach.add(adapter)
         return adapter
+    }
+
+    @Test
+    fun sessionInteropConfig_callbacksNotDuplicatedAcrossMultipleUseCases() {
+        // Arrange
+        val captureCallback =
+            object : android.hardware.camera2.CameraCaptureSession.CaptureCallback() {}
+        val sessionStateCallback =
+            object : android.hardware.camera2.CameraCaptureSession.StateCallback() {
+                override fun onConfigured(session: android.hardware.camera2.CameraCaptureSession) {}
+
+                override fun onConfigureFailed(
+                    session: android.hardware.camera2.CameraCaptureSession
+                ) {}
+            }
+        val deviceStateCallback =
+            object : android.hardware.camera2.CameraDevice.StateCallback() {
+                override fun onOpened(camera: android.hardware.camera2.CameraDevice) {}
+
+                override fun onDisconnected(camera: android.hardware.camera2.CameraDevice) {}
+
+                override fun onError(camera: android.hardware.camera2.CameraDevice, error: Int) {}
+            }
+
+        val interopConfig =
+            androidx.camera.core.impl.MutableOptionsBundle.create().apply {
+                insertOption(Camera2ImplConfig.SESSION_CAPTURE_CALLBACK_OPTION, captureCallback)
+                insertOption(Camera2ImplConfig.SESSION_STATE_CALLBACK_OPTION, sessionStateCallback)
+                insertOption(Camera2ImplConfig.DEVICE_STATE_CALLBACK_OPTION, deviceStateCallback)
+            }
+
+        // Act: call getConfigs for preview and analysis
+        val configs =
+            CameraUseCaseAdapter.getConfigs(
+                setOf(preview, analysis),
+                useCaseConfigFactory,
+                useCaseConfigFactory,
+                androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR,
+                Range(30, 30),
+                interopConfig,
+            )
+
+        // Assert: Only preview's cameraConfig contains the interop callback options
+        val previewCameraConfig = configs[preview]!!.mCameraConfig
+        val analysisCameraConfig = configs[analysis]!!.mCameraConfig
+
+        assertThat(
+                previewCameraConfig.containsOption(
+                    Camera2ImplConfig.SESSION_CAPTURE_CALLBACK_OPTION
+                )
+            )
+            .isEqualTo(true)
+        assertThat(
+                previewCameraConfig.containsOption(Camera2ImplConfig.SESSION_STATE_CALLBACK_OPTION)
+            )
+            .isEqualTo(true)
+        assertThat(
+                previewCameraConfig.containsOption(Camera2ImplConfig.DEVICE_STATE_CALLBACK_OPTION)
+            )
+            .isEqualTo(true)
+
+        assertThat(
+                analysisCameraConfig.containsOption(
+                    Camera2ImplConfig.SESSION_CAPTURE_CALLBACK_OPTION
+                )
+            )
+            .isEqualTo(false)
+        assertThat(
+                analysisCameraConfig.containsOption(Camera2ImplConfig.SESSION_STATE_CALLBACK_OPTION)
+            )
+            .isEqualTo(false)
+        assertThat(
+                analysisCameraConfig.containsOption(Camera2ImplConfig.DEVICE_STATE_CALLBACK_OPTION)
+            )
+            .isEqualTo(false)
     }
 }

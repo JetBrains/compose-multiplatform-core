@@ -22,7 +22,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,16 +34,14 @@ import androidx.compose.ui.test.FontScale
 import androidx.compose.ui.test.FontWeightAdjustment
 import androidx.compose.ui.test.ForcedSize
 import androidx.compose.ui.test.Keyboard
-import androidx.compose.ui.test.KeyboardType
 import androidx.compose.ui.test.LayoutDirection
 import androidx.compose.ui.test.Locales
 import androidx.compose.ui.test.Navigation
-import androidx.compose.ui.test.NavigationType
 import androidx.compose.ui.test.RoundScreen
 import androidx.compose.ui.test.Touchscreen
 import androidx.compose.ui.test.UiMode
-import androidx.compose.ui.test.UiModeType
 import androidx.compose.ui.test.WindowInsets
+import androidx.compose.ui.test.WindowSize
 import androidx.compose.ui.test.then
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.DpRect
@@ -78,6 +76,15 @@ fun DeviceConfigurationOverrideFontScaleSample() {
 fun DeviceConfigurationOverrideForcedSizeSample() {
     DeviceConfigurationOverride(DeviceConfigurationOverride.ForcedSize(DpSize(1280.dp, 800.dp))) {
         MyScreen() // will be rendered in the space for 1280dp by 800dp without clipping
+    }
+}
+
+@Sampled
+@Composable
+fun DeviceConfigurationOverrideWindowSizeSample() {
+    DeviceConfigurationOverride(DeviceConfigurationOverride.WindowSize(DpSize(1280.dp, 800.dp))) {
+        MyScreen() // will be rendered with an apparent window size of 1280dp by 800dp without
+        // clipping
     }
 }
 
@@ -124,7 +131,9 @@ fun DeviceConfigurationOverrideRoundScreenSample() {
 @Sampled
 @Composable
 fun DeviceConfigurationOverrideKeyboard() {
-    DeviceConfigurationOverride(DeviceConfigurationOverride.Keyboard(KeyboardType.Qwerty)) {
+    DeviceConfigurationOverride(
+        DeviceConfigurationOverride.Keyboard(Configuration.KEYBOARD_QWERTY)
+    ) {
         LocalConfiguration.current.keyboard // will be Configuration.KEYBOARD_QWERTY
     }
 }
@@ -134,7 +143,7 @@ fun DeviceConfigurationOverrideKeyboard() {
 fun DeviceConfigurationOverrideNavigation() {
     DeviceConfigurationOverride(
         DeviceConfigurationOverride.Navigation(
-            navigationType = NavigationType.Dpad,
+            navigationType = Configuration.NAVIGATION_DPAD,
             isHidden = false,
         )
     ) {
@@ -154,7 +163,9 @@ fun DeviceConfigurationOverrideTouchscreen() {
 @Sampled
 @Composable
 fun DeviceConfigurationOverrideUiMode() {
-    DeviceConfigurationOverride(DeviceConfigurationOverride.UiMode(UiModeType.Car)) {
+    DeviceConfigurationOverride(
+        DeviceConfigurationOverride.UiMode(Configuration.UI_MODE_TYPE_CAR)
+    ) {
         // will be Configuration.UI_MODE_TYPE_CAR
         LocalConfiguration.current.uiMode and Configuration.UI_MODE_TYPE_MASK
     }

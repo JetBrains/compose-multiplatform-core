@@ -21,6 +21,8 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.MediaCodecInfo
+import android.media.MediaCodecList
 import android.os.Bundle
 import android.os.Environment
 import android.util.Log
@@ -29,6 +31,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.OptIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -58,16 +61,19 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaItem.DrmConfiguration
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.HeadTrackingMode
+import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
@@ -101,7 +107,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
     private var controlPanelEntity: PanelEntity? = null
 
     private val pickMedia =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { _ ->
             Log.i(TAG, "Media Selected")
         }
 
@@ -109,18 +115,28 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         Log.i(TAG, "onCreate")
 
-        val session = (Session.create(this) as SessionCreateSuccess).session
-        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
-        session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
+        lifecycleScope.launch {
+            val sessionResult = Session.create(context = this@VideoPlayerDrmTestActivity)
+            if (sessionResult is SessionCreateSuccess) {
+                val session = sessionResult.session
+                session.configure(
+                    Config.Builder().setDeviceTracking(DeviceTrackingMode.SPATIAL).build()
+                )
+                session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
 
-        if (movableComponentMp == null) {
-            movableComponentMp = MovableComponent.createSystemMovable(session)
-            val unused = session.scene.mainPanelEntity.addComponent(movableComponentMp!!)
+                if (movableComponentMp == null) {
+                    movableComponentMp = MovableComponent.createSystemMovable(session)
+                    @Suppress("UNUSED_VARIABLE")
+                    val unused = session.scene.mainPanelEntity.addComponent(movableComponentMp!!)
+                }
+
+                setContent { BootstrapUi(session, activity) }
+
+                checkExternalStoragePermission()
+            } else {
+                finish()
+            }
         }
-
-        setContent { BootstrapUi(session, activity) }
-
-        checkExternalStoragePermission()
     }
 
     override fun onDestroy() {
@@ -183,6 +199,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                 IntSize2d(640, 480),
                 "playerControls",
                 Pose(Vector3(0.0f, -0.25f, 0.25f)), // below and slightly in front of the canvas
+                parent = session.scene.activitySpace,
             )
         controlPanelEntity!!.parent = surfaceEntity!!
 
@@ -221,13 +238,16 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
         videoPlaying = false
         exoPlayer?.release()
         exoPlayer = null
-        if (surfaceEntity != null) {
-            surfaceEntity!!.dispose()
-            surfaceEntity = null
-        }
+        surfaceEntity?.removeAllComponents()
+        surfaceEntity?.parent = null
+        surfaceEntity = null
     }
 
-    fun getCanvasAspectRatio(stereoMode: Int, videoWidth: Int, videoHeight: Int): FloatSize3d {
+    fun getCanvasAspectRatio(
+        stereoMode: SurfaceEntity.StereoMode,
+        videoWidth: Int,
+        videoHeight: Int,
+    ): FloatSize3d {
         when (stereoMode) {
             SurfaceEntity.StereoMode.MONO,
             SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
@@ -244,9 +264,9 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
     fun playVideo(
         session: Session,
         videoUri: String,
-        stereoMode: Int,
+        stereoMode: SurfaceEntity.StereoMode,
         pose: Pose,
-        canvasShape: SurfaceEntity.CanvasShape,
+        shape: SurfaceEntity.Shape,
         loop: Boolean = true,
         protected: Boolean = false,
     ) {
@@ -254,20 +274,28 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
         if (surfaceEntity == null) {
             val surfaceContentLevel =
                 if (protected) {
-                    SurfaceEntity.ContentSecurityLevel.PROTECTED
+                    SurfaceEntity.SurfaceProtection.PROTECTED
                 } else {
-                    SurfaceEntity.ContentSecurityLevel.NONE
+                    SurfaceEntity.SurfaceProtection.NONE
                 }
 
             surfaceEntity =
-                SurfaceEntity.create(session, stereoMode, pose, canvasShape, surfaceContentLevel)
+                SurfaceEntity.create(
+                    session = session,
+                    pose = pose,
+                    shape = shape,
+                    stereoMode = stereoMode,
+                    surfaceProtection = surfaceContentLevel,
+                    parent = session.scene.activitySpace,
+                )
             // Make the video player movable (to make it easier to look at it from different
             // angles and distances) (only on quad canvas)
             movableComponent = MovableComponent.createSystemMovable(session)
             // The quad has a radius of 1.0 meters
             movableComponent!!.size = FloatSize3d(1.0f, 1.0f, 1.0f)
 
-            if (canvasShape is SurfaceEntity.CanvasShape.Quad) {
+            if (shape is SurfaceEntity.Shape.Quad) {
+                @Suppress("UNUSED_VARIABLE")
                 val unused = surfaceEntity!!.addComponent(movableComponent!!)
             }
         }
@@ -304,15 +332,16 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                     check(width >= 0 && height >= 0) { "Canvas size must be larger than 0" }
 
                     // Resize the canvas to match the video aspect ratio - accounting for
-                    // the stereo
-                    // mode.
+                    // the stereo mode.
                     val dimensions = getCanvasAspectRatio(stereoMode, width, height)
                     // Set the dimensions of the Quad canvas to the video dimensions and
                     // attach the
                     // a MovableComponent.
-                    if (canvasShape is SurfaceEntity.CanvasShape.Quad) {
-                        surfaceEntity?.canvasShape =
-                            SurfaceEntity.CanvasShape.Quad(dimensions.width, dimensions.height)
+                    if (shape is SurfaceEntity.Shape.Quad) {
+                        surfaceEntity?.shape =
+                            SurfaceEntity.Shape.Quad(
+                                FloatSize2d(dimensions.width, dimensions.height)
+                            )
                         movableComponent?.size =
                             surfaceEntity?.dimensions ?: FloatSize3d(1.0f, 1.0f, 1.0f)
                     }
@@ -320,10 +349,13 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
 
                 override fun onPlaybackStateChanged(playbackState: Int) {
                     Log.i(TAG, "onPlaybackStateChanged: $playbackState")
-                    // Update videoPlaying based on ExoPlayer's isPlaying property.
-                    videoPlaying = exoPlayer?.isPlaying ?: false // Use safe call and elvis operator
                     if (playbackState == Player.STATE_ENDED) {
                         destroySurfaceEntity()
+                    } else {
+                        // Note that this doesn't exactly line up with the ExoPlayer isPlaying
+                        // property, because the UI (for this app) counts as "playing" even when
+                        // buffering or paused.
+                        videoPlaying = true
                     }
                 }
 
@@ -390,9 +422,9 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
         session: Session,
         activity: Activity,
         videoUri: String,
-        stereoMode: Int,
+        stereoMode: SurfaceEntity.StereoMode,
         pose: Pose,
-        canvasShape: SurfaceEntity.CanvasShape,
+        shape: SurfaceEntity.Shape,
         buttonText: String,
         enabled: Boolean = true,
         loop: Boolean = true,
@@ -414,7 +446,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
             enabled = enabled,
             onClick = {
                 // Create SurfaceEntity and MovableComponent if they don't exist.
-                playVideo(session, videoUri, stereoMode, pose, canvasShape, loop, protected)
+                playVideo(session, videoUri, stereoMode, pose, shape, loop, protected)
             },
         ) {
             Text(text = buttonText, fontSize = 20.sp)
@@ -454,7 +486,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                 videoUri = videoUri,
                 stereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM,
                 pose = Pose(Vector3(0.0f, 0.0f, -0.25f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
-                canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
+                shape = SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f)),
                 loop = true,
                 protected = false,
             )
@@ -492,6 +524,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
 
     @Composable
     fun DrmVideoButton(session: Session, activity: Activity) {
+        val isDrmSupported: Boolean = remember { isDrmSupported() }
         val videoUri =
             Environment.getExternalStorageDirectory().getPath() +
                 "/Download/sdr_singleview_protected.mp4"
@@ -501,7 +534,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                 videoUri = videoUri,
                 stereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE,
                 pose = Pose(Vector3(0.0f, 0.0f, -0.25f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
-                canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
+                shape = SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f)),
                 loop = true,
                 protected = true,
             )
@@ -512,9 +545,9 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
             videoUri = videoUri,
             buttonText =
                 if (!videoPlaying) {
-                    "Play Drm Video"
+                    if (!isDrmSupported) "Drm Not Supported (Play anyway)" else "Play Drm Video"
                 } else {
-                    "Queue Drm Video"
+                    if (!isDrmSupported) "Drm Not Supported (Queue anyway)" else "Queue Drm Video"
                 },
             onClick = {
                 if (!videoPlaying) {
@@ -550,11 +583,11 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                 Button(onClick = { togglePassthrough(session) }) {
                     Text(text = "Toggle Passthrough", fontSize = 30.sp)
                 }
-                Button(onClick = { session.scene.requestFullSpaceMode() }) {
-                    Text(text = "Request FSM", fontSize = 30.sp)
+                Button(onClick = { session.scene.requestFullSpace() }) {
+                    Text(text = "Request Full Space", fontSize = 30.sp)
                 }
-                Button(onClick = { session.scene.requestHomeSpaceMode() }) {
-                    Text(text = "Request HSM", fontSize = 30.sp)
+                Button(onClick = { session.scene.requestHomeSpace() }) {
+                    Text(text = "Request Home Space", fontSize = 30.sp)
                 }
                 Button(onClick = { ActivityCompat.recreate(activity) }) {
                     Text(text = "Recreate Activity", fontSize = 30.sp)
@@ -620,4 +653,52 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
             }
         }
     }
+}
+
+// TODO: b/473040355 - deduplicate this logic and the other MediaHelper.kt files.
+@OptIn(UnstableApi::class) // For MimeTypes like VP9
+/**
+ * Checks if the device supports Widevine DRM and has a secure decoder.
+ *
+ * This prevents crashes on devices that might report partial DRM support but lack the secure
+ * rendering path required for SurfaceEntity.SurfaceProtection.PROTECTED.
+ */
+private fun isDrmSupported(): Boolean {
+    // 1. Check if the Widevine scheme is supported by the device.
+    if (!android.media.MediaDrm.isCryptoSchemeSupported(C.WIDEVINE_UUID)) {
+        return false
+    }
+
+    // 2. Check if a secure decoder is available.
+    // For example, the emulator might support the scheme (L3) but fail to create a protected
+    // surface if no secure decoder is present.
+    val mimeTypesToCheck =
+        listOf(
+            MimeTypes.VIDEO_H264,
+            MimeTypes.VIDEO_H265,
+            MimeTypes.VIDEO_VP9,
+            MimeTypes.VIDEO_AV1,
+            MimeTypes.VIDEO_MP4,
+        )
+    val mediaCodecList = MediaCodecList(MediaCodecList.ALL_CODECS)
+
+    for (mimeType in mimeTypesToCheck) {
+        for (info in mediaCodecList.codecInfos) {
+            if (info.isEncoder) continue
+            try {
+                val caps = info.getCapabilitiesForType(mimeType)
+                if (
+                    caps != null &&
+                        caps.isFeatureSupported(
+                            MediaCodecInfo.CodecCapabilities.FEATURE_SecurePlayback
+                        )
+                ) {
+                    return true
+                }
+            } catch (e: IllegalArgumentException) {
+                // MIME type not supported by this codec, continue searching.
+            }
+        }
+    }
+    return false
 }

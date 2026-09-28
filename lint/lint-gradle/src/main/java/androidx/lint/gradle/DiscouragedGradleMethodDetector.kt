@@ -27,12 +27,14 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
+import com.intellij.psi.PsiWildcardType
+import com.intellij.psi.util.PsiUtil
 import org.jetbrains.kotlin.psi.KtSimpleNameStringTemplateEntry
 import org.jetbrains.kotlin.psi.KtStringTemplateEntry
+import org.jetbrains.uast.UBinaryExpression
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
-import org.jetbrains.uast.util.isInstanceOf
 
 /**
  * Checks for usages of
@@ -48,9 +50,14 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
         object : UElementHandler() {
             override fun visitCallExpression(node: UCallExpression) {
                 checkForConfigurationToConfigurableFileCollection(node)
+                checkForBuildServiceRegistrationsAccess(node)
                 val methodName = node.methodName
                 val potentialReplacements = REPLACEMENTS[methodName] ?: return
-                val containingClass = (node.receiverType as? PsiClassType)?.resolve() ?: return
+                val method = node.resolve() ?: return
+                val containingClass =
+                    (node.receiver?.getExpressionType() as? PsiClassType)?.resolve()
+                        ?: method.containingClass
+                        ?: return
                 // Check that the called method is from the expected class (or a child class) and
                 // not an unrelated method with the same name).
                 potentialReplacements.forEach { (containingClassName, replacement) ->
@@ -58,6 +65,9 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
 
                     val fix =
                         replacement.recommendedReplacement?.let {
+                            // Autofixes where the replacement is on a different class are
+                            // unsupported for now.
+                            if (replacement.replacementOnDifferentClass) return@let null
                             fix()
                                 .replace()
                                 .with(it)
@@ -114,48 +124,124 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
                 context.report(incident)
             }
 
+            /**
+             * Checks for calls on `BuildServiceRegistry.getRegistrations()`. When Isolated Projects
+             * is enabled Gradle reports a violation for every method called on the registrations
+             * collection except `findByName(String)`.
+             */
+            private fun checkForBuildServiceRegistrationsAccess(node: UCallExpression) {
+                val methodName = node.methodName ?: return
+                if (methodName == "findByName") return
+                val receiverType = node.receiverType as? PsiClassType ?: return
+                val receiverClass = receiverType.resolve() ?: return
+                if (!receiverClass.isInstanceOf(NAMED_DOMAIN_OBJECT_COLLECTION)) return
+                // Resolves the collection's element type: the type argument substituted for the
+                // T in NamedDomainObjectCollection<T>, computed through the receiver's type
+                // hierarchy (e.g. BuildServiceRegistration<?, ?> for a receiver typed as
+                // NamedDomainObjectSet<BuildServiceRegistration<?, ?>>). eraseTypeParameter is
+                // false because erasure only applies when substitution returns null (raw types);
+                // wildcard type arguments are returned as-is either way and unwrapped below.
+                val elementType =
+                    PsiUtil.substituteTypeParameter(
+                        receiverType,
+                        NAMED_DOMAIN_OBJECT_COLLECTION,
+                        0,
+                        false,
+                    )
+                val elementClass =
+                    when (elementType) {
+                        is PsiWildcardType -> (elementType.bound as? PsiClassType)?.resolve()
+                        is PsiClassType -> elementType.resolve()
+                        else -> null
+                    } ?: return
+                if (!elementClass.isInstanceOf(BUILD_SERVICE_REGISTRATION)) return
+                // Only flag methods of the collection itself, not unrelated extension functions
+                // such as Kotlin scope functions.
+                val containingClassName = node.resolve()?.containingClass?.qualifiedName ?: return
+                if (!receiverClass.isInstanceOf(containingClassName)) return
+
+                val recommendedReplacement =
+                    if (methodName in REGISTRATIONS_NAME_LOOKUP_METHODS) "findByName" else null
+                val fix = recommendedReplacement?.let {
+                    fix()
+                        .replace()
+                        .with(it)
+                        .reformat(true)
+                        // Don't auto-fix from the command line because findByName has a
+                        // nullable return type, so the fixed code likely won't compile.
+                        .autoFix(robot = false, independent = false)
+                        .build()
+                }
+                val target = "on the build service registrations collection"
+                val message =
+                    recommendedReplacement?.let { "Use $it instead of $methodName $target" }
+                        ?: "Avoid using method $methodName $target"
+                val incident =
+                    Incident(context)
+                        .issue(PROJECT_ISOLATION_ISSUE)
+                        .location(context.getNameLocation(node))
+                        .message(message)
+                        .fix(fix)
+                        .scope(node)
+                context.report(incident)
+            }
+
             /** Check for implicit calls to Provider.toString(). */
             override fun visitExpression(node: UExpression) {
                 val parent = node.sourcePsi?.parent ?: return
                 // Check if the node is part of a Kotlin formatted string.
                 if (parent is KtStringTemplateEntry) {
-                    val type = node.getExpressionType() ?: return
-                    // Check if type is Provider
-                    if (
-                        type is PsiClassType &&
-                            type.resolve()?.isInstanceOf("org.gradle.api.provider.Provider") == true
-                    ) {
-                        // Use `Provider.get()` to not call `toString()` directly on the Provider.
-                        val nodeWithGet = node.asSourceString() + ".get()"
-                        // Curly braces are required for string templates more complex than a simple
-                        // reference, which the replacement will be. Check if the original template
-                        // already has braces, and add them if not.
-                        val replacement =
-                            if (parent is KtSimpleNameStringTemplateEntry) {
-                                "{$nodeWithGet}"
-                            } else {
-                                nodeWithGet
-                            }
-                        val fix =
-                            fix()
-                                .replace()
-                                .with(replacement)
-                                .reformat(true)
-                                // Allow applying the fix from the command line
-                                .autoFix(robot = true, independent = true)
-                                .build()
+                    checkImplicitToString(node, parent)
+                    return
+                }
 
-                        val incident =
-                            Incident(context)
-                                .issue(TO_STRING_ON_PROVIDER_ISSUE)
-                                .location(context.getNameLocation(node))
-                                .message("Implicit usage of toString on a Provider")
-                                .scope(node)
-                                .fix(fix)
+                // Binary expression for string concatenation
+                if ((node is UBinaryExpression) && (node.operator.text == "+")) {
+                    val leftType = node.leftOperand.getExpressionType()
+                    val rightType = node.rightOperand.getExpressionType()
 
-                        context.report(incident)
+                    // If one operand is a String, check if the other is a Provider
+                    if (leftType?.equalsToText("java.lang.String") == true) {
+                        checkImplicitToString(node.rightOperand)
+                    } else if (rightType?.equalsToText("java.lang.String") == true) {
+                        checkImplicitToString(node.leftOperand)
                     }
                 }
+            }
+
+            private fun checkImplicitToString(
+                node: UExpression,
+                stringTemplateParent: KtStringTemplateEntry? = null,
+            ) {
+                val type = node.getExpressionType() as? PsiClassType ?: return
+                val clazz = type.resolve() ?: return
+
+                if (!clazz.isInstanceOf("org.gradle.api.provider.Provider")) return
+
+                val replacementText =
+                    if (stringTemplateParent is KtSimpleNameStringTemplateEntry) {
+                        "{${node.asSourceString()}.get()}"
+                    } else {
+                        "${node.asSourceString()}.get()"
+                    }
+
+                val fix =
+                    fix()
+                        .replace()
+                        .with(replacementText)
+                        .reformat(true)
+                        .autoFix(robot = true, independent = true)
+                        .build()
+
+                val incident =
+                    Incident(context)
+                        .issue(TO_STRING_ON_PROVIDER_ISSUE)
+                        .location(context.getNameLocation(node))
+                        .message("Implicit usage of toString on a Provider")
+                        .fix(fix)
+                        .scope(node)
+
+                context.report(incident)
             }
         }
 
@@ -171,13 +257,17 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
         private const val CONFIGURABLE_FILE_COLLECTION =
             "org.gradle.api.file.ConfigurableFileCollection"
         private const val PROJECT = "org.gradle.api.Project"
+        private const val TASK = "org.gradle.api.Task"
         private const val TASK_CONTAINER = "org.gradle.api.tasks.TaskContainer"
         private const val TASK_PROVIDER = "org.gradle.api.tasks.TaskProvider"
         private const val DOMAIN_OBJECT_COLLECTION = "org.gradle.api.DomainObjectCollection"
         private const val TASK_COLLECTION = "org.gradle.api.tasks.TaskCollection"
+        private const val BUILD_SERVICE_REGISTRATION =
+            "org.gradle.api.services.BuildServiceRegistration"
         private const val NAMED_DOMAIN_OBJECT_COLLECTION =
             "org.gradle.api.NamedDomainObjectCollection"
         private const val PROVIDER = "org.gradle.api.provider.Provider"
+        private const val SYSTEM = "java.lang.System"
 
         val EAGER_CONFIGURATION_ISSUE =
             Issue.create(
@@ -226,6 +316,38 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
                 Implementation(DiscouragedGradleMethodDetector::class.java, Scope.JAVA_FILE_SCOPE),
             )
 
+        val PERFORMANCE_ISSUE =
+            Issue.create(
+                "GradlePerformance",
+                "Use of this API is expensive",
+                """
+                    Calling Task.mustRunAfter and Task.shouldRunAfter is expensive as it causes Gradle to traverse
+                    the task graph a second time in order to re-order tasks and fix these constraints.
+                    """,
+                Category.CORRECTNESS,
+                5,
+                Severity.ERROR,
+                Implementation(DiscouragedGradleMethodDetector::class.java, Scope.JAVA_FILE_SCOPE),
+            )
+
+        val CONFIGURATION_CACHE_BROAD_INPUTS_ISSUE =
+            Issue.create(
+                "GradleConfigurationCacheBroadInputs",
+                "Use of this API results in unnecessary configuration cache invalidations",
+                """
+                    Use of this API results in unnecessary configuration cache invalidations due to capturing
+                    more of the environment than required as configuration cache input.
+                    """,
+                Category.CORRECTNESS,
+                5,
+                Severity.ERROR,
+                Implementation(DiscouragedGradleMethodDetector::class.java, Scope.JAVA_FILE_SCOPE),
+            )
+
+        // Name-based lookup methods on BuildServiceRegistry.getRegistrations() that have
+        // findByName as a direct replacement.
+        private val REGISTRATIONS_NAME_LOOKUP_METHODS = setOf("getAt", "getByName", "named")
+
         // A map from eager method name to the containing class of the method and the name of the
         // replacement method, if there is a direct equivalent.
         private val REPLACEMENTS =
@@ -246,6 +368,11 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
                     mapOf(PROJECT to Replacement(null, PROJECT_ISOLATION_ISSUE)),
                 "evaluationDependsOnChildren" to
                     mapOf(PROJECT to Replacement(null, PROJECT_ISOLATION_ISSUE)),
+                "filter" to
+                    mapOf(
+                        CONFIGURATION_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE),
+                        TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE),
+                    ),
                 "findAll" to
                     mapOf(
                         NAMED_DOMAIN_OBJECT_COLLECTION to
@@ -260,7 +387,11 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
                     mapOf(
                         PROJECT to Replacement("providers.gradleProperty", PROJECT_ISOLATION_ISSUE)
                     ),
-                "forEach" to mapOf(TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
+                "forEach" to
+                    mapOf(
+                        CONFIGURATION_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE),
+                        TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE),
+                    ),
                 "hasProperty" to
                     mapOf(
                         PROJECT to Replacement("providers.gradleProperty", PROJECT_ISOLATION_ISSUE)
@@ -277,6 +408,15 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
                     mapOf(TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
                 "getByName" to
                     mapOf(TASK_CONTAINER to Replacement("named", EAGER_CONFIGURATION_ISSUE)),
+                "getenv" to
+                    mapOf(
+                        SYSTEM to
+                            Replacement(
+                                "Project.providers.environmentVariable",
+                                CONFIGURATION_CACHE_BROAD_INPUTS_ISSUE,
+                                replacementOnDifferentClass = true,
+                            )
+                    ),
                 "getParent" to mapOf(PROJECT to Replacement(null, PROJECT_ISOLATION_ISSUE)),
                 "getProperties" to
                     mapOf(
@@ -287,16 +427,27 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
                 "groupBy" to mapOf(TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
                 "matching" to
                     mapOf(TASK_COLLECTION to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
-                "map" to mapOf(TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
+                "map" to
+                    mapOf(
+                        CONFIGURATION_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE),
+                        TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE),
+                    ),
                 "mapNotNull" to
-                    mapOf(TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
+                    mapOf(
+                        CONFIGURATION_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE),
+                        TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE),
+                    ),
                 "maybeCreate" to
                     mapOf(
                         CONFIGURATION_CONTAINER to
                             Replacement("register", EAGER_CONFIGURATION_ISSUE)
                     ),
+                "mustRunAfter" to mapOf(TASK to Replacement(null, PERFORMANCE_ISSUE)),
                 "replace" to mapOf(TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
                 "remove" to mapOf(TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
+                "setMustRunAfter" to mapOf(TASK to Replacement(null, PERFORMANCE_ISSUE)),
+                "setShouldRunAfter" to mapOf(TASK to Replacement(null, PERFORMANCE_ISSUE)),
+                "shouldRunAfter" to mapOf(TASK to Replacement(null, PERFORMANCE_ISSUE)),
                 "toString" to mapOf(PROVIDER to Replacement("get", TO_STRING_ON_PROVIDER_ISSUE)),
                 "whenTaskAdded" to
                     mapOf(
@@ -311,4 +462,8 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
     }
 }
 
-private data class Replacement(val recommendedReplacement: String?, val issue: Issue)
+private data class Replacement(
+    val recommendedReplacement: String?,
+    val issue: Issue,
+    val replacementOnDifferentClass: Boolean = false,
+)

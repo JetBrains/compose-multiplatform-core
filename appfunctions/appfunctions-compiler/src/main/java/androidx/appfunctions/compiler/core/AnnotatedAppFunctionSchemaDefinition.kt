@@ -93,6 +93,7 @@ class AnnotatedAppFunctionSchemaDefinition(private val classDeclaration: KSClass
                 sharedDataTypeMap = sharedDataTypeMap,
                 seenDataTypeQualifiers = seenDataTypeQualifiers,
                 allowSerializableInterfaceTypes = true,
+                functionAnnotations = schemaFunctionDeclaration.annotations,
             )
 
         return CompileTimeAppFunctionMetadata(
@@ -101,8 +102,9 @@ class AnnotatedAppFunctionSchemaDefinition(private val classDeclaration: KSClass
             isEnabledByDefault = true,
             schema = annotationProperties.getAppFunctionSchemaMetadata(),
             parameters = parameterTypeMetadataList,
-            response = AppFunctionResponseMetadata(responseTypeMetadata),
+            response = AppFunctionResponseMetadata(responseTypeMetadata, description = ""),
             components = AppFunctionComponentsMetadata(sharedDataTypeMap),
+            deprecation = null, // Schema Inventory should not care about this
         )
     }
 }

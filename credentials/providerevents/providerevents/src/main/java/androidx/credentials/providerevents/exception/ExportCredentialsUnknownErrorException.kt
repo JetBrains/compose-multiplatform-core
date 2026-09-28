@@ -17,7 +17,7 @@
 package androidx.credentials.providerevents.exception
 
 /** The credential json cannot be stored due to unknown error */
-public class ExportCredentialsUnknownErrorException(errorMessage: CharSequence? = null) :
+public class ExportCredentialsUnknownErrorException(errorMessage: String? = null) :
     ExportCredentialsException(TYPE_EXPORT_CREDENTIALS_UNKNOWN_ERROR_EXCEPTION, errorMessage) {
     internal companion object {
         internal const val TYPE_EXPORT_CREDENTIALS_UNKNOWN_ERROR_EXCEPTION: String =

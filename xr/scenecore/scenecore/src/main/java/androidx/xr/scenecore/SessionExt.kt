@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,20 +19,13 @@
 package androidx.xr.scenecore
 
 import androidx.xr.runtime.Session
-import java.util.Collections
-import java.util.WeakHashMap
-
-/**
- * A thread-safe, memory-safe cache to store the Scene for each Session instance.
- *
- * A [WeakHashMap] is used to prevent memory leaks. It allows the garbage collector to remove
- * entries when the [Session] key is no longer in use elsewhere. This is wrapped in a
- * [Collections.synchronizedMap] to ensure thread safety.
- */
-private val sceneCache = Collections.synchronizedMap(WeakHashMap<Session, Scene>())
+import androidx.xr.scenecore.runtime.RenderingRuntime
+import androidx.xr.scenecore.runtime.SceneRuntime
 
 /**
  * Gets the [Scene] associated with this Session.
+ *
+ * Accessing the scene in a destroyed activity can be dangerous.
  *
  * The `Scene` is the primary interface for creating and managing spatial content. There is a single
  * `Scene` instance for each `Session`.
@@ -41,7 +34,20 @@ private val sceneCache = Collections.synchronizedMap(WeakHashMap<Session, Scene>
  */
 public val Session.scene: Scene
     get() =
-        sceneCache.getOrPut(this) {
-            // This lambda is executed only once per session instance.
-            this.sessionConnectors.filterIsInstance<Scene>().single()
-        }
+        // TODO: b/450009236 - This will return the scene even if the Session's Activity has been
+        //  destroyed, which we may want to change in the future.
+        this.sessionConnectors.filterIsInstance<Scene>().single()
+
+internal val Session.sceneRuntime: SceneRuntime
+    get() =
+        runtimes.filterIsInstance<SceneRuntime>().firstOrNull()
+            ?: throw IllegalStateException(
+                "No scene runtime found. Did you create the Session with a non-Activity context?"
+            )
+
+internal val Session.renderingRuntime: RenderingRuntime
+    get() =
+        runtimes.filterIsInstance<RenderingRuntime>().firstOrNull()
+            ?: throw IllegalStateException(
+                "No rendering runtime found. Did you create the Session with a non-Activity context?"
+            )

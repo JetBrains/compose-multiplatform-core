@@ -97,7 +97,7 @@ import kotlin.math.roundToInt
  *   [BottomNavigationItem]s
  */
 @Composable
-fun BottomNavigation(
+public fun BottomNavigation(
     windowInsets: WindowInsets,
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colors.primarySurface,
@@ -153,7 +153,7 @@ fun BottomNavigation(
  *   [BottomNavigationItem]s
  */
 @Composable
-fun BottomNavigation(
+public fun BottomNavigation(
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colors.primarySurface,
     contentColor: Color = contentColorFor(backgroundColor),
@@ -195,7 +195,7 @@ fun BottomNavigation(
  * @param unselectedContentColor the color of the text label and icon when this item is not selected
  */
 @Composable
-fun RowScope.BottomNavigationItem(
+public fun RowScope.BottomNavigationItem(
     selected: Boolean,
     onClick: () -> Unit,
     icon: @Composable () -> Unit,
@@ -207,13 +207,12 @@ fun RowScope.BottomNavigationItem(
     selectedContentColor: Color = LocalContentColor.current,
     unselectedContentColor: Color = selectedContentColor.copy(alpha = ContentAlpha.medium),
 ) {
-    val styledLabel: @Composable (() -> Unit)? =
-        label?.let {
-            @Composable {
-                val style = MaterialTheme.typography.caption.copy(textAlign = TextAlign.Center)
-                ProvideTextStyle(style, content = label)
-            }
+    val styledLabel: @Composable (() -> Unit)? = label?.let {
+        @Composable {
+            val style = MaterialTheme.typography.caption.copy(textAlign = TextAlign.Center)
+            ProvideTextStyle(style, content = label)
         }
+    }
     // The color of the Ripple should always the selected color, as we want to show the color
     // before the item is considered selected, and hence before the new contentColor is
     // provided by BottomNavigationTransition.
@@ -246,12 +245,12 @@ fun RowScope.BottomNavigationItem(
 }
 
 /** Contains default values used for [BottomNavigation]. */
-object BottomNavigationDefaults {
+public object BottomNavigationDefaults {
     /** Default elevation used for [BottomNavigation]. */
-    val Elevation = 8.dp
+    public val Elevation: Dp = 8.dp
 
     /** Recommended window insets to be used and consumed by bottom navigation */
-    val windowInsets: WindowInsets
+    public val windowInsets: WindowInsets
         @Composable
         get() =
             WindowInsets.systemBarsForVisualComponents.only(
@@ -324,17 +323,16 @@ private fun BottomNavigationItemBaselineLayout(
     }) { measurables, constraints ->
         val iconPlaceable = measurables.fastFirst { it.layoutId == "icon" }.measure(constraints)
 
-        val labelPlaceable =
-            label?.let {
-                measurables
-                    .fastFirst { it.layoutId == "label" }
-                    .measure(
-                        // Measure with loose constraints for height as we don't want the label to
-                        // take up more
-                        // space than it needs
-                        constraints.copy(minHeight = 0)
-                    )
-            }
+        val labelPlaceable = label?.let {
+            measurables
+                .fastFirst { it.layoutId == "label" }
+                .measure(
+                    // Measure with loose constraints for height as we don't want the label to
+                    // take up more
+                    // space than it needs
+                    constraints.copy(minHeight = 0)
+                )
+        }
 
         // If there is no label, just place the icon.
         if (label == null) {
@@ -430,15 +428,18 @@ private val BottomNavigationAnimationSpec =
     TweenSpec<Float>(durationMillis = 300, easing = FastOutSlowInEasing)
 
 /** Height of a [BottomNavigation] component */
-private val BottomNavigationHeight = 56.dp
+private val BottomNavigationHeight
+    get() = 56.dp
 
 /** Padding at the start and end of a [BottomNavigationItem] */
-private val BottomNavigationItemHorizontalPadding = 12.dp
+private val BottomNavigationItemHorizontalPadding
+    get() = 12.dp
 
 /**
  * The space between the text baseline and the bottom of the [BottomNavigationItem], and between the
  * text baseline and the bottom of the icon placed above it.
  */
-private val CombinedItemTextBaseline = 12.dp
+private val CombinedItemTextBaseline
+    get() = 12.dp
 
 private val ZeroInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp)

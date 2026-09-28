@@ -18,17 +18,24 @@ package androidx.pdf.annotation.drawer
 
 import android.graphics.Canvas
 import android.graphics.Matrix
-import androidx.pdf.annotation.models.PdfObject
-import androidx.pdf.annotation.models.StampAnnotation
+import androidx.pdf.ExperimentalPdfApi
+import androidx.pdf.annotation.content.PdfObject
+import androidx.pdf.annotation.content.StampAnnotation
 
 /** Draws [StampAnnotation] instances on a [Canvas]. */
+@OptIn(ExperimentalPdfApi::class)
 internal class StampPdfAnnotationDrawer(
     private val pdfObjectDrawerFactory: PdfObjectDrawerFactory
 ) : PdfAnnotationDrawer<StampAnnotation> {
     override fun draw(pdfAnnotation: StampAnnotation, canvas: Canvas, transform: Matrix) {
         pdfAnnotation.pdfObjects.forEach { pdfObject ->
-            val drawer = pdfObjectDrawerFactory.create(pdfObject)
-            (drawer as PdfObjectDrawer<PdfObject>).draw(pdfObject, canvas, transform)
+            try {
+                val drawer = pdfObjectDrawerFactory.create(pdfObject)
+                @Suppress("UNCHECKED_CAST")
+                (drawer as PdfObjectDrawer<PdfObject>).draw(pdfObject, canvas, transform)
+            } catch (e: UnsupportedOperationException) {
+                // TODO: b/440966572 - Handle Logging of Unsupported Annotations and Pfd Objects.
+            }
         }
     }
 }

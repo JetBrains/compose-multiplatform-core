@@ -20,7 +20,6 @@ import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.Posture
 import androidx.compose.material3.adaptive.WindowAdaptiveInfo
 import androidx.compose.material3.adaptive.allVerticalHingeBounds
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.occludingVerticalHingeBounds
 import androidx.compose.material3.adaptive.separatingVerticalHingeBounds
 import androidx.compose.runtime.Immutable
@@ -29,11 +28,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowSizeClass
 import kotlin.jvm.JvmInline
+import kotlin.jvm.JvmName
 
 /**
  * Calculates the recommended [PaneScaffoldDirective] from a given [WindowAdaptiveInfo]. Use this
- * method with [currentWindowAdaptiveInfo] to acquire Material-recommended adaptive layout settings
- * of the current activity window.
+ * method with [androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2] to acquire
+ * Material-recommended adaptive layout settings of the current activity window.
  *
  * See more details on the [Material design guideline site]
  * (https://m3.material.io/foundations/layout/applying-layout/window-size-classes).
@@ -45,7 +45,7 @@ import kotlin.jvm.JvmInline
  * @return an [PaneScaffoldDirective] to be used to decide adaptive layout states.
  */
 @ExperimentalMaterial3AdaptiveApi
-fun calculatePaneScaffoldDirective(
+public fun calculatePaneScaffoldDirective(
     windowAdaptiveInfo: WindowAdaptiveInfo,
     verticalHingePolicy: HingePolicy = HingePolicy.AvoidSeparating,
 ): PaneScaffoldDirective {
@@ -107,12 +107,12 @@ fun calculatePaneScaffoldDirective(
 
 /**
  * Calculates the recommended [PaneScaffoldDirective] from a given [WindowAdaptiveInfo]. Use this
- * method with [currentWindowAdaptiveInfo] to acquire Material-recommended dense-mode adaptive
- * layout settings of the current activity window. Note that this function results in a dual-pane
- * layout when the window width falls in the Medium size bucket, while
- * [calculatePaneScaffoldDirective] results in a single-pane layout instead. We recommend to use
- * [calculatePaneScaffoldDirective], unless you have a strong use case to show two panes on a
- * medium-width window, which can make your layout look too packed.
+ * method with [androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2] to acquire
+ * Material-recommended dense-mode adaptive layout settings of the current activity window. Note
+ * that this function results in a dual-pane layout when the window width falls in the Medium size
+ * bucket, while [calculatePaneScaffoldDirective] results in a single-pane layout instead. We
+ * recommend to use [calculatePaneScaffoldDirective], unless you have a strong use case to show two
+ * panes on a medium-width window, which can make your layout look too packed.
  *
  * See more details on the [Material design guideline site]
  * (https://m3.material.io/foundations/layout/applying-layout/window-size-classes).
@@ -124,7 +124,7 @@ fun calculatePaneScaffoldDirective(
  * @return an [PaneScaffoldDirective] to be used to decide adaptive layout states.
  */
 @ExperimentalMaterial3AdaptiveApi
-fun calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(
+public fun calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(
     windowAdaptiveInfo: WindowAdaptiveInfo,
     verticalHingePolicy: HingePolicy = HingePolicy.AvoidSeparating,
 ): PaneScaffoldDirective {
@@ -178,18 +178,23 @@ private fun getExcludedVerticalBounds(posture: Posture, hingePolicy: HingePolicy
  *   used.
  * @property excludedBounds the bounds of all areas in the window that the layout needs to avoid
  *   displaying anything upon it. Usually these bounds represent where physical hinges are.
+ * @property shouldAutoFocusCurrentDestination set to `true` to make the scaffold automatically move
+ *   focus onto the current destination pane indicated by
+ *   [ThreePaneScaffoldValue.currentDestination] when it changes, otherwise set it to `false`.
  */
 @Immutable
-class PaneScaffoldDirective(
-    val maxHorizontalPartitions: Int,
-    val horizontalPartitionSpacerSize: Dp,
-    val maxVerticalPartitions: Int,
-    val verticalPartitionSpacerSize: Dp,
-    val defaultPanePreferredWidth: Dp,
-    val defaultPanePreferredHeight: Dp,
-    val excludedBounds: List<Rect>,
+public class PaneScaffoldDirective(
+    public val maxHorizontalPartitions: Int,
+    public val horizontalPartitionSpacerSize: Dp,
+    public val maxVerticalPartitions: Int,
+    public val verticalPartitionSpacerSize: Dp,
+    public val defaultPanePreferredWidth: Dp,
+    public val defaultPanePreferredHeight: Dp,
+    public val excludedBounds: List<Rect>,
+    @get:JvmName("shouldAutoFocusCurrentDestination")
+    public val shouldAutoFocusCurrentDestination: Boolean,
 ) {
-    constructor(
+    public constructor(
         maxHorizontalPartitions: Int,
         horizontalPartitionSpacerSize: Dp,
         maxVerticalPartitions: Int,
@@ -204,6 +209,25 @@ class PaneScaffoldDirective(
         defaultPanePreferredWidth = defaultPanePreferredWidth,
         defaultPanePreferredHeight = DefaultPreferredHeight,
         excludedBounds = excludedBounds,
+    )
+
+    public constructor(
+        maxHorizontalPartitions: Int,
+        horizontalPartitionSpacerSize: Dp,
+        maxVerticalPartitions: Int,
+        verticalPartitionSpacerSize: Dp,
+        defaultPanePreferredWidth: Dp,
+        defaultPanePreferredHeight: Dp,
+        excludedBounds: List<Rect>,
+    ) : this(
+        maxHorizontalPartitions = maxHorizontalPartitions,
+        horizontalPartitionSpacerSize = horizontalPartitionSpacerSize,
+        maxVerticalPartitions = maxVerticalPartitions,
+        verticalPartitionSpacerSize = verticalPartitionSpacerSize,
+        defaultPanePreferredWidth = defaultPanePreferredWidth,
+        defaultPanePreferredHeight = defaultPanePreferredHeight,
+        excludedBounds = excludedBounds,
+        shouldAutoFocusCurrentDestination = true,
     )
 
     /**
@@ -226,7 +250,7 @@ class PaneScaffoldDirective(
      * @param defaultPanePreferredHeight Default preferred height of panes that will be used by the
      *   scaffold if there's no [PaneScaffoldScope.preferredHeight] provided with a pane.
      */
-    fun copy(
+    public fun copy(
         maxHorizontalPartitions: Int = this.maxHorizontalPartitions,
         horizontalPartitionSpacerSize: Dp = this.horizontalPartitionSpacerSize,
         maxVerticalPartitions: Int = this.maxVerticalPartitions,
@@ -267,7 +291,7 @@ class PaneScaffoldDirective(
         "Maintained for binary compatibility. Use version with defaultPanePreferredHeight instead.",
         level = DeprecationLevel.HIDDEN,
     )
-    fun copy(
+    public fun copy(
         maxHorizontalPartitions: Int = this.maxHorizontalPartitions,
         horizontalPartitionSpacerSize: Dp = this.horizontalPartitionSpacerSize,
         maxVerticalPartitions: Int = this.maxVerticalPartitions,
@@ -284,7 +308,7 @@ class PaneScaffoldDirective(
             excludedBounds = excludedBounds,
         )
 
-    override fun equals(other: Any?): Boolean {
+    public override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is PaneScaffoldDirective) return false
         if (maxHorizontalPartitions != other.maxHorizontalPartitions) return false
@@ -297,7 +321,7 @@ class PaneScaffoldDirective(
         return true
     }
 
-    override fun hashCode(): Int {
+    public override fun hashCode(): Int {
         var result = maxHorizontalPartitions
         result = 31 * result + horizontalPartitionSpacerSize.hashCode()
         result = 31 * result + maxVerticalPartitions
@@ -308,7 +332,7 @@ class PaneScaffoldDirective(
         return result
     }
 
-    override fun toString(): String {
+    public override fun toString(): String {
         return "PaneScaffoldDirective(maxHorizontalPartitions=$maxHorizontalPartitions, " +
             "horizontalPartitionSpacerSize=$horizontalPartitionSpacerSize, " +
             "maxVerticalPartitions=$maxVerticalPartitions, " +
@@ -318,7 +342,7 @@ class PaneScaffoldDirective(
             "number of excluded bounds=${excludedBounds.size})"
     }
 
-    companion object {
+    public companion object {
         internal val DefaultPreferredWidth = 360.dp
         internal val DefaultPreferredWidthXL = 412.dp
         internal val DefaultPreferredHeight = 420.dp
@@ -328,7 +352,7 @@ class PaneScaffoldDirective(
          * occupies the full window. To create a customized [PaneScaffoldDirective], you can use
          * [PaneScaffoldDirective.copy] on the default instance to create a copy with custom values.
          */
-        val Default =
+        public val Default: PaneScaffoldDirective =
             PaneScaffoldDirective(
                 maxHorizontalPartitions = 1,
                 horizontalPartitionSpacerSize = 0.dp,
@@ -344,8 +368,8 @@ class PaneScaffoldDirective(
 /** Policies that indicate how hinges are supposed to be addressed in an adaptive layout. */
 @Immutable
 @JvmInline
-value class HingePolicy private constructor(private val value: Int) {
-    override fun toString(): String {
+public value class HingePolicy private constructor(private val value: Int) {
+    public override fun toString(): String {
         return "HingePolicy." +
             when (this) {
                 AlwaysAvoid -> "AlwaysAvoid"
@@ -356,20 +380,22 @@ value class HingePolicy private constructor(private val value: Int) {
             }
     }
 
-    companion object {
+    public companion object {
         /** When rendering content in a layout, always avoid where hinges are. */
-        val AlwaysAvoid = HingePolicy(0)
+        public val AlwaysAvoid: HingePolicy = HingePolicy(0)
         /**
          * When rendering content in a layout, avoid hinges that are separating. Note that an
          * occluding hinge is supposed to be separating as well but not vice versa.
          */
-        val AvoidSeparating = HingePolicy(1)
+        public val AvoidSeparating: HingePolicy = HingePolicy(1)
         /**
          * When rendering content in a layout, avoid hinges that are occluding. Note that an
          * occluding hinge is supposed to be separating as well but not vice versa.
          */
-        val AvoidOccluding = HingePolicy(2)
+        public val AvoidOccluding: HingePolicy = HingePolicy(2)
         /** When rendering content in a layout, never avoid any hinges, separating or not. */
-        val NeverAvoid = HingePolicy(3)
+        public val NeverAvoid: HingePolicy = HingePolicy(3)
     }
 }
+
+internal fun PaneScaffoldDirective.isSinglePaneLayout(): Boolean = maxHorizontalPartitions == 1

@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core.operations;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
@@ -25,11 +26,13 @@ import androidx.compose.remote.core.documentation.DocumentedOperation;
 
 import org.jspecify.annotations.NonNull;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * This prints debugging message useful for debugging. It should not be use in production documents
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class DebugMessage extends Operation implements VariableSupport {
     private static final int OP_CODE = Operations.DEBUG_MESSAGE;
     private static final String CLASS_NAME = "DebugMessage";
@@ -37,6 +40,8 @@ public class DebugMessage extends Operation implements VariableSupport {
     float mFloatValue;
     float mOutFloatValue;
     int mFlags = 0;
+
+    public static final int SHOW_USAGE = 1;
 
     public DebugMessage(int textId, float value, int flags) {
         mTextID = textId;
@@ -54,6 +59,7 @@ public class DebugMessage extends Operation implements VariableSupport {
 
     @Override
     public void registerListening(@NonNull RemoteContext context) {
+        context.listensTo(mTextID, this);
         if (Float.isNaN(mFloatValue)) {
             context.listensTo(Utils.idFromNan(mFloatValue), this);
         }
@@ -82,8 +88,8 @@ public class DebugMessage extends Operation implements VariableSupport {
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int text = buffer.readInt();
-        float floatValue = buffer.readFloat();
+        int text = buffer.readId();
+        float floatValue = buffer.readNanId();
         int flags = buffer.readInt();
         DebugMessage op = new DebugMessage(text, floatValue, flags);
         operations.add(op);
@@ -129,17 +135,26 @@ public class DebugMessage extends Operation implements VariableSupport {
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("DebugMessage Operations", id(), CLASS_NAME)
+        doc.operation("Protocol Operations", id(), CLASS_NAME)
                 .description("Print debugging messages")
-                .field(DocumentedOperation.INT, "textId", "test to print")
-                .field(DocumentedOperation.FLOAT, "value", "value of a float to print")
-                .field(DocumentedOperation.INT, "flags", "print additional information");
+                .field(DocumentedOperation.INT, "textId", "The ID of the text to print")
+                .field(DocumentedOperation.FLOAT, "value", "The float value to print")
+                .field(DocumentedOperation.INT, "flags", "Flags for additional information");
     }
 
     @Override
     public void apply(@NonNull RemoteContext context) {
         String str = context.getText(mTextID);
-        System.out.println("Debug message : " + str + " " + mOutFloatValue + " " + mFlags);
+
+        System.out.println("Debug message : " + str + " " + mOutFloatValue);
+        if ((mFlags & SHOW_USAGE) > 0) {
+            ArrayList<VariableSupport> list = context.getListeners(Utils.idFromNan(mFloatValue));
+            if (list != null) {
+                for (VariableSupport varSupport : list) {
+                    System.out.println("Debug message : " + str + " " + varSupport.toString());
+                }
+            }
+        }
     }
 
     @NonNull

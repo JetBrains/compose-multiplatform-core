@@ -17,7 +17,7 @@
 package androidx.core.uwb.impl
 
 import androidx.core.uwb.RangingResult
-import androidx.core.uwb.RangingResult.RangingResultPeerDisconnected
+import androidx.core.uwb.RangingResult.RangingResultFailure
 import androidx.core.uwb.RangingResult.RangingResultPosition
 import androidx.core.uwb.common.TestCommons.Companion.COMPLEX_CHANNEL
 import androidx.core.uwb.common.TestCommons.Companion.LOCAL_ADDRESS
@@ -42,29 +42,11 @@ import org.junit.Test
 
 class UwbClientSessionScopeImplTest {
     private val uwbClient =
-        TestUwbClient(
-            COMPLEX_CHANNEL,
-            LOCAL_ADDRESS,
-            RANGING_CAPABILITIES,
-            isAvailable = true,
-            isController = false,
-        )
+        TestUwbClient(COMPLEX_CHANNEL, LOCAL_ADDRESS, isAvailable = true, isController = false)
     private val uwbClientSession =
         UwbClientSessionScopeImpl(
             uwbClient,
-            androidx.core.uwb.RangingCapabilities(
-                RANGING_CAPABILITIES.supportsDistance(),
-                RANGING_CAPABILITIES.supportsAzimuthalAngle(),
-                RANGING_CAPABILITIES.supportsElevationAngle(),
-                RANGING_CAPABILITIES.minRangingInterval,
-                RANGING_CAPABILITIES.supportedChannels.toSet(),
-                RANGING_CAPABILITIES.supportedNtfConfigs.toSet(),
-                RANGING_CAPABILITIES.supportedConfigIds.toSet(),
-                RANGING_CAPABILITIES.supportedSlotDurations.toSet(),
-                RANGING_CAPABILITIES.supportedRangingUpdateRates.toSet(),
-                RANGING_CAPABILITIES.supportsRangingIntervalReconfigure(),
-                RANGING_CAPABILITIES.hasBackgroundRangingSupport(),
-            ),
+            RANGING_CAPABILITIES,
             androidx.core.uwb.UwbAddress(LOCAL_ADDRESS.address),
         )
 
@@ -161,7 +143,7 @@ class UwbClientSessionScopeImplTest {
                 sessionFlow
                     .cancellable()
                     .onEach {
-                        if (it is RangingResultPeerDisconnected) {
+                        if (it is RangingResultFailure) {
                             peerDisconnected = true
                         }
                     }
@@ -207,7 +189,7 @@ class UwbClientSessionScopeImplTest {
             CoroutineScope(Dispatchers.Main.immediate).launch {
                 sharedFlow
                     .onEach {
-                        if (it is RangingResultPeerDisconnected) {
+                        if (it is RangingResultFailure) {
                             peerDisconnected = true
                         }
                     }
@@ -217,7 +199,7 @@ class UwbClientSessionScopeImplTest {
             CoroutineScope(Dispatchers.Main.immediate).launch {
                 sharedFlow
                     .onEach {
-                        if (it is RangingResultPeerDisconnected) {
+                        if (it is RangingResultFailure) {
                             peerDisconnected2 = true
                         }
                     }

@@ -21,15 +21,17 @@ import androidx.annotation.RestrictTo
 import androidx.health.connect.client.aggregate.AggregationResult
 import androidx.health.connect.client.aggregate.AggregationResultGroupedByDuration
 import androidx.health.connect.client.aggregate.AggregationResultGroupedByPeriod
+import androidx.health.connect.client.records.ActivityIntensityRecord
 import androidx.health.connect.client.records.metadata.DataOrigin
 import androidx.health.platform.client.proto.DataProto
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import kotlin.math.floor
 
 // ZoneOffset.ofTotalSeconds() has been banned but safe here for serialization.
 @SuppressWarnings("GoodTime")
-fun DataProto.AggregateDataRow.toAggregateDataRowGroupByDuration():
+public fun DataProto.AggregateDataRow.toAggregateDataRowGroupByDuration():
     AggregationResultGroupedByDuration {
     require(hasStartTimeEpochMs()) { "start time must be set" }
     require(hasEndTimeEpochMs()) { "end time must be set" }
@@ -42,7 +44,8 @@ fun DataProto.AggregateDataRow.toAggregateDataRowGroupByDuration():
     )
 }
 
-fun DataProto.AggregateDataRow.toAggregateDataRowGroupByPeriod(): AggregationResultGroupedByPeriod {
+public fun DataProto.AggregateDataRow.toAggregateDataRowGroupByPeriod():
+    AggregationResultGroupedByPeriod {
     require(hasStartLocalDateTime()) { "start time must be set" }
     require(hasEndLocalDateTime()) { "end time must be set" }
 
@@ -53,9 +56,18 @@ fun DataProto.AggregateDataRow.toAggregateDataRowGroupByPeriod(): AggregationRes
     )
 }
 
-fun DataProto.AggregateDataRow.retrieveAggregateDataRow() =
-    AggregationResult(
-        longValues = longValuesMap,
-        doubleValues = doubleValuesMap,
+public fun DataProto.AggregateDataRow.retrieveAggregateDataRow(): AggregationResult {
+    val longValues: MutableMap<String, Long> = longValuesMap.toMutableMap()
+    val doubleValues: MutableMap<String, Double> = doubleValuesMap.toMutableMap()
+    // ActivityIntensityRecord.INTENSITY_MINUTES_TOTAL is stored in milliseconds in the proto but
+    // should be returned as minutes in the Jetpack SDK.
+    val metric = ActivityIntensityRecord.INTENSITY_MINUTES_TOTAL.metricKey
+    if (longValues.containsKey(metric)) {
+        longValues[metric] = floor(longValues[metric]!! / 60_000.0).toLong()
+    }
+    return AggregationResult(
+        longValues = longValues,
+        doubleValues = doubleValues,
         dataOrigins = dataOriginsList.mapTo(HashSet()) { DataOrigin(it.applicationId) },
     )
+}

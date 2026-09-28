@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("FacadeClassJvmName") // Cannot be updated, the Kt name has been released
+
 package androidx.savedstate.serialization
 
 import androidx.savedstate.serialization.SavedStateConfiguration.Builder
@@ -45,7 +47,8 @@ import kotlinx.serialization.modules.plus
 public class SavedStateConfiguration
 private constructor(
     public val serializersModule: SerializersModule = DEFAULT_SERIALIZERS_MODULE,
-    @ClassDiscriminatorMode.Definition
+    @get:ClassDiscriminatorMode.Definition
+    @param:ClassDiscriminatorMode.Definition
     public val classDiscriminatorMode: Int = ClassDiscriminatorMode.POLYMORPHIC,
     @get:Suppress("GetterSetterNames") // More idiomatic, matches KTX Serialization naming.
     public val encodeDefaults: Boolean = false,

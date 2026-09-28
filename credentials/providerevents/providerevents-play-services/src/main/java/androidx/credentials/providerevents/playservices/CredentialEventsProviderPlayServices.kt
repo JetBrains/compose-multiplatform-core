@@ -33,6 +33,7 @@ import androidx.credentials.providerevents.CredentialEventsProvider
 import androidx.credentials.providerevents.playservices.ConversionUtils.Companion.convertToGmsResponse
 import androidx.credentials.providerevents.playservices.ConversionUtils.Companion.convertToJetpackRequest
 import androidx.credentials.providerevents.service.CredentialProviderEventsService
+import androidx.credentials.providerevents.signal.ProviderSignalCredentialStateCallback
 import com.google.android.gms.common.util.UidVerifier
 import com.google.android.gms.identitycredentials.CallingAppInfoParcelable
 import com.google.android.gms.identitycredentials.CreateCredentialRequest
@@ -162,12 +163,7 @@ public class CredentialEventsProviderPlayServices() : CredentialEventsProvider {
                 return
             }
 
-            val jetpackRequest =
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    convertToJetpackRequest(request)
-                } else {
-                    null
-                }
+            val jetpackRequest = convertToJetpackRequest(request)
             if (jetpackRequest == null) {
                 callback.onFailure(
                     com.google.android.gms.identitycredentials.SignalCredentialStateException
@@ -182,31 +178,11 @@ public class CredentialEventsProviderPlayServices() : CredentialEventsProvider {
                 if (service == null) {
                     return@post
                 }
-
                 service.onSignalCredentialStateRequest(
                     jetpackRequest,
-                    object :
-                        OutcomeReceiverCompat<
-                            androidx.credentials.SignalCredentialStateResponse,
-                            SignalCredentialStateException,
-                        > {
-                        override fun onResult(
-                            result: androidx.credentials.SignalCredentialStateResponse?
-                        ) {
-                            if (result != null) {
-                                callback.onSuccess(SignalCredentialStateResponse())
-                            } else {
-                                callback.onFailure(
-                                    com.google.android.gms.identitycredentials
-                                        .SignalCredentialStateException
-                                        .ERROR_TYPE_UNKNOWN,
-                                    "Response could not be constructed",
-                                )
-                            }
-                        }
-
-                        override fun onError(error: SignalCredentialStateException) {
-                            callback.onFailure(error.type, error.message.toString())
+                    object : ProviderSignalCredentialStateCallback {
+                        override fun onSignalConsumed() {
+                            callback.onSuccess(SignalCredentialStateResponse())
                         }
                     },
                 )

@@ -43,10 +43,10 @@ public class TotalCaloriesBurnedRecord(
      * See b/400965398 for more context.
      */
     init {
-        require(startTime.isBefore(endTime)) { "startTime must be before endTime." }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             this.toPlatformRecord()
         } else {
+            require(startTime.isBefore(endTime)) { "startTime must be before endTime." }
             energy.requireNotLess(other = energy.zero(), "energy")
             energy.requireNotMore(other = MAX_ENERGY, name = "energy")
         }
@@ -86,7 +86,7 @@ public class TotalCaloriesBurnedRecord(
         return "TotalCaloriesBurnedRecord(startTime=$startTime, startZoneOffset=$startZoneOffset, endTime=$endTime, endZoneOffset=$endZoneOffset, energy=$energy, metadata=$metadata)"
     }
 
-    companion object {
+    public companion object {
         private val MAX_ENERGY = 1000_000.kilocalories
 
         /**
@@ -94,7 +94,7 @@ public class TotalCaloriesBurnedRecord(
          * [androidx.health.connect.client.aggregate.AggregationResult].
          */
         @JvmField
-        val ENERGY_TOTAL: AggregateMetric<Energy> =
+        public val ENERGY_TOTAL: AggregateMetric<Energy> =
             AggregateMetric.doubleMetric(
                 dataTypeName = "TotalCaloriesBurned",
                 aggregationType = AggregateMetric.AggregationType.TOTAL,

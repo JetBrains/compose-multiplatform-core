@@ -48,6 +48,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.textEntryKey
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -58,6 +59,7 @@ import androidx.wear.compose.material3.ButtonColors
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.ChildButton
 import androidx.wear.compose.material3.CompactButton
+import androidx.wear.compose.material3.CompactButtonDefaults
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ListSubHeader
@@ -67,11 +69,13 @@ import androidx.wear.compose.material3.RadioButton
 import androidx.wear.compose.material3.Slider
 import androidx.wear.compose.material3.SwitchButton
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TextButton
 import androidx.wear.compose.material3.samples.ButtonExtraLargeIconSample
 import androidx.wear.compose.material3.samples.ButtonLargeIconSample
 import androidx.wear.compose.material3.samples.ButtonSample
 import androidx.wear.compose.material3.samples.ChildButtonSample
 import androidx.wear.compose.material3.samples.CompactButtonSample
+import androidx.wear.compose.material3.samples.CompactButtonWithContentSample
 import androidx.wear.compose.material3.samples.CompactButtonWithOnLongClickSample
 import androidx.wear.compose.material3.samples.FilledTonalButtonSample
 import androidx.wear.compose.material3.samples.FilledVariantButtonSample
@@ -190,7 +194,7 @@ fun ButtonDemo() {
             )
         }
         item { ListHeader { Text("3 Slot Button") } }
-        item { ButtonSample(modifier = Modifier.fillMaxWidth()) }
+        item { ButtonSample() }
         item {
             Button(
                 onClick = { /* Do something */ },
@@ -600,7 +604,7 @@ fun CompactButtonDemo() {
         item {
             CompactButton(
                 onClick = { /* Do something */ },
-                icon = { FavoriteIcon(ButtonDefaults.ExtraSmallIconSize) },
+                icon = { FavoriteIcon(CompactButtonDefaults.ExtraSmallIconSize) },
                 colors = ButtonDefaults.filledVariantButtonColors(),
             ) {
                 Text("Filled Variant", maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -609,7 +613,7 @@ fun CompactButtonDemo() {
         item {
             CompactButton(
                 onClick = { /* Do something */ },
-                icon = { FavoriteIcon(ButtonDefaults.ExtraSmallIconSize) },
+                icon = { FavoriteIcon(CompactButtonDefaults.ExtraSmallIconSize) },
                 colors = ButtonDefaults.filledTonalButtonColors(),
             ) {
                 Text("Filled Tonal", maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -618,7 +622,7 @@ fun CompactButtonDemo() {
         item {
             CompactButton(
                 onClick = { /* Do something */ },
-                icon = { FavoriteIcon(ButtonDefaults.ExtraSmallIconSize) },
+                icon = { FavoriteIcon(CompactButtonDefaults.ExtraSmallIconSize) },
                 colors = ButtonDefaults.outlinedButtonColors(),
                 border = ButtonDefaults.outlinedButtonBorder(enabled = true),
             ) {
@@ -628,37 +632,39 @@ fun CompactButtonDemo() {
         item {
             CompactButton(
                 onClick = { /* Do something */ },
-                icon = { FavoriteIcon(ButtonDefaults.ExtraSmallIconSize) },
+                icon = { FavoriteIcon(CompactButtonDefaults.ExtraSmallIconSize) },
                 colors = ButtonDefaults.childButtonColors(),
             ) {
                 Text("Child", maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
+        item { ListHeader { Text("Content slot") } }
+        item { CompactButtonWithContentSample() }
         item { ListHeader { Text("Icon only") } }
         item {
             CompactButton(
                 onClick = { /* Do something */ },
-                icon = { FavoriteIcon(ButtonDefaults.SmallIconSize) },
+                icon = { FavoriteIcon(CompactButtonDefaults.SmallIconSize) },
             )
         }
         item {
             CompactButton(
                 onClick = { /* Do something */ },
-                icon = { FavoriteIcon(ButtonDefaults.SmallIconSize) },
+                icon = { FavoriteIcon(CompactButtonDefaults.SmallIconSize) },
                 colors = ButtonDefaults.filledVariantButtonColors(),
             )
         }
         item {
             CompactButton(
                 onClick = { /* Do something */ },
-                icon = { FavoriteIcon(ButtonDefaults.SmallIconSize) },
+                icon = { FavoriteIcon(CompactButtonDefaults.SmallIconSize) },
                 colors = ButtonDefaults.filledTonalButtonColors(),
             )
         }
         item {
             CompactButton(
                 onClick = { /* Do something */ },
-                icon = { FavoriteIcon(ButtonDefaults.SmallIconSize) },
+                icon = { FavoriteIcon(CompactButtonDefaults.SmallIconSize) },
                 colors = ButtonDefaults.outlinedButtonColors(),
                 border = ButtonDefaults.outlinedButtonBorder(enabled = true),
             )
@@ -666,7 +672,7 @@ fun CompactButtonDemo() {
         item {
             CompactButton(
                 onClick = { /* Do something */ },
-                icon = { FavoriteIcon(ButtonDefaults.SmallIconSize) },
+                icon = { FavoriteIcon(CompactButtonDefaults.SmallIconSize) },
                 colors = ButtonDefaults.childButtonColors(),
             )
         }
@@ -885,6 +891,20 @@ fun ButtonUpdateAnimationDemo() {
 }
 
 @Composable
+fun TextEntryButtonDemo() {
+    var text by remember { mutableStateOf("Button") }
+
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        TextButton(
+            onClick = { text = "Button Clicked" },
+            modifier = Modifier.fillMaxWidth().semantics { textEntryKey() },
+        ) {
+            Text(text = text, modifier = Modifier.align(Alignment.Center))
+        }
+    }
+}
+
+@Composable
 private fun MultilineButton(
     enabled: Boolean,
     colors: ButtonColors = ButtonDefaults.buttonColors(),
@@ -1037,7 +1057,7 @@ private fun ScalingLazyListScope.buttonMerge() {
         Column {
             Button(
                 onClick = {},
-                modifier = Modifier.fillMaxWidth().height(ButtonDefaults.CompactButtonHeight),
+                modifier = Modifier.fillMaxWidth().height(CompactButtonDefaults.Height),
                 shape = ButtonDefaults.shape.bottom(noCorner),
                 label = { Text("Top", Modifier.fillMaxWidth()) },
                 colors = ButtonDefaults.filledTonalButtonColors(),

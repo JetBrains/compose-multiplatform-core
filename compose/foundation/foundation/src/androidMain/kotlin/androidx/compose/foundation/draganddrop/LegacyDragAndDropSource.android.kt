@@ -28,7 +28,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNode
 import androidx.compose.ui.node.DelegatingNode
-import androidx.compose.ui.node.LayoutAwareModifierNode
+import androidx.compose.ui.node.MeasuredSizeAwareModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.IntSize
@@ -44,12 +44,12 @@ import androidx.compose.ui.unit.toSize
             "start detection is performed by Compose itself"
 )
 @ExperimentalFoundationApi
-interface DragAndDropSourceScope : PointerInputScope {
+public interface DragAndDropSourceScope : PointerInputScope {
     /**
      * Starts a drag and drop session with [transferData] as the data to be transferred on gesture
      * completion
      */
-    fun startTransfer(transferData: DragAndDropTransferData)
+    public fun startTransfer(transferData: DragAndDropTransferData)
 }
 
 /**
@@ -72,7 +72,7 @@ interface DragAndDropSourceScope : PointerInputScope {
     replaceWith = ReplaceWith("Modifier.dragAndDropSource(transferData)"),
 )
 @ExperimentalFoundationApi
-fun Modifier.dragAndDropSource(
+public fun Modifier.dragAndDropSource(
     drawDragDecoration: DrawScope.() -> Unit,
     block: suspend DragAndDropSourceScope.() -> Unit,
 ): Modifier =
@@ -128,7 +128,7 @@ private class LegacyDragAndDropSourceElement(
 internal class LegacyDragAndDropSourceNode(
     var drawDragDecoration: DrawScope.() -> Unit,
     var dragAndDropSourceHandler: suspend DragAndDropSourceScope.() -> Unit,
-) : DelegatingNode(), LayoutAwareModifierNode {
+) : DelegatingNode(), MeasuredSizeAwareModifierNode {
 
     private var size: IntSize = IntSize.Zero
 

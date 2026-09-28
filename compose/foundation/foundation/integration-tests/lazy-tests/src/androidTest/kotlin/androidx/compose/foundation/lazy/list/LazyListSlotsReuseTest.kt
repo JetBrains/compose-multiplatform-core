@@ -30,7 +30,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.IntOffset
@@ -274,19 +274,17 @@ class LazyListSlotsReuseTest {
         var counter0 = 0
         var counter1 = 0
 
-        val measureCountModifier0 =
-            Modifier.layout { measurable, constraints ->
-                counter0++
-                val placeable = measurable.measure(constraints)
-                layout(placeable.width, placeable.height) { placeable.place(IntOffset.Zero) }
-            }
+        val measureCountModifier0 = Modifier.layout { measurable, constraints ->
+            counter0++
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) { placeable.place(IntOffset.Zero) }
+        }
 
-        val measureCountModifier1 =
-            Modifier.layout { measurable, constraints ->
-                counter1++
-                val placeable = measurable.measure(constraints)
-                layout(placeable.width, placeable.height) { placeable.place(IntOffset.Zero) }
-            }
+        val measureCountModifier1 = Modifier.layout { measurable, constraints ->
+            counter1++
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) { placeable.place(IntOffset.Zero) }
+        }
 
         rule.setContent {
             state = rememberLazyListState()

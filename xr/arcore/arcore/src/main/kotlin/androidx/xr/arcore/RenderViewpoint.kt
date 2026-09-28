@@ -1,0 +1,188 @@
+/*
+ * Copyright 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.xr.arcore
+
+import androidx.annotation.RestrictTo
+import androidx.xr.arcore.runtime.ArDevice as RuntimeArDevice
+import androidx.xr.arcore.runtime.RenderViewpoint as RuntimeRenderViewpoint
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.math.FieldOfView
+import androidx.xr.runtime.math.Pose
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+/**
+ * Viewpoint used for rendering.
+ *
+ * This class provides access to the [State] of a specific render viewpoint, including its
+ * [pose][State.pose], [localPose][State.localPose], and [fieldOfView][State.fieldOfView].
+ *
+ * @property state the current [State] of the render viewpoint
+ */
+@SuppressWarnings("HiddenSuperclass")
+public class RenderViewpoint
+internal constructor(
+    internal val runtimeRenderViewpoint: RuntimeRenderViewpoint,
+    internal val runtimeArDevice: RuntimeArDevice,
+) : Updatable() {
+
+    public companion object {
+        /**
+         * Returns the RenderViewpoint associated with the left display.
+         *
+         * @param session the currently active [Session]
+         * @throws [IllegalStateException] if the device does not support
+         *   [androidx.xr.runtime.RenderingMode.STEREO]
+         */
+        @JvmStatic
+        public fun left(session: Session): RenderViewpoint {
+            val perceptionStateExtender = getPerceptionStateExtender(session)
+            check(perceptionStateExtender.xrResourcesManager.leftRenderViewpoint != null) {
+                "Left render viewpoint is not available."
+            }
+            return perceptionStateExtender.xrResourcesManager.leftRenderViewpoint!!
+        }
+
+        /**
+         * Returns the RenderViewpoint associated with the right display.
+         *
+         * @param session the currently active [Session]
+         * @throws [IllegalStateException] if the device does not support
+         *   [androidx.xr.runtime.RenderingMode.STEREO]
+         */
+        @JvmStatic
+        public fun right(session: Session): RenderViewpoint {
+            val perceptionStateExtender = getPerceptionStateExtender(session)
+            check(perceptionStateExtender.xrResourcesManager.rightRenderViewpoint != null) {
+                "Right render viewpoint is not available."
+            }
+            return perceptionStateExtender.xrResourcesManager.rightRenderViewpoint!!
+        }
+
+        /**
+         * Returns the RenderViewpoint associated with the single device display.
+         *
+         * @param session the currently active [Session]
+         * @note When the device supports [androidx.xr.runtime.RenderingMode.MONO], this will return
+         *   the render viewpoint for that display. When the device uses
+         *   [androidx.xr.runtime.RenderingMode.STEREO], this will return the render viewpoint for
+         *   the center of the two displays.
+         */
+        @JvmStatic
+        public fun mono(session: Session): RenderViewpoint {
+            val perceptionStateExtender = getPerceptionStateExtender(session)
+            check(perceptionStateExtender.xrResourcesManager.monoRenderViewpoint != null) {
+                "Mono render viewpoint is not available."
+            }
+            return perceptionStateExtender.xrResourcesManager.monoRenderViewpoint!!
+        }
+
+        // TODO(b/421240554): Combine getPerceptionStateExtender in different classes.
+        private fun getPerceptionStateExtender(session: Session): PerceptionStateExtender {
+            val perceptionStateExtender: PerceptionStateExtender? =
+                session.stateExtenders.filterIsInstance<PerceptionStateExtender>().first()
+            check(perceptionStateExtender != null) { "PerceptionStateExtender is not available." }
+            return perceptionStateExtender
+        }
+    }
+
+    /**
+     * Class that contains the current state of the render viewpoint.
+     *
+     * @property pose the render viewpoint's pose in perception space
+     *
+     * This value is the underlying [ArDevice]'s pose in the global coordinate system of the
+     * [Session], plus the [localPose] offset. Its update behavior is determined by the current
+     * [androidx.xr.runtime.DeviceTrackingMode]:
+     * - **SPATIAL:** The device pose is updated each frame with the latest valid tracking data,
+     *   reflecting physical movement.
+     * - **DISABLED:** The device pose is not updated. It remains at the origin (an identity pose)
+     *   unless this mode is switched from SPATIAL to DISABLED mid-session, which freezes the pose
+     *   at its last known state
+     *
+     * @property localPose a local offset from the device's central tracking point
+     * @property fieldOfView the camera's [FieldOfView] in radians
+     * @property owner self-reference to the object that owns this state
+     */
+    public class State
+    internal constructor(
+        public val pose: Pose,
+        public val localPose: Pose,
+        public val fieldOfView: FieldOfView,
+        public val owner: RenderViewpoint,
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is State) return false
+            return pose == other.pose &&
+                localPose == other.localPose &&
+                fieldOfView == other.fieldOfView &&
+                owner == other.owner
+        }
+
+        override fun hashCode(): Int {
+            var result = pose.hashCode()
+            result = 31 * result + localPose.hashCode()
+            result = 31 * result + fieldOfView.hashCode()
+            result = 31 * result + owner.hashCode()
+            return result
+        }
+
+        /**
+         * Returns a string representation of [RenderViewpoint.State] for debugging.
+         *
+         * Note: Not intended for production use.
+         */
+        override fun toString(): String =
+            "State(pose=$pose, localPose=$localPose, fieldOfView=$fieldOfView)"
+    }
+
+    private val _state =
+        MutableStateFlow<State>(State(Pose(), Pose(), FieldOfView(0f, 0f, 0f, 0f), owner = this))
+
+    public val state: StateFlow<State> = _state.asStateFlow()
+
+    // TODO b/482646486: Remove public visibility and unrestrict when no longer used in G3
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public override suspend fun update() {
+        val poseInPerceptionSpace = runtimeArDevice.devicePose.compose(runtimeRenderViewpoint.pose)
+        _state.emit(
+            State(
+                poseInPerceptionSpace,
+                runtimeRenderViewpoint.pose,
+                runtimeRenderViewpoint.fieldOfView,
+                owner = this,
+            )
+        )
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is RenderViewpoint) return false
+        return runtimeRenderViewpoint == other.runtimeRenderViewpoint
+    }
+
+    override fun hashCode(): Int = runtimeRenderViewpoint.hashCode()
+
+    /**
+     * Returns a string representation of [RenderViewpoint] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String = "RenderViewpoint(state=${state.value})"
+}

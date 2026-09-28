@@ -16,8 +16,8 @@
 package androidx.work
 
 import android.annotation.SuppressLint
-import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.work.PeriodicWorkRequest.Companion.MIN_PERIODIC_INTERVAL_MILLIS
 import androidx.work.impl.utils.toMillisCompat
 import java.time.Duration
 import java.util.concurrent.TimeUnit
@@ -329,11 +329,7 @@ public class PeriodicWorkRequest internal constructor(builder: Builder) :
         }
 
         override fun buildInternal(): PeriodicWorkRequest {
-            require(
-                !(backoffCriteriaSet &&
-                    Build.VERSION.SDK_INT >= 23 &&
-                    workSpec.constraints.requiresDeviceIdle())
-            ) {
+            require(!(backoffCriteriaSet && workSpec.constraints.requiresDeviceIdle())) {
                 "Cannot set backoff criteria on an idle mode job"
             }
             require(!workSpec.expedited) { "PeriodicWorkRequests cannot be expedited" }

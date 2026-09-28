@@ -25,12 +25,11 @@ import android.view.Surface
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraInterop
 import androidx.camera.camera2.pipe.FrameNumber
-import androidx.camera.camera2.pipe.UnsafeWrapper
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.internal.CameraErrorListener
+import androidx.camera.common.UnsafeWrapper
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executor
-import kotlin.reflect.KClass
 import kotlinx.atomicfu.AtomicLong
 import kotlinx.atomicfu.atomic
 
@@ -242,9 +241,9 @@ internal open class AndroidCameraExtensionSession(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+    override fun <T : Any> unwrapAs(type: Class<T>): T? =
         when (type) {
-            CameraExtensionSession::class -> cameraExtensionSession as T?
+            CameraExtensionSession::class.java -> cameraExtensionSession as T?
             else -> null
         }
 
@@ -269,9 +268,7 @@ internal open class AndroidCameraExtensionSession(
             request: CaptureRequest,
             timestamp: Long,
         ) {
-            val frameNumber = frameNumbers.incrementAndGet()
-            extensionSessionMap[session] = frameNumber
-            frameQueue.add(frameNumber)
+            val frameNumber = incrementAndGetNextFrameNumber(session)
             captureCallback.onCaptureStarted(request, frameNumber, timestamp)
         }
 
@@ -289,7 +286,7 @@ internal open class AndroidCameraExtensionSession(
         }
 
         override fun onCaptureFailed(session: CameraExtensionSession, request: CaptureRequest) {
-            val frameNumber = frameQueue.remove()
+            val frameNumber = dequeueFrameNumber(session)
             captureCallback.onCaptureFailed(request, FrameNumber(frameNumber))
         }
 
@@ -307,8 +304,26 @@ internal open class AndroidCameraExtensionSession(
             request: CaptureRequest,
             result: TotalCaptureResult,
         ) {
-            val frameNumber = frameQueue.remove()
+            val frameNumber = dequeueFrameNumber(session)
             captureCallback.onCaptureCompleted(request, result, FrameNumber(frameNumber))
+        }
+
+        private fun incrementAndGetNextFrameNumber(session: CameraExtensionSession): Long {
+            val frameNumber = frameNumbers.incrementAndGet()
+            extensionSessionMap[session] = frameNumber
+            frameQueue.add(frameNumber)
+            return frameNumber
+        }
+
+        private fun dequeueFrameNumber(session: CameraExtensionSession): Long {
+            // For some cases, onCaptureStarted might not come before the other callback is invoked.
+            // It will cause NoSuchElementException. Checks whether the frameQueue is empty to add
+            // an item before doing the remove operation to avoid the unexpected exception.
+            // See b/433869312 for more details.
+            if (frameQueue.isEmpty()) {
+                incrementAndGetNextFrameNumber(session)
+            }
+            return frameQueue.remove()
         }
     }
 

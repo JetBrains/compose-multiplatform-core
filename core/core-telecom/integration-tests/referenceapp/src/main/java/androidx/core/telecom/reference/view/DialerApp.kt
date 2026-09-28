@@ -18,15 +18,21 @@ package androidx.core.telecom.reference.view
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.util.Log
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.core.telecom.reference.CallRepository
 import androidx.core.telecom.reference.Constants.ACTION_ANSWER_AND_SHOW_UI
 import androidx.core.telecom.reference.Constants.DEEP_LINK_BASE_URI
 import androidx.core.telecom.reference.VoipApplication
+import androidx.core.telecom.reference.viewModel.CallLogViewModel
 import androidx.core.telecom.reference.viewModel.DialerActivityViewModel
 import androidx.core.telecom.reference.viewModel.DialerViewModel
 import androidx.core.telecom.reference.viewModel.InCallViewModel
@@ -89,10 +95,23 @@ fun DialerApp(lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current, cont
         }
     }
 
+    val callLogViewModelFactory = remember {
+        object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                if (modelClass.isAssignableFrom(CallLogViewModel::class.java)) {
+                    @Suppress("UNCHECKED_CAST")
+                    return CallLogViewModel(appContext) as T
+                }
+                throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+            }
+        }
+    }
+
     // Obtain instances of the ViewModels using their respective factories.
     // These ViewModels will be scoped to the NavHost's lifecycle.
     val dialerViewModel: DialerViewModel = viewModel(factory = dialerViewModelFactory)
     val inCallViewModel: InCallViewModel = viewModel(factory = inCallViewModelFactory)
+    val callLogViewModel: CallLogViewModel = viewModel(factory = callLogViewModelFactory)
 
     DisposableEffect(lifecycleOwner, appContext) {
         callRepository.maybeConnectService(appContext)
@@ -110,13 +129,18 @@ fun DialerApp(lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current, cont
     }
 
     // Define the navigation graph for the application.
-    NavHost(navController = navController, startDestination = NavRoutes.DIALER) {
+    NavHost(
+        navController = navController,
+        startDestination = NavRoutes.DIALER,
+        modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing),
+    ) {
         // Define the Dialer screen destination.
         composable(NavRoutes.DIALER) {
             DialerScreen(
                 dialerViewModel = dialerViewModel,
                 // Navigate to Settings when the settings action is triggered.
                 onNavigateToSettings = { navController.navigate(NavRoutes.SETTINGS) },
+                onNavigateToCallLog = { navController.navigate(NavRoutes.CALL_LOG) },
                 // Navigate to the In-Call screen when a call is started.
                 onStartCall = { navController.navigate(NavRoutes.IN_CALL) },
             )
@@ -140,5 +164,10 @@ fun DialerApp(lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current, cont
             InCallScreen(inCallViewModel)
         }
         composable(NavRoutes.SETTINGS) { SettingsScreen() }
+        composable(NavRoutes.CALL_LOG) {
+            if (Build.VERSION.SDK_INT_FULL >= Build.VERSION_CODES_FULL.BAKLAVA_1) {
+                CallLogScreen(callLogViewModel)
+            }
+        }
     }
 }

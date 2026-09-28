@@ -32,12 +32,12 @@ import dagger.Provides
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
-import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.cancel
 
 /** Configure and provide a single [Threads] object to other parts of the library. */
@@ -64,19 +64,19 @@ internal class ThreadConfigModule(private val threadConfig: CameraPipe.ThreadCon
 
     @Singleton
     @Provides
-    fun provideThreads(cameraPipeLifetime: CameraPipeLifetime): Threads {
-        val testOnlyDispatcher = threadConfig.testOnlyDispatcher
-        val testOnlyScope = threadConfig.testOnlyScope
-        if (testOnlyDispatcher != null && testOnlyScope != null) {
-            return provideTestOnlyThreads(testOnlyDispatcher, testOnlyScope)
-        }
-        check(testOnlyDispatcher == null || testOnlyScope == null) {
-            "testOnlyDispatcher and testOnlyScope must be specified together!"
-        }
-
+    fun provideThreads(
+        cameraPipeLifetime: CameraPipeLifetime,
+        @CameraPipeJob cameraPipeJob: Job,
+    ): Threads {
         val executorServices = mutableListOf<ExecutorService>()
 
-        // TODO: b/391655975 - Figure out why cached thread pool creates kotlin default executors.
+        // CAUTION: Our blocking executor is created with a scheduled thread pool, whereas this
+        // normally should be a cached thread pool which creates new threads as needed. The reason
+        // here is that a CoroutineDispatcher created from a non-scheduled ExecutorService would
+        // create internal threads when a delayed task execution is needed, e.g., withTimeout(),
+        // delay(). This may run afoul of runtime checks that prohibit thread creation.
+        //
+        // More details can be found in: b/450940477#comment13
         val blockingExecutor =
             threadConfig.defaultBlockingExecutor
                 ?: AndroidThreads.factory
@@ -112,19 +112,32 @@ internal class ThreadConfigModule(private val threadConfig: CameraPipe.ThreadCon
             }
         }
 
-        val cameraHandlerFn = {
-            if (threadConfig.defaultCameraHandler == null) {
-                val handlerThread =
-                    HandlerThread("CXCP-Camera-H", cameraThreadPriority).also { it.start() }
-                cameraPipeLifetime.addShutdownAction(CameraPipeLifetime.ShutdownType.THREAD) {
-                    handlerThread.quit()
-                }
+        val cameraHandlerFn =
+            threadConfig.defaultCameraHandlerFn
+                ?: {
+                    if (threadConfig.defaultCameraHandler == null) {
+                        val handlerThread =
+                            HandlerThread("CXCP-Camera-H", cameraThreadPriority).also { thread ->
+                                thread.uncaughtExceptionHandler =
+                                    Thread.UncaughtExceptionHandler { _, throwable ->
+                                        if (throwable is CancellationException) {
+                                            return@UncaughtExceptionHandler
+                                        }
+                                    }
+                                thread.start()
+                            }
+                        cameraPipeLifetime.addShutdownAction(
+                            CameraPipeLifetime.ShutdownType.THREAD
+                        ) {
+                            handlerThread.quit()
+                            handlerThread.join(1000)
+                        }
 
-                Handler(handlerThread.looper)
-            } else {
-                threadConfig.defaultCameraHandler
-            }
-        }
+                        Handler(handlerThread.looper)
+                    } else {
+                        threadConfig.defaultCameraHandler
+                    }
+                }
 
         val cameraExecutorFn = {
             if (threadConfig.defaultCameraExecutor == null) {
@@ -144,14 +157,23 @@ internal class ThreadConfigModule(private val threadConfig: CameraPipe.ThreadCon
             }
         }
 
-        val cameraPipeScope =
-            CoroutineScope(SupervisorJob() + lightweightDispatcher + CoroutineName("CXCP"))
-        val cameraPipeDispatchScope =
-            CoroutineScope(SupervisorJob() + CoroutineName("CXCP-Dispatch"))
+        val cameraPipeScope: CoroutineScope
+        val cameraPipeDispatchScope: CoroutineScope
+        if (threadConfig.testOnlyScope != null) {
+            cameraPipeScope = threadConfig.testOnlyScope
+            cameraPipeDispatchScope = threadConfig.testOnlyScope
+        } else {
+            cameraPipeScope =
+                CoroutineScope(
+                    SupervisorJob(cameraPipeJob) + lightweightDispatcher + CoroutineName("CXCP")
+                )
+            cameraPipeDispatchScope =
+                CoroutineScope(SupervisorJob(cameraPipeJob) + CoroutineName("CXCP-Dispatch"))
 
-        cameraPipeLifetime.addShutdownAction(CameraPipeLifetime.ShutdownType.SCOPE) {
-            cameraPipeScope.cancel()
-            cameraPipeDispatchScope.cancel()
+            cameraPipeLifetime.addShutdownAction(CameraPipeLifetime.ShutdownType.SCOPE) {
+                cameraPipeScope.cancel()
+                cameraPipeDispatchScope.cancel()
+            }
         }
 
         return Threads(
@@ -165,33 +187,6 @@ internal class ThreadConfigModule(private val threadConfig: CameraPipe.ThreadCon
             lightweightDispatcher = lightweightDispatcher,
             camera2Handler = cameraHandlerFn,
             camera2Executor = cameraExecutorFn,
-        )
-    }
-
-    private fun provideTestOnlyThreads(
-        testDispatcher: CoroutineDispatcher,
-        testScope: CoroutineScope,
-    ): Threads {
-        val testExecutor = testDispatcher.asExecutor()
-
-        // TODO: This should delegate to the testDispatcher instead of using a HandlerThread.
-        val cameraHandlerFn = {
-            val handlerThread =
-                HandlerThread("CXCP-Camera-H", cameraThreadPriority).also { it.start() }
-            Handler(handlerThread.looper)
-        }
-
-        return Threads(
-            cameraPipeScope = testScope,
-            cameraPipeDispatchScope = testScope,
-            blockingExecutor = testExecutor,
-            blockingDispatcher = testDispatcher,
-            backgroundExecutor = testExecutor,
-            backgroundDispatcher = testDispatcher,
-            lightweightExecutor = testExecutor,
-            lightweightDispatcher = testDispatcher,
-            camera2Handler = cameraHandlerFn,
-            camera2Executor = { testExecutor },
         )
     }
 }

@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.tokens.ShapeKeyTokens
+import androidx.compose.material3.tokens.ShapeToken
 import androidx.compose.material3.tokens.ShapeTokens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -49,7 +50,7 @@ import androidx.compose.ui.graphics.Shape
  * You can change the shape that a component has by overriding the shape parameter for that
  * component. For example, by default, buttons use the shape style “full.” If your product requires
  * a smaller amount of roundedness, you can override the shape parameter with a different shape
- * value like [MaterialTheme.shapes.small].
+ * value like [Shapes.small] of [MaterialTheme.shapes].
  *
  * To learn more about shapes, see
  * [Material Design shapes](https://m3.material.io/styles/shape/overview).
@@ -66,18 +67,25 @@ import androidx.compose.ui.graphics.Shape
  *   use this shape.
  * @param extraLarge A shape style with 4 same-sized corners whose size are bigger than
  *   [Shapes.large] and smaller than [CircleShape]. By default large FABs use this shape.
+ * @param largeIncreased A shape style with 4 same-sized corners whose size are bigger than
+ *   [Shapes.medium] and smaller than [Shapes.extraLarge]. Slightly larger variant to
+ *   [Shapes.large].
+ * @param extraLargeIncreased A shape style with 4 same-sized corners whose size are bigger than
+ *   [Shapes.large] and smaller than [Shapes.extraExtraLarge]. Slightly larger variant to
+ *   [Shapes.extraLarge].
+ * @param extraExtraLarge A shape style with 4 same-sized corners whose size are bigger than
+ *   [Shapes.extraLarge] and smaller than [CircleShape].
  */
 // TODO: Update new shape descriptions to list what components leverage them by default.
 // TODO(b/368578382): Update 'increased' variant kdocs to reference design documentation.
 @Immutable
-class Shapes
-internal constructor(
+public class Shapes(
     // Shapes None and Full are omitted as None is a RectangleShape and Full is a CircleShape.
-    val extraSmall: CornerBasedShape = ShapeDefaults.ExtraSmall,
-    val small: CornerBasedShape = ShapeDefaults.Small,
-    val medium: CornerBasedShape = ShapeDefaults.Medium,
-    val large: CornerBasedShape = ShapeDefaults.Large,
-    val extraLarge: CornerBasedShape = ShapeDefaults.ExtraLarge,
+    public val extraSmall: CornerBasedShape = ShapeDefaults.ExtraSmall,
+    public val small: CornerBasedShape = ShapeDefaults.Small,
+    public val medium: CornerBasedShape = ShapeDefaults.Medium,
+    public val large: CornerBasedShape = ShapeDefaults.Large,
+    public val extraLarge: CornerBasedShape = ShapeDefaults.ExtraLarge,
     largeIncreased: CornerBasedShape = ShapeDefaults.LargeIncreased,
     extraLargeIncreased: CornerBasedShape = ShapeDefaults.ExtraLargeIncreased,
     extraExtraLarge: CornerBasedShape = ShapeDefaults.ExtraExtraLarge,
@@ -86,19 +94,19 @@ internal constructor(
      * A shape style with 4 same-sized corners whose size are bigger than [Shapes.medium] and
      * smaller than [Shapes.extraLarge]. Slightly larger variant to [Shapes.large].
      */
-    internal val largeIncreased = largeIncreased
+    public val largeIncreased: CornerBasedShape = largeIncreased
 
     /**
      * A shape style with 4 same-sized corners whose size are bigger than [Shapes.large] and smaller
      * than [Shapes.extraExtraLarge]. Slightly larger variant to [Shapes.extraLarge].
      */
-    internal val extraLargeIncreased = extraLargeIncreased
+    public val extraLargeIncreased: CornerBasedShape = extraLargeIncreased
 
     /**
      * A shape style with 4 same-sized corners whose size are bigger than [Shapes.extraLarge] and
      * smaller than [CircleShape].
      */
-    internal val extraExtraLarge = extraExtraLarge
+    public val extraExtraLarge: CornerBasedShape = extraExtraLarge
 
     /**
      * Material surfaces can be displayed in different shapes. Shapes direct attention, identify
@@ -121,7 +129,7 @@ internal constructor(
      * You can change the shape that a component has by overriding the shape parameter for that
      * component. For example, by default, buttons use the shape style “full.” If your product
      * requires a smaller amount of roundedness, you can override the shape parameter with a
-     * different shape value like [MaterialTheme.shapes.small].
+     * different shape value like [Shapes.small] of [MaterialTheme.shapes].
      *
      * To learn more about shapes, see
      * [Material Design shapes](https://m3.material.io/styles/shape/overview).
@@ -140,7 +148,7 @@ internal constructor(
      * @param extraLarge A shape style with 4 same-sized corners whose size are bigger than
      *   [Shapes.large] and smaller than [CircleShape]. By default large FABs use this shape.
      */
-    constructor(
+    public constructor(
         extraSmall: CornerBasedShape = ShapeDefaults.ExtraSmall,
         small: CornerBasedShape = ShapeDefaults.Small,
         medium: CornerBasedShape = ShapeDefaults.Medium,
@@ -158,7 +166,7 @@ internal constructor(
     )
 
     /** Returns a copy of this Shapes, optionally overriding some of the values. */
-    internal fun copy(
+    public fun copy(
         extraSmall: CornerBasedShape = this.extraSmall,
         small: CornerBasedShape = this.small,
         medium: CornerBasedShape = this.medium,
@@ -180,7 +188,7 @@ internal constructor(
         )
 
     /** Returns a copy of this Shapes, optionally overriding some of the values. */
-    fun copy(
+    public fun copy(
         extraSmall: CornerBasedShape = this.extraSmall,
         small: CornerBasedShape = this.small,
         medium: CornerBasedShape = this.medium,
@@ -194,8 +202,6 @@ internal constructor(
             large = large,
             extraLarge = extraLarge,
         )
-
-    internal var defaultVerticalDragHandleShapesCached: DragHandleShapes? = null
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -234,33 +240,65 @@ internal constructor(
             "extralargeIncreased=$extraLargeIncreased, " +
             "extraExtraLarge=$extraExtraLarge)"
     }
+
+    /** Cached shapes used in components */
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultButtonShapesCached: ButtonShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultToggleButtonShapesCached: ToggleButtonShapes? = null
+    internal var defaultChipShapesCached: ChipShapes? = null
+    internal var defaultVerticalDragHandleShapesCached: DragHandleShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultIconToggleButtonShapesCached: IconToggleButtonShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultIconButtonShapesCached: IconButtonShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultListItemShapesCached: ListItemShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuStandaloneItemShapesCached: MenuItemShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuLeadingItemShapesCached: MenuItemShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuMiddleItemShapesCached: MenuItemShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuTrailingItemShapesCached: MenuItemShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuStandaloneGroupShapesCached: MenuGroupShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuLeadingGroupShapesCached: MenuGroupShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuMiddleGroupShapesCached: MenuGroupShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuTrailingGroupShapesCached: MenuGroupShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultTimePickerShapesCached: TimePickerShapes? = null
 }
 
 /** Contains the default values used by [Shapes] */
-object ShapeDefaults {
+public object ShapeDefaults {
     /** Extra small sized corner shape */
-    val ExtraSmall: CornerBasedShape = ShapeTokens.CornerExtraSmall
+    public val ExtraSmall: CornerBasedShape = ShapeTokens.CornerExtraSmall
 
     /** Small sized corner shape */
-    val Small: CornerBasedShape = ShapeTokens.CornerSmall
+    public val Small: CornerBasedShape = ShapeTokens.CornerSmall
 
     /** Medium sized corner shape */
-    val Medium: CornerBasedShape = ShapeTokens.CornerMedium
+    public val Medium: CornerBasedShape = ShapeTokens.CornerMedium
 
     /** Large sized corner shape */
-    val Large: CornerBasedShape = ShapeTokens.CornerLarge
+    public val Large: CornerBasedShape = ShapeTokens.CornerLarge
 
     /** Large sized corner shape, slightly larger than [Large] */
-    internal val LargeIncreased: CornerBasedShape = ShapeTokens.CornerLargeIncreased
+    public val LargeIncreased: CornerBasedShape = ShapeTokens.CornerLargeIncreased
 
     /** Extra large sized corner shape */
-    val ExtraLarge: CornerBasedShape = ShapeTokens.CornerExtraLarge
+    public val ExtraLarge: CornerBasedShape = ShapeTokens.CornerExtraLarge
 
     /** Extra large sized corner shape, slightly larger than [ExtraLarge] */
-    internal val ExtraLargeIncreased: CornerBasedShape = ShapeTokens.CornerExtraLargeIncreased
+    public val ExtraLargeIncreased: CornerBasedShape = ShapeTokens.CornerExtraLargeIncreased
 
     /** An extra extra large (XXL) sized corner shape */
-    internal val ExtraExtraLarge: CornerBasedShape = ShapeTokens.CornerExtraExtraLarge
+    public val ExtraExtraLarge: CornerBasedShape = ShapeTokens.CornerExtraExtraLarge
 
     // TODO(b/368578382): Update 'increased' variant kdocs to reference design documentation.
     /** A non-rounded corner size */
@@ -331,7 +369,7 @@ internal fun CornerBasedShape.end(
  * tokens: ``MaterialTheme.shapes.fromToken(FabPrimarySmallTokens.ContainerShape)``
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-internal fun Shapes.fromToken(value: ShapeKeyTokens): Shape {
+internal fun Shapes.fromToken(value: ShapeToken): Shape {
     return when (value) {
         ShapeKeyTokens.CornerExtraLarge -> extraLarge
         ShapeKeyTokens.CornerExtraLargeIncreased -> extraLargeIncreased
@@ -348,14 +386,11 @@ internal fun Shapes.fromToken(value: ShapeKeyTokens): Shape {
         ShapeKeyTokens.CornerNone -> RectangleShape
         ShapeKeyTokens.CornerSmall -> small
         ShapeKeyTokens.CornerLargeStart -> large.start()
+        else -> RectangleShape
     }
 }
 
-/**
- * Converts a shape token key to the local shape provided by the theme The color is subscribed to
- * [LocalShapes] changes
- */
-internal val ShapeKeyTokens.value: Shape
+internal val ShapeToken.value: Shape
     @Composable @ReadOnlyComposable get() = MaterialTheme.shapes.fromToken(this)
 
 /** CompositionLocal used to specify the default shapes for the surfaces. */

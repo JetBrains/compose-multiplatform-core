@@ -47,7 +47,6 @@ public class Constraints {
      * `NetworkRequest`-s with `NetworkSpecifier` set aren't supported, as well as `NetworkRequest`
      * with `setIncludeOtherUidNetworks` set. passed.
      */
-    @get:RequiresApi(21) // NetworkRequest class is available since 21
     public val requiredNetworkRequest: NetworkRequest?
         get() = requiredNetworkRequestCompat.networkRequest
 
@@ -134,8 +133,6 @@ public class Constraints {
      *   acceptable level for the [WorkRequest] to run. The default value is `false`.
      */
     @Ignore
-    @SuppressLint("NewApi")
-    @RequiresApi(23) // requiresDeviceIdle is supported since API 23
     public constructor(
         requiredNetworkType: NetworkType = NetworkType.NOT_REQUIRED,
         requiresCharging: Boolean = false,
@@ -242,7 +239,6 @@ public class Constraints {
     }
 
     /** @return `true` if the work should only execute while the device is idle */
-    @RequiresApi(23)
     public fun requiresDeviceIdle(): Boolean {
         return requiresDeviceIdle
     }
@@ -340,7 +336,7 @@ public class Constraints {
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public constructor(constraints: Constraints) {
             requiresCharging = constraints.requiresCharging()
-            requiresDeviceIdle = Build.VERSION.SDK_INT >= 23 && constraints.requiresDeviceIdle()
+            requiresDeviceIdle = constraints.requiresDeviceIdle()
             requiredNetworkType = constraints.requiredNetworkType
             requiresBatteryNotLow = constraints.requiresBatteryNotLow()
             requiresStorageNotLow = constraints.requiresStorageNotLow()
@@ -370,7 +366,6 @@ public class Constraints {
          * @param requiresDeviceIdle `true` if device must be idle for the work to run
          * @return The current [Builder]
          */
-        @RequiresApi(23)
         public fun setRequiresDeviceIdle(requiresDeviceIdle: Boolean): Builder {
             this.requiresDeviceIdle = requiresDeviceIdle
             return this
@@ -402,7 +397,6 @@ public class Constraints {
          * @param networkType The type of network required for t
          * @return The current [Builder]
          */
-        @RequiresApi(21)
         public fun setRequiredNetworkRequest(
             networkRequest: NetworkRequest,
             networkType: NetworkType,
@@ -549,12 +543,11 @@ public class Constraints {
                 triggerMaxContentDelay = -1
             }
 
-            @Suppress("NewApi")
             return Constraints(
                 requiredNetworkRequestCompat = requiredNetworkRequest,
                 requiredNetworkType = requiredNetworkType,
                 requiresCharging = requiresCharging,
-                requiresDeviceIdle = Build.VERSION.SDK_INT >= 23 && requiresDeviceIdle,
+                requiresDeviceIdle = requiresDeviceIdle,
                 requiresBatteryNotLow = requiresBatteryNotLow,
                 requiresStorageNotLow = requiresStorageNotLow,
                 contentTriggerMaxDelayMillis = triggerMaxContentDelay,

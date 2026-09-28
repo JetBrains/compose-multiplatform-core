@@ -23,9 +23,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.ExtendedFloatingActionButton
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -45,7 +45,7 @@ import androidx.compose.ui.Modifier
  * specific provider value instead of all of them.
  */
 @Suppress("ForbiddenSuperClass")
-class PreviewActivity : ComponentActivity() {
+public class PreviewActivity : ComponentActivity() {
 
     private val TAG = "PreviewActivity"
 
@@ -116,10 +116,10 @@ class PreviewActivity : ComponentActivity() {
                     },
                     floatingActionButton = {
                         ExtendedFloatingActionButton(
-                            text = { Text("Next") },
                             onClick = {
                                 index.intValue = (index.intValue + 1) % previewParameters.size
                             },
+                            content = { Text("Next") },
                         )
                     },
                 )

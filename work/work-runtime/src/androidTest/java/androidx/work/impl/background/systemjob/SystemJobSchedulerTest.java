@@ -50,10 +50,10 @@ import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 import androidx.work.Configuration;
 import androidx.work.OneTimeWorkRequest;
+import androidx.work.RunnableScheduler;
 import androidx.work.WorkInfo;
 import androidx.work.WorkManagerTest;
 import androidx.work.impl.WorkDatabase;
-import androidx.work.impl.WorkManagerImpl;
 import androidx.work.impl.model.PreferenceDao;
 import androidx.work.impl.model.SystemIdInfoDao;
 import androidx.work.impl.model.WorkSpec;
@@ -70,7 +70,6 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 @RunWith(AndroidJUnit4.class)
-@SdkSuppress(minSdkVersion = WorkManagerImpl.MIN_JOB_SCHEDULER_API_LEVEL)
 public class SystemJobSchedulerTest extends WorkManagerTest {
 
     private static final String TEST_ID = "test";
@@ -128,14 +127,15 @@ public class SystemJobSchedulerTest extends WorkManagerTest {
                         mJobScheduler,
                         new SystemJobInfoConverter(context, configuration.getClock(),
                                 configuration.isMarkingJobsAsImportantWhileForeground()
-                        )));
+                        ),
+                        mock(RunnableScheduler.class)));
 
         doNothing().when(mSystemJobScheduler).scheduleInternal(any(WorkSpec.class), anyInt());
     }
 
     @Test
     @SmallTest
-    @SdkSuppress(minSdkVersion = 23, maxSdkVersion = 23)
+    @SdkSuppress(maxSdkVersion = 23)
     public void testSystemJobScheduler_schedulesTwiceOnApi23() {
         OneTimeWorkRequest work1 = new OneTimeWorkRequest.Builder(TestWorker.class).build();
         WorkSpec workSpec1 = work1.getWorkSpec();
@@ -175,7 +175,7 @@ public class SystemJobSchedulerTest extends WorkManagerTest {
 
     @Test
     @SmallTest
-    @SdkSuppress(minSdkVersion = 23, maxSdkVersion = 23)
+    @SdkSuppress(maxSdkVersion = 23)
     public void testSystemJobScheduler_cancelsTwiceOnApi23() {
         mSystemJobScheduler.cancel(TEST_ID);
         verify(mJobScheduler, times(2)).cancel(anyInt());
@@ -198,7 +198,6 @@ public class SystemJobSchedulerTest extends WorkManagerTest {
 
     @Test
     @SmallTest
-    @SdkSuppress(minSdkVersion = 23)
     public void testSystemJobScheduler_ignoresUnfoundWork() {
         OneTimeWorkRequest work = new OneTimeWorkRequest.Builder(TestWorker.class).build();
         WorkSpec workSpec = work.getWorkSpec();
@@ -210,7 +209,6 @@ public class SystemJobSchedulerTest extends WorkManagerTest {
 
     @Test
     @SmallTest
-    @SdkSuppress(minSdkVersion = 23)
     public void testSystemJobScheduler_ignoresUnenqueuedWork() {
         OneTimeWorkRequest work = new OneTimeWorkRequest.Builder(TestWorker.class)
                 .setInitialState(WorkInfo.State.CANCELLED)
@@ -224,7 +222,6 @@ public class SystemJobSchedulerTest extends WorkManagerTest {
 
     @Test
     @MediumTest
-    @SdkSuppress(minSdkVersion = 23)
     public void testSystemJobScheduler_avoidsCrash() {
         doCallRealMethod().when(mSystemJobScheduler)
                 .scheduleInternal(any(WorkSpec.class), anyInt());
@@ -239,9 +236,9 @@ public class SystemJobSchedulerTest extends WorkManagerTest {
         verify(mJobScheduler, times(1)).schedule(any(JobInfo.class));
     }
 
+    @SdkSuppress(minSdkVersion = 24) // b/452723676
     @Test
     @MediumTest
-    @SdkSuppress(minSdkVersion = 23)
     public void testSchedulingExceptionHandler() {
         doCallRealMethod().when(mSystemJobScheduler)
                 .scheduleInternal(any(WorkSpec.class), anyInt());
@@ -257,7 +254,7 @@ public class SystemJobSchedulerTest extends WorkManagerTest {
     @Test
     @LargeTest
     // JobSchedulerNamespaceTest covers maxSdkVersion 34+
-    @SdkSuppress(minSdkVersion = 23, maxSdkVersion = 33)
+    @SdkSuppress(maxSdkVersion = 33)
     public void testSystemJobScheduler_cancelsInvalidJobs() {
         List<JobInfo> allJobInfos = new ArrayList<>(2);
 

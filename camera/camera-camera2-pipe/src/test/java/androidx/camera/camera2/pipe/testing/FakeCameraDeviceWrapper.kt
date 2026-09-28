@@ -20,13 +20,11 @@ import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.TotalCaptureResult
 import android.hardware.camera2.params.InputConfiguration
-import android.os.Build
 import android.view.Surface
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.AudioRestrictionMode
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.RequestTemplate
-import androidx.camera.camera2.pipe.compat.Api23Compat
 import androidx.camera.camera2.pipe.compat.CameraCaptureSessionWrapper
 import androidx.camera.camera2.pipe.compat.CameraDeviceWrapper
 import androidx.camera.camera2.pipe.compat.CameraExtensionSessionWrapper
@@ -34,7 +32,7 @@ import androidx.camera.camera2.pipe.compat.ExtensionSessionConfigData
 import androidx.camera.camera2.pipe.compat.InputConfigData
 import androidx.camera.camera2.pipe.compat.OutputConfigurationWrapper
 import androidx.camera.camera2.pipe.compat.SessionConfigData
-import kotlin.reflect.KClass
+import java.lang.Class
 
 /** Fake implementation of [CameraDeviceWrapper] for tests. */
 internal class FakeCameraDeviceWrapper(val fakeCamera: RobolectricCameras.FakeCamera) :
@@ -53,12 +51,7 @@ internal class FakeCameraDeviceWrapper(val fakeCamera: RobolectricCameras.FakeCa
     override fun createReprocessCaptureRequest(
         inputResult: TotalCaptureResult
     ): CaptureRequest.Builder {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            return Api23Compat.createReprocessCaptureRequest(fakeCamera.cameraDevice, inputResult)
-        }
-        throw UnsupportedOperationException(
-            "createReprocessCaptureRequest is not supported below API 23"
-        )
+        return fakeCamera.cameraDevice.createReprocessCaptureRequest(inputResult)
     }
 
     override fun createCaptureSession(
@@ -152,9 +145,9 @@ internal class FakeCameraDeviceWrapper(val fakeCamera: RobolectricCameras.FakeCa
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+    override fun <T : Any> unwrapAs(type: Class<T>): T? =
         when (type) {
-            CameraDevice::class -> fakeCamera.cameraDevice as T
+            CameraDevice::class.java -> fakeCamera.cameraDevice as T
             else -> null
         }
 }

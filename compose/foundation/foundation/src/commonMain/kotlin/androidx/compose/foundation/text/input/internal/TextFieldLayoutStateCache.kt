@@ -16,14 +16,14 @@
 
 package androidx.compose.foundation.text.input.internal
 
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.internal.checkPreconditionNotNull
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextDelegate
 import androidx.compose.foundation.text.input.PlacedAnnotation
 import androidx.compose.foundation.text.input.TextFieldCharSequence
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.text.input.internal.TextFieldLayoutStateCache.MeasureInputs
-import androidx.compose.foundation.text.input.internal.TextFieldLayoutStateCache.NonMeasureInputs
 import androidx.compose.runtime.SnapshotMutationPolicy
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -43,7 +43,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.intl.Locale
-import androidx.compose.ui.text.intl.PlatformLocale
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -133,6 +133,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
         density: Density,
         layoutDirection: LayoutDirection,
         fontFamilyResolver: FontFamily.Resolver,
+        defaultLocaleList: LocaleList,
         constraints: Constraints,
     ): TextLayoutResult {
         val measureInputs =
@@ -140,6 +141,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
                 density = density,
                 layoutDirection = layoutDirection,
                 fontFamilyResolver = fontFamilyResolver,
+                defaultLocaleList = defaultLocaleList,
                 constraints = constraints,
             )
         this.measureInputs = measureInputs
@@ -150,19 +152,27 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
         return getOrComputeLayout(nonMeasureInputs, measureInputs)
     }
 
+    @OptIn(ExperimentalFoundationApi::class)
     private fun getOrComputeLayout(
         nonMeasureInputs: NonMeasureInputs,
         measureInputs: MeasureInputs,
     ): TextLayoutResult {
         val visualText = nonMeasureInputs.textFieldState.visualText
         val visualTextAnnotations =
-            mergeNullableLists(visualText.composingAnnotations, visualText.outputAnnotations)
+            if (ComposeFoundationFlags.isBasicTextFieldStyledTextEnabled) {
+                mergeNullableLists(
+                    visualText.composingAnnotations,
+                    visualText.textFieldTextStyles?.textStyleBuffer?.getAllStyles(),
+                )
+            } else {
+                mergeNullableLists(visualText.composingAnnotations, visualText.outputAnnotations)
+            }
 
         // Use withCurrent here so the cache itself is never reported as a read state object. It
         // doesn't need to be, because it's always guaranteed to return the same value for the same
         // inputs, so it's good enough to read the input states and those will invalidate the
         // caller when they change.
-        record.withCurrent { cachedRecord ->
+        record.withCurrent(this) { cachedRecord ->
             val cachedResult = cachedRecord.layoutResult
 
             if (
@@ -177,6 +187,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
                     cachedRecord.fontScale == measureInputs.density.fontScale &&
                     cachedRecord.constraints == measureInputs.constraints &&
                     cachedRecord.fontFamilyResolver == measureInputs.fontFamilyResolver &&
+                    cachedRecord.defaultLocaleList == measureInputs.defaultLocaleList &&
                     // one of the resolved fonts has updated, and this MultiParagraph is no longer
                     // valid for measure or display. This read is also a snapshot read guaranteeing
                     // that when the resolved font is stale, readers of text layout will be
@@ -211,6 +222,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
                                 cachedResult.layoutInput.density,
                                 cachedResult.layoutInput.layoutDirection,
                                 cachedResult.layoutInput.fontFamilyResolver,
+                                cachedResult.layoutInput.defaultLocaleList,
                                 cachedResult.layoutInput.constraints,
                             )
                     )
@@ -241,6 +253,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
                             this.fontScale = measureInputs.fontScale
                             this.constraints = measureInputs.constraints
                             this.fontFamilyResolver = measureInputs.fontFamilyResolver
+                            this.defaultLocaleList = measureInputs.defaultLocaleList
                             this.layoutResult = newResult
                         }
                     }
@@ -272,6 +285,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
                     defaultFontFamilyResolver = measureInputs.fontFamilyResolver,
                     defaultDensity = measureInputs.density,
                     defaultLayoutDirection = measureInputs.layoutDirection,
+                    defaultLocaleList = measureInputs.defaultLocaleList,
                     cacheSize = 1,
                 )
                 .also { textMeasurer = it }
@@ -292,9 +306,9 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
         val finalTextStyle =
             if (nonMeasureInputs.isKeyboardTypePhone) {
                 val textStyle = nonMeasureInputs.textStyle
-                val currentLocale = textStyle.localeList?.let { it[0] } ?: Locale.current
-                val textDirection =
-                    resolveTextDirectionForKeyboardTypePhone(currentLocale.platformLocale)
+                val currentLocale =
+                    textStyle.localeList?.let { it[0] } ?: measureInputs.defaultLocaleList.first()
+                val textDirection = resolveTextDirectionForKeyboardTypePhone(currentLocale)
                 nonMeasureInputs.textStyle.merge(TextStyle(textDirection = textDirection))
             } else {
                 nonMeasureInputs.textStyle
@@ -313,6 +327,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
             layoutDirection = measureInputs.layoutDirection,
             density = measureInputs.density,
             fontFamilyResolver = measureInputs.fontFamilyResolver,
+            defaultLocaleList = measureInputs.defaultLocaleList,
         )
     }
 
@@ -362,6 +377,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
         var fontScale: Float = Float.NaN
         var layoutDirection: LayoutDirection? = null
         var fontFamilyResolver: FontFamily.Resolver? = null
+        var defaultLocaleList: LocaleList? = null
 
         /** Not nullable to avoid boxing. */
         var constraints: Constraints = Constraints()
@@ -383,6 +399,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
             fontScale = value.fontScale
             layoutDirection = value.layoutDirection
             fontFamilyResolver = value.fontFamilyResolver
+            defaultLocaleList = value.defaultLocaleList
             constraints = value.constraints
             layoutResult = value.layoutResult
         }
@@ -399,6 +416,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
                 "fontScale=$fontScale, " +
                 "layoutDirection=$layoutDirection, " +
                 "fontFamilyResolver=$fontFamilyResolver, " +
+                "defaultLocaleList=$defaultLocaleList, " +
                 "constraints=$constraints, " +
                 "layoutResult=$layoutResult" +
                 ")"
@@ -465,6 +483,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
         val density: Density,
         val layoutDirection: LayoutDirection,
         val fontFamilyResolver: FontFamily.Resolver,
+        val defaultLocaleList: LocaleList,
         val constraints: Constraints,
     ) {
         val densityValue: Float = density.density
@@ -477,6 +496,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
                 "fontScale=$fontScale, " +
                 "layoutDirection=$layoutDirection, " +
                 "fontFamilyResolver=$fontFamilyResolver, " +
+                "defaultLocaleList=$defaultLocaleList, " +
                 "constraints=$constraints" +
                 ")"
 
@@ -492,6 +512,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
                                 a.fontScale == b.fontScale &&
                                 a.layoutDirection == b.layoutDirection &&
                                 a.fontFamilyResolver == b.fontFamilyResolver &&
+                                a.defaultLocaleList == b.defaultLocaleList &&
                                 a.constraints == b.constraints
                         } else {
                             !((a == null) xor (b == null))
@@ -508,7 +529,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
  * We need to use the digit direction of the [locale] while deciding TextDirection if KeyboardType
  * is configured as [KeyboardType.Phone].
  */
-internal expect fun resolveTextDirectionForKeyboardTypePhone(locale: PlatformLocale): TextDirection
+internal expect fun resolveTextDirectionForKeyboardTypePhone(locale: Locale): TextDirection
 
 /**
  * Efficiently concatenates two nullable lists. Semantically an empty list is equivalent to a null

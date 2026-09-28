@@ -31,7 +31,6 @@ import androidx.camera.testing.impl.ExifUtil.updateExif
 import androidx.camera.testing.impl.TestImageUtil.createJpegBytes
 import androidx.camera.testing.impl.TestImageUtil.getAverageDiff
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -40,7 +39,6 @@ import org.junit.runner.RunWith
 /** Instrumented tests for [JpegBytes2Image]. */
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class JpegBytes2ImageDeviceTest {
 
     private val operation = JpegBytes2Image()

@@ -18,13 +18,23 @@ package androidx.camera.view;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.junit.Assert.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import android.content.Context;
 import android.os.Build;
 import android.util.Size;
+import android.view.Display;
 import android.view.Window;
 import android.widget.FrameLayout;
 
 import androidx.camera.core.CameraInfo;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCapture.ScreenFlash;
 import androidx.camera.core.SurfaceRequest;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
@@ -40,14 +50,13 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
-import org.robolectric.annotation.internal.DoNotInstrument;
 import org.robolectric.shadows.ShadowWindow;
 
 @RunWith(RobolectricTestRunner.class)
-@DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = {Config.ALL_SDKS})
 public class PreviewViewTest {
     private final Context mAppContext = ApplicationProvider.getApplicationContext();
     private PreviewView mPreviewView;
@@ -56,11 +65,7 @@ public class PreviewViewTest {
     @Before
     public void setUp() {
         mPreviewView = new PreviewView(mAppContext);
-        try {
-            mWindow = ShadowWindow.create(mAppContext);
-        } catch (ClassNotFoundException e) {
-            Assume.assumeTrue("Failed to create shadow window", false);
-        }
+        mWindow = ShadowWindow.create(mAppContext);
     }
 
     @After
@@ -199,6 +204,48 @@ public class PreviewViewTest {
         }
     }
 
+    @Test
+    public void getScreenFlashReturnsNull_whenControllerSetButNoWindowSet() {
+        CameraController cameraController = new LifecycleCameraController(mAppContext);
+
+        mPreviewView.setController(cameraController);
+
+        assertThat(mPreviewView.getScreenFlash()).isNull();
+    }
+
+    @Test
+    public void canSetFlashModeScreen_whenWindowSetAndThenControllerSet() {
+        CameraController cameraController = new LifecycleCameraController(mAppContext);
+        cameraController.setCameraSelector(CameraSelector.DEFAULT_FRONT_CAMERA);
+
+        mPreviewView.setScreenFlashWindow(mWindow);
+        mPreviewView.setController(cameraController);
+
+        cameraController.setImageCaptureFlashMode(ImageCapture.FLASH_MODE_SCREEN);
+    }
+
+    @Test
+    public void canSetFlashModeScreen_whenControllerSetAndThenWindowSet() {
+        CameraController cameraController = new LifecycleCameraController(mAppContext);
+        cameraController.setCameraSelector(CameraSelector.DEFAULT_FRONT_CAMERA);
+
+        mPreviewView.setController(cameraController);
+        mPreviewView.setScreenFlashWindow(mWindow);
+
+        cameraController.setImageCaptureFlashMode(ImageCapture.FLASH_MODE_SCREEN);
+    }
+
+    @Test
+    public void setFlashModeScreenThrowsException_whenControllerSetWithoutScreenFlashWindow() {
+        CameraController cameraController = new LifecycleCameraController(mAppContext);
+        cameraController.setCameraSelector(CameraSelector.DEFAULT_FRONT_CAMERA);
+
+        mPreviewView.setController(cameraController);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> cameraController.setImageCaptureFlashMode(ImageCapture.FLASH_MODE_SCREEN));
+    }
+
     private SurfaceRequest createSurfaceRequestCompatibleWithSurfaceView() {
         FakeCameraInfoInternal cameraInfoInternal = new FakeCameraInfoInternal();
         cameraInfoInternal.setImplementationType(CameraInfo.IMPLEMENTATION_TYPE_CAMERA2);
@@ -213,5 +260,89 @@ public class PreviewViewTest {
             Assume.assumeTrue("Failed to create ScreenFlash", screenFlash != null);
         }
         return screenFlash;
+    }
+
+    @Test
+    @Config(sdk = {Config.ALL_SDKS}, instrumentedPackages = {"androidx.camera.view"})
+    public void registerAndUnregisterDisplayListener_notInEditMode() {
+        // 1. Create a spy of the view to track method calls
+        PreviewView previewViewSpy = Mockito.spy(mPreviewView);
+
+        // 2. Override isInEditMode() method to return false to simulate the view being not in
+        // edit mode
+        when(previewViewSpy.isInEditMode()).thenReturn(false);
+
+        // 3. Trigger the lifecycle onAttachedToWindow method
+        previewViewSpy.onAttachedToWindow();
+
+        // 4. Verify the startListeningToDisplayChange method was called once
+        Mockito.verify(previewViewSpy, times(1)).startListeningToDisplayChange();
+
+        // 5. Trigger the lifecycle onDetachedFromWindow method
+        previewViewSpy.onDetachedFromWindow();
+
+        // 6. Verify the stopListeningToDisplayChange method was called once
+        Mockito.verify(previewViewSpy, times(1)).stopListeningToDisplayChange();
+    }
+
+    @Test
+    @Config(sdk = {Config.ALL_SDKS}, instrumentedPackages = {"androidx.camera.view"})
+    public void doesNotRegisterAndUnregisterDisplayListener_inEditMode() {
+        // 1. Create a spy of the view to track method calls
+        PreviewView previewViewSpy = Mockito.spy(mPreviewView);
+
+        // 2. Override isInEditMode() method to return true to simulate the view being in edit mode
+        when(previewViewSpy.isInEditMode()).thenReturn(true);
+
+        // 3. Trigger the lifecycle onAttachedToWindow method
+        previewViewSpy.onAttachedToWindow();
+
+        // 4. Verify the startListeningToDisplayChange method was NEVER called
+        Mockito.verify(previewViewSpy, never()).startListeningToDisplayChange();
+
+        // 5. Trigger the lifecycle onDetachedFromWindow method
+        previewViewSpy.onDetachedFromWindow();
+
+        // 6. Verify the stopListeningToDisplayChange method was NEVER called
+        Mockito.verify(previewViewSpy, never()).stopListeningToDisplayChange();
+    }
+
+    @Test
+    @Config(sdk = {Config.ALL_SDKS}, instrumentedPackages = {"androidx.camera.view"})
+    public void controllerAutoAttached_whenLayoutCompletes() {
+        PreviewView previewViewSpy = Mockito.spy(mPreviewView);
+        Display display = Mockito.mock(Display.class);
+        when(previewViewSpy.getDisplay()).thenReturn(display);
+        when(previewViewSpy.isAttachedToWindow()).thenReturn(true);
+
+        CameraController cameraController = Mockito.mock(CameraController.class);
+
+        // Set controller when dimensions are 0 (unmeasured).
+        when(previewViewSpy.getWidth()).thenReturn(0);
+        when(previewViewSpy.getHeight()).thenReturn(0);
+        previewViewSpy.setController(cameraController);
+
+        // Verify controller is not attached before layout pass.
+        verify(cameraController, never()).attachPreviewSurface(any(), any());
+
+        // Simulate layout pass with positive dimensions.
+        when(previewViewSpy.getWidth()).thenReturn(640);
+        when(previewViewSpy.getHeight()).thenReturn(480);
+        previewViewSpy.onLayout(true, 0, 0, 640, 480);
+
+        // Verify attachPreviewSurface was automatically invoked once layout completed.
+        verify(cameraController, times(1)).attachPreviewSurface(any(), any());
+
+        // Subsequent layout with same size does not trigger duplicate attachment.
+        previewViewSpy.onLayout(false, 0, 0, 640, 480);
+        verify(cameraController, times(1)).attachPreviewSurface(any(), any());
+
+        // When view is detached from window, controller is cleared.
+        previewViewSpy.onDetachedFromWindow();
+        verify(cameraController, times(1)).clearPreviewSurface();
+
+        // When re-attached and laid out, controller is auto-attached again.
+        previewViewSpy.onLayout(false, 0, 0, 640, 480);
+        verify(cameraController, times(2)).attachPreviewSurface(any(), any());
     }
 }

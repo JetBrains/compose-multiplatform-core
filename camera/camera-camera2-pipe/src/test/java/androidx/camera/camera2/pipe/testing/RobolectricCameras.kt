@@ -25,7 +25,6 @@ import android.content.Context
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.camera.camera2.pipe.CameraId
@@ -67,16 +66,14 @@ public object RobolectricCameras {
      * CameraDevice objects to be created for tests.
      */
     @Suppress("MissingPermission")
-    fun create(metadata: Map<CameraCharacteristics.Key<*>, Any> = emptyMap()): CameraId {
+    fun create(apply: ShadowCameraCharacteristics.() -> Unit = {}): CameraId {
         val shadowCameraManager = Shadow.extract<Any>(cameraManager) as ShadowCameraManager
 
         val characteristics = ShadowCameraCharacteristics.newCameraCharacteristics()
         val shadowCharacteristics = Shadow.extract<ShadowCameraCharacteristics>(characteristics)
 
         // Configure the camera characteristics
-        for (entry in metadata) {
-            shadowCharacteristics.set(entry.key, entry.value)
-        }
+        apply(shadowCharacteristics)
 
         val cameraNumber = cameraIds.incrementAndGet()
         val cameraId = CameraId("FakeCamera-$cameraNumber")
@@ -162,16 +159,15 @@ public object RobolectricCameras {
 }
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class RobolectricCamerasTest {
     private val mainLooper = shadowOf(Looper.getMainLooper())
 
     @Test
     fun fakeCamerasCanBeOpened() {
-        val fakeCameraId =
-            RobolectricCameras.create(
-                mapOf(CameraCharacteristics.LENS_FACING to CameraCharacteristics.LENS_FACING_BACK)
-            )
+        val fakeCameraId = RobolectricCameras.create {
+            set(CameraCharacteristics.LENS_FACING, CameraCharacteristics.LENS_FACING_BACK)
+        }
         val fakeCamera = RobolectricCameras.open(fakeCameraId)
 
         assertThat(fakeCamera).isNotNull()

@@ -16,7 +16,6 @@
 
 package androidx.camera.core
 
-import android.os.Build
 import androidx.camera.core.impl.CameraControlInternal
 import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.CameraInternal
@@ -25,6 +24,7 @@ import androidx.camera.testing.fakes.FakeCameraInfoInternal
 import androidx.camera.testing.impl.fakes.FakeCameraFactory
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.ExecutionException
+import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,7 +35,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 public class CameraSelectorTest {
 
     private val mRearId = "0"
@@ -262,7 +262,7 @@ public class CameraSelectorTest {
     fun ofIdentifier_ignoresNonExistentIdentifier() {
         val rearId = (mRearCamera.cameraInfo as CameraInfoInternal).cameraIdentifier
         // Create an identifier that does not correspond to any available camera.
-        val fakeId = CameraIdentifier.create("fake-id")
+        val fakeId = CameraIdentifier.Factory.create("fake-id")
 
         val selector = CameraSelector.of(fakeId, rearId)
         val filtered = selector.filter(mCameraInfos)
@@ -273,7 +273,7 @@ public class CameraSelectorTest {
 
     @Test
     fun ofIdentifier_returnsEmpty_whenOnlyNonExistentIdentifierIsUsed() {
-        val fakeId = CameraIdentifier.create("fake-id")
+        val fakeId = CameraIdentifier.Factory.create("fake-id")
         val selector = CameraSelector.of(fakeId)
         val filtered = selector.filter(mCameraInfos)
         assertThat(filtered).isEmpty()
@@ -292,5 +292,75 @@ public class CameraSelectorTest {
         assertThat(filtered)
             .containsExactly(mRearCamera.cameraInfo, mFrontCamera.cameraInfo)
             .inOrder()
+    }
+
+    @Test
+    fun fromSelector_copiesPhysicalCameraId() {
+        val physicalCameraId = "physical-camera-1"
+        val original =
+            CameraSelector.Builder()
+                .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                .setPhysicalCameraId(physicalCameraId)
+                .build()
+
+        val copy = CameraSelector.Builder.fromSelector(original).build()
+
+        assertThat(copy.physicalCameraId).isEqualTo(physicalCameraId)
+        assertThat(copy.lensFacing).isEqualTo(CameraSelector.LENS_FACING_BACK)
+    }
+
+    @Test
+    fun fromSelector_whenPhysicalCameraIdIsNull_remainsNull() {
+        val original =
+            CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_FRONT).build()
+
+        val copy = CameraSelector.Builder.fromSelector(original).build()
+
+        assertThat(copy.physicalCameraId).isNull()
+        assertThat(copy.lensFacing).isEqualTo(CameraSelector.LENS_FACING_FRONT)
+    }
+
+    @Test
+    fun setLensCategory_getLensCategoryReturnsCorrectValue() {
+        val selector =
+            CameraSelector.Builder()
+                .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                .setLensCategory(CameraSelector.LENS_CATEGORY_ULTRA_WIDE)
+                .build()
+
+        assertThat(selector.lensCategory).isEqualTo(CameraSelector.LENS_CATEGORY_ULTRA_WIDE)
+    }
+
+    @Test
+    fun getLensCategory_returnsNullWhenUnset() {
+        val selector =
+            CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build()
+
+        assertThat(selector.lensCategory).isNull()
+    }
+
+    @Test
+    fun build_withBothPhysicalCameraIdAndLensCategory_throwsException() {
+        assertThrows(IllegalArgumentException::class.java) {
+            CameraSelector.Builder()
+                .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                .setPhysicalCameraId("physical-camera-1")
+                .setLensCategory(CameraSelector.LENS_CATEGORY_TELEPHOTO)
+                .build()
+        }
+    }
+
+    @Test
+    fun fromSelector_copiesLensCategory() {
+        val original =
+            CameraSelector.Builder()
+                .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                .setLensCategory(CameraSelector.LENS_CATEGORY_NARROWEST_FOV)
+                .build()
+
+        val copy = CameraSelector.Builder.fromSelector(original).build()
+
+        assertThat(copy.lensCategory).isEqualTo(CameraSelector.LENS_CATEGORY_NARROWEST_FOV)
+        assertThat(copy.lensFacing).isEqualTo(CameraSelector.LENS_FACING_BACK)
     }
 }

@@ -40,7 +40,8 @@ internal class VideoCallSpeakerManager(private val bluetoothDeviceChecker: Bluet
      * 1. It is a video call.
      * 2. The audio is currently on the earpiece.
      * 3. A speaker endpoint is available.
-     * 4. There are no other non-watch Bluetooth devices available.
+     * 4. There is no wired headset available.
+     * 5. There are no other non-watch Bluetooth devices available.
      *
      * @param isVideoCall True if the current call is a video call.
      * @param currentEndpoint The currently active audio endpoint.
@@ -70,14 +71,38 @@ internal class VideoCallSpeakerManager(private val bluetoothDeviceChecker: Bluet
             return false
         }
 
-        // Condition 4: No other non-watch Bluetooth device should be available.
-        if (bluetoothDeviceChecker.hasAvailableNonWatchDevice(availableEndpoints)) {
-            Log.i(TAG, "shouldSwitchToSpeaker: Skipping, a non-watch BT device is available.")
+        // Condition 4: No wired headset should be available.
+        if (availableEndpoints.any { it.type == CallEndpointCompat.TYPE_WIRED_HEADSET }) {
+            Log.i(
+                TAG,
+                "shouldSwitchToSpeaker: Wired headset is available. Skipping switch to speaker.",
+            )
             return false
         }
 
-        // All conditions met, recommend the switch.
-        Log.i(TAG, "shouldSwitchToSpeaker: Recommending switch to speaker for video call.")
-        return true
+        // Condition 5: No other non-watch Bluetooth device should be available.
+        // -- Perform a cheap check to see if any BT device exists. If not, we can switch.
+        if (!availableEndpoints.any { it.isBluetoothType() }) {
+            Log.i(
+                TAG,
+                "shouldSwitchToSpeaker: No BT devices found. Recommending switch to speaker.",
+            )
+            return true
+        }
+        // -- Only if a BT device exists, perform the costly permission check.
+        val hasNonWatchDevice =
+            bluetoothDeviceChecker.hasAvailableNonWatchDevice(availableEndpoints)
+        // -- Log the result of the costly check and return the final decision.
+        if (hasNonWatchDevice) {
+            Log.i(TAG, "shouldSwitchToSpeaker: Skipping, a non-watch BT device" + " is available.")
+        } else {
+            // This case now specifically means "only a watch BT device is available"
+            Log.i(
+                TAG,
+                "shouldSwitchToSpeaker: Only watch BT device is available," +
+                    " recommending switch to SPEAKER.",
+            )
+        }
+        return !hasNonWatchDevice
     }
 }

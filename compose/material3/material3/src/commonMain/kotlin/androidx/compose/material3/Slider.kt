@@ -16,6 +16,7 @@
 
 package androidx.compose.material3
 
+import androidx.annotation.FloatRange
 import androidx.annotation.IntRange
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.MutatePriority
@@ -32,16 +33,21 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.horizontalDrag
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.DragInteraction
+import androidx.compose.foundation.interaction.FocusInteraction
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -61,16 +67,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.annotation.RememberInComposition
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
@@ -92,9 +102,11 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
+import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.PointerType
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.layout.AlignmentLine
@@ -103,6 +115,7 @@ import androidx.compose.ui.layout.VerticalAlignmentLine
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
@@ -127,7 +140,6 @@ import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -170,16 +182,24 @@ import kotlinx.coroutines.launch
  *   continuously and allow any value from the range. Must not be negative.
  * @param onValueChangeFinished called when value change has ended. This should not be used to
  *   update the slider value (use [onValueChange] instead), but rather to know when the user has
- *   completed selecting a new value by ending a drag or a click.
+ *   completed selecting a new value by ending a drag or a click. For keyboard movements, this is
+ *   called on every step.
  * @param colors [SliderColors] that will be used to resolve the colors used for this slider in
  *   different states. See [SliderDefaults.colors].
  * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
  *   for this slider. You can create and pass in your own `remember`ed instance to observe
  *   [Interaction]s and customize the appearance / behavior of this slider in different states.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@Deprecated(
+    message =
+        "Use the Slider overload that accepts SliderState, onValueChange, and onValueChangeFinished instead.",
+    replaceWith =
+        ReplaceWith(
+            "Slider(state = rememberSliderState(value, steps, trackRange = valueRange), onValueChange = onValueChange, modifier = modifier, enabled = enabled, onValueChangeFinished = onValueChangeFinished, colors = colors, interactionSource = interactionSource)"
+        ),
+)
 @Composable
-fun Slider(
+public fun Slider(
     value: Float,
     onValueChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
@@ -190,15 +210,17 @@ fun Slider(
     colors: SliderColors = SliderDefaults.colors(),
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
+    val state = remember(steps, valueRange) { SliderState(value, steps, valueRange) }
+    state.value = value
+
     Slider(
-        value = value,
+        state = state,
         onValueChange = onValueChange,
         modifier = modifier,
         enabled = enabled,
         onValueChangeFinished = onValueChangeFinished,
         colors = colors,
         interactionSource = interactionSource,
-        steps = steps,
         thumb = {
             SliderDefaults.Thumb(
                 interactionSource = interactionSource,
@@ -209,7 +231,6 @@ fun Slider(
         track = { sliderState ->
             SliderDefaults.Track(colors = colors, enabled = enabled, sliderState = sliderState)
         },
-        valueRange = valueRange,
     )
 }
 
@@ -218,9 +239,8 @@ fun Slider(
  *
  * Sliders allow users to make selections from a range of values.
  *
- * Sliders reflect a range of values along a horizontal bar, from which users may select a single
- * value. They are ideal for adjusting settings such as volume, brightness, or applying image
- * filters.
+ * Sliders reflect a range of values along a bar, from which users may select a single value. They
+ * are ideal for adjusting settings such as volume, brightness, or applying image filters.
  *
  * ![Sliders
  * image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqe2zb2b-1.png?alt=media)
@@ -242,124 +262,45 @@ fun Slider(
  * Slider using custom track and thumb:
  *
  * @sample androidx.compose.material3.samples.SliderWithCustomTrackAndThumbSample
- * @param value current value of the slider. If outside of [valueRange] provided, value will be
- *   coerced to this range.
- * @param onValueChange callback in which value should be updated
+ *
+ * Slider using track icons:
+ *
+ * @sample androidx.compose.material3.samples.SliderWithTrackIconsSample
+ *
+ * Continuous Slider with a centered track:
+ *
+ * @sample androidx.compose.material3.samples.CenteredSliderSample
+ * @param state [SliderState] which contains the slider's current value.
+ * @param onValueChange callback in which value should be updated from the [state] (e.g.
+ *   `state.value = it`)
  * @param modifier the [Modifier] to be applied to this slider
  * @param enabled controls the enabled state of this slider. When `false`, this component will not
  *   respond to user input, and it will appear visually disabled and disabled to accessibility
  *   services.
  * @param onValueChangeFinished called when value change has ended. This should not be used to
  *   update the slider value (use [onValueChange] instead), but rather to know when the user has
- *   completed selecting a new value by ending a drag or a click.
+ *   completed selecting a new value by ending a drag or a click. For keyboard movements, this is
+ *   called on every step.
  * @param colors [SliderColors] that will be used to resolve the colors used for this slider in
  *   different states. See [SliderDefaults.colors].
  * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
  *   for this slider. You can create and pass in your own `remember`ed instance to observe
  *   [Interaction]s and customize the appearance / behavior of this slider in different states.
- * @param steps if positive, specifies the amount of discrete allowable values between the endpoints
- *   of [valueRange]. For example, a range from 0 to 10 with 4 [steps] allows 4 values evenly
- *   distributed between 0 and 10 (i.e., 2, 4, 6, 8). If [steps] is 0, the slider will behave
- *   continuously and allow any value from the range. Must not be negative.
  * @param thumb the thumb to be displayed on the slider, it is placed on top of the track. The
  *   lambda receives a [SliderState] which is used to obtain the current active track.
  * @param track the track to be displayed on the slider, it is placed underneath the thumb. The
  *   lambda receives a [SliderState] which is used to obtain the current active track.
- * @param valueRange range of values that this slider can take. The passed [value] will be coerced
- *   to this range.
  */
 @Composable
-@ExperimentalMaterial3Api
-fun Slider(
-    value: Float,
+public fun Slider(
+    state: SliderState,
     onValueChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     onValueChangeFinished: (() -> Unit)? = null,
     colors: SliderColors = SliderDefaults.colors(),
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    @IntRange(from = 0) steps: Int = 0,
-    thumb: @Composable (SliderState) -> Unit = {
-        SliderDefaults.Thumb(
-            interactionSource = interactionSource,
-            colors = colors,
-            enabled = enabled,
-        )
-    },
-    track: @Composable (SliderState) -> Unit = { sliderState ->
-        SliderDefaults.Track(colors = colors, enabled = enabled, sliderState = sliderState)
-    },
-    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
-) {
-    val state =
-        remember(steps, valueRange) { SliderState(value, steps, onValueChangeFinished, valueRange) }
-    state.onValueChangeFinished = onValueChangeFinished
-    state.onValueChange = onValueChange
-    state.value = value
-
-    Slider(
-        state = state,
-        modifier = modifier,
-        enabled = enabled,
-        interactionSource = interactionSource,
-        thumb = thumb,
-        track = track,
-    )
-}
-
-/**
- * [Material Design slider](https://m3.material.io/components/sliders/overview)
- *
- * Sliders allow users to make selections from a range of values.
- *
- * Sliders reflect a range of values along a horizontal bar, from which users may select a single
- * value. They are ideal for adjusting settings such as volume, brightness, or applying image
- * filters.
- *
- * ![Sliders
- * image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqe2zb2b-1.png?alt=media)
- *
- * Use continuous sliders to allow users to make meaningful selections that don’t require a specific
- * value:
- *
- * @sample androidx.compose.material3.samples.SliderSample
- *
- * You can allow the user to choose only between predefined set of values by specifying the amount
- * of steps between min and max values:
- *
- * @sample androidx.compose.material3.samples.StepsSliderSample
- *
- * Slider using a custom thumb:
- *
- * @sample androidx.compose.material3.samples.SliderWithCustomThumbSample
- *
- * Slider using custom track and thumb:
- *
- * @sample androidx.compose.material3.samples.SliderWithCustomTrackAndThumbSample
- * @param state [SliderState] which contains the slider's current value.
- * @param modifier the [Modifier] to be applied to this slider
- * @param enabled controls the enabled state of this slider. When `false`, this component will not
- *   respond to user input, and it will appear visually disabled and disabled to accessibility
- *   services.
- * @param colors [SliderColors] that will be used to resolve the colors used for this slider in
- *   different states. See [SliderDefaults.colors].
- * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
- *   for this slider. You can create and pass in your own `remember`ed instance to observe
- *   [Interaction]s and customize the appearance / behavior of this slider in different states.
- * @param thumb the thumb to be displayed on the slider, it is placed on top of the track. The
- *   lambda receives a [SliderState] which is used to obtain the current active track.
- * @param track the track to be displayed on the slider, it is placed underneath the thumb. The
- *   lambda receives a [SliderState] which is used to obtain the current active track.
- */
-@Composable
-@ExperimentalMaterial3Api
-fun Slider(
-    state: SliderState,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    colors: SliderColors = SliderDefaults.colors(),
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    thumb: @Composable (SliderState) -> Unit = {
+    thumb: @Composable (SliderState) -> Unit = { _ ->
         SliderDefaults.Thumb(
             interactionSource = interactionSource,
             colors = colors,
@@ -372,10 +313,87 @@ fun Slider(
 ) {
     require(state.steps >= 0) { "steps should be >= 0" }
 
+    state.orientation = Horizontal
+    state.reverseVerticalDirection = false
+
     SliderImpl(
         state = state,
         modifier = modifier,
         enabled = enabled,
+        onValueChange = onValueChange,
+        onValueChangeFinished = onValueChangeFinished,
+        interactionSource = interactionSource,
+        thumb = thumb,
+        track = track,
+    )
+}
+
+/**
+ * [Material Design slider](https://m3.material.io/components/sliders/overview)
+ *
+ * Sliders allow users to make selections from a range of values.
+ *
+ * Sliders reflect a range of values along a bar, from which users may select a single value. They
+ * are ideal for adjusting settings such as volume, brightness, or applying image filters.
+ *
+ * ![Sliders
+ * image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqe2zb2b-1.png?alt=media)
+ *
+ * Slider using custom track and thumb:
+ *
+ * @sample androidx.compose.material3.samples.SliderWithCustomTrackAndThumbSample
+ *
+ * Continuous Slider with a centered track:
+ *
+ * @sample androidx.compose.material3.samples.CenteredSliderSample
+ * @param state [SliderState] which contains the slider's current value.
+ * @param modifier the [Modifier] to be applied to this slider
+ * @param enabled controls the enabled state of this slider. When `false`, this component will not
+ *   respond to user input, and it will appear visually disabled and disabled to accessibility
+ *   services.
+ * @param onValueChange callback in which value should be updated
+ * @param onValueChangeFinished called when value change has ended. This should not be used to
+ *   update the slider value (use [onValueChange] instead), but rather to know when the user has
+ *   completed selecting a new value by ending a drag or a click. For keyboard movements, this is
+ *   called on every step.
+ * @param colors [SliderColors] that will be used to resolve the colors used for this slider in
+ *   different states. See [SliderDefaults.colors].
+ * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
+ *   for this slider. You can create and pass in your own `remember`ed instance to observe
+ *   [Interaction]s and customize the appearance / behavior of this slider in different states.
+ * @param thumb the thumb to be displayed on the slider, it is placed on top of the track. The
+ *   lambda receives a [SliderState] which is used to obtain the current active track.
+ * @param track the track to be displayed on the slider, it is placed underneath the thumb. The
+ *   lambda receives a [SliderState] which is used to obtain the current active track.
+ */
+@Deprecated(message = "Maintained for binary compatibility.", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun Slider(
+    state: SliderState,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    onValueChange: ((Float) -> Unit)? = null,
+    onValueChangeFinished: (() -> Unit)? = null,
+    colors: SliderColors = SliderDefaults.colors(),
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    thumb: @Composable (SliderState) -> Unit = { _ ->
+        SliderDefaults.Thumb(
+            interactionSource = interactionSource,
+            colors = colors,
+            enabled = enabled,
+        )
+    },
+    track: @Composable (SliderState) -> Unit = { sliderState ->
+        SliderDefaults.Track(colors = colors, enabled = enabled, sliderState = sliderState)
+    },
+) {
+    Slider(
+        state = state,
+        onValueChange = onValueChange ?: { state.value = it },
+        modifier = modifier,
+        enabled = enabled,
+        onValueChangeFinished = onValueChangeFinished,
+        colors = colors,
         interactionSource = interactionSource,
         thumb = thumb,
         track = track,
@@ -391,15 +409,31 @@ fun Slider(
  * single value. They are ideal for adjusting settings such as volume, brightness, or applying image
  * filters.
  *
- * ![Sliders
- * image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqe2zb2b-1.png?alt=media)
+ * ![Vertical sliders
+ * image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Fm7lk1j0t-05.png?alt=media&token=3b884058-21ca-4d72-ba5e-5afdb59fa01e)
  *
+ * Vertical Slider:
+ *
+ * @sample androidx.compose.material3.samples.VerticalSliderSample
+ *
+ * Vertical Slider with a centered track:
+ *
+ * @sample androidx.compose.material3.samples.VerticalCenteredSliderSample
  * @param state [SliderState] which contains the slider's current value.
+ * @param onValueChange callback in which value should be updated from the [state] (e.g.
+ *   `state.value = it`)
  * @param modifier the [Modifier] to be applied to this slider
  * @param enabled controls the enabled state of this slider. When `false`, this component will not
  *   respond to user input, and it will appear visually disabled and disabled to accessibility
  *   services.
- * @param reverseDirection controls the direction of this slider. Default is top to bottom.
+ * @param onValueChangeFinished called when value change has ended. This should not be used to
+ *   update the slider value (use [onValueChange] instead), but rather to know when the user has
+ *   completed selecting a new value by ending a drag or a click. For keyboard movements, this is
+ *   called on every step.
+ * @param topToBottom controls the direction of this slider. When true (default), the slider
+ *   progresses from top to bottom (top represents the minimum value and bottom represents the
+ *   maximum value). When false, the slider progresses from bottom to top (bottom represents the
+ *   minimum value and top represents the maximum value).
  * @param colors [SliderColors] that will be used to resolve the colors used for this slider in
  *   different states. See [SliderDefaults.colors].
  * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
@@ -410,19 +444,20 @@ fun Slider(
  * @param track the track to be displayed on the slider, it is placed underneath the thumb. The
  *   lambda receives a [SliderState] which is used to obtain the current active track.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun VerticalSlider(
+public fun VerticalSlider(
     state: SliderState,
+    onValueChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    reverseDirection: Boolean = false,
+    onValueChangeFinished: (() -> Unit)? = null,
+    topToBottom: Boolean = true,
     colors: SliderColors = SliderDefaults.colors(),
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    thumb: @Composable (SliderState) -> Unit = { sliderState ->
+    thumb: @Composable (SliderState) -> Unit = { _ ->
         SliderDefaults.Thumb(
             interactionSource = interactionSource,
-            sliderState = sliderState,
+            isVertical = true,
             colors = colors,
             enabled = enabled,
             thumbSize = VerticalThumbSize,
@@ -440,12 +475,100 @@ internal fun VerticalSlider(
     require(state.steps >= 0) { "steps should be >= 0" }
 
     state.orientation = Vertical
-    state.reverseVerticalDirection = reverseDirection
+    state.reverseVerticalDirection = !topToBottom
 
     SliderImpl(
         state = state,
         modifier = modifier,
         enabled = enabled,
+        onValueChange = onValueChange,
+        onValueChangeFinished = onValueChangeFinished,
+        interactionSource = interactionSource,
+        thumb = thumb,
+        track = track,
+    )
+}
+
+/**
+ * [Material Design slider](https://m3.material.io/components/sliders/overview)
+ *
+ * Vertical Sliders allow users to make selections from a range of values.
+ *
+ * Vertical Sliders reflect a range of values along a vertical bar, from which users may select a
+ * single value. They are ideal for adjusting settings such as volume, brightness, or applying image
+ * filters.
+ *
+ * ![Vertical sliders
+ * image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Fm7lk1j0t-05.png?alt=media&token=3b884058-21ca-4d72-ba5e-5afdb59fa01e)
+ *
+ * Vertical Slider:
+ *
+ * @sample androidx.compose.material3.samples.VerticalSliderSample
+ *
+ * Vertical Slider with a centered track:
+ *
+ * @sample androidx.compose.material3.samples.VerticalCenteredSliderSample
+ * @param state [SliderState] which contains the slider's current value.
+ * @param modifier the [Modifier] to be applied to this slider
+ * @param enabled controls the enabled state of this slider. When `false`, this component will not
+ *   respond to user input, and it will appear visually disabled and disabled to accessibility
+ *   services.
+ * @param onValueChange callback in which value should be updated
+ * @param onValueChangeFinished called when value change has ended. This should not be used to
+ *   update the slider value (use [onValueChange] instead), but rather to know when the user has
+ *   completed selecting a new value by ending a drag or a click. For keyboard movements, this is
+ *   called on every step.
+ * @param topToBottom controls the direction of this slider. When true (default), the slider
+ *   progresses from top to bottom (top represents the minimum value and bottom represents the
+ *   maximum value). When false, the slider progresses from bottom to top (bottom represents the
+ *   minimum value and top represents the maximum value).
+ * @param colors [SliderColors] that will be used to resolve the colors used for this slider in
+ *   different states. See [SliderDefaults.colors].
+ * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
+ *   for this slider. You can create and pass in your own `remember`ed instance to observe
+ *   [Interaction]s and customize the appearance / behavior of this slider in different states.
+ * @param thumb the thumb to be displayed on the slider, it is placed on top of the track. The
+ *   lambda receives a [SliderState] which is used to obtain the current active track.
+ * @param track the track to be displayed on the slider, it is placed underneath the thumb. The
+ *   lambda receives a [SliderState] which is used to obtain the current active track.
+ */
+@Deprecated(message = "Maintained for binary compatibility.", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun VerticalSlider(
+    state: SliderState,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    onValueChange: ((Float) -> Unit)? = null,
+    onValueChangeFinished: (() -> Unit)? = null,
+    topToBottom: Boolean = true,
+    colors: SliderColors = SliderDefaults.colors(),
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    thumb: @Composable (SliderState) -> Unit = { _ ->
+        SliderDefaults.Thumb(
+            interactionSource = interactionSource,
+            isVertical = true,
+            colors = colors,
+            enabled = enabled,
+            thumbSize = VerticalThumbSize,
+        )
+    },
+    track: @Composable (SliderState) -> Unit = { sliderState ->
+        SliderDefaults.Track(
+            colors = colors,
+            enabled = enabled,
+            sliderState = sliderState,
+            trackCornerSize = Dp.Unspecified,
+        )
+    },
+) {
+    VerticalSlider(
+        state = state,
+        onValueChange = onValueChange ?: { state.value = it },
+        modifier = modifier,
+        enabled = enabled,
+        onValueChangeFinished = onValueChangeFinished,
+        topToBottom = topToBottom,
+        colors = colors,
         interactionSource = interactionSource,
         thumb = thumb,
         track = track,
@@ -459,7 +582,7 @@ internal fun VerticalSlider(
  *
  * The two values are still bounded by the value range but they also cannot cross each other.
  *
- * Use continuous Range Sliders to allow users to make meaningful selections that don’t require a
+ * Use continuous Range Sliders to allow users to make meaningful selections that don’t require
  * specific values:
  *
  * @sample androidx.compose.material3.samples.RangeSliderSample
@@ -479,15 +602,23 @@ internal fun VerticalSlider(
  *   of [valueRange]. For example, a range from 0 to 10 with 4 [steps] allows 4 values evenly
  *   distributed between 0 and 10 (i.e., 2, 4, 6, 8). If [steps] is 0, the slider will behave
  *   continuously and allow any value from the range. Must not be negative.
- * @param onValueChangeFinished lambda to be invoked when value change has ended. This callback
- *   shouldn't be used to update the range slider values (use [onValueChange] for that), but rather
- *   to know when the user has completed selecting a new value by ending a drag or a click.
+ * @param onValueChangeFinished called when value change has ended. This should not be used to
+ *   update the range slider value (use [onValueChange] instead), but rather to know when the user
+ *   has completed selecting a new value by ending a drag or a click. For keyboard movements, this
+ *   is called on every step.
  * @param colors [SliderColors] that will be used to determine the color of the Range Slider parts
  *   in different state. See [SliderDefaults.colors] to customize.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@Deprecated(
+    message =
+        "Use the RangeSlider overload that accepts RangeSliderState, onValueChange, and onValueChangeFinished instead.",
+    replaceWith =
+        ReplaceWith(
+            "RangeSlider(state = rememberRangeSliderState(value.start, value.endInclusive, steps, trackRange = valueRange), onValueChange = onValueChange, modifier = modifier, enabled = enabled, onValueChangeFinished = onValueChangeFinished, colors = colors)"
+        ),
+)
 @Composable
-fun RangeSlider(
+public fun RangeSlider(
     value: ClosedFloatingPointRange<Float>,
     onValueChange: (ClosedFloatingPointRange<Float>) -> Unit,
     modifier: Modifier = Modifier,
@@ -497,29 +628,40 @@ fun RangeSlider(
     onValueChangeFinished: (() -> Unit)? = null,
     colors: SliderColors = SliderDefaults.colors(),
 ) {
-    val startInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() }
-    val endInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() }
+    val startThumbInteractionSource: MutableInteractionSource = remember {
+        MutableInteractionSource()
+    }
+    val endThumbInteractionSource: MutableInteractionSource = remember {
+        MutableInteractionSource()
+    }
+
+    val state =
+        remember(steps, valueRange) {
+            RangeSliderState(value.start, value.endInclusive, steps, valueRange)
+        }
+
+    state.startValue = value.start
+    state.endValue = value.endInclusive
 
     RangeSlider(
-        value = value,
+        state = state,
         onValueChange = onValueChange,
         modifier = modifier,
         enabled = enabled,
-        valueRange = valueRange,
-        steps = steps,
         onValueChangeFinished = onValueChangeFinished,
-        startInteractionSource = startInteractionSource,
-        endInteractionSource = endInteractionSource,
+        colors = colors,
+        startThumbInteractionSource = startThumbInteractionSource,
+        endThumbInteractionSource = endThumbInteractionSource,
         startThumb = {
             SliderDefaults.Thumb(
-                interactionSource = startInteractionSource,
+                interactionSource = startThumbInteractionSource,
                 colors = colors,
                 enabled = enabled,
             )
         },
         endThumb = {
             SliderDefaults.Thumb(
-                interactionSource = endInteractionSource,
+                interactionSource = endThumbInteractionSource,
                 colors = colors,
                 enabled = enabled,
             )
@@ -546,124 +688,7 @@ fun RangeSlider(
  * parameters, it will use [SliderDefaults.Thumb] and [SliderDefaults.Track] for the thumbs and
  * track.
  *
- * Use continuous Range Sliders to allow users to make meaningful selections that don’t require a
- * specific values:
- *
- * @sample androidx.compose.material3.samples.RangeSliderSample
- *
- * You can allow the user to choose only between predefined set of values by specifying the amount
- * of steps between min and max values:
- *
- * @sample androidx.compose.material3.samples.StepRangeSliderSample
- *
- * A custom start/end thumb and track can be provided:
- *
- * @sample androidx.compose.material3.samples.RangeSliderWithCustomComponents
- * @param value current values of the RangeSlider. If either value is outside of [valueRange]
- *   provided, it will be coerced to this range.
- * @param onValueChange lambda in which values should be updated
- * @param modifier modifiers for the Range Slider layout
- * @param enabled whether or not component is enabled and can we interacted with or not
- * @param onValueChangeFinished lambda to be invoked when value change has ended. This callback
- *   shouldn't be used to update the range slider values (use [onValueChange] for that), but rather
- *   to know when the user has completed selecting a new value by ending a drag or a click.
- * @param colors [SliderColors] that will be used to determine the color of the Range Slider parts
- *   in different state. See [SliderDefaults.colors] to customize.
- * @param startInteractionSource the [MutableInteractionSource] representing the stream of
- *   [Interaction]s for the start thumb. You can create and pass in your own `remember`ed instance
- *   to observe.
- * @param endInteractionSource the [MutableInteractionSource] representing the stream of
- *   [Interaction]s for the end thumb. You can create and pass in your own `remember`ed instance to
- *   observe.
- * @param steps if positive, specifies the amount of discrete allowable values between the endpoints
- *   of [valueRange]. For example, a range from 0 to 10 with 4 [steps] allows 4 values evenly
- *   distributed between 0 and 10 (i.e., 2, 4, 6, 8). If [steps] is 0, the slider will behave
- *   continuously and allow any value from the range. Must not be negative.
- * @param startThumb the start thumb to be displayed on the Range Slider. The lambda receives a
- *   [RangeSliderState] which is used to obtain the current active track.
- * @param endThumb the end thumb to be displayed on the Range Slider. The lambda receives a
- *   [RangeSliderState] which is used to obtain the current active track.
- * @param track the track to be displayed on the range slider, it is placed underneath the thumb.
- *   The lambda receives a [RangeSliderState] which is used to obtain the current active track.
- * @param valueRange range of values that Range Slider values can take. Passed [value] will be
- *   coerced to this range.
- */
-@Composable
-@ExperimentalMaterial3Api
-fun RangeSlider(
-    value: ClosedFloatingPointRange<Float>,
-    onValueChange: (ClosedFloatingPointRange<Float>) -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
-    onValueChangeFinished: (() -> Unit)? = null,
-    colors: SliderColors = SliderDefaults.colors(),
-    startInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    endInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    startThumb: @Composable (RangeSliderState) -> Unit = {
-        SliderDefaults.Thumb(
-            interactionSource = startInteractionSource,
-            colors = colors,
-            enabled = enabled,
-        )
-    },
-    endThumb: @Composable (RangeSliderState) -> Unit = {
-        SliderDefaults.Thumb(
-            interactionSource = endInteractionSource,
-            colors = colors,
-            enabled = enabled,
-        )
-    },
-    track: @Composable (RangeSliderState) -> Unit = { rangeSliderState ->
-        SliderDefaults.Track(
-            colors = colors,
-            enabled = enabled,
-            rangeSliderState = rangeSliderState,
-        )
-    },
-    @IntRange(from = 0) steps: Int = 0,
-) {
-    val state =
-        remember(steps, valueRange) {
-            RangeSliderState(
-                value.start,
-                value.endInclusive,
-                steps,
-                onValueChangeFinished,
-                valueRange,
-            )
-        }
-
-    state.onValueChangeFinished = onValueChangeFinished
-    state.onValueChange = { onValueChange(it.start..it.endInclusive) }
-    state.activeRangeStart = value.start
-    state.activeRangeEnd = value.endInclusive
-
-    RangeSlider(
-        modifier = modifier,
-        state = state,
-        enabled = enabled,
-        startInteractionSource = startInteractionSource,
-        endInteractionSource = endInteractionSource,
-        startThumb = startThumb,
-        endThumb = endThumb,
-        track = track,
-    )
-}
-
-/**
- * [Material Design range slider](https://m3.material.io/components/sliders/overview)
- *
- * Range Sliders expand upon [Slider] using the same concepts but allow the user to select 2 values.
- *
- * The two values are still bounded by the value range but they also cannot cross each other.
- *
- * It uses the provided startThumb for the slider's start thumb and endThumb for the slider's end
- * thumb. It also uses the provided track for the slider's track. If nothing is passed for these
- * parameters, it will use [SliderDefaults.Thumb] and [SliderDefaults.Track] for the thumbs and
- * track.
- *
- * Use continuous Range Sliders to allow users to make meaningful selections that don’t require a
+ * Use continuous Range Sliders to allow users to make meaningful selections that don’t require
  * specific values:
  *
  * @sample androidx.compose.material3.samples.RangeSliderSample
@@ -677,14 +702,20 @@ fun RangeSlider(
  *
  * @sample androidx.compose.material3.samples.RangeSliderWithCustomComponents
  * @param state [RangeSliderState] which contains the current values of the RangeSlider.
+ * @param onValueChange callback in which values should be updated from the [state] (e.g.
+ *   `state.startValue = it.start` and `state.endValue = it.endInclusive`)
  * @param modifier modifiers for the Range Slider layout
  * @param enabled whether or not component is enabled and can we interacted with or not
+ * @param onValueChangeFinished called when value change has ended. This should not be used to
+ *   update the range slider value (use [onValueChange] instead), but rather to know when the user
+ *   has completed selecting a new value by ending a drag or a click. For keyboard movements, this
+ *   is called on every step.
  * @param colors [SliderColors] that will be used to determine the color of the Range Slider parts
  *   in different state. See [SliderDefaults.colors] to customize.
- * @param startInteractionSource the [MutableInteractionSource] representing the stream of
+ * @param startThumbInteractionSource the [MutableInteractionSource] representing the stream of
  *   [Interaction]s for the start thumb. You can create and pass in your own `remember`ed instance
  *   to observe.
- * @param endInteractionSource the [MutableInteractionSource] representing the stream of
+ * @param endThumbInteractionSource the [MutableInteractionSource] representing the stream of
  *   [Interaction]s for the end thumb. You can create and pass in your own `remember`ed instance to
  *   observe.
  * @param startThumb the start thumb to be displayed on the Range Slider. The lambda receives a
@@ -695,24 +726,25 @@ fun RangeSlider(
  *   The lambda receives a [RangeSliderState] which is used to obtain the current active track.
  */
 @Composable
-@ExperimentalMaterial3Api
-fun RangeSlider(
+public fun RangeSlider(
     state: RangeSliderState,
+    onValueChange: (ClosedFloatingPointRange<Float>) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    onValueChangeFinished: (() -> Unit)? = null,
     colors: SliderColors = SliderDefaults.colors(),
-    startInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    endInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    startThumbInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    endThumbInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     startThumb: @Composable (RangeSliderState) -> Unit = {
         SliderDefaults.Thumb(
-            interactionSource = startInteractionSource,
+            interactionSource = startThumbInteractionSource,
             colors = colors,
             enabled = enabled,
         )
     },
     endThumb: @Composable (RangeSliderState) -> Unit = {
         SliderDefaults.Thumb(
-            interactionSource = endInteractionSource,
+            interactionSource = endThumbInteractionSource,
             colors = colors,
             enabled = enabled,
         )
@@ -731,53 +763,206 @@ fun RangeSlider(
         modifier = modifier,
         state = state,
         enabled = enabled,
-        startInteractionSource = startInteractionSource,
-        endInteractionSource = endInteractionSource,
+        onValueChange = onValueChange,
+        onValueChangeFinished = onValueChangeFinished,
+        startThumbInteractionSource = startThumbInteractionSource,
+        endThumbInteractionSource = endThumbInteractionSource,
         startThumb = startThumb,
         endThumb = endThumb,
         track = track,
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * [Material Design range slider](https://m3.material.io/components/sliders/overview)
+ *
+ * Range Sliders expand upon [Slider] using the same concepts but allow the user to select 2 values.
+ *
+ * The two values are still bounded by the value range but they also cannot cross each other.
+ *
+ * It uses the provided startThumb for the slider's start thumb and endThumb for the slider's end
+ * thumb. It also uses the provided track for the slider's track. If nothing is passed for these
+ * parameters, it will use [SliderDefaults.Thumb] and [SliderDefaults.Track] for the thumbs and
+ * track.
+ *
+ * Use continuous Range Sliders to allow users to make meaningful selections that don’t require
+ * specific values:
+ *
+ * @sample androidx.compose.material3.samples.RangeSliderSample
+ *
+ * You can allow the user to choose only between predefined set of values by specifying the amount
+ * of steps between min and max values:
+ *
+ * @sample androidx.compose.material3.samples.StepRangeSliderSample
+ *
+ * A custom start/end thumb and track can be provided:
+ *
+ * @sample androidx.compose.material3.samples.RangeSliderWithCustomComponents
+ * @param state [RangeSliderState] which contains the current values of the RangeSlider.
+ * @param modifier modifiers for the Range Slider layout
+ * @param enabled whether or not component is enabled and can we interacted with or not
+ * @param onValueChange callback in which values should be updated
+ * @param onValueChangeFinished called when value change has ended. This should not be used to
+ *   update the range slider value (use [onValueChange] instead), but rather to know when the user
+ *   has completed selecting a new value by ending a drag or a click. For keyboard movements, this
+ *   is called on every step.
+ * @param colors [SliderColors] that will be used to determine the color of the Range Slider parts
+ *   in different state. See [SliderDefaults.colors] to customize.
+ * @param startThumbInteractionSource the [MutableInteractionSource] representing the stream of
+ *   [Interaction]s for the start thumb. You can create and pass in your own `remember`ed instance
+ *   to observe.
+ * @param endThumbInteractionSource the [MutableInteractionSource] representing the stream of
+ *   [Interaction]s for the end thumb. You can create and pass in your own `remember`ed instance to
+ *   observe.
+ * @param startThumb the start thumb to be displayed on the Range Slider. The lambda receives a
+ *   [RangeSliderState] which is used to obtain the current active track.
+ * @param endThumb the end thumb to be displayed on the Range Slider. The lambda receives a
+ *   [RangeSliderState] which is used to obtain the current active track.
+ * @param track the track to be displayed on the range slider, it is placed underneath the thumb.
+ *   The lambda receives a [RangeSliderState] which is used to obtain the current active track.
+ */
+@Deprecated(message = "Maintained for binary compatibility.", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun RangeSlider(
+    state: RangeSliderState,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    onValueChange: ((ClosedFloatingPointRange<Float>) -> Unit)? = null,
+    onValueChangeFinished: (() -> Unit)? = null,
+    colors: SliderColors = SliderDefaults.colors(),
+    startThumbInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    endThumbInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    startThumb: @Composable (RangeSliderState) -> Unit = {
+        SliderDefaults.Thumb(
+            interactionSource = startThumbInteractionSource,
+            colors = colors,
+            enabled = enabled,
+        )
+    },
+    endThumb: @Composable (RangeSliderState) -> Unit = {
+        SliderDefaults.Thumb(
+            interactionSource = endThumbInteractionSource,
+            colors = colors,
+            enabled = enabled,
+        )
+    },
+    track: @Composable (RangeSliderState) -> Unit = { rangeSliderState ->
+        SliderDefaults.Track(
+            colors = colors,
+            enabled = enabled,
+            rangeSliderState = rangeSliderState,
+        )
+    },
+) {
+    RangeSlider(
+        state = state,
+        onValueChange =
+            onValueChange
+                ?: {
+                    state.startValue = it.start
+                    state.endValue = it.endInclusive
+                },
+        modifier = modifier,
+        enabled = enabled,
+        onValueChangeFinished = onValueChangeFinished,
+        colors = colors,
+        startThumbInteractionSource = startThumbInteractionSource,
+        endThumbInteractionSource = endThumbInteractionSource,
+        startThumb = startThumb,
+        endThumb = endThumb,
+        track = track,
+    )
+}
+
 @Composable
 private fun SliderImpl(
     modifier: Modifier,
     state: SliderState,
     enabled: Boolean,
+    onValueChange: (Float) -> Unit,
+    onValueChangeFinished: (() -> Unit)?,
     interactionSource: MutableInteractionSource,
     thumb: @Composable (SliderState) -> Unit,
     track: @Composable (SliderState) -> Unit,
 ) {
     state.isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val isFocused by interactionSource.collectIsFocusedAsState()
+    state.isFocused = isFocused
+
+    val orientation = state.orientation
+    val reverseVerticalDirection = state.reverseVerticalDirection
+
     val reverseDirection =
-        (state.orientation == Horizontal && state.isRtl) ||
-            (state.orientation == Vertical && state.reverseVerticalDirection)
-    val press = Modifier.sliderTapModifier(state, interactionSource, enabled)
+        (orientation == Horizontal && state.isRtl) ||
+            (orientation == Vertical && reverseVerticalDirection)
+    val press =
+        Modifier.sliderTapModifier(
+            state = state,
+            interactionSource = interactionSource,
+            enabled = enabled,
+            onValueChange = onValueChange,
+            onValueChangeFinished = onValueChangeFinished,
+        )
+    val draggableState = rememberDraggableState { delta ->
+        state.dispatchRawDeltaInternal(delta, onValueChange)
+    }
     val drag =
         Modifier.draggable(
-            orientation = state.orientation,
+            orientation = orientation,
             reverseDirection = reverseDirection,
             enabled = enabled,
             interactionSource = interactionSource,
-            onDragStopped = { state.gestureEndAction() },
+            onDragStarted = { state.isDragging = true },
+            onDragStopped = {
+                state.isDragging = false
+                onValueChangeFinished?.invoke()
+            },
             startDragImmediately = state.isDragging,
-            state = state,
+            state = draggableState,
         )
     val thumbModifier =
-        if (state.orientation == Vertical) {
+        if (orientation == Vertical) {
             Modifier.layoutId(SliderComponents.THUMB).wrapContentHeight()
         } else {
             Modifier.layoutId(SliderComponents.THUMB).wrapContentWidth()
         }
 
+    val isInsetFocusRing =
+        LocalRippleThemeConfiguration.current.focus is RippleThemeConfiguration.Focus.InsetRing
+
+    val focusRingModifier =
+        if (isInsetFocusRing) {
+            Modifier.indication(
+                    interactionSource = interactionSource,
+                    indication =
+                        ripple(
+                            focusRingShape = SliderTokens.HandleShape.value,
+                            enablePressIndication = false,
+                            enableFocusIndication = true,
+                            enableDragIndication = false,
+                            enableHoverIndication = false,
+                        ),
+                )
+                .padding(if (isFocused) insetFocusRingPadding else 0.dp)
+        } else {
+            Modifier
+        }
+
+    val density = LocalDensity.current
+
     Layout(
         {
             Box(
                 modifier =
-                    thumbModifier.onSizeChanged {
-                        state.thumbWidth = it.width
-                        state.thumbHeight = it.height
+                    thumbModifier.then(focusRingModifier).onSizeChanged {
+                        val padding =
+                            if (isInsetFocusRing && isFocused) {
+                                with(density) { (insetFocusRingPadding * 2).roundToPx() }
+                            } else {
+                                0
+                            }
+                        state.thumbWidth = it.width - padding
+                        state.thumbHeight = it.height - padding
                     }
             ) {
                 thumb(state)
@@ -788,35 +973,48 @@ private fun SliderImpl(
             modifier
                 .minimumInteractiveComponentSize()
                 .requiredSizeIn(
-                    minWidth = if (state.orientation == Vertical) TrackHeight else ThumbWidth,
-                    minHeight = if (state.orientation == Vertical) ThumbWidth else TrackHeight,
+                    minWidth = if (orientation == Vertical) TrackHeight else ThumbWidth,
+                    minHeight = if (orientation == Vertical) ThumbWidth else TrackHeight,
                 )
-                .sliderSemantics(state, enabled)
+                .sliderSemantics(
+                    state = state,
+                    enabled = enabled,
+                    onValueChange = onValueChange,
+                    onValueChangeFinished = onValueChangeFinished,
+                )
                 .focusable(enabled, interactionSource)
                 .slideOnKeyEvents(
                     enabled,
                     state.steps,
-                    state.valueRange,
+                    state.trackRange,
                     state.value,
                     reverseDirection,
-                    state.onValueChange,
-                    state.onValueChangeFinished,
+                    onValueChange,
+                    onValueChangeFinished,
+                    orientation == Vertical,
                 )
                 .then(press)
                 .then(drag),
     ) { measurables, constraints ->
+        val trackPadding =
+            if (isInsetFocusRing && isFocused) insetFocusRingPadding.roundToPx() else 0
+
         val thumbPlaceable =
             measurables.fastFirst { it.layoutId == SliderComponents.THUMB }.measure(constraints)
 
         val trackMeasurable = measurables.fastFirst { it.layoutId == SliderComponents.TRACK }
         val trackPlaceable =
-            if (state.orientation == Vertical) {
+            if (orientation == Vertical) {
                 trackMeasurable.measure(
-                    constraints.offset(vertical = -thumbPlaceable.height).copy(minWidth = 0)
+                    constraints
+                        .offset(vertical = -(thumbPlaceable.height - 2 * trackPadding))
+                        .copy(minWidth = 0)
                 )
             } else {
                 trackMeasurable.measure(
-                    constraints.offset(horizontal = -thumbPlaceable.width).copy(minHeight = 0)
+                    constraints
+                        .offset(horizontal = -(thumbPlaceable.width - 2 * trackPadding))
+                        .copy(minHeight = 0)
                 )
             }
 
@@ -835,34 +1033,42 @@ private fun SliderImpl(
                 if (it != AlignmentLine.Unspecified) it else 0
             }
 
-        if (state.orientation == Vertical) {
-            sliderWidth = max(trackPlaceable.width, thumbPlaceable.width)
-            sliderHeight = thumbPlaceable.height + trackPlaceable.height
+        val thumbCoreWidth = thumbPlaceable.width - 2 * trackPadding
+        val thumbCoreHeight = thumbPlaceable.height - 2 * trackPadding
+
+        if (orientation == Vertical) {
+            sliderWidth = max(trackPlaceable.width, thumbCoreWidth)
+            sliderHeight = thumbCoreHeight + trackPlaceable.height
             trackOffsetX = (sliderWidth - trackPlaceable.width) / 2
-            trackOffsetY = thumbPlaceable.height / 2
+            trackOffsetY = thumbCoreHeight / 2
             thumbOffsetX = (sliderWidth - thumbPlaceable.width) / 2
-            thumbOffsetY =
+            val fractionOffset =
                 if (state.steps > 0 && !isOnFirstOrLastStep) {
                     ((trackPlaceable.height - trackCornerSize * 2) * valueAsFraction).roundToInt() +
                         trackCornerSize
                 } else {
                     (trackPlaceable.height * valueAsFraction).roundToInt()
                 }
-            if (state.reverseVerticalDirection) {
-                thumbOffsetY = trackPlaceable.height - thumbOffsetY
-            }
+            thumbOffsetY =
+                if (reverseVerticalDirection) {
+                    trackPlaceable.height - fractionOffset
+                } else {
+                    fractionOffset
+                }
+            thumbOffsetY += trackOffsetY - thumbPlaceable.height / 2
         } else {
-            sliderWidth = thumbPlaceable.width + trackPlaceable.width
-            sliderHeight = max(trackPlaceable.height, thumbPlaceable.height)
-            trackOffsetX = thumbPlaceable.width / 2
+            sliderWidth = thumbCoreWidth + trackPlaceable.width
+            sliderHeight = max(trackPlaceable.height, thumbCoreHeight)
+            trackOffsetX = thumbCoreWidth / 2
             trackOffsetY = (sliderHeight - trackPlaceable.height) / 2
-            thumbOffsetX =
+            val fractionOffset =
                 if (state.steps > 0 && !isOnFirstOrLastStep) {
                     ((trackPlaceable.width - trackCornerSize * 2) * valueAsFraction).roundToInt() +
                         trackCornerSize
                 } else {
                     (trackPlaceable.width * valueAsFraction).roundToInt()
                 }
+            thumbOffsetX = fractionOffset + trackOffsetX - thumbPlaceable.width / 2
             thumbOffsetY = (sliderHeight - thumbPlaceable.height) / 2
         }
 
@@ -878,141 +1084,469 @@ private fun SliderImpl(
 private fun Modifier.slideOnKeyEvents(
     enabled: Boolean,
     steps: Int,
-    valueRange: ClosedFloatingPointRange<Float>,
+    trackRange: ClosedFloatingPointRange<Float>,
     value: Float,
     reverseDirection: Boolean,
-    onValueChangeState: ((Float) -> Unit)?,
+    onValueChangeState: (Float) -> Unit,
+    onValueChangeFinishedState: (() -> Unit)?,
+    isVertical: Boolean,
+): Modifier {
+    require(steps >= 0) { "steps should be >= 0" }
+    return this.onKeyEvent {
+        if (!enabled) return@onKeyEvent false
+        when (it.type) {
+            KeyEventType.KeyDown -> {
+                val rangeLength = abs(trackRange.endInclusive - trackRange.start)
+                // When steps == 0, it means that a user is not limited by a step length (delta)
+                // when using touch or mouse. But it is not possible to adjust the value
+                // continuously when using keyboard buttons - the delta has to be discrete.
+                // In this case, 1% of the trackRange seems to make sense.
+                val actualSteps = if (steps > 0) steps + 1 else 100
+                val delta = rangeLength / actualSteps
+                val sign = if (reverseDirection) -1 else 1
+
+                if ((it.key == Key.MoveHome) || (it.key == Key.NumPadMoveHome)) {
+                    onValueChangeState(trackRange.start)
+                    return@onKeyEvent true
+                } else if ((it.key == Key.MoveEnd) || (it.key == Key.NumPadMoveEnd)) {
+                    onValueChangeState(trackRange.endInclusive)
+                    return@onKeyEvent true
+                }
+                if (isVertical) {
+                    when (it.key) {
+                        Key.DirectionUp,
+                        Key.NumPadDirectionUp -> {
+                            onValueChangeState((value - sign * delta).coerceIn(trackRange))
+                            return@onKeyEvent true
+                        }
+                        Key.DirectionDown,
+                        Key.NumPadDirectionDown -> {
+                            onValueChangeState((value + sign * delta).coerceIn(trackRange))
+                            return@onKeyEvent true
+                        }
+                        Key.PageUp,
+                        Key.NumPadPageUp -> {
+                            val page = (actualSteps / 10).coerceIn(1, 10)
+                            onValueChangeState((value - page * sign * delta).coerceIn(trackRange))
+                            return@onKeyEvent true
+                        }
+                        Key.PageDown,
+                        Key.NumPadPageDown -> {
+                            val page = (actualSteps / 10).coerceIn(1, 10)
+                            onValueChangeState((value + page * sign * delta).coerceIn(trackRange))
+                            return@onKeyEvent true
+                        }
+                        else -> return@onKeyEvent false
+                    }
+                } else {
+                    when (it.key) {
+                        Key.DirectionRight,
+                        Key.NumPadDirectionRight -> {
+                            onValueChangeState((value + sign * delta).coerceIn(trackRange))
+                            return@onKeyEvent true
+                        }
+                        Key.DirectionLeft,
+                        Key.NumPadDirectionLeft -> {
+                            onValueChangeState((value - sign * delta).coerceIn(trackRange))
+                            return@onKeyEvent true
+                        }
+                        Key.PageUp,
+                        Key.NumPadPageUp -> {
+                            val page = (actualSteps / 10).coerceIn(1, 10)
+                            onValueChangeState((value + page * delta).coerceIn(trackRange))
+                            return@onKeyEvent true
+                        }
+                        Key.PageDown,
+                        Key.NumPadPageDown -> {
+                            val page = (actualSteps / 10).coerceIn(1, 10)
+                            onValueChangeState((value - page * delta).coerceIn(trackRange))
+                            return@onKeyEvent true
+                        }
+                        else -> return@onKeyEvent false
+                    }
+                }
+            }
+
+            KeyEventType.KeyUp -> {
+                if (isVertical) {
+                    when (it.key) {
+                        Key.DirectionUp,
+                        Key.NumPadDirectionUp,
+                        Key.DirectionDown,
+                        Key.NumPadDirectionDown,
+                        Key.MoveHome,
+                        Key.NumPadMoveHome,
+                        Key.MoveEnd,
+                        Key.NumPadMoveEnd,
+                        Key.PageUp,
+                        Key.NumPadPageUp,
+                        Key.PageDown,
+                        Key.NumPadPageDown -> {
+                            onValueChangeFinishedState?.invoke()
+                            return@onKeyEvent true
+                        }
+                        else -> return@onKeyEvent false
+                    }
+                } else {
+                    when (it.key) {
+                        Key.DirectionRight,
+                        Key.NumPadDirectionRight,
+                        Key.DirectionLeft,
+                        Key.NumPadDirectionLeft,
+                        Key.MoveHome,
+                        Key.NumPadMoveHome,
+                        Key.MoveEnd,
+                        Key.NumPadMoveEnd,
+                        Key.PageUp,
+                        Key.NumPadPageUp,
+                        Key.PageDown,
+                        Key.NumPadPageDown -> {
+                            onValueChangeFinishedState?.invoke()
+                            return@onKeyEvent true
+                        }
+                        else -> return@onKeyEvent false
+                    }
+                }
+            }
+
+            else -> return@onKeyEvent false
+        }
+    }
+}
+
+private fun Modifier.rangeSliderOnKeyEvents(
+    enabled: Boolean,
+    steps: Int,
+    trackRange: ClosedFloatingPointRange<Float>,
+    valueStart: Float,
+    valueEnd: Float,
+    isStartThumb: Boolean,
+    reverseDirection: Boolean,
+    onValueChangeState: (SliderRange) -> Unit,
     onValueChangeFinishedState: (() -> Unit)?,
 ): Modifier {
     require(steps >= 0) { "steps should be >= 0" }
     return this.onKeyEvent {
         if (!enabled) return@onKeyEvent false
-        if (onValueChangeState == null) return@onKeyEvent false
         when (it.type) {
             KeyEventType.KeyDown -> {
-                val rangeLength = abs(valueRange.endInclusive - valueRange.start)
+                val rangeLength = abs(trackRange.endInclusive - trackRange.start)
                 // When steps == 0, it means that a user is not limited by a step length (delta)
                 // when using touch or mouse. But it is not possible to adjust the value
                 // continuously when using keyboard buttons - the delta has to be discrete.
-                // In this case, 1% of the valueRange seems to make sense.
+                // In this case, 1% of the trackRange seems to make sense.
                 val actualSteps = if (steps > 0) steps + 1 else 100
                 val delta = rangeLength / actualSteps
                 val sign = if (reverseDirection) -1 else 1
-                when (it.key) {
-                    Key.DirectionUp -> {
-                        onValueChangeState((value + sign * delta).coerceIn(valueRange))
-                        true
+
+                if (isStartThumb) {
+                    val coerceInRange = trackRange.start..valueEnd
+                    when (it.key) {
+                        Key.DirectionRight,
+                        Key.NumPadDirectionRight -> {
+                            onValueChangeState(
+                                SliderRange(
+                                    (valueStart + sign * delta).coerceIn(coerceInRange),
+                                    valueEnd,
+                                )
+                            )
+                            return@onKeyEvent true
+                        }
+
+                        Key.DirectionLeft,
+                        Key.NumPadDirectionLeft -> {
+                            onValueChangeState(
+                                SliderRange(
+                                    (valueStart - sign * delta).coerceIn(coerceInRange),
+                                    valueEnd,
+                                )
+                            )
+                            return@onKeyEvent true
+                        }
+
+                        Key.PageUp,
+                        Key.NumPadPageUp -> {
+                            val page = (actualSteps / 10).coerceIn(1, 10)
+                            onValueChangeState(
+                                SliderRange(
+                                    (valueStart + page * delta).coerceIn(coerceInRange),
+                                    valueEnd,
+                                )
+                            )
+                            return@onKeyEvent true
+                        }
+
+                        Key.PageDown,
+                        Key.NumPadPageDown -> {
+                            val page = (actualSteps / 10).coerceIn(1, 10)
+                            onValueChangeState(
+                                SliderRange(
+                                    (valueStart - page * delta).coerceIn(coerceInRange),
+                                    valueEnd,
+                                )
+                            )
+                            return@onKeyEvent true
+                        }
+
+                        Key.MoveHome,
+                        Key.NumPadMoveHome -> {
+                            onValueChangeState(SliderRange(trackRange.start, valueEnd))
+                            return@onKeyEvent true
+                        }
+
+                        Key.MoveEnd,
+                        Key.NumPadMoveEnd -> {
+                            onValueChangeState(SliderRange(valueEnd, valueEnd))
+                            return@onKeyEvent true
+                        }
+
+                        else -> return@onKeyEvent false
                     }
-                    Key.DirectionDown -> {
-                        onValueChangeState((value - sign * delta).coerceIn(valueRange))
-                        true
+                } else {
+                    val coerceInRange = valueStart..trackRange.endInclusive
+                    when (it.key) {
+                        Key.DirectionRight,
+                        Key.NumPadDirectionRight -> {
+                            onValueChangeState(
+                                SliderRange(
+                                    valueStart,
+                                    (valueEnd + sign * delta).coerceIn(coerceInRange),
+                                )
+                            )
+
+                            return@onKeyEvent true
+                        }
+
+                        Key.DirectionLeft,
+                        Key.NumPadDirectionLeft -> {
+                            onValueChangeState(
+                                SliderRange(
+                                    valueStart,
+                                    (valueEnd - sign * delta).coerceIn(coerceInRange),
+                                )
+                            )
+
+                            return@onKeyEvent true
+                        }
+
+                        Key.PageUp,
+                        Key.NumPadPageUp -> {
+                            val page = (actualSteps / 10).coerceIn(1, 10)
+                            onValueChangeState(
+                                SliderRange(
+                                    valueStart,
+                                    (valueEnd + page * delta).coerceIn(coerceInRange),
+                                )
+                            )
+                            return@onKeyEvent true
+                        }
+
+                        Key.PageDown,
+                        Key.NumPadPageDown -> {
+                            val page = (actualSteps / 10).coerceIn(1, 10)
+                            onValueChangeState(
+                                SliderRange(
+                                    valueStart,
+                                    (valueEnd - page * delta).coerceIn(coerceInRange),
+                                )
+                            )
+                            return@onKeyEvent true
+                        }
+
+                        Key.MoveHome,
+                        Key.NumPadMoveHome -> {
+                            onValueChangeState(SliderRange(valueStart, valueStart))
+                            return@onKeyEvent true
+                        }
+
+                        Key.MoveEnd,
+                        Key.NumPadMoveEnd -> {
+                            onValueChangeState(SliderRange(valueStart, trackRange.endInclusive))
+                            return@onKeyEvent true
+                        }
+
+                        else -> return@onKeyEvent false
                     }
-                    Key.DirectionRight -> {
-                        onValueChangeState((value + sign * delta).coerceIn(valueRange))
-                        true
-                    }
-                    Key.DirectionLeft -> {
-                        onValueChangeState((value - sign * delta).coerceIn(valueRange))
-                        true
-                    }
-                    Key.MoveHome -> {
-                        onValueChangeState(valueRange.start)
-                        true
-                    }
-                    Key.MoveEnd -> {
-                        onValueChangeState(valueRange.endInclusive)
-                        true
-                    }
-                    Key.PageUp -> {
-                        val page = (actualSteps / 10).coerceIn(1, 10)
-                        onValueChangeState((value - page * delta).coerceIn(valueRange))
-                        true
-                    }
-                    Key.PageDown -> {
-                        val page = (actualSteps / 10).coerceIn(1, 10)
-                        onValueChangeState((value + page * delta).coerceIn(valueRange))
-                        true
-                    }
-                    else -> false
                 }
             }
+
             KeyEventType.KeyUp -> {
                 when (it.key) {
-                    Key.DirectionUp,
-                    Key.DirectionDown,
                     Key.DirectionRight,
+                    Key.NumPadDirectionRight,
                     Key.DirectionLeft,
+                    Key.NumPadDirectionLeft,
                     Key.MoveHome,
+                    Key.NumPadMoveHome,
                     Key.MoveEnd,
+                    Key.NumPadMoveEnd,
                     Key.PageUp,
-                    Key.PageDown -> {
+                    Key.NumPadPageUp,
+                    Key.PageDown,
+                    Key.NumPadPageDown -> {
                         onValueChangeFinishedState?.invoke()
-                        true
+                        return@onKeyEvent true
                     }
-                    else -> false
+                    else -> return@onKeyEvent false
                 }
             }
-            else -> false
+
+            else -> return@onKeyEvent false
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RangeSliderImpl(
     modifier: Modifier,
     state: RangeSliderState,
     enabled: Boolean,
-    startInteractionSource: MutableInteractionSource,
-    endInteractionSource: MutableInteractionSource,
+    onValueChange: (ClosedFloatingPointRange<Float>) -> Unit,
+    onValueChangeFinished: (() -> Unit)?,
+    startThumbInteractionSource: MutableInteractionSource,
+    endThumbInteractionSource: MutableInteractionSource,
     startThumb: @Composable ((RangeSliderState) -> Unit),
     endThumb: @Composable ((RangeSliderState) -> Unit),
     track: @Composable ((RangeSliderState) -> Unit),
 ) {
+    val onRangeValueChange: (SliderRange) -> Unit = { onValueChange(it.start..it.endInclusive) }
     state.isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val isStartFocused by startThumbInteractionSource.collectIsFocusedAsState()
+    val isEndFocused by endThumbInteractionSource.collectIsFocusedAsState()
+    state.isStartFocused = isStartFocused
+    state.isEndFocused = isEndFocused
 
     val pressDrag =
         Modifier.rangeSliderPressDragModifier(
             state,
-            startInteractionSource,
-            endInteractionSource,
+            startThumbInteractionSource,
+            endThumbInteractionSource,
             enabled,
+            onRangeValueChange,
+            onValueChangeFinished,
         )
 
     val startContentDescription = getString(Strings.SliderRangeStart)
     val endContentDescription = getString(Strings.SliderRangeEnd)
+
+    val isInsetFocusRing =
+        LocalRippleThemeConfiguration.current.focus is RippleThemeConfiguration.Focus.InsetRing
+
+    val startThumbFocusRingModifier =
+        if (isInsetFocusRing) {
+            Modifier.indication(
+                    interactionSource = startThumbInteractionSource,
+                    indication =
+                        ripple(
+                            focusRingShape = SliderTokens.HandleShape.value,
+                            enablePressIndication = false,
+                            enableFocusIndication = true,
+                            enableDragIndication = false,
+                            enableHoverIndication = false,
+                        ),
+                )
+                .padding(if (isStartFocused) insetFocusRingPadding else 0.dp)
+        } else {
+            Modifier
+        }
+
+    val endThumbFocusRingModifier =
+        if (isInsetFocusRing) {
+            Modifier.indication(
+                    interactionSource = endThumbInteractionSource,
+                    indication =
+                        ripple(
+                            focusRingShape = SliderTokens.HandleShape.value,
+                            enablePressIndication = false,
+                            enableFocusIndication = true,
+                            enableDragIndication = false,
+                            enableHoverIndication = false,
+                        ),
+                )
+                .padding(if (isEndFocused) insetFocusRingPadding else 0.dp)
+        } else {
+            Modifier
+        }
+
+    val density = LocalDensity.current
 
     Layout(
         {
             Box(
                 modifier =
                     Modifier.layoutId(RangeSliderComponents.STARTTHUMB)
+                        .then(startThumbFocusRingModifier)
                         .wrapContentWidth()
                         .onSizeChanged {
-                            state.startThumbWidth = it.width.toFloat()
-                            state.startThumbHeight = it.height.toFloat()
+                            val padding =
+                                if (isInsetFocusRing && isStartFocused) {
+                                    with(density) { (insetFocusRingPadding * 2).roundToPx() }
+                                } else {
+                                    0
+                                }
+                            state.startThumbWidth = (it.width - padding).toFloat()
+                            state.startThumbHeight = (it.height - padding).toFloat()
                         }
-                        .rangeSliderStartThumbSemantics(state, enabled)
+                        .rangeSliderStartThumbSemantics(
+                            state,
+                            enabled,
+                            onRangeValueChange,
+                            onValueChangeFinished,
+                        )
                         .semantics(mergeDescendants = true) {
                             contentDescription = startContentDescription
                         }
-                        .focusable(enabled, startInteractionSource)
+                        .rangeSliderOnKeyEvents(
+                            enabled,
+                            state.steps,
+                            state.trackRange,
+                            state.startValue,
+                            state.endValue,
+                            true,
+                            state.isRtl,
+                            onRangeValueChange,
+                            onValueChangeFinished,
+                        )
+                        .focusable(enabled, startThumbInteractionSource)
             ) {
                 startThumb(state)
             }
             Box(
                 modifier =
                     Modifier.layoutId(RangeSliderComponents.ENDTHUMB)
+                        .then(endThumbFocusRingModifier)
                         .wrapContentWidth()
                         .onSizeChanged {
-                            state.endThumbWidth = it.width.toFloat()
-                            state.endThumbHeight = it.height.toFloat()
+                            val padding =
+                                if (isInsetFocusRing && isEndFocused) {
+                                    with(density) { (insetFocusRingPadding * 2).roundToPx() }
+                                } else {
+                                    0
+                                }
+                            state.endThumbWidth = (it.width - padding).toFloat()
+                            state.endThumbHeight = (it.height - padding).toFloat()
                         }
-                        .rangeSliderEndThumbSemantics(state, enabled)
+                        .rangeSliderEndThumbSemantics(
+                            state,
+                            enabled,
+                            onRangeValueChange,
+                            onValueChangeFinished,
+                        )
                         .semantics(mergeDescendants = true) {
                             contentDescription = endContentDescription
                         }
-                        .focusable(enabled, endInteractionSource)
+                        .rangeSliderOnKeyEvents(
+                            enabled,
+                            state.steps,
+                            state.trackRange,
+                            state.startValue,
+                            state.endValue,
+                            false,
+                            state.isRtl,
+                            onRangeValueChange,
+                            onValueChangeFinished,
+                        )
+                        .focusable(enabled, endThumbInteractionSource)
             ) {
                 endThumb(state)
             }
@@ -1024,6 +1558,11 @@ private fun RangeSliderImpl(
                 .requiredSizeIn(minWidth = ThumbWidth, minHeight = TrackHeight)
                 .then(pressDrag),
     ) { measurables, constraints ->
+        val startTrackPadding =
+            if (isInsetFocusRing && isStartFocused) insetFocusRingPadding.roundToPx() else 0
+        val endTrackPadding =
+            if (isInsetFocusRing && isEndFocused) insetFocusRingPadding.roundToPx() else 0
+
         val startThumbPlaceable =
             measurables
                 .fastFirst { it.layoutId == RangeSliderComponents.STARTTHUMB }
@@ -1040,29 +1579,37 @@ private fun RangeSliderImpl(
                 .measure(
                     constraints
                         .offset(
-                            horizontal = -(startThumbPlaceable.width + endThumbPlaceable.width) / 2
+                            horizontal =
+                                -(startThumbPlaceable.width - 2 * startTrackPadding +
+                                    endThumbPlaceable.width - 2 * endTrackPadding) / 2
                         )
                         .copy(minHeight = 0)
                 )
 
         val sliderWidth =
-            trackPlaceable.width + (startThumbPlaceable.width + endThumbPlaceable.width) / 2
+            trackPlaceable.width +
+                (startThumbPlaceable.width - 2 * startTrackPadding + endThumbPlaceable.width -
+                    2 * endTrackPadding) / 2
         val sliderHeight =
-            maxOf(trackPlaceable.height, startThumbPlaceable.height, endThumbPlaceable.height)
+            maxOf(
+                trackPlaceable.height,
+                startThumbPlaceable.height - 2 * startTrackPadding,
+                endThumbPlaceable.height - 2 * endTrackPadding,
+            )
 
         state.totalWidth = sliderWidth
 
         state.updateMinMaxPx()
 
-        val startValueAsFraction = state.coercedActiveRangeStartAsFraction
+        val startValueAsFraction = state.coercedStartValueAsFraction
         val isStartOnFirstOrLastStep =
             startValueAsFraction == state.tickFractions.firstOrNull() ||
                 startValueAsFraction == state.tickFractions.lastOrNull()
-        val endValueAsFraction = state.coercedActiveRangeEndAsFraction
+        val endValueAsFraction = state.coercedEndValueAsFraction
         val isEndOnFirstOrLastStep =
             endValueAsFraction == state.tickFractions.firstOrNull() ||
                 endValueAsFraction == state.tickFractions.lastOrNull()
-        val trackOffsetX = startThumbPlaceable.width / 2
+        val trackOffsetX = startThumbPlaceable.width / 2 - startTrackPadding
         val trackCornerSize =
             trackPlaceable[CornerSizeAlignmentLine].let {
                 if (it != AlignmentLine.Unspecified) it else 0
@@ -1077,7 +1624,9 @@ private fun RangeSliderImpl(
             }
         // When start thumb and end thumb have different widths,
         // we need to add a correction for the centering of the slider.
-        val endCorrection = (startThumbPlaceable.width - endThumbPlaceable.width) / 2
+        val startThumbCoreWidth = startThumbPlaceable.width - 2 * startTrackPadding
+        val endThumbCoreWidth = endThumbPlaceable.width - 2 * endTrackPadding
+        val endCorrection = (startThumbCoreWidth - endThumbCoreWidth) / 2
         val endThumbOffsetX =
             if (state.steps > 0 && !isEndOnFirstOrLastStep) {
                 ((trackPlaceable.width - trackCornerSize * 2) * endValueAsFraction + endCorrection)
@@ -1091,21 +1640,24 @@ private fun RangeSliderImpl(
 
         layout(sliderWidth, sliderHeight) {
             trackPlaceable.placeRelative(trackOffsetX, trackOffsetY)
-            startThumbPlaceable.placeRelative(startThumbOffsetX, startThumbOffsetY)
-            endThumbPlaceable.placeRelative(endThumbOffsetX, endThumbOffsetY)
+            startThumbPlaceable.placeRelative(
+                startThumbOffsetX - startTrackPadding,
+                startThumbOffsetY,
+            )
+            endThumbPlaceable.placeRelative(endThumbOffsetX - endTrackPadding, endThumbOffsetY)
         }
     }
 }
 
 /** Object to hold defaults used by [Slider] */
 @Stable
-object SliderDefaults {
+public object SliderDefaults {
 
     /**
      * Creates a [SliderColors] that represents the different colors used in parts of the [Slider]
      * in different states.
      */
-    @Composable fun colors() = MaterialTheme.colorScheme.defaultSliderColors
+    @Composable public fun colors(): SliderColors = MaterialTheme.colorScheme.defaultSliderColors
 
     /**
      * Creates a [SliderColors] that represents the different colors used in parts of the [Slider]
@@ -1135,7 +1687,7 @@ object SliderDefaults {
      *   the track when Slider is disabled and when `steps` are specified on it
      */
     @Composable
-    fun colors(
+    public fun colors(
         thumbColor: Color = Color.Unspecified,
         activeTrackColor: Color = Color.Unspecified,
         activeTickColor: Color = Color.Unspecified,
@@ -1204,40 +1756,21 @@ object SliderDefaults {
      * @param thumbSize the size of the thumb.
      */
     @Composable
-    fun Thumb(
+    public fun Thumb(
         interactionSource: MutableInteractionSource,
         modifier: Modifier = Modifier,
         colors: SliderColors = colors(),
         enabled: Boolean = true,
         thumbSize: DpSize = ThumbSize,
-    ) {
-        val interactions = remember { mutableStateListOf<Interaction>() }
-        LaunchedEffect(interactionSource) {
-            interactionSource.interactions.collect { interaction ->
-                when (interaction) {
-                    is PressInteraction.Press -> interactions.add(interaction)
-                    is PressInteraction.Release -> interactions.remove(interaction.press)
-                    is PressInteraction.Cancel -> interactions.remove(interaction.press)
-                    is DragInteraction.Start -> interactions.add(interaction)
-                    is DragInteraction.Stop -> interactions.remove(interaction.start)
-                    is DragInteraction.Cancel -> interactions.remove(interaction.start)
-                }
-            }
-        }
-
-        val size =
-            if (interactions.isNotEmpty()) {
-                thumbSize.copy(width = thumbSize.width / 2)
-            } else {
-                thumbSize
-            }
-        Spacer(
-            modifier
-                .size(size)
-                .hoverable(interactionSource = interactionSource)
-                .background(colors.thumbColor(enabled), SliderTokens.HandleShape.value)
+    ): Unit =
+        Thumb(
+            interactionSource = interactionSource,
+            modifier = modifier,
+            colors = colors,
+            enabled = enabled,
+            thumbSize = thumbSize,
+            isVertical = false,
         )
-    }
 
     /**
      * The Default thumb for [Slider], [VerticalSlider] and [RangeSlider]
@@ -1253,48 +1786,64 @@ object SliderDefaults {
      *   not respond to user input, and it will appear visually disabled and disabled to
      *   accessibility services.
      * @param thumbSize the size of the thumb.
+     *
+     * @material3expressive
      */
-    @OptIn(ExperimentalMaterial3Api::class)
+    @Deprecated(
+        "Maintained for binary compatibility. Use the overload that takes isVertical instead.",
+        level = DeprecationLevel.HIDDEN,
+    )
+    @ExperimentalMaterial3ExpressiveApi
     @Composable
-    internal fun Thumb(
+    public fun Thumb(
         interactionSource: MutableInteractionSource,
         sliderState: SliderState,
         modifier: Modifier = Modifier,
         colors: SliderColors = colors(),
         enabled: Boolean = true,
         thumbSize: DpSize = ThumbSize,
-    ) {
-        val interactions = remember { mutableStateListOf<Interaction>() }
-        LaunchedEffect(interactionSource) {
-            interactionSource.interactions.collect { interaction ->
-                when (interaction) {
-                    is PressInteraction.Press -> interactions.add(interaction)
-                    is PressInteraction.Release -> interactions.remove(interaction.press)
-                    is PressInteraction.Cancel -> interactions.remove(interaction.press)
-                    is DragInteraction.Start -> interactions.add(interaction)
-                    is DragInteraction.Stop -> interactions.remove(interaction.start)
-                    is DragInteraction.Cancel -> interactions.remove(interaction.start)
-                }
-            }
-        }
-
-        val size =
-            if (interactions.isNotEmpty()) {
-                if (sliderState.orientation == Vertical) {
-                    thumbSize.copy(height = thumbSize.height / 2)
-                } else {
-                    thumbSize.copy(width = thumbSize.width / 2)
-                }
-            } else {
-                thumbSize
-            }
-        Spacer(
-            modifier
-                .size(size)
-                .hoverable(interactionSource = interactionSource)
-                .background(colors.thumbColor(enabled), SliderTokens.HandleShape.value)
+    ): Unit =
+        Thumb(
+            interactionSource = interactionSource,
+            isVertical = sliderState.orientation == Vertical,
+            modifier = modifier,
+            colors = colors,
+            enabled = enabled,
+            thumbSize = thumbSize,
         )
-    }
+
+    /**
+     * The Default thumb for [Slider], [VerticalSlider] and [RangeSlider]
+     *
+     * @param interactionSource the [MutableInteractionSource] representing the stream of
+     *   [Interaction]s for this thumb. You can create and pass in your own `remember`ed instance to
+     *   observe
+     * @param isVertical whether the slider that this thumb is being used in is a [VerticalSlider].
+     * @param modifier the [Modifier] to be applied to the thumb.
+     * @param colors [SliderColors] that will be used to resolve the colors used for this thumb in
+     *   different states. See [SliderDefaults.colors].
+     * @param enabled controls the enabled state of this slider. When `false`, this component will
+     *   not respond to user input, and it will appear visually disabled and disabled to
+     *   accessibility services.
+     * @param thumbSize the size of the thumb.
+     */
+    @Composable
+    public fun Thumb(
+        interactionSource: MutableInteractionSource,
+        isVertical: Boolean,
+        modifier: Modifier = Modifier,
+        colors: SliderColors = colors(),
+        enabled: Boolean = true,
+        thumbSize: DpSize = if (isVertical) VerticalThumbSize else ThumbSize,
+    ): Unit =
+        ThumbContent(
+            interactionSource = interactionSource,
+            modifier = modifier,
+            colors = colors,
+            enabled = enabled,
+            thumbSize = thumbSize,
+            isVertical = isVertical,
+        )
 
     /**
      * The Default track for [Slider] and [RangeSlider]
@@ -1311,7 +1860,7 @@ object SliderDefaults {
     @Suppress("DEPRECATION")
     @Composable
     @Deprecated("Use version that supports slider state")
-    fun Track(
+    public fun Track(
         sliderPositions: SliderPositions,
         modifier: Modifier = Modifier,
         colors: SliderColors = colors(),
@@ -1373,47 +1922,6 @@ object SliderDefaults {
      *
      * @param sliderState [SliderState] which is used to obtain the current active track.
      * @param modifier the [Modifier] to be applied to the track.
-     * @param colors [SliderColors] that will be used to resolve the colors used for this track in
-     *   different states. See [SliderDefaults.colors].
-     * @param enabled controls the enabled state of this slider. When `false`, this component will
-     *   not respond to user input, and it will appear visually disabled and disabled to
-     *   accessibility services.
-     */
-    @Deprecated(
-        message =
-            "Use the overload that takes `drawStopIndicator`, `drawTick`, " +
-                "`thumbTrackGapSize` and `trackInsideCornerSize`, see `LegacySliderSample` " +
-                "on how to restore the previous behavior",
-        replaceWith =
-            ReplaceWith(
-                "Track(sliderState, modifier, enabled, colors, drawStopIndicator, " +
-                    "drawTick, thumbTrackGapSize, trackInsideCornerSize)"
-            ),
-        level = DeprecationLevel.HIDDEN,
-    )
-    @Composable
-    @ExperimentalMaterial3Api
-    fun Track(
-        sliderState: SliderState,
-        modifier: Modifier = Modifier,
-        colors: SliderColors = colors(),
-        enabled: Boolean = true,
-    ) {
-        Track(
-            sliderState,
-            modifier,
-            enabled,
-            colors,
-            thumbTrackGapSize = ThumbTrackGapSize,
-            trackInsideCornerSize = TrackInsideCornerSize,
-        )
-    }
-
-    /**
-     * The Default track for [Slider]
-     *
-     * @param sliderState [SliderState] which is used to obtain the current active track.
-     * @param modifier the [Modifier] to be applied to the track.
      * @param enabled controls the enabled state of this slider. When `false`, this component will
      *   not respond to user input, and it will appear visually disabled and disabled to
      *   accessibility services.
@@ -1425,9 +1933,8 @@ object SliderDefaults {
      * @param thumbTrackGapSize size of the gap between the thumb and the track.
      * @param trackInsideCornerSize size of the corners towards the thumb when a gap is set.
      */
-    @ExperimentalMaterial3Api
     @Composable
-    fun Track(
+    public fun Track(
         sliderState: SliderState,
         modifier: Modifier = Modifier,
         enabled: Boolean = true,
@@ -1480,9 +1987,8 @@ object SliderDefaults {
      * @param thumbTrackGapSize size of the gap between the thumb and the track.
      * @param trackInsideCornerSize size of the corners towards the thumb when a gap is set.
      */
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    internal fun Track(
+    public fun Track(
         sliderState: SliderState,
         trackCornerSize: Dp,
         modifier: Modifier = Modifier,
@@ -1535,9 +2041,8 @@ object SliderDefaults {
      * @param trackInsideCornerSize size of the corners towards the thumb when a gap is set.
      * @param trackCornerSize size of the external corners.
      */
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    internal fun CenteredTrack(
+    public fun CenteredTrack(
         sliderState: SliderState,
         modifier: Modifier = Modifier,
         enabled: Boolean = true,
@@ -1571,7 +2076,6 @@ object SliderDefaults {
         )
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     private fun TrackImpl(
         sliderState: SliderState,
@@ -1586,14 +2090,20 @@ object SliderDefaults {
         enableCornerShrinking: Boolean,
         isCentered: Boolean,
     ) {
+        val orientation = sliderState.orientation
+        val reverseVerticalDirection = sliderState.reverseVerticalDirection
         val inactiveTrackColor = colors.trackColor(enabled = enabled, active = false)
         val activeTrackColor = colors.trackColor(enabled = enabled, active = true)
         val inactiveTickColor = colors.tickColor(enabled = enabled, active = false)
         val activeTickColor = colors.tickColor(enabled = enabled, active = true)
+        val isInsetFocusRing =
+            LocalRippleThemeConfiguration.current.focus is RippleThemeConfiguration.Focus.InsetRing
+        val focusPadding =
+            if (isInsetFocusRing && sliderState.isFocused) insetFocusRingPadding else 0.dp
         Canvas(
-            if (sliderState.orientation == Vertical) {
+            if (orientation == Vertical) {
                     modifier.width(TrackHeight).fillMaxHeight().let {
-                        if (sliderState.reverseVerticalDirection) it.scale(1f, -1f) else it
+                        if (reverseVerticalDirection) it.scale(1f, -1f) else it
                     }
                 } else {
                     modifier.fillMaxWidth().height(TrackHeight)
@@ -1603,7 +2113,7 @@ object SliderDefaults {
                         val placeable = measurable.measure(constraints)
                         val cornerSize =
                             if (trackCornerSize == Dp.Unspecified) {
-                                if (sliderState.orientation == Vertical) {
+                                if (orientation == Vertical) {
                                     placeable.width / 2
                                 } else {
                                     placeable.height / 2
@@ -1623,13 +2133,39 @@ object SliderDefaults {
         ) {
             val cornerSize: Float =
                 if (trackCornerSize == Dp.Unspecified) {
-                    if (sliderState.orientation == Vertical) {
+                    if (orientation == Vertical) {
                         size.width / 2
                     } else {
                         size.height / 2
                     }
                 } else {
                     trackCornerSize.toPx()
+                }
+            val isThumbBeforeCenter = sliderState.coercedValueAsFraction < 0.5f
+            val isThumbAfterCenter = sliderState.coercedValueAsFraction > 0.5f
+            val startThumbWidth =
+                if (isCentered && !isThumbAfterCenter) {
+                    sliderState.thumbWidth.toDp()
+                } else {
+                    0.dp
+                }
+            val startThumbHeight =
+                if (isCentered && !isThumbAfterCenter) {
+                    sliderState.thumbHeight.toDp()
+                } else {
+                    0.dp
+                }
+            val endThumbWidth =
+                if (isCentered) {
+                    if (!isThumbBeforeCenter) sliderState.thumbWidth.toDp() else 0.dp
+                } else {
+                    sliderState.thumbWidth.toDp()
+                }
+            val endThumbHeight =
+                if (isCentered) {
+                    if (!isThumbBeforeCenter) sliderState.thumbHeight.toDp() else 0.dp
+                } else {
+                    sliderState.thumbHeight.toDp()
                 }
             drawTrack(
                 tickFractions = sliderState.tickFractions,
@@ -1639,18 +2175,19 @@ object SliderDefaults {
                 activeTrackColor = activeTrackColor,
                 inactiveTickColor = inactiveTickColor,
                 activeTickColor = activeTickColor,
-                startThumbWidth = 0.toDp(),
-                startThumbHeight = 0.toDp(),
-                endThumbWidth = sliderState.thumbWidth.toDp(),
-                endThumbHeight = sliderState.thumbHeight.toDp(),
-                thumbTrackGapSize = thumbTrackGapSize,
+                startThumbWidth = startThumbWidth,
+                startThumbHeight = startThumbHeight,
+                endThumbWidth = endThumbWidth,
+                endThumbHeight = endThumbHeight,
+                startThumbTrackGapSize = if (isCentered) thumbTrackGapSize + focusPadding else 0.dp,
+                endThumbTrackGapSize = thumbTrackGapSize + focusPadding,
                 trackInsideCornerSize = trackInsideCornerSize,
                 trackCornerSize = cornerSize.toDp(),
                 drawStopIndicator = drawStopIndicator,
                 drawTick = drawTick,
                 isRangeSlider = false,
                 enableCornerShrinking = enableCornerShrinking,
-                orientation = sliderState.orientation,
+                orientation = orientation,
                 isCentered = isCentered,
             )
         }
@@ -1679,9 +2216,8 @@ object SliderDefaults {
             ),
         level = DeprecationLevel.HIDDEN,
     )
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun Track(
+    public fun Track(
         rangeSliderState: RangeSliderState,
         modifier: Modifier = Modifier,
         colors: SliderColors = colors(),
@@ -1713,9 +2249,8 @@ object SliderDefaults {
      * @param thumbTrackGapSize size of the gap between the thumbs and the track.
      * @param trackInsideCornerSize size of the corners towards the thumbs when a gap is set.
      */
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun Track(
+    public fun Track(
         rangeSliderState: RangeSliderState,
         modifier: Modifier = Modifier,
         enabled: Boolean = true,
@@ -1763,9 +2298,8 @@ object SliderDefaults {
      * @param thumbTrackGapSize size of the gap between the thumbs and the track.
      * @param trackInsideCornerSize size of the corners towards the thumbs when a gap is set.
      */
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    internal fun Track(
+    public fun Track(
         rangeSliderState: RangeSliderState,
         trackCornerSize: Dp,
         modifier: Modifier = Modifier,
@@ -1797,7 +2331,6 @@ object SliderDefaults {
         )
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     private fun TrackImpl(
         rangeSliderState: RangeSliderState,
@@ -1814,6 +2347,12 @@ object SliderDefaults {
         val activeTrackColor = colors.trackColor(enabled, active = true)
         val inactiveTickColor = colors.tickColor(enabled, active = false)
         val activeTickColor = colors.tickColor(enabled, active = true)
+        val isInsetFocusRing =
+            LocalRippleThemeConfiguration.current.focus is RippleThemeConfiguration.Focus.InsetRing
+        val startFocusPadding =
+            if (isInsetFocusRing && rangeSliderState.isStartFocused) insetFocusRingPadding else 0.dp
+        val endFocusPadding =
+            if (isInsetFocusRing && rangeSliderState.isEndFocused) insetFocusRingPadding else 0.dp
         Canvas(
             modifier.fillMaxWidth().height(TrackHeight).layout { measurable, constraints ->
                 val placeable = measurable.measure(constraints)
@@ -1835,8 +2374,8 @@ object SliderDefaults {
                 }
             drawTrack(
                 tickFractions = rangeSliderState.tickFractions,
-                activeRangeStart = rangeSliderState.coercedActiveRangeStartAsFraction,
-                activeRangeEnd = rangeSliderState.coercedActiveRangeEndAsFraction,
+                activeRangeStart = rangeSliderState.coercedStartValueAsFraction,
+                activeRangeEnd = rangeSliderState.coercedEndValueAsFraction,
                 inactiveTrackColor = inactiveTrackColor,
                 activeTrackColor = activeTrackColor,
                 inactiveTickColor = inactiveTickColor,
@@ -1845,7 +2384,8 @@ object SliderDefaults {
                 startThumbHeight = rangeSliderState.startThumbHeight.toDp(),
                 endThumbWidth = rangeSliderState.endThumbWidth.toDp(),
                 endThumbHeight = rangeSliderState.endThumbHeight.toDp(),
-                thumbTrackGapSize = thumbTrackGapSize,
+                startThumbTrackGapSize = thumbTrackGapSize + startFocusPadding,
+                endThumbTrackGapSize = thumbTrackGapSize + endFocusPadding,
                 trackInsideCornerSize = trackInsideCornerSize,
                 trackCornerSize = cornerSize.toDp(),
                 drawStopIndicator = drawStopIndicator,
@@ -1867,7 +2407,8 @@ object SliderDefaults {
         startThumbHeight: Dp,
         endThumbWidth: Dp,
         endThumbHeight: Dp,
-        thumbTrackGapSize: Dp,
+        startThumbTrackGapSize: Dp,
+        endThumbTrackGapSize: Dp,
         trackInsideCornerSize: Dp,
         trackCornerSize: Dp,
         drawStopIndicator: (DrawScope.(Offset) -> Unit)?,
@@ -1910,13 +2451,19 @@ object SliderDefaults {
         val insideCornerSize = trackInsideCornerSize.toPx()
         var startGap = 0f
         var endGap = 0f
-        if (thumbTrackGapSize > 0.dp) {
-            if (isVertical) {
-                startGap = startThumbHeight.toPx() / 2 + thumbTrackGapSize.toPx()
-                endGap = endThumbHeight.toPx() / 2 + thumbTrackGapSize.toPx()
-            } else {
-                startGap = startThumbWidth.toPx() / 2 + thumbTrackGapSize.toPx()
-                endGap = endThumbWidth.toPx() / 2 + thumbTrackGapSize.toPx()
+        if (isVertical) {
+            if (startThumbTrackGapSize > 0.dp) {
+                startGap = startThumbHeight.toPx() / 2 + startThumbTrackGapSize.toPx()
+            }
+            if (endThumbTrackGapSize > 0.dp) {
+                endGap = endThumbHeight.toPx() / 2 + endThumbTrackGapSize.toPx()
+            }
+        } else {
+            if (startThumbTrackGapSize > 0.dp) {
+                startGap = startThumbWidth.toPx() / 2 + startThumbTrackGapSize.toPx()
+            }
+            if (endThumbTrackGapSize > 0.dp) {
+                endGap = endThumbWidth.toPx() / 2 + endThumbTrackGapSize.toPx()
             }
         }
         val centerAxis = if (isVertical) center.y else center.x
@@ -2074,9 +2621,21 @@ object SliderDefaults {
         val start = sliderStart + cornerSize
         val end = sliderEnd - cornerSize
         val activeTrack = activeTrackStart..activeTrackEnd
-        val tickCenterGap = centerAxis - endGap..centerAxis + endGap
+        val tickCenterGap =
+            if (isCentered) {
+                val gap = if (sliderValueEnd > centerAxis) startGap else endGap
+                centerAxis - gap..centerAxis + gap
+            } else {
+                0f..0f
+            }
         val tickStartGap = sliderValueStart - startGap..sliderValueStart + startGap
-        val tickEndGap = sliderValueEnd - endGap..sliderValueEnd + endGap
+        val tickEndGap =
+            if (isCentered) {
+                val gap = if (sliderValueEnd > centerAxis) endGap else startGap
+                sliderValueEnd - gap..sliderValueEnd + gap
+            } else {
+                sliderValueEnd - endGap..sliderValueEnd + endGap
+            }
         tickFractions.forEachIndexed { index, tick ->
             // skip ticks that fall on the stop indicator
             if (drawStopIndicator != null) {
@@ -2151,17 +2710,66 @@ object SliderDefaults {
      * @param size the size of the indicator.
      * @param color the color of the indicator.
      */
-    fun DrawScope.drawStopIndicator(offset: Offset, size: Dp, color: Color) {
+    public fun DrawScope.drawStopIndicator(offset: Offset, size: Dp, color: Color) {
         drawCircle(color = color, center = offset, radius = size.toPx() / 2f)
     }
 
     /** The default size for the stop indicator at the end of the track. */
-    val TrackStopIndicatorSize: Dp = SliderTokens.StopIndicatorSize
+    public val TrackStopIndicatorSize: Dp = SliderTokens.StopIndicatorSize
 
     /** The default size for the ticks if steps are greater than 0. */
-    val TickSize: Dp = SliderTokens.StopIndicatorSize
+    public val TickSize: Dp = SliderTokens.StopIndicatorSize
 
     private val trackPath = Path()
+}
+
+@Composable
+private fun ThumbContent(
+    interactionSource: MutableInteractionSource,
+    modifier: Modifier,
+    colors: SliderColors,
+    enabled: Boolean,
+    thumbSize: DpSize,
+    isVertical: Boolean,
+) {
+    val interactions = remember { mutableStateListOf<Interaction>() }
+    LaunchedEffect(interactionSource) {
+        interactionSource.interactions.collect { interaction ->
+            when (interaction) {
+                is FocusInteraction.Focus -> interactions.add(interaction)
+                is FocusInteraction.Unfocus -> interactions.remove(interaction.focus)
+                is PressInteraction.Press -> interactions.add(interaction)
+                is PressInteraction.Release -> interactions.remove(interaction.press)
+                is PressInteraction.Cancel -> interactions.remove(interaction.press)
+                is DragInteraction.Start -> interactions.add(interaction)
+                is DragInteraction.Stop -> interactions.remove(interaction.start)
+                is DragInteraction.Cancel -> interactions.remove(interaction.start)
+            }
+        }
+    }
+
+    val size =
+        if (interactions.isNotEmpty()) {
+            if (isVertical) {
+                thumbSize.copy(height = thumbSize.height / 2)
+            } else {
+                thumbSize.copy(width = thumbSize.width / 2)
+            }
+        } else {
+            thumbSize
+        }
+    Box(
+        modifier
+            .size(thumbSize)
+            .hoverable(interactionSource = interactionSource)
+            .pointerHoverIcon(icon = PointerIcon.Hand),
+        contentAlignment = Alignment.Center,
+    ) {
+        Spacer(
+            Modifier.size(size)
+                .background(colors.thumbColor(enabled), SliderTokens.HandleShape.value)
+        )
+    }
 }
 
 private fun snapValueToTick(
@@ -2220,15 +2828,19 @@ private fun scale(
 private fun calcFraction(a: Float, b: Float, pos: Float) =
     (if (b - a == 0f) 0f else (pos - a) / (b - a)).coerceIn(0f, 1f)
 
-@OptIn(ExperimentalMaterial3Api::class)
-private fun Modifier.sliderSemantics(state: SliderState, enabled: Boolean): Modifier {
+private fun Modifier.sliderSemantics(
+    state: SliderState,
+    enabled: Boolean,
+    onValueChange: (Float) -> Unit,
+    onValueChangeFinished: (() -> Unit)?,
+): Modifier {
     return semantics {
             if (!enabled) disabled()
             stateDescription = state.value.formatForSemantics()
             setProgress(
                 action = { targetValue ->
                     var newValue =
-                        targetValue.coerceIn(state.valueRange.start, state.valueRange.endInclusive)
+                        targetValue.coerceIn(state.trackRange.start, state.trackRange.endInclusive)
                     val originalVal = newValue
                     val resolvedValue =
                         if (state.steps > 0) {
@@ -2236,8 +2848,8 @@ private fun Modifier.sliderSemantics(state: SliderState, enabled: Boolean): Modi
                             for (i in 0..state.steps + 1) {
                                 val stepValue =
                                     lerp(
-                                        state.valueRange.start,
-                                        state.valueRange.endInclusive,
+                                        state.trackRange.start,
+                                        state.trackRange.endInclusive,
                                         i.toFloat() / (state.steps + 1),
                                     )
                                 if (abs(stepValue - originalVal) <= distance) {
@@ -2255,14 +2867,8 @@ private fun Modifier.sliderSemantics(state: SliderState, enabled: Boolean): Modi
                     if (resolvedValue == state.value) {
                         false
                     } else {
-                        if (resolvedValue != state.value) {
-                            if (state.onValueChange != null) {
-                                state.onValueChange?.let { it(resolvedValue) }
-                            } else {
-                                state.value = resolvedValue
-                            }
-                        }
-                        state.onValueChangeFinished?.invoke()
+                        onValueChange(resolvedValue)
+                        onValueChangeFinished?.invoke()
                         true
                     }
                 }
@@ -2277,23 +2883,24 @@ private fun Modifier.sliderSemantics(state: SliderState, enabled: Boolean): Modi
         )
         .progressSemantics(
             state.value,
-            state.valueRange.start..state.valueRange.endInclusive,
+            state.trackRange.start..state.trackRange.endInclusive,
             state.steps,
         )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 private fun Modifier.rangeSliderStartThumbSemantics(
     state: RangeSliderState,
     enabled: Boolean,
+    onValueChange: (SliderRange) -> Unit,
+    onValueChangeFinished: (() -> Unit)?,
 ): Modifier {
-    val valueRange = state.valueRange.start..state.activeRangeEnd
+    val trackRange = state.trackRange.start..state.endValue
     return semantics {
             if (!enabled) disabled()
-            stateDescription = state.activeRangeStart.formatForSemantics()
+            stateDescription = state.startValue.formatForSemantics()
             setProgress(
                 action = { targetValue ->
-                    var newValue = targetValue.coerceIn(valueRange.start, valueRange.endInclusive)
+                    var newValue = targetValue.coerceIn(trackRange.start, trackRange.endInclusive)
                     val originalVal = newValue
                     val resolvedValue =
                         if (state.startSteps > 0) {
@@ -2301,8 +2908,8 @@ private fun Modifier.rangeSliderStartThumbSemantics(
                             for (i in 0..state.startSteps + 1) {
                                 val stepValue =
                                     lerp(
-                                        valueRange.start,
-                                        valueRange.endInclusive,
+                                        trackRange.start,
+                                        trackRange.endInclusive,
                                         i.toFloat() / (state.startSteps + 1),
                                     )
                                 if (abs(stepValue - originalVal) <= distance) {
@@ -2317,41 +2924,37 @@ private fun Modifier.rangeSliderStartThumbSemantics(
 
                     // This is to keep it consistent with AbsSeekbar.java: return false if no
                     // change from current.
-                    if (resolvedValue == state.activeRangeStart) {
+                    if (resolvedValue == state.startValue) {
                         false
                     } else {
-                        val resolvedRange = SliderRange(resolvedValue, state.activeRangeEnd)
-                        val activeRange = SliderRange(state.activeRangeStart, state.activeRangeEnd)
+                        val resolvedRange = SliderRange(resolvedValue, state.endValue)
+                        val activeRange = SliderRange(state.startValue, state.endValue)
                         if (resolvedRange != activeRange) {
-                            if (state.onValueChange != null) {
-                                state.onValueChange?.let { it(resolvedRange) }
-                            } else {
-                                state.activeRangeStart = resolvedRange.start
-                                state.activeRangeEnd = resolvedRange.endInclusive
-                            }
+                            onValueChange(resolvedRange)
                         }
-                        state.onValueChangeFinished?.invoke()
+                        onValueChangeFinished?.invoke()
                         true
                     }
                 }
             )
         }
         .then(IncreaseHorizontalSemanticsBounds)
-        .progressSemantics(state.activeRangeStart, valueRange, state.startSteps)
+        .progressSemantics(state.startValue, trackRange, state.startSteps)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 private fun Modifier.rangeSliderEndThumbSemantics(
     state: RangeSliderState,
     enabled: Boolean,
+    onValueChange: (SliderRange) -> Unit,
+    onValueChangeFinished: (() -> Unit)?,
 ): Modifier {
-    val valueRange = state.activeRangeStart..state.valueRange.endInclusive
+    val trackRange = state.startValue..state.trackRange.endInclusive
     return semantics {
             if (!enabled) disabled()
-            stateDescription = state.activeRangeEnd.formatForSemantics()
+            stateDescription = state.endValue.formatForSemantics()
             setProgress(
                 action = { targetValue ->
-                    var newValue = targetValue.coerceIn(valueRange.start, valueRange.endInclusive)
+                    var newValue = targetValue.coerceIn(trackRange.start, trackRange.endInclusive)
                     val originalVal = newValue
                     val resolvedValue =
                         if (state.endSteps > 0) {
@@ -2359,8 +2962,8 @@ private fun Modifier.rangeSliderEndThumbSemantics(
                             for (i in 0..state.endSteps + 1) {
                                 val stepValue =
                                     lerp(
-                                        valueRange.start,
-                                        valueRange.endInclusive,
+                                        trackRange.start,
+                                        trackRange.endInclusive,
                                         i.toFloat() / (state.endSteps + 1),
                                     )
                                 if (abs(stepValue - originalVal) <= distance) {
@@ -2375,138 +2978,220 @@ private fun Modifier.rangeSliderEndThumbSemantics(
 
                     // This is to keep it consistent with AbsSeekbar.java: return false if no
                     // change from current.
-                    if (resolvedValue == state.activeRangeEnd) {
+                    if (resolvedValue == state.endValue) {
                         false
                     } else {
-                        val resolvedRange = SliderRange(state.activeRangeStart, resolvedValue)
-                        val activeRange = SliderRange(state.activeRangeStart, state.activeRangeEnd)
+                        val resolvedRange = SliderRange(state.startValue, resolvedValue)
+                        val activeRange = SliderRange(state.startValue, state.endValue)
                         if (resolvedRange != activeRange) {
-                            if (state.onValueChange != null) {
-                                state.onValueChange?.let { it(resolvedRange) }
-                            } else {
-                                state.activeRangeStart = resolvedRange.start
-                                state.activeRangeEnd = resolvedRange.endInclusive
-                            }
+                            onValueChange(resolvedRange)
                         }
-                        state.onValueChangeFinished?.invoke()
+                        onValueChangeFinished?.invoke()
                         true
                     }
                 }
             )
         }
         .then(IncreaseHorizontalSemanticsBounds)
-        .progressSemantics(state.activeRangeEnd, valueRange, state.endSteps)
+        .progressSemantics(state.endValue, trackRange, state.endSteps)
 }
 
 private fun Float.formatForSemantics() = "${(this * 100).roundToInt() / 100f}"
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Stable
+@Composable
 private fun Modifier.sliderTapModifier(
     state: SliderState,
     interactionSource: MutableInteractionSource,
     enabled: Boolean,
-) =
-    if (enabled) {
-        pointerInput(state, interactionSource) {
+    onValueChange: (Float) -> Unit,
+    onValueChangeFinished: (() -> Unit)?,
+): Modifier {
+    if (!enabled) return this
+    val currentOnValueChange = rememberUpdatedState(onValueChange)
+    val currentOnValueChangeFinished = rememberUpdatedState(onValueChangeFinished)
+    return this.pointerInput(state, interactionSource) {
+        coroutineScope {
             detectTapGestures(
-                onPress = { state.onPress(it) },
+                onPress = { offset ->
+                    var press: PressInteraction.Press? = null
+                    try {
+                        press = PressInteraction.Press(offset)
+                        interactionSource.tryEmit(press)
+                        state.onPress(offset)
+                        val success = tryAwaitRelease()
+                        val release =
+                            if (success) {
+                                PressInteraction.Release(press)
+                            } else {
+                                PressInteraction.Cancel(press)
+                            }
+                        // Emit the release or cancel interaction
+                        interactionSource.tryEmit(release)
+                        press = null
+                    } finally {
+                        press?.let { interactionSource.emit(PressInteraction.Cancel(it)) }
+                    }
+                },
                 onTap = {
-                    state.dispatchRawDelta(0f)
-                    state.gestureEndAction()
+                    state.dispatchRawDeltaInternal(0f, currentOnValueChange.value)
+                    if (!state.isDragging) {
+                        currentOnValueChangeFinished.value?.invoke()
+                    }
                 },
             )
         }
-    } else {
-        this
     }
+}
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Stable
+@Composable
 private fun Modifier.rangeSliderPressDragModifier(
     state: RangeSliderState,
-    startInteractionSource: MutableInteractionSource,
-    endInteractionSource: MutableInteractionSource,
+    startThumbInteractionSource: MutableInteractionSource,
+    endThumbInteractionSource: MutableInteractionSource,
     enabled: Boolean,
-): Modifier =
-    if (enabled) {
-        pointerInput(startInteractionSource, endInteractionSource, state) {
-            val rangeSliderLogic =
-                RangeSliderLogic(state, startInteractionSource, endInteractionSource)
-            coroutineScope {
-                awaitEachGesture {
-                    val event = awaitFirstDown(requireUnconsumed = false)
-                    val interaction = DragInteraction.Start()
-                    var posX =
-                        if (state.isRtl) state.totalWidth - event.position.x else event.position.x
+    onValueChange: (SliderRange) -> Unit,
+    onValueChangeFinished: (() -> Unit)?,
+): Modifier {
+    if (!enabled) return this
+    val currentOnValueChange = rememberUpdatedState(onValueChange)
+    val currentOnValueChangeFinished = rememberUpdatedState(onValueChangeFinished)
+    return this.pointerInput(startThumbInteractionSource, endThumbInteractionSource, state) {
+        val rangeSliderLogic =
+            RangeSliderLogic(
+                state,
+                startThumbInteractionSource,
+                endThumbInteractionSource,
+                currentOnValueChange,
+            )
+        coroutineScope {
+            awaitEachGesture {
+                var activeDragInteraction: DragInteraction.Start? = null
+                var draggingStart = false
+                var press: PressInteraction.Press? = null
+
+                try {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+
+                    val posX =
+                        if (state.isRtl) state.totalWidth - down.position.x else down.position.x
                     val compare = rangeSliderLogic.compareOffsets(posX)
-                    var draggingStart =
-                        if (compare != 0) {
-                            compare < 0
-                        } else {
-                            state.rawOffsetStart > posX
-                        }
 
-                    awaitSlop(event.id, event.type)?.let {
-                        val slop = viewConfiguration.pointerSlop(event.type)
-                        val shouldUpdateCapturedThumb =
-                            abs(state.rawOffsetEnd - posX) < slop &&
-                                abs(state.rawOffsetStart - posX) < slop
-                        if (shouldUpdateCapturedThumb) {
-                            val dir = it.second
-                            draggingStart = if (state.isRtl) dir >= 0f else dir < 0f
-                            posX += it.first.positionChange().x
-                        }
-                    }
+                    draggingStart = if (compare != 0) compare < 0 else state.rawOffsetStart > posX
 
-                    rangeSliderLogic.captureThumb(
-                        draggingStart,
-                        posX,
-                        interaction,
-                        this@coroutineScope,
+                    val interactionSource = rangeSliderLogic.activeInteraction(draggingStart)
+                    press = PressInteraction.Press(down.position)
+                    press?.let { launch { interactionSource.emit(it) } }
+
+                    var drag: PointerInputChange?
+                    var overSlop = Offset.Zero
+                    val pointerSlop = viewConfiguration.pointerSlop(down.type)
+
+                    do {
+                        drag = awaitPointerEvent().changes.firstOrNull()
+                        if (drag != null) {
+                            overSlop += drag.positionChange()
+                        }
+                    } while (
+                        drag != null &&
+                            drag.pressed &&
+                            overSlop.getDistanceSquared() < pointerSlop * pointerSlop
                     )
 
-                    val finishInteraction =
-                        try {
-                            state.isDragging = true
-                            val success =
-                                horizontalDrag(pointerId = event.id) {
-                                    val deltaX = it.positionChange().x
-                                    state.onDrag(
-                                        draggingStart,
-                                        if (state.isRtl) -deltaX else deltaX,
-                                    )
-                                }
+                    if (drag != null && abs(overSlop.x) > abs(overSlop.y)) {
+                        // The press is converted to a drag, so we cancel the press interaction
+                        press?.let {
+                            launch { interactionSource.emit(PressInteraction.Cancel(it)) }
+                        }
+
+                        press = null
+
+                        val interaction = DragInteraction.Start()
+                        activeDragInteraction = interaction
+                        launch { interactionSource.emit(interaction) }
+
+                        // Apply the slop from the initial drag detection
+                        val initialOffset =
+                            posX - (if (draggingStart) state.rawOffsetStart else state.rawOffsetEnd)
+                        val totalDragOffset =
+                            initialOffset + (if (state.isRtl) -overSlop.x else overSlop.x)
+                        state.onDrag(draggingStart, totalDragOffset, currentOnValueChange.value)
+
+                        // The main drag block now handles all subsequent movement.
+                        state.isDragging = true
+                        val success =
+                            horizontalDrag(down.id) { change ->
+                                val deltaX = change.positionChange().x
+                                state.onDrag(
+                                    draggingStart,
+                                    if (state.isRtl) -deltaX else deltaX,
+                                    currentOnValueChange.value,
+                                )
+                                change.consume()
+                            }
+
+                        state.isDragging = false
+
+                        val finishInteraction =
                             if (success) {
                                 DragInteraction.Stop(interaction)
                             } else {
                                 DragInteraction.Cancel(interaction)
                             }
-                        } catch (e: CancellationException) {
-                            DragInteraction.Cancel(interaction)
-                        } finally {
-                            state.isDragging = false
+                        currentOnValueChangeFinished.value?.invoke()
+                        launch { interactionSource.emit(finishInteraction) }
+                        activeDragInteraction = null
+                    } else if (drag?.pressed == false) {
+                        // The press is completed, so emit a release.
+                        press?.let {
+                            launch { interactionSource.emit(PressInteraction.Release(it)) }
                         }
 
-                    state.gestureEndAction(draggingStart)
-                    launch {
-                        rangeSliderLogic.activeInteraction(draggingStart).emit(finishInteraction)
+                        press = null
+
+                        // Perform the tap action to update the slider value
+                        val offset =
+                            posX - if (draggingStart) state.rawOffsetStart else state.rawOffsetEnd
+                        state.onDrag(draggingStart, offset, currentOnValueChange.value)
+                        currentOnValueChangeFinished.value?.invoke()
+                    } else { // Gesture is not a horizontal drag and pointer is still down
+                        // (e.g.,
+                        // vertical scroll)
+                        // Cancel the press to dismiss the ripple and allow scrolling
+                        press?.let {
+                            launch { interactionSource.emit(PressInteraction.Cancel(it)) }
+                        }
+                        press = null
+                    }
+                } finally {
+                    if (state.isDragging) {
+                        // If we were dragging, clean up the state
+                        activeDragInteraction?.let {
+                            val interactionSource =
+                                rangeSliderLogic.activeInteraction(draggingStart)
+                            launch { interactionSource.emit(DragInteraction.Cancel(it)) }
+                        }
+                        currentOnValueChangeFinished.value?.invoke()
+                        state.isDragging = false
+                    }
+
+                    press?.let {
+                        val interactionSource = rangeSliderLogic.activeInteraction(draggingStart)
+                        launch { interactionSource.emit(PressInteraction.Cancel(it)) }
                     }
                 }
             }
         }
-    } else {
-        this
     }
+}
 
-@OptIn(ExperimentalMaterial3Api::class)
 private class RangeSliderLogic(
     val state: RangeSliderState,
-    val startInteractionSource: MutableInteractionSource,
-    val endInteractionSource: MutableInteractionSource,
+    val startThumbInteractionSource: MutableInteractionSource,
+    val endThumbInteractionSource: MutableInteractionSource,
+    val onValueChange: State<(SliderRange) -> Unit>,
 ) {
     fun activeInteraction(draggingStart: Boolean): MutableInteractionSource =
-        if (draggingStart) startInteractionSource else endInteractionSource
+        if (draggingStart) startThumbInteractionSource else endThumbInteractionSource
 
     fun compareOffsets(eventX: Float): Int {
         val diffStart = abs(state.rawOffsetStart - eventX)
@@ -2523,6 +3208,7 @@ private class RangeSliderLogic(
         state.onDrag(
             draggingStart,
             posX - if (draggingStart) state.rawOffsetStart else state.rawOffsetEnd,
+            onValueChange.value,
         )
         scope.launch { activeInteraction(draggingStart).emit(interaction) }
     }
@@ -2553,24 +3239,24 @@ private class RangeSliderLogic(
  *   default implementation that follows Material specifications.
  */
 @Immutable
-class SliderColors(
-    val thumbColor: Color,
-    val activeTrackColor: Color,
-    val activeTickColor: Color,
-    val inactiveTrackColor: Color,
-    val inactiveTickColor: Color,
-    val disabledThumbColor: Color,
-    val disabledActiveTrackColor: Color,
-    val disabledActiveTickColor: Color,
-    val disabledInactiveTrackColor: Color,
-    val disabledInactiveTickColor: Color,
+public class SliderColors(
+    public val thumbColor: Color,
+    public val activeTrackColor: Color,
+    public val activeTickColor: Color,
+    public val inactiveTrackColor: Color,
+    public val inactiveTickColor: Color,
+    public val disabledThumbColor: Color,
+    public val disabledActiveTrackColor: Color,
+    public val disabledActiveTickColor: Color,
+    public val disabledInactiveTrackColor: Color,
+    public val disabledInactiveTickColor: Color,
 ) {
 
     /**
      * Returns a copy of this SelectableChipColors, optionally overriding some of the values. This
      * uses the Color.Unspecified to mean “use the value from the source”
      */
-    fun copy(
+    public fun copy(
         thumbColor: Color = this.thumbColor,
         activeTrackColor: Color = this.activeTrackColor,
         activeTickColor: Color = this.activeTickColor,
@@ -2581,7 +3267,7 @@ class SliderColors(
         disabledActiveTickColor: Color = this.disabledActiveTickColor,
         disabledInactiveTrackColor: Color = this.disabledInactiveTrackColor,
         disabledInactiveTickColor: Color = this.disabledInactiveTickColor,
-    ) =
+    ): SliderColors =
         SliderColors(
             thumbColor.takeOrElse { this.thumbColor },
             activeTrackColor.takeOrElse { this.activeTrackColor },
@@ -2649,13 +3335,20 @@ class SliderColors(
 }
 
 // Internal to be referred to in tests
-internal val TrackHeight = SliderTokens.InactiveTrackHeight
-internal val ThumbWidth = SliderTokens.HandleWidth
-private val ThumbHeight = SliderTokens.HandleHeight
-private val ThumbSize = DpSize(ThumbWidth, ThumbHeight)
-private val VerticalThumbSize = DpSize(ThumbHeight, ThumbWidth)
-private val ThumbTrackGapSize: Dp = SliderTokens.ActiveHandleLeadingSpace
-private val TrackInsideCornerSize: Dp = 2.dp
+internal val TrackHeight
+    get() = SliderTokens.InactiveTrackHeight
+internal val ThumbWidth
+    get() = SliderTokens.HandleWidth
+private val ThumbHeight
+    get() = SliderTokens.HandleHeight
+private val ThumbSize
+    get() = DpSize(ThumbWidth, ThumbHeight)
+private val VerticalThumbSize
+    get() = DpSize(ThumbHeight, ThumbWidth)
+private val ThumbTrackGapSize: Dp
+    get() = SliderTokens.ActiveHandleLeadingSpace
+private val TrackInsideCornerSize: Dp
+    get() = 2.dp
 
 private enum class SliderComponents {
     THUMB,
@@ -2675,7 +3368,7 @@ private enum class RangeSliderComponents {
 @Suppress("DEPRECATION")
 @Deprecated("Not necessary with the introduction of Slider state")
 @Stable
-class SliderPositions(
+public class SliderPositions(
     initialActiveRange: ClosedFloatingPointRange<Float> = 0f..1f,
     initialTickFractions: FloatArray = floatArrayOf(),
 ) {
@@ -2683,7 +3376,7 @@ class SliderPositions(
      * [ClosedFloatingPointRange] that indicates the current active range for the start to thumb for
      * a [Slider] and start thumb to end thumb for a [RangeSlider].
      */
-    var activeRange: ClosedFloatingPointRange<Float> by mutableStateOf(initialActiveRange)
+    public var activeRange: ClosedFloatingPointRange<Float> by mutableStateOf(initialActiveRange)
         internal set
 
     /**
@@ -2691,7 +3384,7 @@ class SliderPositions(
      * should be within the range [0f, 1f]. If the track is continuous, then tickFractions will be
      * an empty [FloatArray].
      */
-    var tickFractions: FloatArray by mutableStateOf(initialTickFractions)
+    public var tickFractions: FloatArray by mutableStateOf(initialTickFractions)
         internal set
 
     override fun equals(other: Any?): Boolean {
@@ -2714,30 +3407,27 @@ class SliderPositions(
 /**
  * Class that holds information about [Slider]'s active range.
  *
- * @param value [Float] that indicates the initial position of the thumb. If outside of [valueRange]
+ * @param value [Float] that indicates the initial position of the thumb. If outside of [trackRange]
  *   provided, value will be coerced to this range.
  * @param steps if positive, specifies the amount of discrete allowable values between the endpoints
- *   of [valueRange]. For example, a range from 0 to 10 with 4 [steps] allows 4 values evenly
+ *   of [trackRange]. For example, a range from 0 to 10 with 4 [steps] allows 4 values evenly
  *   distributed between 0 and 10 (i.e., 2, 4, 6, 8). If [steps] is 0, the slider will behave
  *   continuously and allow any value from the range. Must not be negative.
- * @param onValueChangeFinished lambda to be invoked when value change has ended. This callback
- *   shouldn't be used to update the range slider values (use [onValueChange] for that), but rather
- *   to know when the user has completed selecting a new value by ending a drag or a click.
- * @param valueRange range of values that Slider values can take. [value] will be coerced to this
+ * @param trackRange range of values that Slider values can take. [value] will be coerced to this
  *   range.
  */
-@ExperimentalMaterial3Api
-class SliderState(
+public class SliderState
+@RememberInComposition
+public constructor(
     value: Float = 0f,
-    @IntRange(from = 0) val steps: Int = 0,
-    var onValueChangeFinished: (() -> Unit)? = null,
-    val valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    @IntRange(from = 0) public val steps: Int = 0,
+    public val trackRange: ClosedFloatingPointRange<Float> = 0f..1f,
 ) : DraggableState {
 
     private var valueState by mutableFloatStateOf(value)
 
     /** [Float] that indicates the value that the thumb currently is in respect to the track. */
-    var value: Float
+    public var value: Float
         set(newVal) {
             valueState =
                 if (shouldAutoSnap) {
@@ -2749,12 +3439,12 @@ class SliderState(
         get() = valueState
 
     private fun calculateSnappedValue(newVal: Float): Float {
-        val coercedValue = newVal.coerceIn(valueRange.start, valueRange.endInclusive)
+        val coercedValue = newVal.coerceIn(trackRange.start, trackRange.endInclusive)
         return snapValueToTick(
             coercedValue,
             tickFractions,
-            valueRange.start,
-            valueRange.endInclusive,
+            trackRange.start,
+            trackRange.endInclusive,
         )
     }
 
@@ -2763,11 +3453,21 @@ class SliderState(
         block: suspend DragScope.() -> Unit,
     ): Unit = coroutineScope {
         isDragging = true
-        scrollMutex.mutateWith(dragScope, dragPriority, block)
-        isDragging = false
+        try {
+            scrollMutex.mutateWith(dragScope, dragPriority, block)
+        } finally {
+            isDragging = false
+        }
     }
 
     override fun dispatchRawDelta(delta: Float) {
+        dispatchRawDeltaInternal(delta)
+    }
+
+    internal fun dispatchRawDeltaInternal(
+        delta: Float,
+        onValueChange: ((Float) -> Unit)? = null,
+    ) {
         val maxPx: Float
         val minPx: Float
         if (orientation == Vertical) {
@@ -2783,50 +3483,67 @@ class SliderState(
         val scaledUserValue = scaleToUserValue(minPx, maxPx, offsetInTrack)
         if (scaledUserValue != this.value) {
             if (onValueChange != null) {
-                onValueChange?.let { it(scaledUserValue) }
+                onValueChange(scaledUserValue)
             } else {
                 this.value = scaledUserValue
             }
         }
     }
 
-    /** Callback in which value should be updated. */
-    var onValueChange: ((Float) -> Unit)? = null
-
-    /** Controls the auto-snapping mechanism, disabling it may be useful for custom animations. */
-    @get:JvmName("shouldAutoSnap") var shouldAutoSnap: Boolean = true
+    /**
+     * Controls the auto-snapping mechanism for slider steps.
+     *
+     * When `true` (default), any updates to [value] will automatically snap to the nearest tick
+     * fraction based on the number of [steps].
+     *
+     * Disabling auto-snapping (`false`) allows [value] to be set to any continuous value between
+     * [trackRange] without snapping. This is particularly useful for programmatic animations,
+     * smooth transitions, or custom drag gestures where discrete step snapping is temporarily or
+     * permanently undesired.
+     *
+     * Since this is defined on the state, it can be dynamically toggled during gestures or
+     * animations without triggering a full layout recomposition.
+     */
+    @get:JvmName("shouldAutoSnap") public var shouldAutoSnap: Boolean = true
 
     internal val tickFractions = stepsToTickFractions(steps)
     private var totalWidth by mutableIntStateOf(0)
     private var totalHeight by mutableIntStateOf(0)
-    internal var isRtl = false
-    internal var thumbWidth by mutableIntStateOf(0)
-    internal var thumbHeight by mutableIntStateOf(0)
     internal var orientation = Horizontal
     internal var reverseVerticalDirection = false
+    internal var isRtl = false
+    internal var isFocused by mutableStateOf(false)
+    internal var thumbWidth by mutableIntStateOf(0)
+    internal var thumbHeight by mutableIntStateOf(0)
 
-    /** The fraction of the track that the thumb currently is in. */
-    val coercedValueAsFraction: Float
+    /**
+     * The fraction of the track that the thumb currently occupies.
+     *
+     * The value is coerced (clamped) to the bounds of [trackRange] before calculating its
+     * fractional position (from `0f` to `1f`) on the track.
+     */
+    @get:FloatRange(from = 0.0, to = 1.0)
+    public val coercedValueAsFraction: Float
         get() =
             calcFraction(
-                valueRange.start,
-                valueRange.endInclusive,
-                value.coerceIn(valueRange.start, valueRange.endInclusive),
+                trackRange.start,
+                trackRange.endInclusive,
+                value.coerceIn(trackRange.start, trackRange.endInclusive),
             )
 
-    var isDragging by mutableStateOf(false)
-        private set
+    /**
+     * Indicates whether the slider is currently being dragged.
+     *
+     * This is set to `true` when a drag gesture starts (either via user touch interaction or
+     * programmatically via `drag`) and set back to `false` when the gesture completes or is
+     * cancelled.
+     */
+    public var isDragging: Boolean by mutableStateOf(false)
+        internal set
 
     internal fun updateDimensions(newTotalWidth: Int, newTotalHeight: Int) {
         totalWidth = newTotalWidth
         totalHeight = newTotalHeight
-    }
-
-    internal val gestureEndAction = {
-        if (!isDragging) {
-            // check isDragging in case the change is still in progress (touch -> drag case)
-            onValueChangeFinished?.invoke()
-        }
     }
 
     internal fun onPress(pos: Offset) {
@@ -2843,41 +3560,34 @@ class SliderState(
     private var pressOffset by mutableFloatStateOf(0f)
     private val dragScope: DragScope =
         object : DragScope {
-            override fun dragBy(pixels: Float): Unit = dispatchRawDelta(pixels)
+            override fun dragBy(pixels: Float): Unit = dispatchRawDeltaInternal(pixels)
         }
 
     private val scrollMutex = MutatorMutex()
 
     private fun scaleToUserValue(minPx: Float, maxPx: Float, offset: Float) =
-        scale(minPx, maxPx, offset, valueRange.start, valueRange.endInclusive)
+        scale(minPx, maxPx, offset, trackRange.start, trackRange.endInclusive)
 
     private fun scaleToOffset(minPx: Float, maxPx: Float, userValue: Float) =
-        scale(valueRange.start, valueRange.endInclusive, userValue, minPx, maxPx)
+        scale(trackRange.start, trackRange.endInclusive, userValue, minPx, maxPx)
 
-    companion object {
+    public companion object {
         /**
          * The default [Saver] implementation for [SliderState].
          *
-         * @param onValueChangeFinished lambda to be invoked when value change has ended. This
-         *   callback shouldn't be used to update the range slider values (use [onValueChange] for
-         *   that), but rather to know when the user has completed selecting a new value by ending a
-         *   drag or a click.
-         * @param valueRange range of values that Slider values can take. [value] will be coerced to
+         * @param steps if positive, specifies the amount of discrete allowable values between the
+         *   endpoints of [trackRange].
+         * @param trackRange range of values that Slider values can take. [value] will be coerced to
          *   this range.
          */
-        fun Saver(
-            onValueChangeFinished: (() -> Unit)?,
-            valueRange: ClosedFloatingPointRange<Float>,
+        public fun Saver(
+            steps: Int,
+            trackRange: ClosedFloatingPointRange<Float>,
         ): Saver<SliderState, *> =
             listSaver(
-                save = { listOf(it.value, it.steps) },
+                save = { listOf(it.value) },
                 restore = {
-                    SliderState(
-                        value = it[0] as Float,
-                        steps = it[1] as Int,
-                        onValueChangeFinished = onValueChangeFinished,
-                        valueRange = valueRange,
-                    )
+                    SliderState(value = it[0] as Float, steps = steps, trackRange = trackRange)
                 },
             )
     }
@@ -2889,96 +3599,86 @@ class SliderState(
  * Changes to the provided initial values will **not** result in the state being recreated or
  * changed in any way if it has already been created.
  *
- * @param value [Float] that indicates the initial position of the thumb. If outside of [valueRange]
+ * @param value [Float] that indicates the initial position of the thumb. If outside of [trackRange]
  *   provided, value will be coerced to this range.
  * @param steps if positive, specifies the amount of discrete allowable values between the endpoints
- *   of [valueRange]. For example, a range from 0 to 10 with 4 [steps] allows 4 values evenly
+ *   of [trackRange]. For example, a range from 0 to 10 with 4 [steps] allows 4 values evenly
  *   distributed between 0 and 10 (i.e., 2, 4, 6, 8). If [steps] is 0, the slider will behave
  *   continuously and allow any value from the range. Must not be negative.
- * @param onValueChangeFinished lambda to be invoked when value change has ended. This callback
- *   shouldn't be used to update the range slider values (use [SliderState.onValueChange] for that),
- *   but rather to know when the user has completed selecting a new value by ending a drag or a
- *   click.
- * @param valueRange range of values that Slider values can take. [value] will be coerced to this
+ * @param trackRange range of values that Slider values can take. [value] will be coerced to this
  *   range.
  */
-@ExperimentalMaterial3Api
 @Composable
-fun rememberSliderState(
+public fun rememberSliderState(
     value: Float = 0f,
     @IntRange(from = 0) steps: Int = 0,
-    onValueChangeFinished: (() -> Unit)? = null,
-    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    trackRange: ClosedFloatingPointRange<Float> = 0f..1f,
 ): SliderState {
-    return rememberSaveable(saver = SliderState.Saver(onValueChangeFinished, valueRange)) {
-        SliderState(
-            value = value,
-            steps = steps,
-            onValueChangeFinished = onValueChangeFinished,
-            valueRange = valueRange,
-        )
+    return rememberSaveable(saver = SliderState.Saver(steps = steps, trackRange = trackRange)) {
+        SliderState(value = value, steps = steps, trackRange = trackRange)
     }
 }
 
 /**
  * Class that holds information about [RangeSlider]'s active range.
  *
- * @param activeRangeStart [Float] that indicates the initial start of the active range of the
- *   slider. If outside of [valueRange] provided, value will be coerced to this range.
- * @param activeRangeEnd [Float] that indicates the initial end of the active range of the slider.
- *   If outside of [valueRange] provided, value will be coerced to this range.
+ * @param startValue [Float] that indicates the initial start value of the selected range (for the
+ *   start thumb). This represents a specific position on the track and is coerced to the bounds of
+ *   [trackRange].
+ * @param endValue [Float] that indicates the initial end value of the selected range (for the end
+ *   thumb). This represents a specific position on the track and is coerced to the bounds of
+ *   [trackRange].
  * @param steps if positive, specifies the amount of discrete allowable values between the endpoints
- *   of [valueRange]. For example, a range from 0 to 10 with 4 [steps] allows 4 values evenly
+ *   of [trackRange]. For example, a range from 0 to 10 with 4 [steps] allows 4 values evenly
  *   distributed between 0 and 10 (i.e., 2, 4, 6, 8). If [steps] is 0, the slider will behave
  *   continuously and allow any value from the range. Must not be negative.
- * @param onValueChangeFinished lambda to be invoked when value change has ended. This callback
- *   shouldn't be used to update the range slider values (use [onValueChange] for that), but rather
- *   to know when the user has completed selecting a new value by ending a drag or a click.
- * @param valueRange range of values that Range Slider values can take. [activeRangeStart] and
- *   [activeRangeEnd] will be coerced to this range.
+ * @param trackRange the full range of values that the entire Range Slider track represents. This
+ *   defines the absolute boundaries/constraints of the slider (from minimum to maximum), and the
+ *   individual thumb values ([startValue] and [endValue]) are coerced to this range.
  */
-@ExperimentalMaterial3Api
-class RangeSliderState(
-    activeRangeStart: Float = 0f,
-    activeRangeEnd: Float = 1f,
-    @IntRange(from = 0) val steps: Int = 0,
-    var onValueChangeFinished: (() -> Unit)? = null,
-    val valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+public class RangeSliderState
+@RememberInComposition
+public constructor(
+    startValue: Float = 0f,
+    endValue: Float = 1f,
+    @IntRange(from = 0) public val steps: Int = 0,
+    public val trackRange: ClosedFloatingPointRange<Float> = 0f..1f,
 ) {
-    private var activeRangeStartState by mutableFloatStateOf(activeRangeStart)
-    private var activeRangeEndState by mutableFloatStateOf(activeRangeEnd)
 
-    /** [Float] that indicates the start of the current active range for the [RangeSlider]. */
-    var activeRangeStart: Float
+    private val coercedStart = startValue.coerceIn(trackRange)
+    private val coercedEnd = endValue.coerceIn(trackRange)
+    private var startValueState by mutableFloatStateOf(minOf(coercedStart, coercedEnd))
+    private var endValueState by mutableFloatStateOf(maxOf(coercedStart, coercedEnd))
+
+    /** [Float] that indicates the start of the selected range for the [RangeSlider]. */
+    public var startValue: Float
         set(newVal) {
-            val coercedValue = newVal.coerceIn(valueRange.start, activeRangeEnd)
+            val coercedValue = newVal.coerceIn(trackRange.start, endValue)
             val snappedValue =
                 snapValueToTick(
                     coercedValue,
                     tickFractions,
-                    valueRange.start,
-                    valueRange.endInclusive,
+                    trackRange.start,
+                    trackRange.endInclusive,
                 )
-            activeRangeStartState = snappedValue
+            startValueState = snappedValue
         }
-        get() = activeRangeStartState
+        get() = startValueState
 
-    /** [Float] that indicates the end of the current active range for the [RangeSlider]. */
-    var activeRangeEnd: Float
+    /** [Float] that indicates the end of the selected range for the [RangeSlider]. */
+    public var endValue: Float
         set(newVal) {
-            val coercedValue = newVal.coerceIn(activeRangeStart, valueRange.endInclusive)
+            val coercedValue = newVal.coerceIn(startValue, trackRange.endInclusive)
             val snappedValue =
                 snapValueToTick(
                     coercedValue,
                     tickFractions,
-                    valueRange.start,
-                    valueRange.endInclusive,
+                    trackRange.start,
+                    trackRange.endInclusive,
                 )
-            activeRangeEndState = snappedValue
+            endValueState = snappedValue
         }
-        get() = activeRangeEndState
-
-    internal var onValueChange: ((SliderRange) -> Unit)? = null
+        get() = endValueState
 
     internal val tickFractions = stepsToTickFractions(steps)
 
@@ -2992,102 +3692,100 @@ class RangeSliderState(
     internal var isDragging by mutableStateOf(false)
 
     internal var isRtl by mutableStateOf(false)
-
-    internal val gestureEndAction: (Boolean) -> Unit = { onValueChangeFinished?.invoke() }
+    internal var isStartFocused by mutableStateOf(false)
+    internal var isEndFocused by mutableStateOf(false)
 
     private var maxPx by mutableFloatStateOf(0f)
     private var minPx by mutableFloatStateOf(0f)
 
-    internal fun onDrag(isStart: Boolean, offset: Float) {
+    internal fun onDrag(
+        isStart: Boolean,
+        offset: Float,
+        onValueChange: ((SliderRange) -> Unit)? = null,
+    ) {
         val offsetRange =
             if (isStart) {
                 rawOffsetStart = (rawOffsetStart + offset)
-                rawOffsetEnd = scaleToOffset(minPx, maxPx, activeRangeEnd)
+                rawOffsetEnd = scaleToOffset(minPx, maxPx, endValue)
                 val offsetEnd = rawOffsetEnd
                 var offsetStart = rawOffsetStart.coerceIn(minPx, offsetEnd)
                 offsetStart = snapValueToTick(offsetStart, tickFractions, minPx, maxPx)
                 SliderRange(offsetStart.coerceAtMost(offsetEnd), offsetEnd)
             } else {
                 rawOffsetEnd = (rawOffsetEnd + offset)
-                rawOffsetStart = scaleToOffset(minPx, maxPx, activeRangeStart)
+                rawOffsetStart = scaleToOffset(minPx, maxPx, startValue)
                 val offsetStart = rawOffsetStart
                 var offsetEnd = rawOffsetEnd.coerceIn(offsetStart, maxPx)
                 offsetEnd = snapValueToTick(offsetEnd, tickFractions, minPx, maxPx)
                 SliderRange(offsetStart, offsetEnd.coerceAtLeast(offsetStart))
             }
         val scaledUserValue = scaleToUserValue(isStart, minPx, maxPx, offsetRange)
-        if (scaledUserValue != SliderRange(activeRangeStart, activeRangeEnd)) {
+        if (scaledUserValue != SliderRange(startValue, endValue)) {
             if (onValueChange != null) {
-                onValueChange?.let { it(scaledUserValue) }
+                onValueChange(scaledUserValue)
             } else {
-                this.activeRangeStart = scaledUserValue.start
-                this.activeRangeEnd = scaledUserValue.endInclusive
+                this.startValue = scaledUserValue.start
+                this.endValue = scaledUserValue.endInclusive
             }
         }
     }
 
-    internal val coercedActiveRangeStartAsFraction
-        get() = calcFraction(valueRange.start, valueRange.endInclusive, activeRangeStart)
+    internal val coercedStartValueAsFraction
+        get() = calcFraction(trackRange.start, trackRange.endInclusive, startValue)
 
-    internal val coercedActiveRangeEndAsFraction
-        get() = calcFraction(valueRange.start, valueRange.endInclusive, activeRangeEnd)
+    internal val coercedEndValueAsFraction
+        get() = calcFraction(trackRange.start, trackRange.endInclusive, endValue)
 
     internal val startSteps
-        get() = floor(steps * coercedActiveRangeEndAsFraction).toInt()
+        get() = floor(steps * coercedEndValueAsFraction).toInt()
 
     internal val endSteps
-        get() = floor(steps * (1f - coercedActiveRangeStartAsFraction)).toInt()
+        get() = floor(steps * (1f - coercedStartValueAsFraction)).toInt()
 
-    // scales range offset from within minPx..maxPx to within valueRange.start..valueRange.end
+    // scales range offset from within minPx..maxPx to within trackRange.start..trackRange.end
     private fun scaleToUserValue(
         isStart: Boolean,
         minPx: Float,
         maxPx: Float,
         offset: SliderRange,
-    ) = scale(isStart, minPx, maxPx, offset, valueRange.start, valueRange.endInclusive)
+    ) = scale(isStart, minPx, maxPx, offset, trackRange.start, trackRange.endInclusive)
 
-    // scales float userValue within valueRange.start..valueRange.end to within minPx..maxPx
+    // scales float userValue within trackRange.start..trackRange.end to within minPx..maxPx
     private fun scaleToOffset(minPx: Float, maxPx: Float, userValue: Float) =
-        scale(valueRange.start, valueRange.endInclusive, userValue, minPx, maxPx)
+        scale(trackRange.start, trackRange.endInclusive, userValue, minPx, maxPx)
 
     internal fun updateMinMaxPx() {
         val newMaxPx = max(totalWidth - endThumbWidth / 2, 0f)
         val newMinPx = min(startThumbWidth / 2, newMaxPx)
-        if (
-            !isDragging &&
-                (minPx != newMinPx || maxPx != newMaxPx || activeRangeStart != activeRangeEnd)
-        ) {
+        if (!isDragging && (minPx != newMinPx || maxPx != newMaxPx || startValue != endValue)) {
             minPx = newMinPx
             maxPx = newMaxPx
-            rawOffsetStart = scaleToOffset(minPx, maxPx, activeRangeStart)
-            rawOffsetEnd = scaleToOffset(minPx, maxPx, activeRangeEnd)
+            rawOffsetStart = scaleToOffset(minPx, maxPx, startValue)
+            rawOffsetEnd = scaleToOffset(minPx, maxPx, endValue)
         }
     }
 
-    companion object {
+    public companion object {
         /**
          * The default [Saver] implementation for [RangeSliderState].
          *
-         * @param onValueChangeFinished lambda to be invoked when value change has ended. This
-         *   callback shouldn't be used to update the range slider values (use [onValueChange] for
-         *   that), but rather to know when the user has completed selecting a new value by ending a
-         *   drag or a click.
-         * @param valueRange range of values that Range Slider values can take. [activeRangeStart]
-         *   and [activeRangeEnd] will be coerced to this range.
+         * @param steps if positive, specifies the amount of discrete allowable values between the
+         *   endpoints of [trackRange].
+         * @param trackRange range of values that Range Slider values can take. [startValue] and
+         *   [endValue] will be coerced to this range.
          */
-        fun Saver(
-            onValueChangeFinished: (() -> Unit)?,
-            valueRange: ClosedFloatingPointRange<Float>,
+        public fun Saver(
+            steps: Int,
+            trackRange: ClosedFloatingPointRange<Float>,
         ): Saver<RangeSliderState, *> =
             listSaver(
-                save = { listOf(it.activeRangeStart, it.activeRangeEnd, it.steps) },
+                save = { listOf(it.startValue, it.endValue) },
                 restore = {
                     RangeSliderState(
-                        activeRangeStart = it[0] as Float,
-                        activeRangeEnd = it[1] as Float,
-                        steps = it[2] as Int,
-                        onValueChangeFinished = onValueChangeFinished,
-                        valueRange = valueRange,
+                        startValue = it[0] as Float,
+                        endValue = it[1] as Float,
+                        steps = steps,
+                        trackRange = trackRange,
                     )
                 },
             )
@@ -3095,42 +3793,40 @@ class RangeSliderState(
 }
 
 /**
- * Creates a [SliderState] that is remembered across compositions.
+ * Creates a [RangeSliderState] that is remembered across compositions.
  *
  * Changes to the provided initial values will **not** result in the state being recreated or
  * changed in any way if it has already been created.
  *
- * @param activeRangeStart [Float] that indicates the initial start of the active range of the
- *   slider. If outside of [valueRange] provided, value will be coerced to this range.
- * @param activeRangeEnd [Float] that indicates the initial end of the active range of the slider.
- *   If outside of [valueRange] provided, value will be coerced to this range.
+ * @param startValue [Float] that indicates the initial start value of the selected range (for the
+ *   start thumb). This represents a specific position on the track and is coerced to the bounds of
+ *   [trackRange].
+ * @param endValue [Float] that indicates the initial end value of the selected range (for the end
+ *   thumb). This represents a specific position on the track and is coerced to the bounds of
+ *   [trackRange].
  * @param steps if positive, specifies the amount of discrete allowable values between the endpoints
- *   of [valueRange]. For example, a range from 0 to 10 with 4 [steps] allows 4 values evenly
+ *   of [trackRange]. For example, a range from 0 to 10 with 4 [steps] allows 4 values evenly
  *   distributed between 0 and 10 (i.e., 2, 4, 6, 8). If [steps] is 0, the slider will behave
  *   continuously and allow any value from the range. Must not be negative.
- * @param onValueChangeFinished lambda to be invoked when value change has ended. This callback
- *   shouldn't be used to update the range slider values (use [RangeSliderState.onValueChange] for
- *   that), but rather to know when the user has completed selecting a new value by ending a drag or
- *   a click.
- * @param valueRange range of values that Range Slider values can take. [activeRangeStart] and
- *   [activeRangeEnd] will be coerced to this range.
+ * @param trackRange the full range of values that the entire Range Slider track represents. This
+ *   defines the absolute boundaries/constraints of the slider (from minimum to maximum), and the
+ *   individual thumb values ([startValue] and [endValue]) are coerced to this range.
  */
-@ExperimentalMaterial3Api
 @Composable
-fun rememberRangeSliderState(
-    activeRangeStart: Float = 0f,
-    activeRangeEnd: Float = 1f,
+public fun rememberRangeSliderState(
+    startValue: Float = 0f,
+    endValue: Float = 1f,
     @IntRange(from = 0) steps: Int = 0,
-    onValueChangeFinished: (() -> Unit)? = null,
-    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    trackRange: ClosedFloatingPointRange<Float> = 0f..1f,
 ): RangeSliderState {
-    return rememberSaveable(saver = RangeSliderState.Saver(onValueChangeFinished, valueRange)) {
+    return rememberSaveable(
+        saver = RangeSliderState.Saver(steps = steps, trackRange = trackRange)
+    ) {
         RangeSliderState(
-            activeRangeStart = activeRangeStart,
-            activeRangeEnd = activeRangeEnd,
+            startValue = startValue,
+            endValue = endValue,
             steps = steps,
-            onValueChangeFinished = onValueChangeFinished,
-            valueRange = valueRange,
+            trackRange = trackRange,
         )
     }
 }
@@ -3167,7 +3863,9 @@ internal value class SliderRange(val packedValue: Long) {
          * Represents an unspecified [SliderRange] value, usually a replacement for `null` when a
          * primitive value is desired.
          */
-        @Stable val Unspecified = SliderRange(Float.NaN, Float.NaN)
+        @Stable
+        val Unspecified
+            get() = SliderRange(Float.NaN, Float.NaN)
     }
 
     /** String representation of the [SliderRange] */
@@ -3220,3 +3918,6 @@ internal val SliderRange.isSpecified: Boolean
     get() = packedValue != SliderRange.Unspecified.packedValue
 
 internal val CornerSizeAlignmentLine = VerticalAlignmentLine(::min)
+
+private val insetFocusRingPadding
+    get() = 4.dp

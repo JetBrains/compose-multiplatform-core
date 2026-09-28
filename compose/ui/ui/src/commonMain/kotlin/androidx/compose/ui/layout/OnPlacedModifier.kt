@@ -31,7 +31,8 @@ import androidx.compose.ui.platform.InspectorInfo
  * @sample androidx.compose.ui.samples.OnPlaced
  */
 @Stable
-fun Modifier.onPlaced(onPlaced: (LayoutCoordinates) -> Unit) = this then OnPlacedElement(onPlaced)
+public fun Modifier.onPlaced(onPlaced: (LayoutCoordinates) -> Unit): Modifier =
+    this then OnPlacedElement(onPlaced)
 
 private class OnPlacedElement(val onPlaced: (LayoutCoordinates) -> Unit) :
     ModifierNodeElement<OnPlacedNode>() {
@@ -60,7 +61,7 @@ private class OnPlacedElement(val onPlaced: (LayoutCoordinates) -> Unit) :
     }
 }
 
-private class OnPlacedNode(var callback: (LayoutCoordinates) -> Unit) :
+internal class OnPlacedNode(var callback: (LayoutCoordinates) -> Unit) :
     LayoutAwareModifierNode, Modifier.Node() {
 
     override fun onPlaced(coordinates: LayoutCoordinates) {
@@ -76,7 +77,7 @@ private class OnPlacedNode(var callback: (LayoutCoordinates) -> Unit) :
  * @sample androidx.compose.ui.samples.OnPlaced
  */
 @JvmDefaultWithCompatibility
-interface OnPlacedModifier : Modifier.Element {
+public interface OnPlacedModifier : Modifier.Element {
     /**
      * [onPlaced] is called after parent [LayoutModifier] and parent layout gets placed and before
      * any child [LayoutModifier] is placed.
@@ -84,5 +85,5 @@ interface OnPlacedModifier : Modifier.Element {
      * [coordinates] provides [LayoutCoordinates] of the [OnPlacedModifier]. Placement in both
      * parent [LayoutModifier] and parent layout can be calculated using the [LayoutCoordinates].
      */
-    fun onPlaced(coordinates: LayoutCoordinates)
+    public fun onPlaced(coordinates: LayoutCoordinates)
 }

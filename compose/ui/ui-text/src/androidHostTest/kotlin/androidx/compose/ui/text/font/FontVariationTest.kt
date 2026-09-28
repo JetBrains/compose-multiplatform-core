@@ -1,0 +1,244 @@
+/*
+ * Copyright 2022 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.compose.ui.text.font
+
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.sp
+import com.google.common.truth.Truth.assertThat
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
+
+@RunWith(JUnit4::class)
+class FontVariationTest {
+    @Test
+    fun ital_setsItal() {
+        val fontVariation = FontVariation.italic(0.7f)
+        assertThat(fontVariation.toVariationValue(null)).isEqualTo(0.7f)
+        assertThat(fontVariation.axisName).isEqualTo("ital")
+    }
+
+    @Test(expected = java.lang.IllegalArgumentException::class)
+    fun ital_throws_whenTooLow() {
+        FontVariation.italic(-1.0f)
+    }
+
+    @Test(expected = java.lang.IllegalArgumentException::class)
+    fun ital_throws_whenTooHigh() {
+        FontVariation.italic(1.1f)
+    }
+
+    @Test
+    fun Opsz_sets() {
+        val fontVariation = FontVariation.opticalSizing(18.sp)
+        assertThat(fontVariation.toVariationValue(Density(1f))).isEqualTo(18f)
+        assertThat(fontVariation.axisName).isEqualTo("opsz")
+    }
+
+    @Test
+    fun Opsz_convertsWithDensity() {
+        val fontVariation = FontVariation.opticalSizing(18.sp)
+        val density = Density(10f, 3f)
+        assertThat(fontVariation.toVariationValue(density)).isEqualTo(54f)
+    }
+
+    @Test(expected = java.lang.IllegalArgumentException::class)
+    fun Opsz_throws_whenTooLow() {
+        FontVariation.opticalSizing(TextUnit.Unspecified)
+    }
+
+    @Test
+    fun Opsz_needsDensity() {
+        val fontVariation = FontVariation.opticalSizing(18.sp)
+        assertThat(fontVariation.needsDensity).isTrue()
+    }
+
+    @Test
+    fun Slnt_sets() {
+        val fontVariation = FontVariation.slant(0.7f)
+        assertThat(fontVariation.toVariationValue(null)).isEqualTo(0.7f)
+        assertThat(fontVariation.axisName).isEqualTo("slnt")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun Slnt_throws_whenTooSmall() {
+        FontVariation.slant(-91f)
+    }
+
+    @Test(expected = java.lang.IllegalArgumentException::class)
+    fun Slnt_throws_whenTooBig() {
+        FontVariation.slant(91f)
+    }
+
+    @Test
+    fun Wdth_sets() {
+        val fontVariation = FontVariation.width(0.7f)
+        assertThat(fontVariation.toVariationValue(null)).isEqualTo(0.7f)
+        assertThat(fontVariation.axisName).isEqualTo("wdth")
+    }
+
+    @Test
+    fun Wdth_sets_atMaxSize() {
+        val fontVariation = FontVariation.width(Float.MAX_VALUE)
+        assertThat(fontVariation.toVariationValue(null)).isEqualTo(Float.MAX_VALUE)
+        assertThat(fontVariation.axisName).isEqualTo("wdth")
+    }
+
+    @Test(expected = java.lang.IllegalArgumentException::class)
+    fun Wdth_throws_whenTooSmall() {
+        FontVariation.width(0f)
+    }
+
+    @Test
+    fun Wght_sets() {
+        val fontVariation = FontVariation.weight(200)
+        assertThat(fontVariation.toVariationValue(null)).isEqualTo(200)
+        assertThat(fontVariation.axisName).isEqualTo("wght")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun Wght_throws_whenTooSmall() {
+        FontVariation.weight(0)
+    }
+
+    @Test(expected = java.lang.IllegalArgumentException::class)
+    fun Wght_throws_whenTooBig() {
+        FontVariation.weight(1001)
+    }
+
+    @Test
+    fun grad_sets() {
+        val fontVariation = FontVariation.grade(200)
+        assertThat(fontVariation.toVariationValue(null)).isEqualTo(200)
+        assertThat(fontVariation.axisName).isEqualTo("GRAD")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun grad_throws_whenTooSmall() {
+        FontVariation.grade(-1001)
+    }
+
+    @Test(expected = java.lang.IllegalArgumentException::class)
+    fun grad_throws_whenTooBig() {
+        FontVariation.grade(1001)
+    }
+
+    @Test
+    fun setting_makesSetting() {
+        val setting: FontVariation.Setting = FontVariation.Setting("1234", 8.9f)
+        assertThat(setting.axisName).isEqualTo("1234")
+        assertThat(setting.toVariationValue(null)).isEqualTo(8.9f)
+    }
+
+    @Test(expected = java.lang.IllegalArgumentException::class)
+    fun setting_throws_whenBadName() {
+        FontVariation.Setting("Weight", 500f)
+    }
+
+    @Test
+    fun canExtend() {
+        fun FontVariation.fizzable(fiz: Int): FontVariation.Setting {
+            require(fiz in 1..11) { "'fzzt' must be in 1..11" }
+            return Setting("fzzt", fiz.toFloat())
+        }
+        val variation = FontVariation.fizzable(7)
+        assertThat(variation.axisName).isEqualTo("fzzt")
+        assertThat(variation.toVariationValue(null)).isEqualTo(7f)
+    }
+
+    @Test
+    fun settings_empty_is_empty() {
+        val settings = FontVariation.Empty
+        assertThat(settings.settings).isEmpty()
+        assertThat(settings.needsDensity).isFalse()
+    }
+
+    @Test
+    fun settings_with_settings() {
+        val s1 = FontVariation.weight(400)
+        val s2 = FontVariation.width(100f)
+        val settings = FontVariation.Settings(s1, s2)
+        assertThat(settings.settings).containsExactly(s1, s2)
+        assertThat(settings.needsDensity).isFalse()
+    }
+
+    @Test
+    fun settings_with_settings_needsDensity() {
+        val s1 = FontVariation.weight(400)
+        val s2 = FontVariation.opticalSizing(12.sp)
+        val settings = FontVariation.Settings(s1, s2)
+        assertThat(settings.settings).containsExactly(s1, s2)
+        assertThat(settings.needsDensity).isTrue()
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun settings_throws_on_duplicate() {
+        val s1 = FontVariation.weight(400)
+        val s2 = FontVariation.weight(700)
+        FontVariation.Settings(s1, s2)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun settings_throws_on_duplicate_multiple() {
+        val s1 = FontVariation.weight(400)
+        val s2 = FontVariation.width(100f)
+        val s3 = FontVariation.italic(0.5f)
+        val s4 = FontVariation.grade(1)
+        val s5 = FontVariation.weight(700)
+        FontVariation.Settings(s1, s2, s3, s4, s5)
+    }
+
+    @Test
+    fun settings_merge_other_settings() {
+        val s1 = FontVariation.weight(400)
+        val s2 = FontVariation.width(100f)
+        val s3 = FontVariation.italic(0.5f)
+
+        val base = FontVariation.Settings(s1, s2)
+        val overrides = FontVariation.Settings(FontVariation.weight(700), s3)
+
+        val merged = base.merge(overrides)
+
+        assertThat(merged.settings).containsExactly(FontVariation.weight(700), s2, s3)
+    }
+
+    @Test
+    fun settings_merge_other_settings_empty() {
+        val base = FontVariation.Settings(FontVariation.weight(400))
+        assertThat(base.merge(FontVariation.Empty)).isSameInstanceAs(base)
+        assertThat(FontVariation.Empty.merge(base)).isSameInstanceAs(base)
+    }
+
+    @Test
+    fun settings_merge_vararg_settings() {
+        val s1 = FontVariation.weight(400)
+        val s2 = FontVariation.width(100f)
+        val base = FontVariation.Settings(s1, s2)
+
+        val merged = base.merge(FontVariation.weight(700), FontVariation.italic(0.5f))
+
+        assertThat(merged.settings)
+            .containsExactly(FontVariation.weight(700), s2, FontVariation.italic(0.5f))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun settings_merge_vararg_settings_throws_on_duplicate() {
+        val base = FontVariation.Settings(FontVariation.weight(400))
+        base.merge(FontVariation.width(100f), FontVariation.width(200f))
+    }
+}

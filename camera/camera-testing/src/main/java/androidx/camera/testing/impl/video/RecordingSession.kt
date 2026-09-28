@@ -21,6 +21,7 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecu
 import androidx.camera.video.OutputOptions
 import androidx.camera.video.Recorder
 import java.util.concurrent.Executor
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
@@ -30,6 +31,7 @@ public class RecordingSession(private val defaults: Defaults) {
         public const val DEFAULT_VERIFY_STATUS_COUNT: Int = 5
         public const val DEFAULT_VERIFY_TIMEOUT_MS: Long = 10000
         public const val DEFAULT_VERIFY_STATUS_TIMEOUT_MS: Long = 15000
+        public const val DEFAULT_VERIFY_NO_FINALIZE_TIMEOUT_MS: Long = 2000
     }
 
     public data class Defaults(
@@ -37,14 +39,13 @@ public class RecordingSession(private val defaults: Defaults) {
         val recorder: Recorder? = null,
         val outputOptionsProvider: () -> OutputOptions,
         val withAudio: Boolean = true,
-        val recordingStopStrategy: (androidx.camera.video.Recording, Recorder) -> Unit =
-            { recording, _ ->
-                recording.stop()
-            },
         val callbackExecutor: Executor = mainThreadExecutor(),
         val verifyStatusCount: Int = DEFAULT_VERIFY_STATUS_COUNT,
         val verifyTimeoutMs: Long = DEFAULT_VERIFY_TIMEOUT_MS,
         val verifyStatusTimeoutMs: Long = DEFAULT_VERIFY_STATUS_TIMEOUT_MS,
+        val verifyNoFinalizeTimeoutMs: Long = DEFAULT_VERIFY_NO_FINALIZE_TIMEOUT_MS,
+        val verifyOutputFile: Boolean = true,
+        val onAction: ((Recording) -> Unit)? = null,
     )
 
     private val recordingsToStop = mutableListOf<Recording>()
@@ -64,18 +65,20 @@ public class RecordingSession(private val defaults: Defaults) {
                 withAudio = withAudio,
                 initialAudioMuted = initialAudioMuted,
                 asPersistentRecording = asPersistentRecording,
-                recordingStopStrategy = defaults.recordingStopStrategy,
                 callbackExecutor = defaults.callbackExecutor,
                 defaultVerifyStatusCount = defaults.verifyStatusCount,
                 defaultVerifyTimeoutMs = defaults.verifyTimeoutMs,
                 defaultVerifyStatusTimeoutMs = defaults.verifyStatusTimeoutMs,
+                defaultVerifyNoFinalizeTimeoutMs = defaults.verifyNoFinalizeTimeoutMs,
+                defaultVerifyOutputFile = defaults.verifyOutputFile,
+                onAction = defaults.onAction,
             )
             .apply { recordingsToStop.add(this) }
     }
 
     // Intentionally made a non-suspend function, which is convenient at the end of most tests.
     public fun release(timeoutMs: Long): Unit = runBlocking {
-        withTimeoutOrNull(timeoutMs) {
+        withTimeoutOrNull(timeoutMs.milliseconds) {
             recordingsToStop
                 .filter { !it.stoppedDeferred.isCompleted }
                 .run {

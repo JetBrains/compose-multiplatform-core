@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.node
 
+import androidx.annotation.EmptySuper
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.LayoutModifier
 import androidx.compose.ui.layout.onSizeChanged
@@ -35,25 +36,27 @@ import androidx.compose.ui.unit.IntSize
  * @sample androidx.compose.ui.samples.OnPlaced
  * @sample androidx.compose.ui.samples.LayoutAwareModifierNodeSample
  */
-interface LayoutAwareModifierNode : DelegatableNode {
+public interface LayoutAwareModifierNode : MeasuredSizeAwareModifierNode, DelegatableNode {
     /**
      * [onPlaced] is called after the parent [LayoutModifier] and parent layout has been placed and
      * before child [LayoutModifier] is placed. This allows child [LayoutModifier] to adjust its own
      * placement based on where the parent is.
      *
      * If you only need to access the current [LayoutCoordinates] at a single point in time from
-     * outside this method, use [currentLayoutCoordinates].
+     * outside this method, use [requireLayoutCoordinates].
+     *
+     * @see UnplacedAwareModifierNode if you need to also be notified when the node is not placed
+     *   anymore.
      */
-    fun onPlaced(coordinates: LayoutCoordinates) {}
+    @EmptySuper public fun onPlaced(coordinates: LayoutCoordinates): Unit {}
 
     /**
      * This method is called when the layout content is remeasured. The most common usage is
      * [onSizeChanged].
      */
-    fun onRemeasured(size: IntSize) {}
+    @EmptySuper public override fun onRemeasured(size: IntSize): Unit {}
 }
 
-// TODO(b/309776096): Make it public
-internal interface OnUnplacedModifierNode : DelegatableNode {
-    fun onUnplaced()
-}
+// TODO remove after usages on other platforms are migrated to the new name.
+@Deprecated("Was renamed to UnplacedAwareModifierNode", ReplaceWith("UnplacedAwareModifierNode"))
+internal interface OnUnplacedModifierNode : UnplacedAwareModifierNode

@@ -16,6 +16,7 @@
 
 import androidx.build.PlatformIdentifier
 import androidx.build.SoftwareType
+import androidx.build.KotlinTarget
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.konan.target.Family
 
@@ -41,77 +42,21 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                implementation(libs.kotlinStdlibCommon)
-                implementation(project(":compose:runtime:runtime"))
-                implementation(libs.kotlinTest)
-                implementation(libs.kotlinCoroutinesTest)
-                implementation(libs.kotlinReflect)
-            }
+        commonMain.dependencies {
+            implementation(project(":compose:runtime:runtime"))
+            implementation(libs.kotlinTest)
+            implementation(libs.kotlinCoroutinesTest)
+            implementation(libs.kotlinReflect)
         }
-
-        jvmMain {
-            dependsOn(commonMain)
+        jsMain.dependencies {
+            implementation("org.jetbrains.kotlin:kotlin-test-js:${libs.versions.kotlin.get()}")
         }
-
-        androidMain {
-            dependsOn(jvmMain)
+        wasmJsMain.dependencies {
+            implementation("org.jetbrains.kotlin:kotlin-test-wasm-js:${libs.versions.kotlin.get()}")
         }
-
-        desktopMain {
-            dependsOn(jvmMain)
-        }
-
-        nativeMain {
-            dependsOn(commonMain)
-        }
-
-        unixMain {
-            dependsOn(nativeMain)
-        }
-
-        darwinMain {
-            dependsOn(unixMain)
-        }
-
-        linuxMain {
-            dependsOn(unixMain)
-        }
-
-        webMain {
-            dependsOn(commonMain)
-        }
-
-        jsMain {
-            dependsOn(webMain)
-            dependencies {
-                // For KotlinWasm/Js, versions of toolchain and stdlib need to be the same (2.1):
-                // https://youtrack.jetbrains.com/issue/KT-71032
-                implementation(libs.kotlinStdlibJs)
-            }
-        }
-
-        wasmJsMain {
-            dependsOn(webMain)
-            dependencies {
-                // For KotlinWasm/Js, versions of toolchain and stdlib need to be the same (2.1):
-                // https://youtrack.jetbrains.com/issue/KT-71032
-                implementation(libs.kotlinStdlibWasm)
-            }
-        }
-
-        targets.configureEach { target ->
-            if (target.platformType == KotlinPlatformType.native) {
-                if (target.konanTarget.family.appleFamily) {
-                    target.compilations["main"].defaultSourceSet.dependsOn(darwinMain)
-                } else if (target.konanTarget.family == Family.LINUX) {
-                    target.compilations["main"].defaultSourceSet.dependsOn(linuxMain)
-                } else {
-                    target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
-                }
-            }
-        }
+        create("unixMain").dependsOn(nativeMain)
+        appleMain.dependsOn(unixMain)
+        linuxMain.dependsOn(unixMain)
     }
 }
 
@@ -121,5 +66,6 @@ androidx {
     type = SoftwareType.SNAPSHOT_ONLY_LIBRARY
     inceptionYear = "2024"
     description = "Compose runtime test utils shared between runtime and compiler tests."
+    kotlinTarget = KotlinTarget.KOTLIN_2_3
 }
 

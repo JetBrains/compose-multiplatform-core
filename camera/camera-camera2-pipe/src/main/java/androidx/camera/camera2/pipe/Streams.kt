@@ -33,7 +33,7 @@ import androidx.camera.camera2.pipe.compat.Api33Compat
  *   may be changed, although this may cause the camera to stall and reconfigure.
  * - [CameraStream]'s may be added to [Request]'s that are sent to the [CameraGraph]. This causes
  *   the associated surface to be used by the Camera to produce one or more of the outputs (defined
- *   by outputs.
+ *   by outputs).
  *
  * [CameraStream] may be configured in several different ways with the requirement that each
  * [CameraStream] may only represent a single surface that is sent to Camera2, and that each
@@ -102,6 +102,7 @@ internal constructor(public val id: StreamId, public val outputs: List<OutputStr
                 streamUseHint: OutputStream.StreamUseHint? = null,
                 sensorPixelModes: List<OutputStream.SensorPixelMode> = emptyList(),
                 imageSourceConfig: ImageSourceConfig? = null,
+                useReadoutTimestamp: Boolean = false,
             ): Config =
                 create(
                     OutputStream.Config.create(
@@ -115,6 +116,7 @@ internal constructor(public val id: StreamId, public val outputs: List<OutputStr
                         streamUseCase,
                         streamUseHint,
                         sensorPixelModes,
+                        useReadoutTimestamp,
                     ),
                     imageSourceConfig,
                 )
@@ -129,9 +131,9 @@ internal constructor(public val id: StreamId, public val outputs: List<OutputStr
             ): Config = Config(listOf(output), imageSourceConfig)
 
             /**
-             * Create a [CameraStream] from multiple [OutputStream.Config]s. This is used to to
-             * define a [CameraStream] that may produce one or more of the outputs when used in a
-             * request to the camera.
+             * Create a [CameraStream] from multiple [OutputStream.Config]s. This is used to define
+             * a [CameraStream] that may produce one or more of the outputs when used in a request
+             * to the camera.
              */
             public fun create(
                 outputs: List<OutputStream.Config>,
@@ -172,6 +174,7 @@ public interface OutputStream {
     public val streamUseCase: StreamUseCase?
     public val outputType: OutputType?
     public val streamUseHint: StreamUseHint?
+    public val useReadoutTimestamp: Boolean
 
     // TODO: Consider adding sensor mode and/or other metadata
 
@@ -189,7 +192,13 @@ public interface OutputStream {
         public val streamUseCase: StreamUseCase?,
         public val streamUseHint: StreamUseHint?,
         public val sensorPixelModes: List<SensorPixelMode>,
+        public val useReadoutTimestamp: Boolean = false,
     ) {
+        init {
+            check(!useReadoutTimestamp || Build.VERSION.SDK_INT >= 34) {
+                "onReadoutStarted is not supported with API < 34"
+            }
+        }
 
         public companion object {
             public fun create(
@@ -203,8 +212,9 @@ public interface OutputStream {
                 streamUseCase: StreamUseCase? = null,
                 streamUseHint: StreamUseHint? = null,
                 sensorPixelModes: List<SensorPixelMode> = emptyList(),
+                useReadoutTimestamp: Boolean = false,
             ): Config =
-                // TODO: b/430431303 - Move this lazy/non-lazy selection logic to backend
+                // TODO(b/430431303): Move this lazy/non-lazy selection logic to backend
                 if (outputType.isLazilyConfigurable()) {
                     LazyOutputConfig(
                         size,
@@ -217,6 +227,7 @@ public interface OutputStream {
                         streamUseCase,
                         streamUseHint,
                         sensorPixelModes,
+                        useReadoutTimestamp,
                     )
                 } else {
                     check(outputType == OutputType.SURFACE)
@@ -230,6 +241,7 @@ public interface OutputStream {
                         streamUseCase,
                         streamUseHint,
                         sensorPixelModes,
+                        useReadoutTimestamp,
                     )
                 }
 
@@ -252,16 +264,17 @@ public interface OutputStream {
                 externalOutputConfig: OutputConfiguration,
                 streamUseHint: StreamUseHint?,
                 sensorPixelModes: List<SensorPixelMode> = emptyList(),
-            ): Config {
-                return ExternalOutputConfig(
+                useReadoutTimestamp: Boolean = false,
+            ): Config =
+                ExternalOutputConfig(
                     size,
                     format,
                     camera,
                     output = externalOutputConfig,
                     streamUseHint,
                     sensorPixelModes,
+                    useReadoutTimestamp,
                 )
-            }
         }
 
         /** Most outputs only need to define size, format, and cameraId. */
@@ -275,6 +288,7 @@ public interface OutputStream {
             streamUseCase: StreamUseCase?,
             streamUseHint: StreamUseHint?,
             sensorPixelModes: List<SensorPixelMode>,
+            useReadoutTimestamp: Boolean,
         ) :
             Config(
                 size,
@@ -286,6 +300,7 @@ public interface OutputStream {
                 streamUseCase,
                 streamUseHint,
                 sensorPixelModes,
+                useReadoutTimestamp,
             )
 
         /**
@@ -308,6 +323,7 @@ public interface OutputStream {
             streamUseCase: StreamUseCase?,
             streamUseHint: StreamUseHint?,
             sensorPixelModes: List<SensorPixelMode>,
+            useReadoutTimestamp: Boolean,
         ) :
             Config(
                 size,
@@ -319,6 +335,7 @@ public interface OutputStream {
                 streamUseCase,
                 streamUseHint,
                 sensorPixelModes,
+                useReadoutTimestamp,
             )
 
         /**
@@ -339,6 +356,7 @@ public interface OutputStream {
             val output: OutputConfiguration,
             streamUseHint: StreamUseHint?,
             sensorPixelModes: List<SensorPixelMode>,
+            useReadoutTimestamp: Boolean,
         ) :
             Config(
                 size,
@@ -350,10 +368,11 @@ public interface OutputStream {
                 StreamUseCase(Api33Compat.getStreamUseCase(output)),
                 streamUseHint,
                 sensorPixelModes,
+                useReadoutTimestamp,
             )
 
         override fun toString(): String {
-            return "Config(size=$size, format=$format, camera=$camera, mirrorMode=$mirrorMode, timestampBase=$timestampBase, dynamicRangeProfile=$dynamicRangeProfile, streamUseCase=$streamUseCase, streamUseHint=$streamUseHint, sensorPixelModes=$sensorPixelModes)"
+            return "Config(size=$size, format=$format, camera=$camera, mirrorMode=$mirrorMode, timestampBase=$timestampBase, dynamicRangeProfile=$dynamicRangeProfile, streamUseCase=$streamUseCase, streamUseHint=$streamUseHint, sensorPixelModes=$sensorPixelModes, useReadoutTimestamp=$useReadoutTimestamp)"
         }
     }
 
@@ -480,8 +499,8 @@ public interface OutputStream {
     /**
      * If this OutputStream is a valid stream for HIGH_SPEED recording. The requirement is that the
      * surface must be either video encoder surface or preview surface. The checks below can be used
-     * to ensure that the we are passing along the right intention for any further checks when
-     * actually configuring and using this stream.
+     * to ensure that we are passing along the right intention for any further checks when actually
+     * configuring and using this stream.
      *
      * [Camera2 reference]
      * [https://developer.android.com/reference/android/hardware/camera2/CameraDevice#constrained-high-speed-recording]
@@ -504,7 +523,10 @@ public class ImageSourceConfig(
     public val usageFlags: Long? = null,
     public val defaultDataSpace: Int? = null,
     public val defaultHardwareBufferFormat: Int? = null,
-)
+) {
+    // Only allowed to be set to true on multi-output streams.
+    public var enableConcurrentOutputs: Boolean = false
+}
 
 /** This identifies a single output. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

@@ -39,15 +39,15 @@ import org.json.JSONObject
  * @property signingInfoCompat the signing information associated with the calling app, which can be
  *   used across all Android API levels
  */
-class CallingAppInfo
+public class CallingAppInfo
 private constructor(
-    val packageName: String,
+    public val packageName: String,
     internal val origin: String?,
-    val signingInfoCompat: SigningInfoCompat,
+    public val signingInfoCompat: SigningInfoCompat,
     signingInfo: SigningInfo?,
 ) {
 
-    lateinit var signingInfo: SigningInfo
+    public lateinit var signingInfo: SigningInfo
         private set
         @RequiresApi(28) get
 
@@ -72,7 +72,7 @@ private constructor(
     @RequiresApi(28)
     @VisibleForTesting
     @JvmOverloads
-    constructor(
+    public constructor(
         packageName: String,
         signingInfo: SigningInfo,
         origin: String? = null,
@@ -99,13 +99,13 @@ private constructor(
     @JvmOverloads
     @VisibleForTesting
     @DeprecatedSinceApi(28, "Use the SigningInfo based constructor instead")
-    constructor(
+    public constructor(
         packageName: String,
         signatures: List<Signature>,
         origin: String? = null,
     ) : this(packageName, origin, SigningInfoCompat.fromSignatures(signatures), null)
 
-    companion object {
+    public companion object {
         /**
          * Constructs an instance of [CallingAppInfo]
          *
@@ -119,9 +119,12 @@ private constructor(
          * @throws IllegalArgumentException If [packageName] is empty
          */
         @RequiresApi(28)
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        fun create(packageName: String, signingInfo: SigningInfo, origin: String? = null) =
-            CallingAppInfo(packageName, signingInfo, origin)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        public fun create(
+            packageName: String,
+            signingInfo: SigningInfo,
+            origin: String? = null,
+        ): CallingAppInfo = CallingAppInfo(packageName, signingInfo, origin)
 
         /**
          * Constructs an instance of [CallingAppInfo]
@@ -137,9 +140,12 @@ private constructor(
          * @throws IllegalArgumentException If [packageName] is empty
          */
         @DeprecatedSinceApi(28, "Use the SigningInfo based constructor instead")
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        fun create(packageName: String, signatures: List<Signature>, origin: String? = null) =
-            CallingAppInfo(packageName, signatures, origin)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        public fun create(
+            packageName: String,
+            signatures: List<Signature>,
+            origin: String? = null,
+        ): CallingAppInfo = CallingAppInfo(packageName, signatures, origin)
 
         internal const val EXTRA_CREDENTIAL_REQUEST_ORIGIN =
             "androidx.credentials.provider.extra.CREDENTIAL_REQUEST_ORIGIN"
@@ -150,6 +156,13 @@ private constructor(
         private const val EXTRA_CREDENTIAL_REQUEST_SIGNATURES =
             "androidx.credentials.provider.extra.CREDENTIAL_REQUEST_SIGNATURES"
 
+        /**
+         * Sets the [info] object to the [Bundle] object in question. The [info] object must then be
+         * retrieved using [extractCallingAppInfo].
+         *
+         * @param info the [androidx.credentials.provider.CallingAppInfo] object to be set on the
+         *   bundle
+         */
         internal fun Bundle.setCallingAppInfo(info: CallingAppInfo) {
             this.putString(EXTRA_CREDENTIAL_REQUEST_ORIGIN, info.origin)
             this.putString(EXTRA_CREDENTIAL_REQUEST_PACKAGE_NAME, info.packageName)
@@ -163,8 +176,16 @@ private constructor(
             }
         }
 
+        /**
+         * Retrieves the [androidx.credentials.provider.CallingAppInfo] object from a [Bundle]
+         * instance, only if the [androidx.credentials.provider.CallingAppInfo] object was
+         * previously set through [setCallingAppInfo].
+         *
+         * @param bundle the [Bundle] object that holds a
+         *   [androidx.credentials.provider.CallingAppInfo] object
+         */
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        fun extractCallingAppInfo(bundle: Bundle): CallingAppInfo? {
+        public fun extractCallingAppInfo(bundle: Bundle): CallingAppInfo? {
             val origin = bundle.getString(EXTRA_CREDENTIAL_REQUEST_ORIGIN)
             val packageName = bundle.getString(EXTRA_CREDENTIAL_REQUEST_PACKAGE_NAME) ?: return null
             return if (Build.VERSION.SDK_INT >= 28) {
@@ -228,7 +249,7 @@ private constructor(
      * @throws IllegalStateException If the origin is non-null, but the [packageName] and
      *   [signingInfo] do not have a match in the [privilegedAllowlist]
      */
-    fun getOrigin(privilegedAllowlist: String): String? {
+    public fun getOrigin(privilegedAllowlist: String): String? {
         if (!RequestValidationUtil.isValidJSON(privilegedAllowlist)) {
             throw IllegalArgumentException(
                 "privilegedAllowlist must not be " + "empty, and must be a valid JSON"
@@ -261,7 +282,7 @@ private constructor(
      * Note that the [origin] is only populated if a privileged app like a browser calls Credential
      * Manager APIs on behalf of another application.
      */
-    fun isOriginPopulated(): Boolean {
+    public fun isOriginPopulated(): Boolean {
         return origin != null
     }
 

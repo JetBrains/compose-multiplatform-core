@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.pager
 
+import androidx.collection.IntList
 import androidx.collection.MutableIntObjectMap
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.Orientation
@@ -59,10 +60,11 @@ internal fun LazyLayoutMeasureScope.measurePager(
     visualPageOffset: IntOffset,
     pageAvailableSize: Int,
     beyondViewportPageCount: Int,
-    pinnedPages: List<Int>,
+    pinnedPages: IntList,
     snapPosition: SnapPosition,
     placementScopeInvalidator: ObservableScopeInvalidator,
     coroutineScope: CoroutineScope,
+    density: Density,
     layout: (Int, Int, Placeable.PlacementScope.() -> Unit) -> MeasureResult,
     placeablesCache: MutableIntObjectMap<List<Placeable>>,
 ): PagerMeasureResult {
@@ -78,6 +80,22 @@ internal fun LazyLayoutMeasureScope.measurePager(
             "\n CurrentPageOffset = $currentPageOffset" +
             "\n SnapPosition = $snapPosition"
     }
+
+    val childConstraints =
+        Constraints(
+            maxWidth =
+                if (orientation == Orientation.Vertical) {
+                    constraints.maxWidth
+                } else {
+                    pageAvailableSize
+                },
+            maxHeight =
+                if (orientation != Orientation.Vertical) {
+                    constraints.maxHeight
+                } else {
+                    pageAvailableSize
+                },
+        )
 
     return if (pageCount <= 0) {
         PagerMeasureResult(
@@ -99,25 +117,10 @@ internal fun LazyLayoutMeasureScope.measurePager(
             snapPosition = snapPosition,
             remeasureNeeded = false,
             coroutineScope = coroutineScope,
+            density = density,
+            childConstraints = childConstraints,
         )
     } else {
-
-        val childConstraints =
-            Constraints(
-                maxWidth =
-                    if (orientation == Orientation.Vertical) {
-                        constraints.maxWidth
-                    } else {
-                        pageAvailableSize
-                    },
-                maxHeight =
-                    if (orientation != Orientation.Vertical) {
-                        constraints.maxHeight
-                    } else {
-                        pageAvailableSize
-                    },
-            )
-
         var firstVisiblePage = currentPage
         var firstVisiblePageOffset = currentPageOffset
 
@@ -502,6 +505,8 @@ internal fun LazyLayoutMeasureScope.measurePager(
             extraPagesBefore = positionedPagesBefore,
             extraPagesAfter = positionedPagesAfter,
             coroutineScope = coroutineScope,
+            density = density,
+            childConstraints = childConstraints,
         )
     }
 }
@@ -510,7 +515,7 @@ private fun createPagesAfterList(
     currentLastPage: Int,
     pagesCount: Int,
     beyondViewportPageCount: Int,
-    pinnedPages: List<Int>,
+    pinnedPages: IntList,
     getAndMeasure: (Int) -> MeasuredPage,
 ): List<MeasuredPage> {
     var list: MutableList<MeasuredPage>? = null
@@ -522,7 +527,7 @@ private fun createPagesAfterList(
         list.add(getAndMeasure(i))
     }
 
-    pinnedPages.fastForEach { pageIndex ->
+    pinnedPages.forEach { pageIndex ->
         if (pageIndex in (end + 1) until pagesCount) {
             if (list == null) list = mutableListOf()
             list?.add(getAndMeasure(pageIndex))
@@ -535,7 +540,7 @@ private fun createPagesAfterList(
 private fun createPagesBeforeList(
     currentFirstPage: Int,
     beyondViewportPageCount: Int,
-    pinnedPages: List<Int>,
+    pinnedPages: IntList,
     getAndMeasure: (Int) -> MeasuredPage,
 ): List<MeasuredPage> {
     var list: MutableList<MeasuredPage>? = null
@@ -547,7 +552,7 @@ private fun createPagesBeforeList(
         list.add(getAndMeasure(i))
     }
 
-    pinnedPages.fastForEach { pageIndex ->
+    pinnedPages.forEach { pageIndex ->
         if (pageIndex < start) {
             if (list == null) list = mutableListOf()
             list?.add(getAndMeasure(pageIndex))

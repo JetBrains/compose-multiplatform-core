@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("ListIterator")
 
 package androidx.compose.runtime.mock
 
@@ -67,19 +68,18 @@ open class View : ComposeNodeLifecycleCallback {
     }
 
     fun removeAt(index: Int, count: Int) {
-        if (index < children.count()) {
-            if (count == 1) {
-                val removedChild = children.removeAt(index)
-                removedChild.onDetach()
-                removedChild.parent = null
-            } else {
-                val removedChildren = children.subList(index, index + count)
-                removedChildren.forEach { child ->
-                    child.onDetach()
-                    child.parent = null
-                }
-                removedChildren.clear()
+        check(index in 0 until children.size) { "Expected $index to be less than ${children.size}" }
+        if (count == 1) {
+            val removedChild = children.removeAt(index)
+            removedChild.onDetach()
+            removedChild.parent = null
+        } else {
+            val removedChildren = children.subList(index, index + count)
+            removedChildren.forEach { child ->
+                child.onDetach()
+                child.parent = null
             }
+            removedChildren.clear()
         }
     }
 

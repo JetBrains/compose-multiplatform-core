@@ -269,17 +269,13 @@ class ExperimentalDetector : Detector(), SourceCodeScanner {
                         if (annotated is PsiModifierListOwner) {
                             var found = false
 
-                            for (uAnnotation in
+                            uAnnotations =
                                 uAnnotations
-                                    ?: run {
-                                        val list =
-                                            context.evaluator.getAnnotations(
-                                                annotated,
-                                                inHierarchy = false,
-                                            )
-                                        uAnnotations = list
-                                        list
-                                    }) {
+                                    ?: context.evaluator.getAnnotations(
+                                        annotated,
+                                        inHierarchy = false,
+                                    )
+                            for (uAnnotation in uAnnotations) {
                                 val qualifiedName = uAnnotation.qualifiedName
                                 if (qualifiedName == signature) {
                                     found = true
@@ -550,10 +546,15 @@ class ExperimentalDetector : Detector(), SourceCodeScanner {
         annotationFqName: String,
         type: AnnotationUsageType,
     ): Boolean {
-        // Look up annotated annotations only for DEFINITION usage type.
-        val evaluator = context.evaluator.takeIf { type == DEFINITION }
         // Is the element itself experimental?
-        if (isDeclarationAnnotatedWith(annotationFqName, evaluator)) {
+        if (
+            isDeclarationAnnotatedWith(
+                annotationFqName,
+                context.evaluator,
+                // Look up annotated annotations only for DEFINITION usage type.
+                searchMetaAnnotations = type == DEFINITION,
+            )
+        ) {
             return true
         }
 
@@ -577,8 +578,11 @@ class ExperimentalDetector : Detector(), SourceCodeScanner {
         if (sourcePsi is KtProperty && this is UMethod) {
             val backingField = (uastParent as? UClass)?.fields?.find { it.sourcePsi == sourcePsi }
             if (
-                backingField?.isDeclarationAnnotatedWith(annotationFqName, context.evaluator) ==
-                    true
+                backingField?.isDeclarationAnnotatedWith(
+                    annotationFqName,
+                    context.evaluator,
+                    searchMetaAnnotations = true,
+                ) == true
             ) {
                 return true
             }
@@ -604,8 +608,13 @@ class ExperimentalDetector : Detector(), SourceCodeScanner {
         return config.getOption(ISSUE_ERROR, "opt-in")?.contains(annotationFqName) == true ||
             config.getOption(ISSUE_WARNING, "opt-in")?.contains(annotationFqName) == true ||
             anyParentMatches({ element ->
-                element.isDeclarationAnnotatedWith(annotationFqName) ||
-                    element.isDeclarationAnnotatedWithOptInOf(annotationFqName, optInFqNames)
+                element.isDeclarationAnnotatedWith(
+                    annotationFqName,
+                    context.evaluator,
+                    // The experimentality must be accepted directly, not through the experimental
+                    // annotation being meta-annotated with another experimental annotation.
+                    searchMetaAnnotations = false,
+                ) || element.isDeclarationAnnotatedWithOptInOf(annotationFqName, optInFqNames)
             }) ||
             context.evaluator.getPackage(this)?.let { element ->
                 element.isAnnotatedWith(annotationFqName) ||
@@ -845,7 +854,9 @@ private inline fun UElement.anyParentMatches(
 
 /** Returns whether the package is annotated with the specified annotation. */
 private fun PsiPackage.isAnnotatedWith(annotationFqName: String): Boolean =
-    annotations.any { annotation -> annotation.hasQualifiedName(annotationFqName) }
+    annotations.any { annotation ->
+        annotation.hasQualifiedName(annotationFqName)
+    }
 
 /**
  * Returns whether the package is annotated with any of the specified opt-in annotations where the
@@ -854,35 +865,40 @@ private fun PsiPackage.isAnnotatedWith(annotationFqName: String): Boolean =
 private fun PsiPackage.isAnnotatedWithOptInOf(
     annotationFqName: String,
     optInFqNames: List<String>,
-): Boolean =
-    optInFqNames.any { optInFqName ->
-        annotations.any { annotation ->
-            annotation.hasQualifiedName(optInFqName) &&
-                ((annotation.toUElementOfType<UAnnotation>())?.hasMatchingAttributeValueClass(
-                    "markerClass",
-                    annotationFqName,
-                ) ?: false)
-        }
+): Boolean = optInFqNames.any { optInFqName ->
+    annotations.any { annotation ->
+        annotation.hasQualifiedName(optInFqName) &&
+            ((annotation.toUElementOfType<UAnnotation>())?.hasMatchingAttributeValueClass(
+                "markerClass",
+                annotationFqName,
+            ) ?: false)
     }
+}
 
 /**
- * Returns whether the element declaration is annotated with the specified annotation or annotated
- * with annotation that is annotated with the specified annotation
+ * Returns whether the element declaration is annotated with the specified annotation. If
+ * [searchMetaAnnotations] is true, also checks if the element is annotated with an annotation that
+ * is annotated with the specified annotation.
  */
 private fun UElement.isDeclarationAnnotatedWith(
     annotationFqName: String,
-    evaluator: JavaEvaluator? = null,
+    evaluator: JavaEvaluator,
+    searchMetaAnnotations: Boolean,
 ): Boolean {
-    return (this as? UAnnotated)?.uAnnotations?.firstOrNull { uAnnotation ->
+    if (this !is UAnnotated) return false
+    // Use [getAllAnnotations] instead of [uAnnotations] because for UFields generated from a source
+    // property, [getAllAnnotations] will include all annotations on the property even if they do
+    // not technically apply to the backing field, which is the case for experimental annotations.
+    return evaluator.getAllAnnotations(this).any { uAnnotation ->
         // Directly annotated
-        if (uAnnotation.qualifiedName == annotationFqName) return@firstOrNull true
+        if (uAnnotation.qualifiedName == annotationFqName) return@any true
 
         // Annotated with an annotation that is annotated with the specified annotation
         val cls = uAnnotation.resolve()
-        if (cls == null || !cls.isAnnotationType) return@firstOrNull false
-        val metaAnnotations = evaluator?.getAnnotations(cls, inHierarchy = false)
-        metaAnnotations?.find { it.qualifiedName == annotationFqName } != null
-    } != null
+        if (cls == null || !cls.isAnnotationType || !searchMetaAnnotations) return@any false
+        val metaAnnotations = evaluator.getAnnotations(cls, inHierarchy = false)
+        metaAnnotations.find { it.qualifiedName == annotationFqName } != null
+    }
 }
 
 /**

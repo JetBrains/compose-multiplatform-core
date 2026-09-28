@@ -19,13 +19,13 @@ package androidx.appfunctions.testing
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.appfunctions.AppFunctionManagerCompat
-import androidx.appfunctions.internal.NullTranslatorSelector
+import androidx.appfunctions.AppFunctionManager
 import androidx.appfunctions.testing.internal.FakeAppFunctionManagerApi
 import androidx.appfunctions.testing.internal.FakeAppFunctionReader
 import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
+import org.robolectric.shadows.ShadowSystemProperties
 
 /**
  * A JUnit TestRule for setting up an environment to exercise AppFunction APIs in unit or
@@ -34,7 +34,7 @@ import org.junit.runners.model.Statement
  * Prefer real system-level testing where possible. This rule is intended only for local tests that
  * simulate cross-app interactions via AppFunctions.
  *
- * Any functions annotated with [androidx.appfunctions.service.AppFunction] in test code will be
+ * Any functions annotated with [androidx.appfunctions.AppFunctionDeclaration] in test code will be
  * automatically registered in this environment during initialization, provided the
  * `appfunctions-compiler` is applied to the test configuration with the
  * `appfunctions:aggregateAppFunctions` compiler option set to true.
@@ -59,7 +59,7 @@ import org.junit.runners.model.Statement
  *
  * // Sample functions under test.
  * class ExampleFunctions {
- *     @AppFunction
+ *     @AppFunctionDeclaration
  *     suspend fun add(a: Int, b: Int): Int = a + b
  * }
  *
@@ -95,7 +95,7 @@ import org.junit.runners.model.Statement
  * package com.example.agent.appfunctions
  *
  * class AppFunctionsAgent(
- *     private val appFunctionManagerCompat: AppFunctionManagerCompat
+ *     private val appFunctionManagerCompat: AppFunctionManager
  * ) {
  *     suspend fun executeAppFunction(
  *         packageName: String,
@@ -125,7 +125,7 @@ import org.junit.runners.model.Statement
  *
  * // Test file.
  * class TestFunctions {
- *     @AppFunction
+ *     @AppFunctionDeclaration
  *     fun testFun(parameters: TestParam): TestReturn { ... }
  * }
  *
@@ -153,26 +153,35 @@ public class AppFunctionTestRule(private val context: Context) : TestRule {
     // TODO: b/426219836 - Dynamic registration and changing app function enabled state API(s).
     // TODO: b/425327400 - Move to use Robolectric shadows
 
-    private val appFunctionReader = FakeAppFunctionReader(context)
+    // TODO(b/426219836): appFunctionReader is internal to set dynamic AppFunctionMetadata manually
+    //  in tests. Make it private once dynamic app functions are supported in test rule API.
+    internal val appFunctionReader = FakeAppFunctionReader(context)
     private val appFunctionManagerApi = FakeAppFunctionManagerApi(context, appFunctionReader)
 
     override fun apply(base: Statement?, description: Description?): Statement =
         object : Statement() {
             override fun evaluate() {
+                // Robolectric platform doesn't set these properties, we have checks for certain
+                // AppSearch features that are only available if the sdk extensions for T are above
+                // 13.
+                ShadowSystemProperties.override(T_EXTENSION_PROPERTY_STRING, "13")
                 base?.evaluate()
             }
         }
 
     /**
-     * Returns an [AppFunctionManagerCompat] instance for interacting with AppFunctions registered
-     * via the test rule.
+     * Returns an [AppFunctionManager] instance for interacting with AppFunctions registered via the
+     * test rule.
      */
-    public fun getAppFunctionManagerCompat(): AppFunctionManagerCompat {
-        return AppFunctionManagerCompat(
+    public fun getAppFunctionManager(): AppFunctionManager {
+        return AppFunctionManager(
             context = context,
             appFunctionReader = appFunctionReader,
             appFunctionManagerApi = appFunctionManagerApi,
-            translatorSelector = NullTranslatorSelector(),
         )
+    }
+
+    private companion object {
+        private const val T_EXTENSION_PROPERTY_STRING = "build.version.extensions.t"
     }
 }

@@ -17,7 +17,8 @@
 package androidx.pdf.annotation.drawer
 
 import androidx.annotation.RestrictTo
-import androidx.pdf.annotation.models.PdfObject
+import androidx.pdf.ExperimentalPdfApi
+import androidx.pdf.annotation.content.PdfObject
 
 /** Factory interface for creating [PdfObjectDrawer] instances. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -28,5 +29,6 @@ public interface PdfObjectDrawerFactory {
      * @param pdfObject The PDF object for which to create a drawer.
      * @return A [PdfObjectDrawer] capable of drawing the specified object.
      */
+    @OptIn(ExperimentalPdfApi::class)
     public fun create(pdfObject: PdfObject): PdfObjectDrawer<out PdfObject>
 }

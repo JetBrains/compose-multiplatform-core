@@ -31,7 +31,7 @@ import androidx.health.platform.client.proto.MessageLite
  */
 @Suppress("ParcelCreator", "ParcelNotFinal")
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-abstract class ProtoParcelable<T : MessageLite> : ProtoData<T>(), Parcelable {
+public abstract class ProtoParcelable<T : MessageLite> : ProtoData<T>(), Parcelable {
 
     /** Serialized representation of this object. */
     private val bytes: ByteArray by lazy { proto.toByteArray() }
@@ -57,11 +57,11 @@ abstract class ProtoParcelable<T : MessageLite> : ProtoData<T>(), Parcelable {
     }
 
     /** Returns whether the underlying proto should be stored as an in-place [ByteArray]. */
-    private fun shouldStoreInPlace(): Boolean {
+    protected open fun shouldStoreInPlace(): Boolean {
         return bytes.size <= MAX_IN_PLACE_SIZE
     }
 
-    companion object {
+    public companion object {
         /**
          * Constructs and returns a [Creator] based on the provided [parser] accepting a [ByteArray]
          * .

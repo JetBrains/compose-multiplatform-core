@@ -20,6 +20,7 @@ import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.LibraryPlugin
@@ -64,13 +65,14 @@ internal fun configureRobolectric(project: Project) {
                                 hostTest.isIncludeAndroidResources = true
                             }
                     }
-                // TODO(b/429552116): Use variants API to configure test when bug is fixed
-                project.tasks.withType(Test::class.java).configureEach { task ->
-                    if (task.name == "testAndroidHostTest") {
-                        configureJvmTestTask(project, task)
+                project.extensions
+                    .getByType<KotlinMultiplatformAndroidComponentsExtension>()
+                    .onVariants { variant ->
+                        variant.hostTests.forEach { (_, hostTest) ->
+                            hostTest.configureTestTask { configureJvmTestTask(project, it) }
+                        }
                     }
-                }
-                project.configurations.named("androidUnitTestImplementation").configure {
+                project.configurations.named("androidHostTestImplementation").configure {
                     configuration ->
                     configuration.dependencies.add(project.getLibraryByName("robolectric"))
                 }
@@ -113,6 +115,12 @@ private fun configureJvmTestTask(project: Project, task: Test) {
             "--add-opens=java.base/java.lang=ALL-UNNAMED",
             "--add-opens=java.base/java.util=ALL-UNNAMED",
             "--add-opens=java.base/java.io=ALL-UNNAMED",
+            "--add-opens=java.base/java.net=ALL-UNNAMED",
+            "--add-opens=java.base/java.security=ALL-UNNAMED",
+            "--add-opens=java.base/java.text=ALL-UNNAMED",
+            "--add-opens=java.base/jdk.internal.access=ALL-UNNAMED",
+            "--add-opens=java.desktop/java.awt.font=ALL-UNNAMED",
+            "--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
             // Speculative fixes for b/428257656
             "-XX:CompileCommand=quiet",
             "-XX:CompileCommand=exclude,android/icu/util/Calendar,${"$$"}robo${"$$"}android_icu_util_Calendar${"$"}createInstance",

@@ -140,10 +140,21 @@ private class BaselineProfileAppTargetAgpPlugin(private val project: Project) :
             if (supportsFeature(AgpFeature.APPLICATION_VARIANT_HAS_UNIT_TEST_BUILDER)) {
                 (variantBuilder as? HasUnitTestBuilder)?.enableUnitTest = false
             } else {
-                @Suppress("deprecation")
-                variantBuilder.enableUnitTest = false
-                @Suppress("deprecation")
-                variantBuilder.unitTestEnabled = false
+                try {
+                    variantBuilder::class
+                        .java
+                        .getMethod("setEnableUnitTest", Boolean::class.javaPrimitiveType)
+                        .invoke(variantBuilder, false)
+                    variantBuilder::class
+                        .java
+                        .getMethod("setUnitTestEnabled", Boolean::class.javaPrimitiveType)
+                        .invoke(variantBuilder, false)
+                } catch (e: ReflectiveOperationException) {
+                    throw Exception(
+                        "Could not disable unit tests for variant ${variantBuilder.name} " +
+                            "via reflection: ${e.message}"
+                    )
+                }
             }
         }
     }
@@ -266,6 +277,7 @@ private class BaselineProfileAppTargetAgpPlugin(private val project: Project) :
 
         // Copies the source sets for the newly created build types
         copyBuildTypeSources(
+            supportsDirectories = supportsFeature(AgpFeature.DIRECTORYSET_HAS_DIRECTORIES),
             extensionSourceSets = extension.sourceSets,
             fromToMapping = baselineProfileExtendedToOriginalTypeMap,
         )
@@ -325,6 +337,7 @@ private class BaselineProfileAppTargetAgpPlugin(private val project: Project) :
 
         // Copies the source sets for the newly created build types
         copyBuildTypeSources(
+            supportsDirectories = supportsFeature(AgpFeature.DIRECTORYSET_HAS_DIRECTORIES),
             extensionSourceSets = extension.sourceSets,
             fromToMapping = baselineProfileExtendedToOriginalTypeMap,
         )
@@ -376,6 +389,7 @@ private class BaselineProfileAppTargetAgpPlugin(private val project: Project) :
 
         // Copies the source sets for the newly created build types
         copyBuildTypeSources(
+            supportsDirectories = supportsFeature(AgpFeature.DIRECTORYSET_HAS_DIRECTORIES),
             extensionSourceSets = extension.sourceSets,
             fromToMapping = benchmarkExtendedToOriginalTypeMap,
         )

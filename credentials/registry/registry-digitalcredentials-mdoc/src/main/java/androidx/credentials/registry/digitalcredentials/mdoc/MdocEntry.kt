@@ -16,6 +16,8 @@
 
 package androidx.credentials.registry.digitalcredentials.mdoc
 
+import androidx.credentials.registry.provider.DelegationType
+import androidx.credentials.registry.provider.DelegationTypeAnnotation
 import androidx.credentials.registry.provider.digitalcredentials.DigitalCredentialEntry
 import androidx.credentials.registry.provider.digitalcredentials.EntryDisplayProperties
 
@@ -31,13 +33,22 @@ import androidx.credentials.registry.provider.digitalcredentials.EntryDisplayPro
  * @property fields the given mdoc's individual properties used both for filtering and display
  *   purposes
  * @constructor
+ * @throws IllegalArgumentException if [id] length is greater than 64 characters
  */
-public class MdocEntry(
+public class MdocEntry
+@JvmOverloads
+constructor(
     public val docType: String,
     public val fields: List<MdocField>,
     entryDisplayPropertySet: Set<EntryDisplayProperties>,
     id: String,
-) : DigitalCredentialEntry(id = id, entryDisplayPropertySet = entryDisplayPropertySet) {
+    @DelegationTypeAnnotation delegationType: Int = DelegationType.NONE,
+) :
+    DigitalCredentialEntry(
+        id = id,
+        entryDisplayPropertySet = entryDisplayPropertySet,
+        delegationType = delegationType,
+    ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is MdocEntry) return false
@@ -45,8 +56,7 @@ public class MdocEntry(
             this.entryDisplayPropertySet == other.entryDisplayPropertySet &&
             this.docType == other.docType &&
             this.fields == other.fields &&
-            this.entryDisplayPropertySet == other.entryDisplayPropertySet &&
-            this.id == other.id
+            this.delegationType == other.delegationType
     }
 
     override fun hashCode(): Int {
@@ -54,6 +64,7 @@ public class MdocEntry(
         result = 31 * result + entryDisplayPropertySet.hashCode()
         result = 31 * result + docType.hashCode()
         result = 31 * result + fields.hashCode()
+        result = 31 * result + delegationType
         return result
     }
 }

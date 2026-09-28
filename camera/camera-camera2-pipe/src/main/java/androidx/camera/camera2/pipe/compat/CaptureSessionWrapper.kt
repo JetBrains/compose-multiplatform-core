@@ -25,11 +25,12 @@ import android.os.Handler
 import android.view.Surface
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraInterop
-import androidx.camera.camera2.pipe.UnsafeWrapper
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.internal.CameraErrorListener
-import kotlin.reflect.KClass
+import androidx.camera.common.UnsafeWrapper
+import androidx.camera.common.unwrapAs
+import java.lang.Class
 import kotlinx.atomicfu.atomic
 
 /**
@@ -222,9 +223,7 @@ internal class AndroidCaptureSessionStateCallback(
         // return a CameraConstrainedHighSpeedCaptureSession depending on the configuration. If
         // this happens, several methods are not allowed, the behavior is different, and interacting
         // with the session requires several behavior changes for these interactions to work well.
-        return if (
-            Build.VERSION.SDK_INT >= 23 && session is CameraConstrainedHighSpeedCaptureSession
-        ) {
+        return if (session is CameraConstrainedHighSpeedCaptureSession) {
             AndroidCameraConstrainedHighSpeedCaptureSession(
                 device,
                 session,
@@ -299,23 +298,10 @@ internal open class AndroidCameraCaptureSession(
         CameraInterop.nextCameraCaptureSessionId()
 
     override val isReprocessable: Boolean
-        get() {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                return Api23Compat.isReprocessable(cameraCaptureSession)
-            }
-            // Reprocessing is not supported  prior to Android M
-            return false
-        }
+        get() = cameraCaptureSession.isReprocessable
 
     override val inputSurface: Surface?
-        get() {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                return Api23Compat.getInputSurface(cameraCaptureSession)
-            }
-            // Reprocessing is not supported prior to Android M, and a CaptureSession that does not
-            // support reprocessing will have a null input surface on M and beyond.
-            return null
-        }
+        get() = cameraCaptureSession.inputSurface
 
     @RequiresApi(26)
     override fun finalizeOutputConfigurations(
@@ -330,15 +316,15 @@ internal open class AndroidCameraCaptureSession(
         return instrumentAndCatch("finalizeOutputConfigurations") {
             Api26Compat.finalizeOutputConfigurations(
                 cameraCaptureSession,
-                outputConfigs.map { it.unwrapAs(OutputConfiguration::class) },
+                outputConfigs.map { it.unwrapAs<OutputConfiguration>() },
             )
         } != null
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+    override fun <T : Any> unwrapAs(type: Class<T>): T? =
         when (type) {
-            CameraCaptureSession::class -> cameraCaptureSession as T?
+            CameraCaptureSession::class.java -> cameraCaptureSession as T?
             else -> null
         }
 
@@ -358,7 +344,6 @@ internal open class AndroidCameraCaptureSession(
  * An implementation of [CameraConstrainedHighSpeedCaptureSessionWrapper] forwards calls to a real
  * [CameraConstrainedHighSpeedCaptureSession].
  */
-@RequiresApi(23)
 internal class AndroidCameraConstrainedHighSpeedCaptureSession
 internal constructor(
     device: CameraDeviceWrapper,
@@ -408,9 +393,9 @@ internal constructor(
         }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+    override fun <T : Any> unwrapAs(type: Class<T>): T? =
         when (type) {
-            CameraConstrainedHighSpeedCaptureSession::class -> session as T?
-            else -> super.unwrapAs(type)
+            CameraConstrainedHighSpeedCaptureSession::class.java -> session as T?
+            else -> super<AndroidCameraCaptureSession>.unwrapAs(type)
         }
 }

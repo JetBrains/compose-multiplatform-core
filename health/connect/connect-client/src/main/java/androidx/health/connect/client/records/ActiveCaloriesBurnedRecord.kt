@@ -15,7 +15,9 @@
  */
 package androidx.health.connect.client.records
 
+import android.os.Build
 import androidx.health.connect.client.aggregate.AggregateMetric
+import androidx.health.connect.client.impl.platform.records.toPlatformRecord
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.units.Energy
 import androidx.health.connect.client.units.kilocalories
@@ -38,9 +40,13 @@ public class ActiveCaloriesBurnedRecord(
 ) : IntervalRecord {
 
     init {
-        energy.requireNotLess(other = energy.zero(), "energy")
-        energy.requireNotMore(other = MAX_ENERGY, "energy")
-        require(startTime.isBefore(endTime)) { "startTime must be before endTime." }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            this.toPlatformRecord()
+        } else {
+            require(startTime.isBefore(endTime)) { "startTime must be before endTime." }
+            energy.requireNotLess(other = energy.zero(), "energy")
+            energy.requireNotMore(other = MAX_ENERGY, "energy")
+        }
     }
 
     /*
@@ -77,7 +83,7 @@ public class ActiveCaloriesBurnedRecord(
         return "ActiveCaloriesBurnedRecord(startTime=$startTime, startZoneOffset=$startZoneOffset, endTime=$endTime, endZoneOffset=$endZoneOffset, energy=$energy, metadata=$metadata)"
     }
 
-    companion object {
+    public companion object {
         private const val TYPE_NAME = "ActiveCaloriesBurned"
         private const val ENERGY_FIELD_NAME = "energy"
         private val MAX_ENERGY = 1000_000.kilocalories
@@ -87,7 +93,7 @@ public class ActiveCaloriesBurnedRecord(
          * [androidx.health.connect.client.aggregate.AggregationResult].
          */
         @JvmField
-        val ACTIVE_CALORIES_TOTAL: AggregateMetric<Energy> =
+        public val ACTIVE_CALORIES_TOTAL: AggregateMetric<Energy> =
             AggregateMetric.doubleMetric(
                 dataTypeName = TYPE_NAME,
                 aggregationType = AggregateMetric.AggregationType.TOTAL,

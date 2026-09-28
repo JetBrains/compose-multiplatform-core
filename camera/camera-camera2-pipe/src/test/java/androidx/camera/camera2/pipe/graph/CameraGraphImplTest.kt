@@ -18,35 +18,39 @@ package androidx.camera.camera2.pipe.graph
 
 import android.content.Context
 import android.graphics.ImageFormat
-import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
-import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL
 import android.media.ImageReader
-import android.os.Build
 import android.util.Size
 import androidx.camera.camera2.pipe.CameraBackendFactory
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraphId
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.CameraSurfaceManager
+import androidx.camera.camera2.pipe.MemoryEstimator
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.internal.CameraBackendsImpl
 import androidx.camera.camera2.pipe.internal.CameraGraphParametersImpl
+import androidx.camera.camera2.pipe.internal.CameraGraphRequestListenersImpl
 import androidx.camera.camera2.pipe.internal.CameraPipeLifetime
 import androidx.camera.camera2.pipe.internal.FrameCaptureQueue
 import androidx.camera.camera2.pipe.internal.FrameDistributor
-import androidx.camera.camera2.pipe.internal.ImageSourceMap
-import androidx.camera.camera2.pipe.media.ImageReaderImageSources
+import androidx.camera.camera2.pipe.internal.GraphSessionLock
 import androidx.camera.camera2.pipe.testing.CameraControllerSimulator
 import androidx.camera.camera2.pipe.testing.FakeAudioRestrictionController
 import androidx.camera.camera2.pipe.testing.FakeCameraBackend
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.pipe.testing.FakeGraphProcessor
+import androidx.camera.camera2.pipe.testing.FakeImageReaders
+import androidx.camera.camera2.pipe.testing.FakeImageSources
+import androidx.camera.camera2.pipe.testing.FakeSurfaces
 import androidx.camera.camera2.pipe.testing.FakeThreads
+import androidx.camera.camera2.pipe.testing.HighEndDeviceTemplate
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
 import androidx.test.core.app.ApplicationProvider
 import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -56,6 +60,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -73,15 +78,14 @@ import org.robolectric.annotation.internal.DoNotInstrument
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 internal class CameraGraphImplTest {
-    private val testScope = TestScope()
+    private val testScheduler = TestCoroutineScheduler()
+    private val testScope = TestScope(testScheduler)
+    private val testBackgroundScope = TestScope(testScheduler)
 
     private val context = ApplicationProvider.getApplicationContext() as Context
-    private val metadata =
-        FakeCameraMetadata(
-            mapOf(INFO_SUPPORTED_HARDWARE_LEVEL to INFO_SUPPORTED_HARDWARE_LEVEL_FULL)
-        )
+    private val metadata = FakeCameraMetadata.fromTemplate(HighEndDeviceTemplate)
     private val fakeGraphProcessor = FakeGraphProcessor()
     private val imageReader1 = ImageReader.newInstance(1280, 720, ImageFormat.YUV_420_888, 4)
     private val imageReader2 = ImageReader.newInstance(1920, 1080, ImageFormat.YUV_420_888, 4)
@@ -96,8 +100,8 @@ internal class CameraGraphImplTest {
     private val graphId = CameraGraphId.nextId()
     private val graphConfig =
         CameraGraph.Config(camera = metadata.camera, streams = listOf(stream1Config, stream2Config))
-    private val threads = FakeThreads.fromTestScope(testScope)
-    private val cameraPipeLifetime = CameraPipeLifetime()
+    private val threads = FakeThreads.fromTestScope(testBackgroundScope)
+    private val cameraPipeLifetime = CameraPipeLifetime(Job())
     private val backend = FakeCameraBackend(fakeCameras = mapOf(metadata.camera to metadata))
     private val backends =
         CameraBackendsImpl(
@@ -108,18 +112,28 @@ internal class CameraGraphImplTest {
             cameraPipeLifetime,
         )
     private val cameraContext = CameraBackendsImpl.CameraBackendContext(context, threads, backends)
-    private val imageSources = ImageReaderImageSources(threads)
+    private val fakeSurfaces = FakeSurfaces()
+    private val fakeImageReaders = FakeImageReaders(fakeSurfaces)
+    private val imageSources = FakeImageSources(fakeImageReaders)
     private val frameCaptureQueue = FrameCaptureQueue()
     private val cameraController =
         CameraControllerSimulator(cameraContext, graphId, graphConfig, fakeGraphProcessor)
     private val cameraControllerProvider: () -> CameraControllerSimulator = { cameraController }
-    private val streamGraph = StreamGraphImpl(metadata, graphConfig, cameraControllerProvider)
-    private val imageSourceMap = ImageSourceMap(graphConfig, streamGraph, imageSources)
-    private val frameDistributor = FrameDistributor(imageSourceMap.imageSources, frameCaptureQueue)
+    private val streamGraph =
+        StreamGraphImpl(
+            metadata,
+            graphConfig,
+            imageSources,
+            cameraControllerProvider,
+            MemoryEstimator.create(),
+        )
+    private val frameDistributor = FrameDistributor(streamGraph, frameCaptureQueue, true, 0L)
     private val surfaceGraph =
         SurfaceGraph(streamGraph, cameraControllerProvider, cameraSurfaceManager, emptyMap())
     private val audioRestriction = FakeAudioRestrictionController()
-    private val sessionLock = SessionLock()
+    private val sessionLock = GraphSessionLock()
+    private val controller3A =
+        Controller3A(fakeGraphProcessor, metadata, GraphState3A(), Listener3A())
     private val cameraGraph =
         CameraGraphImpl(
             graphConfig,
@@ -129,14 +143,15 @@ internal class CameraGraphImplTest {
             streamGraph,
             surfaceGraph,
             cameraController,
-            GraphState3A(),
-            Listener3A(),
             frameDistributor,
             frameCaptureQueue,
             audioRestriction,
             graphId,
-            CameraGraphParametersImpl(sessionLock, fakeGraphProcessor, testScope),
+            CameraGraphParametersImpl(sessionLock, fakeGraphProcessor, testBackgroundScope),
+            CameraGraphRequestListenersImpl(sessionLock, fakeGraphProcessor, testScope),
             sessionLock,
+            testBackgroundScope,
+            controller3A,
         )
     private val stream1: CameraStream =
         checkNotNull(cameraGraph.streams[stream1Config]) {
@@ -160,320 +175,304 @@ internal class CameraGraphImplTest {
     @Test fun createCameraGraphImpl() = testScope.runTest { assertThat(cameraGraph).isNotNull() }
 
     @Test
-    fun testAcquireSession() =
-        testScope.runTest {
-            val session = cameraGraph.acquireSession()
-            assertThat(session).isNotNull()
-        }
+    fun testAcquireSession() = testScope.runTest {
+        val session = cameraGraph.acquireSession()
+        assertThat(session).isNotNull()
+    }
 
     @Test
-    fun testAcquireSessionOrNull() =
-        testScope.runTest {
-            val session = cameraGraph.acquireSessionOrNull()
-            assertThat(session).isNotNull()
-        }
+    fun testAcquireSessionOrNull() = testScope.runTest {
+        val session = cameraGraph.acquireSessionOrNull()
+        assertThat(session).isNotNull()
+    }
 
     @Test
-    fun testAcquireSessionOrNullAfterAcquireSession() =
-        testScope.runTest {
-            val session = cameraGraph.acquireSession()
-            assertThat(session).isNotNull()
+    fun testAcquireSessionOrNullAfterAcquireSession() = testScope.runTest {
+        val session = cameraGraph.acquireSession()
+        assertThat(session).isNotNull()
 
-            // Since a session is already active, an attempt to acquire another session will fail.
-            val session1 = cameraGraph.acquireSessionOrNull()
-            assertThat(session1).isNull()
+        // Since a session is already active, an attempt to acquire another session will fail.
+        val session1 = cameraGraph.acquireSessionOrNull()
+        assertThat(session1).isNull()
 
-            // Closing an active session should allow a new session instance to be created.
-            session.close()
+        // Closing an active session should allow a new session instance to be created.
+        session.close()
 
-            val session2 = cameraGraph.acquireSessionOrNull()
-            assertThat(session2).isNotNull()
-        }
-
-    @Test
-    fun sessionSubmitsRequestsToGraphProcessor() =
-        testScope.runTest {
-            val session = checkNotNull(cameraGraph.acquireSessionOrNull())
-            val request = Request(listOf())
-            session.submit(request)
-            advanceUntilIdle()
-
-            assertThat(fakeGraphProcessor.requestQueue).contains(listOf(request))
-        }
+        val session2 = cameraGraph.acquireSessionOrNull()
+        assertThat(session2).isNotNull()
+    }
 
     @Test
-    fun sessionSetsRepeatingRequestOnGraphProcessor() =
-        testScope.runTest {
-            val session = checkNotNull(cameraGraph.acquireSessionOrNull())
-            val request = Request(listOf())
-            session.startRepeating(request)
-            advanceUntilIdle()
+    fun sessionSubmitsRequestsToGraphProcessor() = testScope.runTest {
+        val session = checkNotNull(cameraGraph.acquireSessionOrNull())
+        val request = Request(listOf())
+        session.submit(request)
+        advanceUntilIdle()
 
-            assertThat(fakeGraphProcessor.repeatingRequest).isSameInstanceAs(request)
-        }
-
-    @Test
-    fun sessionAbortsRequestOnGraphProcessor() =
-        testScope.runTest {
-            val session = checkNotNull(cameraGraph.acquireSessionOrNull())
-            val request = Request(listOf())
-            session.submit(request)
-            session.abort()
-            advanceUntilIdle()
-
-            assertThat(fakeGraphProcessor.requestQueue).isEmpty()
-        }
+        assertThat(fakeGraphProcessor.requestQueue).contains(listOf(request))
+    }
 
     @Test
-    fun closingSessionDoesNotCloseGraphProcessor() =
-        testScope.runTest {
-            val session = cameraGraph.acquireSessionOrNull()
-            checkNotNull(session).close()
-            advanceUntilIdle()
+    fun sessionSetsRepeatingRequestOnGraphProcessor() = testScope.runTest {
+        val session = checkNotNull(cameraGraph.acquireSessionOrNull())
+        val request = Request(listOf())
+        session.startRepeating(request)
+        advanceUntilIdle()
 
-            assertThat(fakeGraphProcessor.closed).isFalse()
-        }
-
-    @Test
-    fun closingCameraGraphClosesGraphProcessor() =
-        testScope.runTest {
-            cameraGraph.close()
-            assertThat(fakeGraphProcessor.closed).isTrue()
-        }
+        assertThat(fakeGraphProcessor.repeatingRequest).isSameInstanceAs(request)
+    }
 
     @Test
-    fun stoppingCameraGraphStopsGraphProcessor() =
-        testScope.runTest {
-            assertThat(cameraController.started).isFalse()
-            assertThat(fakeGraphProcessor.closed).isFalse()
-            cameraGraph.start()
-            assertThat(cameraController.started).isTrue()
-            cameraGraph.stop()
-            assertThat(cameraController.started).isFalse()
-            assertThat(fakeGraphProcessor.closed).isFalse()
-            cameraGraph.start()
-            assertThat(cameraController.started).isTrue()
-            cameraGraph.close()
-            assertThat(cameraController.started).isFalse()
-            assertThat(fakeGraphProcessor.closed).isTrue()
-        }
+    fun sessionAbortsRequestOnGraphProcessor() = testScope.runTest {
+        val session = checkNotNull(cameraGraph.acquireSessionOrNull())
+        val request = Request(listOf())
+        session.submit(request)
+        session.abort()
+        advanceUntilIdle()
+
+        assertThat(fakeGraphProcessor.requestQueue).isEmpty()
+    }
 
     @Test
-    fun closingCameraGraphClosesAssociatedSurfaces() =
-        testScope.runTest {
-            cameraGraph.setSurface(stream1.id, imageReader1.surface)
-            cameraGraph.setSurface(stream2.id, imageReader2.surface)
-            cameraGraph.close()
+    fun closingSessionDoesNotCloseGraphProcessor() = testScope.runTest {
+        val session = cameraGraph.acquireSessionOrNull()
+        checkNotNull(session).close()
+        advanceUntilIdle()
 
-            verify(fakeSurfaceListener, times(1)).onSurfaceActive(eq(imageReader1.surface))
-            verify(fakeSurfaceListener, times(1)).onSurfaceActive(eq(imageReader2.surface))
-            verify(fakeSurfaceListener, times(1)).onSurfaceInactive(eq(imageReader1.surface))
-            verify(fakeSurfaceListener, times(1)).onSurfaceInactive(eq(imageReader1.surface))
-        }
+        assertThat(fakeGraphProcessor.closed).isFalse()
+    }
 
     @Test
-    fun useSessionInOperatesInOrder() =
-        testScope.runTest {
-            val events = mutableListOf<Int>()
-            val job1 =
-                cameraGraph.useSessionIn(testScope) {
-                    yield()
-                    events += 2
-                }
-            val job2 =
-                cameraGraph.useSessionIn(testScope) {
-                    delay(100)
-                    events += 3
-                }
-            val job3 =
-                cameraGraph.useSessionIn(testScope) {
-                    yield()
-                    events += 4
-                }
-
-            events += 1
-            job1.join()
-            job2.join()
-            job3.join()
-
-            assertThat(events).containsExactly(1, 2, 3, 4).inOrder()
-        }
+    fun closingCameraGraphClosesImageSources() = testScope.runTest {
+        cameraGraph.close()
+        imageSources.checkImageSourcesClosed()
+    }
 
     @Test
-    fun useSessionWithEarlyCloseAllowsInterleavedExecution() =
-        testScope.runTest {
-            val events = mutableListOf<Int>()
-            val job1 =
-                cameraGraph.useSessionIn(testScope) { session ->
-                    yield()
-                    events += 2
-                    session.close()
-                    delay(1000)
-                    events += 5
-                }
-            val job2 =
-                cameraGraph.useSessionIn(testScope) {
-                    delay(100)
-                    events += 3
-                }
-            val job3 =
-                cameraGraph.useSessionIn(testScope) {
-                    yield()
-                    events += 4
-                }
+    fun closingCameraGraphClosesGraphProcessor() = testScope.runTest {
+        cameraGraph.close()
+        assertThat(fakeGraphProcessor.closed).isTrue()
+    }
 
-            events += 1
-            job1.join()
-            job2.join()
-            job3.join()
+    @Test
+    fun stoppingCameraGraphStopsGraphProcessor() = testScope.runTest {
+        assertThat(cameraController.started).isFalse()
+        assertThat(fakeGraphProcessor.closed).isFalse()
+        cameraGraph.start()
+        assertThat(cameraController.started).isTrue()
+        cameraGraph.stop()
+        assertThat(cameraController.started).isFalse()
+        assertThat(fakeGraphProcessor.closed).isFalse()
+        cameraGraph.start()
+        assertThat(cameraController.started).isTrue()
+        cameraGraph.close()
+        assertThat(cameraController.started).isFalse()
+        assertThat(fakeGraphProcessor.closed).isTrue()
+    }
 
-            assertThat(events).containsExactly(1, 2, 3, 4, 5).inOrder()
-        }
+    @Test
+    fun closingCameraGraphClosesAssociatedSurfaces() = testScope.runTest {
+        cameraGraph.setSurface(stream1.id, imageReader1.surface)
+        cameraGraph.setSurface(stream2.id, imageReader2.surface)
+        cameraGraph.close()
+
+        verify(fakeSurfaceListener, times(1)).onSurfaceActive(eq(imageReader1.surface))
+        verify(fakeSurfaceListener, times(1)).onSurfaceActive(eq(imageReader2.surface))
+        verify(fakeSurfaceListener, times(1)).onSurfaceInactive(eq(imageReader1.surface))
+        verify(fakeSurfaceListener, times(1)).onSurfaceInactive(eq(imageReader1.surface))
+    }
+
+    @Test
+    fun useSessionInOperatesInOrder() = testScope.runTest {
+        val events = mutableListOf<Int>()
+        val job1 =
+            cameraGraph.useSessionIn(testScope) {
+                yield()
+                events += 2
+            }
+        val job2 =
+            cameraGraph.useSessionIn(testScope) {
+                delay(100.milliseconds)
+                events += 3
+            }
+        val job3 =
+            cameraGraph.useSessionIn(testScope) {
+                yield()
+                events += 4
+            }
+
+        events += 1
+        job1.join()
+        job2.join()
+        job3.join()
+
+        assertThat(events).containsExactly(1, 2, 3, 4).inOrder()
+    }
+
+    @Test
+    fun useSessionWithEarlyCloseAllowsInterleavedExecution() = testScope.runTest {
+        val events = mutableListOf<Int>()
+        val job1 =
+            cameraGraph.useSessionIn(testScope) { session ->
+                yield()
+                events += 2
+                session.close()
+                delay(1000)
+                events += 5
+            }
+        val job2 =
+            cameraGraph.useSessionIn(testScope) {
+                delay(100)
+                events += 3
+            }
+        val job3 =
+            cameraGraph.useSessionIn(testScope) {
+                yield()
+                events += 4
+            }
+
+        events += 1
+        job1.join()
+        job2.join()
+        job3.join()
+
+        assertThat(events).containsExactly(1, 2, 3, 4, 5).inOrder()
+    }
 
     @Test
     fun useSessionInWithRunBlockingDoesNotStall() = runBlocking {
-        val deferred = cameraGraph.useSessionIn(this) { delay(1) }
+        val deferred = cameraGraph.useSessionIn(this) { delay(1.milliseconds) }
         deferred.await() // Make sure this does not block.
     }
 
     @Test
-    fun coroutineScope_isCanceledWithException() =
-        testScope.runTest {
-            val scope = CoroutineScope(Job())
+    fun coroutineScope_isCanceledWithException() = testScope.runTest {
+        val scope = CoroutineScope(Job())
 
-            val deferred = scope.async { throw RuntimeException() }
-            deferred.join()
+        val deferred = scope.async { throw RuntimeException() }
+        deferred.join()
 
-            // Ensure the deferred is completed with an exception, and that the scope is NOT active.
-            assertThat(deferred.isCompleted).isTrue()
-            assertThat(deferred.getCompletionExceptionOrNull())
-                .isInstanceOf(RuntimeException::class.java)
-            assertThrows<RuntimeException> { deferred.await() }
-            assertThat(scope.isActive).isFalse()
-        }
-
-    @Test
-    fun coroutineSupervisorScope_isNotCanceledWithException() =
-        testScope.runTest {
-            val scope = CoroutineScope(SupervisorJob())
-
-            val deferred = scope.async { throw RuntimeException() }
-            deferred.join()
-
-            // Ensure the deferred is completed with an exception, and that the scope remains
-            // active.
-            assertThat(deferred.isCompleted).isTrue()
-            assertThat(deferred.getCompletionExceptionOrNull())
-                .isInstanceOf(RuntimeException::class.java)
-            assertThrows<RuntimeException> { deferred.await() }
-            assertThat(scope.isActive).isTrue()
-        }
+        // Ensure the deferred is completed with an exception, and that the scope is NOT active.
+        assertThat(deferred.isCompleted).isTrue()
+        assertThat(deferred.getCompletionExceptionOrNull())
+            .isInstanceOf(RuntimeException::class.java)
+        assertThrows<RuntimeException> { deferred.await() }
+        assertThat(scope.isActive).isFalse()
+    }
 
     @Test
-    fun useSessionIn_scopeIsCanceledWithException() =
-        testScope.runTest {
-            val scope = CoroutineScope(Job())
+    fun coroutineSupervisorScope_isNotCanceledWithException() = testScope.runTest {
+        val scope = CoroutineScope(SupervisorJob())
 
-            val deferred = cameraGraph.useSessionIn(scope) { throw RuntimeException() }
-            deferred.join()
+        val deferred = scope.async { throw RuntimeException() }
+        deferred.join()
 
-            assertThat(deferred.isCompleted).isTrue()
-            assertThat(deferred.getCompletionExceptionOrNull())
-                .isInstanceOf(RuntimeException::class.java)
-            assertThrows<RuntimeException> { deferred.await() }
-            assertThat(scope.isActive).isFalse() // Regular scopes are canceled
-        }
-
-    @Test
-    fun useSessionIn_supervisorScopeIsNotCanceledWithException() =
-        testScope.runTest {
-            val scope = CoroutineScope(SupervisorJob())
-            val deferred = cameraGraph.useSessionIn(scope) { throw RuntimeException() }
-            deferred.join()
-
-            assertThat(deferred.isCompleted).isTrue()
-            assertThat(deferred.getCompletionExceptionOrNull())
-                .isInstanceOf(RuntimeException::class.java)
-            assertThrows<RuntimeException> { deferred.await() }
-            assertThat(scope.isActive).isTrue() // Supervisor scopes are not canceled
-        }
+        // Ensure the deferred is completed with an exception, and that the scope remains
+        // active.
+        assertThat(deferred.isCompleted).isTrue()
+        assertThat(deferred.getCompletionExceptionOrNull())
+            .isInstanceOf(RuntimeException::class.java)
+        assertThrows<RuntimeException> { deferred.await() }
+        assertThat(scope.isActive).isTrue()
+    }
 
     @Test
-    fun coroutineSupervisorTestScope_isNotCanceledWithException() =
-        testScope.runTest {
-            // This illustrates the correct way to create a scope that uses the testScope
-            // dispatcher, does delay skipping, but also does not fail the test if an exception
-            // occurs when doing scope.async. This is useful if, for example, in a real environment
-            // scope represents a supervisor job that will not crash if a coroutine fails and if
-            // some other system is handling the result of the deferred.
-            val scope = CoroutineScope(testScope.coroutineContext + Job())
+    fun useSessionIn_scopeIsCanceledWithException() = testScope.runTest {
+        val scope = CoroutineScope(Job())
 
-            val deferred =
-                scope.async {
-                    delay(100000) // Delay skipping
-                    throw RuntimeException()
-                }
-            deferred.join()
+        val deferred = cameraGraph.useSessionIn(scope) { throw RuntimeException() }
+        deferred.join()
 
-            assertThat(deferred.isCompleted).isTrue()
-            assertThat(deferred.getCompletionExceptionOrNull())
-                .isInstanceOf(RuntimeException::class.java)
-            assertThrows<RuntimeException> { deferred.await() }
-            assertThat(scope.isActive).isFalse()
-            assertThat(testScope.isActive).isTrue()
-        }
+        assertThat(deferred.isCompleted).isTrue()
+        assertThat(deferred.getCompletionExceptionOrNull())
+            .isInstanceOf(RuntimeException::class.java)
+        assertThrows<RuntimeException> { deferred.await() }
+        assertThat(scope.isActive).isFalse() // Regular scopes are canceled
+    }
 
     @Test
-    fun useSessionIn_withSupervisorTestScopeDoesNotCancelTestScope() =
-        testScope.runTest {
-            // Create a scope that uses the testScope dispatcher and delaySkipping, but does not
-            // fail
-            // the test if an exception occurs in useSessionIn.
-            val scope = CoroutineScope(testScope.coroutineContext + SupervisorJob())
+    fun useSessionIn_supervisorScopeIsNotCanceledWithException() = testScope.runTest {
+        val scope = CoroutineScope(SupervisorJob())
+        val deferred = cameraGraph.useSessionIn(scope) { throw RuntimeException() }
+        deferred.join()
 
-            // If you pass in a testScope to useSessionIn, any exception will cause the test to
-            // fail. If, instead, you want to test that the deferred handles the exception, you must
-            // pass in an independent CoroutineScope.
-            val deferred = cameraGraph.useSessionIn(scope) { throw RuntimeException() }
-            deferred.join()
-
-            assertThat(deferred.isCompleted).isTrue()
-            assertThat(deferred.getCompletionExceptionOrNull())
-                .isInstanceOf(RuntimeException::class.java)
-            assertThat(scope.isActive).isTrue() // Supervisor scopes are not canceled
-            assertThat(testScope.isActive).isTrue()
-        }
+        assertThat(deferred.isCompleted).isTrue()
+        assertThat(deferred.getCompletionExceptionOrNull())
+            .isInstanceOf(RuntimeException::class.java)
+        assertThrows<RuntimeException> { deferred.await() }
+        assertThat(scope.isActive).isTrue() // Supervisor scopes are not canceled
+    }
 
     @Test
-    fun useSessionIn_withCancellationDoesNotFailTest() =
-        testScope.runTest {
-            val deferred =
-                cameraGraph.useSessionIn(testScope) {
-                    throw CancellationException() // Throwing cancellation does not cause the test
-                    // to fail.
-                }
-            deferred.join()
+    fun coroutineSupervisorTestScope_isNotCanceledWithException() = testScope.runTest {
+        // This illustrates the correct way to create a scope that uses the testScope
+        // dispatcher, does delay skipping, but also does not fail the test if an exception
+        // occurs when doing scope.async. This is useful if, for example, in a real environment
+        // scope represents a supervisor job that will not crash if a coroutine fails and if
+        // some other system is handling the result of the deferred.
+        val scope = CoroutineScope(testScope.coroutineContext + Job())
 
-            assertThat(deferred.isActive).isFalse()
-            assertThat(deferred.isCompleted).isTrue()
-            assertThat(deferred.isCancelled).isTrue()
-            assertThat(deferred.getCompletionExceptionOrNull())
-                .isInstanceOf(CancellationException::class.java)
-            assertThat(testScope.isActive).isTrue()
+        val deferred = scope.async {
+            delay(100.seconds) // Delay skipping
+            throw RuntimeException()
         }
+        deferred.join()
+
+        assertThat(deferred.isCompleted).isTrue()
+        assertThat(deferred.getCompletionExceptionOrNull())
+            .isInstanceOf(RuntimeException::class.java)
+        assertThrows<RuntimeException> { deferred.await() }
+        assertThat(scope.isActive).isFalse()
+        assertThat(testScope.isActive).isTrue()
+    }
 
     @Test
-    fun useSession_throwsExceptions() =
-        testScope.runTest {
-            assertThrows<RuntimeException> { cameraGraph.useSession { throw RuntimeException() } }
-        }
+    fun useSessionIn_withSupervisorTestScopeDoesNotCancelTestScope() = testScope.runTest {
+        // Create a scope that uses the testScope dispatcher and delaySkipping, but does not
+        // fail
+        // the test if an exception occurs in useSessionIn.
+        val scope = CoroutineScope(testScope.coroutineContext + SupervisorJob())
+
+        // If you pass in a testScope to useSessionIn, any exception will cause the test to
+        // fail. If, instead, you want to test that the deferred handles the exception, you must
+        // pass in an independent CoroutineScope.
+        val deferred = cameraGraph.useSessionIn(scope) { throw RuntimeException() }
+        deferred.join()
+
+        assertThat(deferred.isCompleted).isTrue()
+        assertThat(deferred.getCompletionExceptionOrNull())
+            .isInstanceOf(RuntimeException::class.java)
+        assertThat(scope.isActive).isTrue() // Supervisor scopes are not canceled
+        assertThat(testScope.isActive).isTrue()
+    }
 
     @Test
-    fun testGetOutputLatency() =
-        testScope.runTest {
-            assertThat(cameraController.getOutputLatency(null)).isNull()
-            cameraController.simulateOutputLatency()
-            assertThat(cameraController.getOutputLatency(null)?.estimatedLatencyNs)
-                .isEqualTo(cameraController.outputLatencySet?.estimatedLatencyNs)
-        }
+    fun useSessionIn_withCancellationDoesNotFailTest() = testScope.runTest {
+        val deferred =
+            cameraGraph.useSessionIn(testScope) {
+                throw CancellationException() // Throwing cancellation does not cause the test
+                // to fail.
+            }
+        deferred.join()
+
+        assertThat(deferred.isActive).isFalse()
+        assertThat(deferred.isCompleted).isTrue()
+        assertThat(deferred.isCancelled).isTrue()
+        assertThat(deferred.getCompletionExceptionOrNull())
+            .isInstanceOf(CancellationException::class.java)
+        assertThat(testScope.isActive).isTrue()
+    }
+
+    @Test
+    fun useSession_throwsExceptions() = testScope.runTest {
+        assertThrows<RuntimeException> { cameraGraph.useSession { throw RuntimeException() } }
+    }
+
+    @Test
+    fun testGetOutputLatency() = testScope.runTest {
+        assertThat(cameraController.getOutputLatency(null)).isNull()
+        cameraController.simulateOutputLatency()
+        assertThat(cameraController.getOutputLatency(null)?.estimatedLatencyNs)
+            .isEqualTo(cameraController.outputLatencySet?.estimatedLatencyNs)
+    }
 }

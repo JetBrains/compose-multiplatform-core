@@ -15,12 +15,14 @@
  */
 package androidx.compose.remote.core.operations;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.PaintContext;
 import androidx.compose.remote.core.PaintOperation;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
+import androidx.compose.remote.core.operations.layout.Component;
 import androidx.compose.remote.core.operations.layout.LayoutComponent;
 import androidx.compose.remote.core.serialize.MapSerializer;
 import androidx.compose.remote.core.serialize.Serializable;
@@ -31,10 +33,14 @@ import org.jspecify.annotations.Nullable;
 import java.util.List;
 
 /** The DrawContent command */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class DrawContent extends PaintOperation implements Serializable {
     private static final int OP_CODE = Operations.DRAW_CONTENT;
     private static final String CLASS_NAME = "DrawContent";
     private @Nullable LayoutComponent mComponent;
+
+    boolean mInProcessing = false;
+    private @Nullable Component mProcessingComponent = null;
 
     @Override
     public void write(@NonNull WireBuffer buffer) {
@@ -101,14 +107,54 @@ public class DrawContent extends PaintOperation implements Serializable {
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Layout Operations", OP_CODE, CLASS_NAME)
+        doc.operation("Canvas Operations", OP_CODE, CLASS_NAME)
                 .description("Draw the component content");
     }
 
     @Override
     public void paint(@NonNull PaintContext context) {
-        if (mComponent != null) {
-            mComponent.drawContent(context);
+        Component offscreenComp = context.getOffscreenComponent();
+        boolean isOffscreenRoot =
+                offscreenComp != null && (mComponent == null || mComponent == offscreenComp);
+        Component target =
+                isOffscreenRoot
+                        ? offscreenComp
+                        : (mComponent != null ? mComponent : context.getContext().mLastComponent);
+        if (target != null && !(mInProcessing && mProcessingComponent == target)) {
+            boolean prevInProcessing = mInProcessing;
+            Component prevProcessingComp = mProcessingComponent;
+            mInProcessing = true;
+            mProcessingComponent = target;
+            try {
+                if (mComponent != null
+                        && !isOffscreenRoot
+                        && target instanceof LayoutComponent) {
+                    ((LayoutComponent) target).drawContent(context);
+                } else if (isOffscreenRoot) {
+                    context.setOffscreenComponent(null);
+                    context.save();
+                    context.translate(
+                            -(float) Math.floor(target.getX()),
+                            -(float) Math.floor(target.getY()));
+                    try {
+                        target.paintingComponent(context);
+                    } finally {
+                        context.restore();
+                        context.setOffscreenComponent(offscreenComp);
+                    }
+                } else if (target.mAnimateMeasure != null) {
+                    context.saveLayer(
+                            target.getX(),
+                            target.getY(),
+                            target.getWidth(),
+                            target.getHeight());
+                    target.paintingComponent(context);
+                    context.restore();
+                }
+            } finally {
+                mInProcessing = prevInProcessing;
+                mProcessingComponent = prevProcessingComp;
+            }
         }
     }
 

@@ -22,6 +22,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class GridSectionTest {
     private val testItemList =
         listOf(
@@ -43,6 +44,25 @@ class GridSectionTest {
             GridSection.Builder().setItemImageShape(GridSection.ITEM_IMAGE_SHAPE_CIRCLE).build()
 
         assertThat(section.itemImageShape).isEqualTo(GridSection.ITEM_IMAGE_SHAPE_CIRCLE)
+    }
+
+    @Test
+    fun getIncompleteLastRowStrategy_default() {
+        val section = GridSection.Builder().build()
+
+        assertThat(section.incompleteLastRowStrategy)
+            .isEqualTo(GridSection.INCOMPLETE_LAST_ROW_AS_IS)
+    }
+
+    @Test
+    fun getIncompleteLastRowStrategy() {
+        val section =
+            GridSection.Builder()
+                .setIncompleteLastRowStrategy(GridSection.INCOMPLETE_LAST_ROW_TRUNCATE)
+                .build()
+
+        assertThat(section.incompleteLastRowStrategy)
+            .isEqualTo(GridSection.INCOMPLETE_LAST_ROW_TRUNCATE)
     }
 
     @Test
@@ -98,6 +118,9 @@ class GridSectionTest {
                 GridSection.Builder().setItems(testItemList).build(),
                 GridSection.Builder().setTitle(testHeader).build(),
                 GridSection.Builder().setNoItemsMessage("Example").build(),
+                GridSection.Builder()
+                    .setIncompleteLastRowStrategy(GridSection.INCOMPLETE_LAST_ROW_AS_IS)
+                    .build(),
             )
 
         // Test all different sections against each other

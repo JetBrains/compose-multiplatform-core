@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.11.0-alpha10" type="baseline" client="gradle" dependencies="false" name="AGP (8.11.0-alpha10)" variant="all" version="8.11.0-alpha10">
+<issues format="6" by="lint 9.5.0-alpha04" type="baseline" client="gradle" dependencies="false" name="AGP (9.5.0-alpha04)" variant="all" version="9.5.0-alpha04">
 
     <issue
         id="MissingPermission"
@@ -29,12 +29,21 @@
     </issue>
 
     <issue
-        id="WifiManagerLeak"
-        message="The WIFI_SERVICE must be looked up on the Application context or memory will leak on devices &lt; Android N. Try changing `service` to `service.getApplicationContext()`"
-        errorLine1="        this.mWifiLock = ((WifiManager) service.getSystemService(Context.WIFI_SERVICE))"
-        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        id="ThreadConstraint"
+        message="Statement must run from `@WorkerThread`, incompatible with earlier code that must run from `@{Main,Ui}Thread`"
+        errorLine1="        try {"
+        errorLine2="        ^">
         <location
-            file="src/main/java/com/example/android/supportv4/media/Playback.java"/>
+            file="src/main/java/com/example/android/supportv4/content/FileProviderExample.java"/>
+    </issue>
+
+    <issue
+        id="ThreadConstraint"
+        message="Call must be from `@{Main,Ui}Thread`, but the work passed to `thread` is expected to run from `@WorkerThread`"
+        errorLine1="                visibility.post {"
+        errorLine2="                           ^">
+        <location
+            file="src/main/java/com/example/android/supportv4/view/WindowInsetsControllerPlayground.kt"/>
     </issue>
 
     <issue
@@ -119,24 +128,6 @@
     </issue>
 
     <issue
-        id="MetadataTagInsideApplicationTag"
-        message="Detected &lt;application>-level meta-data tag."
-        errorLine1="        &lt;meta-data"
-        errorLine2="        ^">
-        <location
-            file="src/main/AndroidManifest.xml"/>
-    </issue>
-
-    <issue
-        id="MetadataTagInsideApplicationTag"
-        message="Detected &lt;application>-level meta-data tag."
-        errorLine1="        &lt;meta-data"
-        errorLine2="        ^">
-        <location
-            file="src/main/AndroidManifest.xml"/>
-    </issue>
-
-    <issue
         id="UnspecifiedRegisterReceiverFlag"
         message="`this` is missing `RECEIVER_EXPORTED` or `RECEIVER_NOT_EXPORTED` flag for unprotected broadcasts registered for com.example.android.supportv4.media.next, com.example.android.supportv4.media.pause, com.example.android.supportv4.media.play, com.example.android.supportv4.media.prev"
         errorLine1="                mService.registerReceiver(this, filter);"
@@ -156,20 +147,56 @@
 
     <issue
         id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 21"
-        errorLine1="@RequiresApi(21)"
-        errorLine2="~~~~~~~~~~~~~~~~">
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="                Build.VERSION.SDK_INT >= 23"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/example/android/supportv4/view/WindowInsetsControllerPlayground.kt"/>
+            file="src/main/java/com/example/android/supportv4/media/MediaBrowserServiceSupport.java"/>
     </issue>
 
     <issue
         id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 21"
-        errorLine1="        if (Build.VERSION.SDK_INT >= 21) {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="                Build.VERSION.SDK_INT >= 23"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/example/android/supportv4/view/WindowInsetsPlayground.java"/>
+            file="src/main/java/com/example/android/supportv4/media/MediaNotificationManager.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="                Build.VERSION.SDK_INT >= 23"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/android/supportv4/media/MediaNotificationManager.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="                Build.VERSION.SDK_INT >= 23"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/android/supportv4/media/MediaNotificationManager.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="                Build.VERSION.SDK_INT >= 23"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/android/supportv4/media/MediaNotificationManager.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="                Build.VERSION.SDK_INT >= 23"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/android/supportv4/media/MediaNotificationManager.java"/>
     </issue>
 
     <issue
@@ -183,14 +210,14 @@
 
     <issue
         id="ObsoleteSdkInt"
-        message="This folder configuration (`v11`) is unnecessary; `minSdkVersion` is 21. Merge all the resources in this folder into `values`.">
+        message="This folder configuration (`v11`) is unnecessary; `minSdkVersion` is 24. Merge all the resources in this folder into `values`.">
         <location
             file="src/main/res/values-v11"/>
     </issue>
 
     <issue
         id="ObsoleteSdkInt"
-        message="This folder configuration (`v21`) is unnecessary; `minSdkVersion` is 21. Merge all the resources in this folder into `values`.">
+        message="This folder configuration (`v21`) is unnecessary; `minSdkVersion` is 24. Merge all the resources in this folder into `values`.">
         <location
             file="src/main/res/values-v21"/>
     </issue>

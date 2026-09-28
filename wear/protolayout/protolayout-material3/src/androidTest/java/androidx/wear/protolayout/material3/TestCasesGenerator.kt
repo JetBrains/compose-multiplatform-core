@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("deprecation")
+
 package androidx.wear.protolayout.material3
 
 import androidx.test.core.app.ApplicationProvider
@@ -328,7 +330,9 @@ object TestCasesGenerator {
                         )
                     },
                     bottomSlot = { text("Bottom Slot that overflows".layoutString) },
-                    titleSlot = { text("TitleCard".layoutString, color = colorScheme.secondaryDim) },
+                    titleSlot = {
+                        text("TitleCard".layoutString, color = colorScheme.secondaryDim)
+                    },
                 )
             }
         testCases["primarylayout_bottomslot_withlabel_golden$goldenSuffix"] =

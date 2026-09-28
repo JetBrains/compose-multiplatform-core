@@ -61,8 +61,8 @@ class FakeNoOpAnalyticsService : AnalyticsService() {
             override val enableProfileJson: Property<Boolean>
                 get() = FakeGradleProperty(true)
 
-            override val profileDir: Property<File?>
-                get() = FakeGradleProperty()
+            override val profileDir: Property<File>
+                get(): Property<File> = FakeGradleProperty()
 
             override val taskMetadata: MapProperty<String, TaskMetadata>
                 get() =

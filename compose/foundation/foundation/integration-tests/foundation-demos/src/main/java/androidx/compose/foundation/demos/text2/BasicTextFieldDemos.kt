@@ -44,8 +44,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.unit.dp
@@ -100,17 +100,20 @@ fun BasicTextFieldValueCallbackDemo() {
 }
 
 @Composable
+@Suppress("DEPRECATION") // b/552879150
 private fun SimpleValueCallbackDemo() {
     var text by remember { mutableStateOf("") }
     BasicTextField(value = text, onValueChange = { text = it }, modifier = demoTextFieldModifiers)
 }
 
 @Composable
+@Suppress("DEPRECATION") // b/552879150
 private fun CapitalizeValueCallbackDemo() {
     var text by remember { mutableStateOf("") }
+    val locale = LocalLocale.current
     BasicTextField(
         value = text,
-        onValueChange = { text = it.toUpperCase(Locale.current) },
+        onValueChange = { text = it.toUpperCase(locale) },
         modifier = demoTextFieldModifiers,
     )
     Text(text = "Backing state: \"$text\"", style = MaterialTheme.typography.caption)

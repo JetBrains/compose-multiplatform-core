@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core.operations;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.PaintContext;
@@ -34,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Represents conditional execution of a block of commands */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ConditionalOperations extends PaintOperation
         implements Container, VariableSupport, Serializable {
     private static final String CLASS_NAME = "ConditionalOperations";
@@ -48,6 +50,9 @@ public class ConditionalOperations extends PaintOperation
     float mVarB;
     float mVarAOut;
     float mVarBOut;
+    float mVarAOld;
+    float mVarBOld;
+    boolean mDirty;
 
     /** Equality comparison */
     public static final byte TYPE_EQ = 0;
@@ -67,6 +72,9 @@ public class ConditionalOperations extends PaintOperation
     /** Greater than or equal comparison */
     public static final byte TYPE_GTE = 5;
 
+    /** if ether value changed */
+    public static final byte TYPE_CHANGED = 6;
+
     private static final String[] TYPE_STR = {"EQ", "NEQ", "LT", "LTE", "GT", "GTE"};
 
     @Override
@@ -83,6 +91,13 @@ public class ConditionalOperations extends PaintOperation
     public void updateVariables(@NonNull RemoteContext context) {
         mVarAOut = Float.isNaN(mVarA) ? context.getFloat(Utils.idFromNan(mVarA)) : mVarA;
         mVarBOut = Float.isNaN(mVarB) ? context.getFloat(Utils.idFromNan(mVarB)) : mVarB;
+        if (mType == TYPE_CHANGED && (mVarAOld != mVarAOut || mVarBOld != mVarBOut)) {
+            mVarAOld = mVarAOut;
+            mVarBOld = mVarBOut;
+            mDirty = true;
+        } else {
+            mDirty = false;
+        }
         for (Operation op : mList) {
             if (op instanceof VariableSupport && op.isDirty()) {
                 ((VariableSupport) op).updateVariables(context);
@@ -171,13 +186,22 @@ public class ConditionalOperations extends PaintOperation
             case TYPE_GTE:
                 run = mVarAOut >= mVarBOut;
                 break;
+            case TYPE_CHANGED:
+                run = mDirty;
+                break;
         }
+        mDirty = false;
         if (run) {
             for (Operation op : mList) {
                 remoteContext.incrementOpCount();
-                op.apply(context.getContext());
+                if (op instanceof ConditionalOperations) {
+                    ((ConditionalOperations) op).paint(context.getContext().getPaintContext());
+                } else {
+                    op.apply(context.getContext());
+                }
             }
         }
+
     }
 
     /**
@@ -213,8 +237,8 @@ public class ConditionalOperations extends PaintOperation
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
         byte type = (byte) buffer.readByte();
-        float a = buffer.readFloat();
-        float b = buffer.readFloat();
+        float a = buffer.readNanId();
+        float b = buffer.readNanId();
         operations.add(new ConditionalOperations(type, a, b));
     }
 
@@ -224,11 +248,20 @@ public class ConditionalOperations extends PaintOperation
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Operations", OP_CODE, name())
-                .description("Run if the condition is true")
-                .field(DocumentedOperation.BYTE, "type", "type of comparison")
-                .field(DocumentedOperation.FLOAT, "a", "first value")
-                .field(DocumentedOperation.FLOAT, "b", "second value");
+        doc.operation("Logic & Expressions Operations", OP_CODE, CLASS_NAME)
+                .description("Execute a list of operations if a condition is met")
+                .field(
+                        DocumentedOperation.BYTE,
+                        "type",
+                        "The type of comparison (EQ, NEQ, LT, etc.)")
+                .possibleValues("TYPE_EQ", TYPE_EQ)
+                .possibleValues("TYPE_NEQ", TYPE_NEQ)
+                .possibleValues("TYPE_LT", TYPE_LT)
+                .possibleValues("TYPE_LTE", TYPE_LTE)
+                .possibleValues("TYPE_GT", TYPE_GT)
+                .possibleValues("TYPE_GTE", TYPE_GTE)
+                .field(DocumentedOperation.FLOAT, "varA", "The first value to compare")
+                .field(DocumentedOperation.FLOAT, "varB", "The second value to compare");
     }
 
     /**

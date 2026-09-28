@@ -19,14 +19,18 @@ package androidx.xr.scenecore.testapp.transformation
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.widget.Switch
-import androidx.activity.enableEdgeToEdge
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
@@ -34,7 +38,8 @@ import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.AnchorEntity
+import androidx.xr.runtime.math.Vector3.Companion.distance
+import androidx.xr.scenecore.AnchorSpace
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
@@ -47,13 +52,16 @@ import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.DebugTextLinearView
 import androidx.xr.scenecore.testapp.common.DebugTextPanel
-import androidx.xr.scenecore.testapp.common.createSession
+import androidx.xr.scenecore.testapp.common.format
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.nio.file.Paths
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.TimeSource
+import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -65,7 +73,7 @@ class TransformationActivity : AppCompatActivity() {
     private var movableActive = MutableStateFlow(false)
     private lateinit var solarSystemEntityModel: GltfModel
     private lateinit var staticEntityModel: GltfModel
-    private var anchor: AnchorEntity? = null
+    private var anchor: AnchorSpace? = null
     private lateinit var sunEntity: GltfModelEntity
     private lateinit var planetEntity: GltfModelEntity
     private lateinit var moonEntity: GltfModelEntity
@@ -75,10 +83,17 @@ class TransformationActivity : AppCompatActivity() {
         findViewById<DebugTextLinearView>(R.id.mainDebugTextPanel).also { it.setName("Main Panel") }
     }
     private var debugTextPanelsToUpdate = mutableListOf<DebugTextPanel>()
+    private var labelsToUpdate = mutableListOf<LabelToUpdate>()
+
+    private data class LabelToUpdate(
+        val labelPanel: DebugTextPanel,
+        val trackedEntity: Entity,
+        val dimensions: FloatSize3d,
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        WindowCompat.enableEdgeToEdge(window)
         setContentView(R.layout.transformation_activity_panel)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -87,96 +102,111 @@ class TransformationActivity : AppCompatActivity() {
         }
 
         // Create session
-        session = createSession(this)
-        session!!.configure(
-            Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
-        )
-
-        // toolbar
-        findViewById<Toolbar>(R.id.topAppBar).also { toolbar ->
-            setSupportActionBar(toolbar)
-            toolbar.setNavigationOnClickListener { this@TransformationActivity.finish() }
-            toolbar.setTitle(R.string.cuj_transformation_test)
-        }
-
-        // Recreate button
-        findViewById<FloatingActionButton>(R.id.bottomCenterFab).also {
-            it.tooltipText = getString(R.string.fab_recreate_activity_tooltip)
-            it.setOnClickListener { ActivityCompat.recreate(this@TransformationActivity) }
-        }
-
-        // handle switches
-        findViewById<Switch>(R.id.switch_pause_animation).setOnCheckedChangeListener { _, isOn ->
-            pauseAnimation.value = isOn
-        }
-        findViewById<Switch>(R.id.switch_allow_panel_movement).setOnCheckedChangeListener { _, isOn
-            ->
-            switchMainPanelMovement(isOn)
-        }
 
         lifecycleScope.launch {
-            // Entity solar system
-            loadModels()
-            entitySolarSystem()
+            session = SessionManager(this@TransformationActivity).createSession()
+            session!!.configure(
+                Config.Builder().setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL).build()
+            )
+            session?.scene?.keyEntity = session?.scene?.mainPanelEntity
 
-            // Anchor
-            createAnchor()
+            // toolbar
+            findViewById<Toolbar>(R.id.topAppBar).also { toolbar ->
+                setSupportActionBar(toolbar)
+                toolbar.setNavigationOnClickListener { this@TransformationActivity.finish() }
+                toolbar.setTitle(R.string.cuj_transformation_test)
+            }
 
-            // Activity space debug panel
-            createActivitySpaceDebugPanel()
+            // Recreate button
+            findViewById<FloatingActionButton>(R.id.bottomCenterFab).also {
+                it.tooltipText = getString(R.string.fab_recreate_activity_tooltip)
+                it.setOnClickListener { ActivityCompat.recreate(this@TransformationActivity) }
+            }
 
-            while (true) {
+            // handle switches
+            findViewById<Switch>(R.id.switch_pause_animation).setOnCheckedChangeListener { _, isOn
+                ->
+                pauseAnimation.value = isOn
+            }
+            findViewById<Switch>(R.id.switch_allow_panel_movement).setOnCheckedChangeListener {
+                _,
+                isOn ->
+                switchMainPanelMovement(isOn)
+            }
 
-                // Update debug panels
-                val anchorState = anchor!!.state
-                for (panel in debugTextPanelsToUpdate) {
-                    if (panel == anchorDebugPanel) {
-                        anchorDebugPanel.view.setLine(
-                            "Anchor State",
-                            anchorStateToString(anchorState),
-                        )
-                        if (anchorState != AnchorEntity.State.ANCHORED) {
-                            continue
+            lifecycleScope.launch {
+                // Entity solar system
+                loadModels()
+                entitySolarSystem()
+
+                // Anchor
+                createAnchor()
+
+                // Activity space debug panel
+                createActivitySpaceDebugPanel()
+
+                repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                    while (true) {
+                        val anchorState =
+                            anchor?.state ?: AnchorSpace.State.UNANCHORED // Handle null anchor
+                        for (panel in debugTextPanelsToUpdate) {
+                            if (panel.trackedEntity == null) continue // Skip if no tracked entity
+                            if (panel == anchorDebugPanel) {
+                                anchorDebugPanel.view.setLine(
+                                    "Anchor State",
+                                    anchorState.toString(),
+                                )
+                            }
+                            updateDebugTextPanel(panel.view, panel.trackedEntity!!, anchorState)
                         }
-                    }
-                    updateDebugTextPanel(
-                        panel.view,
-                        panel.trackedEntity!!,
-                        AnchorEntity.State.ANCHORED,
-                    )
-                }
-                // Update main panel debug data
-                updateDebugTextPanel(
-                    mainActivityDebugView,
-                    session!!.scene.mainPanelEntity,
-                    anchorState,
-                )
+                        for (label in labelsToUpdate) {
+                            updateLabelPanelSize(
+                                label.labelPanel,
+                                label.trackedEntity,
+                                label.dimensions,
+                            )
+                        }
+                        // Update main panel debug data
+                        updateDebugTextPanel(
+                            mainActivityDebugView,
+                            session!!.scene.mainPanelEntity,
+                            anchorState,
+                        )
 
-                delay(100L)
+                        delay(100L.milliseconds)
+                    }
+                }
             }
         }
     }
 
     private fun createAnchor() {
         anchor =
-            AnchorEntity.create(
+            AnchorSpace.create(
                 session!!,
                 FloatSize2d(0.1f, 0.1f),
-                PlaneOrientation.ANY,
-                PlaneSemanticType.ANY,
+                PlaneOrientation.ALL,
+                PlaneSemanticType.ALL,
             )
-        GltfModelEntity.create(session!!, staticEntityModel, Pose.Identity).also {
-            it.setScale(1f)
-            anchor!!.addChild(it)
-        }
+        GltfModelEntity.create(
+                session!!,
+                staticEntityModel,
+                Pose.Identity,
+                parent = session!!.scene.activitySpace,
+            )
+            .also {
+                it.setScale(1f)
+                anchor!!.addChild(it)
+            }
+        val anchorLabelDimensions = FloatSize3d(245f, 87f)
         anchorDebugPanel =
-            createDebugPanelAndLabel("Anchor", anchor!!).also {
-                it.view.setLine(
+            createDebugPanelAndLabel("Anchor", anchor!!, anchorLabelDimensions).also { panel ->
+                panel.view.setLine(
                     "onAnchorSpaceUpdatedCount",
                     (++onAnchorSpaceUpdatedCount).toString(),
                 )
-                anchor!!.setOnSpaceUpdatedListener({
-                    it.view.setLine(
+                anchor!!.addOriginChangedListener({
+                    panel.view.setLine(
                         "onAnchorSpaceUpdatedCount",
                         (++onAnchorSpaceUpdatedCount).toString(),
                     )
@@ -185,44 +215,74 @@ class TransformationActivity : AppCompatActivity() {
     }
 
     private fun createActivitySpaceDebugPanel() {
+        val largeLabelDimensions = FloatSize3d(280f, 100f)
         activitySpaceDebugPanel =
-            createDebugPanelAndLabel("ActivitySpace", session!!.scene.activitySpace).also {
-                it.view.setLine(
-                    "onActivitySpaceUpdatedCount",
-                    (++onActivitySpaceUpdatedCount).toString(),
+            createDebugPanelAndLabel(
+                    "ActivitySpace",
+                    session!!.scene.activitySpace,
+                    largeLabelDimensions,
                 )
-                session!!.scene.activitySpace.addOnSpaceUpdatedListener {
-                    it.view.setLine(
+                .also { panel ->
+                    panel.view.setLine(
                         "onActivitySpaceUpdatedCount",
                         (++onActivitySpaceUpdatedCount).toString(),
                     )
+                    session!!.scene.activitySpace.addOriginChangedListener {
+                        panel.view.setLine(
+                            "onActivitySpaceUpdatedCount",
+                            (++onActivitySpaceUpdatedCount).toString(),
+                        )
+                    }
                 }
-            }
     }
 
+    private fun updateLabelPanelSize(
+        labelPanel: DebugTextPanel,
+        entity: Entity,
+        labelDimensions: FloatSize3d,
+    ) {
+        // TODO - b/415320653: Remove use of deprecated Space.REAL_WORLD
+        @Suppress("DEPRECATION", "RestrictedApiAndroidX")
+        val entityScale = entity.getScale(Space.REAL_WORLD)
+        if (entityScale > 0) {
+            val newPixelWidth = (labelDimensions.width * entityScale).toInt().coerceAtLeast(10)
+            val newPixelHeight = (labelDimensions.height * entityScale).toInt().coerceAtLeast(10)
+            if (
+                labelPanel.panelEntity.sizeInPixels.width != newPixelWidth ||
+                    labelPanel.panelEntity.sizeInPixels.height != newPixelHeight
+            ) {
+                labelPanel.panelEntity.sizeInPixels = IntSize2d(newPixelWidth, newPixelHeight)
+            }
+        }
+    }
+
+    // TODO - b/415320653: Remove use of deprecated Space.REAL_WORLD
+    @Suppress("DEPRECATION", "RestrictedApiAndroidX")
     private fun updateDebugTextPanel(
         view: DebugTextLinearView,
         trackedEntity: Entity,
-        anchorState: Int,
+        anchorState: AnchorSpace.State,
     ) {
-        // Need to handle unsupported exception from the anchorEntity's getPose
+        // Need to handle IllegalArgumentException from the anchorEntity's getPose
         val localPose =
             try {
                 trackedEntity.getPose().toFormattedString()
-            } catch (e: UnsupportedOperationException) {
-                "getPose is not enabled on this Entity ${e.cause}"
+            } catch (e: IllegalArgumentException) {
+                "getPose is not allowed with Space.PARENT on this Entity: ${e.message}"
             }
         view.setLine("localPose", localPose)
+        view.setLine("activitySpacePose", trackedEntity.getPose(Space.ACTIVITY).toFormattedString())
+        view.setLine("worldSpacePose", trackedEntity.getPose(Space.REAL_WORLD).toFormattedString())
 
-        view.setLine("worldSpacePose", trackedEntity.activitySpacePose.toFormattedString())
-        view.setLine("worldSpaceScale", trackedEntity.getScale().toString())
-        if (
-            trackedEntity == sunEntity ||
-                trackedEntity == planetEntity ||
-                trackedEntity == moonEntity
-        ) {
-            view.setLine("local scale", trackedEntity.getScale(Space.PARENT).toString())
-        }
+        val localScale =
+            try {
+                trackedEntity.getScale()
+            } catch (e: IllegalArgumentException) {
+                "getScale is not allowed with Space.PARENT on this Entity ${e.message}"
+            }
+        view.setLine("local scale", localScale.toString())
+        view.setLine("activitySpaceScale", trackedEntity.getScale(Space.ACTIVITY).format(2))
+        view.setLine("worldSpaceScale", trackedEntity.getScale(Space.REAL_WORLD).format(2))
 
         val activitySpacePose =
             trackedEntity.transformPoseTo(Pose.Identity, session!!.scene.activitySpace)
@@ -232,22 +292,64 @@ class TransformationActivity : AppCompatActivity() {
             trackedEntity.transformPoseTo(Pose.Identity, session!!.scene.mainPanelEntity)
         view.setLine("MainPanelSpacePose", mainPanelSpacePose.toFormattedString())
 
-        // Pose in Anchor Space is only retrieved if anchor is anchored
-        if (anchorState != AnchorEntity.State.ANCHORED) {
-            view.setLine("AnchorSpacePose", "N/A")
-            view.setLine("Distance to Anchor", "N/A")
-        } else {
+        val trackedEntityWorldPos = trackedEntity.getPose(Space.REAL_WORLD).translation
+        if (anchor != null && anchorState == AnchorSpace.State.ANCHORED) {
             val anchorSpacePose = trackedEntity.transformPoseTo(Pose.Identity, anchor!!)
             view.setLine("AnchorSpacePose", anchorSpacePose.toFormattedString())
-            view.setLine("Distance to Anchor", length(anchorSpacePose.translation).toString())
+            val anchorWorldPos = anchor!!.getPose(Space.REAL_WORLD).translation
+            // Only show the distance to the anchor if it is not the anchor itself.
+            if (trackedEntity != anchor) {
+                view.setLine(
+                    "Distance to Anchor (dest units)",
+                    length(anchorSpacePose.translation).format(2),
+                )
+                view.setLine(
+                    "Distance to Anchor (meters)",
+                    distance(trackedEntityWorldPos, anchorWorldPos).format(2),
+                )
+            }
+        } else {
+            view.setLine("AnchorSpacePose", "N/A (Anchor not ready)")
+            // Only show the distance to the anchor if it is not the anchor itself.
+            if (trackedEntity != anchor) {
+                view.setLine("Distance to Anchor (dest units)", "N/A")
+                view.setLine("Distance to Anchor (meters)", "N/A")
+            }
+        }
+        val activitySpacePos = session!!.scene.activitySpace.getPose(Space.REAL_WORLD).translation
+        // Only show the distance to the activity space if it is not the activity space itself.
+        if (trackedEntity != session!!.scene.activitySpace) {
+            view.setLine(
+                "Distance to ActivitySpace (dest units)",
+                length(activitySpacePose.translation).format(2),
+            )
+            view.setLine(
+                "Distance to ActivitySpace (meters)",
+                distance(trackedEntityWorldPos, activitySpacePos).format(2),
+            )
         }
 
-        view.setLine("Distance to ActivitySpace", length(activitySpacePose.translation).toString())
-        view.setLine("Distance to Main Panel", length(mainPanelSpacePose.translation).toString())
+        val mainPanelWorldPos =
+            session!!.scene.mainPanelEntity.getPose(Space.REAL_WORLD).translation
+        // Only show the distance to the main panel space if it is not the main panel space itself.
+        if (trackedEntity != session!!.scene.mainPanelEntity) {
+            view.setLine(
+                "Distance to Main Panel (dest units)",
+                length(mainPanelSpacePose.translation).format(2),
+            )
+            view.setLine(
+                "Distance to Main Panel (meters)",
+                distance(trackedEntityWorldPos, mainPanelWorldPos).format(2),
+            )
+        }
         when (trackedEntity) {
             is PanelEntity -> {
-                view.setLine("Panel size", trackedEntity.size.toString())
-                view.setLine("Panel scale", trackedEntity.getScale().toString())
+                view.setLine(
+                    "Panel size",
+                    ": w ${trackedEntity.size.width.format(2)} " +
+                        "x h ${trackedEntity.size.height.format(2)}",
+                )
+                view.setLine("Panel scale", trackedEntity.getScale().format(2))
             }
         }
     }
@@ -256,6 +358,7 @@ class TransformationActivity : AppCompatActivity() {
         val movableComponent = MovableComponent.createSystemMovable(session!!, scaleInZ = false)
         if (switchState) {
             movableActive.value = session!!.scene.mainPanelEntity.addComponent(movableComponent)
+            movableComponent.size = session!!.scene.mainPanelEntity.size.to3d()
         } else {
             movableActive.let { session!!.scene.mainPanelEntity.removeAllComponents() }
         }
@@ -268,31 +371,57 @@ class TransformationActivity : AppCompatActivity() {
     }
 
     private fun entitySolarSystem() {
+        if (!::solarSystemEntityModel.isInitialized) {
+            val errorMessage =
+                "Solar system models could not be loaded. Solar system visualization will be unavailable."
+            Toast.makeText(this, "Error: $errorMessage", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
+
         sunEntity =
-            GltfModelEntity.create(session!!, solarSystemEntityModel, Pose.Identity).also {
-                it.setScale(3f)
-                it.setPose(Pose(Vector3(-0.5f, 3f, -9f)))
-                it.parent = session!!.scene.activitySpace
-            }
+            GltfModelEntity.create(
+                    session!!,
+                    solarSystemEntityModel,
+                    Pose.Identity,
+                    parent = session!!.scene.activitySpace,
+                )
+                .also {
+                    it.setScale(3f)
+                    it.setPose(Pose(Vector3(-0.5f, 3f, -9f)))
+                    it.parent = session!!.scene.activitySpace
+                }
         planetEntity =
-            GltfModelEntity.create(session!!, solarSystemEntityModel, Pose.Identity).also {
-                it.setScale(0.5f)
-                it.setPose(Pose(Vector3(-1f, 3f, -9f)))
-                it.parent = sunEntity
-            }
+            GltfModelEntity.create(
+                    session!!,
+                    solarSystemEntityModel,
+                    Pose.Identity,
+                    parent = session!!.scene.activitySpace,
+                )
+                .also {
+                    it.setScale(0.5f)
+                    it.setPose(Pose(Vector3(-1f, 3f, -9f)))
+                    it.parent = sunEntity
+                }
         moonEntity =
-            GltfModelEntity.create(session!!, solarSystemEntityModel, Pose.Identity).also {
-                it.setScale(0.5f)
-                it.setPose(Pose(Vector3(-1.5f, 3f, -9f)))
-                it.parent = planetEntity
-            }
+            GltfModelEntity.create(
+                    session!!,
+                    solarSystemEntityModel,
+                    Pose.Identity,
+                    parent = session!!.scene.activitySpace,
+                )
+                .also {
+                    it.setScale(0.5f)
+                    it.setPose(Pose(Vector3(-1.5f, 3f, -9f)))
+                    it.parent = planetEntity
+                }
         orbitModelAroundParent(planetEntity, 4f, 0f, 20000f)
         orbitModelAroundParent(moonEntity, 2f, 1.67f, 5000f)
 
         val largeLabelDimensions = FloatSize3d(700f, 200f)
-        createDebugPanelAndLabel("sunEntity", sunEntity, largeLabelDimensions)
-        createDebugPanelAndLabel("planetEntity", planetEntity, largeLabelDimensions)
-        createDebugPanelAndLabel("moonEntity", moonEntity, largeLabelDimensions)
+        createDebugPanelAndLabel("SunEntity", sunEntity, largeLabelDimensions)
+        createDebugPanelAndLabel("PlanetEntity", planetEntity, largeLabelDimensions)
+        createDebugPanelAndLabel("MoonEntity", moonEntity, largeLabelDimensions.times(2))
     }
 
     private fun orbitModelAroundParent(
@@ -306,18 +435,21 @@ class TransformationActivity : AppCompatActivity() {
             val timeSource = TimeSource.Monotonic
             val startTime = timeSource.markNow()
 
-            while (true) {
-                while (pauseAnimation.value) {
-                    delay(16L)
-                }
-                delay(16L)
-                val deltaAngle =
-                    (2 * pi) * ((timeSource.markNow() - startTime).inWholeMilliseconds) /
-                        rotateTimeMs
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                while (true) {
+                    if (pauseAnimation.value) {
+                        awaitFrame()
+                        continue
+                    }
+                    awaitFrame()
+                    val deltaAngle =
+                        (2 * pi) * ((timeSource.markNow() - startTime).inWholeMilliseconds) /
+                            rotateTimeMs
 
-                val angle = startAngle + deltaAngle
-                val pos = Vector3(radius * cos(angle), 0F, radius * sin(angle))
-                modelEntity.setPose(Pose(pos, Quaternion.Identity))
+                    val angle = startAngle + deltaAngle
+                    val pos = Vector3(radius * cos(angle), 0F, radius * sin(angle))
+                    modelEntity.setPose(Pose(pos, Quaternion.Identity))
+                }
             }
         }
     }
@@ -328,42 +460,44 @@ class TransformationActivity : AppCompatActivity() {
         labelDimensions: FloatSize3d = FloatSize3d(140f, 50f),
     ): DebugTextPanel {
         // Set position of the panel to be next to other panels created previously
-        val panelPose = Pose(Vector3(-1.0f + debugTextPanelsToUpdate.size * 0.6f, -0.4f, 0.1f))
+        val panelPose = Pose(Vector3(-1.0f + debugTextPanelsToUpdate.size * 0.6f, -0.6f, 0.1f))
 
         // Create the debug panel with info on the tracked entity
         val debugPanel =
             DebugTextPanel(
                 this,
                 session!!,
-                session!!.scene.activitySpace,
+                session!!.scene.mainPanelEntity,
                 name = name,
                 pose = panelPose,
             )
         debugPanel.trackedEntity = trackedEntity
         debugTextPanelsToUpdate.add(debugPanel)
 
-        // Create a label to follow the tracked entity
-        val unused =
-            DebugTextPanel(
-                this,
-                session!!,
-                trackedEntity,
-                pixelDimensions =
-                    IntSize2d(
-                        (labelDimensions.width * trackedEntity.getScale(Space.REAL_WORLD)).toInt(),
-                        (labelDimensions.height * trackedEntity.getScale(Space.REAL_WORLD)).toInt(),
-                    ),
-                name = name,
-            )
+        // The label that follows the object (parented to the object itself)
+        // Ensure this doesn't conflict if trackedEntity is already a panel
+        if (trackedEntity !is PanelEntity || trackedEntity != debugPanel) {
+            val labelPanel =
+                DebugTextPanel(
+                    // This is a separate label, parented to the trackedEntity
+                    this,
+                    session!!,
+                    trackedEntity,
+                    pixelDimensions =
+                        IntSize2d(labelDimensions.width.toInt(), labelDimensions.height.toInt()),
+                    name = name,
+                )
+            labelsToUpdate.add(LabelToUpdate(labelPanel, trackedEntity, labelDimensions))
+        }
         return debugPanel
     }
 
     private fun Pose.toFormattedString(): String {
         val position =
-            "Vector3 [%f, %f, %f]"
+            "Vector3 [%.2f, %.2f, %.2f]"
                 .format(this.translation.x, this.translation.y, this.translation.z)
         val rotation =
-            "Rotation [%f, %f, %f, %f]"
+            "Rotation [%.2f, %.2f, %.2f, %.2f]"
                 .format(this.rotation.x, this.rotation.y, this.rotation.z, this.rotation.w)
         return "$position, $rotation"
     }
@@ -375,15 +509,5 @@ class TransformationActivity : AppCompatActivity() {
     companion object {
         var onActivitySpaceUpdatedCount = 0
         var onAnchorSpaceUpdatedCount = 0
-    }
-
-    private fun anchorStateToString(state: Int): String {
-        return when (state) {
-            0 -> "ANCHORED"
-            1 -> "UNANCHORED"
-            2 -> "TIMEOUT"
-            3 -> "ERROR"
-            else -> "Unknown"
-        }
     }
 }

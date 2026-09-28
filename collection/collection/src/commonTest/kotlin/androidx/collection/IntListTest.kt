@@ -30,6 +30,7 @@ import kotlin.test.assertTrue
 // to ensure the change is available on all versions of the map.
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+@Suppress("REDUNDANT_CALL_OF_CONVERSION_METHOD")
 class IntListTest {
     private val list: MutableIntList = mutableIntListOf(1, 2, 3, 4, 5)
 
@@ -754,5 +755,13 @@ class IntListTest {
         assertEquals(-1, l.binarySearch(-20))
         assertEquals(-4, l.binarySearch(3))
         assertEquals(-6, l.binarySearch(20))
+    }
+
+    @Test
+    fun binarySearchIntListWithComparison() {
+        val l = mutableIntListOf(-2, -1, 2, 10, 10)
+        assertEquals(2, l.binarySearch { it.compareTo(2) })
+        assertEquals(0, l.binarySearch { it.compareTo(-2) })
+        assertEquals(-1, l.binarySearch { it.compareTo(-20) })
     }
 }

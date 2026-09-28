@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -31,7 +30,7 @@ plugins {
 
 androidXMultiplatform {
     androidLibrary {
-        compileSdk = 36
+        compileSdk { version = release(36) }
         namespace = "androidx.navigationevent.testing"
     }
     jvm()
@@ -47,25 +46,8 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                implementation(libs.kotlinStdlib)
-                api(project(":navigationevent:navigationevent"))
-            }
-        }
-
-        wasmJsMain {
-            dependsOn(commonMain)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-            }
-        }
-
-        jsMain {
-            dependsOn(commonMain)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-            }
+        commonMain.dependencies {
+            api(project(":navigationevent:navigationevent"))
         }
     }
 }
@@ -73,6 +55,7 @@ androidXMultiplatform {
 androidx {
     name = "Navigation Event Testing"
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    samples(project(":navigationevent:navigationevent-samples"))
     inceptionYear = "2025"
     description = "Testing utilities for 'navigationevent' artifact"
 }

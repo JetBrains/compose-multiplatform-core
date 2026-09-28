@@ -24,6 +24,7 @@ import androidx.core.telecom.CallEndpointCompat
 import androidx.core.telecom.CallsManager
 import androidx.core.telecom.reference.CallRepository
 import androidx.core.telecom.reference.model.DialerUiState
+import androidx.core.telecom.reference.view.loadExtensionEnabled
 import androidx.core.telecom.reference.view.loadPhoneNumberPrefix
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -56,6 +57,8 @@ class DialerViewModel(
 
     companion object {
         private const val TAG = "DialerViewModel"
+        private const val KEY_LOCAL_CALL_SILENCE_EXTENSION_ENABLED =
+            "local_call_silence_extension_enabled"
     }
 
     private var endpointFetchJob: Job? = null
@@ -63,6 +66,16 @@ class DialerViewModel(
     init {
         // Start fetching endpoints when the ViewModel is created
         fetchAvailableEndpoints()
+        val lcsEnabled = loadExtensionEnabled(context, KEY_LOCAL_CALL_SILENCE_EXTENSION_ENABLED)
+        _uiState.update { it.copy(isLocalCallSilenceEnabled = lcsEnabled) }
+    }
+
+    fun updateIsInitiallyMuted(isMuted: Boolean) {
+        _uiState.update { it.copy(isInitiallyMuted = isMuted) }
+    }
+
+    fun updateCanUserUpdateSilence(canUserUpdateSilence: Boolean) {
+        _uiState.update { it.copy(canUserUpdateSilence = canUserUpdateSilence) }
     }
 
     /**
@@ -81,51 +94,50 @@ class DialerViewModel(
         } // Reset state
 
         val callsManager = CallsManager(context)
-        endpointFetchJob =
-            viewModelScope.launch {
-                try {
-                    callsManager
-                        .getAvailableStartingCallEndpoints()
-                        // Catch potential errors during flow emission
-                        .catch { e ->
-                            Log.e(TAG, "Error collecting endpoints", e)
-                            _uiState.update {
-                                it.copy(
-                                    isFetchingEndpoints = false,
-                                    availableEndpoints = emptyList(),
-                                )
-                            }
-                        }
-                        // Collect the emitted lists of endpoints
-                        .collect { endpoints ->
-                            Log.i(
-                                TAG,
-                                "Received endpoints: ${endpoints.joinToString { it.name.toString() }}",
+        endpointFetchJob = viewModelScope.launch {
+            try {
+                callsManager
+                    .getAvailableStartingCallEndpoints()
+                    // Catch potential errors during flow emission
+                    .catch { e ->
+                        Log.e(TAG, "Error collecting endpoints", e)
+                        _uiState.update {
+                            it.copy(
+                                isFetchingEndpoints = false,
+                                availableEndpoints = emptyList(),
                             )
-                            _uiState.update {
-                                it.copy(
-                                    availableEndpoints = endpoints,
-                                    isFetchingEndpoints = false,
-                                    // Optionally auto-select the first one or the active one if
-                                    // needed
-                                    // selectedEndpoint = endpoints.firstOrNull()
-                                )
-                            }
                         }
-                } catch (e: Exception) {
-                    // Catch potential errors when *getting* the flow itself
-                    Log.e(TAG, "Error getting endpoints flow", e)
-                    _uiState.update {
-                        it.copy(isFetchingEndpoints = false, availableEndpoints = emptyList())
                     }
-                } finally {
-                    // Ensure loading state is turned off if flow completes or job is cancelled
-                    if (_uiState.value.isFetchingEndpoints) {
-                        _uiState.update { it.copy(isFetchingEndpoints = false) }
+                    // Collect the emitted lists of endpoints
+                    .collect { endpoints ->
+                        Log.i(
+                            TAG,
+                            "Received endpoints: ${endpoints.joinToString { it.name.toString() }}",
+                        )
+                        _uiState.update {
+                            it.copy(
+                                availableEndpoints = endpoints,
+                                isFetchingEndpoints = false,
+                                // Optionally auto-select the first one or the active one if
+                                // needed
+                                // selectedEndpoint = endpoints.firstOrNull()
+                            )
+                        }
                     }
-                    Log.d(TAG, "Endpoint fetching finished or cancelled.")
+            } catch (e: Exception) {
+                // Catch potential errors when *getting* the flow itself
+                Log.e(TAG, "Error getting endpoints flow", e)
+                _uiState.update {
+                    it.copy(isFetchingEndpoints = false, availableEndpoints = emptyList())
                 }
+            } finally {
+                // Ensure loading state is turned off if flow completes or job is cancelled
+                if (_uiState.value.isFetchingEndpoints) {
+                    _uiState.update { it.copy(isFetchingEndpoints = false) }
+                }
+                Log.d(TAG, "Endpoint fetching finished or cancelled.")
             }
+        }
     }
 
     /**
@@ -182,15 +194,20 @@ class DialerViewModel(
      * call.
      */
     fun initiateOutgoingCall() {
+        val scheme = loadPhoneNumberPrefix(context)
+        val phoneNumber = _uiState.value.phoneNumber
         callRepository.addOutgoingCall(
             CallAttributesCompat(
                 _uiState.value.displayName,
-                Uri.parse(loadPhoneNumberPrefix(context) + _uiState.value.phoneNumber),
+                Uri.fromParts(scheme, phoneNumber, null),
                 CallAttributesCompat.DIRECTION_OUTGOING,
                 callType = getCallType(),
                 callCapabilities = getCallCapabilities(),
                 preferredStartingCallEndpoint = _uiState.value.selectedEndpoint,
-            )
+                isLogExcluded = false,
+            ),
+            isInitiallyMuted = _uiState.value.isInitiallyMuted,
+            canUserUpdateSilence = _uiState.value.canUserUpdateSilence,
         )
     }
 

@@ -27,11 +27,9 @@ import android.view.MotionEvent;
 import android.view.MotionEvent.PointerCoords;
 import android.view.MotionEvent.PointerProperties;
 
-import com.android.extensions.xr.XrExtensions;
-import com.android.extensions.xr.test.XrUiAutomation;
-
 import org.jspecify.annotations.NonNull;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,8 +54,9 @@ class GestureController {
     // @TestApi method to set display id.
     private static Method sMotionEvent_setDisplayId;
 
-    // @TestApi class specific to XR for injecting motion events
-    private XrUiAutomation mXrUiAutomation;
+    // @TestApi method specific to XR for injection motion events
+    private Object mXrUiAutomation;
+    private Method mInjectMotionEventToWindow;
 
     static {
         try {
@@ -86,14 +85,28 @@ class GestureController {
         Instrumentation instrumentation = device.getInstrumentation();
         Context context = instrumentation.getContext();
         if (context.getPackageManager().hasSystemFeature("android.software.xr.api.spatial")) {
-            // XrUiAutomation is from an optional dependency; check for presence at runtime.
             try {
-                if (Class.forName("com.android.extensions.xr.XrExtensions") != null) {
-                    Log.i(TAG, "Located XrExtensions; using XrUiAutomation for input injection");
-                    mXrUiAutomation = new XrExtensions().getXrUiAutomation(instrumentation);
-                }
+                // TODO(b/392961976): Replace this reflection with usage of xr-stubs once @TestApi
+                // stubs are flowing into androidx.
+                Object xrExtensions =
+                        Class.forName("com.android.extensions.xr.XrExtensions")
+                                .getConstructor()
+                                .newInstance();
+                Class<?> xrUiAutomation =
+                        Class.forName("com.android.extensions.xr.test.XrUiAutomation");
+                mXrUiAutomation =
+                        xrExtensions
+                                .getClass()
+                                .getDeclaredMethod("getXrUiAutomation", Instrumentation.class)
+                                .invoke(xrExtensions, instrumentation);
+                mInjectMotionEventToWindow =
+                        xrUiAutomation.getDeclaredMethod(
+                                "injectMotionEventToWindow",
+                                MotionEvent.class,
+                                int.class,
+                                boolean.class);
             } catch (Exception e) {
-                Log.e(TAG, "XR system feature present but can't find XrExtensions class", e);
+                Log.i(TAG, "can't find XrUiAutomation#injectMotionEventToWindow", e);
             }
         }
     }
@@ -244,12 +257,19 @@ class GestureController {
     }
 
     private boolean injectMotionEvent(MotionEvent event, boolean sync, int windowId) {
-        if (mXrUiAutomation != null) {
+        if (mXrUiAutomation != null && mInjectMotionEventToWindow != null) {
             // If on XR and inject extension API available, use that.
-            return mXrUiAutomation.injectMotionEventToWindow(event, windowId, sync);
+            try {
+                return (boolean)
+                        mInjectMotionEventToWindow.invoke(mXrUiAutomation, event, windowId, sync);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                Log.e(TAG, "failed to call XrUiAutomation#injectMotionEventToWindow", e);
+                mInjectMotionEventToWindow = null;
+                mXrUiAutomation = null;
+            }
         }
         // Otherwise standard injection through UiAutomation#injectInputEvent
-        return getDevice().getUiAutomation().injectInputEvent(event, sync);
+        return getDevice().getUiAutomation().injectInputEvent(event, false);
     }
 
     /** Helper function to obtain a MotionEvent. */

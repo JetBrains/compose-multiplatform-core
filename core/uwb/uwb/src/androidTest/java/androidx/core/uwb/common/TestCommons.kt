@@ -16,10 +16,11 @@
 
 package androidx.core.uwb.common
 
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.core.uwb.RangingCapabilities
 import androidx.core.uwb.RangingParameters
 import androidx.core.uwb.UwbDevice
-import com.google.android.gms.internal.nearby.zzpt
-import com.google.android.gms.nearby.uwb.RangingCapabilities
 import com.google.android.gms.nearby.uwb.UwbAddress
 import com.google.android.gms.nearby.uwb.UwbComplexChannel
 
@@ -30,17 +31,17 @@ internal class TestCommons {
         val LOCAL_ADDRESS = UwbAddress(byteArrayOf(0xB0.toByte()))
         val RANGING_CAPABILITIES =
             RangingCapabilities(
-                true,
-                false,
-                false,
-                false,
-                200,
-                zzpt.zzl(9),
-                zzpt.zzl(1),
-                zzpt.zzn(1, 2, 3),
-                zzpt.zzl(2),
-                zzpt.zzl(1),
-                false,
+                isDistanceSupported = true,
+                isAzimuthalAngleSupported = false,
+                isElevationAngleSupported = false,
+                minRangingInterval = 200,
+                supportedChannels = setOf(9),
+                supportedNtfConfigs = setOf(1),
+                supportedConfigIds = setOf(1, 2, 3),
+                supportedSlotDurations = setOf(2),
+                supportedRangingUpdateRates = setOf(1),
+                isRangingIntervalReconfigureSupported = false,
+                isBackgroundRangingSupported = false,
             )
         val NEIGHBOR_1 = byteArrayOf(0xA1.toByte())
         val NEIGHBOR_2 = byteArrayOf(0xA5.toByte())
@@ -69,5 +70,61 @@ internal class TestCommons {
                 RangingParameters.RANGING_SLOT_DURATION_2_MILLIS,
                 isAoaDisabled = false,
             )
+
+        @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+        internal object GenericRanging {
+            val NEIGHBOR_3 by lazy {
+                android.ranging.uwb.UwbAddress.createRandomShortAddress().addressBytes
+            }
+            val LOCAL_RANGING_ADDRESS by lazy {
+                android.ranging.uwb.UwbAddress.createRandomShortAddress().addressBytes
+            }
+            val UWB_DEVICE_RANGING1 by lazy {
+                UwbDevice.createForAddress(
+                    android.ranging.uwb.UwbAddress.createRandomShortAddress().addressBytes
+                )
+            }
+            val GENERIC_RANGING_PARAMETERS by lazy {
+                RangingParameters(
+                    RangingParameters.CONFIG_UNICAST_DS_TWR,
+                    sessionId = 0,
+                    subSessionId = 0,
+                    sessionKeyInfo =
+                        byteArrayOf(
+                            /* Vendor ID */ 0x07,
+                            0x08,
+                            /* Static STS IV */ 0x01,
+                            0x02,
+                            0x03,
+                            0x04,
+                            0x05,
+                            0x06,
+                        ),
+                    subSessionKeyInfo = null,
+                    complexChannel = null,
+                    listOf(UWB_DEVICE_RANGING1),
+                    RangingParameters.RANGING_UPDATE_RATE_AUTOMATIC,
+                    uwbRangeDataNtfConfig = null,
+                    RangingParameters.RANGING_SLOT_DURATION_2_MILLIS,
+                    isAoaDisabled = false,
+                )
+            }
+
+            val CAPABILITIES_GENERIC_RANGING by lazy {
+                androidx.core.uwb.RangingCapabilities(
+                    isDistanceSupported = true,
+                    isAzimuthalAngleSupported = true,
+                    isElevationAngleSupported = true,
+                    minRangingInterval = 200,
+                    supportedChannels = setOf(9, 10),
+                    supportedNtfConfigs = setOf(1),
+                    supportedConfigIds = setOf(1, 2, 3, 4, 5, 6),
+                    supportedSlotDurations = setOf(1),
+                    supportedRangingUpdateRates = setOf(1),
+                    isRangingIntervalReconfigureSupported = true,
+                    isBackgroundRangingSupported = true,
+                )
+            }
+        }
     }
 }

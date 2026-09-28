@@ -17,6 +17,7 @@
 package androidx.appfunctions.compiler.processors
 
 import androidx.appfunctions.compiler.AppFunctionCompiler
+import androidx.appfunctions.compiler.core.AnnotatedAppFunction
 import androidx.appfunctions.compiler.core.AnnotatedAppFunctions
 import androidx.appfunctions.compiler.core.AppFunctionComponentRegistryGenerator
 import androidx.appfunctions.compiler.core.AppFunctionComponentRegistryGenerator.AppFunctionComponent
@@ -27,14 +28,17 @@ import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionContex
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionInvokerClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.ConfigurableAppFunctionFactoryClass
 import androidx.appfunctions.compiler.core.isOfType
+import androidx.appfunctions.compiler.core.isParametrized
 import androidx.appfunctions.compiler.core.toTypeName
 import com.google.devtools.ksp.KspExperimental
+import com.google.devtools.ksp.getConstructors
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
@@ -55,7 +59,7 @@ import com.squareup.kotlinpoet.buildCodeBlock
  * under the same package. For example,
  * ```
  * class NoteFunction: CreateNote {
- *   @AppFunction
+ *   @AppFunctionDeclaration
  *   override suspend fun createNote(): Note { ... }
  * }
  * ```
@@ -166,8 +170,8 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
         annotatedAppFunctions: AnnotatedAppFunctions
     ): PropertySpec {
         val functionIds =
-            annotatedAppFunctions.appFunctionDeclarations.map { function ->
-                annotatedAppFunctions.getAppFunctionIdentifier(function)
+            annotatedAppFunctions.appFunctions.map { appFunction ->
+                appFunction.getAppFunctionIdentifier(annotatedAppFunctions.classDeclaration)
             }
         return PropertySpec.builder(
                 AppFunctionInvokerClass.SUPPORTED_FUNCTION_IDS_PROPERTY_NAME,
@@ -222,7 +226,7 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
                 buildCodeBlock {
                     addStatement("val result: Any? = when (${functionIdentifierSpec.name}) {")
                     indent()
-                    for (appFunction in annotatedAppFunctions.appFunctionDeclarations) {
+                    for (appFunction in annotatedAppFunctions.appFunctions) {
                         appendInvocationBranchStatement(
                             annotatedAppFunctions,
                             appFunction,
@@ -262,35 +266,54 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
      */
     private fun CodeBlock.Builder.appendInvocationBranchStatement(
         annotatedAppFunctions: AnnotatedAppFunctions,
-        appFunction: KSFunctionDeclaration,
+        appFunction: AnnotatedAppFunction,
         contextSpec: ParameterSpec,
         functionParametersSpec: ParameterSpec,
     ) {
+        val isDeprecated = appFunction.isDeprecated
         val functionParameterStatement =
-            appFunction.getAppFunctionParametersStatement(contextSpec, functionParametersSpec)
+            appFunction.appFunctionDeclaration.getAppFunctionParametersStatement(
+                contextSpec,
+                functionParametersSpec,
+            )
+        val factoryClassName = ConfigurableAppFunctionFactoryClass.CLASS_NAME
         val formatStringMap =
             mapOf<String, Any>(
-                "function_id" to annotatedAppFunctions.getAppFunctionIdentifier(appFunction),
-                "factory_class" to ConfigurableAppFunctionFactoryClass.CLASS_NAME,
+                "function_id" to
+                    appFunction.getAppFunctionIdentifier(annotatedAppFunctions.classDeclaration),
+                "factory_class" to factoryClassName,
                 "enclosing_class" to annotatedAppFunctions.getEnclosingClassName(),
                 "context_param" to contextSpec.name,
                 "context_property" to AppFunctionContextClass.CONTEXT_PROPERTY_NAME,
                 "create_method" to
                     ConfigurableAppFunctionFactoryClass.CreateEnclosingClassMethod.METHOD_NAME,
-                "function_name" to appFunction.simpleName.asString(),
+                "function_name" to appFunction.appFunctionDeclaration.simpleName.asString(),
                 "parameters" to functionParameterStatement,
             )
         addNamed("\"%function_id:L\" -> {\n", formatStringMap)
         indent()
+        if (isDeprecated) {
+            add("@Suppress(\"DEPRECATION\")\n")
+        }
         addNamed("%factory_class:T<%enclosing_class:T>(\n", formatStringMap)
         indent()
         addNamed("%context_param:L.%context_property:L\n", formatStringMap)
         unindent()
-        add(")\n")
+        if (annotatedAppFunctions.containsPublicNoArgConstructor()) {
+            addNamed(") { %enclosing_class:T() }\n", formatStringMap)
+        } else {
+            add(")\n")
+        }
         addNamed(".%create_method:L(%enclosing_class:T::class.java)\n", formatStringMap)
         addNamed(".%function_name:L(%parameters:L)\n", formatStringMap)
         unindent()
         add("}\n")
+    }
+
+    private fun AnnotatedAppFunctions.containsPublicNoArgConstructor(): Boolean {
+        return classDeclaration.getConstructors().firstOrNull { constructor ->
+            constructor.modifiers.contains(Modifier.PUBLIC) && constructor.parameters.isEmpty()
+        } != null
     }
 
     private fun KSFunctionDeclaration.getAppFunctionParametersStatement(
@@ -306,7 +329,7 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
                     } else {
                         val parameterName = checkNotNull(value.name).asString()
                         val parameterType = value.type.toTypeName()
-                        if (value.type.isOfType(LIST)) {
+                        if (value.type.isOfType(LIST) || value.type.isParametrized()) {
                             add(
                                 "@Suppress(\"UNCHECKED_CAST\") (${functionParametersSpec.name}[\"${parameterName}\"] as $parameterType)"
                             )

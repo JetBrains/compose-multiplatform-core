@@ -30,6 +30,7 @@ import kotlin.test.assertTrue
 // to ensure the change is available on all versions of the map.
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+@Suppress("REDUNDANT_CALL_OF_CONVERSION_METHOD")
 class FloatListTest {
     private val list: MutableFloatList = mutableFloatListOf(1f, 2f, 3f, 4f, 5f)
 
@@ -747,12 +748,20 @@ class FloatListTest {
     @Test
     fun binarySearchFloatList() {
         val l = mutableFloatListOf(-2f, -1f, 2f, 10f, 10f)
-        assertEquals(0, l.binarySearch(-2))
-        assertEquals(2, l.binarySearch(2))
-        assertEquals(3, l.binarySearch(10))
+        assertEquals(0, l.binarySearch(-2f))
+        assertEquals(2, l.binarySearch(2f))
+        assertEquals(3, l.binarySearch(10f))
 
-        assertEquals(-1, l.binarySearch(-20))
-        assertEquals(-4, l.binarySearch(3))
-        assertEquals(-6, l.binarySearch(20))
+        assertEquals(-1, l.binarySearch(-20f))
+        assertEquals(-4, l.binarySearch(3f))
+        assertEquals(-6, l.binarySearch(20f))
+    }
+
+    @Test
+    fun binarySearchFloatListWithComparison() {
+        val l = mutableFloatListOf(-2f, -1f, 2f, 10f, 10f)
+        assertEquals(2, l.binarySearch { it.compareTo(2f) })
+        assertEquals(0, l.binarySearch { it.compareTo(-2f) })
+        assertEquals(-1, l.binarySearch { it.compareTo(-20f) })
     }
 }

@@ -20,7 +20,8 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.appfunctions.AppFunctionData
-import androidx.appfunctions.`internal`.AppFunctionSerializableFactory
+import androidx.appfunctions.AppFunctionDataSpec
+import androidx.appfunctions.internal.AppFunctionSerializableFactory
 import java.time.LocalDateTime
 
 // TODO(b/413622177): Temporary workaround of supporting proxy before being able to apply KSP on
@@ -29,28 +30,32 @@ import java.time.LocalDateTime
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 public class `$LocalDateTimeFactory` : AppFunctionSerializableFactory<LocalDateTime> {
     override fun fromAppFunctionData(appFunctionData: AppFunctionData): LocalDateTime {
-
-        val year = checkNotNull(appFunctionData.getIntOrNull("year"))
-        val month = checkNotNull(appFunctionData.getIntOrNull("month"))
-        val dayOfMonth = checkNotNull(appFunctionData.getIntOrNull("dayOfMonth"))
-        val hour = checkNotNull(appFunctionData.getIntOrNull("hour"))
-        val minute = checkNotNull(appFunctionData.getIntOrNull("minute"))
-        val second = checkNotNull(appFunctionData.getIntOrNull("second"))
-        val nanoOfSecond = checkNotNull(appFunctionData.getIntOrNull("nanoOfSecond"))
+        val appFunctionDataWithSpec =
+            getAppFunctionDataWithSpec(
+                appFunctionData = appFunctionData,
+                qualifiedName = "java.time.LocalDateTime",
+            )
+        val year = checkNotNull(appFunctionDataWithSpec.getIntOrNull("year"))
+        val month = checkNotNull(appFunctionDataWithSpec.getIntOrNull("month"))
+        val dayOfMonth = checkNotNull(appFunctionDataWithSpec.getIntOrNull("dayOfMonth"))
+        val hour = checkNotNull(appFunctionDataWithSpec.getIntOrNull("hour"))
+        val minute = checkNotNull(appFunctionDataWithSpec.getIntOrNull("minute"))
+        val second = checkNotNull(appFunctionDataWithSpec.getIntOrNull("second"))
+        val nanoOfSecond = checkNotNull(appFunctionDataWithSpec.getIntOrNull("nanoOfSecond"))
 
         val resultAppFunctionLocalDateTime =
             AppFunctionLocalDateTime(year, month, dayOfMonth, hour, minute, second, nanoOfSecond)
         return resultAppFunctionLocalDateTime.toLocalDateTime()
     }
 
-    override fun toAppFunctionData(appFunctionSerializable: LocalDateTime): AppFunctionData {
+    override fun toAppFunctionData(
+        spec: AppFunctionDataSpec?,
+        appFunctionSerializable: LocalDateTime,
+    ): AppFunctionData {
         val appFunctionLocalDateTime_appFunctionSerializable =
             AppFunctionLocalDateTime.fromLocalDateTime(appFunctionSerializable)
 
-        val builder =
-            AppFunctionData.Builder(
-                "androidx.appfunctions.internal.serializableproxies.AppFunctionLocalDateTime"
-            )
+        val builder = getAppFunctionDataBuilder(spec, "java.time.LocalDateTime")
         val year = appFunctionLocalDateTime_appFunctionSerializable.year
         builder.setInt("year", year)
         val month = appFunctionLocalDateTime_appFunctionSerializable.month

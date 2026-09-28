@@ -23,6 +23,7 @@ import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.wear.watchface.utility.iconEquals
 import androidx.wear.watchface.utility.iconHashCode
+import com.google.wear.services.complications.ComplicationData as WearSdkComplicationData
 import java.util.Objects
 
 internal const val PLACEHOLDER_IMAGE_RESOURCE_ID = -1
@@ -68,11 +69,10 @@ internal constructor(public val image: Icon, public val ambientImage: Icon?) {
     }
 
     /** Adds a [MonochromaticImage] to a builder for [WireComplicationData]. */
-    internal fun addToWireComplicationData(builder: WireComplicationData.Builder) =
-        builder.apply {
-            setIcon(image)
-            setBurnInProtectionIcon(ambientImage)
-        }
+    internal fun addToWireComplicationData(builder: WireComplicationData.Builder) = builder.apply {
+        setIcon(image)
+        setBurnInProtectionIcon(ambientImage)
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -92,9 +92,10 @@ internal constructor(public val image: Icon, public val ambientImage: Icon?) {
         return "MonochromaticImage(image=$image, ambientImage=$ambientImage)"
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) fun isPlaceholder() = image.isPlaceholder()
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun isPlaceholder(): Boolean = image.isPlaceholder()
 
-    companion object {
+    public companion object {
         /**
          * For use when the real data isn't available yet, this [MonochromaticImage] should be
          * rendered as a placeholder. It is suggested that it should be rendered with a light grey
@@ -171,13 +172,25 @@ internal constructor(
     }
 
     /** Adds a [SmallImage] to a builder for [WireComplicationData]. */
-    internal fun addToWireComplicationData(builder: WireComplicationData.Builder) =
+    internal fun addToWireComplicationData(builder: WireComplicationData.Builder) = builder.apply {
+        setSmallImage(image)
+        setSmallImageStyle(
+            when (this@SmallImage.type) {
+                SmallImageType.ICON -> WireComplicationData.IMAGE_STYLE_ICON
+                SmallImageType.PHOTO -> WireComplicationData.IMAGE_STYLE_PHOTO
+            }
+        )
+        setBurnInProtectionSmallImage(ambientImage)
+    }
+
+    /** Adds a [SmallImage] to a builder for [WearSdkComplicationData]. */
+    internal fun addToWearSdkComplicationData(builder: WearSdkComplicationData.Builder) =
         builder.apply {
             setSmallImage(image)
             setSmallImageStyle(
                 when (this@SmallImage.type) {
-                    SmallImageType.ICON -> WireComplicationData.IMAGE_STYLE_ICON
-                    SmallImageType.PHOTO -> WireComplicationData.IMAGE_STYLE_PHOTO
+                    SmallImageType.ICON -> WearSdkComplicationData.IMAGE_STYLE_ICON
+                    SmallImageType.PHOTO -> WearSdkComplicationData.IMAGE_STYLE_PHOTO
                 }
             )
             setBurnInProtectionSmallImage(ambientImage)
@@ -203,7 +216,7 @@ internal constructor(
         return "SmallImage(image=$image, type=$type, ambientImage=$ambientImage)"
     }
 
-    companion object {
+    public companion object {
         /**
          * For use when the real data isn't available yet, this [SmallImage] should be rendered as a
          * placeholder. It is suggested that it should be rendered with a light grey box.
@@ -216,11 +229,12 @@ internal constructor(
             SmallImage(createPlaceholderIcon(), SmallImageType.ICON, null)
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) fun isPlaceholder() = image.isPlaceholder()
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun isPlaceholder(): Boolean = image.isPlaceholder()
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun Icon.isPlaceholder() =
+public fun Icon.isPlaceholder(): Boolean =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
         IconP.isPlaceholder(this)
     } else {

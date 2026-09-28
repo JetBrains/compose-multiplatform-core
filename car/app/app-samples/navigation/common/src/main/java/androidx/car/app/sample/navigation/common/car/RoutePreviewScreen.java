@@ -19,7 +19,6 @@ package androidx.car.app.sample.navigation.common.car;
 import android.text.SpannableString;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.car.app.CarContext;
 import androidx.car.app.Screen;
 import androidx.car.app.model.Action;
@@ -34,6 +33,8 @@ import androidx.car.app.model.Template;
 import androidx.car.app.navigation.model.MapWithContentTemplate;
 import androidx.car.app.sample.navigation.common.R;
 import androidx.core.graphics.drawable.IconCompat;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,8 +61,8 @@ public final class RoutePreviewScreen extends Screen {
         mSettingsAction = settingsAction;
         mSurfaceRenderer = surfaceRenderer;
 
-        CarIcon actionIcon = new CarIcon.Builder(IconCompat.createWithResource(
-                getCarContext(), R.drawable.baseline_assistant_navigation_24)).build();
+        CarIcon actionIcon = CarIcon.createTintedIcon(IconCompat.createWithResource(
+                getCarContext(), R.drawable.baseline_assistant_navigation_24));
         Action navigateAction = new Action.Builder()
                 .setIcon(actionIcon)
                 .setOnClickListener(this::onNavigate)

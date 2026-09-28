@@ -20,6 +20,7 @@ import static androidx.wear.protolayout.DimensionBuilders.dp;
 import static androidx.wear.protolayout.expression.Preconditions.checkNotNull;
 
 import android.annotation.SuppressLint;
+import android.app.PendingIntent;
 
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntDef;
@@ -27,6 +28,7 @@ import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.ActionBuilders.Action;
+import androidx.wear.protolayout.ActionBuilders.PendingIntentAction;
 import androidx.wear.protolayout.ColorBuilders.Brush;
 import androidx.wear.protolayout.ColorBuilders.ColorProp;
 import androidx.wear.protolayout.ColorBuilders.LinearGradient;
@@ -416,25 +418,11 @@ public final class ModifiersBuilders {
                     ModifiersProto.Clickable.newBuilder();
             private final Fingerprint mFingerprint = new Fingerprint(812136104);
 
-            /** Creates an instance of {@link Builder}. */
-            public Builder() {}
-
             /** Sets the ID associated with this action. */
             @RequiresSchemaVersion(major = 1, minor = 0)
             public @NonNull Builder setId(@NonNull String id) {
                 mImpl.setId(id);
                 mFingerprint.recordPropertyUpdate(1, id.hashCode());
-                return this;
-            }
-
-            /**
-             * Sets the action to perform when the element this modifier is attached to is clicked.
-             */
-            @RequiresSchemaVersion(major = 1, minor = 0)
-            public @NonNull Builder setOnClick(@NonNull Action onClick) {
-                mImpl.setOnClick(onClick.toActionProto());
-                mFingerprint.recordPropertyUpdate(
-                        2, checkNotNull(onClick.getFingerprint()).aggregateValueAsInt());
                 return this;
             }
 
@@ -500,9 +488,76 @@ public final class ModifiersBuilders {
                 return this;
             }
 
+            private final @Nullable ProtoLayoutScope mScope;
+            private @Nullable PendingIntent mPendingIntent = null;
+
+            /**
+             * Creates an instance of {@link Builder}.
+             *
+             * <p>Note that, builder created with this constructor can not be used to invoke {@link
+             * #setOnClick(PendingIntent)}, otherwise an exception will be thrown. Instead, create
+             * the builder with {@link #Builder(ProtoLayoutScope, String)} for setting a {@link
+             * PendingIntent} as onClick action.
+             */
+            public Builder() {
+                mScope = null;
+            }
+
+            /**
+             * Creates an instance of {@link Builder} which is able to accept a {@link
+             * PendingIntent} as onClick action. Builder instance created with this constructor
+             * works with other type of actions as well.
+             *
+             * <p>Note that, calling {@code #setId} would override the clickable Id set here.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 600)
+            public Builder(@NonNull ProtoLayoutScope scope, @NonNull String clickableId) {
+                this.mScope = scope;
+                setId(clickableId);
+            }
+
+            /**
+             * Sets the action to perform when the element this modifier is attached to is clicked.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 0)
+            public @NonNull Builder setOnClick(@NonNull Action onClick) {
+                mImpl.setOnClick(onClick.toActionProto());
+                mFingerprint.recordPropertyUpdate(
+                        2, checkNotNull(onClick.getFingerprint()).aggregateValueAsInt());
+                mPendingIntent = null;
+                return this;
+            }
+
+            /**
+             * Sets the {@link PendingIntent} to perform when the element this modifier is attached
+             * to is clicked.
+             *
+             * <p>Note that this method is mutually exclusive with {@code #setOnClick(Action)}, the
+             * later method call will override the previous one.
+             *
+             * @throws IllegalArgumentException if the builder is not constructed with {@link
+             *     #Builder(ProtoLayoutScope, String)}.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 600)
+            public @NonNull Builder setOnClick(@NonNull PendingIntent pendingIntent) {
+                if (mScope == null) {
+                    throw new IllegalStateException(
+                            "Clickable.Builder.setOnClick(PendingIntent) needs to be called with"
+                                    + " constructor that accepts ProtoLayoutScope.");
+                }
+                setOnClick(new PendingIntentAction.Builder().build());
+                mPendingIntent = pendingIntent;
+                return this;
+            }
+
             /** Builds an instance from accumulated values. */
             public @NonNull Clickable build() {
-                return new Clickable(mImpl.build(), mFingerprint);
+                ModifiersProto.Clickable protoImpl = mImpl.build();
+                if (mPendingIntent != null && mScope != null) {
+                    // register the pending intent to the scope for later collection.
+                    mScope.registerPendingIntent(protoImpl.getId(), mPendingIntent);
+                }
+                return new Clickable(protoImpl, mFingerprint);
             }
         }
     }
@@ -1119,6 +1174,7 @@ public final class ModifiersBuilders {
         }
 
         /** Builder for {@link CornerRadius} */
+        @SuppressWarnings("EmptyBuilder")
         public static final class Builder {
             private final ModifiersProto.CornerRadius.Builder mImpl =
                     ModifiersProto.CornerRadius.newBuilder();
@@ -1721,7 +1777,8 @@ public final class ModifiersBuilders {
         /**
          * Gets the horizontal location of the point around which the element is rotated and scaled.
          * With type {@link DpProp}, it is the offset from the element center; otherwise with type
-         * {@link BoundingBoxRatio}, it is the location proportional to the bounding box width.
+         * {@link androidx.wear.protolayout.DimensionBuilders.BoundingBoxRatio}, it is the location
+         * proportional to the bounding box width.
          */
         public @NonNull PivotDimension getPivotX() {
             if (mImpl.hasPivotX()) {
@@ -1734,7 +1791,8 @@ public final class ModifiersBuilders {
         /**
          * Gets the vertical location of the point around which the element is rotated and scaled.
          * With type {@link DpProp}, it is the offset from the element center; otherwise with type
-         * {@link BoundingBoxRatio}, it is the location proportional to the bounding box height.
+         * {@link androidx.wear.protolayout.DimensionBuilders.BoundingBoxRatio}, it is the location
+         * proportional to the bounding box height.
          */
         public @NonNull PivotDimension getPivotY() {
             if (mImpl.hasPivotY()) {
@@ -1859,8 +1917,9 @@ public final class ModifiersBuilders {
             /**
              * Sets the horizontal location of the point around which the element is rotated and
              * scaled. With type {@link DpProp}, it is the offset from the element center; otherwise
-             * with type {@link BoundingBoxRatio}, it is the location proportional to the bounding
-             * box width. Dynamic value is supported. If not set, defaults to the element center.
+             * with type {@link androidx.wear.protolayout.DimensionBuilders.BoundingBoxRatio}, it is
+             * the location proportional to the bounding box width. Dynamic value is supported. If
+             * not set, defaults to the element center.
              */
             @RequiresSchemaVersion(major = 1, minor = 400)
             public @NonNull Builder setPivotX(@NonNull PivotDimension pivotX) {
@@ -1873,8 +1932,9 @@ public final class ModifiersBuilders {
             /**
              * Sets the vertical location of the point around which the element is rotated and
              * scaled. With type {@link DpProp}, it is the offset from the element center; otherwise
-             * with type {@link BoundingBoxRatio}, it is the location proportional to the bounding
-             * box height. Dynamic value is supported. If not set, defaults to the element center.
+             * with type {@link androidx.wear.protolayout.DimensionBuilders.BoundingBoxRatio}, it is
+             * the location proportional to the bounding box height. Dynamic value is supported. If
+             * not set, defaults to the element center.
              */
             @RequiresSchemaVersion(major = 1, minor = 400)
             public @NonNull Builder setPivotY(@NonNull PivotDimension pivotY) {
@@ -3011,10 +3071,12 @@ public final class ModifiersBuilders {
     @ProtoLayoutExperimental
     public interface SlideBound {
         /** Get the protocol buffer representation of this object. */
+        @SuppressWarnings("HiddenAbstractMethodInInterface")
         @RestrictTo(Scope.LIBRARY_GROUP)
         ModifiersProto.@NonNull SlideBound toSlideBoundProto();
 
         /** Get the fingerprint for this object or null if unknown. */
+        @SuppressWarnings("HiddenAbstractMethodInInterface")
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Nullable Fingerprint getFingerprint();
 

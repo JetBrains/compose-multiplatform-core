@@ -16,26 +16,35 @@
 
 package androidx.appfunctions
 
+import android.app.appfunctions.AppFunctionMetadata.PROPERTY_SCOPE
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.annotation.RestrictTo
+import androidx.appfunctions.metadata.AppFunctionMetadata.Companion.SCOPE_ACTIVITY
+import androidx.appfunctions.metadata.AppFunctionMetadata.Companion.SCOPE_GLOBAL
+import androidx.appfunctions.metadata.AppFunctionMetadata.Companion.scopeToScopeXmlValue
 import androidx.appfunctions.metadata.AppFunctionMetadataDocument
+import androidx.appfunctions.metadata.AppFunctionName
 
 /**
  * Defines the specifications for filtering and searching app function snapshots.
  *
- * @property packageNames A set of package names to filter functions by. Only functions belonging to
- *   these packages will be considered. Defaults to null, which means this field is ignored when
- *   filtering.
+ * A search will be performed using a logical AND operation across all provided criteria.
+ *
+ * @property packageNames The set of package names to filter by, or null if this filter is skipped.
  *
  *   The calling app can only search metadata for functions in packages that it is allowed to query
  *   via [android.content.pm.PackageManager.canPackageQuery]. If a package is not queryable by the
  *   calling app, its functions' metadata will not be visible.
  *
- * @property schemaCategory The category of the function's schema. Defaults to null, which means
- *   this field is ignored when filtering.
- * @property schemaName The name of the function's schema. Defaults to null, which means this field
- *   is ignored when filtering.
- * @property minSchemaVersion The minimum version of the function's schema. Functions with a schema
- *   version equal to or greater than this value will be included when filtering. Defaults to 0,
- *   which means this field is ignored when filtering. This value cannot be negative.
+ * @property schemaCategory The schema category to filter by, or null if this filter is skipped.
+ * @property schemaName The schema name to filter by, or null if this filter is skipped.
+ * @property minSchemaVersion The minimum schema version to filter by, or 0 if this filter is
+ *   skipped.
+ * @property functionNames The set of [AppFunctionName] to filter by, or null if this filter is
+ *   skipped.
+ * @property scopes The set of [androidx.appfunctions.metadata.AppFunctionMetadata.scope] type to
+ *   filter by, or null if this filter is skipped.
  * @constructor Creates a new instance of [AppFunctionSearchSpec].
  */
 public class AppFunctionSearchSpec
@@ -43,17 +52,43 @@ public class AppFunctionSearchSpec
 constructor(
     @get:Suppress(
         // Null value is used to specify that the value was not set by the caller to be consistent
-        // with other string fields.
+        // with other fields.
         "NullableCollection"
     )
     public val packageNames: Set<String>? = null,
     public val schemaCategory: String? = null,
     public val schemaName: String? = null,
     public val minSchemaVersion: Int = 0,
+    @get:Suppress(
+        // Null value is used to specify that the value was not set by the caller to be consistent
+        // with other fields.
+        "NullableCollection"
+    )
+    public val functionNames: Set<AppFunctionName>? = null,
+    @get:Suppress(
+        // Null value is used to specify that the value was not set by the caller to be consistent
+        // with other fields.
+        "NullableCollection"
+    )
+    public val scopes: Set<Int>? = null,
 ) {
     init {
         require(minSchemaVersion >= 0) {
             "The minimum schema version must be a non-negative integer."
+        }
+        require(packageNames == null || packageNames.isNotEmpty()) {
+            "Cannot filter by empty set of package names."
+        }
+        require(functionNames == null || functionNames.isNotEmpty()) {
+            "Cannot filter by empty set of function names."
+        }
+        require(scopes == null || scopes.isNotEmpty()) { "Cannot filter by empty set of scopes." }
+
+        if (scopes != null) {
+            val invalidScopes = scopes - setOf(SCOPE_GLOBAL, SCOPE_ACTIVITY)
+            require(invalidScopes.isEmpty()) {
+                "Unknown AppFunctionScope type(s): ${invalidScopes.joinToString()}"
+            }
         }
     }
 
@@ -78,9 +113,48 @@ constructor(
                 if (minSchemaVersion > 0) {
                     add("schemaVersion>=${minSchemaVersion}")
                 }
+                if (!scopes.isNullOrEmpty()) {
+                    val queryXmlScopes =
+                        scopes.mapNotNull { scopeToScopeXmlValue(it) }.toMutableSet()
+                    // Unset scope in app function document defaults to SCOPE_GLOBAL.
+                    if (scopes.contains(SCOPE_GLOBAL)) {
+                        queryXmlScopes.add("")
+                    }
+                    add("$PROPERTY_SCOPE:(${getOrQueryExpression(queryXmlScopes)})")
+                }
             }
             .joinToString(" ")
 
     private fun getOrQueryExpression(elements: Set<String>) =
         elements.joinToString(" OR ") { "\"$it\"" }
+
+    /**
+     * Converts [androidx.appfunctions.AppFunctionSearchSpec] to
+     * [android.app.appfunctions.AppFunctionSearchSpec].
+     */
+    @RequiresApi(Build.VERSION_CODES.CINNAMON_BUN)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun toPlatformSearchSpec(): android.app.appfunctions.AppFunctionSearchSpec {
+        return android.app.appfunctions.AppFunctionSearchSpec.Builder()
+            .setSchemaCategory(schemaCategory)
+            .setSchemaName(schemaName)
+            .setMinSchemaVersion(minSchemaVersion.toLong())
+            .setPackageNames(packageNames)
+            .setScopes(scopes)
+            .apply {
+                if (functionNames != null) {
+                    setFunctionNames(
+                        functionNames
+                            .map {
+                                android.app.appfunctions.AppFunctionName(
+                                    it.packageName,
+                                    it.functionIdentifier,
+                                )
+                            }
+                            .toSet()
+                    )
+                }
+            }
+            .build()
+    }
 }

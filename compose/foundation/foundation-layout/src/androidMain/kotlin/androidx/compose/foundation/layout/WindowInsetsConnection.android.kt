@@ -69,7 +69,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  * @sample androidx.compose.foundation.layout.samples.windowInsetsNestedScrollDemo
  */
 @ExperimentalLayoutApi
-fun Modifier.imeNestedScroll(): Modifier {
+public fun Modifier.imeNestedScroll(): Modifier {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
         return this
     }
@@ -380,12 +380,12 @@ private class WindowInsetsNestedScrollConnection(
     override fun onReady(controller: WindowInsetsAnimationController, types: Int) {
         animationController = controller
         isControllerRequested = false
-        continuation?.resume(controller) {}
+        continuation?.resume(controller) { _, _, _ -> }
         continuation = null
     }
 
     fun dispose() {
-        continuation?.resume(null) {}
+        continuation?.resume(null) { _, _, _ -> }
         animationJob?.cancel()
         val animationController = animationController
         if (animationController != null) {
@@ -413,7 +413,7 @@ private class WindowInsetsNestedScrollConnection(
 
         // The animation controller may not have been given to us, so we have to cancel animations
         // waiting for it.
-        continuation?.resume(null) {}
+        continuation?.resume(null) { _, _, _ -> }
         continuation = null
 
         // Cancel any animation that's running.

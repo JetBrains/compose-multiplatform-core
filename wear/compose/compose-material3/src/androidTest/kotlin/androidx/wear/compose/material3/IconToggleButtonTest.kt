@@ -53,7 +53,7 @@ import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsToggleable
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Dp
@@ -690,7 +690,12 @@ class IconToggleButtonTest {
                 onCheckedChange = { checked = !checked },
                 modifier = modifier,
                 shapes =
-                    IconToggleButtonShapes(uncheckedShape, checkedShape, pressedShape, pressedShape),
+                    IconToggleButtonShapes(
+                        uncheckedShape,
+                        checkedShape,
+                        pressedShape,
+                        pressedShape,
+                    ),
             ) {}
         }
     }
@@ -711,7 +716,10 @@ class IconToggleButtonTest {
             color = { shapeColor(checked = false) },
             releaseAfterTap = false,
         ) { modifier ->
-            CompositionLocalProvider(LocalContentColor provides shapeColor(checked = false)) {
+            CompositionLocalProvider(
+                LocalContentColor provides shapeColor(checked = false),
+                LocalRippleConfiguration provides null,
+            ) {
                 IconToggleButton(
                     checked = false,
                     onCheckedChange = {},
@@ -744,7 +752,10 @@ class IconToggleButtonTest {
             color = { shapeColor(checked = true) },
             releaseAfterTap = false,
         ) { modifier ->
-            CompositionLocalProvider(LocalContentColor provides shapeColor(checked = true)) {
+            CompositionLocalProvider(
+                LocalContentColor provides shapeColor(checked = true),
+                LocalRippleConfiguration provides null,
+            ) {
                 IconToggleButton(
                     checked = true,
                     onCheckedChange = {},

@@ -16,21 +16,17 @@
 
 package androidx.compose.ui.platform
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.input.pointer.EmptyPointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 
 /** Provides information about the Window that is hosting this compose hierarchy. */
 @Stable
-interface WindowInfo {
+public interface WindowInfo {
     /**
      * Indicates whether the window hosting this compose hierarchy is in focus.
      *
@@ -38,33 +34,41 @@ interface WindowInfo {
      * or dialog is visible, this property can be used to determine if the current window is in
      * focus.
      */
-    val isWindowFocused: Boolean
+    public val isWindowFocused: Boolean
 
     /** Indicates the state of keyboard modifiers (pressed or not). */
-    val keyboardModifiers: PointerKeyboardModifiers
+    public val keyboardModifiers: PointerKeyboardModifiers
         get() = WindowInfoImpl.GlobalKeyboardModifiers.value
 
     /**
-     * Size of the window. This size excludes insets, such as any system bars, so it is not safe to
-     * assume that this size matches the available space of the compose hierarchy hosted inside this
-     * window. Instead this size should be used as a breakpoint when changing between UI
-     * configurations, or similar window-dependent configuration.
+     * The size of the window in pixels that can used by the application in some way. Note that this
+     * may be a larger size than is available to the Compose hierarchy (if Compose does not fill the
+     * window). In addition, it may not be safe to display content using the entire window size, for
+     * example in situations where insets representing cutouts or obscuring system UI reduce the
+     * amount of available space. Even though all pixels included in this size may not be usable at
+     * any given time, it's relative stability means it is generally the correct signal to drive the
+     * overall layout structure displaying in the window.
      */
-    val containerSize: IntSize
+    public val containerSize: IntSize
         get() = IntSize(Int.MIN_VALUE, Int.MIN_VALUE)
-}
 
-@Composable
-internal fun WindowFocusObserver(onWindowFocusChanged: (isWindowFocused: Boolean) -> Unit) {
-    val windowInfo = LocalWindowInfo.current
-    val callback = rememberUpdatedState(onWindowFocusChanged)
-    LaunchedEffect(windowInfo) {
-        snapshotFlow { windowInfo.isWindowFocused }.collect { callback.value(it) }
-    }
+    /**
+     * The size of the window represented as a [DpSize] that can used by the application in some
+     * way. Note that this may be a larger size than is available to the Compose hierarchy (if
+     * Compose does not fill the window). In addition, it may not be safe to display content using
+     * the entire window size, for example in situations where insets representing cutouts or
+     * obscuring system UI reduce the amount of available space. Even though all pixels included in
+     * this size may not be usable at any given time, it's relative stability means it is generally
+     * the correct signal to drive the overall layout structure displaying in the window.
+     */
+    public val containerDpSize: DpSize
+        get() = DpSize.Unspecified
 }
 
 internal class WindowInfoImpl : WindowInfo {
     private val _containerSize = mutableStateOf(IntSize.Zero)
+
+    private val _containerDpSize = mutableStateOf(DpSize.Zero)
 
     override var isWindowFocused: Boolean by mutableStateOf(false)
 
@@ -80,9 +84,15 @@ internal class WindowInfoImpl : WindowInfo {
             _containerSize.value = value
         }
 
+    override var containerDpSize: DpSize
+        get() = _containerDpSize.value
+        set(value) {
+            _containerDpSize.value = value
+        }
+
     companion object {
         // One instance across all windows makes sense, since the state of KeyboardModifiers is
         // common for all windows.
-        internal val GlobalKeyboardModifiers = mutableStateOf(EmptyPointerKeyboardModifiers())
+        internal val GlobalKeyboardModifiers = mutableStateOf(PointerKeyboardModifiers())
     }
 }

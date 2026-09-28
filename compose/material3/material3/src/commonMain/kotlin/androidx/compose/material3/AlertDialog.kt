@@ -19,6 +19,7 @@ package androidx.compose.material3
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
@@ -28,23 +29,20 @@ import androidx.compose.material3.internal.getString
 import androidx.compose.material3.tokens.DialogTokens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.ProvidableCompositionLocal
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.layout.Placeable
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEach
-import androidx.compose.ui.util.fastForEachIndexed
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.takeOrElse
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import kotlin.math.max
 
 /**
  * [Material Design basic dialog](https://m3.material.io/components/dialogs/overview)
@@ -92,7 +90,7 @@ import kotlin.math.max
  * @see BasicAlertDialog
  */
 @Composable
-expect fun AlertDialog(
+public expect fun AlertDialog(
     onDismissRequest: () -> Unit,
     confirmButton: @Composable () -> Unit,
     modifier: Modifier = Modifier,
@@ -134,45 +132,23 @@ expect fun AlertDialog(
  * @param properties typically platform specific properties to further configure the dialog.
  * @param content the content of the dialog
  */
-@ExperimentalMaterial3Api
 @Composable
-fun BasicAlertDialog(
+public fun BasicAlertDialog(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     properties: DialogProperties = DialogProperties(),
     content: @Composable () -> Unit,
 ) {
-    with(LocalBasicAlertDialogOverride.current) {
-        BasicAlertDialogOverrideScope(
-                onDismissRequest = onDismissRequest,
-                modifier = modifier,
-                properties = properties,
-                content = content,
-            )
-            .BasicAlertDialog()
-    }
-}
-
-/**
- * This override provides the default behavior of the [BasicAlertDialog] component.
- *
- * [BasicAlertDialogOverride] used when no override is specified.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-internal object DefaultBasicAlertDialogOverride : BasicAlertDialogOverride {
-    @Composable
-    override fun BasicAlertDialogOverrideScope.BasicAlertDialog() {
-        Dialog(onDismissRequest = onDismissRequest, properties = properties) {
-            val dialogPaneDescription = getString(Strings.Dialog)
-            Box(
-                modifier =
-                    modifier
-                        .sizeIn(minWidth = DialogMinWidth, maxWidth = DialogMaxWidth)
-                        .then(Modifier.semantics { paneTitle = dialogPaneDescription }),
-                propagateMinConstraints = true,
-            ) {
-                content()
-            }
+    Dialog(onDismissRequest = onDismissRequest, properties = properties) {
+        val dialogPaneDescription = getString(Strings.Dialog)
+        Box(
+            modifier =
+                modifier
+                    .sizeIn(minWidth = DialogMinWidth, maxWidth = DialogMaxWidth)
+                    .then(Modifier.semantics { paneTitle = dialogPaneDescription }),
+            propagateMinConstraints = true,
+        ) {
+            content()
         }
     }
 }
@@ -206,42 +182,57 @@ internal object DefaultBasicAlertDialogOverride : BasicAlertDialogOverride {
     "Use BasicAlertDialog instead",
     replaceWith = ReplaceWith("BasicAlertDialog(onDismissRequest, modifier, properties, content)"),
 )
-@ExperimentalMaterial3Api
 @Composable
-fun AlertDialog(
+public fun AlertDialog(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     properties: DialogProperties = DialogProperties(),
     content: @Composable () -> Unit,
-) = BasicAlertDialog(onDismissRequest, modifier, properties, content)
+): Unit = BasicAlertDialog(onDismissRequest, modifier, properties, content)
 
 /** Contains default values used for [AlertDialog] and [BasicAlertDialog]. */
-object AlertDialogDefaults {
+public object AlertDialogDefaults {
     /** The default shape for alert dialogs */
-    val shape: Shape
+    public val shape: Shape
         @Composable get() = DialogTokens.ContainerShape.value
 
+    /** The default icon size for alert dialogs. */
+    public val IconSize: Dp = DialogTokens.IconSize
+
     /** The default container color for alert dialogs */
-    val containerColor: Color
+    public val containerColor: Color
         @Composable get() = DialogTokens.ContainerColor.value
 
     /** The default icon color for alert dialogs */
-    val iconContentColor: Color
+    public val iconContentColor: Color
         @Composable get() = DialogTokens.IconColor.value
 
     /** The default title color for alert dialogs */
-    val titleContentColor: Color
+    public val titleContentColor: Color
         @Composable get() = DialogTokens.HeadlineColor.value
 
     /** The default text color for alert dialogs */
-    val textContentColor: Color
+    public val textContentColor: Color
         @Composable get() = DialogTokens.SupportingTextColor.value
 
     /** The default tonal elevation for alert dialogs */
-    val TonalElevation: Dp = 0.dp
+    public val TonalElevation: Dp = 0.dp
+
+    // Container padding.
+    internal val dialogPadding
+        get() = PaddingValues(all = dialogPaddingValue)
+
+    // Text padding.
+    internal val textPadding
+        get() = PaddingValues(bottom = textPaddingValue)
+
+    private val dialogPaddingValue
+        get() = if (shouldUsePrecisionPointerComponentSizing.value) 20.dp else 24.dp
+
+    private val textPaddingValue
+        get() = if (shouldUsePrecisionPointerComponentSizing.value) 16.dp else 24.dp
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun AlertDialogImpl(
     onDismissRequest: () -> Unit,
@@ -266,12 +257,19 @@ internal fun AlertDialogImpl(
     ) {
         AlertDialogContent(
             buttons = {
+                val buttonPaddingFromMICS =
+                    LocalMinimumInteractiveComponentSize.current.takeOrElse { 0.dp } -
+                        ButtonDefaults.MinHeight
                 AlertDialogFlowRow(
                     mainAxisSpacing = ButtonsMainAxisSpacing,
-                    crossAxisSpacing = ButtonsCrossAxisSpacing,
+                    crossAxisSpacing =
+                        (ButtonsCrossAxisSpacing - buttonPaddingFromMICS).coerceIn(
+                            0.dp,
+                            ButtonsCrossAxisSpacing,
+                        ),
                 ) {
-                    dismissButton?.invoke()
                     confirmButton()
+                    dismissButton?.invoke()
                 }
             },
             icon = icon,
@@ -313,7 +311,7 @@ internal fun AlertDialogContent(
         color = containerColor,
         tonalElevation = tonalElevation,
     ) {
-        Column(modifier = Modifier.padding(DialogPadding)) {
+        Column(modifier = Modifier.padding(AlertDialogDefaults.dialogPadding)) {
             icon?.let {
                 CompositionLocalProvider(LocalContentColor provides iconContentColor) {
                     Box(Modifier.padding(IconPadding).align(Alignment.CenterHorizontally)) {
@@ -322,9 +320,18 @@ internal fun AlertDialogContent(
                 }
             }
             title?.let {
+                val textStyle =
+                    if (shouldUsePrecisionPointerComponentSizing.value) {
+                        MaterialTheme.typography.headlineSmall.copy(
+                            fontSize = 20.sp,
+                            lineHeight = 26.sp,
+                        )
+                    } else {
+                        DialogTokens.HeadlineFont.value
+                    }
                 ProvideContentColorTextStyle(
                     contentColor = titleContentColor,
-                    textStyle = DialogTokens.HeadlineFont.value,
+                    textStyle = textStyle,
                 ) {
                     Box(
                         // Align the title to the center when an icon is present.
@@ -349,7 +356,7 @@ internal fun AlertDialogContent(
                 ) {
                     Box(
                         Modifier.weight(weight = 1f, fill = false)
-                            .padding(TextPadding)
+                            .padding(AlertDialogDefaults.textPadding)
                             .align(Alignment.Start)
                     ) {
                         text()
@@ -369,8 +376,7 @@ internal fun AlertDialogContent(
 }
 
 /**
- * Simple clone of FlowRow that arranges its children in a horizontal flow with limited
- * customization.
+ * [FlowRow] for dialog buttons. The confirm button is expected to be the first child of [content].
  */
 @Composable
 internal fun AlertDialogFlowRow(
@@ -378,135 +384,37 @@ internal fun AlertDialogFlowRow(
     crossAxisSpacing: Dp,
     content: @Composable () -> Unit,
 ) {
-    Layout(content) { measurables, constraints ->
-        val sequences = mutableListOf<List<Placeable>>()
-        val crossAxisSizes = mutableListOf<Int>()
-        val crossAxisPositions = mutableListOf<Int>()
-
-        var mainAxisSpace = 0
-        var crossAxisSpace = 0
-
-        val currentSequence = mutableListOf<Placeable>()
-        var currentMainAxisSize = 0
-        var currentCrossAxisSize = 0
-
-        // Return whether the placeable can be added to the current sequence.
-        fun canAddToCurrentSequence(placeable: Placeable) =
-            currentSequence.isEmpty() ||
-                currentMainAxisSize + mainAxisSpacing.roundToPx() + placeable.width <=
-                    constraints.maxWidth
-
-        // Store current sequence information and start a new sequence.
-        fun startNewSequence() {
-            if (sequences.isNotEmpty()) {
-                crossAxisSpace += crossAxisSpacing.roundToPx()
-            }
-            // Ensures that confirming actions appear above dismissive actions.
-            @Suppress("ListIterator") sequences.add(0, currentSequence.toList())
-            crossAxisSizes += currentCrossAxisSize
-            crossAxisPositions += crossAxisSpace
-
-            crossAxisSpace += currentCrossAxisSize
-            mainAxisSpace = max(mainAxisSpace, currentMainAxisSize)
-
-            currentSequence.clear()
-            currentMainAxisSize = 0
-            currentCrossAxisSize = 0
-        }
-
-        measurables.fastForEach { measurable ->
-            // Ask the child for its preferred size.
-            val placeable = measurable.measure(constraints)
-
-            // Start a new sequence if there is not enough space.
-            if (!canAddToCurrentSequence(placeable)) startNewSequence()
-
-            // Add the child to the current sequence.
-            if (currentSequence.isNotEmpty()) {
-                currentMainAxisSize += mainAxisSpacing.roundToPx()
-            }
-            currentSequence.add(placeable)
-            currentMainAxisSize += placeable.width
-            currentCrossAxisSize = max(currentCrossAxisSize, placeable.height)
-        }
-
-        if (currentSequence.isNotEmpty()) startNewSequence()
-
-        val mainAxisLayoutSize = max(mainAxisSpace, constraints.minWidth)
-
-        val crossAxisLayoutSize = max(crossAxisSpace, constraints.minHeight)
-
-        val layoutWidth = mainAxisLayoutSize
-
-        val layoutHeight = crossAxisLayoutSize
-
-        layout(layoutWidth, layoutHeight) {
-            sequences.fastForEachIndexed { i, placeables ->
-                val childrenMainAxisSizes =
-                    IntArray(placeables.size) { j ->
-                        placeables[j].width +
-                            if (j < placeables.lastIndex) mainAxisSpacing.roundToPx() else 0
-                    }
-                val arrangement = Arrangement.End
-                val mainAxisPositions = IntArray(childrenMainAxisSizes.size)
-                with(arrangement) {
-                    arrange(
-                        mainAxisLayoutSize,
-                        childrenMainAxisSizes,
-                        layoutDirection,
-                        mainAxisPositions,
-                    )
-                }
-                placeables.fastForEachIndexed { j, placeable ->
-                    placeable.place(x = mainAxisPositions[j], y = crossAxisPositions[i])
-                }
-            }
+    val originalLayoutDirection = LocalLayoutDirection.current
+    // The confirm button comes BEFORE the dismiss button when stacked vertically,
+    // but AFTER the dismiss button when stacked horizontally.
+    CompositionLocalProvider(LocalLayoutDirection provides originalLayoutDirection.flip()) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(mainAxisSpacing),
+            verticalArrangement = Arrangement.spacedBy(crossAxisSpacing),
+        ) {
+            CompositionLocalProvider(
+                LocalLayoutDirection provides originalLayoutDirection,
+                content = content,
+            )
         }
     }
 }
 
-internal val DialogMinWidth = 280.dp
-internal val DialogMaxWidth = 560.dp
+private fun LayoutDirection.flip(): LayoutDirection =
+    when (this) {
+        LayoutDirection.Ltr -> LayoutDirection.Rtl
+        LayoutDirection.Rtl -> LayoutDirection.Ltr
+    }
 
-private val ButtonsMainAxisSpacing = 8.dp
-private val ButtonsCrossAxisSpacing = 12.dp
+internal val DialogMinWidth
+    get() = 280.dp
+internal val DialogMaxWidth
+    get() = 560.dp
 
-// Paddings for each of the dialog's parts.
-private val DialogPadding = PaddingValues(all = 24.dp)
+private val ButtonsMainAxisSpacing
+    get() = 8.dp
+private val ButtonsCrossAxisSpacing
+    get() = 8.dp
+
 private val IconPadding = PaddingValues(bottom = 16.dp)
 private val TitlePadding = PaddingValues(bottom = 16.dp)
-private val TextPadding = PaddingValues(bottom = 24.dp)
-
-/**
- * Interface that allows libraries to override the behavior of the [BasicAlertDialog] component.
- *
- * To override this component, implement the member function of this interface, then provide the
- * implementation to [LocalBasicAlertDialogOverride] in the Compose hierarchy.
- */
-internal interface BasicAlertDialogOverride {
-    /** Behavior function that is called by the [BasicAlertDialog] component. */
-    @Composable fun BasicAlertDialogOverrideScope.BasicAlertDialog()
-}
-
-/**
- * Parameters available to [BasicAlertDialog].
- *
- * @param onDismissRequest called when the user tries to dismiss the Dialog by clicking outside or
- *   pressing the back button. This is not called when the dismiss button is clicked.
- * @param modifier the [Modifier] to be applied to this dialog's content.
- * @param properties typically platform specific properties to further configure the dialog.
- * @param content the content of the dialog
- */
-internal class BasicAlertDialogOverrideScope
-internal constructor(
-    val onDismissRequest: () -> Unit,
-    val modifier: Modifier = Modifier,
-    val properties: DialogProperties = DialogProperties(),
-    val content: @Composable () -> Unit,
-)
-
-/** CompositionLocal containing the currently-selected [BasicAlertDialogOverride]. */
-internal val LocalBasicAlertDialogOverride: ProvidableCompositionLocal<BasicAlertDialogOverride> =
-    compositionLocalOf {
-        DefaultBasicAlertDialogOverride
-    }

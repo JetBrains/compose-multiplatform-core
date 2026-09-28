@@ -22,7 +22,6 @@ import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.work.impl.WorkDatabase
 import androidx.work.impl.WorkDatabasePathHelper
@@ -55,7 +54,6 @@ class WorkDatabasePathHelperTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     fun testMigration_toNoBackupDirectory() {
         // Create a database
         migrationTestHelper.createDatabase(

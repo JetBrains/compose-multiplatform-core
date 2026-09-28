@@ -23,7 +23,10 @@ import android.view.MotionEvent
 import android.view.ViewConfiguration
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.OverscrollEffect
+import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.ScrollScope
+import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Box
@@ -35,15 +38,17 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.RotaryInjectionScope
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performRotaryScrollInput
 import androidx.compose.ui.unit.Dp
@@ -64,7 +69,6 @@ import org.mockito.Mockito.spy
 import org.mockito.Mockito.`when`
 
 // TODO(b/278705775): Add more tests to check Rotary Snap behavior
-@OptIn(ExperimentalTestApi::class)
 class RotaryScrollTest {
     @get:Rule val rule = createComposeRule()
 
@@ -750,6 +754,202 @@ class RotaryScrollTest {
             advanceEventTime(20)
             rotateToScrollVertically(-itemSizePx)
         }
+    }
+
+    @Test
+    fun rotaryScrollable_behavior_updates() {
+        Assume.assumeTrue(hasRotaryInputDevice())
+        class SpyFlingBehavior(private val flingBehavior: FlingBehavior) : FlingBehavior {
+            var performFlingCalls = 0
+
+            override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
+                performFlingCalls++
+                return with(flingBehavior) { performFling(initialVelocity) }
+            }
+        }
+        var defaultFlingBehavior: FlingBehavior? = null
+        var flingBehavior by mutableStateOf<SpyFlingBehavior?>(null)
+        rule.setContent {
+            state = rememberLazyListState()
+            if (defaultFlingBehavior == null) {
+                defaultFlingBehavior = ScrollableDefaults.flingBehavior()
+                flingBehavior = SpyFlingBehavior(defaultFlingBehavior)
+            }
+
+            DefaultLazyColumnItemsWithRotary(
+                itemSize = itemSizeDp,
+                overscrollEffect = null,
+                focusRequester = focusRequester,
+                behavior = RotaryScrollableDefaults.behavior(state, flingBehavior),
+                scrollableState = state,
+                reverseDirection = false,
+            )
+        }
+
+        rule.runOnIdle { focusRequester.requestFocus() }
+        assertThat(flingBehavior!!.performFlingCalls).isEqualTo(0)
+        rule.onNodeWithTag(TEST_TAG).performRotaryScrollInput {
+            rotateToScrollVertically(itemSizePx)
+            advanceEventTime(2)
+            rotateToScrollVertically(itemSizePx)
+            advanceEventTime(2)
+        }
+        rule.waitForIdle()
+        assertThat(flingBehavior!!.performFlingCalls).isGreaterThan(0)
+
+        // Update the fling behavior. The new fling behavior should be used.
+        val firstFlingBehavior = flingBehavior!!
+        val firstFlingBehaviorPerformFlingCalls = firstFlingBehavior.performFlingCalls
+        flingBehavior = SpyFlingBehavior(defaultFlingBehavior!!)
+        rule.waitForIdle()
+
+        assertThat(flingBehavior!!.performFlingCalls).isEqualTo(0)
+        rule.onNodeWithTag(TEST_TAG).performRotaryScrollInput {
+            rotateToScrollVertically(itemSizePx)
+            advanceEventTime(2)
+            rotateToScrollVertically(itemSizePx)
+            advanceEventTime(2)
+        }
+        rule.waitForIdle()
+        assertThat(flingBehavior!!.performFlingCalls).isGreaterThan(0)
+        assertThat(firstFlingBehavior.performFlingCalls)
+            .isEqualTo(firstFlingBehaviorPerformFlingCalls)
+    }
+
+    @Test
+    fun rotaryScrollable_reverseDirection_reversesDirectionWhenUpdated() {
+        var reverseDirection by mutableStateOf(false)
+
+        rule.setContent {
+            MockRotaryResolution {
+                state = rememberLazyListState()
+                DefaultLazyColumnItemsWithRotary(
+                    itemSize = itemSizeDp,
+                    overscrollEffect = null,
+                    focusRequester = focusRequester,
+                    behavior = RotaryScrollableDefaults.behavior(state),
+                    scrollableState = state,
+                    reverseDirection = reverseDirection,
+                )
+            }
+        }
+
+        rule.runOnIdle { focusRequester.requestFocus() }
+        assertThat(state.firstVisibleItemIndex).isEqualTo(0)
+        rule.onNodeWithTag(TEST_TAG).performRotaryScrollInput {
+            rotateToScrollVertically(itemSizePx)
+        }
+        rule.waitForIdle()
+        assertThat(state.firstVisibleItemIndex).isEqualTo(1)
+
+        // Change the direction. We should now scroll backwards
+        @Suppress("AssignedValueIsNeverRead")
+        reverseDirection = true
+        rule.waitForIdle()
+
+        assertThat(state.firstVisibleItemIndex).isEqualTo(1)
+        rule.onNodeWithTag(TEST_TAG).performRotaryScrollInput {
+            rotateToScrollVertically(itemSizePx)
+        }
+        rule.waitForIdle()
+        assertThat(state.firstVisibleItemIndex).isEqualTo(0)
+    }
+
+    @Test
+    fun rotaryScrollable_overscrollEffect_updates() {
+        var overscrollEffect by mutableStateOf(OffsetOverscrollEffectCounter())
+
+        rule.setContent {
+            MockRotaryResolution {
+                state = rememberLazyListState(initialFirstVisibleItemIndex = itemsCount - 1)
+                DefaultLazyColumnItemsWithRotary(
+                    itemSize = itemSizeDp,
+                    overscrollEffect = overscrollEffect,
+                    focusRequester = focusRequester,
+                    behavior = RotaryScrollableDefaults.behavior(state),
+                    scrollableState = state,
+                    reverseDirection = false,
+                )
+            }
+        }
+
+        rule.runOnIdle { focusRequester.requestFocus() }
+        rule.onNodeWithTag(TEST_TAG).performRotaryScrollInput {
+            rotateToScrollVertically(itemSizePx * 2)
+        }
+        rule.waitForIdle()
+        val firstOverscrollEffectApplyToScrollCount = overscrollEffect.applyToScrollCount
+        val firstOverscrollEffectApplyToFlingCount = overscrollEffect.applyToFlingCount
+        assertThat(firstOverscrollEffectApplyToScrollCount).isGreaterThan(0)
+        assertThat(firstOverscrollEffectApplyToFlingCount).isGreaterThan(0)
+
+        // Update our overscrollEffect
+        val firstOverscrollEffect = overscrollEffect
+        overscrollEffect = OffsetOverscrollEffectCounter()
+        rule.waitForIdle()
+
+        rule.onNodeWithTag(TEST_TAG).performRotaryScrollInput {
+            rotateToScrollVertically(itemSizePx * 2)
+        }
+        rule.waitForIdle()
+
+        assertThat(overscrollEffect.applyToScrollCount).isGreaterThan(0)
+        assertThat(overscrollEffect.applyToFlingCount).isGreaterThan(0)
+        assertThat(firstOverscrollEffect.applyToScrollCount)
+            .isEqualTo(firstOverscrollEffectApplyToScrollCount)
+        assertThat(firstOverscrollEffect.applyToFlingCount)
+            .isEqualTo(firstOverscrollEffectApplyToFlingCount)
+    }
+
+    @Test
+    fun rotaryScrollable_snap_sensitivity_avoids_divide_by_zero() {
+        val lowSensitivity = RotaryScrollableDefaults.LowSnapSensitivity
+        val highSensitivity = RotaryScrollableDefaults.HighSnapSensitivity
+        val sensitivityRange = highSensitivity - lowSensitivity
+        val defaultSensitivityValues = RotarySnapSensitivityValues.Default
+        val highSensitivityValues = RotarySnapSensitivityValues.High
+
+        // In worst case scenario, a bad call could reverse engineer our interpolation to get a
+        // threshold divider that causes a divide by zero. Verify that we're guarding against that,
+        // by coercing to at least 0.1.
+        val fractionForDivideByZero =
+            -defaultSensitivityValues.minThresholdDivider /
+                (highSensitivityValues.minThresholdDivider -
+                    defaultSensitivityValues.minThresholdDivider)
+        val sensitivityForDivideByZero =
+            fractionForDivideByZero * (sensitivityRange) + sensitivityRange
+        val values = RotarySnapSensitivityValues(sensitivityForDivideByZero)
+
+        assertThat(values.minThresholdDivider).isAtLeast(1e-6f)
+        assertThat(values.maxThresholdDivider).isAtLeast(1e-6f)
+    }
+
+    @Test
+    fun rotaryScrollable_snap_sensitivity_extrapolates_lower() {
+        val lowSensitivity = RotaryScrollableDefaults.LowSnapSensitivity
+
+        val values = RotarySnapSensitivityValues(lowSensitivity * 0.9f)
+
+        assertThat(values.minThresholdDivider)
+            .isLessThan(RotarySnapSensitivityValues.Default.minThresholdDivider)
+        assertThat(values.maxThresholdDivider)
+            .isLessThan(RotarySnapSensitivityValues.Default.maxThresholdDivider)
+        assertThat(values.resistanceFactor)
+            .isLessThan(RotarySnapSensitivityValues.Default.resistanceFactor)
+    }
+
+    @Test
+    fun rotaryScrollable_snap_sensitivity_extrapolates_higher() {
+        val highSensitivity = RotaryScrollableDefaults.HighSnapSensitivity
+
+        val values = RotarySnapSensitivityValues(highSensitivity * 1.1f)
+
+        assertThat(values.minThresholdDivider)
+            .isGreaterThan(RotarySnapSensitivityValues.High.minThresholdDivider)
+        assertThat(values.maxThresholdDivider)
+            .isGreaterThan(RotarySnapSensitivityValues.High.maxThresholdDivider)
+        assertThat(values.resistanceFactor)
+            .isGreaterThan(RotarySnapSensitivityValues.High.resistanceFactor)
     }
 
     @OptIn(ExperimentalFoundationApi::class)

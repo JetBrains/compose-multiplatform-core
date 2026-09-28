@@ -17,6 +17,7 @@
 package androidx.compose.material3.samples
 
 import androidx.annotation.Sampled
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -34,6 +35,7 @@ import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
@@ -50,7 +52,7 @@ import kotlin.math.floor
 @Sampled
 @Composable
 fun CheckboxSample() {
-    val checkedState = remember { mutableStateOf(true) }
+    val checkedState = rememberSaveable { mutableStateOf(true) }
     Checkbox(checked = checkedState.value, onCheckedChange = { checkedState.value = it })
 }
 
@@ -58,7 +60,8 @@ fun CheckboxSample() {
 @Sampled
 @Composable
 fun CheckboxWithTextSample() {
-    val (checkedState, onStateChange) = remember { mutableStateOf(true) }
+    val (checkedState, onStateChange) = rememberSaveable { mutableStateOf(true) }
+    val interactionSource = remember { MutableInteractionSource() }
     Row(
         Modifier.fillMaxWidth()
             .height(56.dp)
@@ -66,13 +69,16 @@ fun CheckboxWithTextSample() {
                 value = checkedState,
                 onValueChange = { onStateChange(!checkedState) },
                 role = Role.Checkbox,
+                indication = null,
+                interactionSource = interactionSource,
             )
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Checkbox(
             checked = checkedState,
-            onCheckedChange = null, // null recommended for accessibility with screenreaders
+            interactionSource = interactionSource,
+            onCheckedChange = onStateChange,
         )
         Text(
             text = "Option selection",
@@ -92,7 +98,7 @@ fun CheckboxRoundedStrokesSample() {
             Stroke(width = strokeWidthPx, cap = StrokeCap.Round, join = StrokeJoin.Round)
         }
     val outlineStroke = remember(strokeWidthPx) { Stroke(width = strokeWidthPx) }
-    val checkedState = remember { mutableStateOf(true) }
+    val checkedState = rememberSaveable { mutableStateOf(true) }
     Checkbox(
         checked = checkedState.value,
         onCheckedChange = { checkedState.value = it },
@@ -107,8 +113,8 @@ fun CheckboxRoundedStrokesSample() {
 fun TriStateCheckboxSample() {
     Column {
         // define dependent checkboxes states
-        val (state, onStateChange) = remember { mutableStateOf(true) }
-        val (state2, onStateChange2) = remember { mutableStateOf(true) }
+        val (state, onStateChange) = rememberSaveable { mutableStateOf(true) }
+        val (state2, onStateChange2) = rememberSaveable { mutableStateOf(true) }
 
         // TriStateCheckbox state reflects state of dependent checkboxes
         val parentState =
@@ -181,8 +187,8 @@ fun TriStateCheckboxRoundedStrokesSample() {
     val outlineStroke = remember(strokeWidthPx) { Stroke(width = strokeWidthPx) }
     Column {
         // define dependent checkboxes states
-        val (state, onStateChange) = remember { mutableStateOf(true) }
-        val (state2, onStateChange2) = remember { mutableStateOf(true) }
+        val (state, onStateChange) = rememberSaveable { mutableStateOf(true) }
+        val (state2, onStateChange2) = rememberSaveable { mutableStateOf(true) }
 
         // TriStateCheckbox state reflects state of dependent checkboxes
         val parentState =

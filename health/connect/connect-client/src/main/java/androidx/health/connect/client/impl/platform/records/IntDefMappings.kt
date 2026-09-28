@@ -21,7 +21,10 @@ package androidx.health.connect.client.impl.platform.records
 
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
+import androidx.health.connect.client.HealthConnectFeatures
+import androidx.health.connect.client.HealthConnectFeatures.Companion.FEATURE_STATUS_AVAILABLE
 import androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi
+import androidx.health.connect.client.feature.HealthConnectFeaturesPlatformImpl
 import androidx.health.connect.client.records.ActivityIntensityRecord
 import androidx.health.connect.client.records.BloodGlucoseRecord
 import androidx.health.connect.client.records.BloodPressureRecord
@@ -75,7 +78,8 @@ internal val SDK_TO_PLATFORM_CERVICAL_MUCUS_APPEARANCE: Map<Int, Int> =
         CervicalMucusRecord.APPEARANCE_STICKY to PlatformCervicalMucusAppearance.APPEARANCE_STICKY,
         CervicalMucusRecord.APPEARANCE_CREAMY to PlatformCervicalMucusAppearance.APPEARANCE_CREAMY,
         CervicalMucusRecord.APPEARANCE_WATERY to PlatformCervicalMucusAppearance.APPEARANCE_WATERY,
-        CervicalMucusRecord.APPEARANCE_UNUSUAL to PlatformCervicalMucusAppearance.APPEARANCE_UNUSUAL,
+        CervicalMucusRecord.APPEARANCE_UNUSUAL to
+            PlatformCervicalMucusAppearance.APPEARANCE_UNUSUAL,
     )
 
 internal val PLATFORM_TO_SDK_CERVICAL_MUCUS_APPEARANCE =
@@ -414,7 +418,8 @@ internal val SDK_TO_PLATFORM_SLEEP_STAGE_TYPE: Map<Int, Int> =
         SleepSessionRecord.STAGE_TYPE_LIGHT to PlatformSleepStageType.STAGE_TYPE_SLEEPING_LIGHT,
         SleepSessionRecord.STAGE_TYPE_DEEP to PlatformSleepStageType.STAGE_TYPE_SLEEPING_DEEP,
         SleepSessionRecord.STAGE_TYPE_REM to PlatformSleepStageType.STAGE_TYPE_SLEEPING_REM,
-        SleepSessionRecord.STAGE_TYPE_AWAKE_IN_BED to PlatformSleepStageType.STAGE_TYPE_AWAKE_IN_BED,
+        SleepSessionRecord.STAGE_TYPE_AWAKE_IN_BED to
+            PlatformSleepStageType.STAGE_TYPE_AWAKE_IN_BED,
     )
 
 internal val PLATFORM_TO_SDK_SLEEP_STAGE_TYPE = SDK_TO_PLATFORM_SLEEP_STAGE_TYPE.reversed()
@@ -659,18 +664,31 @@ internal val SDK_TO_PLATFORM_MEDICAL_RESOURCE_TYPE: Map<Int, Int> =
             PlatformMedicalResource.MEDICAL_RESOURCE_TYPE_VITAL_SIGNS,
     )
 
-internal val SDK_TO_PLATFORM_DEVICE_TYPE: Map<Int, Int> =
-    mapOf(
-        Device.TYPE_UNKNOWN to PlatformDevice.DEVICE_TYPE_UNKNOWN,
-        Device.TYPE_WATCH to PlatformDevice.DEVICE_TYPE_WATCH,
-        Device.TYPE_PHONE to PlatformDevice.DEVICE_TYPE_PHONE,
-        Device.TYPE_SCALE to PlatformDevice.DEVICE_TYPE_SCALE,
-        Device.TYPE_RING to PlatformDevice.DEVICE_TYPE_RING,
-        Device.TYPE_HEAD_MOUNTED to PlatformDevice.DEVICE_TYPE_HEAD_MOUNTED,
-        Device.TYPE_FITNESS_BAND to PlatformDevice.DEVICE_TYPE_FITNESS_BAND,
-        Device.TYPE_CHEST_STRAP to PlatformDevice.DEVICE_TYPE_CHEST_STRAP,
-        Device.TYPE_SMART_DISPLAY to PlatformDevice.DEVICE_TYPE_SMART_DISPLAY,
-    )
+internal val SDK_TO_PLATFORM_DEVICE_TYPE: Map<Int, Int> = buildMap {
+    put(Device.TYPE_UNKNOWN, PlatformDevice.DEVICE_TYPE_UNKNOWN)
+    put(Device.TYPE_WATCH, PlatformDevice.DEVICE_TYPE_WATCH)
+    put(Device.TYPE_PHONE, PlatformDevice.DEVICE_TYPE_PHONE)
+    put(Device.TYPE_SCALE, PlatformDevice.DEVICE_TYPE_SCALE)
+    put(Device.TYPE_RING, PlatformDevice.DEVICE_TYPE_RING)
+    put(Device.TYPE_HEAD_MOUNTED, PlatformDevice.DEVICE_TYPE_HEAD_MOUNTED)
+    put(Device.TYPE_FITNESS_BAND, PlatformDevice.DEVICE_TYPE_FITNESS_BAND)
+    put(Device.TYPE_CHEST_STRAP, PlatformDevice.DEVICE_TYPE_CHEST_STRAP)
+    put(Device.TYPE_SMART_DISPLAY, PlatformDevice.DEVICE_TYPE_SMART_DISPLAY)
+
+    if (
+        HealthConnectFeaturesPlatformImpl.getFeatureStatus(
+            HealthConnectFeatures.Companion.FEATURE_EXTENDED_DEVICE_TYPES
+        ) == FEATURE_STATUS_AVAILABLE
+    ) {
+        put(Device.TYPE_CONSUMER_MEDICAL_DEVICE, PlatformDevice.DEVICE_TYPE_CONSUMER_MEDICAL_DEVICE)
+        put(Device.TYPE_GLASSES, PlatformDevice.DEVICE_TYPE_GLASSES)
+        put(Device.TYPE_HEARABLE, PlatformDevice.DEVICE_TYPE_HEARABLE)
+        put(Device.TYPE_FITNESS_MACHINE, PlatformDevice.DEVICE_TYPE_FITNESS_MACHINE)
+        put(Device.TYPE_FITNESS_EQUIPMENT, PlatformDevice.DEVICE_TYPE_FITNESS_EQUIPMENT)
+        put(Device.TYPE_PORTABLE_COMPUTER, PlatformDevice.DEVICE_TYPE_PORTABLE_COMPUTER)
+        put(Device.TYPE_METER, PlatformDevice.DEVICE_TYPE_METER)
+    }
+}
 
 internal val PLATFORM_TO_SDK_DEVICE_TYPE: Map<Int, Int> = SDK_TO_PLATFORM_DEVICE_TYPE.reversed()
 

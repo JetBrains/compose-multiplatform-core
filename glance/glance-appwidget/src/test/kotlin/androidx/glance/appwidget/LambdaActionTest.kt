@@ -29,18 +29,18 @@ import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class LambdaActionTest {
     @Test
     fun siblingActionsHaveDifferentKeys() = runTest {
-        val lambdas =
-            runTestingComposition {
-                    Box {
-                        Text("hello1", modifier = GlanceModifier.clickable {})
-                        Text("hello2", modifier = GlanceModifier.clickable {})
-                    }
-                    Text("hello3", modifier = GlanceModifier.clickable {})
-                }
-                .updateLambdaActionKeys()
+        val lambdas = runTestingComposition {
+            Box {
+                Text("hello1", modifier = GlanceModifier.clickable {})
+                Text("hello2", modifier = GlanceModifier.clickable {})
+            }
+            Text("hello3", modifier = GlanceModifier.clickable {})
+        }
+            .updateLambdaActionKeys()
 
         assertThat(lambdas.size).isEqualTo(3)
     }

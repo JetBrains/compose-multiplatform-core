@@ -21,7 +21,6 @@ import android.graphics.Point
 import android.graphics.RectF
 import android.net.Uri
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import androidx.pdf.PdfDocument
 import androidx.pdf.content.PdfPageGotoLinkContent
 import androidx.pdf.content.PdfPageLinkContent
@@ -49,15 +48,15 @@ class PdfViewNavigationTest {
 
     private fun setupPdfView(width: Int, height: Int, fakePdfDocument: FakePdfDocument?) {
         PdfViewTestActivity.onCreateCallback = { activity ->
-            val container = FrameLayout(activity)
-            container.addView(
-                PdfView(activity).apply {
-                    pdfDocument = fakePdfDocument
-                    id = PDF_VIEW_ID
-                },
-                ViewGroup.LayoutParams(width, height),
-            )
-            activity.setContentView(container)
+            with(activity) {
+                container.addView(
+                    PdfView(activity).apply {
+                        pdfDocument = fakePdfDocument
+                        id = PDF_VIEW_ID
+                    },
+                    ViewGroup.LayoutParams(width, height),
+                )
+            }
         }
     }
 
@@ -107,6 +106,66 @@ class PdfViewNavigationTest {
             }
 
             Espresso.onView(withId(PDF_VIEW_ID)).perform(performSingleTapOnCoords(tapX, tapY))
+            fakePdfDocument.waitForLayout(untilPage = VALID_PAGE_NUMBER)
+
+            Espresso.onView(withId(PDF_VIEW_ID)).check { view, noViewFoundException ->
+                view ?: throw noViewFoundException
+                val pdfView = view as PdfView
+                firstVisiblePage = pdfView.firstVisiblePage
+                visiblePagesCount = pdfView.visiblePagesCount
+            }
+            close()
+        }
+        assertThat(VALID_PAGE_NUMBER).isAtLeast(firstVisiblePage)
+        assertThat(VALID_PAGE_NUMBER).isAtMost(firstVisiblePage + visiblePagesCount - 1)
+    }
+
+    @Test
+    fun testGotoLinkNavigation_withMouseClick() = runTest {
+        val linkBounds = RectF(0f, 0f, 100f, 200f)
+        val fakePdfDocument =
+            FakePdfDocument(
+                pages = List(20) { Point(100, 200) },
+                pageLinks =
+                    mapOf(
+                        0 to
+                            PdfDocument.PdfPageLinks(
+                                gotoLinks =
+                                    listOf(
+                                        PdfPageGotoLinkContent(
+                                            bounds = listOf(linkBounds),
+                                            destination =
+                                                PdfPageGotoLinkContent.Destination(
+                                                    pageNumber = VALID_PAGE_NUMBER,
+                                                    xCoordinate = 10f,
+                                                    yCoordinate = 40f,
+                                                    zoom = 1f,
+                                                ),
+                                        )
+                                    ),
+                                externalLinks = emptyList(),
+                            )
+                    ),
+            )
+        setupPdfView(100, 1000, fakePdfDocument)
+
+        var firstVisiblePage = 0
+        var visiblePagesCount = 0
+        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
+            fakePdfDocument.waitForLayout(untilPage = VALID_PAGE_NUMBER)
+            fakePdfDocument.waitForRender(untilPage = 0)
+
+            var tapX = 0f
+            var tapY = 0f
+            Espresso.onView(withId(PDF_VIEW_ID)).check { view, noViewFoundException ->
+                view ?: throw noViewFoundException
+                val pdfView = view as PdfView
+                val tapPoint = getTapPointFromContentBounds(pdfView, 0, linkBounds)
+                tapX = tapPoint.x
+                tapY = tapPoint.y
+            }
+
+            Espresso.onView(withId(PDF_VIEW_ID)).perform(performMouseClickOnCoords(tapX, tapY))
             fakePdfDocument.waitForLayout(untilPage = VALID_PAGE_NUMBER)
 
             Espresso.onView(withId(PDF_VIEW_ID)).check { view, noViewFoundException ->

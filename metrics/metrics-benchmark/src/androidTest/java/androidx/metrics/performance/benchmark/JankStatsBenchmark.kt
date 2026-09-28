@@ -69,7 +69,10 @@ class JankStatsBenchmark {
     @Before
     fun setup() {
         activityRule.runOnUiThread {
-            textview = activityRule.activity.findViewById(R.id.textview)
+            textview =
+                activityRule.activity.findViewById(
+                    androidx.metrics.performance.benchmark.R.id.textview
+                )
             metricsStateHolder = PerformanceMetricsState.getHolderForHierarchy(textview)
             jankStats = JankStats.createAndTrack(activityRule.activity.window, frameListener)
             jankStatsImpl = JankStatsInternalsForTesting(jankStats)
@@ -122,11 +125,10 @@ class JankStatsBenchmark {
         ) {
             var frameMetrics: FrameMetrics? = null
             val frameMetricsLatch = CountDownLatch(1)
-            val listener =
-                Window.OnFrameMetricsAvailableListener { _, metrics, _ ->
-                    frameMetrics = metrics
-                    frameMetricsLatch.countDown()
-                }
+            val listener = Window.OnFrameMetricsAvailableListener { _, metrics, _ ->
+                frameMetrics = metrics
+                frameMetricsLatch.countDown()
+            }
             // First have to get a FrameMetrics object, which we cannot create ourselves.
             // Instead, we will enable FrameMetrics on the window and wait to receive a callback
             val thread = HandlerThread("FrameMetricsAggregator")

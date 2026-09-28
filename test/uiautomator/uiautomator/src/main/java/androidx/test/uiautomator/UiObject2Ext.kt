@@ -161,17 +161,16 @@ public fun UiObject2.scrollToElementOrNull(
     timeoutMs: Long = 10000,
     pollIntervalMs: Long = 100,
     block: AccessibilityNodeInfo.() -> (Boolean),
-): UiObject2 {
+): UiObject2? {
     val clock = TimeoutClock(timeoutMs = timeoutMs, sleepIntervalMs = pollIntervalMs)
     return scrollUntil(direction) {
-            try {
-                return@scrollUntil onElement(timeoutMs = 0, pollIntervalMs = 0, block)
-            } catch (e: ElementNotFoundException) {
-                if (clock.isTimeoutOrSleep()) throw e
-                return@scrollUntil null
-            }
+        try {
+            return@scrollUntil onElement(timeoutMs = 0, pollIntervalMs = 0, block)
+        } catch (e: ElementNotFoundException) {
+            if (clock.isTimeoutOrSleep()) throw e
+            return@scrollUntil null
         }
-        .notNull(ElementNotFoundException())
+    }
 }
 
 /**
@@ -188,7 +187,9 @@ public fun UiObject2.scrollToElementOrNull(
  *   the specified [stableIntervalMs]. Note that this won't work with elements that change
  *   constantly, like a video player.
  * @return a [androidx.test.uiautomator.StableResult] containing the latest acquired element
- *   hierarchy and screenshot, and a flag indicating if the node was stable before timeout.
+ *   hierarchy and screenshot, and a flag indicating if the node was stable before timeout. The flag
+ *   [StableResult.isTimeout] is set to false if the node was stable before the timeout expired,
+ *   true otherwise.
  */
 @JvmOverloads
 public fun UiObject2.waitForStable(

@@ -16,7 +16,6 @@
 
 package androidx.camera.core.impl.utils
 
-import android.os.Build
 import android.util.Rational
 import android.util.Size
 import androidx.camera.core.impl.utils.AspectRatioUtil.CompareAspectRatiosByMappingAreaInFullFovAspectRatioSpace
@@ -28,7 +27,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class AspectRatioUtilTest {
 
     @Test

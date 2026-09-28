@@ -53,7 +53,7 @@ class InlineClassConverterTest {
 
         fun validate(caller: Group, parameterName: String, valueType: Class<*>) {
             val parameter = caller.parameters.single { it.name == parameterName }
-            val value = mapper.castParameterValue(parameter.inlineClass, parameter.value)
+            val value = mapper.castValue(parameter.inlineClass, parameter.value)
             assertThat(value).isInstanceOf(valueType)
         }
 
@@ -66,6 +66,7 @@ class InlineClassConverterTest {
     private fun flatten(group: Group): Sequence<Group> =
         sequenceOf(group).plus(group.children.asSequence().flatMap { flatten(it) })
 
-    private fun find(groups: Sequence<Group>, calleeName: String) =
-        groups.first { it.parameters.isNotEmpty() && it.name == calleeName }
+    private fun find(groups: Sequence<Group>, calleeName: String) = groups.first {
+        it.parameters.isNotEmpty() && it.name == calleeName
+    }
 }

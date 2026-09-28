@@ -20,13 +20,14 @@ import android.app.Activity
 import android.hardware.HardwareBuffer
 import android.view.Surface
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.arcore.runtime.TrackingState as JXRCoreTrackingState
 import androidx.xr.runtime.CoreState
-import androidx.xr.runtime.TrackingState as JXRCoreTrackingState
 import androidx.xr.runtime.math.Matrix4
 import com.google.ar.core.Camera
 import com.google.ar.core.Coordinates2d
 import com.google.ar.core.Frame
 import com.google.ar.core.Pose as ArCorePose
+import com.google.ar.core.Session
 import com.google.ar.core.TrackingState as ARCoreTrackingState
 import com.google.common.truth.Truth.assertThat
 import java.nio.ByteBuffer
@@ -44,6 +45,7 @@ import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
 class CameraStateExtenderTest {
@@ -57,16 +59,19 @@ class CameraStateExtenderTest {
 
     @Before
     fun setUp() {
+        val activity = Activity()
         timeSource = TestTimeSource()
-        var arCoreTimeSource = ArCoreTimeSource()
-        var lifecycleManager =
-            ArCoreManager(Activity(), ArCorePerceptionManager(arCoreTimeSource), arCoreTimeSource)
+        val arCoreTimeSource = ArCoreTimeSource()
         perceptionManager = ArCorePerceptionManager(ArCoreTimeSource())
-        runtime = ArCoreRuntime(lifecycleManager, perceptionManager)
+        runtime = ArCoreRuntime(activity, perceptionManager, arCoreTimeSource)
         frame = mock<Frame>()
         camera = mock<Camera>()
         whenever(frame.camera).thenReturn(camera)
         perceptionManager._latestFrame = frame
+
+        val mockSession = mock<Session>()
+        perceptionManager.session = mockSession
+
         underTest = CameraStateExtender()
     }
 
@@ -85,7 +90,7 @@ class CameraStateExtenderTest {
     @Test
     fun extend_withNotTrackingState_returnsNulls(): Unit = runBlocking {
         // arrange
-        underTest.initialize(runtime)
+        underTest.initialize(listOf(runtime))
         whenever(camera.trackingState).thenReturn(ARCoreTrackingState.PAUSED)
 
         val timeMark = timeSource.markNow()
@@ -106,9 +111,81 @@ class CameraStateExtenderTest {
     }
 
     @Test
-    fun extend_withIsTrackingState_returnsCorrectValues(): Unit = runBlocking {
+    @Config(maxSdk = 26)
+    fun extend_ApiLevelBelow27_withIsTrackingState_returnsCorrectValues(): Unit = runBlocking {
         // arrange
-        underTest.initialize(runtime)
+        underTest.initialize(listOf(runtime))
+        perceptionManager.setDisplayRotation(Surface.ROTATION_0, 100, 100)
+        val timeMark = timeSource.markNow()
+        val coreState = CoreState(timeMark)
+        // number of components * number of vertices * size of float
+        val BUFFER_SIZE: Int = 2 * 4 * 4
+        val inputVertices: FloatBuffer =
+            ByteBuffer.allocateDirect(BUFFER_SIZE).order(ByteOrder.nativeOrder()).asFloatBuffer()
+        inputVertices.put(
+            floatArrayOf(/*0:*/ -1f, -1f, /*1:*/ +1f, -1f, /*2:*/ -1f, +1f, /*3:*/ +1f, +1f)
+        )
+        whenever(camera.trackingState).thenReturn(ARCoreTrackingState.TRACKING)
+
+        val arCoreCameraPose = ArCorePose(floatArrayOf(1f, 2f, 3f), floatArrayOf(0f, 0f, 0f, 1f))
+        val arCoreDisplayOrientedPose =
+            ArCorePose(floatArrayOf(4f, 5f, 6f), floatArrayOf(0f, 0f, 0f, 1f))
+        val projectionMatrixData = FloatArray(16) { Random.nextFloat() }
+        val viewMatrixData = FloatArray(16) { Random.nextFloat() }
+
+        whenever(camera.pose).thenReturn(arCoreCameraPose)
+        whenever(camera.displayOrientedPose).thenReturn(arCoreDisplayOrientedPose)
+        whenever(camera.getProjectionMatrix(any(), any(), any(), any())).thenAnswer { invocation ->
+            val projectionMatrix = invocation.getArgument<FloatArray>(0)
+            projectionMatrixData.copyInto(projectionMatrix)
+        }
+        whenever(camera.getViewMatrix(any(), any())).thenAnswer { invocation ->
+            val viewMatrix = invocation.getArgument<FloatArray>(0)
+            viewMatrixData.copyInto(viewMatrix)
+        }
+        whenever(
+                frame.transformCoordinates2d(
+                    any<Coordinates2d>(),
+                    any<FloatBuffer>(),
+                    any<Coordinates2d>(),
+                    any<FloatBuffer>(),
+                )
+            )
+            .thenAnswer { invocation ->
+                val inVertices = invocation.getArgument<FloatBuffer>(1)
+                val outVertices = invocation.getArgument<FloatBuffer>(3)
+                inVertices.position(0)
+                outVertices.put(inVertices)
+            }
+
+        // act
+        underTest.extend(coreState)
+
+        // assert
+        assertThat(coreState.cameraState).isNotNull()
+        assertThat(coreState.cameraState!!.trackingState).isEqualTo(JXRCoreTrackingState.TRACKING)
+        assertThat(coreState.cameraState!!.cameraPose).isEqualTo(arCoreCameraPose.toRuntimePose())
+        assertThat(coreState.cameraState!!.displayOrientedPose)
+            .isEqualTo(arCoreDisplayOrientedPose.toRuntimePose())
+        assertThat(coreState.cameraState!!.projectionMatrix)
+            .isEqualTo(Matrix4(projectionMatrixData))
+        assertThat(coreState.cameraState!!.viewMatrix).isEqualTo(Matrix4(viewMatrixData))
+        assertThat(coreState.cameraState!!.hardwareBuffer).isNull()
+        assertThat(coreState.cameraState!!.transformCoordinates2D).isNotNull()
+
+        // act
+        inputVertices.rewind()
+        val outputVertices = coreState.cameraState!!.transformCoordinates2D!!.invoke(inputVertices)
+
+        // assert
+        assertThat(outputVertices).isEqualTo(inputVertices)
+    }
+
+    @Test
+    @Config(minSdk = 27)
+    fun extend_ApiLevel27AndUp_withIsTrackingState_returnsCorrectValues(): Unit = runBlocking {
+        // arrange
+        underTest.initialize(listOf(runtime))
         perceptionManager.setDisplayRotation(Surface.ROTATION_0, 100, 100)
         val timeMark = timeSource.markNow()
         val coreState = CoreState(timeMark)
@@ -172,6 +249,7 @@ class CameraStateExtenderTest {
             assertThat(coreState.cameraState!!.transformCoordinates2D).isNotNull()
 
             // act
+            inputVertices.rewind()
             val outputVertices =
                 coreState.cameraState!!.transformCoordinates2D!!.invoke(inputVertices)
 
@@ -181,19 +259,25 @@ class CameraStateExtenderTest {
     }
 
     @Test
-    fun extend_withDisplayUnchanged_returnsNullTransformCoordinates2D(): Unit = runBlocking {
-        // arrange
-        underTest.initialize(runtime)
-        val timeMark = timeSource.markNow()
-        val coreState = CoreState(timeMark)
-        whenever(camera.trackingState).thenReturn(ARCoreTrackingState.TRACKING)
+    @Config(maxSdk = 26)
+    fun extend_ApiLevelBelow27_withDisplayUnchanged_returnsNullTransformCoordinates2D(): Unit =
+        runBlocking {
+            // arrange
+            underTest.initialize(listOf(runtime))
+            val timeMark = timeSource.markNow()
+            val coreState = CoreState(timeMark)
+            whenever(camera.trackingState).thenReturn(ARCoreTrackingState.TRACKING)
 
-        val arCoreCameraPose = ArCorePose(floatArrayOf(1f, 2f, 3f), floatArrayOf(0f, 0f, 0f, 1f))
-        val arCoreDisplayOrientedPose =
-            ArCorePose(floatArrayOf(4f, 5f, 6f), floatArrayOf(0f, 0f, 0f, 1f))
-        val projectionMatrixData = FloatArray(16) { Random.nextFloat() }
-        val viewMatrixData = FloatArray(16) { Random.nextFloat() }
-        HardwareBuffer.create(1, 1, HardwareBuffer.RGBA_8888, 1, 1).use { hardwareBuffer ->
+            val arCoreCameraPose =
+                ArCorePose(floatArrayOf(1f, 2f, 3f), floatArrayOf(0f, 0f, 0f, 1f))
+            val arCoreDisplayOrientedPose =
+                ArCorePose(floatArrayOf(4f, 5f, 6f), floatArrayOf(0f, 0f, 0f, 1f))
+            val projectionMatrixData = FloatArray(16) { Random.nextFloat() }
+            val viewMatrixData = FloatArray(16) { Random.nextFloat() }
+            val inputVertices: FloatBuffer =
+                ByteBuffer.allocateDirect(2 * 4 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer()
+            inputVertices.put(floatArrayOf(-1f, -1f, +1f, -1f, -1f, +1f, +1f, +1f))
+
             whenever(camera.pose).thenReturn(arCoreCameraPose)
             whenever(camera.displayOrientedPose).thenReturn(arCoreDisplayOrientedPose)
             whenever(camera.getProjectionMatrix(any(), any(), any(), any())).thenAnswer { invocation
@@ -205,31 +289,121 @@ class CameraStateExtenderTest {
                 val viewMatrix = invocation.getArgument<FloatArray>(0)
                 viewMatrixData.copyInto(viewMatrix)
             }
-            whenever(frame.hardwareBuffer).thenReturn(hardwareBuffer)
+            whenever(
+                    frame.transformCoordinates2d(
+                        any<Coordinates2d>(),
+                        any<FloatBuffer>(),
+                        any<Coordinates2d>(),
+                        any<FloatBuffer>(),
+                    )
+                )
+                .thenAnswer { invocation ->
+                    val inVertices = invocation.getArgument<FloatBuffer>(1)
+                    val outVertices = invocation.getArgument<FloatBuffer>(3)
+                    inVertices.position(0)
+                    outVertices.put(inVertices)
+                }
 
             // act
             underTest.extend(coreState)
+            val initialLambda = coreState.cameraState!!.transformCoordinates2D
+            assertThat(initialLambda).isNotNull()
+            initialLambda!!.invoke(inputVertices)
+            timeSource += 10.milliseconds
+            val coreState2 = CoreState(timeSource.markNow())
+            underTest.extend(coreState2)
 
             // assert
-            assertThat(coreState.cameraState).isNotNull()
-            assertThat(coreState.cameraState!!.trackingState)
+            assertThat(coreState2.cameraState).isNotNull()
+            assertThat(coreState2.cameraState!!.trackingState)
                 .isEqualTo(JXRCoreTrackingState.TRACKING)
-            assertThat(coreState.cameraState!!.cameraPose)
+            assertThat(coreState2.cameraState!!.cameraPose)
                 .isEqualTo(arCoreCameraPose.toRuntimePose())
-            assertThat(coreState.cameraState!!.displayOrientedPose)
+            assertThat(coreState2.cameraState!!.displayOrientedPose)
                 .isEqualTo(arCoreDisplayOrientedPose.toRuntimePose())
-            assertThat(coreState.cameraState!!.projectionMatrix)
+            assertThat(coreState2.cameraState!!.projectionMatrix)
                 .isEqualTo(Matrix4(projectionMatrixData))
-            assertThat(coreState.cameraState!!.viewMatrix).isEqualTo(Matrix4(viewMatrixData))
-            assertThat(coreState.cameraState!!.hardwareBuffer).isEqualTo(hardwareBuffer)
-            assertThat(coreState.cameraState!!.transformCoordinates2D).isNull()
+            assertThat(coreState2.cameraState!!.viewMatrix).isEqualTo(Matrix4(viewMatrixData))
+            assertThat(coreState2.cameraState!!.hardwareBuffer).isNull()
+            assertThat(coreState2.cameraState!!.transformCoordinates2D).isNull()
         }
-    }
+
+    @Test
+    @Config(minSdk = 27)
+    fun extend_ApiLevel27AndUp_withDisplayUnchanged_returnsNullTransformCoordinates2D(): Unit =
+        runBlocking {
+            // arrange
+            underTest.initialize(listOf(runtime))
+            val timeMark = timeSource.markNow()
+            val coreState = CoreState(timeMark)
+            whenever(camera.trackingState).thenReturn(ARCoreTrackingState.TRACKING)
+            val arCoreCameraPose =
+                ArCorePose(floatArrayOf(1f, 2f, 3f), floatArrayOf(0f, 0f, 0f, 1f))
+            val arCoreDisplayOrientedPose =
+                ArCorePose(floatArrayOf(4f, 5f, 6f), floatArrayOf(0f, 0f, 0f, 1f))
+            val projectionMatrixData = FloatArray(16) { Random.nextFloat() }
+            val viewMatrixData = FloatArray(16) { Random.nextFloat() }
+            val inputVertices: FloatBuffer =
+                ByteBuffer.allocateDirect(2 * 4 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer()
+            inputVertices.put(floatArrayOf(-1f, -1f, +1f, -1f, -1f, +1f, +1f, +1f))
+
+            HardwareBuffer.create(1, 1, HardwareBuffer.RGBA_8888, 1, 1).use { hardwareBuffer ->
+                whenever(camera.pose).thenReturn(arCoreCameraPose)
+                whenever(camera.displayOrientedPose).thenReturn(arCoreDisplayOrientedPose)
+                whenever(camera.getProjectionMatrix(any(), any(), any(), any())).thenAnswer {
+                    invocation ->
+                    val projectionMatrix = invocation.getArgument<FloatArray>(0)
+                    projectionMatrixData.copyInto(projectionMatrix)
+                }
+                whenever(camera.getViewMatrix(any(), any())).thenAnswer { invocation ->
+                    val viewMatrix = invocation.getArgument<FloatArray>(0)
+                    viewMatrixData.copyInto(viewMatrix)
+                }
+                whenever(frame.hardwareBuffer).thenReturn(hardwareBuffer)
+                whenever(
+                        frame.transformCoordinates2d(
+                            any<Coordinates2d>(),
+                            any<FloatBuffer>(),
+                            any<Coordinates2d>(),
+                            any<FloatBuffer>(),
+                        )
+                    )
+                    .thenAnswer { invocation ->
+                        val inVertices = invocation.getArgument<FloatBuffer>(1)
+                        val outVertices = invocation.getArgument<FloatBuffer>(3)
+                        inVertices.position(0)
+                        outVertices.put(inVertices)
+                    }
+
+                // act
+                underTest.extend(coreState)
+                val initialLambda = coreState.cameraState!!.transformCoordinates2D
+                assertThat(initialLambda).isNotNull()
+                initialLambda!!.invoke(inputVertices)
+                timeSource += 10.milliseconds
+                val coreState2 = CoreState(timeSource.markNow())
+                underTest.extend(coreState2)
+
+                // assert
+                assertThat(coreState.cameraState).isNotNull()
+                assertThat(coreState.cameraState!!.trackingState)
+                    .isEqualTo(JXRCoreTrackingState.TRACKING)
+                assertThat(coreState2.cameraState!!.cameraPose)
+                    .isEqualTo(arCoreCameraPose.toRuntimePose())
+                assertThat(coreState2.cameraState!!.displayOrientedPose)
+                    .isEqualTo(arCoreDisplayOrientedPose.toRuntimePose())
+                assertThat(coreState2.cameraState!!.projectionMatrix)
+                    .isEqualTo(Matrix4(projectionMatrixData))
+                assertThat(coreState2.cameraState!!.viewMatrix).isEqualTo(Matrix4(viewMatrixData))
+                assertThat(coreState2.cameraState!!.hardwareBuffer).isEqualTo(hardwareBuffer)
+                assertThat(coreState2.cameraState!!.transformCoordinates2D).isNull()
+            }
+        }
 
     @Test
     fun extend_cameraStateMapSizeExceedsMax(): Unit = runBlocking {
         // arrange
-        underTest.initialize(runtime)
+        underTest.initialize(listOf(runtime))
         val timeMark = timeSource.markNow()
         val coreState = CoreState(timeMark)
         whenever(camera.trackingState).thenReturn(ARCoreTrackingState.PAUSED)
@@ -251,7 +425,7 @@ class CameraStateExtenderTest {
     @Test
     fun close_cleanUpData(): Unit = runBlocking {
         // arrange
-        underTest.initialize(runtime)
+        underTest.initialize(listOf(runtime))
         val timeMark = timeSource.markNow()
         val coreState = CoreState(timeMark)
         whenever(camera.trackingState).thenReturn(ARCoreTrackingState.PAUSED)

@@ -63,39 +63,39 @@ import kotlin.math.min
 /**
  * Modify element to add border with appearance specified with a [border] and a [shape] and clip it.
  *
- * @sample androidx.compose.foundation.samples.BorderSample()
+ * @sample androidx.compose.foundation.samples.BorderSample
  * @param border [BorderStroke] class that specifies border appearance, such as size and color
  * @param shape shape of the border
  */
 @Stable
-fun Modifier.border(border: BorderStroke, shape: Shape = RectangleShape) =
+public fun Modifier.border(border: BorderStroke, shape: Shape = RectangleShape): Modifier =
     border(width = border.width, brush = border.brush, shape = shape)
 
 /**
  * Modify element to add border with appearance specified with a [width], a [color] and a [shape]
  * and clip it.
  *
- * @sample androidx.compose.foundation.samples.BorderSampleWithDataClass()
+ * @sample androidx.compose.foundation.samples.BorderSampleWithDataClass
  * @param width width of the border. Use [Dp.Hairline] for a hairline border.
  * @param color color to paint the border with
  * @param shape shape of the border
  */
 @Stable
-fun Modifier.border(width: Dp, color: Color, shape: Shape = RectangleShape) =
+public fun Modifier.border(width: Dp, color: Color, shape: Shape = RectangleShape): Modifier =
     border(width, SolidColor(color), shape)
 
 /**
  * Modify element to add border with appearance specified with a [width], a [brush] and a [shape]
  * and clip it.
  *
- * @sample androidx.compose.foundation.samples.BorderSampleWithBrush()
- * @sample androidx.compose.foundation.samples.BorderSampleWithDynamicData()
+ * @sample androidx.compose.foundation.samples.BorderSampleWithBrush
+ * @sample androidx.compose.foundation.samples.BorderSampleWithDynamicData
  * @param width width of the border. Use [Dp.Hairline] for a hairline border.
  * @param brush brush to paint the border with
  * @param shape shape of the border
  */
 @Stable
-fun Modifier.border(width: Dp, brush: Brush, shape: Shape) =
+public fun Modifier.border(width: Dp, brush: Brush, shape: Shape): Modifier =
     this then BorderModifierNodeElement(width, brush, shape)
 
 internal data class BorderModifierNodeElement(val width: Dp, val brush: Brush, val shape: Shape) :
@@ -448,16 +448,15 @@ private fun createRoundRectPath(
     roundedRect: RoundRect,
     strokeWidth: Float,
     fillArea: Boolean,
-): Path =
-    targetPath.apply {
-        reset()
-        addRoundRect(roundedRect)
-        if (!fillArea) {
-            val insetPath =
-                Path().apply { addRoundRect(createInsetRoundedRect(strokeWidth, roundedRect)) }
-            op(this, insetPath, PathOperation.Difference)
-        }
+): Path = targetPath.apply {
+    reset()
+    addRoundRect(roundedRect)
+    if (!fillArea) {
+        val insetPath =
+            Path().apply { addRoundRect(createInsetRoundedRect(strokeWidth, roundedRect)) }
+        op(this, insetPath, PathOperation.Difference)
     }
+}
 
 private fun createInsetRoundedRect(widthPx: Float, roundedRect: RoundRect) =
     RoundRect(

@@ -18,11 +18,11 @@ package androidx.credentials.exceptions
 
 /**
  * During the create credential flow, this is thrown when no viable creation options were found for
- * the given [CreateCredentialRequest].
+ * the given [androidx.credentials.CreateCredentialRequest].
  *
  * @see CreateCredentialException
  */
-class CreateCredentialNoCreateOptionException
+public class CreateCredentialNoCreateOptionException
 @JvmOverloads
 constructor(errorMessage: CharSequence? = null) :
     CreateCredentialException(TYPE_CREATE_CREDENTIAL_NO_CREATE_OPTION, errorMessage) {

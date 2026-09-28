@@ -19,7 +19,7 @@ package androidx.compose.animation.core.samples
 import androidx.annotation.Sampled
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColor
-import androidx.compose.animation.core.ExperimentalTransitionApi
+import androidx.compose.animation.core.DeferredTransitionState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.SeekableTransitionState
@@ -29,6 +29,7 @@ import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.createChildTransition
 import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberDeferredTransition
 import androidx.compose.animation.core.rememberTransition
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
@@ -180,8 +181,9 @@ fun AnimateFloatSample() {
         // [animateFloat] function is used here as a property delegate.
         // This float animation will use the default [spring] for all transition destinations, as
         // specified by the default `transitionSpec`.
-        val scale: Float by
-            transition.animateFloat { state -> if (state == ButtonStatus.Pressed) 1.2f else 1f }
+        val scale: Float by transition.animateFloat { state ->
+            if (state == ButtonStatus.Pressed) 1.2f else 1f
+        }
 
         // Alternatively, we can specify different animation specs based on the initial state and
         // target state of the a transition run using `transitionSpec`.
@@ -216,7 +218,6 @@ fun AnimateFloatSample() {
     }
 }
 
-@OptIn(ExperimentalTransitionApi::class)
 @Sampled
 fun InitialStateSample() {
     // This composable enters the composition with a custom enter transition. This is achieved by
@@ -370,7 +371,6 @@ fun DoubleTapToLikeSample() {
 @Sampled
 fun CreateChildTransitionSample() {
     // enum class DialerState { DialerMinimized, NumberPad }
-    @OptIn(ExperimentalTransitionApi::class)
     @Composable
     fun DialerButton(visibilityTransition: Transition<Boolean>, modifier: Modifier) {
         val scale by visibilityTransition.animateFloat { visible -> if (visible) 1f else 2f }
@@ -384,7 +384,6 @@ fun CreateChildTransitionSample() {
         // Create animations using the provided Transition for visibility change here...
     }
 
-    @OptIn(ExperimentalTransitionApi::class)
     @Composable
     fun childTransitionSample() {
         var dialerState by remember { mutableStateOf(DialerState.NumberPad) }
@@ -392,8 +391,9 @@ fun CreateChildTransitionSample() {
             val parentTransition = updateTransition(dialerState)
 
             // Animate to different corner radius based on target state
-            val cornerRadius by
-                parentTransition.animateDp { if (it == DialerState.NumberPad) 0.dp else 20.dp }
+            val cornerRadius by parentTransition.animateDp {
+                if (it == DialerState.NumberPad) 0.dp else 20.dp
+            }
 
             Box(
                 Modifier.align(Alignment.BottomCenter)
@@ -440,21 +440,20 @@ enum class DialerState {
 }
 
 @Sampled
-@OptIn(ExperimentalTransitionApi::class)
 @Composable
 fun TransitionStateIsIdleSample() {
     @Composable
     fun SelectableItem(selectedState: MutableTransitionState<Boolean>) {
         val transition = rememberTransition(selectedState)
         val cornerRadius by transition.animateDp { selected -> if (selected) 10.dp else 0.dp }
-        val backgroundColor by
-            transition.animateColor { selected -> if (selected) Color.Red else Color.White }
+        val backgroundColor by transition.animateColor { selected ->
+            if (selected) Color.Red else Color.White
+        }
         Box(Modifier.background(backgroundColor, RoundedCornerShape(cornerRadius))) {
             // Item content goes here
         }
     }
 
-    @OptIn(ExperimentalTransitionApi::class)
     @Composable
     fun ItemsSample(selectedId: Int) {
         Column {
@@ -599,4 +598,36 @@ fun SnapToSample() {
     }
     val transition = rememberTransition(seekingState)
     // use the transition
+}
+
+@Sampled
+@Composable
+fun DeferredTransitionSample() {
+    var targetState by remember { mutableStateOf("Initial") }
+    var isDeferred by remember { mutableStateOf(false) }
+
+    // Create a DeferredTransitionState
+    val transitionState = remember { DeferredTransitionState(targetState) }
+
+    // Use LaunchedEffect to handle defer/animateTo logic based on some external signal
+    // (e.g. gesture progress, predictive back events, etc).
+    LaunchedEffect(targetState, isDeferred) {
+        if (isDeferred) {
+            // Enter deferred phase: targetState is updated as a pendingTargetState
+            // but animations don't start yet.
+            transitionState.defer(targetState)
+        } else {
+            // Start automatic transition: pendingTargetState is cleared and targetState is updated
+            // to trigger animations.
+            transitionState.animateTo(targetState)
+        }
+    }
+
+    val transition = rememberDeferredTransition(transitionState)
+    // Create animations as usual
+    val alpha by transition.animateFloat { state -> if (state == "Initial") 0f else 1f }
+
+    Box(Modifier.graphicsLayer { this.alpha = alpha }) {
+        // Content
+    }
 }

@@ -17,6 +17,7 @@
 package androidx.car.app.sample.showcase.common.screens.mapdemos.mapwithcontent;
 
 
+import androidx.annotation.OptIn;
 import androidx.car.app.CarContext;
 import androidx.car.app.CarToast;
 import androidx.car.app.Screen;
@@ -43,7 +44,6 @@ public class MapWithGridTemplateDemoScreen extends Screen {
         super(carContext);
     }
 
-    @ExperimentalCarApi
     @RequiresCarApi(7)
     @Override
     public @NonNull Template onGetTemplate() {
@@ -73,11 +73,10 @@ public class MapWithGridTemplateDemoScreen extends Screen {
                                                         CarToast.LENGTH_SHORT)
                                                 .show())
                                 .setIcon(
-                                        new CarIcon.Builder(
+                                        CarIcon.createTintedIcon(
                                                 IconCompat.createWithResource(
                                                         getCarContext(),
-                                                        R.drawable.ic_bug_report_24px))
-                                                .build())
+                                                        R.drawable.ic_bug_report_24px)))
                                 .setFlags(Action.FLAG_IS_PERSISTENT)
                                 .build())
                 .build();
@@ -89,10 +88,11 @@ public class MapWithGridTemplateDemoScreen extends Screen {
         return builder.build();
     }
 
+    @OptIn(markerClass = ExperimentalCarApi.class)
     private GridItem createGridItem() {
         return new GridItem.Builder()
-                .setImage(new CarIcon.Builder(IconCompat.createWithResource(getCarContext(),
-                        R.drawable.ic_fastfood_white_48dp)).build())
+                .setImage(CarIcon.createTintedIcon(IconCompat.createWithResource(getCarContext(),
+                        R.drawable.ic_fastfood_white_48dp)))
                 .setTitle("Primary")
                 .setText("Secondary")
                 .setOnClickListener(() -> CarToast.makeText(

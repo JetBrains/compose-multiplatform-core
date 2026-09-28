@@ -1,0 +1,425 @@
+/*
+ * Copyright 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@file:Suppress("RestrictedApiAndroidX")
+
+package androidx.wear.compose.remote.material3.previews
+
+import androidx.compose.remote.creation.compose.action.hostAction
+import androidx.compose.remote.creation.compose.layout.RemoteAlignment
+import androidx.compose.remote.creation.compose.layout.RemoteBox
+import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.creation.compose.layout.RemotePaddingValues
+import androidx.compose.remote.creation.compose.modifier.RemoteModifier
+import androidx.compose.remote.creation.compose.modifier.fillMaxSize
+import androidx.compose.remote.creation.compose.modifier.height
+import androidx.compose.remote.creation.compose.shapes.RemoteRoundedCornerShape
+import androidx.compose.remote.creation.compose.state.RemoteColor
+import androidx.compose.remote.creation.compose.state.RemoteImageBitmap.Companion.createNamedRemoteImageBitmap
+import androidx.compose.remote.creation.compose.state.RemoteString
+import androidx.compose.remote.creation.compose.state.rb
+import androidx.compose.remote.creation.compose.state.rc
+import androidx.compose.remote.creation.compose.state.rdp
+import androidx.compose.remote.creation.compose.state.rf
+import androidx.compose.remote.creation.compose.state.rs
+import androidx.compose.remote.creation.profile.Profile
+import androidx.compose.remote.tooling.preview.RemoteContentPreview
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.wear.compose.remote.material3.RemoteButton
+import androidx.wear.compose.remote.material3.RemoteButtonDefaults
+import androidx.wear.compose.remote.material3.RemoteIcon
+import androidx.wear.compose.remote.material3.RemoteMaterialTheme
+import androidx.wear.compose.remote.material3.RemoteText
+import androidx.wear.compose.remote.material3.buttonSizeModifier
+import androidx.wear.compose.remote.material3.previews.utils.ProfilePreviewParameterProvider
+import androidx.wear.compose.remote.material3.previews.utils.TestImageVectors
+import androidx.wear.compose.remote.material3.previews.utils.createImage
+import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
+
+@Composable
+@RemoteComposable
+fun RemoteButtonEnabled() {
+    RemoteButton(
+        onClick = testAction,
+        modifier = RemoteModifier.buttonSizeModifier(),
+        enabled = true.rb,
+        content = { RemoteText("button_enabled".rs) },
+    )
+}
+
+@WearPreviewDevices
+@Composable
+private fun RemoteButtonEnabledPreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) = RemoteContentPreview(profile = profile) { Container { RemoteButtonEnabled() } }
+
+@Composable
+@RemoteComposable
+fun RemoteButtonTwoLineText() {
+    RemoteButton(
+        onClick = testAction,
+        modifier = RemoteModifier.buttonSizeModifier(),
+        enabled = true.rb,
+        content = { RemoteText("Long label that\nspans two lines".rs) },
+    )
+}
+
+@WearPreviewDevices
+@Composable
+private fun RemoteButtonTwoLineTextPreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) = RemoteContentPreview(profile = profile) { Container { RemoteButtonTwoLineText() } }
+
+@Composable
+@RemoteComposable
+fun RemoteButtonWithBorder() {
+    RemoteButton(
+        onClick = testAction,
+        modifier = RemoteModifier.buttonSizeModifier(),
+        border = 8.rdp,
+        borderColor = RemoteColor(Color.Green),
+    ) {
+        RemoteText("button_with_border".rs)
+    }
+}
+
+@WearPreviewDevices
+@Composable
+private fun RemoteButtonWithBorderPreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) = RemoteContentPreview(profile = profile) { Container { RemoteButtonWithBorder() } }
+
+@Composable
+@RemoteComposable
+fun RemoteButtonWithLabel() {
+    RemoteButton(
+        onClick = testAction,
+        modifier = RemoteModifier.buttonSizeModifier(),
+        label = { RemoteText("label".rs) },
+    )
+}
+
+@WearPreviewDevices
+@Composable
+private fun RemoteButtonWithLabelPreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) = RemoteContentPreview(profile = profile) { Container { RemoteButtonWithLabel() } }
+
+@Composable
+@RemoteComposable
+fun RemoteButtonWithMultilineLabel() {
+    RemoteButton(
+        onClick = testAction,
+        modifier = RemoteModifier.buttonSizeModifier(),
+        label = { RemoteText("First Line\nSecond Line".rs) },
+    )
+}
+
+@WearPreviewDevices
+@Composable
+private fun RemoteButtonWithMultilineLabelPreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) = RemoteContentPreview(profile = profile) { Container { RemoteButtonWithMultilineLabel() } }
+
+@Composable
+@RemoteComposable
+fun RemoteButtonWithSecondaryLabel() {
+    RemoteButton(
+        onClick = testAction,
+        modifier = RemoteModifier.buttonSizeModifier(),
+        secondaryLabel = { RemoteText(RemoteString("secondaryLabel")) },
+        label = { RemoteText(RemoteString("label")) },
+    )
+}
+
+@Composable
+@RemoteComposable
+fun RemoteButtonWithIcon() {
+    RemoteButton(
+        onClick = testAction,
+        modifier = RemoteModifier.buttonSizeModifier(),
+        icon = {
+            RemoteIcon(
+                imageVector = TestImageVectors.VolumeUp,
+                contentDescription = null,
+                tint = RemoteButtonDefaults.buttonColors().iconColor,
+            )
+        },
+        label = { RemoteText("label".rs) },
+    )
+}
+
+@WearPreviewDevices
+@Composable
+private fun RemoteButtonWithIconPreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) = RemoteContentPreview(profile = profile) { Container { RemoteButtonWithIcon() } }
+
+@Composable
+@RemoteComposable
+fun RemoteButtonWithIconAndSecondaryLabel() {
+    RemoteButton(
+        onClick = testAction,
+        modifier = RemoteModifier.buttonSizeModifier(),
+        icon = {
+            RemoteIcon(
+                imageVector = TestImageVectors.VolumeUp,
+                contentDescription = null,
+                tint = RemoteButtonDefaults.buttonColors().iconColor,
+            )
+        },
+        secondaryLabel = { RemoteText("secondaryLabel".rs) },
+        label = { RemoteText("label".rs) },
+    )
+}
+
+@WearPreviewDevices
+@Composable
+private fun RemoteButtonWithIconAndSecondaryLabelPreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) =
+    RemoteContentPreview(profile = profile) {
+        Container { RemoteButtonWithIconAndSecondaryLabel() }
+    }
+
+@Composable
+@RemoteComposable
+fun RemoteButtonWithLongLabel() {
+    RemoteButton(
+        onClick = testAction,
+        modifier = RemoteModifier.buttonSizeModifier(),
+        label = {
+            RemoteText("This is a longer button label text that wraps onto a second line".rs)
+        },
+    )
+}
+
+@WearPreviewDevices
+@Composable
+private fun RemoteButtonWithLongLabelPreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) = RemoteContentPreview(profile = profile) { Container { RemoteButtonWithLongLabel() } }
+
+@Composable
+@RemoteComposable
+fun RemoteButtonWithIconAndLongLabel() {
+    RemoteButton(
+        onClick = testAction,
+        modifier = RemoteModifier.buttonSizeModifier(),
+        icon = {
+            RemoteIcon(
+                imageVector = TestImageVectors.VolumeUp,
+                contentDescription = null,
+                tint = RemoteButtonDefaults.buttonColors().iconColor,
+            )
+        },
+        label = { RemoteText("This is a longer button label text with an icon".rs) },
+    )
+}
+
+@WearPreviewDevices
+@Composable
+private fun RemoteButtonWithIconAndLongLabelPreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) = RemoteContentPreview(profile = profile) { Container { RemoteButtonWithIconAndLongLabel() } }
+
+@Composable
+@RemoteComposable
+fun RemoteButtonWithBackground() {
+    val backgroundImage = remember {
+        createNamedRemoteImageBitmap(name = "backgroundImage") {
+            createImage(200, 200).asImageBitmap()
+        }
+    }
+    val containerPainter = RemoteButtonDefaults.containerPainter(backgroundImage)
+    RemoteButton(
+        onClick = testAction,
+        modifier = RemoteModifier.buttonSizeModifier(),
+        containerPainter = containerPainter,
+    ) {
+        RemoteText("image_background".rs)
+    }
+}
+
+@WearPreviewDevices
+@Composable
+private fun RemoteButtonWithBackgroundPreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) = RemoteContentPreview(profile = profile) { Container { RemoteButtonWithBackground() } }
+
+@Composable
+@RemoteComposable
+fun RemoteButtonWithShape() {
+    RemoteButton(
+        onClick = testAction,
+        modifier = RemoteModifier.buttonSizeModifier(),
+        shape = RemoteRoundedCornerShape(4.rdp),
+        content = { RemoteText("Custom shape".rs) },
+    )
+}
+
+@WearPreviewDevices
+@Composable
+private fun RemoteButtonWithShapePreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) = RemoteContentPreview(profile = profile) { Container { RemoteButtonWithShape() } }
+
+@Composable
+@RemoteComposable
+fun RemoteButtonCustomConfig() {
+    RemoteButton(
+        onClick = testAction,
+        modifier = RemoteModifier.height(20.rdp),
+        shape = RemoteRoundedCornerShape(10.rdp),
+        colors =
+            RemoteButtonDefaults.buttonColors(
+                containerColor = Color(0xFF29303D).rc,
+                contentColor = Color(0xFFC2C6D2).rc,
+            ),
+        contentPadding = RemotePaddingValues(horizontal = 10.rdp, vertical = 2.rdp),
+        content = {
+            RemoteText("Outdoor run".rs, style = RemoteMaterialTheme.typography.labelSmall)
+        },
+    )
+}
+
+@WearPreviewDevices
+@Composable
+private fun RemoteButtonCustomConfigPreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) = RemoteContentPreview(profile = profile) { Container { RemoteButtonCustomConfig() } }
+
+@Composable
+@RemoteComposable
+fun RemoteButtonDisabled() {
+    RemoteButton(
+        onClick = testAction,
+        modifier = RemoteModifier.buttonSizeModifier(),
+        enabled = false.rb,
+    ) {
+        RemoteText("button_disabled".rs)
+    }
+}
+
+@WearPreviewDevices
+@Composable
+private fun RemoteButtonDisabledPreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) = RemoteContentPreview(profile = profile) { Container { RemoteButtonDisabled() } }
+
+@Composable
+@RemoteComposable
+fun RemoteButtonWithIconAndSecondaryLabelDisabled() {
+    RemoteButton(
+        onClick = testAction,
+        modifier = RemoteModifier.buttonSizeModifier(),
+        enabled = false.rb,
+        icon = {
+            RemoteIcon(
+                imageVector = TestImageVectors.VolumeUp,
+                contentDescription = null,
+                tint = RemoteButtonDefaults.buttonColors().disabledIconColor,
+            )
+        },
+        secondaryLabel = { RemoteText("secondaryLabel".rs) },
+        label = { RemoteText("label".rs) },
+    )
+}
+
+@WearPreviewDevices
+@Composable
+private fun RemoteButtonWithIconAndSecondaryLabelDisabledPreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) =
+    RemoteContentPreview(profile = profile) {
+        Container { RemoteButtonWithIconAndSecondaryLabelDisabled() }
+    }
+
+@Composable
+@RemoteComposable
+fun RemoteButtonChildColors() {
+    RemoteButton(
+        onClick = testAction,
+        modifier = RemoteModifier.buttonSizeModifier(),
+        colors = RemoteButtonDefaults.childButtonColors(),
+    ) {
+        RemoteText("Child Button".rs)
+    }
+}
+
+@WearPreviewDevices
+@Composable
+private fun RemoteButtonChildColorsPreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) = RemoteContentPreview(profile = profile) { Container { RemoteButtonChildColors() } }
+
+@Composable
+@RemoteComposable
+fun RemoteButtonChildColorsDisabled() {
+    RemoteButton(
+        onClick = testAction,
+        modifier = RemoteModifier.buttonSizeModifier(),
+        enabled = false.rb,
+        colors = RemoteButtonDefaults.childButtonColors(),
+    ) {
+        RemoteText("Disabled Child".rs)
+    }
+}
+
+@WearPreviewDevices
+@Composable
+private fun RemoteButtonChildColorsDisabledPreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) = RemoteContentPreview(profile = profile) { Container { RemoteButtonChildColorsDisabled() } }
+
+@Composable
+@RemoteComposable
+fun RemoteButtonWithSmallImageBackground() {
+    val smallImage = remember {
+        createNamedRemoteImageBitmap(name = "smallBackgroundImage") {
+            createImage(8, 8).asImageBitmap()
+        }
+    }
+    val containerPainter = RemoteButtonDefaults.containerPainter(smallImage)
+    RemoteButton(
+        onClick = testAction,
+        modifier = RemoteModifier.buttonSizeModifier(),
+        containerPainter = containerPainter,
+    ) {
+        RemoteText("small_image".rs)
+    }
+}
+
+@WearPreviewDevices
+@Composable
+private fun RemoteButtonWithSmallImageBackgroundPreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) = RemoteContentPreview(profile = profile) { Container { RemoteButtonWithSmallImageBackground() } }
+
+@Composable
+@RemoteComposable
+private fun Container(
+    modifier: RemoteModifier = RemoteModifier.fillMaxSize(),
+    content: @Composable @RemoteComposable () -> Unit,
+) {
+    RemoteBox(modifier, contentAlignment = RemoteAlignment.Center, content = content)
+}
+
+private val testAction = hostAction("testAction".rs, 1.rf)

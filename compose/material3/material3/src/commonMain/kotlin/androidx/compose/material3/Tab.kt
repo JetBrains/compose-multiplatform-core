@@ -88,7 +88,7 @@ import kotlin.math.max
  * @see LeadingIconTab
  */
 @Composable
-fun Tab(
+public fun Tab(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -99,16 +99,13 @@ fun Tab(
     unselectedContentColor: Color = selectedContentColor,
     interactionSource: MutableInteractionSource? = null,
 ) {
-    val styledText: @Composable (() -> Unit)? =
-        text?.let {
-            @Composable {
-                val style =
-                    PrimaryNavigationTabTokens.LabelTextFont.value.copy(
-                        textAlign = TextAlign.Center
-                    )
-                ProvideTextStyle(style, content = text)
-            }
+    val styledText: @Composable (() -> Unit)? = text?.let {
+        @Composable {
+            val style =
+                PrimaryNavigationTabTokens.LabelTextFont.value.copy(textAlign = TextAlign.Center)
+            ProvideTextStyle(style, content = text)
         }
+    }
     Tab(
         modifier = modifier.badgeBounds(),
         selected = selected,
@@ -152,7 +149,7 @@ fun Tab(
  * @see Tab
  */
 @Composable
-fun LeadingIconTab(
+public fun LeadingIconTab(
     selected: Boolean,
     onClick: () -> Unit,
     text: @Composable () -> Unit,
@@ -226,7 +223,7 @@ fun LeadingIconTab(
  * @param content the content of this tab
  */
 @Composable
-fun Tab(
+public fun Tab(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -307,20 +304,20 @@ private fun TabBaselineLayout(text: @Composable (() -> Unit)?, icon: @Composable
             Box(Modifier.layoutId("icon")) { icon() }
         }
     }) { measurables, constraints ->
-        val textPlaceable =
-            text?.let {
-                measurables
-                    .fastFirst { it.layoutId == "text" }
-                    .measure(
-                        // Measure with loose constraints for height as we don't want the text to
-                        // take up more
-                        // space than it needs
-                        constraints.copy(minHeight = 0)
-                    )
-            }
+        val textPlaceable = text?.let {
+            measurables
+                .fastFirst { it.layoutId == "text" }
+                .measure(
+                    // Measure with loose constraints for height as we don't want the text to
+                    // take up more
+                    // space than it needs
+                    constraints.copy(minHeight = 0)
+                )
+        }
 
-        val iconPlaceable =
-            icon?.let { measurables.fastFirst { it.layoutId == "icon" }.measure(constraints) }
+        val iconPlaceable = icon?.let {
+            measurables.fastFirst { it.layoutId == "icon" }.measure(constraints)
+        }
 
         val tabWidth = max(textPlaceable?.width ?: 0, iconPlaceable?.width ?: 0)
 
@@ -417,22 +414,29 @@ private fun Placeable.PlacementScope.placeTextAndIcon(
 }
 
 // Tab specifications
-private val SmallTabHeight = PrimaryNavigationTabTokens.ContainerHeight
-private val LargeTabHeight = 72.dp
+private val SmallTabHeight
+    get() = PrimaryNavigationTabTokens.ContainerHeight
+private val LargeTabHeight
+    get() = 72.dp
 
 // The horizontal padding on the left and right of text
-internal val HorizontalTextPadding = 16.dp
+internal val HorizontalTextPadding
+    get() = 16.dp
 
 // Distance from the top of the indicator to the text baseline when there is one line of text and an
 // icon
-private val SingleLineTextBaselineWithIcon = 14.dp
+private val SingleLineTextBaselineWithIcon
+    get() = 14.dp
 
 // Distance from the top of the indicator to the last text baseline when there are two lines of text
 // and an icon
-private val DoubleLineTextBaselineWithIcon = 6.dp
+private val DoubleLineTextBaselineWithIcon
+    get() = 6.dp
 
 // Distance from the first text baseline to the bottom of the icon in a combined tab
-private val IconDistanceFromBaseline = 20.sp
+private val IconDistanceFromBaseline
+    get() = 20.sp
 
 // Distance from the end of the leading icon to the start of the text
-private val TextDistanceFromLeadingIcon = 8.dp
+private val TextDistanceFromLeadingIcon
+    get() = 8.dp

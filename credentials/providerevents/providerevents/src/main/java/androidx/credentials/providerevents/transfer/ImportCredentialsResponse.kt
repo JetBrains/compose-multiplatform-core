@@ -17,14 +17,23 @@
 package androidx.credentials.providerevents.transfer
 
 import android.os.Bundle
+import androidx.annotation.RestrictTo
+import androidx.credentials.providerevents.internal.RequestValidationHelper
 
 /**
  * A success response from requesting import.
  *
  * @property responseJson the credential response json according to the
  *   [Fido Credential Exchange Format](https://fidoalliance.org/specs/cx/cxf-v1.0-rd-20250313.html)
+ * @throws IllegalArgumentException If [responseJson] is empty, or if it is not a valid JSON
  */
 public class ImportCredentialsResponse(public val responseJson: String) {
+    init {
+        require(RequestValidationHelper.isValidJSON(responseJson)) {
+            "responseJson must not be empty, and must be a valid JSON"
+        }
+    }
+
     public companion object {
         /**
          * Wraps the response class into a bundle. The responseJson itself isn't written to bundle
@@ -34,6 +43,8 @@ public class ImportCredentialsResponse(public val responseJson: String) {
          * [File Provider](https://developer.android.com/reference/androidx/core/content/FileProvider)
          * can be used to share the credentials to another app.
          */
-        @JvmStatic public fun toBundle(response: ImportCredentialsResponse): Bundle = Bundle()
+        @JvmStatic
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        public fun toBundle(response: ImportCredentialsResponse): Bundle = Bundle()
     }
 }

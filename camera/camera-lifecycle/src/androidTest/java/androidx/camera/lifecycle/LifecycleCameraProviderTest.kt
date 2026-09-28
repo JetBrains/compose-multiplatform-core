@@ -18,16 +18,15 @@ package androidx.camera.lifecycle
 
 import android.content.Context
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
+import androidx.camera.core.RotationProvider
 import androidx.camera.core.internal.CameraUseCaseAdapter
 import androidx.camera.core.internal.StreamSpecsCalculatorImpl
 import androidx.camera.testing.fakes.FakeCamera
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.camera.testing.impl.fakes.FakeCameraCoordinator
@@ -35,7 +34,6 @@ import androidx.camera.testing.impl.fakes.FakeCameraDeviceSurfaceManager
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.testing.impl.fakes.FakeUseCaseConfigFactory
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.testutils.assertThrows
@@ -56,15 +54,10 @@ import org.junit.runners.Parameterized
 
 @SmallTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class LifecycleCameraProviderTest(
     private val implName: String,
     private val cameraConfig: CameraXConfig,
 ) {
-
-    @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(active = implName.contains(CameraPipeConfig::class.simpleName!!))
 
     @get:Rule
     val cameraRule =
@@ -76,24 +69,20 @@ class LifecycleCameraProviderTest(
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun data(): Collection<Array<Any?>> {
-            return listOf(
-                arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
-            )
+            return listOf(arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()))
         }
     }
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val lifecycleOwner1 = FakeLifecycleOwner()
-    private val lifecycleOwner2 = FakeLifecycleOwner()
+    private lateinit var lifecycleOwner1: FakeLifecycleOwner
+    private lateinit var lifecycleOwner2: FakeLifecycleOwner
     private val preview =
         Preview.Builder().build().apply {
             instrumentation.runOnMainSync {
-                surfaceProvider =
-                    SurfaceTextureProvider.createAutoDrainingSurfaceTextureProvider {
-                        frameAvailableSemaphore.release()
-                    }
+                surfaceProvider = SurfaceTextureProvider.createAutoDrainingSurfaceTextureProvider {
+                    frameAvailableSemaphore.release()
+                }
             }
         }
     private val imageAnalysis =
@@ -110,26 +99,15 @@ class LifecycleCameraProviderTest(
     fun setUp() {
         cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
         runBlocking(MainScope().coroutineContext) {
-            if (implName == Camera2Config::class.simpleName) {
-                provider1 =
-                    LifecycleCameraProvider.createInstance(context, Camera2Config.defaultConfig())
-                provider2 =
-                    LifecycleCameraProvider.createInstance(context, Camera2Config.defaultConfig())
-            } else if (implName == CameraPipeConfig::class.simpleName) {
-                provider1 =
-                    LifecycleCameraProvider.createInstance(
-                        context,
-                        CameraPipeConfig.defaultConfig(),
-                    )
-                provider2 =
-                    LifecycleCameraProvider.createInstance(
-                        context,
-                        CameraPipeConfig.defaultConfig(),
-                    )
-            }
+            provider1 =
+                LifecycleCameraProvider.createInstance(context, Camera2Config.defaultConfig())
+            provider2 =
+                LifecycleCameraProvider.createInstance(context, Camera2Config.defaultConfig())
         }
-        lifecycleOwner1.startAndResume()
-        lifecycleOwner2.startAndResume()
+        instrumentation.runOnMainSync {
+            lifecycleOwner1 = FakeLifecycleOwner().apply { startAndResume() }
+            lifecycleOwner2 = FakeLifecycleOwner().apply { startAndResume() }
+        }
     }
 
     @After
@@ -249,20 +227,24 @@ class LifecycleCameraProviderTest(
     @Test
     fun shutdown_onlyRemoveNecessaryCamerasFromRepository() {
         // Arrange.
-        val repository = LifecycleCameraRepository.getInstance()
-        val fakeCamera =
-            repository.createLifecycleCamera(
-                FakeLifecycleOwner(),
-                CameraUseCaseAdapter(
-                    FakeCamera("2"),
-                    FakeCameraCoordinator(),
-                    StreamSpecsCalculatorImpl(
+        val repository = LifecycleCameraRepositories.getInstance()
+        var fakeCamera: LifecycleCamera? = null
+        instrumentation.runOnMainSync {
+            fakeCamera =
+                repository.createLifecycleCamera(
+                    FakeLifecycleOwner(),
+                    CameraUseCaseAdapter(
+                        FakeCamera("2"),
+                        FakeCameraCoordinator(),
+                        StreamSpecsCalculatorImpl(
+                            FakeUseCaseConfigFactory(),
+                            FakeCameraDeviceSurfaceManager(),
+                        ),
                         FakeUseCaseConfigFactory(),
-                        FakeCameraDeviceSurfaceManager(),
                     ),
-                    FakeUseCaseConfigFactory(),
-                ),
-            )
+                    RotationProvider(context),
+                )
+        }
 
         // Act: Bind to a provider then shut it down.
         instrumentation.runOnMainSync {

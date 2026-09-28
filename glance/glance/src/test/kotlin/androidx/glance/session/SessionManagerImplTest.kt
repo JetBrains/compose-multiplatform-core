@@ -43,12 +43,14 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class SessionManagerImplTest {
     private lateinit var context: Context
     private lateinit var sessionManager: SessionManagerImpl
@@ -187,6 +189,7 @@ class SessionManagerImplTest {
         }
     }
 
+    @Ignore // b/433588403
     @Test
     fun usesWorkerClass() = runTest {
         sessionManager.runWithLock {

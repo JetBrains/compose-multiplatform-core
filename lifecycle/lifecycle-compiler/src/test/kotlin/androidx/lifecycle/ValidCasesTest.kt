@@ -26,6 +26,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
+@Suppress("DEPRECATION")
 @RunWith(JUnit4::class)
 class ValidCasesTest {
     @Test
@@ -138,7 +139,7 @@ class ValidCasesTest {
             .generatesProGuardRule("bar.DifferentPackagesDerived2.pro")
     }
 
-    private fun <T> CompileTester.GeneratedPredicateClause<T>.generatesProGuardRule(
+    private fun <T : Any> CompileTester.GeneratedPredicateClause<T>.generatesProGuardRule(
         name: String
     ): CompileTester.SuccessfulFileClause<T> {
         return generatesFileNamed(StandardLocation.CLASS_OUTPUT, "", "META-INF/proguard/$name")

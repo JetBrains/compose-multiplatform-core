@@ -20,7 +20,6 @@ import android.os.Handler;
 import android.webkit.WebMessagePort;
 
 import androidx.annotation.AnyThread;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RestrictTo;
 
@@ -91,10 +90,6 @@ public abstract class WebMessagePortCompat {
     /**
      * Post a WebMessage to the entangled port.
      *
-     * <p>
-     * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)}
-     * returns true for {@link WebViewFeature#WEB_MESSAGE_PORT_POST_MESSAGE}.
      *
      * <p>
      * When posting a {@link WebMessageCompat} with type {@link WebMessageCompat#TYPE_ARRAY_BUFFER},
@@ -112,6 +107,9 @@ public abstract class WebMessagePortCompat {
      * @param message  the message from Java to JS.
      *
      * @throws IllegalStateException If message port is already transferred or closed.
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#WEB_MESSAGE_PORT_POST_MESSAGE} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.WEB_MESSAGE_PORT_POST_MESSAGE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -120,10 +118,9 @@ public abstract class WebMessagePortCompat {
     /**
      * Close the message port and free any resources associated with it.
      *
-     * <p>
-     * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)}
-     * returns true for {@link WebViewFeature#WEB_MESSAGE_PORT_CLOSE}.
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#WEB_MESSAGE_PORT_CLOSE} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.WEB_MESSAGE_PORT_CLOSE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -132,12 +129,10 @@ public abstract class WebMessagePortCompat {
     /**
      * Sets a callback to receive message events on the main thread.
      *
-     * <p>
-     * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)}
-     * returns true for {@link WebViewFeature#WEB_MESSAGE_PORT_SET_MESSAGE_CALLBACK}.
-     *
      * @param callback  the message callback.
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#WEB_MESSAGE_PORT_SET_MESSAGE_CALLBACK} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.WEB_MESSAGE_PORT_SET_MESSAGE_CALLBACK,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -148,13 +143,11 @@ public abstract class WebMessagePortCompat {
      * by the application. If the handler is null the message events are received on the main
      * thread.
      *
-     * <p>
-     * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)}
-     * returns true for {@link WebViewFeature#WEB_MESSAGE_PORT_SET_MESSAGE_CALLBACK}.
-     *
      * @param handler   the handler to receive the message events.
      * @param callback  the message callback.
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#WEB_MESSAGE_PORT_SET_MESSAGE_CALLBACK} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.WEB_MESSAGE_PORT_SET_MESSAGE_CALLBACK,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -165,7 +158,6 @@ public abstract class WebMessagePortCompat {
      * Internal getter returning the private {@link WebMessagePort} implementing this class. This is
      * only available on devices with an Android versions supporting WebMessagePorts.
      */
-    @RequiresApi(23)
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     public abstract @NonNull WebMessagePort getFrameworkPort();
 

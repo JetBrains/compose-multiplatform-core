@@ -16,25 +16,26 @@
 
 package androidx.appfunctions
 
-import android.app.PendingIntent
 import android.app.appsearch.GenericDocument
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Parcelable
 import android.os.ext.SdkExtensions
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
-import androidx.annotation.VisibleForTesting
 import androidx.annotation.WorkerThread
 import androidx.appfunctions.internal.AppFunctionSerializableFactory
 import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
+import androidx.appfunctions.internal.getClass
+import androidx.appfunctions.internal.serializableproxies.BuiltInSerializableProxies
+import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
-import java.time.LocalDateTime
+import com.google.errorprone.annotations.CanIgnoreReturnValue
 
 /**
  * A data class to contain information to be communicated between AppFunctions apps and agents.
@@ -71,20 +72,22 @@ import java.time.LocalDateTime
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 public class AppFunctionData
 internal constructor(
-    // TODO: Make it non-null once the constructor that takes qualifiedName has removed
+    // TODO(b/447302747): Make it non-null once the constructor that takes qualifiedName has removed
     internal val spec: AppFunctionDataSpec?,
-    @get:VisibleForTesting
-    @get:RestrictTo(LIBRARY_GROUP)
-    public val genericDocument: GenericDocument,
+    internal val genericDocument: GenericDocument,
     internal val extras: Bundle,
 ) {
-
-    // TODO: Remove this constructor
-    @RestrictTo(LIBRARY_GROUP)
-    public constructor(
+    // TODO(b/447302747): Remove this constructor
+    internal constructor(
         genericDocument: GenericDocument,
         extras: Bundle,
     ) : this(null, genericDocument, extras)
+
+    init {
+        // This will set the Bundle's classLoader to be the classLoader from the App using this
+        // AppFunctionData class.
+        extras.classLoader = AppFunctionData::class.java.classLoader
+    }
 
     /** Qualified name of the underlying object */
     public val qualifiedName: String
@@ -108,7 +111,8 @@ internal constructor(
         }
         return key == LEGACY_ID_FIELD_KEY ||
             genericDocument.getProperty(key) != null ||
-            extras.containsKey(key)
+            extras.containsKey(key) || // Check direct key in extras
+            extras.containsKey(extrasKey(key)) // Check prefixed key in extras
     }
 
     /**
@@ -156,7 +160,12 @@ internal constructor(
             } else {
                 array[0]
             }
-        spec?.validateReadRequest(key, Boolean::class.java, isCollection = false)
+        spec?.validateReadRequest(
+            key,
+            Boolean::class.java,
+            isCollection = false,
+            targetValue = booleanValue,
+        )
         return booleanValue
     }
 
@@ -205,7 +214,12 @@ internal constructor(
             } else {
                 array[0]
             }
-        spec?.validateReadRequest(key, Float::class.java, isCollection = false)
+        spec?.validateReadRequest(
+            key,
+            Float::class.java,
+            isCollection = false,
+            targetValue = doubleValue,
+        )
         if (doubleValue != null && !isDoubleWithinFloatRange(doubleValue)) {
             // This should never happen because the setters forbid such value to exist in the
             // first place.
@@ -261,7 +275,12 @@ internal constructor(
             } else {
                 array[0]
             }
-        spec?.validateReadRequest(key, Double::class.java, isCollection = false)
+        spec?.validateReadRequest(
+            key,
+            Double::class.java,
+            isCollection = false,
+            targetValue = doubleValue,
+        )
         return doubleValue
     }
 
@@ -310,7 +329,6 @@ internal constructor(
             } else {
                 array[0]
             }
-        spec?.validateReadRequest(key, Int::class.java, isCollection = false)
         if (longValue != null && !isLongWithinLongRange(longValue)) {
             // This should never happen because the setters forbid such value to exist in the
             // first place.
@@ -318,7 +336,14 @@ internal constructor(
                 "The value associated with $key is not within the range of Int"
             )
         }
-        return longValue?.toInt()
+        val intValue = longValue?.toInt()
+        spec?.validateReadRequest(
+            key,
+            Int::class.java,
+            isCollection = false,
+            targetValue = intValue,
+        )
+        return intValue
     }
 
     /**
@@ -366,7 +391,12 @@ internal constructor(
             } else {
                 array[0]
             }
-        spec?.validateReadRequest(key, Long::class.java, isCollection = false)
+        spec?.validateReadRequest(
+            key,
+            Long::class.java,
+            isCollection = false,
+            targetValue = longValue,
+        )
         return longValue
     }
 
@@ -399,12 +429,19 @@ internal constructor(
         val array = unsafeGetProperty(key, Array<String>::class.java)
         val stringValue =
             when {
-                key == LEGACY_ID_FIELD_KEY -> id
+                // For key == "id" we first check GD's id, if that's empty we fallback to checking
+                // GD's properties.
+                key == LEGACY_ID_FIELD_KEY -> id.ifEmpty { array?.ifEmpty { null }?.get(0) }
                 array == null || array.isEmpty() -> null
                 else -> array[0]
             }
 
-        spec?.validateReadRequest(key, String::class.java, isCollection = false)
+        spec?.validateReadRequest(
+            key,
+            String::class.java,
+            isCollection = false,
+            targetValue = stringValue,
+        )
         return stringValue
     }
 
@@ -423,43 +460,83 @@ internal constructor(
                 null
             } else {
                 AppFunctionData(
-                    spec?.getPropertyObjectSpec(key),
+                    spec?.getPropertyObjectSpec(key, array[0].schemaType),
                     array[0],
                     extras.getBundle(extrasKey(key)) ?: Bundle.EMPTY,
                 )
             }
-        spec?.validateReadRequest(key, AppFunctionData::class.java, isCollection = false)
+        spec?.validateReadRequest(
+            key,
+            AppFunctionData::class.java,
+            isCollection = false,
+            targetValue = dataValue,
+        )
         return dataValue
     }
 
     /**
-     * Retrieves a [PendingIntent] value associated with the specified [key].
+     * Retrieves a [Parcelable] value of type [T] associated with the specified [key].
+     *
+     * Returns null or fails with an exception if:
+     * - No value exists for the given [key].
+     * - The object is not of type [clazz].
+     * - The [Parcelable] of type [T] cannot be loaded by the app's `classLoader`.
+     *
+     * For `Parcelable` types not defined by the Android platform (e.g., custom classes shared
+     * between agents and apps), forward and backward compatibility is **not guaranteed** by this
+     * library. Implementers are responsible for managing any compatibility and versioning concerns.
      *
      * @param key The key to retrieve the value for.
-     * @return The value associated with the [key], or null if the associated value is not found.
-     * @throws IllegalArgumentException if the [key] is not allowed or the value type is incorrect
-     *   according to the metadata specification.
+     * @param clazz The [Class] of the [Parcelable] object to retrieve, of type [T].
+     * @return The value associated with the [key], or null if the associated value is not found or
+     *   is not of type [T].
      */
-    public fun getPendingIntent(key: String): PendingIntent? {
-        return getPendingIntentOrNull(key)
+    public fun <T : Parcelable> getParcelable(key: String, clazz: Class<T>): T? {
+        return getParcelableOrNull(key, clazz)
     }
 
     /**
-     * Retrieves a [PendingIntent] value associated with the specified [key], or returns null if the
-     * associated value is not found.
+     * Retrieves a [Parcelable] value of type [T] associated with the specified [key].
      *
-     * This method is used internally by the [AppFunctionSerializableFactory] to retrieve the
-     * underlying PendingIntent value.
+     * Returns null or fails with an exception if:
+     * - No value exists for the given [key].
+     * - The object is not of type [T].
+     * - The [Parcelable] of type [T] cannot be loaded by the app's `classLoader`.
+     *
+     * For `Parcelable` types not defined by the Android platform (e.g., custom classes shared
+     * between agents and apps), forward and backward compatibility is **not guaranteed** by this
+     * library. Implementers are responsible for managing any compatibility and versioning concerns.
+     *
+     * @param T The type of the [Parcelable] object to retrieve.
+     * @param key The key to retrieve the value for.
+     * @return The value associated with the [key], or null if the associated value is not found or
+     *   is not of type [T].
+     */
+    public inline fun <reified T : Parcelable> getParcelable(key: String): T? {
+        return getParcelable(key, T::class.java)
+    }
+
+    /**
+     * Retrieves a [Parcelable] value of type [T] associated with the specified [key].
+     *
+     * Returns null or fails with an exception if:
+     * - No value exists for the given [key].
+     * - The object is not of type [clazz].
+     * - The [Parcelable] of type [T] cannot be loaded by the app's `classLoader`.
+     *
+     * For `Parcelable` types not defined by the Android platform (e.g., custom classes shared
+     * between agents and apps), forward and backward compatibility is **not guaranteed** by this
+     * library. Implementers are responsible for managing any compatibility and versioning concerns.
      *
      * @param key The key to retrieve the value for.
+     * @param clazz The [Class] of the [Parcelable] object to retrieve, of type [T].
      * @return The value associated with the [key], or null if the associated value is not found.
-     * @throws IllegalArgumentException if the [key] is not allowed or the value type is incorrect
-     *   according to the metadata specification.
      */
     @RestrictTo(LIBRARY_GROUP)
-    public fun getPendingIntentOrNull(key: String): PendingIntent? {
-        spec?.validateReadRequest(key, PendingIntent::class.java, isCollection = false)
-        return extras.getParcelable(extrasKey(key), PendingIntent::class.java)
+    public fun <T : Parcelable> getParcelableOrNull(key: String, clazz: Class<T>): T? {
+        val parcelable = extras.getParcelable(extrasKey(key), clazz)
+        spec?.validateReadRequest(key, clazz, isCollection = false, targetValue = parcelable)
+        return parcelable
     }
 
     /**
@@ -472,7 +549,12 @@ internal constructor(
      */
     public fun getBooleanArray(key: String): BooleanArray? {
         val booleanArrayValue = unsafeGetProperty(key, BooleanArray::class.java)
-        spec?.validateReadRequest(key, Boolean::class.java, isCollection = true)
+        spec?.validateReadRequest(
+            key,
+            Boolean::class.java,
+            isCollection = true,
+            targetValue = booleanArrayValue,
+        )
         return booleanArrayValue
     }
 
@@ -486,19 +568,27 @@ internal constructor(
      */
     public fun getFloatArray(key: String): FloatArray? {
         val doubleArrayValue = unsafeGetProperty(key, DoubleArray::class.java)
-        spec?.validateReadRequest(key, Float::class.java, isCollection = true)
-        return doubleArrayValue
-            ?.map { doubleValue ->
-                if (!isDoubleWithinFloatRange(doubleValue)) {
-                    // This should never happen because the setters forbid such value to exist in
-                    // the first place.
-                    throw IllegalStateException(
-                        "One of the value associated with $key is not within the range of Float"
-                    )
+        val floatArrayValue =
+            doubleArrayValue
+                ?.map { doubleValue ->
+                    if (!isDoubleWithinFloatRange(doubleValue)) {
+                        // This should never happen because the setters forbid such value to exist
+                        // in
+                        // the first place.
+                        throw IllegalStateException(
+                            "One of the value associated with $key is not within the range of Float"
+                        )
+                    }
+                    doubleValue.toFloat()
                 }
-                doubleValue.toFloat()
-            }
-            ?.toFloatArray()
+                ?.toFloatArray()
+        spec?.validateReadRequest(
+            key,
+            Float::class.java,
+            isCollection = true,
+            targetValue = floatArrayValue,
+        )
+        return floatArrayValue
     }
 
     /**
@@ -511,7 +601,12 @@ internal constructor(
      */
     public fun getDoubleArray(key: String): DoubleArray? {
         val doubleArrayValue = unsafeGetProperty(key, DoubleArray::class.java)
-        spec?.validateReadRequest(key, Double::class.java, isCollection = true)
+        spec?.validateReadRequest(
+            key,
+            Double::class.java,
+            isCollection = true,
+            targetValue = doubleArrayValue,
+        )
         return doubleArrayValue
     }
 
@@ -525,19 +620,27 @@ internal constructor(
      */
     public fun getIntArray(key: String): IntArray? {
         val longArrayValue = unsafeGetProperty(key, LongArray::class.java)
-        spec?.validateReadRequest(key, Int::class.java, isCollection = true)
-        return longArrayValue
-            ?.map { longValue ->
-                if (!isLongWithinLongRange(longValue)) {
-                    // This should never happen because the setters forbid such value to exist in
-                    // the first place.
-                    throw IllegalStateException(
-                        "One of the value associated with $key is not within the range of Int"
-                    )
+        val intArrayValue =
+            longArrayValue
+                ?.map { longValue ->
+                    if (!isLongWithinLongRange(longValue)) {
+                        // This should never happen because the setters forbid such value to exist
+                        // in
+                        // the first place.
+                        throw IllegalStateException(
+                            "One of the value associated with $key is not within the range of Int"
+                        )
+                    }
+                    longValue.toInt()
                 }
-                longValue.toInt()
-            }
-            ?.toIntArray()
+                ?.toIntArray()
+        spec?.validateReadRequest(
+            key,
+            Int::class.java,
+            isCollection = true,
+            targetValue = intArrayValue,
+        )
+        return intArrayValue
     }
 
     /**
@@ -550,7 +653,12 @@ internal constructor(
      */
     public fun getLongArray(key: String): LongArray? {
         val longArrayValue = unsafeGetProperty(key, LongArray::class.java)
-        spec?.validateReadRequest(key, Long::class.java, isCollection = true)
+        spec?.validateReadRequest(
+            key,
+            Long::class.java,
+            isCollection = true,
+            targetValue = longArrayValue,
+        )
         return longArrayValue
     }
 
@@ -563,13 +671,27 @@ internal constructor(
      *   according to the metadata specification.
      */
     public fun getByteArray(key: String): ByteArray? {
+        return getByteArrayOrNull(key)
+    }
+
+    // Equivalent to getByteArray. Provided for generated AppFunctionSerializableFactory to use
+    // without changing the access getter name based on type.
+    @RestrictTo(LIBRARY_GROUP)
+    public fun getByteArrayOrNull(key: String): ByteArray? {
         val byteArrayValue = unsafeGetProperty(key, Array<ByteArray>::class.java)
-        spec?.validateReadRequest(key, Byte::class.java, isCollection = true)
-        return if (byteArrayValue == null || byteArrayValue.isEmpty()) {
-            null
-        } else {
-            byteArrayValue[0]
-        }
+        val finalByteArrayValue =
+            if (byteArrayValue == null || byteArrayValue.isEmpty()) {
+                null
+            } else {
+                byteArrayValue[0]
+            }
+        spec?.validateReadRequest(
+            key,
+            Byte::class.java,
+            isCollection = true,
+            targetValue = finalByteArrayValue,
+        )
+        return finalByteArrayValue
     }
 
     /**
@@ -583,8 +705,14 @@ internal constructor(
     @Suppress("NullableCollection")
     public fun getStringList(key: String): List<String>? {
         val stringArrayValue = unsafeGetProperty(key, Array<String>::class.java)
-        spec?.validateReadRequest(key, String::class.java, isCollection = true)
-        return stringArrayValue?.asList()
+        val stringListValue = stringArrayValue?.asList()
+        spec?.validateReadRequest(
+            key,
+            String::class.java,
+            isCollection = true,
+            targetValue = stringListValue,
+        )
+        return stringListValue
     }
 
     /**
@@ -597,32 +725,64 @@ internal constructor(
      */
     @Suppress("NullableCollection")
     public fun getAppFunctionDataList(key: String): List<AppFunctionData>? {
-        val propertySpec = spec?.getPropertyObjectSpec(key)
         val dataArrayValue =
             unsafeGetProperty(key, Array<GenericDocument>::class.java)?.mapIndexed { index, element
                 ->
                 AppFunctionData(
-                    propertySpec,
+                    spec?.getPropertyObjectSpec(key, element.schemaType),
                     element,
                     extras.getBundle(extrasKey(key, index)) ?: Bundle.EMPTY,
                 )
             }
-        spec?.validateReadRequest(key, AppFunctionData::class.java, isCollection = true)
+        spec?.validateReadRequest(
+            key,
+            AppFunctionData::class.java,
+            isCollection = true,
+            targetValue = dataArrayValue,
+        )
         return dataArrayValue
     }
 
     /**
-     * Retrieves a [List] of [PendingIntent] value associated with the specified [key].
+     * Retrieves a [List] of [Parcelable] values of type [T] associated with the specified [key].
      *
-     * @param key The key to retrieve the value for.
-     * @return The value associated with the [key]. Or null if the associated value is not found.
-     * @throws IllegalArgumentException if the [key] is not allowed or the value type is incorrect
-     *   according to the metadata specification.
+     * For `Parcelable` types not defined by the Android platform (e.g., custom classes shared
+     * between agents and apps), forward and backward compatibility is **not guaranteed** by this
+     * library. Implementers are responsible for managing any compatibility and versioning concerns.
+     *
+     * @param key The key to retrieve the list for.
+     * @param clazz The [Class] of the [Parcelable] object to retrieve, of type [T].
+     * @return The [List] associated with the [key], or null if the value is not found or if any
+     *   list item is not of type [T].
      */
     @Suppress("NullableCollection")
-    public fun getPendingIntentList(key: String): List<PendingIntent>? {
-        spec?.validateReadRequest(key, PendingIntent::class.java, isCollection = true)
-        return extras.getParcelableArrayList(extrasKey(key), PendingIntent::class.java)
+    public fun <T : Parcelable> getParcelableList(key: String, clazz: Class<T>): List<T>? {
+        extras.classLoader = clazz.classLoader
+        val parcelableList = extras.getParcelableArrayList(extrasKey(key), clazz)
+        spec?.validateReadRequest(key, clazz, isCollection = true, targetValue = parcelableList)
+        if (parcelableList?.all { clazz.isInstance(it) } != true) {
+            // For some reason Bundle.getParcelableArrayList doesn't return null even when type is
+            // wrong.
+            return null
+        }
+        return parcelableList
+    }
+
+    /**
+     * Retrieves a [List] of [Parcelable] values of type [T] associated with the specified [key].
+     *
+     * For `Parcelable` types not defined by the Android platform (e.g., custom classes shared
+     * between agents and apps), forward and backward compatibility is **not guaranteed** by this
+     * library. Implementers are responsible for managing any compatibility and versioning concerns.
+     *
+     * @param T The type of the [Parcelable] object to retrieve.
+     * @param key The key to retrieve the list for.
+     * @return The [List] associated with the [key], or null if the value is not found or if any
+     *   list item is not of type [T].
+     */
+    @Suppress("NullableCollection")
+    public inline fun <reified T : Parcelable> getParcelableList(key: String): List<T>? {
+        return getParcelableList(key, T::class.java)
     }
 
     override fun toString(): String {
@@ -683,7 +843,7 @@ internal constructor(
      */
     @RestrictTo(LIBRARY_GROUP)
     public fun <T : Any> deserialize(qualifiedName: String): T {
-        return deserialize<T>(getSerializableClass(qualifiedName))
+        return deserialize<T>(getClass(qualifiedName))
     }
 
     private fun <T : Any> unsafeGetProperty(key: String, arrayClass: Class<T>): T? {
@@ -720,6 +880,43 @@ internal constructor(
             extras,
         )
     }
+
+    /**
+     * Creates a new [AppFunctionData] instance with a new [AppFunctionDataSpec] based on the
+     * provided [objectTypeMetadata] and [componentMetadata].
+     *
+     * This should only used by the AppFunction infrastructure when recreating the [AppFunctionData]
+     * from remote response. So that the [AppFunctionData] exposed in the public API surface will
+     * have the same read validation.
+     */
+    internal fun replaceSpecWith(
+        objectTypeMetadata: AppFunctionObjectTypeMetadata,
+        componentMetadata: AppFunctionComponentsMetadata,
+    ): AppFunctionData {
+        return AppFunctionData(
+            AppFunctionDataSpec.create(objectTypeMetadata, componentMetadata),
+            genericDocument,
+            extras,
+        )
+    }
+
+    /**
+     * Creates a new [AppFunctionData] instance with a new [AppFunctionDataSpec] based on the
+     * provided [parameterMetadata] and [componentMetadata].
+     *
+     * This should only used by the AppFunction infrastructure when recreating the [AppFunctionData]
+     * from remote response. So that the [AppFunctionData] exposed in the public API surface will
+     * have the same read validation.
+     */
+    internal fun replaceSpecWith(
+        parameterMetadata: List<AppFunctionParameterMetadata>,
+        componentMetadata: AppFunctionComponentsMetadata,
+    ): AppFunctionData =
+        AppFunctionData(
+            AppFunctionDataSpec.create(parameterMetadata, componentMetadata),
+            genericDocument,
+            extras,
+        )
 
     /** Visits all [AppFunctionUriGrant] under the [AppFunctionData]. */
     @WorkerThread
@@ -784,21 +981,20 @@ internal constructor(
      */
     public class Builder {
 
-        // TODO(b/399823985): Remove this once the constructor that takes qualifiedName has removed
+        // TODO(b/447302747): Remove this once the constructor that takes qualifiedName has removed
         private val qualifiedName: String
-        // TODO(b/399823985): Make it non-null once the constructor that takes qualifiedName has
+        // TODO(b/447302747): Make it non-null once the constructor that takes qualifiedName has
         // removed
         private val spec: AppFunctionDataSpec?
         private var genericDocumentBuilder: GenericDocument.Builder<*>
         private val extrasBuilder = Bundle()
 
-        // TODO(b/399823985): Clean up the usage without providing metadata.
+        // TODO(b/447302747): Clean up the usage without providing metadata.
         /**
          * @param id: Only set this when creating a document for the legacy schema. In the legacy
          *   schema, ID is stored as [GenericDocument.id]. In Jetpack, ID is just a normal property.
          */
-        @RestrictTo(LIBRARY_GROUP)
-        public constructor(qualifiedName: String, id: String = "") {
+        internal constructor(qualifiedName: String, id: String = "") {
             this.qualifiedName = qualifiedName
             spec = null
             genericDocumentBuilder =
@@ -808,9 +1004,8 @@ internal constructor(
         /**
          * Constructs a [Builder] to create input data for an AppFunction execution call.
          *
-         * This constructor is used when you need to write data that will be passed as input when
-         * executing an AppFunction. The [parameterMetadataList] defines the expected input
-         * parameters for that function.
+         * The caller can use this to construct the [AppFunctionData] for
+         * [ExecuteAppFunctionRequest.functionParameters].
          *
          * @param parameterMetadataList List of [AppFunctionParameterMetadata] defining the input
          *   parameters.
@@ -826,10 +1021,8 @@ internal constructor(
         /**
          * Constructs a [Builder] to create [AppFunctionData] representing an object.
          *
-         * This constructor is used when you need to create [AppFunctionData] that represents an
-         * object used as either function parameters or return values, as defined by an
-         * [AppFunctionObjectTypeMetadata]. This metadata specifies the properties and their types
-         * for the object.
+         * The caller can use this to construct the [AppFunctionData] that conforms with the
+         * provided [objectTypeMetadata].
          *
          * @param objectTypeMetadata [AppFunctionObjectTypeMetadata] defining the object structure.
          * @param componentMetadata [AppFunctionComponentsMetadata] that has the shared data types.
@@ -842,11 +1035,31 @@ internal constructor(
         ) : this(AppFunctionDataSpec.create(objectTypeMetadata, componentMetadata))
 
         /**
+         * Constructs a [Builder] to create [AppFunctionData] representing an all-of object.
+         *
+         * The caller can use this to construct the [AppFunctionData] that conforms with the
+         * provided [allOfTypeMetadata].
+         *
+         * @param allOfTypeMetadata [AppFunctionAllOfTypeMetadata] defining the object structure.
+         * @param componentMetadata [AppFunctionComponentsMetadata] that has the shared data types.
+         * @see [AppFunctionAllOfTypeMetadata]
+         * @see [AppFunctionComponentsMetadata]
+         */
+        public constructor(
+            allOfTypeMetadata: AppFunctionAllOfTypeMetadata,
+            componentMetadata: AppFunctionComponentsMetadata,
+        ) : this(
+            AppFunctionDataSpec.create(
+                allOfTypeMetadata.getPseudoObjectTypeMetadata(componentMetadata),
+                componentMetadata,
+            )
+        )
+
+        /**
          * Constructs a [Builder] to create [AppFunctionData] representing a response.
          *
-         * This constructor is used when you need to create [AppFunctionData] that represents a
-         * response, as defined by an [AppFunctionResponseMetadata]. This metadata specifies the
-         * properties and their types for the response.
+         * The caller can use this to construct the [AppFunctionData] for
+         * [ExecuteAppFunctionResponse.Success.returnValue].
          *
          * @param responseMetadata [AppFunctionResponseMetadata] defining the response structure.
          * @param componentMetadata [AppFunctionComponentsMetadata] that has the shared data types.
@@ -858,7 +1071,10 @@ internal constructor(
             componentMetadata: AppFunctionComponentsMetadata,
         ) : this(AppFunctionDataSpec.create(responseMetadata, componentMetadata))
 
-        private constructor(spec: AppFunctionDataSpec) {
+        // This constructor cannot be internal because the generated factory that does not live
+        // in the same module need to use it for data serialization/deserialization.
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public constructor(spec: AppFunctionDataSpec) {
             this.spec = spec
             this.qualifiedName = spec.objectQualifiedName
             genericDocumentBuilder =
@@ -874,6 +1090,11 @@ internal constructor(
             // we need to have a compat version of this API to set the ID.
             if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.TIRAMISU) >= 13) {
                 genericDocumentBuilder.setId(id)
+            } else {
+                Log.wtf(
+                    APP_FUNCTIONS_TAG,
+                    "setId method in GenericDocument isn't supported on the current device.",
+                )
             }
         }
 
@@ -885,8 +1106,14 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setBoolean(key: String, value: Boolean): Builder {
-            spec?.validateWriteRequest(key, Boolean::class.java, isCollection = false)
+            spec?.validateWriteRequest(
+                key,
+                Boolean::class.java,
+                isCollection = false,
+                targetValue = value,
+            )
             genericDocumentBuilder.setPropertyBoolean(key, value)
             return this
         }
@@ -899,8 +1126,14 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setFloat(key: String, value: Float): Builder {
-            spec?.validateWriteRequest(key, Float::class.java, isCollection = false)
+            spec?.validateWriteRequest(
+                key,
+                Float::class.java,
+                isCollection = false,
+                targetValue = value,
+            )
             genericDocumentBuilder.setPropertyDouble(key, value.toDouble())
             return this
         }
@@ -913,8 +1146,14 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setDouble(key: String, value: Double): Builder {
-            spec?.validateWriteRequest(key, Double::class.java, isCollection = false)
+            spec?.validateWriteRequest(
+                key,
+                Double::class.java,
+                isCollection = false,
+                targetValue = value,
+            )
             genericDocumentBuilder.setPropertyDouble(key, value)
             return this
         }
@@ -927,8 +1166,14 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setInt(key: String, value: Int): Builder {
-            spec?.validateWriteRequest(key, Int::class.java, isCollection = false)
+            spec?.validateWriteRequest(
+                key,
+                Int::class.java,
+                isCollection = false,
+                targetValue = value,
+            )
             genericDocumentBuilder.setPropertyLong(key, value.toLong())
             return this
         }
@@ -941,8 +1186,14 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setLong(key: String, value: Long): Builder {
-            spec?.validateWriteRequest(key, Long::class.java, isCollection = false)
+            spec?.validateWriteRequest(
+                key,
+                Long::class.java,
+                isCollection = false,
+                targetValue = value,
+            )
             genericDocumentBuilder.setPropertyLong(key, value)
             return this
         }
@@ -955,8 +1206,14 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setString(key: String, value: String): Builder {
-            spec?.validateWriteRequest(key, String::class.java, isCollection = false)
+            spec?.validateWriteRequest(
+                key,
+                String::class.java,
+                isCollection = false,
+                targetValue = value,
+            )
             genericDocumentBuilder.setPropertyString(key, value)
             if (key == LEGACY_ID_FIELD_KEY) {
                 setLegacyId(value)
@@ -972,9 +1229,15 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setAppFunctionData(key: String, value: AppFunctionData): Builder {
-            spec?.validateWriteRequest(key, AppFunctionData::class.java, isCollection = false)
-            spec?.getPropertyObjectSpec(key)?.validateDataSpecMatches(value)
+            spec?.validateWriteRequest(
+                key,
+                AppFunctionData::class.java,
+                isCollection = false,
+                targetValue = value,
+            )
+            spec?.getPropertyObjectSpec(key, value.qualifiedName)?.validateDataSpecMatches(value)
 
             genericDocumentBuilder.setPropertyDocument(key, value.genericDocument)
             if (!value.extras.isEmpty()) {
@@ -984,15 +1247,24 @@ internal constructor(
         }
 
         /**
-         * Sets a [PendingIntent] value for the given [key].
+         * Sets a [Parcelable] value of type [T] for the given [key].
          *
-         * @param key The key to set the [AppFunctionData] value for.
-         * @param value The [AppFunctionData] value to set.
-         * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
-         *   match the metadata specification associated with the [key].
+         * For `Parcelable` types not defined by the Android platform (e.g., custom classes shared
+         * between agents and apps), forward and backward compatibility is **not guaranteed** by
+         * this library. The sender and receiver of the `Parcelable` are responsible for managing
+         * any compatibility and versioning concerns.
+         *
+         * @param key The key to set the value for.
+         * @param value The [Parcelable] value of type [T] to set.
          */
-        public fun setPendingIntent(key: String, value: PendingIntent): Builder {
-            spec?.validateWriteRequest(key, PendingIntent::class.java, isCollection = false)
+        @CanIgnoreReturnValue
+        public fun <T : Parcelable> setParcelable(key: String, value: T): Builder {
+            spec?.validateWriteRequest(
+                key,
+                value.javaClass,
+                isCollection = false,
+                targetValue = value,
+            )
             extrasBuilder.putParcelable(extrasKey(key), value)
             return this
         }
@@ -1005,8 +1277,14 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setBooleanArray(key: String, value: BooleanArray): Builder {
-            spec?.validateWriteRequest(key, Boolean::class.java, isCollection = true)
+            spec?.validateWriteRequest(
+                key,
+                Boolean::class.java,
+                isCollection = true,
+                targetValue = value,
+            )
             genericDocumentBuilder.setPropertyBoolean(key, *value)
             return this
         }
@@ -1019,8 +1297,14 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setFloatArray(key: String, value: FloatArray): Builder {
-            spec?.validateWriteRequest(key, Float::class.java, isCollection = true)
+            spec?.validateWriteRequest(
+                key,
+                Float::class.java,
+                isCollection = true,
+                targetValue = value,
+            )
             genericDocumentBuilder.setPropertyDouble(
                 key,
                 *(value.asList().map { it.toDouble() }.toDoubleArray()),
@@ -1036,8 +1320,14 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setDoubleArray(key: String, value: DoubleArray): Builder {
-            spec?.validateWriteRequest(key, Double::class.java, isCollection = true)
+            spec?.validateWriteRequest(
+                key,
+                Double::class.java,
+                isCollection = true,
+                targetValue = value,
+            )
             genericDocumentBuilder.setPropertyDouble(key, *value)
             return this
         }
@@ -1050,8 +1340,14 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setIntArray(key: String, value: IntArray): Builder {
-            spec?.validateWriteRequest(key, Int::class.java, isCollection = true)
+            spec?.validateWriteRequest(
+                key,
+                Int::class.java,
+                isCollection = true,
+                targetValue = value,
+            )
             genericDocumentBuilder.setPropertyLong(
                 key,
                 *(value.asList().map { it.toLong() }.toLongArray()),
@@ -1067,8 +1363,14 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setLongArray(key: String, value: LongArray): Builder {
-            spec?.validateWriteRequest(key, Long::class.java, isCollection = true)
+            spec?.validateWriteRequest(
+                key,
+                Long::class.java,
+                isCollection = true,
+                targetValue = value,
+            )
             genericDocumentBuilder.setPropertyLong(key, *value)
             return this
         }
@@ -1081,8 +1383,14 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setByteArray(key: String, value: ByteArray): Builder {
-            spec?.validateWriteRequest(key, Byte::class.java, isCollection = true)
+            spec?.validateWriteRequest(
+                key,
+                Byte::class.java,
+                isCollection = true,
+                targetValue = value,
+            )
             genericDocumentBuilder.setPropertyBytes(key, value)
             return this
         }
@@ -1095,8 +1403,15 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setStringList(key: String, value: List<String>): Builder {
-            spec?.validateWriteRequest(key, String()::class.java, isCollection = true)
+            spec?.validateWriteRequest(
+                key,
+                String()::class
+                    .java, // Note: String()::class.java is equivalent to String::class.java
+                isCollection = true,
+                targetValue = value,
+            )
             genericDocumentBuilder.setPropertyString(key, *value.toTypedArray())
             return this
         }
@@ -1109,14 +1424,22 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setAppFunctionDataList(key: String, value: List<AppFunctionData>): Builder {
-            spec?.validateWriteRequest(key, AppFunctionData::class.java, isCollection = true)
+            spec?.validateWriteRequest(
+                key,
+                AppFunctionData::class.java,
+                isCollection = true,
+                targetValue = value,
+            )
             genericDocumentBuilder.setPropertyDocument(
                 key,
                 *value.map { it.genericDocument }.toTypedArray(),
             )
             value.forEachIndexed { index, element ->
-                spec?.getPropertyObjectSpec(key)?.validateDataSpecMatches(element)
+                spec
+                    ?.getPropertyObjectSpec(key, element.qualifiedName)
+                    ?.validateDataSpecMatches(element)
                 if (!element.extras.isEmpty()) {
                     extrasBuilder.putBundle(extrasKey(key, index), element.extras)
                 }
@@ -1125,23 +1448,66 @@ internal constructor(
         }
 
         /**
-         * Sets a [List] of [PendingIntent] value for the given [key].
+         * Sets a [List] of [Parcelable] values of type [T] for the given [key].
          *
-         * @param key The key to set the [List] of [AppFunctionData] value for.
-         * @param value The [List] of [AppFunctionData] value to set.
-         * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
-         *   match the metadata specification associated with the [key].
+         * For `Parcelable` types not defined by the Android platform (e.g., custom classes shared
+         * between agents and apps), forward and backward compatibility is **not guaranteed** by
+         * this framework. The sender and receiver of the `Parcelable` are responsible for managing
+         * any compatibility and versioning concerns.
+         *
+         * @param key The key to set the list for.
+         * @param value The [List] of [Parcelable] values of type [T] to set.
          */
-        public fun setPendingIntentList(key: String, value: List<PendingIntent>): Builder {
-            spec?.validateWriteRequest(key, PendingIntent::class.java, isCollection = true)
-            extrasBuilder.putParcelableArrayList(extrasKey(key), ArrayList<PendingIntent>(value))
+        @CanIgnoreReturnValue
+        public inline fun <reified T : Parcelable> setParcelableList(
+            key: String,
+            value: List<T>,
+        ): Builder {
+            return setParcelableList(key, value, T::class.java)
+        }
+
+        /**
+         * Sets a [List] of [Parcelable] values of type [T] for the given [key].
+         *
+         * For `Parcelable` types not defined by the Android platform (e.g., custom classes shared
+         * between agents and apps), forward and backward compatibility is **not guaranteed** by
+         * this framework. The sender and receiver of the `Parcelable` are responsible for managing
+         * any compatibility and versioning concerns.
+         *
+         * @param key The key to set the list for.
+         * @param value The [List] of [Parcelable] values of type [T] to set.
+         * @param clazz The [Class] of the [Parcelable] list to set, of type [T].
+         */
+        @CanIgnoreReturnValue
+        public fun <T : Parcelable> setParcelableList(
+            key: String,
+            value: List<T>,
+            clazz: Class<T>,
+        ): Builder {
+            spec?.validateWriteRequest(key, clazz, isCollection = true, targetValue = value)
+            extrasBuilder.putParcelableArrayList(extrasKey(key), ArrayList(value))
             return this
         }
 
-        /** Builds [AppFunctionData] */
+        /**
+         * Builds [AppFunctionData]
+         *
+         * @throws IllegalArgumentException if any required property, as defined by the metadata
+         *   specification, is missing.
+         */
         public fun build(): AppFunctionData {
-            // TODO(b/399823985): validate required fields.
-            return AppFunctionData(spec, genericDocumentBuilder.build(), extrasBuilder)
+            val builtGenericDocument = genericDocumentBuilder.build()
+            val appFunctionData = AppFunctionData(spec, builtGenericDocument, extrasBuilder)
+            spec?.getAllPropertyKeys()?.forEach { propertyKey ->
+                if (spec.isRequired(propertyKey)) {
+                    if (!appFunctionData.containsKey(propertyKey)) {
+                        throw IllegalArgumentException(
+                            "Missing required property: '$propertyKey' for object '$qualifiedName'"
+                        )
+                    }
+                }
+            }
+            return appFunctionData
         }
     }
 
@@ -1158,31 +1524,23 @@ internal constructor(
 
         private fun extrasKey(key: String, index: Int) = "property/$key[$index]"
 
-        // TODO(b/399823985): Codegen the mapping table to prevent using reflection
-        private fun <T : Any> getSerializableClass(qualifiedName: String): Class<T> {
-            return try {
-                @Suppress("UNCHECKED_CAST")
-                Class.forName(qualifiedName) as Class<T>
-            } catch (e: Exception) {
-                Log.d(APP_FUNCTIONS_TAG, "Unable to find serializable class $qualifiedName", e)
-                throw IllegalArgumentException("Unable to find serializable class $qualifiedName")
-            }
-        }
-
-        // TODO(b/399823985): Codegen the mapping table to prevent using reflection
         private fun <T : Any> getSerializableFactory(
             serializableClass: Class<T>
         ): AppFunctionSerializableFactory<T> {
-            val packageName = getPackageName(serializableClass)
+            val builtInFactory = BuiltInSerializableProxies.getFactory(serializableClass)
+            if (builtInFactory != null) {
+                return builtInFactory
+            }
+
             // Using `serializableClass.name` and not `serializableClass.simpleName` to be able to
             // reference nested classes (e.g. OuterClass$InnerClass), to avoid ambiguity between
             // inner classes of the same name.
             val serializableSimpleName = serializableClass.name.substringAfterLast('.')
-
             val factorySimpleName = "${'$'}${serializableSimpleName}Factory"
-            val factoryClassName = "${packageName}.${factorySimpleName}"
+            val packageName = serializableClass.packageName
 
             return try {
+                val factoryClassName = "$packageName.$factorySimpleName"
                 val factoryClass = Class.forName(factoryClassName)
                 @Suppress("UNCHECKED_CAST")
                 factoryClass.getDeclaredConstructor().newInstance()
@@ -1199,14 +1557,107 @@ internal constructor(
             }
         }
 
-        private fun getPackageName(serializableClass: Class<*>): String {
-            val setOfProxyTypes = setOf(LocalDateTime::class.simpleName, Uri::class.simpleName)
-            val serializableProxyPackageName = "androidx.appfunctions.internal.serializableproxies"
-            if (setOfProxyTypes.contains(serializableClass.simpleName)) {
-                return serializableProxyPackageName
-            }
+        /**
+         * Serialize [serializable] to [AppFunctionData] representing an AllOf type object.
+         *
+         * The caller can use this to construct the [AppFunctionData] that conforms with the
+         * provided [metadata].
+         *
+         * @param metadata [AppFunctionAllOfTypeMetadata] defining the AllOf type structure.
+         * @param componentMetadata [AppFunctionComponentsMetadata] that has the shared data types.
+         * @param serializable The serializable that is annotated with [AppFunctionSerializable].
+         * @throws IllegalArgumentException if failed to serialize [serializable].
+         * @see [AppFunctionAllOfTypeMetadata]
+         * @see [AppFunctionComponentsMetadata]
+         */
+        @JvmStatic
+        public inline fun <reified T : Any> serialize(
+            metadata: AppFunctionAllOfTypeMetadata,
+            componentMetadata: AppFunctionComponentsMetadata,
+            serializable: T,
+        ): AppFunctionData {
+            return serialize(metadata, componentMetadata, serializable, T::class.java)
+        }
 
-            return serializableClass.packageName
+        /**
+         * Serialize [serializable] to [AppFunctionData] representing an AllOf type object.
+         *
+         * The caller can use this to construct the [AppFunctionData] that conforms with the
+         * provided [metadata].
+         *
+         * @param metadata [AppFunctionAllOfTypeMetadata] defining the AllOf type structure.
+         * @param componentMetadata [AppFunctionComponentsMetadata] that has the shared data types.
+         * @param serializable The serializable that is annotated with [AppFunctionSerializable].
+         * @param serializableClass The class of [serializable].
+         * @throws IllegalArgumentException if failed to serialize [serializable].
+         * @see [AppFunctionAllOfTypeMetadata]
+         * @see [AppFunctionComponentsMetadata]
+         */
+        @JvmStatic
+        public fun <T : Any> serialize(
+            metadata: AppFunctionAllOfTypeMetadata,
+            componentMetadata: AppFunctionComponentsMetadata,
+            serializable: T,
+            serializableClass: Class<T>,
+        ): AppFunctionData {
+            return serialize(
+                AppFunctionDataSpec.create(
+                    metadata.getPseudoObjectTypeMetadata(componentMetadata),
+                    componentMetadata,
+                ),
+                serializable,
+                serializableClass,
+            )
+        }
+
+        /**
+         * Serialize [serializable] to [AppFunctionData] representing an object.
+         *
+         * The caller can use this to construct the [AppFunctionData] that conforms with the
+         * provided [metadata].
+         *
+         * @param metadata [AppFunctionObjectTypeMetadata] defining the object structure.
+         * @param componentMetadata [AppFunctionComponentsMetadata] that has the shared data types.
+         * @param serializable The serializable that is annotated with [AppFunctionSerializable].
+         * @throws IllegalArgumentException if failed to serialize [serializable].
+         * @see [AppFunctionObjectTypeMetadata]
+         * @see [AppFunctionComponentsMetadata]
+         */
+        @JvmStatic
+        public inline fun <reified T : Any> serialize(
+            metadata: AppFunctionObjectTypeMetadata,
+            componentMetadata: AppFunctionComponentsMetadata,
+            serializable: T,
+        ): AppFunctionData {
+            return serialize(metadata, componentMetadata, serializable, T::class.java)
+        }
+
+        /**
+         * Serialize [serializable] to [AppFunctionData] representing an object.
+         *
+         * The caller can use this to construct the [AppFunctionData] that conforms with the
+         * provided [metadata].
+         *
+         * @param metadata [AppFunctionObjectTypeMetadata] defining the object structure.
+         * @param componentMetadata [AppFunctionComponentsMetadata] that has the shared data types.
+         * @param serializable The serializable that is annotated with [AppFunctionSerializable].
+         * @param serializableClass The class of [serializable].
+         * @throws IllegalArgumentException if failed to serialize [serializable].
+         * @see [AppFunctionObjectTypeMetadata]
+         * @see [AppFunctionComponentsMetadata]
+         */
+        @JvmStatic
+        public fun <T : Any> serialize(
+            metadata: AppFunctionObjectTypeMetadata,
+            componentMetadata: AppFunctionComponentsMetadata,
+            serializable: T,
+            serializableClass: Class<T>,
+        ): AppFunctionData {
+            return serialize(
+                AppFunctionDataSpec.create(metadata, componentMetadata),
+                serializable,
+                serializableClass,
+            )
         }
 
         /**
@@ -1219,14 +1670,23 @@ internal constructor(
          *   [AppFunctionData].
          * @see [AppFunctionSerializable]
          */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @JvmStatic
         public fun <T : Any> serialize(
             serializable: T,
             serializableClass: Class<T>,
         ): AppFunctionData {
+            return serialize(null, serializable, serializableClass)
+        }
+
+        internal fun <T : Any> serialize(
+            spec: AppFunctionDataSpec?,
+            serializable: T,
+            serializableClass: Class<T>,
+        ): AppFunctionData {
             return try {
                 val factory = getSerializableFactory(serializableClass)
-                factory.toAppFunctionData(serializable)
+                factory.toAppFunctionData(spec, serializable)
             } catch (e: Exception) {
                 Log.d(
                     APP_FUNCTIONS_TAG,
@@ -1237,21 +1697,6 @@ internal constructor(
                     "Unable to serialize $serializableClass. Is the class annotated with @AppFunctionSerializable?"
                 )
             }
-        }
-
-        /**
-         * Serializes [serializable] to an [AppFunctionData].
-         *
-         * @param serializable The instance of [qualifiedName].
-         * @param qualifiedName The qualified name of the class [serializable].
-         * @return [AppFunctionData] with properties from [serializable].
-         * @throws IllegalArgumentException If unable to serialize [serializable] to an
-         *   [AppFunctionData].
-         * @see [AppFunctionSerializable]
-         */
-        @RestrictTo(LIBRARY_GROUP)
-        public fun <T : Any> serialize(serializable: T, qualifiedName: String): AppFunctionData {
-            return serialize(serializable, getSerializableClass<T>(qualifiedName))
         }
 
         /** Represents an empty [AppFunctionData]. */

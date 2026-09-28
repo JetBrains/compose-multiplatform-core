@@ -48,7 +48,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusDirection.Companion.Left
@@ -101,10 +100,9 @@ import kotlinx.coroutines.yield
  * @param carouselIndicator indicator showing the position of the current item among all items.
  * @param content defines the items for a given index.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @ExperimentalTvMaterial3Api
 @Composable
-fun Carousel(
+public fun Carousel(
     itemCount: Int,
     modifier: Modifier = Modifier,
     carouselState: CarouselState = rememberCarouselState(),
@@ -246,7 +244,7 @@ private fun AutoScrollSideEffect(
     onAutoScrollChange(doAutoScroll)
 }
 
-@OptIn(ExperimentalTvMaterial3Api::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalTvMaterial3Api::class)
 private fun Modifier.handleKeyEvents(
     carouselState: CarouselState,
     outerBoxFocusRequester: FocusRequester,
@@ -254,73 +252,75 @@ private fun Modifier.handleKeyEvents(
     itemCount: Int,
     isLtr: Boolean,
     currentCarouselBoxFocusState: () -> FocusState?,
-): Modifier =
-    onKeyEvent {
-            fun showPreviousItem() {
-                carouselState.moveToPreviousItem(itemCount)
-                outerBoxFocusRequester.requestFocus()
-            }
+): Modifier = onKeyEvent {
+    fun showPreviousItem() {
+        carouselState.moveToPreviousItem(itemCount)
+        outerBoxFocusRequester.requestFocus()
+    }
 
-            fun showNextItem() {
-                carouselState.moveToNextItem(itemCount)
-                outerBoxFocusRequester.requestFocus()
-            }
+    fun showNextItem() {
+        carouselState.moveToNextItem(itemCount)
+        outerBoxFocusRequester.requestFocus()
+    }
 
-            fun updateItemBasedOnLayout(direction: FocusDirection, isLtr: Boolean) {
-                when (direction) {
-                    Left -> if (isLtr) showPreviousItem() else showNextItem()
-                    Right -> if (isLtr) showNextItem() else showPreviousItem()
-                }
-            }
+    fun updateItemBasedOnLayout(direction: FocusDirection, isLtr: Boolean) {
+        when (direction) {
+            Left -> if (isLtr) showPreviousItem() else showNextItem()
+            Right -> if (isLtr) showNextItem() else showPreviousItem()
+        }
+    }
 
-            fun handledHorizontalFocusMove(direction: FocusDirection): Boolean =
-                when {
-                    it.nativeKeyEvent.repeatCount > 0 ->
-                        // Ignore long press key event for manual scrolling
-                        KeyEventPropagation.StopPropagation
-                    currentCarouselBoxFocusState()?.isFocused == true ->
-                        // if carousel box has focus, do not trigger focus search as it can cause
-                        // focus to
-                        // move out of Carousel unintentionally.
-                        if (shouldFocusExitCarousel(direction, carouselState, itemCount, isLtr)) {
-                            KeyEventPropagation.ContinuePropagation
-                        } else {
-                            updateItemBasedOnLayout(direction, isLtr)
-                            KeyEventPropagation.StopPropagation
-                        }
-                    !focusManager.moveFocus(direction) &&
-                        currentCarouselBoxFocusState()?.hasFocus == true -> {
-                        // if focus search was unsuccessful, interpret as input for slide change
-                        updateItemBasedOnLayout(direction, isLtr)
-                        KeyEventPropagation.StopPropagation
-                    }
-                    else -> KeyEventPropagation.StopPropagation
-                }
-
-            when {
-                // Ignore KeyUp action type
-                it.type == KeyUp -> KeyEventPropagation.ContinuePropagation
-                it.key == Key.Back -> {
-                    focusManager.moveFocus(FocusDirection.Exit)
+    fun handledHorizontalFocusMove(direction: FocusDirection): Boolean =
+        when {
+            it.nativeKeyEvent.repeatCount > 0 ->
+                // Ignore long press key event for manual scrolling
+                KeyEventPropagation.StopPropagation
+            currentCarouselBoxFocusState()?.isFocused == true ->
+                // if carousel box has focus, do not trigger focus search as it can cause
+                // focus to
+                // move out of Carousel unintentionally.
+                if (shouldFocusExitCarousel(direction, carouselState, itemCount, isLtr)) {
                     KeyEventPropagation.ContinuePropagation
+                } else {
+                    updateItemBasedOnLayout(direction, isLtr)
+                    KeyEventPropagation.StopPropagation
                 }
-                it.key == Key.DirectionLeft -> handledHorizontalFocusMove(Left)
-                it.key == Key.DirectionRight -> handledHorizontalFocusMove(Right)
-                else -> KeyEventPropagation.ContinuePropagation
+            !focusManager.moveFocus(direction) &&
+                currentCarouselBoxFocusState()?.hasFocus == true -> {
+                // if focus search was unsuccessful, interpret as input for slide change
+                updateItemBasedOnLayout(direction, isLtr)
+                KeyEventPropagation.StopPropagation
+            }
+            else -> KeyEventPropagation.StopPropagation
+        }
+
+    when {
+        // Ignore KeyUp action type
+        it.type == KeyUp -> KeyEventPropagation.ContinuePropagation
+        it.key == Key.Back -> {
+            focusManager.moveFocus(FocusDirection.Exit)
+            KeyEventPropagation.ContinuePropagation
+        }
+        it.key == Key.DirectionLeft -> handledHorizontalFocusMove(Left)
+        it.key == Key.DirectionRight -> handledHorizontalFocusMove(Right)
+        else -> KeyEventPropagation.ContinuePropagation
+    }
+}
+    .focusProperties {
+        // allow exit along horizontal axis only for first and last slide.
+        // Suppressed the deprecation because onExit is not available in compose.ui 1.7.x
+        onExit = {
+            when {
+                shouldFocusExitCarousel(
+                    requestedFocusDirection,
+                    carouselState,
+                    itemCount,
+                    isLtr,
+                ) -> FocusRequester.Default
+                else -> FocusRequester.Cancel
             }
         }
-        .focusProperties {
-            // allow exit along horizontal axis only for first and last slide.
-            // Suppressed the deprecation because onExit is not available in compose.ui 1.7.x
-            @Suppress("DEPRECATION")
-            exit = {
-                when {
-                    shouldFocusExitCarousel(it, carouselState, itemCount, isLtr) ->
-                        FocusRequester.Default
-                    else -> FocusRequester.Cancel
-                }
-            }
-        }
+    }
 
 @OptIn(ExperimentalTvMaterial3Api::class)
 private fun shouldFocusExitCarousel(
@@ -361,7 +361,7 @@ private fun CarouselStateUpdater(carouselState: CarouselState, itemCount: Int) {
  */
 @ExperimentalTvMaterial3Api
 @Composable
-fun rememberCarouselState(initialActiveItemIndex: Int = 0): CarouselState {
+public fun rememberCarouselState(initialActiveItemIndex: Int = 0): CarouselState {
     return rememberSaveable(saver = CarouselState.Saver) { CarouselState(initialActiveItemIndex) }
 }
 
@@ -376,11 +376,11 @@ fun rememberCarouselState(initialActiveItemIndex: Int = 0): CarouselState {
  */
 @Stable
 @ExperimentalTvMaterial3Api
-class CarouselState(initialActiveItemIndex: Int = 0) {
+public class CarouselState(initialActiveItemIndex: Int = 0) {
     internal var activePauseHandlesCount by mutableIntStateOf(0)
 
     /** The index of the item that is currently displayed by the carousel */
-    var activeItemIndex by mutableIntStateOf(initialActiveItemIndex)
+    public var activeItemIndex: Int by mutableIntStateOf(initialActiveItemIndex)
         internal set
 
     /**
@@ -395,7 +395,7 @@ class CarouselState(initialActiveItemIndex: Int = 0) {
      * is not the current item that is visible. Returns a [ScrollPauseHandle] that can be used to
      * resume
      */
-    fun pauseAutoScroll(itemIndex: Int): ScrollPauseHandle {
+    public fun pauseAutoScroll(itemIndex: Int): ScrollPauseHandle {
         if (this.activeItemIndex != itemIndex) {
             return NoOpScrollPauseHandle
         }
@@ -426,18 +426,18 @@ class CarouselState(initialActiveItemIndex: Int = 0) {
         activeItemIndex = floorMod(activeItemIndex + 1, itemCount)
     }
 
-    companion object {
+    public companion object {
         /** The default [Saver] implementation for [CarouselState]. */
-        val Saver: Saver<CarouselState, *> =
+        public val Saver: Saver<CarouselState, *> =
             Saver(save = { it.activeItemIndex }, restore = { CarouselState(it) })
     }
 }
 
 @ExperimentalTvMaterial3Api
 /** Handle returned by [CarouselState.pauseAutoScroll] that can be used to resume auto-scroll. */
-sealed interface ScrollPauseHandle {
+public sealed interface ScrollPauseHandle {
     /** Resumes the auto-scroll behaviour if there are no other active [ScrollPauseHandle]s. */
-    fun resumeAutoScroll()
+    public fun resumeAutoScroll()
 }
 
 @OptIn(ExperimentalTvMaterial3Api::class)
@@ -464,12 +464,12 @@ internal class ScrollPauseHandleImpl(private val carouselState: CarouselState) :
 }
 
 @ExperimentalTvMaterial3Api
-object CarouselDefaults {
+public object CarouselDefaults {
     /** Default time for which the item is visible to the user. */
-    const val TimeToDisplayItemMillis: Long = 5000
+    public const val TimeToDisplayItemMillis: Long = 5000
 
     /** Transition applied when bringing it into view and removing it from the view */
-    val contentTransform: ContentTransform
+    public val contentTransform: ContentTransform
         @Composable
         get() = fadeIn(animationSpec = tween(100)).togetherWith(fadeOut(animationSpec = tween(100)))
 
@@ -483,7 +483,7 @@ object CarouselDefaults {
      * @param indicator indicator dot representing each item in the carousel
      */
     @Composable
-    fun IndicatorRow(
+    public fun IndicatorRow(
         itemCount: Int,
         activeItemIndex: Int,
         modifier: Modifier = Modifier,

@@ -19,7 +19,6 @@ package androidx.credentials
 import android.content.Context
 import android.os.CancellationSignal
 import androidx.annotation.RequiresApi
-import androidx.annotation.RestrictTo
 import androidx.credentials.exceptions.ClearCredentialException
 import androidx.credentials.exceptions.CreateCredentialException
 import androidx.credentials.exceptions.GetCredentialException
@@ -48,7 +47,7 @@ import java.util.concurrent.Executor
  * that will route all requests to the android framework. Providers will need to register directly
  * with the framework to provide credentials.
  */
-interface CredentialProvider {
+public interface CredentialProvider {
     /**
      * Invoked on a request to get a credential.
      *
@@ -58,7 +57,7 @@ interface CredentialProvider {
      * @param executor the callback will take place on this executor
      * @param callback the callback invoked when the request succeeds or fails
      */
-    fun onGetCredential(
+    public fun onGetCredential(
         context: Context,
         request: GetCredentialRequest,
         cancellationSignal: CancellationSignal?,
@@ -75,7 +74,7 @@ interface CredentialProvider {
      * @param executor the callback will take place on this executor
      * @param callback the callback invoked when the request succeeds or fails
      */
-    fun onCreateCredential(
+    public fun onCreateCredential(
         context: Context,
         request: CreateCredentialRequest,
         cancellationSignal: CancellationSignal?,
@@ -84,7 +83,7 @@ interface CredentialProvider {
     )
 
     /** Determines whether the provider is available on this device, or not. */
-    fun isAvailableOnDevice(): Boolean
+    public fun isAvailableOnDevice(): Boolean
 
     /**
      * Invoked on a request to clear a credential.
@@ -94,7 +93,7 @@ interface CredentialProvider {
      * @param executor the callback will take place on this executor
      * @param callback the callback invoked when the request succeeds or fails
      */
-    fun onClearCredential(
+    public fun onClearCredential(
         request: ClearCredentialStateRequest,
         cancellationSignal: CancellationSignal?,
         executor: Executor,
@@ -110,7 +109,7 @@ interface CredentialProvider {
      * @param callback the callback invoked when the request succeeds or fails
      */
     @RequiresApi(34)
-    fun onPrepareCredential(
+    public fun onPrepareCredential(
         request: GetCredentialRequest,
         cancellationSignal: CancellationSignal?,
         executor: Executor,
@@ -127,7 +126,7 @@ interface CredentialProvider {
      * @param callback the callback invoked when the request succeeds or fails
      */
     @RequiresApi(34)
-    fun onGetCredential(
+    public fun onGetCredential(
         context: Context,
         pendingGetCredentialHandle: PrepareGetCredentialResponse.PendingGetCredentialHandle,
         cancellationSignal: CancellationSignal?,
@@ -142,11 +141,13 @@ interface CredentialProvider {
      * @param executor the callback will take place on this executor
      * @param callback the callback invoked when the request succeeds or fails
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
-    fun onSignalCredentialState(
+    public fun onSignalCredentialState(
         request: SignalCredentialStateRequest,
         executor: Executor,
         callback:
-            CredentialManagerCallback<SignalCredentialStateResponse, SignalCredentialStateException>,
+            CredentialManagerCallback<
+                SignalCredentialStateResponse,
+                SignalCredentialStateException,
+            >,
     ) {}
 }

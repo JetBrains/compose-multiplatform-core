@@ -21,12 +21,12 @@ import android.content.res.TypedArray;
 import androidx.car.app.CarContext;
 import androidx.car.app.CarToast;
 import androidx.car.app.Screen;
-import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.annotations.RequiresCarApi;
 import androidx.car.app.model.Action;
 import androidx.car.app.model.ActionStrip;
 import androidx.car.app.model.CarColor;
 import androidx.car.app.model.CarIcon;
+import androidx.car.app.model.CarIconStyle;
 import androidx.car.app.model.Header;
 import androidx.car.app.model.MessageTemplate;
 import androidx.car.app.model.Template;
@@ -47,15 +47,17 @@ public class MapWithMessageTemplateDemoScreen extends Screen {
                     mTypedArray.getColor(R.styleable.ShowcaseTheme_markerIconTintColor, -1),
                     mTypedArray.getColor(R.styleable.ShowcaseTheme_markerIconTintColorDark, -1));
     private final RoutingDemoModelFactory mRoutingDemoModelFactory;
+
     public MapWithMessageTemplateDemoScreen(@NonNull CarContext carContext) {
         super(carContext);
         mRoutingDemoModelFactory = new RoutingDemoModelFactory(carContext);
     }
 
-    @ExperimentalCarApi
     @RequiresCarApi(7)
     @Override
     public @NonNull Template onGetTemplate() {
+        CarIconStyle carIconStyle =
+                new CarIconStyle.Builder(CarIconStyle.TINTED).setTint(mIconTintColor).build();
 
         MessageTemplate messageTemplate = new MessageTemplate.Builder("Continue to Google "
                 + "Kirkland Urban WA 98101?")
@@ -65,8 +67,8 @@ public class MapWithMessageTemplateDemoScreen extends Screen {
                 .setIcon(new CarIcon.Builder(
                         IconCompat.createWithResource(
                                 getCarContext(),
-                                R.drawable.ic_commute_24px))
-                        .setTint(mIconTintColor)
+                                R.drawable.ic_commute_24px),
+                        carIconStyle)
                         .build())
                 .addAction(new Action.Builder()
                         .setOnClickListener(() -> {

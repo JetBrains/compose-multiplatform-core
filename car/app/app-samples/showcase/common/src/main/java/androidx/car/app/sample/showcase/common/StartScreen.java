@@ -98,7 +98,7 @@ public final class StartScreen extends Screen {
     public @NonNull Row createRowForScreen(int titleId, @NonNull CarIcon image,
             @NonNull Screen screen) {
         return new Row.Builder()
-                .setImage(image, Row.IMAGE_TYPE_ICON)
+                .setImage(image, Row.IMAGE_TYPE_SMALL)
                 .setTitle(getCarContext().getString(titleId))
                 .setOnClickListener(() -> getScreenManager().push(screen))
                 .setBrowsable(true)
@@ -109,11 +109,7 @@ public final class StartScreen extends Screen {
     * Given an imageId (as a drawable resource), this function outputs an CarIcon
     */
     public @NonNull CarIcon createCarIconForImage(int imageId) {
-        return new CarIcon.Builder(
-                IconCompat.createWithResource(
-                        getCarContext(),
-                        imageId))
-                .build();
+        return CarIcon.createTintedIcon(IconCompat.createWithResource(getCarContext(), imageId));
     }
 }
 

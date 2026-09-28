@@ -20,6 +20,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.appfunctions.AppFunctionData
+import androidx.appfunctions.AppFunctionDataSpec
 import androidx.appfunctions.`internal`.AppFunctionSerializableFactory
 import java.time.Instant
 
@@ -29,22 +30,26 @@ import java.time.Instant
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 public class `$InstantFactory` : AppFunctionSerializableFactory<Instant> {
     override fun fromAppFunctionData(appFunctionData: AppFunctionData): Instant {
-
-        val epochSecond = checkNotNull(appFunctionData.getLongOrNull("epochSecond"))
-        val nanoAdjustment = checkNotNull(appFunctionData.getIntOrNull("nanoAdjustment"))
+        val appFunctionDataWithSpec =
+            getAppFunctionDataWithSpec(
+                appFunctionData = appFunctionData,
+                qualifiedName = "java.time.Instant",
+            )
+        val epochSecond = checkNotNull(appFunctionDataWithSpec.getLongOrNull("epochSecond"))
+        val nanoAdjustment = checkNotNull(appFunctionDataWithSpec.getIntOrNull("nanoAdjustment"))
 
         val resultAppFunctionInstant = AppFunctionInstant(epochSecond, nanoAdjustment)
         return resultAppFunctionInstant.toInstant()
     }
 
-    override fun toAppFunctionData(appFunctionSerializable: Instant): AppFunctionData {
+    override fun toAppFunctionData(
+        spec: AppFunctionDataSpec?,
+        appFunctionSerializable: Instant,
+    ): AppFunctionData {
         val appFunctionInstant_appFunctionSerializable =
             AppFunctionInstant.fromInstant(appFunctionSerializable)
 
-        val builder =
-            AppFunctionData.Builder(
-                "androidx.appfunctions.internal.serializableproxies.AppFunctionInstant"
-            )
+        val builder = getAppFunctionDataBuilder(spec, "java.time.Instant")
         val epochSecond = appFunctionInstant_appFunctionSerializable.epochSecond
         builder.setLong("epochSecond", epochSecond)
         val nanoAdjustment = appFunctionInstant_appFunctionSerializable.nanoAdjustment

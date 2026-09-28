@@ -23,7 +23,6 @@ import static org.junit.Assert.assertTrue;
 import android.app.Instrumentation;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.KeyEvent;
@@ -90,14 +89,8 @@ public class BrowseSupportFragmentTest {
         PollingCheck.waitFor(WAIT_TRANSIITON_TIMEOUT, new PollingCheck.PollingCheckCondition() {
             @Override
             public boolean canProceed() {
-                if (Build.VERSION.SDK_INT >= 21) {
-                    return mActivity.getBrowseTestSupportFragment() != null
-                            && mActivity.getBrowseTestSupportFragment().mEntranceTransitionEnded;
-                } else {
-                    // when entrance transition not supported, wait main fragment loaded.
-                    return mActivity.getBrowseTestSupportFragment() != null
-                            && mActivity.getBrowseTestSupportFragment().getMainFragment() != null;
-                }
+                return mActivity.getBrowseTestSupportFragment() != null
+                        && mActivity.getBrowseTestSupportFragment().mEntranceTransitionEnded;
             }
         });
     }
@@ -129,6 +122,7 @@ public class BrowseSupportFragmentTest {
         });
     }
 
+    @SdkSuppress(maxSdkVersion = 35) // b/460508283
     @Test
     public void testTouchMode() throws Throwable {
         Intent intent = new Intent();
@@ -372,7 +366,6 @@ public class BrowseSupportFragmentTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP) // API 17 retains local Variable
     @Test
     public void viewLeakTest() throws Throwable {
         Intent intent = new Intent();

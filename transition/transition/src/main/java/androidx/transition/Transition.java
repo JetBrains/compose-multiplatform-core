@@ -46,6 +46,7 @@ import androidx.annotation.IdRes;
 import androidx.annotation.IntDef;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+import androidx.annotation.VisibleForTesting;
 import androidx.collection.ArrayMap;
 import androidx.collection.LongSparseArray;
 import androidx.core.content.res.TypedArrayUtils;
@@ -245,6 +246,10 @@ public abstract class Transition implements Cloneable {
 
     // The transition that this was cloned from
     private Transition mCloneParent = null;
+
+    // The root of a clone of this Transition created for seeking; used to clean up the clone's
+    // animators when this Transition is canceled directly
+    Transition mSeekingCloneRoot = null;
 
     // The set of listeners to be sent transition lifecycle events.
     private ArrayList<Transition.TransitionListener> mListeners = null;
@@ -905,7 +910,8 @@ public abstract class Transition implements Cloneable {
         return false;
     }
 
-    private static ArrayMap<Animator, AnimationInfo> getRunningAnimators() {
+    @VisibleForTesting
+    static ArrayMap<Animator, AnimationInfo> getRunningAnimators() {
         ArrayMap<Animator, AnimationInfo> runningAnimators = sRunningAnimators.get();
         if (runningAnimators == null) {
             runningAnimators = new ArrayMap<>();
@@ -994,6 +1000,26 @@ public abstract class Transition implements Cloneable {
             }
         }
         mAnimators.clear();
+    }
+
+    /**
+     * Remove this transition's animators from the running animators list.
+     *
+     * Behaviors controlling seeking should ensure this is called when seeking
+     * is no longer needed to prevent holding on to animators indefinitely.
+     */
+    void removeSeekingAnimators() {
+        ArrayMap<Animator, AnimationInfo> runningAnimators = getRunningAnimators();
+        int numAnimators = mCurrentAnimators.size();
+        Animator[] cache = mCurrentAnimators.toArray(mAnimatorCache);
+        mAnimatorCache = EMPTY_ANIMATOR_ARRAY;
+        for (int i = numAnimators - 1; i >= 0; i--) {
+            Animator animator = cache[i];
+            cache[i] = null;
+            runningAnimators.remove(animator);
+        }
+        mAnimatorCache = cache;
+        mCurrentAnimators.clear();
     }
 
     /**
@@ -2080,7 +2106,7 @@ public abstract class Transition implements Cloneable {
 
         for (int i = numOldAnims - 1; i >= 0; i--) {
             AnimationInfo info = oldAnimators.valueAt(i);
-            if (info.mView != null && windowId.equals(info.mWindowId)) {
+            if (info.mView != null && Objects.equals(windowId, info.mWindowId)) {
                 Animator anim = oldAnimators.keyAt(i);
                 anim.end();
             }
@@ -2093,6 +2119,13 @@ public abstract class Transition implements Cloneable {
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     protected void cancel() {
+        if (mSeekingCloneRoot != null) {
+            Transition seekingClone = mSeekingCloneRoot;
+            mSeekingCloneRoot = null;
+            seekingClone.cancel();
+        }
+
+        ArrayMap<Animator, AnimationInfo> runningAnimators = getRunningAnimators();
         int numAnimators = mCurrentAnimators.size();
         Animator[] cache = mCurrentAnimators.toArray(mAnimatorCache);
         mAnimatorCache = EMPTY_ANIMATOR_ARRAY;
@@ -2100,6 +2133,7 @@ public abstract class Transition implements Cloneable {
             Animator animator = cache[i];
             cache[i] = null;
             animator.cancel();
+            runningAnimators.remove(animator);
         }
         mAnimatorCache = cache;
         notifyListeners(TransitionNotification.ON_CANCEL, false);
@@ -2174,6 +2208,7 @@ public abstract class Transition implements Cloneable {
      * @see PatternPathMotion
      * @see android.transition.PathMotion
      */
+    @SuppressWarnings("GetterSetterNullability")
     public @NonNull PathMotion getPathMotion() {
         return mPathMotion;
     }
@@ -2298,6 +2333,7 @@ public abstract class Transition implements Cloneable {
             clone.mSeekController = null;
             clone.mCloneParent = this;
             clone.mListeners = null;
+            clone.mSeekingCloneRoot = null;
             return clone;
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException(e);
@@ -2538,7 +2574,8 @@ public abstract class Transition implements Cloneable {
      * information about the state that an animation is going to, to be compared to
      * end state of a new animation.
      */
-    private static class AnimationInfo {
+    @VisibleForTesting
+    static class AnimationInfo {
 
         View mView;
 
@@ -2873,9 +2910,11 @@ public abstract class Transition implements Cloneable {
                         if (cloneParent != null) {
                             cloneParent.notifyListeners(TransitionNotification.ON_END, true);
                         }
+                        notifyListeners(TransitionNotification.ON_END, true);
                     } else {
                         notifyListeners(TransitionNotification.ON_END, false);
                     }
+                    removeSeekingAnimators();
                 }
             });
         }

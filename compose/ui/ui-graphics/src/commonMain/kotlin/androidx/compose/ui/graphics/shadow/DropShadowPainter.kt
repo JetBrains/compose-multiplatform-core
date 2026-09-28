@@ -43,7 +43,7 @@ import kotlin.math.ceil
  * [Painter] implementation that draws a drop shadow with the geometry defined by the specified
  * shape and [Shadow].
  */
-class DropShadowPainter
+public class DropShadowPainter
 internal constructor(
     private val shape: Shape,
     private val shadow: Shadow,
@@ -60,7 +60,7 @@ internal constructor(
      * @param shape Shape of the shadow
      * @param shadow Parameters used to render the shadow
      */
-    constructor(
+    public constructor(
         shape: Shape,
         shadow: Shadow,
     ) : this(shape, shadow, DropShadowRendererProvider.Default)
@@ -233,7 +233,17 @@ internal class DropShadowRenderer(val shadow: Shadow, outline: Outline) : Shadow
         with(shadowCanvas) {
             if (spread > 0f) {
                 translate(radius + spread, radius + spread)
-                drawPath(path, paint)
+                drawPath(
+                    path,
+                    paint.configureShadow(
+                        blurFilter =
+                            if (radius > 0) {
+                                BlurFilter(radius)
+                            } else {
+                                null
+                            }
+                    ),
+                )
                 drawPath(
                     path,
                     paint

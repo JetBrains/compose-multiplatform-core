@@ -31,10 +31,9 @@ import androidx.camera.camera2.Camera2Config
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.testing.impl.CameraUtil
-import androidx.camera.testing.impl.CoreAppTestUtil
-import androidx.camera.testing.impl.CoreAppTestUtil.ForegroundOccupiedError
 import androidx.camera.testing.impl.IgnoreVideoRecordingProblematicDeviceRule
 import androidx.camera.testing.impl.LabTestRule.Companion.isInLabTest
+import androidx.camera.testing.impl.RequireForegroundRule
 import androidx.camera.testing.impl.fakes.FakeActivity
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.testing.impl.testrule.PreTestRule
@@ -81,7 +80,6 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class VideoCaptureDeviceTest(
     private val initialQuality: TargetQuality,
     private val nextQuality: TargetQuality,
@@ -132,9 +130,8 @@ class VideoCaptureDeviceTest(
 
         @JvmStatic
         @BeforeClass
-        @Throws(ForegroundOccupiedError::class)
         fun classSetUp() {
-            CoreAppTestUtil.prepareDeviceUI(InstrumentationRegistry.getInstrumentation())
+            RequireForegroundRule.prepareDeviceUI(InstrumentationRegistry.getInstrumentation())
         }
 
         @JvmStatic
@@ -474,7 +471,7 @@ class VideoCaptureDeviceTest(
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21, maxSdkVersion = 33) // b/262909049: Failing on SDK 34
+    @SdkSuppress(maxSdkVersion = 33) // b/262909049: Failing on SDK 34
     fun canRecordToFile_whenPauseAndResumeInTheMiddle() {
         if (Build.VERSION.SDK_INT == 33 && Build.VERSION.CODENAME != "REL") {
             return // b/262909049: Do not run this test on pre-release Android U.

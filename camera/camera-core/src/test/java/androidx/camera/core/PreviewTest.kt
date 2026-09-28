@@ -20,7 +20,6 @@ import android.content.Context
 import android.graphics.Matrix
 import android.graphics.Rect
 import android.graphics.SurfaceTexture
-import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper.getMainLooper
@@ -83,7 +82,7 @@ private val TEST_CAMERA_SELECTOR = CameraSelector.DEFAULT_BACK_CAMERA
 /** Unit tests for [Preview]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 // Option Declarations:
 // *********************************************************************************************
 class PreviewTest {
@@ -284,14 +283,14 @@ class PreviewTest {
     @Test
     fun defaultMirrorModeIsOnFrontOnly() {
         val preview = Preview.Builder().build()
-        assertThat(preview.mirrorModeInternal).isEqualTo(MIRROR_MODE_ON_FRONT_ONLY)
+        assertThat(preview.mirrorMode).isEqualTo(MIRROR_MODE_ON_FRONT_ONLY)
     }
 
     @Config(minSdk = 33)
     @Test
     fun setMirrorMode_OnFrontOnly() {
         val preview = createPreview()
-        assertThat(preview.mirrorModeInternal).isEqualTo(MIRROR_MODE_ON_FRONT_ONLY)
+        assertThat(preview.mirrorMode).isEqualTo(MIRROR_MODE_ON_FRONT_ONLY)
 
         val sessionConfig = preview.sessionConfig
         assertThat(sessionConfig.outputConfigs[0].mirrorMode).isEqualTo(MIRROR_MODE_ON_FRONT_ONLY)
@@ -301,7 +300,7 @@ class PreviewTest {
     @Test
     fun setMirrorMode_On() {
         val preview = createPreview(mirrorMode = MIRROR_MODE_ON)
-        assertThat(preview.mirrorModeInternal).isEqualTo(MIRROR_MODE_ON)
+        assertThat(preview.mirrorMode).isEqualTo(MIRROR_MODE_ON)
 
         val sessionConfig = preview.sessionConfig
         assertThat(sessionConfig.outputConfigs[0].mirrorMode).isEqualTo(MIRROR_MODE_ON)
@@ -311,10 +310,43 @@ class PreviewTest {
     @Test
     fun setMirrorMode_Off() {
         val preview = createPreview(mirrorMode = MIRROR_MODE_OFF)
-        assertThat(preview.mirrorModeInternal).isEqualTo(MIRROR_MODE_OFF)
+        assertThat(preview.mirrorMode).isEqualTo(MIRROR_MODE_OFF)
 
         val sessionConfig = preview.sessionConfig
         assertThat(sessionConfig.outputConfigs[0].mirrorMode).isEqualTo(MIRROR_MODE_OFF)
+    }
+
+    @Config(minSdk = 33)
+    @Test
+    fun setMirrorMode_notifyReset() {
+        // Arrange: create Preview with MIRROR_MODE_OFF
+        val preview = createPreview(mirrorMode = MIRROR_MODE_OFF)
+        assertThat(preview.mirrorMode).isEqualTo(MIRROR_MODE_OFF)
+        assertThat(preview.sessionConfig.outputConfigs[0].mirrorMode).isEqualTo(MIRROR_MODE_OFF)
+
+        // Act: set mirror mode to ON.
+        preview.setMirrorMode(MIRROR_MODE_ON)
+
+        // Assert.
+        assertThat(preview.mirrorMode).isEqualTo(MIRROR_MODE_ON)
+        assertThat(backCamera.useCaseResetHistory).containsExactly(preview)
+        assertThat(preview.sessionConfig.outputConfigs[0].mirrorMode).isEqualTo(MIRROR_MODE_ON)
+    }
+
+    @Config(maxSdk = 32)
+    @Test
+    fun setMirrorMode_belowSdk33_isNoOp() {
+        // Arrange & Act: create Preview with MIRROR_MODE_ON (which should be no-op)
+        val preview = createPreview(mirrorMode = MIRROR_MODE_ON)
+
+        // Assert: mirrorMode remains default (MIRROR_MODE_ON_FRONT_ONLY)
+        assertThat(preview.mirrorMode).isEqualTo(MIRROR_MODE_ON_FRONT_ONLY)
+
+        // Act: set mirror mode dynamically (which should also be no-op)
+        preview.setMirrorMode(MIRROR_MODE_OFF)
+
+        // Assert: mirrorMode remains default
+        assertThat(preview.mirrorMode).isEqualTo(MIRROR_MODE_ON_FRONT_ONLY)
     }
 
     @Test
@@ -679,7 +711,7 @@ class PreviewTest {
         preview.setSurfaceProvider { request ->
             request.setTransformationInfoListener(
                 CameraXExecutors.directExecutor(),
-                SurfaceRequest.TransformationInfoListener { receivedTransformationInfo = it },
+                SurfaceRequest.TransformationInfoListener {},
             )
             receivedSurfaceRequest = request
         }
@@ -866,7 +898,7 @@ class PreviewTest {
             null,
             previewToDetach.getDefaultConfig(
                 true,
-                cameraXConfig.getUseCaseConfigFactoryProvider(null)!!.newInstance(context),
+                cameraXConfig.getUseCaseConfigFactoryProvider(null)!!.newInstance(context, false),
             ),
         )
 

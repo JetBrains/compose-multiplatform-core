@@ -21,23 +21,36 @@ import android.util.DisplayMetrics
 import android.view.ContextThemeWrapper
 import android.view.View
 import android.view.WindowInsets
+import androidx.annotation.IntDef
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.ExperimentalMediaQueryApi
+import androidx.compose.ui.LocalUiMediaScope
+import androidx.compose.ui.UiMediaScope
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalProvidableLocaleList
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.roundToIntSize
 import androidx.compose.ui.util.fastJoinToString
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.os.ConfigurationCompat
@@ -45,8 +58,11 @@ import androidx.core.os.LocaleListCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.children
 import kotlin.math.floor
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.roundToInt
 
-actual fun DeviceConfigurationOverride.Companion.ForcedSize(
+public actual fun DeviceConfigurationOverride.Companion.ForcedSize(
     size: DpSize
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     // First override the density. Doing this first allows using the resulting density in the
@@ -69,7 +85,7 @@ actual fun DeviceConfigurationOverride.Companion.ForcedSize(
     }
 }
 
-actual fun DeviceConfigurationOverride.Companion.FontScale(
+public actual fun DeviceConfigurationOverride.Companion.FontScale(
     fontScale: Float
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     OverriddenConfiguration(
@@ -85,7 +101,7 @@ actual fun DeviceConfigurationOverride.Companion.FontScale(
     )
 }
 
-actual fun DeviceConfigurationOverride.Companion.LayoutDirection(
+public actual fun DeviceConfigurationOverride.Companion.LayoutDirection(
     layoutDirection: LayoutDirection
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     OverriddenConfiguration(
@@ -117,7 +133,7 @@ actual fun DeviceConfigurationOverride.Companion.LayoutDirection(
  * @return a [DeviceConfigurationOverride] that specifies the locales for the content under test.
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideLocalesSample
  */
-fun DeviceConfigurationOverride.Companion.Locales(
+public fun DeviceConfigurationOverride.Companion.Locales(
     locales: LocaleList
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     OverriddenConfiguration(
@@ -147,7 +163,7 @@ fun DeviceConfigurationOverride.Companion.Locales(
  * @return a [DeviceConfigurationOverride] that specifies the dark mode for the content under test.
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideDarkModeSample
  */
-fun DeviceConfigurationOverride.Companion.DarkMode(
+public fun DeviceConfigurationOverride.Companion.DarkMode(
     isDarkMode: Boolean
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     OverriddenConfiguration(
@@ -180,7 +196,7 @@ fun DeviceConfigurationOverride.Companion.DarkMode(
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideFontWeightAdjustmentSample
  */
 @RequiresApi(31)
-fun DeviceConfigurationOverride.Companion.FontWeightAdjustment(
+public fun DeviceConfigurationOverride.Companion.FontWeightAdjustment(
     fontWeightAdjustment: Int
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     OverriddenConfiguration(
@@ -206,7 +222,7 @@ fun DeviceConfigurationOverride.Companion.FontWeightAdjustment(
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideRoundScreenSample
  */
 @RequiresApi(23)
-fun DeviceConfigurationOverride.Companion.RoundScreen(
+public fun DeviceConfigurationOverride.Companion.RoundScreen(
     isScreenRound: Boolean
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     OverriddenConfiguration(
@@ -230,37 +246,16 @@ fun DeviceConfigurationOverride.Companion.RoundScreen(
     )
 }
 
-/** Values corresponding to keyboard type constants in [Configuration]. */
-@JvmInline
-value class KeyboardType private constructor(internal val configValue: Int) {
-    companion object {
-        /**
-         * No hardware keyboard for [Configuration.keyboard]
-         *
-         * @see Configuration.KEYBOARD_NOKEYS
-         */
-        val NoKeys = KeyboardType(Configuration.KEYBOARD_NOKEYS)
-
-        /**
-         * A keyboard type of `qwerty` for [Configuration.keyboard]
-         *
-         * @see Configuration.KEYBOARD_QWERTY
-         */
-        val Qwerty = KeyboardType(Configuration.KEYBOARD_QWERTY)
-
-        /**
-         * A keyboard type of `12key` for [Configuration.keyboard]
-         *
-         * @see Configuration.KEYBOARD_12KEY
-         */
-        val TwelveKey = KeyboardType(Configuration.KEYBOARD_12KEY)
-    }
-}
+/** A constant for [Configuration.keyboard]. */
+@Retention(AnnotationRetention.SOURCE)
+@IntDef(Configuration.KEYBOARD_NOKEYS, Configuration.KEYBOARD_QWERTY, Configuration.KEYBOARD_12KEY)
+private annotation class KeyboardType
 
 /**
  * A [DeviceConfigurationOverride] that overrides the current keyboard type.
  *
- * @param keyboardType the keyboard type to render content under test in.
+ * @param keyboardType the keyboard type to render content under test in. This should be one of the
+ *   `Configuration.KEYBOARD_*` types.
  * @param isHidden if `true`, render the content under test with a hidden keyboard.
  * @param isHardKeyboardHidden if `true`, render the content under test with a hidden hard keyboard.
  * @return a [DeviceConfigurationOverride] that specifies the keyboard status for the content under
@@ -270,8 +265,8 @@ value class KeyboardType private constructor(internal val configValue: Int) {
  * @see [Configuration.keyboardHidden]
  * @see [Configuration.hardKeyboardHidden]
  */
-fun DeviceConfigurationOverride.Companion.Keyboard(
-    keyboardType: KeyboardType,
+public fun DeviceConfigurationOverride.Companion.Keyboard(
+    @KeyboardType keyboardType: Int,
     isHardKeyboardHidden: Boolean = false,
     isHidden: Boolean = false,
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
@@ -281,7 +276,7 @@ fun DeviceConfigurationOverride.Companion.Keyboard(
                 // Initialize from the current configuration
                 updateFrom(LocalConfiguration.current)
 
-                keyboard = keyboardType.configValue
+                keyboard = keyboardType
                 hardKeyboardHidden =
                     if (isHardKeyboardHidden) {
                         Configuration.HARDKEYBOARDHIDDEN_YES
@@ -299,45 +294,22 @@ fun DeviceConfigurationOverride.Companion.Keyboard(
     )
 }
 
-/** Values corresponding to navigation type constants in [Configuration]. */
-@JvmInline
-value class NavigationType private constructor(internal val configValue: Int) {
-    companion object {
-        /**
-         * A navigation type of `dpad` for [Configuration.navigation]
-         *
-         * @see Configuration.NAVIGATION_DPAD
-         */
-        val Dpad = NavigationType(Configuration.NAVIGATION_DPAD)
-
-        /**
-         * A navigation type of `wheel` for [Configuration.navigation]
-         *
-         * @see Configuration.NAVIGATION_WHEEL
-         */
-        val Wheel = NavigationType(Configuration.NAVIGATION_WHEEL)
-
-        /**
-         * No navigation type for [Configuration.navigation]
-         *
-         * @see Configuration.NAVIGATION_NONAV
-         */
-        val NoNav = NavigationType(Configuration.NAVIGATION_NONAV)
-
-        /**
-         * A navigation type of `trackball` for [Configuration.navigation]
-         *
-         * @see Configuration.NAVIGATION_TRACKBALL
-         */
-        val Trackball = NavigationType(Configuration.NAVIGATION_TRACKBALL)
-    }
-}
+/** A constant for [Configuration.navigation]. */
+@Retention(AnnotationRetention.SOURCE)
+@IntDef(
+    Configuration.NAVIGATION_NONAV,
+    Configuration.NAVIGATION_DPAD,
+    Configuration.NAVIGATION_TRACKBALL,
+    Configuration.NAVIGATION_WHEEL,
+)
+private annotation class NavigationType
 
 /**
  * A [DeviceConfigurationOverride] that overrides the current navigation type and whether it is
  * hidden.
  *
- * @param navigationType the navigation type to render the content under test in.
+ * @param navigationType the navigation type to render the content under test in. This should be one
+ *   of the `Configuration.NAVIGATION_*` values.
  * @param isHidden if `true`, render the content under test with hidden navigation.
  * @return a [DeviceConfigurationOverride] that specifies the navigation type for the content under
  *   test.
@@ -345,8 +317,8 @@ value class NavigationType private constructor(internal val configValue: Int) {
  * @see [Configuration.navigation]
  * @see [Configuration.navigationHidden]
  */
-fun DeviceConfigurationOverride.Companion.Navigation(
-    navigationType: NavigationType,
+public fun DeviceConfigurationOverride.Companion.Navigation(
+    @NavigationType navigationType: Int,
     isHidden: Boolean = false,
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     OverriddenConfiguration(
@@ -355,7 +327,7 @@ fun DeviceConfigurationOverride.Companion.Navigation(
                 // Initialize from the current configuration
                 updateFrom(LocalConfiguration.current)
 
-                navigation = navigationType.configValue
+                navigation = navigationType
                 navigationHidden =
                     if (isHidden) {
                         Configuration.NAVIGATIONHIDDEN_YES
@@ -372,7 +344,7 @@ fun DeviceConfigurationOverride.Companion.Navigation(
  *
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideTouchscreen
  */
-fun DeviceConfigurationOverride.Companion.Touchscreen(
+public fun DeviceConfigurationOverride.Companion.Touchscreen(
     isTouchScreen: Boolean
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     OverriddenConfiguration(
@@ -392,79 +364,30 @@ fun DeviceConfigurationOverride.Companion.Touchscreen(
     )
 }
 
-/** Values corresponding to UI mode type constants in [Configuration]. */
-@JvmInline
-value class UiModeType private constructor(internal val configValue: Int) {
-    companion object {
-        /**
-         * A uiMode type of `appliance` for the [Configuration.UI_MODE_TYPE_MASK] portion of
-         * [Configuration.uiMode].
-         *
-         * @see Configuration.UI_MODE_TYPE_APPLIANCE
-         */
-        val Appliance = UiModeType(Configuration.UI_MODE_TYPE_APPLIANCE)
-
-        /**
-         * A uiMode type of `car` for the [Configuration.UI_MODE_TYPE_MASK] portion of
-         * [Configuration.uiMode].
-         *
-         * @see Configuration.UI_MODE_TYPE_CAR
-         */
-        val Car = UiModeType(Configuration.UI_MODE_TYPE_CAR)
-
-        /**
-         * A uiMode type of `desk` for the [Configuration.UI_MODE_TYPE_MASK] portion of
-         * [Configuration.uiMode].
-         *
-         * @see Configuration.UI_MODE_TYPE_DESK
-         */
-        val Desk = UiModeType(Configuration.UI_MODE_TYPE_DESK)
-
-        /**
-         * No uiMode type for the [Configuration.UI_MODE_TYPE_MASK] portion of
-         * [Configuration.uiMode].
-         *
-         * @see Configuration.UI_MODE_TYPE_NORMAL
-         */
-        val Normal = UiModeType(Configuration.UI_MODE_TYPE_NORMAL)
-
-        /**
-         * A uiMode type of `television` for the [Configuration.UI_MODE_TYPE_MASK] portion of
-         * [Configuration.uiMode].
-         *
-         * @see Configuration.UI_MODE_TYPE_TELEVISION
-         */
-        val Television = UiModeType(Configuration.UI_MODE_TYPE_TELEVISION)
-
-        /**
-         * A uiMode type of `vrheadset` for the [Configuration.UI_MODE_TYPE_MASK] portion of
-         * [Configuration.uiMode].
-         *
-         * @see Configuration.UI_MODE_TYPE_VR_HEADSET
-         */
-        val VrHeadset
-            @RequiresApi(26) get() = UiModeType(Configuration.UI_MODE_TYPE_VR_HEADSET)
-
-        /**
-         * A uiMode type of `watch` for the [Configuration.UI_MODE_TYPE_MASK] portion of
-         * [Configuration.uiMode].
-         *
-         * @see Configuration.UI_MODE_TYPE_WATCH
-         */
-        val Watch = UiModeType(Configuration.UI_MODE_TYPE_WATCH)
-    }
-}
+/** A constant for the [Configuration.UI_MODE_TYPE_MASK] of [Configuration.uiMode]. */
+@Retention(AnnotationRetention.SOURCE)
+@IntDef(
+    Configuration.UI_MODE_TYPE_NORMAL,
+    Configuration.UI_MODE_TYPE_DESK,
+    Configuration.UI_MODE_TYPE_CAR,
+    Configuration.UI_MODE_TYPE_TELEVISION,
+    Configuration.UI_MODE_TYPE_APPLIANCE,
+    Configuration.UI_MODE_TYPE_WATCH,
+    Configuration.UI_MODE_TYPE_VR_HEADSET,
+)
+private annotation class UiModeType
 
 /**
- * A [DeviceConfigurationOverride] that overrides the current navigation type.
+ * A [DeviceConfigurationOverride] that overrides the current ui mode type.
  *
- * @param uiModeType the uiMode type to render the content under test in.
+ * @param uiModeType the uiMode type to render the content under test in. This should be one of the
+ *   `Configuration.UI_MODE_TYPE_*` values.
  * @return a [DeviceConfigurationOverride] that specifies the uiMode type for the content under
  *   test.
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideUiMode
  */
-fun DeviceConfigurationOverride.Companion.UiMode(
-    uiModeType: UiModeType
+public fun DeviceConfigurationOverride.Companion.UiMode(
+    @UiModeType uiModeType: Int
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     OverriddenConfiguration(
         configuration =
@@ -472,8 +395,7 @@ fun DeviceConfigurationOverride.Companion.UiMode(
                 // Initialize from the current configuration
                 updateFrom(LocalConfiguration.current)
 
-                uiMode =
-                    (uiMode and Configuration.UI_MODE_TYPE_MASK.inv()) or uiModeType.configValue
+                uiMode = (uiMode and Configuration.UI_MODE_TYPE_MASK.inv()) or uiModeType
             },
         content = contentUnderTest,
     )
@@ -487,7 +409,7 @@ fun DeviceConfigurationOverride.Companion.UiMode(
  *   test.
  * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideWindowInsetsSample
  */
-fun DeviceConfigurationOverride.Companion.WindowInsets(
+public fun DeviceConfigurationOverride.Companion.WindowInsets(
     windowInsets: WindowInsetsCompat
 ): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
     val currentContentUnderTest by rememberUpdatedState(contentUnderTest)
@@ -523,6 +445,140 @@ fun DeviceConfigurationOverride.Companion.WindowInsets(
     )
 }
 
+@OptIn(ExperimentalMediaQueryApi::class, ExperimentalComposeUiApi::class)
+public actual fun DeviceConfigurationOverride.Companion.WindowSize(
+    size: DpSize
+): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
+    // First override the density. Doing this first allows using the resulting density in the
+    // overridden window info and configuration.
+    DensityForcedSize(size) {
+        // Second, override the window info, to provide a containerDpSize that matches the
+        // requested size, and a containerSize that matches the requested size as close as
+        // possible
+        val currentDensity by rememberUpdatedState(LocalDensity.current)
+        val currentRequestedSize by rememberUpdatedState(size)
+        val currentWindowInfo = LocalWindowInfo.current
+        val newWindowInfo =
+            remember(currentWindowInfo) {
+                object : WindowInfo by currentWindowInfo {
+                    override val containerDpSize: DpSize
+                        get() = currentRequestedSize
+
+                    override val containerSize: IntSize
+                        get() = with(currentDensity) { containerDpSize.toSize() }.roundToIntSize()
+                }
+            }
+
+        val providedLocals =
+            if (ComposeUiFlags.isMediaQueryIntegrationEnabled) {
+                val currentUiMediaScope = LocalUiMediaScope.current
+                val newUiMediaScope =
+                    remember(currentUiMediaScope, newWindowInfo) {
+                        object : UiMediaScope by currentUiMediaScope {
+                            override val windowWidth: Dp
+                                get() = newWindowInfo.containerDpSize.width
+
+                            override val windowHeight: Dp
+                                get() = newWindowInfo.containerDpSize.height
+                        }
+                    }
+                arrayOf(
+                    LocalWindowInfo provides newWindowInfo,
+                    LocalUiMediaScope provides newUiMediaScope,
+                )
+            } else {
+                arrayOf(LocalWindowInfo provides newWindowInfo)
+            }
+
+        CompositionLocalProvider(*providedLocals) {
+            // Third, override the configuration to use the updated window size and updated
+            // density
+            OverriddenConfiguration(
+                configuration =
+                    Configuration().apply {
+                        // Initialize from the current configuration
+                        updateFrom(LocalConfiguration.current)
+
+                        screenWidthDp = currentRequestedSize.width.value.roundToInt()
+                        screenHeightDp = currentRequestedSize.height.value.roundToInt()
+                        smallestScreenWidthDp = min(screenWidthDp, screenHeightDp)
+                        // Square screens (after rounding) being considered portrait is
+                        // derived from DisplayContent.java
+                        orientation =
+                            if (screenWidthDp <= screenHeightDp) {
+                                Configuration.ORIENTATION_PORTRAIT
+                            } else {
+                                Configuration.ORIENTATION_LANDSCAPE
+                            }
+
+                        screenLayout =
+                            screenLayout and
+                                (Configuration.SCREENLAYOUT_SIZE_MASK or
+                                        Configuration.SCREENLAYOUT_LONG_MASK)
+                                    .inv() or
+                                calculateScreenLayout(screenWidthDp, screenHeightDp)
+                        densityDpi =
+                            floor(LocalDensity.current.density * DisplayMetrics.DENSITY_DEFAULT)
+                                .toInt()
+                    },
+                content = contentUnderTest,
+            )
+        }
+    }
+}
+
+/**
+ * Given the rounded [width] and [height] in dp, returns the combined values for the
+ * [Configuration.SCREENLAYOUT_SIZE_MASK] or-ed with the [Configuration.SCREENLAYOUT_LONG_MASK] for
+ * [Configuration.screenLayout].
+ *
+ * These calculations copied from Configuration.java:
+ * https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/core/java/android/content/res/Configuration.java;l=428;drc=64130047e019cee612a85dde07755efd8f356f12
+ */
+private fun calculateScreenLayout(widthDp: Int, heightDp: Int): Int {
+    val shortSizeDp = min(widthDp, heightDp)
+    val longSizeDp = max(widthDp, heightDp)
+
+    val screenLayoutSize: Int
+    val screenLayoutLong: Boolean
+
+    // These semi-magic numbers define our compatibility modes for
+    // applications with different screens.  These are guarantees to
+    // app developers about the space they can expect for a particular
+    // configuration.  DO NOT CHANGE!
+    if (longSizeDp < 470) {
+        // This is shorter than an HVGA normal density screen (which
+        // is 480 pixels on its long side).
+        screenLayoutSize = Configuration.SCREENLAYOUT_SIZE_SMALL
+        screenLayoutLong = false
+    } else {
+        // What size is this screen?
+        if (longSizeDp >= 960 && shortSizeDp >= 720) {
+            // 1.5xVGA or larger screens at medium density are the point
+            // at which we consider it to be an extra large screen.
+            screenLayoutSize = Configuration.SCREENLAYOUT_SIZE_XLARGE
+        } else if (longSizeDp >= 640 && shortSizeDp >= 480) {
+            // VGA or larger screens at medium density are the point
+            // at which we consider it to be a large screen.
+            screenLayoutSize = Configuration.SCREENLAYOUT_SIZE_LARGE
+        } else {
+            screenLayoutSize = Configuration.SCREENLAYOUT_SIZE_NORMAL
+        }
+
+        // Is this a long screen?
+        if (((longSizeDp * 3) / 5) >= (shortSizeDp - 1)) {
+            // Anything wider than WVGA (5:3) is considering to be long.
+            screenLayoutLong = true
+        } else {
+            screenLayoutLong = false
+        }
+    }
+
+    return screenLayoutSize or
+        if (screenLayoutLong) Configuration.SCREENLAYOUT_LONG_YES
+        else Configuration.SCREENLAYOUT_LONG_NO
+}
+
 /**
  * Overrides the compositions locals related to the given [configuration].
  *
@@ -537,6 +593,9 @@ private fun OverriddenConfiguration(configuration: Configuration, content: @Comp
         ContextThemeWrapper(LocalContext.current, 0).apply {
             applyOverrideConfiguration(configuration)
         }
+    val platformLocaleListCompat = ConfigurationCompat.getLocales(configuration)
+    val localeList =
+        LocaleList(List(platformLocaleListCompat.size()) { Locale(platformLocaleListCompat[it]!!) })
 
     CompositionLocalProvider(
         LocalContext provides newContext,
@@ -553,6 +612,7 @@ private fun OverriddenConfiguration(configuration: Configuration, content: @Comp
                 configuration.fontScale,
             ),
         LocalFontFamilyResolver provides createFontFamilyResolver(newContext),
+        @Suppress("VisibleForTests") LocalProvidableLocaleList provides localeList,
         content = content,
     )
 }

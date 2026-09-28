@@ -16,15 +16,21 @@
 
 package androidx.appfunctions.testing
 
+import android.app.appfunctions.AppFunctionRegistration
 import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
+import androidx.appfunctions.ExperimentalAppFunctionsApi
+import androidx.appfunctions.RegisterAppFunctionRequest
 import androidx.appfunctions.internal.AppFunctionManagerApi
+import androidx.appfunctions.metadata.AppFunctionMetadata
 
+@OptIn(ExperimentalAppFunctionsApi::class)
 class FakeAppFunctionManagerApi : AppFunctionManagerApi {
     var executeAppFunctionResponse: ExecuteAppFunctionResponse? = null
 
     override suspend fun executeAppFunction(
-        request: ExecuteAppFunctionRequest
+        request: ExecuteAppFunctionRequest,
+        functionMetadata: AppFunctionMetadata,
     ): ExecuteAppFunctionResponse =
         executeAppFunctionResponse
             ?: throw IllegalStateException("Make sure you set the fake response first.")
@@ -34,4 +40,12 @@ class FakeAppFunctionManagerApi : AppFunctionManagerApi {
 
     override suspend fun setAppFunctionEnabled(functionId: String, newEnabledState: Int) =
         throw UnsupportedOperationException()
+
+    override fun registerAppFunctions(
+        requests: List<RegisterAppFunctionRequest>
+    ): AppFunctionRegistration = throw UnsupportedOperationException()
+
+    override suspend fun getAppFunctionActivityStates(
+        activityIds: Set<android.app.appfunctions.AppFunctionActivityId>
+    ): List<androidx.appfunctions.AppFunctionActivityState> = throw UnsupportedOperationException()
 }

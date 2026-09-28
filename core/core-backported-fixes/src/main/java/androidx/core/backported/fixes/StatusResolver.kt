@@ -16,7 +16,7 @@
 
 package androidx.core.backported.fixes
 
-/** Resolves the [Status] of a [KnownIssue] a device. */
+/** Resolves the [Status] of a [KnownIssue] on a device. */
 public interface StatusResolver {
 
     /**

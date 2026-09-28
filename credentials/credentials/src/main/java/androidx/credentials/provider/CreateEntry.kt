@@ -31,7 +31,6 @@ import androidx.annotation.RestrictTo
 import androidx.credentials.CredentialManager
 import androidx.credentials.PasswordCredential
 import androidx.credentials.PublicKeyCredential
-import androidx.credentials.provider.CreateEntry.Api28Impl.addToSlice
 import androidx.credentials.provider.utils.CryptoObjectUtils.getOperationHandle
 import java.time.Instant
 import java.util.Collections
@@ -65,16 +64,16 @@ import java.util.Collections
  * @throws IllegalArgumentException If [accountName] is empty
  */
 @RequiresApi(23)
-class CreateEntry
+public class CreateEntry
 internal constructor(
-    val accountName: CharSequence,
-    val pendingIntent: PendingIntent,
-    val icon: Icon?,
-    val description: CharSequence?,
-    val lastUsedTime: Instant?,
+    public val accountName: CharSequence,
+    public val pendingIntent: PendingIntent,
+    public val icon: Icon?,
+    public val description: CharSequence?,
+    public val lastUsedTime: Instant?,
     private val credentialCountInformationMap: MutableMap<String, Int?>,
-    val isAutoSelectAllowed: Boolean,
-    val biometricPromptData: BiometricPromptData? = null,
+    public val isAutoSelectAllowed: Boolean,
+    public val biometricPromptData: BiometricPromptData? = null,
 ) {
     /**
      * Creates an entry to be displayed on the selector during create flows.
@@ -103,7 +102,7 @@ internal constructor(
      *   this limit)
      * @throws NullPointerException If [accountName] or [pendingIntent] is null
      */
-    constructor(
+    public constructor(
         accountName: CharSequence,
         pendingIntent: PendingIntent,
         description: CharSequence? = null,
@@ -159,7 +158,7 @@ internal constructor(
      * @throws NullPointerException If [accountName] or [pendingIntent] is null
      */
     @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
-    constructor(
+    public constructor(
         accountName: CharSequence,
         pendingIntent: PendingIntent,
         description: CharSequence? = null,
@@ -197,13 +196,13 @@ internal constructor(
 
     /** Returns the no. of password type credentials that the provider with this entry has. */
     @Suppress("AutoBoxing")
-    fun getPasswordCredentialCount(): Int? {
+    public fun getPasswordCredentialCount(): Int? {
         return credentialCountInformationMap[PasswordCredential.TYPE_PASSWORD_CREDENTIAL]
     }
 
     /** Returns the no. of public key type credentials that the provider with this entry has. */
     @Suppress("AutoBoxing")
-    fun getPublicKeyCredentialCount(): Int? {
+    public fun getPublicKeyCredentialCount(): Int? {
         return credentialCountInformationMap[PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL]
     }
 
@@ -214,7 +213,7 @@ internal constructor(
      * [getPublicKeyCredentialCount].
      */
     @Suppress("AutoBoxing")
-    fun getTotalCredentialCount(): Int? {
+    public fun getTotalCredentialCount(): Int? {
         return credentialCountInformationMap[TYPE_TOTAL_CREDENTIAL]
     }
 
@@ -228,7 +227,7 @@ internal constructor(
      *   NOT with flag [PendingIntent.FLAG_ONE_SHOT] as it can be invoked multiple times
      * @constructor constructs an instance of [CreateEntry.Builder]
      */
-    class Builder
+    public class Builder
     constructor(private val accountName: CharSequence, private val pendingIntent: PendingIntent) {
         private var credentialCountInformationMap: MutableMap<String, Int?> = mutableMapOf()
         private var icon: Icon? = null
@@ -242,7 +241,7 @@ internal constructor(
 
         /** Sets whether the entry should be auto-selected. The value is false by default. */
         @Suppress("MissingGetterMatchingBuilder")
-        fun setAutoSelectAllowed(autoSelectAllowed: Boolean): Builder {
+        public fun setAutoSelectAllowed(autoSelectAllowed: Boolean): Builder {
             this.autoSelectAllowed = autoSelectAllowed
             return this
         }
@@ -253,7 +252,7 @@ internal constructor(
          *
          * This information will be displayed on the [CreateEntry] to help the user make a choice.
          */
-        fun setPasswordCredentialCount(count: Int): Builder {
+        public fun setPasswordCredentialCount(count: Int): Builder {
             passwordCredentialCount = count
             credentialCountInformationMap[PasswordCredential.TYPE_PASSWORD_CREDENTIAL] = count
             return this
@@ -265,7 +264,7 @@ internal constructor(
          *
          * This information will be displayed on the [CreateEntry] to help the user make a choice.
          */
-        fun setPublicKeyCredentialCount(count: Int): Builder {
+        public fun setPublicKeyCredentialCount(count: Int): Builder {
             publicKeyCredentialCount = count
             credentialCountInformationMap[PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL] = count
             return this
@@ -280,14 +279,14 @@ internal constructor(
          *
          * This information will be displayed on the [CreateEntry] to help the user make a choice.
          */
-        fun setTotalCredentialCount(count: Int): Builder {
+        public fun setTotalCredentialCount(count: Int): Builder {
             totalCredentialCount = count
             credentialCountInformationMap[TYPE_TOTAL_CREDENTIAL] = count
             return this
         }
 
         /** Sets an icon to be displayed with the entry on the UI */
-        fun setIcon(icon: Icon?): Builder {
+        public fun setIcon(icon: Icon?): Builder {
             this.icon = icon
             return this
         }
@@ -303,7 +302,7 @@ internal constructor(
          * @throws IllegalArgumentException if [description] is longer than 300 characters (
          *   important: make sure your descriptions across all locales are within this limit).
          */
-        fun setDescription(description: CharSequence?): Builder {
+        public fun setDescription(description: CharSequence?): Builder {
             if (description?.length != null && description.length > DESCRIPTION_MAX_CHAR_LIMIT) {
                 throw IllegalArgumentException("Description must follow a limit of 300 characters.")
             }
@@ -312,7 +311,7 @@ internal constructor(
         }
 
         /** Sets the last time this account was used */
-        fun setLastUsedTime(lastUsedTime: Instant?): Builder {
+        public fun setLastUsedTime(lastUsedTime: Instant?): Builder {
             this.lastUsedTime = lastUsedTime
             return this
         }
@@ -324,7 +323,7 @@ internal constructor(
          * biometric prompt flow.
          */
         @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
-        fun setBiometricPromptData(biometricPromptData: BiometricPromptData?): Builder {
+        public fun setBiometricPromptData(biometricPromptData: BiometricPromptData?): Builder {
             this.biometricPromptData = biometricPromptData
             return this
         }
@@ -334,7 +333,7 @@ internal constructor(
          *
          * @throws IllegalArgumentException If [accountName] is empty
          */
-        fun build(): CreateEntry {
+        public fun build(): CreateEntry {
             return CreateEntry(
                 accountName = accountName,
                 pendingIntent = pendingIntent,
@@ -543,7 +542,7 @@ internal constructor(
         }
     }
 
-    companion object {
+    public companion object {
         private const val TAG = "CreateEntry"
         private const val DESCRIPTION_MAX_CHAR_LIMIT = 300
         internal const val TYPE_TOTAL_CREDENTIAL = "TOTAL_CREDENTIAL_COUNT_TYPE"
@@ -580,7 +579,7 @@ internal constructor(
          */
         @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        fun toSlice(createEntry: CreateEntry): Slice? {
+        public fun toSlice(createEntry: CreateEntry): Slice? {
             if (Build.VERSION.SDK_INT >= 35) {
                 return Api35Impl.toSlice(createEntry)
             } else if (Build.VERSION.SDK_INT >= 28) {
@@ -596,7 +595,7 @@ internal constructor(
          */
         @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        fun fromSlice(slice: Slice): CreateEntry? {
+        public fun fromSlice(slice: Slice): CreateEntry? {
             if (Build.VERSION.SDK_INT >= 35) {
                 return Api35Impl.fromSlice(slice)
             } else if (Build.VERSION.SDK_INT >= 28) {
@@ -616,7 +615,9 @@ internal constructor(
          * @param createEntry the instance of framework class to be converted
          */
         @JvmStatic
-        fun fromCreateEntry(createEntry: android.service.credentials.CreateEntry): CreateEntry? {
+        public fun fromCreateEntry(
+            createEntry: android.service.credentials.CreateEntry
+        ): CreateEntry? {
             if (Build.VERSION.SDK_INT >= 34) {
                 return Api34Impl.fromCreateEntry(createEntry)
             }
@@ -665,8 +666,8 @@ internal constructor(
             "androidx.credentials.provider.extra.PENDING_INTENT_"
         private const val EXTRA_CREATE_ENTRY_IS_AUTO_SELECT_ALLOWED_PREFIX =
             "androidx.credentials.provider.extra.IS_AUTO_SELECT_ALLOWED_"
-        private const val EXTRA_CREATE_ENTRY_LAST_USED_TIME_PREFIX =
-            "androidx.credentials.provider.extra.LAST_USED_TIME_"
+        private const val EXTRA_CREATE_ENTRY_LAST_USED_TIME_MILLIS_PREFIX =
+            "androidx.credentials.provider.extra.LAST_USED_TIME_MILLIS_"
         private const val EXTRA_CREATE_DESCRIPTION_PREFIX =
             "androidx.credentials.provider.extra.DESCRIPTION_"
         private const val EXTRA_CREATE_TYPE_ICON_PREFIX =
@@ -675,7 +676,8 @@ internal constructor(
             "androidx.credentials.provider.extra.CREDENTIAL_COUNT_INFO_"
 
         @RequiresApi(23)
-        internal fun List<CreateEntry>.marshall(bundle: Bundle) {
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        public fun List<CreateEntry>.marshall(bundle: Bundle) {
             bundle.putInt(EXTRA_CREATE_ENTRY_SIZE, this.size)
             this.forEachIndexed { index, entry ->
                 bundle.putCharSequence("$EXTRA_CREATE_ACCOUNT_NAME_PREFIX$index", entry.accountName)
@@ -690,9 +692,9 @@ internal constructor(
                 // TODO: b/356939416 - provide backward compatible timestamp API.
                 if (Build.VERSION.SDK_INT >= 26) {
                     entry.lastUsedTime?.let {
-                        bundle.putSerializable(
-                            "$EXTRA_CREATE_ENTRY_LAST_USED_TIME_PREFIX$index",
-                            it,
+                        bundle.putLong(
+                            "$EXTRA_CREATE_ENTRY_LAST_USED_TIME_MILLIS_PREFIX$index",
+                            it.toEpochMilli(),
                         )
                     }
                 }
@@ -709,7 +711,8 @@ internal constructor(
         }
 
         @RequiresApi(23)
-        internal fun Bundle.unmarshallCreateEntries(): List<CreateEntry> {
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        public fun Bundle.unmarshallCreateEntries(): List<CreateEntry> {
             try {
                 val entries = mutableListOf<CreateEntry>()
                 val size = this.getInt(EXTRA_CREATE_ENTRY_SIZE, 0)
@@ -736,8 +739,23 @@ internal constructor(
                     // TODO: b/356939416 - provide backward compatible timestamp API.
                     if (Build.VERSION.SDK_INT >= 26) {
                         val lastUsedTime: Instant? =
-                            this.getSerializable("$EXTRA_CREATE_ENTRY_LAST_USED_TIME_PREFIX$index")
-                                as Instant?
+                            if (
+                                this.containsKey(
+                                    "$EXTRA_CREATE_ENTRY_LAST_USED_TIME_MILLIS_PREFIX$index"
+                                )
+                            ) {
+                                try {
+                                    Instant.ofEpochMilli(
+                                        this.getLong(
+                                            "$EXTRA_CREATE_ENTRY_LAST_USED_TIME_MILLIS_PREFIX$index"
+                                        )
+                                    )
+                                } catch (_: Exception) {
+                                    null
+                                }
+                            } else {
+                                null
+                            }
                         entries.add(
                             CreateEntry(
                                 accountName = accountName,
@@ -764,7 +782,7 @@ internal constructor(
                     }
                 }
                 return entries
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 return emptyList()
             }
         }

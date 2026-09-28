@@ -26,10 +26,12 @@ import androidx.test.core.app.ApplicationProvider;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
 /** Tests for {@link Tab}. */
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 @DoNotInstrument
 public class TabTest {
 
@@ -38,6 +40,10 @@ public class TabTest {
             .setIcon(TestUtils.getTestCarIcon(ApplicationProvider.getApplicationContext(),
                     "ic_test_1"))
             .setContentId("id")
+            .setStyle(
+                    new TabStyle.Builder().setShape(Shape.CORNER_FULL)
+                            .setSelectedBackgroundColor(CarColor.BLUE).build()
+            )
             .build();
 
     @Test
@@ -82,6 +88,24 @@ public class TabTest {
     }
 
     @Test
+    public void createInstance_missingStyle_valid() {
+        Tab tab = new Tab.Builder()
+                .setTitle("title")
+                .setIcon(TestUtils.getTestCarIcon(
+                        ApplicationProvider.getApplicationContext(),
+                        "ic_test_1"))
+                .setContentId("id")
+                .build();
+        assertEquals(tab.getStyle(), null);
+    }
+
+    @Test
+    public void setStyle_null_clearsStyle() {
+        Tab tab = new Tab.Builder(TEST_TAB).setStyle(null).build();
+        assertEquals(null, tab.getStyle());
+    }
+
+    @Test
     public void createInstance_valid() {
         Tab tab = new Tab.Builder()
                 .setTitle("title")
@@ -89,6 +113,10 @@ public class TabTest {
                 ApplicationProvider.getApplicationContext(),
                 "ic_test_1"))
                 .setContentId("id")
+                .setStyle(
+                        new TabStyle.Builder().setShape(Shape.CORNER_EXTRA_LARGE)
+                                .setSelectedBackgroundColor(CarColor.GREEN).build()
+                )
                 .build();
 
         assertEquals(tab.getContentId(), "id");
@@ -102,6 +130,10 @@ public class TabTest {
                         ApplicationProvider.getApplicationContext(),
                         "ic_test_1"))
                 .setContentId("id")
+                .setStyle(
+                        new TabStyle.Builder().setShape(Shape.CORNER_FULL)
+                                .setSelectedBackgroundColor(CarColor.BLUE).build()
+                )
                 .build();
 
         assertEquals(tab, TEST_TAB);
@@ -135,6 +167,17 @@ public class TabTest {
     @Test
     public void notEquals_differentContentId() {
         Tab tab = new Tab.Builder(TEST_TAB).setContentId("new id").build();
+
+        assertNotEquals(tab, TEST_TAB);
+    }
+
+    @Test
+    public void notEquals_differentStyle() {
+        Tab tab = new Tab.Builder(TEST_TAB)
+                .setStyle(
+                        new TabStyle.Builder().setShape(Shape.CORNER_SMALL).build()
+                )
+                .build();
 
         assertNotEquals(tab, TEST_TAB);
     }

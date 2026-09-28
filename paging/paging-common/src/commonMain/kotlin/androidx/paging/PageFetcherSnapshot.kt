@@ -58,8 +58,9 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
     internal val pagingSource: PagingSource<Key, Value>,
     private val config: PagingConfig,
     private val retryFlow: Flow<Unit>,
+    private val initialLoadSize: Int = config.initialLoadSize,
     val remoteMediatorConnection: RemoteMediatorConnection<Key, Value>? = null,
-    private val previousPagingState: PagingState<Key, Value>? = null,
+    private val cachedInitialState: PagingState<Key, Value>? = null,
     private val jumpCallback: () -> Unit = {},
 ) {
     init {
@@ -143,10 +144,9 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
                             // If retrying REFRESH from PagingSource succeeds, start collection on
                             // ViewportHints for PREPEND / APPEND loads.
                             if (loadType == REFRESH) {
-                                val newRefreshState =
-                                    stateHolder.withLock { state ->
-                                        state.sourceLoadStates.get(REFRESH)
-                                    }
+                                val newRefreshState = stateHolder.withLock { state ->
+                                    state.sourceLoadStates.get(REFRESH)
+                                }
 
                                 if (newRefreshState !is Error) {
                                     startConsumingHints()
@@ -168,7 +168,7 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
                 // valid events from both.
                 remoteMediatorConnection?.let {
                     val pagingState =
-                        previousPagingState
+                        cachedInitialState
                             ?: stateHolder.withLock { state -> state.currentPagingState(null) }
                     it.requestRefreshIfAllowed(pagingState)
                 }
@@ -209,7 +209,8 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
         }
     }
 
-    fun accessHint(viewportHint: ViewportHint) {
+    // viewport Hint can be either Access or Initial
+    fun processHint(viewportHint: ViewportHint) {
         hintHandler.processHint(viewportHint)
     }
 
@@ -262,37 +263,37 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
      */
     private suspend fun Flow<Int>.collectAsGenerationalViewportHints(loadType: LoadType) =
         simpleFlatMapLatest { generationId ->
-                // Reset state to Idle and setup a new flow for consuming incoming load hints.
-                // Subsequent generationIds are normally triggered by cancellation.
-                stateHolder.withLock { state ->
-                    // Skip this generationId of loads if there is no more to load in this
-                    // direction. In the case of the terminal page getting dropped, a new
-                    // generationId will be sent after load state is updated to Idle.
-                    if (state.sourceLoadStates.get(loadType) == NotLoading.Complete) {
-                        return@simpleFlatMapLatest flowOf()
-                    } else if (state.sourceLoadStates.get(loadType) !is Error) {
-                        state.sourceLoadStates.set(loadType, NotLoading.Incomplete)
-                    }
+            // Reset state to Idle and setup a new flow for consuming incoming load hints.
+            // Subsequent generationIds are normally triggered by cancellation.
+            stateHolder.withLock { state ->
+                // Skip this generationId of loads if there is no more to load in this
+                // direction. In the case of the terminal page getting dropped, a new
+                // generationId will be sent after load state is updated to Idle.
+                if (state.sourceLoadStates.get(loadType) == NotLoading.Complete) {
+                    return@simpleFlatMapLatest flowOf()
+                } else if (state.sourceLoadStates.get(loadType) !is Error) {
+                    state.sourceLoadStates.set(loadType, NotLoading.Incomplete)
                 }
+            }
 
-                hintHandler
-                    .hintFor(loadType)
-                    // Prevent infinite loop when competing PREPEND / APPEND cancel each other
-                    .drop(if (generationId == 0) 0 else 1)
-                    .map { hint -> GenerationalViewportHint(generationId, hint) }
-            }
-            .simpleRunningReduce { previous, next ->
-                // Prioritize new hints that would load the maximum number of items.
-                if (next.shouldPrioritizeOver(previous, loadType)) next else previous
-            }
-            .conflate()
-            .collect { generationalHint -> doLoad(loadType, generationalHint) }
+            hintHandler
+                .hintFor(loadType)
+                // Prevent infinite loop when competing PREPEND / APPEND cancel each other
+                .drop(if (generationId == 0) 0 else 1)
+                .map { hint -> GenerationalViewportHint(generationId, hint) }
+        }
+        .simpleRunningReduce { previous, next ->
+            // Prioritize new hints that would load the maximum number of items.
+            if (next.shouldPrioritizeOver(previous, loadType)) next else previous
+        }
+        .conflate()
+        .collect { generationalHint -> doLoad(loadType, generationalHint) }
 
     private fun loadParams(loadType: LoadType, key: Key?) =
         LoadParams.create(
             loadType = loadType,
             key = key,
-            loadSize = if (loadType == REFRESH) config.initialLoadSize else config.pageSize,
+            loadSize = if (loadType == REFRESH) initialLoadSize else config.pageSize,
             placeholdersEnabled = config.enablePlaceholders,
         )
 
@@ -307,21 +308,20 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
             is Page<Key, Value> -> {
                 // Atomically update load states + pages while still holding the mutex, otherwise
                 // remote state can race here and lead to confusing load states.
-                val insertApplied =
-                    stateHolder.withLock { state ->
-                        val insertApplied = state.insert(0, REFRESH, result)
+                val insertApplied = stateHolder.withLock { state ->
+                    val insertApplied = state.insert(0, REFRESH, result, initialKey)
 
-                        // Update loadStates which are sent along with this load's Insert PageEvent.
-                        state.sourceLoadStates.set(type = REFRESH, state = NotLoading.Incomplete)
-                        if (result.prevKey == null) {
-                            state.sourceLoadStates.set(type = PREPEND, state = NotLoading.Complete)
-                        }
-                        if (result.nextKey == null) {
-                            state.sourceLoadStates.set(type = APPEND, state = NotLoading.Complete)
-                        }
-
-                        insertApplied
+                    // Update loadStates which are sent along with this load's Insert PageEvent.
+                    state.sourceLoadStates.set(type = REFRESH, state = NotLoading.Incomplete)
+                    if (result.prevKey == null) {
+                        state.sourceLoadStates.set(type = PREPEND, state = NotLoading.Complete)
                     }
+                    if (result.nextKey == null) {
+                        state.sourceLoadStates.set(type = APPEND, state = NotLoading.Complete)
+                    }
+
+                    insertApplied
+                }
 
                 // Send insert event after load state updates, so that endOfPaginationReached is
                 // correctly reflected in the insert event. Note that we only send the event if the
@@ -339,10 +339,9 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
                 // Launch any RemoteMediator boundary calls after applying initial insert.
                 if (remoteMediatorConnection != null) {
                     if (result.prevKey == null || result.nextKey == null) {
-                        val pagingState =
-                            stateHolder.withLock { state ->
-                                state.currentPagingState(hintHandler.lastAccessHint)
-                            }
+                        val pagingState = stateHolder.withLock { state ->
+                            state.currentPagingState(hintHandler.lastAccessHint)
+                        }
 
                         if (result.prevKey == null) {
                             remoteMediatorConnection.requestLoad(PREPEND, pagingState)
@@ -411,16 +410,15 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
             }
         }
 
-        var loadKey: Key? =
-            stateHolder.withLock { state ->
-                state
-                    .nextLoadKeyOrNull(
-                        loadType,
-                        generationalHint.generationId,
-                        generationalHint.hint.presentedItemsBeyondAnchor(loadType) + itemsLoaded,
-                    )
-                    ?.also { state.setLoading(loadType) }
-            }
+        var loadKey: Key? = stateHolder.withLock { state ->
+            state
+                .nextLoadKeyOrNull(
+                    loadType,
+                    generationalHint.generationId,
+                    generationalHint.hint.presentedItemsBeyondAnchor(loadType) + itemsLoaded,
+                )
+                ?.also { state.setLoading(loadType) }
+        }
 
         // Keep track of whether endOfPaginationReached so we can update LoadState accordingly when
         // this load loop terminates due to fulfilling prefetchDistance.
@@ -453,10 +451,9 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
                             .trimMargin()
                     }
 
-                    val insertApplied =
-                        stateHolder.withLock { state ->
-                            state.insert(generationalHint.generationId, loadType, result)
-                        }
+                    val insertApplied = stateHolder.withLock { state ->
+                        state.insert(generationalHint.generationId, loadType, result, loadKey)
+                    }
 
                     // Break if insert was skipped due to cancellation
                     if (!insertApplied) {
@@ -537,10 +534,9 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
             val endsPrepend = params is LoadParams.Prepend && result.prevKey == null
             val endsAppend = params is LoadParams.Append && result.nextKey == null
             if (remoteMediatorConnection != null && (endsPrepend || endsAppend)) {
-                val pagingState =
-                    stateHolder.withLock { state ->
-                        state.currentPagingState(hintHandler.lastAccessHint)
-                    }
+                val pagingState = stateHolder.withLock { state ->
+                    state.currentPagingState(hintHandler.lastAccessHint)
+                }
 
                 if (endsPrepend) {
                     remoteMediatorConnection.requestLoad(PREPEND, pagingState)
@@ -602,10 +598,56 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
         }
     }
 
+    /**
+     * Creates and sends a [ViewportHint.Access] for the loadType. Does not set lastAccessedIndex.
+     *
+     * Hint created is based on load type:
+     * - APPEND: hint created on the very last loaded item and makes it the anchorPosition
+     * - PREPEND: hint created on the very first loaded item and makes it the anchorPosition
+     */
+    suspend fun forceSetHint(loadType: LoadType) {
+        require(loadType != REFRESH) {
+            "Called for REFRESH but this should only be called for either APPEND or PREPEND loads. " +
+                "This error indicates a bug in the Paging library. Please file a bug report in Buganizer."
+        }
+        stateHolder.withLock { state ->
+            val hint =
+                with(state) {
+                    val originalPageOffsetFirst = -initialPageIndex
+                    val originalPageOffsetLast = pages.size - initialPageIndex - 1
+
+                    if (loadType == APPEND) {
+                        ViewportHint.Access(
+                            pageOffset = originalPageOffsetLast,
+                            indexInPage = pages.last().data.lastIndex,
+                            presentedItemsBefore = storageCount - 1,
+                            presentedItemsAfter = 0,
+                            originalPageOffsetFirst = originalPageOffsetFirst,
+                            originalPageOffsetLast = originalPageOffsetLast,
+                        )
+                    } else {
+                        ViewportHint.Access(
+                            pageOffset = originalPageOffsetFirst,
+                            indexInPage = 0,
+                            presentedItemsBefore = 0,
+                            presentedItemsAfter = storageCount - 1,
+                            originalPageOffsetFirst = originalPageOffsetFirst,
+                            originalPageOffsetLast = originalPageOffsetLast,
+                        )
+                    }
+                }
+            hintHandler.forceSetHint(loadType, hint)
+        }
+    }
+
     // the handler for LoadResult.Invalid for both doInitialLoad and doLoad
     private fun onInvalidLoad() {
         close()
         pagingSource.invalidate()
+    }
+
+    internal suspend fun getLoadKey(page: Page<Key, Value>) = stateHolder.withLock { state ->
+        state.getLoadKey(page)
     }
 }
 

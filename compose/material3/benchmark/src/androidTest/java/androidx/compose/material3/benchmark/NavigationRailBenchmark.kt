@@ -18,6 +18,8 @@ package androidx.compose.material3.benchmark
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalWideNavigationRail
 import androidx.compose.material3.NavigationRail
@@ -41,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.junit.Rule
@@ -49,6 +52,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 class NavigationRailBenchmark {
     @get:Rule val benchmarkRule = ComposeBenchmarkRule()
 
@@ -125,7 +129,7 @@ class NavigationRailBenchmark {
 
     @Test
     fun modalWideNavigationRail_firstPixel() {
-        benchmarkRule.benchmarkFirstRenderUntilStable(modalWideRailTestCaseFactory)
+        benchmarkRule.benchmarkToFirstPixel(modalWideRailTestCaseFactory)
     }
 
     @Test
@@ -141,6 +145,7 @@ class NavigationRailBenchmark {
         benchmarkRule.benchmarkToFirstPixel(dismissibleModalWideRailTestCaseFactory)
     }
 
+    @SdkSuppress(minSdkVersion = 24) // fails in API 23 emulator
     @Test
     fun modalWideNavigationRail_dismissible_stateChange() {
         benchmarkRule.toggleStateBenchmarkComposeMeasureLayout(
@@ -150,6 +155,7 @@ class NavigationRailBenchmark {
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 internal class NavigationRailTestCase(
     private val isWideNavRail: Boolean = false,
     private val initialStateValue: WideNavigationRailValue = WideNavigationRailValue.Expanded,
@@ -200,7 +206,11 @@ internal class NavigationRailTestCase(
 
     @Composable
     override fun ContentWrappers(content: @Composable () -> Unit) {
-        MaterialTheme { content() }
+        if (isWideNavRail) {
+            MaterialExpressiveTheme { content() }
+        } else {
+            MaterialTheme { content() }
+        }
     }
 
     override fun toggleState() {
@@ -214,6 +224,7 @@ internal class NavigationRailTestCase(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 internal class ModalWideNavigationRailTestCase(
     private val isDismissible: Boolean = false,
     private val initialStateValue: WideNavigationRailValue = WideNavigationRailValue.Collapsed,
@@ -248,7 +259,7 @@ internal class ModalWideNavigationRailTestCase(
 
     @Composable
     override fun ContentWrappers(content: @Composable () -> Unit) {
-        MaterialTheme { content() }
+        MaterialExpressiveTheme { content() }
     }
 
     override fun toggleState() {

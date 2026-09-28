@@ -50,19 +50,23 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.compose.platform.DefaultDialogManager
 import androidx.xr.compose.platform.LocalDialogManager
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.SpatialCapabilities
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.testTag
+import androidx.xr.compose.subspace.semantics.testTag
+import androidx.xr.compose.testing.ShadowActivityEmbeddingController
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.TestSetup
-import androidx.xr.compose.testing.createFakeRuntime
+import androidx.xr.compose.testing.configureFakeSession
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
-import androidx.xr.compose.unit.toMeter
+import androidx.xr.compose.testing.session
+import androidx.xr.compose.unit.toMeters
+import androidx.xr.scenecore.scene
 import com.google.common.truth.Truth.assertThat
 import java.util.UUID
 import kotlin.test.Ignore
@@ -70,37 +74,48 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
 /** Tests for [SpatialDialog]. */
 @RunWith(AndroidJUnit4::class)
+@Config(shadows = [ShadowActivityEmbeddingController::class])
 class SpatialDialogTest {
-    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+
+    // Migrate to `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
+    // available starting with v1.11.0.
+    // See API docs for details.
+    @Suppress("DEPRECATION")
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
     fun spatialDialog_dismissOnBackPress_setToTrue_dismissDialog() {
         val showDialog = mutableStateOf(true)
 
         composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        if (showDialog.value) {
-                            SpatialDialog(
-                                onDismissRequest = { showDialog.value = false },
-                                properties = SpatialDialogProperties(dismissOnBackPress = true),
-                            ) {
-                                Text("Spatial Dialog")
-                                val dispatcher =
-                                    LocalOnBackPressedDispatcherOwner.current!!
-                                        .onBackPressedDispatcher
-                                Button(onClick = { dispatcher.onBackPressed() }) {
-                                    Text(text = "Press Back")
+            CompositionLocalProvider(
+                LocalDialogManager provides DefaultDialogManager(),
+                content = {
+                    Subspace {
+                        SpatialPanel(SubspaceModifier.testTag("panel")) {
+                            if (showDialog.value) {
+                                SpatialDialog(
+                                    onDismissRequest = { showDialog.value = false },
+                                    properties = SpatialDialogProperties(dismissOnBackPress = true),
+                                ) {
+                                    Text("Spatial Dialog")
+                                    val dispatcher =
+                                        LocalOnBackPressedDispatcherOwner.current!!
+                                            .onBackPressedDispatcher
+                                    Button(onClick = { dispatcher.onBackPressed() }) {
+                                        Text(text = "Press Back")
+                                    }
                                 }
                             }
                         }
                     }
-                }
-            }
+                },
+            )
         }
 
         composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
@@ -117,21 +132,18 @@ class SpatialDialogTest {
         val showDialog = mutableStateOf(true)
 
         composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        if (showDialog.value) {
-                            SpatialDialog(
-                                onDismissRequest = { showDialog.value = false },
-                                properties = SpatialDialogProperties(dismissOnBackPress = false),
-                            ) {
-                                Text("Spatial Dialog")
-                                val dispatcher =
-                                    LocalOnBackPressedDispatcherOwner.current!!
-                                        .onBackPressedDispatcher
-                                Button(onClick = { dispatcher.onBackPressed() }) {
-                                    Text(text = "Press Back")
-                                }
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    if (showDialog.value) {
+                        SpatialDialog(
+                            onDismissRequest = { showDialog.value = false },
+                            properties = SpatialDialogProperties(dismissOnBackPress = false),
+                        ) {
+                            Text("Spatial Dialog")
+                            val dispatcher =
+                                LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
+                            Button(onClick = { dispatcher.onBackPressed() }) {
+                                Text(text = "Press Back")
                             }
                         }
                     }
@@ -151,31 +163,25 @@ class SpatialDialogTest {
     // TODO(b/431317832): Fix the bug in the implementation of dismissOnClickOutside.
     @Ignore("Fix the underlying implementation")
     @Test
-    fun spatialDialog_fullSpaceMode_dismissOnClickOutside_setToTrue_dismissDialog() {
+    fun spatialDialog_fullSpace_dismissOnClickOutside_setToTrue_dismissDialog() {
         var showDialog by mutableStateOf(true)
         var outsideClicked by mutableStateOf(false)
 
-        val runtime = createFakeRuntime(composeTestRule.activity)
-        runtime.requestFullSpaceMode()
-
         composeTestRule.setContent {
-            TestSetup(runtime = runtime) {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        Box(
-                            modifier =
-                                Modifier.fillMaxSize().testTag("background").clickable {
-                                    outsideClicked = true
-                                }
-                        ) {
-                            if (showDialog) {
-                                SpatialDialog(
-                                    onDismissRequest = { showDialog = false },
-                                    properties =
-                                        SpatialDialogProperties(dismissOnClickOutside = true),
-                                ) {
-                                    Text("Spatial Dialog")
-                                }
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    Box(
+                        modifier =
+                            Modifier.fillMaxSize().testTag("background").clickable {
+                                outsideClicked = true
+                            }
+                    ) {
+                        if (showDialog) {
+                            SpatialDialog(
+                                onDismissRequest = { showDialog = false },
+                                properties = SpatialDialogProperties(dismissOnClickOutside = true),
+                            ) {
+                                Text("Spatial Dialog")
                             }
                         }
                     }
@@ -195,31 +201,25 @@ class SpatialDialogTest {
     // TODO(b/431317832): Fix the bug in the implementation of dismissOnClickOutside.
     @Ignore("Fix the underlying implementation")
     @Test
-    fun spatialDialog_fullSpaceMode_dismissOnClickOutside_setToFalse_doesNotDismissDialog() {
+    fun spatialDialog_fullSpace_dismissOnClickOutside_setToFalse_doesNotDismissDialog() {
         var showDialog by mutableStateOf(true)
         var outsideClicked by mutableStateOf(false)
 
-        val runtime = createFakeRuntime(composeTestRule.activity)
-        runtime.requestFullSpaceMode()
-
         composeTestRule.setContent {
-            TestSetup(runtime = runtime) {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        Box(
-                            modifier =
-                                Modifier.fillMaxSize().testTag("background").clickable {
-                                    outsideClicked = true
-                                }
-                        ) {
-                            if (showDialog) {
-                                SpatialDialog(
-                                    onDismissRequest = { showDialog = false },
-                                    properties =
-                                        SpatialDialogProperties(dismissOnClickOutside = false),
-                                ) {
-                                    Text("Spatial Dialog")
-                                }
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    Box(
+                        modifier =
+                            Modifier.fillMaxSize().testTag("background").clickable {
+                                outsideClicked = true
+                            }
+                    ) {
+                        if (showDialog) {
+                            SpatialDialog(
+                                onDismissRequest = { showDialog = false },
+                                properties = SpatialDialogProperties(dismissOnClickOutside = false),
+                            ) {
+                                Text("Spatial Dialog")
                             }
                         }
                     }
@@ -239,31 +239,26 @@ class SpatialDialogTest {
     // TODO(b/431317832): Fix the bug in the implementation of dismissOnClickOutside.
     @Ignore("Fix the underlying implementation")
     @Test
-    fun spatialDialog_homeSpaceMode_dismissOnClickOutside_setToTrue_dismissDialog() {
+    fun spatialDialog_homeSpace_dismissOnClickOutside_setToTrue_dismissDialog() {
         val showDialog = mutableStateOf(true)
         var outsideClicked = false
-
-        val runtime = createFakeRuntime(composeTestRule.activity)
-        runtime.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpace()
 
         composeTestRule.setContent {
-            TestSetup(runtime = runtime) {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        Box(
-                            modifier =
-                                Modifier.fillMaxSize().testTag("background").clickable {
-                                    outsideClicked = true
-                                }
-                        ) {
-                            if (showDialog.value) {
-                                SpatialDialog(
-                                    onDismissRequest = { showDialog.value = false },
-                                    properties =
-                                        SpatialDialogProperties(dismissOnClickOutside = true),
-                                ) {
-                                    Text("Spatial Dialog")
-                                }
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    Box(
+                        modifier =
+                            Modifier.fillMaxSize().testTag("background").clickable {
+                                outsideClicked = true
+                            }
+                    ) {
+                        if (showDialog.value) {
+                            SpatialDialog(
+                                onDismissRequest = { showDialog.value = false },
+                                properties = SpatialDialogProperties(dismissOnClickOutside = true),
+                            ) {
+                                Text("Spatial Dialog")
                             }
                         }
                     }
@@ -283,31 +278,26 @@ class SpatialDialogTest {
 
     // TODO(b/431317832): Fix the bug in the implementation of dismissOnClickOutside.
     @Test
-    fun spatialDialog_homeSpaceMode_dismissOnClickOutside_setToFalse_doesNotDismissDialog() {
+    fun spatialDialog_homeSpace_dismissOnClickOutside_setToFalse_doesNotDismissDialog() {
         val showDialog = mutableStateOf(true)
         var outsideClicked = false
-
-        val runtime = createFakeRuntime(composeTestRule.activity)
-        runtime.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpace()
 
         composeTestRule.setContent {
-            TestSetup(runtime = runtime) {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        Box(
-                            modifier =
-                                Modifier.fillMaxSize().testTag("background").clickable {
-                                    outsideClicked = true
-                                }
-                        ) {
-                            if (showDialog.value) {
-                                SpatialDialog(
-                                    onDismissRequest = { showDialog.value = false },
-                                    properties =
-                                        SpatialDialogProperties(dismissOnClickOutside = false),
-                                ) {
-                                    Text("Spatial Dialog")
-                                }
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    Box(
+                        modifier =
+                            Modifier.fillMaxSize().testTag("background").clickable {
+                                outsideClicked = true
+                            }
+                    ) {
+                        if (showDialog.value) {
+                            SpatialDialog(
+                                onDismissRequest = { showDialog.value = false },
+                                properties = SpatialDialogProperties(dismissOnClickOutside = false),
+                            ) {
+                                Text("Spatial Dialog")
                             }
                         }
                     }
@@ -338,16 +328,14 @@ class SpatialDialogTest {
             )
 
         composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    elevationLevels.forEach { elevation ->
-                        SpatialPanel(SubspaceModifier.testTag("panel")) {
-                            SpatialDialog(
-                                onDismissRequest = {},
-                                properties = SpatialDialogProperties(elevation = elevation),
-                            ) {
-                                Text("Dialog at $elevation")
-                            }
+            Subspace {
+                elevationLevels.forEach { elevation ->
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {
+                        SpatialDialog(
+                            onDismissRequest = {},
+                            properties = SpatialDialogProperties(elevation = elevation),
+                        ) {
+                            Text("Dialog at $elevation")
                         }
                     }
                 }
@@ -358,18 +346,50 @@ class SpatialDialogTest {
             composeTestRule.onNodeWithText("Dialog at $elevation").assertExists()
         }
 
-        assertThat(SpatialElevationLevel.DialogDefault.toMeter().toM())
-            .isEqualTo(SpatialElevationLevel.Level5.toMeter().toM())
-        assertThat(SpatialElevationLevel.DialogDefault.toMeter().toM())
-            .isGreaterThan(SpatialElevationLevel.Level4.toMeter().toM())
-        assertThat(SpatialElevationLevel.Level4.toMeter().toM())
-            .isGreaterThan(SpatialElevationLevel.Level3.toMeter().toM())
-        assertThat(SpatialElevationLevel.Level3.toMeter().toM())
-            .isGreaterThan(SpatialElevationLevel.Level2.toMeter().toM())
-        assertThat(SpatialElevationLevel.Level2.toMeter().toM())
-            .isGreaterThan(SpatialElevationLevel.Level1.toMeter().toM())
-        assertThat(SpatialElevationLevel.Level1.toMeter().toM())
-            .isGreaterThan(SpatialElevationLevel.Level0.toMeter().toM())
+        val session = checkNotNull(composeTestRule.session) { "session must be initialized" }
+        val density = Density(1.0f)
+        assertThat(
+                SpatialElevationLevel.DialogDefault.toMeters(
+                    density,
+                    session.scene.virtualPixelDensity,
+                )
+            )
+            .isEqualTo(
+                SpatialElevationLevel.Level5.toMeters(density, session.scene.virtualPixelDensity)
+            )
+        assertThat(
+                SpatialElevationLevel.DialogDefault.toMeters(
+                    density,
+                    session.scene.virtualPixelDensity,
+                )
+            )
+            .isGreaterThan(
+                SpatialElevationLevel.Level4.toMeters(density, session.scene.virtualPixelDensity)
+            )
+        assertThat(
+                SpatialElevationLevel.Level4.toMeters(density, session.scene.virtualPixelDensity)
+            )
+            .isGreaterThan(
+                SpatialElevationLevel.Level3.toMeters(density, session.scene.virtualPixelDensity)
+            )
+        assertThat(
+                SpatialElevationLevel.Level3.toMeters(density, session.scene.virtualPixelDensity)
+            )
+            .isGreaterThan(
+                SpatialElevationLevel.Level2.toMeters(density, session.scene.virtualPixelDensity)
+            )
+        assertThat(
+                SpatialElevationLevel.Level2.toMeters(density, session.scene.virtualPixelDensity)
+            )
+            .isGreaterThan(
+                SpatialElevationLevel.Level1.toMeters(density, session.scene.virtualPixelDensity)
+            )
+        assertThat(
+                SpatialElevationLevel.Level1.toMeters(density, session.scene.virtualPixelDensity)
+            )
+            .isGreaterThan(
+                SpatialElevationLevel.Level0.toMeters(density, session.scene.virtualPixelDensity)
+            )
     }
 
     @Composable
@@ -414,28 +434,26 @@ class SpatialDialogTest {
         composeTestRule.mainClock.autoAdvance = false
 
         composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        var showDialog by remember { mutableStateOf(false) }
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    var showDialog by remember { mutableStateOf(false) }
 
-                        Button(
-                            onClick = { showDialog = true },
-                            modifier = Modifier.testTag("showDialogButton"),
+                    Button(
+                        onClick = { showDialog = true },
+                        modifier = Modifier.testTag("showDialogButton"),
+                    ) {
+                        Text("Show Dialog")
+                    }
+
+                    if (showDialog) {
+                        AnimationTrackingDialog(
+                            onDismissRequest = { showDialog = false },
+                            animationSpec = customAnimationSpec,
+                            onAnimationValue = { value -> animationValues.add(value) },
+                            onAnimationComplete = { animationCompleted = true },
                         ) {
-                            Text("Show Dialog")
-                        }
-
-                        if (showDialog) {
-                            AnimationTrackingDialog(
-                                onDismissRequest = { showDialog = false },
-                                animationSpec = customAnimationSpec,
-                                onAnimationValue = { value -> animationValues.add(value) },
-                                onAnimationComplete = { animationCompleted = true },
-                            ) {
-                                Text("Animated Dialog")
-                                dialogShown = true
-                            }
+                            Text("Animated Dialog")
+                            dialogShown = true
                         }
                     }
                 }
@@ -507,28 +525,25 @@ class SpatialDialogTest {
         var dialogManagerState = false
 
         composeTestRule.setContent {
-            TestSetup {
-                val dialogManager = LocalDialogManager.current
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        var showDialog by remember { mutableStateOf(true) }
-
-                        if (showDialog) {
-                            SpatialDialog(onDismissRequest = { showDialog = false }) {
-                                Text("Dialog Content")
-                                Button(
-                                    onClick = {
-                                        dialogManagerState =
-                                            dialogManager.isSpatialDialogActive.value
+            CompositionLocalProvider(
+                LocalDialogManager provides DefaultDialogManager(),
+                content = {
+                    Subspace {
+                        SpatialPanel(SubspaceModifier.testTag("panel")) {
+                            var showDialog by remember { mutableStateOf(true) }
+                            val data = LocalDialogManager.current.isSpatialDialogActive.value
+                            if (showDialog) {
+                                SpatialDialog(onDismissRequest = { showDialog = false }) {
+                                    Text("Dialog Content")
+                                    Button(onClick = { dialogManagerState = data }) {
+                                        Text("Check State")
                                     }
-                                ) {
-                                    Text("Check State")
                                 }
                             }
                         }
                     }
-                }
-            }
+                },
+            )
         }
 
         composeTestRule.onNodeWithText("Check State").performClick()
@@ -542,17 +557,15 @@ class SpatialDialogTest {
 
         composeTestRule.setContent {
             CompositionLocalProvider(LocalSpatialCapabilities provides spatialCapabilities) {
-                TestSetup {
-                    var showDialog by remember { mutableStateOf(true) }
+                var showDialog by remember { mutableStateOf(true) }
 
-                    if (showDialog) {
-                        SpatialDialog(
-                            onDismissRequest = { showDialog = false },
-                            properties = SpatialDialogProperties(usePlatformDefaultWidth = true),
-                        ) {
-                            Box(modifier = Modifier.testTag("nonSpatialDialog")) {
-                                Text("Non-Spatial Dialog")
-                            }
+                if (showDialog) {
+                    SpatialDialog(
+                        onDismissRequest = { showDialog = false },
+                        properties = SpatialDialogProperties(usePlatformDefaultWidth = true),
+                    ) {
+                        Box(modifier = Modifier.testTag("nonSpatialDialog")) {
+                            Text("Non-Spatial Dialog")
                         }
                     }
                 }
@@ -566,14 +579,12 @@ class SpatialDialogTest {
     @Test
     fun spatialDialog_multipleDialogsComposed_bothExist() {
         composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        Column {
-                            SpatialDialog(onDismissRequest = {}) { Text("Dialog 1") }
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    Column {
+                        SpatialDialog(onDismissRequest = {}) { Text("Dialog 1") }
 
-                            SpatialDialog(onDismissRequest = {}) { Text("Dialog 2") }
-                        }
+                        SpatialDialog(onDismissRequest = {}) { Text("Dialog 2") }
                     }
                 }
             }
@@ -586,28 +597,22 @@ class SpatialDialogTest {
     @Test
     fun spatialDialog_contentSizeChange_handled() {
         composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        var expanded by remember { mutableStateOf(false) }
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    var expanded by remember { mutableStateOf(false) }
 
-                        SpatialDialog(onDismissRequest = {}) {
-                            Column(modifier = Modifier.testTag("ColumnContent")) {
-                                Text("Dialog Content")
-                                Button(onClick = { expanded = !expanded }) { Text("Toggle Size") }
+                    SpatialDialog(onDismissRequest = {}) {
+                        Column(modifier = Modifier.testTag("ColumnContent")) {
+                            Text("Dialog Content")
+                            Button(onClick = { expanded = !expanded }) { Text("Toggle Size") }
 
-                                if (expanded) {
-                                    Box(
-                                        modifier = Modifier.size(300.dp).testTag("expandedContent")
-                                    ) {
-                                        Text("Expanded Content")
-                                    }
-                                } else {
-                                    Box(
-                                        modifier = Modifier.size(200.dp).testTag("expandedContent")
-                                    ) {
-                                        Text("Expanded Content")
-                                    }
+                            if (expanded) {
+                                Box(modifier = Modifier.size(300.dp).testTag("expandedContent")) {
+                                    Text("Expanded Content")
+                                }
+                            } else {
+                                Box(modifier = Modifier.size(200.dp).testTag("expandedContent")) {
+                                    Text("Expanded Content")
                                 }
                             }
                         }
@@ -631,12 +636,10 @@ class SpatialDialogTest {
     @Test
     fun spatialDialog_emptyContent_shouldNotCrash() {
         composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        SpatialDialog(onDismissRequest = {}) {
-                            // Empty content
-                        }
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    SpatialDialog(onDismissRequest = {}) {
+                        // Empty content
                     }
                 }
             }
@@ -736,12 +739,12 @@ class SpatialDialogTest {
         var observedCompositionId: String? = null
 
         composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        var showInDialog by remember { mutableStateOf(true) }
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    var showInDialog by remember { mutableStateOf(true) }
 
-                        val movableContent = remember {
+                    val movableContent =
+                        remember<@Composable (() -> Unit)> {
                             movableContentOf {
                                 val compositionId = remember { UUID.randomUUID().toString() }
                                 observedCompositionId = compositionId
@@ -749,22 +752,21 @@ class SpatialDialogTest {
                             }
                         }
 
-                        Column {
-                            Button(
-                                onClick = { showInDialog = !showInDialog },
-                                modifier = Modifier.testTag("toggleButton"),
-                            ) {
-                                Text(if (showInDialog) "Move to Panel" else "Move to Dialog")
-                            }
+                    Column {
+                        Button(
+                            onClick = { showInDialog = !showInDialog },
+                            modifier = Modifier.testTag("toggleButton"),
+                        ) {
+                            Text(if (showInDialog) "Move to Panel" else "Move to Dialog")
+                        }
 
-                            Box {
-                                if (showInDialog) {
-                                    SpatialDialog(onDismissRequest = { showInDialog = false }) {
-                                        movableContent()
-                                    }
-                                } else {
+                        Box {
+                            if (showInDialog) {
+                                SpatialDialog(onDismissRequest = { showInDialog = false }) {
                                     movableContent()
                                 }
+                            } else {
+                                movableContent()
                             }
                         }
                     }
@@ -794,31 +796,29 @@ class SpatialDialogTest {
         val customAnimation = tween<Float>(500)
 
         composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        var showDialog by remember { mutableStateOf(true) }
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    var showDialog by remember { mutableStateOf(true) }
 
-                        if (showDialog) {
-                            SpatialDialog(
-                                onDismissRequest = { showDialog = false },
-                                properties =
-                                    SpatialDialogProperties(
-                                        dismissOnBackPress = false,
-                                        dismissOnClickOutside = false,
-                                        usePlatformDefaultWidth = false,
-                                        backgroundContentAnimationSpec = customAnimation,
-                                        elevation = SpatialElevationLevel.Level4,
-                                    ),
-                            ) {
-                                Column {
-                                    Text("Complex Dialog")
-                                    val dispatcher =
-                                        checkNotNull(LocalOnBackPressedDispatcherOwner.current)
-                                            .onBackPressedDispatcher
-                                    Button(onClick = { dispatcher.onBackPressed() }) {
-                                        Text("Try Back")
-                                    }
+                    if (showDialog) {
+                        SpatialDialog(
+                            onDismissRequest = { showDialog = false },
+                            properties =
+                                SpatialDialogProperties(
+                                    dismissOnBackPress = false,
+                                    dismissOnClickOutside = false,
+                                    usePlatformDefaultWidth = false,
+                                    backgroundContentAnimationSpec = customAnimation,
+                                    elevation = SpatialElevationLevel.Level4,
+                                ),
+                        ) {
+                            Column {
+                                Text("Complex Dialog")
+                                val dispatcher =
+                                    checkNotNull(LocalOnBackPressedDispatcherOwner.current)
+                                        .onBackPressedDispatcher
+                                Button(onClick = { dispatcher.onBackPressed() }) {
+                                    Text("Try Back")
                                 }
                             }
                         }
@@ -838,17 +838,15 @@ class SpatialDialogTest {
     @Test
     fun spatialDialog_whenToggledRapidly_maintainsCorrectState() {
         composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        var showDialog by remember { mutableStateOf(false) }
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    var showDialog by remember { mutableStateOf(false) }
 
-                        Button(onClick = { showDialog = !showDialog }) { Text("Toggle") }
+                    Button(onClick = { showDialog = !showDialog }) { Text("Toggle") }
 
-                        if (showDialog) {
-                            SpatialDialog(onDismissRequest = { showDialog = false }) {
-                                Text("Rapid Dialog")
-                            }
+                    if (showDialog) {
+                        SpatialDialog(onDismissRequest = { showDialog = false }) {
+                            Text("Rapid Dialog")
                         }
                     }
                 }
@@ -873,13 +871,11 @@ class SpatialDialogTest {
     @Test
     fun spatialDialog_withVeryLargeContent_rendersCorrectly() {
         composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        SpatialDialog(onDismissRequest = {}) {
-                            Box(modifier = Modifier.size(2000.dp).testTag("largeContent")) {
-                                Text("Very Large Content")
-                            }
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    SpatialDialog(onDismissRequest = {}) {
+                        Box(modifier = Modifier.size(2000.dp).testTag("largeContent")) {
+                            Text("Very Large Content")
                         }
                     }
                 }
@@ -895,26 +891,20 @@ class SpatialDialogTest {
     @Test
     fun spatialDialog_nestedDialogs_exist() {
         composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        var showOuterDialog by remember { mutableStateOf(true) }
-                        var showInnerDialog by remember { mutableStateOf(false) }
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    var showOuterDialog by remember { mutableStateOf(true) }
+                    var showInnerDialog by remember { mutableStateOf(false) }
 
-                        if (showOuterDialog) {
-                            SpatialDialog(onDismissRequest = { showOuterDialog = false }) {
-                                Column {
-                                    Text("Outer Dialog")
-                                    Button(onClick = { showInnerDialog = true }) {
-                                        Text("Show Inner")
-                                    }
+                    if (showOuterDialog) {
+                        SpatialDialog(onDismissRequest = { showOuterDialog = false }) {
+                            Column {
+                                Text("Outer Dialog")
+                                Button(onClick = { showInnerDialog = true }) { Text("Show Inner") }
 
-                                    if (showInnerDialog) {
-                                        SpatialDialog(
-                                            onDismissRequest = { showInnerDialog = false }
-                                        ) {
-                                            Text("Inner Content")
-                                        }
+                                if (showInnerDialog) {
+                                    SpatialDialog(onDismissRequest = { showInnerDialog = false }) {
+                                        Text("Inner Content")
                                     }
                                 }
                             }
@@ -933,18 +923,16 @@ class SpatialDialogTest {
     @Test
     fun spatialDialog_withStateChange_updatesCorrectly() {
         composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        var counter by remember { mutableStateOf(0) }
-                        var showDialog by remember { mutableStateOf(true) }
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    var counter by remember { mutableStateOf(0) }
+                    var showDialog by remember { mutableStateOf(true) }
 
-                        if (showDialog) {
-                            SpatialDialog(onDismissRequest = { showDialog = false }) {
-                                Column {
-                                    Text("Counter: $counter")
-                                    Button(onClick = { counter++ }) { Text("Increment") }
-                                }
+                    if (showDialog) {
+                        SpatialDialog(onDismissRequest = { showDialog = false }) {
+                            Column {
+                                Text("Counter: $counter")
+                                Button(onClick = { counter++ }) { Text("Increment") }
                             }
                         }
                     }
@@ -961,19 +949,17 @@ class SpatialDialogTest {
     @Test
     fun spatialDialog_withContent_hasCorrectAccessibilitySemantics() {
         composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        SpatialDialog(onDismissRequest = {}) {
-                            Column {
-                                Text("Dialog Title", modifier = Modifier.testTag("dialogTitle"))
-                                Text(
-                                    "Dialog content with important information",
-                                    modifier = Modifier.testTag("dialogContent"),
-                                )
-                                Button(onClick = {}, modifier = Modifier.testTag("dialogAction")) {
-                                    Text("OK")
-                                }
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    SpatialDialog(onDismissRequest = {}) {
+                        Column {
+                            Text("Dialog Title", modifier = Modifier.testTag("dialogTitle"))
+                            Text(
+                                "Dialog content with important information",
+                                modifier = Modifier.testTag("dialogContent"),
+                            )
+                            Button(onClick = {}, modifier = Modifier.testTag("dialogAction")) {
+                                Text("OK")
                             }
                         }
                     }
@@ -992,26 +978,24 @@ class SpatialDialogTest {
         var dialogTapDetected = false
 
         composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        Box(
-                            modifier =
-                                Modifier.fillMaxSize().pointerInput(Unit) {
-                                    detectTapGestures { tapDetected = true }
-                                }
-                        ) {
-                            SpatialDialog(onDismissRequest = {}) {
-                                Box(
-                                    modifier =
-                                        Modifier.size(100.dp)
-                                            .testTag("dialogGestureArea")
-                                            .pointerInput(Unit) {
-                                                detectTapGestures { dialogTapDetected = true }
-                                            }
-                                ) {
-                                    Text("Tap me")
-                                }
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    Box(
+                        modifier =
+                            Modifier.fillMaxSize().pointerInput(Unit) {
+                                detectTapGestures { tapDetected = true }
+                            }
+                    ) {
+                        SpatialDialog(onDismissRequest = {}) {
+                            Box(
+                                modifier =
+                                    Modifier.size(100.dp).testTag("dialogGestureArea").pointerInput(
+                                        Unit
+                                    ) {
+                                        detectTapGestures { dialogTapDetected = true }
+                                    }
+                            ) {
+                                Text("Tap me")
                             }
                         }
                     }
@@ -1033,28 +1017,26 @@ class SpatialDialogTest {
         composeTestRule.mainClock.autoAdvance = false
 
         composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        var showDialog by remember { mutableStateOf(false) }
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    var showDialog by remember { mutableStateOf(false) }
 
-                        Button(
-                            onClick = { showDialog = !showDialog },
-                            modifier = Modifier.testTag("toggleButton"),
+                    Button(
+                        onClick = { showDialog = !showDialog },
+                        modifier = Modifier.testTag("toggleButton"),
+                    ) {
+                        Text("Toggle")
+                    }
+
+                    if (showDialog) {
+                        SpatialDialog(
+                            onDismissRequest = { showDialog = false },
+                            properties =
+                                SpatialDialogProperties(
+                                    backgroundContentAnimationSpec = animationSpec
+                                ),
                         ) {
-                            Text("Toggle")
-                        }
-
-                        if (showDialog) {
-                            SpatialDialog(
-                                onDismissRequest = { showDialog = false },
-                                properties =
-                                    SpatialDialogProperties(
-                                        backgroundContentAnimationSpec = animationSpec
-                                    ),
-                            ) {
-                                Text("Animated Dialog")
-                            }
+                            Text("Animated Dialog")
                         }
                     }
                 }
@@ -1085,19 +1067,17 @@ class SpatialDialogTest {
             )
 
         composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    testCases.forEach { testCase ->
-                        SpatialPanel(SubspaceModifier.testTag("panel")) {
-                            SpatialDialog(
-                                onDismissRequest = {},
-                                properties =
-                                    SpatialDialogProperties(
-                                        backgroundContentAnimationSpec = testCase.spec
-                                    ),
-                            ) {
-                                Text("${testCase.name} Animation")
-                            }
+            Subspace {
+                testCases.forEach<AnimationTestCase> { testCase ->
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {
+                        SpatialDialog(
+                            onDismissRequest = {},
+                            properties =
+                                SpatialDialogProperties(
+                                    backgroundContentAnimationSpec = testCase.spec
+                                ),
+                        ) {
+                            Text("${testCase.name} Animation")
                         }
                     }
                 }
@@ -1113,34 +1093,32 @@ class SpatialDialogTest {
         var errorOccurred = false
 
         composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        SpatialDialog(onDismissRequest = {}) {
-                            @Composable
-                            fun PotentiallyErrorProneContent() {
-                                var shouldError by remember { mutableStateOf(false) }
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    SpatialDialog(onDismissRequest = {}) {
+                        @Composable
+                        fun PotentiallyErrorProneContent() {
+                            var shouldError by remember { mutableStateOf(false) }
 
-                                Button(
-                                    onClick = { shouldError = true },
-                                    modifier = Modifier.testTag("errorButton"),
-                                ) {
-                                    Text("Trigger Error")
-                                }
-
-                                if (shouldError) {
-                                    try {
-                                        // Simulate some operation that might fail
-                                        error("Simulated error")
-                                    } catch (_: Exception) {
-                                        errorOccurred = true
-                                        Text("Error handled gracefully")
-                                    }
-                                }
+                            Button(
+                                onClick = { shouldError = true },
+                                modifier = Modifier.testTag("errorButton"),
+                            ) {
+                                Text("Trigger Error")
                             }
 
-                            PotentiallyErrorProneContent()
+                            if (shouldError) {
+                                try {
+                                    // Simulate some operation that might fail
+                                    error("Simulated error")
+                                } catch (_: Exception) {
+                                    errorOccurred = true
+                                    Text("Error handled gracefully")
+                                }
+                            }
                         }
+
+                        PotentiallyErrorProneContent()
                     }
                 }
             }
@@ -1152,5 +1130,17 @@ class SpatialDialogTest {
 
         assertThat(errorOccurred).isTrue() // Error should be handled
         composeTestRule.onNodeWithText("Error handled gracefully").assertExists()
+    }
+
+    @Test
+    fun spatialDialog_whenActivityIsEmbedded_fallsBackToStandardDialog() {
+        ShadowActivityEmbeddingController.isEmbedded = true
+
+        composeTestRule.setContent {
+            SpatialDialog(onDismissRequest = {}) { Text("Fallback Content") }
+        }
+        composeTestRule.onNodeWithText("Fallback Content").assertExists()
+
+        ShadowActivityEmbeddingController.isEmbedded = false
     }
 }

@@ -54,6 +54,20 @@ if [ "`command -v getprop`" == "" ]; then
     fi
 fi
 
+
+# note: can't simply check exit code, it isn't reliably non-0 when a failure occurs (seen on API 24)
+# also dropping stdout, since it's inconsistently printed in error cases
+cmd power set-fixed-performance-mode-enabled true > /dev/null 2> /data/local/tmp/fixedError
+exitCode=$?
+if [ $exitCode -ne 0 ] || [ -s /data/local/tmp/fixedError ]; then
+    echo "Device does not support fixed perf mode, trying manual lock with root..."
+    echo ""
+else
+    echo "Locked clocks with fixed performance mode."
+    echo "To reset, run 'cmd power set-fixed-performance-mode-enabled false'"
+    exit 0
+fi
+
 # require root
 if [[ `id` != "uid=0"* ]]; then
     echo "Not running as root, cannot lock clocks, aborting"
@@ -267,7 +281,10 @@ function_lock_gpu_kgsl() {
     done
 
     # (below, 100M = 1M for MHz * 100 for %)
-    TARGET_FREQ_MHZ=$(( (${gpuMaxFreq} * ${GPU_TARGET_FREQ_PERCENT}) / 100000000 ))
+    # Since GPU frequencies are in HZ, we need to multiply by 1,000,000 to get MHz.
+    # (x Hz / 1000^2) * (target_percent / 100) = (x Hz * t) / 100,000,000
+    # Important: Divide by 1,000,000 first to avoid Int32 overflow
+    TARGET_FREQ_MHZ=$(( (${gpuMaxFreq} / 1000000 * ${GPU_TARGET_FREQ_PERCENT}) / 100 ))
 
     chosenFreq=${gpuMaxFreq}
     index=0

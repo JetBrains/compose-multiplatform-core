@@ -98,7 +98,7 @@ import kotlin.math.roundToInt
  *   [NavigationRailItem]s
  */
 @Composable
-fun NavigationRail(
+public fun NavigationRail(
     windowInsets: WindowInsets,
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colors.surface,
@@ -163,7 +163,7 @@ fun NavigationRail(
  *   [NavigationRailItem]s
  */
 @Composable
-fun NavigationRail(
+public fun NavigationRail(
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colors.surface,
     contentColor: Color = contentColorFor(backgroundColor),
@@ -198,7 +198,7 @@ fun NavigationRail(
  * @param unselectedContentColor the color of the text label and icon when this item is not selected
  */
 @Composable
-fun NavigationRailItem(
+public fun NavigationRailItem(
     selected: Boolean,
     onClick: () -> Unit,
     icon: @Composable () -> Unit,
@@ -210,13 +210,12 @@ fun NavigationRailItem(
     selectedContentColor: Color = MaterialTheme.colors.primary,
     unselectedContentColor: Color = LocalContentColor.current.copy(alpha = ContentAlpha.medium),
 ) {
-    val styledLabel: @Composable (() -> Unit)? =
-        label?.let {
-            @Composable {
-                val style = MaterialTheme.typography.caption.copy(textAlign = TextAlign.Center)
-                ProvideTextStyle(style, content = label)
-            }
+    val styledLabel: @Composable (() -> Unit)? = label?.let {
+        @Composable {
+            val style = MaterialTheme.typography.caption.copy(textAlign = TextAlign.Center)
+            ProvideTextStyle(style, content = label)
         }
+    }
     // Default to compact size when the item has no label, or a regular size when it does.
     // Any size value that was set on the given Modifier will take precedence and allow custom
     // sizing.
@@ -252,12 +251,12 @@ fun NavigationRailItem(
 }
 
 /** Contains default values used for [NavigationRail]. */
-object NavigationRailDefaults {
+public object NavigationRailDefaults {
     /** Default elevation used for [NavigationRail]. */
-    val Elevation = 8.dp
+    public val Elevation: Dp = 8.dp
 
     /** Recommended window insets for navigation rail. */
-    val windowInsets: WindowInsets
+    public val windowInsets: WindowInsets
         @Composable
         get() =
             WindowInsets.systemBarsForVisualComponents.only(
@@ -324,17 +323,16 @@ private fun NavigationRailItemBaselineLayout(
     }) { measurables, constraints ->
         val iconPlaceable = measurables.fastFirst { it.layoutId == "icon" }.measure(constraints)
 
-        val labelPlaceable =
-            label?.let {
-                measurables
-                    .fastFirst { it.layoutId == "label" }
-                    .measure(
-                        // Measure with loose constraints for height as we don't want the label to
-                        // take up more
-                        // space than it needs
-                        constraints.copy(minHeight = 0)
-                    )
-            }
+        val labelPlaceable = label?.let {
+            measurables
+                .fastFirst { it.layoutId == "label" }
+                .measure(
+                    // Measure with loose constraints for height as we don't want the label to
+                    // take up more
+                    // space than it needs
+                    constraints.copy(minHeight = 0)
+                )
+        }
 
         // If there is no label, just place the icon.
         if (label == null) {
@@ -421,26 +419,32 @@ private val NavigationRailAnimationSpec =
     TweenSpec<Float>(durationMillis = 300, easing = FastOutSlowInEasing)
 
 /** Size of a regular [NavigationRailItem]. */
-private val NavigationRailItemSize = 72.dp
+private val NavigationRailItemSize
+    get() = 72.dp
 
 /** Size of a compact [NavigationRailItem]. */
-private val NavigationRailItemCompactSize = 56.dp
+private val NavigationRailItemCompactSize
+    get() = 56.dp
 
 /** Padding at the top and the bottom of the [NavigationRail] */
-private val NavigationRailPadding = 8.dp
+private val NavigationRailPadding
+    get() = 8.dp
 
 /**
  * Padding at the bottom of the [NavigationRail]'s header [Composable]. This padding will only be
  * added when the header is not null.
  */
-private val HeaderPadding = 8.dp
+private val HeaderPadding
+    get() = 8.dp
 
 /** The space between the text label's baseline and the bottom of the container. */
-private val ItemLabelBaselineBottomOffset = 16.dp
+private val ItemLabelBaselineBottomOffset
+    get() = 16.dp
 
 /**
  * The space between the icon and the top of the container when an item contains a label and icon.
  */
-private val ItemIconTopOffset = 14.dp
+private val ItemIconTopOffset
+    get() = 14.dp
 
 private val ZeroInsets = WindowInsets(0.dp)

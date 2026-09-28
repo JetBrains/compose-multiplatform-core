@@ -16,6 +16,7 @@
 
 package androidx.credentials.provider;
 
+import static androidx.credentials.TestUtilsKt.createDummyProviderGetCredentialRequest;
 import static androidx.credentials.internal.ConversionUtilsKt.getFinalCreateCredentialData;
 import static androidx.credentials.provider.ui.UiUtils.constructActionEntry;
 import static androidx.credentials.provider.ui.UiUtils.constructAuthenticationActionEntry;
@@ -74,7 +75,7 @@ import java.util.Set;
 
 @RunWith(AndroidJUnit4.class)
 @SmallTest
-@SdkSuppress(minSdkVersion = 23, maxSdkVersion = 33)
+@SdkSuppress(maxSdkVersion = 33)
 @SuppressWarnings("deprecation")
 public class PendingIntentHandlerApi23JavaTest {
 
@@ -312,10 +313,11 @@ public class PendingIntentHandlerApi23JavaTest {
         GetCustomCredentialOption customOption = new GetCustomCredentialOption(
                 "custom_type", customQueryData, customQueryData, false
         );
-        ProviderGetCredentialRequest expectedRequest = new ProviderGetCredentialRequest(
-                List.of(pwdOption1, pwdOption2, passkeyOption, customOption),
-                getTestCallingAppInfo("origin")
-        );
+        ProviderGetCredentialRequest expectedRequest =
+                new ProviderGetCredentialRequest(
+                        List.of(pwdOption1, pwdOption2, passkeyOption, customOption),
+                        getTestCallingAppInfo("origin")
+                );
         PendingIntentHandler.Api23Impl.setProviderGetCredentialRequest(intent, expectedRequest);
 
         ProviderGetCredentialRequest actual =
@@ -341,9 +343,10 @@ public class PendingIntentHandlerApi23JavaTest {
         GetCredentialResponse expected = new GetCredentialResponse(cred);
         Intent intent = new Intent();
 
-        PendingIntentHandler.setGetCredentialResponse(intent, expected);
+        PendingIntentHandler.setGetCredentialResponse(intent, expected,
+                createDummyProviderGetCredentialRequest());
 
-        GetCredentialResponse actual = PendingIntentHandler.Api23Impl.extractGetCredentialResponse(
+        GetCredentialResponse actual = PendingIntentHandler.retrieveGetCredentialResponse(
                 intent);
         assertThat(actual).isNotNull();
         TestUtilsKt.equals(actual, expected);
@@ -355,9 +358,10 @@ public class PendingIntentHandlerApi23JavaTest {
         GetCredentialResponse expected = new GetCredentialResponse(cred);
         Intent intent = new Intent();
 
-        PendingIntentHandler.setGetCredentialResponse(intent, expected);
+        PendingIntentHandler.setGetCredentialResponse(intent, expected,
+                createDummyProviderGetCredentialRequest());
 
-        GetCredentialResponse actual = PendingIntentHandler.Api23Impl.extractGetCredentialResponse(
+        GetCredentialResponse actual = PendingIntentHandler.retrieveGetCredentialResponse(
                 intent);
         assertThat(actual).isNotNull();
         TestUtilsKt.equals(actual, expected);
@@ -372,9 +376,10 @@ public class PendingIntentHandlerApi23JavaTest {
         GetCredentialResponse expected = new GetCredentialResponse(cred);
         Intent intent = new Intent();
 
-        PendingIntentHandler.setGetCredentialResponse(intent, expected);
+        PendingIntentHandler.setGetCredentialResponse(intent, expected,
+                createDummyProviderGetCredentialRequest());
 
-        GetCredentialResponse actual = PendingIntentHandler.Api23Impl.extractGetCredentialResponse(
+        GetCredentialResponse actual = PendingIntentHandler.retrieveGetCredentialResponse(
                 intent);
         assertThat(actual).isNotNull();
         TestUtilsKt.equals(actual, expected);

@@ -66,11 +66,6 @@ public class AppSearchConfigImpl implements AppSearchConfig {
     }
 
     @Override
-    public boolean getDocumentStoreNamespaceIdFingerprint() {
-        return mIcingOptionsConfig.getDocumentStoreNamespaceIdFingerprint();
-    }
-
-    @Override
     public float getOptimizeRebuildIndexThreshold() {
         return mIcingOptionsConfig.getOptimizeRebuildIndexThreshold();
     }
@@ -101,11 +96,6 @@ public class AppSearchConfigImpl implements AppSearchConfig {
     }
 
     @Override
-    public boolean getUsePersistentHashMap() {
-        return mIcingOptionsConfig.getUsePersistentHashMap();
-    }
-
-    @Override
     public int getMaxPageBytesLimit() {
         return mIcingOptionsConfig.getMaxPageBytesLimit();
     }
@@ -121,23 +111,8 @@ public class AppSearchConfigImpl implements AppSearchConfig {
     }
 
     @Override
-    public boolean getLiteIndexSortAtIndexing() {
-        return mIcingOptionsConfig.getLiteIndexSortAtIndexing();
-    }
-
-    @Override
     public int getLiteIndexSortSize() {
         return mIcingOptionsConfig.getLiteIndexSortSize();
-    }
-
-    @Override
-    public boolean getUseNewQualifiedIdJoinIndex() {
-        return mIcingOptionsConfig.getUseNewQualifiedIdJoinIndex();
-    }
-
-    @Override
-    public boolean getBuildPropertyExistenceMetadataHits() {
-        return mIcingOptionsConfig.getBuildPropertyExistenceMetadataHits();
     }
 
     @Override
@@ -171,6 +146,11 @@ public class AppSearchConfigImpl implements AppSearchConfig {
     }
 
     @Override
+    public int getMaxAccumulatedResultBytes() {
+        return mLimitConfig.getMaxAccumulatedResultBytes();
+    }
+
+    @Override
     public boolean shouldStoreParentInfoAsSyntheticProperty() {
         return mStoreParentInfoAsSyntheticProperty;
     }
@@ -199,5 +179,25 @@ public class AppSearchConfigImpl implements AppSearchConfig {
     @Override
     public int getCompressionThresholdBytes() {
         return mIcingOptionsConfig.getCompressionThresholdBytes();
+    }
+
+    @Override
+    public int getEmbeddingIndexNumShards() {
+        return mIcingOptionsConfig.getEmbeddingIndexNumShards();
+    }
+
+    @Override
+    public boolean getAllowRepeatedFieldJoins() {
+        return mIcingOptionsConfig.getAllowRepeatedFieldJoins();
+    }
+
+    @Override
+    public boolean enableIcingBackgroundTaskScheduler() {
+        return mIcingOptionsConfig.enableIcingBackgroundTaskScheduler();
+    }
+
+    @Override
+    public long getExpiredDocumentPurgingThresholdMillis() {
+        return mIcingOptionsConfig.getExpiredDocumentPurgingThresholdMillis();
     }
 }

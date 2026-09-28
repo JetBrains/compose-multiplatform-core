@@ -63,22 +63,23 @@ import androidx.credentials.internal.FrameworkClassParsingException
  *   [GetPublicKeyCredentialOption]).
  */
 @OptIn(ExperimentalDigitalCredentialApi::class)
-class GetCredentialRequest
+public class GetCredentialRequest
 @JvmOverloads
 constructor(
-    val credentialOptions: List<CredentialOption>,
-    val origin: String? = null,
-    val preferIdentityDocUi: Boolean = false,
-    val preferUiBrandingComponentName: ComponentName? = null,
+    public val credentialOptions: List<CredentialOption>,
+    public val origin: String? = null,
+    public val preferIdentityDocUi: Boolean = false,
+    public val preferUiBrandingComponentName: ComponentName? = null,
     @get:JvmName("preferImmediatelyAvailableCredentials")
-    val preferImmediatelyAvailableCredentials: Boolean = false,
+    public val preferImmediatelyAvailableCredentials: Boolean = false,
 ) {
 
     init {
         require(credentialOptions.isNotEmpty()) { "credentialOptions should not be empty" }
         if (credentialOptions.size > 1) {
-            val digitalCredentialOptionCount =
-                credentialOptions.count { it is GetDigitalCredentialOption }
+            val digitalCredentialOptionCount = credentialOptions.count {
+                it is GetDigitalCredentialOption
+            }
             if (
                 digitalCredentialOptionCount > 0 &&
                     digitalCredentialOptionCount != credentialOptions.size
@@ -98,7 +99,7 @@ constructor(
     }
 
     /** A builder for [GetCredentialRequest]. */
-    class Builder {
+    public class Builder {
         private var credentialOptions: MutableList<CredentialOption> = mutableListOf()
         private var origin: String? = null
         private var preferIdentityDocUi: Boolean = false
@@ -106,13 +107,13 @@ constructor(
         private var preferUiBrandingComponentName: ComponentName? = null
 
         /** Adds a specific type of [CredentialOption]. */
-        fun addCredentialOption(credentialOption: CredentialOption): Builder {
+        public fun addCredentialOption(credentialOption: CredentialOption): Builder {
             credentialOptions.add(credentialOption)
             return this
         }
 
         /** Sets the list of [CredentialOption]. */
-        fun setCredentialOptions(credentialOptions: List<CredentialOption>): Builder {
+        public fun setCredentialOptions(credentialOptions: List<CredentialOption>): Builder {
             this.credentialOptions = credentialOptions.toMutableList()
             return this
         }
@@ -123,7 +124,7 @@ constructor(
          * throw a SecurityException if android.permission.CREDENTIAL_MANAGER_SET_ORIGIN is not
          * present.
          */
-        fun setOrigin(origin: String): Builder {
+        public fun setOrigin(origin: String): Builder {
             this.origin = origin
             return this
         }
@@ -134,7 +135,7 @@ constructor(
          * false.
          */
         @Suppress("MissingGetterMatchingBuilder")
-        fun setPreferImmediatelyAvailableCredentials(
+        public fun setPreferImmediatelyAvailableCredentials(
             preferImmediatelyAvailableCredentials: Boolean
         ): Builder {
             this.preferImmediatelyAvailableCredentials = preferImmediatelyAvailableCredentials
@@ -148,7 +149,7 @@ constructor(
          * not take effect. Notice that this bit may not take effect for Android API level 33 and
          * below, depending on the pre-34 provider(s) you have chosen.
          */
-        fun setPreferUiBrandingComponentName(component: ComponentName?): Builder {
+        public fun setPreferUiBrandingComponentName(component: ComponentName?): Builder {
             this.preferUiBrandingComponentName = component
             return this
         }
@@ -158,7 +159,7 @@ constructor(
          * UI suited for Identity Documents like mDocs, Driving License etc.
          */
         @Suppress("MissingGetterMatchingBuilder")
-        fun setPreferIdentityDocUi(preferIdentityDocUi: Boolean): Builder {
+        public fun setPreferIdentityDocUi(preferIdentityDocUi: Boolean): Builder {
             this.preferIdentityDocUi = preferIdentityDocUi
             return this
         }
@@ -168,7 +169,7 @@ constructor(
          *
          * @throws IllegalArgumentException If [credentialOptions] is empty
          */
-        fun build(): GetCredentialRequest {
+        public fun build(): GetCredentialRequest {
             return GetCredentialRequest(
                 credentialOptions.toList(),
                 origin,
@@ -179,7 +180,7 @@ constructor(
         }
     }
 
-    companion object {
+    public companion object {
         internal const val BUNDLE_KEY_PREFER_IMMEDIATELY_AVAILABLE_CREDENTIALS =
             "androidx.credentials.BUNDLE_KEY_PREFER_IMMEDIATELY_AVAILABLE_CREDENTIALS"
         private const val BUNDLE_KEY_PREFER_IDENTITY_DOC_UI =
@@ -196,7 +197,7 @@ constructor(
          * include the request's `credentialOptions` or `origin`.
          */
         @JvmStatic
-        fun getRequestMetadataBundle(request: GetCredentialRequest): Bundle {
+        public fun getRequestMetadataBundle(request: GetCredentialRequest): Bundle {
             val bundle = Bundle()
             bundle.putBoolean(BUNDLE_KEY_PREFER_IDENTITY_DOC_UI, request.preferIdentityDocUi)
             bundle.putBoolean(
@@ -221,7 +222,9 @@ constructor(
          */
         @RequiresApi(34)
         @JvmStatic
-        fun createFrom(request: android.credentials.GetCredentialRequest): GetCredentialRequest {
+        public fun createFrom(
+            request: android.credentials.GetCredentialRequest
+        ): GetCredentialRequest {
             return createFrom(
                 request.credentialOptions.map { CredentialOption.createFrom(it) },
                 request.origin,
@@ -241,7 +244,7 @@ constructor(
          * @param metadata request metadata serialized as a Bundle using [getRequestMetadataBundle]
          */
         @JvmStatic
-        fun createFrom(
+        public fun createFrom(
             credentialOptions: List<CredentialOption>,
             origin: String?,
             metadata: Bundle,

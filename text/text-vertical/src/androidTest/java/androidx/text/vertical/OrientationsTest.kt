@@ -14,20 +14,23 @@
  * limitations under the License.
  */
 
+package androidx.text.vertical
+
 import android.text.SpannableString
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import androidx.text.vertical.OrientationMode
-import androidx.text.vertical.ResolvedOrientation
-import androidx.text.vertical.TextOrientation
-import androidx.text.vertical.TextOrientationSpan
-import androidx.text.vertical.forEachOrientation
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 
 private const val SPAN_FLAG = SpannableString.SPAN_INCLUSIVE_EXCLUSIVE
 
+/**
+ * Test cases for [forEachOrientation].
+ *
+ * The function resolves each character to a [ResolvedOrientation]. Then it merges the adjacent
+ * characters that have the same orientation into one run.
+ */
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class OrientationsTest {
@@ -43,7 +46,7 @@ class OrientationsTest {
         text: CharSequence,
         start: Int = 0,
         end: Int = text.length,
-        @OrientationMode textOrientation: Int = TextOrientation.MIXED,
+        textOrientation: TextOrientation = TextOrientation.Mixed,
     ): List<Run> {
         val out = mutableListOf<Run>()
         forEachOrientation(text, start, end, textOrientation) { oStart, oEnd, orientation ->
@@ -56,13 +59,8 @@ class OrientationsTest {
         return out
     }
 
-    private fun resolve(
-        text: CharSequence,
-        @OrientationMode textOrientation: Int = TextOrientation.MIXED,
-    ) = resolve(text, 0, text.length, textOrientation)
-
     @Test
-    fun emptyText() {
+    fun orientation_emptyText() {
         // Empty text
         assertThat(resolve("")).isEmpty()
         assertThat(resolve("", 0, 0)).isEmpty()
@@ -76,105 +74,76 @@ class OrientationsTest {
     }
 
     @Test
-    fun noOverrideText_MixedOrientation() {
+    fun orientation_noOverrideText_MixedOrientation() {
         // Whole text
         // Japanese letters: resolved to upright.
-        var runs = resolve("あいうえお")
-        assertThat(runs.size).isEqualTo(1)
-        assertThat(runs[0]).isEqualTo(Upright(0, 5))
+        assertThat(resolve("あいうえお")).containsExactly(Upright(0, 5))
 
         // English letters: resolved to Rotate.
-        runs = resolve("abcde")
-        assertThat(runs.size).isEqualTo(1)
-        assertThat(runs[0]).isEqualTo(Rotate(0, 5))
+        assertThat(resolve("abcde")).containsExactly(Rotate(0, 5))
 
         // Japanese and English mixed text: resolve as multiple runs
-        runs = resolve("あいうえおabcde")
-        assertThat(runs.size).isEqualTo(2)
-        assertThat(runs[0]).isEqualTo(Upright(0, 5))
-        assertThat(runs[1]).isEqualTo(Rotate(5, 10))
+        assertThat(resolve("あいうえおabcde")).containsExactly(Upright(0, 5), Rotate(5, 10)).inOrder()
 
         // Substring
-        runs = resolve("あいうえお", 1, 3)
-        assertThat(runs.size).isEqualTo(1)
-        assertThat(runs[0]).isEqualTo(Upright(1, 3))
+        assertThat(resolve("あいうえお", 1, 3)).containsExactly(Upright(1, 3))
 
-        runs = resolve("abcde", 1, 3)
-        assertThat(runs.size).isEqualTo(1)
-        assertThat(runs[0]).isEqualTo(Rotate(1, 3))
+        assertThat(resolve("abcde", 1, 3)).containsExactly(Rotate(1, 3))
 
-        runs = resolve("あいうえおabcde", 4, 7)
-        assertThat(runs.size).isEqualTo(2)
-        assertThat(runs[0]).isEqualTo(Upright(4, 5))
-        assertThat(runs[1]).isEqualTo(Rotate(5, 7))
+        assertThat(resolve("あいうえおabcde", 4, 7))
+            .containsExactly(Upright(4, 5), Rotate(5, 7))
+            .inOrder()
     }
 
     @Test
-    fun noOverrideText_UprightOrientation() {
-        var runs = resolve("あいうえお", TextOrientation.UPRIGHT)
-        assertThat(runs.size).isEqualTo(1)
-        assertThat(runs[0]).isEqualTo(Upright(0, 5))
+    fun orientation_noOverrideText_UprightOrientation() {
+        assertThat(resolve("あいうえお", textOrientation = TextOrientation.Upright))
+            .containsExactly(Upright(0, 5))
 
-        runs = resolve("abcde", TextOrientation.UPRIGHT)
-        assertThat(runs.size).isEqualTo(1)
-        assertThat(runs[0]).isEqualTo(Upright(0, 5))
+        assertThat(resolve("abcde", textOrientation = TextOrientation.Upright))
+            .containsExactly(Upright(0, 5))
 
-        runs = resolve("あいうえおabcde", TextOrientation.UPRIGHT)
-        assertThat(runs.size).isEqualTo(1)
-        assertThat(runs[0]).isEqualTo(Upright(0, 10))
+        assertThat(resolve("あいうえおabcde", textOrientation = TextOrientation.Upright))
+            .containsExactly(Upright(0, 10))
 
         // Substring
-        runs = resolve("あいうえお", 1, 3, TextOrientation.UPRIGHT)
-        assertThat(runs.size).isEqualTo(1)
-        assertThat(runs[0]).isEqualTo(Upright(1, 3))
+        assertThat(resolve("あいうえお", 1, 3, TextOrientation.Upright)).containsExactly(Upright(1, 3))
 
-        runs = resolve("abcde", 1, 3, TextOrientation.UPRIGHT)
-        assertThat(runs.size).isEqualTo(1)
-        assertThat(runs[0]).isEqualTo(Upright(1, 3))
+        assertThat(resolve("abcde", 1, 3, TextOrientation.Upright)).containsExactly(Upright(1, 3))
 
-        runs = resolve("あいうえおabcde", 4, 7, textOrientation = TextOrientation.UPRIGHT)
-        assertThat(runs.size).isEqualTo(1)
-        assertThat(runs[0]).isEqualTo(Upright(4, 7))
+        assertThat(resolve("あいうえおabcde", 4, 7, textOrientation = TextOrientation.Upright))
+            .containsExactly(Upright(4, 7))
     }
 
     @Test
-    fun noOverrideText_SidewaysOrientation() {
-        var runs = resolve("あいうえお", TextOrientation.SIDEWAYS)
-        assertThat(runs.size).isEqualTo(1)
-        assertThat(runs[0]).isEqualTo(Rotate(0, 5))
+    fun orientation_noOverrideText_SidewaysOrientation() {
+        assertThat(resolve("あいうえお", textOrientation = TextOrientation.Sideways))
+            .containsExactly(Rotate(0, 5))
 
-        runs = resolve("abcde", TextOrientation.SIDEWAYS)
-        assertThat(runs.size).isEqualTo(1)
-        assertThat(runs[0]).isEqualTo(Rotate(0, 5))
+        assertThat(resolve("abcde", textOrientation = TextOrientation.Sideways))
+            .containsExactly(Rotate(0, 5))
 
-        runs = resolve("あいうえおabcde", TextOrientation.SIDEWAYS)
-        assertThat(runs.size).isEqualTo(1)
-        assertThat(runs[0]).isEqualTo(Rotate(0, 10))
+        assertThat(resolve("あいうえおabcde", textOrientation = TextOrientation.Sideways))
+            .containsExactly(Rotate(0, 10))
 
         // Substring
-        runs = resolve("あいうえお", 1, 3, TextOrientation.SIDEWAYS)
-        assertThat(runs.size).isEqualTo(1)
-        assertThat(runs[0]).isEqualTo(Rotate(1, 3))
+        assertThat(resolve("あいうえお", 1, 3, TextOrientation.Sideways)).containsExactly(Rotate(1, 3))
 
-        runs = resolve("abcde", 1, 3, TextOrientation.SIDEWAYS)
-        assertThat(runs.size).isEqualTo(1)
-        assertThat(runs[0]).isEqualTo(Rotate(1, 3))
+        assertThat(resolve("abcde", 1, 3, TextOrientation.Sideways)).containsExactly(Rotate(1, 3))
 
-        runs = resolve("あいうえおabcde", 4, 7, TextOrientation.SIDEWAYS)
-        assertThat(runs.size).isEqualTo(1)
-        assertThat(runs[0]).isEqualTo(Rotate(4, 7))
+        assertThat(resolve("あいうえおabcde", 4, 7, TextOrientation.Sideways))
+            .containsExactly(Rotate(4, 7))
     }
 
     @Test
-    fun overrideText_UprightOverride() {
+    fun orientation_overrideText_UprightOverride() {
         var runs =
             resolve(
                 SpannableString("あいうえお").apply {
                     setSpan(TextOrientationSpan.Upright(), 1, 2, SPAN_FLAG)
                 }
             )
-        assertThat(runs.size).isEqualTo(1)
-        assertThat(runs[0]).isEqualTo(Upright(0, 5))
+        assertThat(runs).containsExactly(Upright(0, 5))
 
         runs =
             resolve(
@@ -182,10 +151,7 @@ class OrientationsTest {
                     setSpan(TextOrientationSpan.Upright(), 1, 2, SPAN_FLAG)
                 }
             )
-        assertThat(runs.size).isEqualTo(3)
-        assertThat(runs[0]).isEqualTo(Rotate(0, 1))
-        assertThat(runs[1]).isEqualTo(Upright(1, 2))
-        assertThat(runs[2]).isEqualTo(Rotate(2, 5))
+        assertThat(runs).containsExactly(Rotate(0, 1), Upright(1, 2), Rotate(2, 5)).inOrder()
 
         runs =
             resolve(
@@ -193,23 +159,18 @@ class OrientationsTest {
                     setSpan(TextOrientationSpan.Upright(), 4, 7, SPAN_FLAG)
                 }
             )
-        assertThat(runs.size).isEqualTo(2)
-        assertThat(runs[0]).isEqualTo(Upright(0, 7))
-        assertThat(runs[1]).isEqualTo(Rotate(7, 10))
+        assertThat(runs).containsExactly(Upright(0, 7), Rotate(7, 10)).inOrder()
     }
 
     @Test
-    fun overrideText_SidewaysOverride() {
+    fun orientation_overrideText_SidewaysOverride() {
         var runs =
             resolve(
                 SpannableString("あいうえお").apply {
                     setSpan(TextOrientationSpan.Sideways(), 1, 2, SPAN_FLAG)
                 }
             )
-        assertThat(runs.size).isEqualTo(3)
-        assertThat(runs[0]).isEqualTo(Upright(0, 1))
-        assertThat(runs[1]).isEqualTo(Rotate(1, 2))
-        assertThat(runs[2]).isEqualTo(Upright(2, 5))
+        assertThat(runs).containsExactly(Upright(0, 1), Rotate(1, 2), Upright(2, 5)).inOrder()
 
         runs =
             resolve(
@@ -217,8 +178,7 @@ class OrientationsTest {
                     setSpan(TextOrientationSpan.Sideways(), 1, 2, SPAN_FLAG)
                 }
             )
-        assertThat(runs.size).isEqualTo(1)
-        assertThat(runs[0]).isEqualTo(Rotate(0, 5))
+        assertThat(runs).containsExactly(Rotate(0, 5))
 
         runs =
             resolve(
@@ -226,36 +186,54 @@ class OrientationsTest {
                     setSpan(TextOrientationSpan.Sideways(), 4, 7, SPAN_FLAG)
                 }
             )
-        assertThat(runs.size).isEqualTo(2)
-        assertThat(runs[0]).isEqualTo(Upright(0, 4))
-        assertThat(runs[1]).isEqualTo(Rotate(4, 10))
+        assertThat(runs).containsExactly(Upright(0, 4), Rotate(4, 10)).inOrder()
     }
 
+    /** If more than one span covers a range, the last span that you attach controls the result. */
     @Test
-    fun tateChuToko() {
+    fun orientation_overlappingSpans_lastAttachedWins() {
+        // The test attaches Sideways first, then Upright, on the same range. The range stays
+        // upright.
         var runs =
             resolve(
                 SpannableString("abcde").apply {
-                    setSpan(TextOrientationSpan.TextCombineUpright(), 1, 2, SPAN_FLAG)
+                    setSpan(TextOrientationSpan.Sideways(), 1, 2, SPAN_FLAG)
+                    setSpan(TextOrientationSpan.Upright(), 1, 2, SPAN_FLAG)
                 }
             )
-        assertThat(runs.size).isEqualTo(3)
-        assertThat(runs[0]).isEqualTo(Rotate(0, 1))
-        assertThat(runs[1]).isEqualTo(TateChuYoko(1, 2))
-        assertThat(runs[2]).isEqualTo(Rotate(2, 5))
+        assertThat(runs).containsExactly(Rotate(0, 1), Upright(1, 2), Rotate(2, 5)).inOrder()
 
-        // TateChuYoko should not be extended even if they are connected.
+        // The test reverses the order of the two spans. Then all the text becomes one run.
         runs =
             resolve(
                 SpannableString("abcde").apply {
-                    setSpan(TextOrientationSpan.TextCombineUpright(), 1, 2, SPAN_FLAG)
-                    setSpan(TextOrientationSpan.TextCombineUpright(), 2, 4, SPAN_FLAG)
+                    setSpan(TextOrientationSpan.Upright(), 1, 2, SPAN_FLAG)
+                    setSpan(TextOrientationSpan.Sideways(), 1, 2, SPAN_FLAG)
                 }
             )
-        assertThat(runs.size).isEqualTo(4)
-        assertThat(runs[0]).isEqualTo(Rotate(0, 1))
-        assertThat(runs[1]).isEqualTo(TateChuYoko(1, 2))
-        assertThat(runs[2]).isEqualTo(TateChuYoko(2, 4))
-        assertThat(runs[3]).isEqualTo(Rotate(4, 5))
+        assertThat(runs).containsExactly(Rotate(0, 5))
+    }
+
+    @Test
+    fun orientation_TateChuYoko() {
+        var runs =
+            resolve(
+                SpannableString("abcde").apply {
+                    setSpan(TextOrientationSpan.CombineUpright(), 1, 2, SPAN_FLAG)
+                }
+            )
+        assertThat(runs).containsExactly(Rotate(0, 1), TateChuYoko(1, 2), Rotate(2, 5)).inOrder()
+
+        // Even if two TateChuYoko runs are adjacent, the function must not merge them.
+        runs =
+            resolve(
+                SpannableString("abcde").apply {
+                    setSpan(TextOrientationSpan.CombineUpright(), 1, 2, SPAN_FLAG)
+                    setSpan(TextOrientationSpan.CombineUpright(), 2, 4, SPAN_FLAG)
+                }
+            )
+        assertThat(runs)
+            .containsExactly(Rotate(0, 1), TateChuYoko(1, 2), TateChuYoko(2, 4), Rotate(4, 5))
+            .inOrder()
     }
 }

@@ -132,14 +132,15 @@ internal class UndoManager<T>(
                     add(value.capacity)
                     add(value.undoStack.size)
                     add(value.redoStack.size)
-                    value.undoStack.fastForEach { with(itemSaver) { add(save(it)) } }
-                    value.redoStack.fastForEach { with(itemSaver) { add(save(it)) } }
+                    value.undoStack.toList().fastForEach { with(itemSaver) { add(save(it)) } }
+                    value.redoStack.toList().fastForEach { with(itemSaver) { add(save(it)) } }
                 }
 
-                @Suppress("UNCHECKED_CAST")
                 override fun restore(value: Any): UndoManager<T> {
-                    val list = value as List<Any>
-                    val (capacity, undoSize, redoSize) = (list as List<Int>)
+                    @Suppress("UNCHECKED_CAST") val list = value as List<Any>
+                    val capacity = list[0] as Int
+                    val undoSize = list[1] as Int
+                    val redoSize = list[2] as Int
                     var i = 3
                     val undoStackItems = buildList {
                         while (i < undoSize + 3) {

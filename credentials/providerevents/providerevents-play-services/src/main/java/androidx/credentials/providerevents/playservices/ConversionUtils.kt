@@ -24,7 +24,8 @@ import androidx.annotation.RestrictTo
 import androidx.credentials.CreateCredentialResponse
 import androidx.credentials.provider.CallingAppInfo
 import androidx.credentials.provider.ProviderCreateCredentialRequest
-import androidx.credentials.provider.ProviderSignalCredentialStateRequest
+import androidx.credentials.providerevents.internal.UriUtils.Companion.readFromUri
+import androidx.credentials.providerevents.signal.ProviderSignalCredentialStateRequest
 import androidx.credentials.providerevents.transfer.CredentialTransferCapabilitiesRequest
 import androidx.credentials.providerevents.transfer.ExportCredentialsRequest
 import androidx.credentials.providerevents.transfer.ImportCredentialsRequest
@@ -40,6 +41,8 @@ public class ConversionUtils {
     public companion object {
         private const val EXTRA_CREDENTIAL_CALLING_APP_INFO =
             "androidx.credentials.providerevents.extra.CALLING_APP_INFO"
+        private const val BUNDLE_REQUEST_JSON_KEY =
+            "androidx.credentials.providerevents.BUNDLE_REQUEST_JSON_KEY"
         private const val TAG = "ConversionUtils"
 
         public fun convertToGmsResponse(
@@ -78,20 +81,21 @@ public class ConversionUtils {
             request: ExportCredentialsToDeviceSetupRequest,
             context: Context,
         ): ExportCredentialsRequest {
-            val credentialsJson = UriUtils.readFromUri(request.uri, context)
+            val credentialsJson = readFromUri(request.uri, context)
             return ExportCredentialsRequest(credentialsJson)
         }
 
         public fun convertToJetpackRequest(
             request: ImportCredentialsForDeviceSetupRequest
-        ): ImportCredentialsRequest {
-            return ImportCredentialsRequest(request.requestJson)
+        ): ImportCredentialsRequest? {
+            return ImportCredentialsRequest.createFrom(request.requestJson)
         }
 
         public fun convertToJetpackRequest(
             request: GetCredentialTransferCapabilitiesRequest
-        ): CredentialTransferCapabilitiesRequest {
-            return CredentialTransferCapabilitiesRequest()
+        ): CredentialTransferCapabilitiesRequest? {
+            val requestJson = request.requestData.getString(BUNDLE_REQUEST_JSON_KEY) ?: return null
+            return CredentialTransferCapabilitiesRequest.createFrom(requestJson)
         }
 
         @Suppress("RestrictedApiAndroidX")
@@ -102,12 +106,20 @@ public class ConversionUtils {
             if (callingAppInfo == null) {
                 return null
             }
-            val signalRequest =
-                androidx.credentials.SignalCredentialStateRequest.createFrom(
-                    request.type,
-                    request.requestData,
-                    request.origin,
-                )
+            var signalRequest: androidx.credentials.SignalCredentialStateRequest? = null
+            try {
+                signalRequest =
+                    androidx.credentials.SignalCredentialStateRequest.createFrom(
+                        request.type,
+                        request.requestData,
+                        request.origin,
+                    )
+            } catch (e: IllegalArgumentException) {
+                Log.e(TAG, e.message ?: "Signal request conversion failed")
+            }
+            if (signalRequest == null) {
+                return null
+            }
             return ProviderSignalCredentialStateRequest(signalRequest, callingAppInfo)
         }
 

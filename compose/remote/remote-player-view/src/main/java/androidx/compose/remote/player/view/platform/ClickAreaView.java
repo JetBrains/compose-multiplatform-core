@@ -15,14 +15,19 @@
  */
 package androidx.compose.remote.player.view.platform;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.view.View;
 
+import androidx.annotation.RestrictTo;
+
 import org.jspecify.annotations.Nullable;
 
 /** Implementation for the click handling */
+@RestrictTo(LIBRARY_GROUP)
 class ClickAreaView extends View {
     private int mId;
     private final String mMetadata;

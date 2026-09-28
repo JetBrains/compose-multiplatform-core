@@ -59,6 +59,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 
+/** Autofill sample displaying navigation capabilities. */
 @RequiresApi(Build.VERSION_CODES.O)
 @Preview
 @Composable
@@ -121,7 +122,7 @@ fun HomeScreen(navController: NavController) {
 
                 Spacer(modifier = Modifier.height(16.dp))
                 val homescreenText =
-                    """ 
+                    """
                     This is the Home Screen. From here, you can navigate to the registration screen,
                     or scrolling login screens. Scrolling screen 1 has a username field, then 
                     scrolling content, then a password field. Scrolling screen 2 has credentials, 

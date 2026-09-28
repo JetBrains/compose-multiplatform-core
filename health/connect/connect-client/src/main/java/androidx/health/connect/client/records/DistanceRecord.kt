@@ -15,7 +15,9 @@
  */
 package androidx.health.connect.client.records
 
+import android.os.Build
 import androidx.health.connect.client.aggregate.AggregateMetric
+import androidx.health.connect.client.impl.platform.records.toPlatformRecord
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.units.Length
 import androidx.health.connect.client.units.meters
@@ -42,9 +44,13 @@ public class DistanceRecord(
 ) : IntervalRecord {
 
     init {
-        distance.requireNotLess(other = distance.zero(), name = "distance")
-        distance.requireNotMore(other = MAX_DISTANCE, name = "distance")
-        require(startTime.isBefore(endTime)) { "startTime must be before endTime." }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            this.toPlatformRecord()
+        } else {
+            distance.requireNotLess(other = distance.zero(), name = "distance")
+            distance.requireNotMore(other = MAX_DISTANCE, name = "distance")
+            require(startTime.isBefore(endTime)) { "startTime must be before endTime." }
+        }
     }
 
     /*
@@ -83,7 +89,7 @@ public class DistanceRecord(
         return "DistanceRecord(startTime=$startTime, startZoneOffset=$startZoneOffset, endTime=$endTime, endZoneOffset=$endZoneOffset, distance=$distance, metadata=$metadata)"
     }
 
-    companion object {
+    public companion object {
         private val MAX_DISTANCE = 1000_000.meters
 
         /**
@@ -91,7 +97,7 @@ public class DistanceRecord(
          * [androidx.health.connect.client.aggregate.AggregationResult].
          */
         @JvmField
-        val DISTANCE_TOTAL: AggregateMetric<Length> =
+        public val DISTANCE_TOTAL: AggregateMetric<Length> =
             AggregateMetric.doubleMetric(
                 dataTypeName = "Distance",
                 aggregationType = AggregateMetric.AggregationType.TOTAL,

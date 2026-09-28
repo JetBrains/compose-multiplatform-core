@@ -44,8 +44,11 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 
+// TODO: When re-enabling web targets, the KotlinRunTestResultUnused suppression MUST be removed
+//  for correct execution of the tests on web.
 @OptIn(ExperimentalCoroutinesApi::class)
 @IgnoreWebTarget // b/395933428
+@Suppress("KotlinRunTestResultUnused")
 class SimpleChannelFlowTest {
     val testScope = TestScope(UnconfinedTestDispatcher())
 
@@ -228,21 +231,20 @@ class SimpleChannelFlowTest {
                 delay(100)
                 emit(13)
             }
-        val combinedFlow =
-            upstream.flatMapLatest { upstreamValue ->
-                createFlow<Int>(impl) {
-                    try {
-                        send(upstreamValue)
-                        delay(2000)
-                        send(upstreamValue * 2)
-                    } catch (th: Throwable) {
-                        if (producerException == null) {
-                            producerException = th
-                        }
-                        throw th
+        val combinedFlow = upstream.flatMapLatest { upstreamValue ->
+            createFlow<Int>(impl) {
+                try {
+                    send(upstreamValue)
+                    delay(2000)
+                    send(upstreamValue * 2)
+                } catch (th: Throwable) {
+                    if (producerException == null) {
+                        producerException = th
                     }
+                    throw th
                 }
             }
+        }
         testScope.runTest { assertThat(combinedFlow.toList()).containsExactly(5, 13, 26) }
         assertThat(producerException)
             .hasMessageThat()

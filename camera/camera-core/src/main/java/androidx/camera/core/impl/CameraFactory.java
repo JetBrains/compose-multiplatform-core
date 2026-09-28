@@ -68,6 +68,24 @@ public interface CameraFactory extends CameraPresenceMonitor {
     }
 
     /**
+     * An interface for a CameraFactory that can be interrogated about the results of a
+     * potential camera ID list update without committing the change.
+     *
+     * <p>This is used for validation purposes before applying a state change.
+     */
+    interface Interrogator {
+        /**
+         * Calculates the filtered list of available camera IDs that would result from applying
+         * the given raw list, without changing the factory's internal state.
+         *
+         * @param cameraIds The complete, raw list of camera IDs from the hardware.
+         * @return The final, filtered list of available camera IDs.
+         */
+        @NonNull
+        List<String> getAvailableCameraIds(@NonNull List<String> cameraIds);
+    }
+
+    /**
      * Gets the camera with the associated id.
      *
      * @param cameraId the camera id to get camera with

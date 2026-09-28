@@ -14,87 +14,65 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore
 
-import android.app.Activity
-import android.content.Context
-import android.view.View
 import android.widget.TextView
+import androidx.activity.ComponentActivity
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
-import androidx.xr.runtime.internal.Entity as RtEntity
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.PanelEntity as RtPanelEntity
-import androidx.xr.runtime.internal.PixelDimensions as RtPixelDimensions
-import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
+import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.IntSize2d
-import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.testing.FakeRuntimeFactory
-import androidx.xr.runtime.testing.FakeSpatialPointerComponent
+import androidx.xr.scenecore.testing.FakeSpatialPointerComponent
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class SpatialPointerComponentTest {
-    private val fakeRuntimeFactory = FakeRuntimeFactory()
-    private val activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
-    private val mockRuntime = mock<JxrPlatformAdapter>()
-    private val mockActivitySpace = mock<RtActivitySpace>()
+    private val activity =
+        Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
+
     private lateinit var session: Session
-    private val entityManager = EntityManager()
-    private val mockGroupEntity = mock<RtEntity>()
-    private val mockPanelEntity = mock<RtPanelEntity>()
 
     @Before
-    fun setUp() {
-        whenever(mockRuntime.spatialEnvironment).thenReturn(mock())
-        whenever(mockRuntime.activitySpace).thenReturn(mockActivitySpace)
-        whenever(mockRuntime.activitySpaceRootImpl).thenReturn(mockActivitySpace)
-        whenever(mockRuntime.headActivityPose).thenReturn(mock())
-        whenever(mockRuntime.perceptionSpaceActivityPose).thenReturn(mock())
-        whenever(mockRuntime.mainPanelEntity).thenReturn(mock())
-        whenever(mockRuntime.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
-        whenever(mockRuntime.createGroupEntity(any(), any(), any())).thenReturn(mockGroupEntity)
+    fun setUp(): Unit = runBlocking {
+        val testDispatcher = StandardTestDispatcher()
+        val result = Session.create(activity, testDispatcher)
 
-        whenever(
-                mockRuntime.createPanelEntity(
-                    any<Context>(),
-                    any<Pose>(),
-                    any<View>(),
-                    any<RtPixelDimensions>(),
-                    any<String>(),
-                    any<RtEntity>(),
-                )
-            )
-            .thenReturn(mockPanelEntity)
+        assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
 
-        session = Session(activity, fakeRuntimeFactory.createRuntime(activity), mockRuntime)
+        session = (result as SessionCreateSuccess).session
     }
 
     @Test
     fun addSpatialPointerComponent_addsRuntimeSpatialPointerComponent() {
-        val entity = PanelEntity.create(session, TextView(activity), IntSize2d(720, 480), "test")
+        val entity =
+            PanelEntity.create(
+                session,
+                TextView(activity),
+                IntSize2d(720, 480),
+                "test",
+                parent = session.scene.activitySpace,
+            )
         assertThat(entity).isNotNull()
-        whenever(mockRuntime.createSpatialPointerComponent()).thenReturn(mock())
-        whenever(mockPanelEntity.addComponent(any())).thenReturn(true)
         val pointerComponent = SpatialPointerComponent.create(session)
 
         assertThat(entity.addComponent(pointerComponent)).isTrue()
-        verify(mockRuntime).createSpatialPointerComponent()
-        verify(mockPanelEntity).addComponent(any())
+        assertThat(entity.rtEntity?.getComponents()).hasSize(1)
+        assertThat(entity.rtEntity?.getComponents()[0])
+            .isInstanceOf(FakeSpatialPointerComponent::class.java)
     }
 
     @Test
     fun addSpatialPointerComponent_failsForNonPanelEntity() {
-        val entity = GroupEntity.create(session, "test")
+        val entity = Entity.create(session, "test")
         assertThat(entity).isNotNull()
         val pointerComponent = SpatialPointerComponent.create(session)
 
@@ -103,12 +81,16 @@ class SpatialPointerComponentTest {
 
     @Test
     fun getSpatialPointerIcon_returnsSetValue() {
-        val entity = PanelEntity.create(session, TextView(activity), IntSize2d(720, 480), "test")
-        val fakeRtSpatialPointerComponent = FakeSpatialPointerComponent()
+        val entity =
+            PanelEntity.create(
+                session,
+                TextView(activity),
+                IntSize2d(720, 480),
+                "test",
+                parent = session.scene.activitySpace,
+            )
         assertThat(entity).isNotNull()
-        whenever(mockRuntime.createSpatialPointerComponent())
-            .thenReturn(fakeRtSpatialPointerComponent)
-        whenever(mockPanelEntity.addComponent(any())).thenReturn(true)
+
         val pointerComponent = SpatialPointerComponent.create(session)
         assertThat(entity.addComponent(pointerComponent)).isTrue()
 
@@ -122,12 +104,16 @@ class SpatialPointerComponentTest {
 
     @Test
     fun getSpatialPointerIcon_addAndRemoveComponentSetsDefaultIcon() {
-        val entity = PanelEntity.create(session, TextView(activity), IntSize2d(720, 480), "test")
-        val fakeRtSpatialPointerComponent = FakeSpatialPointerComponent()
+        val entity =
+            PanelEntity.create(
+                session,
+                TextView(activity),
+                IntSize2d(720, 480),
+                "test",
+                parent = session.scene.activitySpace,
+            )
         assertThat(entity).isNotNull()
-        whenever(mockRuntime.createSpatialPointerComponent())
-            .thenReturn(fakeRtSpatialPointerComponent)
-        whenever(mockPanelEntity.addComponent(any())).thenReturn(true)
+
         val pointerComponent = SpatialPointerComponent.create(session)
         assertThat(entity.addComponent(pointerComponent)).isTrue()
 

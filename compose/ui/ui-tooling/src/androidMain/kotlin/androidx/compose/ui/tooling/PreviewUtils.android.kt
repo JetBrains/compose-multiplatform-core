@@ -16,9 +16,13 @@
 
 package androidx.compose.ui.tooling
 
+import androidx.annotation.VisibleForTesting
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.data.Group
 import androidx.compose.ui.tooling.data.UiToolingDataApi
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import androidx.compose.ui.tooling.preview.PreviewWrapperProvider
+import java.lang.reflect.Modifier
 import kotlin.collections.removeLast as removeLastKt
 
 /** Tries to find the [Class] of the [PreviewParameterProvider] corresponding to the given FQN. */
@@ -28,6 +32,17 @@ internal fun String.asPreviewProviderClass(): Class<out PreviewParameterProvider
         return Class.forName(this) as? Class<out PreviewParameterProvider<*>>
     } catch (e: ClassNotFoundException) {
         PreviewLogger.logError("Unable to find PreviewProvider '$this'", e)
+        return null
+    }
+}
+
+/** Tries to find the [Class] of the [PreviewWrapperProvider] corresponding to the given FQN. */
+internal fun String.asPreviewWrapperProviderClass(): Class<out PreviewWrapperProvider>? {
+    try {
+        @Suppress("UNCHECKED_CAST")
+        return Class.forName(this) as? Class<out PreviewWrapperProvider>
+    } catch (e: ClassNotFoundException) {
+        PreviewLogger.logError("Unable to find PreviewWrapperProvider '$this'", e)
         return null
     }
 }
@@ -54,7 +69,7 @@ internal fun getPreviewProviderParameters(
                     )
             val params = constructor.newInstance() as PreviewParameterProvider<*>
             if (parameterProviderIndex < 0) {
-                return params.values.toArray(params.count)
+                return params.values.toArray(params.count).map { unwrapIfInline(it) }.toTypedArray()
             }
             return listOf(params.values.elementAt(parameterProviderIndex))
                 .map { unwrapIfInline(it) }
@@ -75,23 +90,59 @@ internal fun getPreviewProviderParameters(
 }
 
 /**
+ * Instantiates a [PreviewWrapperProvider] from the provided [Class].
+ *
+ * This method attempts to find a no-argument constructor on the given class and use it to creates a
+ * new instance. If [previewWrapperProvider] is `null`, it returns a no-op wrapper that just passes
+ * through its content.
+ *
+ * @param previewWrapperProvider The [Class] of the [PreviewWrapperProvider] to instantiate.
+ * @return A new instance of the [PreviewWrapperProvider] or a no-op wrapper if null.
+ * @throws IllegalArgumentException If the class does not have a public, no-argument constructor.
+ */
+internal fun instantiatePreviewWrapperProvider(
+    previewWrapperProvider: Class<out PreviewWrapperProvider>?
+): PreviewWrapperProvider {
+    if (previewWrapperProvider == null) {
+        return object : PreviewWrapperProvider {
+            @Composable
+            override fun Wrap(content: @Composable () -> Unit) {
+                content()
+            }
+        }
+    }
+
+    val constructor =
+        previewWrapperProvider.constructors
+            .singleOrNull { it.parameterTypes.isEmpty() }
+            ?.apply { isAccessible = true }
+            ?: throw IllegalArgumentException(
+                "PreviewWrapperProvider constructor can not" + " have parameters"
+            )
+    return constructor.newInstance() as PreviewWrapperProvider
+}
+
+/**
  * Checks if the object is of inlined value type. If yes, unwraps and returns the packed value If
  * not, returns the object as it is
  */
-private fun unwrapIfInline(classToCheck: Any?): Any? {
+@VisibleForTesting
+internal fun unwrapIfInline(classToCheck: Any?): Any? {
     // At the moment is not possible to use classToCheck::class.isValue, even if it works when
     // running tests, is not working once trying to run the Preview instead.
     // it would be possible in the future.
     // see also https://kotlinlang.org/docs/inline-classes.html
     if (classToCheck != null && classToCheck::class.java.annotations.any { it is JvmInline }) {
-        // The first primitive declared field in the class is the value wrapped
-        val fieldName: String =
-            classToCheck::class.java.declaredFields.first { it.type.isPrimitive }.name
-        return classToCheck::class
-            .java
-            .getDeclaredField(fieldName)
-            .also { it.isAccessible = true }
-            .get(classToCheck)
+        // Filter out static fields (such as Companion or constants) to find the instance backing
+        // field containing the packed value.
+        val field =
+            classToCheck::class.java.declaredFields.firstOrNull {
+                !Modifier.isStatic(it.modifiers) && !it.isSynthetic
+            }
+        if (field != null) {
+            field.isAccessible = true
+            return field.get(classToCheck)
+        }
     }
     return classToCheck
 }

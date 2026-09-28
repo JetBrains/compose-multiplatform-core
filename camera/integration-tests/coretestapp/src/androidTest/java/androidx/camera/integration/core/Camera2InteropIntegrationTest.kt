@@ -15,6 +15,7 @@
  */
 
 @file:OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+@file:Suppress("DEPRECATION")
 
 package androidx.camera.integration.core
 
@@ -26,24 +27,29 @@ import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE
 import android.hardware.camera2.CaptureRequest
+import android.hardware.camera2.TotalCaptureResult
 import android.os.Build
 import android.util.Range
+import androidx.annotation.OptIn
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
+import androidx.camera.camera2.interop.Camera2Interop
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.ExtendableBuilder
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.ExtensionsUtil
+import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.camera.testing.impl.fakes.FakeSessionProcessor
 import androidx.camera.testing.impl.util.Camera2InteropUtil
 import androidx.camera.testing.impl.util.Camera2InteropUtil.builder
@@ -56,6 +62,8 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -81,10 +89,6 @@ import org.junit.runners.Parameterized
 class Camera2InteropIntegrationTest(val implName: String, val cameraConfig: CameraXConfig) {
 
     @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
-
-    @get:Rule
     val useCamera =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(PreTestCameraIdList(cameraConfig))
 
@@ -95,11 +99,7 @@ class Camera2InteropIntegrationTest(val implName: String, val cameraConfig: Came
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun data() =
-            listOf(
-                arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
-            )
+        fun data() = listOf(arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()))
     }
 
     @Before
@@ -310,6 +310,82 @@ class Camera2InteropIntegrationTest(val implName: String, val cameraConfig: Came
         captureCallback.verifyFor(numOfCaptures = 20) { captureRequests, _ ->
             captureRequests.last()[testKey] != testValue
         }
+    }
+
+    @OptIn(ExperimentalCamera2Interop::class)
+    @Test
+    fun setSessionCaptureCallback_invokedForBothRepeatingAndOneShotRequests(): Unit = runBlocking {
+        // Arrange
+        val repeatingCaptureLatch = CountDownLatch(5)
+        val stillCaptureLatch = CountDownLatch(1)
+
+        val captureCallback =
+            object : CameraCaptureSession.CaptureCallback() {
+                override fun onCaptureCompleted(
+                    session: CameraCaptureSession,
+                    request: CaptureRequest,
+                    result: TotalCaptureResult,
+                ) {
+                    repeatingCaptureLatch.countDown()
+                }
+            }
+
+        val stillCaptureCallback =
+            object : CameraCaptureSession.CaptureCallback() {
+                override fun onCaptureCompleted(
+                    session: CameraCaptureSession,
+                    request: CaptureRequest,
+                    result: TotalCaptureResult,
+                ) {
+                    stillCaptureLatch.countDown()
+                }
+            }
+
+        val previewBuilder = Preview.Builder()
+        val imageCaptureBuilder = ImageCapture.Builder()
+
+        // Set session capture callback on ImageCapture using Extender
+        Camera2Interop.Extender(imageCaptureBuilder).setSessionCaptureCallback(stillCaptureCallback)
+
+        // Set session capture callback on Preview using Extender
+        Camera2Interop.Extender(previewBuilder).setSessionCaptureCallback(captureCallback)
+
+        val preview = previewBuilder.build()
+        val imageCapture = imageCaptureBuilder.build()
+
+        withContext(Dispatchers.Main) {
+            preview.setSurfaceProvider(
+                SurfaceTextureProvider.createAutoDrainingSurfaceTextureProvider()
+            )
+            processCameraProvider!!.bindToLifecycle(
+                TestLifecycleOwner(Lifecycle.State.RESUMED),
+                cameraSelector,
+                preview,
+                imageCapture,
+            )
+        }
+
+        // Assert repeating capture callback receives repeating requests
+        assertThat(repeatingCaptureLatch.await(5, TimeUnit.SECONDS)).isTrue()
+
+        // Act: take a picture
+        val pictureTakenLatch = CountDownLatch(1)
+        imageCapture.takePicture(
+            CameraXExecutors.mainThreadExecutor(),
+            object : ImageCapture.OnImageCapturedCallback() {
+                override fun onCaptureSuccess(image: ImageProxy) {
+                    image.close()
+                    pictureTakenLatch.countDown()
+                }
+
+                override fun onError(exception: ImageCaptureException) {}
+            },
+        )
+
+        // Assert: still picture succeeds AND stillCaptureCallback (set via
+        // setSessionCaptureCallback) is invoked for the one-shot request
+        assertThat(pictureTakenLatch.await(10, TimeUnit.SECONDS)).isTrue()
+        assertThat(stillCaptureLatch.await(10, TimeUnit.SECONDS)).isTrue()
     }
 
     @Test

@@ -16,7 +16,6 @@
 
 package androidx.compose.material3.demos
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -163,16 +162,15 @@ fun ColorSchemeDemo() {
     }
 }
 
-@SuppressLint("NullAnnotationGroup")
 @OptIn(ExperimentalTextApi::class)
 @Composable
 private fun ColorTile(text: String, color: Color) {
-    var borderColor: Color
-    if (color.luminance() < 0.5) {
-        borderColor = Color.White
-    } else {
-        borderColor = Color.Black
-    }
+    val borderColor =
+        if (color.luminance() < 0.5) {
+            Color.White
+        } else {
+            Color.Black
+        }
 
     OutlinedCard(border = BorderStroke(1.dp, borderColor)) {
         Surface(modifier = Modifier.height(221.dp).fillMaxWidth(), color = color) {

@@ -25,6 +25,10 @@ import androidx.annotation.RestrictTo
  * Device needs to be populated by users of the API. Metadata fields not provided by clients will
  * remain absent.
  *
+ * Some device types are only available on newer versions of Health Connect. See
+ * `androidx.health.connect.client.HealthConnectFeatures.FEATURE_EXTENDED_DEVICE_TYPES` for more
+ * details.
+ *
  * @property type a client supplied type of the device
  * @property manufacturer an optional client supplied manufacturer of the device
  * @property model an optional client supplied model of the device
@@ -58,16 +62,59 @@ public class Device(
         return "Device(type=$type, manufacturer=$manufacturer, model=$model)"
     }
 
-    companion object {
-        const val TYPE_UNKNOWN = 0
-        const val TYPE_WATCH = 1
-        const val TYPE_PHONE = 2
-        const val TYPE_SCALE = 3
-        const val TYPE_RING = 4
-        const val TYPE_HEAD_MOUNTED = 5
-        const val TYPE_FITNESS_BAND = 6
-        const val TYPE_CHEST_STRAP = 7
-        const val TYPE_SMART_DISPLAY = 8
+    public companion object {
+        public const val TYPE_UNKNOWN: Int = 0
+        public const val TYPE_WATCH: Int = 1
+        public const val TYPE_PHONE: Int = 2
+        public const val TYPE_SCALE: Int = 3
+        public const val TYPE_RING: Int = 4
+        public const val TYPE_HEAD_MOUNTED: Int = 5
+        public const val TYPE_FITNESS_BAND: Int = 6
+        public const val TYPE_CHEST_STRAP: Int = 7
+        public const val TYPE_SMART_DISPLAY: Int = 8
+
+        /**
+         * Requires
+         * `androidx.health.connect.client.HealthConnectFeatures.FEATURE_EXTENDED_DEVICE_TYPES`. If
+         * the feature is not available, this device type will be treated as [TYPE_UNKNOWN].
+         */
+        public const val TYPE_CONSUMER_MEDICAL_DEVICE: Int = 9
+        /**
+         * Requires
+         * `androidx.health.connect.client.HealthConnectFeatures.FEATURE_EXTENDED_DEVICE_TYPES`. If
+         * the feature is not available, this device type will be treated as [TYPE_UNKNOWN].
+         */
+        public const val TYPE_GLASSES: Int = 10
+        /**
+         * Requires
+         * `androidx.health.connect.client.HealthConnectFeatures.FEATURE_EXTENDED_DEVICE_TYPES`. If
+         * the feature is not available, this device type will be treated as [TYPE_UNKNOWN].
+         */
+        public const val TYPE_HEARABLE: Int = 11
+        /**
+         * Requires
+         * `androidx.health.connect.client.HealthConnectFeatures.FEATURE_EXTENDED_DEVICE_TYPES`. If
+         * the feature is not available, this device type will be treated as [TYPE_UNKNOWN].
+         */
+        public const val TYPE_FITNESS_MACHINE: Int = 12
+        /**
+         * Requires
+         * `androidx.health.connect.client.HealthConnectFeatures.FEATURE_EXTENDED_DEVICE_TYPES`. If
+         * the feature is not available, this device type will be treated as [TYPE_UNKNOWN].
+         */
+        public const val TYPE_FITNESS_EQUIPMENT: Int = 13
+        /**
+         * Requires
+         * `androidx.health.connect.client.HealthConnectFeatures.FEATURE_EXTENDED_DEVICE_TYPES`. If
+         * the feature is not available, this device type will be treated as [TYPE_UNKNOWN].
+         */
+        public const val TYPE_PORTABLE_COMPUTER: Int = 14
+        /**
+         * Requires
+         * `androidx.health.connect.client.HealthConnectFeatures.FEATURE_EXTENDED_DEVICE_TYPES`. If
+         * the feature is not available, this device type will be treated as [TYPE_UNKNOWN].
+         */
+        public const val TYPE_METER: Int = 15
     }
 
     /** List of supported device types on Health Platform. */
@@ -84,8 +131,15 @@ public class Device(
                 TYPE_FITNESS_BAND,
                 TYPE_CHEST_STRAP,
                 TYPE_SMART_DISPLAY,
+                TYPE_CONSUMER_MEDICAL_DEVICE,
+                TYPE_GLASSES,
+                TYPE_HEARABLE,
+                TYPE_FITNESS_MACHINE,
+                TYPE_FITNESS_EQUIPMENT,
+                TYPE_PORTABLE_COMPUTER,
+                TYPE_METER,
             ]
     )
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    annotation class DeviceType
+    public annotation class DeviceType
 }

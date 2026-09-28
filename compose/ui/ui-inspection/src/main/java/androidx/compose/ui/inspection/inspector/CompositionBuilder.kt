@@ -28,18 +28,15 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.inspection.util.AnchorMap
 import androidx.compose.ui.inspection.util.NO_ANCHOR_ID
-import androidx.compose.ui.inspection.util.isPrimitiveClass
 import androidx.compose.ui.layout.GraphicLayerInfo
 import androidx.compose.ui.layout.LayoutInfo
 import androidx.compose.ui.layout.view
 import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.InteroperableComposeUiNode
 import androidx.compose.ui.tooling.data.ContextCache
-import androidx.compose.ui.tooling.data.ParameterInformation
 import androidx.compose.ui.tooling.data.SourceContext
 import androidx.compose.ui.tooling.data.SourceLocation
 import androidx.compose.ui.tooling.data.UiToolingDataApi
-import androidx.compose.ui.tooling.data.mapTree
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.toSize
@@ -74,42 +71,67 @@ private val knownCompositionHolders = setOf("LayoutSpatialElevation", "SpatialEl
 
 /** Builder of [InspectorNode] trees from [root] compositions. */
 @OptIn(UiToolingDataApi::class)
-internal class CompositionBuilder(private val info: SharedBuilderData) : SharedBuilderData by info {
+internal class CompositionBuilder(
+    private val info: SharedBuilderData,
+    private val resultByComposition: MutableMap<CompositionInstance, SubCompositionResult>,
+) : SharedBuilderData by info {
     private var ownerView: View? = null
-    private var subCompositionsFound = 0
-    private val subCompositions = mutableMapOf<Any?, MutableList<SubCompositionResult>>()
     private val capturingSubComposition = mutableMapOf<MutableInspectorNode, SubCompositionResult>()
     private var listIndex = -1
 
-    /**
-     * Build a list of [InspectorNode] trees from a single [root] composition, and insert the
-     * already built child compositions in the proper location in the tree.
-     */
-    fun convert(
-        composition: CompositionInstance,
-        root: CompositionData,
-        childCompositions: List<SubCompositionResult>,
-    ): SubCompositionResult {
-        reset(root, childCompositions)
-        val node = root.mapTree(::convert, contextCache) ?: newNode()
-        updateSubCompositionsAtEnd(node)
-        val result = SubCompositionResult(composition, ownerView, node.children.toList(), listIndex)
-        release(node)
-        reset(null, emptyList())
-        return result
-    }
-
-    private fun reset(root: CompositionData?, childCompositions: List<SubCompositionResult>) {
-        ownerView = root?.let { findOwnerView(it) }
-        subCompositionsFound = 0
-        subCompositions.clear()
-        childCompositions
-            .filter { it.group != null && it.nodes.isNotEmpty() }
-            .forEach { result ->
-                subCompositions.getOrPut(result.group) { mutableListOf() }.add(result)
-            }
+    private fun clear() {
+        ownerView = null
         capturingSubComposition.clear()
         listIndex = -1
+    }
+
+    /**
+     * This function is called from [CompositionData.mapTree] before any calls to [convert] for this
+     * [composition].
+     */
+    fun prepareResult(composition: CompositionInstance) {
+        ownerView = findOwnerView(composition.data)
+        capturingSubComposition.clear()
+        listIndex = -1
+    }
+
+    /** This function is called recursively from [CompositionData.mapTree] in Post-Order (LRN). */
+    fun convert(
+        group: CompositionGroup,
+        context: SourceContext,
+        children: List<MutableInspectorNode>,
+        childrenFromSubCompositions: List<SubCompositionResult>,
+    ): MutableInspectorNode {
+        val parent = parse(group, context, children)
+        addToParent(parent, children)
+        addSubCompositions(parent, sort(childrenFromSubCompositions))
+        return parent
+    }
+
+    /**
+     * This function is called from [CompositionData.mapTree] after all calls to [convert] for this
+     * [composition].
+     */
+    fun createResult(
+        composition: CompositionInstance,
+        resultNode: MutableInspectorNode?,
+        childCompositions: List<CompositionInstance>,
+    ): SubCompositionResult {
+        val node = resultNode ?: newNode()
+        updateSubCompositionsAtEnd(node)
+        val singleSubComposition = childCompositions.singleOrNull()
+        var result = SubCompositionResult(ownerView, node.children.toList(), listIndex)
+        if (node.children.isEmpty() && ownerView == null && singleSubComposition != null) {
+            // Special case:
+            // Everything from this unowned composition was pushed to its single sub-composition.
+            // Remove the result of the sub-composition and use that result for this composition.
+            resultByComposition.remove(singleSubComposition)?.let {
+                result = SubCompositionResult(it.ownerView, it.nodes, listIndex)
+            }
+        }
+        resultByComposition[composition] = result
+        clear()
+        return result
     }
 
     /**
@@ -126,18 +148,6 @@ internal class CompositionBuilder(private val info: SharedBuilderData) : SharedB
             }
         }
         return null
-    }
-
-    /** This function is called recursively from [CompositionData.mapTree] in Post-Order (LRN). */
-    private fun convert(
-        group: CompositionGroup,
-        context: SourceContext,
-        children: List<MutableInspectorNode>,
-    ): MutableInspectorNode {
-        val parent = parse(group, context, children)
-        addToParent(parent, children)
-        addSubCompositions(group, parent)
-        return parent
     }
 
     /**
@@ -208,31 +218,31 @@ internal class CompositionBuilder(private val info: SharedBuilderData) : SharedB
         parentNode.id = if (!parentNode.hasLayerId && nodeId != null) nodeId else parentNode.id
     }
 
-    private fun addSubCompositions(group: CompositionGroup, parent: MutableInspectorNode) {
-        // Note: Minimize the number of calls to identity by only looking for a fixed number of
-        // sub-composition parents. Calling identity may create an anchor for the group.
-        if (subCompositions.size > subCompositionsFound) {
-            subCompositions[group.identity]?.let { subCompositions ->
-                subCompositionsFound++
-
-                subCompositions.forEach { subComposition ->
-                    if (subComposition.ownerView == ownerView || subComposition.ownerView == null) {
-                        // Steal all the nodes from the sub-compositions and add them to the parent.
-                        // Propagate the size to the parent node if the parent has no size.
-                        parent.children.addAll(subComposition.nodes)
-                        if (parent.box == emptyBox) {
-                            subComposition.nodes.forEach { parent.box = parent.box.union(it.box) }
-                            parent.boxSizeOverridden = true
-                        }
-                        subComposition.nodes = emptyList()
-                    } else {
-                        // If the sub-composition belongs to a different view prepare to copy the
-                        // parent node to the sub-composition. See: checkCapturingSubCompositions.
-                        capturingSubComposition[parent] = subComposition
-                    }
+    private fun addSubCompositions(
+        parent: MutableInspectorNode,
+        childrenFromSubCompositions: List<SubCompositionResult>,
+    ) {
+        childrenFromSubCompositions.forEach { subComposition ->
+            if (subComposition.ownerView == ownerView || subComposition.ownerView == null) {
+                // Steal all the nodes from the sub-compositions and add them to the parent.
+                // Propagate the size to the parent node if the parent has no size.
+                parent.children.addAll(subComposition.nodes)
+                if (parent.box == emptyBox) {
+                    subComposition.nodes.forEach { parent.box = parent.box.union(it.box) }
+                    parent.boxSizeOverridden = true
                 }
+                subComposition.nodes = emptyList()
+            } else {
+                // If the sub-composition belongs to a different view prepare to copy the
+                // parent node to the sub-composition. See: checkCapturingSubCompositions.
+                capturingSubComposition[parent] = subComposition
             }
         }
+    }
+
+    private fun sort(compositions: List<SubCompositionResult>): List<SubCompositionResult> {
+        val anyIndices = compositions.any { it.listIndex >= 0 }
+        return if (anyIndices) compositions.sortedBy { it.listIndex } else compositions
     }
 
     @OptIn(InternalComposeUiApi::class)
@@ -267,7 +277,7 @@ internal class CompositionBuilder(private val info: SharedBuilderData) : SharedB
         checkCapturingSubCompositions(node, children)
 
         val layoutInfo = group.node as? LayoutInfo
-        if (layoutInfo != null) {
+        if (layoutInfo != null && !layoutInfo.isVirtual) {
             return parseLayoutInfo(layoutInfo, context, node)
         }
 
@@ -298,7 +308,7 @@ internal class CompositionBuilder(private val info: SharedBuilderData) : SharedB
         if (isHiddenSystemNode(node)) {
             return node.markUnwanted()
         }
-        node.anchorId = anchorMap[group.identity]
+        node.anchorId = anchorMap[group.identity, node.key]
         node.id = syntheticId(node.anchorId)
         if (includeAllParameters) {
             addParameters(context, node)
@@ -422,7 +432,7 @@ internal class CompositionBuilder(private val info: SharedBuilderData) : SharedB
         val size = box.size.toSize()
         val coordinates = layoutInfo.coordinates
         var bounds: QuadBounds? = null
-        if (!layoutInfo.isAttached || !coordinates.isAttached || !layoutInfo.isPlaced) {
+        if (!layoutInfo.isAttached || !coordinates.isAttached) {
             // This could happen for extra items generated for reusable content like the
             // items in a LazyColumn. Mark these nodes unwanted i.e. filter them out.
             node.unknownLocation = true
@@ -520,16 +530,7 @@ internal class CompositionBuilder(private val info: SharedBuilderData) : SharedB
     }
 
     private fun addParameters(context: SourceContext, node: MutableInspectorNode) {
-        context.parameters.forEach {
-            val castedValue = castValue(it)
-            node.parameters.add(RawParameter(it.name, castedValue))
-        }
-    }
-
-    private fun castValue(parameter: ParameterInformation): Any? {
-        val value = parameter.value ?: return null
-        if (parameter.inlineClass == null || !value.javaClass.isPrimitiveClass()) return value
-        return inlineClassConverter.castParameterValue(parameter.inlineClass, value)
+        context.parameters.mapTo(node.parameters) { inlineClassConverter.toRawParameter(it) }
     }
 
     private fun isHiddenSystemNode(node: MutableInspectorNode): Boolean =
@@ -618,9 +619,6 @@ internal interface SharedBuilderData {
 
 /** Sub-Compositions of the composition being parsed. */
 internal class SubCompositionResult(
-    /** The sub-composition instance */
-    composition: CompositionInstance,
-
     /** The ownerView of this composition */
     val ownerView: View?,
 
@@ -633,12 +631,6 @@ internal class SubCompositionResult(
      */
     val listIndex: Int,
 ) {
-    /**
-     * The identity of the parent [CompositionGroup] where this composition belongs in a parent
-     * composition.
-     */
-    val group = composition.findContextGroup()?.identity
-
     /** The size of the owner view */
     val ownerViewBox = ownerView?.let { IntRect(0, 0, it.width, it.height) }
 }

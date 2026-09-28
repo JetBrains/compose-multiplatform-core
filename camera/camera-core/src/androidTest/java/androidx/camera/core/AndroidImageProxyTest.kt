@@ -28,13 +28,14 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.never
+import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 
 /** Unit tests for {@link AndroidImageProxy}. */
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class AndroidImageProxyTest {
     private val INITIAL_TIMESTAMP = 138990020L
 
@@ -57,6 +58,9 @@ class AndroidImageProxyTest {
         `when`(mVPlane.pixelStride).thenReturn(1)
         `when`(mVPlane.buffer).thenReturn(ByteBuffer.allocateDirect(320 * 240))
         `when`(mImage.timestamp).thenReturn(INITIAL_TIMESTAMP)
+        `when`(mImage.width).thenReturn(640)
+        `when`(mImage.height).thenReturn(480)
+        `when`(mImage.format).thenReturn(ImageFormat.YUV_420_888)
 
         mImageProxy = AndroidImageProxy(mImage)
     }
@@ -118,5 +122,26 @@ class AndroidImageProxyTest {
             assertThat(wrappedPlanes[i].pixelStride).isEqualTo(originalPlanes[i].pixelStride)
             assertThat(wrappedPlanes[i].buffer).isEqualTo(originalPlanes[i].buffer)
         }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 28)
+    fun getHardwareBuffer_callsImageGetHardwareBufferEachTime() {
+        `when`(mImage.hardwareBuffer).thenReturn(null)
+
+        mImageProxy!!.hardwareBuffer
+        mImageProxy!!.hardwareBuffer
+
+        verify(mImage, times(2)).hardwareBuffer
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 28)
+    fun close_doesNotCloseImageHardwareBuffer() {
+        // This test ensures that AndroidImageProxy doesn't attempt to get and close
+        // the hardware buffer during its own close() call.
+        mImageProxy!!.close()
+
+        verify(mImage, never()).hardwareBuffer
     }
 }

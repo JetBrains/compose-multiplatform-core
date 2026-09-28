@@ -54,7 +54,6 @@ private const val DEFAULT_JPEG_QUALITY = 100
 /** Unit tests for {@link ImageUtil}. */
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class ImageUtilDeviceTest {
 
     @Test(expected = IllegalArgumentException::class)
@@ -67,7 +66,7 @@ class ImageUtilDeviceTest {
                 ImageUtil.DEFAULT_RGBA_PIXEL_STRIDE,
             )
         // Act.
-        ImageUtil.createBitmapFromPlane(arrayOf(planeProxy), WIDTH, HEIGHT)
+        ImageUtil.createBitmapFromPlane(listOf(planeProxy), WIDTH, HEIGHT)
     }
 
     @Test(expected = java.lang.IllegalArgumentException::class)
@@ -80,7 +79,7 @@ class ImageUtilDeviceTest {
                 3,
             ) // Wrong pixel stride.
         // Act.
-        ImageUtil.createBitmapFromPlane(arrayOf(planeProxy), WIDTH, HEIGHT)
+        ImageUtil.createBitmapFromPlane(listOf(planeProxy), WIDTH, HEIGHT)
     }
 
     @Test
@@ -97,7 +96,7 @@ class ImageUtilDeviceTest {
                 ImageUtil.DEFAULT_RGBA_PIXEL_STRIDE,
             )
         // Act.
-        val restored = ImageUtil.createBitmapFromPlane(arrayOf(planeProxy), WIDTH, HEIGHT)
+        val restored = ImageUtil.createBitmapFromPlane(listOf(planeProxy), WIDTH, HEIGHT)
         // Assert.
         assertThat(getAverageDiff(original, restored)).isEqualTo(0)
     }
@@ -112,7 +111,7 @@ class ImageUtilDeviceTest {
                 ImageUtil.DEFAULT_RGBA_PIXEL_STRIDE,
             )
         // Act.
-        ImageUtil.createBitmapFromPlane(arrayOf(planeProxy, planeProxy), WIDTH, HEIGHT)
+        ImageUtil.createBitmapFromPlane(listOf(planeProxy, planeProxy), WIDTH, HEIGHT)
     }
 
     @Test

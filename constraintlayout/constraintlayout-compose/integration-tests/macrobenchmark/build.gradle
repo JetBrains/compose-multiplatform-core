@@ -17,12 +17,11 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.test")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
     defaultConfig {
-        minSdk = 26
+        minSdk { version = release(26) }
     }
     namespace = "androidx.constraintlayout.compose.integration.macrobenchmark"
 
@@ -33,7 +32,7 @@ android {
 // Create a release build type and make sure it's the only one enabled.
 // This is needed because we benchmark the release build type only.
 android.buildTypes { release {} }
-androidComponents { beforeVariants(selector().all()) { enabled = buildType == 'release' } }
+androidComponents { beforeVariants(selector().all()) { enabled = buildType == "release" } }
 
 dependencies {
     implementation(project(":benchmark:benchmark-junit4"))

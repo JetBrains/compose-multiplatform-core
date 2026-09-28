@@ -23,10 +23,8 @@ class AppFunctionComponentsMetadataTest {
 
     @Test
     fun appFunctionComponentsMetadata_equalsAndHashCode() {
-        val dataType1 =
-            AppFunctionPrimitiveTypeMetadata(AppFunctionDataTypeMetadata.TYPE_INT, false)
-        val dataType2 =
-            AppFunctionPrimitiveTypeMetadata(AppFunctionDataTypeMetadata.TYPE_STRING, true)
+        val dataType1 = AppFunctionIntTypeMetadata(false)
+        val dataType2 = AppFunctionStringTypeMetadata(true)
 
         val components1 = AppFunctionComponentsMetadata(mapOf("dataType1" to dataType1))
         val components2 = AppFunctionComponentsMetadata(mapOf("dataType1" to dataType1))
@@ -46,10 +44,8 @@ class AppFunctionComponentsMetadataTest {
 
     @Test
     fun toAppFunctionComponentsMetadataDocument_returnsCorrectDocument() {
-        val primitiveType1 =
-            AppFunctionPrimitiveTypeMetadata(AppFunctionDataTypeMetadata.TYPE_INT, false)
-        val primitiveType2 =
-            AppFunctionPrimitiveTypeMetadata(AppFunctionDataTypeMetadata.TYPE_STRING, true)
+        val primitiveType1 = AppFunctionIntTypeMetadata(false)
+        val primitiveType2 = AppFunctionStringTypeMetadata(true)
         val components =
             AppFunctionComponentsMetadata(
                 mapOf("dataType1" to primitiveType1, "dataType2" to primitiveType2)
@@ -110,16 +106,8 @@ class AppFunctionComponentsMetadataTest {
             .isEqualTo(
                 AppFunctionComponentsMetadata(
                     mapOf(
-                        "dataType1" to
-                            AppFunctionPrimitiveTypeMetadata(
-                                AppFunctionDataTypeMetadata.TYPE_INT,
-                                false,
-                            ),
-                        "dataType2" to
-                            AppFunctionPrimitiveTypeMetadata(
-                                AppFunctionDataTypeMetadata.TYPE_STRING,
-                                true,
-                            ),
+                        "dataType1" to AppFunctionIntTypeMetadata(false),
+                        "dataType2" to AppFunctionStringTypeMetadata(true),
                     )
                 )
             )

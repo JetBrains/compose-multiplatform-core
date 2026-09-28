@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core.operations;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.PaintContext;
@@ -30,6 +31,7 @@ import org.jspecify.annotations.NonNull;
 import java.util.List;
 
 /** Draw to a bitmap. This command redirects drawing to a bitmap. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class DrawToBitmap extends PaintOperation implements Serializable {
     private static final int OP_CODE = Operations.DRAW_TO_BITMAP;
     private static final String CLASS_NAME = "DrawToBitmap";
@@ -38,6 +40,7 @@ public class DrawToBitmap extends PaintOperation implements Serializable {
     private final int mColor;
 
     public static final int MODE_NO_INITIALIZE = 1;
+    public static final int MODE_COMPONENT_ID = 2;
 
     public DrawToBitmap(int bitmapId, int mode, int color) {
         mBitmapId = bitmapId;
@@ -57,11 +60,10 @@ public class DrawToBitmap extends PaintOperation implements Serializable {
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int bitmapId = buffer.readInt();
+        int bitmapId = buffer.readId();
         int mode = buffer.readInt();
         int color = buffer.readInt();
-        DrawToBitmap op = new DrawToBitmap(bitmapId, mode, color);
-        operations.add(op);
+        operations.add(new DrawToBitmap(bitmapId, mode, color));
     }
 
     @NonNull
@@ -111,6 +113,7 @@ public class DrawToBitmap extends PaintOperation implements Serializable {
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
         doc.operation("Canvas Operations", OP_CODE, CLASS_NAME)
+                .addedVersion(7)
                 .description("Draw to a bitmap")
                 .field(
                         DocumentedOperation.INT,
@@ -122,11 +125,81 @@ public class DrawToBitmap extends PaintOperation implements Serializable {
 
     @Override
     public void paint(@NonNull PaintContext context) {
-        context.drawToBitmap(mBitmapId, mMode, mColor);
+        int id = getId(mBitmapId, context);
+        int mode = mMode;
+        int color = mColor;
+        if (id == 0) {
+            if (context.hasActiveOffscreenTarget()) {
+                if (context.popOffscreenTarget()) {
+                    context.restore();
+                }
+                int parentBitmapId = context.getOffscreenBitmapId();
+                if (parentBitmapId != 0) {
+                    BitmapData.resumeOffscreenTargetCanvas(context, parentBitmapId);
+                    return;
+                }
+            }
+            context.drawToBitmap(0, mode, color);
+            return;
+        }
+        boolean isComponentOffscreen = (mode & MODE_COMPONENT_ID) != 0;
+        androidx.compose.remote.core.operations.layout.Component target =
+                context.getContext().mLastComponent;
+        if (isComponentOffscreen) {
+            mode &= ~MODE_COMPONENT_ID;
+            int compId = color;
+            if (compId > 0) {
+                int resolved = context.getContext().getInteger(compId);
+                if (resolved != 0) {
+                    compId = resolved;
+                } else {
+                    float fVal = context.getContext().getFloat(compId);
+                    if (!Float.isNaN(fVal) && fVal != 0f) {
+                        compId = (int) fVal;
+                    }
+                }
+            }
+            if (context.getContext().getDocument() != null) {
+                androidx.compose.remote.core.operations.layout.Component found =
+                        context.getContext().getDocument().getComponent(compId);
+                if (found != null) {
+                    target = found;
+                }
+            }
+            color = 0;
+        }
+        Object obj = context.getContext().getObject(id);
+        if (obj instanceof BitmapData) {
+            BitmapData bd = (BitmapData) obj;
+            if (bd.getEncoding() == BitmapData.ENCODING_COMPONENT_OFFSCREEN_BUFFER) {
+                boolean hasClip = false;
+                androidx.compose.remote.core.operations.layout.Component prevComp =
+                        context.getOffscreenComponent();
+                context.setOffscreenComponent(target);
+                bd.ensureOffscreenBitmap(context.getContext());
+                context.drawToBitmap(id, mode, color);
+                if (bd.getWidth() > 0 && bd.getHeight() > 0) {
+                    context.save();
+                    context.clipRect(0f, 0f, bd.getWidth(), bd.getHeight());
+                    hasClip = true;
+                }
+                context.setOffscreenComponent(prevComp);
+                context.pushOffscreenTarget(target, id, hasClip);
+                return;
+            }
+        }
+        if (isComponentOffscreen) {
+            context.pushOffscreenTarget(target, id, false);
+        }
+        context.drawToBitmap(id, mode, color);
     }
 
     @Override
     public void serialize(@NonNull MapSerializer serializer) {
-        serializer.addType(CLASS_NAME).add("bitmapId", mBitmapId);
+        serializer
+                .addType(CLASS_NAME)
+                .add("bitmapId", mBitmapId)
+                .add("mode", mMode)
+                .add("color", mColor);
     }
 }

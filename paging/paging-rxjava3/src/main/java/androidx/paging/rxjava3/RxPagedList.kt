@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-@file:Suppress("DEPRECATION") // TODO(): Remove when migrating from PagedList
+// Facade class name cannot be updated, the Kt name has been released
+// TODO(): Remove deprecation when migrating from PagedList
+@file:Suppress("DEPRECATION", "FacadeClassJvmName")
 
 package androidx.paging.rxjava3
 
@@ -104,7 +106,7 @@ private fun <Key : Any, Value : Any> createRxPagedListBuilder(
             "kotlinx.coroutines.Dispatchers",
         ),
 )
-fun <Key : Any, Value : Any> DataSource.Factory<Key, Value>.toObservable(
+public fun <Key : Any, Value : Any> DataSource.Factory<Key, Value>.toObservable(
     config: PagedList.Config,
     initialLoadKey: Key? = null,
     boundaryCallback: PagedList.BoundaryCallback<Value>? = null,
@@ -157,7 +159,7 @@ fun <Key : Any, Value : Any> DataSource.Factory<Key, Value>.toObservable(
             "kotlinx.coroutines.Dispatchers",
         ),
 )
-fun <Key : Any, Value : Any> DataSource.Factory<Key, Value>.toObservable(
+public fun <Key : Any, Value : Any> DataSource.Factory<Key, Value>.toObservable(
     pageSize: Int,
     initialLoadKey: Key? = null,
     boundaryCallback: PagedList.BoundaryCallback<Value>? = null,
@@ -217,7 +219,7 @@ fun <Key : Any, Value : Any> DataSource.Factory<Key, Value>.toObservable(
             "kotlinx.coroutines.Dispatchers",
         ),
 )
-fun <Key : Any, Value : Any> DataSource.Factory<Key, Value>.toFlowable(
+public fun <Key : Any, Value : Any> DataSource.Factory<Key, Value>.toFlowable(
     config: PagedList.Config,
     initialLoadKey: Key? = null,
     boundaryCallback: PagedList.BoundaryCallback<Value>? = null,
@@ -272,7 +274,7 @@ fun <Key : Any, Value : Any> DataSource.Factory<Key, Value>.toFlowable(
             "kotlinx.coroutines.Dispatchers",
         ),
 )
-fun <Key : Any, Value : Any> DataSource.Factory<Key, Value>.toFlowable(
+public fun <Key : Any, Value : Any> DataSource.Factory<Key, Value>.toFlowable(
     pageSize: Int,
     initialLoadKey: Key? = null,
     boundaryCallback: PagedList.BoundaryCallback<Value>? = null,
@@ -332,7 +334,7 @@ fun <Key : Any, Value : Any> DataSource.Factory<Key, Value>.toFlowable(
             "kotlinx.coroutines.Dispatchers",
         ),
 )
-fun <Key : Any, Value : Any> (() -> PagingSource<Key, Value>).toObservable(
+public fun <Key : Any, Value : Any> (() -> PagingSource<Key, Value>).toObservable(
     config: PagedList.Config,
     initialLoadKey: Key? = null,
     boundaryCallback: PagedList.BoundaryCallback<Value>? = null,
@@ -383,7 +385,7 @@ fun <Key : Any, Value : Any> (() -> PagingSource<Key, Value>).toObservable(
             "androidx.paging.rxjava3.observable",
         ),
 )
-fun <Key : Any, Value : Any> (() -> PagingSource<Key, Value>).toObservable(
+public fun <Key : Any, Value : Any> (() -> PagingSource<Key, Value>).toObservable(
     pageSize: Int,
     initialLoadKey: Key? = null,
     boundaryCallback: PagedList.BoundaryCallback<Value>? = null,
@@ -441,7 +443,7 @@ fun <Key : Any, Value : Any> (() -> PagingSource<Key, Value>).toObservable(
             "androidx.paging.rxjava3.flowable",
         ),
 )
-fun <Key : Any, Value : Any> (() -> PagingSource<Key, Value>).toFlowable(
+public fun <Key : Any, Value : Any> (() -> PagingSource<Key, Value>).toFlowable(
     config: PagedList.Config,
     initialLoadKey: Key? = null,
     boundaryCallback: PagedList.BoundaryCallback<Value>? = null,
@@ -494,7 +496,7 @@ fun <Key : Any, Value : Any> (() -> PagingSource<Key, Value>).toFlowable(
             "androidx.paging.rxjava3.flowable",
         ),
 )
-fun <Key : Any, Value : Any> (() -> PagingSource<Key, Value>).toFlowable(
+public fun <Key : Any, Value : Any> (() -> PagingSource<Key, Value>).toFlowable(
     pageSize: Int,
     initialLoadKey: Key? = null,
     boundaryCallback: PagedList.BoundaryCallback<Value>? = null,

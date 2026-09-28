@@ -57,14 +57,14 @@ import kotlin.math.max
  * @param colorFilter optional [ColorFilter] to apply to [painter]
  * @sample androidx.compose.ui.samples.PainterModifierSample
  */
-fun Modifier.paint(
+public fun Modifier.paint(
     painter: Painter,
     sizeToIntrinsics: Boolean = true,
     alignment: Alignment = Alignment.Center,
     contentScale: ContentScale = ContentScale.Inside,
     alpha: Float = DefaultAlpha,
     colorFilter: ColorFilter? = null,
-) =
+): Modifier =
     this then
         PainterElement(
             painter = painter,
@@ -142,8 +142,8 @@ private data class PainterElement(
  *
  * IMPORTANT NOTE: This class sets [androidx.compose.ui.Modifier.Node.shouldAutoInvalidate] to false
  * which means it MUST invalidate both draw and the layout. It invalidates both in the
- * [PainterElement.update] method through [LayoutModifierNode.invalidateLayer] (invalidates draw)
- * and [LayoutModifierNode.invalidateLayout] (invalidates layout).
+ * [PainterElement.update] method through [androidx.compose.ui.node.invalidateLayer] (invalidates
+ * draw) and [LayoutModifierNode.invalidateLayout] (invalidates layout).
  */
 private class PainterNode(
     var painter: Painter,

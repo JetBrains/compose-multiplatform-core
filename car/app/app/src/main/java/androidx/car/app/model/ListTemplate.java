@@ -22,10 +22,10 @@ import static androidx.car.app.model.constraints.RowListConstraints.ROW_LIST_CON
 
 import static java.util.Objects.requireNonNull;
 
-import androidx.annotation.OptIn;
+import android.util.Log;
+
 import androidx.car.app.Screen;
 import androidx.car.app.annotations.CarProtocol;
-import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.annotations.KeepFields;
 import androidx.car.app.annotations.RequiresCarApi;
 import androidx.car.app.messaging.model.CarMessage;
@@ -33,6 +33,7 @@ import androidx.car.app.messaging.model.ConversationItem;
 import androidx.car.app.model.constraints.ActionsConstraints;
 import androidx.car.app.model.constraints.CarTextConstraints;
 import androidx.car.app.utils.CollectionUtils;
+import androidx.car.app.utils.LogTags;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 
@@ -266,7 +267,6 @@ public final class ListTemplate implements Template {
     /**
      * Creates and returns a new {@link Builder} initialized with this {@link ListTemplate}'s data.
      */
-    @ExperimentalCarApi
     public ListTemplate.@NonNull Builder toBuilder() {
         return new ListTemplate.Builder(this);
     }
@@ -409,7 +409,6 @@ public final class ListTemplate implements Template {
          * Clears all of the {@link SectionedItemList}s added via
          * {@link #addSectionedList(SectionedItemList)}
          */
-        @ExperimentalCarApi
         public @NonNull Builder clearSectionedLists() {
             mSectionedLists.clear();
             return this;
@@ -442,6 +441,11 @@ public final class ListTemplate implements Template {
         /**
          * Adds a template scoped action outside the rows.
          *
+         * <p>Note: Starting in Car API 9, for media apps (apps with
+         * {@link androidx.car.app.CarAppPermission#MEDIA_TEMPLATES}), a maximum of 1 action can be
+         * set, as the host reserves space to render a persistent media entry point or miniplayer.
+         * If extra actions are sent by a media app, the host will drop the extra action.
+         *
          * @throws IllegalArgumentException if {@code action} contains unsupported Action types,
          *                                  or does not contain a valid {@link CarIcon} and
          *                                  background {@link CarColor}, or if exceeds the
@@ -453,6 +457,11 @@ public final class ListTemplate implements Template {
             List<Action> mActionsCopy = new ArrayList<>(mActions);
             mActionsCopy.add(requireNonNull(action));
             ActionsConstraints.ACTIONS_CONSTRAINTS_FAB.validateOrThrow(mActionsCopy);
+            if (action.getType() == Action.TYPE_MEDIA_PLAYBACK) {
+                Log.w(LogTags.TAG,
+                        "Action.TYPE_MEDIA_PLAYBACK is ignored as a floating action button on"
+                                + " Car API 9+ hosts.");
+            }
             mActions.add(action);
             return this;
         }
@@ -537,7 +546,6 @@ public final class ListTemplate implements Template {
         }
 
         /** Creates a new {@link Builder}, populated from the input {@link ListTemplate} */
-        @OptIn(markerClass = ExperimentalCarApi.class)
         Builder(@NonNull ListTemplate listTemplate) {
             mIsLoading = listTemplate.isLoading();
             mHeaderAction = listTemplate.getHeaderAction();
@@ -596,7 +604,6 @@ public final class ListTemplate implements Template {
     }
 
     /** Truncates ListTemplates to not exceed the Android maximum binder transaction limit. */
-    @OptIn(markerClass = ExperimentalCarApi.class)
     static ItemList truncate(ItemList itemList, TruncateCounter limit) {
         ItemList.Builder builder = new ItemList.Builder(itemList);
         builder.clearItems();

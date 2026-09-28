@@ -39,6 +39,7 @@ import androidx.camera.integration.extensions.IntentExtraKey.INTENT_EXTRA_KEY_TE
 import androidx.camera.integration.extensions.R
 import androidx.camera.integration.extensions.TestResultType.TEST_RESULT_NOT_SUPPORTED
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.testing.impl.util.EdgeToEdgeUtil
 import androidx.concurrent.futures.await
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.lifecycleScope
@@ -64,6 +65,11 @@ class CameraValidationResultActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.full_listview)
+
+        EdgeToEdgeUtil.enableEdgeToEdge(
+            activity = this,
+            viewIdsTopPaddingRequired = listOf(R.id.full_listview_root),
+        )
 
         supportActionBar?.title = resources.getString(R.string.extensions_validator)
         initialize()
@@ -101,39 +107,38 @@ class CameraValidationResultActivity : AppCompatActivity() {
 
             val listView = findViewById<ListView>(R.id.listView)
             listView.adapter = adapter
-            listView.onItemClickListener =
-                AdapterView.OnItemClickListener { _, _, position, _ ->
-                    val (testType, cameraId) = cameraExtensionResultMap.keys.elementAt(position)
-                    if (!isAnyExtensionModeSupported(testType, cameraId)) {
-                        Toast.makeText(
-                                this@CameraValidationResultActivity,
-                                "No extension mode is supported by the camera!",
-                                Toast.LENGTH_SHORT,
-                            )
-                            .show()
-                        return@OnItemClickListener
-                    }
-
-                    val intent =
-                        Intent(
+            listView.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
+                val (testType, cameraId) = cameraExtensionResultMap.keys.elementAt(position)
+                if (!isAnyExtensionModeSupported(testType, cameraId)) {
+                    Toast.makeText(
                             this@CameraValidationResultActivity,
-                            ExtensionValidationResultActivity::class.java,
+                            "No extension mode is supported by the camera!",
+                            Toast.LENGTH_SHORT,
                         )
-                    intent.putExtra(INTENT_EXTRA_KEY_TEST_TYPE, testType)
-                    intent.putExtra(INTENT_EXTRA_KEY_CAMERA_ID, cameraId)
-                    intent.putExtra(INTENT_EXTRA_KEY_LENS_FACING, cameraLensFacingMap[cameraId])
-                    intent.putExtra(
-                        INTENT_EXTRA_KEY_REQUEST_CODE,
-                        extensionValidationActivityRequestCode,
-                    )
-
-                    ActivityCompat.startActivityForResult(
-                        this@CameraValidationResultActivity,
-                        intent,
-                        extensionValidationActivityRequestCode,
-                        null,
-                    )
+                        .show()
+                    return@OnItemClickListener
                 }
+
+                val intent =
+                    Intent(
+                        this@CameraValidationResultActivity,
+                        ExtensionValidationResultActivity::class.java,
+                    )
+                intent.putExtra(INTENT_EXTRA_KEY_TEST_TYPE, testType)
+                intent.putExtra(INTENT_EXTRA_KEY_CAMERA_ID, cameraId)
+                intent.putExtra(INTENT_EXTRA_KEY_LENS_FACING, cameraLensFacingMap[cameraId])
+                intent.putExtra(
+                    INTENT_EXTRA_KEY_REQUEST_CODE,
+                    extensionValidationActivityRequestCode,
+                )
+
+                ActivityCompat.startActivityForResult(
+                    this@CameraValidationResultActivity,
+                    intent,
+                    extensionValidationActivityRequestCode,
+                    null,
+                )
+            }
         }
     }
 
