@@ -114,6 +114,12 @@ internal abstract class AbstractScrollableNode(
         updateDefaultFlingBehavior()
     }
 
+    override fun onDetach() {
+        super.onDetach()
+        mouseWheelScrollingLogic?.onDetach()
+        trackpadScrollingLogic?.onDetach()
+    }
+
     private fun updateDefaultFlingBehavior() {
         if (!isAttached) return
         val density = requireDensity()

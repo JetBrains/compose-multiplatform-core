@@ -78,16 +78,43 @@ internal abstract class NonTouchScrollingLogic(
      */
     protected abstract fun onScrollingEvent(pointerEvent: PointerEvent, bounds: IntSize): Boolean
 
+    /** Invoked, during the initial pass, for a pointer event that [isScrollingEvent] rejects. */
+    protected open fun onNonScrollingEvent(pointerEvent: PointerEvent) {}
+
+    /**
+     * Invoked, during the initial pass, for a scrolling event something else already consumed — an
+     * ancestor, which therefore takes over the scroll.
+     */
+    protected open fun onScrollingEventConsumedElsewhere() {}
+
+    /**
+     * Whether this logic takes the event during the initial pass even though it is not scrolling,
+     * ahead of descendants. Only events [onScrollingEvent] then consumes are consumed.
+     */
+    protected open fun hasScrollingPriority(pointerEvent: PointerEvent): Boolean = false
+
     // Called when the node receives a pointer event.
     fun onPointerEvent(pointerEvent: PointerEvent, pass: PointerEventPass, bounds: IntSize) {
-        if (pointerEvent.isConsumed) return
-        if (!isScrollingEvent(pointerEvent)) return
+        if (!isScrollingEvent(pointerEvent)) {
+            if (pass == PointerEventPass.Initial) onNonScrollingEvent(pointerEvent)
+            return
+        }
+        if (pointerEvent.isConsumed) {
+            if (pass == PointerEventPass.Initial) onScrollingEventConsumedElsewhere()
+            return
+        }
 
-        // If this scrollable is already scrolling from a previous interaction, consume immediately
-        // to give it priority.
-        if (pass == PointerEventPass.Initial && isScrolling) {
-            onScrollingEvent(pointerEvent, bounds)
-            pointerEvent.consume()
+        // If this scrollable is already scrolling from a previous interaction, or has priority,
+        // consume immediately to give it priority. Priority is asked first: answering it may
+        // update state that is stale, whether or not the scrollable is scrolling.
+        if (pass == PointerEventPass.Initial) {
+            val hasPriority = hasScrollingPriority(pointerEvent)
+            if (hasPriority || isScrolling) {
+                val consumed = onScrollingEvent(pointerEvent, bounds)
+                if (consumed || isScrolling) {
+                    pointerEvent.consume()
+                }
+            }
         }
 
         // During the main pass. If this scrollable is not scrolling, decide whether it should be
@@ -103,6 +130,9 @@ internal abstract class NonTouchScrollingLogic(
 
     /** Begins processing of events sent to [onPointerEvent] using the given [coroutineScope]. */
     abstract fun startReceivingEvents(coroutineScope: CoroutineScope)
+
+    /** Called when the owning scrollable node is detached. */
+    open fun onDetach() {}
 }
 
 /**

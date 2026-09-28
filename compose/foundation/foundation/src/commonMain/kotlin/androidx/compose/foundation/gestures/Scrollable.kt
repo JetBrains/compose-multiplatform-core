@@ -53,6 +53,7 @@ import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.dispatchOnScrollChanged
 import androidx.compose.ui.node.requireDensity
+import androidx.compose.ui.node.requireLayoutCoordinates
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Density
@@ -315,6 +316,7 @@ internal class ScrollableNode(
             scrollConfig = platformScrollConfig(),
             onScrollStopped = ::onMouseWheelScrollStopped,
             density = requireDensity(),
+            layoutCoordinates = { if (isAttached) requireLayoutCoordinates() else null },
         )
 
     override fun createTrackpadScrollingLogic() =
