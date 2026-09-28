@@ -555,9 +555,20 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
         onLayoutCompletedListeners += listener
     }
 
+    /**
+     * Calls every registered listener once, in registration order, taking each off the list
+     * before calling it. A listener may lay out again, which calls this from inside the loop.
+     * Iterating the list and clearing it afterwards let such a nested call clear the list under
+     * the outer loop, which then threw on a null entry, and made the nested call run the
+     * listeners up to the running one a second time. A listener registered while this runs is
+     * called in this dispatch, instead of being cleared with the list without ever running.
+     */
     private fun callOnLayoutCompletedListeners() {
-        onLayoutCompletedListeners.forEach { it.onLayoutComplete() }
-        onLayoutCompletedListeners.clear()
+        // Each removeAt(0) shifts the rest, which is fine for the handful of listeners a pass has.
+        val listeners = onLayoutCompletedListeners
+        while (listeners.isNotEmpty()) {
+            listeners.removeAt(0).onLayoutComplete()
+        }
     }
 
     /**
