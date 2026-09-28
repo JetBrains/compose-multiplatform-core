@@ -299,8 +299,13 @@ private fun configureSkikoWebRuntime(
     val unpackRuntime = project.tasks.register("unpackSkikoRuntimeFor$titledTargetName", Copy::class.java) {
         destinationDir = project.file(unpackedRuntimeDir)
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        // Keep the resolution lazy: iterating the file collection here would resolve
+        // the runtime classpath (and configure dependency projects) at configuration time,
+        // which breaks builds with configuration on demand enabled.
         from(
-            skikoWebRuntimeJarFiles.map { artifact -> project.zipTree(artifact) }
+            skikoWebRuntimeJarFiles.elements.map { artifacts ->
+                artifacts.map { project.zipTree(it) }
+            }
         )
     }
 
