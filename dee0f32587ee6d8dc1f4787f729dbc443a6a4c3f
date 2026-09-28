@@ -1,1 +1,7 @@
 Merge script: compilation failure
+
+Merge solver: fixed in cc4b0e30b5c077aa570e68b50fc6f1d6cefef20d
+
+Validation: ./gradlew assemble compileTests passed (after manually installing the Node.js 24.16.0/26.2.0 distributions missing from the environment). lint-checks ktCheck passes for the changed file.
+
+Produced by Air Automations. Name: AOSP Merges / Run: https://air.jetbrains.cloud/org/05cf1a7f-6ab5-713b-abd3-29d0c8a05e2d/automations/aeefe510-9f34-4bbe-b6f6-db539bf3d1bb?run=83366813-4e16-41c5-b529-7d23ea5afaf3
