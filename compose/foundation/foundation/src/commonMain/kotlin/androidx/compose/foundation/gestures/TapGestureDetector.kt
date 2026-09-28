@@ -306,8 +306,8 @@ public suspend fun AwaitPointerEventScope.awaitFirstDown(
 
 /**
  * Reads events until the first down is received. If [requireUnconsumed] is `true` and the first
- * down is consumed in the [PointerEventPass.Main] pass, that gesture is ignored.
- * If it was down caused by [PointerType.Mouse], this function reacts only on primary button.
+ * down is consumed in the [PointerEventPass.Main] pass, that gesture is ignored. If it was down
+ * caused by [PointerType.Mouse], this function reacts only on primary button.
  */
 public suspend fun AwaitPointerEventScope.awaitFirstDown(
     requireUnconsumed: Boolean = true,
@@ -320,8 +320,6 @@ public suspend fun AwaitPointerEventScope.awaitFirstDown(
     )
 }
 
-<<<<<<< HEAD
-=======
 // TODO(b/384562201): Remove once [awaitFirstDown] will be aligned for all platforms and have this
 // behavior.
 internal suspend fun AwaitPointerEventScope.awaitPrimaryFirstDown(
@@ -347,7 +345,6 @@ private suspend fun AwaitPointerEventScope.awaitFirstDownImpl(
     return event.changes[0]
 }
 
->>>>>>> c4ab40370e333eebac0d933331051092dbcaf9ae
 /**
  * Whether [AwaitPointerEventScope.awaitFirstDown], for mouse events, responds only to the primary
  * mouse button being pressed. The behavior currently differs between Android and Desktop, and
@@ -355,10 +352,12 @@ private suspend fun AwaitPointerEventScope.awaitFirstDownImpl(
  */
 internal expect fun firstDownRefersToPrimaryMouseButtonOnly(): Boolean
 
-internal fun PointerEvent.isChangedToDown(requireUnconsumed: Boolean): Boolean {
+internal fun PointerEvent.isChangedToDown(
+    requireUnconsumed: Boolean,
+    onlyPrimaryMouseButton: Boolean = firstDownRefersToPrimaryMouseButtonOnly(),
+): Boolean {
     val onlyPrimaryButtonCausesDown =
-        firstDownRefersToPrimaryMouseButtonOnly() &&
-            changes.fastAll { it.type == PointerType.Mouse }
+        onlyPrimaryMouseButton && changes.fastAll { it.type == PointerType.Mouse }
     if (onlyPrimaryButtonCausesDown && !buttons.isPrimaryPressed) return false
 
     return changes.fastAll {
