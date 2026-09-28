@@ -28,6 +28,8 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.Velocity
@@ -47,21 +49,51 @@ internal class MouseWheelScrollingLogic(
     private val mouseWheelScrollConfig: ScrollConfig,
     onScrollStopped: suspend (velocity: Velocity) -> Unit,
     density: Density,
+    private val layoutCoordinates: () -> LayoutCoordinates?,
 ) : NonTouchScrollingLogic(scrollingLogic, onScrollStopped, density) {
+    /** Identifies this scrollable in [MouseWheelScrollCaptureManager]. */
+    private val captureToken = Any()
+
     override fun onPointerEvent(
         pointerEvent: PointerEvent,
         pass: PointerEventPass,
         bounds: IntSize,
     ) {
-        if (pointerEvent.type != PointerEventType.Scroll) return
-        if (pointerEvent.isConsumed) return
+        if (pointerEvent.type != PointerEventType.Scroll) {
+            if (pass == PointerEventPass.Initial) {
+                MouseWheelScrollCaptureManager.onNonScrollEvent(
+                    captureToken,
+                    layoutCoordinates(),
+                    pointerEvent,
+                )
+            }
+            return
+        }
+        if (pointerEvent.isConsumed) {
+            // An ancestor took this scroll during the initial pass, so it owns the wheel now.
+            if (pass == PointerEventPass.Initial) {
+                MouseWheelScrollCaptureManager.release(captureToken)
+            }
+            return
+        }
         /**
-         * If this scrollable is already scrolling from a previous interaction, consume immediately
-         * to give it priority.
+         * If this scrollable owns the mouse wheel (it consumed the latest scroll and the pointer
+         * didn't move since), or it is already scrolling from a previous interaction, consume
+         * immediately to give it priority over nested scrollables that moved under the pointer.
          */
-        if (pass == PointerEventPass.Initial && isScrolling) {
-            onMouseWheel(pointerEvent, bounds)
-            pointerEvent.consume()
+        if (pass == PointerEventPass.Initial) {
+            val isOwner =
+                MouseWheelScrollCaptureManager.isOwner(
+                    captureToken,
+                    layoutCoordinates(),
+                    pointerEvent,
+                )
+            if (isOwner || isScrolling) {
+                val consumed = onMouseWheel(pointerEvent, bounds)
+                if (consumed || isScrolling) {
+                    pointerEvent.consume()
+                }
+            }
         }
 
         /**
@@ -75,6 +107,10 @@ internal class MouseWheelScrollingLogic(
                 pointerEvent.consume()
             }
         }
+    }
+
+    override fun onDetach() {
+        MouseWheelScrollCaptureManager.release(captureToken)
     }
 
     private data class MouseWheelScrollDelta(
@@ -123,23 +159,39 @@ internal class MouseWheelScrollingLogic(
             with(mouseWheelScrollConfig) {
                 with(density) { calculateMouseWheelScroll(pointerEvent, bounds) }
             }
-        return if (scrollingLogic.canConsumeDelta(scrollDelta)) {
-            channel
-                .trySend(
-                    MouseWheelScrollDelta(
-                        value = scrollDelta,
-                        timeMillis = pointerEvent.changes.first().uptimeMillis,
-                        shouldApplyImmediately = !mouseWheelScrollConfig.isSmoothScrollingEnabled
+        val accepted =
+            scrollingLogic.canConsumeDelta(scrollDelta) &&
+                channel
+                    .trySend(
+                        MouseWheelScrollDelta(
+                            value = scrollDelta,
+                            timeMillis = pointerEvent.changes.first().uptimeMillis,
+                            shouldApplyImmediately =
+                                !mouseWheelScrollConfig.isSmoothScrollingEnabled
 
-                            // In case of high-resolution wheel, such as a freely rotating wheel
-                            // with
-                            // no notches or trackpads, delta should apply immediately, without any
-                            // delays.
-                            || mouseWheelScrollConfig.isPreciseWheelScroll(pointerEvent),
+                                    // In case of high-resolution wheel, such as a freely rotating
+                                    // wheel with no notches or trackpads, delta should apply
+                                    // immediately, without any delays.
+                                    || mouseWheelScrollConfig.isPreciseWheelScroll(pointerEvent),
+                        )
                     )
-                )
-                .isSuccess
-        } else isScrolling
+                    .isSuccess
+        if (accepted && scrollingLogic.isMainAxisDominant(scrollDelta)) {
+            MouseWheelScrollCaptureManager.capture(captureToken, layoutCoordinates(), pointerEvent)
+        } else {
+            MouseWheelScrollCaptureManager.release(captureToken)
+        }
+        return accepted
+    }
+
+    /**
+     * Only a scroll mostly along the scrollable's axis grants the ownership, so that a diagonal or
+     * cross-axis scroll doesn't lock nested scrollables of the other orientation out.
+     */
+    private fun ScrollingLogic.isMainAxisDominant(scrollDelta: Offset): Boolean {
+        val mainAxisDelta = abs(scrollDelta.toFloat())
+        val crossAxisDelta = abs(scrollDelta.x) + abs(scrollDelta.y) - mainAxisDelta
+        return mainAxisDelta != 0f && mainAxisDelta > crossAxisDelta
     }
 
     private fun Channel<MouseWheelScrollDelta>.sumOrNull(): MouseWheelScrollDelta? {
@@ -318,3 +370,86 @@ private val AnimationThreshold = 6.dp // (AnimationSpeed * MaxAnimationDuration)
 private val AnimationSpeed = 1.dp // dp / ms
 private const val MaxAnimationDuration = 100 // ms
 private const val ScrollProgressTimeout = 50L // ms
+
+/**
+ * Tracks which scrollable owns the mouse wheel.
+ *
+ * The scrollable that consumed the latest scroll event keeps receiving the following ones, even
+ * when a nested scrollable moves under the (unmoved) pointer as the content scrolls. The ownership
+ * is released when the pointer moves, the scroll pauses for [ScrollCaptureTimeout], or the owner
+ * can't consume the scroll anymore (e.g. it reached its bounds).
+ */
+private object MouseWheelScrollCaptureManager {
+    private class Capture(
+        val ownerToken: Any,
+        val rootCoordinates: LayoutCoordinates,
+        val pointerPositionInWindow: Offset,
+        val uptimeMillis: Long,
+    )
+
+    private var activeCapture: Capture? = null
+
+    fun capture(ownerToken: Any, layoutCoordinates: LayoutCoordinates?, pointerEvent: PointerEvent) {
+        val coordinates = layoutCoordinates?.takeIf { it.isAttached }
+        val change = pointerEvent.changes.firstOrNull()
+        if (coordinates == null || change == null) {
+            release(ownerToken)
+            return
+        }
+        activeCapture =
+            Capture(
+                ownerToken = ownerToken,
+                rootCoordinates = coordinates.findRootCoordinates(),
+                pointerPositionInWindow = coordinates.localToWindow(change.position),
+                uptimeMillis = change.uptimeMillis,
+            )
+    }
+
+    /** Whether [ownerToken] owns the mouse wheel for the given scroll [pointerEvent]. */
+    fun isOwner(
+        ownerToken: Any,
+        layoutCoordinates: LayoutCoordinates?,
+        pointerEvent: PointerEvent,
+    ): Boolean {
+        val capture = activeCapture?.takeIf { it.ownerToken === ownerToken } ?: return false
+        val uptimeMillis = pointerEvent.changes.firstOrNull()?.uptimeMillis
+        val isValid =
+            isStillAttached(capture, layoutCoordinates) &&
+                uptimeMillis != null &&
+                uptimeMillis >= capture.uptimeMillis &&
+                uptimeMillis - capture.uptimeMillis <= ScrollCaptureTimeout
+        if (!isValid) release(ownerToken)
+        return isValid
+    }
+
+    /** Releases the ownership of [ownerToken] if the pointer moved away since the last scroll. */
+    fun onNonScrollEvent(
+        ownerToken: Any,
+        layoutCoordinates: LayoutCoordinates?,
+        pointerEvent: PointerEvent,
+    ) {
+        val capture = activeCapture?.takeIf { it.ownerToken === ownerToken } ?: return
+        val change = pointerEvent.changes.firstOrNull()
+        val isValid =
+            isStillAttached(capture, layoutCoordinates) &&
+                change != null &&
+                (capture.pointerPositionInWindow -
+                        layoutCoordinates!!.localToWindow(change.position))
+                    .getDistance() <= ScrollCapturePointerSlop
+        if (!isValid) release(ownerToken)
+    }
+
+    fun release(ownerToken: Any) {
+        if (activeCapture?.ownerToken === ownerToken) {
+            activeCapture = null
+        }
+    }
+
+    private fun isStillAttached(capture: Capture, layoutCoordinates: LayoutCoordinates?): Boolean =
+        layoutCoordinates != null &&
+            layoutCoordinates.isAttached &&
+            layoutCoordinates.findRootCoordinates() === capture.rootCoordinates
+}
+
+private const val ScrollCaptureTimeout = 300L // ms
+private const val ScrollCapturePointerSlop = 5f // px

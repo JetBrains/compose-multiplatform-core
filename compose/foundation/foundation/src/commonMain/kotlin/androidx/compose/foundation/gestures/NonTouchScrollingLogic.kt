@@ -63,6 +63,9 @@ internal abstract class NonTouchScrollingLogic(
 
     /** Begins processing of events sent to [onPointerEvent] using the given [coroutineScope]. */
     abstract fun startReceivingEvents(coroutineScope: CoroutineScope)
+
+    /** Called when the owning scrollable node is detached. */
+    open fun onDetach() {}
 }
 
 /**
