@@ -137,8 +137,6 @@ public final class AudioSource {
     boolean mAudioStreamSilenced;
     boolean mMuted;
     private byte @Nullable [] mZeroBytes;
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-    double mAudioAmplitude;
     long mAmplitudeTimestamp = 0;
     private final int mAudioFormat;
     @VisibleForTesting
@@ -673,12 +671,14 @@ public final class AudioSource {
                 maxAmplitude = Math.max(maxAmplitude, Math.abs(shortBuffer.get()));
             }
 
-            maxAmplitude = maxAmplitude / Short.MAX_VALUE;
-
-            mAudioAmplitude = maxAmplitude;
+            // Math.abs(Short.MIN_VALUE) is 32768, which is larger than Short.MAX_VALUE
+            // (32767), so the normalized value has to be clamped to keep it within
+            // [0.0, 1.0].
+            maxAmplitude = Math.min(maxAmplitude / Short.MAX_VALUE, 1.0);
 
             if (executor != null && callback != null) {
-                executor.execute(() -> callback.onAmplitudeValue(mAudioAmplitude));
+                final double amplitudeToReport = maxAmplitude;
+                executor.execute(() -> callback.onAmplitudeValue(amplitudeToReport));
             }
         }
     }
@@ -690,6 +690,7 @@ public final class AudioSource {
         ByteBuffer byteBuffer = inputBuffer.getByteBuffer();
         AudioStream.PacketInfo packetInfo = audioStream.read(byteBuffer);
         if (packetInfo.getSizeInBytes() > 0) {
+            byteBuffer.limit(byteBuffer.position() + packetInfo.getSizeInBytes());
             if (mMuted) {
                 overrideBySilence(byteBuffer, packetInfo.getSizeInBytes());
             }
@@ -701,7 +702,6 @@ public final class AudioSource {
                 mAmplitudeTimestamp = packetInfo.getTimestampNs();
                 postMaxAmplitude(byteBuffer);
             }
-            byteBuffer.limit(byteBuffer.position() + packetInfo.getSizeInBytes());
             inputBuffer.setPresentationTimeUs(
                     NANOSECONDS.toMicros(packetInfo.getTimestampNs()));
             inputBuffer.submit();
@@ -869,6 +869,9 @@ public final class AudioSource {
 
         /**
          * The method called to retrieve audio amplitude values.
+         *
+         * @param maxAmplitude the maximum amplitude of the latest audio data, normalized to the
+         *                     range [0.0, 1.0].
          */
         void onAmplitudeValue(double maxAmplitude);
     }
