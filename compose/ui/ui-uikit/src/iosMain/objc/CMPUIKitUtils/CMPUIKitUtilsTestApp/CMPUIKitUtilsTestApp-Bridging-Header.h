@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
-#import "CMPUIKitObjcUtils.h"
+#import "CMPUIKitUtils.h"
