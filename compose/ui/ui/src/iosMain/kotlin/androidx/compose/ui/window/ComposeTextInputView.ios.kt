@@ -91,7 +91,7 @@ internal class ComposeTextInputView(
                 if (isFirstResponder) {
                     field?.onFocus()
                 }
-                if (!value.isInteractive) {
+                if (!field.isInteractive) {
                     hideTextMenu()
                 }
             }
