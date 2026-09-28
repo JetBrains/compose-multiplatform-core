@@ -397,14 +397,7 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
     private val relevantChanges: LongSparseArray<PointerInputChange> = LongSparseArray(2)
     private var coordinates: LayoutCoordinates? = null
     private var pointerEvent: PointerEvent? = null
-<<<<<<< HEAD
-    private var syntheticEnterEvent: PointerEvent? = null
-=======
     private var syntheticHoverEvent: PointerEvent? = null
-    private var wasIn = false
-    private var isIn = true
-    private var hasExited = true
->>>>>>> a7aeda7e02652da6bd2baa0c5b72b94e3a1068ea
 
     override fun removeInvalidPointerIdsAndChanges(
         pointerIdValue: Long,
@@ -636,8 +629,14 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                     event.type == PointerEventType.PanStart ||
                     event.type == PointerEventType.PanMove ||
                     event.type == PointerEventType.PanEnd
-<<<<<<< HEAD
-            if (event.type == PointerEventType.Move ||
+            if (ComposeUiFlags.isTrackpadPanHoverFixEnabled && isPan && isIn != hasEntered) {
+                // Create a synthetic Enter or Exit event to dispatch to hover listeners
+                // without altering the pan gesture event.
+                syntheticHoverEvent =
+                    PointerEvent(changesList, internalPointerEvent).also {
+                        it.type = if (isIn) PointerEventType.Enter else PointerEventType.Exit
+                    }
+            } else if (event.type == PointerEventType.Move ||
                 event.type == PointerEventType.Enter ||
                 event.type == PointerEventType.Exit
             ) {
@@ -646,46 +645,11 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                     hasEntered && !isIn -> PointerEventType.Exit
                     else -> PointerEventType.Move
                 }
-            } else if (ComposeUiFlags.isTrackpadPanHoverFixEnabled && isPan && isIn != hasEntered) {
-                if (isIn) {
-                    // Create a synthetic Enter event to dispatch to hover listeners
-                    // without altering the pan gesture event.
-                    syntheticEnterEvent =
-                        PointerEvent(changesList, internalPointerEvent).also {
-                            it.type = PointerEventType.Enter
-                        }
-                } else {
-                    event.type = PointerEventType.Exit
-                }
-=======
-            if (isIn != wasIn && ComposeUiFlags.isTrackpadPanHoverFixEnabled && isPan) {
-                // Create a synthetic Enter or Exit event to dispatch to hover listeners
-                // without altering the pan gesture event.
-                syntheticHoverEvent =
-                    PointerEvent(changesList, internalPointerEvent).also {
-                        it.type = if (isIn) PointerEventType.Enter else PointerEventType.Exit
-                    }
-            } else if (
-                isIn != wasIn &&
-                    (event.type == PointerEventType.Move ||
-                        event.type == PointerEventType.Enter ||
-                        event.type == PointerEventType.Exit)
-            ) {
-                event.type =
-                    if (isIn) {
-                        PointerEventType.Enter
-                    } else {
-                        PointerEventType.Exit
-                    }
-            } else if (event.type == PointerEventType.Enter && wasIn && !hasExited) {
-                event.type = PointerEventType.Move // We already knew that it was in.
-            } else if (event.type == PointerEventType.Exit && isIn && activeHoverChange.pressed) {
-                event.type = PointerEventType.Move // We are still in.
->>>>>>> a7aeda7e02652da6bd2baa0c5b72b94e3a1068ea
             }
 
-            if (event.type == PointerEventType.Enter || syntheticEnterEvent != null) hasEntered = true
-            if (event.type == PointerEventType.Exit) hasEntered = false
+            val hoverType = syntheticHoverEvent?.type ?: event.type
+            if (hoverType == PointerEventType.Enter) hasEntered = true
+            if (hoverType == PointerEventType.Exit) hasEntered = false
         }
 
         val changed =
