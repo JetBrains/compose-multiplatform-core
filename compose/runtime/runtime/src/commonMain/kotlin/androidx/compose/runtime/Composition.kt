@@ -390,17 +390,129 @@ public fun ControlledComposition(
 ): ControlledComposition = CompositionImpl(parent, applier)
 
 /**
- * Installs a gate consulted when this composition is due for a standalone recomposition:
- * returning true means its content is about to be refreshed by its host's pending measure
- * pass (which re-runs the content lambda with fresh captures), so the standalone pass is
- * skipped - it would pair stale captured values with fresh reads. null (the default) never
- * skips. The gate must only return true when that refresh is genuinely scheduled: a skipped
- * invalidation is consumed, and only re-arms via the refresh or a new change.
+ * Implemented by the host that re-runs a composition at measure time, such as a
+ * `SubcomposeLayout`, and installed with [ParentDrivenHosting.installHost].
+ *
+ * A composition that has a host, or that is nested in one that has, can be driven by the host's
+ * layout pass: when the recomposer finds it invalidated, it offers it to the host before
+ * recomposing it, and a host that takes it composes it in its layout pass, after the composition
+ * enclosing it has recomposed and applied. A composition with a host goes to its own host through
+ * [onInvalidated]. A composition without a host, or one whose host declines it, goes to the host
+ * of the nearest composition enclosing it that has one, through [onWaiterInvalidated], and that
+ * host recomposes it through [ParentDrivenHosting.recomposeNow] once the composition it waits for
+ * is current. A host that declines answers false, and the recomposer asks the next enclosing one;
+ * if none takes it, it recomposes it at once, as it does any composition. A composition with
+ * nothing to recompose is not offered.
+ *
+ * A host takes a composition only if what the composition captured from its host can be stale in
+ * this frame, and otherwise declines it, so that it recomposes at once, as stock Compose
+ * recomposes it, and costs its host nothing. A `SubcomposeLayout`, for example, re-runs a slot
+ * with the content lambda its enclosing composition supplies, so recomposing the slot before that
+ * could pair captures that are about to be refreshed with fresh reads. The captures can be stale
+ * if a composition enclosing it recomposed with changes, or was taken by a host, earlier in the
+ * same recompose block: that composition's apply, after the block, can give a host above this one
+ * new content. The recomposer knows that, and passes it as `enclosingRecomposed`. They can also
+ * be stale if a layout pass that is due can re-supply its content: a host that re-runs it, or a
+ * composition enclosing it, is already scheduled to measure, or a composition enclosing it is
+ * still due to compose in its host's layout pass. Only the host knows that.
+ *
+ * "Earlier in the same recompose block" is what the block has visited when it offers the
+ * composition. The block runs in passes, and ascending depth orders one pass, so every
+ * composition enclosing it that is queued in that pass comes first. A composition that recomposes
+ * at once, and whose recompose writes a value an enclosing composition reads, as state hoisted up
+ * through `rememberUpdatedState` or a provider fed from below is, makes the next pass recompose
+ * that enclosing composition after it. The enclosing composition's apply can then give the host
+ * new content, which the host's measure delivers in the same frame, but the first recompose
+ * paired the old captures with fresh reads.
+ *
+ * The recomposer calls it from its recompose block and from dispose, on the thread that
+ * recomposes. Its methods must not throw and must not compose. They may schedule a layout: a host
+ * that takes a composition can register for the end of its next layout pass, which asks its owner
+ * for one.
  */
 @InternalComposeApi
-public fun Composition.setParentDrivenRecomposeGate(gate: (() -> Boolean)?) {
-    (this as? CompositionImpl)?.parentDrivenRecomposeGate = gate
+public interface ParentDrivenHost {
+    /**
+     * The composition is invalidated. Returns true if the host's layout pass takes it: the
+     * recomposer then leaves its invalidations in place and does nothing more with it in this
+     * frame, and the host re-runs it, or recomposes it through [ParentDrivenHosting.recomposeNow]
+     * if its layout ends without re-running it. Returns false if the host will not lay it out,
+     * or if nothing it captured can be stale, and the recomposer then hands it to an enclosing
+     * host as a waiter, or recomposes it now. Called before the apply stage of the frame.
+     *
+     * @param enclosingRecomposed whether a composition enclosing it recomposed with changes, or
+     *   was taken by a host, earlier in this recompose block.
+     */
+    public fun onInvalidated(enclosingRecomposed: Boolean): Boolean
+
+    /**
+     * [waiter], a composition nested in this one, is invalidated, and neither its own host, if it
+     * has one, nor the host of any composition between the two takes it. Returns true if this
+     * host takes it: the host delivers it once this composition is current, at the latest at the
+     * end of the host's next full layout pass, by recomposing it through
+     * [ParentDrivenHosting.recomposeNow], or through its own host for a waiter whose host uses it.
+     * Returns false if the host will not lay this composition out, or if nothing [waiter]
+     * captured can be stale, and the recomposer then asks the next enclosing host, or recomposes
+     * [waiter] now.
+     *
+     * @param enclosingRecomposed whether a composition enclosing [waiter] recomposed with changes,
+     *   or was taken by a host, earlier in this recompose block.
+     */
+    public fun onWaiterInvalidated(
+        waiter: ParentDrivenHosting,
+        enclosingRecomposed: Boolean,
+    ): Boolean
+
+    /**
+     * The composition was disposed. Runs inside another composition's apply or inside a layout
+     * pass. May request a remeasure of other hosts; must not compose.
+     */
+    public fun onDisposed()
 }
+
+/**
+ * A composition's side of the arrangement with its [ParentDrivenHost], found through
+ * [CompositionServices.getCompositionService] with [ParentDrivenHostingKey].
+ *
+ * The recomposer never recomposes a composition that has a host, or an enclosing composition with
+ * a host, as long as that host takes it: see [ParentDrivenHost]. The host composes what it takes
+ * in its layout pass, through its own measure or through [recomposeNow].
+ */
+@InternalComposeApi
+public interface ParentDrivenHosting {
+    /** The host, or null. */
+    public val host: ParentDrivenHost?
+
+    /**
+     * Installs the host, once, before the composition first composes. Throws if a host is already
+     * installed.
+     */
+    public fun installHost(host: ParentDrivenHost)
+
+    /** The nearest composition enclosing this one that has a host, or null. */
+    public val enclosingHosted: ParentDrivenHosting?
+
+    /**
+     * Recomposes this composition's pending invalidations now, and applies them: the host's
+     * delivery of a composition it took and does not re-run in its own measure. Withdraws a
+     * recompose queued by [recomposeLater]. Skips a disposed composition, one that is composing,
+     * and one with nothing to recompose, and returns true. Returns false only if the recomposer is
+     * in its error state afterwards, so a caller releasing several compositions stops.
+     */
+    public fun recomposeNow(): Boolean
+
+    /**
+     * Queues this composition for the recomposer's next frame, where it is handed to its host
+     * again or recomposed: the delivery of a composition the host took where it must not compose,
+     * such as inside a dispose.
+     */
+    public fun recomposeLater()
+}
+
+/** Finds a composition's [ParentDrivenHosting] through [CompositionServices]. */
+@InternalComposeApi
+public val ParentDrivenHostingKey: CompositionServiceKey<ParentDrivenHosting> =
+    object : CompositionServiceKey<ParentDrivenHosting> {}
 
 private val PendingApplyNoModifications = Any()
 
@@ -505,7 +617,8 @@ internal class CompositionImpl(
     RecomposeScopeOwner,
     CompositionServices,
     PausableComposition,
-    ObservableComposition {
+    ObservableComposition,
+    ParentDrivenHosting {
 
     /**
      * `null` if a composition isn't pending to apply. `Set<Any>` or `Array<Set<Any>>` if there are
@@ -531,7 +644,58 @@ internal class CompositionImpl(
             boundFrameSnapshotHolder = value
         }
 
-    internal var parentDrivenRecomposeGate: (() -> Boolean)? = null
+    override var host: ParentDrivenHost? = null
+        private set
+
+    /**
+     * The composition that created this one, or `null` when a [Recomposer] created it.
+     *
+     * Walks the composition context chain upward. This composition points at its parent
+     * context, and that context answers with its own composition. A root composition's parent is
+     * the [Recomposer], which answers `null`, so the walk stops there.
+     */
+    internal val parentComposition: CompositionImpl?
+        get() = parent.composition as? CompositionImpl
+
+    /**
+     * How many compositions enclose this one. A root composition has depth zero.
+     *
+     * The recompose block sorts by this. An ancestor always has a smaller depth than a composition
+     * nested inside it, so ascending depth puts a remover before what it removes. Two siblings can
+     * tie, which is correct, because a sibling never removes a sibling.
+     */
+    internal val compositionDepth: Int
+        get() {
+            val cached = cachedCompositionDepth
+            if (cached >= 0) return cached
+            var depth = 0
+            var enclosing = parentComposition
+            while (enclosing != null) {
+                depth++
+                enclosing = enclosing.parentComposition
+            }
+            cachedCompositionDepth = depth
+            return depth
+        }
+
+    // The context chain never changes after construction: [parent] is fixed, and a context's
+    // composition is fixed. So the depth is computed once. The recompose block sorts by it.
+    private var cachedCompositionDepth = -1
+
+    // Cached by [enclosingHosted]. A host is installed before any composition nested in it
+    // exists, and never removed, so the first answer stays right.
+    private var cachedEnclosingHosted: ParentDrivenHosting? = null
+    private var enclosingHostedResolved = false
+
+    /**
+     * Whether [recomposeLater] queued this composition and no frame has taken it from the
+     * recomposer's queue since, so [recomposeNow] has a queued entry to withdraw.
+     *
+     * It is cleared where a frame takes the composition from the queue, when the composition
+     * composes, when [recomposeNow] withdraws the queued entry, and when the composition is
+     * unregistered. So an error path that drops the queue cannot leave it set for good.
+     */
+    internal var recomposeLaterPending: Boolean = false
 
     /**
      * A set of remember observers that were potentially abandoned between [composeContent] or
@@ -930,6 +1094,8 @@ internal class CompositionImpl(
         //   to halt and return
         guardChanges {
             synchronized(lock) {
+                // Composing takes the invalidation a queued recomposeLater carried.
+                recomposeLaterPending = false
                 drainPendingModificationsForCompositionLocked()
                 guardInvalidationsLocked { invalidations ->
                     composer.composeContent(invalidations, content, shouldPause)
@@ -948,6 +1114,7 @@ internal class CompositionImpl(
     }
 
     override fun dispose() {
+        var disposedNow = false
         synchronized(lock) {
             checkPrecondition(!composer.isComposing) {
                 "Composition is disposed while composing. If dispose is triggered by a call in " +
@@ -955,6 +1122,7 @@ internal class CompositionImpl(
             }
             if (state != DISPOSED) {
                 state = DISPOSED
+                disposedNow = true
                 composable = {}
 
                 // Changes are deferred if the composition contains movable content that needs
@@ -996,6 +1164,10 @@ internal class CompositionImpl(
                 composer.dispose()
             }
         }
+        // The host can request a refresh of the compositions that wait for this one. It runs
+        // outside the lock, because that reaches other hosts, and before the unregistration, so
+        // this composition is still registered while they are refreshed.
+        if (disposedNow) host?.onDisposed()
         parent.unregisterComposition(this)
     }
 
@@ -1197,6 +1369,41 @@ internal class CompositionImpl(
             derivedStates.forEachScopeOf(value) { invalidateScopeOfLocked(it) }
         }
 
+    /**
+     * Records [values], written by other compositions while they composed earlier in the
+     * recomposer's current recompose block, as invalidations of the scopes here that read them.
+     * `Recomposer.performRecompose` does the same for a composition it is about to recompose, by
+     * calling [recordWriteOf] for each value inside [prepareCompose]; this is the precedent for
+     * both the recording and the processed mark below. The recomposer calls this one instead for
+     * a composition it is visiting in that block, before it offers it to a host, which may
+     * compose it later in the frame rather than now, so the composition is not composing. Two
+     * things differ from an invalidation of a scope:
+     * - nothing is scheduled: the recomposer is handling this composition right now, and
+     *   scheduling it would also schedule every composition enclosing it, which have composed
+     *   in this block already, for a frame with nothing to do;
+     * - each value is marked processed for its scope, as a write recorded while composing is, so
+     *   the apply notification of the snapshot that wrote it does not invalidate the scope a
+     *   second time, after the scope has composed with it.
+     */
+    internal fun recordEarlierWritesOf(values: ScatterSet<Any>) =
+        synchronized(lock) {
+            values.forEach { value ->
+                recordWrittenScopesOfLocked(value)
+                derivedStates.forEachScopeOf(value) { recordWrittenScopesOfLocked(it) }
+            }
+        }
+
+    private fun recordWrittenScopesOfLocked(value: Any) {
+        observations.forEachScopeOf(value) { scope ->
+            if (
+                invalidate(scope, value, schedule = false) != InvalidationResult.IGNORED &&
+                    value !is DerivedState<*>
+            ) {
+                observationsProcessed.add(value, scope)
+            }
+        }
+    }
+
     override fun recompose(): Boolean =
         synchronized(lock) {
             val pendingPausedComposition = pendingPausedComposition
@@ -1210,6 +1417,8 @@ internal class CompositionImpl(
                 pendingPausedComposition.pausableApplier.markRecomposePending()
                 return false
             }
+            // Composing takes the invalidation a queued recomposeLater carried.
+            recomposeLaterPending = false
             drainPendingModificationsForCompositionLocked()
             guardChanges {
                 guardInvalidationsLocked { invalidations ->
@@ -1385,7 +1594,16 @@ internal class CompositionImpl(
         return previous
     }
 
-    override fun invalidate(scope: RecomposeScopeImpl, instance: Any?): InvalidationResult {
+    override fun invalidate(scope: RecomposeScopeImpl, instance: Any?): InvalidationResult =
+        invalidate(scope, instance, schedule = true)
+
+    // [schedule] false records the invalidation without asking the parent to schedule this
+    // composition, for a composition the recomposer is handling at that moment.
+    private fun invalidate(
+        scope: RecomposeScopeImpl,
+        instance: Any?,
+        schedule: Boolean,
+    ): InvalidationResult {
         if (scope.defaultsInScope) {
             scope.defaultsInvalid = true
         }
@@ -1402,7 +1620,7 @@ internal class CompositionImpl(
         }
         if (!scope.canRecompose)
             return InvalidationResult.IGNORED // The scope isn't able to be recomposed/invalidated
-        return invalidateChecked(scope, anchor, instance).also {
+        return invalidateChecked(scope, anchor, instance, schedule).also {
             if (it != InvalidationResult.IGNORED) {
                 observer()?.onScopeInvalidated(scope, instance)
             }
@@ -1417,7 +1635,39 @@ internal class CompositionImpl(
 
     @Suppress("UNCHECKED_CAST")
     override fun <T> getCompositionService(key: CompositionServiceKey<T>): T? =
-        if (key == ObservableCompositionServiceKey) this as T else null
+        when (key) {
+            ObservableCompositionServiceKey,
+            ParentDrivenHostingKey -> this as T
+            else -> null
+        }
+
+    override fun installHost(host: ParentDrivenHost) {
+        checkPrecondition(this.host == null) { "A host is already installed" }
+        this.host = host
+    }
+
+    override val enclosingHosted: ParentDrivenHosting?
+        get() {
+            if (enclosingHostedResolved) return cachedEnclosingHosted
+            var enclosing = parentComposition
+            while (enclosing != null && enclosing.host == null) {
+                enclosing = enclosing.parentComposition
+            }
+            cachedEnclosingHosted = enclosing
+            enclosingHostedResolved = true
+            return enclosing
+        }
+
+    // Only the recomposer can compose it: it opens the composing snapshot with this
+    // composition's observers and binds the frame, so the request climbs the context chain.
+    override fun recomposeNow(): Boolean = parent.recomposeNow(this)
+
+    override fun recomposeLater() {
+        recomposeLaterPending = true
+        // The recomposer de-duplicates, so one that finds the composition already queued costs
+        // nothing, and one that finds the queue dropped by an error path still lands.
+        parent.invalidate(this)
+    }
 
     private fun tryImminentInvalidation(scope: RecomposeScopeImpl, instance: Any?): Boolean =
         isComposing && composer.tryImminentInvalidation(scope, instance)
@@ -1426,6 +1676,7 @@ internal class CompositionImpl(
         scope: RecomposeScopeImpl,
         anchor: Anchor,
         instance: Any?,
+        schedule: Boolean,
     ): InvalidationResult {
         val delegate =
             synchronized(lock) {
@@ -1468,9 +1719,9 @@ internal class CompositionImpl(
 
         // We call through the delegate here to ensure we don't nest synchronization scopes.
         if (delegate != null) {
-            return delegate.invalidateChecked(scope, anchor, instance)
+            return delegate.invalidateChecked(scope, anchor, instance, schedule)
         }
-        parent.invalidate(this)
+        if (schedule) parent.invalidate(this)
         return if (isComposing) InvalidationResult.DEFERRED else InvalidationResult.SCHEDULED
     }
 

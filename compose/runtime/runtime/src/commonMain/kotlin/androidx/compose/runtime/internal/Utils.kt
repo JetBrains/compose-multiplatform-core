@@ -22,3 +22,9 @@ import androidx.compose.runtime.Composer
 internal expect fun invokeComposable(composer: Composer, composable: @Composable () -> Unit)
 
 internal expect fun logError(message: String, e: Throwable)
+
+/** Logs a diagnostic that is not an error, without a stack trace. */
+// Nothing calls it at present. It stays because this fork edits androidMain only where a fork
+// behaviour would otherwise be lost on Android, and the Android actual would not compile without
+// this expect.
+internal expect fun logWarning(message: String)
