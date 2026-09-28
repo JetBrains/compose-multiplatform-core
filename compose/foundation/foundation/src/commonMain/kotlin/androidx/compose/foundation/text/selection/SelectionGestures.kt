@@ -317,11 +317,21 @@ internal class ClicksCounter(
     private val viewConfiguration: ViewConfiguration
 ) {
     var clicks = 0
+<<<<<<< HEAD
     private var prevClick: PointerInputChange? = null
 
     fun update(event: PointerInputChange) {
         val currentPrevEvent = prevClick
         // Here and further event means upcoming event (new)
+=======
+        private set
+
+    private var prevClick: PointerInputChange? = null
+
+    // CMP uses this where `PointerEvent` is not available; only `PointerInputChange`
+    fun update(newClick: PointerInputChange) {
+        val currentPrevClick = prevClick
+>>>>>>> 7012c192e654329a5c9c6e7381e45b698468c254
         if (
             currentPrevEvent != null &&
             timeIsTolerable(currentPrevEvent, event) &&
