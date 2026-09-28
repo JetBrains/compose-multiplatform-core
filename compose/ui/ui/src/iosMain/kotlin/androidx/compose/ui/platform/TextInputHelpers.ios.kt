@@ -49,6 +49,8 @@ import platform.UIKit.UITextWritingDirection
 internal interface TextEditingDelegate {
     var inputTraits: SkikoUITextInputTraits
 
+    fun onFocus()
+
     fun onResignFocus()
 
     fun beginFloatingCursor(offset: DpOffset)

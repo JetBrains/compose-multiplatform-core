@@ -105,6 +105,17 @@ internal class NativeTextInputView
     : CMPTextInputView(frame = CGRectZero.readValue()), UIKeyInputProtocol, UITextInputProtocol {
 
     var input: NativeTextEditingDelegate? = null
+        set(value) {
+            if (field != value) {
+                if (isFirstResponder) {
+                    field?.onResignFocus()
+                }
+                field = value
+                if (isFirstResponder) {
+                    field?.onFocus()
+                }
+            }
+        }
 
     private val inputTraits: SkikoUITextInputTraits
         get() = input?.inputTraits ?: EmptyInputTraits
@@ -139,6 +150,7 @@ internal class NativeTextInputView
     }
 
     override fun becomeFirstResponder(): Boolean {
+        input?.onFocus()
         val isFirstResponder = this.isFirstResponder()
         val result = super.becomeFirstResponder()
 
@@ -148,6 +160,11 @@ internal class NativeTextInputView
         }
 
         return result
+    }
+
+    override fun resignFirstResponder(): Boolean {
+        input?.onResignFocus()
+        return super.resignFirstResponder()
     }
 
     override fun setTintColor(tintColor: UIColor?) {

@@ -211,7 +211,7 @@ internal abstract class TextInputConnection(
             it.editText {
                 performCommand()
             }
-            if (requireUpdateView) {
+            if (requireUpdateView && isFocused) {
                 updateView()
             }
             onTextFieldValueUpdated(it.stateSnapshot())
@@ -271,7 +271,15 @@ internal abstract class TextInputConnection(
 
     override var inputTraits: SkikoUITextInputTraits = EmptyInputTraits
 
+    var isFocused: Boolean = false
+        private set
+
+    override fun onFocus() {
+        isFocused = true
+    }
+
     override fun onResignFocus() {
+        isFocused = false
         textInputServiceInvalidationsCount++
         coroutineScope.launch {
             if (hasFocusedExternalInputViewInWindowHierarchy()) {
