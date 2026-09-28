@@ -366,6 +366,21 @@ internal interface Owner : PositionCalculator {
     /** [listener] will be notified after the current or next layout has finished. */
     fun registerOnLayoutCompletedListener(listener: OnLayoutCompletedListener)
 
+    /**
+     * [listener] will be notified after the current or next full layout has finished: one that
+     * measured every node that requested it, not a remeasure of a single node as
+     * [androidx.compose.ui.layout.Remeasurement.forceRemeasure] and a lazy list's premeasure run.
+     * A listener that waits for every scheduled measure to have run needs that distinction.
+     *
+     * An owner that does not tell the two apart notifies [listener] after the next layout of
+     * either kind, which is earlier than asked for. It is later than asked for if the owner skips
+     * its layout while nothing is pending: a listener waiting for a node that a remeasure of a
+     * single node already measured then waits for an unrelated layout. So an owner that tells the
+     * two apart also runs its layout while a full-pass listener waits, with nothing else pending.
+     */
+    fun registerOnFullLayoutCompletedListener(listener: OnLayoutCompletedListener) =
+        registerOnLayoutCompletedListener(listener)
+
     val dragAndDropManager: DragAndDropManager
 
     /**

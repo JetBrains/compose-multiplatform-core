@@ -30,7 +30,8 @@ import kotlin.test.assertEquals
 
 /**
  * How the layout delegate calls its layout-completed listeners when a listener lays out again or
- * registers another listener from inside its call.
+ * registers another listener from inside its call, and which layouts call the listeners that wait
+ * for a full layout pass.
  */
 class LayoutCompletedListenerDispatchTest {
 
@@ -81,6 +82,69 @@ class LayoutCompletedListenerDispatchTest {
             owner.measureAndLayout(laidOut, Constraints.fixed(10, 10))
 
             assertEquals(listOf("first", "second", "third"), calls)
+        } finally {
+            scene.close()
+            scheduling.uninstall()
+        }
+    }
+
+    /**
+     * A listener registered for a full layout pass waits for one: a remeasure of a single node,
+     * which calls the other listeners, must not call it, and the owner's next layout must, even
+     * with no node left to measure. A full pass calls these listeners before the others, so one
+     * that another listener registers during that pass waits for the next full pass.
+     */
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Test
+    fun `a full-layout listener waits for a full pass and runs before the other listeners`() {
+        val scheduling = SchedulingDispatcherFixture().apply { install() }
+        val node = arrayOfNulls<LayoutNode>(1)
+        val scene = ImageComposeScene(width = 100, height = 100)
+        try {
+            scene.setContent {
+                Box(Modifier.size(10.dp).onPlaced { node[0] = (it as NodeCoordinator).layoutNode })
+            }
+            scene.render(0)
+            val laidOut = node[0]!!
+            val owner = laidOut.owner!!
+            val calls = mutableListOf<String>()
+            fun listener(name: String, then: () -> Unit = {}) =
+                object : Owner.OnLayoutCompletedListener {
+                    override fun onLayoutComplete() {
+                        calls += name
+                        then()
+                    }
+                }
+            // Registered after the other listener, and called before it.
+            owner.registerOnLayoutCompletedListener(
+                listener("registering") {
+                    owner.registerOnFullLayoutCompletedListener(listener("next full"))
+                }
+            )
+            owner.registerOnFullLayoutCompletedListener(listener("full"))
+            owner.measureAndLayout()
+            assertEquals(
+                listOf("full", "registering"),
+                calls,
+                "the owner's next layout must call the full-layout listener, and first, although " +
+                    "no node was left to measure",
+            )
+
+            owner.registerOnLayoutCompletedListener(listener("any"))
+            owner.measureAndLayout(laidOut, Constraints.fixed(10, 10))
+            assertEquals(
+                listOf("full", "registering", "any"),
+                calls,
+                "a remeasure of a single node must not call a full-layout listener",
+            )
+
+            owner.measureAndLayout()
+            assertEquals(
+                listOf("full", "registering", "any", "next full"),
+                calls,
+                "a full-layout listener registered by another listener waits for the next full " +
+                    "pass",
+            )
         } finally {
             scene.close()
             scheduling.uninstall()

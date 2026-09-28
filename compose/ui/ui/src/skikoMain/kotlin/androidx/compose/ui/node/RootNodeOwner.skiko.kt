@@ -621,9 +621,12 @@ internal class RootNodeOwner(
         }
 
         override fun measureAndLayout(sendPointerUpdate: Boolean) {
-            // only run the logic when we have something pending
+            // only run the logic when we have something pending. A listener waiting for a full
+            // pass counts: the node it waits for may have been measured by a remeasure of a
+            // single node, which leaves nothing pending and does not call it.
             if (measureAndLayoutDelegate.hasPendingMeasureOrLayout ||
-                measureAndLayoutDelegate.hasPendingOnPositionedCallbacks
+                measureAndLayoutDelegate.hasPendingOnPositionedCallbacks ||
+                measureAndLayoutDelegate.hasFullLayoutCompletedListeners
             ) {
                 trace("RootNodeOwner:measureAndLayout") {
                     val resend = if (sendPointerUpdate) onPointerUpdateCallback else null
@@ -785,6 +788,13 @@ internal class RootNodeOwner(
 
         override fun registerOnLayoutCompletedListener(listener: Owner.OnLayoutCompletedListener) {
             measureAndLayoutDelegate.registerOnLayoutCompletedListener(listener)
+            requestMeasureAndLayout()
+        }
+
+        override fun registerOnFullLayoutCompletedListener(
+            listener: Owner.OnLayoutCompletedListener
+        ) {
+            measureAndLayoutDelegate.registerOnFullLayoutCompletedListener(listener)
             requestMeasureAndLayout()
         }
 

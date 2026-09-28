@@ -663,6 +663,38 @@ internal class LinkComposer(
         providerUpdates = null
     }
 
+    /** See [InternalComposer.reportNestedCompositionsRemoved] */
+    override fun reportNestedCompositionsRemoved() {
+        if (slotTable.containsFlags(HasSubcompositionContextFlag)) {
+            slotTable.read { reportCompositionsCreatedIn(this, rootHandle().group) }
+        }
+    }
+
+    /**
+     * Reports the compositions created from a composition context under [group] of [reader] as
+     * removed, and recurses into each of them. It finds the same composition context groups that
+     * [reportFreeMovableContent] finds when a group is removed.
+     */
+    private fun reportCompositionsCreatedIn(reader: SlotTableReader, group: GroupAddress) {
+        reader.traverseChildrenConditionally(
+            group = group,
+            enter = { child -> HasSubcompositionContextFlag in reader.flagsOf(child) },
+            block = { child ->
+                if (IsSubcompositionContextFlag in reader.flagsOf(child)) {
+                    val observerHolder = reader.get(child, 0) as? RememberObserverHolder
+                    val contextHolder = observerHolder?.wrapped as? CompositionContextHolder
+                    contextHolder?.ref?.composers?.forEach { composer ->
+                        parentContext.reportRemovedComposition(composer.composition)
+                        composer.reportNestedCompositionsRemoved()
+                    }
+                    true
+                } else false
+            },
+            exit = {},
+            skip = {},
+        )
+    }
+
     /** See [Composer.deactivateToEndGroup] */
     override fun deactivateToEndGroup(changed: Boolean) {
         runtimeCheck(groupNodeCount == 0) {
@@ -672,6 +704,14 @@ internal class LinkComposer(
             if (!changed) {
                 skipReaderToGroupEnd()
                 return
+            }
+            // Deactivated content keeps its composition contexts for reuse, but deactivation
+            // forgets the state and effects that own the compositions created from them. Skip
+            // those compositions for the rest of the turn, so they cannot compose against the
+            // state that deactivated their creator before their owners tear them down.
+            @OptIn(ExperimentalComposeApi::class, InternalComposeApi::class)
+            if (ComposeRuntimeFlags.isNestedCompositionSkipOnDeactivationEnabled) {
+                reportCompositionsCreatedIn(reader, reader.parentGroup)
             }
             changeListWriter.deactivateCurrentGroup()
             reader.skipToGroupEnd()
@@ -2907,6 +2947,9 @@ internal class LinkComposer(
         ) {
             parentContext.composeInitial(composition, content)
         }
+
+        override fun recomposeNow(composition: ControlledComposition): Boolean =
+            parentContext.recomposeNow(composition)
 
         override fun composeInitialPaused(
             composition: ControlledComposition,

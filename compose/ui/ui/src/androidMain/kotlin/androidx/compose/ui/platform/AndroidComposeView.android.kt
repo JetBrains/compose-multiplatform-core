@@ -2096,10 +2096,13 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
     }
 
     override fun measureAndLayout(sendPointerUpdate: Boolean) {
-        // only run the logic when we have something pending
+        // only run the logic when we have something pending. A listener waiting for a full
+        // pass counts: the node it waits for may have been measured by a remeasure of a
+        // single node, which leaves nothing pending and does not call it.
         if (
             measureAndLayoutDelegate.hasPendingMeasureOrLayout ||
-                measureAndLayoutDelegate.hasPendingOnPositionedCallbacks
+                measureAndLayoutDelegate.hasPendingOnPositionedCallbacks ||
+                measureAndLayoutDelegate.hasFullLayoutCompletedListeners
         ) {
             trace("AndroidOwner:measureAndLayout") {
                 val resend =
@@ -2448,6 +2451,11 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
 
     override fun registerOnLayoutCompletedListener(listener: Owner.OnLayoutCompletedListener) {
         measureAndLayoutDelegate.registerOnLayoutCompletedListener(listener)
+        scheduleMeasureAndLayout()
+    }
+
+    override fun registerOnFullLayoutCompletedListener(listener: Owner.OnLayoutCompletedListener) {
+        measureAndLayoutDelegate.registerOnFullLayoutCompletedListener(listener)
         scheduleMeasureAndLayout()
     }
 

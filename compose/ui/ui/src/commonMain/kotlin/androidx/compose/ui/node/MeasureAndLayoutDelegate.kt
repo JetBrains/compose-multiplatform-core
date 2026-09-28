@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.node
 
+import androidx.compose.runtime.collection.MutableVector
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.runtime.tooling.ComposeToolingApi
 import androidx.compose.runtime.tooling.ComposeToolingFlags
@@ -68,6 +69,21 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
 
     /** List of listeners that must be called after layout has completed. */
     private val onLayoutCompletedListeners = mutableVectorOf<Owner.OnLayoutCompletedListener>()
+
+    /**
+     * List of listeners that must be called after a full layout pass has completed, one that
+     * measured every node that requested it. A remeasure of a single node, as
+     * `Remeasurement.forceRemeasure` and a lazy list's premeasure do, does not call them.
+     */
+    private val onFullLayoutCompletedListeners = mutableVectorOf<Owner.OnLayoutCompletedListener>()
+
+    /**
+     * Whether a listener waits for a full layout pass. The owner runs one for it even with nothing
+     * to measure, because its listener may be waiting for a node that a remeasure of a single node
+     * already measured.
+     */
+    val hasFullLayoutCompletedListeners: Boolean
+        get() = onFullLayoutCompletedListeners.isNotEmpty()
 
     /**
      * The current measure iteration. The value is incremented during the [measureAndLayout]
@@ -172,6 +188,7 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
                     if (layoutNode.isDeactivated) {
                         false
                     } else {
+                        // ParentDrivenSlots.isScheduled mirrors this condition.
                         if (
                             (layoutNode.isPlacedInLookahead == true ||
                                 layoutNode.canAffectParentInLookahead) &&
@@ -227,6 +244,7 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
                     if (layoutNode.isDeactivated) {
                         false
                     } else {
+                        // ParentDrivenSlots.isScheduled mirrors this condition.
                         if (layoutNode.isPlaced || layoutNode.canAffectPlacedParent) {
                             if (layoutNode.parent?.measurePending != true) {
                                 relayoutNodes.add(layoutNode, Invalidation.Measurement)
@@ -400,7 +418,9 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
      */
     fun measureAndLayout(onLayout: (() -> Unit)? = null): Boolean {
         var rootNodeResized = false
+        var fullPassRan = false
         performMeasureAndLayout(fullPass = true) {
+            fullPassRan = true
             if (relayoutNodes.isNotEmpty()) {
                 relayoutNodes.popEach { layoutNode, affectsLookahead, relayoutNeeded ->
                     val sizeChanged =
@@ -432,6 +452,11 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
                 onLayout?.invoke()
             }
         }
+        // Without root constraints the block did not run and measured nothing, so it is not a
+        // full pass. The full-pass listeners go first, so the other listeners see what they did,
+        // and a full-pass listener that one of the others registers waits for the next full pass
+        // instead of running in this one.
+        if (fullPassRan) callListeners(onFullLayoutCompletedListeners)
         callOnLayoutCompletedListeners()
         return rootNodeResized
     }
@@ -555,17 +580,23 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
         onLayoutCompletedListeners += listener
     }
 
+    /** Registers [listener] to be called once, after the current or next full layout pass. */
+    fun registerOnFullLayoutCompletedListener(listener: Owner.OnLayoutCompletedListener) {
+        onFullLayoutCompletedListeners += listener
+    }
+
+    private fun callOnLayoutCompletedListeners() = callListeners(onLayoutCompletedListeners)
+
     /**
-     * Calls every registered listener once, in registration order, taking each off the list
+     * Calls every listener in [listeners] once, in registration order, taking each off the list
      * before calling it. A listener may lay out again, which calls this from inside the loop.
      * Iterating the list and clearing it afterwards let such a nested call clear the list under
      * the outer loop, which then threw on a null entry, and made the nested call run the
      * listeners up to the running one a second time. A listener registered while this runs is
      * called in this dispatch, instead of being cleared with the list without ever running.
      */
-    private fun callOnLayoutCompletedListeners() {
+    private fun callListeners(listeners: MutableVector<Owner.OnLayoutCompletedListener>) {
         // Each removeAt(0) shifts the rest, which is fine for the handful of listeners a pass has.
-        val listeners = onLayoutCompletedListeners
         while (listeners.isNotEmpty()) {
             listeners.removeAt(0).onLayoutComplete()
         }
@@ -839,35 +870,6 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
             measuredByParent == InMeasureBlock ||
                 layoutDelegate.alignmentLinesOwner.alignmentLines.required
 
-    /** Checks if there is a placed parent which is using the measured size of this node. */
-    private val LayoutNode.measuredByPlacedParent: Boolean
-        get() {
-            var node = this
-            while (
-                node.measuredByParent != NotUsed ||
-                    node.layoutDelegate.alignmentLinesOwner.alignmentLines.required ||
-                    // if the parent is currently measuring, then measuredByParent on children was
-                    // reset to NotUsed beforehand and does not represent the real usage.
-                    node.parent?.layoutState == Measuring
-            ) {
-                val parent = node.parent ?: return false
-                if (parent.isPlaced) {
-                    return true
-                }
-                node = parent
-            }
-            return false
-        }
-
-    private val LayoutNode.canAffectPlacedParent
-        get() = measurePending && measuredByPlacedParent
-
-    private val LayoutNode.canAffectParentInLookahead
-        get() =
-            lookaheadMeasurePending &&
-                (measuredByParentInLookahead != NotUsed ||
-                    layoutDelegate.lookaheadAlignmentLinesOwner?.alignmentLines?.required == true)
-
     private val LayoutNode.lookaheadRemeasureCanAffectParentSize
         get() =
             (measuredByParentInLookahead == InMeasureBlock ||
@@ -878,6 +880,38 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
 
     class PostponedRequest(val node: LayoutNode, val isLookahead: Boolean, val isForced: Boolean)
 }
+
+// Top level rather than private members: ParentDrivenSlots.isScheduled asks the question the
+// remeasure requests above ask before they schedule a node, and must get the same answer.
+
+/** Checks if there is a placed parent which is using the measured size of this node. */
+internal val LayoutNode.measuredByPlacedParent: Boolean
+    get() {
+        var node = this
+        while (
+            node.measuredByParent != NotUsed ||
+                node.layoutDelegate.alignmentLinesOwner.alignmentLines.required ||
+                // if the parent is currently measuring, then measuredByParent on children was
+                // reset to NotUsed beforehand and does not represent the real usage.
+                node.parent?.layoutState == Measuring
+        ) {
+            val parent = node.parent ?: return false
+            if (parent.isPlaced) {
+                return true
+            }
+            node = parent
+        }
+        return false
+    }
+
+internal val LayoutNode.canAffectPlacedParent
+    get() = measurePending && measuredByPlacedParent
+
+internal val LayoutNode.canAffectParentInLookahead
+    get() =
+        lookaheadMeasurePending &&
+            (measuredByParentInLookahead != NotUsed ||
+                layoutDelegate.lookaheadAlignmentLinesOwner?.alignmentLines?.required == true)
 
 internal inline fun <T> traceMeasureLayout(label: String, block: () -> T) =
     @OptIn(ComposeToolingApi::class)

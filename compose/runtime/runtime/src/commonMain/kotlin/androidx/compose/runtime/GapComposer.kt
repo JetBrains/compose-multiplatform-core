@@ -645,6 +645,38 @@ internal class GapComposer(
         providerUpdates = null
     }
 
+    override fun reportNestedCompositionsRemoved() {
+        if (slotTable.containsMark()) {
+            slotTable.read { reader -> reportCompositionsCreatedIn(reader, 0, reader.size) }
+        }
+    }
+
+    /**
+     * Reports the compositions created from a composition context in groups [start] to [end] of
+     * [reader] as removed, and recurses into each of them. It finds the same composition context
+     * reference groups that [reportFreeMovableContent] finds when a group is removed.
+     */
+    private fun reportCompositionsCreatedIn(reader: SlotReader, start: Int, end: Int) {
+        var group = start
+        while (group < end) {
+            if (
+                reader.hasMark(group) &&
+                    reader.groupKey(group) == referenceKey &&
+                    reader.groupObjectKey(group) == reference
+            ) {
+                val observerHolder = reader.groupGet(group, 0) as? RememberObserverHolder
+                val contextHolder = observerHolder?.wrapped as? CompositionContextHolder
+                contextHolder?.ref?.composers?.forEach { composer ->
+                    parentContext.reportRemovedComposition(composer.composition)
+                    composer.reportNestedCompositionsRemoved()
+                }
+            } else if (reader.containsMark(group)) {
+                reportCompositionsCreatedIn(reader, group + 1, group + reader.groupSize(group))
+            }
+            group += reader.groupSize(group)
+        }
+    }
+
     override fun forceRecomposeScopes(): Boolean {
         return if (!forceRecomposeScopes) {
             forceRecomposeScopes = true
@@ -2100,6 +2132,14 @@ internal class GapComposer(
             }
             val start = reader.currentGroup
             val end = reader.currentEnd
+            // Deactivated content keeps its composition contexts for reuse, but deactivation
+            // forgets the state and effects that own the compositions created from them. Skip
+            // those compositions for the rest of the turn, so they cannot compose against the
+            // state that deactivated their creator before their owners tear them down.
+            @OptIn(ExperimentalComposeApi::class)
+            if (ComposeRuntimeFlags.isNestedCompositionSkipOnDeactivationEnabled) {
+                reportCompositionsCreatedIn(reader, start, end)
+            }
             changeListWriter.deactivateCurrentGroup()
             invalidations.removeRange(start, end)
             reader.skipToGroupEnd()
@@ -3002,6 +3042,9 @@ internal class GapComposer(
         ) {
             parentContext.composeInitial(composition, content)
         }
+
+        override fun recomposeNow(composition: ControlledComposition): Boolean =
+            parentContext.recomposeNow(composition)
 
         override fun composeInitialPaused(
             composition: ControlledComposition,

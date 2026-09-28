@@ -72,6 +72,14 @@ public abstract class CompositionContext internal constructor() {
         content: @Composable () -> Unit,
     )
 
+    /**
+     * Recomposes [composition]'s pending invalidations now, and applies them. See
+     * [ParentDrivenHosting.recomposeNow]. Only the [Recomposer] can compose it, so a context
+     * forwards the request to its parent. Returns false only if the recomposer is in its error
+     * state afterwards.
+     */
+    internal open fun recomposeNow(composition: ControlledComposition): Boolean = true
+
     internal abstract fun composeInitialPaused(
         composition: ControlledComposition,
         shouldPause: ShouldPauseCallback,

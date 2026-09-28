@@ -651,6 +651,8 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     public suspend fun runRecomposeAndApplyChanges(): Unit =
         recompositionRunner { parentFrameClock ->
             val toRecompose = mutableListOf<ControlledComposition>()
+            // Reused each frame: the depth-ordered copy of toRecompose that the block iterates.
+            val recomposeOrder = mutableListOf<ControlledComposition>()
             val toInsert = mutableListOf<MovableContentStateReference>()
             val toApply = mutableListOf<ControlledComposition>()
             val toLateApply = mutableScatterSetOf<ControlledComposition>()
@@ -658,37 +660,69 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             val modifiedValues = MutableScatterSet<Any>()
             val modifiedValuesSet = modifiedValues.wrapIntoSet()
             val alreadyComposed = mutableScatterSetOf<ControlledComposition>()
-            val skippedParentDriven = mutableScatterSetOf<ControlledComposition>()
+            // The compositions handed to their host's layout pass in this frame. They are not
+            // recomposed here, and not queued again in this frame.
+            val routedToLayout = mutableScatterSetOf<ControlledComposition>()
+            // The compositions whose recompose in this block produced changes. Their apply, after
+            // the block, can give a host nested in them new content.
+            val recomposedWithChanges = mutableScatterSetOf<ControlledComposition>()
 
             fun enqueueForRecompose(composition: ControlledComposition) {
-                if (composition !in toRecompose && composition !in skippedParentDriven) {
+                if (composition !in toRecompose && composition !in routedToLayout) {
                     toRecompose += composition
                 }
             }
 
-            // Parent-driven compositions (those with a recompose gate installed) are handled
-            // in two phases. The recompose pass DEFERS all of them: a standalone
-            // recomposition would pair the captures baked into their content lambda by the
-            // parent with fresh direct reads, and whether the parent is about to refresh
-            // those captures is not knowable yet - the refreshed content (e.g. a
-            // SubcomposeLayout measure policy capturing new values) is only installed, and
-            // the host's measure only marked pending, by applyChanges. AFTER the apply stage
-            // the gate is exact: gated compositions are left to the pending measure pass
-            // (which recomposes them with fresh captures), and the rest recompose in a
-            // second wave - same frame, with captures that are provably current (had any
-            // value they capture changed, the parent's body or measure would be dirty).
-            fun isParentDrivenComposition(composition: ControlledComposition): Boolean =
-                (composition as? CompositionImpl)?.parentDrivenRecomposeGate != null
-
-            fun shouldSkipParentDrivenComposition(
-                composition: ControlledComposition
-            ): Boolean =
-                (composition as? CompositionImpl)?.parentDrivenRecomposeGate?.invoke() == true
+            // Offers a composition that has a host, or an enclosing composition with a host, to
+            // the layout pass instead of recomposing it here, and returns true if a host took it.
+            // `ParentDrivenHost` describes the order of the offers, when a host takes one, and
+            // what "earlier in this block" covers. A composition queued with nothing to
+            // recompose, as an invalidation of a nested composition queues every composition
+            // enclosing it, is not offered: it would cost its host a measure for nothing.
+            //
+            // A value that a composition earlier in this block wrote while it composed, such as a
+            // composition local it provides or a state it updates with `rememberUpdatedState`,
+            // reaches a composition that read it only when that one composes: performRecompose
+            // records the write as its invalidation then. So it is recorded here first, the same
+            // way. Otherwise a composition whose only change is such a write would count as having
+            // nothing to recompose, and recompose here, before the apply of the composition that
+            // wrote it, which may be about to give its host new content; and a host that takes one
+            // would re-run it without the write.
+            fun routeToLayout(composition: ControlledComposition): Boolean {
+                val impl = composition as? CompositionImpl ?: return false
+                if (impl.host == null && impl.enclosingHosted == null) return false
+                if (modifiedValues.isNotEmpty() && impl.observesAnyOf(modifiedValuesSet)) {
+                    impl.recordEarlierWritesOf(modifiedValues)
+                }
+                if (!impl.hasInvalidations) return false
+                // Ascending depth visits every composition enclosing this one first, within this
+                // pass of the block.
+                var enclosingRecomposed = false
+                var enclosing = impl.parentComposition
+                while (enclosing != null) {
+                    if (enclosing in recomposedWithChanges || enclosing in routedToLayout) {
+                        enclosingRecomposed = true
+                        break
+                    }
+                    enclosing = enclosing.parentComposition
+                }
+                var taken = impl.host?.onInvalidated(enclosingRecomposed) == true
+                var enclosingHosted = impl.enclosingHosted
+                while (!taken && enclosingHosted != null) {
+                    taken =
+                        enclosingHosted.host?.onWaiterInvalidated(impl, enclosingRecomposed) ==
+                            true
+                    enclosingHosted = enclosingHosted.enclosingHosted
+                }
+                if (taken) routedToLayout.add(composition)
+                return taken
+            }
 
             fun clearRecompositionState() {
                 synchronized(stateLock) {
                     toRecompose.clear()
                     toInsert.clear()
+                    recomposeOrder.clear()
 
                     toApply.fastForEach {
                         it.abandonChanges()
@@ -706,7 +740,8 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                     toComplete.clear()
 
                     modifiedValues.clear()
-                    skippedParentDriven.clear()
+                    routedToLayout.clear()
+                    recomposedWithChanges.clear()
 
                     alreadyComposed.forEach {
                         it.abandonChanges()
@@ -737,6 +772,12 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                 // each time, but because we've installed the broadcastFrameClock as the scope
                 // clock above for user code to locate.
                 parentFrameClock.withFrameNanos { frameTime ->
+                    synchronized(stateLock) {
+                        // A skip recorded after the last recompose block, in a measure pass or
+                        // outside any frame, belongs to that turn. Its compositions can still be
+                        // alive, so it must not swallow this frame's changes.
+                        compositionsRemoved = null
+                    }
                     // Dispatch MonotonicFrameClock frames first; this may produce new
                     // composer invalidations that we must handle during the same frame.
                     if (hasBroadcastFrameClockAwaiters) {
@@ -750,13 +791,17 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                     }
 
                     trace("Recomposer:recompose") {
-                        skippedParentDriven.clear()
+                        routedToLayout.clear()
+                        recomposedWithChanges.clear()
 
                         // Drain any composer invalidations from snapshot changes and record
                         // composers to work on
                         recordComposerModifications()
                         synchronized(stateLock) {
-                            compositionInvalidations.forEach(::enqueueForRecompose)
+                            compositionInvalidations.forEach { composition ->
+                                enqueueForRecompose(composition)
+                                (composition as? CompositionImpl)?.recomposeLaterPending = false
+                            }
                             compositionInvalidations.clear()
                         }
 
@@ -765,12 +810,28 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                         alreadyComposed.clear()
                         withIsolationOrNotifyObjectsInitialized {while (toRecompose.isNotEmpty() || toInsert.isNotEmpty()) {
                             try {
-                                toRecompose.fastForEach { composition ->
-                                    if (isParentDrivenComposition(composition)) {
-                                        skippedParentDriven.add(composition)
-                                    } else {
+                                // Visit an enclosing composition before one nested inside it,
+                                // so an enclosing composition recomposes before a nested one
+                                // that is recomposed here reads what it supplies. A nested
+                                // composition under a host is handed to the layout pass, which
+                                // runs after this block and its apply.
+                                recomposeOrder.clear()
+                                recomposeOrder.addAll(toRecompose)
+                                if (recomposeOrder.size > 1) {
+                                    recomposeOrder.sortBy {
+                                        (it as? CompositionImpl)?.compositionDepth ?: 0
+                                    }
+                                }
+                                recomposeOrder.fastForEach { composition ->
+                                    // performRecompose skips a disposed or removed composition,
+                                    // so its host is not asked either.
+                                    val skipped =
+                                        composition.isDisposed ||
+                                            compositionsRemoved?.contains(composition) == true
+                                    if (skipped || !routeToLayout(composition)) {
                                         performRecompose(composition, modifiedValues)?.let {
                                             toApply += it
+                                            recomposedWithChanges.add(it)
                                         }
                                         alreadyComposed.add(composition)
                                     }
@@ -781,6 +842,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                                 return@withFrameNanos
                             } finally {
                                 toRecompose.clear()
+                                recomposeOrder.clear()
                             }
 
                                 // Find any trailing recompositions that need to be composed because
@@ -794,7 +856,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                                         knownCompositionsLocked().fastForEach { value ->
                                             if (
                                                 value !in alreadyComposed &&
-                                                value !in skippedParentDriven &&
+                                                value !in routedToLayout &&
                                                 value.observesAnyOf(modifiedValuesSet)
                                             ) {
                                                 enqueueForRecompose(value)
@@ -805,13 +867,27 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                                         // observed
                                         // by the snapshot system, but invalidates composition scope
                                         // directly instead.
+                                        // A composition handed to its host's layout pass is
+                                        // delivered in this frame, with every invalidation it
+                                        // has by then: its host re-runs it, or the host composes
+                                        // it through recomposeNow, which queues it again if it
+                                        // still has invalidations afterwards, or hands it back
+                                        // with recomposeLater. So an entry made for it during
+                                        // this block, such as by recording a write for it before
+                                        // it was offered, would only cost a frame with nothing to
+                                        // do, and is dropped.
                                         compositionInvalidations.removeIf { value ->
-                                            if (
+                                            if (value in routedToLayout) {
+                                                (value as? CompositionImpl)?.recomposeLaterPending =
+                                                    false
+                                                true
+                                            } else if (
                                                 value !in alreadyComposed &&
-                                                value !in skippedParentDriven &&
                                                 value !in toRecompose
                                             ) {
                                                 enqueueForRecompose(value)
+                                                (value as? CompositionImpl)?.recomposeLaterPending =
+                                                    false
                                                 true
                                             } else {
                                                 false
@@ -824,10 +900,10 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                                     try {
                                         fillToInsert()
                                         while (toInsert.isNotEmpty()) {
-                                            toLateApply += performInsertValues(
-                                                toInsert,
-                                                modifiedValues
-                                            )
+                                            val inserted =
+                                                performInsertValues(toInsert, modifiedValues)
+                                            toLateApply += inserted
+                                            inserted.fastForEach { recomposedWithChanges.add(it) }
                                             fillToInsert()
                                         }
                                     } catch (e: Throwable) {
@@ -882,64 +958,6 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                                     }
                                 }
 
-                                // The second wave for the deferred parent-driven
-                                // compositions: the apply stage above has installed any
-                                // refreshed parent content and marked the affected hosts'
-                                // measure pending, so the gate is exact here (see the note
-                                // at its declaration). Still-gated compositions are left to
-                                // the pending measure pass; the rest recompose and apply
-                                // now, within the same frame.
-                                if (skippedParentDriven.isNotEmpty()) {
-                                    // Recompose the deferred parent-driven compositions in ANCESTRY
-                                    // (creation) order. An outer composition's recompose+apply can
-                                    // DISPOSE a nested parent-driven composition - e.g. a gate
-                                    // scope that drops an overlay/dialog whose content
-                                    // subcomposition is itself pending - and that removal must run
-                                    // BEFORE the nested composition is recomposed. In an unordered
-                                    // pass the nested subcomposition could recompose against
-                                    // just-deleted state ahead of its remover. _knownCompositions
-                                    // is in creation order and a subcomposition is always created
-                                    // after its parent, so filtering it yields outer-before-inner;
-                                    // the isDisposed guard below then skips any nested composition
-                                    // an earlier apply already removed.
-                                    val orderedParentDriven = synchronized(stateLock) {
-                                        val out = mutableListOf<ControlledComposition>()
-                                        knownCompositionsLocked().fastForEach {
-                                            if (it in skippedParentDriven) out += it
-                                        }
-                                        // Defensive: include any pending one not in the known list.
-                                        skippedParentDriven.forEach { if (it !in out) out += it }
-                                        out
-                                    }
-                                    orderedParentDriven.fastForEach { composition ->
-                                        if (
-                                            !composition.isDisposed &&
-                                            !shouldSkipParentDrivenComposition(composition)
-                                        ) {
-                                            val needsApply =
-                                                try {
-                                                    performRecompose(composition, modifiedValues)
-                                                } catch (e: Throwable) {
-                                                    processCompositionError(e, recoverable = true)
-                                                    clearRecompositionState()
-                                                    return@withFrameNanos
-                                                }
-                                            if (needsApply != null) {
-                                                toComplete.add(needsApply)
-                                                try {
-                                                    needsApply.applyChanges()
-                                                    needsApply.applyLateChanges()
-                                                } catch (e: Throwable) {
-                                                    processCompositionError(e)
-                                                    clearRecompositionState()
-                                                    return@withFrameNanos
-                                                }
-                                            }
-                                            alreadyComposed.add(composition)
-                                        }
-                                    }
-                                }
-
                                 if (toComplete.isNotEmpty()) {
                                     try {
                                         toComplete.forEach { composition ->
@@ -962,7 +980,8 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                             }
                         }
                         alreadyComposed.clear()
-                        skippedParentDriven.clear()
+                        routedToLayout.clear()
+                        recomposedWithChanges.clear()
                         modifiedValues.clear()
                         compositionsRemoved = null
                     }
@@ -1941,7 +1960,79 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             removeKnownCompositionLocked(composition)
             compositionInvalidations -= composition
             compositionsAwaitingApply -= composition
+            (composition as? CompositionImpl)?.recomposeLaterPending = false
         }
+    }
+
+    /**
+     * Recomposes a composition that its host took from the recompose block and does not re-run in
+     * its own measure, and applies it. See [ParentDrivenHosting.recomposeNow].
+     *
+     * It runs inside the host's layout: at the end of the layout pass in which the composition it
+     * waits for became current, or at once for a re-run outside a layout pass, such as a paused
+     * precomposition applied out of frame. Under frame isolation it runs inside the layout
+     * phase's slice. An error in the recompose is handled like one in the frame's recompose: in
+     * recovery mode it does not escape, and recovery recomposes everything; otherwise it is
+     * rethrown, out of the release. A disposed composition, one that is composing right now, and
+     * one with nothing to recompose are skipped. In the error state nothing is composed, because
+     * recovery recomposes everything.
+     *
+     * A recompose that [ParentDrivenHosting.recomposeLater] queued is withdrawn first, so a
+     * composition delivered here leaves no frame request behind. The queued entry can also carry
+     * a real invalidation, because [invalidate] de-duplicates, for example from another thread, or
+     * from a `SideEffect` that invalidates its own scope during the compose below. So a
+     * composition that still has invalidations after the compose is queued again. The check comes
+     * after the withdrawal, so an invalidation that arrives in between is never lost.
+     * [ControlledComposition.hasInvalidations] takes the composition's own lock, and no code path
+     * here may hold both locks at once, so the checks run after [stateLock] is released. The flag
+     * is read without the lock first, as it is written, so the common case takes no extra lock.
+     */
+    internal override fun recomposeNow(composition: ControlledComposition): Boolean {
+        if (errorState.value != null) return false
+        if (composition.isDisposed || composition.isComposing) return true
+        val impl = composition as? CompositionImpl
+        var withdrewQueuedRecompose = false
+        if (impl?.recomposeLaterPending == true) {
+            synchronized(stateLock) {
+                if (impl.recomposeLaterPending) {
+                    impl.recomposeLaterPending = false
+                    compositionInvalidations -= composition
+                    withdrewQueuedRecompose = true
+                }
+            }
+        }
+        // A host releases a composition it took whether or not it still has work, for example
+        // one whose invalidation an earlier compose already took. Opening a composing snapshot for
+        // nothing is not free, so skip it.
+        if (!composition.hasInvalidations) return true
+        val needsApply =
+            try {
+                performRecompose(composition, null)
+            } catch (e: Throwable) {
+                // A recompose, not a first composition: recovery must not retry it with
+                // setContent. Its host disposes it during recovery, and retrying a disposed
+                // composition throws out of the recovery itself.
+                processCompositionError(e, recoverable = true)
+                return errorState.value == null
+            }
+        if (needsApply != null) {
+            try {
+                performInitialMovableContentInserts(composition)
+                needsApply.applyChanges()
+                needsApply.applyLateChanges()
+                needsApply.changesApplied()
+            } catch (e: Throwable) {
+                processCompositionError(e)
+                return errorState.value == null
+            }
+            if (domainOf(composition) == null) {
+                // Ensure that any state objects created during applyChanges are seen as changed
+                // if modified after this call.
+                Snapshot.notifyObjectsInitialized()
+            }
+        }
+        if (withdrewQueuedRecompose && composition.hasInvalidations) invalidate(composition)
+        return errorState.value == null
     }
 
     internal override fun invalidate(composition: ControlledComposition) {
