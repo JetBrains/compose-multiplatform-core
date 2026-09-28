@@ -20,7 +20,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.internal.JvmDefaultWithCompatibility
-import androidx.compose.ui.node.LayoutAwareModifierNode
+import androidx.compose.ui.node.MeasuredSizeAwareModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.IntSize
@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.IntSize
  * @sample androidx.compose.ui.samples.OnSizeChangedSample
  */
 @Stable
-fun Modifier.onSizeChanged(onSizeChanged: (IntSize) -> Unit) =
+public fun Modifier.onSizeChanged(onSizeChanged: (IntSize) -> Unit): Modifier =
     this.then(OnSizeChangedModifier(onSizeChanged = onSizeChanged))
 
 private class OnSizeChangedModifier(private val onSizeChanged: (IntSize) -> Unit) :
@@ -71,8 +71,8 @@ private class OnSizeChangedModifier(private val onSizeChanged: (IntSize) -> Unit
     }
 }
 
-private class OnSizeChangedNode(private var onSizeChanged: (IntSize) -> Unit) :
-    Modifier.Node(), LayoutAwareModifierNode {
+internal class OnSizeChangedNode(private var onSizeChanged: (IntSize) -> Unit) :
+    Modifier.Node(), MeasuredSizeAwareModifierNode {
     // When onSizeChanged changes, we want to invalidate so onRemeasured is called again
     override val shouldAutoInvalidate: Boolean = true
     private var previousSize = IntSize(Int.MIN_VALUE, Int.MIN_VALUE)
@@ -101,7 +101,7 @@ private class OnSizeChangedNode(private var onSizeChanged: (IntSize) -> Unit) :
  * @sample androidx.compose.ui.samples.OnSizeChangedSample
  */
 @JvmDefaultWithCompatibility
-interface OnRemeasuredModifier : Modifier.Element {
+public interface OnRemeasuredModifier : Modifier.Element {
     /** Called after a layout's contents have been remeasured. */
-    fun onRemeasured(size: IntSize)
+    public fun onRemeasured(size: IntSize)
 }

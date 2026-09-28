@@ -15,15 +15,16 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
@@ -32,49 +33,82 @@ plugins {
 
 androidXMultiplatform {
     androidLibrary {
-        compileSdk = 36
+        compileSdk { version = release(36) }
         namespace = "androidx.navigationevent.compose"
     }
-    jvmStubs()
-    linuxX64Stubs()
+    desktop()
+    mac()
+    linux()
+    ios()
+    watchos()
+    tvos()
+    mingwX64()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api(project(":navigationevent:navigationevent"))
-                api("androidx.compose.runtime:runtime:1.8.2")
-                implementation(libs.kotlinStdlib)
+        commonMain.dependencies {
+            api(project(":navigationevent:navigationevent"))
+            api("androidx.compose.runtime:runtime:1.11.2")
+            implementation(libs.kotlinCoroutinesCore)
+        }
+
+        commonTest.dependencies {
+            implementation(libs.kotlinTest)
+            implementation(project(":navigationevent:navigationevent-testing"))
+            implementation(project(":kruth:kruth"))
+        }
+
+        androidMain.dependencies {
+             implementation("androidx.compose.ui:ui:1.11.2") {
+                because("Ensure we are using the Compose-UI 1.11 or above")
             }
+            // Older versions of lifecycle-runtime lint checks use a deleted lint API
+            implementation("androidx.lifecycle:lifecycle-runtime:2.10.0")
         }
 
-        androidMain {
-            dependsOn(commonMain)
-            dependencies {
-                implementation("androidx.compose.ui:ui:1.8.2") {
-                    because("LocalView")
-                }
-            }
+        androidDeviceTest.dependencies {
+            implementation("androidx.compose.material:material:1.11.2")
+            implementation("androidx.compose.ui:ui-test:1.11.2")
+            implementation("androidx.compose.ui:ui-test-junit4:1.11.2")
+            implementation("androidx.compose.ui:ui-test-manifest:1.11.2")
+            implementation(libs.testExtJunit)
+            implementation(libs.testCore)
+            implementation(libs.testRunner)
+            implementation(libs.testRules)
+            implementation(libs.espressoCore)
         }
 
-        commonStubsMain {
-            dependsOn(commonMain)
-        }
+        create("nonAndroidMain").dependsOn(commonMain)
+        create("nonAndroidTest").dependsOn(commonTest)
 
-        jvmStubsMain {
-            dependsOn(commonStubsMain)
-        }
+        desktopMain.dependsOn(nonAndroidMain)
+        desktopTest.dependsOn(nonAndroidTest)
 
-        linuxx64StubsMain {
-            dependsOn(commonStubsMain)
+        nonJvmMain.dependsOn(nonAndroidMain)
+        nonJvmTest.dependsOn(nonAndroidTest)
+
+        wasmJsMain.dependencies {
+            implementation(libs.kotlinXw3c)
         }
+    }
+}
+
+dependencies.constraints {
+    // Prevents symbols duplication with old versions of JetBrains' fork.
+    // Starting with Compose Multiplatform 1.11.0, this module is published as empty
+    // artifact with dependency to this androidx module.
+    commonMainImplementation("org.jetbrains.androidx.navigationevent:navigationevent-compose:1.1.0") {
+        because "prevents symbols duplication"
     }
 }
 
 androidx {
     name = "NavigationEvent Compose"
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    samples(project(":navigationevent:navigationevent-samples"))
     inceptionYear = "2025"
     description = "Compose integration with NavigationEvent"
 }

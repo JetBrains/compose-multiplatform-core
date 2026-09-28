@@ -27,6 +27,8 @@ import kotlin.js.JsName
  * An implementation of [MutableSet] that can be observed and snapshot. This is the result type
  * created by [androidx.compose.runtime.mutableStateSetOf].
  *
+ * The returned set iteration order is in the order the items were inserted into the set.
+ *
  * @see androidx.compose.runtime.mutableStateSetOf
  */
 @Stable
@@ -109,7 +111,9 @@ internal inline fun <R, T> SnapshotStateSet<T>.writable(block: StateSetStateReco
 
 internal inline fun <R, T> SnapshotStateSet<T>.withCurrent(
     block: StateSetStateRecord<T>.() -> R
-): R = @Suppress("UNCHECKED_CAST") (firstStateRecord as StateSetStateRecord<T>).withCurrent(block)
+): R =
+    @Suppress("UNCHECKED_CAST")
+    (firstStateRecord as StateSetStateRecord<T>).withCurrent(this, block)
 
 internal fun <T> SnapshotStateSet<T>.mutateBoolean(block: (MutableSet<T>) -> Boolean): Boolean =
     mutate(block)

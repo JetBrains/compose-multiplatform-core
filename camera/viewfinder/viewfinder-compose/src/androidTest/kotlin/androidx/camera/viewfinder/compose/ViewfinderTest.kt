@@ -22,6 +22,8 @@ import android.os.Build
 import android.util.Log
 import android.util.Size
 import android.view.Surface
+import androidx.camera.testing.impl.AndroidUtil
+import androidx.camera.viewfinder.core.FrameRenderedListener
 import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.camera.viewfinder.core.TransformationInfo
 import androidx.camera.viewfinder.core.ViewfinderSurfaceRequest
@@ -50,14 +52,17 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.AndroidUiDispatcher
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.junit4.ComposeTestRule
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.test.filters.MediumTest
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.TruthJUnit.assume
+import java.util.concurrent.Executor
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.cos
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -67,8 +72,13 @@ import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.yield
+import org.junit.After
+import org.junit.Assume.assumeFalse
+import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -86,6 +96,13 @@ class ViewfinderTest(private val implementationMode: ImplementationMode) {
     }
 
     @get:Rule val rule = createComposeRule()
+
+    @After
+    fun tearDown() {
+        // Force GC to trigger finalizers and catch leaks/crashes early
+        Runtime.getRuntime().gc()
+        System.runFinalization()
+    }
 
     @Test
     fun coordinatesTransformationSameSizeNoRotation(): Unit = runBlocking {
@@ -145,7 +162,6 @@ class ViewfinderTest(private val implementationMode: ImplementationMode) {
         assertThat(coordinateTransformer.transformMatrix.values).isEqualTo(expectedMatrix.values)
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M) // Needed for Surface.lockHardwareCanvas()
     @Test
     fun canRetrieveSurface() = runBlocking {
         // Disable render animation so we aren't competing to lock the canvas
@@ -165,6 +181,10 @@ class ViewfinderTest(private val implementationMode: ImplementationMode) {
     @Test
     fun verifySurfacesAreReleased_surfaceRequestReleased_thenComposableDestroyed(): Unit =
         runBlocking {
+            assumeFalse(
+                "Skipping test due to SurfaceTexture crash on Emulator API 36",
+                AndroidUtil.isEmulator(36),
+            )
             testHideableWithSession {
                 val surface = awaitSurfaceSession().surface
                 assertThat(surface.isValid).isTrue()
@@ -182,6 +202,10 @@ class ViewfinderTest(private val implementationMode: ImplementationMode) {
     @Test
     fun verifySurfacesAreReleased_composableDestroyed_thenSurfaceRequestReleased(): Unit =
         runBlocking {
+            assumeFalse(
+                "Skipping test due to SurfaceTexture crash on Emulator API 36",
+                AndroidUtil.isEmulator(36),
+            )
             assume()
                 .withMessage(
                     "EXTERNAL implamentation on API < 29 is not yet able to delay surface destruction by the Viewfinder."
@@ -224,7 +248,7 @@ class ViewfinderTest(private val implementationMode: ImplementationMode) {
                         // A new surface would need to be created on API 28 and lower, wait for
                         // the new surface session
                         allowNextSessionCompletion()
-
+                        rule.awaitIdle()
                         val newSurfaceSession =
                             withTimeoutOrNull(5.seconds) {
                                 awaitSurfaceSession { it !== surfaceSession }
@@ -238,44 +262,87 @@ class ViewfinderTest(private val implementationMode: ImplementationMode) {
 
     @Test
     fun viewfinderInPagerWithDefaultOffscreenPageCount_afterMoveOffThenOnScreen_validSurfaceIsAvailable():
-        Unit = runBlocking {
-        testPageableWithSession(beyondViewportPageCount = 0) {
-            val firstSurfaceSession = awaitSurfaceSession()
-            assertThat(firstSurfaceSession.surface.isValid).isTrue()
+        Unit =
+        runTest(rule.mainClock.scheduler) {
+            assumeFalse(
+                "Test fails on cuttlefish b/467137284",
+                Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+            )
+            testPageableWithSession(beyondViewportPageCount = 0) {
+                val firstSurfaceSession = awaitSurfaceSession()
+                assertThat(firstSurfaceSession.surface.isValid).isTrue()
 
-            scrollToPage(1)
+                scrollToPage(1)
 
-            rule.awaitIdleWithPausedRendering()
-            // Moving off screen will remove the View from the composition, so the session should
-            // be completed.
-            allowNextSessionCompletion()
+                rule.awaitIdleWithPausedRendering()
+                // Moving off screen will remove the View from the composition, so the session
+                // should
+                // be completed.
+                allowNextSessionCompletion()
 
-            scrollToPage(0)
-            rule.awaitIdleWithPausedRendering()
-            val secondSurfaceSession = awaitSurfaceSession()
+                scrollToPage(0)
+                rule.awaitIdleWithPausedRendering()
+                val secondSurfaceSession = awaitSurfaceSession()
 
-            assertThat(secondSurfaceSession.surface.isValid).isTrue()
+                assertThat(secondSurfaceSession.surface.isValid).isTrue()
+            }
         }
-    }
 
     @Test
     fun viewfinderInPagerWithOneOffscreenPageCount_afterMoveOffThenOnScreen_validSurfaceIsAvailable():
-        Unit = runBlocking {
-        // When the beyondViewportPageCount keeps the underlying View alive, we don't expect
-        // the session to be recreated since the composable is never removed from the composition.
-        testPageableWithSession(beyondViewportPageCount = 1) {
-            val surfaceSession = awaitSurfaceSession()
-            assertThat(surfaceSession.surface.isValid).isTrue()
+        Unit =
+        runTest(rule.mainClock.scheduler) {
+            // When the beyondViewportPageCount keeps the underlying View alive, we don't expect
+            // the session to be recreated since the composable is never removed from the
+            // composition.
+            testPageableWithSession(beyondViewportPageCount = 1) {
+                val surfaceSession = awaitSurfaceSession()
+                assertThat(surfaceSession.surface.isValid).isTrue()
 
-            scrollToPage(1)
-            rule.awaitIdleWithPausedRendering()
+                scrollToPage(1)
+                rule.awaitIdleWithPausedRendering()
 
-            scrollToPage(0)
-            rule.awaitIdleWithPausedRendering()
+                scrollToPage(0)
+                rule.awaitIdleWithPausedRendering()
 
-            assertThat(surfaceSession.surface.isValid).isTrue()
+                assertThat(surfaceSession.surface.isValid).isTrue()
+            }
         }
-    }
+
+    @Test
+    fun frameRenderedListener_isInvokedWhenSurfaceIsDrawn(): Unit =
+        runTest(rule.mainClock.scheduler) {
+            assumeFalse(
+                "FrameRenderedListener may not be invoked on emulator environments due to GL/rendering limitations or cause crashes",
+                AndroidUtil.isEmulator(),
+            )
+            assumeTrue(implementationMode == ImplementationMode.EMBEDDED)
+
+            testWithSession(withRenderAnimation = true) {
+                val surfaceSession = awaitSurfaceSession()
+                val listenerInvokedCount = AtomicInteger(0)
+                val listener = FrameRenderedListener { _ -> listenerInvokedCount.incrementAndGet() }
+                val executor = Executor { it.run() }
+
+                surfaceSession.addFrameRenderedListener(executor, listener)
+
+                // Wait for frames to be rendered and the listener to be called
+                withTimeoutOrNull(2.seconds) {
+                    while (listenerInvokedCount.get() == 0) {
+                        kotlinx.coroutines.delay(10)
+                    }
+                }
+
+                assertThat(listenerInvokedCount.get()).isGreaterThan(0)
+
+                surfaceSession.removeFrameRenderedListener(listener)
+                val countAfterRemoval = listenerInvokedCount.get()
+
+                // Wait a bit to ensure no more invocations happen
+                delay(500) // render loop is running continuously
+                assertThat(listenerInvokedCount.get()).isEqualTo(countAfterRemoval)
+            }
+        }
 
     private interface SessionTestScope {
 
@@ -306,6 +373,7 @@ class ViewfinderTest(private val implementationMode: ImplementationMode) {
         withRenderAnimation: Boolean = true,
         crossinline block: suspend T.() -> Unit,
     ) {
+        var renderJob: Job? = null
         val surfaceSessionFlow = MutableStateFlow<ViewfinderSurfaceSessionScope?>(null)
         val sessionCompleteCount = MutableStateFlow(0)
         val paused = MutableStateFlow(!withRenderAnimation)
@@ -316,27 +384,29 @@ class ViewfinderTest(private val implementationMode: ImplementationMode) {
                 numSessions++
                 surfaceSessionFlow.value = this@onSurfaceSession
 
-                launch(AndroidUiDispatcher.Main) {
-                    val w = request.width
-                    val h = request.height
+                renderJob =
+                    launch(AndroidUiDispatcher.Main) {
+                        val w = request.width
+                        val h = request.height
 
-                    // Render loop
-                    var initialTime: Long? = null
-                    paused.collectLatest { paused ->
-                        while (!paused) {
-                            withFrameNanos { time ->
-                                if (initialTime == null) {
-                                    initialTime = time
-                                }
-                                surface.tryDrawWithCanvas(Rect(0, 0, w, h)) {
-                                    val timeMs = (time - initialTime) / 1_000_000L
-                                    val t = 0.5f - 0.5f * cos(Math.PI.toFloat() * timeMs / 1_000.0f)
-                                    drawColor(lerp(Color.Blue, Color.Yellow, t).toArgb())
+                        // Render loop
+                        var initialTime: Long? = null
+                        paused.collectLatest { paused ->
+                            while (!paused) {
+                                withFrameNanos { time ->
+                                    if (initialTime == null) {
+                                        initialTime = time
+                                    }
+                                    surface.tryDrawWithCanvas(Rect(0, 0, w, h)) {
+                                        val timeMs = (time - initialTime) / 1_000_000L
+                                        val t =
+                                            0.5f - 0.5f * cos(Math.PI.toFloat() * timeMs / 1_000.0f)
+                                        drawColor(lerp(Color.Blue, Color.Yellow, t).toArgb())
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
                 withContext(NonCancellable) { sessionCompleteCount.first { it >= numSessions } }
             }
@@ -346,12 +416,16 @@ class ViewfinderTest(private val implementationMode: ImplementationMode) {
 
         val baseSessionTestScope =
             BaseSessionTestScope(surfaceSessionFlow, sessionCompleteCount, paused)
+
         val specificSessionTestScope = scopeProvider(baseSessionTestScope)
 
         try {
             block.invoke(specificSessionTestScope)
         } finally {
             sessionCompleteCount.value = Int.MAX_VALUE
+            renderJob?.cancel()
+            renderJob?.join()
+            rule.awaitIdle()
         }
     }
 
@@ -366,7 +440,12 @@ class ViewfinderTest(private val implementationMode: ImplementationMode) {
                 object : SessionTestScope by baseScope, PageableSessionTestScope {
                     override suspend fun scrollToPage(page: Int) {
                         selectedPageFlow.value = page
-                        settledPageFlow.first { it == page }
+
+                        // Manually advance the frame clock and yield until the page settles
+                        while (settledPageFlow.value != page) {
+                            rule.mainClock.advanceTimeByFrame()
+                            yield()
+                        }
                     }
                 }
             },

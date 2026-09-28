@@ -26,8 +26,5 @@ dependencies {
 }
 
 android {
-    defaultConfig {
-        minSdk = 24
-    }
     namespace = "androidx.draganddrop.sampleapp"
 }

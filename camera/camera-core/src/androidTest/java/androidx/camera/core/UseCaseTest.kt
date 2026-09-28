@@ -35,7 +35,9 @@ import androidx.camera.core.featuregroup.GroupableFeature.Companion.IMAGE_ULTRA_
 import androidx.camera.core.featuregroup.GroupableFeature.Companion.PREVIEW_STABILIZATION
 import androidx.camera.core.impl.Config
 import androidx.camera.core.impl.ImageOutputConfig
+import androidx.camera.core.impl.ImageOutputConfig.OPTION_MAX_RESOLUTION
 import androidx.camera.core.impl.SessionConfig
+import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
 import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.UseCaseConfigFactory
 import androidx.camera.core.internal.CameraUseCaseAdapter
@@ -51,7 +53,6 @@ import androidx.camera.testing.impl.fakes.FakeUseCaseConfigFactory
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
@@ -62,8 +63,6 @@ import org.junit.runner.RunWith
 
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
-@OptIn(ExperimentalSessionConfig::class)
 class UseCaseTest {
     private lateinit var fakeCamera: FakeCamera
     private lateinit var fakeFrontCamera: FakeCamera
@@ -210,6 +209,22 @@ class UseCaseTest {
         assertThat(mergedConfig.inputFormat).isEqualTo(useCaseImageFormat)
         val imageOutputConfig = mergedConfig as ImageOutputConfig
         assertThat(imageOutputConfig.targetRotation).isEqualTo(Surface.ROTATION_180)
+    }
+
+    @Test
+    fun mergeConfigs_withHighSpeedSessionType_removesMaxResolution() {
+        val cameraInfo = FakeCameraInfoInternal()
+        val useCase = FakeUseCase()
+
+        val useCaseConfig =
+            FakeUseCaseConfig.Builder()
+                .setSessionType(SESSION_TYPE_HIGH_SPEED)
+                .setMaxResolution(Size(1280, 720))
+                .useCaseConfig
+
+        val mergedConfig = useCase.mergeConfigs(cameraInfo, null, useCaseConfig)
+
+        assertThat(mergedConfig.containsOption(OPTION_MAX_RESOLUTION)).isFalse()
     }
 
     @Test
@@ -547,6 +562,28 @@ class UseCaseTest {
         videoCapture.bindToCamera(fakeCamera, null, null, null)
 
         assertThat(videoCapture.isVideoStabilizationEnabled).isFalse()
+    }
+
+    @Test
+    fun setMirrorModeInternal_updatesConfigAndReturnsTrue() {
+        val useCase = createFakeUseCase()
+        assertThat(useCase.mirrorMode).isEqualTo(MirrorMode.MIRROR_MODE_UNSPECIFIED)
+
+        val changed = useCase.setMirrorMode(MirrorMode.MIRROR_MODE_ON)
+
+        assertThat(changed).isTrue()
+        assertThat(useCase.mirrorMode).isEqualTo(MirrorMode.MIRROR_MODE_ON)
+    }
+
+    @Test
+    fun setMirrorModeInternal_sameValue_returnsFalse() {
+        val useCase = createFakeUseCase()
+        useCase.setMirrorMode(MirrorMode.MIRROR_MODE_ON)
+
+        val changed = useCase.setMirrorMode(MirrorMode.MIRROR_MODE_ON)
+
+        assertThat(changed).isFalse()
+        assertThat(useCase.mirrorMode).isEqualTo(MirrorMode.MIRROR_MODE_ON)
     }
 
     private fun createFakeUseCase(

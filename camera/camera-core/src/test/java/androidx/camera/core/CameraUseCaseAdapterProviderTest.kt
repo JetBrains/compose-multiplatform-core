@@ -16,7 +16,6 @@
 
 package androidx.camera.core
 
-import android.os.Build
 import androidx.camera.core.impl.AdapterCameraInfo
 import androidx.camera.core.impl.CameraConfigs
 import androidx.camera.core.impl.CameraRepository
@@ -36,7 +35,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class CameraUseCaseAdapterProviderTest {
 
     private val cameraCoordinator = FakeCameraCoordinator()
@@ -85,7 +84,8 @@ class CameraUseCaseAdapterProviderTest {
         val adapter = cameraUseCaseAdapterProvider.provide(cameraId)
 
         // Assert.
-        assertThat(adapter.adapterIdentifier.cameraIds).containsExactly(cameraId)
+        assertThat(adapter.adapterIdentifier.cameraIds)
+            .containsExactly(CameraIdentifier.CompositeCameraId(cameraId))
     }
 
     @Test
@@ -128,7 +128,7 @@ class CameraUseCaseAdapterProviderTest {
 
         // Assert.
         val expectedCameraId =
-            CameraIdentifier.fromAdapterInfos(adapterCameraInfo0, adapterCameraInfo1)
+            CameraIdentifier.Factory.fromAdapterInfos(adapterCameraInfo0, adapterCameraInfo1)
         assertThat(adapter.adapterIdentifier).isEqualTo(expectedCameraId)
     }
 }

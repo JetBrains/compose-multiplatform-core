@@ -40,8 +40,6 @@ import android.os.IBinder;
 import android.text.TextUtils;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RawRes;
 import androidx.car.app.AppManager;
 import androidx.car.app.CarContext;
@@ -68,6 +66,9 @@ import androidx.car.app.sample.navigation.common.model.Script;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.graphics.drawable.IconCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -604,8 +605,8 @@ public class NavigationService extends Service {
     private Alert createAlert() {
         CarText title =
                 CarText.create(getString(R.string.navigation_alert_title));
-        CarIcon icon = new CarIcon.Builder(
-                IconCompat.createWithResource(this, R.drawable.ic_police)).build();
+        CarIcon icon = CarIcon.createTintedIcon(
+                IconCompat.createWithResource(this, R.drawable.ic_police));
 
         CarText yesTitle = CarText.create(getString(R.string.yes_action_title));
         Action yesAction = new Action.Builder().setTitle(yesTitle).setOnClickListener(

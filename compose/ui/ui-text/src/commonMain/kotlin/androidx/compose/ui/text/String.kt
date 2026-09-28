@@ -18,7 +18,6 @@ package androidx.compose.ui.text
 
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.intl.LocaleList
-import androidx.compose.ui.text.intl.PlatformLocale
 import androidx.compose.ui.text.platform.ActualStringDelegate
 
 /** Interface for providing platform dependent string related operations. */
@@ -30,7 +29,7 @@ internal interface PlatformStringDelegate {
      * @param locale a locale object
      * @return a transformed string
      */
-    fun toUpperCase(string: String, locale: PlatformLocale): String
+    fun toUpperCase(string: String, locale: Locale): String
 
     /**
      * Implementation must return lowercase transformed String.
@@ -39,7 +38,7 @@ internal interface PlatformStringDelegate {
      * @param locale a locale object
      * @return a transformed string
      */
-    fun toLowerCase(string: String, locale: PlatformLocale): String
+    fun toLowerCase(string: String, locale: Locale): String
 
     /**
      * Implementation must return capitalized String.
@@ -48,7 +47,7 @@ internal interface PlatformStringDelegate {
      * @param locale a locale object
      * @return a transformed string
      */
-    fun capitalize(string: String, locale: PlatformLocale): String
+    fun capitalize(string: String, locale: Locale): String
 
     /**
      * Implementation must return decapitalized String.
@@ -57,7 +56,7 @@ internal interface PlatformStringDelegate {
      * @param locale a locale object
      * @return a transformed string
      */
-    fun decapitalize(string: String, locale: PlatformLocale): String
+    fun decapitalize(string: String, locale: Locale): String
 }
 
 /**
@@ -66,8 +65,7 @@ internal interface PlatformStringDelegate {
  * @param locale a locale object
  * @return a transformed text
  */
-fun String.toUpperCase(locale: Locale): String =
-    stringDelegate.toUpperCase(this, locale.platformLocale)
+public fun String.toUpperCase(locale: Locale): String = stringDelegate.toUpperCase(this, locale)
 
 /**
  * Returns lowercase transformed String.
@@ -75,8 +73,7 @@ fun String.toUpperCase(locale: Locale): String =
  * @param locale a locale object
  * @return a transformed text
  */
-fun String.toLowerCase(locale: Locale): String =
-    stringDelegate.toLowerCase(this, locale.platformLocale)
+public fun String.toLowerCase(locale: Locale): String = stringDelegate.toLowerCase(this, locale)
 
 /**
  * Returns capitalized String.
@@ -84,8 +81,7 @@ fun String.toLowerCase(locale: Locale): String =
  * @param locale a locale object
  * @return a transformed text
  */
-fun String.capitalize(locale: Locale): String =
-    stringDelegate.capitalize(this, locale.platformLocale)
+public fun String.capitalize(locale: Locale): String = stringDelegate.capitalize(this, locale)
 
 /**
  * Returns decapitalized String.
@@ -93,8 +89,7 @@ fun String.capitalize(locale: Locale): String =
  * @param locale a locale object
  * @return a transformed text
  */
-fun String.decapitalize(locale: Locale): String =
-    stringDelegate.decapitalize(this, locale.platformLocale)
+public fun String.decapitalize(locale: Locale): String = stringDelegate.decapitalize(this, locale)
 
 /**
  * Returns uppercase transformed String.
@@ -103,7 +98,14 @@ fun String.decapitalize(locale: Locale): String =
  *   instead.
  * @return a transformed text
  */
-fun String.toUpperCase(localeList: LocaleList): String =
+@Deprecated(
+    "This method allows passing an empty locale list, which will pull a locale in a way " +
+        "that can't be backed by snapshot state. Call toUpperCase with an explicit locale instead. " +
+        "If you have a non-empty locale list, the correct thing to do is use the first locale in the " +
+        "list."
+)
+@Suppress("DEPRECATION")
+public fun String.toUpperCase(localeList: LocaleList): String =
     if (localeList.isEmpty()) toUpperCase(Locale.current) else toUpperCase(localeList[0])
 
 /**
@@ -113,7 +115,14 @@ fun String.toUpperCase(localeList: LocaleList): String =
  *   instead.
  * @return a transformed text
  */
-fun String.toLowerCase(localeList: LocaleList): String =
+@Deprecated(
+    "This method allows passing an empty locale list, which will pull a locale in a way " +
+        "that can't be backed by snapshot state. Call toLowerCase with an explicit locale instead. " +
+        "If you have a non-empty locale list, the correct thing to do is use the first locale in the " +
+        "list."
+)
+@Suppress("DEPRECATION")
+public fun String.toLowerCase(localeList: LocaleList): String =
     if (localeList.isEmpty()) toLowerCase(Locale.current) else toLowerCase(localeList[0])
 
 /**
@@ -123,7 +132,14 @@ fun String.toLowerCase(localeList: LocaleList): String =
  *   instead.
  * @return a transformed text
  */
-fun String.capitalize(localeList: LocaleList): String =
+@Deprecated(
+    "This method allows passing an empty locale list, which will pull a locale in a way " +
+        "that can't be backed by snapshot state. Call capitalize with an explicit locale instead. " +
+        "If you have a non-empty locale list, the correct thing to do is use the first locale in the " +
+        "list."
+)
+@Suppress("DEPRECATION")
+public fun String.capitalize(localeList: LocaleList): String =
     if (localeList.isEmpty()) capitalize(Locale.current) else capitalize(localeList[0])
 
 /**
@@ -132,7 +148,14 @@ fun String.capitalize(localeList: LocaleList): String =
  * @param localeList a locale list object. If empty locale list object is passed, use current locale
  *   instead.
  */
-fun String.decapitalize(localeList: LocaleList): String =
+@Deprecated(
+    "This method allows passing an empty locale list, which will pull a locale in a way " +
+        "that can't be backed by snapshot state. Call decapitalize with an explicit locale instead. " +
+        "If you have a non-empty locale list, the correct thing to do is use the first locale in the " +
+        "list."
+)
+@Suppress("DEPRECATION")
+public fun String.decapitalize(localeList: LocaleList): String =
     if (localeList.isEmpty()) decapitalize(Locale.current) else decapitalize(localeList[0])
 
 private val stringDelegate = ActualStringDelegate()

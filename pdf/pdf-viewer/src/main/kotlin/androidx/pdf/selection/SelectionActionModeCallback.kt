@@ -15,52 +15,23 @@
  */
 package androidx.pdf.selection
 
-import android.content.Context
 import android.graphics.Rect
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import androidx.pdf.util.ClipboardUtils
+import androidx.core.view.MenuItemCompat
+import androidx.pdf.R
 import androidx.pdf.view.PdfView
-import androidx.pdf.view.TextSelection
 import kotlin.math.roundToInt
 
-internal class SelectionActionModeCallback(private val pdfView: PdfView) :
-    ActionMode.Callback2(), SelectionMenuSession {
+internal class SelectionActionModeCallback(
+    private val pdfView: PdfView,
+    private val menuItems: List<ContextMenuComponent>,
+) : ActionMode.Callback2(), SelectionMenuSession {
     internal var actionMode: ActionMode? = null
         private set
 
-    private val context: Context = pdfView.context
-    private val defaultMenuItems =
-        listOf<ContextMenuComponent>(
-            DefaultSelectionMenuComponent(
-                key = PdfSelectionMenuKeys.CopyKey,
-                label = context.getString(android.R.string.copy),
-            ) { pdfView ->
-                // We can't copy the current selection if no text is selected
-                val text = (pdfView.currentSelection as? TextSelection)?.text
-                if (text != null) ClipboardUtils.copyToClipboard(context, text.toString())
-                // close the context menu upon copy action
-                close()
-                // After completion of action the selection should be cleared.
-                pdfView.clearSelection()
-            },
-            DefaultSelectionMenuComponent(
-                key = PdfSelectionMenuKeys.SelectAllKey,
-                label = context.getString(android.R.string.selectAll),
-            ) { pdfView ->
-                val page = pdfView.currentSelection?.bounds?.first()?.pageNum
-                // We can't select all if we don't know what page the selection is on, or if
-                // we don't know the size of that page
-                if (page != null) {
-                    // Action mode for old selection should be closed which will be triggered
-                    // after select all is completed.
-                    close()
-                    pdfView.selectAllTextOnPage(page)
-                }
-            },
-        )
     private lateinit var selectionMenuItems: MutableList<ContextMenuComponent>
 
     override fun close() {
@@ -75,8 +46,12 @@ internal class SelectionActionModeCallback(private val pdfView: PdfView) :
     override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
         actionMode = mode
         // Start afresh with the default menu items
-        selectionMenuItems = defaultMenuItems.toMutableList()
-        pdfView.selectionMenuItemPreparer?.onPrepareSelectionMenuItems(selectionMenuItems)
+        selectionMenuItems = menuItems.toMutableList()
+        // Invoke selection menu item preparer(s) to customize selection menu
+        for (selectionMenuItemPreparer in pdfView.selectionMenuItemPreparers) {
+            selectionMenuItemPreparer.onPrepareSelectionMenuItems(selectionMenuItems)
+        }
+
         selectionMenuItems.forEachIndexed { index, component ->
             when (component) {
                 is DefaultSelectionMenuComponent -> {
@@ -87,7 +62,9 @@ internal class SelectionActionModeCallback(private val pdfView: PdfView) :
                             /* order = */ Menu.NONE,
                             /* title = */ component.label,
                         )
-                    component.contentDescription?.let { menuItem?.contentDescription = it }
+                    if (component.contentDescription != null && menuItem != null) {
+                        MenuItemCompat.setContentDescription(menuItem, component.contentDescription)
+                    }
                     menuItem?.setOnMenuItemClickListener {
                         component.onClick(this, pdfView)
                         true
@@ -101,7 +78,9 @@ internal class SelectionActionModeCallback(private val pdfView: PdfView) :
                             /* order = */ Menu.NONE,
                             /* title = */ component.label,
                         )
-                    component.contentDescription?.let { menuItem?.contentDescription = it }
+                    if (component.contentDescription != null && menuItem != null) {
+                        MenuItemCompat.setContentDescription(menuItem, component.contentDescription)
+                    }
                     menuItem?.setOnMenuItemClickListener {
                         component.onClick(this)
                         true
@@ -118,7 +97,9 @@ internal class SelectionActionModeCallback(private val pdfView: PdfView) :
                             /* order = */ Menu.NONE,
                             /* title = */ component.label,
                         )
-                    component.contentDescription?.let { menuItem?.contentDescription = it }
+                    if (component.contentDescription != null && menuItem != null) {
+                        MenuItemCompat.setContentDescription(menuItem, component.contentDescription)
+                    }
                     component.leadingIcon?.let { menuItem?.icon = it }
                     menuItem?.setOnMenuItemClickListener {
                         component.onClick(this, pdfView)
@@ -137,31 +118,26 @@ internal class SelectionActionModeCallback(private val pdfView: PdfView) :
     override fun onGetContentRect(mode: ActionMode?, view: View?, outRect: Rect?) {
         // If we don't know about page layout, defer to the default implementation
         val localPageLayoutManager =
-            pdfView.pageMetadataLoader ?: return super.onGetContentRect(mode, view, outRect)
+            pdfView.pageLayoutManager ?: return super.onGetContentRect(mode, view, outRect)
         val viewport = pdfView.getVisibleAreaInContentCoords()
-        val firstSelection = pdfView.currentSelection?.bounds?.firstOrNull()
-        val lastSelection = pdfView.currentSelection?.bounds?.lastOrNull()
-        // Try to position the context menu near the first selection if it's visible
-        if (firstSelection != null) {
+
+        // Iterate through all selection bounds to find the first one that is visible.
+        pdfView.currentSelection?.bounds?.forEach { selectionBound ->
             // Copy bounds to avoid mutating the real data
-            val boundsInView = localPageLayoutManager.getViewRect(firstSelection, viewport)
+            val boundsInContentView =
+                localPageLayoutManager.getContentViewRect(selectionBound, viewport)
             if (
-                boundsInView?.let { viewport.intersects(it.left, it.top, it.right, it.bottom) } ==
-                    true
+                boundsInContentView?.let {
+                    viewport.intersects(it.left, it.top, it.right, it.bottom)
+                } == true
             ) {
-                outRect?.set(pdfView.toViewRect(boundsInView))
-                return
-            }
-        }
-        // Else, try to position the context menu near the last selection if it's visible
-        if (lastSelection != null) {
-            // Copy bounds to avoid mutating the real data
-            val boundsInView = localPageLayoutManager.getViewRect(lastSelection, viewport)
-            if (
-                boundsInView?.let { viewport.intersects(it.left, it.top, it.right, it.bottom) } ==
-                    true
-            ) {
-                outRect?.set(pdfView.toViewRect(boundsInView))
+                // Found the first visible selection, position the context menu near it.
+                val viewRect = pdfView.toViewRect(boundsInContentView)
+                // Increase the bottom of the bounding box by the selection handle touch
+                // size to prevent the context menu from overlapping the selection handle.
+                viewRect.bottom +=
+                    pdfView.resources.getDimensionPixelSize(R.dimen.text_select_handle_touch_size)
+                outRect?.set(viewRect)
                 return
             }
         }

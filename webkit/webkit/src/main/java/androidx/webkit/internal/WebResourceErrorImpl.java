@@ -18,7 +18,6 @@ package androidx.webkit.internal;
 
 import android.webkit.WebResourceError;
 
-import androidx.annotation.RequiresApi;
 import androidx.webkit.WebResourceErrorCompat;
 
 import org.chromium.support_lib_boundary.WebResourceErrorBoundaryInterface;
@@ -42,8 +41,7 @@ public class WebResourceErrorImpl extends WebResourceErrorCompat {
     private WebResourceError mFrameworksImpl;
 
     /**
-     * Support library glue implementation - do not use this directly, instead use
-     * {@link #getBoundaryInterface()} to ensure this variable has been instantiated correctly.
+     * Support library glue implementation.
      */
     private WebResourceErrorBoundaryInterface mBoundaryInterface;
 
@@ -56,7 +54,6 @@ public class WebResourceErrorImpl extends WebResourceErrorCompat {
         mFrameworksImpl = error;
     }
 
-    @RequiresApi(23)
     private WebResourceError getFrameworksImpl() {
         if (mFrameworksImpl == null) {
             mFrameworksImpl = WebViewGlueCommunicator.getCompatConverter().convertWebResourceError(
@@ -65,23 +62,16 @@ public class WebResourceErrorImpl extends WebResourceErrorCompat {
         return mFrameworksImpl;
     }
 
-    private WebResourceErrorBoundaryInterface getBoundaryInterface() {
-        if (mBoundaryInterface == null) {
-            mBoundaryInterface = BoundaryInterfaceReflectionUtil.castToSuppLibClass(
-                    WebResourceErrorBoundaryInterface.class,
-                    WebViewGlueCommunicator.getCompatConverter().convertWebResourceError(
-                            mFrameworksImpl));
-        }
-        return mBoundaryInterface;
+    @Override
+    public int getErrorCode() {
+        return getFrameworksImpl().getErrorCode();
     }
 
     @Override
-    public int getErrorCode() {
-        final ApiFeature.M feature = WebViewFeatureInternal.WEB_RESOURCE_ERROR_GET_CODE;
-        if (feature.isSupportedByFramework()) {
-            return ApiHelperForM.getErrorCode(getFrameworksImpl());
-        } else if (feature.isSupportedByWebView()) {
-            return getBoundaryInterface().getErrorCode();
+    public int getDebugCode() {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.NAVIGATION_GET_WEB_RESOURCE_ERROR;
+        if (feature.isSupportedByWebView()) {
+            return mBoundaryInterface.getDebugCode();
         } else {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
         }
@@ -89,12 +79,6 @@ public class WebResourceErrorImpl extends WebResourceErrorCompat {
 
     @Override
     public @NonNull CharSequence getDescription() {
-        final ApiFeature.M feature = WebViewFeatureInternal.WEB_RESOURCE_ERROR_GET_DESCRIPTION;
-        if (feature.isSupportedByFramework()) {
-            return ApiHelperForM.getDescription(getFrameworksImpl());
-        } else if (feature.isSupportedByWebView()) {
-            return getBoundaryInterface().getDescription();
-        }
-        throw WebViewFeatureInternal.getUnsupportedOperationException();
+        return getFrameworksImpl().getDescription();
     }
 }

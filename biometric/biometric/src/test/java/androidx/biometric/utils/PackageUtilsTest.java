@@ -25,48 +25,40 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 @DoNotInstrument
 public class PackageUtilsTest {
     @Rule
     public final MockitoRule mocks = MockitoJUnit.rule();
 
-    @Mock private Context mContext;
-    @Mock private PackageManager mPackageManager;
+    @Mock
+    private Context mContext;
+    @Mock
+    private PackageManager mPackageManager;
 
     @Test
-    @Config(maxSdk = Build.VERSION_CODES.LOLLIPOP_MR1)
-    public void testHasSystemFeatureFingerprint_ReturnsFalse_OnApi22AndBelow() {
-        when(mContext.getPackageManager()).thenReturn(mPackageManager);
-        when(mPackageManager.hasSystemFeature(anyString())).thenReturn(true);
-        assertThat(PackageUtils.hasSystemFeatureFingerprint(mContext)).isFalse();
-    }
-
-    @Test
-    @Config(minSdk = Build.VERSION_CODES.M)
     public void testHasSystemFeatureFingerprint_ReturnsFalse_WhenContextIsNull() {
         assertThat(PackageUtils.hasSystemFeatureFingerprint(null)).isFalse();
     }
 
     @Test
-    @Config(minSdk = Build.VERSION_CODES.M)
     public void testHasSystemFeatureFingerprint_ReturnsFalse_WhenPackageManagerIsNull() {
         when(mContext.getPackageManager()).thenReturn(null);
         assertThat(PackageUtils.hasSystemFeatureFingerprint(mContext)).isFalse();
     }
 
     @Test
-    @Config(minSdk = Build.VERSION_CODES.M)
     public void testHasSystemFeatureFingerprint_ReturnsFalse_WhenPackageManagerReturnsFalse() {
         when(mContext.getPackageManager()).thenReturn(mPackageManager);
         when(mPackageManager.hasSystemFeature(PackageManager.FEATURE_FINGERPRINT))
@@ -75,7 +67,6 @@ public class PackageUtilsTest {
     }
 
     @Test
-    @Config(minSdk = Build.VERSION_CODES.M)
     public void testHasSystemFeatureFingerprint_ReturnsTrue_WhenPackageManagerReturnsTrue() {
         when(mContext.getPackageManager()).thenReturn(mPackageManager);
         when(mPackageManager.hasSystemFeature(PackageManager.FEATURE_FINGERPRINT)).thenReturn(true);

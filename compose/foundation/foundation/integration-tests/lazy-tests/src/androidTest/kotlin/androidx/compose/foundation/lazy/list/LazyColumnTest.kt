@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE") // b/407927787
-
 package androidx.compose.foundation.lazy.list
 
 import android.os.Build
@@ -38,11 +35,13 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.testutils.WithTouchSlop
 import androidx.compose.testutils.assertPixels
 import androidx.compose.ui.Alignment
@@ -63,7 +62,7 @@ import androidx.compose.ui.test.assertPositionInRootIsEqualTo
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTouchInput
@@ -75,8 +74,12 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.collections.removeLast as removeLastKt
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Rule
@@ -454,15 +457,14 @@ class LazyColumnTest(val useLookaheadScope: Boolean) {
     fun nestedLazyRowChildrenAreReused() {
         lateinit var state: LazyListState
         var remeasuresCount = 0
-        val measureModifier =
-            Modifier.layout { _, constraints ->
-                if (!isLookingAhead) {
-                    // Track the post-lookahead measurement count to avoid double counting when
-                    // lookahead is used.
-                    remeasuresCount++
-                }
-                layout(constraints.maxWidth, constraints.maxHeight) {}
+        val measureModifier = Modifier.layout { _, constraints ->
+            if (!isLookingAhead) {
+                // Track the post-lookahead measurement count to avoid double counting when
+                // lookahead is used.
+                remeasuresCount++
             }
+            layout(constraints.maxWidth, constraints.maxHeight) {}
+        }
         rule.setContentWithTestViewConfiguration {
             state = rememberLazyListState()
             LazyColumn(Modifier.fillMaxWidth().height(10.dp), state = state) {
@@ -491,15 +493,14 @@ class LazyColumnTest(val useLookaheadScope: Boolean) {
     fun nestedLazyRowChildrenWithDifferentContentTypeAreReused() {
         lateinit var state: LazyListState
         var remeasuresCount = 0
-        val measureModifier =
-            Modifier.layout { _, constraints ->
-                if (!isLookingAhead) {
-                    // Track the post-lookahead measurement count to avoid double counting when
-                    // lookahead is used.
-                    remeasuresCount++
-                }
-                layout(constraints.maxWidth, constraints.maxHeight) {}
+        val measureModifier = Modifier.layout { _, constraints ->
+            if (!isLookingAhead) {
+                // Track the post-lookahead measurement count to avoid double counting when
+                // lookahead is used.
+                remeasuresCount++
             }
+            layout(constraints.maxWidth, constraints.maxHeight) {}
+        }
         rule.setContentWithTestViewConfiguration {
             state = rememberLazyListState()
             LazyColumn(Modifier.fillMaxWidth().height(10.dp), state = state) {
@@ -620,6 +621,53 @@ class LazyColumnTest(val useLookaheadScope: Boolean) {
             assertEquals(true, job1.isCompleted)
             assertEquals(true, job3.isCompleted)
         }
+    }
+
+    @Test
+    fun awaitFirstLayoutMultipleInvocations() {
+        val itemSize = 10f
+        val itemSizeDp = with(rule.density) { itemSize.toDp() }
+        val state = LazyListState()
+
+        rule.setContent {
+            LazyColumn(Modifier.size(itemSizeDp), state) {
+                items(0) { Box(Modifier.size(itemSizeDp)) }
+            }
+            LaunchedEffect(Unit) { state.animateScrollToItem(0) }
+            LaunchedEffect(Unit) { state.animateScrollToItem(0) }
+        }
+
+        rule.runOnIdle { assertEquals(0, state.firstVisibleItemIndex) }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun awaitFirstLayoutWithSnapshot() {
+        val itemSize = 10f
+        val itemSizeDp = with(rule.density) { itemSize.toDp() }
+
+        var snapshotCollected = false
+
+        @Composable
+        fun customLazyListState(): LazyListState {
+            val state = rememberLazyListState()
+            LaunchedEffect(state) {
+                snapshotFlow { state.isScrollInProgress }
+                    .distinctUntilChanged()
+                    .filter { it }
+                    .collect { snapshotCollected = true }
+            }
+            return state
+        }
+        rule.setContent {
+            val state = customLazyListState()
+            LazyColumn(Modifier.size(itemSizeDp), state) {
+                items(100) { Box(Modifier.size(itemSizeDp)) }
+            }
+            LaunchedEffect(Unit) { state.animateScrollToItem(1) }
+        }
+
+        rule.runOnIdle { assertTrue(snapshotCollected) }
     }
 
     @Composable

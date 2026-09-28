@@ -27,6 +27,7 @@ import static androidx.wear.protolayout.proto.LayoutElementProto.ArcDirection.AR
 import static androidx.wear.protolayout.proto.ModifiersProto.SlideParentSnapOption.SLIDE_PARENT_SNAP_TO_INSIDE;
 import static androidx.wear.protolayout.proto.ModifiersProto.SlideParentSnapOption.SLIDE_PARENT_SNAP_TO_OUTSIDE;
 import static androidx.wear.protolayout.renderer.R.id.clickable_id_tag;
+import static androidx.wear.protolayout.renderer.R.id.element_metadata_tag;
 import static androidx.wear.protolayout.renderer.helper.TestDsl.arc;
 import static androidx.wear.protolayout.renderer.helper.TestDsl.arcText;
 import static androidx.wear.protolayout.renderer.helper.TestDsl.box;
@@ -44,7 +45,6 @@ import static androidx.wear.protolayout.renderer.test.R.drawable.android_animate
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
@@ -121,6 +121,7 @@ import androidx.wear.protolayout.proto.ActionProto.AndroidLongExtra;
 import androidx.wear.protolayout.proto.ActionProto.AndroidStringExtra;
 import androidx.wear.protolayout.proto.ActionProto.LaunchAction;
 import androidx.wear.protolayout.proto.ActionProto.LoadAction;
+import androidx.wear.protolayout.proto.ActionProto.PendingIntentAction;
 import androidx.wear.protolayout.proto.AlignmentProto.HorizontalAlignment;
 import androidx.wear.protolayout.proto.AlignmentProto.HorizontalAlignmentProp;
 import androidx.wear.protolayout.proto.AlignmentProto.VerticalAlignment;
@@ -156,6 +157,7 @@ import androidx.wear.protolayout.proto.LayoutElementProto.Box;
 import androidx.wear.protolayout.proto.LayoutElementProto.ColorFilter;
 import androidx.wear.protolayout.proto.LayoutElementProto.Column;
 import androidx.wear.protolayout.proto.LayoutElementProto.DashedArcLine;
+import androidx.wear.protolayout.proto.LayoutElementProto.DashedLinePattern;
 import androidx.wear.protolayout.proto.LayoutElementProto.ExtensionLayoutElement;
 import androidx.wear.protolayout.proto.LayoutElementProto.FontFeatureSetting;
 import androidx.wear.protolayout.proto.LayoutElementProto.FontSetting;
@@ -188,6 +190,7 @@ import androidx.wear.protolayout.proto.ModifiersProto.Modifiers;
 import androidx.wear.protolayout.proto.ModifiersProto.Padding;
 import androidx.wear.protolayout.proto.ModifiersProto.Semantics;
 import androidx.wear.protolayout.proto.ModifiersProto.SemanticsRole;
+import androidx.wear.protolayout.proto.ModifiersProto.Shadow;
 import androidx.wear.protolayout.proto.ModifiersProto.SlideBound;
 import androidx.wear.protolayout.proto.ModifiersProto.SlideDirection;
 import androidx.wear.protolayout.proto.ModifiersProto.SlideInTransition;
@@ -228,11 +231,12 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
-import org.junit.Ignore;
+import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
+import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowChoreographer;
 import org.robolectric.shadows.ShadowLooper;
@@ -247,6 +251,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 
 @RunWith(AndroidJUnit4.class)
 public class ProtoLayoutInflaterTest {
@@ -262,6 +267,11 @@ public class ProtoLayoutInflaterTest {
 
     private final StateStore mStateStore = new StateStore(ImmutableMap.of());
     private ProtoLayoutDynamicDataPipeline mDataPipeline;
+
+    @After
+    public void tearDown() {
+        Renderer.cleanUp();
+    }
 
     @Test
     public void inflate_textView() {
@@ -706,6 +716,84 @@ public class ProtoLayoutInflaterTest {
         expect.that(info.getClassName().toString()).contains("android.widget.Switch");
         expect.that(info.isImportantForAccessibility()).isTrue();
         assertThat(switchView.isImportantForAccessibility()).isTrue();
+    }
+
+    @Test
+    public void inflate_box_withMetadataModifier() {
+        byte[] tagData = new byte[]{1, 2, 3};
+        Modifiers modifiers =
+                Modifiers.newBuilder()
+                        .setMetadata(
+                                ModifiersProto.ElementMetadata.newBuilder()
+                                        .setTagData(ByteString.copyFrom(tagData)))
+                        .build();
+        LayoutElement root =
+                LayoutElement.newBuilder()
+                        .setBox(
+                                Box.newBuilder()
+                                        .setModifiers(modifiers)
+                                        .setWidth(
+                                                ContainerDimension.newBuilder().setLinearDimension(
+                                                        dp(10)))
+                                        .setHeight(
+                                                ContainerDimension.newBuilder().setLinearDimension(
+                                                        dp(10))))
+                        .build();
+
+        FrameLayout rootLayout = renderer(fingerprintedLayout(root)).inflate();
+
+        assertThat(rootLayout.getChildCount()).isEqualTo(1);
+        View box = rootLayout.getChildAt(0);
+        assertThat((byte[]) box.getTag(element_metadata_tag)).isEqualTo(tagData);
+    }
+
+    @Test
+    public void inflate_box_withMetadataModifier_emptyTagData() {
+        Modifiers modifiers =
+                Modifiers.newBuilder()
+                        .setMetadata(ModifiersProto.ElementMetadata.newBuilder().setTagData(
+                                ByteString.EMPTY))
+                        .build();
+        LayoutElement root =
+                LayoutElement.newBuilder()
+                        .setBox(
+                                Box.newBuilder()
+                                        .setModifiers(modifiers)
+                                        .setWidth(
+                                                ContainerDimension.newBuilder().setLinearDimension(
+                                                        dp(10)))
+                                        .setHeight(
+                                                ContainerDimension.newBuilder().setLinearDimension(
+                                                        dp(10))))
+                        .build();
+
+        FrameLayout rootLayout = renderer(fingerprintedLayout(root)).inflate();
+
+        assertThat(rootLayout.getChildCount()).isEqualTo(1);
+        View box = rootLayout.getChildAt(0);
+        assertThat(box.getTag(element_metadata_tag)).isNull();
+    }
+
+    @Test
+    public void inflate_box_withoutMetadataModifier() {
+        LayoutElement root =
+                LayoutElement.newBuilder()
+                        .setBox(
+                                Box.newBuilder()
+                                        .setModifiers(Modifiers.getDefaultInstance())
+                                        .setWidth(
+                                                ContainerDimension.newBuilder().setLinearDimension(
+                                                        dp(10)))
+                                        .setHeight(
+                                                ContainerDimension.newBuilder().setLinearDimension(
+                                                        dp(10))))
+                        .build();
+
+        FrameLayout rootLayout = renderer(fingerprintedLayout(root)).inflate();
+
+        assertThat(rootLayout.getChildCount()).isEqualTo(1);
+        View box = rootLayout.getChildAt(0);
+        assertThat(box.getTag(element_metadata_tag)).isNull();
     }
 
     @Test
@@ -1593,6 +1681,49 @@ public class ProtoLayoutInflaterTest {
     }
 
     @Test
+    public void inflate_clickableModifier_withPendingIntentAction() {
+        final String textContents = "I am a clickable";
+        final String clickableId = "foo";
+
+        Action action =
+                Action.newBuilder()
+                        .setPendingIntentAction(PendingIntentAction.getDefaultInstance())
+                        .build();
+        Clickable clickable = Clickable.newBuilder().setId(clickableId).setOnClick(action).build();
+        LayoutElement root =
+                LayoutElement.newBuilder()
+                        .setText(
+                                Text.newBuilder()
+                                        .setText(string(textContents))
+                                        .setModifiers(
+                                                Modifiers.newBuilder().setClickable(clickable)))
+                        .build();
+
+        AtomicReference<String> clickedId = new AtomicReference<>("");
+        AtomicReference<@Nullable View> clickedView = new AtomicReference<>(null);
+
+        FrameLayout rootLayout =
+                renderer(
+                                newRendererConfigBuilder(
+                                                fingerprintedLayout(root), resourceResolvers())
+                                        .setPendingIntentActionListener(
+                                                (source, id) -> {
+                                                    clickedId.set(id);
+                                                    clickedView.set(source);
+                                                }))
+                        .inflate();
+
+        // Get the text view from the inflation result, it is the only child of the root.
+        TextView textView = (TextView) rootLayout.getChildAt(0);
+        // Try and fire the intent.
+        textView.performClick();
+        shadowOf(getMainLooper()).idle();
+
+        expect.that(clickedId.get()).isEqualTo(clickableId);
+        expect.that(clickedView.get()).isEqualTo(textView);
+    }
+
+    @Test
     public void inflate_clickableModifier_withAndroidActivity_hasSourceBounds() {
         final String packageName = "com.foo.protolayout.test";
         final String className = "com.foo.protolayout.test.TestActivity";
@@ -2396,6 +2527,58 @@ public class ProtoLayoutInflaterTest {
         assertThat(arcLayout.getChildCount()).isEqualTo(1);
         WearCurvedLineView line = (WearCurvedLineView) arcLayout.getChildAt(0);
         assertThat(line.mSweepGradientHelper).isNotNull();
+    }
+
+    @Test
+    public void inflate_arc_withStrokeCapShadow_clampsExcessiveBlurRadius() {
+        LayoutElement root = arcLineWithStrokeCapShadow(1.0e18f);
+
+        FrameLayout rootLayout = renderer(fingerprintedLayout(root)).inflate();
+
+        ArcLayout arcLayout = (ArcLayout) rootLayout.getChildAt(0);
+        WearCurvedLineView line = (WearCurvedLineView) arcLayout.getChildAt(0);
+        assertThat(line.getStrokeCapShadowBlurRadius())
+                .isEqualTo(WearCurvedLineView.MAX_STROKE_CAP_SHADOW_BLUR_RADIUS_PX);
+    }
+
+    @Test
+    public void inflate_arc_withStrokeCapShadow_withinLimit_setsBlurRadius() {
+        LayoutElement root = arcLineWithStrokeCapShadow(10f);
+
+        FrameLayout rootLayout = renderer(fingerprintedLayout(root)).inflate();
+
+        ArcLayout arcLayout = (ArcLayout) rootLayout.getChildAt(0);
+        WearCurvedLineView line = (WearCurvedLineView) arcLayout.getChildAt(0);
+        assertThat(line.getStrokeCapShadowBlurRadius()).isEqualTo(10f);
+    }
+
+    @Test
+    public void inflate_arc_withStrokeCapShadow_zeroOrNonFinite_doesNotSetShadow() {
+        for (float radius : new float[] {0f, -5f, Float.NaN}) {
+            LayoutElement root = arcLineWithStrokeCapShadow(radius);
+
+            FrameLayout rootLayout = renderer(fingerprintedLayout(root)).inflate();
+
+            ArcLayout arcLayout = (ArcLayout) rootLayout.getChildAt(0);
+            WearCurvedLineView line = (WearCurvedLineView) arcLayout.getChildAt(0);
+            assertThat(line.getStrokeCapShadowBlurRadius()).isNull();
+        }
+    }
+
+    private static LayoutElement arcLineWithStrokeCapShadow(float blurRadiusDp) {
+        Shadow shadow = Shadow.newBuilder().setBlurRadius(dp(blurRadiusDp)).build();
+        ArcLine arcLine =
+                ArcLine.newBuilder()
+                        .setLength(degrees(30))
+                        .setThickness(dp(12))
+                        .setStrokeCap(strokeCapButt().setShadow(shadow))
+                        .build();
+        return LayoutElement.newBuilder()
+                .setArc(
+                        Arc.newBuilder()
+                                .setAnchorAngle(degrees(0).build())
+                                .addContents(ArcLayoutElement.newBuilder().setLine(arcLine)))
+                .build();
     }
 
     @Test
@@ -4716,44 +4899,6 @@ public class ProtoLayoutInflaterTest {
     }
 
     @Test
-    @Ignore("b/262537912")
-    public void viewChangesWhileComputingMutation_applyMutationFails() throws Exception {
-        Layout layout1 =
-                layout(
-                        arc( // 1
-                                arcText("Hello"), // 1.1
-                                arcText("World") // 1.2
-                                ));
-        Layout layout2 =
-                layout(
-                        arc( // 1
-                                props -> props.anchorAngleDegrees = 35,
-                                arcText("Hello"), // 1.1
-                                arcText("World") // 1.2
-                                ));
-        Layout layout3 =
-                layout(
-                        arc( // 1
-                                arcText("Hello") // 1.1
-                                ));
-        // Check the premutation layout
-        Renderer renderer = renderer(layout1);
-        ViewGroup inflatedViewParent1 = renderer.inflate();
-        // Compute the mutation
-        ViewGroupMutation mutation2 =
-                renderer.mRenderer.computeMutation(
-                        getRenderedMetadata(inflatedViewParent1), layout2, ViewProperties.EMPTY);
-        ViewGroupMutation mutation3 =
-                renderer.mRenderer.computeMutation(
-                        getRenderedMetadata(inflatedViewParent1), layout3, ViewProperties.EMPTY);
-
-        renderer.mRenderer.applyMutation(inflatedViewParent1, mutation3).get();
-        assertThrows(
-                ViewMutationException.class,
-                () -> renderer.mRenderer.applyMutation(inflatedViewParent1, mutation2).get());
-    }
-
-    @Test
     public void inflateArcThenMutate_withDifferentNumberOfChildren_causesUpdate() {
         Layout layout1 =
                 layout(
@@ -5090,6 +5235,7 @@ public class ProtoLayoutInflaterTest {
     private static final class Renderer {
         final ProtoLayoutInflater mRenderer;
         final ProtoLayoutDynamicDataPipeline mDataPipeline;
+        static ActivityController<Activity> sActivityController = null;
 
         Renderer(
                 ProtoLayoutInflater.Config rendererConfig,
@@ -5098,10 +5244,20 @@ public class ProtoLayoutInflaterTest {
             this.mDataPipeline = dataPipeline;
         }
 
+        static void cleanUp() {
+            if (sActivityController != null) {
+                sActivityController.destroy();
+                sActivityController = null;
+            }
+        }
+
         FrameLayout inflate() {
+            cleanUp();
+
             FrameLayout rootLayout = new FrameLayout(getApplicationContext());
             // This needs to be an attached view to test animations in data pipeline.
-            Robolectric.buildActivity(Activity.class).setup().get().setContentView(rootLayout);
+            sActivityController = Robolectric.buildActivity(Activity.class).setup();
+            sActivityController.get().setContentView(rootLayout);
             InflateResult inflateResult = mRenderer.inflate(rootLayout);
             if (inflateResult != null) {
                 inflateResult.updateDynamicDataPipeline(/* isReattaching= */ false);
@@ -5537,6 +5693,42 @@ public class ProtoLayoutInflaterTest {
     }
 
     @Test
+    public void inflate_box_withTransformationModifier_NaN_scale_doesNotCrash() {
+        FloatProp scaleX = FloatProp.newBuilder().setValue(Float.NaN).build();
+        FloatProp scaleY = FloatProp.newBuilder().setValue(Float.NaN).build();
+        ModifiersProto.Transformation transformation =
+                ModifiersProto.Transformation.newBuilder()
+                        .setScaleX(scaleX)
+                        .setScaleY(scaleY)
+                        .build();
+
+        ContainerDimension boxWidth =
+                ContainerDimension.newBuilder().setLinearDimension(dp(100.f).build()).build();
+        ContainerDimension boxHeight =
+                ContainerDimension.newBuilder().setLinearDimension(dp(120.f).build()).build();
+        LayoutElement root =
+                LayoutElement.newBuilder()
+                        .setBox(
+                                Box.newBuilder()
+                                        .setWidth(boxWidth)
+                                        .setHeight(boxHeight)
+                                        .setModifiers(
+                                                Modifiers.newBuilder()
+                                                        .setTransformation(transformation)
+                                                        .build()))
+                        .build();
+
+        FrameLayout rootLayout = renderer(fingerprintedLayout(root)).inflate();
+        assertThat(rootLayout.getChildCount()).isEqualTo(1);
+        View box = rootLayout.getChildAt(0);
+
+        // NaN should fall back to 1.0f
+        assertThat(box.getScaleX()).isEqualTo(1.0f);
+        assertThat(box.getScaleY()).isEqualTo(1.0f);
+    }
+
+
+    @Test
     public void inflate_box_wrapAndExpandSize_withPivotTransformationModifier() {
         PivotDimension pivotX = PivotDimension.newBuilder().setOffsetDp(dp(30.f)).build();
         PivotDimension pivotY =
@@ -5596,37 +5788,6 @@ public class ProtoLayoutInflaterTest {
         assertThat(box.getRotation()).isEqualTo(0);
         assertThat(box.getScaleX()).isEqualTo(1);
         assertThat(box.getScaleY()).isEqualTo(1);
-    }
-
-    // TODO(b/342379311): reenable the test when robolectric returns the correct default location.
-    @Ignore // b/342225240
-    @Test
-    public void inflate_box_withPivotTransformationModifier_noValidPivot_defaultToCenter() {
-        // PivotDimension without offSetDp nor locationRation
-        PivotDimension pivotDimension = PivotDimension.newBuilder().build();
-        ModifiersProto.Transformation transformation =
-                ModifiersProto.Transformation.newBuilder().setPivotX(pivotDimension).build();
-        ContainerDimension boxWidth =
-                ContainerDimension.newBuilder().setLinearDimension(dp(100.f).build()).build();
-        ContainerDimension boxHeight =
-                ContainerDimension.newBuilder().setLinearDimension(dp(120.f).build()).build();
-        LayoutElement root =
-                LayoutElement.newBuilder()
-                        .setBox(
-                                Box.newBuilder()
-                                        .setWidth(boxWidth)
-                                        .setHeight(boxHeight)
-                                        .setModifiers(
-                                                Modifiers.newBuilder()
-                                                        .setTransformation(transformation)
-                                                        .build()))
-                        .build();
-
-        FrameLayout rootLayout = renderer(fingerprintedLayout(root)).inflate();
-        assertThat(rootLayout.getChildCount()).isEqualTo(1);
-        View box = rootLayout.getChildAt(0);
-        assertThat(box.getPivotX()).isEqualTo(boxWidth.getLinearDimension().getValue() * 0.5f);
-        assertThat(box.getPivotY()).isEqualTo(boxHeight.getLinearDimension().getValue() * 0.5f);
     }
 
     @Test
@@ -5924,11 +6085,8 @@ public class ProtoLayoutInflaterTest {
                                         .build()));
         renderer.mRenderer.applyMutation(inflatedViewParent, mutation).get();
 
-        // First content transition animation Idle for running code for starting animations.
-        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500));
-        ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
-        // Idle for calling the onStart listener so that animation has started status.
-        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100));
+        // Idle to 600ms so animation 1 starts and animation 2 attempts to run but is quota-capped.
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(600));
 
         // Since we've run delayed tasks, second animation also got a chance to be run, but quota
         // prevented it.
@@ -6423,6 +6581,28 @@ public class ProtoLayoutInflaterTest {
                                 .build()));
 
         assertThat(lineView.getColor()).isEqualTo(Color.MAGENTA);
+    }
+
+    @Test
+    public void inflate_dashedArcLine_withLargeGapSize_noCrash() {
+        // Large gap size that results in an empty segments list.
+        DashedArcLine dashedArcLine =
+                DashedArcLine.newBuilder()
+                        .setLength(degrees(10))
+                        .setThickness(dp(5))
+                        .setLinePattern(
+                                DashedLinePattern.newBuilder()
+                                        .setGapSize(dp(100000f))
+                                        .addGapLocations(degrees(0))
+                                        .build())
+                        .build();
+
+        // The inflateDashedArcLine helper triggers a full inflation and layout pass.
+        // This call should completes without crashing.
+        WearDashedArcLineView dashedLineView = inflateDashedArcLine(dashedArcLine);
+
+        assertThat(dashedLineView).isNotNull();
+        assertThat(dashedLineView.getGapSize()).isEqualTo(100000);
     }
 
     private WearDashedArcLineView inflateDashedArcLine(DashedArcLine dashedArcLine) {

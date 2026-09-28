@@ -30,7 +30,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -58,8 +57,6 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.wear.compose.material3.ButtonDefaults.buttonColors
@@ -71,6 +68,7 @@ import androidx.wear.compose.material3.tokens.DatePickerTokens
 import androidx.wear.compose.materialcore.isLargeScreen
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 import kotlin.math.max
 
 /**
@@ -78,17 +76,25 @@ import kotlin.math.max
  *
  * This component is designed to take most/all of the screen and utilizes large fonts.
  *
+ * For custom backgrounds like gradients or images wrap the DatePicker in a MaterialTheme with the
+ * colorScheme background set to [Color.Unspecified].
+ *
  * Example of a [DatePicker]:
  *
- * @sample androidx.wear.compose.material3.samples.DatePickerSample
+ * @sample androidx.wear.compose.material3.samples.DatePickerSample ![DatePickerSample Composite
+ *   Image](https://developer.android.com/wear/images/design/WearComposeM3_DatePickerSample_CompositeImage.png)
  *
  * Example of a [DatePicker] shows the picker options in year-month-day order:
  *
  * @sample androidx.wear.compose.material3.samples.DatePickerYearMonthDaySample
+ *   ![DatePickerYearMonthDaySample Composite
+ *   Image](https://developer.android.com/wear/images/design/WearComposeM3_DatePickerYearMonthDaySample_CompositeImage.png)
  *
  * Example of a [DatePicker] with a minValidDate:
  *
  * @sample androidx.wear.compose.material3.samples.DatePickerFutureOnlySample
+ *   ![DatePickerFutureOnlySample Composite
+ *   Image](https://developer.android.com/wear/images/design/WearComposeM3_DatePickerFutureOnlySample_CompositeImage.png)
  * @param initialDate The initial value to be displayed in the DatePicker.
  * @param onDatePicked The callback that is called when the user confirms the date selection. It
  *   provides the selected date as [LocalDate]
@@ -109,6 +115,8 @@ public fun DatePicker(
     datePickerType: DatePickerType = DatePickerDefaults.datePickerType,
     colors: DatePickerColors = DatePickerDefaults.datePickerColors(),
 ) {
+    StatusBarSuppression()
+
     val inspectionMode = LocalInspectionMode.current
     val fullyDrawn = remember { Animatable(if (inspectionMode) 1f else 0f) }
 
@@ -163,6 +171,7 @@ public fun DatePicker(
     val yearString = getString(Strings.DatePickerYear)
     val monthString = getString(Strings.DatePickerMonth)
     val dayString = getString(Strings.DatePickerDay)
+    val contentDescriptionTemplate = getString(Strings.DatePickerContentDescription)
 
     LaunchedEffect(
         datePickerState.isMinYearSelected,
@@ -193,10 +202,33 @@ public fun DatePicker(
         }
     }
 
-    val shortMonthNames = remember { getMonthNames("MMM") }
+    val locale = LocalConfiguration.current.locales[0]
+    val monthPattern =
+        remember(locale) {
+            val yearPattern = DateFormat.getBestDateTimePattern(locale, "y")
+            // REVISED, SAFER HEURISTIC:
+            // Check if the pattern contains any letter that isn't 'y'. This correctly
+            // identifies linguistic markers like '年', '년', 'г', etc., while safely
+            // ignoring spaces or simple punctuation.
+            val useNumericMonth = yearPattern.any { it.isLetter() && it != 'y' }
+
+            if (useNumericMonth) {
+                "MM"
+            } else {
+                "MMM"
+            }
+        }
+
+    val shortMonthNames = remember(monthPattern) { getMonthNames(monthPattern) }
     val fullMonthNames = remember { getMonthNames("MMMM") }
     val yearContentDescription = {
-        createDescriptionDatePicker(selectedIndex, datePickerState.selectedYear, yearString)
+        createDescriptionDatePicker(
+            locale,
+            contentDescriptionTemplate,
+            selectedIndex,
+            datePickerState.selectedYear,
+            yearString,
+        )
     }
     val monthContentDescription = {
         if (selectedIndex == null) {
@@ -206,7 +238,13 @@ public fun DatePicker(
         }
     }
     val dayContentDescription = {
-        createDescriptionDatePicker(selectedIndex, datePickerState.selectedDay, dayString)
+        createDescriptionDatePicker(
+            locale,
+            contentDescriptionTemplate,
+            selectedIndex,
+            datePickerState.selectedDay,
+            dayString,
+        )
     }
 
     val datePickerOptions = datePickerType.toDatePickerOptions()
@@ -223,8 +261,8 @@ public fun DatePicker(
         }
     }
 
+    @Suppress("UnusedBoxWithConstraintsScope")
     BoxWithConstraints(modifier = modifier.fillMaxSize().alpha(fullyDrawn.value)) {
-        val boxConstraints = this
         val heading =
             selectedIndex?.let {
                 when (datePickerOptions.getOrNull(it)) {
@@ -237,22 +275,26 @@ public fun DatePicker(
 
         // Allow more room for the initial instruction heading under TalkBck
         val maxTextLines = if (selectedIndex == null) 2 else 1
-        val textPaddingPercentage = 24f
+        val textPaddingPercentage = 30f
+        val topPadding = if (selectedIndex == null) 0.dp else 14.dp
+        val headingHeight = 38.dp - topPadding
 
         Column(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(topPadding))
             FadeLabel(
                 text = heading,
                 animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
                 modifier =
-                    Modifier.padding(
+                    Modifier.height(headingHeight)
+                        .padding(
                             horizontal =
                                 PaddingDefaults.horizontalContentPadding(textPaddingPercentage)
                         )
                         .fillMaxWidth()
+                        .align(Alignment.CenterHorizontally)
                         .semantics(mergeDescendants = true) { heading() },
                 color = colors.pickerLabelColor,
                 style = labelTextStyle,
@@ -320,14 +362,19 @@ public fun DatePicker(
                             minimumInteractiveComponentSize,
                         )
                     }
-                val monthYearWidth =
+                val monthWidth =
                     with(LocalDensity.current) {
                         maxOf(
                             // Add 1dp buffer to compensate for potential conversion loss
-                            maxOf(
-                                measuredMetrics.maxMonthWidthPx.toDp(),
-                                (measuredMetrics.digitWidthPx * 4).toDp(),
-                            ) + 1.dp,
+                            measuredMetrics.maxMonthWidthPx.toDp() + 1.dp,
+                            minimumInteractiveComponentSize,
+                        )
+                    }
+                val yearWidth =
+                    with(LocalDensity.current) {
+                        maxOf(
+                            // Add 1dp buffer to compensate for potential conversion loss
+                            (measuredMetrics.digitWidthPx * 4).toDp() + 1.dp,
                             minimumInteractiveComponentSize,
                         )
                     }
@@ -343,21 +390,7 @@ public fun DatePicker(
                         .toInt()
 
                 Row(
-                    modifier =
-                        Modifier.fillMaxWidth().weight(1f).offset {
-                            IntOffset(
-                                getPickerGroupRowOffset(
-                                        boxConstraints.maxWidth,
-                                        dayWidth,
-                                        monthYearWidth,
-                                        monthYearWidth,
-                                        touchExplorationServicesEnabled,
-                                        selectedIndex,
-                                    )
-                                    .roundToPx(),
-                                0,
-                            )
-                        },
+                    modifier = Modifier.fillMaxWidth().weight(1f),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
                 ) {
@@ -388,7 +421,11 @@ public fun DatePicker(
                                             pickerTextOption(
                                                 textStyle = optionTextStyle,
                                                 indexToText = {
-                                                    "%02d".format(datePickerState.dayValue(it))
+                                                    "%02d"
+                                                        .format(
+                                                            locale,
+                                                            datePickerState.dayValue(it),
+                                                        )
                                                 },
                                                 optionHeight = optionHeight,
                                                 optionBaseline = optionBaseline,
@@ -409,7 +446,7 @@ public fun DatePicker(
                                 DatePickerOption.Month ->
                                     PickerGroupItem(
                                         pickerState = datePickerState.monthState,
-                                        modifier = Modifier.width(monthYearWidth).fillMaxHeight(),
+                                        modifier = Modifier.width(monthWidth).fillMaxHeight(),
                                         onSelected = { onPickerSelected(index, index + 1) },
                                         selected = index == selectedIndex,
                                         contentDescription = monthContentDescription,
@@ -439,7 +476,7 @@ public fun DatePicker(
                                 DatePickerOption.Year ->
                                     PickerGroupItem(
                                         pickerState = datePickerState.yearState,
-                                        modifier = Modifier.width(monthYearWidth).fillMaxHeight(),
+                                        modifier = Modifier.width(yearWidth).fillMaxHeight(),
                                         onSelected = { onPickerSelected(index, index + 1) },
                                         selected = index == selectedIndex,
                                         contentDescription = yearContentDescription,
@@ -447,7 +484,11 @@ public fun DatePicker(
                                             pickerTextOption(
                                                 textStyle = optionTextStyle,
                                                 indexToText = {
-                                                    "%4d".format(datePickerState.yearValue(it))
+                                                    "%4d"
+                                                        .format(
+                                                            locale,
+                                                            datePickerState.yearValue(it),
+                                                        )
                                                 },
                                                 optionHeight = optionHeight,
                                                 optionBaseline = optionBaseline,
@@ -767,25 +808,6 @@ private fun getMonthNames(pattern: String): List<String> {
     return months.map { LocalDate.of(2022, it, 1).format(monthFormatter) }
 }
 
-private fun getPickerGroupRowOffset(
-    rowWidth: Dp,
-    dayPickerWidth: Dp,
-    monthPickerWidth: Dp,
-    yearPickerWidth: Dp,
-    touchExplorationServicesEnabled: Boolean,
-    selectedIndex: Int?,
-): Dp {
-    val currentOffset = (rowWidth - (dayPickerWidth + monthPickerWidth + yearPickerWidth)) / 2
-
-    return if (touchExplorationServicesEnabled && selectedIndex == null) {
-        ((rowWidth - dayPickerWidth) / 2) - currentOffset
-    } else if (touchExplorationServicesEnabled && selectedIndex!! > 2) {
-        ((rowWidth - yearPickerWidth) / 2) - (dayPickerWidth + monthPickerWidth + currentOffset)
-    } else {
-        0.dp
-    }
-}
-
 @RequiresApi(Build.VERSION_CODES.O)
 private class DatePickerState(
     initialDate: LocalDate,
@@ -932,10 +954,13 @@ private class DatePickerState(
 }
 
 private fun createDescriptionDatePicker(
+    locale: Locale,
+    template: String,
     selectedIndex: Int?,
     selectedValue: Int,
     label: String,
-): String = if (selectedIndex == null) label else "$label, $selectedValue"
+): String =
+    if (selectedIndex == null) label else String.format(locale, template, label, selectedValue)
 
 /** A private data class to hold the measured raw pixel metrics for picker options. */
 private data class DatePickerMeasuredMetrics(

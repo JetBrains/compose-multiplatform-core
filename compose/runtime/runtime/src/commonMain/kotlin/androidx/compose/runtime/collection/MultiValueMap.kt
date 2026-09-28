@@ -125,13 +125,24 @@ internal value class MultiValueMap<K : Any, V : Any>(
         }
     }
 
+    inline fun forEachValue(block: (value: V) -> Unit) {
+        map.forEachValue {
+            when (it) {
+                is MutableObjectList<*> -> {
+                    it.forEach { value -> block(value as V) }
+                }
+                else -> block(it as V)
+            }
+        }
+    }
+
     fun removeValueIf(key: K, condition: (value: V) -> Boolean) {
         map[key]?.let {
             when (it) {
                 is MutableObjectList<*> -> {
                     (it as MutableObjectList<V>).removeIf(condition)
                     if (it.isEmpty()) map.remove(key)
-                    if (it.size == 0) map[key] = it.first()
+                    if (it.size == 1) map[key] = it.first()
                 }
                 else -> if (condition(it as V)) map.remove(key)
             }

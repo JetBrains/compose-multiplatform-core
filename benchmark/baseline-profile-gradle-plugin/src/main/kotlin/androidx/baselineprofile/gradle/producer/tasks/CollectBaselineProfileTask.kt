@@ -20,8 +20,6 @@ import androidx.baselineprofile.gradle.utils.INTERMEDIATES_BASE_FOLDER
 import androidx.baselineprofile.gradle.utils.TASK_NAME_SUFFIX
 import androidx.baselineprofile.gradle.utils.camelCase
 import com.android.build.api.variant.TestVariant
-import com.android.build.gradle.internal.tasks.BuildAnalyzer
-import com.android.buildanalyzer.common.TaskCategory
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto
 import java.io.File
 import org.gradle.api.DefaultTask
@@ -44,7 +42,6 @@ import org.gradle.work.DisableCachingByDefault
  * ui tests.
  */
 @DisableCachingByDefault(because = "Mostly I/O bound task")
-@BuildAnalyzer(primaryTaskCategory = TaskCategory.OPTIMIZATION)
 abstract class CollectBaselineProfileTask : DefaultTask() {
 
     companion object {
@@ -130,7 +127,14 @@ abstract class CollectBaselineProfileTask : DefaultTask() {
 
         // Prepares list with test results to read. Note that these are the output directories
         // from the instrumentation task. We're interested only in `test-result.pb`.
-        val testResultProtoFiles = testResultDirs.files.map { File(it, "test-result.pb") }
+        val testResultProtoFiles =
+            testResultDirs.files.flatMap { dir ->
+                if (dir.exists()) {
+                    dir.walkTopDown().filter { it.name == "test-result.pb" }.toList()
+                } else {
+                    emptyList()
+                }
+            }
 
         // A test-result.pb file must exist as output of connected and managed device tests.
         // If it doesn't exist it's because there were no tests to run. If there are no devices,

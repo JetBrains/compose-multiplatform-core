@@ -1,8 +1,7 @@
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -15,8 +14,6 @@ plugins {
 
 android {
     namespace = "androidx.webkit.instrumentation"
-    compileSdk = 35
-
     flavorDimensions = ["targetSdk"]
 
     productFlavors {
@@ -39,6 +36,7 @@ androidComponents {
 
 dependencies {
     api(libs.jspecify)
+
     androidTestImplementation(project(":webkit:webkit"))
     androidTestImplementation(project(":webkit:integration-tests:common"))
 
@@ -55,6 +53,11 @@ dependencies {
 
     // Hamcrest matchers:
     androidTestImplementation(libs.bundles.espressoContrib)
+
+    // Unit test dependencies
+    testImplementation(project(":webkit:webkit"))
+    testImplementation(libs.byteBuddy)
+    testImplementation(libs.truth)
 }
 
 androidx {

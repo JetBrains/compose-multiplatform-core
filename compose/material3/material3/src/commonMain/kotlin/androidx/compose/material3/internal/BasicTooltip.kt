@@ -31,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,7 +40,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType.Companion.KeyDown
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
@@ -106,9 +108,7 @@ internal fun BasicTooltipBox(
     val forceFocusableForKeyboardNav = remember { mutableStateOf(false) }
     // The focusable value will be forced to true for correct a11y or keyboard navigation behaviors.
     val shouldForceFocusableForA11y =
-        hasAction &&
-            (rememberTouchExplorationOrSwitchAccessServiceState().value ||
-                forceFocusableForKeyboardNav.value)
+        hasAction && shouldForceFocusableForA11y(forceFocusableForKeyboardNav.value)
 
     Box {
         if (state.isVisible) {
@@ -137,6 +137,12 @@ internal fun BasicTooltipBox(
 }
 
 @Composable
+private fun shouldForceFocusableForA11y(forceFocusableForKeyboardNav: Boolean): Boolean {
+    val accessibilityState = rememberTouchExplorationOrSwitchAccessServiceState()
+    return accessibilityState.value || forceFocusableForKeyboardNav
+}
+
+@Composable
 private fun WrappedAnchor(
     enableUserInput: Boolean,
     state: TooltipState,
@@ -147,12 +153,20 @@ private fun WrappedAnchor(
 ) {
     val scope = rememberCoroutineScope()
     val longPressLabel = BasicTooltipStrings.label()
+    val receivedKeyboardFocus = remember { mutableStateOf(false) }
     Box(
         modifier =
             modifier
                 .handleGestures(enableUserInput, state)
                 .anchorSemantics(longPressLabel, enableUserInput, state, scope)
-                .keyboardBehavior(enableUserInput, state, scope, hasAction, forceKeyboardFocusable)
+                .keyboardBehavior(
+                    enableUserInput,
+                    state,
+                    scope,
+                    hasAction,
+                    forceKeyboardFocusable,
+                    receivedKeyboardFocus,
+                )
     ) {
         content()
     }
@@ -182,7 +196,7 @@ private fun TooltipPopup(
                 onDismissRequest()
             }
         },
-        properties = PopupProperties(focusable = focusable),
+        properties = PopupProperties(focusable = focusable, clippingEnabled = false),
     ) {
         Box(
             modifier =
@@ -258,7 +272,9 @@ private fun Modifier.handleGestures(enabled: Boolean, state: TooltipState): Modi
                                         launch { state.show(MutatePriority.UserInput) }
                                     }
                                     PointerEventType.Exit -> {
-                                        state.dismiss()
+                                        if (!state.isPersistent) {
+                                            state.dismiss()
+                                        }
                                     }
                                 }
                             }
@@ -292,15 +308,18 @@ private fun Modifier.keyboardBehavior(
     scope: CoroutineScope,
     hasAction: Boolean,
     forceKeyboardFocusable: MutableState<Boolean>,
+    receivedKeyboardFocus: MutableState<Boolean>,
 ): Modifier =
     if (enabled) {
         this.onFocusChanged {
                 scope.launch {
                     // Tooltip should show when anchor is keyboard focused.
                     if (it.isFocused) {
+                        receivedKeyboardFocus.value = true
                         state.show(MutatePriority.PreventUserInput)
                     }
-                    if (state.isVisible && !it.isFocused) {
+                    if (receivedKeyboardFocus.value && state.isVisible && !it.isFocused) {
+                        receivedKeyboardFocus.value = false
                         state.dismiss()
                     }
                 }
@@ -308,16 +327,18 @@ private fun Modifier.keyboardBehavior(
             .onPreviewKeyEvent {
                 if (!state.isVisible) {
                     forceKeyboardFocusable.value = false
-                }
-                // Make sure that tabbing from the anchor navigates to tooltip.
-                if (
-                    hasAction &&
-                        it.type == KeyEventType.KeyDown &&
-                        it.key == Key.Tab &&
-                        state.isVisible
-                ) {
-                    forceKeyboardFocusable.value = true
-                    return@onPreviewKeyEvent true
+                } else {
+                    // Make sure that tabbing from the anchor navigates to tooltip with action.
+                    if (hasAction && it.isTab) {
+                        forceKeyboardFocusable.value = true
+                        return@onPreviewKeyEvent true
+                    }
+                    // Escape key should dismiss a currently displayed tooltip.
+                    if (it.isEscape) {
+                        receivedKeyboardFocus.value = false
+                        state.dismiss()
+                        return@onPreviewKeyEvent true
+                    }
                 }
                 return@onPreviewKeyEvent false
             }
@@ -406,7 +427,7 @@ private class BasicTooltipStateImpl(
         // or until tooltip is explicitly dismissed depending on [isPersistent].
         mutatorMutex.mutate(mutatePriority) {
             try {
-                if (isPersistent) {
+                if (isPersistent || mutatePriority == MutatePriority.UserInput) {
                     cancellableShow()
                 } else {
                     withTimeout(BasicTooltipDefaults.TooltipDuration) { cancellableShow() }
@@ -453,9 +474,12 @@ internal expect object BasicTooltipStrings {
 
 /** Returns the current accessibility touch exploration or switch access service [State]. */
 @Composable
-private fun rememberTouchExplorationOrSwitchAccessServiceState() =
+private fun rememberTouchExplorationOrSwitchAccessServiceState(): State<Boolean> =
     rememberAccessibilityServiceState(
         listenToTouchExplorationState = true,
         listenToSwitchAccessState = true,
         listenToVoiceAccessState = false,
     )
+
+private val KeyEvent.isEscape: Boolean
+    get() = type == KeyDown && key == Key.Escape

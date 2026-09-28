@@ -22,6 +22,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(SharedRobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 public class TimeRangeTest {
     @Test
     public fun beforeGivenTime() {
@@ -58,7 +59,7 @@ public class TimeRangeTest {
 
     @Test
     public fun always() {
-        var range = TimeRange.ALWAYS
+        val range = TimeRange.ALWAYS
         assertThat(range.contains(Instant.EPOCH)).isTrue()
         assertThat(range.contains(Instant.ofEpochMilli(100))).isTrue()
         assertThat(range.contains(Instant.ofEpochMilli(999))).isTrue()

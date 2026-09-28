@@ -33,6 +33,7 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
+import androidx.lifecycle.lifecycleScope
 import androidx.work.Constraints
 import androidx.work.Constraints.ContentUriTrigger
 import androidx.work.ExistingWorkPolicy
@@ -61,6 +62,9 @@ import androidx.work.multiprocess.RemoteListenableWorker.ARGUMENT_PACKAGE_NAME
 import androidx.work.multiprocess.RemoteWorkerService
 import androidx.work.workDataOf
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /** Main Activity */
 class MainActivity : AppCompatActivity() {
@@ -354,6 +358,22 @@ class MainActivity : AppCompatActivity() {
                 Log.d(TAG, "No work to cancel")
             }
         }
+        findViewById<View>(R.id.run_foreground_worker_shutdown_race).setOnClickListener {
+            lifecycleScope.launch(Dispatchers.Unconfined) {
+                (1 until 100).forEach { i ->
+                    val inputData = workDataOf(SetForegroundAsyncWorker.InputDelayTime to 100L)
+                    val delay = 100L + ((i % 20) * 2)
+                    Log.d(TAG, "Start next FG run $i in $delay ms")
+                    delay(delay)
+                    val request =
+                        OneTimeWorkRequest.Builder(SetForegroundAsyncWorker::class.java)
+                            .setInputData(inputData)
+                            .build()
+
+                    workManager.enqueue(request)
+                }
+            }
+        }
         findViewById<View>(R.id.enqueue_work_multi_process).setOnClickListener {
             startService(enqueueIntent(this))
         }
@@ -442,10 +462,6 @@ class MainActivity : AppCompatActivity() {
 }
 
 private fun enqueueWithNetworkRequest(workManager: WorkManager) {
-    if (Build.VERSION.SDK_INT < 21) {
-        Log.w(TAG, "Ignoring enqueueWithNetworkRequest on old API levels")
-        return
-    }
     val networkRequest =
         NetworkRequest.Builder()
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)

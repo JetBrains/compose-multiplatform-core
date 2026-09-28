@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -53,6 +54,7 @@ import androidx.wear.compose.material3.CardDefaults
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ListSubHeader
+import androidx.wear.compose.material3.LocalRippleConfiguration
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.OutlinedCard
 import androidx.wear.compose.material3.RadioButton
@@ -66,6 +68,10 @@ import androidx.wear.compose.material3.samples.AppCardWithImageSample
 import androidx.wear.compose.material3.samples.CardFillContentSample
 import androidx.wear.compose.material3.samples.CardSample
 import androidx.wear.compose.material3.samples.CardWithOnLongClickSample
+import androidx.wear.compose.material3.samples.NonClickableAppCardSample
+import androidx.wear.compose.material3.samples.NonClickableCardSample
+import androidx.wear.compose.material3.samples.NonClickableOutlinedCardSample
+import androidx.wear.compose.material3.samples.NonClickableTitleCardSample
 import androidx.wear.compose.material3.samples.OutlinedAppCardSample
 import androidx.wear.compose.material3.samples.OutlinedCardSample
 import androidx.wear.compose.material3.samples.OutlinedTitleCardSample
@@ -80,6 +86,8 @@ fun CardDemo() {
     ScalingLazyDemo {
         item { ListHeader { Text("Card") } }
         item { CardSample() }
+        item { CardWithoutRippleEffectDemo() }
+        item { NonClickableCardSample() }
         item { CardWithOnLongClickSample { showOnLongClickToast(context) } }
         item { CardWithNestedImageDemo() }
         item { CardWithMultipleImagesDemo() }
@@ -89,10 +97,20 @@ fun CardDemo() {
 }
 
 @Composable
+fun CardWithoutRippleEffectDemo() {
+    CompositionLocalProvider(LocalRippleConfiguration provides null) {
+        Card(onClick = {}, modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.fillMaxWidth()) { Text("Card without ripple effect") }
+        }
+    }
+}
+
+@Composable
 fun OutlinedCardDemo() {
     ScalingLazyDemo {
         item { ListHeader { Text("Outlined Card") } }
         item { OutlinedCardSample() }
+        item { NonClickableOutlinedCardSample() }
         item {
             OutlinedCard(onClick = { /* Do something */ }, enabled = false) {
                 Text("Disabled Outlined")
@@ -106,6 +124,8 @@ fun AppCardDemo() {
     ScalingLazyDemo {
         item { ListHeader { Text("App card") } }
         item { AppCardSample() }
+        item { NonClickableAppCardSample() }
+        item { AppCardDisabledDemo() }
         item { AppCardWithIconSample() }
         item { AppCardWithImageSample() }
         item { AppCardWithMultipleImagesDemo() }
@@ -118,6 +138,7 @@ fun TitleCardDemo() {
     ScalingLazyDemo {
         item { ListHeader { Text("Title card") } }
         item { TitleCardSample() }
+        item { NonClickableTitleCardSample() }
         item { TitleCardWithSubtitleDemo() }
         item { TitleCardWithSubtitleAndTimeSample() }
         item { TitleCardWithContentSubtitleAndTimeDemo() }
@@ -157,6 +178,20 @@ fun CardWithMultipleImagesDemo() {
     Card(onClick = { /* Do something */ }) {
         Spacer(Modifier.height(4.dp))
         MultipleImagesContent()
+    }
+}
+
+@Composable
+fun AppCardDisabledDemo() {
+    AppCard(
+        onClick = { /* Do something */ },
+        appName = { Text("App name") },
+        title = { Text("Card title") },
+        time = { Text("Now") },
+        enabled = false,
+    ) {
+        Text("Card content")
+        Text("Disabled state")
     }
 }
 
@@ -258,11 +293,6 @@ fun ImageCardBuilder() {
 
         item { ListHeader { Text("Image Card") } }
         item {
-            val painter =
-                painterResource(
-                    androidx.wear.compose.material3.demos.R.drawable.backgroundsplitimage
-                )
-
             TitleCard(
                 onClick = { /* Do something */ },
                 title = { Text("Title") },

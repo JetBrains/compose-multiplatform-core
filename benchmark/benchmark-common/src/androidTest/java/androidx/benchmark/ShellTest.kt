@@ -73,13 +73,11 @@ class ShellTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun executeScriptCaptureStdout_trivial() {
         Assert.assertEquals("foo\n", Shell.executeScriptCaptureStdout("echo foo"))
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun executeScriptCaptureStdoutStderr_trivial() {
         Assert.assertEquals(
@@ -88,7 +86,6 @@ class ShellTest {
         )
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun executeScriptCaptureStdoutStderr_stderrFirstLine() {
         Assert.assertEquals(
@@ -103,7 +100,6 @@ class ShellTest {
         )
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun executeScriptCaptureStdoutStderr_invalidCommand() {
         val shellOutput = Shell.executeScriptCaptureStdoutStderr("invalidCommand")
@@ -121,7 +117,6 @@ class ShellTest {
         )
     }
 
-    @SdkSuppress(minSdkVersion = 23) // xargs added api 23
     @Test
     fun executeScriptCaptureStdout_pipe_xargs() {
         // validate piping works with xargs
@@ -138,7 +133,6 @@ class ShellTest {
         )
     }
 
-    @SdkSuppress(minSdkVersion = 23) // xargs added api 23
     @Test
     fun executeScriptCaptureStdout_stdinArg_xargs() {
         // validate stdin to first command in script
@@ -158,30 +152,28 @@ class ShellTest {
         )
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun executeScriptCaptureStdout_multilineRedirect() {
         Assert.assertEquals(
             "foo\n",
             Shell.executeScriptCaptureStdout(
                 """
-                    echo foo > /data/local/tmp/foofile
-                    cat /data/local/tmp/foofile
+                echo foo > /data/local/tmp/foofile
+                cat /data/local/tmp/foofile
                 """
                     .trimIndent()
             ),
         )
     }
 
-    @SdkSuppress(minSdkVersion = 23) // xargs added api 23
     @Test
     fun executeScriptCaptureStdout_multilineRedirectStdin_xargs() {
         Assert.assertEquals(
             "foo\n",
             Shell.executeScriptCaptureStdout(
                 """
-                    xargs echo $1 > /data/local/tmp/foofile
-                    cat /data/local/tmp/foofile
+                xargs echo $1 > /data/local/tmp/foofile
+                cat /data/local/tmp/foofile
                 """
                     .trimIndent(),
                 stdin = "foo",
@@ -196,8 +188,8 @@ class ShellTest {
             "foo\n",
             Shell.executeScriptCaptureStdout(
                 """
-                    echo $(</dev/stdin) > /data/local/tmp/foofile
-                    cat /data/local/tmp/foofile
+                echo $(</dev/stdin) > /data/local/tmp/foofile
+                cat /data/local/tmp/foofile
                 """
                     .trimIndent(),
                 stdin = "foo",
@@ -205,7 +197,6 @@ class ShellTest {
         )
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun createRunnableExecutable_simpleScript() {
         val path =
@@ -220,7 +211,6 @@ class ShellTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun isPackageAlive() {
         // this package is certainly alive...
@@ -230,14 +220,12 @@ class ShellTest {
         assertNotNull(Shell.isPackageAlive(Packages.FAKE))
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun pidof() {
         assertNotNull(pidof(Packages.TEST))
         assertNull(pidof(Packages.FAKE))
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun isPidAlive() {
         val pid = pidof(Packages.TEST)!!
@@ -248,7 +236,6 @@ class ShellTest {
         assertFalse(Shell.isProcessAlive(pid + 1, Packages.TEST))
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun killProcessesAndWait() {
         // validate that killTermProcessesAndWait kills bg process
@@ -258,7 +245,6 @@ class ShellTest {
         assertFalse(backgroundProcess.isAlive())
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun killProcessesAndWait_nonExistentProcess() {
         Shell.killProcessesAndWait(
@@ -267,7 +253,6 @@ class ShellTest {
         )
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun killProcessesAndWait_failure() {
         // validate that killTermProcessesAndWait kills bg process
@@ -291,7 +276,6 @@ class ShellTest {
         assertTrue(backgroundProcess.isAlive())
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun killProcessesAndWait_allowBackground() {
         val backgroundProcess1 = getBackgroundSpinningProcess()
@@ -313,7 +297,6 @@ class ShellTest {
         assertFalse(backgroundProcess2.isAlive())
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun killProcessesAndWait_multi() {
         val backgroundProcess1 = getBackgroundSpinningProcess()
@@ -329,7 +312,6 @@ class ShellTest {
         assertFalse(backgroundProcess2.isAlive())
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun killProcessesAndWait_processName() {
         val backgroundProcess1 = getBackgroundSpinningProcess()
@@ -344,14 +326,68 @@ class ShellTest {
         assertFalse(backgroundProcess2.isAlive())
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun getRunningSubPackages() {
         assertEquals(emptyList(), Shell.getRunningProcessesForPackage("not.a.real.packagename"))
         assertEquals(listOf(Packages.TEST), Shell.getRunningProcessesForPackage(Packages.TEST))
     }
 
-    @SdkSuppress(minSdkVersion = 21)
+    @Test
+    fun isSubpackageInstalled() {
+        val installedPackages =
+            setOf(
+                "com.example.app",
+                "com.example.app.plugin",
+                "com.example.app.feature.history",
+                "com.example.app.test",
+            )
+        val isInstalled: (String) -> Boolean = { it in installedPackages }
+
+        // Dot-separated subprocesses of an app are NOT separate installed packages
+        assertFalse(
+            Shell.isSubpackageInstalled(
+                "com.example.app",
+                "com.example.app.persistent",
+                isInstalled,
+            )
+        )
+        assertFalse(
+            Shell.isSubpackageInstalled("com.example.app", "com.example.app.ui", isInstalled)
+        )
+        assertFalse(
+            Shell.isSubpackageInstalled("com.example.app", "com.example.app.unstable", isInstalled)
+        )
+
+        // Separate installed packages sharing the prefix ARE identified as subpackages
+        assertTrue(
+            Shell.isSubpackageInstalled("com.example.app", "com.example.app.plugin", isInstalled)
+        )
+        assertTrue(
+            Shell.isSubpackageInstalled(
+                "com.example.app",
+                "com.example.app.feature.history",
+                isInstalled,
+            )
+        )
+        assertTrue(
+            Shell.isSubpackageInstalled(
+                "com.example.app",
+                "com.example.app.feature.history:bg",
+                isInstalled,
+            )
+        )
+        assertTrue(
+            Shell.isSubpackageInstalled(
+                "com.example.app",
+                "com.example.app.feature.history.sub",
+                isInstalled,
+            )
+        )
+        assertTrue(
+            Shell.isSubpackageInstalled("com.example.app", "com.example.app.test", isInstalled)
+        )
+    }
+
     @Test
     fun checkRootStatus() {
         if (Shell.isSessionRooted()) {
@@ -364,7 +400,6 @@ class ShellTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = 23) // xargs added api 23
     @Test
     fun shellReuse() {
         val script = Shell.createShellScript("xargs echo $1", stdin = "foo")
@@ -376,17 +411,15 @@ class ShellTest {
         script.cleanUp()
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun getChecksum() {
         val emptyPaths = listOf("/data/local/tmp/emptyfile1", "/data/local/tmp/emptyfile2")
         try {
-            val checksums =
-                emptyPaths.map {
-                    Shell.executeScriptSilent("rm -f $it")
-                    Shell.executeScriptSilent("touch $it")
-                    Shell.getChecksum(it)
-                }
+            val checksums = emptyPaths.map {
+                Shell.executeScriptSilent("rm -f $it")
+                Shell.executeScriptSilent("touch $it")
+                Shell.getChecksum(it)
+            }
 
             assertEquals(checksums.first(), checksums.last())
             if (Build.VERSION.SDK_INT < 23) {
@@ -430,13 +463,13 @@ class ShellTest {
                 Shell.parseCompilationMode(
                     26,
                     """
-                      Dexopt state:
-                          [androidx.benchmark.test]
-                            Instruction Set: x86
-                              path: /data/app/androidx.benchmark.test-C3VDUG1iLystEGyQTxcspA==/base.apk
-                              status: /data/app/androidx.benchmark.test-C3VDUG1iLystEGyQTxcspA==/oat/x86/base.odex[status=kOatUpToDate, compilat
-                              ion_filter=quicken]
-        """
+                    Dexopt state:
+                        [androidx.benchmark.test]
+                          Instruction Set: x86
+                            path: /data/app/androidx.benchmark.test-C3VDUG1iLystEGyQTxcspA==/base.apk
+                            status: /data/app/androidx.benchmark.test-C3VDUG1iLystEGyQTxcspA==/oat/x86/base.odex[status=kOatUpToDate, compilat
+                            ion_filter=quicken]
+                    """
                         .trimIndent(),
                 ),
         )
@@ -452,7 +485,7 @@ class ShellTest {
                       [androidx.compose.foundation.layout.benchmark.test]
                         path: /data/app/androidx.compose.foundation.layout.benchmark.test-pBhSh_spHfjDL-5jgzu_Jg==/base.apk
                           arm64: /data/app/androidx.compose.foundation.layout.benchmark.test-pBhSh_spHfjDL-5jgzu_Jg==/oat/arm64/base.odex[status=kOatUpToDate, compilation_filter=speed]
-        """
+                    """
                         .trimIndent(),
                 ),
         )
@@ -464,15 +497,15 @@ class ShellTest {
                 Shell.parseCompilationMode(
                     29,
                     """
-                Dexopt state:
-                 [com.android.settings]
-                   path: .../SettingsGoogle.apk
-                     arm64: [status=verify] [reason=vdex] [primary-abi]
-                       [location is .../SettingsGoogle.vdex]
+                    Dexopt state:
+                     [com.android.settings]
+                       path: .../SettingsGoogle.apk
+                         arm64: [status=verify] [reason=vdex] [primary-abi]
+                           [location is .../SettingsGoogle.vdex]
 
-                ## These lines added for test purposes
-                ## status=0 []
-        """
+                    ## These lines added for test purposes
+                    ## status=0 []
+                    """
                         .trimIndent(),
                 ),
         )
@@ -484,11 +517,11 @@ class ShellTest {
                 Shell.parseCompilationMode(
                     32,
                     """
-                Dexopt state:
-                  [androidx.benchmark.test]
-                    path: /data/app/~~coMYW_NCkevOuZyH32n5Ag==/androidx.benchmark.test-kcNBMDGJ58lezaNWmNyTzQ==/base.apk
-                      x86_64: [status=run-from-apk] [reason=unknown]
-                """
+                    Dexopt state:
+                      [androidx.benchmark.test]
+                        path: /data/app/~~coMYW_NCkevOuZyH32n5Ag==/androidx.benchmark.test-kcNBMDGJ58lezaNWmNyTzQ==/base.apk
+                          x86_64: [status=run-from-apk] [reason=unknown]
+                    """
                         .trimIndent(),
                 ),
         )
@@ -554,7 +587,7 @@ class ShellTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23, maxSdkVersion = 35)
+    @SdkSuppress(maxSdkVersion = 35)
     fun pgrepLFBelowApi36() {
         val processPids = Shell.pgrepLF(Packages.TEST)
         assertTrue(

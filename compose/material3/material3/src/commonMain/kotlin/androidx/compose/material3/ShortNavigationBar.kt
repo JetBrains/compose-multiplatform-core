@@ -24,13 +24,13 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.material3.MaterialTheme.LocalMaterialTheme
+import androidx.compose.material3.ShortNavigationBarDefaults.containerColor
 import androidx.compose.material3.internal.systemBarsForVisualComponents
 import androidx.compose.material3.tokens.NavigationBarHorizontalItemTokens
 import androidx.compose.material3.tokens.NavigationBarTokens
 import androidx.compose.material3.tokens.NavigationBarVerticalItemTokens
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.ProvidableCompositionLocal
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -90,9 +90,11 @@ import kotlin.math.roundToInt
  * @param windowInsets a window insets of the navigation bar
  * @param arrangement the [ShortNavigationBarArrangement] of this navigation bar
  * @param content the content of this navigation bar, typically [ShortNavigationBarItem]s
+ *
+ * @material3expressive
  */
 @Composable
-fun ShortNavigationBar(
+public fun ShortNavigationBar(
     modifier: Modifier = Modifier,
     containerColor: Color = ShortNavigationBarDefaults.containerColor,
     contentColor: Color = ShortNavigationBarDefaults.contentColor,
@@ -100,71 +102,109 @@ fun ShortNavigationBar(
     arrangement: ShortNavigationBarArrangement = ShortNavigationBarDefaults.arrangement,
     content: @Composable () -> Unit,
 ) {
-    with(LocalShortNavigationBarOverride.current) {
-        ShortNavigationBarOverrideScope(
-                modifier = modifier,
-                containerColor = containerColor,
-                contentColor = contentColor,
-                windowInsets = windowInsets,
-                arrangement = arrangement,
-                content = content,
-            )
-            .ShortNavigationBar()
-    }
+    ShortNavigationBarImpl(
+        modifier = modifier,
+        containerColor = containerColor,
+        contentColor = contentColor,
+        windowInsets = windowInsets,
+        arrangement = arrangement,
+        containerHeight = NavigationBarTokens.ContainerHeight,
+        content = content,
+    )
 }
 
-/**
- * This override provides the default behavior of the [ShortNavigationBar] component.
- *
- * [ShortNavigationBarOverride] used when no override is specified.
- */
-internal object DefaultShortNavigationBarOverride : ShortNavigationBarOverride {
-    @Composable
-    override fun ShortNavigationBarOverrideScope.ShortNavigationBar() {
-        Surface(color = containerColor, contentColor = contentColor, modifier = modifier) {
-            Layout(
-                modifier =
-                    Modifier.windowInsetsPadding(windowInsets)
-                        .defaultMinSize(minHeight = NavigationBarTokens.ContainerHeight)
-                        .selectableGroup(),
-                content = content,
-                measurePolicy =
-                    when (arrangement) {
-                        ShortNavigationBarArrangement.EqualWeight -> {
-                            EqualWeightContentMeasurePolicy()
-                        }
-                        ShortNavigationBarArrangement.Centered -> {
-                            CenteredContentMeasurePolicy()
-                        }
-                        else -> {
-                            throw IllegalArgumentException("Invalid ItemsArrangement value.")
-                        }
-                    },
-            )
-        }
+// Note that we cannot name this function as ShortNavigationBar as it will cause overload resolution
+// ambiguity. We will come back to this problem when we need to publish it.
+@Composable
+internal fun StyleableShortNavigationBar(
+    modifier: Modifier = Modifier,
+    windowInsets: WindowInsets? = null,
+    arrangement: ShortNavigationBarArrangement? = null,
+    style: NavigationBarStyle? = null,
+    content: @Composable () -> Unit,
+) {
+    val localTheme = LocalMaterialTheme.current
+    val styleScope = NavigationBarStyleScope(localTheme)
+    with(style ?: localTheme.componentProperties.navigationBarProperties.style) {
+        styleScope.applyStyle()
+    }
+    val arrangement =
+        arrangement ?: localTheme.componentProperties.navigationBarProperties.arrangement
+    val themeWindowInsets = localTheme.componentProperties.navigationBarProperties.windowInsets
+    val windowInsets =
+        windowInsets
+            ?: if (themeWindowInsets == WindowInsets.Unspecified) {
+                ShortNavigationBarDefaults.windowInsets
+            } else {
+                themeWindowInsets
+            }
+
+    ShortNavigationBarImpl(
+        modifier = modifier,
+        containerColor = styleScope.containerColor,
+        contentColor = styleScope.contentColor,
+        windowInsets = windowInsets,
+        arrangement = arrangement,
+        containerHeight = styleScope.containerHeight,
+        content = content,
+    )
+}
+
+@Composable
+private fun ShortNavigationBarImpl(
+    modifier: Modifier = Modifier,
+    containerColor: Color,
+    contentColor: Color,
+    windowInsets: WindowInsets,
+    arrangement: ShortNavigationBarArrangement,
+    containerHeight: Dp,
+    content: @Composable () -> Unit,
+) {
+    Surface(color = containerColor, contentColor = contentColor, modifier = modifier) {
+        Layout(
+            modifier =
+                Modifier.windowInsetsPadding(windowInsets)
+                    .defaultMinSize(minHeight = containerHeight)
+                    .selectableGroup(),
+            content = content,
+            measurePolicy =
+                when (arrangement) {
+                    ShortNavigationBarArrangement.EqualWeight -> {
+                        EqualWeightContentMeasurePolicy()
+                    }
+                    ShortNavigationBarArrangement.Centered -> {
+                        CenteredContentMeasurePolicy()
+                    }
+                    else -> {
+                        throw IllegalArgumentException("Invalid ItemsArrangement value.")
+                    }
+                },
+        )
     }
 }
 
 /** Class that describes the different supported item arrangements of the [ShortNavigationBar]. */
 @JvmInline
-value class ShortNavigationBarArrangement private constructor(private val value: Int) {
-    companion object {
+public value class ShortNavigationBarArrangement private constructor(private val value: Int) {
+    public companion object {
         /*
          * The items are equally distributed on the Short Navigation Bar.
          *
          * This configuration is recommended for small width screens.
          */
-        val EqualWeight = ShortNavigationBarArrangement(0)
+        public val EqualWeight: ShortNavigationBarArrangement
+            get() = ShortNavigationBarArrangement(0)
 
         /*
          * The items are centered on the Short Navigation Bar.
          *
          * This configuration is recommended for medium width screens.
          */
-        val Centered = ShortNavigationBarArrangement(1)
+        public val Centered: ShortNavigationBarArrangement
+            get() = ShortNavigationBarArrangement(1)
     }
 
-    override fun toString() =
+    public override fun toString(): String =
         when (this) {
             EqualWeight -> "EqualWeight"
             Centered -> "Centered"
@@ -205,9 +245,11 @@ value class ShortNavigationBarArrangement private constructor(private val value:
  *   emitting [Interaction]s for this item. You can use this to change the item's appearance or
  *   preview the item in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
+ *
+ * @material3expressive
  */
 @Composable
-fun ShortNavigationBarItem(
+public fun ShortNavigationBarItem(
     selected: Boolean,
     onClick: () -> Unit,
     icon: @Composable () -> Unit,
@@ -247,7 +289,72 @@ fun ShortNavigationBarItem(
         indicatorToLabelVerticalPadding = TopIconIndicatorToLabelPadding,
         startIconToLabelHorizontalPadding = StartIconToLabelPadding,
         topIconItemVerticalPadding = TopIconItemVerticalPadding,
-        colors = colors,
+        textColor = colors.textColor(selected, enabled, isIconPositionTop),
+        iconColor = colors.iconColor(selected, enabled),
+        indicatorColor = colors.selectedIndicatorColor,
+        modifier = modifier,
+        enabled = enabled,
+        label = label,
+        iconPosition = iconPosition,
+        interactionSource = interactionSource,
+    )
+}
+
+// Note that we cannot name this function as ShortNavigationBarItem as it will cause overload
+// resolution ambiguity. We will come back to this problem when we need to publish it.
+@Composable
+internal fun StyleableShortNavigationBarItem(
+    selected: Boolean,
+    onClick: () -> Unit,
+    icon: @Composable () -> Unit,
+    label: @Composable (() -> Unit)?,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    iconPosition: NavigationItemIconPosition = NavigationItemIconPosition.Top,
+    style: NavigationBarItemStyle? = null,
+    interactionSource: MutableInteractionSource? = null,
+) {
+    @Suppress("NAME_SHADOWING")
+    val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
+    val localTheme = LocalMaterialTheme.current
+    val isIconPositionTop = iconPosition == NavigationItemIconPosition.Top
+    val styleScope =
+        NavigationBarItemStyleScope(
+            localTheme,
+            ComponentState.selected(selected).enabled(enabled).orientation(isIconPositionTop),
+        )
+    with(style ?: localTheme.componentProperties.navigationBarItemProperties.style) {
+        styleScope.applyStyle()
+    }
+
+    val indicatorHorizontalPadding =
+        if (isIconPositionTop) {
+            TopIconIndicatorHorizontalPadding
+        } else {
+            StartIconIndicatorHorizontalPadding
+        }
+    val indicatorVerticalPadding =
+        if (isIconPositionTop) {
+            TopIconIndicatorVerticalPadding
+        } else {
+            StartIconIndicatorVerticalPadding
+        }
+
+    NavigationItem(
+        selected = selected,
+        onClick = onClick,
+        icon = icon,
+        labelTextStyle = NavigationBarTokens.LabelTextFont.value,
+        indicatorShape = NavigationBarTokens.ItemActiveIndicatorShape.value,
+        indicatorWidth = NavigationBarVerticalItemTokens.ActiveIndicatorWidth,
+        indicatorHorizontalPadding = indicatorHorizontalPadding,
+        indicatorVerticalPadding = indicatorVerticalPadding,
+        indicatorToLabelVerticalPadding = TopIconIndicatorToLabelPadding,
+        startIconToLabelHorizontalPadding = StartIconToLabelPadding,
+        topIconItemVerticalPadding = TopIconItemVerticalPadding,
+        textColor = styleScope.textColor,
+        iconColor = styleScope.iconColor,
+        indicatorColor = styleScope.indicatorColor,
         modifier = modifier,
         enabled = enabled,
         label = label,
@@ -257,21 +364,21 @@ fun ShortNavigationBarItem(
 }
 
 /** Defaults used in [ShortNavigationBar]. */
-object ShortNavigationBarDefaults {
+public object ShortNavigationBarDefaults {
     /** Default container color for a short navigation bar. */
-    val containerColor: Color
+    public val containerColor: Color
         @Composable get() = NavigationBarTokens.ContainerColor.value
 
     /** Default content color for a short navigation bar. */
-    val contentColor: Color
+    public val contentColor: Color
         @Composable get() = contentColorFor(containerColor)
 
     /** Default arrangement for a short navigation bar. */
-    val arrangement: ShortNavigationBarArrangement
+    public val arrangement: ShortNavigationBarArrangement
         get() = ShortNavigationBarArrangement.EqualWeight
 
     /** Default window insets to be used and consumed by the short navigation bar. */
-    val windowInsets: WindowInsets
+    public val windowInsets: WindowInsets
         @Composable
         get() =
             WindowInsets.systemBarsForVisualComponents.only(
@@ -280,19 +387,24 @@ object ShortNavigationBarDefaults {
 }
 
 /** Defaults used in [ShortNavigationBarItem]. */
-object ShortNavigationBarItemDefaults {
+public object ShortNavigationBarItemDefaults {
     /**
      * Creates a [NavigationItemColors] with the provided colors according to the Material
      * specification.
      */
-    @Composable fun colors() = MaterialTheme.colorScheme.defaultShortNavigationBarItemColors
+    @Composable
+    public fun colors(): NavigationItemColors =
+        MaterialTheme.colorScheme.defaultShortNavigationBarItemColors
 
     /**
      * Creates a [NavigationItemColors] with the provided colors according to the Material
      * specification.
      *
      * @param selectedIconColor the color to use for the icon when the item is selected.
-     * @param selectedTextColor the color to use for the text label when the item is selected.
+     * @param selectedTextColorTopIconPosition the color to use for the text label when the item is
+     *   selected and is in the Top icon position configuration.
+     * @param selectedTextColorStartIconPosition the color to use for the text label when the item
+     *   is selected and is in the Start icon position configuration.
      * @param selectedIndicatorColor the color to use for the indicator when the item is selected.
      * @param unselectedIconColor the color to use for the icon when the item is unselected.
      * @param unselectedTextColor the color to use for the text label when the item is unselected.
@@ -301,9 +413,11 @@ object ShortNavigationBarItemDefaults {
      * @return the resulting [NavigationItemColors] used for [ShortNavigationBarItem]
      */
     @Composable
-    fun colors(
+    public fun colors(
         selectedIconColor: Color = NavigationBarTokens.ItemActiveIconColor.value,
-        selectedTextColor: Color = NavigationBarTokens.ItemActiveLabelTextColor.value,
+        selectedTextColorTopIconPosition: Color =
+            NavigationBarTokens.ItemActiveLabelTextColor.value,
+        selectedTextColorStartIconPosition: Color = NavigationBarTokens.ItemActiveIconColor.value,
         selectedIndicatorColor: Color = NavigationBarTokens.ItemActiveIndicatorColor.value,
         unselectedIconColor: Color = NavigationBarTokens.ItemInactiveIconColor.value,
         unselectedTextColor: Color = NavigationBarTokens.ItemInactiveLabelTextColor.value,
@@ -312,7 +426,30 @@ object ShortNavigationBarItemDefaults {
     ): NavigationItemColors =
         MaterialTheme.colorScheme.defaultShortNavigationBarItemColors.copy(
             selectedIconColor = selectedIconColor,
-            selectedTextColor = selectedTextColor,
+            selectedTextColorTopIconPosition = selectedTextColorTopIconPosition,
+            selectedTextColorStartIconPosition = selectedTextColorStartIconPosition,
+            selectedIndicatorColor = selectedIndicatorColor,
+            unselectedIconColor = unselectedIconColor,
+            unselectedTextColor = unselectedTextColor,
+            disabledIconColor = disabledIconColor,
+            disabledTextColor = disabledTextColor,
+        )
+
+    @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+    @Composable
+    public fun colors(
+        selectedIconColor: Color = NavigationBarTokens.ItemActiveIconColor.value,
+        selectedTextColor: Color = NavigationBarTokens.ItemActiveLabelTextColor.value,
+        selectedIndicatorColor: Color = NavigationBarTokens.ItemActiveIndicatorColor.value,
+        unselectedIconColor: Color = NavigationBarTokens.ItemInactiveIconColor.value,
+        unselectedTextColor: Color = NavigationBarTokens.ItemInactiveLabelTextColor.value,
+        disabledIconColor: Color = unselectedIconColor.copy(alpha = DisabledAlpha),
+        disabledTextColor: Color = unselectedTextColor.copy(alpha = DisabledAlpha),
+    ): NavigationItemColors =
+        colors(
+            selectedIconColor = selectedIconColor,
+            selectedTextColorTopIconPosition = selectedTextColor,
+            selectedTextColorStartIconPosition = selectedTextColor,
             selectedIndicatorColor = selectedIndicatorColor,
             unselectedIconColor = unselectedIconColor,
             unselectedTextColor = unselectedTextColor,
@@ -325,7 +462,12 @@ object ShortNavigationBarItemDefaults {
             return defaultShortNavigationBarItemColorsCached
                 ?: NavigationItemColors(
                         selectedIconColor = fromToken(NavigationBarTokens.ItemActiveIconColor),
-                        selectedTextColor = fromToken(NavigationBarTokens.ItemActiveLabelTextColor),
+                        selectedTextColorTopIconPosition =
+                            fromToken(NavigationBarTokens.ItemActiveLabelTextColor),
+                        // TODO: Replace with the correct token once it is available in
+                        // NavigationBarTokens
+                        selectedTextColorStartIconPosition =
+                            fromToken(NavigationBarTokens.ItemActiveIconColor),
                         selectedIndicatorColor =
                             fromToken(NavigationBarTokens.ItemActiveIndicatorColor),
                         unselectedIconColor = fromToken(NavigationBarTokens.ItemInactiveIconColor),
@@ -341,45 +483,6 @@ object ShortNavigationBarItemDefaults {
                     .also { defaultShortNavigationBarItemColorsCached = it }
         }
 }
-
-/**
- * Interface that allows libraries to override the behavior of the [ShortNavigationBar] component.
- *
- * To override this component, implement the member function of this interface, then provide the
- * implementation to [LocalShortNavigationBarOverride] in the Compose hierarchy.
- */
-internal interface ShortNavigationBarOverride {
-    /** Behavior function that is called by the [ShortNavigationBar] component. */
-    @Composable fun ShortNavigationBarOverrideScope.ShortNavigationBar()
-}
-
-/**
- * Parameters available to [ShortNavigationBar].
- *
- * @param modifier the [Modifier] to be applied to this navigation bar
- * @param containerColor the color used for the background of this navigation bar. Use
- *   [Color.Transparent] to have no color
- * @param contentColor the color for content inside this navigation bar.
- * @param windowInsets a window insets of the navigation bar
- * @param arrangement the [ShortNavigationBarArrangement] of this navigation bar
- * @param content the content of this navigation bar, typically [ShortNavigationBarItem]s
- */
-internal class ShortNavigationBarOverrideScope
-internal constructor(
-    val modifier: Modifier,
-    val containerColor: Color,
-    val contentColor: Color,
-    val windowInsets: WindowInsets,
-    val arrangement: ShortNavigationBarArrangement,
-    val content: @Composable () -> Unit,
-)
-
-/** CompositionLocal containing the currently-selected [ShortNavigationBarOverride]. */
-internal val LocalShortNavigationBarOverride:
-    ProvidableCompositionLocal<ShortNavigationBarOverride> =
-    compositionLocalOf {
-        DefaultShortNavigationBarOverride
-    }
 
 private class EqualWeightContentMeasurePolicy : MeasurePolicy {
     override fun MeasureScope.measure(
@@ -398,10 +501,9 @@ private class EqualWeightContentMeasurePolicy : MeasurePolicy {
         if (!constraints.hasBoundedWidth) {
             // If width constraint is not bounded, let item containers widths be as big as they are.
             // This may lead to a different items arrangement than the expected.
-            itemsPlaceables =
-                measurables.fastMap {
-                    it.measure(constraints.constrain(Constraints.fixedHeight(height = itemHeight)))
-                }
+            itemsPlaceables = measurables.fastMap {
+                it.measure(constraints.constrain(Constraints.fixedHeight(height = itemHeight)))
+            }
         } else {
             val itemWidth = width / itemsCount
             measurables.fastForEach {
@@ -412,14 +514,11 @@ private class EqualWeightContentMeasurePolicy : MeasurePolicy {
             }
 
             // Make sure the item containers have the same width and height.
-            itemsPlaceables =
-                measurables.fastMap {
-                    it.measure(
-                        constraints.constrain(
-                            Constraints.fixed(width = itemWidth, height = itemHeight)
-                        )
-                    )
-                }
+            itemsPlaceables = measurables.fastMap {
+                it.measure(
+                    constraints.constrain(Constraints.fixed(width = itemWidth, height = itemHeight))
+                )
+            }
         }
 
         return layout(width, itemHeight) {
@@ -451,10 +550,9 @@ private class CenteredContentMeasurePolicy : MeasurePolicy {
         if (!constraints.hasBoundedWidth) {
             // If width constraint is not bounded, let item containers widths be as big as they are.
             // This may lead to a different items arrangement than the expected.
-            itemsPlaceables =
-                measurables.fastMap {
-                    it.measure(constraints.constrain(Constraints.fixedHeight(height = itemHeight)))
-                }
+            itemsPlaceables = measurables.fastMap {
+                it.measure(constraints.constrain(Constraints.fixedHeight(height = itemHeight)))
+            }
         } else {
             val itemMaxWidth = width / itemsCount
             barHorizontalPadding = calculateCenteredContentHorizontalPadding(itemsCount, width)
@@ -467,24 +565,23 @@ private class CenteredContentMeasurePolicy : MeasurePolicy {
                     itemHeight = measurableHeight.coerceAtMost(constraints.maxHeight)
                 }
             }
-            itemsPlaceables =
-                measurables.fastMap {
-                    var currentItemWidth = itemMinWidth
-                    val measurableWidth = it.maxIntrinsicWidth(constraints.minHeight)
-                    if (currentItemWidth < measurableWidth) {
-                        // Let an item container be bigger in width if needed, but limit it to
-                        // itemMaxWidth.
-                        currentItemWidth = measurableWidth.coerceAtMost(itemMaxWidth)
-                        // Update horizontal padding so that items remain centered.
-                        barHorizontalPadding -= (currentItemWidth - itemMinWidth) / 2
-                    }
-
-                    it.measure(
-                        constraints.constrain(
-                            Constraints.fixed(width = currentItemWidth, height = itemHeight)
-                        )
-                    )
+            itemsPlaceables = measurables.fastMap {
+                var currentItemWidth = itemMinWidth
+                val measurableWidth = it.maxIntrinsicWidth(constraints.minHeight)
+                if (currentItemWidth < measurableWidth) {
+                    // Let an item container be bigger in width if needed, but limit it to
+                    // itemMaxWidth.
+                    currentItemWidth = measurableWidth.coerceAtMost(itemMaxWidth)
+                    // Update horizontal padding so that items remain centered.
+                    barHorizontalPadding -= (currentItemWidth - itemMinWidth) / 2
                 }
+
+                it.measure(
+                    constraints.constrain(
+                        Constraints.fixed(width = currentItemWidth, height = itemHeight)
+                    )
+                )
+            }
         }
 
         return layout(width, itemHeight) {
@@ -518,7 +615,8 @@ private fun calculateCenteredContentHorizontalPadding(itemsCount: Int, barWidth:
 }
 
 /*@VisibleForTesting*/
-internal val TopIconItemVerticalPadding = NavigationBarVerticalItemTokens.ContainerBetweenSpace
+internal val TopIconItemVerticalPadding
+    get() = NavigationBarVerticalItemTokens.ContainerBetweenSpace
 /*@VisibleForTesting*/
 internal val TopIconIndicatorVerticalPadding =
     (NavigationBarVerticalItemTokens.ActiveIndicatorHeight -
@@ -532,9 +630,11 @@ internal val StartIconIndicatorVerticalPadding =
     (NavigationBarHorizontalItemTokens.ActiveIndicatorHeight -
         NavigationBarHorizontalItemTokens.IconSize) / 2
 /*@VisibleForTesting*/
-internal val TopIconIndicatorToLabelPadding: Dp = 4.dp
+internal val TopIconIndicatorToLabelPadding: Dp
+    get() = 4.dp
 /*@VisibleForTesting*/
 internal val StartIconIndicatorHorizontalPadding =
     NavigationBarHorizontalItemTokens.ActiveIndicatorLeadingSpace
 /*@VisibleForTesting*/
-internal val StartIconToLabelPadding = NavigationBarTokens.ItemActiveIndicatorIconLabelSpace
+internal val StartIconToLabelPadding
+    get() = NavigationBarTokens.ItemActiveIndicatorIconLabelSpace

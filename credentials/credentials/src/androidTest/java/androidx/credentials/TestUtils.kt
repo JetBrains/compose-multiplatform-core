@@ -37,7 +37,6 @@ import androidx.credentials.provider.PasswordCredentialEntry
 import androidx.credentials.provider.ProviderClearCredentialStateRequest
 import androidx.credentials.provider.ProviderCreateCredentialRequest
 import androidx.credentials.provider.ProviderGetCredentialRequest
-import androidx.credentials.provider.ProviderSignalCredentialStateRequest
 import androidx.credentials.provider.PublicKeyCredentialEntry
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
@@ -254,7 +253,8 @@ fun assertEquals(context: Context, actual: CredentialEntry, expected: Credential
             assertThat(actual.typeDisplayName).isEqualTo(expected.typeDisplayName)
             assertThat(actual.pendingIntent).isEqualTo(expected.pendingIntent)
             if (Build.VERSION.SDK_INT >= 26) {
-                assertThat(actual.lastUsedTime).isEqualTo(expected.lastUsedTime)
+                assertThat(actual.lastUsedTime?.toEpochMilli())
+                    .isEqualTo(expected.lastUsedTime?.toEpochMilli())
             }
             assertEquals(context, actual.icon, expected.icon)
             assertThat(actual.isAutoSelectAllowed).isEqualTo(expected.isAutoSelectAllowed)
@@ -269,7 +269,8 @@ fun assertEquals(context: Context, actual: CredentialEntry, expected: Credential
             assertThat(actual.typeDisplayName).isEqualTo(expected.typeDisplayName)
             assertThat(actual.pendingIntent).isEqualTo(expected.pendingIntent)
             if (Build.VERSION.SDK_INT >= 26) {
-                assertThat(actual.lastUsedTime).isEqualTo(expected.lastUsedTime)
+                assertThat(actual.lastUsedTime?.toEpochMilli())
+                    .isEqualTo(expected.lastUsedTime?.toEpochMilli())
             }
             assertEquals(context, actual.icon, expected.icon)
             assertThat(actual.isAutoSelectAllowed).isEqualTo(expected.isAutoSelectAllowed)
@@ -285,7 +286,8 @@ fun assertEquals(context: Context, actual: CredentialEntry, expected: Credential
             assertThat(actual.typeDisplayName).isEqualTo(expected.typeDisplayName)
             assertThat(actual.pendingIntent).isEqualTo(expected.pendingIntent)
             if (Build.VERSION.SDK_INT >= 26) {
-                assertThat(actual.lastUsedTime).isEqualTo(expected.lastUsedTime)
+                assertThat(actual.lastUsedTime?.toEpochMilli())
+                    .isEqualTo(expected.lastUsedTime?.toEpochMilli())
             }
             assertEquals(context, actual.icon, expected.icon)
             assertThat(actual.isAutoSelectAllowed).isEqualTo(expected.isAutoSelectAllowed)
@@ -316,16 +318,6 @@ fun assertEquals(
     assertThat(actual.biometricPromptResult).isEqualTo(expected.biometricPromptResult)
     assertThat(actual.callingAppInfo).isEqualTo(expected.callingAppInfo)
     assertEquals(context, actual.callingRequest, expected.callingRequest)
-}
-
-@RequiresApi(28)
-fun assertEquals(
-    actual: ProviderSignalCredentialStateRequest,
-    expected: ProviderSignalCredentialStateRequest,
-) {
-    if (actual === expected) return
-    assertThat(actual.callingAppInfo).isEqualTo(expected.callingAppInfo)
-    assertEquals(actual.callingRequest, expected.callingRequest)
 }
 
 @RequiresApi(28)
@@ -480,7 +472,12 @@ fun equals(
     getCredentialResponse1: GetCredentialResponse,
     getCredentialResponse2: GetCredentialResponse,
 ) {
-    equals(getCredentialResponse1.credential, getCredentialResponse2.credential)
+    assertThat(getCredentialResponse1.credentials.size)
+        .isEqualTo(getCredentialResponse2.credentials.size)
+    getCredentialResponse1.credentials.zip(getCredentialResponse2.credentials).forEach {
+        (cred1, cred2) ->
+        equals(cred1, cred2)
+    }
 }
 
 @RequiresApi(34)
@@ -496,7 +493,7 @@ fun assertEquals(
     actual: android.credentials.GetCredentialResponse,
     expected: GetCredentialResponse,
 ) {
-    equals(actual.credential, expected.credential)
+    equals(actual.credential, expected.credentials.first())
 }
 
 @RequiresApi(34)
@@ -567,12 +564,8 @@ fun assertEquals(context: Context, actual: CreateEntry, expected: CreateEntry) {
     assertEquals(context, actual.icon, expected.icon)
     assertThat(actual.description).isEqualTo(expected.description)
     if (Build.VERSION.SDK_INT >= 26) {
-        if (Build.VERSION.SDK_INT >= 34) {
-            assertThat(actual.lastUsedTime?.toEpochMilli())
-                .isEqualTo(expected.lastUsedTime?.toEpochMilli())
-        } else {
-            assertThat(actual.lastUsedTime).isEqualTo(expected.lastUsedTime)
-        }
+        assertThat(actual.lastUsedTime?.toEpochMilli())
+            .isEqualTo(expected.lastUsedTime?.toEpochMilli())
     }
     assertThat(actual.getTotalCredentialCount()).isEqualTo(expected.getTotalCredentialCount())
     assertThat(actual.getPasswordCredentialCount()).isEqualTo(expected.getPasswordCredentialCount())
@@ -599,4 +592,11 @@ fun getTestCallingAppInfo(origin: String?): CallingAppInfo {
             context.packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES)
         return CallingAppInfo(packageName, packageInfo.signatures!!.filterNotNull(), origin)
     }
+}
+
+fun createDummyProviderGetCredentialRequest(): ProviderGetCredentialRequest {
+    return ProviderGetCredentialRequest(
+        listOf(GetPasswordOption()),
+        getTestCallingAppInfo("dummy-origin"),
+    )
 }

@@ -33,7 +33,6 @@ import androidx.credentials.CredentialOption
 import androidx.credentials.PasswordCredential
 import androidx.credentials.R
 import androidx.credentials.provider.PasswordCredentialEntry.Api28Impl.toSlice
-import androidx.credentials.provider.PasswordCredentialEntry.Companion.toSlice
 import androidx.credentials.provider.utils.CryptoObjectUtils.getOperationHandle
 import java.time.Instant
 import java.util.Collections
@@ -75,15 +74,15 @@ import java.util.Collections
  * @see CredentialEntry
  */
 @RequiresApi(23)
-class PasswordCredentialEntry
+public class PasswordCredentialEntry
 internal constructor(
-    val username: CharSequence,
-    val displayName: CharSequence?,
-    val typeDisplayName: CharSequence,
-    val pendingIntent: PendingIntent,
-    val lastUsedTime: Instant?,
-    val icon: Icon,
-    val isAutoSelectAllowed: Boolean,
+    public val username: CharSequence,
+    public val displayName: CharSequence?,
+    public val typeDisplayName: CharSequence,
+    public val pendingIntent: PendingIntent,
+    public val lastUsedTime: Instant?,
+    public val icon: Icon,
+    public val isAutoSelectAllowed: Boolean,
     beginGetPasswordOption: BeginGetPasswordOption,
     isDefaultIconPreferredAsSingleProvider: Boolean,
     entryGroupId: CharSequence? = username,
@@ -102,9 +101,9 @@ internal constructor(
         affiliatedDomain = affiliatedDomain,
         biometricPromptData = biometricPromptData,
     ) {
-    val isAutoSelectAllowedFromOption = autoSelectAllowedFromOption
+    public val isAutoSelectAllowedFromOption: Boolean = autoSelectAllowedFromOption
     @get:JvmName("hasDefaultIcon")
-    val hasDefaultIcon: Boolean
+    public val hasDefaultIcon: Boolean
         get() {
             if (Build.VERSION.SDK_INT >= 28) {
                 return Api28Impl.isDefaultIcon(this)
@@ -159,7 +158,7 @@ internal constructor(
      * @throws NullPointerException If [context], [username], [pendingIntent], or
      *   [beginGetPasswordOption] is null
      */
-    constructor(
+    public constructor(
         context: Context,
         username: CharSequence,
         pendingIntent: PendingIntent,
@@ -230,7 +229,7 @@ internal constructor(
      *   [beginGetPasswordOption] is null
      */
     @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
-    constructor(
+    public constructor(
         context: Context,
         username: CharSequence,
         pendingIntent: PendingIntent,
@@ -298,7 +297,7 @@ internal constructor(
             ),
         level = DeprecationLevel.HIDDEN,
     )
-    constructor(
+    public constructor(
         context: Context,
         username: CharSequence,
         pendingIntent: PendingIntent,
@@ -603,7 +602,7 @@ internal constructor(
         }
     }
 
-    companion object {
+    public companion object {
         private const val TAG = "PasswordCredentialEntry"
 
         /**
@@ -614,7 +613,7 @@ internal constructor(
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @JvmStatic
-        fun toSlice(entry: PasswordCredentialEntry): Slice? {
+        public fun toSlice(entry: PasswordCredentialEntry): Slice? {
             if (Build.VERSION.SDK_INT >= 35) {
                 return Api35Impl.toSlice(entry)
             } else if (Build.VERSION.SDK_INT >= 28) {
@@ -625,7 +624,7 @@ internal constructor(
 
         @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        fun fromSlice(slice: Slice): PasswordCredentialEntry? {
+        public fun fromSlice(slice: Slice): PasswordCredentialEntry? {
             if (Build.VERSION.SDK_INT >= 35) {
                 return Api35Impl.fromSlice(slice)
             } else if (Build.VERSION.SDK_INT >= 28) {
@@ -645,7 +644,7 @@ internal constructor(
          * @param credentialEntry the instance of framework class to be converted
          */
         @JvmStatic
-        fun fromCredentialEntry(
+        public fun fromCredentialEntry(
             credentialEntry: android.service.credentials.CredentialEntry
         ): PasswordCredentialEntry? {
             if (Build.VERSION.SDK_INT >= 34) {
@@ -684,9 +683,9 @@ internal constructor(
             // TODO: b/356939416 - provide backward compatible timestamp API.
             if (Build.VERSION.SDK_INT >= 26) {
                 this.lastUsedTime?.let {
-                    bundle.putSerializable(
-                        "$EXTRA_CREDENTIAL_ENTRY_LAST_USED_TIME_PREFIX$index",
-                        it,
+                    bundle.putLong(
+                        "$EXTRA_CREDENTIAL_ENTRY_LAST_USED_TIME_MILLIS_PREFIX$index",
+                        it.toEpochMilli(),
                     )
                 }
             }
@@ -734,9 +733,23 @@ internal constructor(
                 // TODO: b/356939416 - provide backward compatible timestamp API.
                 return if (Build.VERSION.SDK_INT >= 26) {
                     val lastUsedTime: Instant? =
-                        bundle.getSerializable(
-                            "$EXTRA_CREDENTIAL_ENTRY_LAST_USED_TIME_PREFIX$index"
-                        ) as Instant?
+                        if (
+                            bundle.containsKey(
+                                "$EXTRA_CREDENTIAL_ENTRY_LAST_USED_TIME_MILLIS_PREFIX$index"
+                            )
+                        ) {
+                            try {
+                                Instant.ofEpochMilli(
+                                    bundle.getLong(
+                                        "$EXTRA_CREDENTIAL_ENTRY_LAST_USED_TIME_MILLIS_PREFIX$index"
+                                    )
+                                )
+                            } catch (_: Exception) {
+                                null
+                            }
+                        } else {
+                            null
+                        }
                     PasswordCredentialEntry(
                         username = username,
                         displayName = displayName,
@@ -797,7 +810,7 @@ internal constructor(
      *   [beginGetPasswordOption] is null
      * @throws IllegalArgumentException If [username] is empty
      */
-    class Builder(
+    public class Builder(
         private val context: Context,
         private val username: CharSequence,
         private val pendingIntent: PendingIntent,
@@ -812,13 +825,13 @@ internal constructor(
         private var biometricPromptData: BiometricPromptData? = null
 
         /** Sets a displayName to be shown on the UI with this entry. */
-        fun setDisplayName(displayName: CharSequence?): Builder {
+        public fun setDisplayName(displayName: CharSequence?): Builder {
             this.displayName = displayName
             return this
         }
 
         /** Sets the icon to be shown on the UI with this entry. */
-        fun setIcon(icon: Icon): Builder {
+        public fun setIcon(icon: Icon): Builder {
             this.icon = icon
             return this
         }
@@ -830,14 +843,14 @@ internal constructor(
          * biometric prompt flow.
          */
         @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
-        fun setBiometricPromptData(biometricPromptData: BiometricPromptData?): Builder {
+        public fun setBiometricPromptData(biometricPromptData: BiometricPromptData?): Builder {
             this.biometricPromptData = biometricPromptData
             return this
         }
 
         /** Sets whether the entry should be auto-selected. The value is false by default. */
         @Suppress("MissingGetterMatchingBuilder")
-        fun setAutoSelectAllowed(autoSelectAllowed: Boolean): Builder {
+        public fun setAutoSelectAllowed(autoSelectAllowed: Boolean): Builder {
             this.autoSelectAllowed = autoSelectAllowed
             return this
         }
@@ -848,7 +861,7 @@ internal constructor(
          * app_two may be bound by 'super_app' as the larger affiliation domain) without length
          * limit, default null.
          */
-        fun setAffiliatedDomain(affiliatedDomain: CharSequence?): Builder {
+        public fun setAffiliatedDomain(affiliatedDomain: CharSequence?): Builder {
             this.affiliatedDomain = affiliatedDomain
             return this
         }
@@ -857,7 +870,7 @@ internal constructor(
          * Sets the last used time of this account. This information will be used to sort the
          * entries on the selector.
          */
-        fun setLastUsedTime(lastUsedTime: Instant?): Builder {
+        public fun setLastUsedTime(lastUsedTime: Instant?): Builder {
             this.lastUsedTime = lastUsedTime
             return this
         }
@@ -866,7 +879,7 @@ internal constructor(
          * When set to true, the UI prefers to render the default credential type icon when you are
          * the single available provider; false by default.
          */
-        fun setDefaultIconPreferredAsSingleProvider(
+        public fun setDefaultIconPreferredAsSingleProvider(
             isDefaultIconPreferredAsSingleProvider: Boolean
         ): Builder {
             this.isDefaultIconPreferredAsSingleProvider = isDefaultIconPreferredAsSingleProvider
@@ -874,7 +887,7 @@ internal constructor(
         }
 
         /** Builds an instance of [PasswordCredentialEntry] */
-        fun build(): PasswordCredentialEntry {
+        public fun build(): PasswordCredentialEntry {
             if (icon == null && Build.VERSION.SDK_INT >= 23) {
                 icon = Icon.createWithResource(context, R.drawable.adx_ic_password)
             }

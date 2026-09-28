@@ -144,8 +144,8 @@ public abstract class ProtoParcelable implements Parcelable {
     }
 
     /** Represents a function that accepts three arguments and produces a result. */
-    interface TriFunction<A, B, C, R> {
-        R apply(A var1, B var2, C var3);
+    interface TriFunction<A, B, C, R2> {
+        R2 apply(A var1, B var2, C var3);
     }
 
     /**

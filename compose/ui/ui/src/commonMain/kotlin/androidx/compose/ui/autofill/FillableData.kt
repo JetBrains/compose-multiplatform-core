@@ -17,41 +17,88 @@
 package androidx.compose.ui.autofill
 
 /**
- * Represents a data object that can be filled with different types of data for autofill.
+ * Represents a single piece of data for autofill purposes.
  *
- * Implementations of this interface provide a way to access data as various primitive types. If a
- * specific data type is not available or supported by the implementation, the corresponding `get`
- * method will return `null`.
+ * An instance of `FillableData` is expected to hold a value of a single specific type. Consumers
+ * can use the corresponding property to retrieve the value. For any given instance, only the
+ * property that matches the underlying data's type will return a non-null value. All other
+ * properties will return `null`.
  */
-internal interface FillableData {
-    /**
-     * Retrieves the `CharSequence` (text) representation of the data.
-     *
-     * @return The `CharSequence` data, or `null` if none is available.
-     */
-    fun getCharSequence(): CharSequence? {
-        return null
-    }
+public interface FillableData {
+    /** The `CharSequence` (text) representation of the data, or `null` if none is available. */
+    public val textValue: CharSequence?
+        get() = null
+
+    /** The `Boolean` representation of the data, or `null` if none is available. */
+    public val booleanValue: Boolean?
+        @Suppress("AutoBoxing") get() = null
+
+    /** The `Int` (integer) representation of the data, or `null` if none is available. */
+    public val listIndexValue: Int?
+        @Suppress("AutoBoxing") get() = null
+
+    /** Returns the list index value if it is available, otherwise returns the [defaultValue]. */
+    public fun getListIndexOrDefault(defaultValue: Int): Int = listIndexValue ?: defaultValue
+
+    /** The date in milliseconds since epoch, or `null` if none is available. */
+    public val dateMillisValue: Long?
+        @Suppress("AutoBoxing") get() = null
 
     /**
-     * Retrieves the `Boolean` representation of the data.
-     *
-     * @return The `Boolean` data, or `null` if none is available.
+     * Returns the date in milliseconds value if it is available, otherwise returns the
+     * [defaultValue].
      */
-    fun getBool(): Boolean? {
-        return null
-    }
+    public fun getDateMillisOrDefault(defaultValue: Long): Long = dateMillisValue ?: defaultValue
 
-    /**
-     * Retrieves the `Int` (integer) representation of the data.
-     *
-     * @return The `Int` data, or `null` if none is available.
-     */
-    fun getInt(): Int? {
-        return null
-    }
+    public companion object
 }
 
-internal expect fun FillableData(booleanValue: Boolean): FillableData
+/**
+ * Creates a [FillableData] instance from a [Boolean].
+ *
+ * This function is used to wrap a boolean value for autofill purposes, such as the state of a
+ * checkbox or a switch.
+ *
+ * @param booleanValue The boolean data to be used for autofill.
+ * @return A [FillableData] object containing the boolean data, or `null` if the platform does not
+ *   support autofill.
+ */
+public expect fun FillableData.Companion.createFromBoolean(booleanValue: Boolean): FillableData?
 
-internal expect fun FillableData(charSequenceValue: CharSequence): FillableData
+/**
+ * Creates a [FillableData] instance from a [CharSequence].
+ *
+ * This function is used to wrap a text value for autofill purposes. Depending on the platform, the
+ * text might be truncated to a safe length if it is too long to prevent crashing the IPC.
+ *
+ * @param textValue The text data to be used for autofill.
+ * @return A [FillableData] object containing the text data, or `null` if the platform does not
+ *   support autofill.
+ */
+public expect fun FillableData.Companion.createFromText(textValue: CharSequence): FillableData?
+
+/**
+ * Creates a [FillableData] instance from an [Int].
+ *
+ * This function is used to wrap an integer value for autofill purposes, such as the selected index
+ * in a dropdown menu or spinner.
+ *
+ * @param listIndexValue The integer data to be used for autofill, representing the index of the
+ *   selected item in a list.
+ * @return A [FillableData] object containing the integer data, or `null` if the platform does not
+ *   support autofill.
+ */
+public expect fun FillableData.Companion.createFromListIndex(listIndexValue: Int): FillableData?
+
+/**
+ * Creates a [FillableData] instance from a [Long].
+ *
+ * This function is used to wrap a long value for autofill purposes, such as a date represented in
+ * milliseconds since the epoch.
+ *
+ * @param dateMillisValue The long data to be used for autofill, representing a date in milliseconds
+ *   since the epoch.
+ * @return A [FillableData] object containing the long data, or `null` if the platform does not
+ *   support autofill.
+ */
+public expect fun FillableData.Companion.createFromDateMillis(dateMillisValue: Long): FillableData?

@@ -39,7 +39,6 @@ import android.provider.Browser;
 
 import androidx.annotation.ColorRes;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.filters.SdkSuppress;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -56,6 +55,7 @@ import java.util.Locale;
  */
 @SuppressWarnings("deprecation")
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 @DoNotInstrument
 public class CustomTabsIntentTest {
 
@@ -848,7 +848,6 @@ public class CustomTabsIntentTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M /* getActiveNetwork requires api>=23 */)
     public void testBindNetworkToCustomTabs() {
         ConnectivityManager cm =
                 (ConnectivityManager) ApplicationProvider.getApplicationContext()

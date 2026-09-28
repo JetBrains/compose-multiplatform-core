@@ -16,7 +16,7 @@
 
 package androidx.xr.compose.subspace.layout
 
-import androidx.xr.compose.subspace.node.LayoutCoordinatesAwareModifierNode
+import androidx.xr.compose.subspace.node.SubspaceLayoutAwareModifierNode
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
 
 /**
@@ -29,9 +29,11 @@ import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
  * whenever the composable's transform (position, rotation, scale) is updated relative to the
  * subspace's origin.
  *
- * The callback information will be relative to its subspace. For instance, When a nested subspace
- * is moved by the global subspace its Pose will reflect its position in the nested subspace. Its
+ * The callback information will be relative to its subspace. For instance, when a nested subspace
+ * is moved by the global subspace, its Pose will reflect its position in the nested subspace. Its
  * position value will not be updated despite moving locations in the Global Subspace.
+ *
+ * @param onGloballyPositioned callback to be invoked with the updated [SubspaceLayoutCoordinates].
  */
 public fun SubspaceModifier.onGloballyPositioned(
     onGloballyPositioned: (SubspaceLayoutCoordinates) -> Unit
@@ -61,8 +63,8 @@ private class OnGloballyPositionedVolumeElement(
 
 /** Node associated with [onGloballyPositioned]. */
 private class OnGloballyPositionedNode(public var callback: (SubspaceLayoutCoordinates) -> Unit) :
-    SubspaceModifier.Node(), LayoutCoordinatesAwareModifierNode {
-    override fun onLayoutCoordinates(coordinates: SubspaceLayoutCoordinates) {
+    SubspaceModifier.Node(), SubspaceLayoutAwareModifierNode {
+    override fun onPlaced(coordinates: SubspaceLayoutCoordinates) {
         callback(coordinates)
     }
 }

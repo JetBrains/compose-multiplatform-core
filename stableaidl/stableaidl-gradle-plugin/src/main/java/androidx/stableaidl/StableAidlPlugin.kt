@@ -100,33 +100,36 @@ abstract class StableAidlPlugin : Plugin<Project> {
 
             // The framework supports Stable AIDL definitions starting in SDK 36. Prior to that,
             // we'll need to use manually-defined stubs.
-            val compileSdkProvider =
-                project.provider {
-                    @Suppress("deprecation") // TODO(aurimas): migrate to new API
-                    project.extensions.findByType(CommonExtension::class.java)?.compileSdk
-                        ?: project.extensions
-                            .findByType(KotlinMultiplatformExtension::class.java)
-                            ?.extensions
-                            ?.findByType(KotlinMultiplatformAndroidLibraryTarget::class.java)
-                            ?.compileSdk
-                        ?: throw RuntimeException("Failed to obtain compileSdk")
+            val compileSdkProvider = project.provider {
+                project.extensions.findByType(CommonExtension::class.java)?.let { ext ->
+                    // Assume any preview SDK is at least 36.
+                    ext.compileSdk ?: ext.compileSdkPreview?.let { 36 }
                 }
-            val aidlFramework =
-                compileSdkProvider.flatMap { compileSdk ->
-                    if (compileSdk >= 36) {
-                        aidl.framework
-                    } else {
-                        project.objects.fileProperty()
-                    }
+                    ?: project.extensions
+                        .findByType(KotlinMultiplatformExtension::class.java)
+                        ?.extensions
+                        ?.findByType(KotlinMultiplatformAndroidLibraryTarget::class.java)
+                        ?.let { ext -> ext.compileSdk ?: ext.compileSdkPreview?.let { 36 } }
+                    ?: throw RuntimeException("Failed to obtain compileSdk")
+            }
+            val aidlFramework = compileSdkProvider.flatMap { compileSdk ->
+                if (compileSdk >= 36) {
+                    aidl.framework
+                } else {
+                    project.objects.fileProperty()
                 }
-            val shadowFramework =
-                compileSdkProvider.flatMap { compileSdk ->
-                    if (compileSdk < 36) {
-                        extension.shadowFrameworkDir
-                    } else {
-                        project.objects.directoryProperty()
-                    }
+            }
+            val shadowFramework = compileSdkProvider.flatMap { compileSdk ->
+                if (compileSdk < 36) {
+                    extension.shadowFrameworkDir
+                } else {
+                    project.objects.directoryProperty()
                 }
+            }
+
+            // An ABI version defined on a variant takes precedence over a top-level version.
+            val variantExtension = variant.getExtension(StableAidlVariantExtension::class.java)
+            val version = variantExtension?.version?.orElse(extension.version) ?: extension.version
 
             val compileAidlApiTask =
                 registerCompileAidlApi(
@@ -136,6 +139,7 @@ abstract class StableAidlPlugin : Plugin<Project> {
                     aidlFramework,
                     shadowFramework,
                     aidlVersion,
+                    version,
                     sourceDir,
                     packagedDir,
                     importsDir,
@@ -155,6 +159,7 @@ abstract class StableAidlPlugin : Plugin<Project> {
                     aidlFramework,
                     shadowFramework,
                     aidlVersion,
+                    version,
                     sourceDir,
                     importsDir,
                     depImports,

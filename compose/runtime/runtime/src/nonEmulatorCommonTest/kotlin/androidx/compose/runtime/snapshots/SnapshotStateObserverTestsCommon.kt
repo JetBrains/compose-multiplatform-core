@@ -17,8 +17,10 @@
 package androidx.compose.runtime.snapshots
 
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.computedStateOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.setValue
@@ -33,7 +35,7 @@ class SnapshotStateObserverTestsCommon {
         val data = ValueWrapper("Hello World")
         var changes = 0
 
-        val state = mutableStateOf(0)
+        val state = mutableIntStateOf(0)
         val stateObserver = SnapshotStateObserver { it() }
         try {
             stateObserver.start()
@@ -46,11 +48,11 @@ class SnapshotStateObserverTestsCommon {
 
             stateObserver.observeReads(data, onChangeListener) {
                 // read the value
-                state.value
+                state.intValue
             }
 
             Snapshot.notifyObjectsInitialized()
-            state.value++
+            state.intValue++
             Snapshot.sendApplyNotifications()
 
             assertEquals(1, changes)
@@ -67,9 +69,9 @@ class SnapshotStateObserverTestsCommon {
         var stage1Changes = 0
         var stage2Changes = 0
         var stage3Changes = 0
-        val stage1Model = mutableStateOf(0)
-        val stage2Model = mutableStateOf(0)
-        val stage3Model = mutableStateOf(0)
+        val stage1Model = mutableIntStateOf(0)
+        val stage2Model = mutableIntStateOf(0)
+        val stage3Model = mutableIntStateOf(0)
 
         val onChangeStage1: (ValueWrapper) -> Unit = { affectedData ->
             assertEquals(strStage1, affectedData)
@@ -90,17 +92,17 @@ class SnapshotStateObserverTestsCommon {
         try {
             stateObserver.start()
 
-            stateObserver.observeReads(strStage1, onChangeStage1) { stage1Model.value }
+            stateObserver.observeReads(strStage1, onChangeStage1) { stage1Model.intValue }
 
-            stateObserver.observeReads(strStage2, onChangeStage2) { stage2Model.value }
+            stateObserver.observeReads(strStage2, onChangeStage2) { stage2Model.intValue }
 
-            stateObserver.observeReads(strStage3, onChangeStage3) { stage3Model.value }
+            stateObserver.observeReads(strStage3, onChangeStage3) { stage3Model.intValue }
 
             Snapshot.notifyObjectsInitialized()
 
-            stage1Model.value++
-            stage2Model.value++
-            stage3Model.value++
+            stage1Model.intValue++
+            stage2Model.intValue++
+            stage3Model.intValue++
 
             Snapshot.sendApplyNotifications()
 
@@ -120,9 +122,9 @@ class SnapshotStateObserverTestsCommon {
         var stage1Changes = 0
         var stage2Changes1 = 0
         var stage2Changes2 = 0
-        val stage1Data = mutableStateOf(0)
-        val stage2Data1 = mutableStateOf(0)
-        val stage2Data2 = mutableStateOf(0)
+        val stage1Data = mutableIntStateOf(0)
+        val stage2Data1 = mutableIntStateOf(0)
+        val stage2Data2 = mutableIntStateOf(0)
 
         val onChangeStage1Listener: (ValueWrapper) -> Unit = { affected ->
             assertEquals(affected, stage1Info)
@@ -150,20 +152,20 @@ class SnapshotStateObserverTestsCommon {
             stateObserver.start()
 
             stateObserver.observeReads(stage2Info1, onChangeState2Listener) {
-                stage2Data1.value
+                stage2Data1.intValue
                 stateObserver.observeReads(stage2Info2, onChangeState2Listener) {
-                    stage2Data2.value
+                    stage2Data2.intValue
                     stateObserver.observeReads(stage1Info, onChangeStage1Listener) {
-                        stage1Data.value
+                        stage1Data.intValue
                     }
                 }
             }
 
             Snapshot.notifyObjectsInitialized()
 
-            stage2Data1.value++
-            stage2Data2.value++
-            stage1Data.value++
+            stage2Data1.intValue++
+            stage2Data2.intValue++
+            stage1Data.intValue++
 
             Snapshot.sendApplyNotifications()
 
@@ -180,7 +182,7 @@ class SnapshotStateObserverTestsCommon {
         val info = ValueWrapper("Hello")
         var changes = 0
 
-        val state = mutableStateOf(0)
+        val state = mutableIntStateOf(0)
         val onChangeListener: (ValueWrapper) -> Unit = { _ ->
             assertEquals(0, changes)
             changes++
@@ -196,14 +198,14 @@ class SnapshotStateObserverTestsCommon {
                 val snapshot = Snapshot.takeMutableSnapshot()
                 try {
                     // read the value
-                    snapshot.enter { state.value }
+                    snapshot.enter { state.intValue }
                     snapshot.apply().check()
                 } finally {
                     snapshot.dispose()
                 }
             }
 
-            state.value++
+            state.intValue++
 
             Snapshot.sendApplyNotifications()
 
@@ -425,6 +427,7 @@ class SnapshotStateObserverTestsCommon {
         assertEquals(1, changes)
     }
 
+    @Suppress("MutableCollectionMutableState") // The point of this test
     @Test
     fun derivedStateOfReferentialChangeDoesNotInvalidateObserver() {
         var changes = 0
@@ -459,6 +462,7 @@ class SnapshotStateObserverTestsCommon {
         assertEquals(1, changes)
     }
 
+    @Suppress("MutableCollectionMutableState") // The point of this test
     @Test
     fun derivedStateOfWithReferentialMutationPolicy() {
         var changes = 0
@@ -477,6 +481,7 @@ class SnapshotStateObserverTestsCommon {
         assertEquals(1, changes)
     }
 
+    @Suppress("MutableCollectionMutableState") // The point of this test
     @Test
     fun derivedStateOfWithStructuralMutationPolicy() {
         var changes = 0
@@ -567,43 +572,501 @@ class SnapshotStateObserverTestsCommon {
             Snapshot.notifyObjectsInitialized()
 
             // stop observing state in other scope
-            stateObserver.observeReads(scope2, onChange) {
-                /* no-op */
+            stateObserver.observeReads(scope2, onChange) { /* no-op */ }
+        }
+        assertEquals(1, changes)
+    }
+
+    @Test
+    fun computedStateOfInvalidatesObserver() {
+        var changes = 0
+
+        runSimpleTest { stateObserver, state ->
+            val computedState = computedStateOf { state.value }
+
+            Snapshot.notifyObjectsInitialized()
+            stateObserver.observeReads(ValueWrapper("scope"), { changes++ }) {
+                // read
+                computedState.value
+            }
+        }
+        assertEquals(1, changes)
+    }
+
+    @Suppress("MutableCollectionMutableState") // The point of this test
+    @Test
+    fun computedStateOfReferentialChangeDoesNotInvalidateObserver() {
+        var changes = 0
+
+        runSimpleTest { stateObserver, _ ->
+            val state = mutableStateOf(mutableListOf(42), referentialEqualityPolicy())
+            val computedState = computedStateOf { state.value }
+
+            Snapshot.notifyObjectsInitialized()
+            stateObserver.observeReads(ValueWrapper("scope"), { changes++ }) {
+                // read
+                computedState.value
+            }
+
+            state.value = mutableListOf(42)
+        }
+        assertEquals(0, changes)
+    }
+
+    @Test
+    fun nestedComputedStateOfInvalidatesObserver() {
+        var changes = 0
+
+        runSimpleTest { stateObserver, state ->
+            val computedState = computedStateOf { state.value }
+            val computedState2 = computedStateOf { computedState.value }
+
+            Snapshot.notifyObjectsInitialized()
+            stateObserver.observeReads(ValueWrapper("scope"), { changes++ }) {
+                // read
+                computedState2.value
+            }
+        }
+        assertEquals(1, changes)
+    }
+
+    @Suppress("MutableCollectionMutableState") // The point of this test
+    @Test
+    fun computedStateOfWithReferentialMutationPolicy() {
+        var changes = 0
+
+        runSimpleTest { stateObserver, _ ->
+            val state = mutableStateOf(mutableListOf(1), referentialEqualityPolicy())
+            val computedState = computedStateOf(referentialEqualityPolicy()) { state.value }
+
+            Snapshot.notifyObjectsInitialized()
+            stateObserver.observeReads(ValueWrapper("scope"), { changes++ }) {
+                // read
+                computedState.value
+            }
+
+            state.value = mutableListOf(1)
+        }
+        assertEquals(1, changes)
+    }
+
+    @Suppress("MutableCollectionMutableState") // The point of this test
+    @Test
+    fun computedStateOfWithStructuralMutationPolicy() {
+        var changes = 0
+
+        runSimpleTest { stateObserver, _ ->
+            val state = mutableStateOf(mutableListOf(1), referentialEqualityPolicy())
+            val computedState = computedStateOf(structuralEqualityPolicy()) { state.value }
+
+            Snapshot.notifyObjectsInitialized()
+            stateObserver.observeReads(ValueWrapper("scope"), { changes++ }) {
+                // read
+                computedState.value
+            }
+
+            state.value = mutableListOf(1)
+        }
+        assertEquals(0, changes)
+    }
+
+    @Test
+    fun readingComputedStateAndDependencyInvalidates() {
+        var changes = 0
+
+        runSimpleTest { stateObserver, state ->
+            val computedState = computedStateOf { state.value >= 0 }
+
+            Snapshot.notifyObjectsInitialized()
+            stateObserver.observeReads(ValueWrapper("scope"), { changes++ }) {
+                // read derived state
+                computedState.value
+                // read dependency
+                state.value
             }
         }
         assertEquals(1, changes)
     }
 
     @Test
+    fun readingComputedStateWithDependencyChangeInvalidates() {
+        var changes = 0
+
+        runSimpleTest { stateObserver, state ->
+            val state2 = mutableStateOf(false)
+            val computedState = computedStateOf {
+                if (state2.value) {
+                    state.value
+                } else {
+                    null
+                }
+            }
+            val onChange: (ValueWrapper) -> Unit = { changes++ }
+
+            val scope = ValueWrapper("scope")
+            Snapshot.notifyObjectsInitialized()
+            stateObserver.observeReads(scope, onChange) {
+                // read derived state
+                computedState.value
+            }
+
+            state2.value = true
+            // advance snapshot
+            Snapshot.sendApplyNotifications()
+            Snapshot.notifyObjectsInitialized()
+
+            stateObserver.observeReads(scope, onChange) {
+                // read derived state
+                computedState.value
+            }
+        }
+        assertEquals(2, changes)
+    }
+
+    @Test
+    fun readingComputedStateConditionallyInvalidatesBothScopes() {
+        var changes = 0
+
+        runSimpleTest { stateObserver, state ->
+            val computedState = computedStateOf { state.value }
+
+            Snapshot.notifyObjectsInitialized()
+            val onChange: (ValueWrapper) -> Unit = { changes++ }
+            stateObserver.observeReads(ValueWrapper("scope"), onChange) {
+                // read derived state
+                computedState.value
+            }
+
+            val scope2 = ValueWrapper("other scope")
+            // read the same state in other scope
+            stateObserver.observeReads(scope2, onChange) { computedState.value }
+
+            // advance snapshot to invalidate reads
+            Snapshot.notifyObjectsInitialized()
+
+            // stop observing state in other scope
+            stateObserver.observeReads(scope2, onChange) { /* no-op */ }
+        }
+        assertEquals(1, changes)
+    }
+
+    @Test
+    fun readComputedStateInsideDerivedState() {
+        var changes = 0
+        val changeBlock: (Any) -> Unit = { changes++ }
+
+        runSimpleTest { stateObserver, _ ->
+            var a by mutableIntStateOf(10)
+            var b by mutableIntStateOf(20)
+            val computed = computedStateOf { a + b }
+            val derived = derivedStateOf { computed.value * 2 }
+            val scope = ValueWrapper("scope")
+
+            Snapshot.notifyObjectsInitialized()
+
+            stateObserver.observeReads(scope, changeBlock) { derived.value }
+
+            a++
+            Snapshot.sendApplyNotifications()
+            assertEquals(1, changes)
+
+            stateObserver.observeReads(scope, changeBlock) { derived.value }
+
+            b++
+            Snapshot.sendApplyNotifications()
+            assertEquals(2, changes)
+
+            stateObserver.observeReads(scope, changeBlock) { derived.value }
+
+            a++
+            b--
+            Snapshot.sendApplyNotifications()
+            assertEquals(2, changes)
+        }
+    }
+
+    @Test
+    fun readDerivedStateInsideComputedState() {
+        var changes = 0
+        val changeBlock: (Any) -> Unit = { changes++ }
+
+        runSimpleTest { stateObserver, _ ->
+            var a by mutableIntStateOf(10)
+            var b by mutableIntStateOf(20)
+            val derived = derivedStateOf { a + b }
+            val computed = computedStateOf { derived.value * 2 }
+            val scope = ValueWrapper("scope")
+
+            Snapshot.notifyObjectsInitialized()
+
+            stateObserver.observeReads(scope, changeBlock) { computed.value }
+
+            a++
+            Snapshot.sendApplyNotifications()
+            assertEquals(1, changes)
+
+            stateObserver.observeReads(scope, changeBlock) { derived.value }
+
+            b--
+            Snapshot.sendApplyNotifications()
+            assertEquals(2, changes)
+
+            stateObserver.observeReads(scope, changeBlock) { derived.value }
+
+            a++
+            b--
+            Snapshot.sendApplyNotifications()
+            assertEquals(2, changes)
+        }
+    }
+
+    @Test
+    fun computedStateChangesDependencies() {
+        var changes = 0
+        val changeBlock: (Any) -> Unit = { changes++ }
+
+        runSimpleTest { stateObserver, _ ->
+            var a by mutableIntStateOf(10)
+            var b by mutableIntStateOf(20)
+            var c by mutableIntStateOf(30)
+            var cond by mutableStateOf(true)
+            val computed = computedStateOf { if (cond) a + b else c }
+            val scope = ValueWrapper("scope")
+
+            Snapshot.notifyObjectsInitialized()
+
+            stateObserver.observeReads(scope, changeBlock) { computed.value }
+
+            cond = false
+            Snapshot.sendApplyNotifications()
+            assertEquals(0, changes)
+
+            a = 30
+            Snapshot.sendApplyNotifications()
+            assertEquals(0, changes)
+
+            c = 0
+            Snapshot.sendApplyNotifications()
+            assertEquals(1, changes)
+
+            stateObserver.observeReads(scope, changeBlock) { computed.value }
+
+            cond = true
+            a = -20
+            Snapshot.sendApplyNotifications()
+            assertEquals(1, changes)
+
+            a = 0
+            Snapshot.sendApplyNotifications()
+            assertEquals(2, changes)
+        }
+    }
+
+    @Test
+    fun computedStateChangesDependenciesBetweenDerivedAndDirectStates() {
+        var changes = 0
+        val changeBlock: (Any) -> Unit = { changes++ }
+
+        runSimpleTest { stateObserver, _ ->
+            var a by mutableIntStateOf(10)
+            var b by mutableIntStateOf(20)
+            var c by mutableIntStateOf(30)
+            var cond by mutableStateOf(true)
+            val derived = derivedStateOf { a + b }
+            val computed = computedStateOf { if (cond) derived.value else c }
+            val scope = ValueWrapper("scope")
+
+            Snapshot.notifyObjectsInitialized()
+
+            stateObserver.observeReads(scope, changeBlock) { computed.value }
+
+            cond = false
+            Snapshot.sendApplyNotifications()
+            assertEquals(0, changes)
+
+            a = 30
+            Snapshot.sendApplyNotifications()
+            assertEquals(0, changes)
+
+            c = 0
+            Snapshot.sendApplyNotifications()
+            assertEquals(1, changes)
+
+            stateObserver.observeReads(scope, changeBlock) { computed.value }
+
+            cond = true
+            a = -20
+            Snapshot.sendApplyNotifications()
+            assertEquals(1, changes)
+
+            stateObserver.observeReads(scope, changeBlock) { computed.value }
+
+            a = 0
+            Snapshot.sendApplyNotifications()
+            assertEquals(2, changes)
+        }
+    }
+
+    @Test
+    fun derivedStateChangesDependencies() {
+        var changes = 0
+        val changeBlock: (Any) -> Unit = { changes++ }
+
+        runSimpleTest { stateObserver, _ ->
+            var a by mutableIntStateOf(10)
+            var b by mutableIntStateOf(20)
+            var c by mutableIntStateOf(30)
+            var cond by mutableStateOf(true)
+            val derived = derivedStateOf { if (cond) a + b else c }
+            val scope = ValueWrapper("scope")
+
+            Snapshot.notifyObjectsInitialized()
+
+            stateObserver.observeReads(scope, changeBlock) { derived.value }
+
+            cond = false
+            Snapshot.sendApplyNotifications()
+            assertEquals(0, changes)
+
+            a = 30
+            Snapshot.sendApplyNotifications()
+            assertEquals(0, changes)
+
+            c = 0
+            Snapshot.sendApplyNotifications()
+            assertEquals(1, changes)
+
+            stateObserver.observeReads(scope, changeBlock) { derived.value }
+
+            cond = true
+            a = -20
+            Snapshot.sendApplyNotifications()
+            assertEquals(1, changes)
+
+            a = 0
+            Snapshot.sendApplyNotifications()
+            assertEquals(2, changes)
+        }
+    }
+
+    @Test
+    fun derivedStateChangesDependenciesBetweenComputedAndDirectStates() {
+        var changes = 0
+        val changeBlock: (Any) -> Unit = { changes++ }
+
+        runSimpleTest { stateObserver, _ ->
+            var a by mutableIntStateOf(10)
+            var b by mutableIntStateOf(20)
+            var c by mutableIntStateOf(30)
+            var cond by mutableStateOf(true)
+            val computed = computedStateOf { a + b }
+            val derived = derivedStateOf { if (cond) computed.value else c }
+            val scope = ValueWrapper("scope")
+
+            Snapshot.notifyObjectsInitialized()
+
+            stateObserver.observeReads(scope, changeBlock) { derived.value }
+
+            cond = false
+            Snapshot.sendApplyNotifications()
+            assertEquals(0, changes)
+
+            a = 30
+            Snapshot.sendApplyNotifications()
+            assertEquals(0, changes)
+
+            c = 0
+            Snapshot.sendApplyNotifications()
+            assertEquals(1, changes)
+
+            stateObserver.observeReads(scope, changeBlock) { derived.value }
+
+            cond = true
+            a = -20
+            Snapshot.sendApplyNotifications()
+            assertEquals(1, changes)
+
+            stateObserver.observeReads(scope, changeBlock) { derived.value }
+
+            a = 0
+            Snapshot.sendApplyNotifications()
+            assertEquals(2, changes)
+        }
+    }
+
+    @Test
+    fun readInterwovenComputedAndDerivedStates() {
+        var changes = 0
+        val changeBlock: (Any) -> Unit = { changes++ }
+
+        runSimpleTest { stateObserver, _ ->
+            var state by mutableIntStateOf(1)
+            // computed -> derived -> computed
+            val c1 = computedStateOf { state * 2 }
+            val d1 = derivedStateOf { c1.value * 3 }
+            val c2 = computedStateOf { d1.value * 5 }
+
+            val scope = ValueWrapper("scope")
+
+            Snapshot.notifyObjectsInitialized()
+
+            stateObserver.observeReads(scope, changeBlock) { c2.value }
+
+            state++
+            Snapshot.sendApplyNotifications()
+            assertEquals(1, changes)
+        }
+
+        changes = 0
+        runSimpleTest { stateObserver, _ ->
+            var state by mutableIntStateOf(1)
+            // derived -> computed -> derived
+            val d1 = derivedStateOf { state * 2 }
+            val c1 = computedStateOf { d1.value * 3 }
+            val d2 = derivedStateOf { c1.value * 5 }
+
+            val scope = ValueWrapper("scope")
+
+            Snapshot.notifyObjectsInitialized()
+
+            stateObserver.observeReads(scope, changeBlock) { d2.value }
+
+            state++
+            Snapshot.sendApplyNotifications()
+            assertEquals(1, changes)
+        }
+    }
+
+    @Test
     fun testRecursiveApplyChanges_SingleRecursive() {
         val stateObserver = SnapshotStateObserver { it() }
-        val state1 = mutableStateOf(0)
-        val state2 = mutableStateOf(0)
+        val state1 = mutableIntStateOf(0)
+        val state2 = mutableIntStateOf(0)
         try {
             stateObserver.start()
             Snapshot.notifyObjectsInitialized()
 
             val onChange: (ValueWrapper) -> Unit = { scope ->
-                if (scope.s == "scope" && state1.value < 2) {
-                    state1.value++
+                if (scope.s == "scope" && state1.intValue < 2) {
+                    state1.intValue++
                     Snapshot.sendApplyNotifications()
                 }
             }
 
             stateObserver.observeReads(ValueWrapper("scope"), onChange) {
-                state1.value
-                state2.value
+                state1.intValue
+                state2.intValue
             }
 
             repeat(10) {
                 stateObserver.observeReads(ValueWrapper("scope $it"), onChange) {
-                    state1.value
-                    state2.value
+                    state1.intValue
+                    state2.intValue
                 }
             }
 
-            state1.value++
-            state2.value++
+            state1.intValue++
+            state2.intValue++
 
             Snapshot.sendApplyNotifications()
         } finally {
@@ -614,47 +1077,47 @@ class SnapshotStateObserverTestsCommon {
     @Test
     fun testRecursiveApplyChanges_MultiRecursive() {
         val stateObserver = SnapshotStateObserver { it() }
-        val state1 = mutableStateOf(0)
-        val state2 = mutableStateOf(0)
-        val state3 = mutableStateOf(0)
-        val state4 = mutableStateOf(0)
+        val state1 = mutableIntStateOf(0)
+        val state2 = mutableIntStateOf(0)
+        val state3 = mutableIntStateOf(0)
+        val state4 = mutableIntStateOf(0)
         try {
             stateObserver.start()
             Snapshot.notifyObjectsInitialized()
 
             val onChange: (ValueWrapper) -> Unit = { scope ->
-                if (scope.s == "scope" && state1.value < 2) {
-                    state1.value++
+                if (scope.s == "scope" && state1.intValue < 2) {
+                    state1.intValue++
                     Snapshot.sendApplyNotifications()
-                    state2.value++
+                    state2.intValue++
                     Snapshot.sendApplyNotifications()
-                    state3.value++
+                    state3.intValue++
                     Snapshot.sendApplyNotifications()
-                    state4.value++
+                    state4.intValue++
                     Snapshot.sendApplyNotifications()
                 }
             }
 
             stateObserver.observeReads(ValueWrapper("scope"), onChange) {
-                state1.value
-                state2.value
-                state3.value
-                state4.value
+                state1.intValue
+                state2.intValue
+                state3.intValue
+                state4.intValue
             }
 
             repeat(10) {
                 stateObserver.observeReads(ValueWrapper("scope $it"), onChange) {
-                    state1.value
-                    state2.value
-                    state3.value
-                    state4.value
+                    state1.intValue
+                    state2.intValue
+                    state3.intValue
+                    state4.intValue
                 }
             }
 
-            state1.value++
-            state2.value++
-            state3.value++
-            state4.value++
+            state1.intValue++
+            state2.intValue++
+            state3.intValue++
+            state4.intValue++
 
             Snapshot.sendApplyNotifications()
         } finally {
@@ -752,16 +1215,71 @@ class SnapshotStateObserverTestsCommon {
         assertEquals(2, changes)
     }
 
+    // regression test for b/435655844
+    @Test
+    fun derivedStateReentrant() = runSimpleTest { observer, state ->
+        val initialRead = mutableStateOf(true)
+        // This cursed setup invalidates this derived state while it is inside apply observer
+        // Initially this reads both `state` and `initialRead` states.
+        //
+        // During invalidation, we are incrementing the `state.value` while iterating over derived
+        // states that have dependency on `initialRead`. `state.value` is incremented during that
+        // iteration causing re-entrant apply observer with states that technically don't read
+        // `initialRead` anymore. Note that it is technically possible to cause the same issue
+        // with writing states from different threads as well.
+        val derivedStates =
+            Array(3) {
+                derivedStateOf {
+                    if (state.value >= 2) return@derivedStateOf
+                    if (initialRead.value) return@derivedStateOf
+                    if (state.value < 2) {
+                        state.value++
+                    }
+                }
+            }
+
+        observer.observeReads(Unit, {}) { derivedStates.forEach { it.value } }
+
+        initialRead.value = false
+    }
+
+    @Test
+    fun computedState_doesNotLeakDependenciesToScope_whenDependenciesChangeWithoutValueChanged() {
+        var changes = 0
+        val changeBlock: (Any) -> Unit = { changes++ }
+
+        runSimpleTest { stateObserver, _ ->
+            var a by mutableIntStateOf(1)
+            val computed = computedStateOf { a > 0 }
+            val scope = ValueWrapper("scope")
+
+            Snapshot.notifyObjectsInitialized()
+
+            stateObserver.observeReads(scope, changeBlock) {
+                computed.value
+            }
+            assertEquals(0, changes)
+
+            a = 2
+            Snapshot.sendApplyNotifications()
+            assertEquals(0, changes)
+
+            a = 3
+            Snapshot.sendApplyNotifications()
+            assertEquals(0, changes)
+        }
+    }
+
     private fun runSimpleTest(
         block: (modelObserver: SnapshotStateObserver, data: MutableState<Int>) -> Unit
     ) {
         val stateObserver = SnapshotStateObserver { it() }
-        val state = mutableStateOf(0)
+        val state = mutableIntStateOf(0)
         try {
             stateObserver.start()
             Snapshot.notifyObjectsInitialized()
             block(stateObserver, state)
-            state.value++
+            state.intValue++
             Snapshot.sendApplyNotifications()
         } finally {
             stateObserver.stop()

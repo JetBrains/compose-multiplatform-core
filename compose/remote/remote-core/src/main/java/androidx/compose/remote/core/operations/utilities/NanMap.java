@@ -15,6 +15,9 @@
  */
 package androidx.compose.remote.core.operations.utilities;
 
+import static androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression.VAR1;
+
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.operations.Utils;
 
 /**
@@ -25,6 +28,7 @@ import androidx.compose.remote.core.operations.Utils;
  * 4xxxxx,5xxxxx,7xxxxx are reserved for future use 0x1000-0x1100 are used for path operations in
  * PathData 0x1100-0x1200 are used for math operations in Animated float 0x
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class NanMap {
 
     public static final int MOVE = 0x300_000;
@@ -75,6 +79,16 @@ public class NanMap {
     }
 
     /**
+     * Returns true if the float id is a var1
+     *
+     * @param value the id encoded as float NaN
+     * @return true if the float id is a var1
+     */
+    public static boolean isVar1(float value) {
+        return Float.floatToRawIntBits(value) == Float.floatToRawIntBits(VAR1);
+    }
+
+    /**
      * Returns true if the float id is an operation variable
      *
      * @param value the id encoded as float NaN
@@ -84,8 +98,9 @@ public class NanMap {
         return (fromNaN(value) >> 20) == 3;
     }
 
-    public static final int START_VAR = (1 << 20) + 42;
-    public static final int START_ARRAY = (2 << 20) + 42;
+    public static final int START_VARIABLE_ID = 42;
+    public static final int START_VAR = (1 << 20) + START_VARIABLE_ID;
+    public static final int START_ARRAY = (2 << 20) + START_VARIABLE_ID;
     public static final int TYPE_SYSTEM = 0;
     public static final int TYPE_VARIABLE = 1;
     public static final int TYPE_ARRAY = 2;

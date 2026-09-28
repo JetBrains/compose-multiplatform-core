@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastSumBy
 import kotlin.math.absoluteValue
 import kotlin.math.sign
 
@@ -36,10 +37,10 @@ import kotlin.math.sign
  *   within the viewport.
  * @return A [SnapLayoutInfoProvider] that can be used with [snapFlingBehavior]
  */
-fun SnapLayoutInfoProvider(
+public fun SnapLayoutInfoProvider(
     lazyGridState: LazyGridState,
     snapPosition: SnapPosition = SnapPosition.Center,
-) =
+): SnapLayoutInfoProvider =
     object : SnapLayoutInfoProvider {
         private val layoutInfo: LazyGridLayoutInfo
             get() = lazyGridState.layoutInfo
@@ -51,7 +52,7 @@ fun SnapLayoutInfoProvider(
                     0
                 } else {
                     val numberOfItems = layoutInfo.visibleItemsInfo.size
-                    layoutInfo.visibleItemsInfo.sumOf {
+                    layoutInfo.visibleItemsInfo.fastSumBy {
                         it.sizeOnMainAxis(layoutInfo.orientation)
                     } / numberOfItems
                 }
@@ -109,7 +110,7 @@ fun SnapLayoutInfoProvider(
  *   within the viewport.
  */
 @Composable
-fun rememberSnapFlingBehavior(
+public fun rememberSnapFlingBehavior(
     lazyGridState: LazyGridState,
     snapPosition: SnapPosition = SnapPosition.Center,
 ): FlingBehavior {

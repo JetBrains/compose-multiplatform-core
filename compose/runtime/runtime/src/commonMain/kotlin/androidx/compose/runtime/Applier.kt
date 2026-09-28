@@ -16,6 +16,7 @@
 
 package androidx.compose.runtime
 
+import androidx.annotation.EmptySuper
 import androidx.compose.runtime.internal.JvmDefaultWithCompatibility
 
 /**
@@ -43,13 +44,13 @@ public interface Applier<N> {
      * Called when the [Composer] is about to begin applying changes using this applier.
      * [onEndChanges] will be called when changes are complete.
      */
-    public fun onBeginChanges() {}
+    @EmptySuper public fun onBeginChanges() {}
 
     /**
      * Called when the [Composer] is finished applying changes using this applier. A call to
      * [onBeginChanges] will always precede a call to [onEndChanges].
      */
-    public fun onEndChanges() {}
+    @EmptySuper public fun onEndChanges() {}
 
     /**
      * Indicates that the applier is getting traversed "down" the tree. When this gets called,
@@ -89,7 +90,6 @@ public interface Applier<N> {
      * where the node `B` is being inserted into the tree at `R`. Top-down building of the tree
      * first inserts `B` into `R`, then inserts `A` into `B` followed by inserting `C` into B`. For
      * example,
-     *
      *  ```
      *      1           2           3
      *      R           R           R
@@ -292,5 +292,36 @@ internal class OffsetApplier<N>(private val applier: Applier<N>, private val off
 
     override fun reuse() {
         applier.reuse()
+    }
+}
+
+/**
+ * A stub of [Applier] that does not implement any operations and throws when called into. Used to
+ * apply pending changes that do not result in a change to the composition hierarchy and therefore
+ * do not need a real application phase after completing the composition.
+ */
+internal object ThrowingApplierStub : Applier<Any?> {
+    override val current: Any
+        get() = throwIllegalOperationException()
+
+    override fun up() = throwIllegalOperationException()
+
+    override fun remove(index: Int, count: Int) = throwIllegalOperationException()
+
+    override fun move(from: Int, to: Int, count: Int) = throwIllegalOperationException()
+
+    override fun clear() = throwIllegalOperationException()
+
+    override fun insertBottomUp(index: Int, instance: Any?) = throwIllegalOperationException()
+
+    override fun insertTopDown(index: Int, instance: Any?) = throwIllegalOperationException()
+
+    override fun down(node: Any?) = throwIllegalOperationException()
+
+    private fun throwIllegalOperationException() {
+        composeImmediateRuntimeError(
+            "ChangeList cannot call the Applier when " +
+                "executing pending changes outside of the applier phase."
+        )
     }
 }

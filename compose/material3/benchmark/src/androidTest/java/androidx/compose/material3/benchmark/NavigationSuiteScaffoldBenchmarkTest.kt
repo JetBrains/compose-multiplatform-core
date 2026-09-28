@@ -18,6 +18,8 @@ package androidx.compose.material3.benchmark
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteItem
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
@@ -29,6 +31,7 @@ import androidx.compose.testutils.LayeredComposeTestCase
 import androidx.compose.testutils.ToggleableTestCase
 import androidx.compose.testutils.benchmark.ComposeBenchmarkRule
 import androidx.compose.testutils.benchmark.benchmarkFirstCompose
+import androidx.compose.testutils.benchmark.benchmarkToFirstPixel
 import androidx.compose.testutils.benchmark.toggleStateBenchmarkComposeMeasureLayout
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -43,7 +46,7 @@ class NavigationSuiteScaffoldBenchmarkTest {
 
     @Test
     fun expressive_firstPixel() {
-        benchmarkRule.benchmarkFirstRenderUntilStable(testCaseFactoryExpressive)
+        benchmarkRule.benchmarkToFirstPixel(testCaseFactoryExpressive)
     }
 
     @Test
@@ -61,7 +64,7 @@ class NavigationSuiteScaffoldBenchmarkTest {
 
     @Test
     fun firstPixel() {
-        benchmarkRule.benchmarkFirstRenderUntilStable(testCaseFactory)
+        benchmarkRule.benchmarkToFirstPixel(testCaseFactory)
     }
 
     @Test
@@ -104,9 +107,10 @@ internal class NavigationSuiteScaffoldExpressiveTestCase :
         ) {}
     }
 
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Composable
     override fun ContentWrappers(content: @Composable () -> Unit) {
-        MaterialTheme { content() }
+        MaterialExpressiveTheme { content() }
     }
 
     override fun toggleState() {

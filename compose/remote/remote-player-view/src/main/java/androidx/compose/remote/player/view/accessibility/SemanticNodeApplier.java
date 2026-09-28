@@ -15,8 +15,14 @@
  */
 package androidx.compose.remote.player.view.accessibility;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.operations.layout.Component;
 import androidx.compose.remote.core.semantics.AccessibilitySemantics;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -37,6 +43,7 @@ import java.util.List;
  * @param <N> The type representing information about the node. This could be an Androidx
  *     `AccessibilityNodeInfoCompat`, or potentially a platform `AccessibilityNodeInfo`.
  */
+@RestrictTo(LIBRARY_GROUP)
 public interface SemanticNodeApplier<N> {
     /**
      * This method applies semantic information from a list of {@link AccessibilitySemantics} to a
@@ -53,20 +60,17 @@ public interface SemanticNodeApplier<N> {
      * @param component The component that this semantic information corresponds to.
      * @param semantics A list of {@link AccessibilitySemantics} objects representing the semantic
      *     properties and actions to apply.
+     * @param parentId The parent according to semantic tree.
      */
     void applyComponent(
-            RemoteComposeDocumentAccessibility remoteComposeAccessibility,
-            N nodeInfo,
-            Component component,
-            List<AccessibilitySemantics> semantics);
+            @NonNull RemoteComposeDocumentAccessibility remoteComposeAccessibility,
+            @NonNull N nodeInfo,
+            @NonNull Component component,
+            @NonNull List<@NonNull AccessibilitySemantics> semantics,
+            @Nullable Integer parentId);
 
-    /**
-     * add children to the node
-     *
-     * @param nodeInfo
-     * @param childIds
-     */
-    void addChildren(N nodeInfo, List<Integer> childIds);
+    /** add children to the node */
+    void addChildren(@NonNull N nodeInfo, @NonNull List<Integer> childIds);
 
     String VIRTUAL_VIEW_ID_KEY = "VirtualViewId";
 }

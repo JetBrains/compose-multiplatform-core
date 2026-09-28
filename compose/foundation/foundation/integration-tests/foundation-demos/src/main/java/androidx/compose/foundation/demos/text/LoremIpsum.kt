@@ -32,8 +32,10 @@ fun loremIpsum(
     loremIpsumWords(language).joinToString(separator = separator, limit = wordCount, truncated = "")
 
 /** An infinite [Sequence] of words of Lorem Ipsum text. */
-fun loremIpsumWords(language: Language = Language.Latin): Sequence<String> =
-    generateSequence { language.words.asSequence() }.flatten()
+fun loremIpsumWords(language: Language = Language.Latin): Sequence<String> = generateSequence {
+    language.words.asSequence()
+}
+    .flatten()
 
 private val LatinLipsum =
     """
@@ -75,7 +77,7 @@ private val LatinLipsum =
     eleifend efficitur. Curabitur accumsan vestibulum ligula sed aliquet. Nulla pretium dui id
     nunc ultricies, id porttitor lorem pretium. Lorem ipsum dolor sit amet, consectetur
     adipiscing elit.
-"""
+    """
         .trimIndent()
 
 private val ArabicLipsum =
@@ -90,7 +92,7 @@ private val ArabicLipsum =
     ٣٠ صفحة فاتّبع الكونجرس لها, بحق ضمنها الإنذار، و. تم لعدم الإنزال الأهداف ذلك, غضون تجهيز عن
     جهة. الذود الأسيوي ٣٠ حيث, دار بل بزمام أثره، المواد, تم الدّفاع الأوروبية شيء. مواقعها مليارات
     وتم ٣٠. كما جنوب مكثّفة الإمداد عن, من أضف وحتّى الخاسر الإحتفاظ.
-"""
+    """
         .trimIndent()
 
 private val HebrewLipsum =
@@ -105,5 +107,5 @@ private val HebrewLipsum =
     ישראל בקלות לטיפול בה שמו. שנתי בגרסה האנציקלופדיה זכר של, של חשמל לימודים האטמוספירה מתן, לוח
     על ובמתן קישורים עקרונות. סדר את החול רוסית, תנך למנוע ברוכים דת, מדע אל ניווט ניהול והנדסה.
     בה צעד בקלות אנגלית שימושיים. על ערכים נבחרים הספרות כדי, ארץ ליום טיפול ברוכים מה.
-"""
+    """
         .trimIndent()

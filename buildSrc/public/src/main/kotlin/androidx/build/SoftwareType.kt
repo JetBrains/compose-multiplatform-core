@@ -205,7 +205,7 @@ sealed class SoftwareType(
             ConfigurableSoftwareType(
                 name = "SNAPSHOT_ONLY_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS",
                 publish = Publish.SNAPSHOT_ONLY,
-                checkApi = RunApiTasks.Yes(),
+                checkApi = RunApiTasks.No("Snapshot-only library that does not run API tasks"),
                 targetsKotlinConsumersOnly = true,
             )
 
@@ -348,9 +348,6 @@ sealed class SoftwareType(
         }
     }
 }
-
-fun SoftwareType.requiresDependencyVerification(): Boolean =
-    this !in listOf(BENCHMARK, SAMPLES, TEST_APPLICATION, UNSET)
 
 enum class CompilationTarget {
     /** This library is meant to run on the host machine (like an annotation processor). */

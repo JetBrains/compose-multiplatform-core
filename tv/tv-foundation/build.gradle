@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -29,20 +28,20 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api("androidx.annotation:annotation:1.9.1")
 
-    def composeVersion = "1.7.6"
+    def composeVersion = "1.10.3"
     api("androidx.compose.foundation:foundation:$composeVersion")
     api("androidx.compose.runtime:runtime:$composeVersion")
     api("androidx.compose.ui:ui:$composeVersion")
     api("androidx.compose.ui:ui-text:$composeVersion")
 
     implementation("androidx.profileinstaller:profileinstaller:1.4.1")
+    // Older versions of lifecycle-runtime lint checks use a deleted lint API
+    implementation("androidx.lifecycle:lifecycle-runtime:2.10.0")
 
     androidTestImplementation(libs.truth)
     androidTestImplementation("androidx.compose.runtime:runtime:$composeVersion")
@@ -53,7 +52,7 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(35) }
     namespace = "androidx.tv.foundation"
 }
 
@@ -66,5 +65,4 @@ androidx {
             "to write Jetpack Compose applications for TV devices by providing " +
             "functionality to support TV specific devices sizes, shapes and d-pad navigation " +
             "supported components. It builds upon the Jetpack Compose libraries."
-    legacyDisableKotlinStrictApiMode = true
 }

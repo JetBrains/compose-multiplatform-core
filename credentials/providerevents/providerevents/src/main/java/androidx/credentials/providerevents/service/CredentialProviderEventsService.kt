@@ -20,16 +20,14 @@ import android.app.Service
 import android.content.Intent
 import android.os.CancellationSignal
 import android.os.IBinder
-import androidx.annotation.RestrictTo
 import androidx.core.os.OutcomeReceiverCompat
 import androidx.credentials.CreateCredentialResponse
-import androidx.credentials.SignalCredentialStateResponse
 import androidx.credentials.exceptions.CreateCredentialException
-import androidx.credentials.exceptions.publickeycredential.SignalCredentialStateException
 import androidx.credentials.provider.CredentialProviderService
 import androidx.credentials.provider.ProviderCreateCredentialRequest
-import androidx.credentials.provider.ProviderSignalCredentialStateRequest
 import androidx.credentials.providerevents.internal.CredentialEventsProviderFactory
+import androidx.credentials.providerevents.signal.ProviderSignalCredentialStateCallback
+import androidx.credentials.providerevents.signal.ProviderSignalCredentialStateRequest
 
 /**
  * A base service for credential providers to receive advanced requests from
@@ -126,21 +124,19 @@ public abstract class CredentialProviderEventsService() : Service() {
     ) {}
 
     /**
-     * Called when a credential provider should receive credential state signals from calling
-     * applications.
+     * Called when a credential provider should receive credential state signals from a calling
+     * application.
      *
      * This method should be extended by credential providers to receive credential state signal
-     * requests. Note there is no required action on receipt of this request, however there are
-     * recommended actions. See [spec](https://w3c.github.io/webauthn/#sctn-signal-methods)
+     * requests. Note there is no required action on receipt of this request if it is not
+     * applicable, however there are recommended actions. See
+     * [spec](https://w3c.github.io/webauthn/#sctn-signal-methods)
      *
      * @param request The request for signalling a user's credential state.
-     * @param callback The callback to receive the result of the credential creation.
+     * @param callback The callback to receive the result of the credential state signal.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
-    @Suppress("RestrictedApiAndroidX")
     public open fun onSignalCredentialStateRequest(
         request: ProviderSignalCredentialStateRequest,
-        callback:
-            OutcomeReceiverCompat<SignalCredentialStateResponse, SignalCredentialStateException>,
+        callback: ProviderSignalCredentialStateCallback,
     ) {}
 }

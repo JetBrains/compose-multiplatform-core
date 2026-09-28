@@ -1,8 +1,7 @@
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SoftwareType
@@ -14,10 +13,10 @@ plugins {
 
 dependencies {
     api(libs.jspecify)
-    api("androidx.annotation:annotation:1.8.1")
-    api("androidx.core:core:1.1.0")
+    api(project(":asynclayoutinflater:asynclayoutinflater"))
+
     implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation(project(":asynclayoutinflater:asynclayoutinflater"))
+    implementation("androidx.appcompat:appcompat-resources:1.7.0")
 }
 
 androidx {

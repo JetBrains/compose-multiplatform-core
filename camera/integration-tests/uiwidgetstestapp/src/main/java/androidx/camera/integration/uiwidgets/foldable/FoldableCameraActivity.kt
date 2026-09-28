@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.camera.integration.uiwidgets.foldable
 
 import android.content.ContentValues
@@ -55,6 +57,7 @@ import androidx.camera.core.MeteringPointFactory
 import androidx.camera.integration.uiwidgets.R
 import androidx.camera.integration.uiwidgets.databinding.ActivityFoldableCameraBinding
 import androidx.camera.integration.uiwidgets.rotations.CameraActivity.Companion.PERMISSIONS
+import androidx.camera.testing.impl.util.EdgeToEdgeUtil
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
 import androidx.core.app.ActivityCompat
@@ -66,7 +69,6 @@ import androidx.window.layout.WindowInfoTracker
 import androidx.window.layout.WindowLayoutInfo
 import androidx.window.layout.WindowMetrics
 import androidx.window.layout.WindowMetricsCalculator
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 class FoldableCameraActivity : AppCompatActivity() {
@@ -94,6 +96,12 @@ class FoldableCameraActivity : AppCompatActivity() {
         cameraController = LifecycleCameraController(this)
         binding.previewView.controller = cameraController
         setContentView(binding.root)
+
+        EdgeToEdgeUtil.enableEdgeToEdge(
+            activity = this,
+            viewIdsTopPaddingRequired = listOf(binding.cameraInfo.id),
+        )
+
         savedInstanceState?.let {
             currentCameraSelectorString = it.getString(KEY_CAMERA_SELECTOR) ?: BACK_CAMERA_STR
             cameraController.cameraSelector =
@@ -323,8 +331,9 @@ class FoldableCameraActivity : AppCompatActivity() {
 
     private fun View.moveToRightOf(foldingFeatureRect: Rect) {
         x = foldingFeatureRect.left.toFloat()
-        layoutParams =
-            layoutParams.apply { width = (parent as View).width - foldingFeatureRect.left }
+        layoutParams = layoutParams.apply {
+            width = (parent as View).width - foldingFeatureRect.left
+        }
     }
 
     private fun View.moveToTopOf(foldingFeatureRect: Rect) {
@@ -334,17 +343,17 @@ class FoldableCameraActivity : AppCompatActivity() {
 
     private fun View.moveToBottomOf(foldingFeatureRect: Rect) {
         y = foldingFeatureRect.top.toFloat()
-        layoutParams =
-            layoutParams.apply { height = (parent as View).height - foldingFeatureRect.top }
+        layoutParams = layoutParams.apply {
+            height = (parent as View).height - foldingFeatureRect.top
+        }
     }
 
     private fun View.restore() {
         // Restore to full view
-        layoutParams =
-            layoutParams.apply {
-                width = MATCH_PARENT
-                height = MATCH_PARENT
-            }
+        layoutParams = layoutParams.apply {
+            width = MATCH_PARENT
+            height = MATCH_PARENT
+        }
         y = 0f
         x = 0f
     }
@@ -405,7 +414,7 @@ class FoldableCameraActivity : AppCompatActivity() {
         popup.menu.add(0, 0, 0, FRONT_CAMERA_STR)
         val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
         for (id in cameraManager.cameraIdList) {
-            popup.menu.add(0, 0, 0, "$id")
+            popup.menu.add(0, 0, 0, id)
         }
         popup.show()
 

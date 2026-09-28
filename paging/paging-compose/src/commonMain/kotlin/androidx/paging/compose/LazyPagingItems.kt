@@ -16,14 +16,12 @@
 
 package androidx.paging.compose
 
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.AndroidUiDispatcher
 import androidx.paging.CombinedLoadStates
 import androidx.paging.ItemSnapshotList
 import androidx.paging.LoadState
@@ -44,7 +42,7 @@ import kotlinx.coroutines.withContext
 /**
  * The class responsible for accessing the data from a [Flow] of [PagingData]. In order to obtain an
  * instance of [LazyPagingItems] use the [collectAsLazyPagingItems] extension method of [Flow] with
- * [PagingData]. This instance can be used for Lazy foundations such as [LazyListScope.items] to
+ * [PagingData]. This instance can be used for Lazy foundations such as `LazyListScope.items` to
  * display data received from the [Flow] of [PagingData].
  *
  * Previewing [LazyPagingItems] is supported on a list of mock data. See sample for how to preview
@@ -58,7 +56,7 @@ internal constructor(
     /** the [Flow] object which contains a stream of [PagingData] elements. */
     private val flow: Flow<PagingData<T>>
 ) {
-    private val mainDispatcher = AndroidUiDispatcher.Main
+    private val mainDispatcher = uiDispatcher
 
     /**
      * If the [flow] is a SharedFlow, it is expected to be the flow returned by from
@@ -83,11 +81,12 @@ internal constructor(
      * placeholders if they are enabled. Note that similarly to [peek] accessing the items in a list
      * will not trigger any loads. Use [get] to achieve such behavior.
      */
-    var itemSnapshotList by mutableStateOf(pagingDataPresenter.snapshot())
+    public var itemSnapshotList: ItemSnapshotList<T> by
+        mutableStateOf(pagingDataPresenter.snapshot())
         private set
 
     /** The number of items which can be accessed. */
-    val itemCount: Int
+    public val itemCount: Int
         get() = itemSnapshotList.size
 
     private fun updateItemSnapshotList() {
@@ -100,7 +99,7 @@ internal constructor(
      *
      * @see peek
      */
-    operator fun get(index: Int): T? {
+    public operator fun get(index: Int): T? {
         pagingDataPresenter[index] // this registers the value load
         return itemSnapshotList[index]
     }
@@ -112,7 +111,7 @@ internal constructor(
      * @param index Index of the presented item to return, including placeholders.
      * @return The presented item at position [index], `null` if it is a placeholder
      */
-    fun peek(index: Int): T? {
+    public fun peek(index: Int): T? {
         return itemSnapshotList[index]
     }
 
@@ -127,7 +126,7 @@ internal constructor(
      * * [PagingSource.load] returning [PagingSource.LoadResult.Error]
      * * [RemoteMediator.load] returning [RemoteMediator.MediatorResult.Error]
      */
-    fun retry() {
+    public fun retry() {
         pagingDataPresenter.retry()
     }
 
@@ -136,8 +135,9 @@ internal constructor(
      *
      * [refresh] triggers the creation of a new [PagingData] with a new instance of [PagingSource]
      * to represent an updated snapshot of the backing dataset. If a [RemoteMediator] is set,
-     * calling [refresh] will also trigger a call to [RemoteMediator.load] with [LoadType] [REFRESH]
-     * to allow [RemoteMediator] to check for updates to the dataset backing [PagingSource].
+     * calling [refresh] will also trigger a call to [RemoteMediator.load] with
+     * [androidx.paging.LoadType.REFRESH] to allow [RemoteMediator] to check for updates to the
+     * dataset backing [PagingSource].
      *
      * Note: This API is intended for UI-driven refresh signals, such as swipe-to-refresh.
      * Invalidation due repository-layer signals, such as DB-updates, should instead use
@@ -145,7 +145,7 @@ internal constructor(
      *
      * @see PagingSource.invalidate
      */
-    fun refresh() {
+    public fun refresh() {
         pagingDataPresenter.refresh()
     }
 
@@ -178,7 +178,7 @@ private val InitialLoadStates =
 /**
  * Collects values from this [Flow] of [PagingData] and represents them inside a [LazyPagingItems]
  * instance. The [LazyPagingItems] instance can be used for lazy foundations such as
- * [LazyListScope.items] in order to display the data obtained from a [Flow] of [PagingData].
+ * `LazyListScope.items` in order to display the data obtained from a [Flow] of [PagingData].
  *
  * @sample androidx.paging.compose.samples.PagingBackendSample
  * @param context the [CoroutineContext] to perform the collection of [PagingData] and

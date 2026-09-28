@@ -20,43 +20,47 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.appfunctions.AppFunctionContext
+import androidx.appfunctions.AppFunctionDeclaration
 import androidx.appfunctions.AppFunctionInvalidArgumentException
 import androidx.appfunctions.AppFunctionSerializable
-import androidx.appfunctions.service.AppFunction
+import androidx.appfunctions.AppFunctionSignature
+import androidx.appfunctions.ExperimentalAppFunctionsApi
+import androidx.appfunctions.metadata.AppFunctionMetadata
 import java.time.LocalDateTime
 
 @AppFunctionSerializable data class DateTime(val localDateTime: LocalDateTime)
 
 class TestFunctions {
-    @AppFunction
+    @AppFunctionDeclaration
     fun add(appFunctionContext: AppFunctionContext, num1: Long, num2: Long) = num1 + num2
 
-    @AppFunction
+    @AppFunctionDeclaration
     fun logLocalDateTime(appFunctionContext: AppFunctionContext, dateTime: DateTime) {
         Log.d("TestFunctions", "LocalDateTime: ${dateTime.localDateTime}")
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    @AppFunction
+    @AppFunctionDeclaration
     fun getLocalDate(appFunctionContext: AppFunctionContext): DateTime {
         return DateTime(localDateTime = LocalDateTime.now())
     }
 
-    @AppFunction
+    @AppFunctionDeclaration
     fun doThrow(appFunctionContext: AppFunctionContext) {
         throw AppFunctionInvalidArgumentException("invalid")
     }
 
-    @AppFunction fun voidFunction(appFunctionContext: AppFunctionContext) {}
+    @AppFunctionDeclaration fun voidFunction(appFunctionContext: AppFunctionContext) {}
 
-    @AppFunction fun enabledByDefault(appFunctionContext: AppFunctionContext) {}
+    @AppFunctionDeclaration fun enabledByDefault(appFunctionContext: AppFunctionContext) {}
 
-    @AppFunction(isEnabled = false) fun disabledByDefault(appFunctionContext: AppFunctionContext) {}
+    @AppFunctionDeclaration(isEnabled = false)
+    fun disabledByDefault(appFunctionContext: AppFunctionContext) {}
 }
 
 class NotesFunctions : CreateNoteAppFunction<NotesFunctions.Parameters, NotesFunctions.Response> {
 
-    @AppFunction
+    @AppFunctionDeclaration
     override suspend fun createNote(
         appFunctionContext: AppFunctionContext,
         parameters: Parameters,
@@ -72,4 +76,13 @@ class NotesFunctions : CreateNoteAppFunction<NotesFunctions.Parameters, NotesFun
 
     @AppFunctionSerializable
     class Response(override val createdNote: MyNote) : CreateNoteAppFunction.Response
+}
+
+@OptIn(ExperimentalAppFunctionsApi::class)
+@AppFunctionSignature(
+    scope = AppFunctionMetadata.SCOPE_ACTIVITY,
+    appFunctionXmlFileName = "activity_scope_functions",
+)
+fun interface ActivityScopeFunction {
+    suspend fun activityScopeFunction()
 }

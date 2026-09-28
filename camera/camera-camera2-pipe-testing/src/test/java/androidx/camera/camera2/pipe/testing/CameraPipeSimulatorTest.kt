@@ -34,20 +34,20 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class CameraPipeSimulatorTest {
     private val testScope = TestScope()
     private val backCameraMetadata =
-        FakeCameraMetadata(
+        FakeCameraMetadata.fromTemplate(
+            template = HighEndDeviceTemplate,
             cameraId = FakeCameraIds.next(),
-            characteristics =
-                mapOf(CameraCharacteristics.LENS_FACING to CameraCharacteristics.LENS_FACING_BACK),
+            lensFacing = CameraCharacteristics.LENS_FACING_BACK,
         )
     private val frontCameraMetadata =
-        FakeCameraMetadata(
+        FakeCameraMetadata.fromTemplate(
+            template = HighEndDeviceTemplate,
             cameraId = FakeCameraIds.next(),
-            characteristics =
-                mapOf(CameraCharacteristics.LENS_FACING to CameraCharacteristics.LENS_FACING_FRONT),
+            lensFacing = CameraCharacteristics.LENS_FACING_FRONT,
         )
 
     private val streamConfig = CameraStream.Config.create(Size(640, 480), StreamFormat.YUV_420_888)
@@ -65,58 +65,55 @@ class CameraPipeSimulatorTest {
         )
 
     @Test
-    fun cameraPipeSimulatorCanCreateCameraGraphSimulators() =
-        testScope.runTest {
-            val cameraGraph1 = cameraPipe.createCameraGraph(graphConfig)
-            val cameraGraphSimulator1 = cameraPipe.cameraGraphs.find { it == cameraGraph1 }
+    fun cameraPipeSimulatorCanCreateCameraGraphSimulators() = testScope.runTest {
+        val cameraGraph1 = cameraPipe.createCameraGraph(graphConfig)
+        val cameraGraphSimulator1 = cameraPipe.cameraGraphs.find { it == cameraGraph1 }
 
-            assertThat(cameraGraph1).isInstanceOf(CameraGraphSimulator::class.java)
-            assertThat(cameraGraph1).isSameInstanceAs(cameraGraphSimulator1)
+        assertThat(cameraGraph1).isInstanceOf(CameraGraphSimulator::class.java)
+        assertThat(cameraGraph1).isSameInstanceAs(cameraGraphSimulator1)
 
-            // Assert that a new CameraGraph can be created with the same graphConfig and that they
-            // produce different CameraGraph instances and simulators.
-            val cameraGraphSimulator3 = cameraPipe.createCameraGraphSimulator(graphConfig)
-            assertThat(cameraGraphSimulator3).isNotSameInstanceAs(cameraGraphSimulator1)
-        }
-
-    @Test
-    fun cameraPipeSimulatorHasMetadataViaCameraPipe() =
-        testScope.runTest {
-            val cameraIds = cameraPipe.cameras().getCameraIds()
-
-            assertThat(cameraIds).isNotNull()
-            assertThat(cameraIds!!.size).isEqualTo(2)
-
-            val firstCameraId = cameraIds.first()
-            val firstMetadata = cameraPipe.cameras().getCameraMetadata(firstCameraId)
-
-            assertThat(firstMetadata).isNotNull()
-            assertThat(firstMetadata).isSameInstanceAs(frontCameraMetadata)
-            assertThat(firstMetadata!!.camera).isEqualTo(firstCameraId)
-
-            val lastCameraId = cameraIds.last()
-            val lastCameraMetadata = cameraPipe.cameras().getCameraMetadata(lastCameraId)
-
-            assertThat(lastCameraMetadata).isNotNull()
-            assertThat(lastCameraMetadata).isSameInstanceAs(backCameraMetadata)
-            assertThat(lastCameraMetadata!!.camera).isEqualTo(lastCameraId)
-        }
+        // Assert that a new CameraGraph can be created with the same graphConfig and that they
+        // produce different CameraGraph instances and simulators.
+        val cameraGraphSimulator3 = cameraPipe.createCameraGraphSimulator(graphConfig)
+        assertThat(cameraGraphSimulator3).isNotSameInstanceAs(cameraGraphSimulator1)
+    }
 
     @Test
-    fun cameraPipeSimulatorCanCreateDualCameraGraphs() =
-        testScope.runTest {
-            val cameraIds = cameraPipe.cameras().getCameraIds()
+    fun cameraPipeSimulatorHasMetadataViaCameraPipe() = testScope.runTest {
+        val cameraIds = cameraPipe.cameras().getCameraIds()
 
-            assertThat(cameraIds).isNotNull()
-            assertThat(cameraIds!!.size).isEqualTo(2)
+        assertThat(cameraIds).isNotNull()
+        assertThat(cameraIds!!.size).isEqualTo(2)
 
-            val firstCameraId = cameraIds.first()
-            val firstMetadata = cameraPipe.cameras().getCameraMetadata(firstCameraId)
+        val firstCameraId = cameraIds.first()
+        val firstMetadata = cameraPipe.cameras().getCameraMetadata(firstCameraId)
 
-            assertThat(firstMetadata).isNotNull()
-            assertThat(firstMetadata).isSameInstanceAs(frontCameraMetadata)
-            assertThat(firstMetadata!!.camera).isEqualTo(firstCameraId)
-        }
+        assertThat(firstMetadata).isNotNull()
+        assertThat(firstMetadata).isSameInstanceAs(frontCameraMetadata)
+        assertThat(firstMetadata!!.camera).isEqualTo(firstCameraId)
+
+        val lastCameraId = cameraIds.last()
+        val lastCameraMetadata = cameraPipe.cameras().getCameraMetadata(lastCameraId)
+
+        assertThat(lastCameraMetadata).isNotNull()
+        assertThat(lastCameraMetadata).isSameInstanceAs(backCameraMetadata)
+        assertThat(lastCameraMetadata!!.camera).isEqualTo(lastCameraId)
+    }
+
+    @Test
+    fun cameraPipeSimulatorCanCreateDualCameraGraphs() = testScope.runTest {
+        val cameraIds = cameraPipe.cameras().getCameraIds()
+
+        assertThat(cameraIds).isNotNull()
+        assertThat(cameraIds!!.size).isEqualTo(2)
+
+        val firstCameraId = cameraIds.first()
+        val firstMetadata = cameraPipe.cameras().getCameraMetadata(firstCameraId)
+
+        assertThat(firstMetadata).isNotNull()
+        assertThat(firstMetadata).isSameInstanceAs(frontCameraMetadata)
+        assertThat(firstMetadata!!.camera).isEqualTo(firstCameraId)
+    }
 
     @Test
     fun cameraPipeSimulatorCanVerifyCameraGraphConstructionOrder() {
@@ -213,6 +210,19 @@ class CameraPipeSimulatorTest {
                     ConfigQueryResult.UNKNOWN
                 }
             assertThat(unsupportedResult).isEqualTo(expectedResult)
+        }
+    }
+
+    @Test
+    fun cameraDevicesCanBeDisconnectedAfterGraphClose() {
+        testScope.runTest {
+            val cameraGraphSimulator = cameraPipe.createCameraGraph(graphConfig)
+            cameraGraphSimulator.start()
+            cameraGraphSimulator.initializeSurfaces()
+            cameraGraphSimulator.simulateCameraStarted()
+
+            cameraGraphSimulator.close()
+            cameraPipe.cameras().disconnectAll()
         }
     }
 }

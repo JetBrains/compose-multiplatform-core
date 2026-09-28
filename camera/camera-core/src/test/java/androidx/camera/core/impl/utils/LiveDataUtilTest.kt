@@ -16,7 +16,6 @@
 
 package androidx.camera.core.impl.utils
 
-import android.os.Build
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.testutils.MainDispatcherRule
@@ -39,7 +38,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class LiveDataUtilTest {
     @get:Rule
     val dispatcherRule = MainDispatcherRule(MoreExecutors.directExecutor().asCoroutineDispatcher())
@@ -235,7 +234,7 @@ class LiveDataUtilTest {
         runBlocking(Dispatchers.Main) {
             val sourceLiveData = MutableLiveData<Int?>()
             sourceLiveData.value = 0
-            var redirectableLiveData =
+            val redirectableLiveData =
                 MappingRedirectableLiveData<Int?, Int?>(0) { it }
                     .apply { redirectTo(sourceLiveData) }
 

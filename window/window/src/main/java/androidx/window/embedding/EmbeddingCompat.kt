@@ -174,14 +174,7 @@ internal class EmbeddingCompat(
         setDefaultSplitAttributeCalculatorIfNeeded()
 
         if (windowSdkExtensions.extensionVersion >= 8) {
-            // TODO(b/289875940): remove the try-catch block once handled by the reflection guard
-            try {
-                embeddingExtension.setAutoSaveEmbeddingState(
-                    embeddingConfig.isAutoSaveEmbeddingState
-                )
-            } catch (e: Throwable) {
-                Log.w(TAG, "#setAutoSaveEmbeddingState failed", e)
-            }
+            embeddingExtension.setAutoSaveEmbeddingState(embeddingConfig.isAutoSaveEmbeddingState)
         }
         embeddingExtension.invalidateTopVisibleSplitAttributes()
     }
@@ -253,10 +246,9 @@ internal class EmbeddingCompat(
     override fun setOverlayCreateParams(
         options: Bundle,
         overlayCreateParams: OverlayCreateParams,
-    ): Bundle =
-        options.apply {
-            ActivityEmbeddingOptionsImpl.setOverlayCreateParams(options, overlayCreateParams)
-        }
+    ): Bundle = options.apply {
+        ActivityEmbeddingOptionsImpl.setOverlayCreateParams(options, overlayCreateParams)
+    }
 
     @RequiresWindowSdkExtension(OVERLAY_FEATURE_VERSION)
     override fun setOverlayAttributesCalculator(

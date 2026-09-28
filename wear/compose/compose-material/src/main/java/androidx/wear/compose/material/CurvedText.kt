@@ -84,7 +84,9 @@ import androidx.wear.compose.foundation.curvedRow
  * @param angularDirection Specify if the text is laid out clockwise or anti-clockwise, and if those
  *   needs to be reversed in a Rtl layout. If not specified, it will be inherited from the enclosing
  *   [curvedRow] or [CurvedLayout] See [CurvedDirection.Angular].
- * @param overflow How visual overflow should be handled.
+ * @param overflow How visual overflow should be handled. Note that this takes into account only
+ *   explicit size curved modifiers in this element, to size this element matching the parent's, add
+ *   a CurvedModifier.weight here.
  */
 public fun CurvedScope.curvedText(
     text: String,
@@ -102,12 +104,11 @@ public fun CurvedScope.curvedText(
 ): Unit =
     basicCurvedText(text, modifier, angularDirection, overflow) {
         val baseStyle = style ?: CurvedTextStyle(LocalTextStyle.current)
-        val textColor =
-            color.takeOrElse {
-                baseStyle.color.takeOrElse {
-                    LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
-                }
+        val textColor = color.takeOrElse {
+            baseStyle.color.takeOrElse {
+                LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
             }
+        }
         baseStyle.merge(
             CurvedTextStyle(
                 color = textColor,
@@ -163,7 +164,9 @@ public fun CurvedScope.curvedText(
  * @param angularDirection Specify if the text is laid out clockwise or anti-clockwise, and if those
  *   needs to be reversed in a Rtl layout. If not specified, it will be inherited from the enclosing
  *   [curvedRow] or [CurvedLayout] See [CurvedDirection.Angular].
- * @param overflow How visual overflow should be handled.
+ * @param overflow How visual overflow should be handled. Note that this takes into account only
+ *   explicit size curved modifiers in this element, to size this element matching the parent's, add
+ *   a CurvedModifier.weight here.
  */
 @Deprecated(
     "This overload is provided for backwards compatibility with Compose for " +
@@ -182,12 +185,11 @@ public fun CurvedScope.curvedText(
 ): Unit =
     basicCurvedText(text, modifier, angularDirection, overflow) {
         val baseStyle = style ?: CurvedTextStyle(LocalTextStyle.current)
-        val textColor =
-            color.takeOrElse {
-                baseStyle.color.takeOrElse {
-                    LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
-                }
+        val textColor = color.takeOrElse {
+            baseStyle.color.takeOrElse {
+                LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
             }
+        }
         baseStyle.merge(
             CurvedTextStyle(color = textColor, fontSize = fontSize, background = background)
         )

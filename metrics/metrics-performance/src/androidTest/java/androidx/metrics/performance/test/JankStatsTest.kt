@@ -455,7 +455,7 @@ class JankStatsTest {
         // handled inside DelayedView. //-Comments above each item indicate what the resulting
         // state should be in that frame, which is checked in the asserts below
         // TODO: make immutable, copy to mutable list for delayedView
-        var perFrameStateData =
+        val perFrameStateData =
             mutableListOf(
                 // 0: A:0
                 JankStatsTest.FrameStateInputData(addStates = listOf("stateNameA" to "0")),
@@ -487,7 +487,17 @@ class JankStatsTest {
                 JankStatsTest.FrameStateInputData(
                     addStates = listOf("stateNameA" to "0", "stateNameA" to "1")
                 ),
-                // 12-16: empty, just to allow extra frames to pulse
+                // 12: A:1, B:2
+                JankStatsTest.FrameStateInputData(
+                    addStates =
+                        listOf(
+                            "stateNameA" to "0",
+                            "stateNameB" to "0",
+                            "stateNameB" to "1",
+                            "stateNameA" to "1",
+                        )
+                ),
+                // 13-17: empty, just to allow extra frames to pulse
                 // Run more than the exact number of frames we have states for. Sometimes the system
                 // isn't done running all of the frames in which these states should go by the
                 // time we've run that number of frames.
@@ -518,6 +528,7 @@ class JankStatsTest {
                 mapOf("stateNameA" to "0", "stateNameB" to "10"),
                 emptyMap(),
                 mapOf("stateNameA" to "1"),
+                mapOf("stateNameA" to "1", "stateNameB" to "1"),
             )
 
         resetFrameStates()

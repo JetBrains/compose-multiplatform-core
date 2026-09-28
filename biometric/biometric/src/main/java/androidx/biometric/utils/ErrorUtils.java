@@ -20,6 +20,7 @@ import android.content.Context;
 import android.util.Log;
 
 import androidx.annotation.RestrictTo;
+import androidx.biometric.BiometricManager;
 import androidx.biometric.BiometricPrompt;
 import androidx.biometric.R;
 
@@ -43,7 +44,8 @@ public class ErrorUtils {
      * @return A matched known error.
      */
     @BiometricPrompt.AuthenticationError
-    public static int toKnownErrorCode(@BiometricPrompt.AuthenticationError int errorCode) {
+    public static int toKnownErrorCodeForAuthenticate(
+            @BiometricPrompt.AuthenticationError int errorCode) {
         switch (errorCode) {
             case BiometricPrompt.ERROR_HW_UNAVAILABLE:
             case BiometricPrompt.ERROR_UNABLE_TO_PROCESS:
@@ -67,6 +69,24 @@ public class ErrorUtils {
                 return BiometricPrompt.ERROR_HW_UNAVAILABLE;
             default:
                 return BiometricPrompt.ERROR_VENDOR;
+        }
+    }
+
+    /**
+     * Convert unknown authentication status to known status for backward compatibility
+     *
+     * @param statusCode An integer ID associated with the authentication status.
+     * @return A matched known status code.
+     */
+    public static int toKnownStatusCodeForCanAuthenticate(
+            @BiometricManager.AuthenticationStatus int statusCode) {
+        switch (statusCode) {
+            case BiometricManager.BIOMETRIC_ERROR_LOCKOUT:
+                return BiometricManager.BIOMETRIC_SUCCESS;
+            case BiometricManager.BIOMETRIC_ERROR_NOT_ENABLED_FOR_APPS:
+                return BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE;
+            default:
+                return statusCode;
         }
     }
 

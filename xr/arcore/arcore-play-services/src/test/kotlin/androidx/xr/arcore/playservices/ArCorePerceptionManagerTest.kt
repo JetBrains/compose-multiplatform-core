@@ -16,37 +16,26 @@
 
 package androidx.xr.arcore.playservices
 
-import androidx.xr.runtime.VpsAvailabilityAvailable
-import androidx.xr.runtime.VpsAvailabilityErrorInternal
-import androidx.xr.runtime.VpsAvailabilityNetworkError
-import androidx.xr.runtime.VpsAvailabilityNotAuthorized
-import androidx.xr.runtime.VpsAvailabilityResourceExhausted
-import androidx.xr.runtime.VpsAvailabilityResult
-import androidx.xr.runtime.VpsAvailabilityUnavailable
-import androidx.xr.runtime.internal.AnchorNotTrackingException
+import androidx.xr.arcore.runtime.AnchorNotTrackingException
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
 import com.google.ar.core.Anchor as ARCoreAnchor
+import com.google.ar.core.AugmentedImage as ARCore1xAugmentedImage
+import com.google.ar.core.Camera
 import com.google.ar.core.Frame
 import com.google.ar.core.HitResult
 import com.google.ar.core.Plane as ARCore1xPlane
 import com.google.ar.core.Pose as ARCorePose
 import com.google.ar.core.Session
-import com.google.ar.core.VpsAvailability as ARCore1xVpsAvailability
-import com.google.ar.core.VpsAvailabilityFuture
 import com.google.ar.core.exceptions.NotTrackingException
 import com.google.ar.core.exceptions.ResourceExhaustedException
 import com.google.common.truth.Truth.assertThat
-import com.google.testing.junit.testparameterinjector.TestParameter
 import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import java.util.UUID
-import java.util.function.Consumer
-import kotlin.reflect.KClass
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
-import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -66,10 +55,15 @@ class ArCorePerceptionManagerTest {
 
     lateinit var mockSession: Session
     lateinit var underTest: ArCorePerceptionManager
+    lateinit var mockCamera: Camera
+    lateinit var mockCameraPose: ARCorePose
 
     @Before
     fun setUp() {
         mockSession = mock<Session>()
+        mockCamera = mock<Camera>()
+        mockCameraPose = mock<ARCorePose>()
+        whenever(mockCamera.pose).thenReturn(mockCameraPose)
 
         val timeSource = ArCoreTimeSource()
         underTest = ArCorePerceptionManager(timeSource)
@@ -89,6 +83,7 @@ class ArCorePerceptionManagerTest {
         val mockFrame = mock<Frame>()
         whenever(mockARCoreAnchor.pose).thenReturn(pose.toARCorePose())
         doReturn(mockARCoreAnchor).whenever(mockSession).createAnchor(any())
+        whenever(mockFrame.camera).thenReturn(mockCamera)
         whenever(mockSession.update()).thenReturn(mockFrame)
 
         underTest.update()
@@ -112,6 +107,7 @@ class ArCorePerceptionManagerTest {
             .doThrow(ResourceExhaustedException())
             .whenever(mockSession)
             .createAnchor(any())
+        whenever(mockFrame.camera).thenReturn(mockCamera)
         whenever(mockSession.update()).thenReturn(mockFrame)
 
         underTest.update()
@@ -156,6 +152,7 @@ class ArCorePerceptionManagerTest {
             .thenReturn(listOf(mockPlane))
         whenever(mockFrame.hitTest(any(), eq(0), any(), eq(0))).thenReturn(listOf(mockHitResult))
         whenever(mockFrame.timestamp).thenReturn(timestamp)
+        whenever(mockFrame.camera).thenReturn(mockCamera)
         whenever(mockSession.update()).thenReturn(mockFrame)
 
         underTest.update()
@@ -176,11 +173,6 @@ class ArCorePerceptionManagerTest {
     }
 
     @Test
-    fun loadAnchorFromNativePointer_throwsNotImplementedError() {
-        assertFailsWith<NotImplementedError> { underTest.loadAnchorFromNativePointer(0L) }
-    }
-
-    @Test
     fun unpersistAnchor_throwsNotImplementedError() {
         val uuid = UUID.randomUUID()
 
@@ -190,6 +182,7 @@ class ArCorePerceptionManagerTest {
     @Test
     fun update_callsSessionUpdate() {
         val mockFrame = mock<Frame>()
+        whenever(mockFrame.camera).thenReturn(mockCamera)
         whenever(mockSession.update()).thenReturn(mockFrame)
 
         underTest.update()
@@ -205,6 +198,7 @@ class ArCorePerceptionManagerTest {
         whenever(mockFrame.getUpdatedTrackables(ARCore1xPlane::class.java))
             .thenReturn(listOf(mockPlane))
         whenever(mockFrame.timestamp).thenReturn(timestamp)
+        whenever(mockFrame.camera).thenReturn(mockCamera)
         whenever(mockSession.update()).thenReturn(mockFrame)
 
         underTest.update()
@@ -214,47 +208,21 @@ class ArCorePerceptionManagerTest {
         verify(mockFrame).getUpdatedTrackables(ARCore1xPlane::class.java)
     }
 
-    enum class VpsAvailabilityTestCase(
-        val arCoreVpsAvailability: ARCore1xVpsAvailability,
-        val expectedXrVpsAvailability: KClass<out VpsAvailabilityResult>,
-    ) {
-        AVAILABLE(ARCore1xVpsAvailability.AVAILABLE, VpsAvailabilityAvailable::class),
-        ERROR_INTERNAL(ARCore1xVpsAvailability.ERROR_INTERNAL, VpsAvailabilityErrorInternal::class),
-        ERROR_NETWORK_CONNECTION(
-            ARCore1xVpsAvailability.ERROR_NETWORK_CONNECTION,
-            VpsAvailabilityNetworkError::class,
-        ),
-        ERROR_NOT_AUTHORIZED(
-            ARCore1xVpsAvailability.ERROR_NOT_AUTHORIZED,
-            VpsAvailabilityNotAuthorized::class,
-        ),
-        ERROR_RESOURCE_EXHAUSTED(
-            ARCore1xVpsAvailability.ERROR_RESOURCE_EXHAUSTED,
-            VpsAvailabilityResourceExhausted::class,
-        ),
-        UNAVAILABLE(ARCore1xVpsAvailability.UNAVAILABLE, VpsAvailabilityUnavailable::class),
-        UNKNOWN(ARCore1xVpsAvailability.UNKNOWN, VpsAvailabilityErrorInternal::class),
-    }
-
     @Test
-    fun checkVpsAvailability_returnsCorrectType(@TestParameter testCase: VpsAvailabilityTestCase) =
-        runTest {
-            val mockFuture = mock<VpsAvailabilityFuture>()
-            whenever(
-                    mockSession.checkVpsAvailabilityAsync(
-                        any(),
-                        any(),
-                        any<Consumer<ARCore1xVpsAvailability?>>(),
-                    )
-                )
-                .thenAnswer { invocation ->
-                    val callback = invocation.getArgument<Consumer<ARCore1xVpsAvailability?>>(2)
-                    callback.accept(testCase.arCoreVpsAvailability)
-                    mockFuture
-                }
+    fun update_addsAugmentedImagesToTrackables() {
+        val mockFrame = mock<Frame>()
+        val mockAugmentedImage = mock<ARCore1xAugmentedImage>()
+        val timestamp = 1000L
+        whenever(mockFrame.getUpdatedTrackables(ARCore1xAugmentedImage::class.java))
+            .thenReturn(listOf(mockAugmentedImage))
+        whenever(mockFrame.timestamp).thenReturn(timestamp)
+        whenever(mockFrame.camera).thenReturn(mockCamera)
+        whenever(mockSession.update()).thenReturn(mockFrame)
 
-            val result = underTest.checkVpsAvailability(0.0, 0.0)
+        underTest.update()
 
-            assertThat(result::class).isEqualTo(testCase.expectedXrVpsAvailability)
-        }
+        assertThat(underTest.trackables).hasSize(1)
+        assertIs<ArCoreAugmentedImage>(underTest.trackables.first())
+        verify(mockFrame).getUpdatedTrackables(ARCore1xAugmentedImage::class.java)
+    }
 }

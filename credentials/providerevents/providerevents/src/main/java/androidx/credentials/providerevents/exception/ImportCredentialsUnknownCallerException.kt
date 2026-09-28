@@ -17,7 +17,7 @@
 package androidx.credentials.providerevents.exception
 
 /** The request cannot be trusted because the caller is unknown */
-public class ImportCredentialsUnknownCallerException(errorMessage: CharSequence? = null) :
+public class ImportCredentialsUnknownCallerException(errorMessage: String? = null) :
     ImportCredentialsException(TYPE_IMPORT_CREDENTIALS_UNKNOWN_CALLER_EXCEPTION, errorMessage) {
     internal companion object {
         internal const val TYPE_IMPORT_CREDENTIALS_UNKNOWN_CALLER_EXCEPTION: String =

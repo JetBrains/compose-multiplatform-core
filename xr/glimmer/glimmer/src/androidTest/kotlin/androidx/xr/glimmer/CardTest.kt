@@ -1,0 +1,1818 @@
+/*
+ * Copyright 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.xr.glimmer
+
+import android.os.Build
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.interaction.FocusInteraction
+import androidx.compose.foundation.interaction.Interaction
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.requiredHeightIn
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.testutils.assertIsEqualTo
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusTarget
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.ComposeUiTestConfig
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertHasNoClickAction
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.isFocusable
+import androidx.compose.ui.test.isNotFocusable
+import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
+import androidx.xr.glimmer.samples.placeholderImagePainter
+import androidx.xr.glimmer.testutils.assertGlimmerSurfaceShape
+import androidx.xr.glimmer.testutils.captureToImage
+import androidx.xr.glimmer.testutils.createGlimmerRule
+import com.google.common.truth.Truth.assertThat
+import kotlin.properties.Delegates
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@MediumTest
+@RunWith(AndroidJUnit4::class)
+// The expected min sdk is 35, but we test on 33 for wider device coverage (some APIs are not
+// available below 33)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
+class CardTest {
+    @get:Rule(0) val rule = createComposeRule(ComposeUiTestConfig(inputMode = InputMode.Keyboard))
+
+    @get:Rule(1) val glimmerRule = createGlimmerRule()
+
+    @Test
+    fun semantics() {
+        rule.setGlimmerThemeContent {
+            Box { Card(modifier = Modifier.testTag("card")) { Text("This is a card") } }
+        }
+
+        rule
+            .onNodeWithTag("card")
+            .assert(isFocusable())
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Role))
+    }
+
+    @Test
+    fun semantics_clickable() {
+        rule.setGlimmerThemeContent {
+            Box {
+                Card(modifier = Modifier.testTag("card"), onClick = {}) { Text("This is a card") }
+            }
+        }
+
+        rule
+            .onNodeWithTag("card")
+            .assert(isFocusable())
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Role))
+            .assertHasClickAction()
+            .assertIsEnabled()
+    }
+
+    @Test
+    fun shapeAndColorFromThemeIsUsed() {
+        lateinit var expectedShape: Shape
+        val surfaceColor = Color.Blue
+        val backgroundColor = Color.Red
+        rule.setGlimmerThemeContent(
+            addInitialFocusInterceptor = true,
+            colors = Colors(surface = surfaceColor, background = backgroundColor),
+        ) {
+            expectedShape = GlimmerTheme.shapes.medium
+            Card(modifier = Modifier.testTag("card")) { Box(Modifier.size(100.dp, 100.dp)) }
+        }
+
+        val image = rule.onNodeWithTag("card").captureToImage()
+        image.assertGlimmerSurfaceShape(
+            density = rule.density,
+            shape = expectedShape,
+            backgroundColor = backgroundColor,
+        )
+        val centerColor = image.toPixelMap().run { get(width / 2, height / 2) }
+        assertThat(centerColor).isEqualTo(surfaceColor)
+    }
+
+    @Test
+    fun shapeAndColorFromThemeIsUsedWhenFocused() {
+        lateinit var expectedShape: Shape
+        var expectedFocusedSurfaceColor: Color? = null
+        val surfaceColor = Color.Blue
+        val backgroundColor = Color.Red
+        rule.setGlimmerThemeContent(
+            addInitialFocusInterceptor = false,
+            colors = Colors(surface = surfaceColor, background = backgroundColor),
+        ) {
+            expectedShape = GlimmerTheme.shapes.medium
+            expectedFocusedSurfaceColor = SurfaceDefaults.focusedColor(surfaceColor)
+            Card(modifier = Modifier.testTag("card")) { Box(Modifier.size(100.dp, 100.dp)) }
+        }
+
+        rule.waitForIdle()
+
+        val image = rule.onNodeWithTag("card").captureToImage()
+        image.assertGlimmerSurfaceShape(
+            density = rule.density,
+            shape = expectedShape,
+            backgroundColor = backgroundColor,
+        )
+        val centerColor = image.toPixelMap().run { get(width / 2, height / 2) }
+        assertThat(centerColor).isEqualTo(expectedFocusedSurfaceColor)
+    }
+
+    @Test
+    fun setsLocalTextStyle() {
+        lateinit var actualTitleTextStyle: TextStyle
+        lateinit var actualSubtitleTextStyle: TextStyle
+        lateinit var actualContentTextStyle: TextStyle
+        lateinit var expectedTitleTextStyle: TextStyle
+        lateinit var expectedSubtitleTextStyle: TextStyle
+        lateinit var expectedContentTextStyle: TextStyle
+        rule.setGlimmerThemeContent {
+            expectedTitleTextStyle = GlimmerTheme.typography.bodyMedium
+            expectedSubtitleTextStyle = GlimmerTheme.typography.caption
+            expectedContentTextStyle = GlimmerTheme.typography.bodySmall
+            Card(
+                title = { actualTitleTextStyle = LocalTextStyle.current },
+                subtitle = { actualSubtitleTextStyle = LocalTextStyle.current },
+            ) {
+                actualContentTextStyle = LocalTextStyle.current
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(actualTitleTextStyle).isEqualTo(expectedTitleTextStyle)
+            assertThat(actualSubtitleTextStyle).isEqualTo(expectedSubtitleTextStyle)
+            assertThat(actualContentTextStyle).isEqualTo(expectedContentTextStyle)
+        }
+    }
+
+    @Test
+    fun setsContentColor() {
+        var titleContentColor = Color.Unspecified
+        var subtitleContentColor = Color.Unspecified
+        var leadingIconContentColor = Color.Unspecified
+        var trailingIconContentColor = Color.Unspecified
+        var contentContentColor = Color.Unspecified
+        rule.setGlimmerThemeContent {
+            Card(
+                title = {
+                    Box(
+                        DelegatableNodeProviderElement {
+                            titleContentColor = it?.currentContentColor() ?: Color.Unspecified
+                        }
+                    )
+                },
+                subtitle = {
+                    Box(
+                        DelegatableNodeProviderElement {
+                            subtitleContentColor = it?.currentContentColor() ?: Color.Unspecified
+                        }
+                    )
+                },
+                leadingIcon = {
+                    Box(
+                        DelegatableNodeProviderElement {
+                            leadingIconContentColor = it?.currentContentColor() ?: Color.Unspecified
+                        }
+                    )
+                },
+                trailingIcon = {
+                    Box(
+                        DelegatableNodeProviderElement {
+                            trailingIconContentColor =
+                                it?.currentContentColor() ?: Color.Unspecified
+                        }
+                    )
+                },
+            ) {
+                Box(
+                    DelegatableNodeProviderElement {
+                        contentContentColor = it?.currentContentColor() ?: Color.Unspecified
+                    }
+                )
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(titleContentColor).isEqualTo(Color.White)
+            assertThat(subtitleContentColor).isEqualTo(Color.White)
+            assertThat(leadingIconContentColor).isEqualTo(Color.White)
+            assertThat(trailingIconContentColor).isEqualTo(Color.White)
+            assertThat(contentContentColor).isEqualTo(Color.White)
+        }
+    }
+
+    @Test
+    fun setsLocalIconSize() {
+        var actualLeadingIconSize: Dp? = null
+        var actualTrailingIconSize: Dp? = null
+        var expectedIconSize: Dp? = null
+        rule.setGlimmerThemeContent {
+            expectedIconSize = GlimmerTheme.iconSizes.large
+            Card(
+                leadingIcon = { actualLeadingIconSize = LocalIconSize.current },
+                trailingIcon = { actualTrailingIconSize = LocalIconSize.current },
+            ) {}
+        }
+
+        rule.runOnIdle {
+            assertThat(actualLeadingIconSize!!).isEqualTo(expectedIconSize!!)
+            assertThat(actualTrailingIconSize!!).isEqualTo(expectedIconSize)
+        }
+    }
+
+    @Test
+    fun emitsFocusInteractions() {
+        val interactionSource = MutableInteractionSource()
+        val (focusRequester, otherFocusRequester) = FocusRequester.createRefs()
+
+        lateinit var scope: CoroutineScope
+
+        rule.setGlimmerThemeContent {
+            scope = rememberCoroutineScope()
+            Box {
+                Card(
+                    modifier = Modifier.testTag("card").focusRequester(focusRequester),
+                    interactionSource = interactionSource,
+                ) {
+                    Text("This is a card")
+                }
+                Box(Modifier.size(100.dp).focusRequester(otherFocusRequester).focusTarget())
+            }
+        }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        rule.runOnIdle { focusRequester.requestFocus() }
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(FocusInteraction.Focus::class.java)
+        }
+
+        rule.runOnIdle { otherFocusRequester.requestFocus() }
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(FocusInteraction.Focus::class.java)
+            assertThat(interactions[1]).isInstanceOf(FocusInteraction.Unfocus::class.java)
+            assertThat((interactions[1] as FocusInteraction.Unfocus).focus)
+                .isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
+    fun emitsPressInteractions_clickable() {
+        val interactionSource = MutableInteractionSource()
+        val focusRequester = FocusRequester()
+
+        lateinit var scope: CoroutineScope
+
+        rule.setGlimmerThemeContent {
+            scope = rememberCoroutineScope()
+            Box {
+                Card(
+                    modifier = Modifier.focusRequester(focusRequester),
+                    interactionSource = interactionSource,
+                    onClick = {},
+                ) {
+                    Text("This is a card")
+                }
+            }
+        }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { focusRequester.requestFocus() }
+
+        rule.runOnIdle { interactions.clear() }
+
+        rule.sendGlimmerIndirectPointerInput { down(Offset.Zero) }
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+
+        rule.sendGlimmerIndirectPointerInput {
+            advanceEventTime(200L)
+            up()
+        }
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Release::class.java)
+            assertThat((interactions[1] as PressInteraction.Release).press)
+                .isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
+    fun actionCard_isNotInteractable() {
+        rule.setGlimmerThemeContent {
+            ActionCard(
+                modifier = Modifier.testTag("card"),
+                action = { Box(Modifier.size(50.dp).testTag("action")) },
+            ) {
+                Spacer(Modifier.size(100.dp))
+            }
+        }
+
+        // When an action is specified, the action is required to be focusable / handle focus, so
+        // the underlying card should not be focusable / interactable.
+        rule.onNodeWithTag("card").assert(isNotFocusable()).assertHasNoClickAction()
+    }
+
+    @Test
+    fun actionCard_forcesMinimumConstraintsToBeMaxWidth() {
+        val cardWidth = 300.dp
+        var mediumSpacing: Dp by Delegates.notNull()
+        rule.setGlimmerThemeContent {
+            mediumSpacing = GlimmerTheme.componentSpacingValues.medium
+            ActionCard(
+                modifier = Modifier.width(cardWidth).testTag("card"),
+                action = {
+                    // Action should fill the full width of the card, even if a smaller width is
+                    // specified
+                    Box(Modifier.width(50.dp).height(40.dp).testTag("action"))
+                },
+            ) {
+                Text("Content")
+            }
+        }
+
+        val cardBounds = rule.onNodeWithTag("card").getBoundsInRoot()
+        val actionBounds = rule.onNodeWithTag("action").getBoundsInRoot()
+
+        cardBounds.width.assertIsEqualTo(cardWidth, "card width")
+        actionBounds.width.assertIsEqualTo(cardWidth - mediumSpacing * 2, "action width")
+        actionBounds.height.assertIsEqualTo(40.dp, "action height")
+    }
+
+    @Test
+    fun image_appliesAspectRatioToMaximumHeight_fillMaxSize() {
+        var mediumSpacing: Dp by Delegates.notNull()
+        rule.setGlimmerThemeContent {
+            mediumSpacing = GlimmerTheme.componentSpacingValues.medium
+            ImageCard(
+                image = { Box(Modifier.fillMaxSize().testTag("image")) },
+                modifier = Modifier.testTag("card"),
+            ) {
+                Spacer(Modifier.requiredSize(10.dp))
+            }
+        }
+
+        val cardBounds = rule.onNodeWithTag("card").getBoundsInRoot()
+
+        rule.onNodeWithTag("image").apply {
+            with(getBoundsInRoot()) {
+                width.assertIsEqualTo(cardBounds.width - mediumSpacing * 2, "width")
+                height.assertIsEqualTo(width / 1.6f, "height")
+            }
+        }
+    }
+
+    @Test
+    fun image_appliesAspectRatioToMaximumHeight_fixedLargeSize() {
+        var mediumSpacing: Dp by Delegates.notNull()
+        rule.setGlimmerThemeContent {
+            mediumSpacing = GlimmerTheme.componentSpacingValues.medium
+            ImageCard(
+                image = { Box(Modifier.size(1000.dp).testTag("image")) },
+                modifier = Modifier.testTag("card"),
+            ) {
+                Spacer(Modifier.requiredSize(10.dp))
+            }
+        }
+
+        val cardBounds = rule.onNodeWithTag("card").getBoundsInRoot()
+
+        rule.onNodeWithTag("image").apply {
+            with(getBoundsInRoot()) {
+                width.assertIsEqualTo(cardBounds.width - mediumSpacing * 2, "width")
+                height.assertIsEqualTo(width / 1.6f, "height")
+            }
+        }
+    }
+
+    @Test
+    fun image_doesNotEnforceFillingHeight_fillMaxWidth() {
+        var mediumSpacing: Dp by Delegates.notNull()
+        rule.setGlimmerThemeContent {
+            mediumSpacing = GlimmerTheme.componentSpacingValues.medium
+            ImageCard(
+                image = { Box(Modifier.fillMaxWidth().height(10.dp).testTag("image")) },
+                modifier = Modifier.testTag("card"),
+            ) {
+                Spacer(Modifier.requiredSize(10.dp))
+            }
+        }
+
+        val cardBounds = rule.onNodeWithTag("card").getBoundsInRoot()
+
+        rule.onNodeWithTag("image").apply {
+            with(getBoundsInRoot()) {
+                width.assertIsEqualTo(cardBounds.width - mediumSpacing * 2, "width")
+                height.assertIsEqualTo(10.dp, "height")
+            }
+        }
+    }
+
+    @Test
+    fun image_doesNotEnforceFillingWidth_fillMaxHeight() {
+        var mediumSpacing: Dp by Delegates.notNull()
+        rule.setGlimmerThemeContent {
+            mediumSpacing = GlimmerTheme.componentSpacingValues.medium
+            ImageCard(
+                image = { Box(Modifier.fillMaxHeight().width(10.dp).testTag("image")) },
+                modifier = Modifier.testTag("card"),
+            ) {
+                Spacer(Modifier.requiredSize(10.dp))
+            }
+        }
+
+        val cardBounds = rule.onNodeWithTag("card").getBoundsInRoot()
+
+        rule.onNodeWithTag("image").apply {
+            with(getBoundsInRoot()) {
+                width.assertIsEqualTo(10.dp, "width")
+                height.assertIsEqualTo((cardBounds.width - mediumSpacing * 2) / 1.6f, "height")
+            }
+        }
+    }
+
+    @Test
+    fun image_doesNotEnforceFillingWidthOrHeight_fixedSize() {
+        rule.setGlimmerThemeContent {
+            ImageCard(image = { Box(Modifier.size(10.dp).testTag("image")) }) {
+                Spacer(Modifier.requiredSize(10.dp))
+            }
+        }
+
+        rule.onNodeWithTag("image").apply {
+            with(getBoundsInRoot()) {
+                width.assertIsEqualTo(10.dp, "width")
+                height.assertIsEqualTo(10.dp, "height")
+            }
+        }
+    }
+
+    @Test
+    fun image_doesNotApplyAspectRatio_whenHeightIsLimited() {
+        val cardWidth = 150.dp
+        // Height is smaller than cardWidth / 1.6, so the aspect ratio cannot be reached.
+        // Modifier.aspectRatio would reduce the width to satisfy this, but we don't want to reduce
+        // width in this case, so this should no-op.
+        val cardHeight = 50.dp
+
+        var mediumSpacing: Dp by Delegates.notNull()
+        rule.setGlimmerThemeContent {
+            mediumSpacing = GlimmerTheme.componentSpacingValues.medium
+            ImageCard(
+                image = { Box(Modifier.fillMaxSize().testTag("image")) },
+                modifier = Modifier.size(cardWidth, cardHeight).testTag("card"),
+            ) {
+                Spacer(Modifier.requiredSize(10.dp))
+            }
+        }
+
+        rule.onNodeWithTag("image").apply {
+            with(getBoundsInRoot()) {
+                // Height and width should be unmodified
+                height.assertIsEqualTo(50.dp - mediumSpacing * 2, "height")
+                width.assertIsEqualTo(150.dp - mediumSpacing * 2, "width")
+            }
+        }
+    }
+
+    @Test
+    fun positioning() {
+        var smallSpacing: Dp by Delegates.notNull()
+        var mediumSpacing: Dp by Delegates.notNull()
+        rule.setGlimmerThemeContent {
+            smallSpacing = GlimmerTheme.componentSpacingValues.small
+            mediumSpacing = GlimmerTheme.componentSpacingValues.medium
+            Column {
+                Spacer(Modifier.height(10.dp).fillMaxWidth().testTag("spacer"))
+                Card(modifier = Modifier.testTag("card")) {
+                    Text("This is a card", modifier = Modifier.testTag("content"))
+                }
+            }
+        }
+
+        val spacerBounds =
+            rule.onNodeWithTag("spacer", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val contentBounds =
+            rule.onNodeWithTag("content", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val cardBounds =
+            rule.onNodeWithTag("card", useUnmergedTree = true).getUnclippedBoundsInRoot()
+
+        // Content should typically be center aligned for cards without a title / subtitle, since
+        // the minimum height of the item should be larger than the height of the text
+        (((cardBounds.height - contentBounds.height) / 2f) + cardBounds.top).assertIsEqualTo(
+            contentBounds.top,
+            "Padding between top of card and top of content.",
+        )
+
+        (contentBounds.left - cardBounds.left).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between the start of the card and the start of the content.",
+        )
+
+        // The width should fill the max width, like with the spacer
+        cardBounds.width.assertIsEqualTo(spacerBounds.width, "width of card.")
+        cardBounds.height.assertIsEqualTo(80.dp, "height of card.")
+    }
+
+    @Test
+    fun positioning_titleAndSubtitle() {
+        var smallSpacing: Dp by Delegates.notNull()
+        var mediumSpacing: Dp by Delegates.notNull()
+        rule.setGlimmerThemeContent {
+            smallSpacing = GlimmerTheme.componentSpacingValues.small
+            mediumSpacing = GlimmerTheme.componentSpacingValues.medium
+            Column {
+                Spacer(Modifier.height(10.dp).fillMaxWidth().testTag("spacer"))
+                Card(
+                    modifier = Modifier.testTag("card"),
+                    title = { Text("Title", modifier = Modifier.testTag("title")) },
+                    subtitle = { Text("Subtitle", modifier = Modifier.testTag("subtitle")) },
+                ) {
+                    Text("This is a card", modifier = Modifier.testTag("content"))
+                }
+            }
+        }
+
+        val spacerBounds =
+            rule.onNodeWithTag("spacer", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val contentBounds =
+            rule.onNodeWithTag("content", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val titleBounds =
+            rule.onNodeWithTag("title", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val subtitleBounds =
+            rule.onNodeWithTag("subtitle", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val cardBounds =
+            rule.onNodeWithTag("card", useUnmergedTree = true).getUnclippedBoundsInRoot()
+
+        (titleBounds.top - cardBounds.top).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between top of card and top of title.",
+        )
+
+        (titleBounds.left - cardBounds.left).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between start of card and start of title.",
+        )
+
+        (subtitleBounds.left - cardBounds.left).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between start of card and start of subtitle.",
+        )
+
+        (contentBounds.left - cardBounds.left).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between the start of the card and the start of the content.",
+        )
+
+        titleBounds.bottom.assertIsEqualTo(
+            subtitleBounds.top - 3.dp,
+            "Padding between the bottom of the title and the top of the subtitle.",
+        )
+
+        subtitleBounds.bottom.assertIsEqualTo(
+            contentBounds.top - 3.dp,
+            "Padding between the bottom of the subtitle and the top of the content.",
+        )
+
+        (cardBounds.bottom - contentBounds.bottom).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between bottom of card and bottom of content.",
+        )
+
+        // The width should fill the max width, like with the spacer
+        cardBounds.width.assertIsEqualTo(spacerBounds.width, "width of card.")
+        // Title and subtitle will likely make the item taller than the minimum height, so just
+        // assert we are at least the minimum height
+        assertThat(cardBounds.height.value).isAtLeast(80)
+    }
+
+    @Test
+    fun positioning_withIcons() {
+        var smallSpacing: Dp by Delegates.notNull()
+        var mediumSpacing: Dp by Delegates.notNull()
+        rule.setGlimmerThemeContent {
+            smallSpacing = GlimmerTheme.componentSpacingValues.small
+            mediumSpacing = GlimmerTheme.componentSpacingValues.medium
+            Column {
+                Spacer(Modifier.height(10.dp).fillMaxWidth().testTag("spacer"))
+                Card(
+                    modifier = Modifier.testTag("card"),
+                    leadingIcon = {
+                        Icon(
+                            FavoriteIcon,
+                            contentDescription = "Localized description",
+                            modifier = Modifier.testTag("leadingIcon"),
+                        )
+                    },
+                    trailingIcon = {
+                        Icon(
+                            FavoriteIcon,
+                            contentDescription = "Localized description",
+                            modifier = Modifier.testTag("trailingIcon"),
+                        )
+                    },
+                ) {
+                    Text("This is a card", modifier = Modifier.testTag("content"))
+                }
+            }
+        }
+
+        val spacerBounds =
+            rule.onNodeWithTag("spacer", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val contentBounds =
+            rule.onNodeWithTag("content", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val leadingIconBounds =
+            rule.onNodeWithTag("leadingIcon", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val trailingIconBounds =
+            rule.onNodeWithTag("trailingIcon", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val cardBounds =
+            rule.onNodeWithTag("card", useUnmergedTree = true).getUnclippedBoundsInRoot()
+
+        (leadingIconBounds.top - cardBounds.top).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between top of card and top of leading icon.",
+        )
+
+        (leadingIconBounds.left - cardBounds.left).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between start of card and start of leading icon.",
+        )
+
+        // Content should typically be center aligned for cards without title / subtitle, since
+        // the minimum height of the item should be larger than the height of the content
+        (((cardBounds.height - contentBounds.height) / 2f) + cardBounds.top).assertIsEqualTo(
+            contentBounds.top,
+            "Padding between top of card and top of content.",
+        )
+
+        (contentBounds.left - leadingIconBounds.right).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between end of leading icon and start of content.",
+        )
+
+        (trailingIconBounds.top - cardBounds.top).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between top of card and top of trailing icon.",
+        )
+
+        (cardBounds.right - trailingIconBounds.right).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between end of trailing icon and end of card.",
+        )
+
+        // The width should fill the max width, like with the spacer
+        cardBounds.width.assertIsEqualTo(spacerBounds.width, "width of card.")
+        val totalOuterAndInnerPadding = (mediumSpacing + smallSpacing) * 2
+        cardBounds.height.assertIsEqualTo(
+            /* vertical padding * 2 + icon height*/ totalOuterAndInnerPadding + 48.dp,
+            "height of card.",
+        )
+    }
+
+    @Test
+    fun positioning_titleAndSubtitle_withIcons() {
+        var smallSpacing: Dp by Delegates.notNull()
+        var mediumSpacing: Dp by Delegates.notNull()
+        rule.setGlimmerThemeContent {
+            smallSpacing = GlimmerTheme.componentSpacingValues.small
+            mediumSpacing = GlimmerTheme.componentSpacingValues.medium
+            Column {
+                Spacer(Modifier.height(10.dp).fillMaxWidth().testTag("spacer"))
+                Card(
+                    modifier = Modifier.testTag("card"),
+                    title = { Text("Title", modifier = Modifier.testTag("title")) },
+                    subtitle = { Text("Subtitle", modifier = Modifier.testTag("subtitle")) },
+                    leadingIcon = {
+                        Icon(
+                            FavoriteIcon,
+                            contentDescription = "Localized description",
+                            modifier = Modifier.testTag("leadingIcon"),
+                        )
+                    },
+                    trailingIcon = {
+                        Icon(
+                            FavoriteIcon,
+                            contentDescription = "Localized description",
+                            modifier = Modifier.testTag("trailingIcon"),
+                        )
+                    },
+                ) {
+                    Text("This is a card", modifier = Modifier.testTag("content"))
+                }
+            }
+        }
+
+        val spacerBounds =
+            rule.onNodeWithTag("spacer", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val contentBounds =
+            rule.onNodeWithTag("content", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val titleBounds =
+            rule.onNodeWithTag("title", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val subtitleBounds =
+            rule.onNodeWithTag("subtitle", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val leadingIconBounds =
+            rule.onNodeWithTag("leadingIcon", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val trailingIconBounds =
+            rule.onNodeWithTag("trailingIcon", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val cardBounds =
+            rule.onNodeWithTag("card", useUnmergedTree = true).getUnclippedBoundsInRoot()
+
+        (leadingIconBounds.top - cardBounds.top).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between top of card and top of leading icon.",
+        )
+
+        (leadingIconBounds.left - cardBounds.left).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between start of card and start of leading icon.",
+        )
+
+        // Title should be top aligned when the height of the content, title, and subtitle is
+        // greater than minimum card height
+        (titleBounds.top - cardBounds.top).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between top of card and top of title.",
+        )
+
+        (titleBounds.left - leadingIconBounds.right).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between end of leading icon and start of title.",
+        )
+
+        (subtitleBounds.left - leadingIconBounds.right).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between end of leading icon and start of subtitle.",
+        )
+
+        (contentBounds.left - leadingIconBounds.right).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between end of leading icon and start of content.",
+        )
+
+        titleBounds.bottom.assertIsEqualTo(
+            subtitleBounds.top - 3.dp,
+            "Padding between the bottom of the title and the top of the subtitle.",
+        )
+
+        subtitleBounds.bottom.assertIsEqualTo(
+            contentBounds.top - 3.dp,
+            "Padding between the bottom of the subtitle and the top of the content.",
+        )
+
+        (cardBounds.bottom - contentBounds.bottom).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between bottom of card and bottom of content.",
+        )
+
+        (trailingIconBounds.top - cardBounds.top).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between top of card and top of trailing icon.",
+        )
+
+        (cardBounds.right - trailingIconBounds.right).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between end of trailing icon and end of card.",
+        )
+
+        // The width should fill the max width, like with the spacer
+        cardBounds.width.assertIsEqualTo(spacerBounds.width, "width of card.")
+        // Title and subtitle will likely make the item taller than the minimum height, so just
+        // assert we are at least the minimum height
+        assertThat(cardBounds.height.value).isAtLeast(80)
+    }
+
+    @Test
+    fun positioning_titleAndSubtitle_withIcons_longText() {
+        var smallSpacing: Dp by Delegates.notNull()
+        var mediumSpacing: Dp by Delegates.notNull()
+        rule.setGlimmerThemeContent {
+            smallSpacing = GlimmerTheme.componentSpacingValues.small
+            mediumSpacing = GlimmerTheme.componentSpacingValues.medium
+            Column(Modifier.width(300.dp)) {
+                Spacer(Modifier.height(10.dp).fillMaxWidth().testTag("spacer"))
+                Card(
+                    modifier = Modifier.testTag("card"),
+                    title = { Text("Title", modifier = Modifier.testTag("title")) },
+                    subtitle = { Text("Subtitle", modifier = Modifier.testTag("subtitle")) },
+                    leadingIcon = {
+                        Icon(
+                            FavoriteIcon,
+                            contentDescription = "Localized description",
+                            modifier = Modifier.testTag("leadingIcon"),
+                        )
+                    },
+                    trailingIcon = {
+                        Icon(
+                            FavoriteIcon,
+                            contentDescription = "Localized description",
+                            modifier = Modifier.testTag("trailingIcon"),
+                        )
+                    },
+                ) {
+                    Text("This is a card", modifier = Modifier.testTag("content"))
+                }
+            }
+        }
+
+        val spacerBounds =
+            rule.onNodeWithTag("spacer", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val contentBounds =
+            rule.onNodeWithTag("content", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val titleBounds =
+            rule.onNodeWithTag("title", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val subtitleBounds =
+            rule.onNodeWithTag("subtitle", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val leadingIconBounds =
+            rule.onNodeWithTag("leadingIcon", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val trailingIconBounds =
+            rule.onNodeWithTag("trailingIcon", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val cardBounds =
+            rule.onNodeWithTag("card", useUnmergedTree = true).getUnclippedBoundsInRoot()
+
+        (leadingIconBounds.top - cardBounds.top).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between top of card and top of leading icon.",
+        )
+
+        (leadingIconBounds.left - cardBounds.left).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between start of card and start of leading icon.",
+        )
+
+        // Title should be top aligned when the height of the content, title, and subtitle is
+        // greater than minimum card height
+        (titleBounds.top - cardBounds.top).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between top of card and top of title.",
+        )
+
+        (titleBounds.left - leadingIconBounds.right).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between end of leading icon and start of title.",
+        )
+
+        (subtitleBounds.left - leadingIconBounds.right).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between end of leading icon and start of subtitle.",
+        )
+
+        (contentBounds.left - leadingIconBounds.right).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between end of leading icon and start of content.",
+        )
+
+        titleBounds.bottom.assertIsEqualTo(
+            subtitleBounds.top - 3.dp,
+            "Padding between the bottom of the title and the top of the subtitle.",
+        )
+
+        subtitleBounds.bottom.assertIsEqualTo(
+            contentBounds.top - 3.dp,
+            "Padding between the bottom of the subtitle and the top of the content.",
+        )
+
+        (cardBounds.bottom - contentBounds.bottom).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between bottom of card and bottom of content.",
+        )
+
+        (trailingIconBounds.top - cardBounds.top).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between top of card and top of trailing icon.",
+        )
+
+        (cardBounds.right - trailingIconBounds.right).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between end of trailing icon and end of card.",
+        )
+
+        // The width should fill the max width, like with the spacer
+        cardBounds.width.assertIsEqualTo(spacerBounds.width, "width of card.")
+        assertThat(cardBounds.height.value).isAtLeast(80)
+    }
+
+    @Test
+    fun positioning_actionCard() {
+        var smallSpacing: Dp by Delegates.notNull()
+        var mediumSpacing: Dp by Delegates.notNull()
+        rule.setGlimmerThemeContent {
+            smallSpacing = GlimmerTheme.componentSpacingValues.small
+            mediumSpacing = GlimmerTheme.componentSpacingValues.medium
+            Column {
+                Spacer(Modifier.height(10.dp).fillMaxWidth().testTag("spacer"))
+                ActionCard(
+                    modifier = Modifier.testTag("card"),
+                    action = { Button(onClick = {}, Modifier.testTag("action")) { Text("Send") } },
+                ) {
+                    Text("This is a card", modifier = Modifier.testTag("content"))
+                }
+            }
+        }
+
+        val spacerBounds =
+            rule.onNodeWithTag("spacer", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val contentBounds =
+            rule.onNodeWithTag("content", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val actionBounds =
+            rule.onNodeWithTag("action", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val cardBounds =
+            rule.onNodeWithTag("card", useUnmergedTree = true).getUnclippedBoundsInRoot()
+
+        (contentBounds.top - cardBounds.top).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between top of card and top of content.",
+        )
+
+        (contentBounds.left - cardBounds.left).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between the start of the card and the start of the content.",
+        )
+
+        (actionBounds.top - contentBounds.bottom).assertIsEqualTo(
+            smallSpacing,
+            "Space between the bottom of the content and the top of the action",
+        )
+
+        (cardBounds.bottom - actionBounds.bottom).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between the bottom of the action and the bottom of the card",
+        )
+
+        (actionBounds.left - cardBounds.left).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between start of card and start of action",
+        )
+
+        (cardBounds.right - actionBounds.right).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between end of action and end of card",
+        )
+
+        // The width should fill the max width, like with the spacer
+        cardBounds.width.assertIsEqualTo(spacerBounds.width, "width of card.")
+        // The height should be the content height, action height, and padding
+        val totalOuterAndInnerPadding = (mediumSpacing + smallSpacing) * 2
+        cardBounds.height.assertIsEqualTo(
+            contentBounds.height + actionBounds.height + totalOuterAndInnerPadding,
+            "height of card.",
+        )
+    }
+
+    @Test
+    fun positioning_actionCard_titleAndSubtitle_withIcons() {
+        var smallSpacing: Dp by Delegates.notNull()
+        var mediumSpacing: Dp by Delegates.notNull()
+        rule.setGlimmerThemeContent {
+            smallSpacing = GlimmerTheme.componentSpacingValues.small
+            mediumSpacing = GlimmerTheme.componentSpacingValues.medium
+            Column(Modifier.width(300.dp)) {
+                Spacer(Modifier.height(10.dp).fillMaxWidth().testTag("spacer"))
+                ActionCard(
+                    action = { Button(onClick = {}, Modifier.testTag("action")) { Text("Send") } },
+                    modifier = Modifier.testTag("card"),
+                    title = { Text("Title", modifier = Modifier.testTag("title")) },
+                    subtitle = { Text("Subtitle", modifier = Modifier.testTag("subtitle")) },
+                    leadingIcon = {
+                        Icon(
+                            FavoriteIcon,
+                            contentDescription = "Localized description",
+                            modifier = Modifier.testTag("leadingIcon"),
+                        )
+                    },
+                    trailingIcon = {
+                        Icon(
+                            FavoriteIcon,
+                            contentDescription = "Localized description",
+                            modifier = Modifier.testTag("trailingIcon"),
+                        )
+                    },
+                ) {
+                    Text("This is a card", modifier = Modifier.testTag("content"))
+                }
+            }
+        }
+
+        val spacerBounds =
+            rule.onNodeWithTag("spacer", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val contentBounds =
+            rule.onNodeWithTag("content", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val actionBounds =
+            rule.onNodeWithTag("action", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val titleBounds =
+            rule.onNodeWithTag("title", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val subtitleBounds =
+            rule.onNodeWithTag("subtitle", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val leadingIconBounds =
+            rule.onNodeWithTag("leadingIcon", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val trailingIconBounds =
+            rule.onNodeWithTag("trailingIcon", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val cardBounds =
+            rule.onNodeWithTag("card", useUnmergedTree = true).getUnclippedBoundsInRoot()
+
+        (leadingIconBounds.top - cardBounds.top).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between top of card and top of leading icon.",
+        )
+
+        (leadingIconBounds.left - cardBounds.left).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between start of card and start of leading icon.",
+        )
+
+        (titleBounds.top - cardBounds.top).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between top of card and top of title.",
+        )
+
+        (titleBounds.left - leadingIconBounds.right).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between end of leading icon and start of title.",
+        )
+
+        (subtitleBounds.left - leadingIconBounds.right).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between end of leading icon and start of subtitle.",
+        )
+
+        (contentBounds.left - leadingIconBounds.right).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between end of leading icon and start of content.",
+        )
+
+        titleBounds.bottom.assertIsEqualTo(
+            subtitleBounds.top - 3.dp,
+            "Padding between the bottom of the title and the top of the subtitle.",
+        )
+
+        subtitleBounds.bottom.assertIsEqualTo(
+            contentBounds.top - 3.dp,
+            "Padding between the bottom of the subtitle and the top of the content.",
+        )
+
+        (trailingIconBounds.top - cardBounds.top).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between top of card and top of trailing icon.",
+        )
+
+        (cardBounds.right - trailingIconBounds.right).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between end of trailing icon and end of card.",
+        )
+
+        (actionBounds.top - contentBounds.bottom).assertIsEqualTo(
+            smallSpacing,
+            "Space between the top of the action and the bottom of the content",
+        )
+
+        (cardBounds.bottom - actionBounds.bottom).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between bottom of card and bottom of action",
+        )
+
+        (actionBounds.left - cardBounds.left).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between start of card and start of action",
+        )
+
+        (cardBounds.right - actionBounds.right).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between end of action and end of card",
+        )
+
+        // The width should fill the max width, like with the spacer
+        cardBounds.width.assertIsEqualTo(spacerBounds.width, "width of card.")
+        assertThat(cardBounds.height.value).isAtLeast(80)
+    }
+
+    @Test
+    fun positioning_imageCard() {
+        var smallSpacing: Dp by Delegates.notNull()
+        var mediumSpacing: Dp by Delegates.notNull()
+        rule.setGlimmerThemeContent {
+            smallSpacing = GlimmerTheme.componentSpacingValues.small
+            mediumSpacing = GlimmerTheme.componentSpacingValues.medium
+            Column(Modifier.width(300.dp)) {
+                Spacer(Modifier.height(10.dp).fillMaxWidth().testTag("spacer"))
+                ImageCard(
+                    image = {
+                        Image(
+                            placeholderImagePainter(Size(width = 1000f, height = 1000f)),
+                            "Localized description",
+                            modifier = Modifier.testTag("image"),
+                            contentScale = ContentScale.FillWidth,
+                        )
+                    },
+                    modifier = Modifier.testTag("card"),
+                ) {
+                    Text("This is a card", modifier = Modifier.testTag("content"))
+                }
+            }
+        }
+
+        val spacerBounds =
+            rule.onNodeWithTag("spacer", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val contentBounds =
+            rule.onNodeWithTag("content", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val imageBounds =
+            rule.onNodeWithTag("image", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val cardBounds =
+            rule.onNodeWithTag("card", useUnmergedTree = true).getUnclippedBoundsInRoot()
+
+        (imageBounds.top - cardBounds.top).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between top of card and top of image.",
+        )
+
+        (imageBounds.left - cardBounds.left).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between the start of the card and the start of the image.",
+        )
+
+        (cardBounds.right - imageBounds.right).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between the end of the image and the end of the card.",
+        )
+
+        (contentBounds.left - cardBounds.left).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between the start of the card and the start of the content.",
+        )
+
+        (contentBounds.top - imageBounds.bottom).assertIsEqualTo(
+            smallSpacing,
+            "Padding between the bottom of the image and the top of the content.",
+        )
+
+        (cardBounds.bottom - contentBounds.bottom).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between bottom of card and bottom of content.",
+        )
+
+        // The width should fill the max width, like with the spacer
+        cardBounds.width.assertIsEqualTo(spacerBounds.width, "width of card.")
+        assertThat(cardBounds.height.value).isAtLeast(80)
+        imageBounds.height.assertIsEqualTo(imageBounds.width / 1.6f, "height of image")
+    }
+
+    @Test
+    fun positioning_imageCard_titleAndSubtitle_withIcons() {
+        var smallSpacing: Dp by Delegates.notNull()
+        var mediumSpacing: Dp by Delegates.notNull()
+        rule.setGlimmerThemeContent {
+            smallSpacing = GlimmerTheme.componentSpacingValues.small
+            mediumSpacing = GlimmerTheme.componentSpacingValues.medium
+            Column(Modifier.width(300.dp)) {
+                Spacer(Modifier.height(10.dp).fillMaxWidth().testTag("spacer"))
+                ImageCard(
+                    image = {
+                        Image(
+                            placeholderImagePainter(Size(1000f, 1000f)),
+                            "Localized description",
+                            modifier = Modifier.testTag("image"),
+                            contentScale = ContentScale.FillWidth,
+                        )
+                    },
+                    modifier = Modifier.testTag("card"),
+                    title = { Text("Title", modifier = Modifier.testTag("title")) },
+                    subtitle = { Text("Subtitle", modifier = Modifier.testTag("subtitle")) },
+                    leadingIcon = {
+                        Icon(
+                            FavoriteIcon,
+                            contentDescription = "Localized description",
+                            modifier = Modifier.testTag("leadingIcon"),
+                        )
+                    },
+                    trailingIcon = {
+                        Icon(
+                            FavoriteIcon,
+                            contentDescription = "Localized description",
+                            modifier = Modifier.testTag("trailingIcon"),
+                        )
+                    },
+                ) {
+                    Text("This is a card", modifier = Modifier.testTag("content"))
+                }
+            }
+        }
+
+        val spacerBounds =
+            rule.onNodeWithTag("spacer", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val contentBounds =
+            rule.onNodeWithTag("content", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val titleBounds =
+            rule.onNodeWithTag("title", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val subtitleBounds =
+            rule.onNodeWithTag("subtitle", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val imageBounds =
+            rule.onNodeWithTag("image", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val leadingIconBounds =
+            rule.onNodeWithTag("leadingIcon", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val trailingIconBounds =
+            rule.onNodeWithTag("trailingIcon", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val cardBounds =
+            rule.onNodeWithTag("card", useUnmergedTree = true).getUnclippedBoundsInRoot()
+
+        (imageBounds.top - cardBounds.top).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between top of card and top of image.",
+        )
+
+        (imageBounds.left - cardBounds.left).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between the start of the card and the start of the image.",
+        )
+
+        (cardBounds.right - imageBounds.right).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between the end of the image and the end of the card.",
+        )
+
+        (leadingIconBounds.top - imageBounds.bottom).assertIsEqualTo(
+            smallSpacing,
+            "Padding between the bottom of image and top of leading icon.",
+        )
+
+        (leadingIconBounds.left - cardBounds.left).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between start of card and start of leading icon.",
+        )
+
+        (titleBounds.top - imageBounds.bottom).assertIsEqualTo(
+            smallSpacing,
+            "Padding between the bottom of image and top of title.",
+        )
+
+        (titleBounds.left - leadingIconBounds.right).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between end of leading icon and start of title.",
+        )
+
+        (subtitleBounds.left - leadingIconBounds.right).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between end of leading icon and start of subtitle.",
+        )
+
+        (contentBounds.left - leadingIconBounds.right).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between end of leading icon and start of content.",
+        )
+
+        titleBounds.bottom.assertIsEqualTo(
+            subtitleBounds.top - 3.dp,
+            "Padding between the bottom of the title and the top of the subtitle.",
+        )
+
+        subtitleBounds.bottom.assertIsEqualTo(
+            contentBounds.top - 3.dp,
+            "Padding between the bottom of the subtitle and the top of the content.",
+        )
+
+        (cardBounds.bottom - contentBounds.bottom).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between bottom of card and bottom of content.",
+        )
+
+        (trailingIconBounds.top - imageBounds.bottom).assertIsEqualTo(
+            smallSpacing,
+            "Padding between the bottom of image and top of trailing icon.",
+        )
+
+        (cardBounds.right - trailingIconBounds.right).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between end of trailing icon and end of card.",
+        )
+
+        // The width should fill the max width, like with the spacer
+        cardBounds.width.assertIsEqualTo(spacerBounds.width, "width of card.")
+        assertThat(cardBounds.height.value).isAtLeast(80)
+        imageBounds.height.assertIsEqualTo(imageBounds.width / 1.6f, "height of image")
+    }
+
+    @Test
+    fun positioning_imageCard_withExcessHeight() {
+        val cardHeight = 500.dp
+        var smallSpacing: Dp by Delegates.notNull()
+        var mediumSpacing: Dp by Delegates.notNull()
+        rule.setGlimmerThemeContent {
+            smallSpacing = GlimmerTheme.componentSpacingValues.small
+            mediumSpacing = GlimmerTheme.componentSpacingValues.medium
+            Column(Modifier.width(300.dp)) {
+                Spacer(Modifier.height(10.dp).fillMaxWidth().testTag("spacer"))
+                ImageCard(
+                    modifier = Modifier.height(cardHeight).testTag("card"),
+                    image = { Box(Modifier.fillMaxSize().testTag("image")) },
+                ) {
+                    Text("This is a card", modifier = Modifier.testTag("content"))
+                }
+            }
+        }
+
+        val spacerBounds =
+            rule.onNodeWithTag("spacer", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val imageBounds =
+            rule.onNodeWithTag("image", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val contentBounds =
+            rule.onNodeWithTag("content", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val cardBounds =
+            rule.onNodeWithTag("card", useUnmergedTree = true).getUnclippedBoundsInRoot()
+
+        val totalOuterPadding = mediumSpacing * 2
+        val availableBodyHeight = cardBounds.height - totalOuterPadding
+        // Body height consists of image height and content row height (with its vertical inner
+        // padding)
+        val bodyHeight = imageBounds.height + contentBounds.height + smallSpacing * 2
+        val expectedBodyY = (availableBodyHeight - bodyHeight) / 2
+
+        // Image and content should be centered together vertically in the card
+        (imageBounds.top - cardBounds.top).assertIsEqualTo(
+            mediumSpacing + expectedBodyY,
+            "Padding between top of card and top of image.",
+        )
+
+        (imageBounds.left - cardBounds.left).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between the start of the card and the start of the image.",
+        )
+
+        (cardBounds.right - imageBounds.right).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between the end of the image and the end of the card.",
+        )
+
+        // Image and content must remain glued together with standard smallSpacing
+        (contentBounds.top - imageBounds.bottom).assertIsEqualTo(
+            smallSpacing,
+            "Padding between the bottom of the image and the top of the content.",
+        )
+
+        (contentBounds.left - cardBounds.left).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between the start of the card and the start of the content.",
+        )
+
+        // Bottom padding between content and bottom of card reflects centering
+        (cardBounds.bottom - contentBounds.bottom).assertIsEqualTo(
+            mediumSpacing + smallSpacing + expectedBodyY,
+            "Padding between bottom of card and bottom of content.",
+        )
+
+        // The width should fill the max width, like with the spacer
+        cardBounds.width.assertIsEqualTo(spacerBounds.width, "width of card.")
+        cardBounds.height.assertIsEqualTo(cardHeight, "height of card.")
+        imageBounds.height.assertIsEqualTo(imageBounds.width / 1.6f, "height of image")
+    }
+
+    @Test
+    fun minHeightCanBeOverridden() {
+        rule.setGlimmerThemeContent {
+            Card(
+                contentPadding = PaddingValues(),
+                modifier = Modifier.requiredHeightIn(30.dp).testTag("card"),
+            ) {
+                Spacer(Modifier.requiredSize(10.dp))
+            }
+        }
+
+        rule.onNodeWithTag("card").apply {
+            with(getBoundsInRoot()) { height.assertIsEqualTo(30.dp, "height") }
+        }
+    }
+
+    @Test
+    fun positioning_leadingImage_titleAndSubtitle() {
+        var smallSpacing: Dp by Delegates.notNull()
+        var mediumSpacing: Dp by Delegates.notNull()
+        rule.setGlimmerThemeContent {
+            smallSpacing = GlimmerTheme.componentSpacingValues.small
+            mediumSpacing = GlimmerTheme.componentSpacingValues.medium
+            Column {
+                Spacer(Modifier.height(10.dp).fillMaxWidth().testTag("spacer"))
+                LeadingImageCard(
+                    modifier = Modifier.testTag("card"),
+                    image = {
+                        Image(
+                            testPainter(Size(1000f, 1000f)),
+                            "Localized description",
+                            modifier = Modifier.testTag("image"),
+                        )
+                    },
+                    title = { Text("Title", modifier = Modifier.testTag("title")) },
+                    subtitle = { Text("Subtitle", modifier = Modifier.testTag("subtitle")) },
+                ) {
+                    Text("This is a card", modifier = Modifier.testTag("content"))
+                }
+            }
+        }
+
+        val spacerBounds =
+            rule.onNodeWithTag("spacer", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val contentBounds =
+            rule.onNodeWithTag("content", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val titleBounds =
+            rule.onNodeWithTag("title", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val subtitleBounds =
+            rule.onNodeWithTag("subtitle", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val imageBounds =
+            rule.onNodeWithTag("image", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val cardBounds =
+            rule.onNodeWithTag("card", useUnmergedTree = true).getUnclippedBoundsInRoot()
+
+        val expectedImageSize = cardBounds.height - mediumSpacing * 2
+        imageBounds.width.assertIsEqualTo(expectedImageSize, "width of image")
+        imageBounds.height.assertIsEqualTo(expectedImageSize, "height of image")
+
+        (imageBounds.top - cardBounds.top).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between top of card and top of image.",
+        )
+
+        val imageColumnWidth = (cardBounds.width - mediumSpacing * 2) * 0.3f
+        (imageBounds.left - cardBounds.left).assertIsEqualTo(
+            mediumSpacing + (imageColumnWidth - imageBounds.width) / 2f,
+            "Padding between start of card and start of image.",
+        )
+
+        val textColumnStart = cardBounds.left + mediumSpacing + imageColumnWidth
+        (titleBounds.left - textColumnStart).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between start of text column and start of title.",
+        )
+
+        (subtitleBounds.left - textColumnStart).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between start of text column and start of subtitle.",
+        )
+
+        (contentBounds.left - textColumnStart).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between start of text column and start of content.",
+        )
+
+        titleBounds.bottom.assertIsEqualTo(
+            subtitleBounds.top - 3.dp,
+            "Padding between the bottom of the title and the top of the subtitle.",
+        )
+
+        subtitleBounds.bottom.assertIsEqualTo(
+            contentBounds.top - 3.dp,
+            "Padding between the bottom of the subtitle and the top of the content.",
+        )
+
+        cardBounds.width.assertIsEqualTo(spacerBounds.width, "width of card.")
+        assertThat(cardBounds.height.value).isAtLeast(80)
+    }
+
+    @Test
+    fun positioning_trailingImage_titleAndSubtitle() {
+        var smallSpacing: Dp by Delegates.notNull()
+        var mediumSpacing: Dp by Delegates.notNull()
+        rule.setGlimmerThemeContent {
+            smallSpacing = GlimmerTheme.componentSpacingValues.small
+            mediumSpacing = GlimmerTheme.componentSpacingValues.medium
+            Column {
+                Spacer(Modifier.height(10.dp).fillMaxWidth().testTag("spacer"))
+                TrailingImageCard(
+                    modifier = Modifier.testTag("card"),
+                    image = {
+                        Image(
+                            testPainter(Size(1000f, 1000f)),
+                            "Localized description",
+                            modifier = Modifier.testTag("image"),
+                        )
+                    },
+                    title = { Text("Title", modifier = Modifier.testTag("title")) },
+                    subtitle = { Text("Subtitle", modifier = Modifier.testTag("subtitle")) },
+                ) {
+                    Text("This is a card", modifier = Modifier.testTag("content"))
+                }
+            }
+        }
+
+        val spacerBounds =
+            rule.onNodeWithTag("spacer", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val contentBounds =
+            rule.onNodeWithTag("content", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val titleBounds =
+            rule.onNodeWithTag("title", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val subtitleBounds =
+            rule.onNodeWithTag("subtitle", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val imageBounds =
+            rule.onNodeWithTag("image", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val cardBounds =
+            rule.onNodeWithTag("card", useUnmergedTree = true).getUnclippedBoundsInRoot()
+
+        val expectedImageSize = cardBounds.height - mediumSpacing * 2
+        imageBounds.width.assertIsEqualTo(expectedImageSize, "width of image")
+        imageBounds.height.assertIsEqualTo(expectedImageSize, "height of image")
+
+        (imageBounds.top - cardBounds.top).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between top of card and top of image.",
+        )
+
+        (titleBounds.left - cardBounds.left).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between start of card and start of title.",
+        )
+
+        (subtitleBounds.left - cardBounds.left).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between start of card and start of subtitle.",
+        )
+
+        (contentBounds.left - cardBounds.left).assertIsEqualTo(
+            mediumSpacing + smallSpacing,
+            "Padding between start of card and start of content.",
+        )
+
+        val textColumnWidth = (cardBounds.width - mediumSpacing * 2) * 0.7f
+        val imageColumnWidth = (cardBounds.width - mediumSpacing * 2) * 0.3f
+        val imageColumnStart = cardBounds.left + mediumSpacing + textColumnWidth
+        (imageBounds.left - imageColumnStart).assertIsEqualTo(
+            (imageColumnWidth - imageBounds.width) / 2f,
+            "Horizontal centering of image in trailing slot.",
+        )
+
+        (cardBounds.right - imageColumnStart - imageColumnWidth).assertIsEqualTo(
+            mediumSpacing,
+            "Padding between end of image slot and end of card.",
+        )
+
+        titleBounds.bottom.assertIsEqualTo(
+            subtitleBounds.top - 3.dp,
+            "Padding between the bottom of the title and the top of the subtitle.",
+        )
+
+        subtitleBounds.bottom.assertIsEqualTo(
+            contentBounds.top - 3.dp,
+            "Padding between the bottom of the subtitle and the top of the content.",
+        )
+
+        cardBounds.width.assertIsEqualTo(spacerBounds.width, "width of card.")
+        assertThat(cardBounds.height.value).isAtLeast(80)
+    }
+
+    @Test
+    fun leadingImageCard_allocatesThirtyPercentWidth() {
+        rule.setGlimmerThemeContent {
+            LeadingImageCard(
+                contentPadding = PaddingValues(0.dp),
+                modifier = Modifier.requiredSize(width = 500.dp, height = 100.dp).testTag("card"),
+                image = {
+                    Image(
+                        testPainter(Size(1000f, 1000f)),
+                        "Localized description",
+                        modifier = Modifier.fillMaxWidth().testTag("image"),
+                    )
+                },
+            ) {
+                Text("This is a card")
+            }
+        }
+
+        val imageBounds =
+            rule.onNodeWithTag("image", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        imageBounds.width.assertIsEqualTo(150.dp, "width of image")
+    }
+
+    @Test
+    fun leadingImageCard_defaultImageSizing_maintainsSourceAspectRatio() {
+        rule.setGlimmerThemeContent {
+            LeadingImageCard(
+                contentPadding = PaddingValues(0.dp),
+                modifier = Modifier.requiredSize(width = 500.dp, height = 200.dp).testTag("card"),
+                image = {
+                    Image(
+                        testPainter(Size(1000f, 1000f)),
+                        "Localized description",
+                        modifier = Modifier.testTag("image"),
+                    )
+                },
+            ) {
+                Text("This is a card")
+            }
+        }
+
+        val imageBounds =
+            rule.onNodeWithTag("image", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        imageBounds.width.assertIsEqualTo(150.dp, "width of image")
+        imageBounds.height.assertIsEqualTo(150.dp, "height of image")
+    }
+
+    @Test
+    fun leadingImageCard_withFillMaxHeightModifier() {
+        rule.setGlimmerThemeContent {
+            LeadingImageCard(
+                contentPadding = PaddingValues(0.dp),
+                modifier = Modifier.requiredSize(width = 500.dp, height = 300.dp).testTag("card"),
+                image = {
+                    Image(
+                        testPainter(Size(1000f, 1000f)),
+                        "Localized description",
+                        modifier = Modifier.fillMaxHeight().testTag("image"),
+                    )
+                },
+            ) {
+                Text("This is a card")
+            }
+        }
+
+        val imageBounds =
+            rule.onNodeWithTag("image", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        imageBounds.width.assertIsEqualTo(150.dp, "width of image")
+        imageBounds.height.assertIsEqualTo(300.dp, "height of image")
+    }
+
+    @Test
+    fun leadingImageCard_withCustomSizeModifier() {
+        rule.setGlimmerThemeContent {
+            LeadingImageCard(
+                contentPadding = PaddingValues(0.dp),
+                modifier = Modifier.requiredSize(width = 400.dp, height = 120.dp).testTag("card"),
+                image = {
+                    Image(
+                        testPainter(Size(1000f, 1000f)),
+                        "Localized description",
+                        modifier = Modifier.size(width = 80.dp, height = 60.dp).testTag("image"),
+                    )
+                },
+            ) {
+                Text("This is a card")
+            }
+        }
+
+        val imageBounds =
+            rule.onNodeWithTag("image", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        imageBounds.width.assertIsEqualTo(80.dp, "width of image")
+        imageBounds.height.assertIsEqualTo(60.dp, "height of image")
+    }
+
+    @Test
+    fun trailingImageCard_allocatesThirtyPercentWidth() {
+        rule.setGlimmerThemeContent {
+            TrailingImageCard(
+                contentPadding = PaddingValues(0.dp),
+                modifier = Modifier.requiredSize(width = 500.dp, height = 100.dp).testTag("card"),
+                image = {
+                    Image(
+                        testPainter(Size(1000f, 1000f)),
+                        "Localized description",
+                        modifier = Modifier.fillMaxWidth().testTag("image"),
+                    )
+                },
+            ) {
+                Text("This is a card")
+            }
+        }
+
+        val imageBounds =
+            rule.onNodeWithTag("image", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        imageBounds.width.assertIsEqualTo(150.dp, "width of image")
+    }
+
+    @Test
+    fun trailingImageCard_defaultImageSizing_maintainsSourceAspectRatio() {
+        rule.setGlimmerThemeContent {
+            TrailingImageCard(
+                contentPadding = PaddingValues(0.dp),
+                modifier = Modifier.requiredSize(width = 500.dp, height = 200.dp).testTag("card"),
+                image = {
+                    Image(
+                        testPainter(Size(1000f, 1000f)),
+                        "Localized description",
+                        modifier = Modifier.testTag("image"),
+                    )
+                },
+            ) {
+                Text("This is a card")
+            }
+        }
+
+        val imageBounds =
+            rule.onNodeWithTag("image", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        imageBounds.width.assertIsEqualTo(150.dp, "width of image")
+        imageBounds.height.assertIsEqualTo(150.dp, "height of image")
+    }
+
+    @Test
+    fun trailingImageCard_withFillMaxHeightModifier() {
+        rule.setGlimmerThemeContent {
+            TrailingImageCard(
+                contentPadding = PaddingValues(0.dp),
+                modifier = Modifier.requiredSize(width = 500.dp, height = 300.dp).testTag("card"),
+                image = {
+                    Image(
+                        testPainter(Size(1000f, 1000f)),
+                        "Localized description",
+                        modifier = Modifier.fillMaxHeight().testTag("image"),
+                    )
+                },
+            ) {
+                Text("This is a card")
+            }
+        }
+
+        val imageBounds =
+            rule.onNodeWithTag("image", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        imageBounds.width.assertIsEqualTo(150.dp, "width of image")
+        imageBounds.height.assertIsEqualTo(300.dp, "height of image")
+    }
+
+    @Test
+    fun trailingImageCard_withCustomSizeModifier() {
+        rule.setGlimmerThemeContent {
+            TrailingImageCard(
+                contentPadding = PaddingValues(0.dp),
+                modifier = Modifier.requiredSize(width = 400.dp, height = 120.dp).testTag("card"),
+                image = {
+                    Image(
+                        testPainter(Size(1000f, 1000f)),
+                        "Localized description",
+                        modifier = Modifier.size(width = 90.dp, height = 90.dp).testTag("image"),
+                    )
+                },
+            ) {
+                Text("This is a card")
+            }
+        }
+
+        val imageBounds =
+            rule.onNodeWithTag("image", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        imageBounds.width.assertIsEqualTo(90.dp, "width of image")
+        imageBounds.height.assertIsEqualTo(90.dp, "height of image")
+    }
+
+    private fun testPainter(intrinsicSize: Size): androidx.compose.ui.graphics.painter.Painter =
+        object : androidx.compose.ui.graphics.painter.Painter() {
+            override val intrinsicSize: Size = intrinsicSize
+
+            override fun androidx.compose.ui.graphics.drawscope.DrawScope.onDraw() {}
+        }
+}

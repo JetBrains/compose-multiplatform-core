@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,20 @@
  * limitations under the License.
  */
 
-@file:Suppress("BanConcurrentHashMap")
-
 package androidx.xr.scenecore
 
 import android.app.Activity
-import android.os.Bundle
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.SessionConnector
-import androidx.xr.runtime.internal.Entity as RtEntity
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.LifecycleManager
-import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
-import androidx.xr.runtime.internal.SpatialModeChangeListener as RtSpatialModeChangeListener
-import androidx.xr.runtime.internal.SpatialVisibility as RtSpatialVisibility
+import androidx.xr.runtime.internal.JxrRuntime
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentMap
+import androidx.xr.scenecore.runtime.Entity as RtEntity
+import androidx.xr.scenecore.runtime.HandlerExecutor
+import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.runtime.SpatialCapabilities
+import androidx.xr.scenecore.runtime.SpatialModeChangeListener as RtSpatialModeChangeListener
+import androidx.xr.scenecore.runtime.SpatialVisibility as RtSpatialVisibility
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 
@@ -43,12 +39,14 @@ import java.util.function.Consumer
  * Widget panels and geometric models, set the background environment, and anchor content to the
  * real world.
  */
+// TODO: b/455593773 - Restrict ctor and other methods/fields once YTXR ports to JXR proper, and is
+// no longer a chimeric app.
 @Suppress("NotCloseable")
-public class Scene : SessionConnector {
+public class Scene @RestrictTo(RestrictTo.Scope.LIBRARY) public constructor() : SessionConnector {
 
-    internal val entityManager = EntityManager()
+    internal val entityRegistry = EntityRegistry()
 
-    internal lateinit var platformAdapter: JxrPlatformAdapter
+    internal lateinit var sceneRuntime: SceneRuntime
         private set
 
     /**
@@ -72,38 +70,12 @@ public class Scene : SessionConnector {
         private set
 
     /**
-     * The ActivitySpace is a special entity that represents the space in which the application is
+     * The [ActivitySpace] is a special entity that represents the space in which the application is
      * launched. It is the default parent of all entities in the scene.
      *
-     * The ActivitySpace is created automatically when the Session is created.
+     * The ActivitySpace is created automatically when the [androidx.xr.runtime.Session] is created.
      */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public lateinit var activitySpace: ActivitySpace
-        private set
-
-    // TODO: 378706624 - Remove this method once we have a better way to handle the root entity.
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public lateinit var activitySpaceRoot: Entity
-        private set
-
-    /**
-     * The [SpatialUser] represents the user within the XR scene, providing access to tracking
-     * information for the user's head and eyes.
-     *
-     * Use it to get the following:
-     * - **Head Pose**: Access [SpatialUser.head] to get the position and orientation of the user's
-     *   head in the scene.
-     * - **Camera Views**: Access [SpatialUser.cameraViews] to get the pose and field of view for
-     *   each of the user's camera views.
-     *
-     * Note: Accessing properties on [SpatialUser] requires head tracking to be enabled in the
-     * session [androidx.xr.runtime.Session.config].
-     *
-     * @see SpatialUser
-     * @see Head
-     * @see CameraView
-     */
-    public lateinit var spatialUser: SpatialUser
         private set
 
     /**
@@ -116,80 +88,147 @@ public class Scene : SessionConnector {
         private set
 
     /**
-     * Returns the current [SpatialCapabilities] of the Session. The set of capabilities can change
-     * within a session. The returned object will not update if the capabilities change; this method
-     * should be called again to get the latest set of capabilities.
+     * The current [Set] of [SpatialCapability] constants available in the Session. The set may
+     * change within a session. The returned object will not update if the capabilities change; this
+     * method should be called again to get the latest set of capabilities, or clients can subscribe
+     * to changes with [addSpatialCapabilitiesChangedListener].
      */
-    public var spatialCapabilities: SpatialCapabilities = SpatialCapabilities(0)
+    public lateinit var spatialCapabilities: Set<SpatialCapability>
         private set
-        get() = platformAdapter.spatialCapabilities.toSpatialCapabilities()
 
     /**
-     * The [Entity] that will be used by the default [SpatialModeChangeListener] to be placed at a
-     * location provided by the system thinks is an optimal placement for content when the scene
-     * enters FULL_SPACE_MANAGED mode or is re-centered. This ensures continuity of the user's
-     * attention between sequential FULL_SPACE_MANAGED sessions.
+     * The primary [Entity] that serves as the spatial reference for the scene's content.
      *
-     * Unmovable entities are not allowed to be the key, for example, [AnchorEntity].
+     * This entity is used to maintain visual continuity during spatial mode transitions. When
+     * entering Full Space Mode or re-centering the scene, the system provides a recommended pose
+     * and scale. SceneCore's default mode change handler applies those to the entity designated as
+     * [keyEntity] to help preserve the user's spatial context across these mode transitions.
+     *
+     * Starting with Spatial API v2, setting [keyEntity] allows SceneCore to share the entity's pose
+     * with the system as a spatial continuity hint. The system uses this hint to maintain visual
+     * consistency when the current activity transitions to the Home Space or when a new activity is
+     * launched.
+     *
+     * Spaces, such as [AnchorSpace] or [ActivitySpace], cannot be set as the [Scene.keyEntity] and
+     * will throw [IllegalArgumentException] if set.
+     *
+     * By default, this is set to [mainPanelEntity]. This field can be `null` if the key entity was
+     * cleared by setting this value to `null`. When `null`, the default listener takes no action
+     * during spatial mode changes.
+     *
+     * When a new non-null [Entity] is assigned as [keyEntity], the [spaceChangedListener] is
+     * immediately invoked with the last known recommended pose and scale values if the following
+     * conditions are met:
+     * 1. The previous value of [keyEntity] was `null`.
+     * 2. There are cached pose and scale values, provided by the system earlier.
      */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    // TODO - b/514128879: Adds getter for Scene.keyEntity
     public var keyEntity: Entity? = null
-        private set
+        set(value) {
+            when (value) {
+                is AnchorSpace ->
+                    throw IllegalArgumentException("AnchorSpace cannot be set as the keyEntity.")
 
-    /**
-     * The [SpatialModeChangeListener] used to handle scenegraph updates when the spatial mode for
-     * the scene changes.
-     */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public var spatialModeChangeListener: SpatialModeChangeListener =
-        /**
-         * The default [spatialModeChangeListener], which translates the key entity to the
-         * recommended pose when the scene encounters spatial mode change, and applies the
-         * recommended scale. This default handler can be replaced with the client's own
-         * [SpatialModeChangeListener] by updating the [Scene.spatialModeChangeListener] property.
-         */
-        object : SpatialModeChangeListener {
-            override fun onSpatialModeChanged(recommendedPose: Pose, recommendedScale: Float) {
-                keyEntity?.setPose(recommendedPose, Space.ACTIVITY)
-                keyEntity?.setScale(recommendedScale, Space.ACTIVITY)
+                is ActivitySpace ->
+                    throw IllegalArgumentException("ActivitySpace cannot be set as the keyEntity.")
+
+                else -> {
+                    // If the previous keyEntity was from null value, invoke the
+                    // spatialModeChangedListener to apply cached values to new keyEntity.
+                    val wasNull = field == null
+                    field = value
+                    sceneRuntime.keyEntity = value?.rtEntity
+                    // If we've just transitioned from a null to a non-null entity,
+                    // and we have cached values, apply them to the new entity.
+                    if (wasNull && value != null) {
+                        lastRecommendedPose?.let { pose ->
+                            lastRecommendedScale?.let { scale ->
+                                val event = SpaceChangeEvent(pose, scale.x)
+                                spaceChangedExecutor.execute { spaceChangedListener.accept(event) }
+                            }
+                        }
+                    }
+                }
             }
         }
 
-    private val spatialCapabilitiesListeners:
-        ConcurrentMap<Consumer<SpatialCapabilities>, Consumer<RtSpatialCapabilities>> =
-        ConcurrentHashMap()
+    /**
+     * Checks if boundary consent has been granted, which is a key safety prerequisite before
+     * showing immersive content(i.e.,content that fully or substantially obscures the passthrough
+     * view).
+     *
+     * @return `true` if the user has granted consent. Returns `false` otherwise, in which case
+     *   showing immersive content is strongly discouraged.
+     *
+     * **Note:** Advanced users may disable the entire boundary system in developer settings. If the
+     * boundary system is disabled, this method will also return `true`, as this is treated as an
+     * **implicit** form of consent. However, in this specific scenario, the system will not present
+     * the boundary line to the user upon approach.
+     */
+    public val isBoundaryConsentGranted: Boolean
+        @RestrictTo(RestrictTo.Scope.LIBRARY) get() = sceneRuntime.isBoundaryConsentGranted
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    override fun initialize(
-        lifecycleManager: LifecycleManager,
-        platformAdapter: JxrPlatformAdapter,
-    ): Unit {
-        this.platformAdapter = platformAdapter
-        spatialEnvironment = SpatialEnvironment(platformAdapter)
-        perceptionSpace = PerceptionSpace.create(platformAdapter)
-        activitySpace = ActivitySpace.create(platformAdapter, entityManager)
-        spatialUser = SpatialUser.create(lifecycleManager, platformAdapter)
-        mainPanelEntity = MainPanelEntity.create(lifecycleManager, platformAdapter, entityManager)
-        activitySpaceRoot =
-            entityManager.getEntityForRtEntity(platformAdapter.activitySpaceRootImpl)!!
-        platformAdapter.spatialModeChangeListener =
-            object : RtSpatialModeChangeListener {
-                override fun onSpatialModeChanged(
-                    recommendedPose: Pose,
-                    recommendedScale: Vector3,
-                ) {
-                    spatialModeChangeListener.onSpatialModeChanged(
-                        recommendedPose,
-                        recommendedScale.x,
-                    )
-                }
+    private var lastRecommendedPose: Pose? = null
+    private var lastRecommendedScale: Vector3? = null
+
+    private val defaultSpaceChangedListener =
+        Consumer<SpaceChangeEvent> { event ->
+            keyEntity?.setPose(event.recommendedPose, Space.ACTIVITY)
+            keyEntity?.setScale(event.recommendedScale, Space.ACTIVITY)
+        }
+    private var spaceChangedListener = defaultSpaceChangedListener
+    private var spaceChangedExecutor: Executor = HandlerExecutor.mainThreadExecutor
+
+    private val spatialVisibilityChangedListeners = ConsumerListenerMap<SpatialVisibility>()
+    private val spatialCapabilitiesListeners = ConsumerListenerMap<Set<SpatialCapability>>()
+
+    private val rtSpatialCapabilitiesListener =
+        Consumer<SpatialCapabilities> {
+            val spatialCaps = it.toSpatialCapabilities()
+            spatialCapabilities = spatialCaps
+            spatialCapabilitiesListeners.fire(spatialCaps)
+        }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    override fun initialize(runtimes: List<JxrRuntime>) {
+        this.sceneRuntime = runtimes.filterIsInstance<SceneRuntime>().first()
+        spatialEnvironment = SpatialEnvironment(sceneRuntime, entityRegistry)
+        perceptionSpace = PerceptionSpace.create(sceneRuntime)
+        activitySpace = ActivitySpace.create(sceneRuntime, entityRegistry)
+        mainPanelEntity = MainPanelEntity.create(sceneRuntime, perceptionSpace, entityRegistry)
+        keyEntity = mainPanelEntity
+
+        sceneRuntime.spatialModeChangeListener =
+            RtSpatialModeChangeListener { recommendedPose, recommendedScale ->
+                lastRecommendedPose = recommendedPose
+                lastRecommendedScale = recommendedScale
+                val event = SpaceChangeEvent(recommendedPose, recommendedScale.x)
+                spaceChangedExecutor.execute { spaceChangedListener.accept(event) }
             }
+
+        spatialCapabilities = sceneRuntime.spatialCapabilities.toSpatialCapabilities()
+        sceneRuntime.addSpatialCapabilitiesChangedListener(
+            HandlerExecutor.mainThreadExecutor,
+            rtSpatialCapabilitiesListener,
+        )
+
+        sceneRuntime.setSpatialVisibilityChangedListener(HandlerExecutor.mainThreadExecutor) {
+            rtVisibility: RtSpatialVisibility ->
+            val visibility = rtVisibility.toSpatialVisibility()
+            spatialVisibilityChangedListeners.fire(visibility)
+        }
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    override fun close(): Unit {
-        entityManager.clear()
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    override fun close() {
+        entityRegistry.getAllEntities().forEach { it.disposeInternal() }
+        entityRegistry.clear()
+        sceneRuntime.removeSpatialCapabilitiesChangedListener(rtSpatialCapabilitiesListener)
+        sceneRuntime.clearSpatialVisibilityChangedListener()
+        spatialCapabilitiesListeners.clear()
+        spatialVisibilityChangedListeners.clear()
+        keyEntity = null
+        clearSpaceChangedListener()
     }
 
     /**
@@ -202,128 +241,94 @@ public class Scene : SessionConnector {
     public var panelClippingConfig: PanelClippingConfig = PanelClippingConfig()
         set(value) {
             field = value
-            platformAdapter.enablePanelDepthTest(value.isDepthTestEnabled)
+            sceneRuntime.enablePanelDepthTest(value.isDepthTestEnabled)
         }
 
     /**
-     * Adds the given [Consumer] as a listener to be invoked when this [Session]'s current
-     * [SpatialCapabilities] change.
+     * Adds the given [Consumer] as a listener to be invoked when the boundary consent state
+     * changes.
      *
-     * @param listener The Consumer to be invoked asynchronously on the main thread executor
-     *   whenever the SpatialCapabilities changes.
-     */
-    public fun addSpatialCapabilitiesChangedListener(
-        listener: Consumer<SpatialCapabilities>
-    ): Unit = addSpatialCapabilitiesChangedListener(HandlerExecutor.mainThreadExecutor, listener)
-
-    /**
-     * Adds the given [Consumer] as a listener to be invoked when this [Session]'s current
-     * [SpatialCapabilities] change.
+     * The listener will be invoked asynchronously on the **main thread executor**.
      *
-     * @param callbackExecutor The [Executor] to run the listener on.
-     * @param listener The Consumer to be invoked asynchronously on the given callbackExecutor
-     *   whenever the SpatialCapabilities changes.
+     * @param listener The [Consumer] to be invoked with the new boundary consent state (`true` if
+     *   granted, `false` otherwise). Refer to [Scene.isBoundaryConsentGranted] for a detailed
+     *   explanation of the states.
      */
-    public fun addSpatialCapabilitiesChangedListener(
-        callbackExecutor: Executor,
-        listener: Consumer<SpatialCapabilities>,
-    ): Unit {
-        // wrap the client's listener in a callback that receives & converts the platformAdapter
-        // SpatialCapabilities type.
-        val rtListener: Consumer<RtSpatialCapabilities> =
-            Consumer<RtSpatialCapabilities> { rtCaps: RtSpatialCapabilities ->
-                listener.accept(rtCaps.toSpatialCapabilities())
-            }
-        spatialCapabilitiesListeners.compute(
-            listener,
-            { _, _ ->
-                platformAdapter.addSpatialCapabilitiesChangedListener(callbackExecutor, rtListener)
-                rtListener
-            },
-        )
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public fun addBoundaryConsentChangedListener(listener: Consumer<Boolean>) {
+        addBoundaryConsentChangedListener(HandlerExecutor.mainThreadExecutor, listener)
     }
 
     /**
-     * Releases the given [Consumer] from receiving updates when the [Session]'s
-     * [SpatialCapabilities] change.
+     * Adds the given [Consumer] as a listener to be invoked when the boundary consent state
+     * changes.
+     *
+     * @param callbackExecutor The [Executor] on which to invoke the listener.
+     * @param listener The [Consumer] to be invoked asynchronously on the given [callbackExecutor]
+     *   with the new boundary consent state (`true` if granted, `false` otherwise). Refer to
+     *   [Scene.isBoundaryConsentGranted] for a detailed explanation of the states.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public fun addBoundaryConsentChangedListener(
+        callbackExecutor: Executor,
+        listener: Consumer<Boolean>,
+    ) {
+        sceneRuntime.addOnBoundaryConsentChangedListener(callbackExecutor, listener)
+    }
+
+    /**
+     * Releases the given [Consumer] from receiving updates when the boundary consent state changes.
+     *
+     * The listeners are automatically released at the end of the Scene's lifecycle even if this
+     * method is not explicitly called.
+     *
+     * @param listener The [Consumer] to be removed. It will no longer receive change events.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public fun removeBoundaryConsentChangedListener(listener: Consumer<Boolean>) {
+        sceneRuntime.removeOnBoundaryConsentChangedListener(listener)
+    }
+
+    /**
+     * Adds the given [Consumer] as a listener to be invoked when this
+     * [androidx.xr.runtime.Session]'s spatial capabilities change.
+     *
+     * @param listener The Consumer to be invoked asynchronously, on the main thread. The set
+     *   includes every currently-available [SpatialCapability].
+     */
+    public fun addSpatialCapabilitiesChangedListener(
+        listener: Consumer<Set<SpatialCapability>>
+    ): Unit = addSpatialCapabilitiesChangedListener(HandlerExecutor.mainThreadExecutor, listener)
+
+    /**
+     * Adds the given [Consumer] as a listener to be invoked when this
+     * [androidx.xr.runtime.Session]'s spatial capabilities change.
+     *
+     * @param callbackExecutor The [Executor] to run the listener on.
+     * @param listener The Consumer to be invoked asynchronously on the given callbackExecutor. The
+     *   set includes every currently-available [SpatialCapability].
+     */
+    public fun addSpatialCapabilitiesChangedListener(
+        callbackExecutor: Executor,
+        listener: Consumer<Set<SpatialCapability>>,
+    ) {
+        spatialCapabilitiesListeners.add(callbackExecutor, listener)
+    }
+
+    /**
+     * Releases the given [Consumer] from receiving updates when the [androidx.xr.runtime.Session]'s
+     * [SpatialCapability] change.
+     *
+     * The listeners are automatically released at the end of the Scene's lifecycle even if this
+     * method is not explicitly called.
      *
      * @param listener The Consumer to be removed. It will no longer receive change events.
      */
     public fun removeSpatialCapabilitiesChangedListener(
-        listener: Consumer<SpatialCapabilities>
-    ): Unit {
-        spatialCapabilitiesListeners.computeIfPresent(
-            listener,
-            { _, rtListener ->
-                platformAdapter.removeSpatialCapabilitiesChangedListener(rtListener)
-                null
-            },
-        )
+        listener: Consumer<Set<SpatialCapability>>
+    ) {
+        spatialCapabilitiesListeners.remove(listener)
     }
-
-    /**
-     * Configures a [Bundle] to request that a new [Activity] be launched directly into Full Space
-     * Mode.
-     *
-     * The configured bundle can be used to launch an Activity directly into Full Space Mode through
-     * [Activity.startActivity]. If there's a bundle used for customizing how the Activity should be
-     * started by [android.app.ActivityOptions.toBundle] or
-     * [androidx.core.app.ActivityOptionsCompat.toBundle], it's suggested to use the bundle to call
-     * this method.
-     *
-     * The flag will be ignored when no [android.content.Intent.FLAG_ACTIVITY_NEW_TASK] is set in
-     * the bundle, or it is not started from a focused Activity context.
-     *
-     * This flag is also ignored when the
-     * [androidx.xr.runtime.manifest.PROPERTY_XR_ACTIVITY_START_MODE] property is set to a value
-     * other than [androidx.xr.runtime.manifest.XR_ACTIVITY_START_MODE_UNDEFINED] in the
-     * AndroidManifest.xml file for the activity being launched.
-     *
-     * @param bundle the input bundle to set with the Full Space Mode flag.
-     * @return the input bundle with the Full Space Mode flag set.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public fun configureBundleForFullSpaceModeLaunch(bundle: Bundle): Bundle =
-        platformAdapter.setFullSpaceMode(bundle)
-
-    /**
-     * Configures a [Bundle] to request that a new [Activity] be launched directly into Full Space
-     * Mode while inheriting the environment from the launching activity.
-     *
-     * The configured bundle can be used to launch an Activity directly into Full Space Mode while
-     * inherit the existing environment through [Activity.startActivity]. If there's a bundle used
-     * for customizing how the Activity should be started by [android.app.ActivityOptions.toBundle]
-     * or [androidx.core.app.ActivityOptionsCompat.toBundle], it's suggested to use the bundle to
-     * call this method.
-     *
-     * When launched, the Activity will be in Full Space Mode and will inherit the environment from
-     * the launching activity. If the inherited environment needs to be animated, the launching
-     * activity has to continue updating the environment even after the activity is put into the
-     * stopped state.
-     *
-     * The flag will be ignored when no [android.content.Intent.FLAG_ACTIVITY_NEW_TASK] is set in
-     * the intent, or it is not started from a focused Activity context.
-     *
-     * The flag will also be ignored when there is no environment to inherit or when the activity
-     * has its own environment set already.
-     *
-     * This flag is also ignored when the
-     * [androidx.xr.runtime.manifest.PROPERTY_XR_ACTIVITY_START_MODE] property is set to a value
-     * other than [androidx.xr.runtime.manifest.XR_ACTIVITY_START_MODE_UNDEFINED] in the
-     * AndroidManifest.xml file for the activity being launched.
-     *
-     * For security reasons, Z-testing for the new activity is disabled, and the activity is always
-     * drawn on top of the inherited environment. Because Z-testing is disabled, the activity should
-     * not spatialize itself.
-     *
-     * @param bundle the input bundle to configure with the inherit Full Space Mode environment
-     *   flag.
-     * @return the input bundle with the inherit Full Space Mode flag set.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public fun configureBundleForFullSpaceModeLaunchWithEnvironmentInherited(
-        bundle: Bundle
-    ): Bundle = platformAdapter.setFullSpaceModeWithEnvironmentInherited(bundle)
 
     /**
      * Returns all entities of the given type or its subtypes.
@@ -332,24 +337,118 @@ public class Scene : SessionConnector {
      * @return a list of all entities of the given type.
      */
     public fun <T : Entity> getEntitiesOfType(type: Class<out T>): List<T> =
-        entityManager.getEntitiesOfType(type)
+        entityRegistry.getEntitiesOfType(type)
 
     internal fun getEntityForRtEntity(entity: RtEntity): Entity? {
-        return entityManager.getEntityForRtEntity(entity)
+        return entityRegistry.getEntityForRtEntity(entity)
     }
 
     /**
-     * Sets the listener to be invoked when the spatial visibility of the rendered content of the
-     * entire scene (all entities, including children of [AnchorEntity]s and [ActivitySpace])
-     * changes within the user's field of view. In Home Space Mode, the listener continues to
-     * monitor the spatial visibility of the application's main panel.
+     * Adds a listener to be invoked when the spatial visibility of the rendered content of the
+     * entire scene (all entities, including children of [AnchorSpace]s and [ActivitySpace]) changes
+     * within the user's field of view. In Home Space Mode, the listener continues to monitor the
+     * spatial visibility of the application's main panel.
      *
      * This API only checks if the bounding box of all rendered content (even if partially
      * transparent) is within the user's field of view. Content not rendered due to full
      * transparency (alpha=0) or being hidden is not considered. If the entities in the scene or any
      * of their ancestors are hidden using [Entity.setEnabled] (enabled=false) or if the entities
      * are turned fully transparent using [Entity.setAlpha] (alpha=0.0), then the SpatialVisibility
-     * checks will return [SpatialVisibility.SPATIAL_VISIBILITY_OUTSIDE_FIELD_OF_VIEW].
+     * checks will return [SpatialVisibility.OUTSIDE_FIELD_OF_VIEW].
+     *
+     * The listener is invoked on the provided [Executor].
+     *
+     * @param callbackExecutor The [Executor] to run the listener on.
+     * @param listener The [Consumer] to be invoked asynchronously on the given callbackExecutor
+     *   whenever the [SpatialVisibility] of the renderable content changes.
+     */
+    public fun addSpatialVisibilityChangedListener(
+        callbackExecutor: Executor,
+        listener: Consumer<SpatialVisibility>,
+    ) {
+        spatialVisibilityChangedListeners.add(callbackExecutor, listener)
+    }
+
+    /**
+     * Adds a listener to be invoked on the main thread executor when the spatial visibility of the
+     * rendered content of the entire scene (all entities, including children of [AnchorSpace]s and
+     * [ActivitySpace]) changes within the user's field of view. In Home Space Mode, the listener
+     * continues to monitor the spatial visibility of the application's main panel.
+     *
+     * This API only checks if the bounding box of all rendered content (even if partially
+     * transparent) is within the user's field of view. Content not rendered due to full
+     * transparency (alpha=0) or being hidden is not considered. If the entities in the scene or any
+     * of their ancestors are hidden using [Entity.setEnabled] (enabled=false) or if the entities
+     * are turned fully transparent using [Entity.setAlpha] (alpha=0.0), then the SpatialVisibility
+     * checks will return [SpatialVisibility.OUTSIDE_FIELD_OF_VIEW].
+     *
+     * @param listener The [Consumer] to be invoked asynchronously on the main thread whenever the
+     *   [SpatialVisibility] of the renderable content changes.
+     */
+    public fun addSpatialVisibilityChangedListener(listener: Consumer<SpatialVisibility>): Unit =
+        addSpatialVisibilityChangedListener(HandlerExecutor.mainThreadExecutor, listener)
+
+    /**
+     * Releases the listener previously added by [addSpatialVisibilityChangedListener].
+     *
+     * The listener is automatically released at the end of the Scene's lifecycle even if this
+     * method is not explicitly called.
+     */
+    public fun removeSpatialVisibilityChangedListener(listener: Consumer<SpatialVisibility>) {
+        spatialVisibilityChangedListeners.remove(listener)
+    }
+
+    /**
+     * Sets the listener to be invoked when the space has changed, such as from Home Space to Full
+     * Space.
+     *
+     * The listener is invoked on the provided [Executor].
+     *
+     * Because the listener will typically update the [keyEntity]'s pose and/or scale, there can
+     * only be one listener set at a time. If a new listener is set, the previous listener will be
+     * released.
+     *
+     * @param callbackExecutor The [Executor] on which to run the listener.
+     * @param listener The [Consumer] to be invoked asynchronously on the given callbackExecutor
+     *   whenever the space has changed.
+     */
+    public fun setSpaceChangedListener(
+        callbackExecutor: Executor,
+        listener: Consumer<SpaceChangeEvent>,
+    ) {
+        spaceChangedListener = listener
+        spaceChangedExecutor = callbackExecutor
+    }
+
+    /**
+     * Sets the listener to be invoked on the main thread executor when the space for the Scene has
+     * changed, such as from Home Space to Full Space.
+     *
+     * Because the listener will typically update the [keyEntity]'s pose and/or scale, there can
+     * only be one listener set at a time. If a new listener is set, the previous listener will be
+     * released.
+     *
+     * @param listener The [Consumer] to be invoked asynchronously on the main thread whenever the
+     *   spatial mode has changed.
+     */
+    public fun setSpaceChangedListener(listener: Consumer<SpaceChangeEvent>): Unit =
+        setSpaceChangedListener(HandlerExecutor.mainThreadExecutor, listener)
+
+    /**
+     * Releases the listener previously set by [setSpaceChangedListener] and reinstates the default
+     * behavior of automatically updating the [keyEntity]'s pose and scale on the main thread
+     * executor.
+     *
+     * The listener is automatically released at the end of the Scene's lifecycle even if this
+     * method is not explicitly called.
+     */
+    public fun clearSpaceChangedListener() {
+        spaceChangedListener = defaultSpaceChangedListener
+        spaceChangedExecutor = HandlerExecutor.mainThreadExecutor
+    }
+
+    /**
+     * Sets the listener to be invoked when the spatial mode for the scene has changed.
      *
      * The listener is invoked on the provided [Executor].
      *
@@ -358,82 +457,98 @@ public class Scene : SessionConnector {
      *
      * @param callbackExecutor The [Executor] to run the listener on.
      * @param listener The [Consumer] to be invoked asynchronously on the given callbackExecutor
-     *   whenever the [SpatialVisibility] of the renderable content changes.
+     *   whenever the spatial mode has changed.
      */
-    public fun setSpatialVisibilityChangedListener(
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Deprecated("Use setSpaceChangedListener", replaceWith = ReplaceWith("setSpaceChangedListener"))
+    @Suppress("Deprecation")
+    public fun setSpatialModeChangedListener(
         callbackExecutor: Executor,
-        listener: Consumer<@SpatialVisibilityValue Int>,
-    ): Unit {
-        // Wrap client's listener in a callback that converts the platformAdapter's
-        // SpatialVisibility.
-        val rtListener =
-            Consumer<RtSpatialVisibility> { rtVisibility: RtSpatialVisibility ->
-                listener.accept(rtVisibility.toSpatialVisibility())
-            }
-        platformAdapter.setSpatialVisibilityChangedListener(callbackExecutor, rtListener)
-    }
+        listener: Consumer<SpatialModeChangeEvent>,
+    ): Unit =
+        setSpaceChangedListener(callbackExecutor) { spaceChangeEvent ->
+            listener.accept(
+                SpatialModeChangeEvent(
+                    spaceChangeEvent.recommendedPose,
+                    spaceChangeEvent.recommendedScale,
+                )
+            )
+        }
 
     /**
-     * Sets the listener to be invoked on the main thread executor when the spatial visibility of
-     * the rendered content of the entire scene (all entities, including children of [AnchorEntity]s
-     * and [ActivitySpace]) changes within the user's field of view. In Home Space Mode, the
-     * listener continues to monitor the spatial visibility of the application's main panel.
+     * Sets the listener to be invoked on the main thread executor when the spatial mode for the
+     * scene has changed.
      *
-     * This API only checks if the bounding box of all rendered content (even if partially
-     * transparent) is within the user's field of view. Content not rendered due to full
-     * transparency (alpha=0) or being hidden is not considered. If the entities in the scene or any
-     * of their ancestors are hidden using [Entity.setEnabled] (enabled=false) or if the entities
-     * are turned fully transparent using [Entity.setAlpha] (alpha=0.0), then the SpatialVisibility
-     * checks will return [SpatialVisibility.SPATIAL_VISIBILITY_OUTSIDE_FIELD_OF_VIEW].
-     *
-     * There can only be one listener set at a time. If a new listener is set, the previous listener
-     * will be released.
+     * Because the listener will typically update the [keyEntity]'s pose and/or scale, there can
+     * only be one listener set at a time. If a new listener is set, the previous listener will be
+     * released.
      *
      * @param listener The [Consumer] to be invoked asynchronously on the main thread whenever the
-     *   [SpatialVisibility] of the renderable content changes.
+     *   spatial mode has changed.
      */
-    public fun setSpatialVisibilityChangedListener(
-        listener: Consumer<@SpatialVisibilityValue Int>
-    ): Unit = setSpatialVisibilityChangedListener(HandlerExecutor.mainThreadExecutor, listener)
-
-    /** Releases the listener previously added by [setSpatialVisibilityChangedListener]. */
-    public fun clearSpatialVisibilityChangedListener(): Unit =
-        platformAdapter.clearSpatialVisibilityChangedListener()
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Deprecated("Use setSpaceChangedListener", replaceWith = ReplaceWith("setSpaceChangedListener"))
+    @Suppress("Deprecation")
+    public fun setSpatialModeChangedListener(listener: Consumer<SpatialModeChangeEvent>): Unit =
+        setSpatialModeChangedListener(HandlerExecutor.mainThreadExecutor, listener)
 
     /**
-     * The [Entity] that will be used by the default [SpatialModeChangeListener] to be placed at a
-     * location provided by the system thinks is an optimal placement for content when the scene
-     * enters FULL_SPACE_MANAGED mode or is re-centered. This ensures continuity of the user's
-     * attention between sequential FULL_SPACE_MANAGED sessions.
+     * Releases the listener previously set by [setSpatialModeChangedListener] and reinstates the
+     * default behavior of automatically updating the [keyEntity]'s pose and scale on the main
+     * thread executor.
      *
-     * Unmovable entities are not allowed to be the key, for example, [AnchorEntity].
-     *
-     * Setting null as key is allowed - in which case the default spatial mode change handler will
-     * be no-op.
-     *
-     * @param entity the entity to set as the key.
-     * @return true if the entity was successfully set as the key, false otherwise.
+     * The listener is automatically released at the end of the Scene's lifecycle even if this
+     * method is not explicitly called.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public fun setKeyEntity(entity: Entity?): Boolean {
-        when (entity) {
-            is AnchorEntity -> return false
-            else -> {
-                keyEntity = entity
-                return true
-            }
-        }
-    }
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Deprecated(
+        "Use clearSpaceChangedListener",
+        replaceWith = ReplaceWith("clearSpaceChangedListener"),
+    )
+    public fun clearSpatialModeChangedListener(): Unit = clearSpaceChangedListener()
+
+    /**
+     * If the [Activity] has focus, causes the Activity to be placed in Full Space. Otherwise, this
+     * call does nothing.
+     */
+    public fun requestFullSpace(): Unit = sceneRuntime.requestFullSpaceMode()
+
+    /**
+     * If the [Activity] has focus, causes the Activity to be placed in Home Space. Otherwise, this
+     * call does nothing.
+     */
+    public fun requestHomeSpace(): Unit = sceneRuntime.requestHomeSpaceMode()
 
     /**
      * If the [Activity] has focus, causes the Activity to be placed in Full Space Mode. Otherwise,
      * this call does nothing.
      */
-    public fun requestFullSpaceMode(): Unit = platformAdapter.requestFullSpaceMode()
+    @Deprecated("Use requestFullSpace", replaceWith = ReplaceWith("requestFullSpace()"))
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun requestFullSpaceMode(): Unit = requestFullSpace()
 
     /**
      * If the [Activity] has focus, causes the Activity to be placed in Home Space Mode. Otherwise,
      * this call does nothing.
      */
-    public fun requestHomeSpaceMode(): Unit = platformAdapter.requestHomeSpaceMode()
+    @Deprecated("Use requestHomeSpace", replaceWith = ReplaceWith("requestHomeSpace()"))
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun requestHomeSpaceMode(): Unit = requestHomeSpace()
+
+    /**
+     * Provides access to the [PixelDensity] standards for this scene.
+     *
+     * This specific density represents the default number of **virtual pixels** that correspond to
+     * one physical meter in [ActivitySpace].
+     *
+     * Since the spatial coordinate system is emulated, these pixels represent content units
+     * (texture resolution) used to define entities such as [PanelEntity], rather than physical
+     * display pixels.
+     *
+     * It is a static hardware constant and ignores user-level display preference overrides (system
+     * density changes).
+     */
+    public val virtualPixelDensity: PixelDensity by lazy {
+        PixelDensity(sceneRuntime.virtualPixelDensity)
+    }
 }

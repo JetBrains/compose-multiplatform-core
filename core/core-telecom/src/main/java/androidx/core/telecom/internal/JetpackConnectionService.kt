@@ -37,6 +37,7 @@ import androidx.core.telecom.CallEndpointCompat
 import androidx.core.telecom.CallsManager
 import androidx.core.telecom.internal.utils.Utils
 import java.util.UUID
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -78,7 +79,8 @@ internal class JetpackConnectionService : ConnectionService() {
         const val TAG = "JetpackCS"
         const val CONNECTION_CREATION_TIMEOUT: Long = 5000 // time in milli-seconds
         const val SDK_26_AND_27_ADDRESS_PREFIX = "sip:"
-        var mPendingConnectionRequests: ArrayList<PendingConnectionRequest> = ArrayList()
+        var mPendingConnectionRequests: CopyOnWriteArrayList<PendingConnectionRequest> =
+            CopyOnWriteArrayList()
     }
 
     /**
@@ -109,6 +111,8 @@ internal class JetpackConnectionService : ConnectionService() {
         val idBundle = Bundle()
         idBundle.putString(REQUEST_ID_MATCHER_KEY, pendingConnectionRequest.requestIdMatcher)
 
+        injectSpeakerSettings(pendingConnectionRequest.preferredStartingCallEndpoint, extras)
+
         // Call into the platform to start call
         if (pendingConnectionRequest.callAttributes.isOutgoingCall()) {
             extras.putBundle(TelecomManager.EXTRA_OUTGOING_CALL_EXTRAS, idBundle)
@@ -119,6 +123,14 @@ internal class JetpackConnectionService : ConnectionService() {
                 pendingConnectionRequest.callAttributes.mHandle,
                 extras,
             )
+        }
+    }
+
+    fun injectSpeakerSettings(preferredStartingCallEndpoint: CallEndpointCompat?, extras: Bundle) {
+        preferredStartingCallEndpoint?.let { endpoint ->
+            val useSpeaker = endpoint.type == CallEndpointCompat.TYPE_SPEAKER
+            extras.putBoolean(TelecomManager.EXTRA_START_CALL_WITH_SPEAKERPHONE, useSpeaker)
+            Log.v(TAG, "injectSpeakerSettings: useSpeaker=[$useSpeaker]")
         }
     }
 

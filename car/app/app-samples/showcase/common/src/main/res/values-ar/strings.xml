@@ -232,10 +232,21 @@
     <string name="msg_template_demo_text" msgid="2275291617716161409">"تظهر الرسالة هنا.\nالمزيد من النص في السطر الثاني."</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"عرض توضيحي لنموذج رسالة قصيرة"</string>
     <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"عرض توضيحي لنموذج عناصر مُقسَّم"</string>
+    <string name="condensed_item_demo_title" msgid="225744083182855764">"عرض توضيحي لعنصر مكثّف"</string>
+    <string name="sectioned_item_alpha_jump_demo_title" msgid="1923794280863081616">"‏عرض توضيحي لميزة AlphaJump المفعّلة في قائمة مقسّمة"</string>
     <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"قسم \"زر الاختيار\""</string>
     <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"تفعيل القسم أو إيقافه"</string>
     <string name="sectioned_item_template_lots_of_rows_section_title" msgid="1501401956386938735">"قسم \"العديد من الصفوف\""</string>
     <string name="sectioned_item_template_grid_item_section_title" msgid="565528119467142741">"قسم عناصر الشبكة"</string>
+    <string name="sectioned_item_list_demo_title" msgid="1236735461225007729">"عرض تجريبي لقائمة عناصر مُقسَّمة"</string>
+    <string name="sectioned_item_list_one_title" msgid="6594204350307263338">"القائمة 1"</string>
+    <string name="sectioned_item_list_two_title" msgid="4941545381743022833">"القائمة 2"</string>
+    <string name="sectioned_item_list_subtext" msgid="2963927693547537519">"نص فرعي تحت كل قائمة"</string>
+    <string name="end_image_and_action_demo_title" msgid="6451955718459316414">"إنهاء العرض التوضيحي للصور والإجراءات"</string>
+    <string name="chip_demo_title" msgid="814337127879515513">"عرض توضيحي للشريحة"</string>
+    <string name="progress_bar_demo_title" msgid="1759206063037269237">"عرض توضيحي لشريط التقدّم"</string>
+    <string name="section_header_demo_title" msgid="4880150421750399922">"عرض توضيحي لعنوان القسم"</string>
+    <string name="spotlight_section_demo_title" msgid="4149938914167169739">"عرض توضيحي لقسم \"تحت الضوء\""</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"إصدار تجريبي لنموذج اللوحة"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"إصدار تجريبي لنموذج قائمة الأماكن"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"تصفُّح الأماكن"</string>
@@ -266,12 +277,22 @@
     <string name="tab_template_demo_title" msgid="7587839101813629975">"عرض توضيحي لنموذج علامة تبويب"</string>
     <string name="tab_title_message" msgid="5266710951630087246">"علامة تبويب رسالة"</string>
     <string name="tab_title_pane" msgid="2520606145526537263">"علامة تبويب لوحة"</string>
+    <string name="tab_title_sectioned_item" msgid="7299509321019990398">"علامة تبويب العناصر المُقسَّمة"</string>
     <string name="tab_title_list" msgid="5104962518489668123">"علامة تبويب قائمة"</string>
     <string name="tab_title_grid" msgid="5268168907976325154">"علامة تبويب شبكة مع عنوان طويل لعلامة التبويب"</string>
     <string name="tab_title_search" msgid="1892925693146631173">"علامة تبويب بحث"</string>
     <string name="tab_title_loading" msgid="5385807479734490989">"جارٍ تحميل علامة التبويب"</string>
+    <string name="tab_title_template_style_1" msgid="2975307122280161449">"نمط النموذج 1"</string>
+    <string name="tab_title_template_style_2" msgid="7803400629501965995">"نمط النموذج 2"</string>
+    <string name="tab_title_overridden_style" msgid="3140303976251439964">"نمط علامة التبويب المُتجاوزَة"</string>
+    <string name="tab_title_failing_style" msgid="745811892650973560">"نمط خطأ علامة التبويب"</string>
     <string name="tab_template_loading_demo_title" msgid="4638051615030345574">"عرض توضيحي لنموذج علامة تبويب يجري تحميلها"</string>
     <string name="tab_template_no_tabs_demo_title" msgid="6907466201298082309">"عرض توضيحي لنموذج بلا علامات تبويب"</string>
+    <string name="tab_template_style_demo_title" msgid="3986454672226386561">"العرض التوضيحي لنمط نموذج علامة التبويب"</string>
+    <string name="msg_tab_template_style_1_text" msgid="6874362443887944175">"نمط نموذج علامة التبويب (علامة التبويب 1)\nيتم اكتساب النمط من النموذج"</string>
+    <string name="msg_tab_template_style_2_text" msgid="7244377408142388066">"نمط نموذج علامة التبويب (علامة التبويب 2)\nيتم اكتساب النمط من النموذج"</string>
+    <string name="msg_tab_overridden_style_text" msgid="7242618513807844655">"نمط علامة التبويب المُتجاوزَة\nيتم إلغاء نمط النموذج باستخدام ألوان زرقاء مخصّصة"</string>
+    <string name="msg_tab_failing_style_text" msgid="4357682634226036060">"نمط خطأ علامة التبويب\nرمز أحمر على خلفية حمراء"</string>
     <string name="images_unknown_host_error" msgid="3180661817432720076">"يتعذّر عرض الصور لمضيف غير معروف."</string>
     <string name="icon_title_prefix" msgid="8487026131229541244">"الرمز"</string>
     <string name="content_provider_icons_demo_title" msgid="5708602618664311097">"إصدار تجريبي لرموز أداة توفير المحتوى"</string>
@@ -330,10 +351,7 @@
     <string name="secondary_actions_decoration_test_subtitle" msgid="155884606592724532">"يمكن أيضًا اختيار الصف."</string>
     <string name="secondary_action_toast" msgid="5076434693504006565">"تم اختيار إجراء ثانوي للصف."</string>
     <string name="row_primary_action_toast" msgid="756516694751965204">"تم اختيار إجراء أساسي للصف."</string>
-    <string name="sectioned_item_list_demo_title" msgid="1236735461225007729">"عرض تجريبي لقائمة عناصر مُقسَّمة"</string>
-    <string name="sectioned_item_list_one_title" msgid="6594204350307263338">"القائمة 1"</string>
-    <string name="sectioned_item_list_two_title" msgid="4941545381743022833">"القائمة 2"</string>
-    <string name="sectioned_item_list_subtext" msgid="2963927693547537519">"نص فرعي تحت كل قائمة"</string>
+    <string name="row_end_image_and_actions_demo_title" msgid="4581677315854620705">"عرض توضيحي للصور والإجراءات في نهاية الصف"</string>
     <string name="empty_list_demo_title" msgid="5989013634820902455">"عرض تقديمي لقائمة فارغة"</string>
     <string name="empty_list_message" msgid="5331395517560728138">"القائمة فارغة."</string>
     <string name="misc_templates_demos_title" msgid="6077169010255928114">"إصدارات تجريبية لنموذج ميزات متنوّعة"</string>
@@ -364,6 +382,9 @@
     <string name="latest_feature_title" msgid="7929405790070777460">"أحدث الميزات"</string>
     <string name="loading_toggle_enabled" msgid="8828072732804454994">"تم تفعيل التحميل."</string>
     <string name="loading_toggle_disabled" msgid="7689738885077382673">"تم إيقاف التحميل."</string>
+    <string name="app_theme_title" msgid="5002857339487981595">"استخدام \"مظهر التطبيق\""</string>
+    <string name="app_theme_enabled" msgid="3146649362736130743">"تم تفعيل \"مظهر التطبيق\""</string>
+    <string name="app_theme_disabled" msgid="947882095780434267">"تم إيقاف \"مظهر التطبيق\""</string>
     <string name="loading_screen" msgid="4771507490730308794">"شاشة التحميل"</string>
     <string name="vector_toggle_details" msgid="1301305340033556819">"لإضافة لون أو إزالته، عليك تفعيل الخيار أو إيقافه"</string>
     <string name="map_template_toggle_demo_title" msgid="6510798293640092611">"إصدار تجريبي لنموذج خريطة يحتوي على خيارات تفعيل/إيقاف"</string>
@@ -375,4 +396,7 @@
     <string name="map_with_content_demo_title" msgid="1032610482145018739">"عروض توضيحية لخرائط تعرض محتوى"</string>
     <string name="map_with_message_demo_title" msgid="7007078234918054436">"عرض توضيحي لنموذج خرائط مع رسائل"</string>
     <string name="map_with_grid_demo_title" msgid="688667167861193192">"عرض توضيحي لنموذج خرائط مع شبكة"</string>
+    <string name="map_with_sectioned_items_demo_title" msgid="8566567348699628797">"خريطة تتضمن قائمة عناصر مقسّمة إلى أقسام"</string>
+    <string name="banner_demo_title" msgid="6740573531391394513">"عرض توضيحي للبانر"</string>
+    <string name="enhanced_header_demo_title" msgid="5926669146325565791">"عرض توضيحي للعنوان المحسّن"</string>
 </resources>

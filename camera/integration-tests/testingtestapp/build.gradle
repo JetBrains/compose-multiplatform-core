@@ -18,13 +18,12 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
     id("com.google.dagger.hilt.android")
     id("com.google.devtools.ksp")
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(37) { minorApiLevel = 1 } }
 
     namespace = "androidx.camera.integration.testingtestapp"
 
@@ -43,17 +42,17 @@ dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.activity:activity-compose:1.9.1")
     implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
 
     // Hilt Dependency Injection
     implementation(libs.hiltAndroid)
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.6.8")
-    debugImplementation("androidx.compose.ui:ui-test-manifest:1.6.8")
+    androidTestImplementation(project(":compose:ui:ui-test-junit4"))
+    debugImplementation(project(":compose:ui:ui-test-manifest"))
     ksp(libs.hiltCompiler)
 
     // Arch Components
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.4")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
 
     // Compose
     implementation("androidx.compose.ui:ui:1.6.8")
@@ -72,6 +71,8 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.espressoCore)
+    androidTestImplementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
+    androidTestImplementation("androidx.concurrent:concurrent-futures:1.1.0")
     implementation(libs.testRunner)
     implementation(libs.hiltAndroidTesting)
     implementation(libs.testCore)

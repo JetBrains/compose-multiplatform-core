@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.12.0-alpha08" type="baseline" client="gradle" dependencies="true" name="AGP (8.12.0-alpha08)" variant="all" version="8.12.0-alpha08">
+<issues format="6" by="lint 9.4.0-alpha05" type="baseline" client="gradle" dependencies="true" name="AGP (9.4.0-alpha05)" variant="all" version="9.4.0-alpha05">
+
+    <issue
+        id="RememberInComposition"
+        message="Calling a @RememberInComposition annotated declaration inside composition without using `remember`"
+        errorLine1="    val focusRequester = FocusRequester()"
+        errorLine2="                         ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/material/samples/SelectionControlsSamples.kt"/>
+    </issue>
 
     <issue
         id="AutoboxingStateCreation"
@@ -285,15 +294,6 @@
         message="Prefer `mutableIntStateOf` instead of `mutableStateOf`"
         errorLine1="    var state by remember { mutableStateOf(0) }"
         errorLine2="                            ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/compose/material/samples/TabSamples.kt"/>
-    </issue>
-
-    <issue
-        id="UseOfNonLambdaOffsetOverload"
-        message="State backed values should use the lambda overload of Modifier.offset"
-        errorLine1="                .offset(x = indicatorStart)"
-        errorLine2="                 ~~~~~~">
         <location
             file="src/main/java/androidx/compose/material/samples/TabSamples.kt"/>
     </issue>

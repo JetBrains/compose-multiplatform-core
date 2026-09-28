@@ -16,8 +16,6 @@
 
 package androidx.compose.foundation
 
-import androidx.compose.foundation.gestures.detectTapAndPress
-import androidx.compose.foundation.gestures.detectTapGestures
 import kotlin.jvm.JvmField
 
 /**
@@ -48,28 +46,12 @@ import kotlin.jvm.JvmField
  * paths being completely removed from the artifact, which can often have nontrivial positive
  * performance impact.
  *
- *      -assumevalues class androidx.compose.runtime.ComposeFoundationFlags {
+ *      -assumevalues class androidx.compose.foundation.ComposeFoundationFlags {
  *          public static boolean SomeFeatureEnabled return false
  *      }
  */
 @ExperimentalFoundationApi
-object ComposeFoundationFlags {
-    /**
-     * Selecting flag to enable Drag Gesture "Pick-up" on drag gesture detectors. This also applies
-     * to Draggables and Scrollables which use gesture detectors as well. Any parent drag detector
-     * will continue to monitor the event stream until the gesture terminates (all pointers are
-     * lifted), if a child gives up an event, the parent gesture detector will "pick-up" and
-     * continue the gesture until all pointers are up.
-     */
-    @Suppress("MutableBareField") @JvmField var DragGesturePickUpEnabled = true
-
-    /**
-     * Whether to use more immediate coroutine dispatching in [detectTapGestures] and
-     * [detectTapAndPress], true by default.
-     */
-    @Suppress("MutableBareField")
-    @JvmField
-    var isDetectTapGesturesImmediateCoroutineDispatchEnabled = true
+public object ComposeFoundationFlags {
 
     /**
      * Whether to use the new context menu API and default implementations in
@@ -77,98 +59,310 @@ object ComposeFoundationFlags {
      * [BasicTextField][androidx.compose.foundation.text.BasicTextField]s. If false, the previous
      * context menu that has no public APIs will be used instead.
      */
-    @Suppress("MutableBareField") @JvmField var isNewContextMenuEnabled = true
+    // TODO: b/455589857
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isNewContextMenuEnabled: Boolean = isNewContextMenuInitiallyEnabled
 
     /**
      * Whether to use the new smart selection feature in
      * [androidx.compose.foundation.text.selection.SelectionContainer] and all
      * [androidx.compose.foundation.text.BasicTextField]s.
      */
-    @Suppress("MutableBareField") @JvmField var isSmartSelectionEnabled = true
+    // TODO: b/455592302
+    @field:Suppress("MutableBareField") @JvmField public var isSmartSelectionEnabled: Boolean = true
 
     /**
-     * Selecting flag to enable the use of new PausableComposition in lazy layout prefetch. This
-     * change allows us to distribute work we need to do during the prefetch better, for example we
-     * can only perform the composition for parts of the LazyColumn's next item during one ui frame,
-     * and then continue composing the rest of it in the next frames.
+     * Whether to support inherited text styles. If enabled, text styles set by the styles API will
+     * be inherited by text composables contained in a style box.
      */
-    @Suppress("MutableBareField") @JvmField var isPausableCompositionInPrefetchEnabled = false
-
-    /**
-     * Selecting flag to enable the use of automatic nested prefetch. When this is enabled, nested
-     * prefetching using the default Prefetch Strategies
-     * [androidx.compose.foundation.lazy.LazyListPrefetchStrategy] and
-     * [androidx.compose.foundation.lazy.grid.LazyGridPrefetchStrategy] or Cache Window will be
-     * automatically defined by the number of visible items in the nested LazyLayout.
-     */
-    @Suppress("MutableBareField") @JvmField var isAutomaticNestedPrefetchEnabled = true
-
-    /**
-     * Flag that enables an optimized implementation for the [clickable] overload without an
-     * [Indication] parameter. This also applies to [combinedClickable],
-     * [androidx.compose.foundation.selection.selectable], and
-     * [androidx.compose.foundation.selection.toggleable], which also use [clickable]. When this
-     * flag is true, [clickable] will no longer use [androidx.compose.ui.composed], which leads to
-     * improved performance and allows for composables with a [clickable] modifier to skip. However,
-     * this means that only [IndicationNodeFactory] instances can be supported - if a
-     * non-[IndicationNodeFactory] instance is provided to [LocalIndication], [clickable] will crash
-     * at runtime. To resolve this either migrate the [Indication] implementation used to a
-     * [IndicationNodeFactory], or use the other [clickable] overload with an explicit [Indication]
-     * parameter - this flag can be disabled as a temporary migration aid.
-     */
-    @Suppress("MutableBareField") @JvmField var isNonComposedClickableEnabled = true
-
-    /**
-     * Enables Compose trigger for calling
-     * [androidx.compose.ui.node.DelegatableNode.dispatchOnScrollChanged] callbacks during scroll
-     * events.
-     */
-    @Suppress("MutableBareField") @JvmField var isOnScrollChangedCallbackEnabled: Boolean = true
-
-    /**
-     * With this flag on, any dragging movement is offset by the container position offset before it
-     * is added to the [androidx.compose.ui.input.pointer.util.VelocityTracker]. Pointer Input
-     * positions are relative to a container's position. If the container changes positions with the
-     * movement this can cause problems because the VT doesn't know about changes in the container
-     * position. We should correct the Pointer Input position by offsetting it by the container
-     * position offset before sending the events to the VT. We will use the new
-     * [androidx.compose.ui.input.pointer.PointerInputChange] API.
-     */
-    @Suppress("MutableBareField")
+    // TODO: b/485968143
+    @field:Suppress("MutableBareField")
     @JvmField
-    var isAdjustPointerInputChangeOffsetForVelocityTrackerEnabled: Boolean = true
+    public var isInheritedTextStyleEnabled: Boolean = false
 
     /**
-     * With this flag on a new fling cancellation behavior will be implemented. Previously, when the
-     * list hit the bounds we would cancel the fling since the list couldn't consume anything
-     * anymore. Now we only cancel the fling if the scrollable node is detatched.
+     * With this flag on, Pager will use
+     * [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow] as the default prefetching
+     * strategy, instead of 1 item in the direction of the scroll. The window used will be 1 view
+     * port AFTER the currently composed items, this includes visible and items composed through
+     * beyond bounds.
      */
-    @Suppress("MutableBareField") @JvmField var isFlingContinuationAtBoundsEnabled = true
-
-    /**
-     * With this flag on we don't use suspend pointer input as part of Modifier.clickable
-     * implementation as an optimization.
-     */
-    @Suppress("MutableBareField") @JvmField var isNonSuspendingPointerInputInClickableEnabled = true
-
-    /**
-     * With this flag on, the new BasicTextField and the other new TextFields that accept
-     * [androidx.compose.foundation.text.input.TextFieldState] changes their behavior of how they
-     * process arrow/Dpad keys received from input devices such as hardware keyboards, gamepads, or
-     * TV remotes. The new behavior is to always move the cursor first until it reaches the start or
-     * the end of the text. Then the TextField allows to move the focus to the next focusable
-     * element on the screen.
-     */
-    @Suppress("MutableBareField") @JvmField var isTextFieldDpadNavigationEnabled = true
-
-    /**
-     * Controls the behavior of any scrollable container in terms of how it operates to keep the
-     * focused child in view when the container's viewport shrinks. When this flag is enabled, the
-     * scrollable polls the focused area among its descendants to find the most up-to-date area
-     * which should be kept in view. Otherwise, each focused child notifies the scrollable of its
-     * focus area through [onFocusedBoundsChanged].
-     */
-    @Suppress("MutableBareField")
+    // TODO: b/485967807
+    @field:Suppress("MutableBareField")
     @JvmField
-    var isKeepInViewFocusObservationChangeEnabled: Boolean = true
+    public var isCacheWindowForPagerEnabled: Boolean = true
+
+    /**
+     * With this flag on, [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow] will
+     * support multi-lane configurations.
+     */
+    // TODO: b/522643119
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isMultiLaneCacheWindowEnabled: Boolean = true
+
+    /**
+     * With this flag enabled, [androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGrid]
+     * layouts will make use of a cache window, either a default cache window or the cache window
+     * provided by the user via the composable function arguments.
+     */
+    // TODO: b/530894185
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isUsingCacheWindowInStaggeredGrids: Boolean = true
+
+    /**
+     * With this flag enabled,
+     * [androidx.compose.foundation.gestures.AnchoredDraggableState.targetValue] correctly returns
+     * the [androidx.compose.foundation.gestures.AnchoredDraggableState.currentValue] when no
+     * [androidx.compose.foundation.gestures.AnchoredDraggableState.anchoredDrag] is in progress.
+     * Previously, [androidx.compose.foundation.gestures.AnchoredDraggableState.targetValue]
+     * incorrectly returned the last-inserted anchor when there were two or more anchors with the
+     * same offset, for example: `DraggableAnchors { Expanded at 100f; HalfExpanded at 0f; Hidden at
+     * 0f;}` Disabling the flag restores this previous behavior.
+     */
+    // TODO: b/485967318
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isAnchoredDraggableTargetValueCalculationFixEnabled: Boolean = true
+
+    /**
+     * This flag controls performance optimizations related to
+     * [androidx.compose.foundation.text.BasicTextField]'s internal min height calculations.
+     */
+    // TODO: Remove this flag once it has soaked (b/487251541)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isBasicTextFieldMinSizeOptimizationEnabled: Boolean = true
+
+    /**
+     * This flag controls performance optimizations related to
+     * [androidx.compose.foundation.text.BasicTextField]'s internal calculations of the minimum and
+     * maximum height.
+     */
+    // TODO: Remove this flag once it has soaked (b/501503945)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isBasicTextFieldHeightInLinesOptimizationEnabled: Boolean = true
+
+    /**
+     * This flag controls performance optimizations related to squashing multiple modifiers
+     * responsible for providing default measurement of the
+     * [androidx.compose.foundation.text.BasicTextField] into one.
+     */
+    // TODO: Remove this flag after 1.12 (b/507967106)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isBasicTextFieldSizeOptimizationEnabled: Boolean = true
+
+    /**
+     * This flag controls the fix where we correctly dispatch deltas in pager's default
+     * pageNestedScrollConnection by considering the role of reverse layout.
+     */
+    // TODO: Remove this flag once it has soaked (b/493462428)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isReverseLayoutNestedScrollConnectionInPagerFixEnabled: Boolean = true
+
+    /**
+     * This flag controls whether [androidx.compose.foundation.pager.Pager]'s default nested scroll
+     * connection absorbs unconsumed main-axis deltas during non-gesture scrolls (such as
+     * accessibility actions) to prevent synthetic scrolls from accidentally dragging the parent
+     * Pager.
+     */
+    // TODO: Remove this flag once it has soaked (b/543033546)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isAbsorbNonGestureNestedScrollInPagerFixEnabled: Boolean = true
+
+    /**
+     * This flag controls whether [androidx.compose.foundation.text.BasicTextField]'s formatted text
+     * features are enabled.
+     */
+    // TODO: Remove this flag once it has soaked (b/494340211)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isBasicTextFieldStyledTextEnabled: Boolean = true
+
+    /**
+     * This flag controls whether the legacy nodeOffset logic in DragGestureNode and
+     * IndirectPointerInputDragCycleDetector is disabled. Previously, VelocityTracker used local
+     * coordinates, necessitating manual point adjustment tracking.
+     */
+    // TODO: Remove this flag once it has soaked (b/457672200)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isDragNodeOffsetDoubleCountingFixEnabled: Boolean = true
+
+    /**
+     * This flag controls the fix where we prioritize consumption on initial pass in Draggable. If a
+     * drag gesture started immediately, it should block subsequent nested gestures because the
+     * initial down was consumed.
+     */
+    // TODO: Remove this flag once it has soaked (b/518770709)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isDraggableInitialPassConsumptionFixEnabled: Boolean = true
+
+    /**
+     * This flag controls whether selecting text in
+     * [androidx.compose.foundation.text.selection.SelectionContainer] causes scrollable ancestors
+     * of the text to be scrolled when the selecting pointer is dragged outside the scrollable's
+     * viewport.
+     */
+    // TODO: Remove this flag once it has soaked (b/504914051)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isSelectionAutoScrollEnabled: Boolean = true
+
+    /**
+     * This flag controls whether the fix for velocity tracker usage in Draggable and related
+     * classes is enabled to a) properly track velocity per pointer and b) make sure to also take
+     * the pointer events into account that don't move at the beginning of the gesture in order to
+     * increase the stability of the computed velocity.
+     */
+    // TODO: Remove this flag once it has soaked (b/501080937)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isDraggableVelocityTrackerFixEnabled: Boolean = true
+
+    /**
+     * This flag controls whether it's possible to start selecting (via the mouse) text in a
+     * [androidx.compose.foundation.text.selection.SelectionContainer] by dragging from the areas
+     * between the text selectables.
+     */
+    // TODO: Remove this flag once it has soaked (b/521973612)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isMouseSelectionBetweenTextEnabled: Boolean = true
+
+    /**
+     * Disable minimum touch target expansion for inline links. Touch target expansion for
+     * multi-line links causes incorrect clicks on plain text on the same lines because it uses
+     * layout bounds (bounding box of multi-line path) instead of clipped shape.
+     */
+    // TODO: b/522377028
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isLinkMinimumTouchTargetSizeZeroEnabled: Boolean = false
+
+    /**
+     * This flag controls the fix where draggable was ignoring and not consuming zero delta events.
+     * This caused issues with the gesture pickup feature. When this flag is enabled, zero delta
+     * events will be consumed (after a drag gesture has started).
+     */
+    // TODO: Remove this flag once it has soaked (b/524219039)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isDraggableZeroDeltaConsumptionEnabled: Boolean = true
+
+    /**
+     * This flag controls whether [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow]
+     * checks if the number of visible items has changed across iterations without scroll deltas
+     * (such as when changing lookahead window sizes) and refills the cache window if needed.
+     */
+    // TODO: b/535884139
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isCacheWindowLookaheadCheckEnabled: Boolean = false
+
+    /**
+     * This flag controls whether [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow]
+     * only executes `keepAroundItems` during non-lookahead (approach) measure passes in
+     * [androidx.compose.foundation.lazy.LazyList],
+     * [androidx.compose.foundation.lazy.grid.LazyGrid], and
+     * [androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGrid].
+     */
+    // TODO: b/543772810
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isKeepAroundDuringLookaheadDisabled: Boolean = true
+
+    /**
+     * This flag controls whether [androidx.compose.foundation.lazy.LazyList] prefers using the
+     * default [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow] over
+     * [androidx.compose.foundation.lazy.LazyListPrefetchStrategy].
+     */
+    // TODO: b/536884365
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isPreferDefaultCacheWindowOverPrefetchStrategyLazyList: Boolean = true
+
+    /**
+     * This flag controls whether [androidx.compose.foundation.lazy.grid.LazyGrid] prefers using the
+     * default [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow] over
+     * [androidx.compose.foundation.lazy.grid.LazyGridPrefetchStrategy].
+     */
+    // TODO: b/543758449
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isPreferDefaultCacheWindowOverPrefetchStrategyLazyGrid: Boolean = true
+
+    /**
+     * This flag controls whether lazy list measure passes calculate `firstVisibleIndex` and
+     * `lastVisibleIndex` from layout visible items before item placement animations run, preventing
+     * moving-away items added by [androidx.compose.foundation.lazy.layout.LazyLayoutItemAnimator]
+     * from corrupting visible item bounds and causing unwanted composition in prefetch or cache
+     * window strategies.
+     */
+    // TODO: b/543329409
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isLazyListItemAnimatorVisibleBoundsFixEnabled: Boolean = true
+
+    /**
+     * Controls whether [androidx.compose.foundation.lazy.LazyColumn] and
+     * [androidx.compose.foundation.lazy.LazyRow] use a dynamic default cache window.
+     *
+     * When enabled, the ahead [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow] size
+     * dynamically adapts to the average size of visible items, bounded between 10% and 50% of the
+     * viewport, rather than using a static viewport fraction.
+     */
+    // TODO: b/553939434
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isUsingDynamicDefaultCacheWindowInLists: Boolean = true
+
+    /**
+     * Controls whether [androidx.compose.foundation.lazy.grid.LazyVerticalGrid] and
+     * [androidx.compose.foundation.lazy.grid.LazyHorizontalGrid] use a dynamic default cache
+     * window.
+     *
+     * When enabled, the ahead [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow] size
+     * dynamically adapts to the average main axis size of visible lines, bounded between 10% and
+     * 50% of the viewport, rather than using a static viewport fraction.
+     */
+    // TODO: b/553939434
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isUsingDynamicDefaultCacheWindowInGrids: Boolean = true
+
+    /**
+     * Controls whether [androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid]
+     * and [androidx.compose.foundation.lazy.staggeredgrid.LazyHorizontalStaggeredGrid] use a
+     * dynamic default cache window.
+     *
+     * When enabled, the ahead [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow] size
+     * dynamically adapts to the average size of visible items, bounded between 10% and 50% of the
+     * viewport, rather than using a static viewport fraction.
+     */
+    // TODO: b/553939434
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isUsingDynamicDefaultCacheWindowInStaggeredGrids: Boolean = true
+
+    /**
+     * Controls whether [androidx.compose.foundation.text.BasicTextField] starts the input session
+     * only when the window is focused rather than immediately upon element focus. When enabled, if
+     * the element gains focus while the window is not yet focused, starting the input session is
+     * deferred until the window gains focus.
+     */
+    // TODO: Remove this flag once it has soaked (b/560119132)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isTextFieldWaitWindowFocusForInputSessionEnabled: Boolean = true
 }
+
+/** The initial value of [ComposeFoundationFlags.isNewContextMenuEnabled] */
+internal expect val isNewContextMenuInitiallyEnabled: Boolean

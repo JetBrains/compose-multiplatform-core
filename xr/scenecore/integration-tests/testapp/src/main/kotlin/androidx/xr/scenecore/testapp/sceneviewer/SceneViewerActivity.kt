@@ -23,10 +23,10 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Button
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
+import androidx.core.view.WindowCompat
 import androidx.xr.scenecore.testapp.R
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
@@ -34,7 +34,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 class SceneViewerActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        WindowCompat.enableEdgeToEdge(window)
         setContentView(R.layout.common_test_panel)
         Log.i("CREATE_ACTIVITY", "created")
 
@@ -59,11 +59,13 @@ class SceneViewerActivity : AppCompatActivity() {
                 val intentUri =
                     Uri.parse("https://arvr.google.com/scene-viewer/1.2")
                         .buildUpon()
-                        .appendQueryParameter("file", ALT_THREE_D_MODEL_URL)
+                        .appendQueryParameter("file", THREE_D_MODEL_URL)
                         .build()
 
                 Log.i("SCENE_VIEWER_INTENT", intentUri.toString())
                 sceneViewerIntent.setData(intentUri)
+                sceneViewerIntent.setClassName(SCENE_VIEWER_XR_PACKAGE, SCENE_VIEWER_XR_ACTIVITY)
+
                 try {
                     startActivity(sceneViewerIntent)
                 } catch (e: ActivityNotFoundException) {
@@ -79,12 +81,10 @@ class SceneViewerActivity : AppCompatActivity() {
     }
 
     private companion object {
-        const val ALT_THREE_D_MODEL_URL =
-            "https://assets.science.nasa.gov/content/dam/science/psd/mars/resources" +
-                "/gltf_files/25042_Perseverance.glb?emrc=67ddb74ba1d27"
         const val THREE_D_MODEL_URL =
             "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master" +
-                "/2.0/FlightHelmet/glTF/FlightHelmet.gltf"
-        const val MIME_TYPE = "model/gltf-binary"
+                "/2.0/BarramundiFish/glTF-Binary/BarramundiFish.glb"
+        const val SCENE_VIEWER_XR_PACKAGE = "com.google.vr.sceneviewerxr"
+        const val SCENE_VIEWER_XR_ACTIVITY = "com.google.vr.sceneviewerxr.SceneViewerXrActivity"
     }
 }

@@ -18,6 +18,7 @@ package androidx.camera.core
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope
 import androidx.lifecycle.LifecycleOwner
+import java.util.concurrent.Executor
 
 /**
  * A [CameraProvider] provides basic access to a set of cameras such as querying for camera
@@ -51,6 +52,7 @@ public interface CameraProvider {
      * @sample androidx.camera.core.samples.bindConcurrentCameraSample
      * @return List of combinations of [CameraInfo].
      */
+    @get:Suppress("HiddenAbstractMethodInInterface")
     @get:RestrictTo(Scope.LIBRARY_GROUP)
     public val availableConcurrentCameraInfos: List<List<CameraInfo>>
 
@@ -59,7 +61,9 @@ public interface CameraProvider {
      *
      * @return `true` if there is a [ConcurrentCamera] bound, otherwise `false`.
      */
-    @get:RestrictTo(Scope.LIBRARY_GROUP) public val isConcurrentCameraModeOn: Boolean
+    @get:Suppress("HiddenAbstractMethodInInterface")
+    @get:RestrictTo(Scope.LIBRARY_GROUP)
+    public val isConcurrentCameraModeOn: Boolean
 
     /**
      * Checks whether this provider supports at least one camera that meets the requirements from a
@@ -77,6 +81,26 @@ public interface CameraProvider {
     public fun hasCamera(cameraSelector: CameraSelector): Boolean
 
     /**
+     * Returns the list of supported lens categories available on the device for the specified lens
+     * facing.
+     *
+     * @param lensFacing The lens facing direction ([CameraSelector.LENS_FACING_BACK],
+     *   [CameraSelector.LENS_FACING_FRONT], or [CameraSelector.LENS_FACING_EXTERNAL]).
+     * @return An unmodifiable list of supported [CameraSelector.LensCategory] values
+     *   ([CameraSelector.LENS_CATEGORY_DEFAULT], [CameraSelector.LENS_CATEGORY_ULTRA_WIDE],
+     *   [CameraSelector.LENS_CATEGORY_TELEPHOTO], [CameraSelector.LENS_CATEGORY_WIDEST_FOV], or
+     *   [CameraSelector.LENS_CATEGORY_NARROWEST_FOV]), or an empty list if no camera matches the
+     *   criteria.
+     */
+    // TODO: b/530043225 - Make this public in next alpha
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public fun getSupportedLensCategories(
+        @CameraSelector.LensFacing lensFacing: Int
+    ): List<@CameraSelector.LensCategory Int> {
+        throw UnsupportedOperationException("The camera provider is not implemented properly.")
+    }
+
+    /**
      * Returns the [CameraInfo] instance of the camera resulted from the specified [CameraSelector].
      *
      * The returned [CameraInfo] corresponds to the camera that will be bound when calling
@@ -92,6 +116,63 @@ public interface CameraProvider {
         throw UnsupportedOperationException("The camera provider is not implemented properly.")
     }
 
-    /** Returns the [CameraXConfig] implementation type. */
-    @get:RestrictTo(Scope.LIBRARY_GROUP) @CameraXConfig.ImplType public val configImplType: Int
+    /**
+     * Returns the [CameraInfo] instance of the camera resulted from the specified [CameraSelector]
+     * and [SessionConfig].
+     *
+     * The returned [CameraInfo] corresponds to the camera that will be bound when calling
+     * `bindToLifecycle` with the specified [CameraSelector] and [SessionConfig].
+     *
+     * This method is used for the case when the input [SessionConfig] can affect the camera
+     * selection or the information provided by the obtained CameraInfo object. For example, the
+     * `androidx.camera.extensions.ExtensionSessionConfig`.
+     *
+     * @param cameraSelector the [CameraSelector] to use for selecting the camera to receive
+     *   information about.
+     * @param sessionConfig the [SessionConfig] to use for selecting the camera to receive
+     *   information about.
+     * @return the corresponding [CameraInfo].
+     * @throws IllegalArgumentException if the given [CameraSelector] and [SessionConfig] can't
+     *   result in a valid camera to provide the [CameraInfo].
+     */
+    public fun getCameraInfo(
+        cameraSelector: CameraSelector,
+        sessionConfig: SessionConfig,
+    ): CameraInfo {
+        throw UnsupportedOperationException("The camera provider is not implemented properly.")
+    }
+
+    /**
+     * Adds a listener for changes in camera presence.
+     *
+     * The listener will be notified when cameras are added to or removed from the set of devices
+     * that can be used by CameraX. This list of "usable" cameras has already been processed by any
+     * configured [CameraSelector] limiters and compatibility filters.
+     *
+     * **Important Note on Synchronization:** To prevent race conditions, this method immediately
+     * invokes [CameraPresenceListener.onCamerasAdded] **once** on the provided [executor] with a
+     * `Set` containing all cameras that are currently available. This guarantees that the
+     * listener's state is synchronized with the provider's state at the moment of registration.
+     *
+     * This listener reports on persistent hardware changes and does not fire for temporary,
+     * recoverable errors, such as when a camera is in use by another application.
+     *
+     * @param executor The [Executor] on which the listener's methods will be invoked.
+     * @param listener The listener to be added.
+     */
+    public fun addCameraPresenceListener(executor: Executor, listener: CameraPresenceListener) {
+        throw UnsupportedOperationException("The camera provider is not implemented properly.")
+    }
+
+    /**
+     * Removes a previously registered camera presence listener.
+     *
+     * Once removed, the listener will no longer receive updates. If the listener was not previously
+     * registered, this method is a no-op.
+     *
+     * @param listener The same listener instance that was passed to [addCameraPresenceListener].
+     */
+    public fun removeCameraPresenceListener(listener: CameraPresenceListener) {
+        throw UnsupportedOperationException("The camera provider is not implemented properly.")
+    }
 }

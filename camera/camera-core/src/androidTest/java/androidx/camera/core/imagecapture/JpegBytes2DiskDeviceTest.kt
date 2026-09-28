@@ -34,7 +34,6 @@ import androidx.camera.testing.impl.TestImageUtil.createBitmap
 import androidx.camera.testing.impl.TestImageUtil.createJpegBytes
 import androidx.camera.testing.impl.TestImageUtil.getAverageDiff
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import java.io.FileOutputStream
@@ -44,7 +43,6 @@ import org.junit.runner.RunWith
 /** Instrumented tests for [JpegBytes2Disk]. */
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class JpegBytes2DiskDeviceTest {
 
     private val operation = JpegBytes2Disk()

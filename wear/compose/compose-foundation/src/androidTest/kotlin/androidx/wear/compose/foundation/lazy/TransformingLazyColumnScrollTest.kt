@@ -24,7 +24,7 @@ import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.Dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -91,16 +91,16 @@ class TransformingLazyColumnScrollTest {
     @Test
     fun scrollToItemWithOffset() =
         testScroll(scrollBlock = { state.scrollToItem(3, 10) }) {
-            assertThat(state.anchorItemIndex).isEqualTo(3)
-            assertThat(state.anchorItemScrollOffset).isEqualTo(10)
+            assertThat(state.layoutInfo.visibleItems.firstOrNull()?.index).isEqualTo(2)
+            val item3Offset = state.layoutInfo.visibleItems.first { it.index == 3 }.offset
+            assertThat(item3Offset).isEqualTo(itemSizePx - 10)
         }
 
     @Test
     fun scrollToItemWithNegativeOffset() =
         testScroll(scrollBlock = { state.scrollToItem(3, -10) }) {
-            assertThat(state.layoutInfo.visibleItems.firstOrNull()?.index).isEqualTo(2)
-            val item3Offset = state.layoutInfo.visibleItems.first { it.index == 3 }.offset
-            assertThat(item3Offset).isEqualTo(itemSizePx - 10)
+            assertThat(state.anchorItemIndex).isEqualTo(3)
+            assertThat(state.anchorItemScrollOffset).isEqualTo(-10)
         }
 
     @Test

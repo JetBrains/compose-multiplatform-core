@@ -71,15 +71,15 @@ internal class CurvedColumnChild(
                 currentMaxRadius - node.estimateThickness(currentMaxRadius)
             }
 
+    @Suppress("ListIterator")
     override fun doRadialPosition(
         parentOuterRadius: Float,
         parentThickness: Float,
     ): PartialLayoutInfo {
         // Compute space used by weighted children and space left
-        val weights =
-            childrenInLayoutOrder.fastMap { node ->
-                (node.computeParentData() as? CurvedScopeParentData)?.weight ?: 0f
-            }
+        val weights = childrenInLayoutOrder.fastMap { node ->
+            (node.computeParentData() as? CurvedScopeParentData)?.weight ?: 0f
+        }
         val sumWeights = weights.sum()
         val extraSpace =
             parentThickness -
@@ -106,7 +106,7 @@ internal class CurvedColumnChild(
             node.radialPosition(outerRadius, actualThickness)
             outerRadius -= actualThickness
         }
-        var maxSweep = childrenInLayoutOrder.fastMaxOfOrNull { it.sweepRadians } ?: 0f
+        val maxSweep = childrenInLayoutOrder.fastMaxOfOrNull { it.sweepRadians } ?: 0f
 
         return PartialLayoutInfo(
             maxSweep,

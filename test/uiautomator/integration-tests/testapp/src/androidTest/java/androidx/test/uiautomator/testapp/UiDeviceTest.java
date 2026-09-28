@@ -145,6 +145,7 @@ public class UiDeviceTest extends BaseTest {
         assertTrue(textView.wait(Until.textEquals("keycode menu pressed; "), TIMEOUT_MS));
     }
 
+    @SdkSuppress(maxSdkVersion = 35) // b/454426904
     @Test
     public void testPressBack() {
         launchTestActivity(KeycodeTestActivity.class);
@@ -271,7 +272,6 @@ public class UiDeviceTest extends BaseTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 24) // required for multi-window
     public void testPressRecentApps() throws Exception {
         assumeFalse("The app title is in the header in desktop mode", isDesktopWindowing());
         launchTestActivity(MainActivity.class);
@@ -345,7 +345,6 @@ public class UiDeviceTest extends BaseTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 24)
     public void testDrag() {
         launchTestActivity(DragTestActivity.class);
 

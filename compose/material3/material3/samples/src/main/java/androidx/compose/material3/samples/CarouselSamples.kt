@@ -36,8 +36,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -50,15 +53,18 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.carousel.CarouselParallaxScrollEffectState
 import androidx.compose.material3.carousel.HorizontalCenteredHeroCarousel
 import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
 import androidx.compose.material3.carousel.HorizontalUncontainedCarousel
+import androidx.compose.material3.carousel.carouselParallaxScrollEffect
 import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,13 +83,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import kotlin.math.max
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -104,8 +110,10 @@ fun HorizontalMultiBrowseCarouselSample() {
             CarouselItem(4, R.drawable.carousel_image_5, R.string.carousel_image_5_description),
         )
 
+    val state = rememberCarouselState { items.count() }
+    val animationScope = rememberCoroutineScope()
     HorizontalMultiBrowseCarousel(
-        state = rememberCarouselState { items.count() },
+        state = state,
         modifier = Modifier.fillMaxWidth().height(221.dp),
         preferredItemWidth = 186.dp,
         itemSpacing = 8.dp,
@@ -113,7 +121,13 @@ fun HorizontalMultiBrowseCarouselSample() {
     ) { i ->
         val item = items[i]
         Image(
-            modifier = Modifier.height(205.dp).maskClip(MaterialTheme.shapes.extraLarge),
+            modifier =
+                Modifier.height(205.dp)
+                    .fillMaxWidth()
+                    .clickable(true, "Tap to focus", Role.Image) {
+                        animationScope.launch { state.animateScrollToItem(i) }
+                    }
+                    .maskClip(MaterialTheme.shapes.extraLarge),
             painter = painterResource(id = item.imageResId),
             contentDescription = stringResource(item.contentDescriptionResId),
             contentScale = ContentScale.Crop,
@@ -121,7 +135,6 @@ fun HorizontalMultiBrowseCarouselSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -158,7 +171,6 @@ fun HorizontalUncontainedCarouselSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -203,6 +215,77 @@ fun HorizontalCenteredHeroCarouselSample() {
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Preview
+@Sampled
+@Composable
+fun MultiAspectCarouselRowSample() {
+    data class CarouselItem(
+        val id: Int,
+        @DrawableRes val imageResId: Int,
+        @StringRes val contentDescriptionResId: Int,
+        val mainAxisSize: Dp,
+    )
+
+    val items =
+        listOf(
+            CarouselItem(
+                0,
+                R.drawable.carousel_image_1,
+                R.string.carousel_image_1_description,
+                305.dp,
+            ),
+            CarouselItem(
+                1,
+                R.drawable.carousel_image_2,
+                R.string.carousel_image_2_description,
+                205.dp,
+            ),
+            CarouselItem(
+                2,
+                R.drawable.carousel_image_3,
+                R.string.carousel_image_3_description,
+                275.dp,
+            ),
+            CarouselItem(
+                3,
+                R.drawable.carousel_image_4,
+                R.string.carousel_image_4_description,
+                350.dp,
+            ),
+            CarouselItem(
+                4,
+                R.drawable.carousel_image_5,
+                R.string.carousel_image_5_description,
+                100.dp,
+            ),
+        )
+
+    val state = rememberLazyListState()
+    val effectState = remember(state) { CarouselParallaxScrollEffectState(state) }
+    LazyRow(
+        state = state,
+        contentPadding = PaddingValues(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth().height(221.dp),
+    ) {
+        itemsIndexed(items) { i, item ->
+            Image(
+                painter = painterResource(id = item.imageResId),
+                contentDescription = stringResource(item.contentDescriptionResId),
+                modifier =
+                    Modifier.width(item.mainAxisSize)
+                        .height(205.dp)
+                        .carouselParallaxScrollEffect(
+                            i,
+                            effectState,
+                            MaterialTheme.shapes.extraLarge,
+                        ),
+                contentScale = ContentScale.Crop,
+            )
+        }
+    }
+}
+
 @Preview
 @Sampled
 @Composable
@@ -322,7 +405,6 @@ fun FadingHorizontalMultiBrowseCarouselSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -342,7 +424,7 @@ fun CarouselWithShowAllButtonSample() {
             CarouselItem(3, R.drawable.carousel_image_4, R.string.carousel_image_4_description),
             CarouselItem(4, R.drawable.carousel_image_5, R.string.carousel_image_5_description),
         )
-    var showAllItems by remember { mutableStateOf(false) }
+    var showAllItems by rememberSaveable { mutableStateOf(false) }
     BackHandler(enabled = showAllItems) { showAllItems = false }
     if (showAllItems) {
         // Shows the grid page directly. For better user experience and navigation patterns,

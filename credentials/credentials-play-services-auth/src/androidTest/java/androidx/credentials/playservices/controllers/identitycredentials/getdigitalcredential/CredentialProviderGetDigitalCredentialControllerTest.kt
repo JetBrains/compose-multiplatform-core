@@ -24,7 +24,6 @@ import androidx.credentials.playservices.TestCredentialsActivity
 import androidx.credentials.playservices.TestUtils
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -33,7 +32,6 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @SmallTest
 @OptIn(ExperimentalDigitalCredentialApi::class)
-@SdkSuppress(minSdkVersion = 23)
 class CredentialProviderGetDigitalCredentialControllerTest {
     @Test
     fun convertRequestToPlayServices_success() {

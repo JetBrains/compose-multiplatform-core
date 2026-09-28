@@ -16,6 +16,10 @@
 
 package androidx.compose.material3
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material3.internal.Icons
+import androidx.compose.material3.internal.Strings
+import androidx.compose.material3.internal.getString
 import androidx.compose.material3.internal.subtractConstraintSafely
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,6 +28,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
@@ -38,7 +44,7 @@ import androidx.compose.ui.util.fastMaxOfOrNull
 import kotlin.math.max
 
 /** DSL scope for building the content of an [AppBarRow] and [AppBarColumn]. */
-sealed interface AppBarScope {
+public sealed interface AppBarScope {
 
     /**
      * Adds a clickable item to the [AppBarRow] or [AppBarColumn].
@@ -48,7 +54,7 @@ sealed interface AppBarScope {
      * @param enabled Whether the item is enabled.
      * @param label The text label for the item, used in the overflow menu.
      */
-    fun clickableItem(
+    public fun clickableItem(
         onClick: () -> Unit,
         icon: @Composable () -> Unit,
         label: String,
@@ -64,7 +70,7 @@ sealed interface AppBarScope {
      * @param enabled Whether the item is enabled.
      * @param label The text label for the item, used in the overflow menu.
      */
-    fun toggleableItem(
+    public fun toggleableItem(
         checked: Boolean,
         onCheckedChange: (Boolean) -> Unit,
         icon: @Composable () -> Unit,
@@ -79,7 +85,7 @@ sealed interface AppBarScope {
      * @param menuContent The composable to display in the overflow menu. It receives an
      *   [AppBarMenuState] instance.
      */
-    fun customItem(
+    public fun customItem(
         appbarContent: @Composable () -> Unit,
         menuContent: @Composable (AppBarMenuState) -> Unit,
     )
@@ -161,7 +167,7 @@ internal class ClickableAppBarItem(
         TooltipBox(
             positionProvider =
                 TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-            tooltip = { PlainTooltip { Text(label) } },
+            tooltip = { PlainTooltipInternal(label) { Text(label) } },
             state = rememberTooltipState(),
         ) {
             IconButton(onClick = onClick, enabled = enabled, content = icon)
@@ -196,7 +202,7 @@ internal class ToggleableAppBarItem(
         TooltipBox(
             positionProvider =
                 TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-            tooltip = { PlainTooltip { Text(label) } },
+            tooltip = { PlainTooltipInternal(label) { Text(label) } },
             state = rememberTooltipState(),
         ) {
             IconToggleButton(
@@ -237,20 +243,25 @@ internal class CustomAppBarItem(
 }
 
 /** State class for the overflow menu in [AppBarRow] and [AppBarColumn]. */
-class AppBarMenuState {
-
+public class AppBarMenuState {
     /** Indicates whether the overflow menu is currently expanded. */
-    var isExpanded by mutableStateOf(false)
+    @Deprecated("Keeping for binary compatibility", level = DeprecationLevel.HIDDEN)
+    public var isExpanded: Boolean = false
+        get() = isShowing
+        private set
+
+    /** Indicates whether the overflow menu is currently showing. */
+    public var isShowing: Boolean by mutableStateOf(false)
         private set
 
     /** Closes the overflow menu. */
-    fun dismiss() {
-        isExpanded = false
+    public fun dismiss(): Unit {
+        isShowing = false
     }
 
     /** Show the overflow menu. */
-    fun show() {
-        isExpanded = true
+    public fun show(): Unit {
+        isShowing = true
     }
 }
 
@@ -371,8 +382,8 @@ internal class OverflowMeasurePolicy(
                 )
             }
 
-        var width: Int
-        var height: Int
+        val width: Int
+        val height: Int
         return if (isVertical) {
             width = constraints.constrainWidth(childrenMaxSpace)
             height = constraints.constrainHeight(currentSpace)
@@ -398,5 +409,60 @@ internal class OverflowMeasurePolicy(
                 overflowPlaceables?.fastForEach { it.placeRelative(x = currentX, y = 0) }
             }
         }
+    }
+}
+
+/**
+ * Default overflow indicator for an [AppBarRow] and [AppBarColumn]. It uses a [IconButton]. When
+ * clicked it will open the menu associated with the provided [AppBarMenuState].
+ *
+ * @param menuState the [AppBarMenuState] used to show or dismiss the overflow menu.
+ * @param modifier [Modifier] to be applied to the overflow indicator.
+ * @param enabled controls the enabled state of this icon button. When `false`, this component will
+ *   not respond to user input, and it will appear visually disabled and disabled to accessibility
+ *   services.
+ * @param shape defines the shape of this icon button's container.
+ * @param colors [IconButtonColors] that will be used to resolve the colors used for this icon
+ *   button in different states. See [IconButtonDefaults.iconButtonColors].
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ *   emitting [androidx.compose.foundation.interaction.Interaction]s for this icon button. You can
+ *   use this to change the icon button's appearance or preview the icon button in different states.
+ *   Note that if `null` is provided, interactions will still happen internally.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+public fun AppBarOverflowIndicator(
+    menuState: AppBarMenuState,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    shape: Shape = IconButtonDefaults.standardShape,
+    colors: IconButtonColors = IconButtonDefaults.iconButtonColors(),
+    interactionSource: MutableInteractionSource? = null,
+) {
+    val contentDescription = getString(Strings.FloatingToolbarMoreOptions)
+
+    TooltipBox(
+        positionProvider =
+            TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+        tooltip = { PlainTooltipInternal(contentDescription) { Text(contentDescription) } },
+        state = rememberTooltipState(),
+    ) {
+        IconButton(
+            onClick = {
+                if (menuState.isShowing) {
+                    menuState.dismiss()
+                } else {
+                    menuState.show()
+                }
+            },
+            modifier = modifier,
+            enabled = enabled,
+            shape = shape,
+            colors = colors,
+            interactionSource = interactionSource,
+            content = {
+                Icon(imageVector = Icons.Filled.MoreVert, contentDescription = contentDescription)
+            },
+        )
     }
 }

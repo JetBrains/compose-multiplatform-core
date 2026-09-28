@@ -83,10 +83,8 @@ public class TypefaceCompat {
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
                 && TypefaceCompatApi24Impl.isUsable()) {
             sTypefaceCompatImpl = new TypefaceCompatApi24Impl();
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            sTypefaceCompatImpl = new TypefaceCompatApi21Impl();
         } else {
-            sTypefaceCompatImpl = new TypefaceCompatBaseImpl();
+            sTypefaceCompatImpl = new TypefaceCompatApi21Impl();
         }
     }
 
@@ -270,7 +268,7 @@ public class TypefaceCompat {
             }
 
             FontFamily family;
-            if (TextUtils.isEmpty(fr.getVariationSettings())) {
+            if (!TextUtils.isEmpty(fr.getVariationSettings())) {
                 try {
                     family = new FontFamily.Builder(
                             new Font.Builder(font).setFontVariationSettings(
@@ -442,20 +440,6 @@ public class TypefaceCompat {
     }
 
     /**
-     * Retrieves the best matching font from the family specified by the {@link Typeface} object
-     */
-    private static @Nullable Typeface getBestFontFromFamily(final Context context,
-            final Typeface typeface, final int style) {
-        final FontFamilyFilesResourceEntry families = sTypefaceCompatImpl.getFontFamily(typeface);
-        if (families == null) {
-            return null;
-        }
-
-        return sTypefaceCompatImpl.createFromFontFamilyFilesResourceEntry(context, families,
-                context.getResources(), style);
-    }
-
-    /**
      * Retrieves the best matching typeface given the family, style and context.
      * If null is passed for the family, then the "default" font will be chosen.
      *
@@ -469,15 +453,6 @@ public class TypefaceCompat {
         if (context == null) {
             throw new IllegalArgumentException("Context cannot be null");
         }
-
-        Typeface typefaceFromFamily = null;
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            typefaceFromFamily = TypefaceCompat.getBestFontFromFamily(context, family, style);
-            if (typefaceFromFamily != null) {
-                return typefaceFromFamily;
-            }
-        }
-
         return Typeface.create(family, style);
     }
 

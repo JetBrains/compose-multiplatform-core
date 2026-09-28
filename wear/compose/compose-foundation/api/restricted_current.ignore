@@ -1,3 +1,0 @@
-// Baseline format: 1.0
-RemovedFromBytecode: androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress#TransformingLazyColumnItemScrollProgress(float, float):
-    Binary breaking change: constructor androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress(float,float) has been removed from bytecode

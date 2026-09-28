@@ -16,44 +16,75 @@
 
 package androidx.build
 
+import androidx.build.pinneddependencies.TIP_OF_TREE_EXEMPTIONS_FILE_NAME
+import androidx.build.pinneddependencies.TipOfTreeExemption
+import androidx.build.pinneddependencies.parseTipOfTreeExemptions
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
-import org.tomlj.Toml
-import org.tomlj.TomlParseResult
-import org.tomlj.TomlTable
+import tools.jackson.core.JacksonException
+import tools.jackson.databind.JsonNode
+import tools.jackson.dataformat.toml.TomlMapper
 
 /** Loads Library groups and versions from a specified TOML file. */
 abstract class LibraryVersionsService : BuildService<LibraryVersionsService.Parameters> {
     interface Parameters : BuildServiceParameters {
-        var tomlFileName: String
-        var tomlFileContents: Provider<String>
+        val tomlFileName: Property<String>
+        val tomlFileContents: Property<String>
+        val tipOfTreeExemptionsFileName: Property<String>
+        val tipOfTreeExemptionsFileContents: Property<String>
     }
 
-    private val parsedTomlFile: TomlParseResult by lazy {
-        val result = Toml.parse(parameters.tomlFileContents.get())
-        if (result.hasErrors()) {
-            val issues =
-                result.errors().joinToString(separator = "\n") {
-                    "${parameters.tomlFileName}:${it.position()}: ${it.message}"
+    private val parsedTomlFile: JsonNode by lazy {
+        val fileName = parameters.tomlFileName.get()
+        try {
+            TomlMapper().readTree(parameters.tomlFileContents.get())
+        } catch (e: JacksonException) {
+            val location = e.location
+            val locationDesc =
+                if (location != null && location.lineNr != -1) {
+                    "line ${location.lineNr}, column ${location.columnNr}: "
+                } else {
+                    ""
                 }
-            throw Exception("${parameters.tomlFileName} file has issues.\n$issues")
+            throw Exception(
+                "$fileName file has issues.\n" +
+                    "$fileName:$locationDesc${e.originalMessage ?: e.message}",
+                e,
+            )
         }
-        result
     }
 
-    private fun getTable(key: String): TomlTable {
-        return parsedTomlFile.getTable(key)
-            ?: throw GradleException("Library versions toml file is missing [$key] table")
+    /**
+     * Exemptions declared in [TIP_OF_TREE_EXEMPTIONS_FILE_NAME], parsed only if something reads
+     * them.
+     *
+     * An absent file parses to an empty list rather than failing, so that a checkout without it, or
+     * a build that never consults it, behaves as though nothing is exempted.
+     */
+    internal val tipOfTreeExemptions: List<TipOfTreeExemption> by lazy {
+        parseTipOfTreeExemptions(
+            parameters.tipOfTreeExemptionsFileContents.orNull,
+            parameters.tipOfTreeExemptionsFileName.get(),
+        )
+    }
+
+    private fun getTable(key: String): JsonNode {
+        val table = parsedTomlFile.get(key)
+        if (table == null || !table.isObject) {
+            throw GradleException("Library versions toml file is missing [$key] table")
+        }
+        return table
     }
 
     // map from name of constant to Version
     val libraryVersions: Map<String, Version> by lazy {
         val versions = getTable("versions")
-        versions.keySet().associateWith { versionName ->
-            val versionValue = versions.getString(versionName)!!
+        versions.propertyNames().associateWith { versionName ->
+            val versionValue = versions.get(versionName)!!.asString()
             Version.parseOrNull(versionValue)
                 ?: throw GradleException(
                     "$versionName does not match expected format - $versionValue"
@@ -116,8 +147,8 @@ abstract class LibraryVersionsService : BuildService<LibraryVersionsService.Para
     private val libraryGroupAssociations: List<LibraryGroupAssociation> by lazy {
         val groups = getTable("groups")
 
-        fun readGroupVersion(groupDefinition: TomlTable, groupName: String, key: String): Version? {
-            val versionRef = groupDefinition.getString(key) ?: return null
+        fun readGroupVersion(groupDefinition: JsonNode, groupName: String, key: String): Version? {
+            val versionRef = groupDefinition.get(key)?.asString() ?: return null
             if (!versionRef.startsWith(VersionReferencePrefix)) {
                 throw GradleException(
                     "Group entry $key is expected to start with $VersionReferencePrefix"
@@ -131,10 +162,12 @@ abstract class LibraryVersionsService : BuildService<LibraryVersionsService.Para
                         "doesn't exist"
                 )
         }
-        groups.keySet().sorted().map { name ->
+        groups.propertyNames().sorted().map { name ->
             // get group name
-            val groupDefinition = groups.getTable(name)!!
-            val groupName = groupDefinition.getString("group")!!
+            val groupDefinition = groups.get(name)!!
+            val groupName =
+                groupDefinition.get("group")?.asString()
+                    ?: throw GradleException("Group entry $name is missing 'group' field")
 
             // get group version, if any
             val atomicGroupVersion =
@@ -144,9 +177,8 @@ abstract class LibraryVersionsService : BuildService<LibraryVersionsService.Para
                     key = AtomicGroupVersion,
                 )
             val overrideApplyToProjects =
-                (groupDefinition.getArray("overrideInclude")?.toList() ?: listOf()).map {
-                    it as String
-                }
+                groupDefinition.get("overrideInclude")?.values()?.map { it.asString() }
+                    ?: emptyList()
 
             val group = LibraryGroup(groupName, atomicGroupVersion)
             LibraryGroupAssociation(name, group, overrideApplyToProjects)
@@ -157,13 +189,17 @@ abstract class LibraryVersionsService : BuildService<LibraryVersionsService.Para
         internal fun registerOrGet(project: Project): Provider<LibraryVersionsService> {
             val tomlFileName = "libraryversions.toml"
             val toml = project.lazyReadFile(tomlFileName)
+            val exemptionsFileName = TIP_OF_TREE_EXEMPTIONS_FILE_NAME
+            val exemptions = project.lazyReadFile(exemptionsFileName)
 
             return project.gradle.sharedServices.registerIfAbsent(
                 "libraryVersionsService",
                 LibraryVersionsService::class.java,
             ) { spec ->
-                spec.parameters.tomlFileName = tomlFileName
-                spec.parameters.tomlFileContents = toml
+                spec.parameters.tomlFileName.set(tomlFileName)
+                spec.parameters.tomlFileContents.set(toml)
+                spec.parameters.tipOfTreeExemptionsFileName.set(exemptionsFileName)
+                spec.parameters.tipOfTreeExemptionsFileContents.set(exemptions)
             }
         }
     }

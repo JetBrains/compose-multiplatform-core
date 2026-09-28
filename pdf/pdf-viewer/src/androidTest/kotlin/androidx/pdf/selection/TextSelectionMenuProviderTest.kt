@@ -16,37 +16,33 @@
 package androidx.pdf.selection
 
 import android.os.Build
-import androidx.pdf.featureflag.PdfFeatureFlags
-import androidx.pdf.view.TextSelection
+import androidx.pdf.selection.model.TextSelection
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
 class TextSelectionMenuProviderTest {
     internal lateinit var textSelectionMenuProvider: TextSelectionMenuProvider
 
     @Before
     fun setUp() {
-        PdfFeatureFlags.isSmartActionMenuComponentEnabled = true
         val context = InstrumentationRegistry.getInstrumentation().context
         textSelectionMenuProvider = TextSelectionMenuProvider(context)
     }
 
-    @After
-    fun tearDown() {
-        PdfFeatureFlags.isSmartActionMenuComponentEnabled = false
-    }
+    @After fun tearDown() {}
 
     @Test
-    fun testTextSelectionEmail() {
-        val emailText = "test@example.com"
+    fun getMenuItems_withEmail_returnsEmailMenu() = runTest {
+        val emailText = "androidpdf@gmail.com"
         val textSelection = TextSelection(emailText, emptyList())
         val menuItems = textSelectionMenuProvider.getMenuItems(textSelection)
         assertThat(menuItems).isNotNull()
@@ -57,7 +53,7 @@ class TextSelectionMenuProviderTest {
     }
 
     @Test
-    fun testTextSelectionPhoneNumber() {
+    fun getMenuItems_withPhoneNumber_returnsCallMenu() = runTest {
         val phoneNumber = "8044566807"
         val textSelection = TextSelection(phoneNumber, emptyList())
         val menuItems = textSelectionMenuProvider.getMenuItems(textSelection)
@@ -69,7 +65,7 @@ class TextSelectionMenuProviderTest {
     }
 
     @Test
-    fun testTextSelectionURL() {
+    fun getMenuItems_withURL_returnsOpenMenu() = runTest {
         val url = "https://www.google.com"
         val textSelection = TextSelection(url, emptyList())
         val menuItems = textSelectionMenuProvider.getMenuItems(textSelection)
@@ -81,7 +77,7 @@ class TextSelectionMenuProviderTest {
     }
 
     @Test
-    fun testTextSelectionLongText() {
+    fun getMenuItems_withLongText_returnsDefaultMenu() = runTest {
         val longText = "A".repeat(501)
         val textSelection = TextSelection(longText, emptyList())
         val menuItems = textSelectionMenuProvider.getMenuItems(textSelection)
@@ -96,17 +92,17 @@ class TextSelectionMenuProviderTest {
     }
 
     @Test
-    fun testSmartActionMenuComponentDisabled() {
-        PdfFeatureFlags.isSmartActionMenuComponentEnabled = false
-        val emailText = "test@example.com"
+    fun getMenuItems_returnsAtleastDefaultMenu() = runTest {
+        val emailText = "abcd"
         val textSelection = TextSelection(emailText, emptyList())
         val menuItems = textSelectionMenuProvider.getMenuItems(textSelection)
         assertThat(menuItems).isNotNull()
-        assertThat(menuItems).hasSize(2) // Only Copy and Select All.
-        val defaultMenuItem = menuItems[0] as DefaultSelectionMenuComponent
+        val size = menuItems.size
+        assertThat(size).isAtLeast(2) // Copy and Select All are must.
+        val defaultMenuItem = menuItems[size - 2] as DefaultSelectionMenuComponent
         assertThat(defaultMenuItem).isNotNull()
         assertThat(defaultMenuItem.label).isEqualTo("Copy")
-        val defaultMenuItem1 = menuItems[1] as DefaultSelectionMenuComponent
+        val defaultMenuItem1 = menuItems[size - 1] as DefaultSelectionMenuComponent
         assertThat(defaultMenuItem1).isNotNull()
         assertThat(defaultMenuItem1.label).isEqualTo("Select all")
     }

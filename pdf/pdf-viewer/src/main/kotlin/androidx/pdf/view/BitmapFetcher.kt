@@ -21,7 +21,7 @@ import android.graphics.Bitmap
 import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.RectF
-import android.os.DeadObjectException
+import android.os.RemoteException
 import android.util.Size
 import androidx.annotation.AnyThread
 import androidx.annotation.GuardedBy
@@ -31,9 +31,9 @@ import androidx.core.graphics.toRect
 import androidx.pdf.PdfDocument
 import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.exceptions.RequestMetadata
+import androidx.pdf.util.ExceptionUtils.isHandledRemoteException
 import androidx.pdf.util.PAGE_BITMAP_REQUEST_NAME
 import androidx.pdf.util.PAGE_BITMAP_TILE_REQUEST_NAME
-import androidx.pdf.util.PAGE_RELEASE_REQUEST_NAME
 import androidx.pdf.util.RectUtils
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
@@ -70,7 +70,7 @@ internal class BitmapFetcher(
      * threshold, we will start to use tiled rendering.
      */
     private val maxBitmapSizePx: Point,
-    private val onPageUpdate: () -> Unit,
+    private val onBitmapReady: (Int) -> Unit,
     /** Error flow for propagating error occurred while processing to [PdfView]. */
     private val errorFlow: MutableSharedFlow<Throwable>,
 ) : AutoCloseable {
@@ -246,22 +246,7 @@ internal class BitmapFetcher(
         pageBitmaps = null
         fetchingWorkHandle?.cancel()
         fetchingWorkHandle = null
-        try {
-            bitmapSource.close()
-        } catch (e: DeadObjectException) {
-            val exception =
-                RequestFailedException(
-                    requestMetadata =
-                        RequestMetadata(
-                            requestName = PAGE_RELEASE_REQUEST_NAME,
-                            pageRange = pageNum..pageNum,
-                        ),
-                    throwable = e,
-                    // Release page is a fire-and-forget request, no need to show error on UI
-                    showError = false,
-                )
-            errorFlow.tryEmit(exception)
-        }
+        bitmapSource.close()
     }
 
     /** Fetch a [FullPageBitmap] */
@@ -269,7 +254,7 @@ internal class BitmapFetcher(
         val job =
             fetchFullPageBitmap(limitBitmapSize(scale, maxBitmapSizePx)) {
                 pageBitmaps = FullPageBitmap(it, scale)
-                onPageUpdate()
+                onBitmapReady(pageNum)
             }
         return SingleBitmapRequestHandle(job)
     }
@@ -319,7 +304,9 @@ internal class BitmapFetcher(
                 val bitmap = bitmapSource.getBitmap(size)
                 ensureActive()
                 onReady(bitmap)
-            } catch (e: DeadObjectException) {
+            } catch (e: RemoteException) {
+                if (!e.isHandledRemoteException) throw e
+
                 val exception =
                     RequestFailedException(
                         requestMetadata =
@@ -330,6 +317,14 @@ internal class BitmapFetcher(
                         throwable = e,
                     )
                 errorFlow.emit(exception)
+            } catch (e: IllegalStateException) {
+                /*
+                  This exception is thrown when attempting to render a page that has already
+                  been closed. This can happen in a race condition where the document is
+                  closed while a background render task is in progress. We can safely ignore
+                  this exception because if the document is being closed, the rendered bitmap
+                  is no longer needed.
+                */
             }
         }
     }
@@ -343,37 +338,46 @@ internal class BitmapFetcher(
      *   guarantee tiles are loaded left-to-right and top-to-bottom
      */
     private fun fetchBitmap(tile: TileBoard.Tile, scale: Float, prevJob: Job?): Job {
-        val job =
-            backgroundScope.launch {
-                prevJob?.join()
+        val job = backgroundScope.launch {
+            prevJob?.join()
+            ensureActive()
+            try {
+                val bitmap =
+                    bitmapSource.getBitmap(
+                        Size(
+                            (pageSize.x * scale).roundToInt(),
+                            (pageSize.y * scale).roundToInt(),
+                        ),
+                        tile.rectPx.toRect(),
+                    )
                 ensureActive()
-                try {
-                    val bitmap =
-                        bitmapSource.getBitmap(
-                            Size(
-                                (pageSize.x * scale).roundToInt(),
-                                (pageSize.y * scale).roundToInt(),
+                tile.bitmap = bitmap
+                onBitmapReady(pageNum)
+            } catch (e: RemoteException) {
+                if (!e.isHandledRemoteException) throw e
+
+                // Service was disconnected or another IPC error occurred.
+                val exception =
+                    RequestFailedException(
+                        requestMetadata =
+                            RequestMetadata(
+                                requestName = PAGE_BITMAP_TILE_REQUEST_NAME,
+                                pageRange = pageNum..pageNum,
                             ),
-                            tile.rectPx.toRect(),
-                        )
-                    ensureActive()
-                    tile.bitmap = bitmap
-                    onPageUpdate()
-                } catch (e: DeadObjectException) {
-                    // Service was disconnected.
-                    val exception =
-                        RequestFailedException(
-                            requestMetadata =
-                                RequestMetadata(
-                                    requestName = PAGE_BITMAP_TILE_REQUEST_NAME,
-                                    pageRange = pageNum..pageNum,
-                                ),
-                            throwable = e,
-                        )
-                    errorFlow.emit(exception)
-                    return@launch
-                }
+                        throwable = e,
+                    )
+                errorFlow.emit(exception)
+                return@launch
+            } catch (e: IllegalStateException) {
+                /*
+                  This exception is thrown when attempting to render a page that has already
+                  been closed. This can happen in a race condition where the document is
+                  closed while a background render task is in progress. We can safely ignore
+                  this exception because if the document is being closed, the rendered bitmap
+                  is no longer needed.
+                */
             }
+        }
         return job
     }
 

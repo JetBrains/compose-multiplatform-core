@@ -502,7 +502,8 @@ public class TypefaceCompatTest {
         assertNotNull(family);
 
         final AppCompatTextView appCompatTextView = new AppCompatTextView(
-                new ContextThemeWrapper(mContext, R.style.Theme_AppCompat_Light));
+                new ContextThemeWrapper(mContext,
+                        androidx.appcompat.R.style.Theme_AppCompat_Light));
         assertNotNull(appCompatTextView);
 
         appCompatTextView.setTypeface(family, Typeface.NORMAL);

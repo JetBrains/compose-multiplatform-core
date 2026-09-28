@@ -69,14 +69,15 @@ import kotlin.math.min
  * image](https://developer.android.com/images/reference/androidx/compose/material/menus.png)
  *
  * A [DropdownMenu] behaves similarly to a [Popup], and will use the position of the parent layout
- * to position itself on screen. Commonly a [DropdownMenu] will be placed in a [Box] with a sibling
- * that will be used as the 'anchor'. Note that a [DropdownMenu] by itself will not take up any
- * space in a layout, as the menu is displayed in a separate window, on top of other content.
+ * to position itself on screen. Commonly a [DropdownMenu] will be placed in a
+ * [androidx.compose.foundation.layout.Box] with a sibling that will be used as the 'anchor'. Note
+ * that a [DropdownMenu] by itself will not take up any space in a layout, as the menu is displayed
+ * in a separate window, on top of other content.
  *
  * The [content] of a [DropdownMenu] will typically be [DropdownMenuItem]s, as well as custom
  * content. Using [DropdownMenuItem]s will result in a menu that matches the Material specification
  * for menus. Also note that the [content] is placed inside a scrollable [Column], so using a
- * [LazyColumn] as the root layout inside [content] is unsupported.
+ * [androidx.compose.foundation.lazy.LazyColumn] as the root layout inside [content] is unsupported.
  *
  * [onDismissRequest] will be called when the menu should close - for example when there is a tap
  * outside the menu, or when the back key is pressed.
@@ -108,7 +109,7 @@ import kotlin.math.min
  * @param content the content of this dropdown menu, typically a [DropdownMenuItem]
  */
 @Composable
-expect fun DropdownMenu(
+public expect fun DropdownMenu(
     expanded: Boolean,
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
@@ -136,7 +137,7 @@ expect fun DropdownMenu(
  * @param content the content of this menu item
  */
 @Composable
-expect fun DropdownMenuItem(
+public expect fun DropdownMenuItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -256,9 +257,9 @@ internal fun DropdownMenuItemContent(
 }
 
 /** Contains default values used for [DropdownMenuItem]. */
-object MenuDefaults {
+public object MenuDefaults {
     /** Default padding used for [DropdownMenuItem]. */
-    val DropdownMenuItemContentPadding =
+    public val DropdownMenuItemContentPadding: PaddingValues =
         PaddingValues(horizontal = DropdownMenuItemHorizontalPadding, vertical = 0.dp)
 }
 
@@ -266,13 +267,20 @@ object MenuDefaults {
 internal expect val DefaultMenuProperties: PopupProperties
 
 // Size defaults.
-private val MenuElevation = 8.dp
-internal val MenuVerticalMargin = 48.dp
-private val DropdownMenuItemHorizontalPadding = 16.dp
-internal val DropdownMenuVerticalPadding = 8.dp
-private val DropdownMenuItemDefaultMinWidth = 112.dp
-private val DropdownMenuItemDefaultMaxWidth = 280.dp
-private val DropdownMenuItemDefaultMinHeight = 48.dp
+private val MenuElevation
+    get() = 8.dp
+internal val MenuVerticalMargin
+    get() = 48.dp
+private val DropdownMenuItemHorizontalPadding
+    get() = 16.dp
+internal val DropdownMenuVerticalPadding
+    get() = 8.dp
+private val DropdownMenuItemDefaultMinWidth
+    get() = 112.dp
+private val DropdownMenuItemDefaultMaxWidth
+    get() = 280.dp
+private val DropdownMenuItemDefaultMinHeight
+    get() = 48.dp
 
 // Menu open/close animation.
 internal const val InTransitionDuration = 120

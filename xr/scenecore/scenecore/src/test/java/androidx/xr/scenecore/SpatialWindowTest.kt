@@ -16,11 +16,11 @@
 
 package androidx.xr.scenecore
 
-import android.app.Activity
+import androidx.activity.ComponentActivity
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.testing.FakeRuntimeFactory
+import androidx.xr.scenecore.runtime.ActivitySpace as RtActivitySpace
+import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.runtime.SpatialCapabilities
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -31,24 +31,36 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class SpatialWindowTest {
-    private val fakeRuntimeFactory = FakeRuntimeFactory()
-    private val activityController = Robolectric.buildActivity(Activity::class.java)
-    private val activity: Activity = activityController.create().start().get()
-    private val mockPlatformAdapter = mock<JxrPlatformAdapter>()
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
+    private val fakePerceptionRuntimeFactory =
+        androidx.xr.arcore.testing.FakePerceptionRuntimeFactory()
+    private val activityController = Robolectric.buildActivity(ComponentActivity::class.java)
+    private val activity = activityController.create().start().get()
+    private val mockSceneRuntime = mock<SceneRuntime>()
+
     private lateinit var session: Session
 
     @Before
+    @SuppressWarnings("RestrictTo")
     fun setUp() {
         // A minimal setup is needed to create a Session instance.
-        // The session needs access to the mockPlatformAdapter.
+        // The session needs access to the mockSceneRuntime.
         val mockActivitySpace = mock<RtActivitySpace>()
-        whenever(mockPlatformAdapter.activitySpace).thenReturn(mockActivitySpace)
-        whenever(mockPlatformAdapter.activitySpaceRootImpl).thenReturn(mockActivitySpace)
-        whenever(mockPlatformAdapter.mainPanelEntity).thenReturn(mock())
-        whenever(mockPlatformAdapter.spatialEnvironment).thenReturn(mock())
-        whenever(mockPlatformAdapter.perceptionSpaceActivityPose).thenReturn(mock())
-        session = Session(activity, fakeRuntimeFactory.createRuntime(activity), mockPlatformAdapter)
+        whenever(mockSceneRuntime.activitySpace).thenReturn(mockActivitySpace)
+        whenever(mockSceneRuntime.mainPanelEntity).thenReturn(mock())
+        whenever(mockSceneRuntime.spatialEnvironment).thenReturn(mock())
+        whenever(mockSceneRuntime.perceptionSpaceActivityPose).thenReturn(mock())
+        whenever(mockSceneRuntime.spatialCapabilities).thenReturn(SpatialCapabilities(0))
+        session =
+            Session(
+                activity,
+                runtimes =
+                    listOf(fakePerceptionRuntimeFactory.createRuntime(activity), mockSceneRuntime),
+                lifecycleOwner = activity,
+            )
     }
 
     @Test
@@ -57,6 +69,6 @@ class SpatialWindowTest {
 
         SpatialWindow.setPreferredAspectRatio(session, activity, ratio)
 
-        verify(mockPlatformAdapter).setPreferredAspectRatio(activity, ratio)
+        verify(mockSceneRuntime).setPreferredAspectRatio(activity, ratio)
     }
 }

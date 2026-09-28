@@ -20,8 +20,10 @@ import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraExtensionCharacteristics
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
+import android.util.Range
 import android.util.Size
 import androidx.annotation.RestrictTo
+import androidx.camera.common.CameraCharacteristicsMetadata
 
 /**
  * [CameraExtensionMetadata] is a compatibility wrapper around [CameraExtensionCharacteristics].
@@ -34,11 +36,7 @@ import androidx.annotation.RestrictTo
  * easier to test and reason about.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public interface CameraExtensionMetadata : Metadata, UnsafeWrapper {
-    public operator fun <T> get(key: CameraCharacteristics.Key<T>): T?
-
-    public fun <T> getOrDefault(key: CameraCharacteristics.Key<T>, default: T): T
-
+public interface CameraExtensionMetadata : CameraCharacteristicsMetadata {
     public val camera: CameraId
     public val cameraExtension: Int
 
@@ -58,4 +56,10 @@ public interface CameraExtensionMetadata : Metadata, UnsafeWrapper {
 
     /** Get sizes that may be used for the postview stream. */
     public fun getPostviewSizes(captureSize: Size, format: Int): Set<Size>
+
+    /** Get the estimated capture latency range for a given size and format in milliseconds. */
+    public fun getEstimatedCaptureLatencyRangeMillis(
+        captureSize: Size,
+        imageFormat: Int,
+    ): Range<Long>?
 }

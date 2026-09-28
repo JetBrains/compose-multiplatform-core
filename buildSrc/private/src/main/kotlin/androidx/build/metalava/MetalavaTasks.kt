@@ -20,32 +20,39 @@ import androidx.build.AndroidXExtension
 import androidx.build.addFilterableTasks
 import androidx.build.addToBuildOnServer
 import androidx.build.addToCheckTask
+import androidx.build.checkapi.AndroidMultiplatformApiTaskConfig
 import androidx.build.checkapi.ApiBaselinesLocation
 import androidx.build.checkapi.ApiLocation
+import androidx.build.checkapi.ApiTaskConfig
 import androidx.build.checkapi.CompilationInputs
+import androidx.build.checkapi.KmpNoJvmApiTaskConfig
+import androidx.build.checkapi.LibraryApiTaskConfig
 import androidx.build.checkapi.MultiplatformCompilationInputs
 import androidx.build.checkapi.SourceSetInputs
 import androidx.build.checkapi.getRequiredCompatibilityApiLocation
+import androidx.build.getLibraryClasspath
 import androidx.build.uptodatedness.cacheEvenIfNoOutputs
 import androidx.build.version
 import org.gradle.api.Project
-import org.gradle.api.artifacts.Configuration
+import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 internal object MetalavaTasks {
 
     fun setupProject(
         project: Project,
         compilationInputs: CompilationInputs,
-        generateApiDependencies: Configuration,
+        generateApiDependencies: FileCollection,
         extension: AndroidXExtension,
         androidManifest: Provider<RegularFile>?,
         baselinesApiLocation: ApiBaselinesLocation,
         builtApiLocation: ApiLocation,
         outputApiLocations: List<ApiLocation>,
+        config: ApiTaskConfig,
     ) {
         val metalavaClasspath = project.getMetalavaClasspath()
         val version = project.version()
@@ -55,21 +62,27 @@ internal object MetalavaTasks {
         // implemented by excluding APIs with this annotation from the restricted API file.
         val generateRestrictToLibraryGroupAPIs = !extension.mavenGroup!!.requireSameVersion
         val kotlinSourceLevel: Provider<KotlinVersion> = extension.kotlinApiVersion
-        val targetsJavaConsumers = !extension.type.targetsKotlinConsumersOnly
+        val targetsJavaConsumers = extension.type.map { !it.targetsKotlinConsumersOnly }
+        val multiplatform = compilationInputs is MultiplatformCompilationInputs
+        val hasJvmOrAndroidTarget = config !is KmpNoJvmApiTaskConfig
+        val hasAndroidTarget =
+            config is LibraryApiTaskConfig || config is AndroidMultiplatformApiTaskConfig
+
         val generateApi =
             project.tasks.register("generateApi", GenerateApiTask::class.java) { task ->
                 task.group = "API"
                 task.description = "Generates API files from source"
                 task.apiLocation.set(builtApiLocation)
                 task.metalavaClasspath.from(metalavaClasspath)
-                task.generateRestrictToLibraryGroupAPIs = generateRestrictToLibraryGroupAPIs
+                task.generateRestrictToLibraryGroupAPIs.set(generateRestrictToLibraryGroupAPIs)
                 task.baselines.set(baselinesApiLocation)
                 task.targetsJavaConsumers.set(targetsJavaConsumers)
-                task.k2UastEnabled.set(extension.metalavaK2UastEnabled)
                 task.kotlinSourceLevel.set(kotlinSourceLevel)
+                task.multiplatform.set(multiplatform)
+                task.hasJvmOrAndroidTarget.set(hasJvmOrAndroidTarget)
 
                 // Arguments needed for generating the API levels JSON
-                task.projectApiDirectory = project.layout.projectDirectory.dir("api")
+                task.projectApiDirectory.set(project.layout.projectDirectory.dir("api"))
                 task.currentVersion.set(version)
 
                 applyInputs(compilationInputs, task, generateApiDependencies, androidManifest)
@@ -77,13 +90,17 @@ internal object MetalavaTasks {
                 // using it to validate the generated api
                 task.mustRunAfter("updateApiLintBaseline")
             }
-        project.registerVersionMetadataComponent(generateApi)
+        // TODO(b/491425901): KMP version metadata isn't generated
+        if (hasJvmOrAndroidTarget) {
+            project.registerVersionMetadataComponent(generateApi)
+        }
 
         // Policy: If the artifact has previously been released, e.g. has a beta or later API file
         // checked in, then we must verify "release compatibility" against the work-in-progress
         // API file.
         var checkApiRelease: TaskProvider<CheckApiCompatibilityTask>? = null
         var ignoreApiChanges: TaskProvider<IgnoreApiChangesTask>? = null
+        var regenerateCompatApi: TaskProvider<RegenerateCompatibilityApiTask>? = null
         project.getRequiredCompatibilityApiLocation()?.let { lastReleasedApiFile ->
             checkApiRelease =
                 project.tasks.register("checkApiRelease", CheckApiCompatibilityTask::class.java) {
@@ -93,9 +110,8 @@ internal object MetalavaTasks {
                     task.baselines.set(baselinesApiLocation)
                     task.api.set(builtApiLocation)
                     task.version.set(version)
-                    task.dependencyClasspath = compilationInputs.dependencyClasspath
-                    task.bootClasspath = compilationInputs.bootClasspath
-                    task.k2UastEnabled.set(extension.metalavaK2UastEnabled)
+                    task.dependencyClasspath.from(compilationInputs.dependencyClasspath)
+                    task.bootClasspath.from(compilationInputs.bootClasspath)
                     task.kotlinSourceLevel.set(kotlinSourceLevel)
                     task.targetsJavaConsumers.set(targetsJavaConsumers)
                     task.cacheEvenIfNoOutputs()
@@ -106,17 +122,40 @@ internal object MetalavaTasks {
                 project.tasks.register("ignoreApiChanges", IgnoreApiChangesTask::class.java) { task
                     ->
                     task.metalavaClasspath.from(metalavaClasspath)
-                    task.referenceApi.set(checkApiRelease!!.flatMap { it.referenceApi })
-                    task.baselines.set(checkApiRelease!!.flatMap { it.baselines })
+                    task.referenceApi.set(checkApiRelease.flatMap { it.referenceApi })
+                    task.baselines.set(checkApiRelease.flatMap { it.baselines })
                     task.api.set(builtApiLocation)
                     task.version.set(version)
-                    task.dependencyClasspath = compilationInputs.dependencyClasspath
-                    task.bootClasspath = compilationInputs.bootClasspath
-                    task.k2UastEnabled.set(extension.metalavaK2UastEnabled)
+                    task.dependencyClasspath.from(compilationInputs.dependencyClasspath)
+                    task.bootClasspath.from(compilationInputs.bootClasspath)
                     task.kotlinSourceLevel.set(kotlinSourceLevel)
                     task.targetsJavaConsumers.set(targetsJavaConsumers)
                     task.dependsOn(generateApi)
                 }
+
+            regenerateCompatApi =
+                RegenerateCompatibilityApiTask.configureTask(
+                    project,
+                    lastReleasedApiFile,
+                    kotlinSourceLevel,
+                    generateRestrictToLibraryGroupAPIs,
+                    metalavaClasspath,
+                    hasAndroidTarget,
+                    hasJvmOrAndroidTarget,
+                    multiplatform,
+                    targetsJavaConsumers,
+                    compilationInputs.bootClasspath,
+                )
+
+            if (regenerateCompatApi != null) {
+                // ignoreApiChanges depends on the output of this task for the "last released" API
+                // surface. Make sure it always runs *after* the regenerateOldApis task.
+                ignoreApiChanges.configure { it.mustRunAfter(regenerateCompatApi!!) }
+
+                // checkApiRelease validates the output of this task, so make sure it always runs
+                // *after* the regenerateOldApis task.
+                checkApiRelease.configure { it.mustRunAfter(regenerateCompatApi!!) }
+            }
         }
 
         val updateApiLintBaseline =
@@ -127,8 +166,9 @@ internal object MetalavaTasks {
                 task.metalavaClasspath.from(metalavaClasspath)
                 task.baselines.set(baselinesApiLocation)
                 task.targetsJavaConsumers.set(targetsJavaConsumers)
-                task.k2UastEnabled.set(extension.metalavaK2UastEnabled)
                 task.kotlinSourceLevel.set(kotlinSourceLevel)
+                task.multiplatform.set(multiplatform)
+                task.hasJvmOrAndroidTarget.set(hasJvmOrAndroidTarget)
                 applyInputs(compilationInputs, task, generateApiDependencies, androidManifest)
             }
 
@@ -147,24 +187,6 @@ internal object MetalavaTasks {
                 task.dependsOn(generateApi)
                 checkApiRelease?.let { task.dependsOn(checkApiRelease) }
             }
-
-        val regenerateOldApis =
-            project.tasks.register("regenerateOldApis", RegenerateOldApisTask::class.java) { task ->
-                task.group = "API"
-                task.description =
-                    "Regenerates historic API .txt files using the " +
-                        "corresponding prebuilt and the latest Metalava"
-                task.kotlinSourceLevel.set(kotlinSourceLevel)
-                task.generateRestrictToLibraryGroupAPIs = generateRestrictToLibraryGroupAPIs
-            }
-
-        // ignoreApiChanges depends on the output of this task for the "last released" API
-        // surface. Make sure it always runs *after* the regenerateOldApis task.
-        ignoreApiChanges?.configure { it.mustRunAfter(regenerateOldApis) }
-
-        // checkApiRelease validates the output of this task, so make sure it always runs
-        // *after* the regenerateOldApis task.
-        checkApiRelease?.configure { it.mustRunAfter(regenerateOldApis) }
 
         val updateApi =
             project.tasks.register("updateApi", UpdateApiTask::class.java) { task ->
@@ -191,7 +213,7 @@ internal object MetalavaTasks {
                 task.description =
                     "Regenerates current and historic API .txt files using the corresponding " +
                         "prebuilt and the latest Metalava, then updates API ignore files"
-                task.dependsOn(regenerateOldApis)
+                regenerateCompatApi?.let { task.dependsOn(it) }
                 task.dependsOn(updateApi)
                 ignoreApiChanges?.let { task.dependsOn(it) }
             }
@@ -202,7 +224,7 @@ internal object MetalavaTasks {
             ignoreApiChanges,
             updateApiLintBaseline,
             checkApi,
-            regenerateOldApis,
+            regenerateCompatApi,
             updateApi,
             regenerateApis,
             generateApi,
@@ -212,17 +234,18 @@ internal object MetalavaTasks {
     private fun applyInputs(
         inputs: CompilationInputs,
         task: SourceMetalavaTask,
-        generateApiDependencies: Configuration,
+        generateApiDependencies: FileCollection?,
         androidManifest: Provider<RegularFile>?,
     ) {
-        task.sourcePaths = inputs.sourcePaths
-        task.compiledSources = generateApiDependencies
-        task.dependencyClasspath = inputs.dependencyClasspath
-        task.bootClasspath = inputs.bootClasspath
+        task.sourcePaths.from(inputs.sourcePaths)
+        task.compiledSources.from(generateApiDependencies)
+        task.bootClasspath.from(inputs.bootClasspath)
         androidManifest?.let { task.manifestPath.set(it) }
         if (inputs is MultiplatformCompilationInputs) {
+            task.dependencyClasspath.from(inputs.allSourceSetsDependencyClasspath)
             task.sourceSets.set(inputs.sourceSets)
         } else {
+            task.dependencyClasspath.from(inputs.dependencyClasspath)
             // Represent a non-multiplatform project as one source set.
             task.sourceSets.set(
                 listOf(
@@ -231,9 +254,12 @@ internal object MetalavaTasks {
                         dependsOnSourceSets = emptyList(),
                         sourcePaths = inputs.sourcePaths,
                         dependencyClasspath = inputs.dependencyClasspath,
+                        kotlinPlatforms = setOf(KotlinPlatformType.androidJvm),
                     )
                 )
             )
         }
     }
 }
+
+fun Project.getMetalavaClasspath(): FileCollection = getLibraryClasspath("metalava")

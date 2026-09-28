@@ -20,6 +20,7 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import android.os.Build
 import android.os.Handler
 import androidx.annotation.RequiresApi
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
@@ -36,6 +37,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.collectIndexed
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
@@ -62,6 +64,9 @@ import org.robolectric.shadows.ShadowNetworkCapabilities
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
 class NetworkRequestConstraintControllerTest {
+    companion object {
+        private const val TEST_TIMEOUT_MS = 2000L
+    }
 
     // First implement your own ConnectivityManager, then test NetworkRequestConstraintController
     // against it. What could possibly go wrong?
@@ -92,15 +97,25 @@ class NetworkRequestConstraintControllerTest {
         runBlocking {
             val results = mutableListOf<ConstraintsState>()
             val deferred = CompletableDeferred<Unit>()
-            val job = launch {
-                controller.track(constraints).take(2).collectIndexed { index, value ->
-                    results.add(value)
-                    if (index == 0) {
-                        deferred.complete(Unit)
+            // Dispatch on Unconfined to ensure callback is registered before we call the network
+            // callback hooks
+            val job =
+                launch(Dispatchers.Unconfined) {
+                    controller.track(constraints).distinctUntilChanged().take(2).collectIndexed {
+                        index,
+                        value ->
+                        results.add(value)
+                        if (index == 0) {
+                            deferred.complete(Unit)
+                        }
                     }
                 }
-            }
             withTimeout(1000) {
+                if (Build.VERSION.SDK_INT >= 29) {
+                    connManagerShadow.networkCallbacks.forEach {
+                        it.onBlockedStatusChanged(connectivityManager.activeNetwork!!, false)
+                    }
+                }
                 deferred.await()
                 connManagerShadow.networkCallbacks.forEach {
                     it.onLost(connectivityManager.activeNetwork!!)
@@ -164,6 +179,7 @@ class NetworkRequestConstraintControllerTest {
             addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
             addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
         }
+        connManagerShadow.setNetworkCapabilities(connectivityManager.activeNetwork, capabilities)
 
         fun buildConstraint() =
             Constraints.Builder()
@@ -177,45 +193,245 @@ class NetworkRequestConstraintControllerTest {
 
         val constraints = listOf(buildConstraint(), buildConstraint())
         val initialValueBarriers = listOf(CompletableDeferred<Unit>(), CompletableDeferred<Unit>())
-        val asyncResults =
-            constraints.mapIndexed { index, constraint ->
-                async(Dispatchers.IO) {
-                    val result = CompletableDeferred<ConstraintsState>()
-                    controller.track(constraints[index]).take(2).collectIndexed { i, state ->
-                        when (i) {
-                            // initial value is ConstraintNotMet due timeout since there is
-                            // no network
-                            0 -> initialValueBarriers[index].complete(Unit)
-                            // second value is the one we are interested on emitted by the test
-                            // network callback invocation
-                            1 -> result.complete(state)
-                            else -> error("Received too many results")
-                        }
+        val asyncResults = constraints.mapIndexed { index, constraint ->
+            async(Dispatchers.IO) {
+                val result = CompletableDeferred<ConstraintsState>()
+                controller.track(constraints[index]).take(2).collectIndexed { i, state ->
+                    when (i) {
+                        // initial value is ConstraintNotMet due timeout since there is
+                        // no network
+                        0 -> initialValueBarriers[index].complete(Unit)
+                        // second value is the one we are interested on emitted by the test
+                        // network callback invocation
+                        1 -> result.complete(state)
+                        else -> error("Received too many results")
                     }
-                    result.await()
                 }
+                result.await()
             }
+        }
         initialValueBarriers.awaitAll() // await for async initial values
 
         connManagerShadow.setActiveNetworkInfo(mobileNetwork)
         connManagerShadow.networkCallbacks.forEach {
             it.onCapabilitiesChanged(connectivityManager.activeNetwork!!, capabilities)
+            it.onBlockedStatusChanged(connectivityManager.activeNetwork!!, false)
         }
 
         val results = asyncResults.awaitAll()
         assertThat(results).containsExactly(ConstraintsMet, ConstraintsMet)
+    }
+
+    @Test
+    @Config(minSdk = 30)
+    fun testBlockedStatus() = runTest {
+        val connectivityManager =
+            getApplicationContext<Context>().getSystemService(Context.CONNECTIVITY_SERVICE)
+                as ConnectivityManager
+        val connManagerShadow =
+            Shadow.extract<ExtendedShadowConnectivityManager>(connectivityManager)
+
+        val capabilities = ShadowNetworkCapabilities.newInstance()
+        shadowOf(capabilities).apply {
+            addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+            addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        }
+        connManagerShadow.setNetworkCapabilities(connectivityManager.activeNetwork, capabilities)
+
+        val controller = NetworkRequestConstraintController(connectivityManager)
+        val request =
+            NetworkRequest.Builder()
+                .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build()
+        val constraints =
+            Constraints.Builder().setRequiredNetworkRequest(request, NetworkType.CONNECTED).build()
+
+        val results = mutableListOf<ConstraintsState>()
+        val deferredNotMet = CompletableDeferred<Unit>()
+        val deferredMet = CompletableDeferred<Unit>()
+
+        // Dispatch on Unconfined to ensure callback is registered before we call the network
+        // callback hooks
+        val job =
+            launch(Dispatchers.Unconfined) {
+                controller.track(constraints).distinctUntilChanged().collectIndexed { index, value
+                    ->
+                    results.add(value)
+                    when (index) {
+                        0 -> deferredNotMet.complete(Unit)
+                        1 -> deferredMet.complete(Unit)
+                    }
+                }
+            }
+
+        withTimeout(TEST_TIMEOUT_MS) {
+            // 1. Simulate network being blocked
+            connManagerShadow.networkCallbacks.forEach {
+                it.onBlockedStatusChanged(connectivityManager.activeNetwork!!, true)
+            }
+            deferredNotMet.await()
+
+            // 2. Simulate network being unblocked
+            connManagerShadow.networkCallbacks.forEach {
+                it.onBlockedStatusChanged(connectivityManager.activeNetwork!!, false)
+            }
+            deferredMet.await()
+        }
+        job.cancel()
+
+        // 4. Assert the sequence of states was correct
+        assertThat(results)
+            .isEqualTo(
+                listOf(ConstraintsNotMet(STOP_REASON_CONSTRAINT_CONNECTIVITY), ConstraintsMet)
+            )
+    }
+
+    @Test
+    @Config(minSdk = 30)
+    fun testBlockedStatus_secondTrackerGetsCachedBlockedState() = runTest {
+        val connectivityManager =
+            getApplicationContext<Context>().getSystemService(Context.CONNECTIVITY_SERVICE)
+                as ConnectivityManager
+        val connManagerShadow =
+            Shadow.extract<ExtendedShadowConnectivityManager>(connectivityManager)
+
+        val capabilities = ShadowNetworkCapabilities.newInstance()
+        shadowOf(capabilities).apply {
+            addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+            addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        }
+        connManagerShadow.setNetworkCapabilities(connectivityManager.activeNetwork, capabilities)
+
+        val controller = NetworkRequestConstraintController(connectivityManager)
+
+        val request =
+            NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build()
+        val constraints =
+            Constraints.Builder().setRequiredNetworkRequest(request, NetworkType.CONNECTED).build()
+
+        val results1 = mutableListOf<ConstraintsState>()
+        val deferredMet1 = CompletableDeferred<Unit>()
+        val deferredNotMet1 = CompletableDeferred<Unit>()
+        // Dispatch on Unconfined to ensure callback is registered before we call the network
+        // callback hooks
+        val job1 =
+            launch(Dispatchers.Unconfined) {
+                controller.track(constraints).distinctUntilChanged().collectIndexed { index, value
+                    ->
+                    results1.add(value)
+                    when (index) {
+                        0 -> deferredNotMet1.complete(Unit)
+                        1 -> deferredMet1.complete(Unit)
+                    }
+                }
+            }
+
+        withTimeout(TEST_TIMEOUT_MS) {
+            connManagerShadow.networkCallbacks.forEach {
+                it.onBlockedStatusChanged(connectivityManager.activeNetwork!!, true)
+            }
+            deferredNotMet1.await()
+
+            val initialState = controller.track(constraints).first()
+            assertThat(initialState)
+                .isEqualTo(ConstraintsNotMet(STOP_REASON_CONSTRAINT_CONNECTIVITY))
+
+            connManagerShadow.networkCallbacks.forEach {
+                it.onBlockedStatusChanged(connectivityManager.activeNetwork!!, false)
+            }
+            deferredMet1.await()
+        }
+        job1.cancel()
+
+        val expectedSequence =
+            listOf(ConstraintsNotMet(STOP_REASON_CONSTRAINT_CONNECTIVITY), ConstraintsMet)
+        assertThat(results1).isEqualTo(expectedSequence)
+    }
+
+    @Test
+    @Config(minSdk = 30)
+    fun testTrackerAfterNetworkCapabilitiesInitialized() = runTest {
+        val connectivityManager =
+            getApplicationContext<Context>().getSystemService(Context.CONNECTIVITY_SERVICE)
+                as ConnectivityManager
+        val controller = NetworkRequestConstraintController(connectivityManager)
+        @Suppress("DEPRECATION") // due to NetworkInfo but that's what Robolectric needs
+        val mobileNetwork = connectivityManager.activeNetworkInfo
+
+        val connManagerShadow =
+            Shadow.extract<ExtendedShadowConnectivityManager>(connectivityManager)
+        connManagerShadow.setActiveNetworkInfo(mobileNetwork)
+
+        val capabilities = ShadowNetworkCapabilities.newInstance()
+        shadowOf(capabilities).apply {
+            addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+            addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        }
+        connManagerShadow.setNetworkCapabilities(connectivityManager.activeNetwork, capabilities)
+
+        fun buildConstraint() =
+            Constraints.Builder()
+                .setRequiredNetworkRequest(
+                    NetworkRequest.Builder()
+                        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                        .build(),
+                    NetworkType.CONNECTED,
+                )
+                .build()
+
+        // Dispatch on Unconfined to ensure callback is registered before we call the network
+        // callback hooks
+        backgroundScope.launch(Dispatchers.Unconfined) {
+            controller.track(buildConstraint()).collect {}
+        }
+
+        // Ensure initial capabilities are passed
+        connManagerShadow.networkCallbacks.forEach {
+            it.onCapabilitiesChanged(connectivityManager.activeNetwork!!, capabilities)
+            it.onBlockedStatusChanged(connectivityManager.activeNetwork!!, false)
+        }
+
+        val state = async(Dispatchers.IO) { controller.track(buildConstraint()).first() }
+        assertThat(state.await()).isEqualTo(ConstraintsMet)
+    }
+
+    @Test
+    fun testSecurityExceptionDuringRegistration() {
+        val connectivityManager =
+            getApplicationContext<Context>().getSystemService(Context.CONNECTIVITY_SERVICE)
+                as ConnectivityManager
+        val connManagerShadow =
+            Shadow.extract<ExtendedShadowConnectivityManager>(connectivityManager)
+
+        connManagerShadow.onRegisterNetworkCallback = { throw SecurityException("Test Exception") }
+
+        val controller = NetworkRequestConstraintController(connectivityManager, 10000L)
+        val constraints =
+            Constraints.Builder()
+                .setRequiredNetworkRequest(NetworkRequest.Builder().build(), NetworkType.CONNECTED)
+                .build()
+        runBlocking {
+            val constraintsState = controller.track(constraints).first()
+            assertThat(constraintsState)
+                .isEqualTo(ConstraintsNotMet(STOP_REASON_CONSTRAINT_CONNECTIVITY))
+        }
     }
 }
 
 @RequiresApi(28)
 @Implements(ConnectivityManager::class)
 class ExtendedShadowConnectivityManager : ShadowConnectivityManager() {
+    var onRegisterNetworkCallback: (() -> Unit)? = null
 
     override fun registerNetworkCallback(
         request: NetworkRequest?,
         networkCallback: ConnectivityManager.NetworkCallback?,
         handler: Handler?,
     ) {
+        onRegisterNetworkCallback?.invoke()
         super.registerNetworkCallback(request, networkCallback, handler)
         val network = activeNetwork ?: return
 
@@ -226,6 +442,7 @@ class ExtendedShadowConnectivityManager : ShadowConnectivityManager() {
     override fun registerDefaultNetworkCallback(
         networkCallback: ConnectivityManager.NetworkCallback?
     ) {
+        onRegisterNetworkCallback?.invoke()
         super.registerDefaultNetworkCallback(networkCallback)
         val network = activeNetwork ?: return
 

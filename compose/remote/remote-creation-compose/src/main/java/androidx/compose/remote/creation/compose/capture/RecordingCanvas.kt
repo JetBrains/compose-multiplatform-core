@@ -1,0 +1,2681 @@
+/*
+ * Copyright 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+
+package androidx.compose.remote.creation.compose.capture
+
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.Rect
+import android.graphics.RectF
+import android.graphics.Region
+import androidx.annotation.ColorInt
+import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
+import androidx.compose.remote.core.RcPlatformServices.RcPathArrayCreator
+import androidx.compose.remote.core.operations.ConditionalOperations
+import androidx.compose.remote.core.operations.Utils
+import androidx.compose.remote.core.operations.paint.PaintBundle
+import androidx.compose.remote.creation.RemoteComposeWriter
+import androidx.compose.remote.creation.RemotePath
+import androidx.compose.remote.creation.compose.layout.RemoteCustomPropertiesScope
+import androidx.compose.remote.creation.compose.modifier.RemoteModifier
+import androidx.compose.remote.creation.compose.modifier.toRecordingModifier
+import androidx.compose.remote.creation.compose.shapes.MorphTweenUtility
+import androidx.compose.remote.creation.compose.state.BaseRemoteState
+import androidx.compose.remote.creation.compose.state.MutableRemoteFloat
+import androidx.compose.remote.creation.compose.state.RemoteBitmapFont
+import androidx.compose.remote.creation.compose.state.RemoteBoolean
+import androidx.compose.remote.creation.compose.state.RemoteColor
+import androidx.compose.remote.creation.compose.state.RemoteFloat
+import androidx.compose.remote.creation.compose.state.RemoteFloatArray
+import androidx.compose.remote.creation.compose.state.RemoteImageBitmap
+import androidx.compose.remote.creation.compose.state.RemoteInt
+import androidx.compose.remote.creation.compose.state.RemoteIntArray
+import androidx.compose.remote.creation.compose.state.RemoteLong
+import androidx.compose.remote.creation.compose.state.RemotePaint
+import androidx.compose.remote.creation.compose.state.RemoteStateIdKey
+import androidx.compose.remote.creation.compose.state.RemoteStateScope
+import androidx.compose.remote.creation.compose.state.RemoteString
+import androidx.compose.remote.creation.compose.state.RemoteStringArray
+import androidx.compose.remote.creation.compose.state.StandardRemotePaint
+import androidx.compose.remote.creation.compose.state.asRemotePaint
+import androidx.compose.remote.creation.compose.state.rf
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.asAndroidPath
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.graphics.shapes.RoundedPolygon
+
+/**
+ * A bridge for code calling standard [android.graphics.Canvas] to record drawing commands into a
+ * remote document.
+ *
+ * This implementation intercepts standard [Canvas] methods and serializes the resulting operations
+ * via [RemoteComposeWriter]. It allows legacy or framework-dependent code that uses standard
+ * platform types to be recorded.
+ *
+ * For most remote-compose development,
+ * [androidx.compose.remote.creation.compose.layout.RemoteCanvas] is the main way to interact with
+ * the recording system, as it provides a remote-first API with overloads for [RemoteFloat],
+ * [RemoteColor], etc.
+ *
+ * Note [flush] MUST be called to commit commands to the underlying document.
+ *
+ * @param bitmap The backing [Bitmap] for the Android [Canvas].
+ * @param creationState Optional [RemoteComposeCreationState] to initialize [creationState].
+ * @param enableOptimizations Whether to enable save/restore elision and transform fusing
+ *   optimizations. Defaults to `false`.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public open class RecordingCanvas(
+    bitmap: Bitmap,
+    creationState: RemoteComposeCreationState? = null,
+    public val enableOptimizations: Boolean = false,
+) : Canvas(bitmap), RemoteStateScope {
+
+    internal val tracker = PaintTracker()
+
+    internal val buffer: CanvasOperationBuffer = CanvasOperationBuffer(enableOptimizations)
+
+    internal lateinit var creationState: RemoteComposeCreationState
+
+    init {
+        if (creationState != null) {
+            this.creationState = creationState
+        }
+    }
+
+    override val parentScope: RemoteStateScope
+        get() = creationState
+
+    internal var forceSendingPaint = false
+
+    private var globalSaveCounter: Int = 0
+    internal var initialSpanSaveCount: Int = 0
+    internal var currentDrawToBitmapId = 0
+    internal var currentSaveRestoreNode: CanvasOp.SaveRestore? = null
+
+    override val document: RemoteComposeWriter
+        get() = creationState.document
+
+    override val remoteDensity: RemoteDensity
+        get() = creationState.remoteDensity
+
+    override val layoutDirection: LayoutDirection
+        get() = this.creationState.layoutDirection
+
+    public val creationDisplayInfo: RemoteCreationDisplayInfo
+        get() = creationState.creationDisplayInfo
+
+    /**
+     * Records a [CanvasOp] into the canvas operation buffer.
+     *
+     * If optimizations are enabled and the canvas is currently inside a save block
+     * ([currentSaveRestoreNode] is not null), the operation is added to the active save node's
+     * children list for post-processing/optimization rather than being immediately recorded.
+     *
+     * If the operation is a [CanvasOp.Draw], this method also triggers [markDrawCall] to mark the
+     * active save hierarchy as containing drawing operations, ensuring they are not optimized away.
+     *
+     * @param op The [CanvasOp] to record.
+     * @return The [CanvasOperationBuffer.SpanOp] representing the recorded operation's span.
+     */
+    internal fun recordRenderingOp(op: CanvasOp): CanvasOperationBuffer.SpanOp {
+        if (op.triggersDrawCall()) {
+            markDrawCall()
+        }
+        if (currentSaveRestoreNode != null) {
+            currentSaveRestoreNode!!.children.add(op)
+            return currentSaveRestoreNode!!.getRootSaveNode().spanOp!!
+        } else {
+            val spanOp = buffer.recordRenderingOp(op)
+            if (op is CanvasOp.SaveRestore) {
+                op.spanOp = spanOp
+            }
+            return spanOp
+        }
+    }
+
+    /**
+     * Propagates a flag up the active save block hierarchy ([currentSaveRestoreNode] and its
+     * parents) marking them as containing at least one draw call.
+     *
+     * This is used during optimization to ensure that save/restore blocks that actually perform
+     * drawing are preserved, while empty save/restore blocks can be pruned.
+     */
+    private fun markDrawCall() {
+        var s = currentSaveRestoreNode
+        while (s != null) {
+            s.hasDrawCalls = true
+            s = s.parent
+        }
+    }
+
+    /**
+     * Records a generic drawing action as a [CanvasOp.Draw] operation.
+     *
+     * @param action The block containing drawing commands to record.
+     * @return The [CanvasOperationBuffer.SpanOp] representing the recorded draw operation.
+     */
+    internal fun recordRenderingOp(action: () -> Unit): CanvasOperationBuffer.SpanOp {
+        return recordRenderingOp(CanvasOp.Draw { action() })
+    }
+
+    /**
+     * Records a drawing action that uses a [RemotePaint].
+     *
+     * This method takes a snapshot of the paint state, records a command to use that paint, and
+     * then records the drawing action.
+     *
+     * @param paint The [RemotePaint] to apply for this drawing action.
+     * @param action The block containing drawing commands to record.
+     * @return The [CanvasOperationBuffer.SpanOp] representing the recorded operation.
+     */
+    internal fun recordRenderingOp(
+        paint: RemotePaint?,
+        action: () -> Unit,
+    ): CanvasOperationBuffer.SpanOp {
+        val paintSnapshot = snapshotPaint(paint)
+        return recordRenderingOp {
+            usePaintInternal(paintSnapshot)
+            action()
+        }
+    }
+
+    /**
+     * Records a drawing action that uses a platform [Paint].
+     *
+     * This method takes a snapshot of the paint state, records a command to use that paint, and
+     * then records the drawing action.
+     *
+     * @param paint The platform [Paint] to apply for this drawing action.
+     * @param action The block containing drawing commands to record.
+     * @return The [CanvasOperationBuffer.SpanOp] representing the recorded operation.
+     */
+    internal fun recordRenderingOp(
+        paint: Paint?,
+        action: () -> Unit,
+    ): CanvasOperationBuffer.SpanOp {
+        val paintSnapshot = snapshotPaint(paint)
+        return recordRenderingOp {
+            usePaintInternal(paintSnapshot)
+            action()
+        }
+    }
+
+    /**
+     * Records a drawing action that uses a Compose [androidx.compose.ui.graphics.Paint].
+     *
+     * This method takes a snapshot of the paint state, records a command to use that paint, and
+     * then records the drawing action.
+     *
+     * @param paint The Compose [androidx.compose.ui.graphics.Paint] to apply for this drawing
+     *   action.
+     * @param action The block containing drawing commands to record.
+     * @return The [CanvasOperationBuffer.SpanOp] representing the recorded operation.
+     */
+    internal fun recordRenderingOp(
+        paint: androidx.compose.ui.graphics.Paint,
+        action: () -> Unit,
+    ): CanvasOperationBuffer.SpanOp {
+        val paintSnapshot = snapshotPaint(paint)
+        return recordRenderingOp {
+            usePaintInternal(paintSnapshot)
+            action()
+        }
+    }
+
+    internal inline fun recordInChildSpan(action: () -> Unit): CanvasOperationBuffer.Span {
+        val childSpan = buffer.insertPoint.createChildSpan()
+        val prevInsertPoint = buffer.insertPoint
+        val prevSaveNode = currentSaveRestoreNode
+        val prevLastRenderingOp = buffer.lastRenderingOp
+        val prevGlobalSaveCounter = globalSaveCounter
+        val prevInitialSpanSaveCount = initialSpanSaveCount
+        buffer.insertPoint = childSpan
+        currentSaveRestoreNode = null
+        buffer.lastRenderingOp = null
+        initialSpanSaveCount = globalSaveCounter
+        var exceptionThrown = false
+        try {
+            action()
+        } catch (e: Throwable) {
+            exceptionThrown = true
+            throw e
+        } finally {
+            val netSaveCountChange = globalSaveCounter - prevGlobalSaveCounter
+            val exitGlobalSaveCounter = globalSaveCounter
+
+            buffer.insertPoint = prevInsertPoint
+            currentSaveRestoreNode = prevSaveNode
+            buffer.lastRenderingOp = prevLastRenderingOp
+            initialSpanSaveCount = prevInitialSpanSaveCount
+            globalSaveCounter = prevGlobalSaveCounter
+
+            if (!exceptionThrown && netSaveCountChange != 0) {
+                throw IllegalStateException(
+                    "Unbalanced save/restore in child span: net save count change was " +
+                        "$netSaveCountChange (must be 0, entered at " +
+                        "$prevGlobalSaveCounter, exited at $exitGlobalSaveCounter)"
+                )
+            }
+        }
+        return childSpan
+    }
+
+    internal inline fun recordInOffscreenChildSpan(
+        bitmapId: Int,
+        action: () -> Unit,
+    ): CanvasOperationBuffer.Span {
+        val lastDrawToBitmapId = currentDrawToBitmapId
+        return recordInChildSpan {
+            currentDrawToBitmapId = bitmapId
+            try {
+                action()
+            } finally {
+                currentDrawToBitmapId = lastDrawToBitmapId
+            }
+        }
+    }
+
+    internal fun snapshotPaint(paint: RemotePaint?): RemotePaint? = paint?.let {
+        StandardRemotePaint(it)
+    }
+
+    internal fun snapshotPaint(paint: Paint?): RemotePaint? = paint?.asRemotePaint()
+
+    internal fun snapshotPaint(paint: androidx.compose.ui.graphics.Paint): RemotePaint =
+        paint.asRemotePaint()
+
+    /**
+     * Sets the [RemoteComposeCreationState] and [RemoteComposeWriter] instances. These are critical
+     * for the `RecordingCanvas` to interact with the remote document and capture context. This must
+     * be called before any drawing operations.
+     *
+     * @param creationState The current [RemoteComposeCreationState] holding document and other
+     *   context.
+     */
+    public fun setRemoteComposeCreationState(creationState: RemoteComposeCreationState) {
+        this.creationState = creationState
+    }
+
+    /**
+     * Flushes all buffered operations to the document, applying optimizations like common
+     * subexpression elimination and operation hoisting.
+     */
+    public fun flush() {
+        buffer.flush(creationState)
+    }
+
+    /**
+     * Processes a [Paint] object, determining which of its attributes have changed since the last
+     * `usePaint` call and serializing only those changes (or all if forced) to the remote document
+     * via a [PaintBundle].
+     *
+     * This is a crucial optimization to reduce the amount of data sent over the wire, as `Paint`
+     * objects can be complex and frequently modified.
+     *
+     * @param paint The [Paint] object whose attributes need to be synchronized with the remote
+     *   side.
+     */
+    internal fun usePaintInternal(paint: RemotePaint?) {
+        if (paint == null) {
+            return
+        }
+
+        val paintBundle = PaintBundle()
+
+        tracker.reset(forceSendingPaint || document.checkAndClearForceSendingNewPaint())
+        tracker.updateWithPaint(paint, paintBundle, creationState)
+
+        if (tracker.isChanged) {
+            document.buffer.addPaint(paintBundle)
+        }
+        forceSendingPaint = false
+    }
+
+    @VisibleForTesting
+    public fun usePaint(paint: Paint?) {
+        val paintSnapshot = snapshotPaint(paint)
+        recordRenderingOp { usePaintInternal(paintSnapshot) }
+    }
+
+    @VisibleForTesting
+    public fun usePaint(paint: RemotePaint?) {
+        val paintSnapshot = snapshotPaint(paint)
+        recordRenderingOp { usePaintInternal(paintSnapshot) }
+    }
+
+    override fun drawColor(drawColor: Int) {
+        drawRect(
+            0f.rf,
+            0f.rf,
+            creationState.creationDisplayInfo.size.width.toInt().rf,
+            creationState.creationDisplayInfo.size.height.toInt().rf,
+            Paint().apply {
+                color = drawColor
+                style = Paint.Style.FILL
+            },
+        )
+    }
+
+    override fun drawText(text: String, x: Float, y: Float, paint: Paint) {
+        drawTextRun(text, 0, text.length, 0, text.length, x, y, false, paint)
+    }
+
+    public fun drawText(text: String, x: RemoteFloat, y: RemoteFloat, paint: Paint) {
+        val op =
+            recordRenderingOp(paint) {
+                document.drawTextRun(
+                    text,
+                    0,
+                    text.length,
+                    0,
+                    text.length,
+                    x.getFloatIdForCreationState(creationState),
+                    y.getFloatIdForCreationState(creationState),
+                    false,
+                )
+            }
+        buffer.addRoots(op, x, y)
+    }
+
+    /**
+     * Draws text from a [RemoteString] at the specified position.
+     *
+     * @param text The [RemoteString] to draw.
+     * @param length The number of characters to draw from the [RemoteString].
+     * @param x The X coordinate of the text's origin.
+     * @param y The Y coordinate of the text's origin.
+     * @param paint The [Paint] object used for styling the text.
+     */
+    public fun drawText(
+        text: RemoteString,
+        length: Int,
+        x: RemoteFloat,
+        y: RemoteFloat,
+        paint: Paint,
+    ) {
+        val op =
+            recordRenderingOp(paint) {
+                document.drawTextRun(
+                    text.getIdForCreationState(creationState),
+                    0,
+                    length,
+                    0,
+                    length,
+                    x.getFloatIdForCreationState(creationState),
+                    y.getFloatIdForCreationState(creationState),
+                    false,
+                )
+            }
+        buffer.addRoots(op, text, x, y)
+    }
+
+    override fun drawRect(left: Float, top: Float, right: Float, bottom: Float, paint: Paint) {
+        val op = recordRenderingOp(paint) { document.drawRect(left, top, right, bottom) }
+    }
+
+    public fun drawRect(
+        left: RemoteFloat,
+        top: RemoteFloat,
+        right: RemoteFloat,
+        bottom: RemoteFloat,
+        paint: Paint,
+    ) {
+        val op =
+            recordRenderingOp(paint) {
+                document.drawRect(
+                    left.getFloatIdForCreationState(creationState),
+                    top.getFloatIdForCreationState(creationState),
+                    right.getFloatIdForCreationState(creationState),
+                    bottom.getFloatIdForCreationState(creationState),
+                )
+            }
+        buffer.addRoots(op, left, top, right, bottom)
+    }
+
+    override fun drawRect(rect: Rect, paint: Paint) {
+        val left = rect.left.toFloat()
+        val top = rect.top.toFloat()
+        val right = rect.right.toFloat()
+        val bottom = rect.bottom.toFloat()
+        recordRenderingOp(paint) { document.drawRect(left, top, right, bottom) }
+    }
+
+    override fun drawRect(rect: RectF, paint: Paint) {
+        val left = rect.left
+        val top = rect.top
+        val right = rect.right
+        val bottom = rect.bottom
+        recordRenderingOp(paint) { document.drawRect(left, top, right, bottom) }
+    }
+
+    /** For V1 compatibility. */
+    override fun drawOval(left: Float, top: Float, right: Float, bottom: Float, paint: Paint) {
+        val op = recordRenderingOp(paint) { document.drawOval(left, top, right, bottom) }
+    }
+
+    public fun drawOval(
+        left: RemoteFloat,
+        top: RemoteFloat,
+        right: RemoteFloat,
+        bottom: RemoteFloat,
+        paint: Paint,
+    ) {
+        val op =
+            recordRenderingOp(paint) {
+                document.drawOval(
+                    left.getFloatIdForCreationState(creationState),
+                    top.getFloatIdForCreationState(creationState),
+                    right.getFloatIdForCreationState(creationState),
+                    bottom.getFloatIdForCreationState(creationState),
+                )
+            }
+        buffer.addRoots(op, left, top, right, bottom)
+    }
+
+    override fun drawRoundRect(
+        left: Float,
+        top: Float,
+        right: Float,
+        bottom: Float,
+        rx: Float,
+        ry: Float,
+        paint: Paint,
+    ) {
+        recordRenderingOp(paint) { document.drawRoundRect(left, top, right, bottom, rx, ry) }
+    }
+
+    public fun drawRoundRect(
+        left: RemoteFloat,
+        top: RemoteFloat,
+        right: RemoteFloat,
+        bottom: RemoteFloat,
+        rx: RemoteFloat,
+        ry: RemoteFloat,
+        paint: Paint,
+    ) {
+        val op =
+            recordRenderingOp(paint) {
+                document.drawRoundRect(
+                    left.getFloatIdForCreationState(creationState),
+                    top.getFloatIdForCreationState(creationState),
+                    right.getFloatIdForCreationState(creationState),
+                    bottom.getFloatIdForCreationState(creationState),
+                    rx.getFloatIdForCreationState(creationState),
+                    ry.getFloatIdForCreationState(creationState),
+                )
+            }
+        buffer.addRoots(op, left, top, right, bottom, rx, ry)
+    }
+
+    override fun drawLine(startX: Float, startY: Float, stopX: Float, stopY: Float, paint: Paint) {
+        recordRenderingOp(paint) { document.drawLine(startX, startY, stopX, stopY) }
+    }
+
+    public fun drawLine(
+        startX: RemoteFloat,
+        startY: RemoteFloat,
+        stopX: RemoteFloat,
+        stopY: RemoteFloat,
+        paint: Paint,
+    ) {
+        val op =
+            recordRenderingOp(paint) {
+                document.drawLine(
+                    startX.getFloatIdForCreationState(creationState),
+                    startY.getFloatIdForCreationState(creationState),
+                    stopX.getFloatIdForCreationState(creationState),
+                    stopY.getFloatIdForCreationState(creationState),
+                )
+            }
+        buffer.addRoots(op, startX, startY, stopX, stopY)
+    }
+
+    override fun translate(dx: Float, dy: Float) {
+        if (dx != 0f || dy != 0f) {
+            recordRenderingOp(CanvasOp.Transform(PendingOp.Translate(dx.rf, dy.rf)))
+        }
+    }
+
+    public fun translate(dx: RemoteFloat, dy: RemoteFloat) {
+        val op = recordRenderingOp(CanvasOp.Transform(PendingOp.Translate(dx, dy)))
+        buffer.addRoots(op, dx, dy)
+    }
+
+    override fun scale(sx: Float, sy: Float) {
+        recordRenderingOp(CanvasOp.Transform(PendingOp.Scale(sx.rf, sy.rf, null, null)))
+    }
+
+    public fun scale(sx: RemoteFloat, sy: RemoteFloat) {
+        val op = recordRenderingOp(CanvasOp.Transform(PendingOp.Scale(sx, sy, null, null)))
+        buffer.addRoots(op, sx, sy)
+    }
+
+    public fun scale(sx: RemoteFloat, sy: RemoteFloat, px: RemoteFloat, py: RemoteFloat) {
+        val op = recordRenderingOp(CanvasOp.Transform(PendingOp.Scale(sx, sy, px, py)))
+        buffer.addRoots(op, sx, sy, px, py)
+    }
+
+    override fun skew(sx: Float, sy: Float) {
+        recordRenderingOp(CanvasOp.Transform(PendingOp.Skew(sx.rf, sy.rf)))
+    }
+
+    public fun skew(sx: RemoteFloat, sy: RemoteFloat) {
+        val op = recordRenderingOp(CanvasOp.Transform(PendingOp.Skew(sx, sy)))
+        buffer.addRoots(op, sx, sy)
+    }
+
+    public fun drawBitmap(bitmap: ImageBitmap, left: Float, top: Float, paint: Paint?) {
+        recordRenderingOp(paint) {
+            val androidBitmap = bitmap.asAndroidBitmap()
+            document.drawBitmap(
+                androidBitmap,
+                left,
+                top,
+                left + androidBitmap.width.toFloat(),
+                top + androidBitmap.height.toFloat(),
+                "",
+            )
+        }
+    }
+
+    override fun drawBitmap(bitmap: Bitmap, left: Float, top: Float, paint: Paint?) {
+        drawBitmap(bitmap.asImageBitmap(), left, top, paint)
+    }
+
+    public fun drawBitmap(
+        bitmap: RemoteImageBitmap,
+        left: RemoteFloat,
+        top: RemoteFloat,
+        paint: Paint?,
+    ) {
+        val op =
+            recordRenderingOp(paint) {
+                document.drawBitmap(
+                    bitmap.getIdForCreationState(creationState),
+                    left.getFloatIdForCreationState(creationState),
+                    top.getFloatIdForCreationState(creationState),
+                    "",
+                )
+            }
+        buffer.addRoots(op, bitmap, left, top)
+    }
+
+    public fun drawBitmap(bitmap: ImageBitmap, src: Rect?, dst: Rect, paint: Paint?) {
+        val dstLeft = dst.left.toFloat()
+        val dstTop = dst.top.toFloat()
+        val dstRight = dst.right.toFloat()
+        val dstBottom = dst.bottom.toFloat()
+        recordRenderingOp(paint) {
+            val androidBitmap = bitmap.asAndroidBitmap()
+            document.drawBitmap(androidBitmap, dstLeft, dstTop, dstRight, dstBottom, "")
+        }
+    }
+
+    override fun drawBitmap(bitmap: Bitmap, src: Rect?, dst: Rect, paint: Paint?) {
+        drawBitmap(bitmap.asImageBitmap(), src, dst, paint)
+    }
+
+    public fun drawBitmap(bitmap: RemoteImageBitmap, src: Rect?, dst: Rect, paint: Paint?) {
+        val left = dst.left.toFloat()
+        val top = dst.top.toFloat()
+        val right = dst.right.toFloat()
+        val bottom = dst.bottom.toFloat()
+        val op =
+            recordRenderingOp(paint) {
+                document.drawBitmap(
+                    bitmap.getIdForCreationState(creationState),
+                    left,
+                    top,
+                    right,
+                    bottom,
+                    "",
+                )
+            }
+        buffer.addRoots(op, bitmap)
+    }
+
+    public fun drawBitmap(bitmap: ImageBitmap, src: Rect?, dst: RectF, paint: Paint?) {
+        val dstLeft = dst.left
+        val dstTop = dst.top
+        val dstRight = dst.right
+        val dstBottom = dst.bottom
+        recordRenderingOp(paint) {
+            val androidBitmap = bitmap.asAndroidBitmap()
+            document.drawBitmap(androidBitmap, dstLeft, dstTop, dstRight, dstBottom, "")
+        }
+    }
+
+    override fun drawBitmap(bitmap: Bitmap, src: Rect?, dst: RectF, paint: Paint?) {
+        drawBitmap(bitmap.asImageBitmap(), src, dst, paint)
+    }
+
+    public fun drawBitmap(
+        bitmap: Bitmap,
+        left: RemoteFloat,
+        top: RemoteFloat,
+        right: RemoteFloat,
+        bottom: RemoteFloat,
+        paint: Paint?,
+    ) {
+        val op =
+            recordRenderingOp(paint) {
+                document.drawBitmap(
+                    bitmap,
+                    left.getFloatIdForCreationState(creationState),
+                    top.getFloatIdForCreationState(creationState),
+                    right.getFloatIdForCreationState(creationState),
+                    bottom.getFloatIdForCreationState(creationState),
+                    "",
+                )
+            }
+        buffer.addRoots(op, left, top, right, bottom)
+    }
+
+    /**
+     * Draws a [RemotePath] onto the canvas using the specified [Paint].
+     *
+     * @param path The [RemotePath] to draw.
+     * @param paint The [Paint] object to use for drawing the path.
+     */
+    public fun drawRPath(path: RemotePath, paint: Paint) {
+        val op = recordRenderingOp(paint) { document.drawPath(path) }
+        buffer.addRoots(op, path)
+    }
+
+    /**
+     * Draws a [RoundedPolygon] onto the canvas using the specified [Paint].
+     *
+     * @param roundedPolygon The [RoundedPolygon] to draw.
+     * @param paint The [Paint] object to use for drawing the polygon.
+     */
+    public fun drawRoundedPolygon(roundedPolygon: RoundedPolygon, paint: RemotePaint?) {
+        // Snapshot the paint state to prevent mutation bugs before flush.
+        recordRenderingOp(paint) {
+            val pathData = MorphTweenUtility.cubicsToPathData(roundedPolygon.cubics)
+            val id =
+                document.addPathData(
+                    object : RcPathArrayCreator {
+                        override fun createFloatArray(): FloatArray = pathData
+                    }
+                )
+            document.buffer.addDrawPath(id)
+        }
+    }
+
+    /**
+     * Draws a morph between two [RoundedPolygon]s onto the canvas using the specified [Paint].
+     *
+     * @param from The starting [RoundedPolygon].
+     * @param to The ending [RoundedPolygon].
+     * @param progress The morph progress [0..1].
+     * @param paint The [Paint] object to use for drawing the morph.
+     */
+    public fun drawRoundedPolygonMorph(
+        from: RoundedPolygon,
+        to: RoundedPolygon,
+        progress: RemoteFloat,
+        paint: RemotePaint?,
+    ) {
+        // Snapshot the paint state to prevent mutation bugs before flush.
+        val op =
+            recordRenderingOp(paint) {
+                MorphTweenUtility.emitMorphAsTweens(
+                    document,
+                    from,
+                    to,
+                    progress.getFloatIdForCreationState(creationState),
+                )
+            }
+        buffer.addRoots(op, progress)
+    }
+
+    override fun save(): Int {
+        // Child spans (such as conditional blocks recorded via drawConditionally or offscreen
+        // buffers) operate with two save/restore contexts:
+        //  1. Outer context: Save frames that were active before entering the child span.
+        //  2. Inner context: Save frames created locally inside the child span.
+        //
+        // If code inside a child span previously called restore() to temporarily pop an outer
+        // frame (e.g. to draw pre-rendered content at screen coordinates under the identity
+        // matrix), globalSaveCounter will be less than initialSpanSaveCount. When reinstating that
+        // outer frame via save(), we must emit a standalone document.save() rather than creating a
+        // CanvasOp.SaveRestore node, because CanvasOp.SaveRestore nodes are scoped blocks that
+        // automatically emit a matching trailing document.restore() when their operations end.
+        //
+        // Once all popped outer frames are reinstated (globalSaveCounter >= initialSpanSaveCount),
+        // any further save() is creating a new local save block in the inner context, which is
+        // recorded as a standard CanvasOp.SaveRestore node for canvas tree optimizations.
+        if (globalSaveCounter < initialSpanSaveCount) {
+            recordRenderingOp { document.save() }
+            globalSaveCounter++
+        } else {
+            val node = CanvasOp.SaveRestore(parent = currentSaveRestoreNode)
+            recordRenderingOp(node)
+            currentSaveRestoreNode = node
+            globalSaveCounter++
+        }
+        return globalSaveCounter
+    }
+
+    override fun restore() {
+        // When restoring inside a child span (e.g. a conditional block):
+        //  1. Inner context: If currentSaveRestoreNode != null, we are popping a local save/restore
+        //     frame created within this span. We update the node hierarchy and decrement the
+        // counter.
+        //  2. Outer context: If currentSaveRestoreNode == null but globalSaveCounter > 0, we are
+        //     temporarily popping an outer save frame that was pushed before entering this child
+        //     span. Because the outer frame was opened outside this span's buffer, we emit a
+        //     standalone document.restore() into the span. Note that recordInChildSpan strictly
+        //     requires all popped outer frames to be reinstated with matching save() calls before
+        //     the child span exits (net balance must be 0).
+        //  3. Underflow: If globalSaveCounter == 0, there are no saves left to restore.
+        if (currentSaveRestoreNode != null) {
+            currentSaveRestoreNode = currentSaveRestoreNode?.parent
+            globalSaveCounter--
+        } else if (globalSaveCounter > 0) {
+            recordRenderingOp { document.restore() }
+            globalSaveCounter--
+        } else {
+            throw IllegalStateException("Underflow in restore - more restores than saves")
+        }
+    }
+
+    override fun restoreToCount(saveCount: Int) {
+        while (globalSaveCounter > saveCount) {
+            restore()
+        }
+    }
+
+    override fun getClipBounds(bounds: Rect): Boolean {
+        bounds.set(0, 0, 2048, 2048)
+        return true
+    }
+
+    @Suppress("OverridingDeprecatedMember", "DEPRECATION")
+    @Deprecated("Deprecated in Java")
+    override fun clipRect(
+        left: Float,
+        top: Float,
+        right: Float,
+        bottom: Float,
+        op: Region.Op,
+    ): Boolean {
+        recordRenderingOp { document.clipRect(left, top, right, bottom) }
+        // We return true unconditionally because we cannot easily compute whether the resulting
+        // clip is empty or not without maintaining full clip stack state during recording.
+        return true
+    }
+
+    override fun clipRect(rect: Rect): Boolean =
+        clipRect(
+            rect.left.toFloat(),
+            rect.top.toFloat(),
+            rect.right.toFloat(),
+            rect.bottom.toFloat(),
+        )
+
+    override fun clipRect(rect: RectF): Boolean =
+        clipRect(rect.left, rect.top, rect.right, rect.bottom)
+
+    override fun clipRect(left: Float, top: Float, right: Float, bottom: Float): Boolean {
+        recordRenderingOp(CanvasOp.Clip { it.clipRect(left, top, right, bottom) })
+        return true
+    }
+
+    public fun clipRect(
+        left: RemoteFloat,
+        top: RemoteFloat,
+        right: RemoteFloat,
+        bottom: RemoteFloat,
+    ): Boolean {
+        val op =
+            recordRenderingOp(
+                CanvasOp.Clip { writer ->
+                    val l = left.getFloatIdForCreationState(creationState)
+                    val t = top.getFloatIdForCreationState(creationState)
+                    val r = right.getFloatIdForCreationState(creationState)
+                    val b = bottom.getFloatIdForCreationState(creationState)
+                    writer.clipRect(l, t, r, b)
+                }
+            )
+        buffer.addRoots(op, left, top, right, bottom)
+        return true
+    }
+
+    override fun drawTextRun(
+        text: CharSequence,
+        start: Int,
+        end: Int,
+        contextStart: Int,
+        contextEnd: Int,
+        x: Float,
+        y: Float,
+        isRtl: Boolean,
+        paint: Paint,
+    ) {
+        val textString = text.toString()
+        recordRenderingOp(paint) {
+            document.drawTextRun(textString, start, end, contextStart, contextEnd, x, y, isRtl)
+        }
+    }
+
+    /**
+     * Draws a run of text from a [RemoteString] at a specified position.
+     *
+     * @param text The [RemoteString] to draw.
+     * @param start The index of the first character to draw.
+     * @param end The index after the last character to draw.
+     * @param contextStart The index of the first character of the context for glyph shaping.
+     * @param contextEnd The index after the last character of the context for glyph shaping.
+     * @param x The X coordinate of the text's origin.
+     * @param y The Y coordinate of the text's origin.
+     * @param isRtl `true` if the text is right-to-left.
+     * @param paint The [Paint] object used for styling.
+     */
+    public fun drawTextRun(
+        text: RemoteString,
+        start: Int,
+        end: Int,
+        contextStart: Int,
+        contextEnd: Int,
+        x: RemoteFloat,
+        y: RemoteFloat,
+        isRtl: Boolean,
+        paint: Paint,
+    ) {
+        val op =
+            recordRenderingOp(paint) {
+                document.drawTextRun(
+                    text.getIdForCreationState(creationState),
+                    start,
+                    end,
+                    contextStart,
+                    contextEnd,
+                    x.getFloatIdForCreationState(creationState),
+                    y.getFloatIdForCreationState(creationState),
+                    isRtl,
+                )
+            }
+        buffer.addRoots(op, text, x, y)
+    }
+
+    /**
+     * Draws a substring of [text] with [bitmapFont] at position [x], [y]
+     *
+     * @param text The [RemoteString] to draw
+     * @param bitmapFont The [RemoteBitmapFont] to draw [text] with
+     * @param start The character to start drawing from
+     * @param end The character to stop drawing at. Note if this is -1 then all characters from
+     *   [start] until the last character of [text] are drawn
+     * @param x The left x-coordinate to start rendering from
+     * @param y The top y-coordinate to start rendering from
+     * @param glyphSpacing Horizontal adjustment in pixels between glyphs
+     * @param paint The [Paint] to render with
+     */
+    public fun drawBitmapFontTextRun(
+        text: RemoteString,
+        bitmapFont: RemoteBitmapFont,
+        start: Int,
+        end: Int,
+        x: RemoteFloat,
+        y: RemoteFloat,
+        glyphSpacing: RemoteFloat,
+        paint: Paint,
+    ) {
+        val op =
+            recordRenderingOp(paint) {
+                document.drawBitmapFontTextRun(
+                    text.getIdForCreationState(creationState),
+                    bitmapFont.getIdForCreationState(creationState),
+                    start,
+                    end,
+                    x.getFloatIdForCreationState(creationState),
+                    y.getFloatIdForCreationState(creationState),
+                    glyphSpacing.getFloatIdForCreationState(creationState),
+                )
+            }
+        buffer.addRoots(op, text, bitmapFont, x, y, glyphSpacing)
+    }
+
+    /**
+     * Draws a substring of [text] with [bitmapFont]
+     *
+     * @param text The [RemoteString] to draw
+     * @param bitmapFont The [RemoteBitmapFont] to draw [text] with
+     * @param path The [Path] to draw along
+     * @param start The character to start drawing from
+     * @param end The character to stop drawing at. Note if this is -1 then all characters from
+     *   [start] until the last character of [text] are drawn
+     * @param yAdj Adjustment away from the path along the normal at that point
+     * @param glyphSpacing Horizontal adjustment in pixels between glyphs
+     * @param paint The [Paint] to render with
+     */
+    public fun drawBitmapFontTextRunOnPath(
+        text: RemoteString,
+        bitmapFont: RemoteBitmapFont,
+        path: Path,
+        start: Int,
+        end: Int,
+        yAdj: Float,
+        glyphSpacing: Float,
+        paint: Paint,
+    ) {
+        val pathSnapshot = Path(path)
+        val op =
+            recordRenderingOp(paint) {
+                document.drawBitmapFontTextRunOnPath(
+                    text.getIdForCreationState(creationState),
+                    bitmapFont.getIdForCreationState(creationState),
+                    pathSnapshot,
+                    start,
+                    end,
+                    yAdj,
+                    glyphSpacing,
+                )
+            }
+        buffer.addRoots(op, text, bitmapFont)
+    }
+
+    override fun drawPath(path: Path, paint: Paint) {
+        val pathSnapshot = Path(path)
+        recordRenderingOp(paint) { document.drawPath(pathSnapshot) }
+    }
+
+    override fun rotate(degrees: Float) {
+        recordRenderingOp(CanvasOp.Transform(PendingOp.Rotate(degrees.rf, null, null)))
+    }
+
+    /**
+     * Applies a rotation transformation to the canvas.
+     *
+     * @param degrees The angle of rotation in degrees.
+     */
+    public fun rotate(degrees: RemoteFloat) {
+        val op = recordRenderingOp(CanvasOp.Transform(PendingOp.Rotate(degrees, null, null)))
+        buffer.addRoots(op, degrees)
+    }
+
+    /**
+     * Applies a rotation transformation to the canvas around a specified pivot point.
+     *
+     * @param degrees The angle of rotation in degrees.
+     * @param px The X-coordinate of the pivot point.
+     * @param py The Y-coordinate of the pivot point.
+     */
+    public fun rotate(degrees: RemoteFloat, px: RemoteFloat, py: RemoteFloat) {
+        val op = recordRenderingOp(CanvasOp.Transform(PendingOp.Rotate(degrees, px, py)))
+        buffer.addRoots(op, degrees, px, py)
+    }
+
+    override fun getSaveCount(): Int {
+        return globalSaveCounter
+    }
+
+    override fun drawTextOnPath(
+        text: String,
+        path: Path,
+        hOffset: Float,
+        vOffset: Float,
+        paint: Paint,
+    ) {
+        val pathSnapshot = Path(path)
+        recordRenderingOp(paint) { document.drawTextOnPath(text, pathSnapshot, hOffset, vOffset) }
+    }
+
+    /**
+     * Draws text from a [RemoteString] along a given [Path].
+     *
+     * @param text The [RemoteString] to draw.
+     * @param path The [Path] along which to draw the text.
+     * @param hOffset The horizontal offset along the path.
+     * @param vOffset The vertical offset from the path.
+     * @param paint The [Paint] object for styling the text.
+     */
+    public fun drawTextOnPath(
+        text: String,
+        path: Path,
+        hOffset: RemoteFloat,
+        vOffset: RemoteFloat,
+        paint: Paint,
+    ) {
+        val pathSnapshot = Path(path)
+        val op =
+            recordRenderingOp(paint) {
+                document.drawTextOnPath(
+                    text,
+                    pathSnapshot,
+                    hOffset.getFloatIdForCreationState(creationState),
+                    vOffset.getFloatIdForCreationState(creationState),
+                )
+            }
+        buffer.addRoots(op, hOffset, vOffset)
+    }
+
+    /**
+     * Draws text along a given [RemotePath].
+     *
+     * @param text The text to draw.
+     * @param path The [RemotePath] along which to draw the text.
+     * @param hOffset The horizontal offset along the path.
+     * @param vOffset The vertical offset from the path.
+     * @param paint The [Paint] object for styling the text.
+     */
+    public fun drawTextOnPath(
+        text: String,
+        path: RemotePath,
+        hOffset: RemoteFloat,
+        vOffset: RemoteFloat,
+        paint: Paint,
+    ) {
+        val op =
+            recordRenderingOp(paint) {
+                document.drawTextOnPath(
+                    text,
+                    path,
+                    hOffset.getFloatIdForCreationState(creationState),
+                    vOffset.getFloatIdForCreationState(creationState),
+                )
+            }
+        buffer.addRoots(op, path, hOffset, vOffset)
+    }
+
+    /**
+     * Draws text from a [RemoteString] along a given [Path].
+     *
+     * @param text The [RemoteString] to draw.
+     * @param path The [Path] along which to draw the text.
+     * @param hOffset The horizontal offset along the path.
+     * @param vOffset The vertical offset from the path.
+     * @param paint The [Paint] object for styling the text.
+     */
+    public fun drawTextOnPath(
+        text: RemoteString,
+        path: Path,
+        hOffset: RemoteFloat,
+        vOffset: RemoteFloat,
+        paint: Paint,
+    ) {
+        val pathSnapshot = Path(path)
+        val op =
+            recordRenderingOp(paint) {
+                document.drawTextOnPath(
+                    text.getIdForCreationState(creationState),
+                    pathSnapshot,
+                    hOffset.getFloatIdForCreationState(creationState),
+                    vOffset.getFloatIdForCreationState(creationState),
+                )
+            }
+        buffer.addRoots(op, text, hOffset, vOffset)
+    }
+
+    /**
+     * Draws text from a [RemoteString] along a given [RemotePath].
+     *
+     * @param text The [RemoteString] to draw.
+     * @param path The [RemotePath] along which to draw the text.
+     * @param hOffset The horizontal offset along the path.
+     * @param vOffset The vertical offset from the path.
+     * @param paint The [Paint] object for styling the text.
+     */
+    public fun drawTextOnPath(
+        text: RemoteString,
+        path: RemotePath,
+        hOffset: RemoteFloat,
+        vOffset: RemoteFloat,
+        paint: Paint,
+    ) {
+        val op =
+            recordRenderingOp(paint) {
+                document.drawTextOnPath(
+                    text.getIdForCreationState(creationState),
+                    path,
+                    hOffset.getFloatIdForCreationState(creationState),
+                    vOffset.getFloatIdForCreationState(creationState),
+                )
+            }
+        buffer.addRoots(op, text, path, hOffset, vOffset)
+    }
+
+    override fun drawArc(
+        left: Float,
+        top: Float,
+        right: Float,
+        bottom: Float,
+        startAngle: Float,
+        sweepAngle: Float,
+        useCenter: Boolean,
+        paint: Paint,
+    ) {
+        recordRenderingOp(paint) {
+            if (useCenter) {
+                document.drawSector(left, top, right, bottom, startAngle, sweepAngle)
+            } else {
+                document.drawArc(left, top, right, bottom, startAngle, sweepAngle)
+            }
+        }
+    }
+
+    public fun drawArc(
+        left: RemoteFloat,
+        top: RemoteFloat,
+        right: RemoteFloat,
+        bottom: RemoteFloat,
+        startAngle: RemoteFloat,
+        sweepAngle: RemoteFloat,
+        useCenter: Boolean,
+        paint: Paint,
+    ) {
+        val op =
+            recordRenderingOp(paint) {
+                if (useCenter) {
+                    document.drawSector(
+                        left.getFloatIdForCreationState(creationState),
+                        top.getFloatIdForCreationState(creationState),
+                        right.getFloatIdForCreationState(creationState),
+                        bottom.getFloatIdForCreationState(creationState),
+                        startAngle.getFloatIdForCreationState(creationState),
+                        sweepAngle.getFloatIdForCreationState(creationState),
+                    )
+                } else {
+                    document.drawArc(
+                        left.getFloatIdForCreationState(creationState),
+                        top.getFloatIdForCreationState(creationState),
+                        right.getFloatIdForCreationState(creationState),
+                        bottom.getFloatIdForCreationState(creationState),
+                        startAngle.getFloatIdForCreationState(creationState),
+                        sweepAngle.getFloatIdForCreationState(creationState),
+                    )
+                }
+            }
+        buffer.addRoots(op, left, top, right, bottom, startAngle, sweepAngle)
+    }
+
+    override fun drawCircle(cx: Float, cy: Float, radius: Float, paint: Paint) {
+        recordRenderingOp(paint) { document.drawCircle(cx, cy, radius) }
+    }
+
+    /**
+     * Draws a circle at ([cx], [cy]) with the specified [radius] and [paint].
+     *
+     * @param cx The X-coordinate of the center of the circle.
+     * @param cy The Y-coordinate of the center of the circle.
+     * @param radius The radius of the circle.
+     * @param paint The [Paint] object for styling.
+     */
+    public fun drawCircle(cx: RemoteFloat, cy: RemoteFloat, radius: RemoteFloat, paint: Paint) {
+        val op =
+            recordRenderingOp(paint) {
+                document.drawCircle(
+                    cx.getFloatIdForCreationState(creationState),
+                    cy.getFloatIdForCreationState(creationState),
+                    radius.getFloatIdForCreationState(creationState),
+                )
+            }
+        buffer.addRoots(op, cx, cy, radius)
+    }
+
+    /**
+     * Draws a path that is an interpolation (tween) between two Compose UI [Path] objects.
+     *
+     * This allows for smooth animation between different path shapes. If the input paths are
+     * [RemoteComposePath] instances, it optimizes by directly using their remote representations.
+     * Otherwise, it converts them to Android `Path` objects.
+     *
+     * @param path1 The starting Compose UI [Path].
+     * @param path2 The ending Compose UI [Path].
+     * @param tween The interpolation factor (0.0 for `path1`, 1.0 for `path2`).
+     * @param start The start value for internal tween calculations (often 0.0).
+     * @param stop The stop value for internal tween calculations (often 1.0).
+     * @param paint The Compose UI [Paint] object for styling.
+     */
+    public fun drawTweenPath(
+        path1: androidx.compose.ui.graphics.Path,
+        path2: androidx.compose.ui.graphics.Path,
+        tween: RemoteFloat,
+        start: RemoteFloat,
+        stop: RemoteFloat,
+        paint: androidx.compose.ui.graphics.Paint,
+    ) {
+        val op =
+            recordRenderingOp(paint) {
+                if (path1 is RemoteComposePath && path2 is RemoteComposePath) {
+                    document.drawTweenPath(
+                        path1.remote,
+                        path2.remote,
+                        tween.getFloatIdForCreationState(creationState),
+                        start.getFloatIdForCreationState(creationState),
+                        stop.getFloatIdForCreationState(creationState),
+                    )
+                } else {
+                    document.drawTweenPath(
+                        path1.asAndroidPath(),
+                        path2.asAndroidPath(),
+                        tween.getFloatIdForCreationState(creationState),
+                        start.getFloatIdForCreationState(creationState),
+                        stop.getFloatIdForCreationState(creationState),
+                    )
+                }
+            }
+        buffer.addRoots(op, tween, start, stop)
+    }
+
+    /**
+     * Draws a path, interpolated using tween, between path1, & path2 [RemotePath] with the given
+     * [Paint].
+     *
+     * @param path1 The starting [RemotePath].
+     * @param path2 The ending [RemotePath].
+     * @param tween The interpolation factor (0.0 for `path1`, 1.0 for `path2`).
+     * @param start The start value for internal tween calculations (often 0.0).
+     * @param stop The stop value for internal tween calculations (often 1.0).
+     * @param paint The Compose UI [Paint] object for styling.
+     */
+    public fun drawTweenPath(
+        path1: RemotePath,
+        path2: RemotePath,
+        tween: RemoteFloat,
+        start: RemoteFloat,
+        stop: RemoteFloat,
+        paint: androidx.compose.ui.graphics.Paint,
+    ) {
+        val op =
+            recordRenderingOp(paint) {
+                document.drawTweenPath(
+                    path1,
+                    path2,
+                    tween.getFloatIdForCreationState(creationState),
+                    start.getFloatIdForCreationState(creationState),
+                    stop.getFloatIdForCreationState(creationState),
+                )
+            }
+        buffer.addRoots(op, path1, path2, tween, start, stop)
+    }
+
+    /**
+     * Draws a scaled portion of an [Bitmap] into a destination rectangle.
+     *
+     * @param image The [Bitmap] image to draw.
+     * @param srcLeft The left coordinate of the source rectangle in the image.
+     * @param srcTop The top coordinate of the source rectangle in the image.
+     * @param srcRight The right coordinate of the source rectangle in the image.
+     * @param srcBottom The bottom coordinate of the source rectangle in the image.
+     * @param dstLeft The left coordinate of the destination rectangle on the canvas.
+     * @param dstTop The top coordinate of the destination rectangle on the canvas.
+     * @param dstRight The right coordinate of the destination rectangle on the canvas.
+     * @param dstBottom The bottom coordinate of the destination rectangle on the canvas.
+     * @param scaleType An integer representing the scale type (e.g., FIT_XY, CENTER_CROP).
+     * @param scaleFactor A general scale factor.
+     * @param contentDescription An optional content description for accessibility.
+     */
+    public fun drawScaledBitmap(
+        image: Bitmap,
+        srcLeft: RemoteFloat,
+        srcTop: RemoteFloat,
+        srcRight: RemoteFloat,
+        srcBottom: RemoteFloat,
+        dstLeft: RemoteFloat,
+        dstTop: RemoteFloat,
+        dstRight: RemoteFloat,
+        dstBottom: RemoteFloat,
+        scaleType: Int,
+        scaleFactor: RemoteFloat,
+        contentDescription: String?,
+    ) {
+        val op = recordRenderingOp {
+            document.drawScaledBitmap(
+                image,
+                srcLeft.getFloatIdForCreationState(creationState),
+                srcTop.getFloatIdForCreationState(creationState),
+                srcRight.getFloatIdForCreationState(creationState),
+                srcBottom.getFloatIdForCreationState(creationState),
+                dstLeft.getFloatIdForCreationState(creationState),
+                dstTop.getFloatIdForCreationState(creationState),
+                dstRight.getFloatIdForCreationState(creationState),
+                dstBottom.getFloatIdForCreationState(creationState),
+                scaleType,
+                scaleFactor.getFloatIdForCreationState(creationState),
+                contentDescription,
+            )
+        }
+        buffer.addRoots(
+            op,
+            srcLeft,
+            srcTop,
+            srcRight,
+            srcBottom,
+            dstLeft,
+            dstTop,
+            dstRight,
+            dstBottom,
+            scaleFactor,
+        )
+    }
+
+    /**
+     * Draws a scaled portion of a [RemoteImageBitmap] into a destination rectangle.
+     *
+     * @param image The [RemoteImageBitmap] to draw.
+     * @param srcLeft The left coordinate of the source rectangle in the image.
+     * @param srcTop The top coordinate of the source rectangle in the image.
+     * @param srcRight The right coordinate of the source rectangle in the image.
+     * @param srcBottom The bottom coordinate of the source rectangle in the image.
+     * @param dstLeft The left coordinate of the destination rectangle on the canvas.
+     * @param dstTop The top coordinate of the destination rectangle on the canvas.
+     * @param dstRight The right coordinate of the destination rectangle on the canvas.
+     * @param dstBottom The bottom coordinate of the destination rectangle on the canvas.
+     * @param scaleType An integer representing the scale type.
+     * @param scaleFactor A general scale factor.
+     * @param contentDescription An optional content description for accessibility.
+     */
+    public fun drawScaledBitmap(
+        image: RemoteImageBitmap,
+        srcLeft: RemoteFloat,
+        srcTop: RemoteFloat,
+        srcRight: RemoteFloat,
+        srcBottom: RemoteFloat,
+        dstLeft: RemoteFloat,
+        dstTop: RemoteFloat,
+        dstRight: RemoteFloat,
+        dstBottom: RemoteFloat,
+        scaleType: Int,
+        scaleFactor: RemoteFloat,
+        contentDescription: String?,
+    ) {
+        val op = recordRenderingOp {
+            document.drawScaledBitmap(
+                image.getIdForCreationState(creationState),
+                srcLeft.getFloatIdForCreationState(creationState),
+                srcTop.getFloatIdForCreationState(creationState),
+                srcRight.getFloatIdForCreationState(creationState),
+                srcBottom.getFloatIdForCreationState(creationState),
+                dstLeft.getFloatIdForCreationState(creationState),
+                dstTop.getFloatIdForCreationState(creationState),
+                dstRight.getFloatIdForCreationState(creationState),
+                dstBottom.getFloatIdForCreationState(creationState),
+                scaleType,
+                scaleFactor.getFloatIdForCreationState(creationState),
+                contentDescription,
+            )
+        }
+        buffer.addRoots(
+            op,
+            image,
+            srcLeft,
+            srcTop,
+            srcRight,
+            srcBottom,
+            dstLeft,
+            dstTop,
+            dstRight,
+            dstBottom,
+            scaleFactor,
+        )
+    }
+
+    /**
+     * Executes [body] commands in a loop, with the index in the range
+     * [from .. until) with a stride of [step].
+     *
+     * Note there is a maximum number of operations that will be executed, which may be less than
+     * the total number of iterations needed to fully realize this loop.
+     *
+     * @param from The initial value of index
+     * @param until The loop will be executed until the index is >= this value
+     * @param step The amount to increment each time
+     * @param body Code that generates draw calls to run in a loop.
+     */
+    public fun loop(
+        from: RemoteFloat,
+        until: RemoteFloat,
+        step: RemoteFloat,
+        body: (index: RemoteFloat) -> Unit,
+    ) {
+        val loopVariable = MutableRemoteFloat()
+        val childSpan = recordInChildSpan { body(loopVariable) }
+
+        val op =
+            recordRenderingOp(
+                CanvasOp.Draw { writer ->
+                    writer.loop(loopVariable.id, from.floatId, step.floatId, until.floatId) {
+                        childSpan.record(writer, creationState)
+                    }
+                }
+            )
+        buffer.addRoots(op, from, until, step)
+    }
+
+    /**
+     * Executes [body] commands in a loop, with the index in the range [from .. until).
+     *
+     * Note there is a maximum number of operations that will be executed, which may be less than
+     * the total number of iterations needed to fully realize this loop.
+     *
+     * @param from The initial value of index
+     * @param until The loop will be executed until the index is >= this value
+     * @param body Code that generates draw calls to run in a loop.
+     */
+    public fun loop(from: Int, until: RemoteInt, body: (index: RemoteInt) -> Unit) {
+        val loopVariable = MutableRemoteFloat()
+        val childSpan = recordInChildSpan { body(loopVariable.toRemoteInt()) }
+
+        val op =
+            recordRenderingOp(
+                CanvasOp.Draw { writer ->
+                    writer.loop(loopVariable.id, from.toFloat(), 1f, until.floatId) {
+                        childSpan.record(writer, creationState)
+                    }
+                }
+            )
+        buffer.addRoots(op, until)
+    }
+
+    /**
+     * Instructs the player to conditionally execute [drawCommands] if [condition] evaluates to
+     * true.
+     *
+     * @param condition The condition that controls whether or not the player executes
+     *   [drawCommands].
+     * @param drawCommands The commands the player will execute if [condition] evaluate to true.
+     */
+    public fun drawConditionally(condition: RemoteBoolean, drawCommands: () -> Unit) {
+        val childSpan = recordInChildSpan(drawCommands)
+        if (buffer.enableOptimizations) {
+            buffer.optimizeSpan(childSpan)
+        }
+        if (!childSpan.emitsWireCommands()) {
+            buffer.insertPoint.removeChildSpan(childSpan)
+            return
+        }
+
+        val op =
+            recordRenderingOp(
+                CanvasOp.DrawConditionally(condition, childSpan) { writer, creationState ->
+                    if (condition.hasConstantValue) {
+                        if (condition.constantValue) {
+                            childSpan.record(writer, creationState)
+                        }
+                    } else {
+                        writer.conditionalOperations(
+                            ConditionalOperations.TYPE_NEQ,
+                            condition
+                                .toRemoteInt()
+                                .toRemoteFloat()
+                                .getFloatIdForCreationState(creationState),
+                            0f,
+                        ) {
+                            forceSendingPaint = true
+                            childSpan.record(writer, creationState)
+                            forceSendingPaint = true
+                        }
+                    }
+                }
+            )
+        buffer.addRoots(op, condition)
+    }
+
+    /**
+     * Instructs the player to draw [drawCommands] into [bitmap].
+     *
+     * @param bitmap The [RemoteImageBitmap] to draw to.
+     * @param drawCommands The commands the player will execute in the offscreen buffer. Profiler
+     *   hooks will be executed.
+     */
+    public fun drawToOffscreenBitmap(bitmap: RemoteImageBitmap, drawCommands: () -> Unit) {
+        val bitmapId = bitmap.getIdForCreationState(creationState)
+        val lastDrawToBitmapId = currentDrawToBitmapId
+        val childSpan = recordInOffscreenChildSpan(bitmapId, drawCommands)
+
+        val op =
+            recordRenderingOp(
+                CanvasOp.Draw(switchesCanvas = true) { writer ->
+                    writer.drawOnBitmap(bitmapId, 1, 0)
+                    forceSendingPaint = true
+                    childSpan.record(writer, creationState)
+                    forceSendingPaint = true
+                    writer.drawOnBitmap(lastDrawToBitmapId, 1, 0)
+                }
+            )
+        buffer.addRoots(op, bitmap)
+    }
+
+    /**
+     * Instructs the player to draw [drawCommands] into [bitmap] which will be cleared with
+     * [clearColor] before any [drawCommands] are processed.
+     *
+     * @param bitmap The [RemoteImageBitmap] to draw to.
+     * @param clearColor The color the created offscreen bitmap will be cleared with.
+     * @param drawCommands The commands the player will execute in the offscreen buffer.
+     */
+    public fun drawToOffscreenBitmap(
+        bitmap: RemoteImageBitmap,
+        @ColorInt clearColor: Int,
+        drawCommands: () -> Unit,
+    ) {
+        val bitmapId = bitmap.getIdForCreationState(creationState)
+        val lastDrawToBitmapId = currentDrawToBitmapId
+        val childSpan = recordInOffscreenChildSpan(bitmapId, drawCommands)
+
+        val op =
+            recordRenderingOp(
+                CanvasOp.Draw(switchesCanvas = true) { writer ->
+                    writer.drawOnBitmap(bitmapId, 0, clearColor)
+                    forceSendingPaint = true
+                    childSpan.record(writer, creationState)
+                    forceSendingPaint = true
+                    writer.drawOnBitmap(lastDrawToBitmapId, 1, 0)
+                }
+            )
+        buffer.addRoots(op, bitmap)
+    }
+
+    private fun generateFormalArg(id: Int, actualArg: Any?): BaseRemoteState<*> {
+        return when (actualArg) {
+            is RemoteFloat -> RemoteFloat(Utils.asNan(id))
+            is RemoteInt -> RemoteInt.createForId(id.toLong() + 0x100000000L)
+            is RemoteString -> RemoteString.createForId(id)
+            is RemoteColor -> RemoteColor.createForId(id)
+            is RemoteBoolean -> RemoteBoolean.createForId(id)
+            is RemoteImageBitmap -> RemoteImageBitmap.createForId(id)
+            is RemoteLong -> RemoteLong.createForId(id)
+            is RemoteFloatArray -> RemoteFloatArray(null, RemoteStateIdKey(id))
+            is RemoteStringArray -> RemoteStringArray(null, RemoteStateIdKey(id))
+            is RemoteIntArray -> RemoteIntArray(null, RemoteStateIdKey(id))
+            else -> throw IllegalArgumentException("Unsupported arg type: ${actualArg?.javaClass}")
+        }
+    }
+
+    /**
+     * Resolves the argument ID for pattern inflation.
+     *
+     * Promotes [RemoteFloatArray] to an ID list to allow loop iteration within patterns.
+     *
+     * @param creationState creation state associated with the document being written
+     * @return document ID for the pattern argument
+     */
+    private fun BaseRemoteState<*>.getPatternArgId(creationState: RemoteComposeCreationState): Int {
+        // RemoteFloatArray defaults to a primitive float array (DataListFloat) for spline and
+        // dereference efficiency, but PatternForEach requires variable IDs (DataListIds) to remap
+        // elements during pattern expansion.
+        return if (this is RemoteFloatArray) {
+            getIdListForCreationState(creationState)
+        } else {
+            getIdForCreationState(creationState)
+        }
+    }
+
+    /**
+     * Defines a reusable drawing pattern with no parameters.
+     *
+     * Records [action] as a macro template on first call. Subsequent invocations inflate the
+     * template.
+     *
+     * @param action drawing commands to record into the pattern template
+     * @return a [RemotePattern0] that inflates the recorded pattern
+     */
+    public fun definePattern(action: () -> Unit): RemotePattern0 {
+        var patternId = -1
+        var patternBodySpan: CanvasOperationBuffer.Span? = null
+        return RemotePattern0 { modifier ->
+            if (patternId == -1) {
+                patternId = document.nextId()
+                patternBodySpan = recordInChildSpan(action)
+                recordRenderingOp(
+                    CanvasOp.Draw { writer ->
+                        writer.buffer.definePattern(patternId, intArrayOf())
+                        patternBodySpan!!.record(writer, creationState)
+                        writer.buffer.endPatternDefine()
+                    }
+                )
+            }
+            recordRenderingOp(
+                CanvasOp.Draw { writer ->
+                    writer.buffer.inflatePattern(patternId, intArrayOf())
+                    modifier?.let { writeRemoteModifier(it, writer) }
+                    writer.buffer.endPatternInflation()
+                }
+            )
+        }
+    }
+
+    /**
+     * Defines a reusable drawing pattern with 1 parameter.
+     *
+     * Records [action] as a macro template on first call. Subsequent invocations inflate the
+     * template with the provided argument.
+     *
+     * @param action drawing commands parameterized by [T1]
+     * @return a [RemotePattern1] that inflates the recorded pattern
+     */
+    @Suppress("UNCHECKED_CAST")
+    public fun <T1 : BaseRemoteState<*>> definePattern(action: (T1) -> Unit): RemotePattern1<T1> {
+        var patternId = -1
+        var patternBodySpan: CanvasOperationBuffer.Span? = null
+        var paramIds: IntArray? = null
+        return RemotePattern1 { arg1, modifier ->
+            if (patternId == -1) {
+                patternId = document.nextId()
+                val argId1 = document.nextId()
+                paramIds = intArrayOf(argId1)
+                val formal1 = generateFormalArg(argId1, arg1) as T1
+                patternBodySpan = recordInChildSpan { action(formal1) }
+                recordRenderingOp(
+                    CanvasOp.Draw { writer ->
+                        writer.buffer.definePattern(patternId, paramIds!!)
+                        patternBodySpan!!.record(writer, creationState)
+                        writer.buffer.endPatternDefine()
+                    }
+                )
+            }
+            val opInflate =
+                recordRenderingOp(
+                    CanvasOp.Draw { writer ->
+                        writer.buffer.inflatePattern(
+                            patternId,
+                            intArrayOf(arg1.getPatternArgId(creationState)),
+                        )
+                        modifier?.let { writeRemoteModifier(it, writer) }
+                        writer.buffer.endPatternInflation()
+                    }
+                )
+            buffer.addRoots(opInflate, arg1)
+        }
+    }
+
+    /**
+     * Defines a reusable drawing pattern with 2 parameters.
+     *
+     * Records [action] as a macro template on first call. Subsequent invocations inflate the
+     * template with the provided arguments.
+     *
+     * @param action drawing commands parameterized by [T1] and [T2]
+     * @return a [RemotePattern2] that inflates the recorded pattern
+     */
+    @Suppress("UNCHECKED_CAST")
+    public fun <T1 : BaseRemoteState<*>, T2 : BaseRemoteState<*>> definePattern(
+        action: (T1, T2) -> Unit
+    ): RemotePattern2<T1, T2> {
+        var patternId = -1
+        var patternBodySpan: CanvasOperationBuffer.Span? = null
+        var paramIds: IntArray? = null
+        return RemotePattern2 { arg1, arg2, modifier ->
+            if (patternId == -1) {
+                patternId = document.nextId()
+                val argId1 = document.nextId()
+                val argId2 = document.nextId()
+                paramIds = intArrayOf(argId1, argId2)
+                val formal1 = generateFormalArg(argId1, arg1) as T1
+                val formal2 = generateFormalArg(argId2, arg2) as T2
+                patternBodySpan = recordInChildSpan { action(formal1, formal2) }
+                recordRenderingOp(
+                    CanvasOp.Draw { writer ->
+                        writer.buffer.definePattern(patternId, paramIds!!)
+                        patternBodySpan!!.record(writer, creationState)
+                        writer.buffer.endPatternDefine()
+                    }
+                )
+            }
+            val opInflate =
+                recordRenderingOp(
+                    CanvasOp.Draw { writer ->
+                        writer.buffer.inflatePattern(
+                            patternId,
+                            intArrayOf(
+                                arg1.getPatternArgId(creationState),
+                                arg2.getPatternArgId(creationState),
+                            ),
+                        )
+                        modifier?.let { writeRemoteModifier(it, writer) }
+                        writer.buffer.endPatternInflation()
+                    }
+                )
+            buffer.addRoots(opInflate, arg1, arg2)
+        }
+    }
+
+    /**
+     * Defines a reusable drawing pattern with 3 parameters.
+     *
+     * Records [action] as a macro template on first call. Subsequent invocations inflate the
+     * template with the provided arguments.
+     *
+     * @param action drawing commands parameterized by [T1], [T2], and [T3]
+     * @return a [RemotePattern3] that inflates the recorded pattern
+     */
+    @Suppress("UNCHECKED_CAST")
+    public fun <
+        T1 : BaseRemoteState<*>,
+        T2 : BaseRemoteState<*>,
+        T3 : BaseRemoteState<*>,
+    > definePattern(action: (T1, T2, T3) -> Unit): RemotePattern3<T1, T2, T3> {
+        var patternId = -1
+        var patternBodySpan: CanvasOperationBuffer.Span? = null
+        var paramIds: IntArray? = null
+        return RemotePattern3 { arg1, arg2, arg3, modifier ->
+            if (patternId == -1) {
+                patternId = document.nextId()
+                val argId1 = document.nextId()
+                val argId2 = document.nextId()
+                val argId3 = document.nextId()
+                paramIds = intArrayOf(argId1, argId2, argId3)
+                val formal1 = generateFormalArg(argId1, arg1) as T1
+                val formal2 = generateFormalArg(argId2, arg2) as T2
+                val formal3 = generateFormalArg(argId3, arg3) as T3
+                patternBodySpan = recordInChildSpan { action(formal1, formal2, formal3) }
+                recordRenderingOp(
+                    CanvasOp.Draw { writer ->
+                        writer.buffer.definePattern(patternId, paramIds!!)
+                        patternBodySpan!!.record(writer, creationState)
+                        writer.buffer.endPatternDefine()
+                    }
+                )
+            }
+            val opInflate =
+                recordRenderingOp(
+                    CanvasOp.Draw { writer ->
+                        writer.buffer.inflatePattern(
+                            patternId,
+                            intArrayOf(
+                                arg1.getPatternArgId(creationState),
+                                arg2.getPatternArgId(creationState),
+                                arg3.getPatternArgId(creationState),
+                            ),
+                        )
+                        modifier?.let { writeRemoteModifier(it, writer) }
+                        writer.buffer.endPatternInflation()
+                    }
+                )
+            buffer.addRoots(opInflate, arg1, arg2, arg3)
+        }
+    }
+
+    /**
+     * Defines a reusable drawing pattern with 4 parameters.
+     *
+     * Records [action] as a macro template on first call. Subsequent invocations inflate the
+     * template with the provided arguments.
+     *
+     * @param action drawing commands parameterized by [T1], [T2], [T3], and [T4]
+     * @return a [RemotePattern4] that inflates the recorded pattern
+     */
+    @Suppress("UNCHECKED_CAST")
+    public fun <
+        T1 : BaseRemoteState<*>,
+        T2 : BaseRemoteState<*>,
+        T3 : BaseRemoteState<*>,
+        T4 : BaseRemoteState<*>,
+    > definePattern(action: (T1, T2, T3, T4) -> Unit): RemotePattern4<T1, T2, T3, T4> {
+        var patternId = -1
+        var patternBodySpan: CanvasOperationBuffer.Span? = null
+        var paramIds: IntArray? = null
+        return RemotePattern4 { arg1, arg2, arg3, arg4, modifier ->
+            if (patternId == -1) {
+                patternId = document.nextId()
+                val argId1 = document.nextId()
+                val argId2 = document.nextId()
+                val argId3 = document.nextId()
+                val argId4 = document.nextId()
+                paramIds = intArrayOf(argId1, argId2, argId3, argId4)
+                val formal1 = generateFormalArg(argId1, arg1) as T1
+                val formal2 = generateFormalArg(argId2, arg2) as T2
+                val formal3 = generateFormalArg(argId3, arg3) as T3
+                val formal4 = generateFormalArg(argId4, arg4) as T4
+                patternBodySpan = recordInChildSpan {
+                    action(formal1, formal2, formal3, formal4)
+                }
+                recordRenderingOp(
+                    CanvasOp.Draw { writer ->
+                        writer.buffer.definePattern(patternId, paramIds!!)
+                        patternBodySpan!!.record(writer, creationState)
+                        writer.buffer.endPatternDefine()
+                    }
+                )
+            }
+            val opInflate =
+                recordRenderingOp(
+                    CanvasOp.Draw { writer ->
+                        writer.buffer.inflatePattern(
+                            patternId,
+                            intArrayOf(
+                                arg1.getPatternArgId(creationState),
+                                arg2.getPatternArgId(creationState),
+                                arg3.getPatternArgId(creationState),
+                                arg4.getPatternArgId(creationState),
+                            ),
+                        )
+                        modifier?.let { writeRemoteModifier(it, writer) }
+                        writer.buffer.endPatternInflation()
+                    }
+                )
+            buffer.addRoots(opInflate, arg1, arg2, arg3, arg4)
+        }
+    }
+
+    /**
+     * Defines a reusable drawing pattern with 5 parameters.
+     *
+     * Records [action] as a macro template on first call. Subsequent invocations inflate the
+     * template with the provided arguments.
+     *
+     * @param action drawing commands parameterized by [T1], [T2], [T3], [T4], and [T5]
+     * @return a [RemotePattern5] that inflates the recorded pattern
+     */
+    @Suppress("UNCHECKED_CAST")
+    public fun <
+        T1 : BaseRemoteState<*>,
+        T2 : BaseRemoteState<*>,
+        T3 : BaseRemoteState<*>,
+        T4 : BaseRemoteState<*>,
+        T5 : BaseRemoteState<*>,
+    > definePattern(action: (T1, T2, T3, T4, T5) -> Unit): RemotePattern5<T1, T2, T3, T4, T5> {
+        var patternId = -1
+        var patternBodySpan: CanvasOperationBuffer.Span? = null
+        var paramIds: IntArray? = null
+        return RemotePattern5 { arg1, arg2, arg3, arg4, arg5, modifier ->
+            if (patternId == -1) {
+                patternId = document.nextId()
+                val argId1 = document.nextId()
+                val argId2 = document.nextId()
+                val argId3 = document.nextId()
+                val argId4 = document.nextId()
+                val argId5 = document.nextId()
+                paramIds = intArrayOf(argId1, argId2, argId3, argId4, argId5)
+                val formal1 = generateFormalArg(argId1, arg1) as T1
+                val formal2 = generateFormalArg(argId2, arg2) as T2
+                val formal3 = generateFormalArg(argId3, arg3) as T3
+                val formal4 = generateFormalArg(argId4, arg4) as T4
+                val formal5 = generateFormalArg(argId5, arg5) as T5
+                patternBodySpan = recordInChildSpan {
+                    action(formal1, formal2, formal3, formal4, formal5)
+                }
+                recordRenderingOp(
+                    CanvasOp.Draw { writer ->
+                        writer.buffer.definePattern(patternId, paramIds!!)
+                        patternBodySpan!!.record(writer, creationState)
+                        writer.buffer.endPatternDefine()
+                    }
+                )
+            }
+            val opInflate =
+                recordRenderingOp(
+                    CanvasOp.Draw { writer ->
+                        writer.buffer.inflatePattern(
+                            patternId,
+                            intArrayOf(
+                                arg1.getPatternArgId(creationState),
+                                arg2.getPatternArgId(creationState),
+                                arg3.getPatternArgId(creationState),
+                                arg4.getPatternArgId(creationState),
+                                arg5.getPatternArgId(creationState),
+                            ),
+                        )
+                        modifier?.let { writeRemoteModifier(it, writer) }
+                        writer.buffer.endPatternInflation()
+                    }
+                )
+            buffer.addRoots(opInflate, arg1, arg2, arg3, arg4, arg5)
+        }
+    }
+
+    /**
+     * Defines a reusable drawing pattern with 6 parameters.
+     *
+     * Records [action] as a macro template on first call. Subsequent invocations inflate the
+     * template with the provided arguments.
+     *
+     * @param action drawing commands parameterized by [T1] through [T6]
+     * @return a [RemotePattern6] that inflates the recorded pattern
+     */
+    @Suppress("UNCHECKED_CAST")
+    public fun <
+        T1 : BaseRemoteState<*>,
+        T2 : BaseRemoteState<*>,
+        T3 : BaseRemoteState<*>,
+        T4 : BaseRemoteState<*>,
+        T5 : BaseRemoteState<*>,
+        T6 : BaseRemoteState<*>,
+    > definePattern(
+        action: (T1, T2, T3, T4, T5, T6) -> Unit
+    ): RemotePattern6<T1, T2, T3, T4, T5, T6> {
+        var patternId = -1
+        var patternBodySpan: CanvasOperationBuffer.Span? = null
+        var paramIds: IntArray? = null
+        return RemotePattern6 { arg1, arg2, arg3, arg4, arg5, arg6, modifier ->
+            if (patternId == -1) {
+                patternId = document.nextId()
+                val argId1 = document.nextId()
+                val argId2 = document.nextId()
+                val argId3 = document.nextId()
+                val argId4 = document.nextId()
+                val argId5 = document.nextId()
+                val argId6 = document.nextId()
+                paramIds = intArrayOf(argId1, argId2, argId3, argId4, argId5, argId6)
+                val formal1 = generateFormalArg(argId1, arg1) as T1
+                val formal2 = generateFormalArg(argId2, arg2) as T2
+                val formal3 = generateFormalArg(argId3, arg3) as T3
+                val formal4 = generateFormalArg(argId4, arg4) as T4
+                val formal5 = generateFormalArg(argId5, arg5) as T5
+                val formal6 = generateFormalArg(argId6, arg6) as T6
+                patternBodySpan = recordInChildSpan {
+                    action(formal1, formal2, formal3, formal4, formal5, formal6)
+                }
+                recordRenderingOp(
+                    CanvasOp.Draw { writer ->
+                        writer.buffer.definePattern(patternId, paramIds!!)
+                        patternBodySpan!!.record(writer, creationState)
+                        writer.buffer.endPatternDefine()
+                    }
+                )
+            }
+            val opInflate =
+                recordRenderingOp(
+                    CanvasOp.Draw { writer ->
+                        writer.buffer.inflatePattern(
+                            patternId,
+                            intArrayOf(
+                                arg1.getPatternArgId(creationState),
+                                arg2.getPatternArgId(creationState),
+                                arg3.getPatternArgId(creationState),
+                                arg4.getPatternArgId(creationState),
+                                arg5.getPatternArgId(creationState),
+                                arg6.getPatternArgId(creationState),
+                            ),
+                        )
+                        modifier?.let { writeRemoteModifier(it, writer) }
+                        writer.buffer.endPatternInflation()
+                    }
+                )
+            buffer.addRoots(opInflate, arg1, arg2, arg3, arg4, arg5, arg6)
+        }
+    }
+
+    /**
+     * Iterates over [items] and records [action] for each element.
+     *
+     * @param items list of items to iterate over
+     * @param action drawing commands to record for each element
+     */
+    @Suppress("UNCHECKED_CAST")
+    public fun <T : BaseRemoteState<*>> forEach(items: List<T>, action: (T) -> Unit) {
+        if (items.isEmpty()) return
+        val localItemId = document.nextId()
+        val formal = generateFormalArg(localItemId, items.first()) as T
+        val childSpan = recordInChildSpan { action(formal) }
+
+        val op =
+            recordRenderingOp(
+                CanvasOp.Draw { writer ->
+                    val ids = IntArray(items.size)
+                    for (i in items.indices) {
+                        ids[i] = items[i].getIdForCreationState(creationState)
+                    }
+                    val collectionId = writer.addDataListIds(ids)
+                    writer.buffer.addPatternForEach(collectionId, localItemId)
+                    childSpan.record(writer, creationState)
+                    writer.buffer.endPatternForEach()
+                }
+            )
+        for (i in items.indices) {
+            buffer.addRoots(op, items[i])
+        }
+    }
+
+    /**
+     * Iterates over [array] and records [action] for each float element.
+     *
+     * @param array remote float array to iterate over
+     * @param action drawing commands to record for each element
+     */
+    public fun forEach(array: RemoteFloatArray, action: (RemoteFloat) -> Unit) {
+        val localItemId = document.nextId()
+        val formal = RemoteFloat(Utils.asNan(localItemId))
+        val childSpan = recordInChildSpan { action(formal) }
+
+        val op =
+            recordRenderingOp(
+                CanvasOp.Draw { writer ->
+                    // RemoteFloatArray requires an ID list so PatternForEach can map elements.
+                    val collectionId = array.getIdListForCreationState(creationState)
+                    writer.buffer.addPatternForEach(collectionId, localItemId)
+                    childSpan.record(writer, creationState)
+                    writer.buffer.endPatternForEach()
+                }
+            )
+        buffer.addRoots(op, array)
+    }
+
+    /**
+     * Iterates over [array] and records [action] for each string element.
+     *
+     * @param array remote string array to iterate over
+     * @param action drawing commands to record for each element
+     */
+    public fun forEach(array: RemoteStringArray, action: (RemoteString) -> Unit) {
+        val localItemId = document.nextId()
+        val formal = RemoteString.createForId(localItemId)
+        val childSpan = recordInChildSpan { action(formal) }
+
+        val op =
+            recordRenderingOp(
+                CanvasOp.Draw { writer ->
+                    val collectionId = array.getIdForCreationState(creationState)
+                    writer.buffer.addPatternForEach(collectionId, localItemId)
+                    childSpan.record(writer, creationState)
+                    writer.buffer.endPatternForEach()
+                }
+            )
+        buffer.addRoots(op, array)
+    }
+
+    /**
+     * Iterates over [array] and records [action] for each integer element.
+     *
+     * @param array remote integer array to iterate over
+     * @param action drawing commands to record for each element
+     */
+    public fun forEach(array: RemoteIntArray, action: (RemoteInt) -> Unit) {
+        val localItemId = document.nextId()
+        val formal = RemoteInt.createForId(localItemId.toLong() + 0x100000000L)
+        val childSpan = recordInChildSpan { action(formal) }
+
+        val op =
+            recordRenderingOp(
+                CanvasOp.Draw { writer ->
+                    val collectionId = array.getIdForCreationState(creationState)
+                    writer.buffer.addPatternForEach(collectionId, localItemId)
+                    childSpan.record(writer, creationState)
+                    writer.buffer.endPatternForEach()
+                }
+            )
+        buffer.addRoots(op, array)
+    }
+
+    /**
+     * Iterates over [items1] and [items2] pairwise and records [action] for each pair.
+     *
+     * Iteration stops at the length of the shorter list.
+     *
+     * @param items1 first list of items to iterate over
+     * @param items2 second list of items to iterate over
+     * @param action drawing commands to record for each pair
+     */
+    @Suppress("UNCHECKED_CAST")
+    public fun <T1 : BaseRemoteState<*>, T2 : BaseRemoteState<*>> forEach(
+        items1: List<T1>,
+        items2: List<T2>,
+        action: (T1, T2) -> Unit,
+    ) {
+        val size = minOf(items1.size, items2.size)
+        if (size == 0) return
+
+        val localTupleId = document.nextId()
+        val localTupleFloat = Utils.asNan(localTupleId)
+        val id1 = document.nextId()
+        val id2 = document.nextId()
+        val formal1 = generateFormalArg(id1, items1.first()) as T1
+        val formal2 = generateFormalArg(id2, items2.first()) as T2
+
+        val childSpan = recordInChildSpan {
+            recordRenderingOp(
+                CanvasOp.Draw { writer ->
+                    writer.buffer.idLookup(id1, localTupleFloat, 0f)
+                    writer.buffer.idLookup(id2, localTupleFloat, 1f)
+                }
+            )
+            action(formal1, formal2)
+        }
+
+        val op =
+            recordRenderingOp(
+                CanvasOp.Draw { writer ->
+                    val tupleIds = IntArray(size)
+                    for (i in 0 until size) {
+                        tupleIds[i] =
+                            writer.addDataListIds(
+                                intArrayOf(
+                                    items1[i].getIdForCreationState(creationState),
+                                    items2[i].getIdForCreationState(creationState),
+                                )
+                            )
+                    }
+                    val outerListId = writer.addDataListIds(tupleIds)
+                    writer.buffer.addPatternForEach(outerListId, localTupleId)
+                    childSpan.record(writer, creationState)
+                    writer.buffer.endPatternForEach()
+                }
+            )
+        for (i in items1.indices) buffer.addRoots(op, items1[i])
+        for (i in items2.indices) buffer.addRoots(op, items2[i])
+    }
+
+    /**
+     * Iterates over [items1], [items2], and [items3] and records [action] for each triple.
+     *
+     * Iteration stops at the length of the shortest list.
+     *
+     * @param items1 first list of items to iterate over
+     * @param items2 second list of items to iterate over
+     * @param items3 third list of items to iterate over
+     * @param action drawing commands to record for each triple
+     */
+    @Suppress("UNCHECKED_CAST")
+    public fun <
+        T1 : BaseRemoteState<*>,
+        T2 : BaseRemoteState<*>,
+        T3 : BaseRemoteState<*>,
+    > forEach(
+        items1: List<T1>,
+        items2: List<T2>,
+        items3: List<T3>,
+        action: (T1, T2, T3) -> Unit,
+    ) {
+        val size = minOf(items1.size, items2.size, items3.size)
+        if (size == 0) return
+
+        val localTupleId = document.nextId()
+        val localTupleFloat = Utils.asNan(localTupleId)
+        val id1 = document.nextId()
+        val id2 = document.nextId()
+        val id3 = document.nextId()
+        val formal1 = generateFormalArg(id1, items1.first()) as T1
+        val formal2 = generateFormalArg(id2, items2.first()) as T2
+        val formal3 = generateFormalArg(id3, items3.first()) as T3
+
+        val childSpan = recordInChildSpan {
+            recordRenderingOp(
+                CanvasOp.Draw { writer ->
+                    writer.buffer.idLookup(id1, localTupleFloat, 0f)
+                    writer.buffer.idLookup(id2, localTupleFloat, 1f)
+                    writer.buffer.idLookup(id3, localTupleFloat, 2f)
+                }
+            )
+            action(formal1, formal2, formal3)
+        }
+
+        val op =
+            recordRenderingOp(
+                CanvasOp.Draw { writer ->
+                    val tupleIds = IntArray(size)
+                    for (i in 0 until size) {
+                        tupleIds[i] =
+                            writer.addDataListIds(
+                                intArrayOf(
+                                    items1[i].getIdForCreationState(creationState),
+                                    items2[i].getIdForCreationState(creationState),
+                                    items3[i].getIdForCreationState(creationState),
+                                )
+                            )
+                    }
+                    val outerListId = writer.addDataListIds(tupleIds)
+                    writer.buffer.addPatternForEach(outerListId, localTupleId)
+                    childSpan.record(writer, creationState)
+                    writer.buffer.endPatternForEach()
+                }
+            )
+        for (i in items1.indices) buffer.addRoots(op, items1[i])
+        for (i in items2.indices) buffer.addRoots(op, items2[i])
+        for (i in items3.indices) buffer.addRoots(op, items3[i])
+    }
+
+    /**
+     * Iterates over [items1], [items2], [items3], and [items4] and records [action] for each
+     * 4-tuple.
+     *
+     * Iteration stops at the length of the shortest list.
+     *
+     * @param items1 first list of items to iterate over
+     * @param items2 second list of items to iterate over
+     * @param items3 third list of items to iterate over
+     * @param items4 fourth list of items to iterate over
+     * @param action drawing commands to record for each 4-tuple
+     */
+    @Suppress("UNCHECKED_CAST")
+    public fun <
+        T1 : BaseRemoteState<*>,
+        T2 : BaseRemoteState<*>,
+        T3 : BaseRemoteState<*>,
+        T4 : BaseRemoteState<*>,
+    > forEach(
+        items1: List<T1>,
+        items2: List<T2>,
+        items3: List<T3>,
+        items4: List<T4>,
+        action: (T1, T2, T3, T4) -> Unit,
+    ) {
+        val size = minOf(items1.size, items2.size, items3.size, items4.size)
+        if (size == 0) return
+
+        val localTupleId = document.nextId()
+        val localTupleFloat = Utils.asNan(localTupleId)
+        val id1 = document.nextId()
+        val id2 = document.nextId()
+        val id3 = document.nextId()
+        val id4 = document.nextId()
+        val formal1 = generateFormalArg(id1, items1.first()) as T1
+        val formal2 = generateFormalArg(id2, items2.first()) as T2
+        val formal3 = generateFormalArg(id3, items3.first()) as T3
+        val formal4 = generateFormalArg(id4, items4.first()) as T4
+
+        val childSpan = recordInChildSpan {
+            recordRenderingOp(
+                CanvasOp.Draw { writer ->
+                    writer.buffer.idLookup(id1, localTupleFloat, 0f)
+                    writer.buffer.idLookup(id2, localTupleFloat, 1f)
+                    writer.buffer.idLookup(id3, localTupleFloat, 2f)
+                    writer.buffer.idLookup(id4, localTupleFloat, 3f)
+                }
+            )
+            action(formal1, formal2, formal3, formal4)
+        }
+
+        val op =
+            recordRenderingOp(
+                CanvasOp.Draw { writer ->
+                    val tupleIds = IntArray(size)
+                    for (i in 0 until size) {
+                        tupleIds[i] =
+                            writer.addDataListIds(
+                                intArrayOf(
+                                    items1[i].getIdForCreationState(creationState),
+                                    items2[i].getIdForCreationState(creationState),
+                                    items3[i].getIdForCreationState(creationState),
+                                    items4[i].getIdForCreationState(creationState),
+                                )
+                            )
+                    }
+                    val outerListId = writer.addDataListIds(tupleIds)
+                    writer.buffer.addPatternForEach(outerListId, localTupleId)
+                    childSpan.record(writer, creationState)
+                    writer.buffer.endPatternForEach()
+                }
+            )
+        for (i in items1.indices) buffer.addRoots(op, items1[i])
+        for (i in items2.indices) buffer.addRoots(op, items2[i])
+        for (i in items3.indices) buffer.addRoots(op, items3[i])
+        for (i in items4.indices) buffer.addRoots(op, items4[i])
+    }
+
+    /**
+     * Iterates over [items1], [items2], [items3], [items4], and [items5] and records [action] for
+     * each 5-tuple.
+     *
+     * Iteration stops at the length of the shortest list.
+     *
+     * @param items1 first list of items to iterate over
+     * @param items2 second list of items to iterate over
+     * @param items3 third list of items to iterate over
+     * @param items4 fourth list of items to iterate over
+     * @param items5 fifth list of items to iterate over
+     * @param action drawing commands to record for each 5-tuple
+     */
+    @Suppress("UNCHECKED_CAST")
+    public fun <
+        T1 : BaseRemoteState<*>,
+        T2 : BaseRemoteState<*>,
+        T3 : BaseRemoteState<*>,
+        T4 : BaseRemoteState<*>,
+        T5 : BaseRemoteState<*>,
+    > forEach(
+        items1: List<T1>,
+        items2: List<T2>,
+        items3: List<T3>,
+        items4: List<T4>,
+        items5: List<T5>,
+        action: (T1, T2, T3, T4, T5) -> Unit,
+    ) {
+        val size = minOf(items1.size, items2.size, items3.size, items4.size, items5.size)
+        if (size == 0) return
+
+        val localTupleId = document.nextId()
+        val localTupleFloat = Utils.asNan(localTupleId)
+        val id1 = document.nextId()
+        val id2 = document.nextId()
+        val id3 = document.nextId()
+        val id4 = document.nextId()
+        val id5 = document.nextId()
+        val formal1 = generateFormalArg(id1, items1.first()) as T1
+        val formal2 = generateFormalArg(id2, items2.first()) as T2
+        val formal3 = generateFormalArg(id3, items3.first()) as T3
+        val formal4 = generateFormalArg(id4, items4.first()) as T4
+        val formal5 = generateFormalArg(id5, items5.first()) as T5
+
+        val childSpan = recordInChildSpan {
+            recordRenderingOp(
+                CanvasOp.Draw { writer ->
+                    writer.buffer.idLookup(id1, localTupleFloat, 0f)
+                    writer.buffer.idLookup(id2, localTupleFloat, 1f)
+                    writer.buffer.idLookup(id3, localTupleFloat, 2f)
+                    writer.buffer.idLookup(id4, localTupleFloat, 3f)
+                    writer.buffer.idLookup(id5, localTupleFloat, 4f)
+                }
+            )
+            action(formal1, formal2, formal3, formal4, formal5)
+        }
+
+        val op =
+            recordRenderingOp(
+                CanvasOp.Draw { writer ->
+                    val tupleIds = IntArray(size)
+                    for (i in 0 until size) {
+                        tupleIds[i] =
+                            writer.addDataListIds(
+                                intArrayOf(
+                                    items1[i].getIdForCreationState(creationState),
+                                    items2[i].getIdForCreationState(creationState),
+                                    items3[i].getIdForCreationState(creationState),
+                                    items4[i].getIdForCreationState(creationState),
+                                    items5[i].getIdForCreationState(creationState),
+                                )
+                            )
+                    }
+                    val outerListId = writer.addDataListIds(tupleIds)
+                    writer.buffer.addPatternForEach(outerListId, localTupleId)
+                    childSpan.record(writer, creationState)
+                    writer.buffer.endPatternForEach()
+                }
+            )
+        for (i in items1.indices) buffer.addRoots(op, items1[i])
+        for (i in items2.indices) buffer.addRoots(op, items2[i])
+        for (i in items3.indices) buffer.addRoots(op, items3[i])
+        for (i in items4.indices) buffer.addRoots(op, items4[i])
+        for (i in items5.indices) buffer.addRoots(op, items5[i])
+    }
+
+    /**
+     * Iterates over [items1] through [items6] and records [action] for each 6-tuple.
+     *
+     * Iteration stops at the length of the shortest list.
+     *
+     * @param items1 first list of items to iterate over
+     * @param items2 second list of items to iterate over
+     * @param items3 third list of items to iterate over
+     * @param items4 fourth list of items to iterate over
+     * @param items5 fifth list of items to iterate over
+     * @param items6 sixth list of items to iterate over
+     * @param action drawing commands to record for each 6-tuple
+     */
+    @Suppress("UNCHECKED_CAST")
+    public fun <
+        T1 : BaseRemoteState<*>,
+        T2 : BaseRemoteState<*>,
+        T3 : BaseRemoteState<*>,
+        T4 : BaseRemoteState<*>,
+        T5 : BaseRemoteState<*>,
+        T6 : BaseRemoteState<*>,
+    > forEach(
+        items1: List<T1>,
+        items2: List<T2>,
+        items3: List<T3>,
+        items4: List<T4>,
+        items5: List<T5>,
+        items6: List<T6>,
+        action: (T1, T2, T3, T4, T5, T6) -> Unit,
+    ) {
+        val size =
+            minOf(items1.size, items2.size, items3.size, items4.size, items5.size, items6.size)
+        if (size == 0) return
+
+        val localTupleId = document.nextId()
+        val localTupleFloat = Utils.asNan(localTupleId)
+        val id1 = document.nextId()
+        val id2 = document.nextId()
+        val id3 = document.nextId()
+        val id4 = document.nextId()
+        val id5 = document.nextId()
+        val id6 = document.nextId()
+        val formal1 = generateFormalArg(id1, items1.first()) as T1
+        val formal2 = generateFormalArg(id2, items2.first()) as T2
+        val formal3 = generateFormalArg(id3, items3.first()) as T3
+        val formal4 = generateFormalArg(id4, items4.first()) as T4
+        val formal5 = generateFormalArg(id5, items5.first()) as T5
+        val formal6 = generateFormalArg(id6, items6.first()) as T6
+
+        val childSpan = recordInChildSpan {
+            recordRenderingOp(
+                CanvasOp.Draw { writer ->
+                    writer.buffer.idLookup(id1, localTupleFloat, 0f)
+                    writer.buffer.idLookup(id2, localTupleFloat, 1f)
+                    writer.buffer.idLookup(id3, localTupleFloat, 2f)
+                    writer.buffer.idLookup(id4, localTupleFloat, 3f)
+                    writer.buffer.idLookup(id5, localTupleFloat, 4f)
+                    writer.buffer.idLookup(id6, localTupleFloat, 5f)
+                }
+            )
+            action(formal1, formal2, formal3, formal4, formal5, formal6)
+        }
+
+        val op =
+            recordRenderingOp(
+                CanvasOp.Draw { writer ->
+                    val tupleIds = IntArray(size)
+                    for (i in 0 until size) {
+                        tupleIds[i] =
+                            writer.addDataListIds(
+                                intArrayOf(
+                                    items1[i].getIdForCreationState(creationState),
+                                    items2[i].getIdForCreationState(creationState),
+                                    items3[i].getIdForCreationState(creationState),
+                                    items4[i].getIdForCreationState(creationState),
+                                    items5[i].getIdForCreationState(creationState),
+                                    items6[i].getIdForCreationState(creationState),
+                                )
+                            )
+                    }
+                    val outerListId = writer.addDataListIds(tupleIds)
+                    writer.buffer.addPatternForEach(outerListId, localTupleId)
+                    childSpan.record(writer, creationState)
+                    writer.buffer.endPatternForEach()
+                }
+            )
+        for (i in items1.indices) buffer.addRoots(op, items1[i])
+        for (i in items2.indices) buffer.addRoots(op, items2[i])
+        for (i in items3.indices) buffer.addRoots(op, items3[i])
+        for (i in items4.indices) buffer.addRoots(op, items4[i])
+        for (i in items5.indices) buffer.addRoots(op, items5[i])
+        for (i in items6.indices) buffer.addRoots(op, items6[i])
+    }
+
+    private fun RemoteComposeWriter.addDataListIds(ids: IntArray): Int =
+        Utils.idFromNan(addList(ids))
+
+    private fun writeRemoteModifier(
+        modifier: RemoteModifier,
+        writer: RemoteComposeWriter = document,
+    ) {
+        val recordingModifier = toRecordingModifier(modifier)
+        for (i in 0 until recordingModifier.list.size) {
+            recordingModifier.list[i].write(writer)
+        }
+    }
+
+    /**
+     * Records a custom component layout operation.
+     *
+     * @param config The configuration string for the custom component.
+     * @param modifier The [RemoteModifier] applied to this component.
+     * @param content Optional drawing commands to record inside the custom component layout.
+     * @param properties Scope for configuring custom component properties and return bindings.
+     */
+    public fun custom(
+        config: String,
+        modifier: RemoteModifier = RemoteModifier,
+        content: (() -> Unit)? = null,
+        properties: RemoteCustomPropertiesScope.() -> Unit = {},
+    ) {
+        val scope = RemoteCustomPropertiesScope().apply(properties)
+        val childSpan =
+            if (content != null) {
+                val span = recordInChildSpan(content)
+                if (buffer.enableOptimizations) {
+                    buffer.optimizeSpan(span)
+                }
+                span
+            } else {
+                null
+            }
+
+        val op =
+            recordRenderingOp(CanvasOp.CustomComponent(config, modifier, scope.entries, childSpan))
+        for (i in scope.entries.indices) {
+            val state = scope.entries[i].state
+            if (state != null) {
+                buffer.addRoots(op, state)
+            }
+        }
+    }
+
+    public companion object {
+        // TODO replace this with a dedicated color space for RemoteCompose.
+        internal const val REMOTE_COMPOSE_EXPRESSION_COLOR_SPACE_ID = 5L
+    }
+}
+
+/**
+ * Reusable drawing pattern with no parameters.
+ *
+ * Call to inflate the recorded template into the canvas stream.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun interface RemotePattern0 : (RemoteModifier?) -> Unit {
+    public operator fun invoke(): Unit = invoke(null)
+
+    public override operator fun invoke(modifier: RemoteModifier?)
+}
+
+/**
+ * Reusable drawing pattern with 1 parameter.
+ *
+ * Call to inflate the recorded template with the provided argument.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun interface RemotePattern1<T1 : BaseRemoteState<*>> : (T1, RemoteModifier?) -> Unit {
+    public operator fun invoke(arg1: T1): Unit = invoke(arg1, null)
+
+    public override operator fun invoke(arg1: T1, modifier: RemoteModifier?)
+}
+
+/**
+ * Reusable drawing pattern with 2 parameters.
+ *
+ * Call to inflate the recorded template with the provided arguments.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun interface RemotePattern2<T1 : BaseRemoteState<*>, T2 : BaseRemoteState<*>> :
+    (T1, T2, RemoteModifier?) -> Unit {
+    public operator fun invoke(arg1: T1, arg2: T2): Unit = invoke(arg1, arg2, null)
+
+    public override operator fun invoke(arg1: T1, arg2: T2, modifier: RemoteModifier?)
+}
+
+/**
+ * Reusable drawing pattern with 3 parameters.
+ *
+ * Call to inflate the recorded template with the provided arguments.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun interface RemotePattern3<
+    T1 : BaseRemoteState<*>,
+    T2 : BaseRemoteState<*>,
+    T3 : BaseRemoteState<*>,
+> : (T1, T2, T3, RemoteModifier?) -> Unit {
+    public operator fun invoke(arg1: T1, arg2: T2, arg3: T3): Unit = invoke(arg1, arg2, arg3, null)
+
+    public override operator fun invoke(arg1: T1, arg2: T2, arg3: T3, modifier: RemoteModifier?)
+}
+
+/**
+ * Reusable drawing pattern with 4 parameters.
+ *
+ * Call to inflate the recorded template with the provided arguments.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun interface RemotePattern4<
+    T1 : BaseRemoteState<*>,
+    T2 : BaseRemoteState<*>,
+    T3 : BaseRemoteState<*>,
+    T4 : BaseRemoteState<*>,
+> : (T1, T2, T3, T4, RemoteModifier?) -> Unit {
+    public operator fun invoke(arg1: T1, arg2: T2, arg3: T3, arg4: T4): Unit =
+        invoke(arg1, arg2, arg3, arg4, null)
+
+    public override operator fun invoke(
+        arg1: T1,
+        arg2: T2,
+        arg3: T3,
+        arg4: T4,
+        modifier: RemoteModifier?,
+    )
+}
+
+/**
+ * Reusable drawing pattern with 5 parameters.
+ *
+ * Call to inflate the recorded template with the provided arguments.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun interface RemotePattern5<
+    T1 : BaseRemoteState<*>,
+    T2 : BaseRemoteState<*>,
+    T3 : BaseRemoteState<*>,
+    T4 : BaseRemoteState<*>,
+    T5 : BaseRemoteState<*>,
+> : (T1, T2, T3, T4, T5, RemoteModifier?) -> Unit {
+    public operator fun invoke(arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5): Unit =
+        invoke(arg1, arg2, arg3, arg4, arg5, null)
+
+    public override operator fun invoke(
+        arg1: T1,
+        arg2: T2,
+        arg3: T3,
+        arg4: T4,
+        arg5: T5,
+        modifier: RemoteModifier?,
+    )
+}
+
+/**
+ * Reusable drawing pattern with 6 parameters.
+ *
+ * Call to inflate the recorded template with the provided arguments.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun interface RemotePattern6<
+    T1 : BaseRemoteState<*>,
+    T2 : BaseRemoteState<*>,
+    T3 : BaseRemoteState<*>,
+    T4 : BaseRemoteState<*>,
+    T5 : BaseRemoteState<*>,
+    T6 : BaseRemoteState<*>,
+> : (T1, T2, T3, T4, T5, T6, RemoteModifier?) -> Unit {
+    public operator fun invoke(arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6): Unit =
+        invoke(arg1, arg2, arg3, arg4, arg5, arg6, null)
+
+    public override operator fun invoke(
+        arg1: T1,
+        arg2: T2,
+        arg3: T3,
+        arg4: T4,
+        arg5: T5,
+        arg6: T6,
+        modifier: RemoteModifier?,
+    )
+}

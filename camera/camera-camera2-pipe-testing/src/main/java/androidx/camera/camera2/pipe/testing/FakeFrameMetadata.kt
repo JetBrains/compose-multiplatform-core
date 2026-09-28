@@ -22,9 +22,9 @@ import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.FrameInfo
 import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.FrameNumber
-import androidx.camera.camera2.pipe.Metadata
 import androidx.camera.camera2.pipe.RequestMetadata
-import kotlin.reflect.KClass
+import androidx.camera.common.Metadata
+import java.lang.Class
 import kotlinx.atomicfu.atomic
 
 private val fakeFrameNumbers = atomic(0L)
@@ -40,13 +40,27 @@ public class FakeFrameMetadata(
     override val extraMetadata: Map<*, Any?> = emptyMap<Any, Any>(),
 ) : FakeMetadata(extraResultMetadata), FrameMetadata {
 
+    override val metadataKeys: Set<Metadata.Key<*>>
+        get() = buildSet {
+            addAll(super<FakeMetadata>.metadataKeys)
+            extraMetadata.keys.forEach { if (it is Metadata.Key<*>) add(it) }
+        }
+
+    override fun <T : Any> get(key: Metadata.Key<T>): T? {
+        return super<FakeMetadata>.get(key)
+    }
+
+    override fun <T : Any> getOrDefault(key: Metadata.Key<T>, default: T): T {
+        return super<FakeMetadata>.getOrDefault(key, default)
+    }
+
     @Suppress("UNCHECKED_CAST")
     override fun <T> get(key: CaptureResult.Key<T>): T? =
         extraMetadata[key] as T? ?: resultMetadata[key] as T?
 
     override fun <T> getOrDefault(key: CaptureResult.Key<T>, default: T): T = get(key) ?: default
 
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? = null
+    override fun <T : Any> unwrapAs(type: Class<T>): T? = null
 
     override fun toString(): String =
         "FakeFrameMetadata(camera: ${camera.value}, frameNumber: ${frameNumber.value})"
@@ -66,7 +80,7 @@ public class FakeFrameInfo(
     override val frameNumber: FrameNumber
         get() = metadata.frameNumber
 
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? = null
+    override fun <T : Any> unwrapAs(type: Class<T>): T? = null
 
     override fun toString(): String =
         "FakeFrameInfo(camera: ${camera.value}, frameNumber: ${frameNumber.value})"

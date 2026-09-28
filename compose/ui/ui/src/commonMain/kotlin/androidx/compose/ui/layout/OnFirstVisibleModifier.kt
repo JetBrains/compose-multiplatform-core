@@ -59,13 +59,30 @@ import kotlinx.coroutines.launch
  * @see RelativeLayoutBounds.fractionVisibleIn
  * @see layoutBounds
  */
+@Deprecated(
+    message =
+        "This modifier is deprecated as its behavior is misleading and doesn't always follow " +
+            "the contract claimed by the name. For example, when it is added on an item of LazyColumn, " +
+            "this callback will be called everytime this item became visible after scrolling." +
+            "It is not what the users of the modifier with this name might have expected. It is " +
+            "recommended to use Modifier.onVisibilityChanged() instead and manually track if the " +
+            "layout was visible already previously based on the requirement of the specific use case.",
+    replaceWith =
+        ReplaceWith(
+            "onVisibilityChanged(minDurationMs, minFractionVisible, viewportBounds) { visible ->" +
+                "if (visible) { callback() } " +
+                "}"
+        ),
+    level = DeprecationLevel.WARNING,
+)
 @Stable
-fun Modifier.onFirstVisible(
+public fun Modifier.onFirstVisible(
     @IntRange(from = 0) minDurationMs: Long = 0,
     @FloatRange(from = 0.0, to = 1.0) minFractionVisible: Float = 1f,
     viewportBounds: LayoutBoundsHolder? = null,
     callback: () -> Unit,
-) = this then OnFirstVisibleElement(minDurationMs, minFractionVisible, viewportBounds, callback)
+): Modifier =
+    this then OnFirstVisibleElement(minDurationMs, minFractionVisible, viewportBounds, callback)
 
 private class OnFirstVisibleElement(
     val minDurationMs: Long,
@@ -174,11 +191,10 @@ private class OnFirstVisibleNode(
         if (minDurationMs == 0L) triggerCallback()
         else {
             job?.cancel()
-            job =
-                coroutineScope.launch {
-                    delay(minDurationMs)
-                    triggerCallback()
-                }
+            job = coroutineScope.launch {
+                delay(minDurationMs)
+                triggerCallback()
+            }
         }
     }
 

@@ -16,6 +16,7 @@
 
 package androidx.health.connect.client.testing
 
+import androidx.annotation.IntRange
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.PermissionController
@@ -25,7 +26,6 @@ import androidx.health.connect.client.aggregate.AggregationResultGroupedByPeriod
 import androidx.health.connect.client.changes.Change
 import androidx.health.connect.client.changes.DeletionChange
 import androidx.health.connect.client.changes.UpsertionChange
-import androidx.health.connect.client.feature.HealthConnectFeaturesUnavailableImpl
 import androidx.health.connect.client.impl.converters.datatype.RECORDS_TYPE_NAME_MAP
 import androidx.health.connect.client.impl.converters.records.toProto
 import androidx.health.connect.client.impl.converters.records.toRecord
@@ -55,19 +55,22 @@ import kotlin.reflect.KClass
  *   [FakeHealthConnectClientOverrides.aggregateGroupByPeriod].
  * * Stubs for every call, using the [overrides] property to set responses and exceptions.
  *
- * Note that this fake does not check for permissions.
+ * Note that this fake does not check for permissions or feature availability.
  *
  * @param packageName the name of the package to use to generate unique record IDs.
  * @param clock used to close open-ended [TimeRangeFilter]s and record update times.
  * @param permissionController grants and revokes permissions.
+ * @param features enables control of feature availability status in tests. By default all features
+ *   are unavailable.
  */
-public class FakeHealthConnectClient(
+public class FakeHealthConnectClient
+@JvmOverloads
+constructor(
     private var packageName: String = DEFAULT_PACKAGE_NAME,
     private val clock: Clock = Clock.systemDefaultZone(),
     override val permissionController: PermissionController = FakePermissionController(),
+    override val features: HealthConnectFeatures = FakeHealthConnectFeatures(),
 ) : HealthConnectClient {
-
-    override val features: HealthConnectFeatures = HealthConnectFeaturesUnavailableImpl
 
     private val idsToRecords: MutableMap<String, Record> = mutableMapOf()
     private val deletedIdsToRecords: MutableMap<String, Record> = mutableMapOf()
@@ -369,6 +372,13 @@ public class FakeHealthConnectClient(
     }
 
     override suspend fun getChanges(changesToken: String): ChangesResponse {
+        return getChanges(changesToken, pageSizeGetChanges)
+    }
+
+    override suspend fun getChanges(
+        changesToken: String,
+        @IntRange(from = 1, to = 5000) pageSize: Int,
+    ): ChangesResponse {
         // Stubs
         overrides.getChanges?.next(changesToken)?.let {
             return it
@@ -397,21 +407,21 @@ public class FakeHealthConnectClient(
                     }
                 }
                 .values
-        val hasMoreChanges = changes.size > pageSizeGetChanges
+        val hasMoreChanges = changes.size > pageSize
         val nextChangesToken =
             if (hasMoreChanges) {
                 // Next page token
-                generateNewToken(timeInToken + pageSizeGetChanges, recordTypes)
+                generateNewToken(timeInToken + pageSize, recordTypes)
             } else {
                 // Future changes token
                 generateNewToken(timeToChangesLastKey + 1, recordTypes)
             }
 
         // Store metadata for new token
-        tokens[nextChangesToken] = tokenInfo.copy(time = tokenInfo.time + pageSizeGetChanges)
+        tokens[nextChangesToken] = tokenInfo.copy(time = tokenInfo.time + pageSize)
 
         return ChangesResponse(
-            changes.take(pageSizeGetChanges).toList(),
+            changes.take(pageSize).toList(),
             hasMore = hasMoreChanges,
             changesTokenExpired = tokenInfo.expired,
             nextChangesToken = nextChangesToken,

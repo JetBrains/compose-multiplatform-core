@@ -20,16 +20,14 @@ import androidx.annotation.RestrictTo
 import androidx.car.app.IOnDoneCallback
 import androidx.car.app.OnDoneCallback
 import androidx.car.app.annotations.CarProtocol
-import androidx.car.app.annotations.ExperimentalCarApi
 import androidx.car.app.annotations.KeepFields
 import androidx.car.app.utils.RemoteUtils
 
 /** Implementation for [ListDelegate] */
-@ExperimentalCarApi
 @CarProtocol
 @KeepFields
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-class ListDelegateImpl<T> : ListDelegate<T> {
+public class ListDelegateImpl<T> : ListDelegate<T> {
     private var _size: Int = -1
 
     /**
@@ -42,7 +40,7 @@ class ListDelegateImpl<T> : ListDelegate<T> {
 
     private lateinit var mStub: IRemoteList
 
-    constructor(content: List<T>) {
+    public constructor(content: List<T>) {
         _size = content.size
         listHashCode = content.hashCode()
         mStub = RemoteListStub<T>(content)
@@ -51,7 +49,7 @@ class ListDelegateImpl<T> : ListDelegate<T> {
     /** For Serialization */
     @Suppress("unused") private constructor()
 
-    override val size
+    override val size: Int
         get() = _size
 
     override fun requestItemRange(startIndex: Int, endIndex: Int, callback: OnDoneCallback) {
@@ -70,7 +68,7 @@ class ListDelegateImpl<T> : ListDelegate<T> {
         }
     }
 
-    override fun equals(other: Any?) =
+    override fun equals(other: Any?): Boolean =
         other is ListDelegateImpl<*> && other.listHashCode == listHashCode
 
     override fun hashCode(): Int = listHashCode
@@ -87,5 +85,7 @@ class ListDelegateImpl<T> : ListDelegate<T> {
                 mContent.subList(startIndex, endIndex + 1)
             }
         }
+
+        override fun getInterfaceVersion(): Int = VERSION
     }
 }

@@ -21,20 +21,19 @@ import android.graphics.SurfaceTexture
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Size
+import androidx.camera.camera2.Camera2Config
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
+import androidx.camera.extensions.ExtensionSessionConfig
 import androidx.camera.extensions.ExtensionsManager
-import androidx.camera.integration.extensions.CameraExtensionsActivity.CAMERA_PIPE_IMPLEMENTATION_OPTION
 import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil
-import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil.CameraXExtensionTestParams
 import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil.VERIFICATION_TARGET_IMAGE_CAPTURE
 import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil.VERIFICATION_TARGET_PREVIEW
 import androidx.camera.integration.extensions.utils.CameraSelectorUtil
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.ExtensionsUtil.assumePcsSupportedForImageCapture
@@ -44,7 +43,6 @@ import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -66,23 +64,17 @@ private var texId = INVALID_TEX_ID
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
-class BindUnbindUseCasesStressTest(private val config: CameraXExtensionTestParams) {
-    @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(active = config.implName == CAMERA_PIPE_IMPLEMENTATION_OPTION)
-
+class BindUnbindUseCasesStressTest(private val cameraId: String, private val extensionMode: Int) {
     @get:Rule
     val useCamera =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
-            PreTestCameraIdList(config.cameraXConfig)
+            PreTestCameraIdList(Camera2Config.defaultConfig())
         )
 
     private lateinit var cameraProvider: ProcessCameraProvider
     private lateinit var extensionsManager: ExtensionsManager
     private lateinit var camera: Camera
     private lateinit var baseCameraSelector: CameraSelector
-    private lateinit var extensionCameraSelector: CameraSelector
     private lateinit var preview: Preview
     private lateinit var imageCapture: ImageCapture
     private lateinit var lifecycleOwner: FakeLifecycleOwner
@@ -90,24 +82,23 @@ class BindUnbindUseCasesStressTest(private val config: CameraXExtensionTestParam
     @Before
     fun setUp(): Unit = runBlocking {
         assumeTrue(CameraXExtensionsTestUtil.isTargetDeviceAvailableForExtensions())
-        val (_, cameraXConfig, cameraId, extensionMode) = config
-        ProcessCameraProvider.configureInstance(cameraXConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
-        extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
+        extensionsManager = ExtensionsManager.getInstance(context, cameraProvider)
 
         baseCameraSelector = CameraSelectorUtil.createCameraSelectorById(cameraId)
         assumeTrue(extensionsManager.isExtensionAvailable(baseCameraSelector, extensionMode))
-
-        extensionCameraSelector =
-            extensionsManager.getExtensionEnabledCameraSelector(baseCameraSelector, extensionMode)
 
         camera =
             withContext(Dispatchers.Main) {
                 lifecycleOwner = FakeLifecycleOwner()
                 lifecycleOwner.startAndResume()
-                cameraProvider.bindToLifecycle(lifecycleOwner, extensionCameraSelector)
+                val extensionSessionConfig =
+                    ExtensionSessionConfig(extensionMode, extensionsManager)
+                cameraProvider.bindToLifecycle(
+                    lifecycleOwner,
+                    baseCameraSelector,
+                    extensionSessionConfig,
+                )
             }
 
         preview = Preview.Builder().build()
@@ -132,8 +123,8 @@ class BindUnbindUseCasesStressTest(private val config: CameraXExtensionTestParam
 
         val context = ApplicationProvider.getApplicationContext<Context>()
         @JvmStatic
-        @get:Parameterized.Parameters(name = "config = {0}")
-        val parameters: Collection<CameraXExtensionTestParams>
+        @get:Parameterized.Parameters(name = "cameraId = {0}, extensionMode = {1}")
+        val parameters: Collection<Array<Any>>
             get() = CameraXExtensionsTestUtil.getAllCameraIdExtensionModeCombinations()
     }
 
@@ -173,17 +164,20 @@ class BindUnbindUseCasesStressTest(private val config: CameraXExtensionTestParam
             val previewFrameAvailableMonitor = PreviewFrameAvailableMonitor()
 
             // Act: binds use cases
-            withContext(Dispatchers.Main) {
+            withContext<Unit>(Dispatchers.Main) {
                 preview.setSurfaceProvider(
                     SurfaceTextureProvider.createSurfaceTextureProvider(
                         previewFrameAvailableMonitor.createSurfaceTextureCallback()
                     )
                 )
 
+                val extensionSessionConfig =
+                    ExtensionSessionConfig(extensionMode, extensionsManager, preview, imageCapture)
+
                 cameraProvider.bindToLifecycle(
                     lifecycleOwner,
-                    extensionCameraSelector,
-                    *listOfNotNull(preview, imageCapture).toTypedArray(),
+                    baseCameraSelector,
+                    extensionSessionConfig,
                 )
             }
 
@@ -248,17 +242,20 @@ class BindUnbindUseCasesStressTest(private val config: CameraXExtensionTestParam
             previewFrameAvailableMonitor = PreviewFrameAvailableMonitor()
 
             // Act: binds use cases
-            withContext(Dispatchers.Main) {
+            withContext<Unit>(Dispatchers.Main) {
                 preview.setSurfaceProvider(
                     SurfaceTextureProvider.createSurfaceTextureProvider(
                         previewFrameAvailableMonitor.createSurfaceTextureCallback()
                     )
                 )
 
+                val extensionSessionConfig =
+                    ExtensionSessionConfig(extensionMode, extensionsManager, preview, imageCapture)
+
                 cameraProvider.bindToLifecycle(
                     lifecycleOwner,
-                    extensionCameraSelector,
-                    *listOfNotNull(preview, imageCapture).toTypedArray(),
+                    baseCameraSelector,
+                    extensionSessionConfig,
                 )
 
                 // Clean it up: do not unbind at the last time

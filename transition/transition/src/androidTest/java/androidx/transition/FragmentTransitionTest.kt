@@ -15,7 +15,6 @@
  */
 package androidx.transition
 
-import android.os.Build
 import android.os.Bundle
 import android.view.View
 import androidx.core.app.SharedElementCallback
@@ -24,7 +23,6 @@ import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import androidx.test.core.app.ActivityScenario
 import androidx.test.filters.MediumTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.testutils.waitForExecution
 import androidx.testutils.withActivity
@@ -47,7 +45,6 @@ import org.mockito.Mockito.verify
 
 @MediumTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
 class FragmentTransitionTest(private val reorderingAllowed: ReorderingAllowed) {
 
     @Suppress("DEPRECATION")
@@ -58,8 +55,9 @@ class FragmentTransitionTest(private val reorderingAllowed: ReorderingAllowed) {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private lateinit var fragmentManager: FragmentManager
     private var onBackStackChangedTimes: Int = 0
-    private val onBackStackChangedListener =
-        FragmentManager.OnBackStackChangedListener { onBackStackChangedTimes++ }
+    private val onBackStackChangedListener = FragmentManager.OnBackStackChangedListener {
+        onBackStackChangedTimes++
+    }
 
     @Before
     fun setup() {

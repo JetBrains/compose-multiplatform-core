@@ -47,6 +47,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -60,7 +61,7 @@ import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertWidthIsEqualTo
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -73,9 +74,12 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assume.assumeTrue
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -1376,6 +1380,28 @@ class LazyListAnimateItemPlacementTest(private val config: Config) {
         }
     }
 
+    @Ignore // b/497014394
+    @Test
+    fun animateScrollToItem_withReorder_doNotAnimatePlacement() {
+        var list by mutableStateOf(listOf(0, 1, 2, 4, 5))
+        lateinit var scope: CoroutineScope
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            LazyList { items(list, key = { it }) { Item(it) } }
+        }
+
+        assertPositions(0 to 0f, 1 to itemSize)
+
+        rule.runOnIdle {
+            scope.launch { state.animateScrollToItem(2) }
+            list = listOf(1, 0, 2, 4, 5)
+        }
+
+        onAnimationFrame { fraction ->
+            assertPositions(0 to itemSize, 1 to 0f, fraction = fraction)
+        }
+    }
+
     @Test
     fun noAnimationWhenParentSizeShrinks() {
         var size by mutableStateOf(itemSizeDp * 3)
@@ -1448,25 +1474,11 @@ class LazyListAnimateItemPlacementTest(private val config: Config) {
                 assertPositions(0 to 0f, 1 to itemSize, fraction = fraction)
                 rule.runOnUiThread { runBlocking { state.scrollBy(scrollDelta) } }
             }
-            if (isInLookaheadScope) {
-                assertPositions(
-                    0 to -scrollDelta,
-                    1 to
-                        spring<IntOffset>(stiffness = Spring.StiffnessMediumLow)
-                            .getValueAtFrame(
-                                (fraction * Duration / FrameDuration).toInt(),
-                                from = itemSize - scrollDelta,
-                                to = itemSize * 3 - scrollDelta,
-                            ),
-                    fraction = fraction,
-                )
-            } else {
-                assertPositions(
-                    0 to -scrollDelta,
-                    1 to itemSize + (containerSize - itemSize) * fraction,
-                    fraction = fraction,
-                )
-            }
+            assertPositions(
+                0 to -scrollDelta,
+                1 to itemSize + (containerSize - itemSize) * fraction,
+                fraction = fraction,
+            )
         }
     }
 
@@ -1526,7 +1538,7 @@ class LazyListAnimateItemPlacementTest(private val config: Config) {
             if (fraction == 0f) {
                 assertPositions(0 to 0f, 1 to itemSize, fraction = fraction)
                 rule.runOnUiThread { runBlocking { state.scrollBy(itemSize * 2) } }
-                val postFirstScrollItem2Offset = if (isInLookaheadScope) -itemSize else itemSize
+                val postFirstScrollItem2Offset = itemSize
                 assertPositions(
                     2 to 0f,
                     3 to itemSize,
@@ -1546,27 +1558,12 @@ class LazyListAnimateItemPlacementTest(private val config: Config) {
                     fraction = fraction,
                 )
             }
-            if (!isInLookaheadScope) {
-                assertPositions(
-                    2 to -scrollDelta,
-                    3 to itemSize - scrollDelta,
-                    1 to itemSize - scrollDelta + itemSize * fraction,
-                    fraction = fraction,
-                )
-            } else {
-                // Expect interruption to lookahead placement animation on 0th frame.
-                assertPositions(
-                    2 to -scrollDelta,
-                    3 to itemSize - scrollDelta,
-                    1 to
-                        interruptionSpec.getValueAtFrame(
-                            (Duration / FrameDuration * fraction).toInt(),
-                            from = -itemSize - scrollDelta,
-                            to = 2 * itemSize - scrollDelta,
-                        ),
-                    fraction = fraction,
-                )
-            }
+            assertPositions(
+                2 to -scrollDelta,
+                3 to itemSize - scrollDelta,
+                1 to itemSize - scrollDelta + itemSize * fraction,
+                fraction = fraction,
+            )
         }
     }
 
@@ -1667,13 +1664,12 @@ class LazyListAnimateItemPlacementTest(private val config: Config) {
                     keySelector = { it.config.get(SemanticsProperties.TestTag) },
                     valueTransform = { IntRect(it.positionInRoot.round(), it.size) },
                 )
-        val actualOffsets =
-            expected.map {
-                it.first to
-                    actualBounds.getValue(it.first.toString()).let { bounds ->
-                        if (isVertical) bounds.top else bounds.left
-                    }
-            }
+        val actualOffsets = expected.map {
+            it.first to
+                actualBounds.getValue(it.first.toString()).let { bounds ->
+                    if (isVertical) bounds.top else bounds.left
+                }
+        }
         val subject =
             if (fraction == null) {
                 assertThat(actualOffsets)
@@ -1700,13 +1696,12 @@ class LazyListAnimateItemPlacementTest(private val config: Config) {
             }
         )
         if (crossAxis != null) {
-            val actualCrossOffset =
-                expected.map {
-                    it.first to
-                        actualBounds.getValue(it.first.toString()).let { bounds ->
-                            if (isVertical) bounds.left else bounds.top
-                        }
-                }
+            val actualCrossOffset = expected.map {
+                it.first to
+                    actualBounds.getValue(it.first.toString()).let { bounds ->
+                        if (isVertical) bounds.left else bounds.top
+                    }
+            }
             assertWithMessage("CrossAxis" + if (fraction != null) "for fraction=$fraction" else "")
                 .that(actualCrossOffset)
                 .isEqualTo(crossAxis.map { it.first to it.second.roundToInt() })

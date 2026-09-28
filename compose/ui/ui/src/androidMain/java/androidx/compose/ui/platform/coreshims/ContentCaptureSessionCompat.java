@@ -26,6 +26,7 @@ import android.view.contentcapture.ContentCaptureSession;
 
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+import androidx.compose.ui.contentcapture.ContentCaptureSessionWrapper;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -37,8 +38,7 @@ import java.util.Objects;
  * Helper for accessing features in {@link ContentCaptureSession}.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-public class ContentCaptureSessionCompat {
-
+public class ContentCaptureSessionCompat implements ContentCaptureSessionWrapper {
     private static final String KEY_VIEW_TREE_APPEARING = "TREAT_AS_VIEW_TREE_APPEARING";
     private static final String KEY_VIEW_TREE_APPEARED = "TREAT_AS_VIEW_TREE_APPEARED";
     // Only guaranteed to be non-null on SDK_INT >= 29.
@@ -102,6 +102,7 @@ public class ContentCaptureSessionCompat {
      *
      * @return {@link AutofillId} for the virtual child
      */
+    @Override
     public @Nullable AutofillId newAutofillId(long virtualChildId) {
         if (SDK_INT >= 29) {
             return Api29Impl.newAutofillId(
@@ -128,6 +129,7 @@ public class ContentCaptureSessionCompat {
      *
      * @return a new {@link ViewStructure} that can be used for Content Capture purposes.
      */
+    @Override
     public @Nullable ViewStructureCompat newVirtualViewStructure(
             @NonNull AutofillId parentId, long virtualId) {
         if (SDK_INT >= 29) {
@@ -156,6 +158,7 @@ public class ContentCaptureSessionCompat {
      *
      * @param node node that has been added.
      */
+    @Override
     public void notifyViewAppeared(@NonNull ViewStructure node) {
         if (SDK_INT >= 29) {
             Api29Impl.notifyViewAppeared((ContentCaptureSession) mWrappedObj, node);
@@ -179,6 +182,7 @@ public class ContentCaptureSessionCompat {
      *
      * @param id id of the node that has been removed.
      */
+    @Override
     public void notifyViewDisappeared(@NonNull AutofillId id) {
         if (SDK_INT >= 29) {
             Api29Impl.notifyViewDisappeared((ContentCaptureSession) mWrappedObj, id);
@@ -214,6 +218,7 @@ public class ContentCaptureSessionCompat {
      * <li>SDK 28 and below, this method does nothing.
      * </ul>
      */
+    @Override
     public void flush() {
         // TODO(b/380381249): implement after the new API is finalized.
         // TODO(b/388128425): upstream changes back to the `core` lib.
@@ -242,6 +247,7 @@ public class ContentCaptureSessionCompat {
      * been added to the view structure. The order of the elements is important, which should be
      * preserved as the attached order of when the node is attached to the virtual view hierarchy.
      */
+    @Override
     public void notifyViewsAppeared(@NonNull List<ViewStructure> appearedNodes) {
         if (SDK_INT >= 34) {
             Api34Impl.notifyViewsAppeared((ContentCaptureSession) mWrappedObj, appearedNodes);
@@ -279,6 +285,7 @@ public class ContentCaptureSessionCompat {
      *
      * @param virtualIds ids of the virtual children.
      */
+    @Override
     public void notifyViewsDisappeared(long @NonNull [] virtualIds) {
         if (SDK_INT >= 34) {
             Api29Impl.notifyViewsDisappeared(
@@ -315,6 +322,7 @@ public class ContentCaptureSessionCompat {
      * @param id of the node.
      * @param text new text.
      */
+    @Override
     public void notifyViewTextChanged(@NonNull AutofillId id, @Nullable CharSequence text) {
         if (SDK_INT >= 29) {
             Api29Impl.notifyViewTextChanged((ContentCaptureSession) mWrappedObj, id, text);

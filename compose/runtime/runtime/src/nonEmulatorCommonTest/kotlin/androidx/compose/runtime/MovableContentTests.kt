@@ -16,6 +16,7 @@
 
 package androidx.compose.runtime
 
+import androidx.compose.runtime.mock.ComposerToUse
 import androidx.compose.runtime.mock.InlineLinear
 import androidx.compose.runtime.mock.Linear
 import androidx.compose.runtime.mock.MockViewValidator
@@ -34,6 +35,11 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.test.TestResult
 
 @Stable
 class MovableContentTests {
@@ -750,8 +756,9 @@ class MovableContentTests {
     }
 
     @Test
+    @Suppress("RememberInComposition") // See note below
     fun compositionLocalsShouldBeAvailable() = compositionTest {
-        var someValue by mutableStateOf(0)
+        var someValue by mutableIntStateOf(0)
         val local = staticCompositionLocalOf<Int> { error("No value provided for local") }
 
         compose {
@@ -1596,62 +1603,6 @@ class MovableContentTests {
         revalidate()
     }
 
-    @Test // 362539770
-    @OptIn(ExperimentalComposeApi::class)
-    fun movableContent_nestedMovableContent_disabled() = compositionTest {
-        var data = 0
-
-        var condition by mutableStateOf(true)
-
-        val common = movableContentOf {
-            val state = remember { data++ }
-            Text("Generated state: $state")
-        }
-
-        val wrapper = movableContentOf {
-            Text("Wrapper start")
-            common()
-            Text("Wrapper end")
-        }
-
-        compose {
-            Text("Outer")
-            if (condition) {
-                wrapper()
-            } else {
-                common()
-            }
-        }
-
-        var expectedState = 0
-        validate {
-            Text("Outer")
-            if (condition) {
-                Text("Wrapper start")
-            }
-            Text("Generated state: $expectedState")
-            if (condition) {
-                Text("Wrapper end")
-            }
-        }
-
-        ComposeRuntimeFlags.isMovingNestedMovableContentEnabled = false
-        try {
-            // With moving nested content disabled the call to common() will generate new
-            // state when it moves out of the containing movable content.
-            expectedState = 1
-            condition = false
-            expectChanges()
-            revalidate()
-
-            condition = true
-            expectChanges()
-            revalidate()
-        } finally {
-            ComposeRuntimeFlags.isMovingNestedMovableContentEnabled = true
-        }
-    }
-
     @Test
     fun movableContent_nestedMovableContent_simpleMove() = compositionTest {
         var data = 0
@@ -1807,6 +1758,312 @@ class MovableContentTests {
         index++
         advance()
     }
+
+    @Test
+    fun moveContentBetweenSubcompositions() = compositionTest {
+        var inSubcompose by mutableStateOf(true)
+        val content = movableContentOf { Text("Some text") }
+        compose {
+            if (inSubcompose) {
+                Subcompose { content() }
+            } else {
+                DeferredSubcompose { content() }
+            }
+        }
+
+        inSubcompose = false
+        advance()
+    }
+
+    @Test
+    fun movableContentReactivated() = compositionTest {
+        var value by mutableStateOf(true)
+        var text by mutableStateOf("text")
+        val movableContent = movableContentOf { Linear { Text(text) } }
+
+        val content =
+            @Composable {
+                if (value) {
+                    movableContent()
+                } else {
+                    movableContent()
+                }
+            }
+
+        compose(content)
+        validate { Linear { Text(text) } }
+
+        val c = composition as ReusableComposition
+        c.deactivate()
+        value = false
+        c.setContentWithReuse(content)
+
+        c.deactivate()
+        value = true
+        text = "new text"
+        c.setContentWithReuse(content)
+
+        revalidate()
+    }
+
+    private class ManualClock : MonotonicFrameClock {
+        val awaiters = mutableListOf<Awaiter<*>>()
+
+        private class Awaiter<R>(
+            private val onFrame: (Long) -> R,
+            private val continuation: CancellableContinuation<R>,
+        ) {
+            fun runFrame(frameTimeNanos: Long): () -> Unit {
+                val result = runCatching { onFrame(frameTimeNanos) }
+                return { continuation.resumeWith(result) }
+            }
+        }
+
+        override suspend fun <R> withFrameNanos(onFrame: (frameTimeNanos: Long) -> R): R =
+            suspendCancellableCoroutine { co ->
+                awaiters.add(Awaiter(onFrame, co))
+            }
+
+        fun runFrame(nanos: Long) {
+            awaiters.forEach { it.runFrame(nanos).invoke() }
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun movableContentInvalidatedWhileDeleted_linkComposer(): TestResult {
+        val clock = ManualClock()
+
+        return compositionTest(clock = clock, composerToUse = ComposerToUse.Link) {
+            var value by mutableStateOf(true)
+            var targetScope: RecomposeScope? = null
+            val movableContent = movableContentOf { key: Int ->
+                Linear {
+                    targetScope = currentRecomposeScope
+                    Text(key.toString())
+                }
+            }
+
+            val content: @Composable () -> Unit = {
+                if (value) {
+                    movableContent(20)
+                } else {
+                    Linear { repeat(5) { Text("$it") } }
+                }
+
+                targetScope?.invalidate()
+            }
+
+            compose(content)
+            validate { Linear { Text("20") } }
+
+            value = false
+            Snapshot.sendApplyNotifications()
+
+            while (clock.awaiters.isEmpty()) {
+                testCoroutineScheduler.advanceTimeBy(5.milliseconds)
+            }
+            clock.runFrame(testCoroutineScheduler.currentTime.milliseconds.inWholeNanoseconds)
+
+            // This is before previous content is disposed (e.g. during measure)
+            composition!!.setContent(content)
+            verifyConsistent()
+
+            testCoroutineScheduler.runCurrent()
+
+            validate { Linear { repeat(5) { Text("$it") } } }
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun movableContentInvalidatedWhileDeleted_gapComposer(): TestResult {
+        val clock = ManualClock()
+
+        return compositionTest(clock = clock, composerToUse = ComposerToUse.Gap) {
+            var value by mutableStateOf(true)
+            var targetScope: RecomposeScope? = null
+            val movableContent = movableContentOf { key: Int ->
+                Linear {
+                    targetScope = currentRecomposeScope
+                    Text(key.toString())
+                }
+            }
+
+            val content: @Composable () -> Unit = {
+                if (value) {
+                    movableContent(20)
+                } else {
+                    Linear { repeat(5) { Text("$it") } }
+                }
+
+                targetScope?.invalidate()
+            }
+
+            compose(content)
+            validate { Linear { Text("20") } }
+
+            value = false
+            Snapshot.sendApplyNotifications()
+
+            while (clock.awaiters.isEmpty()) {
+                testCoroutineScheduler.advanceTimeBy(5.milliseconds)
+            }
+            clock.runFrame(testCoroutineScheduler.currentTime.milliseconds.inWholeNanoseconds)
+
+            // This is before previous content is disposed (e.g. during measure)
+            composition!!.setContent(content)
+            verifyConsistent()
+
+            testCoroutineScheduler.runCurrent()
+
+            validate { Linear { repeat(5) { Text("$it") } } }
+        }
+    }
+
+    @Test
+    fun movableContentRemovedFromWriter() = compositionTest {
+        var value by mutableStateOf(true)
+        val movableContent = movableContentOf { key: Int -> Linear { Text(key.toString()) } }
+        compose {
+            // This group will be removed first, moving the second group over the gap
+            // This will force anchor to be negative during extraction.
+            if (value) {
+                Text("Hello")
+            }
+
+            if (value) {
+                movableContent(0)
+            }
+        }
+
+        validate {
+            Text("Hello")
+            Linear { Text("0") }
+        }
+
+        value = false
+        advance()
+
+        validate {}
+    }
+
+    @Test
+    fun moveNestedMovableContentFromNodeGroup() =
+        compositionTest(ComposerToUse.Link) {
+            var moveNested by mutableStateOf(false)
+            var showOuter by mutableStateOf(true)
+
+            val innerMovable = movableContentOf { repeat(10) { Text("$it") } }
+            val outerMovable = movableContentOf {
+                Linear {
+                    Text("Hello")
+                    innerMovable()
+                }
+            }
+
+            compose {
+                Linear {
+                    if (showOuter) {
+                        outerMovable()
+                    }
+                    if (moveNested) {
+                        innerMovable()
+                    }
+                }
+            }
+
+            validate {
+                Linear {
+                    Linear {
+                        Text("Hello")
+                        repeat(10) { Text("$it") }
+                    }
+                }
+            }
+
+            showOuter = false
+            moveNested = true
+            expectChanges()
+
+            validate { Linear { repeat(10) { Text("$it") } } }
+        }
+
+    @Test
+    fun testUpdateMovingNestedContent() = compositionTest {
+        var moveContent by mutableStateOf(false)
+        var value by mutableIntStateOf(1)
+
+        val nestedMovable = movableContentOf { param: Int ->
+            Linear { key(1) { use(remember(param) { param }) } }
+        }
+
+        val parentMovable = movableContentOf {
+            Linear {
+                if (!moveContent) {
+                    nestedMovable(value)
+                }
+            }
+        }
+
+        compose {
+            Linear {
+                key("A") { Linear { parentMovable() } }
+
+                key("B") {
+                    Linear {
+                        if (moveContent) {
+                            nestedMovable(value)
+                        }
+                    }
+                }
+            }
+        }
+
+        value++
+        moveContent = true
+        expectChanges()
+
+        value++
+        moveContent = false
+        expectChanges()
+    }
+
+    @Test
+    fun movableContentMoveZeroesOutOldWrapperSlots_linkComposer() =
+        compositionTest(composerToUse = ComposerToUse.Link) {
+            class Payload(val iteration: Int)
+            var iteration by mutableStateOf(0)
+            var inFirstBranch by mutableStateOf(true)
+
+            val content = movableContentOf { payload: Payload ->
+                Text("Iteration ${payload.iteration}")
+            }
+
+            compose {
+                val payload = Payload(iteration)
+                if (inFirstBranch) {
+                    Column { content(payload) }
+                } else {
+                    Row { content(payload) }
+                }
+            }
+
+            val slotTable =
+                (composition as CompositionImpl).slotStorage
+                    as androidx.compose.runtime.composer.linkbuffer.SlotTable
+
+            repeat(20) {
+                iteration++
+                inFirstBranch = !inFirstBranch
+                expectChanges()
+            }
+
+            assertEquals(
+                1,
+                slotTable.addressSpace.slots.filterIsInstance<Payload>().distinct().size,
+            )
+        }
 }
 
 @Composable
@@ -1864,11 +2121,11 @@ private fun Marker(value: Int) {
 }
 
 @Composable
-private fun Stack(isHorizontal: Boolean, block: @Composable () -> Unit) {
+private fun Stack(isHorizontal: Boolean, content: @Composable () -> Unit) {
     if (isHorizontal) {
-        Column(block)
+        Column(content)
     } else {
-        Row(block)
+        Row(content)
     }
 }
 

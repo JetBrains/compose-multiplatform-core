@@ -35,7 +35,6 @@ import android.system.Os;
 import android.system.OsConstants;
 import android.util.Log;
 
-import androidx.annotation.RequiresApi;
 import androidx.exifinterface.test.R;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
@@ -340,6 +339,28 @@ public class ExifInterfaceTest {
 
     @Test
     @LargeTest
+    public void testJpegWithFill1Byte() throws Throwable {
+        // One fill bytes added before each marker
+        File imageFile =
+                copyFromResourceToFile(
+                        R.raw.jpeg_with_fill_1byte, "jpeg_with_fill_1byte.jpg");
+        readFromFilesWithExif(imageFile, ExpectedAttributes.JPEG_WITH_FILL_1BYTE);
+        testWritingExif(imageFile, ExpectedAttributes.JPEG_WITH_FILL_1BYTE);
+    }
+
+    @Test
+    @LargeTest
+    public void testJpegWithFill2Bytes() throws Throwable {
+        // Two fill bytes added before each marker
+        File imageFile =
+                copyFromResourceToFile(
+                        R.raw.jpeg_with_fill_2bytes, "jpeg_with_fill_2bytes.jpg");
+        readFromFilesWithExif(imageFile, ExpectedAttributes.JPEG_WITH_FILL_2BYTES);
+        testWritingExif(imageFile, ExpectedAttributes.JPEG_WITH_FILL_2BYTES);
+    }
+
+    @Test
+    @LargeTest
     public void testDngWithExifAndXmp() throws Throwable {
         File imageFile =
                 copyFromResourceToFile(R.raw.dng_with_exif_with_xmp, "dng_with_exif_with_xmp.dng");
@@ -526,7 +547,7 @@ public class ExifInterfaceTest {
     // https://issuetracker.google.com/342697059
     @Test
     @LargeTest
-    @SdkSuppress(minSdkVersion = 22) // Parsing the large image causes OOM on API 21 FTL emulators.
+    @SdkSuppress(minSdkVersion = 25) // Parsing the large image causes OOM on API 24 FTL emulators.
     public void testWebpWithoutExifHeight8192px() throws Throwable {
         File imageFile =
                 copyFromResourceToFile(
@@ -2037,19 +2058,16 @@ public class ExifInterfaceTest {
             compareWithExpectedAttributes(exifInterface, expectedAttributes, verboseTag);
         }
 
-        // Creates via FileDescriptor.
-        if (Build.VERSION.SDK_INT >= 21) {
-            FileDescriptor fd = null;
-            try {
-                fd = Os.open(imageFile.getAbsolutePath(), OsConstants.O_RDONLY,
-                        OsConstants.S_IRWXU);
-                exifInterface = new ExifInterface(fd);
-                compareWithExpectedAttributes(exifInterface, expectedAttributes, verboseTag);
-            } catch (Exception e) {
-                throw new IOException("Failed to open file descriptor", e);
-            } finally {
-                closeQuietly(fd);
-            }
+        FileDescriptor fd = null;
+        try {
+            fd = Os.open(imageFile.getAbsolutePath(), OsConstants.O_RDONLY,
+                    OsConstants.S_IRWXU);
+            exifInterface = new ExifInterface(fd);
+            compareWithExpectedAttributes(exifInterface, expectedAttributes, verboseTag);
+        } catch (Exception e) {
+            throw new IOException("Failed to open file descriptor", e);
+        } finally {
+            closeQuietly(fd);
         }
     }
 
@@ -2149,27 +2167,25 @@ public class ExifInterfaceTest {
         expectSavingPersistsModifications(ExifInterface::new, srcFile, expectedAttributes);
 
         // Creates via FileDescriptor.
-        if (Build.VERSION.SDK_INT >= 21) {
-            AtomicReference<FileDescriptor> fileDescriptor = new AtomicReference<>();
-            ExifInterfaceFactory createFromFileDescriptor =
-                    f -> {
-                        try {
-                            fileDescriptor.set(
-                                    Os.open(
-                                            f.getAbsolutePath(),
-                                            OsConstants.O_RDWR,
-                                            OsConstants.S_IRWXU));
-                        } catch (ErrnoException e) {
-                            throw new IOException("Failed to open file descriptor", e);
-                        }
-                        return new ExifInterface(fileDescriptor.get());
-                    };
-            try {
-                expectSavingPersistsModifications(
-                        createFromFileDescriptor, srcFile, expectedAttributes);
-            } finally {
-                closeQuietly(fileDescriptor.get());
-            }
+        AtomicReference<FileDescriptor> fileDescriptor = new AtomicReference<>();
+        ExifInterfaceFactory createFromFileDescriptor =
+                f -> {
+                    try {
+                        fileDescriptor.set(
+                                Os.open(
+                                        f.getAbsolutePath(),
+                                        OsConstants.O_RDWR,
+                                        OsConstants.S_IRWXU));
+                    } catch (ErrnoException e) {
+                        throw new IOException("Failed to open file descriptor", e);
+                    }
+                    return new ExifInterface(fileDescriptor.get());
+                };
+        try {
+            expectSavingPersistsModifications(
+                    createFromFileDescriptor, srcFile, expectedAttributes);
+        } finally {
+            closeQuietly(fileDescriptor.get());
         }
     }
 
@@ -2313,7 +2329,6 @@ public class ExifInterfaceTest {
         expectBitmapsEquivalent(thumbnailBitmapFromFile, exifInterface.getThumbnailBitmap());
     }
 
-    @RequiresApi(21)
     private void closeQuietly(FileDescriptor fd) {
         if (fd != null) {
             try {

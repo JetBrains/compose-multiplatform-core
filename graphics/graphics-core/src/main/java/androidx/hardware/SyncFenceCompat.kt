@@ -35,17 +35,17 @@ import androidx.opengl.EGLSyncKHR
  * [SurfaceControlCompat.Transaction.setBuffer]. Note that depending on API level, this will utilize
  * either [android.hardware.SyncFence] or a compatibility implementation.
  */
-class SyncFenceCompat : AutoCloseable {
+public class SyncFenceCompat : AutoCloseable {
     internal val mImpl: SyncFenceImpl
 
-    companion object {
+    public companion object {
         /**
          * Creates a native synchronization fence from an EGLSync object.
          *
          * @throws IllegalStateException if EGL dependencies cannot be resolved
          */
         @JvmStatic
-        fun createNativeSyncFence(): SyncFenceCompat {
+        public fun createNativeSyncFence(): SyncFenceCompat {
             val usePlatformSyncFence =
                 !FrontBufferUtils.UseCompatSurfaceControl &&
                     Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
@@ -72,13 +72,13 @@ class SyncFenceCompat : AutoCloseable {
          * valid (that is, [isValid] is `false`), or if an error occurred while attempting to
          * retrieve the signal time.
          */
-        const val SIGNAL_TIME_INVALID: Long = -1L
+        public const val SIGNAL_TIME_INVALID: Long = -1L
 
         /**
          * A pending signal time. This is equivalent to the max value of a long, representing an
          * infinitely far point in the future.
          */
-        const val SIGNAL_TIME_PENDING: Long = Long.MAX_VALUE
+        public const val SIGNAL_TIME_PENDING: Long = Long.MAX_VALUE
     }
 
     internal constructor(syncFence: SyncFenceV19) {
@@ -95,10 +95,10 @@ class SyncFenceCompat : AutoCloseable {
      *
      * @param timeoutNanos time in nanoseconds to wait for before timing out.
      */
-    fun await(timeoutNanos: Long): Boolean = mImpl.await(timeoutNanos)
+    public fun await(timeoutNanos: Long): Boolean = mImpl.await(timeoutNanos)
 
     /** Waits forever for a [SyncFenceImpl] to signal */
-    fun awaitForever(): Boolean = mImpl.awaitForever()
+    public fun awaitForever(): Boolean = mImpl.awaitForever()
 
     /** Close the [SyncFenceImpl] */
     override fun close() {
@@ -106,12 +106,15 @@ class SyncFenceCompat : AutoCloseable {
     }
 
     /**
-     * Returns the time that the fence signaled in the [CLOCK_MONOTONIC] time domain. This returns
-     * an instant, [SyncFenceCompat.SIGNAL_TIME_INVALID] if the SyncFence is invalid, and if the
-     * fence hasn't yet signaled, then [SyncFenceCompat.SIGNAL_TIME_PENDING] is returned.
+     * Returns the time that the fence signaled in the `CLOCK_MONOTONIC` time domain. This
+     * corresponds to [System.nanoTime] but may also be compared to
+     * [android.os.SystemClock.uptimeMillis] after adjusting for milliseconds vs. nanoseconds.
+     *
+     * This returns an instant, [SyncFenceCompat.SIGNAL_TIME_INVALID] if the SyncFence is invalid,
+     * and if the fence hasn't yet signaled, then [SyncFenceCompat.SIGNAL_TIME_PENDING] is returned.
      */
     @RequiresApi(Build.VERSION_CODES.O)
-    fun getSignalTimeNanos(): Long {
+    public fun getSignalTimeNanos(): Long {
         return mImpl.getSignalTimeNanos()
     }
 
@@ -120,7 +123,7 @@ class SyncFenceCompat : AutoCloseable {
      *
      * @return `true` if it is valid, `false` otherwise
      */
-    fun isValid() = mImpl.isValid()
+    public fun isValid(): Boolean = mImpl.isValid()
 }
 
 /** Helper class to avoid class verification failures */

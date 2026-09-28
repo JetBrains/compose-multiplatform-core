@@ -16,16 +16,15 @@
 package androidx.emoji.widget;
 
 import android.content.Context;
-import android.os.Build;
 import android.text.method.KeyListener;
 import android.util.AttributeSet;
 import android.view.ActionMode;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.RequiresApi;
 import androidx.core.widget.TextViewCompat;
 import androidx.emoji.text.EmojiCompat;
 
@@ -61,7 +60,6 @@ public class EmojiEditText extends EditText {
         init(attrs, defStyleAttr, 0 /*defStyleRes*/);
     }
 
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     public EmojiEditText(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         init(attrs, defStyleAttr, defStyleRes);

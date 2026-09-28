@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("FacadeClassJvmName") // Cannot be updated, the Kt name has been released
+
 package androidx.collection
 
 import androidx.annotation.IntRange
@@ -163,8 +165,8 @@ public constructor(@IntRange(from = 1, to = MAX_SIZE) private var maxSize: Int) 
      */
     public open fun trimToSize(maxSize: Int) {
         while (true) {
-            var key: K
-            var value: V
+            val key: K
+            val value: V
 
             lock.synchronized {
                 checkPrecondition(!(size < 0 || (map.isEmpty && size != 0))) {

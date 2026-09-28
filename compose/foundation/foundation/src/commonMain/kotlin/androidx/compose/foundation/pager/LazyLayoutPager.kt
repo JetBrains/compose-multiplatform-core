@@ -20,7 +20,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.gestures.BringIntoViewSpec
 import androidx.compose.foundation.gestures.FlingBehavior
-import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.TargetedFlingBehavior
@@ -40,7 +39,7 @@ import androidx.compose.foundation.lazy.layout.MutableIntervalList
 import androidx.compose.foundation.lazy.layout.NearestRangeKeyIndexMap
 import androidx.compose.foundation.lazy.layout.lazyLayoutBeyondBoundsModifier
 import androidx.compose.foundation.lazy.layout.lazyLayoutSemantics
-import androidx.compose.foundation.scrollingContainer
+import androidx.compose.foundation.scrollableArea
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
@@ -98,6 +97,8 @@ internal fun Pager(
     verticalAlignment: Alignment.Vertical,
     /** The final positioning of [PagerState.currentPage] in this layout */
     snapPosition: SnapPosition,
+    /** The spec used to scroll pages into view */
+    bringIntoViewSpec: BringIntoViewSpec,
     /** The content of the pager */
     pageContent: @Composable PagerScope.(page: Int) -> Unit,
 ) {
@@ -135,12 +136,6 @@ internal fun Pager(
     val resolvedFlingBehavior =
         remember(state, flingBehavior) { PagerWrapperFlingBehavior(flingBehavior, state) }
 
-    val defaultBringIntoViewSpec = LocalBringIntoViewSpec.current
-    val pagerBringIntoViewSpec =
-        remember(state, defaultBringIntoViewSpec) {
-            PagerBringIntoViewSpec(state, defaultBringIntoViewSpec)
-        }
-
     val beyondBoundsModifier =
         if (userScrollEnabled) {
             Modifier.lazyLayoutBeyondBoundsModifier(
@@ -176,7 +171,7 @@ internal fun Pager(
                     userScrollEnabled,
                 )
                 .then(beyondBoundsModifier)
-                .scrollingContainer(
+                .scrollableArea(
                     state = state,
                     orientation = orientation,
                     enabled = userScrollEnabled,
@@ -184,8 +179,7 @@ internal fun Pager(
                     flingBehavior = resolvedFlingBehavior,
                     interactionSource = state.internalInteractionSource,
                     overscrollEffect = overscrollEffect,
-                    useLocalOverscrollFactory = false,
-                    bringIntoViewSpec = pagerBringIntoViewSpec,
+                    bringIntoViewSpec = bringIntoViewSpec,
                 )
                 .dragDirectionDetector(state)
                 .nestedScroll(pageNestedScrollConnection),
@@ -286,92 +280,26 @@ private fun Modifier.dragDirectionDetector(state: PagerState) =
                 awaitEachGesture {
                     val downEvent =
                         awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                    state.isGestureInProgress = true
                     var upEventOrCancellation: PointerInputChange? = null
                     state.upDownDifference = Offset.Zero // Reset
-                    while (upEventOrCancellation == null) {
-                        val event = awaitPointerEvent(pass = PointerEventPass.Initial)
-                        if (event.changes.fastAll { it.changedToUp() }) {
-                            // All pointers are up
-                            upEventOrCancellation = event.changes[0]
+                    try {
+                        while (upEventOrCancellation == null) {
+                            val event = awaitPointerEvent(pass = PointerEventPass.Initial)
+                            if (event.changes.fastAll { it.changedToUp() }) {
+                                // All pointers are up
+                                upEventOrCancellation = event.changes[0]
+                            }
                         }
+                    } finally {
+                        state.isGestureInProgress = false
                     }
 
-                    state.upDownDifference = upEventOrCancellation.position - downEvent.position
+                    state.upDownDifference =
+                        (upEventOrCancellation?.position ?: downEvent.position) - downEvent.position
                 }
             }
         }
-
-private class PagerBringIntoViewSpec(
-    val pagerState: PagerState,
-    val defaultBringIntoViewSpec: BringIntoViewSpec,
-) : BringIntoViewSpec {
-
-    /**
-     * [calculateScrollDistance] for Pager behaves differently than in a normal list. We must always
-     * respect the snapped pages over bringing a child into view. The logic here will behave like
-     * so:
-     * 1) If there's an ongoing request from the default bring into view spec, override the value to
-     *    make it land on the closest page to the requested offset.
-     * 2) If there's no ongoing request it means that either we moved enough to fulfill the
-     *    previously on going request or we didn't need move at all. 2a) If we didn't move at all we
-     *    do nothing (pagerState.firstVisiblePageOffset == 0) 2b) If we fulfilled the default
-     *    request, settle to the next page in the direction where we were scrolling before. We use
-     *    firstVisiblePage as anchor, but the goal is to keep the pager snapped.
-     */
-    override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float {
-        val proposedOffsetMove =
-            defaultBringIntoViewSpec.calculateScrollDistance(offset, size, containerSize)
-
-        val isItemOutView =
-            if (offset > 0) {
-                offset + size > containerSize
-            } else {
-                offset + size <= 0
-            }
-
-        val finalOffset =
-            if (proposedOffsetMove.absoluteValue != 0.0f && isItemOutView) {
-                overrideProposedOffsetMove(proposedOffsetMove)
-            } else {
-                // if there's no info from the default behavior, or if we already satisfied their
-                // request.
-                if (pagerState.firstVisiblePageOffset.absoluteValue < 1e-6) {
-                    // do nothing, we're settled
-                    0f
-                } else {
-                    // move one page forward or backward, whilst making sure we don't move out of
-                    // bounds
-                    // again.
-                    val reversedFirstPageScroll = pagerState.firstVisiblePageOffset * -1f
-                    if (pagerState.lastScrolledForward) {
-                            reversedFirstPageScroll + pagerState.pageSizeWithSpacing
-                        } else {
-                            reversedFirstPageScroll
-                        }
-                        .coerceIn(-containerSize, containerSize)
-                    // moving the pager outside of container size bounds will make the focused item
-                    // disappear so we're limiting how much we can scroll so the page won't move too
-                    // much.
-                }
-            }
-        return finalOffset
-    }
-
-    private fun overrideProposedOffsetMove(proposedOffsetMove: Float): Float {
-        var correctedOffset = pagerState.firstVisiblePageOffset.toFloat() * -1
-
-        // if moving forward, start from the first visible page, move as many pages as proposed.
-        while (proposedOffsetMove > 0.0f && correctedOffset < proposedOffsetMove) {
-            correctedOffset += pagerState.pageSizeWithSpacing
-        }
-
-        // if moving backwards, start from the first visible page, move as many pages as proposed.
-        while (proposedOffsetMove < 0.0f && correctedOffset > proposedOffsetMove) {
-            correctedOffset -= pagerState.pageSizeWithSpacing
-        }
-        return correctedOffset
-    }
-}
 
 /** Wraps [snapFlingBehavior] to give out information about target page coming from flings. */
 private class PagerWrapperFlingBehavior(

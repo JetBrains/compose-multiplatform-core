@@ -25,7 +25,6 @@ import android.os.ParcelFileDescriptor;
 import androidx.appsearch.app.AppSearchBatchResult;
 import androidx.appsearch.app.AppSearchBlobHandle;
 import androidx.appsearch.app.AppSearchResult;
-import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.Features;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.GetByDocumentIdRequest;
@@ -95,12 +94,12 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
         Preconditions.checkState(!mIsClosed, "GlobalSearchSession has already been closed");
         return FutureUtil.execute(mExecutor, () -> {
             CallerAccess access = new CallerAccess(mContext.getPackageName());
-            return mAppSearchImpl.batchGetDocuments(packageName, databaseName, request, access);
+            return mAppSearchImpl.batchGetDocuments(packageName, databaseName, request, access,
+                    /*callStatsBuilder=*/null);
         });
     }
 
     @Override
-    @ExperimentalAppSearchApi
     public @NonNull ListenableFuture<OpenBlobForReadResponse> openBlobForReadAsync(
             @NonNull Set<AppSearchBlobHandle> handles) {
         Preconditions.checkNotNull(handles);
@@ -114,7 +113,8 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
                     // Global reader could read blobs that are written by other apps. We skip the
                     // verification that the handle's package name and database name must match
                     // to the caller.
-                    ParcelFileDescriptor pfd = mAppSearchImpl.globalOpenReadBlob(handle, access);
+                    ParcelFileDescriptor pfd = mAppSearchImpl.globalOpenReadBlob(handle, access,
+                            /*callStatsBuilder=*/null);
                     resultBuilder.setSuccess(handle, pfd);
                 } catch (Throwable t) {
                     resultBuilder.setResult(handle, throwableToFailedResult(t));
@@ -166,7 +166,8 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
         Preconditions.checkNotNull(databaseName);
         Preconditions.checkState(!mIsClosed, "GlobalSearchSession has already been closed");
         return FutureUtil.execute(mExecutor,
-                () -> mAppSearchImpl.getSchema(packageName, databaseName, mSelfCallerAccess));
+                () -> mAppSearchImpl.getSchema(packageName, databaseName, mSelfCallerAccess,
+                        /*callStatsBuilder=*/null));
     }
 
     @Override

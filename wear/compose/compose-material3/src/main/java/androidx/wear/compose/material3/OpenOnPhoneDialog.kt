@@ -50,7 +50,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.platform.LocalAccessibilityManager
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.coerceAtLeast
@@ -83,6 +83,11 @@ import kotlinx.coroutines.launch
  * Example of an [OpenOnPhoneDialog] usage:
  *
  * @sample androidx.wear.compose.material3.samples.OpenOnPhoneDialogSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_OpenOnPhoneDialogSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param visible A boolean indicating whether the dialog should be displayed.
  * @param onDismissRequest A lambda function to be called when the dialog is dismissed - either by
  *   swiping right or when the [durationMillis] has passed. Implementation of this lambda must
@@ -111,6 +116,12 @@ public fun OpenOnPhoneDialog(
     durationMillis: Long = OpenOnPhoneDialogDefaults.DurationMillis,
     content: @Composable () -> Unit = { OpenOnPhoneDialogDefaults.Icon() },
 ) {
+    if (visible) {
+        // This will activate the screen-on flag for the duration of this screen, so that the
+        // animations run to completion and then the dialog self-dismisses.
+        KeepScreenOn()
+    }
+
     val a11yFullDurationMillis =
         LocalAccessibilityManager.current?.calculateRecommendedTimeoutMillis(
             originalTimeoutMillis = durationMillis,
@@ -151,6 +162,11 @@ public fun OpenOnPhoneDialog(
  * Example of an [OpenOnPhoneDialog] usage:
  *
  * @sample androidx.wear.compose.material3.samples.OpenOnPhoneDialogSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_OpenOnPhoneDialogSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param curvedText A slot for displaying curved text content which will be shown along the bottom
  *   edge of the dialog. We recommend using [openOnPhoneDialogCurvedText] for this parameter, which
  *   will give the default sweep angle and padding, and [OpenOnPhoneDialogDefaults.curvedTextStyle]
@@ -189,8 +205,11 @@ public fun OpenOnPhoneDialogContent(
             animatedDelay(DurationShort3.toLong(), reduceMotionEnabled)
             alphaAnimatable.animateTo(1f, alphaAnimationSpec)
         }
+
         launch {
-            if (!reduceMotionEnabled) {
+            if (reduceMotionEnabled) {
+                delay(progressDuration)
+            } else {
                 progressAnimatable.animateTo(
                     targetValue = 1f,
                     animationSpec =
@@ -198,8 +217,9 @@ public fun OpenOnPhoneDialogContent(
                 ) {
                     progress = value
                 }
-                finalAnimation = true
             }
+
+            finalAnimation = true
         }
     }
 
@@ -285,7 +305,7 @@ public object OpenOnPhoneDialogDefaults {
 
     /** The default message for an [OpenOnPhoneDialog]. */
     public val text: String
-        @Composable get() = LocalContext.current.getString(R.string.wear_m3c_open_on_phone)
+        @Composable get() = stringResource(R.string.wear_m3c_open_on_phone)
 
     /**
      * A default composable used in [OpenOnPhoneDialog] that displays an open on phone icon with an
@@ -302,6 +322,7 @@ public object OpenOnPhoneDialogDefaults {
 
         LaunchedEffect(Unit) {
             animatedDelay(IconDelay, reduceMotionEnabled)
+
             atEnd = true
         }
         Icon(
@@ -453,12 +474,14 @@ private fun iconAndProgressContainer(
             .align(Alignment.Center)
     )
 
-    IconContainerProgressIndicator(
-        progress = progress,
-        progressAlpha = progressAlphaAnimationFraction.value,
-        strokeWidth = strokeWidth,
-        colors = progressIndicatorColors,
-    )
+    if (!LocalReduceMotion.current) {
+        IconContainerProgressIndicator(
+            progress = progress,
+            progressAlpha = progressAlphaAnimationFraction.value,
+            strokeWidth = strokeWidth,
+            colors = progressIndicatorColors,
+        )
+    }
 }
 
 @Composable
@@ -488,4 +511,4 @@ private const val WidthPaddingFraction = 0.176f
 private const val SizeFraction = (1 - WidthPaddingFraction * 2)
 private val progressIndicatorStrokeWidth = 5.dp
 private val progressIndicatorPadding = 5.dp
-private const val OpenOnPhoneMaxSweepAngle = 130f
+private const val OpenOnPhoneMaxSweepAngle = 200f

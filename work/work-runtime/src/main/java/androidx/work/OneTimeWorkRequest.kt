@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+@file:Suppress("FacadeClassJvmName") // Cannot be updated, the Kt name has been released
+
 package androidx.work
 
-import android.os.Build
 import androidx.annotation.NonNull
 import kotlin.reflect.KClass
 
@@ -60,11 +62,7 @@ public class OneTimeWorkRequest internal constructor(builder: Builder) :
         }
 
         override fun buildInternal(): OneTimeWorkRequest {
-            require(
-                !(backoffCriteriaSet &&
-                    Build.VERSION.SDK_INT >= 23 &&
-                    workSpec.constraints.requiresDeviceIdle())
-            ) {
+            require(!(backoffCriteriaSet && workSpec.constraints.requiresDeviceIdle())) {
                 "Cannot set backoff criteria on an idle mode job"
             }
             return OneTimeWorkRequest(this)

@@ -31,7 +31,7 @@ import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Dp
 import androidx.test.filters.SdkSuppress
@@ -361,8 +361,10 @@ class PlaceholderTest {
     @OptIn(ExperimentalWearMaterialApi::class)
     @Composable
     fun TestPlaceholderChip(contents: String?, currentState: StableRef<PlaceholderState?>) {
-        val placeholderState =
-            rememberPlaceholderState { contents != null }.also { currentState.value = it }
+        val placeholderState = rememberPlaceholderState {
+            contents != null
+        }
+            .also { currentState.value = it }
         Chip(
             modifier = Modifier.testTag("test-item").placeholderShimmer(placeholderState),
             content = {},

@@ -26,15 +26,6 @@ import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
 @RequiresApi(Build.VERSION_CODES.S)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public object Dependencies {
-    public val translatorSelector: TranslatorSelector by lazy {
-        try {
-            TranslatorSelector::class.java.findImpl(prefix = "", suffix = "Impl")
-        } catch (ex: Exception) {
-            Log.d(APP_FUNCTIONS_TAG, "Cannot find TranslatorSelectorImpl")
-            NullTranslatorSelector()
-        }
-    }
-
     internal val schemaAppFunctionInventory: SchemaAppFunctionInventory? by lazy {
         try {
             SchemaAppFunctionInventory::class.java.findImpl(prefix = "$", suffix = "_Impl")
@@ -42,5 +33,29 @@ public object Dependencies {
             Log.d(APP_FUNCTIONS_TAG, "Cannot find SchemaAppFunctionInventory implementation")
             null
         }
+    }
+
+    public val aggregatedAppFunctionInventory: AggregatedAppFunctionInventory? by lazy {
+        try {
+            AggregatedAppFunctionInventory::class.java.findImpl(prefix = "$", suffix = "_Impl")
+        } catch (e: Exception) {
+            Log.d(APP_FUNCTIONS_TAG, "Cannot find AggregatedAppFunctionInventory implementation", e)
+            null
+        }
+    }
+
+    /**
+     * Returns the AggregatedAppFunctionInventory if available else the SchemaAppFunctionInventory.
+     *
+     * If both are not available, returns null.
+     */
+    internal val appFunctionInventory: AppFunctionInventory? by lazy {
+        if (aggregatedAppFunctionInventory != null) return@lazy aggregatedAppFunctionInventory
+
+        return@lazy schemaAppFunctionInventory
+    }
+
+    internal val aggregatedAppFunctionInvoker: AggregatedAppFunctionInvoker by lazy {
+        AggregatedAppFunctionInvoker::class.java.findImpl(prefix = "$", suffix = "_Impl")
     }
 }

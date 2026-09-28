@@ -50,6 +50,7 @@ import org.robolectric.annotation.internal.DoNotInstrument;
 
 /** Tests for {@link CarAppService} and related classes for establishing a host connection. */
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 @DoNotInstrument
 public final class CarAppServiceTest {
     @Rule
@@ -93,6 +94,33 @@ public final class CarAppServiceTest {
 
         assertThat(binder.getCurrentSession()).isNull();
         assertThat(binder.getCarAppService()).isNotNull();
+        assertThat(mCarAppService.getSession(clusterSessionInfo)).isNull();
+    }
+
+    @Test
+    public void onRebind_destroysSession_onSubsequentUnbind() {
+        Intent bindIntent = new Intent();
+        SessionInfo clusterSessionInfo = new SessionInfo(DISPLAY_TYPE_CLUSTER, "test-id");
+        SessionInfoIntentEncoder.encode(clusterSessionInfo, bindIntent);
+        CarAppBinder binder = bindAndStart(bindIntent);
+
+        // First unbind
+        assertThat(mCarAppService.onUnbind(bindIntent)).isTrue();
+        assertThat(binder.getCurrentSession()).isNull();
+
+        // Rebind using cached binder
+        binder.onAppCreate(
+                mMockCarHost,
+                bindIntent,
+                mContext.getResources().getConfiguration(),
+                mMockOnDoneCallback);
+        binder.onAppStart(mMockOnDoneCallback);
+        assertThat(binder.getCurrentSession()).isNotNull();
+        assertThat(mCarAppService.getSession(clusterSessionInfo)).isNotNull();
+
+        // Second unbind
+        assertThat(mCarAppService.onUnbind(bindIntent)).isTrue();
+        assertThat(binder.getCurrentSession()).isNull();
         assertThat(mCarAppService.getSession(clusterSessionInfo)).isNull();
     }
 

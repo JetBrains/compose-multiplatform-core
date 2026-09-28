@@ -20,8 +20,11 @@ import androidx.compose.animation.core.AnimationVector
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.TwoWayConverter
 import androidx.compose.animation.core.spring
+import androidx.compose.material3.MotionScheme.Companion.expressive
+import androidx.compose.material3.MotionScheme.Companion.standard
 import androidx.compose.material3.tokens.ExpressiveMotionTokens
 import androidx.compose.material3.tokens.MotionSchemeKeyTokens
+import androidx.compose.material3.tokens.MotionSchemeToken
 import androidx.compose.material3.tokens.StandardMotionTokens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -33,13 +36,13 @@ import androidx.compose.runtime.Stable
  *
  * Motion schemes are designed to create a harmonious motion for components in the app.
  *
- * There are two built-in schemes, a standard and an expressive, that can be used as-is or
+ * There are two built-in schemes, a [standard] and an [expressive], that can be used as-is or
  * customized.
  *
  * You can customize the motion scheme for all components in the [MaterialTheme].
  */
 @Immutable
-internal interface MotionScheme {
+public interface MotionScheme {
     /**
      * A default spatial motion [FiniteAnimationSpec].
      *
@@ -50,7 +53,7 @@ internal interface MotionScheme {
      * [T] is the generic data type that will be animated by the system, as long as the appropriate
      * [TwoWayConverter] for converting the data to and from an [AnimationVector] is supplied.
      */
-    fun <T> defaultSpatialSpec(): FiniteAnimationSpec<T>
+    public fun <T> defaultSpatialSpec(): FiniteAnimationSpec<T>
 
     /**
      * A fast spatial motion [FiniteAnimationSpec].
@@ -62,7 +65,7 @@ internal interface MotionScheme {
      * [T] is the generic data type that will be animated by the system, as long as the appropriate
      * [TwoWayConverter] for converting the data to and from an [AnimationVector] is supplied.
      */
-    fun <T> fastSpatialSpec(): FiniteAnimationSpec<T>
+    public fun <T> fastSpatialSpec(): FiniteAnimationSpec<T>
 
     /**
      * A slow spatial motion [FiniteAnimationSpec].
@@ -74,7 +77,7 @@ internal interface MotionScheme {
      * [T] is the generic data type that will be animated by the system, as long as the appropriate
      * [TwoWayConverter] for converting the data to and from an [AnimationVector] is supplied.
      */
-    fun <T> slowSpatialSpec(): FiniteAnimationSpec<T>
+    public fun <T> slowSpatialSpec(): FiniteAnimationSpec<T>
 
     /**
      * A default effects motion [FiniteAnimationSpec].
@@ -85,7 +88,7 @@ internal interface MotionScheme {
      * [T] is the generic data type that will be animated by the system, as long as the appropriate
      * [TwoWayConverter] for converting the data to and from an [AnimationVector] is supplied.
      */
-    fun <T> defaultEffectsSpec(): FiniteAnimationSpec<T>
+    public fun <T> defaultEffectsSpec(): FiniteAnimationSpec<T>
 
     /**
      * A fast effects motion [FiniteAnimationSpec].
@@ -96,7 +99,7 @@ internal interface MotionScheme {
      * [T] is the generic data type that will be animated by the system, as long as the appropriate
      * [TwoWayConverter] for converting the data to and from an [AnimationVector] is supplied.
      */
-    fun <T> fastEffectsSpec(): FiniteAnimationSpec<T>
+    public fun <T> fastEffectsSpec(): FiniteAnimationSpec<T>
 
     /**
      * A slow effects motion [FiniteAnimationSpec].
@@ -107,9 +110,9 @@ internal interface MotionScheme {
      * [T] is the generic data type that will be animated by the system, as long as the appropriate
      * [TwoWayConverter] for converting the data to and from an [AnimationVector] is supplied.
      */
-    fun <T> slowEffectsSpec(): FiniteAnimationSpec<T>
+    public fun <T> slowEffectsSpec(): FiniteAnimationSpec<T>
 
-    companion object {
+    public companion object {
 
         /**
          * Returns a standard Material motion scheme.
@@ -117,7 +120,7 @@ internal interface MotionScheme {
          * The standard scheme is Material's basic motion scheme for utilitarian UI elements and
          * recurring interactions. It provides a linear motion feel.
          */
-        @Suppress("UNCHECKED_CAST") internal fun standard(): MotionScheme = StandardMotionSchemeImpl
+        @Suppress("UNCHECKED_CAST") public fun standard(): MotionScheme = StandardMotionSchemeImpl
 
         /**
          * Returns an expressive Material motion scheme.
@@ -126,7 +129,7 @@ internal interface MotionScheme {
          * and hero interactions. It provides a visually engaging motion feel.
          */
         @Suppress("UNCHECKED_CAST")
-        internal fun expressive(): MotionScheme = ExpressiveMotionSchemeImpl
+        public fun expressive(): MotionScheme = ExpressiveMotionSchemeImpl
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -258,17 +261,12 @@ internal interface MotionScheme {
 }
 
 /**
- * Helper function for component motion tokens.
- *
- * Here is an example on how to use component motion tokens:
- * ``MaterialTheme.motionScheme.fromToken(ExtendedFabBranded.ExpandMotion)``
- *
- * The returned [FiniteAnimationSpec] is remembered across compositions.
+ * Converts a motion scheme token key to the animation spec provided by the theme
  *
  * @param value the token's value
  */
 @Stable
-internal fun <T> MotionScheme.fromToken(value: MotionSchemeKeyTokens): FiniteAnimationSpec<T> {
+internal fun <T> MotionScheme.fromToken(value: MotionSchemeToken): FiniteAnimationSpec<T> {
     return when (value) {
         MotionSchemeKeyTokens.DefaultSpatial -> defaultSpatialSpec()
         MotionSchemeKeyTokens.FastSpatial -> fastSpatialSpec()
@@ -276,14 +274,14 @@ internal fun <T> MotionScheme.fromToken(value: MotionSchemeKeyTokens): FiniteAni
         MotionSchemeKeyTokens.DefaultEffects -> defaultEffectsSpec()
         MotionSchemeKeyTokens.FastEffects -> fastEffectsSpec()
         MotionSchemeKeyTokens.SlowEffects -> slowEffectsSpec()
+        else -> defaultSpatialSpec()
     }
 }
 
 /**
- * Converts a [MotionSchemeKeyTokens] key to the [FiniteAnimationSpec] provided by the
- * [MotionScheme].
+ * Converts a [MotionSchemeToken] key to the [FiniteAnimationSpec] provided by the [MotionScheme].
  */
 @Composable
 @ReadOnlyComposable
-internal fun <T> MotionSchemeKeyTokens.value(): FiniteAnimationSpec<T> =
+internal fun <T> MotionSchemeToken.value(): FiniteAnimationSpec<T> =
     MaterialTheme.motionScheme.fromToken(this)

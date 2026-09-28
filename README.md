@@ -1,6 +1,6 @@
 # Android Jetpack
 
-[![Revved up by Develocity](https://img.shields.io/badge/Revved%20up%20by-Develocity-06A0CE?logo=Gradle&labelColor=02303A)](https://ge.androidx.dev)
+[![Revved up by Develocity](https://img.shields.io/badge/Revved%20up%20by-Develocity-06A0CE?logo=Gradle&labelColor=02303A)](https://androidx.develocity.cloud)
 
 Jetpack is a suite of libraries, tools, and guidance to help developers write high-quality apps easier. These components help you follow best practices, free you from writing boilerplate code, and simplify complex tasks, so you can focus on the code you care about.
 
@@ -54,7 +54,7 @@ development workflow!
 Before uploading your first contribution, you will need setup a password and agree to the contribution agreement:
 
 Generate a HTTPS password:
-https://android-review.googlesource.com/new-password
+https://android.googlesource.com/new-password
 
 Agree to the Google Contributor Licenses Agreement:
 https://android-review.googlesource.com/settings/new-agreement

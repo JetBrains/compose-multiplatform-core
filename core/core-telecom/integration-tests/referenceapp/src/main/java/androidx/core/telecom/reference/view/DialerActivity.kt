@@ -17,13 +17,16 @@
 package androidx.core.telecom.reference.view
 
 import android.Manifest
+import android.content.BroadcastReceiver
 import android.content.ContentValues.TAG
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.telecom.TelecomManager
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -58,6 +61,20 @@ class DialerActivity : ComponentActivity() {
         (application as VoipApplication).callRepository
     }
 
+    private val mCallbackReceiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(p0: Context?, p1: Intent?) {
+                if (TelecomManager.ACTION_CALL_BACK == intent?.action) {
+                    val uuid = intent.getStringExtra(TelecomManager.EXTRA_UUID)
+                    Log.i(
+                        TAG,
+                        "Received action callback intent. Attempting to" +
+                            " place a call with uuid - $uuid",
+                    )
+                }
+            }
+        }
+
     // List of permissions required by the app
     private val requiredPermissions =
         mutableListOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.BLUETOOTH_CONNECT)
@@ -83,11 +100,9 @@ class DialerActivity : ComponentActivity() {
                 // You might want to show a dialog explaining why they are needed
                 // and potentially guide the user to settings.
                 // Check if rationale should be shown for any denied permission
-                val shouldShowRationale =
-                    requiredPermissions.any {
-                        !permissions.getOrDefault(it, false) &&
-                            shouldShowRequestPermissionRationale(it)
-                    }
+                val shouldShowRationale = requiredPermissions.any {
+                    !permissions.getOrDefault(it, false) && shouldShowRequestPermissionRationale(it)
+                }
                 if (!shouldShowRationale) {
                     // User selected "Don't ask again" or policy prevents asking.
                     // Guide to settings.

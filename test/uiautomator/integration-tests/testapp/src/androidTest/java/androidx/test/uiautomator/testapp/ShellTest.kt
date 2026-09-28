@@ -18,13 +18,11 @@ package androidx.test.uiautomator.testapp
 
 import android.Manifest
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import androidx.test.shell.Shell
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@SdkSuppress(minSdkVersion = 23)
 @RunWith(AndroidJUnit4::class)
 class ShellTest {
 

@@ -24,7 +24,7 @@ import androidx.benchmark.junit4.measureRepeatedOnMainThread
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.LocalAutofillTree
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
@@ -57,24 +57,23 @@ class AndroidAutofillBenchmark {
     @Test
     @SdkSuppress(minSdkVersion = 26)
     fun provideAutofillVirtualStructure_performAutofill() {
-        val autofillValues =
-            composeTestRule.runOnUiThread {
-                // Arrange.
-                val autofillNode =
-                    @Suppress("Deprecation")
-                    androidx.compose.ui.autofill.AutofillNode(
-                        onFill = {},
-                        autofillTypes =
-                            listOf(androidx.compose.ui.autofill.AutofillType.PersonFullName),
-                        boundingBox = Rect(0f, 0f, 0f, 0f),
-                    )
+        val autofillValues = composeTestRule.runOnUiThread {
+            // Arrange.
+            val autofillNode =
+                @Suppress("Deprecation")
+                androidx.compose.ui.autofill.AutofillNode(
+                    onFill = {},
+                    autofillTypes =
+                        listOf(androidx.compose.ui.autofill.AutofillType.PersonFullName),
+                    boundingBox = Rect(0f, 0f, 0f, 0f),
+                )
 
-                autofillTree += autofillNode
+            autofillTree += autofillNode
 
-                SparseArray<AutofillValue>().apply {
-                    append(autofillNode.id, AutofillValue.forText("Name"))
-                }
+            SparseArray<AutofillValue>().apply {
+                append(autofillNode.id, AutofillValue.forText("Name"))
             }
+        }
 
         // Assess.
         benchmarkRule.measureRepeatedOnMainThread { composeView.autofill(autofillValues) }

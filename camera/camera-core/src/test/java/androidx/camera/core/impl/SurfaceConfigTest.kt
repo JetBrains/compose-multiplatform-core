@@ -31,7 +31,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 /** Unit tests for [SurfaceConfig]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = 21)
+@Config(sdk = [Config.ALL_SDKS])
 class SurfaceConfigTest {
     @Test
     fun create_validTypeAndSize_createsSurfaceConfigWithCorrectProperties() {

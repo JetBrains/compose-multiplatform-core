@@ -21,41 +21,35 @@ import android.content.Context
 import android.content.Intent
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
-import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.CameraX
 import androidx.camera.core.CameraXConfig
 import androidx.camera.integration.core.CameraXActivity.BIND_IMAGE_CAPTURE
 import androidx.camera.integration.core.CameraXActivity.BIND_PREVIEW
 import androidx.camera.integration.core.CameraXActivity.INTENT_EXTRA_CAMERA_ID
 import androidx.camera.integration.core.CameraXActivity.INTENT_EXTRA_USE_CASE_COMBINATION
-import androidx.camera.integration.core.util.StressTestUtil
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.CoreAppTestUtil
 import androidx.camera.testing.impl.LabTestRule
+import androidx.camera.testing.impl.RequireForegroundRule
 import androidx.camera.testing.impl.activity.Camera2TestActivity
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.IdlingRegistry
-import androidx.test.espresso.IdlingResource
+import androidx.test.espresso.idling.CountingIdlingResource
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -75,8 +69,11 @@ class CameraDisconnectTest(
 ) {
 
     @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
+    val requireForegroundRule = RequireForegroundRule {
+        assumeTrue(CameraUtil.hasCameraWithLensFacing(lensFacing))
+        CoreAppTestUtil.assumeCompatibleDevice()
+        CoreAppTestUtil.assumeCanTestCameraDisconnect()
+    }
 
     @get:Rule
     val cameraRule =
@@ -106,14 +103,6 @@ class CameraDisconnectTest(
                             Camera2Config.defaultConfig(),
                         )
                     )
-                    add(
-                        arrayOf(
-                            "config=${CameraPipeConfig::class.simpleName} lensFacing={$lensFacing}",
-                            lensFacing,
-                            CameraPipeConfig::class.simpleName,
-                            CameraPipeConfig.defaultConfig(),
-                        )
-                    )
                 }
             }
     }
@@ -127,15 +116,17 @@ class CameraDisconnectTest(
 
     @Before
     fun setUp() {
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(lensFacing))
-        device.setOrientationNatural()
-        CoreAppTestUtil.assumeCompatibleDevice()
-        CoreAppTestUtil.assumeCanTestCameraDisconnect()
         ProcessCameraProvider.configureInstance(cameraConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context)[10, TimeUnit.SECONDS]
-        // Clear the device UI and check if there is no dialog or lock screen on the top of the
-        // window before start the test.
-        CoreAppTestUtil.prepareDeviceUI(InstrumentationRegistry.getInstrumentation())
+        requireForegroundRule.deferCleanup {
+            if (::cameraProvider.isInitialized) {
+                cameraProvider.shutdownAsync()[10000, TimeUnit.MILLISECONDS]
+            }
+
+            if (::backgroundCameraHandlerThread.isInitialized) {
+                backgroundCameraHandlerThread.quitSafely()
+            }
+        }
         cameraId = CameraUtil.getCameraIdWithLensFacing(lensFacing)!!
     }
 
@@ -144,22 +135,35 @@ class CameraDisconnectTest(
         if (::cameraXActivityScenario.isInitialized) {
             cameraXActivityScenario.close()
         }
+    }
 
-        if (::cameraProvider.isInitialized) {
-            withContext(Dispatchers.Main) {
-                cameraProvider.shutdownAsync()[10000, TimeUnit.MILLISECONDS]
+    private fun launchAndAwaitCamera2Activity(cameraId: String) {
+        val intent =
+            Intent(context, Camera2TestActivity::class.java).apply {
+                putExtra(Camera2TestActivity.EXTRA_CAMERA_ID, cameraId)
             }
+
+        var completionIdlingResource: CountingIdlingResource? = null
+        var wasCamera2PreviewReady = false
+        try {
+            ActivityScenario.launch<Camera2TestActivity>(intent).use { scenario ->
+                var previewStartedIdlingResource: CountingIdlingResource? = null
+                scenario.onActivity { activity ->
+                    completionIdlingResource = activity.completionIdlingResource
+                    previewStartedIdlingResource = activity.previewStartedIdlingResource
+                    IdlingRegistry.getInstance().register(completionIdlingResource)
+                }
+                Espresso.onIdle() // Wait for the completionIdlingResource to become idle.
+                wasCamera2PreviewReady = previewStartedIdlingResource!!.isIdleNow
+            }
+        } finally {
+            completionIdlingResource?.let { IdlingRegistry.getInstance().unregister(it) }
         }
 
-        if (::backgroundCameraHandlerThread.isInitialized) {
-            backgroundCameraHandlerThread.quitSafely()
-        }
-
-        // Unfreeze rotation so the device can choose the orientation via its own policy. Be nice
-        // to other tests :)
-        device.unfreezeRotation()
-        device.pressHome()
-        device.waitForIdle(StressTestUtil.HOME_TIMEOUT_MS)
+        assumeTrue(
+            "Camera2TestActivity failed to start preview, skipping recovery test.",
+            wasCamera2PreviewReady,
+        )
     }
 
     /**
@@ -177,7 +181,6 @@ class CameraDisconnectTest(
      */
     @LabTestRule.LabTestOnly
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M) // Known issue, checkout b/147393563.
     fun canRecovered_afterSecondCamera2ImplementationActivityIsClosed() {
         // Launch CameraX activity
         cameraXActivityScenario = launchCameraXActivity(cameraId)
@@ -186,46 +189,13 @@ class CameraDisconnectTest(
                 // Wait for preview to become active
                 waitForViewfinderIdle()
 
-                // Launch Camera2 test activity. It should cause the camera to disconnect from
-                // CameraX.
-                val intent =
-                    Intent(context, Camera2TestActivity::class.java).apply {
-                        putExtra(Camera2TestActivity.EXTRA_CAMERA_ID, cameraId)
-                    }
+                // Launch Camera2 test activity to disconnect CameraX, and wait for it to succeed.
+                launchAndAwaitCamera2Activity(cameraId)
 
-                CoreAppTestUtil.launchActivity(
-                        InstrumentationRegistry.getInstrumentation(),
-                        Camera2TestActivity::class.java,
-                        intent,
-                    )
-                    ?.apply {
-                        // Wait for preview to become active to make sure the 2nd activity can
-                        // enable
-                        // its camera function successfully
-                        try {
-                            waitForCamera2Preview()
-                        } finally {
-                            // Close Camera2 test activity, and verify the CameraX Preview resumes
-                            // successfully.
-                            finish()
-                        }
-                    }
-
-                // Wait for CameraXActivity's preview to become active after Camera2TestActivity is
-                // closed.
+                // Wait for CameraXActivity's preview to become active again.
                 waitForViewfinderIdle()
             }
         }
-    }
-
-    private fun Camera2TestActivity.waitForCamera2Preview() {
-        waitFor(mPreviewReady)
-    }
-
-    private fun waitFor(idlingResource: IdlingResource) {
-        IdlingRegistry.getInstance().register(idlingResource)
-        Espresso.onIdle()
-        IdlingRegistry.getInstance().unregister(idlingResource)
     }
 
     /**
@@ -239,7 +209,6 @@ class CameraDisconnectTest(
      */
     @LabTestRule.LabTestOnly
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M) // Known issue, checkout b/147393563.
     fun canRecovered_afterReceivingCameraOnDisconnectedEvent() {
         // Launch CameraX activity
         cameraXActivityScenario = launchCameraXActivity(cameraId)

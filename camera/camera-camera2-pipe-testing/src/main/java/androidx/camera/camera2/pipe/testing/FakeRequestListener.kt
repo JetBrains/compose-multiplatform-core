@@ -20,6 +20,7 @@ import androidx.camera.camera2.pipe.CameraTimestamp
 import androidx.camera.camera2.pipe.FrameInfo
 import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.FrameNumber
+import androidx.camera.camera2.pipe.OutputId
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestFailure
 import androidx.camera.camera2.pipe.RequestMetadata
@@ -61,6 +62,11 @@ public class FakeRequestListener(private val replayBuffer: Int = 10) : Request.L
 
     private val _onFailedFlow = MutableSharedFlow<OnFailed>(replay = replayBuffer)
     public val onFailedFlow: SharedFlow<OnFailed> = _onFailedFlow.asSharedFlow()
+
+    private val _onRequestSequenceCompletedFlow =
+        MutableSharedFlow<OnRequestSequenceCompleted>(replay = replayBuffer)
+    public val onRequestSequenceCompletedFlow: SharedFlow<OnRequestSequenceCompleted> =
+        _onRequestSequenceCompletedFlow.asSharedFlow()
 
     override fun onStarted(
         requestMetadata: RequestMetadata,
@@ -119,9 +125,14 @@ public class FakeRequestListener(private val replayBuffer: Int = 10) : Request.L
     override fun onBufferLost(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,
-        stream: StreamId,
+        streamId: StreamId,
+        outputId: OutputId,
     ): Unit =
-        check(_onBufferLostFlow.tryEmit(OnBufferLost(requestMetadata, frameNumber, stream))) {
+        check(
+            _onBufferLostFlow.tryEmit(
+                OnBufferLost(requestMetadata, frameNumber, streamId, outputId)
+            )
+        ) {
             "Failed to emit OnBufferLost event! The size of the replay buffer" +
                 "($replayBuffer) may need to be increased."
         }
@@ -133,6 +144,19 @@ public class FakeRequestListener(private val replayBuffer: Int = 10) : Request.L
     ): Unit =
         check(_onFailedFlow.tryEmit(OnFailed(requestMetadata, frameNumber, requestFailure))) {
             "Failed to emit OnFailed event! The size of the replay buffer" +
+                "($replayBuffer) may need to be increased."
+        }
+
+    override fun onRequestSequenceCompleted(
+        requestMetadata: RequestMetadata,
+        frameNumber: FrameNumber,
+    ): Unit =
+        check(
+            _onRequestSequenceCompletedFlow.tryEmit(
+                OnRequestSequenceCompleted(requestMetadata, frameNumber)
+            )
+        ) {
+            "Failed to emit OnRequestSequenceCompleted event! The size of the replay buffer" +
                 "($replayBuffer) may need to be increased."
         }
 }
@@ -169,10 +193,16 @@ public class OnBufferLost(
     public val requestMetadata: RequestMetadata,
     public val frameNumber: FrameNumber,
     public val streamId: StreamId,
+    public val outputId: OutputId,
 ) : RequestListenerEvent()
 
 public class OnFailed(
     public val requestMetadata: RequestMetadata,
     public val frameNumber: FrameNumber,
     public val requestFailure: RequestFailure,
+) : RequestListenerEvent()
+
+public class OnRequestSequenceCompleted(
+    public val requestMetadata: RequestMetadata,
+    public val frameNumber: FrameNumber,
 ) : RequestListenerEvent()

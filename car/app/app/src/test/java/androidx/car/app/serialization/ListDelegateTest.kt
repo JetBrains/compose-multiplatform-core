@@ -28,6 +28,7 @@ import org.mockito.kotlin.verify
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class ListDelegateTest {
     private val testList = (100..199).toList()
     private val listDelegate = ListDelegateImpl(testList)
@@ -59,8 +60,9 @@ class ListDelegateTest {
         ListDelegateImpl(testList).let { assertEqual(it, it) }
 
     @Test
-    fun equalsAndHashCode_equivalentItems_areEqual() =
-        testList.let { assertEqual(ListDelegateImpl(it), ListDelegateImpl(it)) }
+    fun equalsAndHashCode_equivalentItems_areEqual() = testList.let {
+        assertEqual(ListDelegateImpl(it), ListDelegateImpl(it))
+    }
 
     @Test
     fun equalsAndHashCode_marshalledItem_areEqual() =

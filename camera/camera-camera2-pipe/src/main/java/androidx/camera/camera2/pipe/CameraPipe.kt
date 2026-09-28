@@ -31,14 +31,13 @@ import androidx.camera.camera2.pipe.config.DaggerCameraPipeComponent
 import androidx.camera.camera2.pipe.config.FrameGraphConfigModule
 import androidx.camera.camera2.pipe.config.ThreadConfigModule
 import androidx.camera.camera2.pipe.core.Debug
-import androidx.camera.camera2.pipe.core.DurationNs
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.media.ImageSources
 import androidx.camera.featurecombinationquery.CameraDeviceSetupCompat
 import java.util.concurrent.Executor
+import kotlin.time.Duration
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.locks.synchronized
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 
 internal val cameraPipeIds = atomic(0)
@@ -75,7 +74,7 @@ public interface CameraPipe {
     public fun createCameraGraphs(config: CameraGraph.ConcurrentConfig): List<CameraGraph>
 
     /**
-     * [FrameGraph] extends [CameraGraph] and provides tools to more easily interact with [Frame]'s,
+     * [FrameGraph] extends [CameraGraph] and provides tools to more easily interact with [Frame]s,
      * images, and metadata from the camera, while maintaining the capabilities of [CameraGraph].
      *
      * This creates a new [FrameGraph] that can be used to interact with a single Camera on the
@@ -145,11 +144,22 @@ public interface CameraPipe {
     public data class Config(
         val appContext: Context,
         val threadConfig: ThreadConfig = ThreadConfig(),
-        val cameraMetadataConfig: CameraMetadataConfig = CameraMetadataConfig(),
         val cameraBackendConfig: CameraBackendConfig = CameraBackendConfig(),
         val cameraInteropConfig: CameraInteropConfig = CameraInteropConfig(),
         val imageSources: ImageSources? = null,
+        val flags: Flags = Flags(),
+        val platformApiCompat: PlatformApiCompat? = null,
+        val memoryEstimator: MemoryEstimator = MemoryEstimator.create(),
     )
+
+    /**
+     * Boolean Flags for controlling [CameraPipe] behaviours.
+     *
+     * @param strictModeEnabled disable all special treatment in
+     *   [androidx.camera.camera2.pipe.compat.Camera2Quirks]
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public data class Flags(val strictModeEnabled: Boolean = false)
 
     /**
      * Application level configuration for Camera2Interop callbacks. If set, these callbacks will be
@@ -158,7 +168,8 @@ public interface CameraPipe {
     public data class CameraInteropConfig(
         val cameraDeviceStateCallback: CameraDevice.StateCallback? = null,
         val cameraCaptureSessionListener: CameraInterop.CaptureSessionListener? = null,
-        val cameraOpenRetryMaxTimeoutNs: DurationNs? = null,
+        val cameraOpenRetryMaxTimeout: Duration? = null,
+        val cameraSystemCallbacks: CameraInterop.CameraSystemCallbacks? = null,
     )
 
     /**
@@ -166,12 +177,11 @@ public interface CameraPipe {
      * will be used to run asynchronous background work across [CameraPipe].
      * - [defaultLightweightExecutor] is used to run fast, non-blocking, lightweight tasks.
      * - [defaultBackgroundExecutor] is used to run blocking and/or io bound tasks.
+     * - [defaultBlockingExecutor] is used for tasks that may block threads, such as disk or I/O.
      * - [defaultCameraExecutor] is used on newer API versions to interact with CameraAPIs. This is
      *   split into a separate field since many camera operations are extremely latency sensitive.
      * - [defaultCameraHandler] is used on older API versions to interact with CameraAPIs. This is
      *   split into a separate field since many camera operations are extremely latency sensitive.
-     * - [testOnlyDispatcher] is used for testing to overwrite all internal dispatchers to the
-     *   testOnly version. If specified, default executors and handlers are ignored.
      * - [testOnlyScope] is used for testing to overwrite the internal global scope with the test
      *   method scope.
      */
@@ -181,22 +191,8 @@ public interface CameraPipe {
         val defaultBlockingExecutor: Executor? = null,
         val defaultCameraExecutor: Executor? = null,
         val defaultCameraHandler: Handler? = null,
-        val testOnlyDispatcher: CoroutineDispatcher? = null,
+        val defaultCameraHandlerFn: (() -> Handler)? = null,
         val testOnlyScope: CoroutineScope? = null,
-    )
-
-    /**
-     * Application level configuration options for [CameraMetadata] provider(s).
-     *
-     * @param cacheBlocklist is used to prevent the metadata backend from caching the results of
-     *   specific keys.
-     * @param cameraCacheBlocklist is used to prevent the metadata backend from caching the results
-     *   of specific keys for specific cameraIds.
-     */
-    public class CameraMetadataConfig(
-        public val cacheBlocklist: Set<CameraCharacteristics.Key<*>> = emptySet(),
-        public val cameraCacheBlocklist: Map<CameraId, Set<CameraCharacteristics.Key<*>>> =
-            emptyMap(),
     )
 
     /**
@@ -258,21 +254,33 @@ internal class CameraPipeImpl(private val component: CameraPipeComponent) : Came
     override fun createCameraGraph(config: CameraGraph.Config): CameraGraph =
         synchronized(lock) {
             check(!shutdown)
-            createCameraGraphLocked(config)
+            createCameraGraphLocked(config, CameraGraphId.nextId())
         }
 
     override fun createCameraGraphs(config: CameraGraph.ConcurrentConfig): List<CameraGraph> =
         synchronized(lock) {
             check(!shutdown)
-            config.graphConfigs.map { createCameraGraphLocked(it) }
+            val cameraGraphIdMap = buildMap {
+                for (graphConfig in config.graphConfigs) {
+                    put(graphConfig, CameraGraphId.nextId())
+                }
+            }
+            val cameraIds = config.graphConfigs.map { it.camera }.toSet()
+            val concurrentCameraGraphs =
+                ConcurrentCameraGraphs(cameraGraphIdMap.values.toSet(), cameraIds)
+
+            config.graphConfigs.map {
+                it.concurrentCameraGraphs = concurrentCameraGraphs
+                createCameraGraphLocked(it, checkNotNull(cameraGraphIdMap[it]))
+            }
         }
 
     @GuardedBy("lock")
-    private fun createCameraGraphLocked(config: CameraGraph.Config) =
+    private fun createCameraGraphLocked(config: CameraGraph.Config, cameraGraphId: CameraGraphId) =
         Debug.trace("CXCP#CameraGraph-${config.camera}") {
             component
                 .cameraGraphComponentBuilder()
-                .cameraGraphConfigModule(CameraGraphConfigModule(config))
+                .cameraGraphConfigModule(CameraGraphConfigModule(config, cameraGraphId))
                 .build()
                 .cameraGraph()
         }
@@ -280,7 +288,7 @@ internal class CameraPipeImpl(private val component: CameraPipeComponent) : Came
     override fun createFrameGraph(frameGraphConfig: FrameGraph.Config): FrameGraph =
         synchronized(lock) {
             check(!shutdown)
-            createFrameGraphLocked(frameGraphConfig)
+            createFrameGraphLocked(frameGraphConfig, CameraGraphId.nextId(isFrameGraph = true))
         }
 
     override fun createFrameGraphs(
@@ -288,17 +296,33 @@ internal class CameraPipeImpl(private val component: CameraPipeComponent) : Came
     ): List<FrameGraph> =
         synchronized(lock) {
             check(!shutdown)
-            frameGraphConfigs.frameGraphConfigs.map { createFrameGraphLocked(it) }
+            val cameraGraphIdMap = buildMap {
+                for (graphConfig in frameGraphConfigs.frameGraphConfigs) {
+                    put(graphConfig, CameraGraphId.nextId(isFrameGraph = true))
+                }
+            }
+            val cameraIds =
+                frameGraphConfigs.frameGraphConfigs.map { it.cameraGraphConfig.camera }.toSet()
+            val concurrentCameraGraphs =
+                ConcurrentCameraGraphs(cameraGraphIdMap.values.toSet(), cameraIds)
+
+            frameGraphConfigs.frameGraphConfigs.map {
+                it.cameraGraphConfig.concurrentCameraGraphs = concurrentCameraGraphs
+                createFrameGraphLocked(it, checkNotNull(cameraGraphIdMap[it]))
+            }
         }
 
     @GuardedBy("lock")
-    private fun createFrameGraphLocked(frameGraphConfig: FrameGraph.Config) =
+    private fun createFrameGraphLocked(
+        frameGraphConfig: FrameGraph.Config,
+        cameraGraphId: CameraGraphId,
+    ) =
         Debug.trace("CXCP#CreateFrameGraph-${frameGraphConfig.cameraGraphConfig.camera}") {
             val cameraGraphComponent =
                 component
                     .cameraGraphComponentBuilder()
                     .cameraGraphConfigModule(
-                        CameraGraphConfigModule(frameGraphConfig.cameraGraphConfig)
+                        CameraGraphConfigModule(frameGraphConfig.cameraGraphConfig, cameraGraphId)
                     )
                     .build()
             component
@@ -358,10 +382,9 @@ internal class CameraPipeImpl(private val component: CameraPipeComponent) : Came
 
     /**
      * Performs a one-time, potentially slow initialization to fetch and cache
-     * CameraDeviceSetupCompat.
+     * [CameraDeviceSetupCompat].
      *
-     * @param graphConfig The camera graph configuration to prepare for a query.
-     * @return A [CameraDeviceSetupCompat] if the prewarm was successful, otherwise null.
+     * @param graphConfig the camera graph configuration to prepare for a query
      */
     override fun prewarmIsConfigSupported(graphConfig: CameraGraph.Config) {
         val backend = getBackend(graphConfig)
@@ -379,7 +402,8 @@ internal class CameraPipeImpl(private val component: CameraPipeComponent) : Came
                     Log.warn { "Trying to get audio restriction after shutdown! Returning NONE" }
                     return AudioRestrictionMode.AUDIO_RESTRICTION_NONE
                 }
-                component.cameraAudioRestrictionController().globalAudioRestrictionMode
+                return component.cameraAudioRestrictionController().globalAudioRestrictionMode
+                    ?: AudioRestrictionMode.AUDIO_RESTRICTION_NONE
             }
         set(value) =
             synchronized(lock) {

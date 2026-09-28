@@ -17,14 +17,17 @@
 package androidx.compose.foundation.text.modifiers
 
 import androidx.compose.ui.text.Paragraph
+import androidx.compose.ui.text.ParagraphIntrinsics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.resolveDefaults
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastRoundToInt
+import kotlin.collections.emptyList
 
 /**
  * Coerce min and max lines into actual constraints.
@@ -40,16 +43,13 @@ internal class MinLinesConstrainer
     val inputTextStyle: TextStyle,
     val density: Density,
     val fontFamilyResolver: FontFamily.Resolver,
+    val defaultLocaleList: LocaleList,
 ) {
     private val resolvedStyle = resolveDefaults(inputTextStyle, layoutDirection)
     private var lineHeightCache: Float = Float.NaN
     private var oneLineHeightCache: Float = Float.NaN
 
     companion object {
-        // LRU cache of one since this tends to be used for similar styles
-        // ... it may be useful to increase this cache if requested by some dev use case
-        private var last: MinLinesConstrainer? = null
-
         /** Returns a coercer (possibly cached) with these parameters */
         fun from(
             minMaxUtil: MinLinesConstrainer?,
@@ -57,36 +57,28 @@ internal class MinLinesConstrainer
             paramStyle: TextStyle,
             density: Density,
             fontFamilyResolver: FontFamily.Resolver,
+            defaultLocaleList: LocaleList,
         ): MinLinesConstrainer {
             minMaxUtil?.let {
                 if (
                     layoutDirection == it.layoutDirection &&
                         resolveDefaults(paramStyle, layoutDirection) == it.inputTextStyle &&
                         density.density == it.density.density &&
-                        fontFamilyResolver === it.fontFamilyResolver
-                ) {
-                    return it
-                }
-            }
-            last?.let {
-                if (
-                    layoutDirection == it.layoutDirection &&
-                        resolveDefaults(paramStyle, layoutDirection) == it.inputTextStyle &&
-                        density.density == it.density.density &&
-                        fontFamilyResolver === it.fontFamilyResolver
+                        fontFamilyResolver === it.fontFamilyResolver &&
+                        defaultLocaleList == it.defaultLocaleList
                 ) {
                     return it
                 }
             }
             return MinLinesConstrainer(
-                    layoutDirection,
-                    resolveDefaults(paramStyle, layoutDirection),
-                    // other density implementations may hold references to views/activities
-                    // which the cache outlives, potentially causing memory leak.
-                    Density(density.density, density.fontScale),
-                    fontFamilyResolver,
-                )
-                .also { last = it }
+                layoutDirection,
+                resolveDefaults(paramStyle, layoutDirection),
+                // other density implementations may hold references to views/activities
+                // which the cache outlives, potentially causing memory leak.
+                Density(density.density, density.fontScale),
+                fontFamilyResolver,
+                defaultLocaleList,
+            )
         }
     }
 
@@ -101,25 +93,39 @@ internal class MinLinesConstrainer
         if (oneLineHeight.isNaN() || lineHeight.isNaN()) {
             oneLineHeight =
                 Paragraph(
-                        text = EmptyTextReplacement,
-                        style = resolvedStyle,
-                        constraints = Constraints(),
-                        density = density,
-                        fontFamilyResolver = fontFamilyResolver,
+                        paragraphIntrinsics =
+                            ParagraphIntrinsics(
+                                text = EmptyTextReplacement,
+                                style = resolvedStyle,
+                                placeholders = emptyList(),
+                                annotations = emptyList(),
+                                density = density,
+                                softWrap = false,
+                                fontFamilyResolver = fontFamilyResolver,
+                                defaultLocaleList = defaultLocaleList,
+                            ),
                         maxLines = 1,
                         overflow = TextOverflow.Clip,
+                        constraints = Constraints(),
                     )
                     .height
 
             val twoLineHeight =
                 Paragraph(
-                        text = TwoLineTextReplacement,
-                        style = resolvedStyle,
-                        constraints = Constraints(),
-                        density = density,
-                        fontFamilyResolver = fontFamilyResolver,
+                        paragraphIntrinsics =
+                            ParagraphIntrinsics(
+                                text = TwoLineTextReplacement,
+                                style = resolvedStyle,
+                                placeholders = emptyList(),
+                                annotations = emptyList(),
+                                density = density,
+                                softWrap = true,
+                                fontFamilyResolver = fontFamilyResolver,
+                                defaultLocaleList = defaultLocaleList,
+                            ),
                         maxLines = 2,
                         overflow = TextOverflow.Clip,
+                        constraints = Constraints(),
                     )
                     .height
 

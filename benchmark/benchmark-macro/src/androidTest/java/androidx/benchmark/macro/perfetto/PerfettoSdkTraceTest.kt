@@ -18,9 +18,9 @@ package androidx.benchmark.macro.perfetto
 
 import android.os.Build
 import androidx.benchmark.junit4.PerfettoTraceRule
-import androidx.benchmark.macro.runSingleSessionServer
 import androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi
 import androidx.benchmark.perfetto.PerfettoHelper
+import androidx.benchmark.runSingleSessionServer
 import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
@@ -55,13 +55,12 @@ class PerfettoSdkTraceTest(enableAppTagTracing: Boolean, enableUserspaceTracing:
             enableAppTagTracing = enableAppTagTracing,
             enableUserspaceTracing = enableUserspaceTracing,
         ) { trace ->
-            val expectedSlices =
-                sequence {
-                        if (enableAppTagTracing) yield(StringSource.appTagTraceStrings)
-                        if (enableUserspaceTracing) yield(StringSource.userspaceTraceStrings)
-                    }
-                    .flatMap { it }
-                    .toList()
+            val expectedSlices = sequence {
+                if (enableAppTagTracing) yield(StringSource.appTagTraceStrings)
+                if (enableUserspaceTracing) yield(StringSource.userspaceTraceStrings)
+            }
+                .flatMap { it }
+                .toList()
             val actualSlices =
                 TraceProcessor.runSingleSessionServer(trace.path) {
                     StringSource.allTraceStrings.flatMap {

@@ -17,6 +17,7 @@
 package androidx.build.lint
 
 import com.android.SdkConstants.ATTR_VALUE
+import com.android.tools.lint.checks.ApiLookup
 import com.android.tools.lint.checks.TypedefDetector
 import com.android.tools.lint.detector.api.AnnotationInfo
 import com.android.tools.lint.detector.api.AnnotationOrigin
@@ -24,6 +25,7 @@ import com.android.tools.lint.detector.api.AnnotationUsageInfo
 import com.android.tools.lint.detector.api.AnnotationUsageType
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.ConstantEvaluator
+import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Implementation
 import com.android.tools.lint.detector.api.Issue
@@ -33,16 +35,19 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.StringOption
+import com.android.tools.lint.detector.api.getInternalMethodName
 import com.android.tools.lint.detector.api.getMethodName
 import com.android.tools.lint.detector.api.isUnconditionalReturn
 import com.intellij.lang.java.JavaLanguage
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
-import com.intellij.psi.PsiLiteralValue
+import com.intellij.psi.PsiJavaFile
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.PsiStatement
+import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.psi.KtBlockExpression
 import org.jetbrains.kotlin.psi.KtClassInitializer
@@ -57,8 +62,10 @@ import org.jetbrains.uast.UAnnotated
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UBlockExpression
 import org.jetbrains.uast.UCallExpression
+import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UClassLiteralExpression
 import org.jetbrains.uast.UElement
+import org.jetbrains.uast.UField
 import org.jetbrains.uast.UFile
 import org.jetbrains.uast.UIfExpression
 import org.jetbrains.uast.UMethod
@@ -72,20 +79,34 @@ import org.jetbrains.uast.UastBinaryOperator
 import org.jetbrains.uast.UastFacade
 import org.jetbrains.uast.UastPrefixOperator
 import org.jetbrains.uast.evaluateString
+import org.jetbrains.uast.getContainingUClass
+import org.jetbrains.uast.isInjectionHost
 import org.jetbrains.uast.skipParenthesizedExprDown
 import org.jetbrains.uast.toUElement
 import org.jetbrains.uast.tryResolve
 import org.jetbrains.uast.util.isConstructorCall
 
 /**
- * Enforced flag checking in the Android platform; see go/android-flagged-apis.
+ * Enforced flag checking in the Android platform; see go/android-flagged-apis. Also checks if a
+ * -dontwarn rule is present for the flagged API class.
  *
  * **NOTE:** This file is a fork of the original sources in the Android lint code base, see
  * `lint-checks/src/main/java/com/android/tools/lint/checks/optional/FlaggedApiDetector.kt`
  */
 class FlaggedApiDetector : Detector(), SourceCodeScanner {
+    private var apiDatabase: ApiLookup? = null
+    private val proguardFileCache = ConcurrentHashMap<File, List<String>>()
+
+    override fun beforeCheckRootProject(context: Context) {
+        if (apiDatabase == null) {
+            apiDatabase = ApiLookup.get(context.client, context.project.buildTarget)
+        }
+    }
 
     companion object Issues {
+        private const val API_LEVEL_UNKNOWN_OR_1 = -1
+        private const val API_LEVEL_PREVIEW = 10000
+
         private val IMPLEMENTATION =
             Implementation(FlaggedApiDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
@@ -107,7 +128,8 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
                     explanation =
                         """
           This lint check looks for accesses of APIs marked with `@FlaggedApi(X)` without \
-          a guarding `if (Flags.X)` check or equivalent gating check. See go/android-flagged-apis.
+          a guarding `if (Flags.X)` check or equivalent gating check. See go/android-flagged-apis
+          and go/androidx-api-guidelines#compat-flags.
           """,
                     briefDescription = "FlaggedApi access without check",
                     category = Category.CORRECTNESS,
@@ -118,20 +140,39 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
                 )
                 .setOptions(listOf(ALLOWLIST_OPTION))
 
+        @JvmField
+        val MISSING_DONTWARN_ISSUE =
+            Issue.create(
+                id = "AndroidXMissingDontWarnRule",
+                briefDescription = "Missing -dontwarn ProGuard rule for Flagged API class.",
+                explanation =
+                    """
+                Classes annotated with @FlaggedApi (or their inner classes) might not exist
+                in the app's classpath if the app compiles against an SDK where the flag is off.
+                To prevent R8 errors for consumers of this library, the library must provide a consumer
+                ProGuard rule like '-dontwarn <class.name>'. This check ensures such a rule
+                exists in this module's 'consumer-rules.pro' file. See
+                go/androidx-api-guidelines#preventing-r8-warnings
+            """,
+                category = Category.CORRECTNESS,
+                priority = 7,
+                severity = Severity.ERROR,
+                androidSpecific = true,
+                implementation = IMPLEMENTATION,
+            )
+
         // Message embedded in the autofix reminding the developer to implement a fallback.
         private const val TODO_FALLBACK_MESSAGE = "Implement fallback behavior"
 
+        private const val CHECKS_FLAG_ANNOTATION = "androidx.annotation.ChecksFlag"
         private const val COMPAT_FLAGS_CLASS = "androidx.core.flagging.Flags"
         private const val COMPAT_FLAGS_COMPANION_CLASS = "androidx.core.flagging.Flags.Companion"
-        private const val CHECKS_ACONFIG_FLAG_ANNOTATION = "androidx.annotation.ChecksAconfigFlag"
-        private const val REQUIRES_ACONFIG_FLAG_ANNOTATION =
-            "androidx.annotation.RequiresAconfigFlag"
-        private const val ATTR_FLAG = "flag"
         private const val FLAGGED_API_ANNOTATION = "android.annotation.FlaggedApi"
+        private const val REQUIRES_FLAG_ANNOTATION = "androidx.annotation.RequiresFlag"
     }
 
     override fun applicableAnnotations(): List<String> {
-        return listOf(FLAGGED_API_ANNOTATION, REQUIRES_ACONFIG_FLAG_ANNOTATION)
+        return listOf(CHECKS_FLAG_ANNOTATION, FLAGGED_API_ANNOTATION, REQUIRES_FLAG_ANNOTATION)
     }
 
     override fun isApplicableAnnotationUsage(type: AnnotationUsageType): Boolean {
@@ -142,7 +183,10 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
             AnnotationUsageType.CLASS_REFERENCE,
             AnnotationUsageType.ANNOTATION_REFERENCE,
             AnnotationUsageType.EXTENDS,
-            AnnotationUsageType.DEFINITION -> true
+            AnnotationUsageType.DEFINITION,
+            // for dontwarn rules only
+            AnnotationUsageType.VARIABLE_REFERENCE,
+            AnnotationUsageType.METHOD_CALL_PARAMETER -> true
             else -> false
         }
     }
@@ -157,23 +201,44 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
         annotationInfo: AnnotationInfo,
         usageInfo: AnnotationUsageInfo,
     ) {
-        val flagString = getFlaggedApiString(context, annotationInfo.annotation)
+        // Validate usage of the annotation itself.
+        val flagString =
+            if (annotationInfo.qualifiedName == FLAGGED_API_ANNOTATION) {
+                annotationInfo.annotation.findAttributeAsResolvedString(context, ATTR_VALUE)
+            } else {
+                annotationInfo.annotation.findAttributeAsInlineString(ATTR_VALUE)
+            }
         if (flagString == null) {
+            val message =
+                if (annotationInfo.qualifiedName == FLAGGED_API_ANNOTATION) {
+                    // This should never happen! All occurrences of `@FlaggedApi` should be coming
+                    // from
+                    // the SDK stubs and therefore use inline strings despite being defined in the
+                    // SDK
+                    // sources using constants.
+                    "Failed to obtain flag string from FlaggedApi annotation."
+                } else {
+                    "Failed to obtain string value for aconfig flag. The `value` argument must be an " +
+                        "inline string."
+                }
             context.report(
                 ISSUE,
-                element,
-                context.getLocation(element),
-                "Failed to obtain flag string",
+                annotationInfo.annotation,
+                context.getLocation(annotationInfo.annotation),
+                message,
             )
             return
         }
 
-        // Avoid checking usage of the `@FlaggedApi` or `@RequiresAconfigFlag` annotations
-        // themselves.
+        // Avoid checking any usages of `@ChecksFlag`.
+        if (annotationInfo.qualifiedName == CHECKS_FLAG_ANNOTATION) return
+
+        val isFlaggedApiAnnotation = annotationInfo.qualifiedName == FLAGGED_API_ANNOTATION
+
+        // Avoid checking usage of the `@FlaggedApi` or `@RequiresFlag` annotations themselves.
         if (annotationInfo.origin == AnnotationOrigin.SELF) {
             if (
-                annotationInfo.qualifiedName == FLAGGED_API_ANNOTATION ||
-                    annotationInfo.qualifiedName == REQUIRES_ACONFIG_FLAG_ANNOTATION
+                isFlaggedApiAnnotation || annotationInfo.qualifiedName == REQUIRES_FLAG_ANNOTATION
             ) {
                 return
             }
@@ -181,9 +246,24 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
             return
         }
 
+        // Reduce false positives on flagged APIs by only looking at flags for platform APIs that
+        // were either definitely added in a preview SDK or don't have enough information to know
+        // for certain.
+        if (isUsageOfPlatformApi(usageInfo) && !isUsageOfPreviewApi(context, usageInfo)) {
+            return
+        }
+
         // Avoid checking flagged deprecations. We don't allow adding APIs as deprecated, so we can
         // safely assume that the flag applies to the deprecated state rather than the API itself.
         if (isFlaggedDeprecation(usageInfo)) return
+        if (isFlaggedApiAnnotation) {
+            val referencedPsiClass = usageInfo.getReferencedPsiClass()
+            if (referencedPsiClass != null) {
+                checkMissingDontWarnRule(context, element, referencedPsiClass)
+            }
+        }
+
+        if (isPureTypeReference(usageInfo.type)) return
 
         // Only allowlisted libraries are allowed to call flagged APIs.
         if (!isUsageInAllowlistedLibrary(context, usageInfo.usage)) {
@@ -236,6 +316,85 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
         context.report(ISSUE, element, context.getLocation(element), message, quickfixData)
     }
 
+    private fun isPureTypeReference(type: AnnotationUsageType): Boolean {
+        return when (type) {
+            AnnotationUsageType.VARIABLE_REFERENCE,
+            AnnotationUsageType.METHOD_CALL_PARAMETER -> true
+            else -> false
+        }
+    }
+
+    private fun AnnotationUsageInfo.getReferencedPsiClass(): PsiClass? {
+        return when (val ref = this.referenced) {
+            is PsiClass -> ref
+            is PsiField -> ref.containingClass
+            is PsiMethod -> ref.containingClass
+            else -> (usage as? UCallExpression)?.getReferencedPsiClass()
+        }
+    }
+
+    private fun UCallExpression.getReferencedPsiClass(): PsiClass? =
+        takeIf { it.isConstructorCall() }?.classReference?.tryResolve() as? PsiClass
+
+    private fun checkMissingDontWarnRule(context: JavaContext, node: UElement, psiClass: PsiClass) {
+        if (isClassOrOuterClassFlagged(psiClass)) {
+            val proguardName = getProguardName(psiClass) ?: return
+            if (getConsumerProguardFile(context).contains(proguardName)) {
+                return
+            }
+            val location = context.getLocation(node)
+            context.report(
+                MISSING_DONTWARN_ISSUE,
+                node,
+                location,
+                "Usage of Flagged API class '$proguardName' requires a matching '-dontwarn $proguardName' rule in this module's consumer ProGuard file.",
+            )
+        }
+    }
+
+    private fun getConsumerProguardFile(context: Context): List<String> =
+        proguardFileCache.getOrPut(context.project.dir) {
+            parseConsumerProguardFiles(context.project.dir)
+        }
+
+    private fun parseConsumerProguardFiles(projectDir: File): List<String> {
+        val standardPath = File(projectDir, "consumer-rules.pro")
+        val srcMainPath = File(projectDir, "src/main/consumer-rules.pro")
+
+        return listOf(standardPath, srcMainPath)
+            .filter { it.isFile }
+            .flatMap { file ->
+                file
+                    .readLines() // lines
+                    .map { it.trim() } // trimmed
+                    .filter { line -> // prefixed with -dontwarn
+                        line.trim().startsWith("-dontwarn ")
+                    }
+                    .map { // just the class names
+                        it.substringAfter("-dontwarn ").trim()
+                    }
+                    .filter { className -> // class names we care about
+                        className.isNotEmpty() &&
+                            !className.contains("*") && // ignore wildcards
+                            !className.startsWith("@") // and annotations
+                    }
+            }
+    }
+
+    private fun isClassOrOuterClassFlagged(psiClass: PsiClass?): Boolean {
+        if (psiClass == null) return false
+        return psiClass.hasAnnotation(FLAGGED_API_ANNOTATION) ||
+            isClassOrOuterClassFlagged(psiClass.containingClass)
+    }
+
+    private fun getProguardName(psiClass: PsiClass): String? {
+        val packageName = (psiClass.containingFile as? PsiJavaFile)?.packageName ?: ""
+        val className =
+            psiClass.qualifiedName?.removePrefix("${packageName}.")?.replace(".", "$")
+                ?: return null
+        return if (packageName.isNotEmpty()) "$packageName.$className" else className
+    }
+
     private val AnnotationUsageInfo.referencedElement: UElement?
         get() =
             referenced.toUElement()
@@ -246,10 +405,10 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
                 }
 
     private fun isUsageInAllowlistedLibrary(context: JavaContext, usage: UElement): Boolean =
-        context.getAllowlistedCoordinates().let { allowlistedCoordinates ->
-            (context.evaluator.getLibrary(usage) ?: context.project.mavenCoordinate)?.let {
-                allowlistedCoordinates.contains(it.groupId) ||
-                    allowlistedCoordinates.contains("${it.groupId}:${it.artifactId}")
+        context.getAllowlistedCoordinates().let { allowlist ->
+            context.evaluator.getLibrary(usage)?.let {
+                allowlist.contains(it.groupId) ||
+                    allowlist.contains("${it.groupId}:${it.artifactId.substringAfterLast(':')}")
             } ?: true // If we can't obtain the Maven coordinate, assume we're in a lint test.
         }
 
@@ -258,16 +417,70 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
             it.substringAfter('-').startsWith("alpha") || it == "unspecified" || it.isEmpty()
         } ?: true // If we can't obtain the Maven coordinate, assume we're in a lint test or app.
 
+    private fun isUsageOfPlatformApi(usageInfo: AnnotationUsageInfo): Boolean =
+        when (val element = usageInfo.referencedElement) {
+            is UClass -> element.qualifiedName
+            is UField -> element.getContainingUClass()?.qualifiedName
+            is UMethod -> element.getContainingUClass()?.qualifiedName
+            else -> null
+        }?.startsWith("android.") ?: false
+
+    private fun isUsageOfPreviewApi(context: JavaContext, usageInfo: AnnotationUsageInfo): Boolean =
+        when (val element = usageInfo.referencedElement) {
+            is UClass -> isPreviewClass(context, element)
+            is UField -> isPreviewField(element)
+            is UMethod -> isPreviewMethod(context, element)
+            else -> false
+        }
+
+    private fun isPreviewField(field: UField): Boolean {
+        val owner = field.getContainingUClass()?.qualifiedName ?: return false
+        val addedInSdk = apiDatabase?.getFieldVersions(owner, field.name)?.min() ?: return false
+        return addedInSdk == API_LEVEL_PREVIEW || addedInSdk == API_LEVEL_UNKNOWN_OR_1
+    }
+
+    private fun isPreviewMethod(context: JavaContext, method: UMethod): Boolean {
+        val owner = method.getContainingUClass()?.qualifiedName ?: return false
+        val name = getInternalMethodName(method.javaPsi)
+        val desc =
+            context.evaluator.getMethodDescription(
+                method.javaPsi,
+                includeName = false,
+                includeReturn = false,
+            ) ?: return false
+        val addedInSdk = apiDatabase?.getMethodVersions(owner, name, desc)?.min() ?: return false
+        return addedInSdk == API_LEVEL_PREVIEW || addedInSdk == API_LEVEL_UNKNOWN_OR_1
+    }
+
+    private fun isPreviewClass(context: JavaContext, clazz: UClass): Boolean {
+        val className = clazz.qualifiedName ?: return false
+        val addedInSdk = apiDatabase?.getClassVersions(className)?.min() ?: return false
+        return addedInSdk == API_LEVEL_PREVIEW || addedInSdk == API_LEVEL_UNKNOWN_OR_1
+    }
+
     private fun isFlaggedDeprecation(usageInfo: AnnotationUsageInfo): Boolean =
         (usageInfo.referencedElement as? UAnnotated)?.let {
             it.findAnnotation("java.lang.Deprecated") != null ||
                 it.findAnnotation("kotlin.Deprecated") != null
         } == true
 
-    private fun getFlaggedApiString(context: JavaContext, annotation: UAnnotation): String? =
-        annotation.findAttributeValue(ATTR_VALUE)?.let { value ->
+    private fun UAnnotation.findAttributeAsResolvedString(
+        context: JavaContext,
+        name: String,
+    ): String? =
+        // Sometimes we get an UnknownJavaExpression from UAST and need to drop to PSI.
+        findAttributeValue(name)?.sourcePsi?.let { value ->
             ConstantEvaluator.evaluate(context, value)
         } as? String
+
+    private fun UAnnotation.findAttributeAsInlineString(name: String): String? =
+        // Work around a bug where sometimes the attribute name is missing.
+        (findAttributeValue(name) ?: findAttributeValue(null))?.let {
+            // Work around a bug in UAST where `evaluate()` will resolve a constant even though it's
+            // only supposed to resolve inline strings. Interestingly, this only happens in Kotlin
+            // sources and only when the constant is not fully-qualified.
+            if (it.isInjectionHost()) it.evaluateString() else null
+        }
 
     /**
      * Is the given [element] within a code block already annotated with the same flagged api as
@@ -284,7 +497,8 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
                 //noinspection AndroidLintExternalAnnotations
                 for (annotation in current.uAnnotations) {
                     if (!applicableAnnotations().contains(annotation.qualifiedName)) continue
-                    val flag = getFlaggedApiString(context, annotation) ?: continue
+                    val flag =
+                        annotation.findAttributeAsResolvedString(context, ATTR_VALUE) ?: continue
                     if (flag == flagString) return true
                 }
             }
@@ -301,7 +515,9 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
                             UastFacade.convertElement(psiAnnotation, null) as? UAnnotation
                                 ?: continue
                         if (!applicableAnnotations().contains(annotation.qualifiedName)) continue
-                        val flag = getFlaggedApiString(context, annotation) ?: continue
+                        val flag =
+                            annotation.findAttributeAsResolvedString(context, ATTR_VALUE)
+                                ?: continue
                         if (flag == flagString) return true
                     }
                 }
@@ -414,15 +630,8 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
                 if (
                     (resolved.toUElement() as UAnnotated)
                         .uAnnotations
-                        .filter { it.qualifiedName == CHECKS_ACONFIG_FLAG_ANNOTATION }
-                        .mapNotNull {
-                            val attr =
-                                it.findAttributeValue(ATTR_FLAG)
-                                    ?: it.findAttributeValue(null)
-                                    ?: return@mapNotNull null
-                            attr.evaluateString()
-                                ?: (attr.javaPsi as? PsiLiteralValue)?.value as? String
-                        }
+                        .filter { it.qualifiedName == CHECKS_FLAG_ANNOTATION }
+                        .mapNotNull { it.findAttributeAsInlineString(ATTR_VALUE) }
                         .contains(flagString)
                 ) {
                     return true

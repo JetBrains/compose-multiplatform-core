@@ -16,18 +16,19 @@
 
 package androidx.text.vertical
 
-import android.graphics.Paint
 import android.graphics.Paint.FontMetricsInt
 import android.text.SpannableString
 import android.text.TextPaint
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
 
 private const val SPAN_FLAG = SpannableString.SPAN_INCLUSIVE_EXCLUSIVE
 
-@RunWith(JUnit4::class)
+@RunWith(AndroidJUnit4::class)
+@SmallTest
 class LineLayoutRunTest {
     private val PREFIX = "PREFIX_PREFIX_PREFIX"
     private val SUFFIX = "SUFFIX_SUFFIX_SUFFIX"
@@ -45,19 +46,13 @@ class LineLayoutRunTest {
 
     private val PAINT = TextPaint().apply { textSize = ONE_EM }
 
-    private fun getVerticalAdvance(text: String): Float {
-        PAINT.flags = PAINT.flags or Paint.VERTICAL_TEXT_FLAG
-        return PAINT.measureText(text)
-    }
+    private fun getVerticalAdvance(text: String): Float = PAINT.measureTextVertical(text)
 
-    private fun getHorizontalAdvance(text: String): Float {
-        PAINT.flags = PAINT.flags and Paint.VERTICAL_TEXT_FLAG.inv()
-        return PAINT.measureText(text)
-    }
+    private fun getHorizontalAdvance(text: String): Float = PAINT.measureText(text)
 
     private fun getHorizontalLineHeight(text: String): Float {
         val fm = FontMetricsInt()
-        PAINT.getFontMetricsInt(text, 0, text.length, 0, text.length, false, fm)
+        PAINT.getFontMetricsIntCompat(text, 0, text.length, 0, text.length, false, fm)
         return (fm.descent - fm.ascent).toFloat()
     }
 
@@ -69,8 +64,8 @@ class LineLayoutRunTest {
     ) = createLayoutRun(text, start, end, PAINT, orientation)
 
     @Test
-    fun `LineLayout plain text with Mixed`() {
-        createLineLayout(TEXT, LATIN_START, JAPANESE_END, PAINT, TextOrientation.MIXED).run {
+    fun lineLayout_PlainTextWithMixed() {
+        createLineLayout(TEXT, LATIN_START, JAPANESE_END, PAINT, TextOrientation.Mixed).run {
             assertThat(start).isEqualTo(LATIN_START)
             assertThat(end).isEqualTo(JAPANESE_END)
             assertThat(width).isEqualTo(ONE_EM) // width is 1em.
@@ -89,8 +84,8 @@ class LineLayoutRunTest {
     }
 
     @Test
-    fun `LineLayout plain text with Upright`() {
-        createLineLayout(TEXT, LATIN_START, JAPANESE_END, PAINT, TextOrientation.UPRIGHT).run {
+    fun lineLayout_PlainTextWithUpright() {
+        createLineLayout(TEXT, LATIN_START, JAPANESE_END, PAINT, TextOrientation.Upright).run {
             assertThat(start).isEqualTo(LATIN_START)
             assertThat(end).isEqualTo(JAPANESE_END)
             assertThat(width).isEqualTo(ONE_EM) // width is 1em.
@@ -106,8 +101,8 @@ class LineLayoutRunTest {
     }
 
     @Test
-    fun `LineLayout plain text with Sideways`() {
-        createLineLayout(TEXT, LATIN_START, JAPANESE_END, PAINT, TextOrientation.SIDEWAYS).run {
+    fun lineLayout_PlainTextWithSideways() {
+        createLineLayout(TEXT, LATIN_START, JAPANESE_END, PAINT, TextOrientation.Sideways).run {
             assertThat(start).isEqualTo(LATIN_START)
             assertThat(end).isEqualTo(JAPANESE_END)
             assertThat(width).isEqualTo(ONE_EM) // width is 1em.
@@ -123,12 +118,12 @@ class LineLayoutRunTest {
     }
 
     @Test
-    fun `LineLayout span override text with Sideways`() {
+    fun lineLayout_SpanOverridesTextWithSideways() {
         val spanned =
             SpannableString(TEXT).apply {
                 setSpan(TextOrientationSpan.Sideways(), JAPANESE_START, JAPANESE_END, SPAN_FLAG)
             }
-        createLineLayout(spanned, LATIN_START, JAPANESE_END, PAINT, TextOrientation.MIXED).run {
+        createLineLayout(spanned, LATIN_START, JAPANESE_END, PAINT, TextOrientation.Mixed).run {
             assertThat(start).isEqualTo(LATIN_START)
             assertThat(end).isEqualTo(JAPANESE_END)
             assertThat(width).isEqualTo(ONE_EM) // width is 1em.
@@ -144,12 +139,12 @@ class LineLayoutRunTest {
     }
 
     @Test
-    fun `LineLayout span override text with TateChuYoko`() {
+    fun lineLayout_SpanOverridesTextWithTateChuYoko() {
         val spanned =
             SpannableString(TEXT).apply {
-                setSpan(TextOrientationSpan.TextCombineUpright(), LATIN_START, LATIN_END, SPAN_FLAG)
+                setSpan(TextOrientationSpan.CombineUpright(), LATIN_START, LATIN_END, SPAN_FLAG)
             }
-        createLineLayout(spanned, LATIN_START, JAPANESE_END, PAINT, TextOrientation.MIXED).run {
+        createLineLayout(spanned, LATIN_START, JAPANESE_END, PAINT, TextOrientation.Mixed).run {
             assertThat(start).isEqualTo(LATIN_START)
             assertThat(end).isEqualTo(JAPANESE_END)
             // Overall line width is extended to 1.1em because of the long TateChuYoko span.

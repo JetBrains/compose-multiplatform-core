@@ -29,79 +29,105 @@ import android.util.Log
 import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
+import androidx.biometric.AuthenticationRequest
 import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt.AuthenticationCallback
 import androidx.biometric.BiometricPrompt.CryptoObject
 import androidx.biometric.BiometricPrompt.PromptInfo
 import androidx.biometric.R
+import androidx.biometric.internal.data.CanceledFrom
+import androidx.biometric.internal.viewmodel.AuthenticationViewModel
 import androidx.biometric.utils.AuthenticatorUtils
 import androidx.biometric.utils.CryptoObjectUtils
 import androidx.biometric.utils.ErrorUtils
 import androidx.biometric.utils.PromptContentViewUtils
-import androidx.lifecycle.Observer
+import androidx.lifecycle.lifecycleScope
 import java.util.concurrent.Executor
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 private const val TAG = "AuthHandlerBP"
 
+/**
+ * An [AuthenticationHandler] that uses the framework [android.hardware.biometrics.BiometricPrompt]
+ * for handling the authentication flow.
+ *
+ * This handler is responsible for constructing and displaying the system biometric prompt based on
+ * the configuration provided in the [AuthenticationViewModel], and processing the results. It uses
+ * an internal [AuthenticationManager] to manage state and interactions.
+ */
 internal class AuthenticationHandlerBiometricPrompt(
     private val authenticationManager: AuthenticationManager
 ) : AuthenticationHandler {
-    private val context = authenticationManager.context
-    private val viewModel = authenticationManager.viewModel
-    private val clientExecutor = authenticationManager.clientExecutor
-    private val isNegativeButtonPressPendingObserver =
-        authenticationManager.isNegativeButtonPressPendingObserver
-    private var isPrepared: Boolean = false
+    val context
+        get() = authenticationManager.context
 
-    private val isMoreOptionsButtonPressPendingObserver =
-        Observer { moreOptionsButtonPressPending: Boolean? ->
-            if (moreOptionsButtonPressPending != null && moreOptionsButtonPressPending) {
-                if (viewModel.isPromptShowing) {
-                    onMoreOptionsButtonPressed()
+    val viewModel
+        get() = authenticationManager.viewModel
+
+    val lifecycleOwner
+        get() = authenticationManager.lifecycleOwner
+
+    val clientExecutor
+        get() = authenticationManager.clientExecutor
+
+    init {
+        val resultDispatcher =
+            object :
+                AuthenticationResultDispatcher(
+                    context,
+                    viewModel,
+                    clientExecutor,
+                    authenticationManager.clientAuthenticationCallback,
+                    authenticationManager.confirmCredentialActivityLauncher,
+                    { authenticationManager.dismiss() },
+                ) {
+                override fun onAuthenticationError(errorCode: Int, errorMessage: CharSequence?) {
+                    // Ensure we're only sending publicly defined errors.
+                    val knownErrorCode = ErrorUtils.toKnownErrorCodeForAuthenticate(errorCode)
+                    if (
+                        ErrorUtils.isLockoutError(knownErrorCode) &&
+                            viewModel.isOverriddenDeviceCredential
+                    ) {
+                        showKMAsFallback()
+                        return
+                    }
+
+                    val errorString = errorMessage ?: context.getString(R.string.default_error_msg)
+                    sendErrorAndDismiss(knownErrorCode, errorString)
                 }
-                viewModel.setMoreOptionsButtonPressPending(false)
             }
-        }
 
-    override fun prepareAuth() {
-        if (isPrepared) {
-            return
-        }
-        authenticationManager.prepareAuth { errorCode, errorMessage ->
-            onAuthenticationError(errorCode, errorMessage)
-        }
-        connectViewModelForButtons()
-
-        isPrepared = true
-    }
-
-    override fun destroy() {
-        authenticationManager.destroy()
-        disconnectViewModelForButtons()
-        isPrepared = false
+        val uiStateObserver =
+            object : AuthenticationUiStateObserver() {
+                override fun createObserverJob(): Job =
+                    lifecycleOwner.lifecycleScope.launch {
+                        launch {
+                            viewModel.isNegativeButtonPressPending.collect {
+                                authenticationManager.isNegativeButtonPressPendingObserver()
+                            }
+                        }
+                        launch {
+                            viewModel.isFallbackOptionPressPending.collect { fallback ->
+                                onFallbackOptionPressed(fallback)
+                            }
+                        }
+                        launch {
+                            viewModel.isMoreOptionsButtonPressPending.collect {
+                                onMoreOptionsButtonPressed()
+                            }
+                        }
+                    }
+            }
+        authenticationManager.initialize(resultDispatcher, uiStateObserver)
     }
 
     override fun authenticate(info: PromptInfo, crypto: CryptoObject?) {
-        prepareAuth()
         authenticationManager.authenticate(info, crypto) { showAuthentication() }
     }
 
     override fun cancelAuthentication(canceledFrom: CanceledFrom) {
         authenticationManager.cancelAuthentication(canceledFrom)
-        destroy()
-    }
-
-    private fun connectViewModelForButtons() {
-        viewModel.isNegativeButtonPressPending.observeForever(isNegativeButtonPressPendingObserver)
-        viewModel.isMoreOptionsButtonPressPending.observeForever(
-            isMoreOptionsButtonPressPendingObserver
-        )
-    }
-
-    private fun disconnectViewModelForButtons() {
-        viewModel.isNegativeButtonPressPending.removeObserver(isNegativeButtonPressPendingObserver)
-        viewModel.isMoreOptionsButtonPressPending.removeObserver(
-            isMoreOptionsButtonPressPendingObserver
-        )
     }
 
     /**
@@ -125,7 +151,7 @@ internal class AuthenticationHandlerBiometricPrompt(
             Api28Impl.setDescription(builder, description)
         }
 
-        val negativeButtonText: CharSequence? = viewModel.negativeButtonText
+        val negativeButtonText: CharSequence? = viewModel.singleFallbackOptionText
         if (negativeButtonText != null && !TextUtils.isEmpty(negativeButtonText)) {
             Api28Impl.setNegativeButton(
                 builder,
@@ -134,6 +160,19 @@ internal class AuthenticationHandlerBiometricPrompt(
                 viewModel.negativeButtonListener,
             )
         }
+
+        val fallbackOptionList = viewModel.multipleFallbackOptionList
+        fallbackOptionList
+            ?.filterIsInstance<AuthenticationRequest.Biometric.Fallback.CustomOption>()
+            ?.forEach {
+                Api36MinorImpl.addFallbackOption(
+                    builder,
+                    it.text,
+                    it.iconType,
+                    clientExecutor,
+                    viewModel.fallbackOptionListener(it),
+                )
+            }
 
         // Set the confirmation required option introduced in Android 10 (API 29).
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -169,7 +208,7 @@ internal class AuthenticationHandlerBiometricPrompt(
             if (logoBitmap != null) {
                 Api35Impl.setLogoBitmap(builder, logoBitmap)
             }
-            if (logoDescription != null && !logoDescription.isEmpty()) {
+            if (!logoDescription.isNullOrEmpty()) {
                 Api35Impl.setLogoDescription(builder, logoDescription)
             }
             if (contentView != null) {
@@ -211,27 +250,8 @@ internal class AuthenticationHandlerBiometricPrompt(
             Log.e(TAG, "Got NPE while authenticating with biometric prompt.", e)
             val errorCode = androidx.biometric.BiometricPrompt.ERROR_HW_UNAVAILABLE
             val errorString = context.getString(R.string.default_error_msg)
-            authenticationManager.sendErrorAndDismiss(errorCode, errorString)
+            authenticationManager.resultDispatcher.sendErrorAndDismiss(errorCode, errorString)
         }
-    }
-
-    /** Callback that is run when the view model receives an unrecoverable error result. */
-    private fun onAuthenticationError(errorCode: Int, errorMessage: CharSequence?) {
-        // Ensure we're only sending publicly defined errors.
-        val knownErrorCode = ErrorUtils.toKnownErrorCode(errorCode)
-        if (
-            ErrorUtils.isLockoutError(knownErrorCode) &&
-                context.isManagingDeviceCredentialButton(viewModel.allowedAuthenticators)
-        ) {
-            authenticationManager.showKMAsFallback()
-            return
-        }
-
-        var errorString = errorMessage
-        if (errorString == null) {
-            errorString = context.getString(R.string.default_error_msg)
-        }
-        authenticationManager.sendErrorAndDismiss(knownErrorCode, errorString)
     }
 
     /**
@@ -239,11 +259,43 @@ internal class AuthenticationHandlerBiometricPrompt(
      * pressed on the prompt content.
      */
     private fun onMoreOptionsButtonPressed() {
-        authenticationManager.sendErrorAndDismiss(
+        authenticationManager.resultDispatcher.sendErrorAndDismiss(
             androidx.biometric.BiometricPrompt.ERROR_CONTENT_VIEW_MORE_OPTIONS_BUTTON,
             context.getString(R.string.content_view_more_options_button_clicked),
         )
         cancelAuthentication(CanceledFrom.MORE_OPTIONS_BUTTON)
+    }
+
+    /**
+     * Callback that is run when the view model reports that the fallback options has been pressed.
+     */
+    private fun onFallbackOptionPressed(
+        fallback: AuthenticationRequest.Biometric.Fallback.CustomOption
+    ) {
+        authenticationManager.resultDispatcher.sendFallbackOptionAndDismiss(fallback)
+        cancelAuthentication(CanceledFrom.FALLBACK_OPTION)
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES_FULL.BAKLAVA_1)
+private object Api36MinorImpl {
+    /**
+     * Sets the text, icon, executor, and click listener for a fallback option in biometric prompt.
+     *
+     * @param text Text to be shown on the fallback option for the prompt.
+     * @param iconType Icon to be shown for the fallback option
+     * @param executor Executor that will be used to run the on click callback.
+     * @param listener Listener containing a callback to be run when the button is pressed.
+     */
+    @DoNotInline
+    fun addFallbackOption(
+        builder: BiometricPrompt.Builder,
+        text: CharSequence,
+        iconType: Int,
+        executor: Executor,
+        listener: DialogInterface.OnClickListener,
+    ) {
+        builder.addFallbackOption(text, iconType, executor, listener)
     }
 }
 

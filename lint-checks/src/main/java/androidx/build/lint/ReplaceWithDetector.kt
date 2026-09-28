@@ -80,28 +80,30 @@ class ReplaceWithDetector : Detector(), SourceCodeScanner {
         // Don't warn for Kotlin replacement in Kotlin files -- that's the Kotlin Compiler's job.
         if (qualifiedName == KOTLIN_DEPRECATED_ANNOTATION && isKotlin(usage.lang)) return
 
-        var (expression, imports) =
-            when (qualifiedName) {
-                KOTLIN_DEPRECATED_ANNOTATION -> {
-                    val replaceWith =
-                        annotation.findAttributeValue("replaceWith")?.unwrap() as? UCallExpression
-                            ?: return
-                    val expression =
-                        replaceWith.valueArguments.getOrNull(0)?.parseLiteral() ?: return
-                    val imports =
-                        replaceWith.valueArguments.getOrNull(1)?.parseVarargLiteral() ?: emptyList()
-                    Pair(expression, imports)
-                }
-                JAVA_REPLACE_WITH_ANNOTATION -> {
-                    val expression =
-                        annotation.findAttributeValue("expression")?.let { expr ->
-                            ConstantEvaluator.evaluate(context, expr)
-                        } as? String ?: return
-                    val imports = annotation.getAttributeValueVarargLiteral("imports")
-                    Pair(expression, imports)
-                }
-                else -> return
+        var expression: String
+        val imports: List<String>
+        when (qualifiedName) {
+            KOTLIN_DEPRECATED_ANNOTATION -> {
+                val replaceWith =
+                    annotation.findAttributeValue("replaceWith")?.unwrap() as? UCallExpression
+                        ?: return
+                expression =
+                    replaceWith.valueArguments.getOrNull(0)?.parseLiteral(context) ?: return
+                imports =
+                    replaceWith.valueArguments.getOrNull(1)?.parseVarargLiteral(context)
+                        ?: emptyList()
+                Pair(expression, imports)
             }
+            JAVA_REPLACE_WITH_ANNOTATION -> {
+                expression =
+                    annotation.findAttributeValue("expression")?.let { expr ->
+                        ConstantEvaluator.evaluate(context, expr)
+                    } as? String ?: return
+                imports = annotation.getAttributeValueVarargLiteral(context, "imports")
+                Pair(expression, imports)
+            }
+            else -> return
+        }
 
         var location = context.getLocation(usage)
         val includeReceiver = expressionWithReceiverRegex.matches(expression)
@@ -340,21 +342,18 @@ fun JavaContext.getConstructorLocation(
  * @return the value of the specified vararg attribute as a list of String literals, or an empty
  *   list if not specified
  */
-fun UAnnotation.getAttributeValueVarargLiteral(name: String): List<String> =
-    findDeclaredAttributeValue(name)?.parseVarargLiteral() ?: emptyList()
+fun UAnnotation.getAttributeValueVarargLiteral(context: JavaContext, name: String): List<String> =
+    findDeclaredAttributeValue(name)?.parseVarargLiteral(context) ?: emptyList()
 
-fun UExpression.parseVarargLiteral(): List<String> =
+fun UExpression.parseVarargLiteral(context: JavaContext): List<String> =
     when (val expr = this.unwrap()) {
-        is ULiteralExpression -> listOfNotNull(expr.parseLiteral())
-        is UCallExpression -> expr.valueArguments.mapNotNull { it.parseLiteral() }
+        is ULiteralExpression -> listOfNotNull(expr.parseLiteral(context))
+        is UCallExpression -> expr.valueArguments.mapNotNull { it.parseLiteral(context) }
         else -> emptyList()
     }
 
-fun UExpression.parseLiteral(): String? =
-    when (val expr = this.unwrap()) {
-        is ULiteralExpression -> expr.value.toString()
-        else -> null
-    }
+fun UExpression.parseLiteral(context: JavaContext?): String? =
+    ConstantEvaluator.evaluateString(context, this, false)
 
 fun UExpression.unwrap(): UExpression =
     when (this) {

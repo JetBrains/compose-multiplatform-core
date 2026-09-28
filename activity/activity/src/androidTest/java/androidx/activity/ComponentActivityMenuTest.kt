@@ -204,7 +204,6 @@ class ComponentActivityMenuTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O, maxSdkVersion = 34) // b/427245008
     @Test
     fun onPanelClosed() {
         withUse(ActivityScenario.launch(ContextMenuComponentActivity::class.java)) {

@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SoftwareType
@@ -26,20 +25,17 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
     api(libs.jspecify)
     api(project(":car:app:app"))
 
-    implementation "androidx.lifecycle:lifecycle-runtime:2.2.0"
-    implementation "androidx.lifecycle:lifecycle-common-java8:2.2.0"
+    implementation "androidx.lifecycle:lifecycle-runtime:2.10.0"
+    implementation "androidx.lifecycle:lifecycle-common-java8:2.10.0"
     implementation("androidx.annotation:annotation:1.1.0")
     implementation(libs.robolectric)
     implementation("androidx.annotation:annotation-experimental:1.4.1")
-    api(libs.kotlinStdlib)
-    implementation(libs.kotlinStdlibCommon)
 
     testImplementation(project(":car:app:app-projected"))
     testImplementation(libs.junit)
@@ -50,6 +46,14 @@ dependencies {
     testImplementation(libs.truth)
 
     annotationProcessor(libs.nullaway)
+}
+
+dependencies {
+    constraints {
+        implementation("org.bouncycastle:bcprov-jdk18on:1.86") {
+            because("b/505222436 - upgrading to fix vulns")
+        }
+    }
 }
 
 android {

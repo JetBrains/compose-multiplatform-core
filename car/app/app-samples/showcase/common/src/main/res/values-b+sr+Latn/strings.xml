@@ -38,7 +38,7 @@
     <string name="settings_action_title" msgid="8616900063253887861">"Podešavanja"</string>
     <string name="accept_action_title" msgid="4899660585470647578">"Prihvatam"</string>
     <string name="reject_action_title" msgid="6730366705938402668">"Odbij"</string>
-    <string name="ok_action_title" msgid="7128494973966098611">"Potvrdi"</string>
+    <string name="ok_action_title" msgid="7128494973966098611">"Važi"</string>
     <string name="throw_action_title" msgid="7163710562670220163">"Baci"</string>
     <string name="commute_action_title" msgid="2585755255290185096">"Redovno putovanje"</string>
     <string name="sign_out_action_title" msgid="1653943000866713010">"Odjavite se"</string>
@@ -232,10 +232,21 @@
     <string name="msg_template_demo_text" msgid="2275291617716161409">"Ovde ide poruka.\nViše teksta u drugom redu."</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"Demonstracija šablona kratke poruke"</string>
     <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"Demo verzija šablona stavke sa odeljcima"</string>
+    <string name="condensed_item_demo_title" msgid="225744083182855764">"Demonstracija sažete stavke"</string>
+    <string name="sectioned_item_alpha_jump_demo_title" msgid="1923794280863081616">"Demonstracija omogućenog AlphaJump-a za stavke sa odeljcima"</string>
     <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"Odeljak sa dugmetom za izbor"</string>
     <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"Odeljak sa prekidačem"</string>
     <string name="sectioned_item_template_lots_of_rows_section_title" msgid="1501401956386938735">"Odeljak sa mnogo redova"</string>
     <string name="sectioned_item_template_grid_item_section_title" msgid="565528119467142741">"Odeljak stavke mreže"</string>
+    <string name="sectioned_item_list_demo_title" msgid="1236735461225007729">"Demonstracija liste za stavke sa odeljcima"</string>
+    <string name="sectioned_item_list_one_title" msgid="6594204350307263338">"Lista 1"</string>
+    <string name="sectioned_item_list_two_title" msgid="4941545381743022833">"Lista 2"</string>
+    <string name="sectioned_item_list_subtext" msgid="2963927693547537519">"Podtekst ispod svake liste"</string>
+    <string name="end_image_and_action_demo_title" msgid="6451955718459316414">"Demonstracija krajnje slike i radnji"</string>
+    <string name="chip_demo_title" msgid="814337127879515513">"Demonstracija elementa"</string>
+    <string name="progress_bar_demo_title" msgid="1759206063037269237">"Demo verzija trake napretka"</string>
+    <string name="section_header_demo_title" msgid="4880150421750399922">"Demonstracija zaglavlja odeljka"</string>
+    <string name="spotlight_section_demo_title" msgid="4149938914167169739">"Demonstracija odeljka Istaknuto"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"Demonstracija šablona okna"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"Demonstracija šablona liste mesta"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"Pregledajte mesta"</string>
@@ -266,12 +277,22 @@
     <string name="tab_template_demo_title" msgid="7587839101813629975">"Demonstracija šablona kartice"</string>
     <string name="tab_title_message" msgid="5266710951630087246">"Kartica poruke"</string>
     <string name="tab_title_pane" msgid="2520606145526537263">"Kartica okna"</string>
+    <string name="tab_title_sectioned_item" msgid="7299509321019990398">"Kartica stavke sa odeljcima"</string>
     <string name="tab_title_list" msgid="5104962518489668123">"Kartica liste"</string>
     <string name="tab_title_grid" msgid="5268168907976325154">"Kartica sa rešetkom i dugačkim naslovom"</string>
     <string name="tab_title_search" msgid="1892925693146631173">"Kartica pretrage"</string>
     <string name="tab_title_loading" msgid="5385807479734490989">"Učitava se kartica"</string>
+    <string name="tab_title_template_style_1" msgid="2975307122280161449">"1. stil Šablon"</string>
+    <string name="tab_title_template_style_2" msgid="7803400629501965995">"2. stil Šablon"</string>
+    <string name="tab_title_overridden_style" msgid="3140303976251439964">"Stil Zamena"</string>
+    <string name="tab_title_failing_style" msgid="745811892650973560">"Stil Ne uspeva"</string>
     <string name="tab_template_loading_demo_title" msgid="4638051615030345574">"Demonstracija učitavanja šablona kartice"</string>
     <string name="tab_template_no_tabs_demo_title" msgid="6907466201298082309">"Demonstracija šablona kartice kada nema kartica"</string>
+    <string name="tab_template_style_demo_title" msgid="3986454672226386561">"Demonstracija stila kartice Šablon"</string>
+    <string name="msg_tab_template_style_1_text" msgid="6874362443887944175">"Stil kartice Šablon (kartica 1)\nNasleđuje stilizovanje na nivou šablona"</string>
+    <string name="msg_tab_template_style_2_text" msgid="7244377408142388066">"Stil kartice Šablon (kartica 2)\nNasleđuje stilizovanje na nivou šablona"</string>
+    <string name="msg_tab_overridden_style_text" msgid="7242618513807844655">"Stil kartice Zamena\nMenja stil šablona prilagođenim plavim bojama"</string>
+    <string name="msg_tab_failing_style_text" msgid="4357682634226036060">"Stil kartice Ne uspeva\nCrvena ikona na crvenoj pozadini"</string>
     <string name="images_unknown_host_error" msgid="3180661817432720076">"Slike ne mogu da se prikazuju za nepoznat host"</string>
     <string name="icon_title_prefix" msgid="8487026131229541244">"Ikona"</string>
     <string name="content_provider_icons_demo_title" msgid="5708602618664311097">"Demonstracija ikona dobavljača sadržaja"</string>
@@ -330,10 +351,7 @@
     <string name="secondary_actions_decoration_test_subtitle" msgid="155884606592724532">"Može da se izabere i red"</string>
     <string name="secondary_action_toast" msgid="5076434693504006565">"Sekundarna radnja je izabrana"</string>
     <string name="row_primary_action_toast" msgid="756516694751965204">"Primarna radnja reda je izabrana"</string>
-    <string name="sectioned_item_list_demo_title" msgid="1236735461225007729">"Demonstracija liste za stavke sa odeljcima"</string>
-    <string name="sectioned_item_list_one_title" msgid="6594204350307263338">"Lista 1"</string>
-    <string name="sectioned_item_list_two_title" msgid="4941545381743022833">"Lista 2"</string>
-    <string name="sectioned_item_list_subtext" msgid="2963927693547537519">"Podtekst ispod svake liste"</string>
+    <string name="row_end_image_and_actions_demo_title" msgid="4581677315854620705">"Demonstracija slike i radnji na kraju reda"</string>
     <string name="empty_list_demo_title" msgid="5989013634820902455">"Demonstracija prazne liste"</string>
     <string name="empty_list_message" msgid="5331395517560728138">"Lista je prazna"</string>
     <string name="misc_templates_demos_title" msgid="6077169010255928114">"Demonstracije različitih šablona"</string>
@@ -364,6 +382,9 @@
     <string name="latest_feature_title" msgid="7929405790070777460">"Najnovije funkcije"</string>
     <string name="loading_toggle_enabled" msgid="8828072732804454994">"Učitavanje je omogućeno"</string>
     <string name="loading_toggle_disabled" msgid="7689738885077382673">"Učitavanje je onemogućeno"</string>
+    <string name="app_theme_title" msgid="5002857339487981595">"Koristi temu aplikacije"</string>
+    <string name="app_theme_enabled" msgid="3146649362736130743">"Tema aplikacije je omogućena"</string>
+    <string name="app_theme_disabled" msgid="947882095780434267">"Tema aplikacije je onemogućena"</string>
     <string name="loading_screen" msgid="4771507490730308794">"Ekran učitavanja"</string>
     <string name="vector_toggle_details" msgid="1301305340033556819">"Dugme za dodavanje/uklanjanje boje"</string>
     <string name="map_template_toggle_demo_title" msgid="6510798293640092611">"Demonstracija šablona mape sa prekidačima"</string>
@@ -375,4 +396,7 @@
     <string name="map_with_content_demo_title" msgid="1032610482145018739">"Demo verzije mape sa sadržajem"</string>
     <string name="map_with_message_demo_title" msgid="7007078234918054436">"Demo verzija mape sa šablonom poruke"</string>
     <string name="map_with_grid_demo_title" msgid="688667167861193192">"Demo verzija mape sa šablonom mreže"</string>
+    <string name="map_with_sectioned_items_demo_title" msgid="8566567348699628797">"Mapa sa listom stavki sa odeljcima"</string>
+    <string name="banner_demo_title" msgid="6740573531391394513">"Demonstracija banera"</string>
+    <string name="enhanced_header_demo_title" msgid="5926669146325565791">"Demonstracija poboljšanog zaglavlja"</string>
 </resources>

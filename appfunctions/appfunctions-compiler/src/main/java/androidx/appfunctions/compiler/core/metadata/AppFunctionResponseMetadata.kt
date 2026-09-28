@@ -16,10 +16,14 @@
 
 package androidx.appfunctions.compiler.core.metadata
 
-data class AppFunctionResponseMetadata(val valueType: AppFunctionDataTypeMetadata) {
+data class AppFunctionResponseMetadata(
+    val valueType: AppFunctionDataTypeMetadata,
+    val description: String,
+) {
     fun toAppFunctionResponseMetadataDocument(): AppFunctionResponseMetadataDocument {
         return AppFunctionResponseMetadataDocument(
-            valueType = valueType.toAppFunctionDataTypeMetadataDocument()
+            valueType = valueType.toAppFunctionDataTypeMetadataDocument(),
+            description = description,
         )
     }
 }
@@ -28,4 +32,5 @@ data class AppFunctionResponseMetadataDocument(
     val namespace: String = APP_FUNCTION_NAMESPACE,
     val id: String = APP_FUNCTION_ID_EMPTY,
     val valueType: AppFunctionDataTypeMetadataDocument,
+    val description: String,
 )

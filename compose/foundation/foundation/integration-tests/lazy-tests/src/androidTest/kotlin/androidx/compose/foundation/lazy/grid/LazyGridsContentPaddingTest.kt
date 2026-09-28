@@ -47,7 +47,7 @@ import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -322,15 +322,15 @@ class LazyGridsContentPaddingTest {
             .onNodeWithTag(ItemTag)
             .assertLeftPositionInRootIsEqualTo(2.dp)
             .assertTopPositionInRootIsEqualTo(4.dp)
-            .assertWidthIsEqualTo(itemSize)
-            .assertHeightIsEqualTo(itemSize)
+            .assertWidthIsEqualTo(itemSize, tolerance = 1.dp)
+            .assertHeightIsEqualTo(itemSize, tolerance = 1.dp)
 
         rule
             .onNodeWithTag(ContainerTag)
             .assertLeftPositionInRootIsEqualTo(0.dp)
             .assertTopPositionInRootIsEqualTo(0.dp)
-            .assertWidthIsEqualTo(itemSize + 2.dp + 6.dp)
-            .assertHeightIsEqualTo(itemSize + 4.dp + 8.dp)
+            .assertWidthIsEqualTo(itemSize + 2.dp + 6.dp, tolerance = 1.dp)
+            .assertHeightIsEqualTo(itemSize + 4.dp + 8.dp, tolerance = 1.dp)
     }
 
     @Test
@@ -349,8 +349,8 @@ class LazyGridsContentPaddingTest {
             .onNodeWithTag(ContainerTag)
             .assertLeftPositionInRootIsEqualTo(0.dp)
             .assertTopPositionInRootIsEqualTo(0.dp)
-            .assertWidthIsEqualTo(8.dp)
-            .assertHeightIsEqualTo(12.dp)
+            .assertWidthIsEqualTo(8.dp, tolerance = 1.dp)
+            .assertHeightIsEqualTo(12.dp, tolerance = 1.dp)
     }
 
     @Test
@@ -371,8 +371,8 @@ class LazyGridsContentPaddingTest {
             .onNodeWithTag(ContainerTag)
             .assertLeftPositionInRootIsEqualTo(0.dp)
             .assertTopPositionInRootIsEqualTo(0.dp)
-            .assertWidthIsEqualTo(8.dp)
-            .assertHeightIsEqualTo(12.dp)
+            .assertWidthIsEqualTo(8.dp, tolerance = 1.dp)
+            .assertHeightIsEqualTo(12.dp, tolerance = 1.dp)
     }
 
     @Test

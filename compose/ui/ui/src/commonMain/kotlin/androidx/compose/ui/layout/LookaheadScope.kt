@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.node.LayoutNode
+import androidx.compose.ui.node.LookaheadCapablePlaceable
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.NodeCoordinator
 import androidx.compose.ui.platform.InspectorInfo
@@ -46,7 +47,7 @@ import androidx.compose.ui.unit.IntSize
  */
 @UiComposable
 @Composable
-fun LookaheadScope(content: @Composable @UiComposable LookaheadScope.() -> Unit) {
+public fun LookaheadScope(content: @Composable @UiComposable LookaheadScope.() -> Unit): Unit {
     val scope = remember { LookaheadScopeImpl() }
     ReusableComposeNode<LayoutNode, Applier<Any>>(
         factory = { LayoutNode(isVirtual = true) },
@@ -98,7 +99,7 @@ fun LookaheadScope(content: @Composable @UiComposable LookaheadScope.() -> Unit)
  * @sample androidx.compose.ui.samples.approachLayoutSample
  * @see ApproachLayoutModifierNode
  */
-fun Modifier.approachLayout(
+public fun Modifier.approachLayout(
     isMeasurementApproachInProgress: (lookaheadSize: IntSize) -> Boolean,
     isPlacementApproachInProgress:
         Placeable.PlacementScope.(lookaheadCoordinates: LayoutCoordinates) -> Boolean =
@@ -199,12 +200,12 @@ private class ApproachLayoutModifierNodeImpl(
  *
  * @sample androidx.compose.ui.samples.LookaheadLayoutCoordinatesSample
  */
-interface LookaheadScope {
+public interface LookaheadScope {
     /**
      * Converts a [LayoutCoordinates] into a [LayoutCoordinates] in the Lookahead coordinate space.
      * This can be used for layouts within [LookaheadScope].
      */
-    fun LayoutCoordinates.toLookaheadCoordinates(): LayoutCoordinates
+    public fun LayoutCoordinates.toLookaheadCoordinates(): LayoutCoordinates
 
     /**
      * Returns the [LayoutCoordinates] of the [LookaheadScope]. This is only accessible from
@@ -214,7 +215,7 @@ interface LookaheadScope {
      * the lookahead coordinates of the lookaheadScope is needed, suggest converting the returned
      * coordinates using [toLookaheadCoordinates].
      */
-    val Placeable.PlacementScope.lookaheadScopeCoordinates: LayoutCoordinates
+    public val Placeable.PlacementScope.lookaheadScopeCoordinates: LayoutCoordinates
 
     /**
      * Converts [relativeToSource] in [sourceCoordinates]'s lookahead coordinate space into local
@@ -227,7 +228,7 @@ interface LookaheadScope {
      * [includeMotionFrameOfReference] as `false` to get their position while excluding the
      * additional Offset.
      */
-    fun LayoutCoordinates.localLookaheadPositionOf(
+    public fun LayoutCoordinates.localLookaheadPositionOf(
         sourceCoordinates: LayoutCoordinates,
         relativeToSource: Offset = Offset.Zero,
         includeMotionFrameOfReference: Boolean = true,
@@ -238,6 +239,26 @@ interface LookaheadScope {
             relativeToSource = relativeToSource,
             includeMotionFrameOfReference = includeMotionFrameOfReference,
         )
+}
+
+/**
+ * Obtains the [LayoutCoordinates] for the given [LookaheadScope] using a [LayoutCoordinates] within
+ * the [LookaheadScope].
+ *
+ * **Important:** This must be an actual [LayoutCoordinates] instance from the [PlacementScope] or
+ * [Modifier] APIs. The Layout that associates with the coordinates needs to be within the subtree
+ * of the [LookaheadScope]. Using a custom [LayoutCoordinates] implementation will result in an
+ * [IllegalArgumentException].
+ *
+ * @param sourceCoordinates A [LayoutCoordinates] within the subtree of the given [LookaheadScope].
+ */
+public fun LookaheadScope.lookaheadScopeCoordinates(
+    sourceCoordinates: LayoutCoordinates
+): LayoutCoordinates {
+    require(sourceCoordinates is LookaheadCapablePlaceable) {
+        "Invalid LayoutCoordinates: $sourceCoordinates"
+    }
+    return sourceCoordinates.placementScope.lookaheadScopeCoordinates
 }
 
 /** Internal implementation to handle [LookaheadScope.localLookaheadPositionOf]. */

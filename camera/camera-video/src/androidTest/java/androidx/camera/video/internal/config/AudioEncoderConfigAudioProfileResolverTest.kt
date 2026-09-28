@@ -18,23 +18,18 @@ package androidx.camera.video.internal.config
 
 import android.content.Context
 import android.os.Build
-import android.util.Range
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange.SDR
 import androidx.camera.core.impl.Timebase
 import androidx.camera.core.internal.CameraUseCaseAdapter
 import androidx.camera.testing.impl.AndroidUtil.isEmulator
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraXUtil
 import androidx.camera.video.AudioSpec
-import androidx.camera.video.Quality
-import androidx.camera.video.Recorder
-import androidx.camera.video.VideoCapabilities
+import androidx.camera.video.EncoderProfilesResolver
+import androidx.camera.video.EncoderProfilesResolverFactory
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.TimeUnit
@@ -44,7 +39,6 @@ import org.junit.After
 import org.junit.Assume
 import org.junit.Assume.assumeFalse
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -56,7 +50,6 @@ import org.junit.runners.Parameterized
  */
 @RunWith(Parameterized::class)
 @SmallTest
-@SdkSuppress(minSdkVersion = 21)
 class AudioEncoderConfigAudioProfileResolverTest(
     private val implName: String,
     private val cameraConfig: CameraXConfig,
@@ -65,23 +58,15 @@ class AudioEncoderConfigAudioProfileResolverTest(
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun data() =
-            listOf(
-                arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
-            )
+        fun data() = listOf(arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()))
     }
-
-    @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val defaultAudioSpec = AudioSpec.builder().build()
     private val timebase = Timebase.UPTIME
 
     private lateinit var cameraUseCaseAdapter: CameraUseCaseAdapter
-    private lateinit var videoCapabilities: VideoCapabilities
+    private lateinit var profilesResolver: EncoderProfilesResolver
 
     @Before
     fun setUp() {
@@ -94,8 +79,10 @@ class AudioEncoderConfigAudioProfileResolverTest(
         CameraXUtil.initialize(context, cameraConfig).get()
 
         val cameraInfo = CameraUtil.createCameraUseCaseAdapter(context, cameraSelector).cameraInfo
-        videoCapabilities = Recorder.getVideoCapabilities(cameraInfo)
-        Assume.assumeTrue(videoCapabilities.getSupportedQualities(SDR).isNotEmpty())
+
+        profilesResolver = EncoderProfilesResolverFactory.getResolver(cameraInfo)
+
+        Assume.assumeTrue(profilesResolver.getSupportedQualities(SDR).isNotEmpty())
     }
 
     @After
@@ -112,15 +99,14 @@ class AudioEncoderConfigAudioProfileResolverTest(
     @Test
     fun defaultAudioSpecAndAudioSourceProducesValidSettings() {
         val supportedProfiles =
-            videoCapabilities.getSupportedQualities(SDR).map {
-                videoCapabilities.getProfiles(it, SDR)!!
+            profilesResolver.getSupportedQualities(SDR).map {
+                profilesResolver.getProfiles(it, SDR)!!
             }
 
         for (encoderProfiles in supportedProfiles) {
             val audioProfile = encoderProfiles.defaultAudioProfile ?: continue
 
-            val audioSettings =
-                AudioSettingsAudioProfileResolver(defaultAudioSpec, audioProfile, null).get()
+            val audioSettings = AudioConfigUtil.resolveAudioSettings(defaultAudioSpec, audioProfile)
             val config =
                 AudioEncoderConfigAudioProfileResolver(
                         audioProfile.mediaType,
@@ -138,130 +124,5 @@ class AudioEncoderConfigAudioProfileResolverTest(
             assertThat(config.encodeSampleRate).isEqualTo(audioProfile.sampleRate)
             assertThat(config.channelCount).isEqualTo(audioProfile.channels)
         }
-    }
-
-    @Test
-    fun increasedChannelCountIncreasesBitrate() {
-        val encoderProfiles = videoCapabilities.getProfiles(Quality.HIGHEST, SDR)!!
-        val profile = encoderProfiles.defaultAudioProfile
-        Assume.assumeTrue(profile != null)
-
-        // Get default channel count
-        val defaultAudioSettings =
-            AudioSettingsAudioProfileResolver(defaultAudioSpec, profile!!, null).get()
-        val defaultConfig =
-            AudioEncoderConfigAudioProfileResolver(
-                    profile.mediaType,
-                    profile.profile,
-                    timebase,
-                    defaultAudioSpec,
-                    defaultAudioSettings,
-                    profile,
-                )
-                .get()
-        val defaultChannelCount = defaultConfig.channelCount
-
-        val higherChannelCountAudioSettings =
-            defaultAudioSettings.toBuilder().setChannelCount(defaultChannelCount * 2).build()
-
-        val higherChannelCountConfig =
-            AudioEncoderConfigAudioProfileResolver(
-                    profile.mediaType,
-                    profile.profile,
-                    timebase,
-                    defaultAudioSpec,
-                    higherChannelCountAudioSettings,
-                    profile,
-                )
-                .get()
-
-        assertThat(higherChannelCountConfig.bitrate).isGreaterThan(defaultConfig.bitrate)
-    }
-
-    @Test
-    fun increasedSampleRateIncreasesBitrate() {
-        val encoderProfiles = videoCapabilities.getProfiles(Quality.HIGHEST, SDR)!!
-        val profile = encoderProfiles.defaultAudioProfile
-        Assume.assumeTrue(profile != null)
-
-        // Get default sample rate
-        val defaultAudioSettings =
-            AudioSettingsAudioProfileResolver(defaultAudioSpec, profile!!, null).get()
-        val defaultConfig =
-            AudioEncoderConfigAudioProfileResolver(
-                    profile.mediaType,
-                    profile.profile,
-                    timebase,
-                    defaultAudioSpec,
-                    defaultAudioSettings,
-                    profile,
-                )
-                .get()
-        val defaultSampleRate = defaultConfig.captureSampleRate
-
-        val higherSampleRateAudioSettings =
-            defaultAudioSettings.toBuilder().setChannelCount(defaultSampleRate * 2).build()
-
-        val higherSampleRateConfig =
-            AudioEncoderConfigAudioProfileResolver(
-                    profile.mediaType,
-                    profile.profile,
-                    timebase,
-                    defaultAudioSpec,
-                    higherSampleRateAudioSettings,
-                    profile,
-                )
-                .get()
-
-        assertThat(higherSampleRateConfig.bitrate).isGreaterThan(defaultConfig.bitrate)
-    }
-
-    @Test
-    fun bitrateRangeInVideoSpecClampsBitrate() {
-        val encoderProfiles = videoCapabilities.getProfiles(Quality.HIGHEST, SDR)!!
-        val profile = encoderProfiles.defaultAudioProfile
-        Assume.assumeTrue(profile != null)
-
-        val defaultAudioSettings =
-            AudioSettingsAudioProfileResolver(defaultAudioSpec, profile!!, null).get()
-
-        val defaultBitrate = profile.bitrate
-
-        // Create audio spec with limit 20% higher than default.
-        val higherBitrate = (defaultBitrate * 1.2).toInt()
-        val higherAudioSpec =
-            AudioSpec.builder().setBitrate(Range(higherBitrate, Int.MAX_VALUE)).build()
-
-        // Create audio spec with limit 20% lower than default.
-        val lowerBitrate = (defaultBitrate * 0.8).toInt()
-        val lowerAudioSpec = AudioSpec.builder().setBitrate(Range(0, lowerBitrate)).build()
-
-        assertThat(
-                AudioEncoderConfigAudioProfileResolver(
-                        profile.mediaType,
-                        profile.profile,
-                        timebase,
-                        higherAudioSpec,
-                        defaultAudioSettings,
-                        profile,
-                    )
-                    .get()
-                    .bitrate
-            )
-            .isEqualTo(higherBitrate)
-
-        assertThat(
-                AudioEncoderConfigAudioProfileResolver(
-                        profile.mediaType,
-                        profile.profile,
-                        timebase,
-                        lowerAudioSpec,
-                        defaultAudioSettings,
-                        profile,
-                    )
-                    .get()
-                    .bitrate
-            )
-            .isEqualTo(lowerBitrate)
     }
 }

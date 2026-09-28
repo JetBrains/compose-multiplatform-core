@@ -25,6 +25,7 @@ import android.view.ScaleGestureDetector
 import android.view.ScaleGestureDetector.OnScaleGestureListener
 import android.view.ViewConfiguration
 import android.view.ViewParent
+import androidx.pdf.featureflag.PdfFeatureFlags
 import androidx.pdf.view.GestureTracker.Gesture
 import kotlin.math.abs
 import kotlin.math.sqrt
@@ -148,21 +149,29 @@ internal class GestureTracker(context: Context) {
     private val touchDown = PointF()
     private var lastEvent: EventId? = null
     private var detectedGesture: Gesture? = null
+    private var isAtLeftEdge = false
+    private var isAtRightEdge = false
 
     /**
      * Feed an event into this tracker. To be plugged in a [android.view.View.onTouchEvent]
      *
      * @param event The event.
      * @param viewParent [ViewParent] of the [PdfView]
-     * @param contentAtEdge Represents if the content in the viewport is currently at edge or not.
+     * @param isAtLeftEdge Represents if the content in the viewport is currently at its left edge.
+     * @param isAtRightEdge Represents if the content in the viewport is currently at its right
+     *   edge.
      * @return true if the event was recorded, false if it was discarded as a duplicate
      */
     fun feed(
         event: MotionEvent,
         viewParent: ViewParent? = null,
-        contentAtEdge: Boolean = false,
+        isAtLeftEdge: Boolean = false,
+        isAtRightEdge: Boolean = false,
     ): Boolean {
-        parent = if (contentAtEdge) viewParent else null
+        this.parent = if (isAtLeftEdge || isAtRightEdge) viewParent else null
+        this.isAtLeftEdge = isAtLeftEdge
+        this.isAtRightEdge = isAtRightEdge
+
         if (lastEvent?.matches(event) == true) {
             // We have already processed this event in this way (handling or non-handling).
             return false
@@ -334,8 +343,12 @@ internal class GestureTracker(context: Context) {
             val dx = getDistance(e2, MotionEvent.AXIS_X)
             val dy = getDistance(e2, MotionEvent.AXIS_Y)
 
-            // Release the gesture if the detected gesture is a horizontal scroll
-            if (detectedGesture == Gesture.DRAG_X) {
+            // Release the gesture to the parent if we are scrolling past a horizontal edge.
+            val isScrollingPastLeft = distanceX < 0 && isAtLeftEdge
+            val isScrollingPastRight = distanceX > 0 && isAtRightEdge
+            if (
+                detectedGesture == Gesture.DRAG_X && (isScrollingPastLeft || isScrollingPastRight)
+            ) {
                 parent?.requestDisallowInterceptTouchEvent(false)
             }
 
@@ -355,7 +368,7 @@ internal class GestureTracker(context: Context) {
 
         override fun onLongPress(e: MotionEvent) {
             detected(Gesture.LONG_PRESS)
-            if (delegate != null) {
+            if (!PdfFeatureFlags.isMultiTouchScrollEnabled && delegate != null) {
                 delegate?.onLongPress(e)
             }
         }

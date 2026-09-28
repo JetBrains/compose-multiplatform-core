@@ -20,26 +20,26 @@ import androidx.annotation.RestrictTo
 import java.lang.IllegalArgumentException
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-class Cbor {
-    data class Item(val item: Any, val len: Int)
+public class Cbor {
+    public data class Item(val item: Any, val len: Int)
 
-    data class Arg(val arg: Long, val len: Int)
+    public data class Arg(val arg: Long, val len: Int)
 
-    val TYPE_UNSIGNED_INT = 0x00
-    val TYPE_NEGATIVE_INT = 0x01
-    val TYPE_BYTE_STRING = 0x02
-    val TYPE_TEXT_STRING = 0x03
-    val TYPE_ARRAY = 0x04
-    val TYPE_MAP = 0x05
-    val TYPE_TAG = 0x06
-    val TYPE_FLOAT = 0x07
+    public val TYPE_UNSIGNED_INT: Int = 0x00
+    public val TYPE_NEGATIVE_INT: Int = 0x01
+    public val TYPE_BYTE_STRING: Int = 0x02
+    public val TYPE_TEXT_STRING: Int = 0x03
+    public val TYPE_ARRAY: Int = 0x04
+    public val TYPE_MAP: Int = 0x05
+    public val TYPE_TAG: Int = 0x06
+    public val TYPE_FLOAT: Int = 0x07
 
-    fun decode(data: ByteArray): Any {
+    public fun decode(data: ByteArray): Any {
         val ret = parseItem(data, 0)
         return ret.item
     }
 
-    fun encode(data: Any): ByteArray {
+    public fun encode(data: Any): ByteArray {
         if (data is Number) {
             if (data is Double) {
                 throw IllegalArgumentException("Don't support doubles yet")
@@ -69,20 +69,20 @@ class Cbor {
             // See:
             // https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-20210615.html#ctap2-canonical-cbor-encoding-form
             var ret = createArg(TYPE_MAP, data.size.toLong())
-            var byteMap: MutableMap<ByteArray, ByteArray> = mutableMapOf()
+            val byteMap: MutableMap<ByteArray, ByteArray> = mutableMapOf()
             for (i in data) {
                 // Convert to byte arrays so we can sort them.
                 byteMap.put(encode(i.key!!), encode(i.value!!))
             }
 
-            var keysList = ArrayList<ByteArray>(byteMap.keys)
+            val keysList = ArrayList<ByteArray>(byteMap.keys)
             keysList.sortedWith(
                 Comparator<ByteArray> { a, b ->
                     // If two keys have different lengths, the shorter one sorts earlier;
                     // If two keys have the same length, the one with the lower value in (byte-wise)
                     // lexical order sorts earlier.
-                    var aBytes = byteMap.get(a)!!
-                    var bBytes = byteMap.get(b)!!
+                    val aBytes = byteMap.get(a)!!
+                    val bBytes = byteMap.get(b)!!
                     when {
                         a.size > b.size -> 1
                         a.size < b.size -> -1
@@ -133,7 +133,6 @@ class Cbor {
     private fun parseItem(data: ByteArray, offset: Int): Item {
         val itemType = getType(data, offset)
         val arg = getArg(data, offset)
-        println("Type $itemType ${arg.arg} ${arg.len}")
 
         when (itemType) {
             TYPE_UNSIGNED_INT -> {
@@ -143,17 +142,11 @@ class Cbor {
                 return Item(-1 - arg.arg, arg.len)
             }
             TYPE_BYTE_STRING -> {
-                val ret =
-                    data.sliceArray(
-                        offset + arg.len.toInt() until offset + arg.len.toInt() + arg.arg.toInt()
-                    )
+                val ret = data.sliceArray(offset + arg.len until offset + arg.len + arg.arg.toInt())
                 return Item(ret, arg.len + arg.arg.toInt())
             }
             TYPE_TEXT_STRING -> {
-                val ret =
-                    data.sliceArray(
-                        offset + arg.len.toInt() until offset + arg.len.toInt() + arg.arg.toInt()
-                    )
+                val ret = data.sliceArray(offset + arg.len until offset + arg.len + arg.arg.toInt())
                 return Item(ret.toString(Charsets.UTF_8), arg.len + arg.arg.toInt())
             }
             TYPE_ARRAY -> {

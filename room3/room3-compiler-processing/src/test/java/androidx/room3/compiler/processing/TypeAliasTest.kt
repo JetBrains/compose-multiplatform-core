@@ -1,0 +1,208 @@
+/*
+ * Copyright 2021 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.room3.compiler.processing
+
+import androidx.kruth.assertThat
+import androidx.room3.compiler.codegen.XTypeName
+import androidx.room3.compiler.codegen.asClassName
+import androidx.room3.compiler.processing.util.CONTINUATION_JCLASS_NAME
+import androidx.room3.compiler.processing.util.Source
+import androidx.room3.compiler.processing.util.asJClassName
+import androidx.room3.compiler.processing.util.asKClassName
+import androidx.room3.compiler.processing.util.compileFiles
+import androidx.room3.compiler.processing.util.getField
+import androidx.room3.compiler.processing.util.getMethodByJvmName
+import androidx.room3.compiler.processing.util.runProcessorTest
+import com.squareup.kotlinpoet.LONG
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.javapoet.JParameterizedTypeName
+import com.squareup.kotlinpoet.javapoet.JTypeName
+import com.squareup.kotlinpoet.javapoet.JWildcardTypeName
+import kotlin.coroutines.Continuation
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
+
+@RunWith(JUnit4::class)
+class TypeAliasTest {
+    @Test
+    fun kotlinTypeAlias() {
+        fun produceSource(pkg: String) =
+            Source.kotlin(
+                "$pkg/Foo.kt",
+                """
+            package $pkg
+            typealias MyLong = Long
+            class Subject {
+                var prop: MyLong = 1L
+                val nullable: MyLong? = null
+                val inGeneric : List<MyLong> = TODO()
+                suspend fun suspendFun() : MyLong = TODO()
+            }
+            """
+                    .trimIndent(),
+            )
+        val lib = compileFiles(listOf(produceSource("lib")))
+        runProcessorTest(sources = listOf(produceSource("app")), classpath = lib) { invocation ->
+            listOf("lib", "app").forEach { pkg ->
+                val elm = invocation.processingEnv.requireTypeElement("$pkg.Subject")
+                elm.getField("prop").type.let {
+                    assertThat(it.nullability).isEqualTo(XNullability.NONNULL)
+                    assertThat(it.asTypeName()).isEqualTo(XTypeName.PRIMITIVE_LONG)
+                }
+                elm.getField("nullable").type.let {
+                    assertThat(it.nullability).isEqualTo(XNullability.NULLABLE)
+                    assertThat(it.asTypeName())
+                        .isEqualTo(Long::class.asClassName().copy(nullable = true))
+                }
+                elm.getField("inGeneric").type.let {
+                    assertThat(it.nullability).isEqualTo(XNullability.NONNULL)
+                    assertThat(it.asTypeName().java)
+                        .isEqualTo(
+                            JParameterizedTypeName.get(
+                                List::class.asJClassName(),
+                                JTypeName.LONG.box(),
+                            )
+                        )
+                    if (invocation.isKsp) {
+                        assertThat(it.asTypeName().kotlin)
+                            .isEqualTo(List::class.asKClassName().parameterizedBy(LONG))
+                    }
+                }
+                elm.getMethodByJvmName("suspendFun").parameters.last().type.let {
+                    assertThat(it.asTypeName().java)
+                        .isEqualTo(
+                            JParameterizedTypeName.get(
+                                CONTINUATION_JCLASS_NAME,
+                                JWildcardTypeName.supertypeOf(JTypeName.LONG.box()),
+                            )
+                        )
+                    if (invocation.isKsp) {
+                        assertThat(it.asTypeName().kotlin)
+                            .isEqualTo(Continuation::class.asKClassName().parameterizedBy(LONG))
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun nestedTypeAlias() {
+        val src =
+            Source.kotlin(
+                "Foo.kt",
+                """
+                package foo.bar
+                class Subject {
+                    typealias MyNestedTypeAlias = String
+                    val prop: MyNestedTypeAlias = "hello"
+                }
+                """
+                    .trimIndent(),
+            )
+        runProcessorTest(
+            sources = listOf(src),
+            kotlincArguments = listOf("-XXLanguage:+NestedTypeAliases"),
+        ) { invocation ->
+            val subject = invocation.processingEnv.requireTypeElement("foo.bar.Subject")
+            subject.getField("prop").type.let { prop ->
+                assertThat(prop.nullability).isEqualTo(XNullability.NONNULL)
+                assertThat(prop.asTypeName()).isEqualTo(XTypeName.STRING)
+            }
+        }
+    }
+
+    @Test
+    fun transitiveTypeAlias() {
+        fun produceSource(pkg: String) =
+            Source.kotlin(
+                "$pkg/Foo.kt",
+                """
+                package $pkg
+                interface MyInterface
+                typealias TypeAlias = MyInterface
+                typealias AnotherTypeAlias = TypeAlias
+
+                interface MyGeneric<T>
+                typealias GenericAlias1<T> = MyGeneric<T>
+                typealias GenericAlias2<T> = GenericAlias1<List<T>>
+
+                class Subject {
+                    val prop: AnotherTypeAlias = TODO()
+                    val nullableProp: AnotherTypeAlias? = null
+                    val genericProp: GenericAlias2<String> = TODO()
+                }
+                """
+                    .trimIndent(),
+            )
+        val lib = compileFiles(listOf(produceSource("lib")))
+        runProcessorTest(sources = listOf(produceSource("app")), classpath = lib) { invocation ->
+            listOf("lib", "app").forEach { pkg ->
+                val subject = invocation.processingEnv.requireTypeElement("$pkg.Subject")
+                val myInterface = invocation.processingEnv.requireTypeElement("$pkg.MyInterface")
+                val myGeneric = invocation.processingEnv.requireTypeElement("$pkg.MyGeneric")
+
+                subject.getField("prop").type.let { prop ->
+                    assertThat(prop.nullability).isEqualTo(XNullability.NONNULL)
+                    assertThat(prop.typeElement).isEqualTo(myInterface)
+                    assertThat(prop.asTypeName()).isEqualTo(myInterface.asClassName())
+                }
+
+                subject.getField("nullableProp").type.let { nullableProp ->
+                    assertThat(nullableProp.nullability).isEqualTo(XNullability.NULLABLE)
+                    assertThat(nullableProp.typeElement).isEqualTo(myInterface)
+                    assertThat(nullableProp.asTypeName())
+                        .isEqualTo(myInterface.asClassName().copy(nullable = true))
+                }
+
+                subject.getField("genericProp").type.let { genericProp ->
+                    assertThat(genericProp.nullability).isEqualTo(XNullability.NONNULL)
+                    assertThat(genericProp.typeElement).isEqualTo(myGeneric)
+                    assertThat(genericProp.asTypeName())
+                        .isEqualTo(
+                            myGeneric
+                                .asClassName()
+                                .parametrizedBy(XTypeName.LIST.parametrizedBy(XTypeName.STRING))
+                        )
+                }
+            }
+        }
+    }
+
+    @Test
+    fun recursiveTypeAlias() {
+        val src =
+            Source.kotlin(
+                "Foo.kt",
+                """
+                package foo.bar
+                typealias A = B
+                typealias B = A
+                class Subject {
+                    val prop: A = TODO()
+                }
+                """
+                    .trimIndent(),
+            )
+        runProcessorTest(sources = listOf(src)) { invocation ->
+            val subject = invocation.processingEnv.findTypeElement("foo.bar.Subject")
+            val propType = subject?.getField("prop")?.type
+            assertThat(propType?.isError()).isTrue()
+            invocation.assertCompilationResult { compilationDidFail() }
+        }
+    }
+}

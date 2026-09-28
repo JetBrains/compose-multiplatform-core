@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("FacadeClassJvmName") // Cannot be updated, the Kt name has been released
+
 package androidx.benchmark.junit4
 
 import android.Manifest
@@ -53,9 +55,10 @@ import org.junit.runners.model.Statement
  *
  * @sample androidx.benchmark.samples.benchmarkRuleSample
  */
-class BenchmarkRule @ExperimentalBenchmarkConfigApi constructor(val config: MicrobenchmarkConfig) :
-    TestRule {
-    constructor() : this(config = MicrobenchmarkConfig())
+public class BenchmarkRule
+@ExperimentalBenchmarkConfigApi
+constructor(public val config: MicrobenchmarkConfig) : TestRule {
+    public constructor() : this(config = MicrobenchmarkConfig())
 
     @PublishedApi
     internal // synthetic access
@@ -97,7 +100,7 @@ class BenchmarkRule @ExperimentalBenchmarkConfigApi constructor(val config: Micr
      *
      * @throws [IllegalStateException] if the BenchmarkRule isn't correctly applied to a test.
      */
-    fun getState(): BenchmarkState {
+    public fun getState(): BenchmarkState {
         // Note: this is an explicit method instead of an accessor to help convey it's only for Java
         // Kotlin users should call the [measureRepeated] method.
         throwIfNotApplied()
@@ -110,12 +113,12 @@ class BenchmarkRule @ExperimentalBenchmarkConfigApi constructor(val config: Micr
     // can we avoid published API here?
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    val scopeFactory: (MicrobenchmarkRunningState) -> MicrobenchmarkScope = { runningState ->
+    public val scopeFactory: (MicrobenchmarkRunningState) -> MicrobenchmarkScope = { runningState ->
         Scope(runningState)
     }
 
     /** Handle used for controlling measurement during [measureRepeated]. */
-    inner class Scope internal constructor(internal val state: MicrobenchmarkRunningState) :
+    public inner class Scope internal constructor(internal val state: MicrobenchmarkRunningState) :
 
         /*
          * Ideally, the microbenchmark scope concept would live entirely in benchmark-common so that
@@ -151,7 +154,7 @@ class BenchmarkRule @ExperimentalBenchmarkConfigApi constructor(val config: Micr
             "Renamed to runWithMeasurementDisabled to clarify all measurements are paused",
             replaceWith = ReplaceWith("runWithMeasurementDisabled"),
         )
-        inline fun <T> runWithTimingDisabled(block: () -> T): T {
+        public inline fun <T> runWithTimingDisabled(block: () -> T): T {
             return runWithMeasurementDisabled(block)
         }
 
@@ -247,7 +250,7 @@ public inline fun BenchmarkRule.measureRepeated(crossinline block: BenchmarkRule
  *   main thread.
  * @sample androidx.benchmark.samples.measureRepeatedOnMainThreadSample
  */
-inline fun BenchmarkRule.measureRepeatedOnMainThread(
+public inline fun BenchmarkRule.measureRepeatedOnMainThread(
     crossinline block: BenchmarkRule.Scope.() -> Unit
 ) {
     check(Looper.myLooper() != Looper.getMainLooper()) {

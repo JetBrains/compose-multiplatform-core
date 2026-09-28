@@ -28,6 +28,7 @@ import android.provider.MediaStore;
 
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
+import androidx.camera.core.Logger;
 import androidx.camera.core.impl.utils.Exif;
 
 import org.jspecify.annotations.NonNull;
@@ -46,6 +47,7 @@ import java.util.UUID;
  */
 public final class FileUtil {
 
+    private static final String TAG = "FileUtil";
     private static final String TEMP_FILE_PREFIX = "CameraX";
     private static final String TEMP_FILE_SUFFIX = ".tmp";
     private static final int COPY_BUFFER_SIZE = 1024;
@@ -62,14 +64,26 @@ public final class FileUtil {
         try {
             File appProvidedFile = options.getFile();
             if (appProvidedFile != null) {
+                File parent = appProvidedFile.getParentFile();
+                if (parent != null && !parent.exists()) {
+                    parent.mkdirs();
+                }
                 // For saving-to-file case, write to the target folder and rename for better
                 // performance. The file extensions must be the same as app provided to avoid the
                 // directory access problem.
-                return new File(appProvidedFile.getParent(),
+                return new File(parent,
                         TEMP_FILE_PREFIX + UUID.randomUUID().toString()
                                 + getFileExtensionWithDot(appProvidedFile));
             } else {
-                return File.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX);
+                File tempDir = null;
+                String tmpDirProperty = System.getProperty("java.io.tmpdir");
+                if (tmpDirProperty != null) {
+                    tempDir = new File(tmpDirProperty);
+                    if (!tempDir.exists()) {
+                        tempDir.mkdirs();
+                    }
+                }
+                return File.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX, tempDir);
             }
         } catch (IOException e) {
             throw new ImageCaptureException(ERROR_FILE_IO, "Failed to create temp file.", e);
@@ -164,10 +178,13 @@ public final class FileUtil {
         ContentValues values = options.getContentValues() != null
                 ? new ContentValues(options.getContentValues())
                 : new ContentValues();
+
         setContentValuePendingFlag(values, PENDING);
         Uri uri = null;
         try {
+            Logger.d(TAG, "copyFileToMediaStore: inserting values to MediaStore");
             uri = contentResolver.insert(options.getSaveCollection(), values);
+            Logger.d(TAG, "copyFileToMediaStore: insert success");
             if (uri == null) {
                 throw new ImageCaptureException(
                         ERROR_FILE_IO, "Failed to insert a MediaStore URI.", null);

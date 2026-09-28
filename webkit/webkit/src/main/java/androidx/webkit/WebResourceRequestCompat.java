@@ -20,7 +20,6 @@ import android.webkit.WebResourceRequest;
 
 import androidx.annotation.RequiresFeature;
 import androidx.webkit.internal.ApiFeature;
-import androidx.webkit.internal.ApiHelperForN;
 import androidx.webkit.internal.WebResourceRequestAdapter;
 import androidx.webkit.internal.WebViewFeatureInternal;
 import androidx.webkit.internal.WebViewGlueCommunicator;
@@ -38,19 +37,17 @@ public class WebResourceRequestCompat {
     /**
      * Gets whether the request was a result of a server-side redirect.
      *
-     * <p>
-     * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)}
-     * returns true for {@link WebViewFeature#WEB_RESOURCE_REQUEST_IS_REDIRECT}.
-     *
      * @return whether the request was a result of a server-side redirect.
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#WEB_RESOURCE_REQUEST_IS_REDIRECT} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.WEB_RESOURCE_REQUEST_IS_REDIRECT,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     public static boolean isRedirect(@NonNull WebResourceRequest request) {
         ApiFeature.N feature = WebViewFeatureInternal.WEB_RESOURCE_REQUEST_IS_REDIRECT;
         if (feature.isSupportedByFramework()) {
-            return ApiHelperForN.isRedirect(request);
+            return request.isRedirect();
         } else if (feature.isSupportedByWebView()) {
             return getAdapter(request).isRedirect();
         } else {

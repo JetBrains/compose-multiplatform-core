@@ -51,6 +51,7 @@ import androidx.car.app.sample.showcase.common.R;
 import androidx.car.app.sample.showcase.common.ShowcaseService;
 import androidx.core.app.NotificationChannelCompat;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.IconCompat;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
@@ -119,7 +120,7 @@ public final class NotificationDemoScreen extends Screen implements DefaultLifec
         listBuilder.addItem(
                 new GridItem.Builder()
                         .setTitle(getCarContext().getString(R.string.send_notification_title))
-                        .setImage(new CarIcon.Builder(mIcon).build())
+                        .setImage(CarIcon.createTintedIcon(mIcon))
                         .setOnClickListener(this::sendNotification)
                         .build());
 
@@ -127,7 +128,7 @@ public final class NotificationDemoScreen extends Screen implements DefaultLifec
         listBuilder.addItem(
                 new GridItem.Builder()
                         .setTitle(getCarContext().getString(R.string.start_notifications_title))
-                        .setImage(new CarIcon.Builder(mIcon).build())
+                        .setImage(CarIcon.createTintedIcon(mIcon))
                         .setOnClickListener(() -> mHandler.sendMessage(
                                 mHandler.obtainMessage(MSG_SEND_NOTIFICATION)))
                         .build());
@@ -136,7 +137,7 @@ public final class NotificationDemoScreen extends Screen implements DefaultLifec
         listBuilder.addItem(
                 new GridItem.Builder()
                         .setTitle(getCarContext().getString(R.string.stop_notifications_title))
-                        .setImage(new CarIcon.Builder(mIcon).build())
+                        .setImage(CarIcon.createTintedIcon(mIcon))
                         .setOnClickListener(() -> {
                             mHandler.removeMessages(MSG_SEND_NOTIFICATION);
                             CarNotificationManager.from(getCarContext()).cancelAll();
@@ -147,7 +148,7 @@ public final class NotificationDemoScreen extends Screen implements DefaultLifec
         // Configure the notification importance.
         listBuilder.addItem(
                 new GridItem.Builder()
-                        .setImage(new CarIcon.Builder(mIcon).build())
+                        .setImage(CarIcon.createTintedIcon(mIcon))
                         .setTitle(getCarContext().getString(R.string.importance_title))
                         .setText(getImportanceString())
                         .setOnClickListener(() -> {
@@ -159,7 +160,7 @@ public final class NotificationDemoScreen extends Screen implements DefaultLifec
         // Configure whether the notification's category is navigation.
         listBuilder.addItem(
                 new GridItem.Builder()
-                        .setImage(new CarIcon.Builder(mIcon).build())
+                        .setImage(CarIcon.createTintedIcon(mIcon))
                         .setTitle(getCarContext().getString(R.string.category_title))
                         .setText(getCategoryString())
                         .setOnClickListener(() -> {
@@ -171,7 +172,7 @@ public final class NotificationDemoScreen extends Screen implements DefaultLifec
         // Configure whether the notification is an ongoing notification.
         listBuilder.addItem(
                 new GridItem.Builder()
-                        .setImage(new CarIcon.Builder(mIcon).build())
+                        .setImage(CarIcon.createTintedIcon(mIcon))
                         .setTitle(getCarContext().getString(R.string.ongoing_title))
                         .setText(String.valueOf(mSetOngoing))
                         .setOnClickListener(() -> {
@@ -335,7 +336,8 @@ public final class NotificationDemoScreen extends Screen implements DefaultLifec
         filter.addAction(INTENT_ACTION_PRIMARY_PHONE);
         filter.addAction(INTENT_ACTION_SECONDARY_PHONE);
 
-        getCarContext().registerReceiver(mBroadcastReceiver, filter);
+        ContextCompat.registerReceiver(getCarContext(), mBroadcastReceiver, filter,
+                ContextCompat.RECEIVER_NOT_EXPORTED);
     }
 
     private void unregisterBroadcastReceiver() {

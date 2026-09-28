@@ -49,13 +49,20 @@ class BaselineProfileProjectSetupRule(
     val rootFolder = TemporaryFolder().also { it.create() }
 
     /** Represents a module with the app target plugin applied. */
-    val appTarget by lazy { AppTargetModule(rule = appTargetSetupRule, name = appTargetName) }
+    val appTarget by lazy {
+        AppTargetModule(
+            rule = appTargetSetupRule,
+            name = appTargetName,
+            legacyGradleVersion = forcedTestAgpVersion.shouldUseLegacyGradle(),
+        )
+    }
 
     /** Represents a module with the consumer plugin applied. */
     val consumer by lazy {
         ConsumerModule(
             rule = consumerSetupRule,
             name = consumerName,
+            legacyGradleVersion = forcedTestAgpVersion.shouldUseLegacyGradle(),
             producerName = producerName,
             dependencyName = dependencyName,
         )
@@ -66,6 +73,7 @@ class BaselineProfileProjectSetupRule(
         ProducerModule(
             rule = producerSetupRule,
             name = producerName,
+            legacyGradleVersion = forcedTestAgpVersion.shouldUseLegacyGradle(),
             tempFolder = tempFolder,
             consumer = consumer,
             managedDeviceContainerName = managedDeviceContainerName,
@@ -123,6 +131,8 @@ class BaselineProfileProjectSetupRule(
                         "-Xmx4g -XX:+UseParallelGC -XX:MaxMetaspaceSize=1g",
                     )
                     props.setProperty("android.useAndroidX", "true")
+                    // b/443311090
+                    props.setProperty("android.newDsl", "false")
                     props.store(it, null)
                 }
 
@@ -326,8 +336,18 @@ interface Module {
     val rootDir: File
         get() = rule.rootDir
 
+    val legacyGradleVersion: Boolean
+
     val gradleRunner: GradleRunner
-        get() = GradleRunner.create().withProjectDir(rule.rootDir)
+        get() {
+            val runner = GradleRunner.create().withProjectDir(rule.rootDir)
+            if (legacyGradleVersion) {
+                // Run tests using Gradle 8.14 to support AGP version used for the tests,
+                // b/431846917
+                rule.setUpGradleVersion(runner, "8.14")
+            }
+            return runner
+        }
 
     fun setBuildGradle(buildGradleContent: String) =
         rule.writeDefaultBuildGradle(
@@ -342,18 +362,22 @@ interface Module {
 
 class DependencyModule(val name: String)
 
-class AppTargetModule(override val rule: ProjectSetupRule, override val name: String) : Module {
+class AppTargetModule(
+    override val rule: ProjectSetupRule,
+    override val name: String,
+    override val legacyGradleVersion: Boolean,
+) : Module {
 
     fun setup(
         buildGradleContent: String =
             """
-                plugins {
-                    id("com.android.application")
-                    id("androidx.baselineprofile.apptarget")
-                }
-                android {
-                    namespace 'com.example.namespace'
-                }
+            plugins {
+                id("com.android.application")
+                id("androidx.baselineprofile.apptarget")
+            }
+            android {
+                namespace 'com.example.namespace'
+            }
             """
                 .trimIndent()
     ) {
@@ -364,6 +388,7 @@ class AppTargetModule(override val rule: ProjectSetupRule, override val name: St
 class ProducerModule(
     override val rule: ProjectSetupRule,
     override val name: String,
+    override val legacyGradleVersion: Boolean,
     private val tempFolder: File,
     private val consumer: Module,
     private val managedDeviceContainerName: String,
@@ -620,24 +645,23 @@ class ProducerModule(
             fileNamePart: String,
             label: String,
             useGsSchema: Boolean,
-        ) =
-            testNameToProfileLines.map {
+        ) = testNameToProfileLines.map {
 
-                // Write the fake profile with the given list of profile rules.
-                val profileFileName = "fake-$fileNamePart-${it.key}.txt"
-                val fakeProfileFile =
-                    File(profilesOutputDir, profileFileName).apply {
-                        writeText(it.value.joinToString(System.lineSeparator()))
-                    }
+            // Write the fake profile with the given list of profile rules.
+            val profileFileName = "fake-$fileNamePart-${it.key}.txt"
+            val fakeProfileFile =
+                File(profilesOutputDir, profileFileName).apply {
+                    writeText(it.value.joinToString(System.lineSeparator()))
+                }
 
-                // Creates an artifact for the test result proto. Note that this can be used
-                // both as a test result artifact and a global artifact.
-                val path = (if (useGsSchema) "gs://" else "") + fakeProfileFile.absolutePath
-                TestArtifactProto.Artifact.newBuilder()
-                    .setLabel(LabelProto.Label.newBuilder().setLabel(label).build())
-                    .setSourcePath(PathProto.Path.newBuilder().setPath(path).build())
-                    .build()
-            }
+            // Creates an artifact for the test result proto. Note that this can be used
+            // both as a test result artifact and a global artifact.
+            val path = (if (useGsSchema) "gs://" else "") + fakeProfileFile.absolutePath
+            TestArtifactProto.Artifact.newBuilder()
+                .setLabel(LabelProto.Label.newBuilder().setLabel(label).build())
+                .setSourcePath(PathProto.Path.newBuilder().setPath(path).build())
+                .build()
+        }
 
         // Baseline and startup profiles are added as test results artifacts.
         // For testing with FTL instead, we add the profile as global artifact.
@@ -683,6 +707,7 @@ class ProducerModule(
 class ConsumerModule(
     override val rule: ProjectSetupRule,
     override val name: String,
+    override val legacyGradleVersion: Boolean,
     private val producerName: String,
     private val dependencyName: String,
 ) : Module {
@@ -709,10 +734,10 @@ class ConsumerModule(
             flavorsBlock =
                 if (flavors)
                     """
-                flavorDimensions = ["version"]
-                free { dimension "version" }
-                paid { dimension "version" }
-            """
+                    flavorDimensions = ["version"]
+                    free { dimension "version" }
+                    paid { dimension "version" }
+                    """
                         .trimIndent()
                 else "",
             dependencyOnProducerProject = dependencyOnProducerProject,
@@ -720,8 +745,8 @@ class ConsumerModule(
             buildTypesBlock =
                 if (buildTypeAnotherRelease)
                     """
-                anotherRelease { initWith(release) }
-        """
+                    anotherRelease { initWith(release) }
+                    """
                         .trimIndent()
                 else "",
             addAppTargetPlugin = addAppTargetPlugin,
@@ -780,6 +805,47 @@ class ConsumerModule(
                 $additionalGradleCodeBlock
 
             """
+                .trimIndent()
+        )
+    }
+
+    fun setupKotlinMultiplatformLibrary(
+        otherPluginsBlock: String = "",
+        dependenciesBlock: String = "",
+        dependencyOnProducerProject: Boolean = true,
+        additionalGradleCodeBlock: String = "",
+    ) {
+        isLibraryModule = true
+        // Use appendText() directly here to avoid the android() block.
+        rule.buildFile.appendText(
+            """
+            plugins {
+                id("org.jetbrains.kotlin.multiplatform")
+                id("com.android.kotlin.multiplatform.library")
+                id("androidx.baselineprofile.consumer")
+                $otherPluginsBlock
+            }
+
+            kotlin {
+              androidLibrary {
+                namespace = "com.example.namespace"
+                compileSdk = ${rule.props.compileSdk}
+              }
+              sourceSets {
+                androidMain.dependencies {
+                  $dependenciesBlock
+                }
+              }
+            }
+            baselineProfile {
+              variants {
+                androidMain {
+                  ${if (dependencyOnProducerProject) """from(project(":$producerName"))""" else ""}
+                }
+              }
+            }
+            $additionalGradleCodeBlock
+        """
                 .trimIndent()
         )
     }

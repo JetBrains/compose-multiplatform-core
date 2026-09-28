@@ -26,7 +26,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 
 /** Lazy-initialized test-suite global state for errors around measurement inaccuracy. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-object Errors {
+public object Errors {
     /** Same as trimMargins, but add newlines on either side. */
     @Suppress("MemberVisibilityCanBePrivate")
     internal fun String.trimMarginWrapNewlines(): String {
@@ -38,7 +38,7 @@ object Errors {
         return toList().sorted().joinToString(" ")
     }
 
-    val PREFIX: String
+    public val PREFIX: String
     private val UNSUPPRESSED_WARNING_MESSAGE: String?
 
     /**
@@ -115,17 +115,15 @@ object Errors {
                     .trimMarginWrapNewlines()
         }
 
-        if (!DeviceInfo.isEmulator && DeviceInfo.isRooted && !CpuInfo.locked) {
-            warningPrefix += "UNLOCKED_"
-            warningString +=
-                """
-                |WARNING: Unlocked CPU clocks
-                |    Benchmark appears to be running on a rooted device with unlocked CPU
-                |    clocks. Unlocked CPU clocks can lead to inconsistent results due to
-                |    dynamic frequency scaling, and thermal throttling. On a rooted device,
-                |    lock your device clocks to a stable frequency with `./gradlew lockClocks`
-            """
-                    .trimMarginWrapNewlines()
+        if (
+            Arguments.requireLockedClocks &&
+                !DeviceInfo.isEmulator &&
+                DeviceInfo.isRooted &&
+                !CpuInfo.locked
+        ) {
+            warningPrefix += "${CpuInfo.Error.ID}_"
+            warningString += "|WARNING: " + CpuInfo.Error.SUMMARY
+            warningString += CpuInfo.Error.MESSAGE.trimMarginWrapNewlines()
         }
 
         if (
@@ -226,8 +224,11 @@ object Errors {
             warningString +=
                 """
                 |WARNING: Benchmark running without full AOT compilation.
-                |    Benchmarks should be speed compiled to reduce noise. This is enabled by default
-                |    in the benchmark plugin. Observed compilation state = $compilationMode.
+                |    Benchmarks should be `speed` compiled to reduce noise. This is enabled by
+                |    default in the benchmark plugin (on AGP 8.4+, where it's supported).
+                |    Observed compilation state = $compilationMode.
+                |    In other contexts, use:
+                |        adb shell cmd package compile -m speed -f ${context.packageName}
             """
                     .trimMarginWrapNewlines()
         }
@@ -243,6 +244,24 @@ object Errors {
                 |    Even in a speed-compiled, fully AOT'd benchmark, JIT can occur and reduce perf
                 |    consistency. Use the following script to disable JIT and restart the runtime:
                 |        ./benchmark/gradle-plugin/src/main/resources/scripts/disableJit.sh
+            """
+                    .trimMarginWrapNewlines()
+        }
+        if (DeviceMirroring.isAndroidStudioDeviceMirroringActive()) {
+            warningPrefix += "${DeviceMirroring.Error.ID}_"
+            warningString += "ERROR: " + DeviceMirroring.Error.SUMMARY
+            warningString += DeviceMirroring.Error.MESSAGE.trimMarginWrapNewlines()
+        }
+
+        if (!DeviceInfo.canShellAccessAppFiles) {
+            warningPrefix += "SHELL-ACCESS-DENIED_"
+            warningString +=
+                """
+                |ERROR: Shell user cannot access app files
+                |    MediaProvider/FUSE is blocking the ADB shell from accessing app data.
+                |    This is a known issue on some devices and prevents Jetpack Benchmark from
+                |    capturing profiles and traces. The device may simply be incompatible with
+                |    Jetpack Benchmark.
             """
                     .trimMarginWrapNewlines()
         }
@@ -285,7 +304,7 @@ object Errors {
      * deeply buried in a stack of initializer errors. Instead, they're deferred until this method
      * call.
      */
-    fun throwIfError() {
+    public fun throwIfError() {
         // Note - we ignore configuration errors in dry run mode, since we don't care about
         // measurement accuracy, and we want to support e.g. running on emulators, -eng builds, and
         // unlocked devices in presubmit.

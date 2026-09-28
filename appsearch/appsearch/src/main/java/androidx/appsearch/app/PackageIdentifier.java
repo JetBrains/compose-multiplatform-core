@@ -19,13 +19,20 @@ package androidx.appsearch.app;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.annotation.HideInPlatform;
+import androidx.appsearch.flags.FlaggedApi;
+import androidx.appsearch.flags.Flags;
 import androidx.appsearch.safeparcel.PackageIdentifierParcel;
 import androidx.core.util.Preconditions;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * This class represents a uniquely identifiable package.
  */
-// TODO(b/384721898): Switch to JSpecify annotations
+// TODO(b/384721898): Switching to JSpecify annotations changes APIs once synced to platform.
+//  Do not switch unless you've checked that no APIs are affected.
 @SuppressWarnings("JSpecifyNullness")
 public class PackageIdentifier {
     private final @NonNull PackageIdentifierParcel mPackageIdentifierParcel;
@@ -46,12 +53,46 @@ public class PackageIdentifier {
      * @param sha256Certificate SHA-256 certificate digest of the package.
      */
     public PackageIdentifier(@NonNull String packageName, @NonNull byte[] sha256Certificate) {
-        Preconditions.checkNotNull(packageName);
-        Preconditions.checkNotNull(sha256Certificate);
-        mPackageIdentifierParcel = new PackageIdentifierParcel(packageName, sha256Certificate);
+        mPackageIdentifierParcel = new PackageIdentifierParcel(
+                Preconditions.checkNotNull(packageName),
+                Preconditions.checkNotNull(sha256Certificate));
     }
 
-    /** @exportToFramework:hide */
+    /**
+     * Creates a unique identifier for a package signed by multiple certificates.
+     *
+     * <p>This constructor is for multi-signer applications that are simultaneously signed by
+     * multiple active certificates under AND-logic (where <b>all</b> certificates are concurrently
+     * valid and must be validated together).
+     *
+     * <p>This list is <b>not</b> for key rotation history (where past keys from a rotation lineage
+     * are provided) nor for OR-logic (where matching any single certificate out of several is
+     * sufficient). For single-signer applications with or without key rotation, use {@link
+     * #PackageIdentifier(String, byte[])}.
+     *
+     * @param packageName                  Name of the package.
+     * @param multiSignerSha256Certificates List of all SHA-256 certificate digests for a
+     *                                     multi-signer package. All active co-signing certificates
+     *                                     must be provided.
+     */
+    @FlaggedApi(Flags.FLAG_ENABLE_PACKAGE_IDENTIFIER_MULTI_CERT)
+    public PackageIdentifier(
+            @NonNull String packageName,
+            @NonNull List<byte[]> multiSignerSha256Certificates) {
+        Preconditions.checkNotNull(packageName);
+        Preconditions.checkNotNull(multiSignerSha256Certificates);
+        if (multiSignerSha256Certificates.isEmpty()) {
+            throw new IllegalArgumentException("multiSignerSha256Certificates cannot be empty");
+        }
+        for (int i = 0; i < multiSignerSha256Certificates.size(); i++) {
+            Preconditions.checkNotNull(
+                    multiSignerSha256Certificates.get(i), "cert at index " + i + " cannot be null");
+        }
+        byte[][] certsArray = multiSignerSha256Certificates.toArray(new byte[0][]);
+        mPackageIdentifierParcel = new PackageIdentifierParcel(packageName, certsArray);
+    }
+
+    @HideInPlatform
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public PackageIdentifier(@NonNull PackageIdentifierParcel packageIdentifierParcel) {
         mPackageIdentifierParcel = Preconditions.checkNotNull(packageIdentifierParcel);
@@ -60,9 +101,8 @@ public class PackageIdentifier {
     /**
      * Returns the {@link PackageIdentifierParcel} holding the values for this
      * {@link PackageIdentifier}.
-     *
-     * @exportToFramework:hide
      */
+    @HideInPlatform
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public @NonNull PackageIdentifierParcel getPackageIdentifierParcel() {
         return mPackageIdentifierParcel;
@@ -73,9 +113,45 @@ public class PackageIdentifier {
         return mPackageIdentifierParcel.getPackageName();
     }
 
-    /** Returns the SHA-256 certificate for a package. */
+    // TODO(b/536955734): Deprecate this method and introduce a getSha256CertificateHistory method.
+    /**
+     * Returns the SHA-256 certificate for a single-signer package.
+     *
+     * <p>For packages signed by multiple certificates, callers should use
+     * {@link #getMultiSignerSha256Certificates()} to retrieve all certificates. If this method
+     * is called on a multi-signer package, it returns the primary certificate (the first
+     * certificate in that list) for backward compatibility.
+     *
+     * <p>To determine whether a package has one or multiple certificates, check whether
+     * {@link #getMultiSignerSha256Certificates()} returns a non-empty list.
+     */
     public @NonNull byte[] getSha256Certificate() {
-        return mPackageIdentifierParcel.getSha256Certificate();
+        return mPackageIdentifierParcel.getSha256Certificate().clone();
+    }
+
+    // TODO(b/536955734): Update Javadoc to recommend getSha256CertificateHistory() once
+    // getSha256Certificate() is deprecated.
+    /**
+     * Returns all SHA-256 certificates for a multi-signer package, or an empty list if the
+     * package has a single signer.
+     *
+     * <p>For multi-signer packages, this list contains all active co-signing certificates. For
+     * single-signer packages (including those with certificate rotation), use
+     * {@link #getSha256Certificate()}.
+     */
+    @FlaggedApi(Flags.FLAG_ENABLE_PACKAGE_IDENTIFIER_MULTI_CERT)
+    public @NonNull List<byte[]> getMultiSignerSha256Certificates() {
+        byte[][] certs = mPackageIdentifierParcel.getMultiSignerSha256Certificates();
+        if (certs == null) {
+            return Collections.emptyList();
+        }
+        // Defensively copy each byte array so callers cannot mutate the internal state of
+        // this PackageIdentifier.
+        byte[][] copy = new byte[certs.length][];
+        for (int i = 0; i < certs.length; i++) {
+            copy[i] = certs[i].clone();
+        }
+        return List.of(copy);
     }
 
     @Override

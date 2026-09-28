@@ -28,12 +28,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.R
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.core.graphics.Insets as AndroidXInsets
+import androidx.core.view.DisplayCutoutCompat
 import androidx.core.view.OnApplyWindowInsetsListener
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsAnimationCompat
@@ -60,7 +63,6 @@ internal class AndroidWindowInsets(internal val type: Int, private val name: Str
      * the Window.
      */
     var isVisible by mutableStateOf(true)
-        private set
 
     override fun getLeft(density: Density, layoutDirection: LayoutDirection): Int {
         return insets.left
@@ -78,7 +80,6 @@ internal class AndroidWindowInsets(internal val type: Int, private val name: Str
         return insets.bottom
     }
 
-    @OptIn(ExperimentalLayoutApi::class)
     internal fun update(windowInsetsCompat: WindowInsetsCompat, typeMask: Int) {
         if (typeMask == 0 || typeMask and type != 0) {
             insets = windowInsetsCompat.getInsets(type)
@@ -110,11 +111,8 @@ internal class AndroidWindowInsets(internal val type: Int, private val name: Str
  *
  * This property should be set prior to first composition.
  */
-@OptIn(ExperimentalLayoutApi::class)
-var AbstractComposeView.consumeWindowInsets: Boolean
-    get() =
-        getTag(R.id.consume_window_insets_tag) as? Boolean
-            ?: !ComposeFoundationLayoutFlags.isWindowInsetsDefaultPassThroughEnabled
+public var AbstractComposeView.consumeWindowInsets: Boolean
+    get() = getTag(R.id.consume_window_insets_tag) as? Boolean ?: false
     set(value) {
         setTag(R.id.consume_window_insets_tag, value)
     }
@@ -130,24 +128,21 @@ var AbstractComposeView.consumeWindowInsets: Boolean
     level = DeprecationLevel.HIDDEN,
     message = "Please use AbstractComposeView.consumeWindowInsets",
 )
-@OptIn(ExperimentalLayoutApi::class)
-var ComposeView.consumeWindowInsets: Boolean
-    get() =
-        getTag(R.id.consume_window_insets_tag) as? Boolean
-            ?: !ComposeFoundationLayoutFlags.isWindowInsetsDefaultPassThroughEnabled
+public var ComposeView.consumeWindowInsets: Boolean
+    get() = getTag(R.id.consume_window_insets_tag) as? Boolean ?: false
     set(value) {
         setTag(R.id.consume_window_insets_tag, value)
     }
 
 /** For the [WindowInsetsCompat.Type.captionBar]. */
-actual val WindowInsets.Companion.captionBar: WindowInsets
+actual public val WindowInsets.Companion.captionBar: WindowInsets
     @Composable @NonRestartableComposable get() = WindowInsetsHolder.current().captionBar
 
 /**
  * For the [WindowInsetsCompat.Type.displayCutout]. This insets represents the area that the display
  * cutout (e.g. for camera) is and important content should be excluded from.
  */
-actual val WindowInsets.Companion.displayCutout: WindowInsets
+actual public val WindowInsets.Companion.displayCutout: WindowInsets
     @Composable @NonRestartableComposable get() = WindowInsetsHolder.current().displayCutout
 
 /**
@@ -159,14 +154,14 @@ actual val WindowInsets.Companion.displayCutout: WindowInsets
  * file and call `WindowCompat.setDecorFitsSystemWindows(window, false)` in their
  * [android.app.Activity.onCreate].
  */
-actual val WindowInsets.Companion.ime: WindowInsets
+actual public val WindowInsets.Companion.ime: WindowInsets
     @Composable @NonRestartableComposable get() = WindowInsetsHolder.current().ime
 
 /**
  * For the [WindowInsetsCompat.Type.mandatorySystemGestures]. These insets represents the space
  * where system gestures have priority over application gestures.
  */
-actual val WindowInsets.Companion.mandatorySystemGestures: WindowInsets
+actual public val WindowInsets.Companion.mandatorySystemGestures: WindowInsets
     @Composable
     @NonRestartableComposable
     get() = WindowInsetsHolder.current().mandatorySystemGestures
@@ -175,34 +170,42 @@ actual val WindowInsets.Companion.mandatorySystemGestures: WindowInsets
  * For the [WindowInsetsCompat.Type.navigationBars]. These insets represent where system UI places
  * navigation bars. Interactive UI should avoid the navigation bars area.
  */
-actual val WindowInsets.Companion.navigationBars: WindowInsets
+actual public val WindowInsets.Companion.navigationBars: WindowInsets
     @Composable @NonRestartableComposable get() = WindowInsetsHolder.current().navigationBars
 
 /** For the [WindowInsetsCompat.Type.statusBars]. */
-actual val WindowInsets.Companion.statusBars: WindowInsets
+actual public val WindowInsets.Companion.statusBars: WindowInsets
     @Composable @NonRestartableComposable get() = WindowInsetsHolder.current().statusBars
 
 /** For the [WindowInsetsCompat.Type.systemBars]. */
-actual val WindowInsets.Companion.systemBars: WindowInsets
+actual public val WindowInsets.Companion.systemBars: WindowInsets
     @Composable @NonRestartableComposable get() = WindowInsetsHolder.current().systemBars
 
 /** For the [WindowInsetsCompat.Type.systemGestures]. */
-actual val WindowInsets.Companion.systemGestures: WindowInsets
+actual public val WindowInsets.Companion.systemGestures: WindowInsets
     @Composable @NonRestartableComposable get() = WindowInsetsHolder.current().systemGestures
 
 /** For the [WindowInsetsCompat.Type.tappableElement]. */
-actual val WindowInsets.Companion.tappableElement: WindowInsets
+actual public val WindowInsets.Companion.tappableElement: WindowInsets
     @Composable @NonRestartableComposable get() = WindowInsetsHolder.current().tappableElement
 
 /** The insets for the curved areas in a waterfall display. */
-actual val WindowInsets.Companion.waterfall: WindowInsets
+actual public val WindowInsets.Companion.waterfall: WindowInsets
     @Composable @NonRestartableComposable get() = WindowInsetsHolder.current().waterfall
+
+/**
+ * The path for the cutout, if any
+ *
+ * See [DisplayCutoutCompat.getCutoutPath]
+ */
+actual public val WindowInsets.Companion.cutoutPath: Path?
+    @Composable @NonRestartableComposable get() = WindowInsetsHolder.current().cutoutPath
 
 /**
  * The insets that include areas where content may be covered by other drawn content. This includes
  * all [system bars][systemBars], [display cutout][displayCutout], and [soft keyboard][ime].
  */
-actual val WindowInsets.Companion.safeDrawing: WindowInsets
+actual public val WindowInsets.Companion.safeDrawing: WindowInsets
     @Composable @NonRestartableComposable get() = WindowInsetsHolder.current().safeDrawing
 
 /**
@@ -210,22 +213,21 @@ actual val WindowInsets.Companion.safeDrawing: WindowInsets
  * [system gestures][systemGestures], [mandatory system gestures][mandatorySystemGestures],
  * [rounded display areas][waterfall], and [tappable areas][tappableElement].
  */
-actual val WindowInsets.Companion.safeGestures: WindowInsets
+actual public val WindowInsets.Companion.safeGestures: WindowInsets
     @Composable @NonRestartableComposable get() = WindowInsetsHolder.current().safeGestures
 
 /**
  * The insets that include all areas that may be drawn over or have gesture confusion, including
  * everything in [safeDrawing] and [safeGestures].
  */
-actual val WindowInsets.Companion.safeContent: WindowInsets
+actual public val WindowInsets.Companion.safeContent: WindowInsets
     @Composable @NonRestartableComposable get() = WindowInsetsHolder.current().safeContent
 
 /**
  * The insets that the [WindowInsetsCompat.Type.captionBar] will consume if shown. If it cannot be
  * shown then this will be empty.
  */
-@ExperimentalLayoutApi
-val WindowInsets.Companion.captionBarIgnoringVisibility: WindowInsets
+public val WindowInsets.Companion.captionBarIgnoringVisibility: WindowInsets
     @Composable
     @NonRestartableComposable
     get() = WindowInsetsHolder.current().captionBarIgnoringVisibility
@@ -235,8 +237,7 @@ val WindowInsets.Companion.captionBarIgnoringVisibility: WindowInsets
  * represent where system UI places navigation bars. Interactive UI should avoid the navigation bars
  * area. If navigation bars cannot be shown, then this will be empty.
  */
-@ExperimentalLayoutApi
-val WindowInsets.Companion.navigationBarsIgnoringVisibility: WindowInsets
+public val WindowInsets.Companion.navigationBarsIgnoringVisibility: WindowInsets
     @Composable
     @NonRestartableComposable
     get() = WindowInsetsHolder.current().navigationBarsIgnoringVisibility
@@ -245,8 +246,7 @@ val WindowInsets.Companion.navigationBarsIgnoringVisibility: WindowInsets
  * The insets that [WindowInsetsCompat.Type.statusBars] will consume if shown. If the status bar can
  * never be shown, then this will be empty.
  */
-@ExperimentalLayoutApi
-val WindowInsets.Companion.statusBarsIgnoringVisibility: WindowInsets
+public val WindowInsets.Companion.statusBarsIgnoringVisibility: WindowInsets
     @Composable
     @NonRestartableComposable
     get() = WindowInsetsHolder.current().statusBarsIgnoringVisibility
@@ -256,8 +256,7 @@ val WindowInsets.Companion.statusBarsIgnoringVisibility: WindowInsets
  *
  * If system bars can never be shown, then this will be empty.
  */
-@ExperimentalLayoutApi
-val WindowInsets.Companion.systemBarsIgnoringVisibility: WindowInsets
+public val WindowInsets.Companion.systemBarsIgnoringVisibility: WindowInsets
     @Composable
     @NonRestartableComposable
     get() = WindowInsetsHolder.current().systemBarsIgnoringVisibility
@@ -267,8 +266,7 @@ val WindowInsets.Companion.systemBarsIgnoringVisibility: WindowInsets
  *
  * If there are never tappable elements then this is empty.
  */
-@ExperimentalLayoutApi
-val WindowInsets.Companion.tappableElementIgnoringVisibility: WindowInsets
+public val WindowInsets.Companion.tappableElementIgnoringVisibility: WindowInsets
     @Composable
     @NonRestartableComposable
     get() = WindowInsetsHolder.current().tappableElementIgnoringVisibility
@@ -277,49 +275,43 @@ val WindowInsets.Companion.tappableElementIgnoringVisibility: WindowInsets
  * `true` when the [caption bar][captionBar] is being displayed, irrespective of whether it
  * intersects with the Window.
  */
-@ExperimentalLayoutApi
-val WindowInsets.Companion.isCaptionBarVisible: Boolean
+public val WindowInsets.Companion.isCaptionBarVisible: Boolean
     @Composable @NonRestartableComposable get() = WindowInsetsHolder.current().captionBar.isVisible
 
 /**
  * `true` when the [soft keyboard][ime] is being displayed, irrespective of whether it intersects
  * with the Window.
  */
-@ExperimentalLayoutApi
-val WindowInsets.Companion.isImeVisible: Boolean
+public val WindowInsets.Companion.isImeVisible: Boolean
     @Composable @NonRestartableComposable get() = WindowInsetsHolder.current().ime.isVisible
 
 /**
- * `true` when the [statusBars] are being displayed, irrespective of whether they intersects with
- * the Window.
+ * `true` when the [statusBars] are being displayed, irrespective of whether they intersect with the
+ * Window.
  */
-@ExperimentalLayoutApi
-val WindowInsets.Companion.areStatusBarsVisible: Boolean
+public val WindowInsets.Companion.areStatusBarsVisible: Boolean
     @Composable @NonRestartableComposable get() = WindowInsetsHolder.current().statusBars.isVisible
 
 /**
- * `true` when the [navigationBars] are being displayed, irrespective of whether they intersects
- * with the Window.
+ * `true` when the [navigationBars] are being displayed, irrespective of whether they intersect with
+ * the Window.
  */
-@ExperimentalLayoutApi
-val WindowInsets.Companion.areNavigationBarsVisible: Boolean
+public val WindowInsets.Companion.areNavigationBarsVisible: Boolean
     @Composable
     @NonRestartableComposable
     get() = WindowInsetsHolder.current().navigationBars.isVisible
 
 /**
- * `true` when the [systemBars] are being displayed, irrespective of whether they intersects with
- * the Window.
+ * `true` when the [systemBars] are being displayed, irrespective of whether they intersect with the
+ * Window.
  */
-@ExperimentalLayoutApi
-val WindowInsets.Companion.areSystemBarsVisible: Boolean
+public val WindowInsets.Companion.areSystemBarsVisible: Boolean
     @Composable @NonRestartableComposable get() = WindowInsetsHolder.current().systemBars.isVisible
 /**
- * `true` when the [tappableElement] is being displayed, irrespective of whether they intersects
- * with the Window.
+ * `true` when the [tappableElement] is being displayed, irrespective of whether they intersect with
+ * the Window.
  */
-@ExperimentalLayoutApi
-val WindowInsets.Companion.isTappableElementVisible: Boolean
+public val WindowInsets.Companion.isTappableElementVisible: Boolean
     @Composable
     @NonRestartableComposable
     get() = WindowInsetsHolder.current().tappableElement.isVisible
@@ -330,8 +322,7 @@ val WindowInsets.Companion.isTappableElementVisible: Boolean
  *
  * This will be the same as [imeAnimationTarget] when there is no IME animation in progress.
  */
-@ExperimentalLayoutApi
-val WindowInsets.Companion.imeAnimationSource: WindowInsets
+public val WindowInsets.Companion.imeAnimationSource: WindowInsets
     @Composable @NonRestartableComposable get() = WindowInsetsHolder.current().imeAnimationSource
 
 /**
@@ -340,8 +331,7 @@ val WindowInsets.Companion.imeAnimationSource: WindowInsets
  *
  * This will be the same as [imeAnimationSource] when there is no IME animation in progress.
  */
-@ExperimentalLayoutApi
-val WindowInsets.Companion.imeAnimationTarget: WindowInsets
+public val WindowInsets.Companion.imeAnimationTarget: WindowInsets
     @Composable @NonRestartableComposable get() = WindowInsetsHolder.current().imeAnimationTarget
 
 /** The insets for various values in the current window. */
@@ -366,6 +356,9 @@ internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat
         systemInsets(insets, WindowInsetsCompat.Type.tappableElement(), "tappableElement")
     val waterfall =
         ValueInsets(insets?.displayCutout?.waterfallInsets ?: AndroidXInsets.NONE, "waterfall")
+    var cutoutPath by mutableStateOf(insets?.displayCutout?.cutoutPath?.asComposePath())
+        private set
+
     val safeDrawing = systemBars.union(ime).union(displayCutout)
     val safeGestures: WindowInsets =
         tappableElement.union(mandatorySystemGestures).union(systemGestures).union(waterfall)
@@ -401,19 +394,15 @@ internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat
             WindowInsetsCompat.Type.tappableElement(),
             "tappableElementIgnoringVisibility",
         )
-    val imeAnimationTarget =
-        valueInsetsIgnoringVisibility(insets, WindowInsetsCompat.Type.ime(), "imeAnimationTarget")
-    val imeAnimationSource =
-        valueInsetsIgnoringVisibility(insets, WindowInsetsCompat.Type.ime(), "imeAnimationSource")
+    val imeAnimationTarget = ValueInsets(AndroidXInsets.NONE, "imeAnimationTarget")
+    val imeAnimationSource = ValueInsets(AndroidXInsets.NONE, "imeAnimationSource")
 
     /**
      * `true` unless the `AbstractComposeView` [AbstractComposeView.consumeWindowInsets] is set to
      * `false`.
      */
-    @OptIn(ExperimentalLayoutApi::class)
     val consumes =
-        (view.parent as? View)?.getTag(R.id.consume_window_insets_tag) as? Boolean
-            ?: !ComposeFoundationLayoutFlags.isWindowInsetsDefaultPassThroughEnabled
+        (view.parent as? View)?.getTag(R.id.consume_window_insets_tag) as? Boolean ?: false
 
     /**
      * The number of accesses to [WindowInsetsHolder]. When this reaches zero, the listeners are
@@ -423,12 +412,35 @@ internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat
 
     private val insetsListener = InsetsListener(this)
 
+    init {
+        val rootWindowInsets = ViewCompat.getRootWindowInsets(view)
+        if (rootWindowInsets != null) {
+            // set the initial state of visibility
+            captionBar.isVisible = rootWindowInsets.isVisible(WindowInsetsCompat.Type.captionBar())
+            displayCutout.isVisible =
+                rootWindowInsets.isVisible(WindowInsetsCompat.Type.displayCutout())
+            ime.isVisible = rootWindowInsets.isVisible(WindowInsetsCompat.Type.ime())
+            mandatorySystemGestures.isVisible =
+                rootWindowInsets.isVisible(WindowInsetsCompat.Type.mandatorySystemGestures())
+            navigationBars.isVisible =
+                rootWindowInsets.isVisible(WindowInsetsCompat.Type.navigationBars())
+            statusBars.isVisible = rootWindowInsets.isVisible(WindowInsetsCompat.Type.statusBars())
+            systemBars.isVisible = rootWindowInsets.isVisible(WindowInsetsCompat.Type.systemBars())
+            systemGestures.isVisible =
+                rootWindowInsets.isVisible(WindowInsetsCompat.Type.systemGestures())
+            tappableElement.isVisible =
+                rootWindowInsets.isVisible(WindowInsetsCompat.Type.tappableElement())
+        }
+    }
+
     /**
      * A usage of [WindowInsetsHolder.current] was added. We must track so that when the first one
      * is added, listeners are set and when the last is removed, the listeners are removed.
      */
     fun incrementAccessors(view: View) {
         if (accessCount == 0) {
+            // Ensure the listener is in a fresh reset state
+            insetsListener.resetState()
             // add listeners
             ViewCompat.setOnApplyWindowInsetsListener(view, insetsListener)
 
@@ -502,10 +514,8 @@ internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat
                     .toInsetsValues()
 
             val cutout = insets.displayCutout
-            if (cutout != null) {
-                val waterfallInsets = cutout.waterfallInsets
-                waterfall.value = waterfallInsets.toInsetsValues()
-            }
+            waterfall.value = (cutout?.waterfallInsets ?: AndroidXInsets.NONE).toInsetsValues()
+            cutoutPath = cutout?.cutoutPath?.asComposePath()
         }
         Snapshot.sendApplyNotifications()
     }
@@ -561,7 +571,7 @@ internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat
         /**
          * Returns the [WindowInsetsHolder] associated with [view] or creates one and associates it.
          */
-        private fun getOrCreateFor(view: View): WindowInsetsHolder {
+        fun getOrCreateFor(view: View): WindowInsetsHolder {
             return synchronized(viewMap) {
                 viewMap.getOrPut(view) {
                     val insets = null
@@ -608,13 +618,22 @@ private class InsetsListener(val composeInsets: WindowInsetsHolder) :
     var prepared = false
 
     /** `true` if there is an animation in progress. */
-    var runningAnimation = false
+    private var runningAnimationMask = 0
+
+    val runningAnimation: Boolean
+        get() = runningAnimationMask != 0
 
     var savedInsets: WindowInsetsCompat? = null
 
+    /** Resets the internal state of the listener. */
+    fun resetState() {
+        prepared = false
+        runningAnimationMask = 0
+        savedInsets = null
+    }
+
     override fun onPrepare(animation: WindowInsetsAnimationCompat) {
         prepared = true
-        runningAnimation = true
         super.onPrepare(animation)
     }
 
@@ -623,6 +642,12 @@ private class InsetsListener(val composeInsets: WindowInsetsHolder) :
         bounds: WindowInsetsAnimationCompat.BoundsCompat,
     ): WindowInsetsAnimationCompat.BoundsCompat {
         prepared = false
+
+        if (animation.durationMillis != 0L) {
+            val type = animation.typeMask
+            runningAnimationMask = runningAnimationMask or type
+        }
+
         return super.onStart(animation, bounds)
     }
 
@@ -636,14 +661,22 @@ private class InsetsListener(val composeInsets: WindowInsetsHolder) :
 
     override fun onEnd(animation: WindowInsetsAnimationCompat) {
         prepared = false
-        runningAnimation = false
+        val type = animation.typeMask
         val insets = savedInsets
-        if (animation.durationMillis > 0L && insets != null) {
-            composeInsets.updateImeAnimationSource(insets)
-            composeInsets.updateImeAnimationTarget(insets)
-            composeInsets.update(insets)
+        runningAnimationMask = runningAnimationMask and type.inv()
+        val allFinished = runningAnimationMask == 0
+        if (insets != null) {
+            if (allFinished || type and WindowInsetsCompat.Type.ime() != 0) {
+                composeInsets.updateImeAnimationSource(insets)
+                composeInsets.updateImeAnimationTarget(insets)
+            }
+            if (allFinished) {
+                composeInsets.update(insets)
+            }
         }
-        savedInsets = null
+        if (allFinished) {
+            savedInsets = null
+        }
         super.onEnd(animation)
     }
 
@@ -660,7 +693,7 @@ private class InsetsListener(val composeInsets: WindowInsetsHolder) :
             if (Build.VERSION.SDK_INT == Build.VERSION_CODES.R) {
                 view.post(this)
             }
-        } else if (!runningAnimation) {
+        } else if (runningAnimationMask == 0) {
             // If an animation is running, rely on onProgress() to update the insets
             // On APIs less than 30 where the IME animation is backported, this avoids reporting
             // the final insets for a frame while the animation is running.
@@ -679,8 +712,8 @@ private class InsetsListener(val composeInsets: WindowInsetsHolder) :
      */
     override fun run() {
         if (prepared) {
+            runningAnimationMask = 0
             prepared = false
-            runningAnimation = false
             savedInsets?.let {
                 composeInsets.updateImeAnimationSource(it)
                 composeInsets.update(it)

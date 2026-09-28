@@ -18,6 +18,7 @@ package androidx.compose.remote.core.operations.layout.managers;
 import static androidx.compose.remote.core.documentation.DocumentedOperation.FLOAT;
 import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.PaintContext;
@@ -26,6 +27,7 @@ import androidx.compose.remote.core.VariableSupport;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
 import androidx.compose.remote.core.operations.BitmapData;
+import androidx.compose.remote.core.operations.Utils;
 import androidx.compose.remote.core.operations.layout.Component;
 import androidx.compose.remote.core.operations.layout.measure.ComponentMeasure;
 import androidx.compose.remote.core.operations.layout.measure.MeasurePass;
@@ -39,19 +41,39 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ImageLayout extends LayoutManager implements VariableSupport {
     private int mBitmapId = -1;
     private int mScaleType;
     private float mAlpha = 1f;
+    private float mOutAlpha;
 
     @NonNull ImageScaling mScaling = new ImageScaling();
     @NonNull PaintBundle mPaint = new PaintBundle();
+
+    public float getAlpha() {
+        return mAlpha;
+    }
+
+    public int getBitmapId() {
+        return mBitmapId;
+    }
+
+    public int getScaleType() {
+        return mScaleType;
+    }
 
     @Override
     public void registerListening(@NonNull RemoteContext context) {
         if (mBitmapId != -1) {
             context.listensTo(mBitmapId, this);
         }
+        context.listensTo(Utils.idFromNan(mAlpha), this);
+    }
+
+    @Override
+    public void updateVariables(@NonNull RemoteContext context) {
+        mOutAlpha = Float.isNaN(mAlpha) ? context.getFloat(Utils.idFromNan(mAlpha)) : mAlpha;
     }
 
     public ImageLayout(
@@ -69,6 +91,7 @@ public class ImageLayout extends LayoutManager implements VariableSupport {
         mBitmapId = bitmapId;
         mScaleType = scaleType & 0xFF;
         mAlpha = alpha;
+        mOutAlpha = Float.isNaN(alpha) ? 1f : alpha;
     }
 
     public ImageLayout(
@@ -84,15 +107,18 @@ public class ImageLayout extends LayoutManager implements VariableSupport {
     @Override
     public void computeWrapSize(
             @NonNull PaintContext context,
+            float minWidth,
             float maxWidth,
+            float minHeight,
             float maxHeight,
             boolean horizontalWrap,
             boolean verticalWrap,
             @NonNull MeasurePass measure,
             @NonNull Size size) {
 
-        BitmapData bitmapData = (BitmapData) context.getContext().getObject(mBitmapId);
-        if (bitmapData != null) {
+        Object obj = context.getContext().getObject(mBitmapId);
+        if (obj instanceof BitmapData) {
+            BitmapData bitmapData = (BitmapData) obj;
             size.setWidth(bitmapData.getWidth());
             size.setHeight(bitmapData.getHeight());
         }
@@ -140,7 +166,7 @@ public class ImageLayout extends LayoutManager implements VariableSupport {
                     1f);
 
             context.savePaint();
-            if (mAlpha == 1f) {
+            if (mOutAlpha == 1f) {
                 context.drawBitmap(
                         mBitmapId,
                         (int) 0f,
@@ -155,7 +181,8 @@ public class ImageLayout extends LayoutManager implements VariableSupport {
             } else {
                 context.savePaint();
                 mPaint.reset();
-                mPaint.setColor(0f, 0f, 0f, mAlpha);
+                // Set paint color to black with the alpha value, this will apply to the bitmap.
+                mPaint.setColor(0f, 0f, 0f, mOutAlpha);
                 context.applyPaint(mPaint);
                 context.drawBitmap(
                         mBitmapId,
@@ -247,16 +274,7 @@ public class ImageLayout extends LayoutManager implements VariableSupport {
         return Operations.LAYOUT_IMAGE;
     }
 
-    /**
-     * Write the operation to the buffer
-     *
-     * @param buffer
-     * @param componentId
-     * @param animationId
-     * @param bitmapId
-     * @param scaleType
-     * @param alpha
-     */
+    /** Write the operation to the buffer */
     public static void apply(
             @NonNull WireBuffer buffer,
             int componentId,
@@ -279,11 +297,11 @@ public class ImageLayout extends LayoutManager implements VariableSupport {
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int componentId = buffer.readInt();
-        int animationId = buffer.readInt();
-        int bitmapId = buffer.readInt();
+        int componentId = buffer.declareId();
+        int animationId = buffer.declareId();
+        int bitmapId = buffer.readId();
         int scaleType = buffer.readInt();
-        float alpha = buffer.readFloat();
+        float alpha = buffer.readNanId();
         operations.add(new ImageLayout(null, componentId, animationId, bitmapId, scaleType, alpha));
     }
 
@@ -293,16 +311,14 @@ public class ImageLayout extends LayoutManager implements VariableSupport {
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Layout Operations", id(), name())
-                .description("Image layout implementation.\n\n")
-                .field(INT, "COMPONENT_ID", "unique id for this component")
-                .field(
-                        INT,
-                        "ANIMATION_ID",
-                        "id used to match components," + " for animation purposes")
-                .field(INT, "BITMAP_ID", "bitmap id")
-                .field(INT, "SCALE_TYPE", "scale type")
-                .field(FLOAT, "ALPHA", "alpha");
+        doc.operation("Layout Managers", id(), name())
+                .additionalDocumentation("image_layout")
+                .description("Image layout implementation")
+                .field(INT, "componentId", "Unique ID for this component")
+                .field(INT, "animationId", "ID used to match components for animation purposes")
+                .field(INT, "bitmapId", "The ID of the bitmap to display")
+                .field(INT, "scaleType", "The scale type to apply")
+                .field(FLOAT, "alpha", "The alpha transparency [0..1]");
     }
 
     @Override

@@ -30,6 +30,7 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.Paragraph
+import androidx.compose.ui.text.ParagraphIntrinsics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextPainter
@@ -45,6 +46,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TextInputService
 import androidx.compose.ui.text.input.TextInputSession
 import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
@@ -60,7 +62,8 @@ internal const val DefaultWidthCharCount = 10 // min width for TextField is 10 c
 internal val EmptyTextReplacement = "H".repeat(DefaultWidthCharCount) // just a reference character.
 
 /**
- * Computed the default width and height for TextField.
+ * Computes a width and height of the default string with [lines] amount of lines that is then used
+ * to calculate the default size of the text field.
  *
  * The bounding box or x-advance of the empty text is empty, i.e. 0x0 box or 0px advance. However
  * this is not useful for TextField since text field want to reserve some amount of height for
@@ -74,22 +77,45 @@ internal fun computeSizeForDefaultText(
     style: TextStyle,
     density: Density,
     fontFamilyResolver: FontFamily.Resolver,
-    text: String = EmptyTextReplacement,
-    maxLines: Int = 1,
+    defaultLocaleList: LocaleList,
+    lines: Int = 1,
 ): IntSize {
     val paragraph =
-        Paragraph(
-            text = text,
-            style = style,
-            spanStyles = listOf(),
-            maxLines = maxLines,
-            overflow = TextOverflow.Clip,
-            density = density,
-            fontFamilyResolver = fontFamilyResolver,
-            constraints = Constraints(),
+        paragraphForDefaultText(
+            style,
+            density,
+            fontFamilyResolver,
+            defaultLocaleList,
+            lines,
+            lines > 1,
         )
     return IntSize(paragraph.minIntrinsicWidth.ceilToIntPx(), paragraph.height.ceilToIntPx())
 }
+
+/** See [computeSizeForDefaultText] for details. */
+internal fun paragraphForDefaultText(
+    style: TextStyle,
+    density: Density,
+    fontFamilyResolver: FontFamily.Resolver,
+    defaultLocaleList: LocaleList,
+    lines: Int,
+    softWrap: Boolean,
+) =
+    Paragraph(
+        ParagraphIntrinsics(
+            text = (0..<lines).joinToString("\n") { EmptyTextReplacement },
+            style = style,
+            fontFamilyResolver = fontFamilyResolver,
+            defaultLocaleList = defaultLocaleList,
+            annotations = emptyList(),
+            placeholders = listOf(),
+            density = density,
+            softWrap = softWrap,
+        ),
+        Constraints(),
+        lines,
+        TextOverflow.Clip,
+    )
 
 internal class TextFieldDelegate {
     companion object {
@@ -220,6 +246,7 @@ internal class TextFieldDelegate {
                             textDelegate.style,
                             textDelegate.density,
                             textDelegate.fontFamilyResolver,
+                            textDelegate.defaultLocaleList,
                         )
                     },
                 )

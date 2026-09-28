@@ -171,7 +171,7 @@ class FragmentContainerViewTest {
             }
         )
 
-        childView.setTag(R.id.fragment_container_view_tag, Fragment())
+        childView.setTag(androidx.fragment.R.id.fragment_container_view_tag, Fragment())
 
         parentView.addView(childView)
         parentView.dispatchApplyWindowInsets(sentInsets)
@@ -215,8 +215,8 @@ class FragmentContainerViewTest {
             }
         )
 
-        childView.setTag(R.id.fragment_container_view_tag, Fragment())
-        childView2.setTag(R.id.fragment_container_view_tag, Fragment())
+        childView.setTag(androidx.fragment.R.id.fragment_container_view_tag, Fragment())
+        childView2.setTag(androidx.fragment.R.id.fragment_container_view_tag, Fragment())
 
         parentView.addView(childView)
         parentView.addView(childView2)
@@ -374,8 +374,8 @@ class FragmentContainerViewTest {
         fragment1.mView = childView1
         fragment2.mView = childView2
 
-        childView1.setTag(R.id.fragment_container_view_tag, fragment1)
-        childView2.setTag(R.id.fragment_container_view_tag, fragment2)
+        childView1.setTag(androidx.fragment.R.id.fragment_container_view_tag, fragment1)
+        childView2.setTag(androidx.fragment.R.id.fragment_container_view_tag, fragment2)
 
         view.addView(childView1)
         view.addView(childView2)

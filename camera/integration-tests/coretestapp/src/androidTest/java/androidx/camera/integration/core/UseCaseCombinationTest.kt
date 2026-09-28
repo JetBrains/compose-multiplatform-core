@@ -21,8 +21,7 @@ import android.hardware.camera2.CameraCharacteristics
 import android.os.Build
 import android.util.Rational
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
-import androidx.camera.camera2.pipe.integration.internal.StreamUseCaseUtil.STREAM_USE_CASE_STREAM_SPEC_OPTION
+import androidx.camera.camera2.internal.StreamUseCaseUtil.STREAM_USE_CASE_STREAM_SPEC_OPTION
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.AspectRatio.Ratio
 import androidx.camera.core.Camera
@@ -43,11 +42,11 @@ import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.IgnoreVideoRecordingProblematicDeviceRule.Companion.skipVideoRecordingTestIfNotSupportedByEmulator
 import androidx.camera.testing.impl.SurfaceTextureProvider.createAutoDrainingSurfaceTextureProvider
 import androidx.camera.testing.impl.WakelockEmptyActivityRule
+import androidx.camera.testing.impl.WakelockRule
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.testing.impl.mocks.MockScreenFlash
 import androidx.camera.testing.impl.video.AudioChecker
@@ -80,6 +79,7 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
@@ -92,10 +92,6 @@ class UseCaseCombinationTest(
     private val implName: String,
     private val cameraConfig: CameraXConfig,
 ) {
-
-    @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(active = implName.contains(CameraPipeConfig::class.simpleName!!))
 
     @get:Rule
     val cameraRule =
@@ -111,7 +107,13 @@ class UseCaseCombinationTest(
     val permissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(Manifest.permission.RECORD_AUDIO)
 
-    @get:Rule val wakelockEmptyActivityRule = WakelockEmptyActivityRule()
+    @get:Rule
+    val wakelockRule: TestRule =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            WakelockRule()
+        } else {
+            WakelockEmptyActivityRule()
+        }
 
     companion object {
 
@@ -127,14 +129,6 @@ class UseCaseCombinationTest(
                             selector,
                             Camera2Config::class.simpleName,
                             Camera2Config.defaultConfig(),
-                        )
-                    )
-                    add(
-                        arrayOf(
-                            "config=${CameraPipeConfig::class.simpleName} lensFacing={$lens}",
-                            selector,
-                            CameraPipeConfig::class.simpleName,
-                            CameraPipeConfig.defaultConfig(),
                         )
                     )
                 }
@@ -156,9 +150,7 @@ class UseCaseCombinationTest(
     private lateinit var cameraInfo: CameraInfo
     private lateinit var videoCapabilities: VideoCapabilities
 
-    private val audioStreamAvailable by lazy {
-        AudioChecker.canAudioStreamBeStarted(videoCapabilities, Recorder.DEFAULT_QUALITY_SELECTOR)
-    }
+    private val audioStreamAvailable by lazy { AudioChecker.canAudioStreamBeStarted() }
 
     @Before
     fun initializeCameraX() {

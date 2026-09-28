@@ -17,7 +17,6 @@
 package androidx.compose.ui.semantics
 
 import androidx.collection.MutableObjectList
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.LayoutInfo
 
 /**
@@ -47,12 +46,6 @@ internal interface SemanticsInfo : LayoutInfo {
      * them. Note that the object is reused so you shouldn't save it for later.
      */
     val childrenInfo: List<SemanticsInfo>
-
-    /**
-     * The bounding box for this SemanticsInfo relative to the parent SemanticsInfo, with clipping
-     * applied.
-     */
-    val boundsInParent: Rect
 }
 
 /** The semantics parent (nearest ancestor which has semantic properties). */
@@ -86,7 +79,7 @@ internal fun SemanticsInfo.mergedSemanticsConfiguration(): SemanticsConfiguratio
         return unMergedConfig
     }
 
-    var mergedConfig: SemanticsConfiguration = unMergedConfig.copy()
+    val mergedConfig: SemanticsConfiguration = unMergedConfig.copy()
     val needsMerging: MutableObjectList<SemanticsInfo> =
         MutableObjectList<SemanticsInfo>(childrenInfo.size).apply { addAll(childrenInfo) }
 

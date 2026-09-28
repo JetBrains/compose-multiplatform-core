@@ -17,7 +17,6 @@
 package androidx.viewpager2.widget
 
 import android.content.Intent
-import android.os.Build
 import android.util.Log
 import android.view.View
 import android.view.ViewConfiguration
@@ -270,36 +269,27 @@ open class BaseTest {
                 return // these assertions only apply to enhanced a11y
             }
 
-            var customActions = getActionList(viewPager)
-            var currentPage = viewPager.currentItem
-            var numPages = viewPager.adapter!!.itemCount
-            var isUserInputEnabled = viewPager.isUserInputEnabled
-            var isHorizontalOrientation = viewPager.orientation == ViewPager2.ORIENTATION_HORIZONTAL
-            var isVerticalOrientation = viewPager.orientation == ViewPager2.ORIENTATION_VERTICAL
+            val customActions = getActionList(viewPager)
+            val currentPage = viewPager.currentItem
+            val numPages = viewPager.adapter!!.itemCount
+            val isUserInputEnabled = viewPager.isUserInputEnabled
+            val isHorizontalOrientation = viewPager.orientation == ViewPager2.ORIENTATION_HORIZONTAL
+            val isVerticalOrientation = viewPager.orientation == ViewPager2.ORIENTATION_VERTICAL
 
             val expectPageLeftAction =
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP &&
-                    isUserInputEnabled &&
+                isUserInputEnabled &&
                     isHorizontalOrientation &&
                     (if (viewPager.isRtl) currentPage < numPages - 1 else currentPage > 0)
 
             val expectPageRightAction =
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP &&
-                    isUserInputEnabled &&
+                isUserInputEnabled &&
                     isHorizontalOrientation &&
                     (if (viewPager.isRtl) currentPage > 0 else currentPage < numPages - 1)
 
-            val expectPageUpAction =
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP &&
-                    isUserInputEnabled &&
-                    isVerticalOrientation &&
-                    currentPage > 0
+            val expectPageUpAction = isUserInputEnabled && isVerticalOrientation && currentPage > 0
 
             val expectPageDownAction =
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP &&
-                    isUserInputEnabled &&
-                    isVerticalOrientation &&
-                    currentPage < numPages - 1
+                isUserInputEnabled && isVerticalOrientation && currentPage < numPages - 1
 
             val expectScrollBackwardAction = isUserInputEnabled && currentPage > 0
 
@@ -327,9 +317,9 @@ open class BaseTest {
                 equalTo(expectPageDownAction),
             )
 
-            @Suppress("DEPRECATION") var node = AccessibilityNodeInfo.obtain()
+            @Suppress("DEPRECATION") val node = AccessibilityNodeInfo.obtain()
             runOnUiThreadSync { viewPager.onInitializeAccessibilityNodeInfo(node) }
-            @Suppress("DEPRECATION") var standardActions = node.actions
+            @Suppress("DEPRECATION") val standardActions = node.actions
 
             assertThat(
                 "scroll backward action expected: $expectScrollBackwardAction",
@@ -359,7 +349,7 @@ open class BaseTest {
         private fun getActionList(
             view: View
         ): List<AccessibilityNodeInfoCompat.AccessibilityActionCompat> {
-            return view.getTag(R.id.tag_accessibility_actions)
+            return view.getTag(androidx.core.R.id.tag_accessibility_actions)
                 as? ArrayList<AccessibilityNodeInfoCompat.AccessibilityActionCompat> ?: ArrayList()
         }
     }

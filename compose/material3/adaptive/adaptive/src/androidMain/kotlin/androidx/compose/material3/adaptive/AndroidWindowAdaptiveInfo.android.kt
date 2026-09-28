@@ -35,7 +35,8 @@ import kotlinx.coroutines.flow.map
     message = "Moved to common source set, maintained for binary compatibility.",
 )
 @Composable
-fun currentWindowAdaptiveInfo(): WindowAdaptiveInfo = currentWindowAdaptiveInfo(false)
+@Suppress("DEPRECATION")
+public fun currentWindowAdaptiveInfo(): WindowAdaptiveInfo = currentWindowAdaptiveInfo(false)
 
 /**
  * Returns and automatically update the current window size in [DpSize].
@@ -49,8 +50,11 @@ fun currentWindowAdaptiveInfo(): WindowAdaptiveInfo = currentWindowAdaptiveInfo(
 @JvmName("currentWindowDpSize")
 @ExperimentalMaterial3AdaptiveApi
 @Composable
-fun currentWindowDpSizeDeprecated(): DpSize =
-    with(LocalDensity.current) { currentWindowSize().toSize().toDpSize() }
+public fun currentWindowDpSizeDeprecated(): DpSize =
+    // Workaround (b/358626778): Directly using WindowInfo.containerDpSize breaks tests based on
+    //   DeviceConfigurationOverride.ForcedSize. Those clients need to migrate to
+    //   DeviceConfigurationOverride.WindowSize when its available.
+    with(LocalDensity.current) { LocalWindowInfo.current.containerSize.toSize().toDpSize() }
 
 /**
  * Returns and automatically update the current window size. It's a convenient function of getting
@@ -64,7 +68,7 @@ fun currentWindowDpSizeDeprecated(): DpSize =
 )
 @JvmName("currentWindowSize")
 @Composable
-fun currentWindowSizeDeprecated(): IntSize = LocalWindowInfo.current.containerSize
+public fun currentWindowSizeDeprecated(): IntSize = LocalWindowInfo.current.containerSize
 
 /**
  * Collects the current window folding features from [WindowInfoTracker] in to a [State].
@@ -72,11 +76,11 @@ fun currentWindowSizeDeprecated(): IntSize = LocalWindowInfo.current.containerSi
  * @return a [State] of a [FoldingFeature] list.
  */
 @Composable
-fun collectFoldingFeaturesAsState(): State<List<FoldingFeature>> {
+public fun collectFoldingFeaturesAsState(): State<List<FoldingFeature>> {
     val context = LocalContext.current
     return remember(context) {
             WindowInfoTracker.getOrCreate(context).windowLayoutInfo(context).map {
-                it.displayFeatures.filterIsInstance<FoldingFeature>()
+                @Suppress("ListIterator") it.displayFeatures.filterIsInstance<FoldingFeature>()
             }
         }
         .collectAsState(emptyList())

@@ -20,8 +20,6 @@ import android.os.Build.VERSION.SDK_INT
 import android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.ui.ComposeUiFlags.isAdaptiveRefreshRateEnabled
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.inspection.rules.ComposeInspectionRule
 import androidx.compose.ui.inspection.rules.sendCommand
 import androidx.compose.ui.inspection.testdata.AndroidViewTestActivity
@@ -38,9 +36,7 @@ import org.junit.Test
 class AndroidViewTest {
     @get:Rule val rule = ComposeInspectionRule(AndroidViewTestActivity::class)
 
-    val isArrEnabled =
-        @OptIn(ExperimentalComposeUiApi::class) isAdaptiveRefreshRateEnabled &&
-            SDK_INT >= VANILLA_ICE_CREAM
+    val isArrEnabled = SDK_INT >= VANILLA_ICE_CREAM
 
     @Test
     fun androidView(): Unit = runBlocking {
@@ -57,14 +53,13 @@ class AndroidViewTest {
                 .single()
         assertThat(strings[composeNode.name]).isEqualTo("ComposeNode")
         val rootView = rule.rootsForTest.single().view
-        val androidViewsHandler =
-            rootView.let {
-                if (isArrEnabled) {
-                    it.childAt(1)
-                } else {
-                    it.childAt(0)
-                }
+        val androidViewsHandler = rootView.let {
+            if (isArrEnabled) {
+                it.childAt(1)
+            } else {
+                it.childAt(0)
             }
+        }
         val viewFactoryHolder = androidViewsHandler.childAt(0)
         assertThat(composeNode.viewId).isEqualTo(viewFactoryHolder.uniqueDrawingId)
     }

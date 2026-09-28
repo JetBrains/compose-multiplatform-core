@@ -18,22 +18,21 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(37) { minorApiLevel = 1 } }
     namespace = "androidx.compose.integration.hero.jetsnack.implementation"
 
     lint {
         // These projects should use the external lint checks to simulate real world development
-        disable += ['PrimitiveInCollection', 'AsCollectionCall']
+        disable += ["PrimitiveInCollection", "AsCollectionCall"]
     }
 
     buildTypes {
         release {
             minifyEnabled = false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
     }
 
@@ -45,7 +44,6 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.cardview:cardview:1.0.0")
 
-    implementation(libs.kotlinStdlib)
     implementation("androidx.activity:activity-compose:1.10.1")
     implementation(project(":compose:foundation:foundation-layout"))
     implementation(project(":compose:foundation:foundation"))
@@ -53,7 +51,6 @@ dependencies {
     implementation(project(":compose:material3:material3"))
     implementation("androidx.compose.material:material-icons-core:1.6.7")
     implementation(project(":compose:runtime:runtime"))
-    implementation(project(":compose:runtime:runtime-tracing"))
     implementation(project(":compose:ui:ui"))
     implementation(project(":compose:ui:ui-tooling"))
 }

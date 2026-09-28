@@ -23,7 +23,6 @@ import android.media.AudioTimestamp
 import android.media.AudioTimestamp.TIMEBASE_MONOTONIC
 import android.media.MediaRecorder
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.camera.core.Logger
 import androidx.camera.testing.impl.AndroidUtil.isEmulator
 import androidx.camera.testing.impl.RequiresDevice
@@ -34,7 +33,6 @@ import androidx.camera.video.internal.compat.quirk.AudioTimestampFramePositionIn
 import androidx.camera.video.internal.compat.quirk.DeviceQuirks
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
 import java.nio.ByteBuffer
@@ -51,7 +49,6 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class AudioRecordCompatibilityTest {
 
     companion object {
@@ -106,7 +103,6 @@ class AudioRecordCompatibilityTest {
 
     // See b/301067226 for more information.
     @RequiresDevice
-    @SdkSuppress(minSdkVersion = 24)
     @Test
     fun read_withNoNegativeFramePositionIssue_whenRecordingMultipleTimes() {
         assumeFalse(hasAudioTimestampQuirk())
@@ -133,7 +129,6 @@ class AudioRecordCompatibilityTest {
 
     // See b/301067226 for more information.
     @RequiresDevice
-    @SdkSuppress(minSdkVersion = 24)
     @Test
     fun read_withNoNegativeFramePositionIssue_whenRecordingAfterRecreatingMultipleTimes() {
         repeat(5) {
@@ -161,7 +156,6 @@ class AudioRecordCompatibilityTest {
 
     // See b/301067226 for more information.
     @RequiresDevice
-    @SdkSuppress(minSdkVersion = 24)
     @Test
     fun read_withTimestampDiffToSystemInLimit_whenRecordingMultipleTimes() {
         assumeFalse(hasAudioTimestampQuirk())
@@ -186,7 +180,6 @@ class AudioRecordCompatibilityTest {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.N)
     private fun readAndVerifyFramePositionMultipleTimes(times: Int = DEFAULT_READ_TIMES) {
         repeat(times) {
             byteBuffer.clear()
@@ -202,7 +195,6 @@ class AudioRecordCompatibilityTest {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.N)
     private fun readAndVerifyTimestampDiffToSystemMultipleTimes(times: Int = DEFAULT_READ_TIMES) {
         var totalFramesRead = 0L
 

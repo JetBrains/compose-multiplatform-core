@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
+// ***********************************************************************************
+// GENERATED FILE. DO NOT EDIT! See KeepItemAnnotationGenerator.java.
+// ***********************************************************************************
+
+// ***********************************************************************************
+// MAINTAINED AND TESTED IN THE R8 REPO. PLEASE MAKE CHANGES THERE AND REPLICATE.
+// ***********************************************************************************
+
 package androidx.annotation.keep
 
 import kotlin.reflect.KClass
@@ -37,6 +45,7 @@ import kotlin.reflect.KClass
     AnnotationTarget.CONSTRUCTOR,
 )
 public annotation class UsesReflectionToAccessField(
+
     /**
      * Class containing the field accessed by reflection.
      *
@@ -45,30 +54,30 @@ public annotation class UsesReflectionToAccessField(
     @Suppress("KotlinDefaultParameterOrder") val classConstant: KClass<*> = Unspecified::class,
 
     /**
-     * Class name (or pattern) containing the field accessed by reflection.
+     * Class name (or class name pattern) containing the field accessed by reflection.
      *
      * Mutually exclusive with [classConstant].
      */
     @Suppress("KotlinDefaultParameterOrder") val className: String = "",
 
-    /** Field name (or pattern) accessed by reflection. */
+    /** Name (or name pattern) of field accessed by reflection. */
     val fieldName: String,
 
     /**
-     * Class of field accessed by reflection.
+     * Type of field accessed by reflection.
      *
      * Ignored if not specified.
      *
-     * Mutually exclusive with [fieldClassName].
+     * Mutually exclusive with [fieldTypeName].
      */
-    val fieldClass: KClass<*> = Unspecified::class,
+    val fieldType: KClass<*> = Unspecified::class,
 
     /**
-     * Class (or class pattern) of field accessed by reflection.
+     * Type (or type pattern) of field accessed by reflection.
      *
      * Ignored if not specified.
      *
-     * Mutually exclusive with [fieldClass].
+     * Mutually exclusive with [fieldType].
      */
-    val fieldClassName: String = "",
+    val fieldTypeName: String = "",
 )

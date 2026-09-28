@@ -16,23 +16,19 @@
 
 package androidx.appfunctions.compiler.core.metadata
 
-import androidx.annotation.IntDef
+import androidx.appfunctions.compiler.core.IntrospectionHelper
+import androidx.appfunctions.compiler.core.ProcessingException
+import androidx.appfunctions.compiler.core.findAnnotation
+import androidx.appfunctions.compiler.core.requirePropertyValueOfType
+import com.google.devtools.ksp.symbol.KSAnnotation
+import java.util.regex.Pattern
+import java.util.regex.PatternSyntaxException
+import kotlin.reflect.cast
 
-@IntDef(
-    AppFunctionDataTypeMetadata.TYPE_UNIT,
-    AppFunctionDataTypeMetadata.TYPE_BOOLEAN,
-    AppFunctionDataTypeMetadata.TYPE_BYTES,
-    AppFunctionDataTypeMetadata.TYPE_DOUBLE,
-    AppFunctionDataTypeMetadata.TYPE_FLOAT,
-    AppFunctionDataTypeMetadata.TYPE_LONG,
-    AppFunctionDataTypeMetadata.TYPE_INT,
-    AppFunctionDataTypeMetadata.TYPE_STRING,
-    AppFunctionDataTypeMetadata.TYPE_PENDING_INTENT,
-)
-@Retention(AnnotationRetention.SOURCE)
-internal annotation class AppFunctionPrimitiveType
+abstract class AppFunctionDataTypeMetadata() {
+    abstract val isNullable: Boolean
+    abstract val description: String
 
-abstract class AppFunctionDataTypeMetadata {
     abstract fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument
 
     companion object {
@@ -48,27 +44,15 @@ abstract class AppFunctionDataTypeMetadata {
         internal const val TYPE_ARRAY: Int = 10
         internal const val TYPE_REFERENCE: Int = 11
         internal const val TYPE_ALL_OF: Int = 12
-        internal const val TYPE_PENDING_INTENT: Int = 13
-
-        internal val PRIMITIVE_TYPES =
-            setOf(
-                TYPE_UNIT,
-                TYPE_BOOLEAN,
-                TYPE_BYTES,
-                TYPE_DOUBLE,
-                TYPE_FLOAT,
-                TYPE_LONG,
-                TYPE_INT,
-                TYPE_STRING,
-                TYPE_PENDING_INTENT,
-            )
+        internal const val TYPE_PARCELABLE: Int = 13
+        internal const val TYPE_ONE_OF = 14
     }
 }
 
 data class AppFunctionArrayTypeMetadata(
     val itemType: AppFunctionDataTypeMetadata,
-    val isNullable: Boolean,
-    val description: String,
+    override val isNullable: Boolean,
+    override val description: String,
 ) : AppFunctionDataTypeMetadata() {
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
         return AppFunctionDataTypeMetadataDocument(
@@ -84,11 +68,29 @@ data class AppFunctionArrayTypeMetadata(
     }
 }
 
+data class AppFunctionParcelableTypeMetadata(
+    val qualifiedName: String?,
+    override val isNullable: Boolean,
+    override val description: String,
+) : AppFunctionDataTypeMetadata() {
+    override fun toAppFunctionDataTypeMetadataDocument() =
+        AppFunctionDataTypeMetadataDocument(
+            type = TYPE,
+            isNullable = isNullable,
+            description = description,
+            objectQualifiedName = qualifiedName,
+        )
+
+    companion object {
+        const val TYPE: Int = TYPE_PARCELABLE
+    }
+}
+
 data class AppFunctionAllOfTypeMetadata(
     val matchAll: List<AppFunctionDataTypeMetadata>,
     val qualifiedName: String?,
-    val isNullable: Boolean,
-    val description: String,
+    override val isNullable: Boolean,
+    override val description: String,
 ) : AppFunctionDataTypeMetadata() {
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
         val allOfDocuments = matchAll.map { it.toAppFunctionDataTypeMetadataDocument() }
@@ -106,21 +108,42 @@ data class AppFunctionAllOfTypeMetadata(
     }
 }
 
+data class AppFunctionOneOfTypeMetadata(
+    val matchOneOf: List<AppFunctionDataTypeMetadata>,
+    val qualifiedName: String?,
+    override val isNullable: Boolean,
+    override val description: String,
+) : AppFunctionDataTypeMetadata() {
+    override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
+        val oneOfDocuments = matchOneOf.map { it.toAppFunctionDataTypeMetadataDocument() }
+        return AppFunctionDataTypeMetadataDocument(
+            type = TYPE,
+            oneOf = oneOfDocuments,
+            isNullable = isNullable,
+            objectQualifiedName = qualifiedName,
+            description = description,
+        )
+    }
+
+    companion object {
+        const val TYPE: Int = TYPE_ONE_OF
+    }
+}
+
 data class AppFunctionObjectTypeMetadata(
     val properties: Map<String, AppFunctionDataTypeMetadata>,
     val required: List<String>,
     val qualifiedName: String?,
-    val isNullable: Boolean,
-    val description: String,
+    override val isNullable: Boolean,
+    override val description: String,
 ) : AppFunctionDataTypeMetadata() {
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
-        val properties =
-            properties.map { (name, dataType) ->
-                AppFunctionNamedDataTypeMetadataDocument(
-                    name = checkNotNull(name),
-                    dataTypeMetadata = dataType.toAppFunctionDataTypeMetadataDocument(),
-                )
-            }
+        val properties = properties.map { (name, dataType) ->
+            AppFunctionNamedDataTypeMetadataDocument(
+                name = checkNotNull(name),
+                dataTypeMetadata = dataType.toAppFunctionDataTypeMetadataDocument(),
+            )
+        }
         return AppFunctionDataTypeMetadataDocument(
             type = TYPE,
             properties = properties,
@@ -138,8 +161,8 @@ data class AppFunctionObjectTypeMetadata(
 
 data class AppFunctionReferenceTypeMetadata(
     val referenceDataType: String,
-    val isNullable: Boolean,
-    val description: String,
+    override val isNullable: Boolean,
+    override val description: String,
 ) : AppFunctionDataTypeMetadata() {
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
         return AppFunctionDataTypeMetadataDocument(
@@ -155,29 +178,200 @@ data class AppFunctionReferenceTypeMetadata(
     }
 }
 
-data class AppFunctionPrimitiveTypeMetadata(
-    @AppFunctionPrimitiveType val type: Int,
-    val isNullable: Boolean,
-    val description: String,
+data class AppFunctionIntTypeMetadata(
+    override val isNullable: Boolean,
+    override val description: String,
+    val enumValues: Set<Int>? = null,
 ) : AppFunctionDataTypeMetadata() {
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
         return AppFunctionDataTypeMetadataDocument(
-            type = type,
+            type = AppFunctionDataTypeMetadata.TYPE_INT,
             isNullable = isNullable,
             description = description,
+            enumValues = enumValues.orEmpty().map { it.toString() },
         )
     }
 
     companion object {
-        const val TYPE_UNIT: Int = AppFunctionDataTypeMetadata.TYPE_UNIT
-        const val TYPE_BOOLEAN: Int = AppFunctionDataTypeMetadata.TYPE_BOOLEAN
-        const val TYPE_BYTES: Int = AppFunctionDataTypeMetadata.TYPE_BYTES
-        const val TYPE_DOUBLE: Int = AppFunctionDataTypeMetadata.TYPE_DOUBLE
-        const val TYPE_FLOAT: Int = AppFunctionDataTypeMetadata.TYPE_FLOAT
-        const val TYPE_LONG: Int = AppFunctionDataTypeMetadata.TYPE_LONG
-        const val TYPE_INT: Int = AppFunctionDataTypeMetadata.TYPE_INT
-        const val TYPE_STRING: Int = AppFunctionDataTypeMetadata.TYPE_STRING
-        const val TYPE_PENDING_INTENT: Int = AppFunctionDataTypeMetadata.TYPE_PENDING_INTENT
+        fun create(
+            isNullable: Boolean,
+            description: String,
+            annotations: Sequence<KSAnnotation>,
+        ): AppFunctionIntTypeMetadata {
+            return AppFunctionIntTypeMetadata(
+                isNullable,
+                description,
+                annotations
+                    .findAnnotation(
+                        IntrospectionHelper.AppFunctionIntValueConstraintAnnotation.CLASS_NAME
+                    )
+                    ?.requirePropertyValueOfType(
+                        IntrospectionHelper.AppFunctionIntValueConstraintAnnotation
+                            .PROPERTY_ENUM_VALUES,
+                        // Array properties are returned as ArrayList from KSP.
+                        java.util.ArrayList::class,
+                    )
+                    ?.map { Int::class.cast(it) }
+                    ?.toSet()
+                    ?.ifEmpty { null },
+            )
+        }
+    }
+}
+
+data class AppFunctionLongTypeMetadata(
+    override val isNullable: Boolean,
+    override val description: String,
+) : AppFunctionDataTypeMetadata() {
+    override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
+        return AppFunctionDataTypeMetadataDocument(
+            type = AppFunctionDataTypeMetadata.TYPE_LONG,
+            isNullable = isNullable,
+            description = description,
+        )
+    }
+}
+
+data class AppFunctionFloatTypeMetadata(
+    override val isNullable: Boolean,
+    override val description: String,
+) : AppFunctionDataTypeMetadata() {
+    override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
+        return AppFunctionDataTypeMetadataDocument(
+            type = AppFunctionDataTypeMetadata.TYPE_FLOAT,
+            isNullable = isNullable,
+            description = description,
+        )
+    }
+}
+
+data class AppFunctionDoubleTypeMetadata(
+    override val isNullable: Boolean,
+    override val description: String,
+) : AppFunctionDataTypeMetadata() {
+    override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
+        return AppFunctionDataTypeMetadataDocument(
+            type = AppFunctionDataTypeMetadata.TYPE_DOUBLE,
+            isNullable = isNullable,
+            description = description,
+        )
+    }
+}
+
+data class AppFunctionStringTypeMetadata(
+    override val isNullable: Boolean,
+    override val description: String,
+    val enumValues: Set<String>? = null,
+    val pattern: String? = null,
+    val format: String? = null,
+) : AppFunctionDataTypeMetadata() {
+    override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
+        return AppFunctionDataTypeMetadataDocument(
+            type = AppFunctionDataTypeMetadata.TYPE_STRING,
+            isNullable = isNullable,
+            description = description,
+            enumValues = enumValues.orEmpty().toList(),
+            pattern = pattern,
+            format = format,
+        )
+    }
+
+    companion object {
+        const val FORMAT_URI: String = "uri"
+
+        fun create(
+            isNullable: Boolean,
+            description: String,
+            annotations: Sequence<KSAnnotation>,
+        ): AppFunctionStringTypeMetadata {
+            val stringConstraintAnnotation =
+                annotations.findAnnotation(
+                    IntrospectionHelper.AppFunctionStringValueConstraintAnnotation.CLASS_NAME
+                )
+            val enumValues =
+                stringConstraintAnnotation
+                    ?.requirePropertyValueOfType(
+                        IntrospectionHelper.AppFunctionStringValueConstraintAnnotation
+                            .PROPERTY_ENUM_VALUES,
+                        ArrayList::class,
+                    )
+                    ?.map { String::class.cast(it) }
+                    ?.toSet()
+                    ?.ifEmpty { null }
+            val pattern =
+                stringConstraintAnnotation
+                    ?.requirePropertyValueOfType(
+                        IntrospectionHelper.AppFunctionStringValueConstraintAnnotation
+                            .PROPERTY_PATTERN,
+                        String::class,
+                    )
+                    ?.ifEmpty { null }
+            if (pattern != null) {
+                try {
+                    Pattern.compile(pattern)
+                } catch (e: PatternSyntaxException) {
+                    throw ProcessingException(
+                        "Invalid pattern regex \"$pattern\" in @AppFunctionStringValueConstraint: ${e.message}",
+                        stringConstraintAnnotation,
+                        e,
+                    )
+                }
+            }
+            val format =
+                stringConstraintAnnotation
+                    ?.requirePropertyValueOfType(
+                        IntrospectionHelper.AppFunctionStringValueConstraintAnnotation
+                            .PROPERTY_FORMAT,
+                        String::class,
+                    )
+                    ?.ifEmpty { null }
+            return AppFunctionStringTypeMetadata(
+                isNullable = isNullable,
+                description = description,
+                enumValues = enumValues,
+                pattern = pattern,
+                format = format,
+            )
+        }
+    }
+}
+
+data class AppFunctionBooleanTypeMetadata(
+    override val isNullable: Boolean,
+    override val description: String,
+) : AppFunctionDataTypeMetadata() {
+    override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
+        return AppFunctionDataTypeMetadataDocument(
+            type = AppFunctionDataTypeMetadata.TYPE_BOOLEAN,
+            isNullable = isNullable,
+            description = description,
+        )
+    }
+}
+
+data class AppFunctionBytesTypeMetadata(
+    override val isNullable: Boolean,
+    override val description: String,
+) : AppFunctionDataTypeMetadata() {
+    override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
+        return AppFunctionDataTypeMetadataDocument(
+            type = AppFunctionDataTypeMetadata.TYPE_BYTES,
+            isNullable = isNullable,
+            description = description,
+        )
+    }
+}
+
+data class AppFunctionUnitTypeMetadata(
+    override val isNullable: Boolean,
+    override val description: String,
+) : AppFunctionDataTypeMetadata() {
+    override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
+        return AppFunctionDataTypeMetadataDocument(
+            type = AppFunctionDataTypeMetadata.TYPE_UNIT,
+            isNullable = isNullable,
+            description = description,
+        )
     }
 }
 
@@ -195,11 +389,15 @@ data class AppFunctionDataTypeMetadataDocument(
     val itemType: AppFunctionDataTypeMetadataDocument? = null,
     val properties: List<AppFunctionNamedDataTypeMetadataDocument> = emptyList(),
     val allOf: List<AppFunctionDataTypeMetadataDocument> = emptyList(),
+    val oneOf: List<AppFunctionDataTypeMetadataDocument> = emptyList(),
     val required: List<String> = emptyList(),
     val dataTypeReference: String? = null,
     val isNullable: Boolean = false,
     val objectQualifiedName: String? = null,
     val description: String = "",
+    val enumValues: List<String> = emptyList(),
+    val pattern: String? = null,
+    val format: String? = null,
 ) {
     fun toAppFunctionDataTypeMetadata(): AppFunctionDataTypeMetadata =
         when (type) {
@@ -215,10 +413,9 @@ data class AppFunctionDataTypeMetadataDocument(
                 check(properties.isNotEmpty()) {
                     "Properties must be present for object type can't be empty"
                 }
-                val propertiesMap =
-                    properties.associate {
-                        it.name to it.dataTypeMetadata.toAppFunctionDataTypeMetadata()
-                    }
+                val propertiesMap = properties.associate {
+                    it.name to it.dataTypeMetadata.toAppFunctionDataTypeMetadata()
+                }
                 AppFunctionObjectTypeMetadata(
                     properties = propertiesMap,
                     required = required,
@@ -243,9 +440,50 @@ data class AppFunctionDataTypeMetadataDocument(
                     isNullable = isNullable,
                     description = description,
                 )
-            in AppFunctionDataTypeMetadata.PRIMITIVE_TYPES ->
-                AppFunctionPrimitiveTypeMetadata(
-                    type = type,
+            AppFunctionDataTypeMetadata.TYPE_INT ->
+                AppFunctionIntTypeMetadata(
+                    isNullable = isNullable,
+                    description = description,
+                    enumValues.map { it.toInt() }.toSet().ifEmpty { null },
+                )
+
+            AppFunctionDataTypeMetadata.TYPE_LONG ->
+                AppFunctionLongTypeMetadata(isNullable = isNullable, description = description)
+
+            AppFunctionDataTypeMetadata.TYPE_FLOAT ->
+                AppFunctionFloatTypeMetadata(isNullable = isNullable, description = description)
+
+            AppFunctionDataTypeMetadata.TYPE_DOUBLE ->
+                AppFunctionDoubleTypeMetadata(isNullable = isNullable, description = description)
+
+            AppFunctionDataTypeMetadata.TYPE_STRING ->
+                AppFunctionStringTypeMetadata(
+                    isNullable = isNullable,
+                    description = description,
+                    enumValues = enumValues.toSet().ifEmpty { null },
+                    pattern = pattern,
+                    format = format,
+                )
+
+            AppFunctionDataTypeMetadata.TYPE_BOOLEAN ->
+                AppFunctionBooleanTypeMetadata(isNullable = isNullable, description = description)
+
+            AppFunctionDataTypeMetadata.TYPE_BYTES ->
+                AppFunctionBytesTypeMetadata(isNullable = isNullable, description = description)
+
+            AppFunctionDataTypeMetadata.TYPE_UNIT ->
+                AppFunctionUnitTypeMetadata(isNullable = isNullable, description = description)
+
+            AppFunctionDataTypeMetadata.TYPE_PARCELABLE ->
+                AppFunctionParcelableTypeMetadata(
+                    isNullable = isNullable,
+                    description = description,
+                    qualifiedName = objectQualifiedName,
+                )
+            AppFunctionDataTypeMetadata.TYPE_ONE_OF ->
+                AppFunctionOneOfTypeMetadata(
+                    matchOneOf = oneOf.map { it.toAppFunctionDataTypeMetadata() },
+                    qualifiedName = objectQualifiedName,
                     isNullable = isNullable,
                     description = description,
                 )

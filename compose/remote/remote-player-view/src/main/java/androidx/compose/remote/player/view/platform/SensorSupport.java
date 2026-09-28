@@ -15,17 +15,21 @@
  */
 package androidx.compose.remote.player.view.platform;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.RemoteContext;
 
 import org.jspecify.annotations.NonNull;
 
 /** Implements sensors management (used by RemoteComposePlayer) */
+@RestrictTo(LIBRARY_GROUP)
 public class SensorSupport {
     SensorManager mSensorManager;
     Sensor mAcc = null, mGyro = null, mMag = null, mLight = null;
@@ -54,6 +58,9 @@ public class SensorSupport {
         mLight = null;
         if (count > 0) {
             mSensorManager = (SensorManager) application.getSystemService(Context.SENSOR_SERVICE);
+            if (mSensorManager == null) {
+                return;
+            }
             for (int i = 0; i < count; i++) {
                 switch (ids[i]) {
                     case RemoteContext.ID_ACCELERATION_X:
@@ -88,7 +95,6 @@ public class SensorSupport {
     }
 
     private void registerListener() {
-        Sensor[] s = {mAcc, mGyro, mMag, mLight};
         if (mListener != null) {
             unregisterListener();
         }
@@ -130,7 +136,7 @@ public class SensorSupport {
         Sensor[] sensors = {mAcc, mGyro, mMag, mLight};
         for (int i = 0; i < sensors.length; i++) {
             Sensor sensor = sensors[i];
-            if (sensor != null) {
+            if (sensor != null && mSensorManager != null) {
                 mListener = listener;
                 mSensorManager.registerListener(
                         mListener, sensor, SensorManager.SENSOR_DELAY_NORMAL);

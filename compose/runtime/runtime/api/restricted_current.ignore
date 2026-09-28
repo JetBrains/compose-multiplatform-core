@@ -1,7 +1,0 @@
-// Baseline format: 1.0
-BecameUnchecked: androidx.compose.runtime.ComposablesKt#getCurrentCompositionContext(androidx.compose.runtime.Composer, int):
-    Removed method androidx.compose.runtime.ComposablesKt.getCurrentCompositionContext(androidx.compose.runtime.Composer,int) from compatibility checked API surface
-BecameUnchecked: androidx.compose.runtime.ComposablesKt#getCurrentCompositionContext(androidx.compose.runtime.Composer, int) parameter #0:
-    Removed parameter arg1 in androidx.compose.runtime.ComposablesKt.getCurrentCompositionContext(androidx.compose.runtime.Composer arg1, int arg2) from compatibility checked API surface
-BecameUnchecked: androidx.compose.runtime.ComposablesKt#getCurrentCompositionContext(androidx.compose.runtime.Composer, int) parameter #1:
-    Removed parameter arg2 in androidx.compose.runtime.ComposablesKt.getCurrentCompositionContext(androidx.compose.runtime.Composer arg1, int arg2) from compatibility checked API surface

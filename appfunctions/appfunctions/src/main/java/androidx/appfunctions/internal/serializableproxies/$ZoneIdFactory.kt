@@ -20,7 +20,8 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.appfunctions.AppFunctionData
-import androidx.appfunctions.`internal`.AppFunctionSerializableFactory
+import androidx.appfunctions.AppFunctionDataSpec
+import androidx.appfunctions.internal.AppFunctionSerializableFactory
 import java.time.ZoneId
 
 // TODO(b/413622177): Temporary workaround of supporting proxy before being able to apply KSP on
@@ -29,21 +30,25 @@ import java.time.ZoneId
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 public class `$ZoneIdFactory` : AppFunctionSerializableFactory<ZoneId> {
     override fun fromAppFunctionData(appFunctionData: AppFunctionData): ZoneId {
-
-        val zoneID = checkNotNull(appFunctionData.getStringOrNull("zoneID"))
+        val appFunctionDataWithSpec =
+            getAppFunctionDataWithSpec(
+                appFunctionData = appFunctionData,
+                qualifiedName = "java.time.ZoneId",
+            )
+        val zoneID = checkNotNull(appFunctionDataWithSpec.getStringOrNull("zoneID"))
 
         val resultAppFunctionZoneId = AppFunctionZoneId(zoneID)
         return resultAppFunctionZoneId.toZoneId()
     }
 
-    override fun toAppFunctionData(appFunctionSerializable: ZoneId): AppFunctionData {
+    override fun toAppFunctionData(
+        spec: AppFunctionDataSpec?,
+        appFunctionSerializable: ZoneId,
+    ): AppFunctionData {
         val appFunctionZoneId_appFunctionSerializable =
             AppFunctionZoneId.fromZoneId(appFunctionSerializable)
 
-        val builder =
-            AppFunctionData.Builder(
-                "androidx.appfunctions.internal.serializableproxies.AppFunctionZoneId"
-            )
+        val builder = getAppFunctionDataBuilder(spec, "java.time.ZoneId")
         val zoneID = appFunctionZoneId_appFunctionSerializable.zoneID
         builder.setString("zoneID", zoneID)
 

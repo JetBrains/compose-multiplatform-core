@@ -22,7 +22,6 @@ import android.os.Build
 import android.os.ext.SdkExtensions
 import android.util.Log
 import androidx.annotation.RequiresExtension
-import androidx.annotation.RestrictTo
 import androidx.privacysandbox.ads.adservices.internal.AdServicesInfo
 
 /**
@@ -96,7 +95,6 @@ public constructor(
     }
 
     @SuppressLint("NewApi")
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     internal fun convertToAdServices(): android.adservices.common.AdData {
         if (
             AdServicesInfo.adServicesVersion() >= 10 || AdServicesInfo.extServicesVersionS() >= 10
@@ -134,7 +132,8 @@ public constructor(
                 adData.adRenderId?.let {
                     Log.w(
                         "AdData",
-                        "adRenderId is ignored. Min version to use adRenderId is " + "API 31 ext 10",
+                        "adRenderId is ignored. Min version to use adRenderId is " +
+                            "API 31 ext 10",
                     )
                 }
                 return android.adservices.common.AdData.Builder()
@@ -169,7 +168,8 @@ public constructor(
                 adData.adRenderId?.let {
                     Log.w(
                         "AdData",
-                        "adRenderId is ignored. Min version to use adRenderId is " + "API 31 ext 10",
+                        "adRenderId is ignored. Min version to use adRenderId is " +
+                            "API 31 ext 10",
                     )
                 }
                 return android.adservices.common.AdData.Builder()

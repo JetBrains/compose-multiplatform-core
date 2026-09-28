@@ -42,7 +42,6 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -54,7 +53,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class ImageCaptureTest(@CameraSelector.LensFacing private val lensFacing: Int) {
     @get:Rule val fakeCameraRule = FakeCameraTestRule(ApplicationProvider.getApplicationContext())
 
@@ -207,7 +206,7 @@ class ImageCaptureTest(@CameraSelector.LensFacing private val lensFacing: Int) {
 
     // Duplicate to ImageCaptureTest on androidTest/fakecamera/ImageCaptureTest, any change here may
     // need to be reflected there too
-    @Ignore // b/425423599
+    @Config(minSdk = 29) // TODO: b/455717521 - Removed when fixed
     @Test
     fun canFindFakeImageUri_whenMediaStoreAndImageSavedCallbackIsUsed(): Unit = runBlocking {
         val callback = FakeOnImageSavedCallback()

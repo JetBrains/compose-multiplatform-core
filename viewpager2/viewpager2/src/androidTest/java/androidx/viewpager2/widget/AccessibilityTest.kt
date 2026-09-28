@@ -16,9 +16,7 @@
 
 package androidx.viewpager2.widget
 
-import android.os.Build
 import android.view.accessibility.AccessibilityNodeInfo
-import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
@@ -108,9 +106,9 @@ class AccessibilityTest(private val config: TestConfig) : BaseTest() {
             setAdapterSync(viewAdapterProvider.provider(stringSequence(numberOfItems)))
             assertBasicState(viewPager.currentItem, null)
 
-            var node = AccessibilityNodeInfo.obtain()
+            val node = AccessibilityNodeInfo.obtain()
             runOnUiThreadSync { viewPager.onInitializeAccessibilityNodeInfo(node) }
-            var collectionInfo = node.collectionInfo
+            val collectionInfo = node.collectionInfo
             if (config.orientation == ORIENTATION_VERTICAL) {
                 assertThat(collectionInfo.rowCount, equalTo(numberOfItems))
                 assertThat(collectionInfo.columnCount, equalTo(1))
@@ -119,9 +117,7 @@ class AccessibilityTest(private val config: TestConfig) : BaseTest() {
                 assertThat(collectionInfo.rowCount, equalTo(1))
             }
             assertThat(collectionInfo.isHierarchical, equalTo(false))
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                assertThat(collectionInfo.selectionMode, equalTo(0))
-            }
+            assertThat(collectionInfo.selectionMode, equalTo(0))
         }
     }
 
@@ -133,10 +129,10 @@ class AccessibilityTest(private val config: TestConfig) : BaseTest() {
             listOf(1, 0, 2, 5).forEach { targetPage ->
                 viewPager.setCurrentItemSync(targetPage, false, 2, TimeUnit.SECONDS)
                 assertBasicState(targetPage)
-                var nodeChild = AccessibilityNodeInfo.obtain()
+                val nodeChild = AccessibilityNodeInfo.obtain()
                 val item = viewPager.linearLayoutManager.findViewByPosition(targetPage)
                 runOnUiThreadSync { item!!.onInitializeAccessibilityNodeInfo(nodeChild) }
-                var collectionItemInfo = nodeChild.collectionItemInfo
+                val collectionItemInfo = nodeChild.collectionItemInfo
                 if (config.orientation == ORIENTATION_VERTICAL) {
                     assertThat(collectionItemInfo.rowIndex, equalTo(targetPage))
                     assertThat(collectionItemInfo.columnIndex, equalTo(0))
@@ -164,31 +160,25 @@ class AccessibilityTest(private val config: TestConfig) : BaseTest() {
     }
 
     private fun getNextPageAction(orientation: Int, isRtl: Boolean): Int {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            if (orientation == ViewPager2.ORIENTATION_HORIZONTAL) {
-                if (isRtl) {
-                    return ACTION_ID_PAGE_LEFT
-                } else {
-                    return ACTION_ID_PAGE_RIGHT
-                }
+        if (orientation == ViewPager2.ORIENTATION_HORIZONTAL) {
+            if (isRtl) {
+                return ACTION_ID_PAGE_LEFT
+            } else {
+                return ACTION_ID_PAGE_RIGHT
             }
-            return ACTION_ID_PAGE_DOWN
         }
-        return AccessibilityNodeInfoCompat.ACTION_SCROLL_FORWARD
+        return ACTION_ID_PAGE_DOWN
     }
 
     private fun getPreviousPageAction(orientation: Int, isRtl: Boolean): Int {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            if (orientation == ViewPager2.ORIENTATION_HORIZONTAL) {
-                if (isRtl) {
-                    return ACTION_ID_PAGE_RIGHT
-                } else {
-                    return ACTION_ID_PAGE_LEFT
-                }
+        if (orientation == ViewPager2.ORIENTATION_HORIZONTAL) {
+            if (isRtl) {
+                return ACTION_ID_PAGE_RIGHT
+            } else {
+                return ACTION_ID_PAGE_LEFT
             }
-            return ACTION_ID_PAGE_UP
         }
-        return AccessibilityNodeInfoCompat.ACTION_SCROLL_BACKWARD
+        return ACTION_ID_PAGE_UP
     }
 
     private fun getOppositeOrientation(orientation: Int): Int {

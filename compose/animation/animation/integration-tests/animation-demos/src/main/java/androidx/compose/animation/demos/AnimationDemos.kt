@@ -33,10 +33,12 @@ import androidx.compose.animation.demos.layoutanimation.AnimatedContentWithConte
 import androidx.compose.animation.demos.layoutanimation.AnimatedPlacementDemo
 import androidx.compose.animation.demos.layoutanimation.AnimatedVisibilityDemo
 import androidx.compose.animation.demos.layoutanimation.AnimatedVisibilityLazyColumnDemo
+import androidx.compose.animation.demos.layoutanimation.CapturedAnimatedVisibilityDemo
 import androidx.compose.animation.demos.layoutanimation.NestedMenuDemo
 import androidx.compose.animation.demos.layoutanimation.ScaleEnterExitDemo
 import androidx.compose.animation.demos.layoutanimation.ScreenTransitionDemo
 import androidx.compose.animation.demos.layoutanimation.ShrineCartDemo
+import androidx.compose.animation.demos.layoutanimation.VeilTransitionDemo
 import androidx.compose.animation.demos.lookahead.AnimateBoundsModifierDemo
 import androidx.compose.animation.demos.lookahead.AnimateBoundsOnFloatingToolbarDemo
 import androidx.compose.animation.demos.lookahead.CraneDemo
@@ -106,6 +108,9 @@ val AnimationDemos =
                     },
                     ComposableDemo("Animate Placement") { AnimatedPlacementDemo() },
                     ComposableDemo("Animate Visibility Demo") { AnimatedVisibilityDemo() },
+                    ComposableDemo("Captured Animate Visibility Demo") {
+                        CapturedAnimatedVisibilityDemo()
+                    },
                     ComposableDemo("Animate Visibility Lazy Column Demo") {
                         AnimatedVisibilityLazyColumnDemo()
                     },
@@ -118,6 +123,7 @@ val AnimationDemos =
                     ComposableDemo("Scaled Enter/Exit") { ScaleEnterExitDemo() },
                     ComposableDemo("Shrine Cart") { ShrineCartDemo() },
                     ComposableDemo("Screen Transition") { ScreenTransitionDemo() },
+                    ComposableDemo("Veil Transition Demo") { VeilTransitionDemo() },
                 ),
             ),
             DemoCategory(

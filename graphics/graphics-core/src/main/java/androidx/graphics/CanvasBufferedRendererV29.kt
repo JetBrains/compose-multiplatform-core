@@ -123,22 +123,21 @@ internal class CanvasBufferedRendererV29(
      */
     private val mAllocatedBuffers = HashMap<HardwareBuffer, Image>()
 
-    private fun closeBuffers() =
-        mBufferLock.withLock {
-            for (entry in mAllocatedBuffers) {
-                entry.key.close() // HardwareBuffer
-                entry.value.waitAndClose() // Image
-            }
-            mAllocatedBuffers.clear()
-            mBufferSignal.signal()
-            mImageReader?.close()
-            mImageReader = null
-            mHardwareRenderer?.let { renderer ->
-                renderer.stop()
-                renderer.destroy()
-            }
-            mHardwareRenderer = null
+    private fun closeBuffers() = mBufferLock.withLock {
+        for (entry in mAllocatedBuffers) {
+            entry.key.close() // HardwareBuffer
+            entry.value.waitAndClose() // Image
         }
+        mAllocatedBuffers.clear()
+        mBufferSignal.signal()
+        mImageReader?.close()
+        mImageReader = null
+        mHardwareRenderer?.let { renderer ->
+            renderer.stop()
+            renderer.destroy()
+        }
+        mHardwareRenderer = null
+    }
 
     private val mIsReleased = AtomicBoolean(false)
 
@@ -389,7 +388,23 @@ internal class CanvasBufferedRendererV29(
         private var mHardwareBuffer: HardwareBuffer? = null
         private var mFence: SyncFenceCompat? = null
 
-        private val drawBitmapPaint = Paint().apply { blendMode = BlendMode.SRC }
+        /**
+         * Used for a call to [Canvas.drawBitmap] to overwrite the contents of one [HardwareBuffer]
+         * with another. This operation should stay as simple as possible to avoid complications.
+         */
+        private val drawBitmapPaint =
+            Paint().apply {
+                blendMode = BlendMode.SRC
+
+                // No need for AA. The zero-arg Paint constructor enables this by default on API 31
+                // and above.
+                isAntiAlias = false
+
+                // Since we know this is always an unscaled blit, avoid any risk of subpixel
+                // alignment causing filtering to slightly blur the re-rendered content.
+                // The zero-arg Paint constructor enables this by default on API 29 and above.
+                isFilterBitmap = false
+            }
 
         override fun restoreContents(canvas: Canvas) {
             if (forceClear) {

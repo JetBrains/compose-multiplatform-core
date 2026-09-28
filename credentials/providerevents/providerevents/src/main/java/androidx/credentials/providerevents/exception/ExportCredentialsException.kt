@@ -23,6 +23,5 @@ public abstract class ExportCredentialsException
 @JvmOverloads
 internal constructor(
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public open val type: String,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public open val errorMessage: CharSequence? = null,
-) : Exception(errorMessage?.toString())
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public open val errorMessage: String? = null,
+) : Exception(errorMessage)

@@ -35,8 +35,10 @@ private class ReportDrawnComposition(
     private val predicate: () -> Boolean,
 ) : () -> Unit {
 
-    private val snapshotStateObserver =
-        SnapshotStateObserver { command -> command() }.apply { start() }
+    private val snapshotStateObserver = SnapshotStateObserver { command ->
+        command()
+    }
+        .apply { start() }
 
     /** Called whenever the values read in the lambda parameter has changed. */
     private val checkReporter: (() -> Boolean) -> Unit = ::observeReporter
@@ -82,7 +84,7 @@ private class ReportDrawnComposition(
  * Provides a [FullyDrawnReporterOwner] that can be used by Composables hosted in a
  * [androidx.activity.ComponentActivity].
  */
-object LocalFullyDrawnReporterOwner {
+public object LocalFullyDrawnReporterOwner {
     private val LocalFullyDrawnReporterOwner = compositionLocalOf<FullyDrawnReporterOwner?> { null }
 
     /**
@@ -90,7 +92,7 @@ object LocalFullyDrawnReporterOwner {
      * one has not been set via [androidx.activity.setViewTreeFullyDrawnReporterOwner], nor is one
      * available by looking at the [LocalContext].
      */
-    val current: FullyDrawnReporterOwner?
+    public val current: FullyDrawnReporterOwner?
         @Composable
         get() =
             LocalFullyDrawnReporterOwner.current
@@ -98,7 +100,7 @@ object LocalFullyDrawnReporterOwner {
                 ?: findOwner<FullyDrawnReporterOwner>(LocalContext.current)
 
     /** Associates a [LocalFullyDrawnReporterOwner] key to a value. */
-    infix fun provides(
+    public infix fun provides(
         fullyDrawnReporterOwner: FullyDrawnReporterOwner
     ): ProvidedValue<FullyDrawnReporterOwner?> {
         return LocalFullyDrawnReporterOwner.provides(fullyDrawnReporterOwner)
@@ -114,7 +116,7 @@ object LocalFullyDrawnReporterOwner {
  * @sample androidx.activity.compose.samples.ReportDrawnWhenSample
  */
 @Composable
-fun ReportDrawnWhen(predicate: () -> Boolean) {
+public fun ReportDrawnWhen(predicate: () -> Boolean) {
     val fullyDrawnReporter = LocalFullyDrawnReporterOwner.current?.fullyDrawnReporter ?: return
     DisposableEffect(fullyDrawnReporter, predicate) {
         if (fullyDrawnReporter.isFullyDrawnReported) {
@@ -133,7 +135,7 @@ fun ReportDrawnWhen(predicate: () -> Boolean) {
  *
  * @sample androidx.activity.compose.samples.ReportDrawnSample
  */
-@Composable fun ReportDrawn() = ReportDrawnWhen { true }
+@Composable public fun ReportDrawn(): Unit = ReportDrawnWhen { true }
 
 /**
  * Adds [block] to the methods that must complete prior to [Activity.reportFullyDrawn] being called.
@@ -146,7 +148,7 @@ fun ReportDrawnWhen(predicate: () -> Boolean) {
  * @sample androidx.activity.compose.samples.ReportDrawnAfterSample
  */
 @Composable
-fun ReportDrawnAfter(block: suspend () -> Unit) {
+public fun ReportDrawnAfter(block: suspend () -> Unit) {
     val fullyDrawnReporter = LocalFullyDrawnReporterOwner.current?.fullyDrawnReporter ?: return
     LaunchedEffect(block, fullyDrawnReporter) { fullyDrawnReporter.reportWhenComplete(block) }
 }

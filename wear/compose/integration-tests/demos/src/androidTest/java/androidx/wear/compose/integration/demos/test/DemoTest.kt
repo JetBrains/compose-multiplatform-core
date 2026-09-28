@@ -22,7 +22,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.espresso.Espresso
@@ -179,8 +179,9 @@ class DemoTest {
     }
 }
 
-private val AllButIgnoredDemos =
-    WearComposeDemos.filter { path, demo -> demo.navigationTitle(path) !in ignoredDemos }
+private val AllButIgnoredDemos = WearComposeDemos.filter { path, demo ->
+    demo.navigationTitle(path) !in ignoredDemos
+}
 
 private fun Demo.navigationTitle(path: List<DemoCategory>): String {
     return path.plus(this).navigationTitle

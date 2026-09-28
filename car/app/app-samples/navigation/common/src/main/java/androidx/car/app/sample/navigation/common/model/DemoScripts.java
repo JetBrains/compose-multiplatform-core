@@ -66,8 +66,6 @@ import static androidx.car.app.navigation.model.Maneuver.TYPE_U_TURN_RIGHT;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.car.app.CarContext;
 import androidx.car.app.model.CarColor;
 import androidx.car.app.model.CarIcon;
@@ -81,6 +79,9 @@ import androidx.car.app.navigation.model.Step;
 import androidx.car.app.navigation.model.TravelEstimate;
 import androidx.car.app.sample.navigation.common.R;
 import androidx.core.graphics.drawable.IconCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -135,14 +136,13 @@ public class DemoScripts {
         DateTimeWithZone arrivalTimeAtDestination = getCurrentDateTimeZoneWithOffset(30);
 
         CarIcon lanesImage =
-                new CarIcon.Builder(IconCompat.createWithResource(carContext, R.drawable.lanes))
-                        .build();
+                CarIcon.createOriginalIcon(
+                        IconCompat.createWithResource(carContext, R.drawable.lanes));
         CarIcon junctionImage =
-                new CarIcon.Builder(
+                CarIcon.createOriginalIcon(
                         IconCompat.createWithResource(
                                 carContext,
-                                R.drawable.junction_image))
-                        .build();
+                                R.drawable.junction_image));
 
         Lane straightNormal =
                 new Lane.Builder()
@@ -481,7 +481,7 @@ public class DemoScripts {
 
     /** Generates a {@link CarIcon} representing the turn. */
     private static CarIcon getCarIcon(@NonNull CarContext carContext, int resourceId) {
-        return new CarIcon.Builder(IconCompat.createWithResource(carContext, resourceId)).build();
+        return CarIcon.createTintedIcon(IconCompat.createWithResource(carContext, resourceId));
     }
 
     private static int getTurnIconResourceId(int type) {

@@ -19,7 +19,6 @@ package androidx.health.connect.client.records
 import android.os.Build
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
-import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.aggregate.AggregateMetric
 import androidx.health.connect.client.impl.platform.records.toPlatformRecord
 import androidx.health.connect.client.records.metadata.Metadata
@@ -35,17 +34,18 @@ import java.time.ZoneOffset
  * Each record requires the start time, the end time and the activity intensity type.
  *
  * The ability to insert or read this record type is dependent on the version of Health Connect
- * installed on the device. To check if available: call [HealthConnectFeatures.getFeatureStatus] and
- * pass [HealthConnectFeatures.FEATURE_ACTIVITY_INTENSITY] as an argument.
+ * installed on the device. To check if available: call
+ * [androidx.health.connect.client.HealthConnectFeatures.getFeatureStatus] and pass
+ * [androidx.health.connect.client.HealthConnectFeatures.FEATURE_ACTIVITY_INTENSITY] as an argument.
  */
-class ActivityIntensityRecord(
+public class ActivityIntensityRecord(
     override val startTime: Instant,
     override val startZoneOffset: ZoneOffset?,
     override val endTime: Instant,
     override val endZoneOffset: ZoneOffset?,
     override val metadata: Metadata,
     /** Type of activity intensity (moderate or vigorous). */
-    @property:ActivityIntensityTypes val activityIntensityType: Int,
+    @property:ActivityIntensityTypes public val activityIntensityType: Int,
 ) : IntervalRecord {
 
     /*
@@ -53,7 +53,10 @@ class ActivityIntensityRecord(
      * See b/400965398 for more context.
      */
     init {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+                isAtLeastSdkExtension16()
+        ) {
             this.toPlatformRecord()
         } else {
             require(startTime.isBefore(endTime)) { "startTime must be before endTime." }
@@ -88,15 +91,16 @@ class ActivityIntensityRecord(
         return "ActivityIntensityRecord(startTime=$startTime, startZoneOffset=$startZoneOffset, endTime=$endTime, endZoneOffset=$endZoneOffset, activityIntensityType=$activityIntensityType, metadata=$metadata)"
     }
 
-    companion object {
+    public companion object {
         /**
          * Metric identifier to retrieve the total duration of moderate activity intensity from
          * [androidx.health.connect.client.aggregate.AggregationResult]. To check if this metric is
-         * available, use [HealthConnectFeatures.getFeatureStatus] with
-         * [HealthConnectFeatures.FEATURE_ACTIVITY_INTENSITY] as the argument.
+         * available, use [androidx.health.connect.client.HealthConnectFeatures.getFeatureStatus]
+         * with [androidx.health.connect.client.HealthConnectFeatures.FEATURE_ACTIVITY_INTENSITY] as
+         * the argument.
          */
         @JvmField
-        val MODERATE_DURATION_TOTAL: AggregateMetric<Duration> =
+        public val MODERATE_DURATION_TOTAL: AggregateMetric<Duration> =
             AggregateMetric.durationMetric(
                 "ActivityIntensity",
                 aggregationType = AggregateMetric.AggregationType.DURATION,
@@ -106,11 +110,12 @@ class ActivityIntensityRecord(
         /**
          * Metric identifier to retrieve the total duration of vigorous activity intensity from
          * [androidx.health.connect.client.aggregate.AggregationResult]. To check if this metric is
-         * available, use [HealthConnectFeatures.getFeatureStatus] with
-         * [HealthConnectFeatures.FEATURE_ACTIVITY_INTENSITY] as the argument.
+         * available, use [androidx.health.connect.client.HealthConnectFeatures.getFeatureStatus]
+         * with [androidx.health.connect.client.HealthConnectFeatures.FEATURE_ACTIVITY_INTENSITY] as
+         * the argument.
          */
         @JvmField
-        val VIGOROUS_DURATION_TOTAL: AggregateMetric<Duration> =
+        public val VIGOROUS_DURATION_TOTAL: AggregateMetric<Duration> =
             AggregateMetric.durationMetric(
                 "ActivityIntensity",
                 aggregationType = AggregateMetric.AggregationType.DURATION,
@@ -120,11 +125,13 @@ class ActivityIntensityRecord(
         /**
          * Metric identifier to retrieve the total duration of activity intensity regardless of the
          * type from [androidx.health.connect.client.aggregate.AggregationResult]. To check if this
-         * metric is available, use [HealthConnectFeatures.getFeatureStatus] with
-         * [HealthConnectFeatures.FEATURE_ACTIVITY_INTENSITY] as the argument.
+         * metric is available, use
+         * [androidx.health.connect.client.HealthConnectFeatures.getFeatureStatus] with
+         * [androidx.health.connect.client.HealthConnectFeatures.FEATURE_ACTIVITY_INTENSITY] as the
+         * argument.
          */
         @JvmField
-        val DURATION_TOTAL: AggregateMetric<Duration> =
+        public val DURATION_TOTAL: AggregateMetric<Duration> =
             AggregateMetric.durationMetric(
                 "ActivityIntensity",
                 aggregationType = AggregateMetric.AggregationType.DURATION,
@@ -134,26 +141,27 @@ class ActivityIntensityRecord(
         /**
          * Metric identifier to retrieve the number of weighted intensity minutes from
          * [androidx.health.connect.client.aggregate.AggregationResult]. To check if this metric is
-         * available, use [HealthConnectFeatures.getFeatureStatus] with
-         * [HealthConnectFeatures.FEATURE_ACTIVITY_INTENSITY] as the argument.
+         * available, use [androidx.health.connect.client.HealthConnectFeatures.getFeatureStatus]
+         * with [androidx.health.connect.client.HealthConnectFeatures.FEATURE_ACTIVITY_INTENSITY] as
+         * the argument.
          */
         @JvmField
-        val INTENSITY_MINUTES_TOTAL: AggregateMetric<Duration> =
-            AggregateMetric.durationMetric(
+        public val INTENSITY_MINUTES_TOTAL: AggregateMetric<Long> =
+            AggregateMetric.longMetric(
                 "ActivityIntensity",
                 aggregationType = AggregateMetric.AggregationType.DURATION,
                 fieldName = "intensityMinutes",
             )
 
         /** Moderate intensity activity */
-        const val ACTIVITY_INTENSITY_TYPE_MODERATE = 0
+        public const val ACTIVITY_INTENSITY_TYPE_MODERATE: Int = 0
 
         /** Vigorous intensity activity. */
-        const val ACTIVITY_INTENSITY_TYPE_VIGOROUS = 1
+        public const val ACTIVITY_INTENSITY_TYPE_VIGOROUS: Int = 1
 
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @JvmField
-        val ACTIVITY_INTENSITY_TYPE_STRING_TO_INT_MAP =
+        public val ACTIVITY_INTENSITY_TYPE_STRING_TO_INT_MAP: Map<String, Int> =
             mapOf(
                 "moderate" to ACTIVITY_INTENSITY_TYPE_MODERATE,
                 "vigorous" to ACTIVITY_INTENSITY_TYPE_VIGOROUS,
@@ -161,7 +169,7 @@ class ActivityIntensityRecord(
 
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @JvmField
-        val ACTIVITY_INTENSITY_TYPE_INT_TO_STRING_MAP =
+        public val ACTIVITY_INTENSITY_TYPE_INT_TO_STRING_MAP: Map<Int, String> =
             ACTIVITY_INTENSITY_TYPE_STRING_TO_INT_MAP.reverse()
     }
 
@@ -169,5 +177,5 @@ class ActivityIntensityRecord(
     @Retention(AnnotationRetention.SOURCE)
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @IntDef(value = [ACTIVITY_INTENSITY_TYPE_MODERATE, ACTIVITY_INTENSITY_TYPE_VIGOROUS])
-    annotation class ActivityIntensityTypes
+    public annotation class ActivityIntensityTypes
 }

@@ -73,11 +73,10 @@ import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadows.ShadowPackageManager
 import org.robolectric.shadows.ShadowSystemClock
 import org.robolectric.shadows.ShadowVirtualDeviceManager
-import org.robolectric.versioning.AndroidVersions
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 @OptIn(ExperimentalCoroutinesApi::class)
 class CameraXInitRetryTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
@@ -412,8 +411,9 @@ class CameraXInitRetryTest {
             assertThat(cameraX.isInitialized).isFalse()
 
             // Assert. Verify that retry attempts occurred in sequential order.
-            val numAttemptList =
-                executionStateMutableList.map { executionState -> executionState.numOfAttempts }
+            val numAttemptList = executionStateMutableList.map { executionState ->
+                executionState.numOfAttempts
+            }
             assertThat(numAttemptList).isInOrder()
 
             // Assert. Ensure all errors encountered were specifically due to camera unavailability.
@@ -458,8 +458,9 @@ class CameraXInitRetryTest {
         assertThat(cameraX.isInitialized).isFalse()
 
         // Assert. Verify that retry attempts occurred in sequential order.
-        val numAttemptList =
-            executionStateMutableList.map { executionState -> executionState.numOfAttempts }
+        val numAttemptList = executionStateMutableList.map { executionState ->
+            executionState.numOfAttempts
+        }
         assertThat(numAttemptList).isInOrder()
 
         // Assert. Ensure all errors encountered were specifically due to camera unavailability.
@@ -634,7 +635,7 @@ class CameraXInitRetryTest {
 
     @Test
     @Config(minSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE, shadows = [TestShadowVDM::class])
-    fun testInitFailVirtualCameraValidation_NoAvailableDevices() = runTest {
+    fun testInitSucceedsOnVirtualDevice_NoAvailableDevices() = runTest {
         // Arrange. Set up a simulated environment that no accessible cameras.
         var callCount = 0
         val configBuilder: CameraXConfig.Builder =
@@ -663,13 +664,11 @@ class CameraXInitRetryTest {
 
         // Act.
         val cameraX = CameraX(context) { configBuilder.build() }
-        val throwableSubject =
-            assertThrows<InitializationException> { cameraX.initializeFuture.await() }
+        cameraX.initializeFuture.await()
 
         // Assert.
-        throwableSubject.hasCauseThat().isInstanceOf(CameraUnavailableException::class.java)
-        assertThat(cameraX.isInitialized).isFalse()
-        assertThat(callCount).isGreaterThan(0)
+        assertThat(cameraX.isInitialized).isTrue()
+        assertThat(callCount).isEqualTo(0)
         cameraX.shutdown().get()
     }
 
@@ -692,9 +691,17 @@ class CameraXInitRetryTest {
             .setCameraFactoryProvider(cameraFactoryProvider)
             .apply {
                 surfaceManager?.let {
-                    setDeviceSurfaceManagerProvider { _: Context?, _: Any?, _: Set<String?>? -> it }
+                    setDeviceSurfaceManagerProvider {
+                        _: Context?,
+                        _: Any?,
+                        _: Set<String?>?,
+                        _: String? ->
+                        it
+                    }
                 }
-                useCaseConfigFactory?.let { setUseCaseConfigFactoryProvider { _: Context? -> it } }
+                useCaseConfigFactory?.let {
+                    setUseCaseConfigFactoryProvider { _: Context?, _: Boolean -> it }
+                }
             }
             .build()
     }
@@ -741,7 +748,7 @@ class CameraXInitRetryTest {
 
     @Implements(
         value = VirtualDeviceManager::class,
-        minSdk = AndroidVersions.U.SDK_INT,
+        minSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
         isInAndroidSdk = false,
     )
     class TestShadowVDM : ShadowVirtualDeviceManager() {

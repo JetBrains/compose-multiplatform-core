@@ -15,9 +15,12 @@
  */
 package androidx.compose.remote.core.operations.paint;
 
+import androidx.annotation.RestrictTo;
+
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class PaintChangeAdapter implements PaintChanges {
 
     @Override
@@ -25,6 +28,9 @@ public class PaintChangeAdapter implements PaintChanges {
 
     @Override
     public void setTypeFace(int fontType, int weight, boolean italic) {}
+
+    @Override
+    public void setFallbackTypeFace(int fontType, int weight, boolean italic) {}
 
     @Override
     public void setShaderMatrix(float matrixId) {}
@@ -38,6 +44,9 @@ public class PaintChangeAdapter implements PaintChanges {
     @Override
     public void setTextureShader(
             int bitmapId, short tileX, short tileY, short filterMode, short maxAnisotropy) {}
+
+    @Override
+    public void setPathEffect(float @Nullable [] pathEffect) {}
 
     @Override
     public void setStrokeWidth(float width) {}
@@ -95,6 +104,18 @@ public class PaintChangeAdapter implements PaintChanges {
             float centerX,
             float centerY,
             float radius,
+            int tileMode) {}
+
+    @Override
+    public void setRadialGradient(
+            int @NonNull [] colors,
+            float @Nullable [] stops,
+            float startX,
+            float startY,
+            float startRadius,
+            float endX,
+            float endY,
+            float endRadius,
             int tileMode) {}
 
     @Override

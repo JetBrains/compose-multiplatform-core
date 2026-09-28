@@ -17,15 +17,11 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.test")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
     namespace = "androidx.tv.integration.macrobenchmark"
 
-    defaultConfig {
-        minSdk = 24
-    }
 
     buildTypes {
         // Create a release build type and make sure it's the only one enabled.

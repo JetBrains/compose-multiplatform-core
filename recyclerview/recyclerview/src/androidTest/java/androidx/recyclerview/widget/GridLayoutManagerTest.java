@@ -83,6 +83,7 @@ public class GridLayoutManagerTest extends BaseGridLayoutManagerTest {
         focusSearchFailure(false);
     }
 
+    @SdkSuppress(maxSdkVersion = 36) // b/537526293
     @Test
     public void focusSearchFailureDown() throws Throwable {
         focusSearchFailure(true);
@@ -976,7 +977,6 @@ public class GridLayoutManagerTest extends BaseGridLayoutManagerTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M)
     public void onInitializeAccessibilityNodeInfo_addActionScrollToPosition_addedWithNonEmptyList()
             throws Throwable {
         final RecyclerView recyclerView = setupBasic(new Config(3, 1));

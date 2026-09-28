@@ -25,6 +25,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
+        <profileable android:shell="true" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -39,6 +42,17 @@
             android:windowSoftInputMode="adjustNothing" />
         <!-- Prevents the PdfView from shifting upward when the activity resizes for the keyboard.
         This flag is optional and can be customized by the host app to achieve the desired behavior. -->
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
     </application>
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>

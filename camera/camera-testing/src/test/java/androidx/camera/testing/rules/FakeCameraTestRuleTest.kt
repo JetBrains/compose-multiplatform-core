@@ -31,7 +31,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = 21)
+@Config(sdk = [Config.ALL_SDKS])
 class FakeCameraTestRuleTest(@CameraSelector.LensFacing private val lensFacing: Int) {
     private val fakeCameraRule = FakeCameraTestRule(ApplicationProvider.getApplicationContext())
 

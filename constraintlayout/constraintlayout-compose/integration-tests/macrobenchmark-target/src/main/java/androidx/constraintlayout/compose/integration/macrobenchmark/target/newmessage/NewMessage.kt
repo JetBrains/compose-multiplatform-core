@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.Button
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
@@ -594,20 +595,17 @@ internal fun MessageWidgetCol(modifier: Modifier) {
     ) {
         TextField(
             modifier = Modifier.fillMaxWidth(),
-            value = "",
-            onValueChange = {},
+            state = rememberTextFieldState(),
             placeholder = { Text("Recipients") },
         )
         TextField(
             modifier = Modifier.fillMaxWidth(),
-            value = "",
-            onValueChange = {},
+            state = rememberTextFieldState(),
             placeholder = { Text("Subject") },
         )
         TextField(
             modifier = Modifier.fillMaxWidth().weight(weight = 2.0f, fill = true),
-            value = "",
-            onValueChange = {},
+            state = rememberTextFieldState(),
             placeholder = { Text("Message") },
         )
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -640,38 +638,38 @@ internal fun MessageWidget(modifier: Modifier, onDelete: () -> Unit = {}) {
     val constraintSet = remember {
         ConstraintSet(
             """
-                {
-                    gl1: { type: 'hGuideline', end: 50 },
-                    recipient: {
-                      top: ['parent', 'top', 2],
-                      width: 'spread',
-                      centerHorizontally: 'parent',
-                    },
-                    subject: { 
-                      top: ['recipient', 'bottom', 8],
-                      width: 'spread',
-                      centerHorizontally: 'parent',
-                    },
-                    message: {
-                      height: 'spread',
-                      width: 'spread',
-                      centerHorizontally: 'parent',
-                      top: ['subject', 'bottom', 8],
-                      bottom: ['gl1', 'bottom', 4],
-                    },
-                    delete: {
-                      height: 'spread',
-                      top: ['gl1', 'bottom', 0],
-                      bottom: ['parent', 'bottom', 4],
-                      start: ['parent', 'start', 0]
-                    },
-                    send: {
-                      height: 'spread',
-                      top: ['gl1', 'bottom', 0],
-                      bottom: ['parent', 'bottom', 4],
-                      end: ['parent', 'end', 0]
-                    }
+            {
+                gl1: { type: 'hGuideline', end: 50 },
+                recipient: {
+                  top: ['parent', 'top', 2],
+                  width: 'spread',
+                  centerHorizontally: 'parent',
+                },
+                subject: { 
+                  top: ['recipient', 'bottom', 8],
+                  width: 'spread',
+                  centerHorizontally: 'parent',
+                },
+                message: {
+                  height: 'spread',
+                  width: 'spread',
+                  centerHorizontally: 'parent',
+                  top: ['subject', 'bottom', 8],
+                  bottom: ['gl1', 'bottom', 4],
+                },
+                delete: {
+                  height: 'spread',
+                  top: ['gl1', 'bottom', 0],
+                  bottom: ['parent', 'bottom', 4],
+                  start: ['parent', 'start', 0]
+                },
+                send: {
+                  height: 'spread',
+                  top: ['gl1', 'bottom', 0],
+                  bottom: ['parent', 'bottom', 4],
+                  end: ['parent', 'end', 0]
                 }
+            }
             """
                 .trimIndent()
         )
@@ -682,20 +680,17 @@ internal fun MessageWidget(modifier: Modifier, onDelete: () -> Unit = {}) {
     ) {
         OutlinedTextField(
             modifier = Modifier.layoutId("recipient"),
-            value = "",
-            onValueChange = {},
+            state = rememberTextFieldState(),
             label = { CheapText("To") },
         )
         OutlinedTextField(
             modifier = Modifier.layoutId("subject"),
-            value = "",
-            onValueChange = {},
+            state = rememberTextFieldState(),
             label = { CheapText("Subject") },
         )
         OutlinedTextField(
             modifier = Modifier.layoutId("message").fillMaxHeight(),
-            value = "",
-            onValueChange = {},
+            state = rememberTextFieldState(),
             label = { CheapText("Message") },
         )
         Button(

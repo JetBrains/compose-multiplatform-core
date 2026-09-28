@@ -16,7 +16,6 @@
 
 package androidx.camera.video
 
-import android.os.Build
 import android.util.Range
 import android.util.Size
 import androidx.camera.core.AspectRatio
@@ -35,10 +34,9 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
-@OptIn(ExperimentalHighSpeedVideo::class)
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class HighSpeedVideoSessionConfigTest {
 
     private val defaultVideoCapture = createVideoCapture()
@@ -155,6 +153,27 @@ class HighSpeedVideoSessionConfigTest {
     }
 
     @Test
+    fun builder_build_defaultIsAutoRotationEnabledFalse() {
+        val config =
+            HighSpeedVideoSessionConfig.Builder(defaultVideoCapture)
+                .setFrameRateRange(FPS_120_120)
+                .build()
+
+        assertThat(config.isAutoRotationEnabled).isFalse()
+    }
+
+    @Test
+    fun builder_setAutoRotationEnabled_configHasIsAutoRotationEnabledTrue() {
+        val config =
+            HighSpeedVideoSessionConfig.Builder(defaultVideoCapture)
+                .setFrameRateRange(FPS_120_120)
+                .setAutoRotationEnabled(true)
+                .build()
+
+        assertThat(config.isAutoRotationEnabled).isTrue()
+    }
+
+    @Test
     fun builder_build_setsFrameRateAndVideoCapture() {
         val config =
             HighSpeedVideoSessionConfig.Builder(defaultVideoCapture)
@@ -176,6 +195,64 @@ class HighSpeedVideoSessionConfigTest {
 
         assertThat(config.preview).isEqualTo(defaultPreview)
         assertThat(config.useCases).containsExactly(defaultVideoCapture, defaultPreview)
+    }
+
+    @Test
+    fun dsl_buildsCorrectHighSpeedVideoSessionConfig() {
+        val config =
+            highSpeedVideoSessionConfig(defaultVideoCapture) {
+                preview = defaultPreview
+                frameRateRange = FPS_120_120
+                isSlowMotionEnabled = true
+                isAutoRotationEnabled = true
+
+                assertThat(preview).isEqualTo(defaultPreview)
+                assertThat(frameRateRange).isEqualTo(FPS_120_120)
+                assertThat(isSlowMotionEnabled).isTrue()
+                assertThat(isAutoRotationEnabled).isTrue()
+            }
+
+        assertThat(config.videoCapture).isEqualTo(defaultVideoCapture)
+        assertThat(config.preview).isEqualTo(defaultPreview)
+        assertThat(config.frameRateRange).isEqualTo(FPS_120_120)
+        assertThat(config.isSlowMotionEnabled).isTrue()
+        assertThat(config.isAutoRotationEnabled).isTrue()
+        assertThat(config.useCases).containsExactly(defaultVideoCapture, defaultPreview)
+    }
+
+    @Test
+    fun toString_containsAllPropertiesCorrectly() {
+        // Test with all properties
+        val config1 =
+            HighSpeedVideoSessionConfig(
+                defaultVideoCapture,
+                defaultPreview,
+                FPS_120_120,
+                isSlowMotionEnabled = true,
+                isAutoRotationEnabled = true,
+            )
+        assertThat(config1.toString()).apply {
+            contains("videoCapture=$defaultVideoCapture")
+            contains("preview=$defaultPreview")
+            contains("frameRateRange=$FPS_120_120")
+            contains("isSlowMotionEnabled=true")
+            contains("isAutoRotationEnabled=true")
+        }
+
+        // Test with null preview and default values
+        val config2 =
+            HighSpeedVideoSessionConfig(
+                defaultVideoCapture,
+                preview = null,
+                frameRateRange = FPS_120_120,
+            )
+        assertThat(config2.toString()).apply {
+            contains("videoCapture=$defaultVideoCapture")
+            contains("preview=null")
+            contains("frameRateRange=$FPS_120_120")
+            contains("isSlowMotionEnabled=false")
+            contains("isAutoRotationEnabled=false")
+        }
     }
 
     private fun createRecorder() = Recorder.Builder().build()

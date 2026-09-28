@@ -17,13 +17,10 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.test")
-    id("org.jetbrains.kotlin.android")
+    alias(libs.plugins.kotlinSerialization)
 }
 
 android {
-    defaultConfig {
-        minSdk = 23
-    }
     namespace = "androidx.compose.integration.hero.pokedex.macrobenchmark"
     targetProjectPath = ":compose:integration-tests:hero:pokedex:pokedex-macrobenchmark-target"
     experimentalProperties["android.experimental.self-instrumenting"] = true
@@ -32,7 +29,7 @@ android {
 // Create a release build type and make sure it's the only one enabled.
 // This is needed because we benchmark the release build type only.
 android.buildTypes { release {} }
-androidComponents { beforeVariants(selector().all()) { enabled = buildType == 'release' } }
+androidComponents { beforeVariants(selector().all()) { enabled = buildType == "release" } }
 
 dependencies {
     implementation(project(":benchmark:benchmark-junit4"))
@@ -44,4 +41,7 @@ dependencies {
     implementation(libs.testCore)
     implementation(libs.testRunner)
     implementation(libs.testUiautomator)
+    implementation(libs.okhttpMockwebserver)
+    implementation(libs.kotlinSerializationJson)
+
 }

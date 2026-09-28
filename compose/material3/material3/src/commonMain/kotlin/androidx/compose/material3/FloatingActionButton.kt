@@ -18,6 +18,7 @@ package androidx.compose.material3
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.updateTransition
@@ -40,6 +41,7 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.MaterialTheme.LocalMaterialTheme
 import androidx.compose.material3.internal.ProvideContentColorTextStyle
 import androidx.compose.material3.internal.animateElevation
 import androidx.compose.material3.tokens.ElevationTokens
@@ -49,6 +51,7 @@ import androidx.compose.material3.tokens.ExtendedFabPrimaryTokens
 import androidx.compose.material3.tokens.ExtendedFabSmallTokens
 import androidx.compose.material3.tokens.FabBaselineTokens
 import androidx.compose.material3.tokens.FabLargeTokens
+import androidx.compose.material3.tokens.FabMediumTokens
 import androidx.compose.material3.tokens.FabPrimaryContainerTokens
 import androidx.compose.material3.tokens.FabSmallTokens
 import androidx.compose.material3.tokens.MotionSchemeKeyTokens
@@ -61,17 +64,36 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.CacheDrawModifierNode
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.inset
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
+import androidx.compose.ui.node.DelegatingNode
+import androidx.compose.ui.node.LayoutModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.currentValueOf
+import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toIntSize
+import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.util.lerp
 import kotlinx.coroutines.launch
 
@@ -106,7 +128,7 @@ import kotlinx.coroutines.launch
  * @param content the content of this FAB, typically an [Icon]
  */
 @Composable
-fun FloatingActionButton(
+public fun FloatingActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = FloatingActionButtonDefaults.shape,
@@ -115,7 +137,7 @@ fun FloatingActionButton(
     elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
     interactionSource: MutableInteractionSource? = null,
     content: @Composable () -> Unit,
-) =
+): Unit =
     FloatingActionButton(
         onClick,
         ExtendedFabPrimaryTokens.LabelTextFont.value,
@@ -177,6 +199,10 @@ private fun FloatingActionButton(
  * image](https://developer.android.com/images/reference/androidx/compose/material3/small-fab.png)
  *
  * @sample androidx.compose.material3.samples.SmallFloatingActionButtonSample
+ *
+ * FABs can also be shown and hidden with an animation when the main content is scrolled:
+ *
+ * @sample androidx.compose.material3.samples.AnimatedFloatingActionButtonSample
  * @param onClick called when this FAB is clicked
  * @param modifier the [Modifier] to be applied to this FAB
  * @param shape defines the shape of this FAB's container and shadow (when using [elevation])
@@ -196,7 +222,7 @@ private fun FloatingActionButton(
  * @param content the content of this FAB, typically an [Icon]
  */
 @Composable
-fun SmallFloatingActionButton(
+public fun SmallFloatingActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = FloatingActionButtonDefaults.smallShape,
@@ -223,6 +249,64 @@ fun SmallFloatingActionButton(
 }
 
 /**
+ * [Material Design medium floating action
+ * button](https://m3.material.io/components/floating-action-button/overview)
+ *
+ * The FAB represents the most important action on a screen. It puts key actions within reach.
+ *
+ * @sample androidx.compose.material3.samples.MediumFloatingActionButtonSample
+ *
+ * FABs can also be shown and hidden with an animation when the main content is scrolled:
+ *
+ * @sample androidx.compose.material3.samples.AnimatedFloatingActionButtonSample
+ * @param onClick called when this FAB is clicked
+ * @param modifier the [Modifier] to be applied to this FAB
+ * @param shape defines the shape of this FAB's container and shadow (when using [elevation])
+ * @param containerColor the color used for the background of this FAB. Use [Color.Transparent] to
+ *   have no color.
+ * @param contentColor the preferred color for content inside this FAB. Defaults to either the
+ *   matching content color for [containerColor], or to the current [LocalContentColor] if
+ *   [containerColor] is not a color from the theme.
+ * @param elevation [FloatingActionButtonElevation] used to resolve the elevation for this FAB in
+ *   different states. This controls the size of the shadow below the FAB. Additionally, when the
+ *   container color is [ColorScheme.surface], this controls the amount of primary color applied as
+ *   an overlay. See also: [Surface].
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ *   emitting [Interaction]s for this FAB. You can use this to change the FAB's appearance or
+ *   preview the FAB in different states. Note that if `null` is provided, interactions will still
+ *   happen internally.
+ * @param content the content of this FAB, typically an [Icon]
+ *
+ * @material3expressive
+ */
+@Composable
+public fun MediumFloatingActionButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    shape: Shape = FloatingActionButtonDefaults.mediumShape,
+    containerColor: Color = FloatingActionButtonDefaults.containerColor,
+    contentColor: Color = contentColorFor(containerColor),
+    elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
+    interactionSource: MutableInteractionSource? = null,
+    content: @Composable () -> Unit,
+) {
+    FloatingActionButton(
+        onClick = onClick,
+        modifier =
+            modifier.sizeIn(
+                minWidth = FabMediumTokens.ContainerWidth,
+                minHeight = FabMediumTokens.ContainerHeight,
+            ),
+        shape = shape,
+        containerColor = containerColor,
+        contentColor = contentColor,
+        elevation = elevation,
+        interactionSource = interactionSource,
+        content = content,
+    )
+}
+
+/**
  * [Material Design large floating action
  * button](https://m3.material.io/components/floating-action-button/overview)
  *
@@ -232,6 +316,10 @@ fun SmallFloatingActionButton(
  * image](https://developer.android.com/images/reference/androidx/compose/material3/large-fab.png)
  *
  * @sample androidx.compose.material3.samples.LargeFloatingActionButtonSample
+ *
+ * FABs can also be shown and hidden with an animation when the main content is scrolled:
+ *
+ * @sample androidx.compose.material3.samples.AnimatedFloatingActionButtonSample
  * @param onClick called when this FAB is clicked
  * @param modifier the [Modifier] to be applied to this FAB
  * @param shape defines the shape of this FAB's container and shadow (when using [elevation])
@@ -251,7 +339,7 @@ fun SmallFloatingActionButton(
  * @param content the content of this FAB, typically an [Icon]
  */
 @Composable
-fun LargeFloatingActionButton(
+public fun LargeFloatingActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = FloatingActionButtonDefaults.largeShape,
@@ -275,6 +363,207 @@ fun LargeFloatingActionButton(
         interactionSource = interactionSource,
         content = content,
     )
+}
+
+// TODO link to image
+/**
+ * [Material Design small extended floating action
+ * button](https://m3.material.io/components/extended-fab/overview)
+ *
+ * Extended FABs help people take primary actions. They're wider than FABs to accommodate a text
+ * label and larger target area.
+ *
+ * The other small extended floating action button overload supports a text label and icon.
+ *
+ * @sample androidx.compose.material3.samples.SmallExtendedFloatingActionButtonTextSample
+ * @param onClick called when this FAB is clicked
+ * @param modifier the [Modifier] to be applied to this FAB
+ * @param shape defines the shape of this FAB's container and shadow (when using [elevation])
+ * @param containerColor the color used for the background of this FAB. Use [Color.Transparent] to
+ *   have no color.
+ * @param contentColor the preferred color for content inside this FAB. Defaults to either the
+ *   matching content color for [containerColor], or to the current [LocalContentColor] if
+ *   [containerColor] is not a color from the theme.
+ * @param elevation [FloatingActionButtonElevation] used to resolve the elevation for this FAB in
+ *   different states. This controls the size of the shadow below the FAB. Additionally, when the
+ *   container color is [ColorScheme.surface], this controls the amount of primary color applied as
+ *   an overlay. See also: [Surface].
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ *   emitting [Interaction]s for this FAB. You can use this to change the FAB's appearance or
+ *   preview the FAB in different states. Note that if `null` is provided, interactions will still
+ *   happen internally.
+ * @param content the content of this FAB, typically a [Text] label
+ *
+ * @material3expressive
+ */
+@Composable
+public fun SmallExtendedFloatingActionButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    shape: Shape = FloatingActionButtonDefaults.smallExtendedFabShape,
+    containerColor: Color = FloatingActionButtonDefaults.containerColor,
+    contentColor: Color = contentColorFor(containerColor),
+    elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
+    interactionSource: MutableInteractionSource? = null,
+    content: @Composable RowScope.() -> Unit,
+) {
+    FloatingActionButton(
+        onClick = onClick,
+        textStyle = SmallExtendedFabTextStyle.value,
+        minWidth = SmallExtendedFabMinimumWidth,
+        minHeight = SmallExtendedFabMinimumHeight,
+        modifier = modifier,
+        shape = shape,
+        containerColor = containerColor,
+        contentColor = contentColor,
+        elevation = elevation,
+        interactionSource = interactionSource,
+    ) {
+        Row(
+            modifier =
+                Modifier.padding(
+                    start = SmallExtendedFabPaddingStart,
+                    end = SmallExtendedFabPaddingEnd,
+                ),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+            content = content,
+        )
+    }
+}
+
+// TODO link to image
+/**
+ * [Material Design medium extended floating action
+ * button](https://m3.material.io/components/extended-fab/overview)
+ *
+ * Extended FABs help people take primary actions. They're wider than FABs to accommodate a text
+ * label and larger target area.
+ *
+ * The other medium extended floating action button overload supports a text label and icon.
+ *
+ * @sample androidx.compose.material3.samples.MediumExtendedFloatingActionButtonTextSample
+ * @param onClick called when this FAB is clicked
+ * @param modifier the [Modifier] to be applied to this FAB
+ * @param shape defines the shape of this FAB's container and shadow (when using [elevation])
+ * @param containerColor the color used for the background of this FAB. Use [Color.Transparent] to
+ *   have no color.
+ * @param contentColor the preferred color for content inside this FAB. Defaults to either the
+ *   matching content color for [containerColor], or to the current [LocalContentColor] if
+ *   [containerColor] is not a color from the theme.
+ * @param elevation [FloatingActionButtonElevation] used to resolve the elevation for this FAB in
+ *   different states. This controls the size of the shadow below the FAB. Additionally, when the
+ *   container color is [ColorScheme.surface], this controls the amount of primary color applied as
+ *   an overlay. See also: [Surface].
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ *   emitting [Interaction]s for this FAB. You can use this to change the FAB's appearance or
+ *   preview the FAB in different states. Note that if `null` is provided, interactions will still
+ *   happen internally.
+ * @param content the content of this FAB, typically a [Text] label
+ *
+ * @material3expressive
+ */
+@Composable
+public fun MediumExtendedFloatingActionButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    shape: Shape = FloatingActionButtonDefaults.mediumExtendedFabShape,
+    containerColor: Color = FloatingActionButtonDefaults.containerColor,
+    contentColor: Color = contentColorFor(containerColor),
+    elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
+    interactionSource: MutableInteractionSource? = null,
+    content: @Composable RowScope.() -> Unit,
+) {
+    FloatingActionButton(
+        onClick = onClick,
+        textStyle = MediumExtendedFabTextStyle.value,
+        minWidth = MediumExtendedFabMinimumWidth,
+        minHeight = MediumExtendedFabMinimumHeight,
+        modifier = modifier,
+        shape = shape,
+        containerColor = containerColor,
+        contentColor = contentColor,
+        elevation = elevation,
+        interactionSource = interactionSource,
+    ) {
+        Row(
+            modifier =
+                Modifier.padding(
+                    start = MediumExtendedFabPaddingStart,
+                    end = MediumExtendedFabPaddingEnd,
+                ),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+            content = content,
+        )
+    }
+}
+
+// TODO link to image
+/**
+ * [Material Design large extended floating action
+ * button](https://m3.material.io/components/extended-fab/overview)
+ *
+ * Extended FABs help people take primary actions. They're wider than FABs to accommodate a text
+ * label and larger target area.
+ *
+ * The other large extended floating action button overload supports a text label and icon.
+ *
+ * @sample androidx.compose.material3.samples.LargeExtendedFloatingActionButtonTextSample
+ * @param onClick called when this FAB is clicked
+ * @param modifier the [Modifier] to be applied to this FAB
+ * @param shape defines the shape of this FAB's container and shadow (when using [elevation])
+ * @param containerColor the color used for the background of this FAB. Use [Color.Transparent] to
+ *   have no color.
+ * @param contentColor the preferred color for content inside this FAB. Defaults to either the
+ *   matching content color for [containerColor], or to the current [LocalContentColor] if
+ *   [containerColor] is not a color from the theme.
+ * @param elevation [FloatingActionButtonElevation] used to resolve the elevation for this FAB in
+ *   different states. This controls the size of the shadow below the FAB. Additionally, when the
+ *   container color is [ColorScheme.surface], this controls the amount of primary color applied as
+ *   an overlay. See also: [Surface].
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ *   emitting [Interaction]s for this FAB. You can use this to change the FAB's appearance or
+ *   preview the FAB in different states. Note that if `null` is provided, interactions will still
+ *   happen internally.
+ * @param content the content of this FAB, typically a [Text] label
+ *
+ * @material3expressive
+ */
+@Composable
+public fun LargeExtendedFloatingActionButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    shape: Shape = FloatingActionButtonDefaults.largeExtendedFabShape,
+    containerColor: Color = FloatingActionButtonDefaults.containerColor,
+    contentColor: Color = contentColorFor(containerColor),
+    elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
+    interactionSource: MutableInteractionSource? = null,
+    content: @Composable RowScope.() -> Unit,
+) {
+    FloatingActionButton(
+        onClick = onClick,
+        textStyle = LargeExtendedFabTextStyle.value,
+        minWidth = LargeExtendedFabMinimumWidth,
+        minHeight = LargeExtendedFabMinimumHeight,
+        modifier = modifier,
+        shape = shape,
+        containerColor = containerColor,
+        contentColor = contentColor,
+        elevation = elevation,
+        interactionSource = interactionSource,
+    ) {
+        Row(
+            modifier =
+                Modifier.padding(
+                    start = LargeExtendedFabPaddingStart,
+                    end = LargeExtendedFabPaddingEnd,
+                ),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+            content = content,
+        )
+    }
 }
 
 /**
@@ -309,7 +598,7 @@ fun LargeFloatingActionButton(
  * @param content the content of this FAB, typically a [Text] label
  */
 @Composable
-fun ExtendedFloatingActionButton(
+public fun ExtendedFloatingActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = FloatingActionButtonDefaults.extendedFabShape,
@@ -338,6 +627,213 @@ fun ExtendedFloatingActionButton(
         )
     }
 }
+
+/**
+ * [Material Design small extended floating action
+ * button](https://m3.material.io/components/extended-fab/overview)
+ *
+ * Extended FABs help people take primary actions. They're wider than FABs to accommodate a text
+ * label and larger target area.
+ *
+ * The other small extended floating action button overload is for FABs without an icon.
+ *
+ * Default content description for accessibility is extended from the extended fabs icon. For custom
+ * behavior, you can provide your own via [Modifier.semantics].
+ *
+ * @sample androidx.compose.material3.samples.SmallExtendedFloatingActionButtonSample
+ * @sample androidx.compose.material3.samples.SmallAnimatedExtendedFloatingActionButtonSample
+ * @param text label displayed inside this FAB
+ * @param icon icon for this FAB, typically an [Icon]
+ * @param onClick called when this FAB is clicked
+ * @param modifier the [Modifier] to be applied to this FAB
+ * @param expanded controls the expansion state of this FAB. In an expanded state, the FAB will show
+ *   both the [icon] and [text]. In a collapsed state, the FAB will show only the [icon].
+ * @param shape defines the shape of this FAB's container and shadow (when using [elevation])
+ * @param containerColor the color used for the background of this FAB. Use [Color.Transparent] to
+ *   have no color.
+ * @param contentColor the preferred color for content inside this FAB. Defaults to either the
+ *   matching content color for [containerColor], or to the current [LocalContentColor] if
+ *   [containerColor] is not a color from the theme.
+ * @param elevation [FloatingActionButtonElevation] used to resolve the elevation for this FAB in
+ *   different states. This controls the size of the shadow below the FAB. Additionally, when the
+ *   container color is [ColorScheme.surface], this controls the amount of primary color applied as
+ *   an overlay. See also: [Surface].
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ *   emitting [Interaction]s for this FAB. You can use this to change the FAB's appearance or
+ *   preview the FAB in different states. Note that if `null` is provided, interactions will still
+ *   happen internally.
+ *
+ * @material3expressive
+ */
+@Composable
+public fun SmallExtendedFloatingActionButton(
+    text: @Composable () -> Unit,
+    icon: @Composable () -> Unit,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    expanded: Boolean = true,
+    shape: Shape = FloatingActionButtonDefaults.smallExtendedFabShape,
+    containerColor: Color = FloatingActionButtonDefaults.containerColor,
+    contentColor: Color = contentColorFor(containerColor),
+    elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
+    interactionSource: MutableInteractionSource? = null,
+): Unit =
+    ExtendedFloatingActionButton(
+        text = text,
+        icon = icon,
+        onClick = onClick,
+        textStyle = SmallExtendedFabTextStyle.value,
+        minWidth = SmallExtendedFabMinimumWidth,
+        minHeight = SmallExtendedFabMinimumHeight,
+        startPadding = SmallExtendedFabPaddingStart,
+        endPadding = SmallExtendedFabPaddingEnd,
+        iconPadding = SmallExtendedFabIconPadding,
+        modifier = modifier,
+        expanded = expanded,
+        shape = shape,
+        containerColor = containerColor,
+        contentColor = contentColor,
+        elevation = elevation,
+        interactionSource = interactionSource,
+    )
+
+/**
+ * [Material Design medium extended floating action
+ * button](https://m3.material.io/components/extended-fab/overview)
+ *
+ * Extended FABs help people take primary actions. They're wider than FABs to accommodate a text
+ * label and larger target area.
+ *
+ * The other medium extended floating action button overload is for FABs without an icon.
+ *
+ * Default content description for accessibility is extended from the extended fabs icon. For custom
+ * behavior, you can provide your own via [Modifier.semantics].
+ *
+ * @sample androidx.compose.material3.samples.MediumExtendedFloatingActionButtonSample
+ * @sample androidx.compose.material3.samples.MediumAnimatedExtendedFloatingActionButtonSample
+ * @param text label displayed inside this FAB
+ * @param icon icon for this FAB, typically an [Icon]
+ * @param onClick called when this FAB is clicked
+ * @param modifier the [Modifier] to be applied to this FAB
+ * @param expanded controls the expansion state of this FAB. In an expanded state, the FAB will show
+ *   both the [icon] and [text]. In a collapsed state, the FAB will show only the [icon].
+ * @param shape defines the shape of this FAB's container and shadow (when using [elevation])
+ * @param containerColor the color used for the background of this FAB. Use [Color.Transparent] to
+ *   have no color.
+ * @param contentColor the preferred color for content inside this FAB. Defaults to either the
+ *   matching content color for [containerColor], or to the current [LocalContentColor] if
+ *   [containerColor] is not a color from the theme.
+ * @param elevation [FloatingActionButtonElevation] used to resolve the elevation for this FAB in
+ *   different states. This controls the size of the shadow below the FAB. Additionally, when the
+ *   container color is [ColorScheme.surface], this controls the amount of primary color applied as
+ *   an overlay. See also: [Surface].
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ *   emitting [Interaction]s for this FAB. You can use this to change the FAB's appearance or
+ *   preview the FAB in different states. Note that if `null` is provided, interactions will still
+ *   happen internally.
+ *
+ * @material3expressive
+ */
+@Composable
+public fun MediumExtendedFloatingActionButton(
+    text: @Composable () -> Unit,
+    icon: @Composable () -> Unit,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    expanded: Boolean = true,
+    shape: Shape = FloatingActionButtonDefaults.mediumExtendedFabShape,
+    containerColor: Color = FloatingActionButtonDefaults.containerColor,
+    contentColor: Color = contentColorFor(containerColor),
+    elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
+    interactionSource: MutableInteractionSource? = null,
+): Unit =
+    ExtendedFloatingActionButton(
+        text = text,
+        icon = icon,
+        onClick = onClick,
+        textStyle = MediumExtendedFabTextStyle.value,
+        minWidth = MediumExtendedFabMinimumWidth,
+        minHeight = MediumExtendedFabMinimumHeight,
+        startPadding = MediumExtendedFabPaddingStart,
+        endPadding = MediumExtendedFabPaddingEnd,
+        iconPadding = MediumExtendedFabIconPadding,
+        modifier = modifier,
+        expanded = expanded,
+        shape = shape,
+        containerColor = containerColor,
+        contentColor = contentColor,
+        elevation = elevation,
+        interactionSource = interactionSource,
+    )
+
+/**
+ * [Material Design large extended floating action
+ * button](https://m3.material.io/components/extended-fab/overview)
+ *
+ * Extended FABs help people take primary actions. They're wider than FABs to accommodate a text
+ * label and larger target area.
+ *
+ * The other large extended floating action button overload is for FABs without an icon.
+ *
+ * Default content description for accessibility is extended from the extended fabs icon. For custom
+ * behavior, you can provide your own via [Modifier.semantics].
+ *
+ * @sample androidx.compose.material3.samples.LargeExtendedFloatingActionButtonSample
+ * @sample androidx.compose.material3.samples.LargeAnimatedExtendedFloatingActionButtonSample
+ * @param text label displayed inside this FAB
+ * @param icon icon for this FAB, typically an [Icon]
+ * @param onClick called when this FAB is clicked
+ * @param modifier the [Modifier] to be applied to this FAB
+ * @param expanded controls the expansion state of this FAB. In an expanded state, the FAB will show
+ *   both the [icon] and [text]. In a collapsed state, the FAB will show only the [icon].
+ * @param shape defines the shape of this FAB's container and shadow (when using [elevation])
+ * @param containerColor the color used for the background of this FAB. Use [Color.Transparent] to
+ *   have no color.
+ * @param contentColor the preferred color for content inside this FAB. Defaults to either the
+ *   matching content color for [containerColor], or to the current [LocalContentColor] if
+ *   [containerColor] is not a color from the theme.
+ * @param elevation [FloatingActionButtonElevation] used to resolve the elevation for this FAB in
+ *   different states. This controls the size of the shadow below the FAB. Additionally, when the
+ *   container color is [ColorScheme.surface], this controls the amount of primary color applied as
+ *   an overlay. See also: [Surface].
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ *   emitting [Interaction]s for this FAB. You can use this to change the FAB's appearance or
+ *   preview the FAB in different states. Note that if `null` is provided, interactions will still
+ *   happen internally.
+ *
+ * @material3expressive
+ */
+@Composable
+public fun LargeExtendedFloatingActionButton(
+    text: @Composable () -> Unit,
+    icon: @Composable () -> Unit,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    expanded: Boolean = true,
+    shape: Shape = FloatingActionButtonDefaults.largeExtendedFabShape,
+    containerColor: Color = FloatingActionButtonDefaults.containerColor,
+    contentColor: Color = contentColorFor(containerColor),
+    elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
+    interactionSource: MutableInteractionSource? = null,
+): Unit =
+    ExtendedFloatingActionButton(
+        text = text,
+        icon = icon,
+        onClick = onClick,
+        textStyle = LargeExtendedFabTextStyle.value,
+        minWidth = LargeExtendedFabMinimumWidth,
+        minHeight = LargeExtendedFabMinimumHeight,
+        startPadding = LargeExtendedFabPaddingStart,
+        endPadding = LargeExtendedFabPaddingEnd,
+        iconPadding = LargeExtendedFabIconPadding,
+        modifier = modifier,
+        expanded = expanded,
+        shape = shape,
+        containerColor = containerColor,
+        contentColor = contentColor,
+        elevation = elevation,
+        interactionSource = interactionSource,
+    )
 
 /**
  * [Material Design extended floating action
@@ -378,7 +874,7 @@ fun ExtendedFloatingActionButton(
  *   happen internally.
  */
 @Composable
-fun ExtendedFloatingActionButton(
+public fun ExtendedFloatingActionButton(
     text: @Composable () -> Unit,
     icon: @Composable () -> Unit,
     onClick: () -> Unit,
@@ -504,29 +1000,49 @@ private fun ExtendedFloatingActionButton(
 }
 
 /** Contains the default values used by [FloatingActionButton] */
-object FloatingActionButtonDefaults {
+public object FloatingActionButtonDefaults {
+    internal val ShowHideTargetScale = 0.2f
+
+    /** The recommended size of the icon inside a [MediumFloatingActionButton]. */
+    public val MediumIconSize: Dp = FabMediumTokens.IconSize
 
     /** The recommended size of the icon inside a [LargeFloatingActionButton]. */
-    val LargeIconSize = 36.dp // TODO: FabLargeTokens.IconSize is incorrect
+    public val LargeIconSize: Dp = 36.dp // TODO: FabLargeTokens.IconSize is incorrect
 
     /** Default shape for a floating action button. */
-    val shape: Shape
+    public val shape: Shape
         @Composable get() = FabBaselineTokens.ContainerShape.value
 
     /** Default shape for a small floating action button. */
-    val smallShape: Shape
+    public val smallShape: Shape
         @Composable get() = FabSmallTokens.ContainerShape.value
 
+    /** Default shape for a medium floating action button. */
+    public val mediumShape: Shape
+        @Composable get() = ShapeDefaults.LargeIncreased // TODO: update to use token
+
     /** Default shape for a large floating action button. */
-    val largeShape: Shape
+    public val largeShape: Shape
         @Composable get() = FabLargeTokens.ContainerShape.value
 
     /** Default shape for an extended floating action button. */
-    val extendedFabShape: Shape
+    public val extendedFabShape: Shape
         @Composable get() = ExtendedFabPrimaryTokens.ContainerShape.value
 
+    /** Default shape for a small extended floating action button. */
+    public val smallExtendedFabShape: Shape
+        @Composable get() = ExtendedFabSmallTokens.ContainerShape.value
+
+    /** Default shape for a medium extended floating action button. */
+    public val mediumExtendedFabShape: Shape
+        @Composable get() = ShapeDefaults.LargeIncreased // TODO: update to use token
+
+    /** Default shape for a large extended floating action button. */
+    public val largeExtendedFabShape: Shape
+        @Composable get() = ExtendedFabLargeTokens.ContainerShape.value
+
     /** Default container color for a floating action button. */
-    val containerColor: Color
+    public val containerColor: Color
         @Composable get() = FabPrimaryContainerTokens.ContainerColor.value
 
     /**
@@ -541,7 +1057,7 @@ object FloatingActionButtonDefaults {
      * @param hoveredElevation the elevation used when the [FloatingActionButton] is hovered.
      */
     @Composable
-    fun elevation(
+    public fun elevation(
         defaultElevation: Dp = FabPrimaryContainerTokens.ContainerElevation,
         pressedElevation: Dp = FabPrimaryContainerTokens.PressedContainerElevation,
         focusedElevation: Dp = FabPrimaryContainerTokens.FocusedContainerElevation,
@@ -565,7 +1081,7 @@ object FloatingActionButtonDefaults {
      * @param hoveredElevation the elevation used when the [FloatingActionButton] is hovered.
      */
     @Composable
-    fun loweredElevation(
+    public fun loweredElevation(
         defaultElevation: Dp = ElevationTokens.Level1,
         pressedElevation: Dp = ElevationTokens.Level1,
         focusedElevation: Dp = ElevationTokens.Level1,
@@ -588,7 +1104,7 @@ object FloatingActionButtonDefaults {
      * @param focusedElevation the elevation used when the [FloatingActionButton] is focused.
      * @param hoveredElevation the elevation used when the [FloatingActionButton] is hovered.
      */
-    fun bottomAppBarFabElevation(
+    public fun bottomAppBarFabElevation(
         defaultElevation: Dp = 0.dp,
         pressedElevation: Dp = 0.dp,
         focusedElevation: Dp = 0.dp,
@@ -603,13 +1119,168 @@ object FloatingActionButtonDefaults {
 }
 
 /**
+ * Apply this modifier to a [FloatingActionButton] to show or hide it with an animation, typically
+ * based on the app's main content scrolling.
+ *
+ * @param visible whether the FAB should be shown or hidden with an animation
+ * @param alignment the direction towards which the FAB should be scaled to and from
+ * @param targetScale the initial scale value when showing the FAB and the final scale value when
+ *   hiding the FAB
+ * @param scaleAnimationSpec the [AnimationSpec] to use for the scale part of the animation, if null
+ *   the Fast Spatial spring spec from the [MotionScheme] will be used
+ * @param alphaAnimationSpec the [AnimationSpec] to use for the alpha part of the animation, if null
+ *   the Fast Effects spring spec from the [MotionScheme] will be used
+ * @sample androidx.compose.material3.samples.AnimatedFloatingActionButtonSample
+ */
+public fun Modifier.animateFloatingActionButton(
+    visible: Boolean,
+    alignment: Alignment,
+    targetScale: Float = FloatingActionButtonDefaults.ShowHideTargetScale,
+    scaleAnimationSpec: AnimationSpec<Float>? = null,
+    alphaAnimationSpec: AnimationSpec<Float>? = null,
+): Modifier {
+    return this.then(
+        FabVisibleModifier(
+            visible = visible,
+            alignment = alignment,
+            targetScale = targetScale,
+            scaleAnimationSpec = scaleAnimationSpec,
+            alphaAnimationSpec = alphaAnimationSpec,
+        )
+    )
+}
+
+internal data class FabVisibleModifier(
+    private val visible: Boolean,
+    private val alignment: Alignment,
+    private val targetScale: Float,
+    private val scaleAnimationSpec: AnimationSpec<Float>? = null,
+    private val alphaAnimationSpec: AnimationSpec<Float>? = null,
+) : ModifierNodeElement<FabVisibleNode>() {
+
+    override fun create(): FabVisibleNode =
+        FabVisibleNode(
+            visible = visible,
+            alignment = alignment,
+            targetScale = targetScale,
+            scaleAnimationSpec = scaleAnimationSpec,
+            alphaAnimationSpec = alphaAnimationSpec,
+        )
+
+    override fun update(node: FabVisibleNode) {
+        node.updateNode(
+            visible = visible,
+            alignment = alignment,
+            targetScale = targetScale,
+            scaleAnimationSpec = scaleAnimationSpec,
+            alphaAnimationSpec = alphaAnimationSpec,
+        )
+    }
+
+    override fun InspectorInfo.inspectableProperties() {
+        // Show nothing in the inspector.
+    }
+}
+
+internal class FabVisibleNode(
+    visible: Boolean,
+    private var alignment: Alignment,
+    private var targetScale: Float,
+    private var scaleAnimationSpec: AnimationSpec<Float>? = null,
+    private var alphaAnimationSpec: AnimationSpec<Float>? = null,
+) : DelegatingNode(), LayoutModifierNode, CompositionLocalConsumerModifierNode {
+
+    private val scaleAnimatable = Animatable(if (visible) 1f else 0f)
+    private val alphaAnimatable = Animatable(if (visible) 1f else 0f)
+
+    init {
+        delegate(
+            CacheDrawModifierNode {
+                val layer = obtainGraphicsLayer()
+                // Use a larger layer size to make sure the elevation shadow doesn't get clipped
+                // and offset via layer.topLeft and DrawScope.inset to preserve the visual
+                // position of the FAB.
+                val layerInsetInt = 16.dp.toPx().toInt()
+                val layerInsetFloat = layerInsetInt.toFloat()
+                val layerSize =
+                    Size(size.width + layerInsetInt * 2f, size.height + layerInsetInt * 2f)
+                        .toIntSize()
+                val nodeSize = size.toIntSize()
+
+                layer.apply {
+                    topLeft = IntOffset(-layerInsetInt, -layerInsetInt)
+
+                    alpha = alphaAnimatable.value
+
+                    // Scale towards the direction of the provided alignment
+                    val alignOffset = alignment.align(IntSize(1, 1), nodeSize, layoutDirection)
+                    pivotOffset = alignOffset.toOffset() + Offset(layerInsetFloat, layerInsetFloat)
+                    scaleX = lerp(targetScale, 1f, scaleAnimatable.value)
+                    scaleY = lerp(targetScale, 1f, scaleAnimatable.value)
+
+                    record(size = layerSize) {
+                        inset(layerInsetFloat, layerInsetFloat) { this@record.drawContent() }
+                    }
+                }
+
+                onDrawWithContent { drawLayer(layer) }
+            }
+        )
+    }
+
+    fun updateNode(
+        visible: Boolean,
+        alignment: Alignment,
+        targetScale: Float,
+        scaleAnimationSpec: AnimationSpec<Float>?,
+        alphaAnimationSpec: AnimationSpec<Float>?,
+    ) {
+        this.alignment = alignment
+        this.targetScale = targetScale
+        this.scaleAnimationSpec = scaleAnimationSpec
+        this.alphaAnimationSpec = alphaAnimationSpec
+
+        coroutineScope.launch {
+            // TODO Load the motionScheme tokens from the component tokens file
+            scaleAnimatable.animateTo(
+                targetValue = if (visible) 1f else 0f,
+                animationSpec =
+                    scaleAnimationSpec
+                        ?: currentValueOf(LocalMaterialTheme).motionScheme.fastSpatialSpec<Float>(),
+            )
+        }
+
+        coroutineScope.launch {
+            // TODO Load the motionScheme tokens from the component tokens file
+            alphaAnimatable.animateTo(
+                targetValue = if (visible) 1f else 0f,
+                animationSpec =
+                    alphaAnimationSpec
+                        ?: currentValueOf(LocalMaterialTheme).motionScheme.fastEffectsSpec<Float>(),
+            )
+        }
+    }
+
+    override fun MeasureScope.measure(
+        measurable: Measurable,
+        constraints: Constraints,
+    ): MeasureResult {
+        if (alphaAnimatable.value == 0f) {
+            return layout(0, 0) {}
+        }
+        val placeable = measurable.measure(constraints)
+        return layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+    }
+}
+
+/**
  * Represents the tonal and shadow elevation for a floating action button in different states.
  *
  * See [FloatingActionButtonDefaults.elevation] for the default elevation used in a
  * [FloatingActionButton] and [ExtendedFloatingActionButton].
  */
 @Stable
-open class FloatingActionButtonElevation
+public open class FloatingActionButtonElevation
 internal constructor(
     private val defaultElevation: Dp,
     private val pressedElevation: Dp,
@@ -760,36 +1431,55 @@ private class FloatingActionButtonElevationAnimatable(
     fun asState(): State<Dp> = animatable.asState()
 }
 
-private val SmallExtendedFabMinimumWidth = ExtendedFabSmallTokens.ContainerHeight
-private val SmallExtendedFabMinimumHeight = ExtendedFabSmallTokens.ContainerHeight
-private val SmallExtendedFabPaddingStart = ExtendedFabSmallTokens.LeadingSpace
-private val SmallExtendedFabPaddingEnd = ExtendedFabSmallTokens.TrailingSpace
-private val SmallExtendedFabIconPadding = ExtendedFabSmallTokens.IconLabelSpace
+private val SmallExtendedFabMinimumWidth
+    get() = ExtendedFabSmallTokens.ContainerHeight
+private val SmallExtendedFabMinimumHeight
+    get() = ExtendedFabSmallTokens.ContainerHeight
+private val SmallExtendedFabPaddingStart
+    get() = ExtendedFabSmallTokens.LeadingSpace
+private val SmallExtendedFabPaddingEnd
+    get() = ExtendedFabSmallTokens.TrailingSpace
+private val SmallExtendedFabIconPadding
+    get() = ExtendedFabSmallTokens.IconLabelSpace
 private val SmallExtendedFabTextStyle = TypographyKeyTokens.TitleMedium
 
-private val MediumExtendedFabMinimumWidth = ExtendedFabMediumTokens.ContainerHeight
-private val MediumExtendedFabMinimumHeight = ExtendedFabMediumTokens.ContainerHeight
-private val MediumExtendedFabPaddingStart = ExtendedFabMediumTokens.LeadingSpace
-private val MediumExtendedFabPaddingEnd = ExtendedFabMediumTokens.TrailingSpace
+private val MediumExtendedFabMinimumWidth
+    get() = ExtendedFabMediumTokens.ContainerHeight
+private val MediumExtendedFabMinimumHeight
+    get() = ExtendedFabMediumTokens.ContainerHeight
+private val MediumExtendedFabPaddingStart
+    get() = ExtendedFabMediumTokens.LeadingSpace
+private val MediumExtendedFabPaddingEnd
+    get() = ExtendedFabMediumTokens.TrailingSpace
 // TODO: ExtendedFabMediumTokens.IconLabelSpace is incorrect
-private val MediumExtendedFabIconPadding = 12.dp
+private val MediumExtendedFabIconPadding
+    get() = 12.dp
 private val MediumExtendedFabTextStyle = TypographyKeyTokens.TitleLarge
 
-private val LargeExtendedFabMinimumWidth = ExtendedFabLargeTokens.ContainerHeight
-private val LargeExtendedFabMinimumHeight = ExtendedFabLargeTokens.ContainerHeight
-private val LargeExtendedFabPaddingStart = ExtendedFabLargeTokens.LeadingSpace
-private val LargeExtendedFabPaddingEnd = ExtendedFabLargeTokens.TrailingSpace
+private val LargeExtendedFabMinimumWidth
+    get() = ExtendedFabLargeTokens.ContainerHeight
+private val LargeExtendedFabMinimumHeight
+    get() = ExtendedFabLargeTokens.ContainerHeight
+private val LargeExtendedFabPaddingStart
+    get() = ExtendedFabLargeTokens.LeadingSpace
+private val LargeExtendedFabPaddingEnd
+    get() = ExtendedFabLargeTokens.TrailingSpace
 // TODO: ExtendedFabLargeTokens.IconLabelSpace is incorrect
-private val LargeExtendedFabIconPadding = 16.dp
+private val LargeExtendedFabIconPadding
+    get() = 16.dp
 private val LargeExtendedFabTextStyle = TypographyKeyTokens.HeadlineSmall
 
-private val ExtendedFabStartIconPadding = 16.dp
+private val ExtendedFabStartIconPadding
+    get() = 16.dp
 
-private val ExtendedFabEndIconPadding = 12.dp
+private val ExtendedFabEndIconPadding
+    get() = 12.dp
 
-private val ExtendedFabTextPadding = 20.dp
+private val ExtendedFabTextPadding
+    get() = 20.dp
 
-private val ExtendedFabMinimumWidth = 80.dp
+private val ExtendedFabMinimumWidth
+    get() = 80.dp
 
 @Composable
 private fun extendedFabCollapseAnimation() =

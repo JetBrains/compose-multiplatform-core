@@ -72,7 +72,6 @@ import java.util.Map;
  * Service invoked by {@link JobScheduler} to run work tasks.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@RequiresApi(WorkManagerImpl.MIN_JOB_SCHEDULER_API_LEVEL)
 public class SystemJobService extends JobService implements ExecutionListener {
     private static final String TAG = Logger.tagWithPrefix("SystemJobService");
     private WorkManagerImpl mWorkManagerImpl;
@@ -133,6 +132,12 @@ public class SystemJobService extends JobService implements ExecutionListener {
         WorkGenerationalId workGenerationalId = workGenerationalIdFromJobParameters(params);
         if (workGenerationalId == null) {
             Logger.get().error(TAG, "WorkSpec id not found!");
+            return false;
+        }
+
+        if (mWorkManagerImpl.getProcessor().isForeground(workGenerationalId)) {
+            Logger.get().debug(TAG, "Job is already running in foreground: " + workGenerationalId);
+            jobFinished(params, /* wantReschedule= */ true);
             return false;
         }
 
@@ -213,10 +218,10 @@ public class SystemJobService extends JobService implements ExecutionListener {
     @Override
     public void onExecuted(@NonNull WorkGenerationalId id, boolean needsReschedule) {
         assertMainThread("onExecuted");
-        Logger.get().debug(TAG, id.getWorkSpecId() + " executed on JobScheduler");
         JobParameters parameters = mJobParameters.remove(id);
         mStartStopTokens.remove(id);
         if (parameters != null) {
+            Logger.get().debug(TAG, id.getWorkSpecId() + " executed on JobScheduler");
             jobFinished(parameters, needsReschedule);
         }
     }
@@ -292,9 +297,15 @@ public class SystemJobService extends JobService implements ExecutionListener {
             case STOP_REASON_QUOTA:
             case STOP_REASON_SYSTEM_PROCESSING:
             case STOP_REASON_TIMEOUT:
-            case STOP_REASON_UNDEFINED:
             case STOP_REASON_USER:
                 reason = jobReason;
+                break;
+            case STOP_REASON_UNDEFINED:
+                // JobScheduler behavior can sometimes result in STOP_REASON_UNDEFINED (0)
+                // being returned even when onStopJob is called. To ensure developers
+                // receive a documented WorkManager stop reason, we map this to UNKNOWN.
+                // Tracking bug for JobScheduler investigation: b/491038210
+                reason = WorkInfo.STOP_REASON_UNKNOWN;
                 break;
             default:
                 reason = WorkInfo.STOP_REASON_UNKNOWN;

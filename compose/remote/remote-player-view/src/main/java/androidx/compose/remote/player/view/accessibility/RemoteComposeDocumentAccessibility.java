@@ -15,14 +15,18 @@
  */
 package androidx.compose.remote.player.view.accessibility;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+
 import android.graphics.PointF;
 import android.os.Bundle;
 import android.view.View;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.operations.layout.Component;
 import androidx.compose.remote.core.semantics.AccessibilitySemantics;
 import androidx.compose.remote.core.semantics.CoreSemantics;
 
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -32,6 +36,7 @@ import java.util.List;
  * provides methods to perform actions, retrieve state, and query the accessibility tree of the
  * remote Compose UI.
  */
+@RestrictTo(LIBRARY_GROUP)
 public interface RemoteComposeDocumentAccessibility {
     // Matches ExploreByTouchHelper.HOST_ID
     int RootId = View.NO_ID;
@@ -43,11 +48,11 @@ public interface RemoteComposeDocumentAccessibility {
      * Performs the specified action on the given component.
      *
      * @param component The component on which to perform the action.
-     * @param action The action to perform.
+     * @param action    The action to perform.
      * @param arguments Optional arguments for the action.
      * @return {@code true} if the action was performed successfully, {@code false} otherwise.
      */
-    boolean performAction(Component component, int action, Bundle arguments);
+    boolean performAction(@NonNull Component component, int action, @Nullable Bundle arguments);
 
     /**
      * Retrieves the string value associated with the given ID.
@@ -62,12 +67,13 @@ public interface RemoteComposeDocumentAccessibility {
      * view. These may later be hidden from accessibility services by properties, but should contain
      * only possibly semantically relevant virtual views.
      *
-     * @param component The component to retrieve child view IDs from, or [RootId] for the top
-     *     level.
+     * @param component       The component to retrieve child view IDs from, or [RootId] for the top
+     *                        level.
      * @param useUnmergedTree Whether to include merged children
      * @return A list of integer IDs representing the child views of the component.
      */
-    List<Integer> semanticallyRelevantChildComponents(Component component, boolean useUnmergedTree);
+    @NonNull List<@NonNull Integer> semanticallyRelevantChildComponents(
+            @NonNull Component component, boolean useUnmergedTree);
 
     /**
      * Retrieves the semantic modifiers associated with a given component.
@@ -75,7 +81,8 @@ public interface RemoteComposeDocumentAccessibility {
      * @param component The component for which to retrieve semantic modifiers.
      * @return A list of semantic modifiers applicable to the component.
      */
-    List<AccessibilitySemantics> semanticModifiersForComponent(Component component);
+    @NonNull List<@NonNull AccessibilitySemantics> semanticModifiersForComponent(
+            @NonNull Component component);
 
     /**
      * Gets all applied merge modes of the given component. A Merge mode is one of Set, Merge or
@@ -84,7 +91,7 @@ public interface RemoteComposeDocumentAccessibility {
      * @param component The component to merge the mode for.
      * @return The effective merge modes, potentially conflicting but resolved to a single value.
      */
-    CoreSemantics.Mode mergeMode(Component component);
+    CoreSemantics.@NonNull Mode mergeMode(@NonNull Component component);
 
     /**
      * Finds a component by its ID.
@@ -100,5 +107,5 @@ public interface RemoteComposeDocumentAccessibility {
      * @param point where to look up for the component
      * @return the component id or -1 if not found
      */
-    @Nullable Integer getComponentIdAt(PointF point);
+    @Nullable Integer getComponentIdAt(@NonNull PointF point);
 }

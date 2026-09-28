@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE") // b/407927787
-
 package androidx.compose.foundation.lazy.list
 
 import android.os.Build
@@ -24,6 +21,8 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.AutoTestFrameClock
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.VelocityTrackerCalculationThreshold
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -114,6 +113,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.round
 import androidx.compose.ui.zIndex
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
@@ -130,6 +130,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -599,12 +600,11 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
     @Test
     fun itemFillingParentSizeParentRecomposed_noRemeasureOnReuse() {
         var counter = 0
-        val modifier =
-            Modifier.layout { measurable, constraints ->
-                counter++
-                val placeable = measurable.measure(constraints)
-                layout(placeable.width, placeable.height) { placeable.place(IntOffset.Zero) }
-            }
+        val modifier = Modifier.layout { measurable, constraints ->
+            counter++
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) { placeable.place(IntOffset.Zero) }
+        }
 
         lateinit var state: LazyListState
         rule.setContentWithTestViewConfiguration {
@@ -1625,12 +1625,11 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
     @Test
     fun recomposingWithNewComposedModifierObjectIsNotCausingRemeasure() {
         var remeasureCount = 0
-        val layoutModifier =
-            Modifier.layout { measurable, constraints ->
-                remeasureCount++
-                val placeable = measurable.measure(constraints)
-                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
-            }
+        val layoutModifier = Modifier.layout { measurable, constraints ->
+            remeasureCount++
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+        }
         val counter = mutableStateOf(0)
 
         rule.setContentWithTestViewConfiguration {
@@ -1800,6 +1799,36 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
         }
 
         rule.onNodeWithTag("10").assertStartPositionInRootIsEqualTo(0.dp)
+    }
+
+    @Test
+    fun scrollByOnInitiallyNotAttachedState() {
+        var displayList by mutableStateOf(false)
+        rule.setContent {
+            val state = rememberLazyListState()
+            if (displayList) {
+                CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                    LazyColumnOrRow(
+                        state = state,
+                        modifier = Modifier.mainAxisSize(100.dp).fillMaxCrossAxis(),
+                    ) {
+                        items(20) {
+                            val tag = it.toString()
+                            BasicText(
+                                text = tag,
+                                modifier =
+                                    Modifier.mainAxisSize(30.dp).fillMaxCrossAxis().testTag(tag),
+                            )
+                        }
+                    }
+                }
+            }
+            LaunchedEffect(state) { state.scrollBy(30f) }
+        }
+
+        rule.runOnIdle { displayList = true }
+
+        rule.onNodeWithTag("1").assertStartPositionInRootIsEqualTo(0.dp)
     }
 
     @Test
@@ -2025,73 +2054,99 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
     @Test
     fun testLookaheadItemPlacementAnimatorTarget() {
         var mutableSize by mutableStateOf(80)
-        var lastItemOffset by mutableStateOf(Offset.Zero)
+        val lastItemOffsets = mutableListOf<IntOffset>()
+        val expectedLastItemOffsets = mutableListOf<IntOffset>()
         val initialSize = IntSize(200, 200)
         val largerCrossAxisSize = if (vertical) IntSize(300, 200) else IntSize(200, 300)
         var containerSize by mutableStateOf(initialSize)
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(1f)) {
-                LookaheadScope {
-                    LazyColumnOrRow(
-                        modifier =
-                            Modifier.requiredSize(containerSize.width.dp, containerSize.height.dp),
-                        beyondBoundsItemCount = 1,
-                    ) {
-                        item { // item 0
-                            Box(Modifier.requiredSize(40.dp))
+                Box {
+                    LookaheadScope {
+                        LazyColumnOrRow(
+                            modifier =
+                                Modifier.requiredSize(
+                                    containerSize.width.dp,
+                                    containerSize.height.dp,
+                                ),
+                            beyondBoundsItemCount = 1,
+                        ) {
+                            item { // item 0
+                                Box(Modifier.requiredSize(40.dp))
+                            }
+                            item { // item 1. Will change size from 80.dp to 160.dp
+                                Box(Modifier.requiredSize(mutableSize.dp))
+                            }
+                            item { // item 2
+                                Box(Modifier.requiredSize(40.dp))
+                            }
+                            item { // item 3
+                                Box(
+                                    Modifier.animateItem(
+                                            fadeInSpec = null,
+                                            fadeOutSpec = null,
+                                            placementSpec = tween(160, easing = LinearEasing),
+                                        )
+                                        .onGloballyPositioned {
+                                            lastItemOffsets.add(it.positionInRoot().round())
+                                        }
+                                        .requiredSize(80.dp)
+                                )
+                            }
+                            item { // item 4
+                                Box(Modifier.requiredSize(1.dp))
+                            }
                         }
-                        item { // item 1. Will change size from 80.dp to 160.dp
-                            Box(Modifier.requiredSize(mutableSize.dp))
-                        }
-                        item { // item 2
-                            Box(Modifier.requiredSize(40.dp))
-                        }
-                        item { // item 3
-                            Box(
-                                Modifier.animateItem(
-                                        fadeInSpec = null,
-                                        fadeOutSpec = null,
-                                        placementSpec = tween(160, easing = LinearEasing),
-                                    )
-                                    .onGloballyPositioned { lastItemOffset = it.positionInRoot() }
-                                    .requiredSize(80.dp)
-                            )
-                        }
-                        item { // item 4
-                            Box(Modifier.requiredSize(1.dp))
-                        }
+                    }
+                }
+                // Control group without lookahead
+                LazyColumnOrRow(
+                    modifier =
+                        Modifier.requiredSize(containerSize.width.dp, containerSize.height.dp),
+                    beyondBoundsItemCount = 1,
+                ) {
+                    item { // item 0
+                        Box(Modifier.requiredSize(40.dp))
+                    }
+                    item { // item 1. Will change size from 80.dp to 160.dp
+                        Box(Modifier.requiredSize(mutableSize.dp))
+                    }
+                    item { // item 2
+                        Box(Modifier.requiredSize(40.dp))
+                    }
+                    item { // item 3
+                        Box(
+                            Modifier.animateItem(
+                                    fadeInSpec = null,
+                                    fadeOutSpec = null,
+                                    placementSpec = tween(160, easing = LinearEasing),
+                                )
+                                .onGloballyPositioned {
+                                    expectedLastItemOffsets.add(it.positionInRoot().round())
+                                }
+                                .requiredSize(80.dp)
+                        )
+                    }
+                    item { // item 4
+                        Box(Modifier.requiredSize(1.dp))
                     }
                 }
             }
         }
 
         rule.waitForIdle()
-        rule.mainClock.autoAdvance = false
 
         containerSize = largerCrossAxisSize
         mutableSize = 160
         rule.waitForIdle()
-        rule.mainClock.advanceTimeByFrame()
 
         containerSize = initialSize
         rule.waitForIdle()
 
-        // Expect last item to move from 160 to 240 within 10 frames
-        while (lastItemOffset.mainAxisPosition == 160) {
-            rule.waitForIdle()
-            rule.mainClock.advanceTimeByFrame()
-        }
-
-        repeat(9) {
-            val expected = (it + 1) * (240 - 160) / 10 + 160
-            if (expected <= 200) { // within the viewport
-                assertEquals((it + 1) * 8 + 160, lastItemOffset.mainAxisPosition)
-            } else {
-                // Once the item moves out of the viewport, we don't enforce the exact offset
-                assertTrue(lastItemOffset.mainAxisPosition >= 200)
-            }
-            rule.waitForIdle()
-            rule.mainClock.advanceTimeByFrame()
+        // Compare against control group results
+        assertEquals(expectedLastItemOffsets.size, lastItemOffsets.size)
+        lastItemOffsets.forEachIndexed { id, actual ->
+            assertEquals(expectedLastItemOffsets[id], actual)
         }
     }
 
@@ -2104,6 +2159,107 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
             targetExpectedLookaheadPositions = listOf(300, 100, 0, 200, -100, -200),
             startingIndex = 2,
         )
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Test
+    fun testRetainedItemsInLookahead() {
+        assumeTrue(ComposeFoundationFlags.isCacheWindowLookaheadCheckEnabled)
+        val composedItems = mutableListOf<Int>()
+        val expectedComposedItems = mutableListOf<Int>()
+        var expanded by mutableStateOf(false)
+        rule.setContent {
+            Box {
+                LookaheadScope {
+                    LazyColumnOrRow(Modifier.size(40.dp, 40.dp)) {
+                        items(10) {
+                            Box(Modifier.animateContentSize()) {
+                                Box(Modifier.size(10.dp))
+                                if (expanded) {
+                                    Box(Modifier.size(20.dp))
+                                }
+                                DisposableEffect(Unit) {
+                                    composedItems.add(it)
+                                    onDispose { composedItems.remove(it) }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Control group:
+            LazyColumnOrRow(Modifier.size(40.dp, 40.dp)) {
+                items(10) {
+                    Box(Modifier.animateContentSize()) {
+                        Box(Modifier.size(10.dp))
+                        if (expanded) {
+                            Box(Modifier.size(25.dp))
+                        }
+                        DisposableEffect(Unit) {
+                            expectedComposedItems.add(it)
+                            onDispose { expectedComposedItems.remove(it) }
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertEquals(expectedComposedItems.size, composedItems.size)
+            composedItems.forEachIndexed { id, value ->
+                assertEquals(expectedComposedItems[id], value)
+            }
+            expanded = true
+        }
+        rule.runOnIdle {
+            assertEquals(expectedComposedItems.size, composedItems.size)
+            composedItems.forEachIndexed { id, value ->
+                assertEquals(expectedComposedItems[id], value)
+            }
+            assertEquals(2, composedItems.size)
+        }
+    }
+
+    @Test
+    fun testRetainedItemsDuringScrolling() {
+        val composedItems = mutableSetOf<Int>()
+        val lazyState = LazyListState(40)
+        // Control Group
+        val expectedComposedItems = mutableSetOf<Int>()
+        val lazyStateControlGroup = LazyListState(40)
+        rule.setContent {
+            Box {
+                LookaheadScope {
+                    LazyColumnOrRow(Modifier.size(40.dp, 40.dp), state = lazyState) {
+                        items(50) {
+                            Box(Modifier.size(10.dp))
+                            DisposableEffect(it) {
+                                composedItems.add(it)
+                                onDispose { composedItems.remove(it) }
+                            }
+                        }
+                    }
+                }
+            }
+            // Control group
+            LazyColumnOrRow(Modifier.size(40.dp, 40.dp), state = lazyStateControlGroup) {
+                items(50) {
+                    Box(Modifier.size(10.dp))
+                    DisposableEffect(it) {
+                        expectedComposedItems.add(it)
+                        onDispose { expectedComposedItems.remove(it) }
+                    }
+                }
+            }
+        }
+        rule.runOnIdle { assertEquals(expectedComposedItems.size, composedItems.size) }
+        repeat(10) {
+            val index = 40 - it * 2
+            rule.runOnUiThread { runBlocking { lazyState.scrollToItem(index) } }
+            rule.runOnUiThread { runBlocking { lazyStateControlGroup.scrollToItem(index) } }
+            rule.runOnIdle { assertEquals(expectedComposedItems.size, composedItems.size) }
+        }
     }
 
     private fun testLookaheadPositionWithPlacementAnimator(
@@ -2237,7 +2393,8 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
                                 Modifier.animateItem(
                                         fadeInSpec = null,
                                         fadeOutSpec = null,
-                                        placementSpec = tween<IntOffset>(160, easing = LinearEasing),
+                                        placementSpec =
+                                            tween<IntOffset>(160, easing = LinearEasing),
                                     )
                                     .trackPositions(
                                         lookaheadPosition,
@@ -2900,7 +3057,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
     }
 
     @Test
-    fun reorderingInLookeahead() {
+    fun reorderingInLookahead() {
         var items by mutableStateOf(List(500) { it })
 
         val itemSizePx = 50f
@@ -3036,11 +3193,12 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
         rule.mainClock.advanceTimeBy(100L)
 
         // swipe outer list
+        val velocity = with(rule.density) { 2000.dp.toPx() }
         rule.onNodeWithTag(LazyListTag).performTouchInput {
             if (vertical) {
-                swipeWithVelocity(center, topCenter, 5000f)
+                swipeWithVelocity(center, topCenter, velocity)
             } else {
-                swipeWithVelocity(center, centerLeft, 5000f)
+                swipeWithVelocity(center, centerLeft, velocity)
             }
         }
 

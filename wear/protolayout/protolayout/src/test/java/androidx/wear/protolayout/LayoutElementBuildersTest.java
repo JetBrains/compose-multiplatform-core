@@ -836,27 +836,35 @@ public class LayoutElementBuildersTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation") // Intentionally testing deprecated value.
     public void image_withImageRes_withoutScope_throws() {
         Image.Builder builder = new Image.Builder();
+
         assertThrows(IllegalStateException.class, () -> builder.setImageResource(IMAGE_RESOURCE));
     }
 
     @Test
+    @SuppressWarnings("deprecation") // Intentionally testing deprecated value.
     public void image_withImageRes_withResId_throws() {
         Image.Builder builder =
                 new Image.Builder(new ProtoLayoutScope()).setImageResource(IMAGE_RESOURCE);
+
         assertThrows(IllegalStateException.class, () -> builder.setResourceId("id"));
     }
 
     @Test
+    @SuppressWarnings("deprecation") // Intentionally testing deprecated value.
     public void image_withResId_andScope_throws() {
         Image.Builder builder = new Image.Builder(new ProtoLayoutScope());
+
         assertThrows(IllegalStateException.class, () -> builder.setResourceId("id"));
     }
 
     @Test
+    @SuppressWarnings("deprecation") // Intentionally testing deprecated value.
     public void image_withResId_andImageRes_throws() {
         Image.Builder builder = new Image.Builder().setResourceId("id");
+
         assertThrows(IllegalStateException.class, () -> builder.setImageResource(IMAGE_RESOURCE));
     }
 
@@ -866,6 +874,7 @@ public class LayoutElementBuildersTest {
         Image unused = new Image.Builder(scope).setImageResource(IMAGE_RESOURCE).build();
 
         Map<String, ImageResource> resources = scope.collectResources().getIdToImageMapping();
+
         assertThat(resources).containsExactly("" + IMAGE_RESOURCE.hashCode(), IMAGE_RESOURCE);
     }
 
@@ -876,6 +885,7 @@ public class LayoutElementBuildersTest {
         Image unused = new Image.Builder(scope).setImageResource(IMAGE_RESOURCE, id).build();
 
         Map<String, ImageResource> resources = scope.collectResources().getIdToImageMapping();
+
         assertThat(resources).containsExactly(id, IMAGE_RESOURCE);
     }
 }

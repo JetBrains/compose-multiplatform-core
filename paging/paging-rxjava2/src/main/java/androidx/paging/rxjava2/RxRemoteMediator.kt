@@ -31,7 +31,7 @@ import kotlinx.coroutines.rx2.await
 
 /** RxJava2 compatibility wrapper around [RemoteMediator]'s suspending APIs. */
 @ExperimentalPagingApi
-abstract class RxRemoteMediator<Key : Any, Value : Any> : RemoteMediator<Key, Value>() {
+public abstract class RxRemoteMediator<Key : Any, Value : Any> : RemoteMediator<Key, Value>() {
     /**
      * Implement this method to load additional remote data, which will then be stored for the
      * [PagingSource] to access. These loads take one of two forms:
@@ -61,7 +61,7 @@ abstract class RxRemoteMediator<Key : Any, Value : Any> : RemoteMediator<Key, Va
      * @return [MediatorResult] signifying what [LoadState] to be passed to the UI, and whether
      *   there's more data available.
      */
-    abstract fun loadSingle(
+    public abstract fun loadSingle(
         loadType: LoadType,
         state: PagingState<Key, Value>,
     ): Single<MediatorResult>
@@ -74,12 +74,13 @@ abstract class RxRemoteMediator<Key : Any, Value : Any> : RemoteMediator<Key, Va
      * @return [InitializeAction] indicating the action to take after initialization:
      *     * [LAUNCH_INITIAL_REFRESH] to immediately dispatch a [load] asynchronously with load type
      *       [LoadType.REFRESH], to update paginated content when the stream is initialized. Note:
-     *       This also prevents [RemoteMediator] from triggering [PREPEND] or [APPEND] until
-     *       [REFRESH] succeeds.
+     *       This also prevents [RemoteMediator] from triggering [LoadType.PREPEND] or
+     *       [LoadType.APPEND] until [LoadType.REFRESH] succeeds.
      *     * [SKIP_INITIAL_REFRESH][InitializeAction.SKIP_INITIAL_REFRESH] to wait for a refresh
      *       request from the UI before dispatching a [load] with load type [LoadType.REFRESH].
      */
-    open fun initializeSingle(): Single<InitializeAction> = Single.just(LAUNCH_INITIAL_REFRESH)
+    public open fun initializeSingle(): Single<InitializeAction> =
+        Single.just(LAUNCH_INITIAL_REFRESH)
 
     final override suspend fun load(
         loadType: LoadType,

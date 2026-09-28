@@ -50,6 +50,7 @@ import androidx.core.view.AccessibilityDelegateCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import androidx.test.filters.FlakyTest;
 import androidx.test.filters.LargeTest;
+import androidx.test.filters.SdkSuppress;
 
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
@@ -331,11 +332,13 @@ public class StaggeredGridLayoutManagerTest extends BaseStaggeredGridLayoutManag
         focusSearchFailure(false);
     }
 
+    @SdkSuppress(maxSdkVersion = 36) // b/537526408
     @Test
     public void focusSearchFailureDown() throws Throwable {
         focusSearchFailure(true);
     }
 
+    @SdkSuppress(maxSdkVersion = 36) // b/537526408
     @Test
     public void focusSearchFailureFromSubChild() throws Throwable {
         setupByConfig(new Config(VERTICAL, false, 3, GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS),
@@ -467,6 +470,7 @@ public class StaggeredGridLayoutManagerTest extends BaseStaggeredGridLayoutManag
         for (int i : new int[]{18, 19, 20, 21, 23, 24}) {
             focusSearchAndWaitForScroll(focusedView, focusDir);
             focusedView = mRecyclerView.getFocusedChild();
+            assertFalse(focusedView == null);
             assertEquals(i, mRecyclerView.getChildViewHolder(
                     focusedView).getAbsoluteAdapterPosition());
         }

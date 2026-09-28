@@ -16,9 +16,6 @@
 
 package androidx.camera.core.imagecapture;
 
-import static android.graphics.ImageFormat.JPEG;
-import static android.graphics.ImageFormat.RAW_SENSOR;
-
 import static androidx.camera.core.ImageCapture.ERROR_CAPTURE_FAILED;
 import static androidx.camera.core.impl.utils.Threads.checkMainThread;
 import static androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor;
@@ -46,6 +43,7 @@ import androidx.camera.core.impl.CameraCaptureCallbacks;
 import androidx.camera.core.impl.DeferrableSurface;
 import androidx.camera.core.impl.ImageReaderProxy;
 import androidx.camera.core.impl.ImmediateSurface;
+import androidx.camera.core.impl.TagBundle;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.impl.utils.futures.FutureCallback;
 import androidx.camera.core.impl.utils.futures.Futures;
@@ -80,7 +78,7 @@ class CaptureNode implements Node<CaptureNode.In, ProcessingNode.In> {
     @VisibleForTesting
     static final int MAX_IMAGES = 4;
 
-    ProcessingRequest mCurrentRequest = null;
+    @Nullable ProcessingRequest mCurrentRequest = null;
 
     @Nullable SafeCloseImageReaderProxy mSafeCloseImageReaderProxy;
 
@@ -132,14 +130,15 @@ class CaptureNode implements Node<CaptureNode.In, ProcessingNode.In> {
         if (hasMetadata && inputEdge.getImageReaderProxyProvider() == null) {
             if (isSimultaneousCaptureEnabled) {
                 MetadataImageReader metadataImageReader = new MetadataImageReader(size.getWidth(),
-                        size.getHeight(), JPEG, MAX_IMAGES);
+                        size.getHeight(), format, MAX_IMAGES);
                 cameraCaptureCallbacks =
                         CameraCaptureCallbacks.createComboCallback(
                                 progressCallback, metadataImageReader.getCameraCaptureCallback());
                 wrappedImageReader = metadataImageReader;
 
+                int secondaryFormat = inputEdge.getOutputFormats().get(1);
                 MetadataImageReader secondaryMetadataImageReader = new MetadataImageReader(
-                        size.getWidth(), size.getHeight(), RAW_SENSOR, MAX_IMAGES);
+                        size.getWidth(), size.getHeight(), secondaryFormat, MAX_IMAGES);
                 secondaryCameraCaptureCallback =
                         CameraCaptureCallbacks.createComboCallback(
                                 progressCallback,
@@ -205,7 +204,9 @@ class CaptureNode implements Node<CaptureNode.In, ProcessingNode.In> {
 
         // Simultaneous capture RAW + JPEG
         if (isSimultaneousCaptureEnabled && secondaryWrappedImageReader != null) {
-            inputEdge.setSecondarySurface(secondaryWrappedImageReader.getSurface());
+            int secondaryFormat = inputEdge.getOutputFormats().get(1);
+            inputEdge.setSecondarySurface(secondaryWrappedImageReader.getSurface(),
+                    secondaryFormat);
             mSecondarySafeCloseImageReaderProxy = new SafeCloseImageReaderProxy(
                     secondaryWrappedImageReader);
             setOnImageAvailableListener(secondaryWrappedImageReader);
@@ -235,6 +236,11 @@ class CaptureNode implements Node<CaptureNode.In, ProcessingNode.In> {
         imageReaderProxy.setOnImageAvailableListener(imageReader -> {
             try {
                 ImageProxy image = imageReader.acquireLatestImage();
+
+                Logger.d(TAG, "OnImageAvailableListener: mCurrentRequest ID = "
+                        + (mCurrentRequest == null ? null : mCurrentRequest.getRequestId())
+                        + ", image.isNull = " + (image == null));
+
                 if (image != null) {
                     onImageProxyAvailable(image);
                 } else {
@@ -269,10 +275,12 @@ class CaptureNode implements Node<CaptureNode.In, ProcessingNode.In> {
         } else {
             // If new request arrives but the previous aborted request still generates Image,
             // close the image and do nothing.
-            Integer stageId = (Integer) imageProxy.getImageInfo().getTagBundle()
-                    .getTag(mCurrentRequest.getTagBundleKey());
+            TagBundle tagBundle = imageProxy.getImageInfo().getTagBundle();
+            Integer stageId = (Integer) tagBundle.getTag(mCurrentRequest.getTagBundleKey());
             if (stageId == null) {
-                Logger.w(TAG, "Discarding ImageProxy which was acquired for aborted request");
+                Logger.w(TAG, "Discarding ImageProxy which was acquired for another request"
+                        + ", mCurrentRequest id = " + mCurrentRequest.getRequestId()
+                        + ", ImageProxy tagBundle keys = " + tagBundle.listKeys());
                 imageProxy.close();
                 return;
             }
@@ -527,9 +535,15 @@ class CaptureNode implements Node<CaptureNode.In, ProcessingNode.In> {
         }
 
         void setSecondarySurface(@NonNull Surface surface) {
+            int secondaryFormat = getOutputFormats().size() > 1
+                    ? getOutputFormats().get(1) : getInputFormat();
+            setSecondarySurface(surface, secondaryFormat);
+        }
+
+        void setSecondarySurface(@NonNull Surface surface, int format) {
             checkState(mSecondarySurface == null, "The secondary surface is "
                     + "already set.");
-            mSecondarySurface = new ImmediateSurface(surface, getSize(), getInputFormat());
+            mSecondarySurface = new ImmediateSurface(surface, getSize(), format);
         }
 
         /**

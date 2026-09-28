@@ -47,7 +47,6 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class AudioStreamImplTest {
 
     companion object {
@@ -212,7 +211,7 @@ class AudioStreamImplTest {
     }
 
     @RequiresDevice // b/264902324
-    @SdkSuppress(minSdkVersion = 21, maxSdkVersion = 28)
+    @SdkSuppress(maxSdkVersion = 28)
     @Test
     fun canReceiveOnSilenceStateChangedAfterStarted_belowApi29() {
         // Act.
@@ -249,6 +248,7 @@ class AudioStreamImplTest {
             onSilenceStateChanged: ((List<Boolean>) -> Unit)? = null,
         ) {
             val captor = onSilenceStateChanged?.let { ArgumentCaptor<Boolean>() }
+            @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN") // intentionally using java.* types
             onSilencedCallback.verifyAcceptCall(
                 java.lang.Boolean::class.java,
                 inOder,

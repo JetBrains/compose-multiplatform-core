@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.player.view.accessibility.platform;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
 import static androidx.compose.remote.player.view.accessibility.RemoteComposeDocumentAccessibility.RootId;
 
 import android.graphics.PointF;
@@ -22,6 +23,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.operations.layout.Component;
 import androidx.compose.remote.core.semantics.AccessibilitySemantics;
 import androidx.compose.remote.core.semantics.AccessibleComponent.Mode;
@@ -33,7 +35,9 @@ import androidx.customview.widget.ExploreByTouchHelper;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A helper class for implementing a custom accessibility service for remote Compose content.
@@ -75,11 +79,17 @@ import java.util.List;
  * @param <S> The type of the semantic information used by the {@link SemanticNodeApplier}
  *     (typically {@link AccessibilitySemantics}).
  */
+@RestrictTo(LIBRARY_GROUP)
 public class AndroidxRemoteComposeTouchHelper<N, C, S> extends ExploreByTouchHelper {
     private final RemoteComposeDocumentAccessibility mRemoteDocA11y;
 
     private final SemanticNodeApplier<AccessibilityNodeInfoCompat> mApplier;
     private final View mHost;
+
+    // Cache for last known child to semantic parent mapping
+    // to allow correct calculation of boundsInParent
+    // May grow, but not indefinitely O(200) entries
+    private final Map<Integer, Integer> mChildToParentMapping = new HashMap<>();
 
     /**
      * Constructs an {@link AndroidxRemoteComposeTouchHelper}.
@@ -94,9 +104,9 @@ public class AndroidxRemoteComposeTouchHelper<N, C, S> extends ExploreByTouchHel
      *     properties.
      */
     public AndroidxRemoteComposeTouchHelper(
-            View host,
-            RemoteComposeDocumentAccessibility remoteDocA11y,
-            SemanticNodeApplier<AccessibilityNodeInfoCompat> applier) {
+            @NonNull View host,
+            @NonNull RemoteComposeDocumentAccessibility remoteDocA11y,
+            @NonNull SemanticNodeApplier<AccessibilityNodeInfoCompat> applier) {
         super(host);
         this.mRemoteDocA11y = remoteDocA11y;
         this.mApplier = applier;
@@ -118,7 +128,7 @@ public class AndroidxRemoteComposeTouchHelper<N, C, S> extends ExploreByTouchHel
      */
     @Override
     protected int getVirtualViewAt(float x, float y) {
-        @Nullable Integer root = mRemoteDocA11y.getComponentIdAt(new PointF(x, y));
+        Integer root = mRemoteDocA11y.getComponentIdAt(new PointF(x, y));
 
         if (root == null) {
             return INVALID_ID;
@@ -137,7 +147,7 @@ public class AndroidxRemoteComposeTouchHelper<N, C, S> extends ExploreByTouchHel
      * @param virtualViewIds The list to be populated with the visible virtual view IDs.
      */
     @Override
-    public void getVisibleVirtualViews(List<Integer> virtualViewIds) {
+    public void getVisibleVirtualViews(@NonNull List<@NonNull Integer> virtualViewIds) {
         virtualViewIds.addAll(getVisibleChildVirtualViews());
     }
 
@@ -150,7 +160,7 @@ public class AndroidxRemoteComposeTouchHelper<N, C, S> extends ExploreByTouchHel
      * @return A list of integer IDs representing the visible child virtual views.
      */
     @SuppressWarnings("JdkImmutableCollections")
-    public List<Integer> getVisibleChildVirtualViews() {
+    public @NonNull List<@NonNull Integer> getVisibleChildVirtualViews() {
         Component rootComponent = mRemoteDocA11y.findComponentById(RootId);
 
         if (rootComponent == null
@@ -164,49 +174,67 @@ public class AndroidxRemoteComposeTouchHelper<N, C, S> extends ExploreByTouchHel
     @Override
     public void onPopulateNodeForVirtualView(
             int virtualViewId, @NonNull AccessibilityNodeInfoCompat node) {
-        Component component = mRemoteDocA11y.findComponentById(virtualViewId);
-
-        Mode mergeMode = mRemoteDocA11y.mergeMode(component);
-
-        // default to enabled
-        node.setEnabled(true);
-
-        if (mergeMode == Mode.MERGE) {
-            List<Integer> childViews =
-                    mRemoteDocA11y.semanticallyRelevantChildComponents(component, true);
-
-            for (Integer childView : childViews) {
-                onPopulateNodeForVirtualView(childView, node);
+        try {
+            Component component = mRemoteDocA11y.findComponentById(virtualViewId);
+            if (component == null) {
+                return;
             }
-        }
 
-        List<AccessibilitySemantics> semantics =
-                mRemoteDocA11y.semanticModifiersForComponent(component);
-        mApplier.applyComponent(mRemoteDocA11y, node, component, semantics);
+            Mode mergeMode = mRemoteDocA11y.mergeMode(component);
 
-        if (mergeMode == Mode.SET) {
-            List<Integer> childViews =
-                    mRemoteDocA11y.semanticallyRelevantChildComponents(component, false);
+            // default to enabled
+            node.setEnabled(true);
 
-            mApplier.addChildren(node, childViews);
+            if (mergeMode == Mode.MERGE) {
+                List<Integer> childViews =
+                        mRemoteDocA11y.semanticallyRelevantChildComponents(component, true);
+
+                for (Integer childView : childViews) {
+                    onPopulateNodeForVirtualView(childView, node);
+                }
+            }
+
+            List<AccessibilitySemantics> semantics =
+                    mRemoteDocA11y.semanticModifiersForComponent(component);
+            Integer semanticParentId = mChildToParentMapping.get(virtualViewId);
+            mApplier.applyComponent(mRemoteDocA11y, node, component, semantics, semanticParentId);
+
+            if (mergeMode == Mode.SET) {
+                List<Integer> childViews =
+                        mRemoteDocA11y.semanticallyRelevantChildComponents(component, false);
+
+                // declare children so parent is known
+                childViews.forEach((id) -> mChildToParentMapping.put(id, virtualViewId));
+
+                mApplier.addChildren(node, childViews);
+            }
+        } catch (Exception e) {
+            // Hostile document content must not crash the host via the a11y delegate
+            android.util.Log.e("RemoteCompose", "onPopulateNodeForVirtualView failed", e);
         }
     }
 
     @Override
     protected boolean onPerformActionForVirtualView(
             int virtualViewId, int action, @Nullable Bundle arguments) {
-        Component component = mRemoteDocA11y.findComponentById(virtualViewId);
+        try {
+            Component component = mRemoteDocA11y.findComponentById(virtualViewId);
 
-        if (component != null) {
-            boolean performed = mRemoteDocA11y.performAction(component, action, arguments);
+            if (component != null) {
+                boolean performed = mRemoteDocA11y.performAction(component, action, arguments);
 
-            if (performed) {
-                mHost.invalidate();
-                invalidateRoot();
+                if (performed) {
+                    mHost.invalidate();
+                    invalidateRoot();
+                }
+
+                return performed;
+            } else {
+                return false;
             }
-
-            return performed;
-        } else {
+        } catch (Exception e) {
+            // Hostile document content must not crash the host via the a11y delegate
+            android.util.Log.e("RemoteCompose", "onPerformActionForVirtualView failed", e);
             return false;
         }
     }

@@ -18,13 +18,12 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.test")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(37) }
     defaultConfig {
-        minSdk = 29
+        minSdk { version = release(29) }
     }
     namespace = "androidx.wear.compose.integration.macrobenchmark"
     targetProjectPath = ":wear:compose:integration-tests:macrobenchmark-target"
@@ -38,7 +37,7 @@ android.buildTypes {
         proguardFiles("proguard-benchmark.pro")
     }
 }
-androidComponents { beforeVariants(selector().all()) { enabled = buildType == 'release' } }
+androidComponents { beforeVariants(selector().all()) { enabled = buildType == "release" } }
 dependencies {
     implementation(project(":benchmark:benchmark-junit4"))
     implementation(project(":benchmark:benchmark-macro-junit4"))

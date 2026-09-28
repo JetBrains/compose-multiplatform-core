@@ -52,6 +52,7 @@ import androidx.compose.ui.Modifier
  *   screen. Expected to be a TimeText component.
  * @param content Slot for composable screen content
  */
+@Suppress("ComposableLambdaInMeasurePolicy")
 @Composable
 public fun Scaffold(
     modifier: Modifier = Modifier,

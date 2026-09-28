@@ -52,7 +52,7 @@ class DateRangePickerBenchmark {
 
     @Test
     fun dateRangeInput_firstPixel() {
-        benchmarkRule.benchmarkFirstRenderUntilStable(dateRangeInputTestCaseFactory)
+        benchmarkRule.benchmarkToFirstPixel(dateRangeInputTestCaseFactory)
     }
 
     @Ignore
@@ -76,7 +76,7 @@ class DateRangePickerBenchmark {
     @Ignore
     @Test
     fun dateRangeInput_measure() {
-        benchmarkRule.benchmarkMeasureUntilStable(dateRangeInputTestCaseFactory)
+        benchmarkRule.benchmarkFirstMeasure(dateRangeInputTestCaseFactory)
     }
 
     @Ignore
@@ -88,7 +88,7 @@ class DateRangePickerBenchmark {
     @Ignore
     @Test
     fun dateRangeInput_layout() {
-        benchmarkRule.benchmarkLayoutUntilStable(dateRangeInputTestCaseFactory)
+        benchmarkRule.benchmarkFirstLayout(dateRangeInputTestCaseFactory)
     }
 
     @Ignore
@@ -100,7 +100,7 @@ class DateRangePickerBenchmark {
     @Ignore
     @Test
     fun dateRangeInput_draw() {
-        benchmarkRule.benchmarkDrawUntilStable(dateRangeInputTestCaseFactory)
+        benchmarkRule.benchmarkFirstDraw(dateRangeInputTestCaseFactory)
     }
 }
 

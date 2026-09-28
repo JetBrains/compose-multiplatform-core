@@ -41,7 +41,6 @@ class WindowInsetsCompatTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21)
     public fun inset_systemWindow() {
         val start = Insets.of(12, 34, 35, 31)
         val insets = WindowInsetsCompat.Builder().setSystemWindowInsets(start).build()
@@ -54,7 +53,6 @@ class WindowInsetsCompatTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21)
     public fun inset_systemWindow_largeValues() {
         val start = Insets.of(12, 34, 35, 31)
         val insets = WindowInsetsCompat.Builder().setSystemWindowInsets(start).build()
@@ -69,7 +67,6 @@ class WindowInsetsCompatTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21)
     public fun inset_systemBars() {
         val start = Insets.of(12, 34, 35, 31)
         val insets = WindowInsetsCompat.Builder().setInsets(Type.systemBars(), start).build()
@@ -82,7 +79,6 @@ class WindowInsetsCompatTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21)
     public fun inset_systemBars_largeValues() {
         val start = Insets.of(12, 34, 35, 31)
         val insets = WindowInsetsCompat.Builder().setInsets(Type.systemBars(), start).build()
@@ -96,7 +92,6 @@ class WindowInsetsCompatTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21)
     public fun inset_set_ime_insets() {
         val start = Insets.of(10, 11, 12, 13)
         val insets =
@@ -107,6 +102,67 @@ class WindowInsetsCompatTest {
         assertEquals(11, insets.top)
         assertEquals(12, insets.right)
         assertEquals(13, insets.bottom)
+    }
+
+    @Test
+    public fun builder_boundingRects() {
+        val statusBars = mutableListOf(Rect(0, 50, 0, 0))
+        val navigationBars = mutableListOf(Rect(0, 0, 0, 100))
+        val tappableElement = mutableListOf(Rect(0, 10, 0, 10))
+        val mandatorySystemGestures = mutableListOf(Rect(0, 20, 0, 20))
+        val displayCutout = mutableListOf(Rect(0, 5, 0, 0))
+        val captionBar = mutableListOf(Rect(0, 50, 0, 0))
+        val ime = mutableListOf(Rect(0, 0, 0, 300))
+        val systemOverlays = mutableListOf(Rect(10, 0, 0, 10))
+        val result =
+            WindowInsetsCompat.Builder()
+                .setBoundingRects(Type.statusBars(), statusBars)
+                .setBoundingRects(Type.navigationBars(), navigationBars)
+                .setBoundingRects(Type.tappableElement(), tappableElement)
+                .setBoundingRects(
+                    Type.mandatorySystemGestures() or Type.systemGestures(),
+                    mandatorySystemGestures,
+                )
+                .setBoundingRects(Type.displayCutout(), displayCutout)
+                .setBoundingRects(Type.captionBar(), captionBar)
+                .setBoundingRects(Type.ime(), ime)
+                .setBoundingRects(Type.systemOverlays(), systemOverlays)
+                .build()
+
+        val resultCopy = WindowInsetsCompat.Builder(result).build()
+
+        assertEquals(statusBars, result.getBoundingRects(Type.statusBars()))
+        assertEquals(navigationBars, result.getBoundingRects(Type.navigationBars()))
+        assertEquals(tappableElement, result.getBoundingRects(Type.tappableElement()))
+        assertEquals(
+            mandatorySystemGestures,
+            result.getBoundingRects(Type.mandatorySystemGestures()),
+        )
+        assertEquals(mandatorySystemGestures, result.getBoundingRects(Type.systemGestures()))
+        assertEquals(displayCutout, result.getBoundingRects(Type.displayCutout()))
+        assertEquals(captionBar, result.getBoundingRects(Type.captionBar()))
+        assertEquals(ime, result.getBoundingRects(Type.ime()))
+        assertEquals(systemOverlays, result.getBoundingRects(Type.systemOverlays()))
+
+        assertEquals(
+            mutableListOf(
+                statusBars.single(),
+                navigationBars.single(),
+                captionBar.single(),
+                systemOverlays.single(),
+            ),
+            result.getBoundingRects(
+                Type.statusBars() or
+                    Type.navigationBars() or
+                    Type.captionBar() or
+                    Type.systemOverlays()
+            ),
+        )
+
+        assertEquals(
+            resultCopy.getBoundingRects(Type.captionBar()),
+            result.getBoundingRects(Type.captionBar()),
+        )
     }
 
     /** On API 34+ we can test more types such as SYSTEM_OVERLAYS. */
@@ -236,9 +292,15 @@ class WindowInsetsCompatTest {
         assertEquals(tappable, result.tappableElementInsets)
     }
 
+    @Test
+    public fun builder_min20_display_shape() {
+        val displayShape = DisplayShapeCompat.create(100, 200, false, 0, 0, 0, 0)
+        val result = WindowInsetsCompat.Builder().setDisplayShape(displayShape).build()
+        assertEquals(displayShape, result.displayShape)
+    }
+
     /** Only API 20-28, only `setSystemWindowInsets` and `systemBars()` works. */
     @Test
-    @SdkSuppress(minSdkVersion = 20)
     public fun builder_min20_types() {
         val sysBars = Insets.of(12, 34, 35, 31)
         val result = WindowInsetsCompat.Builder().setInsets(Type.systemBars(), sysBars).build()
@@ -248,7 +310,6 @@ class WindowInsetsCompatTest {
 
     /** Only API 20-28, only `setSystemWindowInsets` and `systemBars()` works. */
     @Test
-    @SdkSuppress(minSdkVersion = 20)
     public fun builder_min20_deprecated() {
         val sysBars = Insets.of(12, 34, 35, 31)
         val result = WindowInsetsCompat.Builder().setSystemWindowInsets(sysBars).build()
@@ -265,13 +326,6 @@ class WindowInsetsCompatTest {
     }
 
     @Test
-    @SdkSuppress(maxSdkVersion = 19)
-    public fun consumed_exists() {
-        assertNotNull(WindowInsetsCompat.CONSUMED)
-    }
-
-    @Test
-    @SdkSuppress(minSdkVersion = 20)
     public fun consumed_exists_api20() {
         assertNotNull(WindowInsetsCompat.CONSUMED)
         assertNotNull(WindowInsetsCompat.CONSUMED.toWindowInsets())
@@ -280,7 +334,6 @@ class WindowInsetsCompatTest {
 
     @Suppress("DEPRECATION")
     @Test
-    @SdkSuppress(minSdkVersion = 20)
     public fun consumed_returnsNoneInsets() {
         val sysBars = Insets.of(12, 34, 35, 31)
         val original = WindowInsetsCompat.Builder().setInsets(Type.systemBars(), sysBars).build()
@@ -306,7 +359,6 @@ class WindowInsetsCompatTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 20)
     public fun test_not_equals_root_visible_insets() {
         val result =
             WindowInsetsCompat.Builder()
@@ -338,7 +390,6 @@ class WindowInsetsCompatTest {
         assertEquals(result.hashCode(), result2.hashCode())
     }
 
-    @SdkSuppress(minSdkVersion = 21) // b/189492236
     @Test
     public fun set_only_navigation_bar_insets() {
         val insets =
@@ -358,5 +409,67 @@ class WindowInsetsCompatTest {
 
         assertEquals(100, removeNavBarInsets.getInsets(Type.statusBars()).top)
         assertEquals(0, removeNavBarInsets.getInsets(Type.navigationBars()).bottom)
+    }
+
+    @SdkSuppress(minSdkVersion = 30, maxSdkVersion = 30)
+    @Test
+    public fun getInsets_clampsNegativeValues() {
+        val insets = Insets.of(-10, -20, 30, -375)
+        val insetsCompat = WindowInsetsCompat.Builder().setInsets(Type.ime(), insets).build()
+
+        val result = insetsCompat.getInsets(Type.ime())
+
+        assertEquals(0, result.left)
+        assertEquals(0, result.top)
+        assertEquals(30, result.right)
+        assertEquals(0, result.bottom)
+    }
+
+    @SdkSuppress(minSdkVersion = 30, maxSdkVersion = 30)
+    @Test
+    public fun getInsetsIgnoringVisibility_clampsNegativeValues() {
+        val insets = Insets.of(-10, -20, 30, -375)
+        val insetsCompat =
+            WindowInsetsCompat.Builder()
+                .setInsetsIgnoringVisibility(Type.systemBars(), insets)
+                .build()
+
+        val result = insetsCompat.getInsetsIgnoringVisibility(Type.systemBars())
+
+        assertEquals(0, result.left)
+        assertEquals(0, result.top)
+        assertEquals(30, result.right)
+        assertEquals(0, result.bottom)
+    }
+
+    @SdkSuppress(minSdkVersion = 31)
+    @Test
+    public fun getInsets_doesNotClampNegativeValues() {
+        val insets = Insets.of(-10, -20, 30, -375)
+        val insetsCompat = WindowInsetsCompat.Builder().setInsets(Type.ime(), insets).build()
+
+        val result = insetsCompat.getInsets(Type.ime())
+
+        assertEquals(-10, result.left)
+        assertEquals(-20, result.top)
+        assertEquals(30, result.right)
+        assertEquals(-375, result.bottom)
+    }
+
+    @SdkSuppress(minSdkVersion = 31)
+    @Test
+    public fun getInsetsIgnoringVisibility_doesNotClampNegativeValues() {
+        val insets = Insets.of(-10, -20, 30, -375)
+        val insetsCompat =
+            WindowInsetsCompat.Builder()
+                .setInsetsIgnoringVisibility(Type.systemBars(), insets)
+                .build()
+
+        val result = insetsCompat.getInsetsIgnoringVisibility(Type.systemBars())
+
+        assertEquals(-10, result.left)
+        assertEquals(-20, result.top)
+        assertEquals(30, result.right)
+        assertEquals(-375, result.bottom)
     }
 }

@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core.operations;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.PaintContext;
@@ -33,6 +34,7 @@ import org.jspecify.annotations.NonNull;
 import java.util.List;
 
 /** Operation to draw a given cached bitmap */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class DrawBitmapScaled extends PaintOperation
         implements VariableSupport, AccessibleComponent {
     private static final int OP_CODE = Operations.DRAW_BITMAP_SCALED;
@@ -49,7 +51,6 @@ public class DrawBitmapScaled extends PaintOperation
     int mContentDescId;
     float mScaleFactor, mOutScaleFactor;
     int mScaleType;
-    int mMode;
 
     @NonNull ImageScaling mScaling = new ImageScaling();
     public static final int SCALE_NONE = ImageScaling.SCALE_NONE;
@@ -84,7 +85,9 @@ public class DrawBitmapScaled extends PaintOperation
         mOutDstRight = mDstRight = dstRight;
         mOutDstBottom = mDstBottom = dstBottom;
         mScaleType = type & 0xFF;
-        mMode = type >> 8;
+        if (((type >> 8) & 0x1) != 0) {
+            mImageId |= PTR_DEREFERENCE;
+        }
         mOutScaleFactor = mScaleFactor = scale;
         this.mContentDescId = cdId;
     }
@@ -274,20 +277,20 @@ public class DrawBitmapScaled extends PaintOperation
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int imageId = buffer.readInt();
+        int imageId = buffer.readId();
 
-        float sLeft = buffer.readFloat();
-        float srcTop = buffer.readFloat();
-        float srcRight = buffer.readFloat();
-        float srcBottom = buffer.readFloat();
+        float sLeft = buffer.readNanId();
+        float srcTop = buffer.readNanId();
+        float srcRight = buffer.readNanId();
+        float srcBottom = buffer.readNanId();
 
-        float dstLeft = buffer.readFloat();
-        float dstTop = buffer.readFloat();
-        float dstRight = buffer.readFloat();
-        float dstBottom = buffer.readFloat();
+        float dstLeft = buffer.readNanId();
+        float dstTop = buffer.readNanId();
+        float dstRight = buffer.readNanId();
+        float dstBottom = buffer.readNanId();
         int scaleType = buffer.readInt();
-        float scaleFactor = buffer.readFloat();
-        int cdId = buffer.readInt();
+        float scaleFactor = buffer.readNanId();
+        int cdId = buffer.readId();
         DrawBitmapScaled op =
                 new DrawBitmapScaled(
                         imageId,
@@ -312,19 +315,29 @@ public class DrawBitmapScaled extends PaintOperation
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Draw Operations", OP_CODE, CLASS_NAME)
-                .description("Draw a bitmap using integer coordinates")
-                .field(DocumentedOperation.INT, "id", "id of bitmap")
-                .field(DocumentedOperation.FLOAT, "srcLeft", "The left side of the image")
-                .field(DocumentedOperation.FLOAT, "srcTop", "The top of the image")
-                .field(DocumentedOperation.FLOAT, "srcRight", "The right side of the image")
-                .field(DocumentedOperation.FLOAT, "srcBottom", "The bottom of the output")
-                .field(DocumentedOperation.FLOAT, "dstLeft", "The left side of the output")
-                .field(DocumentedOperation.FLOAT, "dstTop", "The top of the output")
-                .field(DocumentedOperation.FLOAT, "dstRight", "The right side of the output")
-                .field(DocumentedOperation.INT, "type", "type of auto scaling")
-                .field(DocumentedOperation.INT, "scaleFactor", "for allowed")
-                .field(DocumentedOperation.INT, "cdId", "id of string");
+        doc.operation("Canvas Operations", OP_CODE, CLASS_NAME)
+                .additionalDocumentation("draw_bitmap_scaled")
+                .description("Draw a bitmap with scaling and alignment options")
+                .field(DocumentedOperation.INT, "imageId", "The ID of the bitmap")
+                .field(DocumentedOperation.FLOAT, "srcLeft", "The left side of the source image")
+                .field(DocumentedOperation.FLOAT, "srcTop", "The top of the source image")
+                .field(DocumentedOperation.FLOAT, "srcRight", "The right side of the source image")
+                .field(DocumentedOperation.FLOAT, "srcBottom", "The bottom of the source image")
+                .field(DocumentedOperation.FLOAT, "dstLeft", "The left side of the destination")
+                .field(DocumentedOperation.FLOAT, "dstTop", "The top of the destination")
+                .field(DocumentedOperation.FLOAT, "dstRight", "The right side of the destination")
+                .field(DocumentedOperation.FLOAT, "dstBottom", "The bottom of the destination")
+                .field(DocumentedOperation.INT, "scaleType", "Type of scaling to apply")
+                .possibleValues("SCALE_NONE", SCALE_NONE)
+                .possibleValues("SCALE_INSIDE", SCALE_INSIDE)
+                .possibleValues("SCALE_FILL_WIDTH", SCALE_FILL_WIDTH)
+                .possibleValues("SCALE_FILL_HEIGHT", SCALE_FILL_HEIGHT)
+                .possibleValues("SCALE_FIT", SCALE_FIT)
+                .possibleValues("SCALE_CROP", SCALE_CROP)
+                .possibleValues("SCALE_FILL_BOUNDS", SCALE_FILL_BOUNDS)
+                .possibleValues("SCALE_FIXED_SCALE", SCALE_FIXED_SCALE)
+                .field(DocumentedOperation.FLOAT, "scaleFactor", "Factor for fixed scale")
+                .field(DocumentedOperation.INT, "cdId", "The ID of the content description string");
     }
 
     //    private String typeToString(int type) {
@@ -357,13 +370,8 @@ public class DrawBitmapScaled extends PaintOperation
         context.save();
         context.clipRect(mOutDstLeft, mOutDstTop, mOutDstRight, mOutDstBottom);
 
-        int imageId = mImageId;
-        if ((mMode & 0x1) != 0) {
-            imageId = context.getContext().getInteger(imageId);
-        }
-
         context.drawBitmap(
-                imageId,
+                getId(mImageId, context),
                 (int) mOutSrcLeft,
                 (int) mOutSrcTop,
                 (int) mOutSrcRight,
@@ -383,7 +391,6 @@ public class DrawBitmapScaled extends PaintOperation
                 .add("imageId", mImageId)
                 .add("contentDescriptionId", mContentDescId)
                 .add("scaleType", getScaleTypeString())
-                .add("mode", mMode)
                 .add("scaleFactor", mScaleFactor, mOutScaleFactor)
                 .add("srcLeft", mSrcLeft, mOutSrcLeft)
                 .add("srcTop", mSrcTop, mOutSrcTop)

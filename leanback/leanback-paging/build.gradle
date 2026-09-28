@@ -1,8 +1,7 @@
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SoftwareType
@@ -10,17 +9,19 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
     api("androidx.annotation:annotation:1.8.1")
-    api(project(":leanback:leanback"))
+    api("androidx.leanback:leanback:1.2.0")
     api("androidx.paging:paging-runtime:3.1.0")
 
     // To avoid manifest merger warnings due to duplicate package names
     // It can be removed if leanback library is updated to a newer version
     implementation("androidx.vectordrawable:vectordrawable-animated:1.1.0")
+
+    // Older versions of lifecycle-runtime lint checks use a deleted lint API
+    implementation("androidx.lifecycle:lifecycle-runtime:2.10.0")
 
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
@@ -43,11 +44,11 @@ dependencies {
     androidTestImplementation(libs.kotlinTest)
     androidTestImplementation(libs.kotlinCoroutinesTest)
     androidTestImplementation("androidx.arch.core:core-testing:2.2.0")
-    androidTestImplementation("androidx.lifecycle:lifecycle-runtime-testing:2.3.1")
+    androidTestImplementation("androidx.lifecycle:lifecycle-runtime-testing:2.10.0")
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(35) }
     lint {
         // Bug in Android Lint 7.0.0-alpha15 b/187419330
         disable.add("MissingLeanbackLauncher")
@@ -64,5 +65,4 @@ androidx {
     inceptionYear = "2020"
     description = "AndroidX Leanback Paging"
     failOnDeprecationWarnings = false
-    legacyDisableKotlinStrictApiMode = true
 }

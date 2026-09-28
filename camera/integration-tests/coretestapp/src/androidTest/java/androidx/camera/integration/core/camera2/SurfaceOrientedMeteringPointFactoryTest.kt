@@ -18,7 +18,6 @@ package androidx.camera.integration.core.camera2
 import android.content.Context
 import android.util.Rational
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.ImageAnalysis
@@ -28,7 +27,6 @@ import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraXUtil
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth
 import java.util.concurrent.TimeUnit
@@ -41,7 +39,6 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class SurfaceOrientedMeteringPointFactoryTest(
     private val implName: String,
     private val cameraConfig: CameraXConfig,
@@ -147,10 +144,6 @@ class SurfaceOrientedMeteringPointFactoryTest(
 
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun data() =
-            listOf(
-                arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
-            )
+        fun data() = listOf(arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()))
     }
 }

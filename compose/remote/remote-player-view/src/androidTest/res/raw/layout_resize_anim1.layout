@@ -1,0 +1,24 @@
+ROOT [-2:-1] = [0.0, 0.0, 1000.0, 1000.0] VISIBLE
+  BOX [-3:-1] = [0.0, 0.0, 1000.0, 1000.0] VISIBLE
+    MODIFIERS
+      PADDING = [8.0, 8.0, 8.0, 8.0]
+      BACKGROUND = [0.0, 0.0, 984.0, 984.0] color [1.0, 0.0, 0.0, 1.0] shape [0]
+SNAPSHOT = 0
+ROOT [-2:-1] = [0.0, 0.0, 1000.0, 1000.0] VISIBLE
+  BOX [-3:-1] = [0.0, 0.0, 1000.0, 1000.0] VISIBLE
+    MODIFIERS
+      PADDING = [8.0, 8.0, 8.0, 8.0]
+      BACKGROUND = [0.0, 0.0, 984.0, 984.0] color [1.0, 0.0, 0.0, 1.0] shape [0]
+SNAPSHOT = 0
+ROOT [-2:-1] = [0.0, 0.0, 1155.077, 1232.6155] VISIBLE
+  BOX [-3:-1] = [0.0, 0.0, 1155.077, 1232.6155] VISIBLE
+    MODIFIERS
+      PADDING = [8.0, 8.0, 8.0, 8.0]
+      BACKGROUND = [0.0, 0.0, 1139.077, 1216.6155] color [1.0, 0.0, 0.0, 1.0] shape [0]
+SNAPSHOT = 150
+ROOT [-2:-1] = [0.0, 0.0, 1200.0, 1300.0] VISIBLE
+  BOX [-3:-1] = [0.0, 0.0, 1200.0, 1300.0] VISIBLE
+    MODIFIERS
+      PADDING = [8.0, 8.0, 8.0, 8.0]
+      BACKGROUND = [0.0, 0.0, 1184.0, 1284.0] color [1.0, 0.0, 0.0, 1.0] shape [0]
+SNAPSHOT = 300

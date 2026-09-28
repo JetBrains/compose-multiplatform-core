@@ -1,0 +1,77 @@
+/*
+ * Copyright 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import androidx.build.AndroidXConfig
+import androidx.build.SoftwareType
+
+plugins {
+    id("AndroidXPlugin")
+    id("AndroidXComposePlugin")
+    id("com.android.library")
+}
+
+dependencies {
+    api(libs.junit)
+    api(libs.testRunner)
+    api(libs.testRules)
+    api(libs.testCore)
+    api(libs.kotlinTest)
+    api("androidx.compose.animation:animation-core:1.7.5")
+    api(project(":lifecycle:lifecycle-common"))
+    api(project(":xr:runtime:runtime"))
+    api(project(":xr:runtime:runtime-manifest"))
+
+    implementation("androidx.compose.runtime:runtime:1.7.5")
+
+    androidTestImplementation(project(":compose:foundation:foundation"))
+    androidTestImplementation(project(":compose:material3:material3"))
+    androidTestImplementation(project(":compose:ui:ui"))
+    androidTestImplementation(project(":compose:ui:ui-test"))
+    androidTestImplementation(project(":compose:ui:ui-test-junit4"))
+    androidTestImplementation(project(":xr:compose:compose"))
+    androidTestImplementation(libs.androidx.activity.compose)
+    androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.testRules)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.testExtJunit)
+    androidTestImplementation(libs.testUiautomator)
+}
+
+android {
+    compileSdk { version = release(36) }
+    namespace = "androidx.xr.testutils"
+}
+
+androidComponents {
+    def cliAssetsPath = new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/cli")
+            .absolutePath
+
+    onVariants(selector().all()) { variant ->
+        if (new File(cliAssetsPath).exists()) {
+            variant.sources.assets.addStaticSourceDirectory(cliAssetsPath)
+        }
+    }
+}
+
+androidx {
+    name = "XR Test Utilities"
+    type = SoftwareType.INTERNAL_TEST_LIBRARY
+    inceptionYear = "2026"
+    description = "Internal test utilities for XR libraries."
+    deviceTests {
+        enabled = false
+    }
+}

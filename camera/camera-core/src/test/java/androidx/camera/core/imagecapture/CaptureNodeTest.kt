@@ -19,7 +19,6 @@ package androidx.camera.core.imagecapture
 import android.graphics.ImageFormat.JPEG
 import android.graphics.ImageFormat.RAW_SENSOR
 import android.graphics.ImageFormat.YUV_420_888
-import android.os.Build
 import android.os.Looper.getMainLooper
 import android.util.Pair
 import android.util.Size
@@ -46,7 +45,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 /** Unit tests for [CaptureNode]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class CaptureNodeTest {
 
     private val imagePropagated = mutableListOf<ImageProxy>()
@@ -66,6 +65,9 @@ class CaptureNodeTest {
     @After
     fun tearDown() {
         captureNode.release()
+
+        // Process any pending looper updates to prevent leaks
+        shadowOf(getMainLooper()).idle()
     }
 
     @Test
@@ -99,8 +101,10 @@ class CaptureNodeTest {
         // Assert
         assertThat(output.outputFormats.size).isEqualTo(2)
         assertThat(input.surface).isNotNull()
+        assertThat(input.surface.prescribedStreamFormat).isEqualTo(RAW_SENSOR)
         assertThat(input.cameraCaptureCallback).isNotNull()
         assertThat(input.secondarySurface).isNotNull()
+        assertThat(input.secondarySurface!!.prescribedStreamFormat).isEqualTo(JPEG)
         assertThat(input.secondaryCameraCaptureCallback).isNotNull()
     }
 
@@ -136,6 +140,39 @@ class CaptureNodeTest {
     }
 
     @Test
+    fun release_simultaneousCapture_imageReadersNotClosedUntilTermination() {
+        val input =
+            CaptureNode.In.of(Size(10, 10), RAW_SENSOR, listOf(RAW_SENSOR, JPEG), false, null)
+        val node = CaptureNode()
+        node.transform(input)
+
+        // Arrange: increment use count on both primary and secondary surfaces
+        input.surface.incrementUseCount()
+        input.secondarySurface!!.incrementUseCount()
+
+        // Act: release node
+        node.release()
+        shadowOf(getMainLooper()).idle()
+
+        // Assert: both ImageReaders remain open
+        assertThat(node.mSafeCloseImageReaderProxy!!.isClosed).isFalse()
+        assertThat(node.mSecondarySafeCloseImageReaderProxy!!.isClosed).isFalse()
+
+        // Act: decrement primary surface use count
+        input.surface.decrementUseCount()
+        shadowOf(getMainLooper()).idle()
+        // Assert: primary closed, secondary still open
+        assertThat(node.mSafeCloseImageReaderProxy!!.isClosed).isTrue()
+        assertThat(node.mSecondarySafeCloseImageReaderProxy!!.isClosed).isFalse()
+
+        // Act: decrement secondary surface use count
+        input.secondarySurface!!.decrementUseCount()
+        shadowOf(getMainLooper()).idle()
+        // Assert: both closed
+        assertThat(node.mSecondarySafeCloseImageReaderProxy!!.isClosed).isTrue()
+    }
+
+    @Test
     fun transform_verifyInputSurface() {
         assertThat(captureNodeIn.surface.surface.get())
             .isEqualTo(captureNode.mSafeCloseImageReaderProxy!!.surface)
@@ -162,11 +199,10 @@ class CaptureNodeTest {
         val captureBundleA = createCaptureBundle(intArrayOf(1))
         val callbackA = FakeTakePictureCallback()
         var captureFutureCompleterA: CallbackToFutureAdapter.Completer<Void>? = null
-        val captureFuture1 =
-            CallbackToFutureAdapter.getFuture {
-                captureFutureCompleterA = it
-                "test"
-            }
+        val captureFuture1 = CallbackToFutureAdapter.getFuture {
+            captureFutureCompleterA = it
+            "test"
+        }
         val requestA = FakeProcessingRequest(captureBundleA, callbackA, captureFuture1)
         val tagBundleKeyA = captureBundleA.hashCode().toString()
         val tagBundleA = TagBundle.create(Pair(tagBundleKeyA, /* stage id */ 1))

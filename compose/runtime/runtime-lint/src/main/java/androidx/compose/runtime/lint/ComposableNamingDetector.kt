@@ -30,8 +30,11 @@ import com.android.tools.lint.detector.api.LintFix
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
+import com.intellij.psi.PsiNamedElement
 import java.util.EnumSet
 import java.util.Locale
+import org.jetbrains.kotlin.lexer.KtTokens
+import org.jetbrains.kotlin.psi.KtFunction
 import org.jetbrains.uast.UMethod
 
 /**
@@ -55,17 +58,24 @@ class ComposableNamingDetector : Detector(), SourceCodeScanner {
                 // special case where a generic return type and a Unit type parameter is used.
                 if (node.findSuperMethods().isNotEmpty()) return
 
-                val name = node.name
+                // Fallback structural check for Kotlin overrides when type resolution fails.
+                val sourcePsi = node.sourcePsi
+                if (sourcePsi is KtFunction && sourcePsi.hasModifier(KtTokens.OVERRIDE_KEYWORD)) {
+                    return
+                }
+
+                // NOTE: this is the inlined version of `UElement#nameFromSource`
+                // (available starting with Lint `31.10.0`)
+                val name = (node.sourcePsi as? PsiNamedElement)?.name ?: node.name
 
                 val capitalizedFunctionName = name.first().isUpperCase()
 
                 if (node.returnsUnit) {
                     if (!capitalizedFunctionName) {
-                        val capitalizedName =
-                            name.replaceFirstChar {
-                                if (it.isLowerCase()) it.titlecase(Locale.getDefault())
-                                else it.toString()
-                            }
+                        val capitalizedName = name.replaceFirstChar {
+                            if (it.isLowerCase()) it.titlecase(Locale.getDefault())
+                            else it.toString()
+                        }
                         context.report(
                             ComposableNaming,
                             node,
@@ -83,8 +93,9 @@ class ComposableNamingDetector : Detector(), SourceCodeScanner {
                     }
                 } else {
                     if (capitalizedFunctionName) {
-                        val lowercaseName =
-                            name.replaceFirstChar { it.lowercase(Locale.getDefault()) }
+                        val lowercaseName = name.replaceFirstChar {
+                            it.lowercase(Locale.getDefault())
+                        }
                         context.report(
                             ComposableNaming,
                             node,

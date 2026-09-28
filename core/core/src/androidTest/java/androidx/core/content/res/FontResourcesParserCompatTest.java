@@ -30,7 +30,6 @@ import android.annotation.SuppressLint;
 import android.app.Instrumentation;
 import android.content.res.Resources;
 import android.content.res.XmlResourceParser;
-import android.os.Build;
 import android.util.Base64;
 
 import androidx.core.provider.FontRequest;
@@ -102,12 +101,6 @@ public class FontResourcesParserCompatTest {
 
     @Test
     public void testParseAndroidAttrs() throws XmlPullParserException, IOException {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP_MR1) {
-            // The following tests are only expected to pass on v22+ devices. The android
-            // resources are stripped in older versions and hence won't be parsed.
-            return;
-        }
-
         @SuppressLint("ResourceType")
         XmlResourceParser parser = mResources.getXml(R.font.samplexmlfontforparsing2);
 
@@ -257,5 +250,27 @@ public class FontResourcesParserCompatTest {
         assertThat(request.getProviderPackage()).isEqualTo("androidx.core.test");
         assertThat(request.getQuery()).isEqualTo("secondFallback");
         assertThat(request.getSystemFont()).isEqualTo("monospace");
+    }
+
+    @Test
+    public void testFallbackSyntax_Variation() throws XmlPullParserException, IOException {
+        XmlResourceParser parser = mResources.getXml(R.font.system_fallback_variation);
+        FamilyResourceEntry result = FontResourcesParserCompat.parse(parser, mResources);
+        assertNotNull(result);
+
+        assertThat(result).isInstanceOf(ProviderResourceEntry.class);
+        ProviderResourceEntry entry = (ProviderResourceEntry) result;
+
+        List<FontRequest> requests = entry.getRequests();
+        assertThat(requests).hasSize(1);
+        FontRequest request = requests.get(0);
+        assertThat(request.getQuery()).isEqualTo("fallbackWithVariation");
+        assertThat(request.getVariationSettings()).isEqualTo("'wdth' 1.0");
+    }
+
+    @Test(expected = XmlPullParserException.class)
+    public void testFallbackSyntax_Invalid() throws XmlPullParserException, IOException {
+        XmlResourceParser parser = mResources.getXml(R.font.system_fallback_invalid);
+        FontResourcesParserCompat.parse(parser, mResources);
     }
 }

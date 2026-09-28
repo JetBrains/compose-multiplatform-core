@@ -18,7 +18,8 @@ package androidx.camera.viewfinder.compose
 
 import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.camera.viewfinder.core.TransformationInfo
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.camera.viewfinder.core.TransformationMode
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
@@ -232,6 +233,19 @@ class ViewfinderScreenshotTest {
                     implementationMode = ImplementationMode.EMBEDDED,
                     isMirroredHorizontally = true,
                     isMirroredVertically = true,
+                )
+
+            drawUprightFaceAndAssert(testParams)
+        }
+
+    @Test
+    fun embeddedImplementationDrawsUpright_from0DegreeSource_preAppliedTransformation() =
+        runBlocking {
+            val testParams =
+                ViewfinderTestParams(
+                    sourceRotation = 0,
+                    implementationMode = ImplementationMode.EMBEDDED,
+                    transformationMode = TransformationMode.PRE_APPLIED,
                 )
 
             drawUprightFaceAndAssert(testParams)

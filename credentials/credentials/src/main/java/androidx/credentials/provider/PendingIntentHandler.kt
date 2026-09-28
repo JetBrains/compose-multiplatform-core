@@ -20,6 +20,11 @@ import android.app.Activity
 import android.app.PendingIntent
 import android.content.Intent
 import android.os.Build
+import android.os.Bundle
+import android.os.Parcel
+import android.os.ParcelFileDescriptor
+import android.os.Process
+import android.os.ResultReceiver
 import android.service.credentials.BeginCreateCredentialResponse
 import android.service.credentials.CreateCredentialRequest
 import android.service.credentials.CredentialEntry
@@ -27,12 +32,16 @@ import android.service.credentials.CredentialProviderService
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
+import androidx.core.os.BundleCompat
 import androidx.credentials.CreateCredentialResponse
 import androidx.credentials.Credential
 import androidx.credentials.CredentialOption
 import androidx.credentials.GetCredentialResponse
 import androidx.credentials.exceptions.CreateCredentialException
 import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.internal.LargePayloadSupport
+import androidx.credentials.internal.LargePayloadSupport.EXTRA_LARGE_PAYLOAD
+import androidx.credentials.internal.LargePayloadSupport.use
 import androidx.credentials.internal.toJetpackCreateException
 import androidx.credentials.internal.toJetpackGetException
 import androidx.credentials.provider.utils.BeginGetCredentialUtil
@@ -56,10 +65,24 @@ import java.util.stream.Collectors
  * See extension functions for [Intent] in IntentHandlerConverters.kt to help test intents that are
  * set on pending intents in different entry classes.
  */
-@RequiresApi(23)
-class PendingIntentHandler {
-    companion object {
+public class PendingIntentHandler {
+    public companion object {
         private const val TAG = "PendingIntentHandler"
+        private const val ACTIVITY_REQUEST_CODE_TAG = "ACTIVITY_REQUEST_CODE"
+        private const val FAILURE_RESPONSE_TAG = "FAILURE_RESPONSE"
+        private const val RESULT_DATA_TAG = "RESULT_DATA"
+        private const val CONTROLLER_REQUEST_CODE: Int = 1
+        private const val ILLEGAL_PID: Int = -1
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        public const val EXTRA_PASS_IT_BY_RESULT_RECEIVER: String =
+            "androidx.credentials.provider.EXTRA_PASS_IT_BY_RESULT_RECEIVER"
+        private const val TWO_HUNDRED_KB = 200 * 1024
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        public const val EXTRA_LARGE_PAYLOAD_RESULT_RECEIVER: String =
+            "androidx.credentials.provider.EXTRA_LARGE_PAYLOAD_RESULT_RECEIVER"
+
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        public const val EXTRA_RP_PID: String = "androidx.credentials.provider.EXTRA_RP_PID"
 
         /**
          * Extracts the [ProviderCreateCredentialRequest] from the provider's [PendingIntent]
@@ -70,7 +93,7 @@ class PendingIntentHandler {
          * @throws NullPointerException If [intent] is null
          */
         @JvmStatic
-        fun retrieveProviderCreateCredentialRequest(
+        public fun retrieveProviderCreateCredentialRequest(
             intent: Intent
         ): ProviderCreateCredentialRequest? {
             return if (Build.VERSION.SDK_INT >= 34) {
@@ -89,7 +112,7 @@ class PendingIntentHandler {
          * @throws NullPointerException If [intent] is null
          */
         @JvmStatic
-        fun retrieveBeginGetCredentialRequest(intent: Intent): BeginGetCredentialRequest? {
+        public fun retrieveBeginGetCredentialRequest(intent: Intent): BeginGetCredentialRequest? {
             return if (Build.VERSION.SDK_INT >= 34) {
                 Api34Impl.retrieveBeginGetCredentialRequest(intent)
             } else {
@@ -116,7 +139,7 @@ class PendingIntentHandler {
          * @throws NullPointerException If [intent], or [response] is null
          */
         @JvmStatic
-        fun setCreateCredentialResponse(intent: Intent, response: CreateCredentialResponse) {
+        public fun setCreateCredentialResponse(intent: Intent, response: CreateCredentialResponse) {
             if (Build.VERSION.SDK_INT >= 34) {
                 Api34Impl.setCreateCredentialResponse(intent, response)
             } else {
@@ -126,7 +149,7 @@ class PendingIntentHandler {
 
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @JvmStatic
-        fun retrieveCreateCredentialResponse(
+        public fun retrieveCreateCredentialResponse(
             type: String,
             intent: Intent,
         ): CreateCredentialResponse? {
@@ -146,7 +169,9 @@ class PendingIntentHandler {
          * @throws NullPointerException If [intent] is null
          */
         @JvmStatic
-        fun retrieveProviderGetCredentialRequest(intent: Intent): ProviderGetCredentialRequest? {
+        public fun retrieveProviderGetCredentialRequest(
+            intent: Intent
+        ): ProviderGetCredentialRequest? {
             return if (Build.VERSION.SDK_INT >= 34) {
                 Api34Impl.retrieveProviderGetCredentialRequest(intent)
             } else {
@@ -170,20 +195,57 @@ class PendingIntentHandler {
          * @param intent the intent to be set on the result of the [Activity] invoked through the
          *   [PendingIntent]
          * @param response the response to be set as an extra on the [intent]
+         * @param request the [ProviderGetCredentialRequest] that this `response` fulfills,
+         *   retrieved through the [retrieveProviderGetCredentialRequest] method
+         * @throws NullPointerException If [intent], [response], or [request] is null
+         */
+        @JvmStatic
+        public fun setGetCredentialResponse(
+            intent: Intent,
+            response: GetCredentialResponse,
+            request: ProviderGetCredentialRequest,
+        ) {
+            setGetCredentialResponseInternal(intent, response, request)
+        }
+
+        /**
+         * Sets the [GetCredentialResponse] on the intent passed in.
+         *
+         * This API is deprecated and will be removed in Credentials 2.0. Use
+         * [setGetCredentialResponse(Intent, GetCredentialResponse, ProviderGetCredentialRequest)]
+         * instead.
+         *
+         * @param intent the intent to be set on the result of the [Activity] invoked through the
+         *   [PendingIntent]
+         * @param response the response to be set as an extra on the [intent]
          * @throws NullPointerException If [intent], or [response] is null
          */
         @JvmStatic
-        fun setGetCredentialResponse(intent: Intent, response: GetCredentialResponse) {
+        @Deprecated(
+            message =
+                "Use setGetCredentialResponse(Intent, GetCredentialResponse, " +
+                    "ProviderGetCredentialRequest) instead.",
+            replaceWith = ReplaceWith("setGetCredentialResponse(intent, response, request)"),
+        )
+        public fun setGetCredentialResponse(intent: Intent, response: GetCredentialResponse) {
+            setGetCredentialResponseInternal(intent, response, null)
+        }
+
+        private fun setGetCredentialResponseInternal(
+            intent: Intent,
+            response: GetCredentialResponse,
+            request: ProviderGetCredentialRequest?,
+        ) {
             if (Build.VERSION.SDK_INT >= 34) {
-                Api34Impl.setGetCredentialResponse(intent, response)
+                Api34Impl.setGetCredentialResponse(intent, response, request)
             } else {
-                Api23Impl.setGetCredentialResponse(intent, response)
+                Api23Impl.setGetCredentialResponse(intent, response, request)
             }
         }
 
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @JvmStatic
-        fun retrieveGetCredentialResponse(intent: Intent): GetCredentialResponse? {
+        public fun retrieveGetCredentialResponse(intent: Intent): GetCredentialResponse? {
             return if (Build.VERSION.SDK_INT >= 34) {
                 Api34Impl.extractGetCredentialResponse(intent)
             } else {
@@ -210,7 +272,10 @@ class PendingIntentHandler {
          * @throws NullPointerException If [intent], or [response] is null
          */
         @JvmStatic
-        fun setBeginGetCredentialResponse(intent: Intent, response: BeginGetCredentialResponse) {
+        public fun setBeginGetCredentialResponse(
+            intent: Intent,
+            response: BeginGetCredentialResponse,
+        ) {
             if (Build.VERSION.SDK_INT >= 34) {
                 Api34Impl.setBeginGetCredentialResponse(intent, response)
             } else {
@@ -245,7 +310,7 @@ class PendingIntentHandler {
          * @throws NullPointerException If [intent], or [exception] is null
          */
         @JvmStatic
-        fun setGetCredentialException(intent: Intent, exception: GetCredentialException) {
+        public fun setGetCredentialException(intent: Intent, exception: GetCredentialException) {
             if (Build.VERSION.SDK_INT >= 34) {
                 Api34Impl.setGetCredentialException(intent, exception)
             } else {
@@ -255,7 +320,7 @@ class PendingIntentHandler {
 
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @JvmStatic
-        fun retrieveGetCredentialException(intent: Intent): GetCredentialException? {
+        public fun retrieveGetCredentialException(intent: Intent): GetCredentialException? {
             return if (Build.VERSION.SDK_INT >= 34) {
                 Api34Impl.extractGetCredentialException(intent)
             } else {
@@ -291,7 +356,10 @@ class PendingIntentHandler {
          * @throws NullPointerException If [intent], or [exception] is null
          */
         @JvmStatic
-        fun setCreateCredentialException(intent: Intent, exception: CreateCredentialException) {
+        public fun setCreateCredentialException(
+            intent: Intent,
+            exception: CreateCredentialException,
+        ) {
             if (Build.VERSION.SDK_INT >= 34) {
                 Api34Impl.setCreateCredentialException(intent, exception)
             } else {
@@ -301,11 +369,57 @@ class PendingIntentHandler {
 
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @JvmStatic
-        fun retrieveCreateCredentialException(intent: Intent): CreateCredentialException? {
+        public fun retrieveCreateCredentialException(intent: Intent): CreateCredentialException? {
             return if (Build.VERSION.SDK_INT >= 34) {
                 Api34Impl.extractCreateCredentialException(intent)
             } else {
                 Api23Impl.extractCreateCredentialException(intent)
+            }
+        }
+
+        private fun Bundle.isLargerThan200Kb(): Boolean {
+            return Parcel.obtain().use { parcel ->
+                parcel.writeBundle(this)
+                val dataSize = parcel.dataSize()
+                return dataSize >= TWO_HUNDRED_KB
+            } ?: false
+        }
+
+        private fun delegateBundleToFd(data: Bundle): Bundle {
+            return LargePayloadSupport.encodeBundleToPfd(data) ?: Bundle.EMPTY
+        }
+
+        private fun readBundleFromFd(data: Bundle): Bundle? {
+            try {
+                return LargePayloadSupport.decodeBundleFromPfd(data)
+            } catch (t: Throwable) {
+                Log.e(TAG, "decode exception", t)
+            }
+            // returns null if decoding fails
+            return null
+        }
+
+        private fun ResultReceiver.reportResult(requestCode: Int, resultCode: Int, data: Intent?) {
+            val bundle = Bundle()
+            bundle.putBoolean(FAILURE_RESPONSE_TAG, false)
+            bundle.putInt(ACTIVITY_REQUEST_CODE_TAG, requestCode)
+            bundle.putParcelable(RESULT_DATA_TAG, data)
+            try {
+                this.send(resultCode, bundle)
+            } catch (t: Throwable) {
+                Log.e(TAG, "send error", t)
+            }
+        }
+
+        private fun closePfd(data: Bundle, rpPid: Int) {
+            val pfd =
+                BundleCompat.getParcelable(
+                    data,
+                    EXTRA_LARGE_PAYLOAD,
+                    ParcelFileDescriptor::class.java,
+                )
+            if (rpPid != Process.myPid()) {
+                pfd?.close()
             }
         }
     }
@@ -313,13 +427,13 @@ class PendingIntentHandler {
     @SuppressLint("ObsoleteSdkInt") // TODO: b/356939416 - remove with official API update
     @RequiresApi(23)
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    class Api23Impl {
-        companion object {
+    public class Api23Impl {
+        public companion object {
             private const val EXTRA_CREATE_CREDENTIAL_REQUEST =
                 "android.service.credentials.extra.CREATE_CREDENTIAL_REQUEST"
 
             @JvmStatic
-            fun setProviderCreateCredentialRequest(
+            public fun setProviderCreateCredentialRequest(
                 intent: Intent,
                 request: ProviderCreateCredentialRequest,
             ) {
@@ -330,7 +444,7 @@ class PendingIntentHandler {
             }
 
             @JvmStatic
-            fun retrieveProviderCreateCredentialRequest(
+            public fun retrieveProviderCreateCredentialRequest(
                 intent: Intent
             ): ProviderCreateCredentialRequest? {
                 return try {
@@ -346,7 +460,10 @@ class PendingIntentHandler {
                 "android.service.credentials.extra.BEGIN_GET_CREDENTIAL_REQUEST"
 
             @JvmStatic
-            fun setBeginGetCredentialRequest(intent: Intent, request: BeginGetCredentialRequest) {
+            public fun setBeginGetCredentialRequest(
+                intent: Intent,
+                request: BeginGetCredentialRequest,
+            ) {
                 intent.putExtra(
                     EXTRA_BEGIN_GET_CREDENTIAL_REQUEST,
                     BeginGetCredentialRequest.asBundle(request),
@@ -354,7 +471,9 @@ class PendingIntentHandler {
             }
 
             @JvmStatic
-            fun retrieveBeginGetCredentialRequest(intent: Intent): BeginGetCredentialRequest? {
+            public fun retrieveBeginGetCredentialRequest(
+                intent: Intent
+            ): BeginGetCredentialRequest? {
                 return BeginGetCredentialRequest.fromBundle(
                     intent.getBundleExtra(EXTRA_BEGIN_GET_CREDENTIAL_REQUEST) ?: return null
                 )
@@ -364,14 +483,17 @@ class PendingIntentHandler {
                 "android.service.credentials.extra.CREATE_CREDENTIAL_RESPONSE"
 
             @JvmStatic
-            fun extractCreateCredentialResponse(intent: Intent): CreateCredentialResponse? {
+            public fun extractCreateCredentialResponse(intent: Intent): CreateCredentialResponse? {
                 return CreateCredentialResponse.fromBundle(
                     intent.getBundleExtra(EXTRA_CREATE_CREDENTIAL_RESPONSE) ?: return null
                 )
             }
 
             @JvmStatic
-            fun setCreateCredentialResponse(intent: Intent, response: CreateCredentialResponse) {
+            public fun setCreateCredentialResponse(
+                intent: Intent,
+                response: CreateCredentialResponse,
+            ) {
                 intent.putExtra(
                     EXTRA_CREATE_CREDENTIAL_RESPONSE,
                     CreateCredentialResponse.asBundle(response),
@@ -382,7 +504,7 @@ class PendingIntentHandler {
                 "android.service.credentials.extra.GET_CREDENTIAL_REQUEST"
 
             @JvmStatic
-            fun setProviderGetCredentialRequest(
+            public fun setProviderGetCredentialRequest(
                 intent: Intent,
                 request: ProviderGetCredentialRequest,
             ) {
@@ -393,7 +515,7 @@ class PendingIntentHandler {
             }
 
             @JvmStatic
-            fun retrieveProviderGetCredentialRequest(
+            public fun retrieveProviderGetCredentialRequest(
                 intent: Intent
             ): ProviderGetCredentialRequest? {
                 return try {
@@ -409,17 +531,69 @@ class PendingIntentHandler {
                 "android.service.credentials.extra.GET_CREDENTIAL_RESPONSE"
 
             @JvmStatic
-            fun extractGetCredentialResponse(intent: Intent): GetCredentialResponse? {
-                return GetCredentialResponse.fromBundle(
-                    intent.getBundleExtra(EXTRA_GET_CREDENTIAL_RESPONSE) ?: return null
-                )
+            public fun extractGetCredentialResponse(intent: Intent): GetCredentialResponse? {
+                val bundle = intent.getBundleExtra(EXTRA_GET_CREDENTIAL_RESPONSE) ?: return null
+                val finalBundle =
+                    if (bundle.containsKey(EXTRA_LARGE_PAYLOAD)) {
+                        readBundleFromFd(bundle) ?: return null
+                    } else {
+                        bundle
+                    }
+                return GetCredentialResponse.fromBundle(finalBundle)
             }
 
             @JvmStatic
-            fun setGetCredentialResponse(intent: Intent, response: GetCredentialResponse) {
+            @Suppress("DEPRECATION")
+            public fun setGetCredentialResponse(
+                intent: Intent,
+                response: GetCredentialResponse,
+                request: ProviderGetCredentialRequest?,
+            ) {
+                // If the response is small enough, set it directly on the intent. This is
+                // consistent with the ResultReceiver == null case below to ensure that
+                // existing flows are not impacted.
+                if (!response.credential.data.isLargerThan200Kb()) {
+                    setGetCredentialResponseExtra(intent, GetCredentialResponse.asBundle(response))
+                    return
+                }
+                val resultReceiver =
+                    request?.credentialOptions?.firstNotNullOfOrNull {
+                        BundleCompat.getParcelable(
+                            it.requestData,
+                            EXTRA_LARGE_PAYLOAD_RESULT_RECEIVER,
+                            ResultReceiver::class.java,
+                        )
+                    }
+                val rpPid: Int =
+                    request?.credentialOptions?.firstNotNullOfOrNull {
+                        it.requestData.getInt(EXTRA_RP_PID)
+                    } ?: ILLEGAL_PID
+                // If the ResultReceiver is not found, fallback to setting it on the intent
+                // directly. This ensures that existing flows are not impacted if the
+                // ResultReceiver optimization is not available.
+                if (resultReceiver == null) {
+                    setGetCredentialResponseExtra(intent, GetCredentialResponse.asBundle(response))
+                    return
+                }
+                // If the response is too large, use the ResultReceiver to pass the data.
+                val data = delegateBundleToFd(GetCredentialResponse.asBundle(response))
+                val passIntent: Intent = intent.clone() as Intent
+                setGetCredentialResponseExtra(passIntent, data)
+                intent.putExtra(EXTRA_PASS_IT_BY_RESULT_RECEIVER, true)
+                resultReceiver.reportResult(CONTROLLER_REQUEST_CODE, Activity.RESULT_OK, passIntent)
+                closePfd(data, rpPid)
+            }
+
+            /**
+             * Sets the GetCredentialResponse as an extra on the given [intent].
+             *
+             * @param intent the intent to set the extra on
+             * @param responseBundle the bundle representation of the GetCredentialResponse
+             */
+            private fun setGetCredentialResponseExtra(intent: Intent, responseBundle: Bundle) {
                 intent.putExtra(
-                    EXTRA_GET_CREDENTIAL_RESPONSE,
-                    GetCredentialResponse.asBundle(response),
+                    CredentialProviderService.EXTRA_GET_CREDENTIAL_RESPONSE,
+                    responseBundle,
                 )
             }
 
@@ -427,14 +601,16 @@ class PendingIntentHandler {
                 "android.service.credentials.extra.BEGIN_GET_CREDENTIAL_RESPONSE"
 
             @JvmStatic
-            fun extractBeginGetCredentialResponse(intent: Intent): BeginGetCredentialResponse? {
+            public fun extractBeginGetCredentialResponse(
+                intent: Intent
+            ): BeginGetCredentialResponse? {
                 return BeginGetCredentialResponse.fromBundle(
                     intent.getBundleExtra(EXTRA_BEGIN_GET_CREDENTIAL_RESPONSE) ?: return null
                 )
             }
 
             @JvmStatic
-            fun setBeginGetCredentialResponse(
+            public fun setBeginGetCredentialResponse(
                 intent: Intent,
                 response: BeginGetCredentialResponse,
             ) {
@@ -448,14 +624,17 @@ class PendingIntentHandler {
                 "android.service.credentials.extra.GET_CREDENTIAL_EXCEPTION"
 
             @JvmStatic
-            fun extractGetCredentialException(intent: Intent): GetCredentialException? {
+            public fun extractGetCredentialException(intent: Intent): GetCredentialException? {
                 return GetCredentialException.fromBundle(
                     intent.getBundleExtra(EXTRA_GET_CREDENTIAL_EXCEPTION) ?: return null
                 )
             }
 
             @JvmStatic
-            fun setGetCredentialException(intent: Intent, exception: GetCredentialException) {
+            public fun setGetCredentialException(
+                intent: Intent,
+                exception: GetCredentialException,
+            ) {
                 intent.putExtra(
                     EXTRA_GET_CREDENTIAL_EXCEPTION,
                     GetCredentialException.asBundle(exception),
@@ -466,14 +645,19 @@ class PendingIntentHandler {
                 "android.service.credentials.extra.CREATE_CREDENTIAL_EXCEPTION"
 
             @JvmStatic
-            fun extractCreateCredentialException(intent: Intent): CreateCredentialException? {
+            public fun extractCreateCredentialException(
+                intent: Intent
+            ): CreateCredentialException? {
                 return CreateCredentialException.fromBundle(
                     intent.getBundleExtra(EXTRA_CREATE_CREDENTIAL_EXCEPTION) ?: return null
                 )
             }
 
             @JvmStatic
-            fun setCreateCredentialException(intent: Intent, exception: CreateCredentialException) {
+            public fun setCreateCredentialException(
+                intent: Intent,
+                exception: CreateCredentialException,
+            ) {
                 intent.putExtra(
                     EXTRA_CREATE_CREDENTIAL_EXCEPTION,
                     CreateCredentialException.asBundle(exception),
@@ -519,6 +703,7 @@ class PendingIntentHandler {
                                 frameworkReq.callingAppInfo.origin,
                             ),
                         biometricPromptResult = biometricPromptResult,
+                        sourceBundle = intent.extras,
                     )
                 } catch (e: IllegalArgumentException) {
                     return null
@@ -653,18 +838,81 @@ class PendingIntentHandler {
                         CredentialProviderService.EXTRA_GET_CREDENTIAL_RESPONSE,
                         android.credentials.GetCredentialResponse::class.java,
                     ) ?: return null
-                return GetCredentialResponse(Credential.Companion.createFrom(response.credential))
+                val credential =
+                    if (response.credential.data.containsKey(EXTRA_LARGE_PAYLOAD)) {
+                        val data = readBundleFromFd(response.credential.data) ?: return null
+                        android.credentials.Credential(response.credential.type, data)
+                    } else {
+                        response.credential
+                    }
+                val bundle = credential.data
+                if (bundle.containsKey(GetCredentialResponse.EXTRA_CREDENTIAL_LIST_SIZE)) {
+                    return GetCredentialResponse.fromBundle(bundle)
+                }
+                @Suppress("DEPRECATION")
+                return GetCredentialResponse(Credential.createFrom(credential))
             }
 
             @JvmStatic
-            fun setGetCredentialResponse(intent: Intent, response: GetCredentialResponse) {
+            @Suppress("DEPRECATION")
+            fun setGetCredentialResponse(
+                intent: Intent,
+                response: GetCredentialResponse,
+                request: ProviderGetCredentialRequest?,
+            ) {
+                val responseBundle =
+                    if (response.credentials.size > 1) {
+                        GetCredentialResponse.asBundle(response)
+                    } else {
+                        response.credential.data
+                    }
+                // If the response is small enough, set it directly on the intent. This is
+                // consistent with the ResultReceiver == null case below to ensure that
+                // existing flows are not impacted.
+                if (!responseBundle.isLargerThan200Kb()) {
+                    setGetCredentialResponseExtra(intent, response.credential.type, responseBundle)
+                    return
+                }
+                val resultReceiver =
+                    request?.credentialOptions?.firstNotNullOfOrNull {
+                        BundleCompat.getParcelable(
+                            it.requestData,
+                            EXTRA_LARGE_PAYLOAD_RESULT_RECEIVER,
+                            ResultReceiver::class.java,
+                        )
+                    }
+                val rpPid: Int =
+                    request?.credentialOptions?.firstNotNullOfOrNull {
+                        it.requestData.getInt(EXTRA_RP_PID)
+                    } ?: ILLEGAL_PID
+                // If the ResultReceiver is not found, fallback to setting it on the intent
+                // directly. This ensures that existing flows are not impacted if the
+                // ResultReceiver optimization is not available.
+                if (resultReceiver == null) {
+                    setGetCredentialResponseExtra(intent, response.credential.type, responseBundle)
+                    return
+                }
+                // If the response is too large, use the ResultReceiver to pass the data.
+                val data = delegateBundleToFd(responseBundle)
+                val passIntent: Intent = intent.clone() as Intent
+                setGetCredentialResponseExtra(passIntent, response.credential.type, data)
+                intent.putExtra(EXTRA_PASS_IT_BY_RESULT_RECEIVER, true)
+                resultReceiver.reportResult(CONTROLLER_REQUEST_CODE, Activity.RESULT_OK, passIntent)
+                closePfd(data, rpPid)
+            }
+
+            /**
+             * Sets the GetCredentialResponse as an extra on the given [intent].
+             *
+             * @param intent the intent to set the extra on
+             * @param type the type of the credential
+             * @param data the bundle data of the credential
+             */
+            private fun setGetCredentialResponseExtra(intent: Intent, type: String, data: Bundle) {
                 intent.putExtra(
                     CredentialProviderService.EXTRA_GET_CREDENTIAL_RESPONSE,
                     android.credentials.GetCredentialResponse(
-                        android.credentials.Credential(
-                            response.credential.type,
-                            response.credential.data,
-                        )
+                        android.credentials.Credential(type, data)
                     ),
                 )
             }
@@ -712,7 +960,10 @@ class PendingIntentHandler {
             fun setCreateCredentialException(intent: Intent, exception: CreateCredentialException) {
                 intent.putExtra(
                     CredentialProviderService.EXTRA_CREATE_CREDENTIAL_EXCEPTION,
-                    android.credentials.CreateCredentialException(exception.type, exception.message),
+                    android.credentials.CreateCredentialException(
+                        exception.type,
+                        exception.message,
+                    ),
                 )
             }
         }

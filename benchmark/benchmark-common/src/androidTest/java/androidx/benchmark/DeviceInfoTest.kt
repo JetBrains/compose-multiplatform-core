@@ -16,11 +16,13 @@
 
 package androidx.benchmark
 
+import android.app.admin.DevicePolicyManager
+import android.content.Context
 import android.os.Build
-import androidx.benchmark.perfetto.PerfettoHelper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
+import androidx.test.platform.app.InstrumentationRegistry
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -38,7 +40,7 @@ class DeviceInfoTest {
         InstrumentationResults.clearIdeWarningPrefix()
     }
 
-    @SdkSuppress(minSdkVersion = PerfettoHelper.MIN_SDK_VERSION)
+    @SdkSuppress(minSdkVersion = 24) // b/441743079 move back to PerfettoHelper.MIN_SDK_VERSION
     @Test
     fun misconfiguredForTracing() {
         // NOTE: tests device capability, not implementation of DeviceInfo
@@ -82,8 +84,156 @@ class DeviceInfoTest {
     }
 
     @Test
+    fun methodTracingSlowdownFactor() {
+        assertEquals(0x10, TRACE_CLOCK_SOURCE_WALL_CLOCK)
+        assertTrue(DeviceInfo.methodTracingSlowdownFactor > 0)
+
+        // sargo: 450x on API 31+ (runs factory ART 319999900 without low-overhead wall-clock
+        // tracing), 1000x below API 31
+        assertEquals(
+            1000,
+            DeviceInfo.methodTracingSlowdownFactor(
+                device = "sargo",
+                sdkInt = 30,
+                artMainlineVersion = -1L,
+            ),
+        )
+        assertEquals(
+            450,
+            DeviceInfo.methodTracingSlowdownFactor(
+                device = "sargo",
+                sdkInt = 31,
+                artMainlineVersion = 310000000L,
+            ),
+        )
+
+        // mokey variants: 300x when low-overhead wall-clock tracing is supported (SDK 35+ or
+        // ART mainline >= 341513000, excluding internal builds >= 990000000), else 1000x
+        assertEquals(
+            300,
+            DeviceInfo.methodTracingSlowdownFactor(
+                device = "mokey",
+                sdkInt = 35,
+                artMainlineVersion = 352090000L,
+            ),
+        )
+        assertEquals(
+            300,
+            DeviceInfo.methodTracingSlowdownFactor(
+                device = "aosp_mokey",
+                sdkInt = 35,
+                artMainlineVersion = 352090000L,
+            ),
+        )
+        assertEquals(
+            300,
+            DeviceInfo.methodTracingSlowdownFactor(
+                device = "mokey_go32",
+                sdkInt = 35,
+                artMainlineVersion = 352090000L,
+            ),
+        )
+        assertEquals(
+            1000,
+            DeviceInfo.methodTracingSlowdownFactor(
+                device = "mokey",
+                sdkInt = 34,
+                artMainlineVersion = 340000000L,
+            ),
+        )
+
+        // eos: 350x when low-overhead wall-clock tracing is supported (SDK 35+ or
+        // ART mainline >= 341513000, excluding internal builds >= 990000000), else 1000x
+        assertEquals(
+            350,
+            DeviceInfo.methodTracingSlowdownFactor(
+                device = "eos",
+                sdkInt = 34,
+                artMainlineVersion = 341513000L,
+            ),
+        )
+        assertEquals(
+            1000,
+            DeviceInfo.methodTracingSlowdownFactor(
+                device = "eos",
+                sdkInt = 34,
+                artMainlineVersion = 340000000L,
+            ),
+        )
+
+        // oriole: 150x on SDK 35/36 with ART < 370000000, 550x on SDK 37+ or ART >= 370000000,
+        // 1000x when low-overhead wall-clock tracing is not supported (SDK < 35 and ART <
+        // 341513000)
+        assertEquals(
+            150,
+            DeviceInfo.methodTracingSlowdownFactor(
+                device = "oriole",
+                sdkInt = 35,
+                artMainlineVersion = 352090000L,
+            ),
+        )
+        assertEquals(
+            150,
+            DeviceInfo.methodTracingSlowdownFactor(
+                device = "oriole",
+                sdkInt = 36,
+                artMainlineVersion = 360000000L,
+            ),
+        )
+        assertEquals(
+            550,
+            DeviceInfo.methodTracingSlowdownFactor(
+                device = "oriole",
+                sdkInt = 36,
+                artMainlineVersion = 370000000L,
+            ),
+        )
+        assertEquals(
+            550,
+            DeviceInfo.methodTracingSlowdownFactor(
+                device = "oriole",
+                sdkInt = 37,
+                artMainlineVersion = 370000000L,
+            ),
+        )
+        assertEquals(
+            1000,
+            DeviceInfo.methodTracingSlowdownFactor(
+                device = "oriole",
+                sdkInt = 34,
+                artMainlineVersion = 340000000L,
+            ),
+        )
+
+        // Uncalibrated devices fall back to GENERIC_METHOD_TRACING_ESTIMATED_SLOWDOWN_FACTOR
+        // (1000x)
+        assertEquals(
+            BenchmarkState.GENERIC_METHOD_TRACING_ESTIMATED_SLOWDOWN_FACTOR,
+            DeviceInfo.methodTracingSlowdownFactor(
+                device = "bramble",
+                sdkInt = 31,
+                artMainlineVersion = 310000000L,
+            ),
+        )
+    }
+
+    @Test
     fun artMainlineVersion() =
         validateArtMainlineVersion(artMainlineVersion = DeviceInfo.artMainlineVersion)
+
+    @Test
+    fun canShellAccessAppFiles_granted() {
+        assumeTrue(DeviceInfo.isRooted)
+        assertTrue(DeviceInfo.canShellAccessAppFiles)
+    }
+
+    @Test
+    fun canShellAccessAppFiles_denied() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        assumeTrue(dpm.isDeviceOwnerApp("com.google.android.apps.work.clouddpc"))
+        assertFalse(DeviceInfo.canShellAccessAppFiles)
+    }
 }
 
 /**

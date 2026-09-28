@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text.input.internal
 
+import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.FocusableNode
 import androidx.compose.foundation.content.MediaType
@@ -24,7 +25,6 @@ import androidx.compose.foundation.content.internal.ReceiveContentConfiguration
 import androidx.compose.foundation.content.internal.dragAndDropRequestPermission
 import androidx.compose.foundation.content.internal.getReceiveContentConfiguration
 import androidx.compose.foundation.content.readPlainText
-import androidx.compose.foundation.interaction.HoverInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.Handle
@@ -44,10 +44,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.autofill.ContentDataType
+import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.autofill.FillableData
+import androidx.compose.ui.autofill.createFromText
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusProperties
 import androidx.compose.ui.focus.FocusPropertiesModifierNode
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyInputModifierNode
 import androidx.compose.ui.input.pointer.PointerEvent
@@ -70,6 +74,7 @@ import androidx.compose.ui.node.observeReads
 import androidx.compose.ui.node.requestAutofill
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -79,29 +84,35 @@ import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.establishTextInputSession
+import androidx.compose.ui.semantics.InputTextSuggestionState
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.contentDataType
+import androidx.compose.ui.semantics.contentType
 import androidx.compose.ui.semantics.copyText
 import androidx.compose.ui.semantics.cutText
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.editableText
+import androidx.compose.ui.semantics.fillableData
 import androidx.compose.ui.semantics.getTextLayoutResult
 import androidx.compose.ui.semantics.inputText
+import androidx.compose.ui.semantics.inputTextSuggestionState
 import androidx.compose.ui.semantics.insertTextAtCursor
 import androidx.compose.ui.semantics.isEditable
-import androidx.compose.ui.semantics.onAutofillText
 import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.onFillData
 import androidx.compose.ui.semantics.onImeAction
 import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.password
 import androidx.compose.ui.semantics.pasteText
 import androidx.compose.ui.semantics.setSelection
 import androidx.compose.ui.semantics.setText
+import androidx.compose.ui.semantics.textCompositionRange
 import androidx.compose.ui.semantics.textSelectionRange
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -214,7 +225,11 @@ internal class TextFieldDecoratorModifierNode(
             onFocusChange = { isFocused ->
                 val editable = enabled && !readOnly
                 if (isFocused) {
-                    if (editable) {
+                    applyCurrentInputMode()
+                    if (
+                        editable &&
+                            !ComposeFoundationFlags.isTextFieldWaitWindowFocusForInputSessionEnabled
+                    ) {
                         startInputSession(fromTap = false)
                     }
                 } else {
@@ -237,9 +252,11 @@ internal class TextFieldDecoratorModifierNode(
             SuspendingPointerInputModifierNode {
                 coroutineScope {
                     with(textFieldSelectionState) {
-                        val requestFocus = { if (!isFocused) requestFocus() }
+                        val requestFocus = { if (!isWindowAndTextFieldFocused) requestFocus() }
 
-                        launch(start = CoroutineStart.UNDISPATCHED) { detectTouchMode() }
+                        launch(start = CoroutineStart.UNDISPATCHED) {
+                            detectDirectTouchInteraction()
+                        }
                         launch(start = CoroutineStart.UNDISPATCHED) {
                             detectTextFieldTapGestures(
                                 requestFocus = requestFocus,
@@ -265,16 +282,8 @@ internal class TextFieldDecoratorModifierNode(
     /**
      * The last enter event that was submitted to [interactionSource] from [dragAndDropNode]. We
      * need to keep a reference to this event to send a follow-up exit event.
-     *
-     * We are using interaction source hover state as a hacky capsule to carry dragging events to
-     * core modifier node which draws the cursor and shows the magnifier. TextFields are not really
-     * focused when a dragging text hovers over them. Focused TextFields should have active input
-     * connections that is not required in a drag and drop scenario.
-     *
-     * When proper hover events are implemented for [interactionSource], the below code in
-     * [dragAndDropNode] should be revised.
      */
-    private var dragEnterEvent: HoverInteraction.Enter? = null
+    private var dragEnterEvent: DragAndDropHoverInteraction.Enter? = null
 
     /** Special Drag and Drop node for BasicTextField that is also aware of `receiveContent` API. */
     private val dragAndDropNode =
@@ -296,7 +305,8 @@ internal class TextFieldDecoratorModifierNode(
                     }
                 },
                 onEntered = {
-                    dragEnterEvent = HoverInteraction.Enter().also { interactionSource.tryEmit(it) }
+                    dragEnterEvent =
+                        DragAndDropHoverInteraction.Enter().also { interactionSource.tryEmit(it) }
                     // Although BasicTextField itself is not a `receiveContent` node, it should
                     // behave like one. Delegate the enter event to the ancestor nodes just like
                     // `receiveContent` itself would.
@@ -382,16 +392,18 @@ internal class TextFieldDecoratorModifierNode(
      * [textFieldKeyEventHandler] because Clipboard actions require a [coroutineScope] which is
      * available here.
      */
-    private val clipboardKeyCommandsHandler = ClipboardKeyCommandsHandler { keyCommand ->
-        coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
-            when (keyCommand) {
-                KeyCommand.COPY -> textFieldSelectionState.copy(false)
-                KeyCommand.CUT -> textFieldSelectionState.cut()
-                KeyCommand.PASTE -> textFieldSelectionState.paste()
-                else -> Unit
+    private val clipboardKeyCommandsHandler =
+        ClipboardKeyCommandsHandler { keyCommand, isFromHardwareSource ->
+            coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                when (keyCommand) {
+                    KeyCommand.COPY -> textFieldSelectionState.copy(false)
+                    KeyCommand.CUT -> textFieldSelectionState.cut()
+                    KeyCommand.PASTE ->
+                        textFieldSelectionState.paste(isFromHardwareSource = isFromHardwareSource)
+                    else -> Unit
+                }
             }
         }
-    }
 
     /**
      * A coroutine job that observes text and layout changes in selection state to react to those
@@ -505,10 +517,9 @@ internal class TextFieldDecoratorModifierNode(
 
                 if (isFocused && toolbarAndHandlesVisibilityObserverJob != null) {
                     toolbarAndHandlesVisibilityObserverJob?.cancel()
-                    toolbarAndHandlesVisibilityObserverJob =
-                        coroutineScope.launch {
-                            textFieldSelectionState.startToolbarAndHandlesVisibilityObserver()
-                        }
+                    toolbarAndHandlesVisibilityObserverJob = coroutineScope.launch {
+                        textFieldSelectionState.startToolbarAndHandlesVisibilityObserver()
+                    }
                 }
             }
             textFieldSelectionState.requestAutofillAction = { requestAutofill() }
@@ -541,6 +552,10 @@ internal class TextFieldDecoratorModifierNode(
         inputText = AnnotatedString(textFieldState.untransformedText.toString())
         editableText = AnnotatedString(text.toString())
         textSelectionRange = selection
+        textCompositionRange = textFieldState.untransformedComposition
+
+        inputTextSuggestionState =
+            InputTextSuggestionState(textFieldState.userCommit, textFieldState.suggestionSelected)
 
         if (!enabled) disabled()
         if (isPassword) password()
@@ -551,13 +566,28 @@ internal class TextFieldDecoratorModifierNode(
         // The developer will set `contentType`. TF populates the other autofill-related
         // semantics. And since we're in a TextField, set the `contentDataType` to be "Text".
         this.contentDataType = ContentDataType.Text
-
-        onAutofillText { newText ->
-            if (!editable) return@onAutofillText false
-            textFieldState.replaceAll(newText)
+        FillableData.createFromText(text)?.let { this.fillableData = it }
+        onFillData { dataValue ->
+            if (!editable) return@onFillData false
+            dataValue.textValue?.let { textFieldState.replaceAll(it) }
             autofillHighlightOn = true
             coroutineScope.launch { observeUntransformedTextChanges() }
             true
+        }
+
+        when (keyboardOptions.keyboardType) {
+            KeyboardType.Email -> {
+                contentType = ContentType.EmailAddress
+            }
+            KeyboardType.Password -> {
+                contentType = ContentType.Password
+            }
+            KeyboardType.NumberPassword -> {
+                contentType = ContentType.Password
+            }
+            KeyboardType.Phone -> {
+                contentType = ContentType.PhoneNumber
+            }
         }
 
         getTextLayoutResult {
@@ -678,14 +708,22 @@ internal class TextFieldDecoratorModifierNode(
      * sources, so any change to them requires this method to be invoked.
      */
     private fun onIsFocusedUpdated() {
-        textFieldSelectionState.isFocused = this.isFocused
-        if (isFocused && toolbarAndHandlesVisibilityObserverJob == null) {
-            // only start a new job is there's not an ongoing one.
-            toolbarAndHandlesVisibilityObserverJob =
-                coroutineScope.launch {
+        textFieldSelectionState.isWindowAndTextFieldFocused = this.isFocused
+        if (isFocused) {
+            if (ComposeFoundationFlags.isTextFieldWaitWindowFocusForInputSessionEnabled) {
+                val editable = enabled && !readOnly
+                val hasOngoingSession = inputSessionJob?.isActive == true
+                if (editable && !hasOngoingSession) {
+                    startInputSession(fromTap = false)
+                }
+            }
+            if (toolbarAndHandlesVisibilityObserverJob == null) {
+                // only start a new job is there's not an ongoing one.
+                toolbarAndHandlesVisibilityObserverJob = coroutineScope.launch {
                     textFieldSelectionState.startToolbarAndHandlesVisibilityObserver()
                 }
-        } else if (!isFocused) {
+            }
+        } else {
             toolbarAndHandlesVisibilityObserverJob?.cancel()
             toolbarAndHandlesVisibilityObserverJob = null
         }
@@ -711,10 +749,6 @@ internal class TextFieldDecoratorModifierNode(
 
     override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
         textLayoutState.decoratorNodeCoordinates = coordinates
-
-        if (enabled) {
-            focusableNode.onGloballyPositioned(coordinates)
-        }
     }
 
     override fun onPointerEvent(
@@ -777,13 +811,19 @@ internal class TextFieldDecoratorModifierNode(
         dragAndDropNode.onRemeasured(size)
     }
 
+    private fun applyCurrentInputMode() {
+        if (currentValueOf(LocalInputModeManager).inputMode != InputMode.Touch) {
+            textFieldSelectionState.isDirectTouchInteraction = false
+        }
+    }
+
     private fun startInputSession(fromTap: Boolean) {
         if (!fromTap && !keyboardOptions.showKeyboardOnFocusOrDefault) return
 
         val receiveContentConfiguration = getReceiveContentConfiguration()
 
         inputSessionJob =
-            coroutineScope.launch {
+            coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
                 // This will automatically cancel the previous session, if any, so we don't need to
                 // cancel the inputSessionJob ourselves.
                 establishTextInputSession {
@@ -800,6 +840,9 @@ internal class TextFieldDecoratorModifierNode(
                         },
                         stylusHandwritingTrigger = stylusHandwritingTrigger,
                         viewConfiguration = currentValueOf(LocalViewConfiguration),
+                        updateDirectTouchInteraction = {
+                            textFieldSelectionState.isDirectTouchInteraction = it
+                        },
                     )
                 }
             }
@@ -817,7 +860,7 @@ internal class TextFieldDecoratorModifierNode(
 
     private fun emitDragExitEvent() {
         dragEnterEvent?.let {
-            interactionSource.tryEmit(HoverInteraction.Exit(it))
+            interactionSource.tryEmit(DragAndDropHoverInteraction.Exit(it))
             dragEnterEvent = null
         }
     }
@@ -866,4 +909,5 @@ internal expect suspend fun PlatformTextInputSession.platformSpecificTextInputSe
     updateSelectionState: (() -> Unit)? = null,
     stylusHandwritingTrigger: MutableSharedFlow<Unit>? = null,
     viewConfiguration: ViewConfiguration? = null,
+    updateDirectTouchInteraction: (Boolean) -> Unit,
 ): Nothing

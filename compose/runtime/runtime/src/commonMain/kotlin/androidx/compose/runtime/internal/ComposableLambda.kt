@@ -15,6 +15,7 @@
  */
 
 @file:OptIn(InternalComposeApi::class)
+@file:Suppress("EXPECT_ACTUAL_INCOMPATIBILITY") // b/418285824
 
 package androidx.compose.runtime.internal
 
@@ -206,7 +207,13 @@ internal class ComposableLambdaImpl(val key: Int, private val tracked: Boolean, 
             (_block
                 as
                 (
-                    p1: Any?, p2: Any?, p3: Any?, p4: Any?, p5: Any?, c: Composer, changed: Int,
+                    p1: Any?,
+                    p2: Any?,
+                    p3: Any?,
+                    p4: Any?,
+                    p5: Any?,
+                    c: Composer,
+                    changed: Int,
                 ) -> Any?)(p1, p2, p3, p4, p5, c, dirty)
         c.endRestartGroup()?.updateScope { nc, _ ->
             this(p1, p2, p3, p4, p5, nc, updateChangedFlags(changed) or 0b1)
@@ -1369,4 +1376,7 @@ public fun composableLambdaInstance(key: Int, tracked: Boolean, block: Any): Com
 @Composable
 @ComposeCompilerApi
 public fun rememberComposableLambda(key: Int, tracked: Boolean, block: Any): ComposableLambda =
-    remember { ComposableLambdaImpl(key, tracked, block) }.also { it.update(block) }
+    remember {
+        ComposableLambdaImpl(key, tracked, block)
+    }
+    .also { it.update(block) }

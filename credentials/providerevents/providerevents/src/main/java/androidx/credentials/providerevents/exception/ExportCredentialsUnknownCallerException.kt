@@ -17,7 +17,7 @@
 package androidx.credentials.providerevents.exception
 
 /** The credential json cannot be trusted because the caller is unknown */
-public class ExportCredentialsUnknownCallerException(errorMessage: CharSequence? = null) :
+public class ExportCredentialsUnknownCallerException(errorMessage: String? = null) :
     ExportCredentialsException(TYPE_EXPORT_CREDENTIALS_UNKNOWN_CALLER_EXCEPTION, errorMessage) {
     internal companion object {
         internal const val TYPE_EXPORT_CREDENTIALS_UNKNOWN_CALLER_EXCEPTION: String =

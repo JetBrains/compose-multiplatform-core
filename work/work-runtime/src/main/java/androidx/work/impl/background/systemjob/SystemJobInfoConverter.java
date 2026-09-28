@@ -33,7 +33,6 @@ import androidx.work.Clock;
 import androidx.work.Constraints;
 import androidx.work.Logger;
 import androidx.work.NetworkType;
-import androidx.work.impl.WorkManagerImpl;
 import androidx.work.impl.model.WorkSpec;
 
 import org.jspecify.annotations.NonNull;
@@ -43,7 +42,6 @@ import org.jspecify.annotations.NonNull;
  *
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@RequiresApi(api = WorkManagerImpl.MIN_JOB_SCHEDULER_API_LEVEL)
 class SystemJobInfoConverter {
     private static final String TAG = Logger.tagWithPrefix("SystemJobInfoConverter");
 
@@ -73,6 +71,21 @@ class SystemJobInfoConverter {
      * @return The {@link JobInfo} representing the same information as the {@link WorkSpec}
      */
     JobInfo convert(WorkSpec workSpec, int jobId) {
+        long nextRunTime = workSpec.calculateNextRunTime();
+        long now = mClock.currentTimeMillis();
+        long offset = Math.max(nextRunTime - now, 0);
+        return convert(workSpec, jobId, offset);
+    }
+
+    /**
+     * Converts a {@link WorkSpec} into a {@link JobInfo} with a custom initial delay offset.
+     *
+     * @param workSpec The {@link WorkSpec} to convert
+     * @param jobId    The {@code jobId} to use
+     * @param offset   The initial delay offset in milliseconds
+     * @return The {@link JobInfo} representing the same information as the {@link WorkSpec}
+     */
+    JobInfo convert(WorkSpec workSpec, int jobId, long offset) {
         Constraints constraints = workSpec.constraints;
         PersistableBundle extras = new PersistableBundle();
         extras.putString(EXTRA_WORK_SPEC_ID, workSpec.id);
@@ -95,10 +108,6 @@ class SystemJobInfoConverter {
                     ? JobInfo.BACKOFF_POLICY_LINEAR : JobInfo.BACKOFF_POLICY_EXPONENTIAL;
             builder.setBackoffCriteria(workSpec.backoffDelayDuration, backoffPolicy);
         }
-
-        long nextRunTime = workSpec.calculateNextRunTime();
-        long now = mClock.currentTimeMillis();
-        long offset = Math.max(nextRunTime - now, 0);
 
         if (Build.VERSION.SDK_INT <= 28) {
             // Before API 29, Jobs needed at least one constraint. Therefore before API 29 we

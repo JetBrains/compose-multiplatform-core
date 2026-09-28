@@ -353,7 +353,8 @@ class GlanceAppWidgetReceiverScreenshotTest {
             ) {
                 Text(
                     "Upper half",
-                    modifier = GlanceModifier.defaultWeight().fillMaxWidth().background(Color.Green),
+                    modifier =
+                        GlanceModifier.defaultWeight().fillMaxWidth().background(Color.Green),
                 )
                 Text(
                     "Lower right half",
@@ -376,7 +377,8 @@ class GlanceAppWidgetReceiverScreenshotTest {
             ) {
                 Text(
                     "Upper half",
-                    modifier = GlanceModifier.defaultWeight().fillMaxWidth().background(Color.Green),
+                    modifier =
+                        GlanceModifier.defaultWeight().fillMaxWidth().background(Color.Green),
                 )
                 Text(
                     "Lower right half",
@@ -663,6 +665,20 @@ class GlanceAppWidgetReceiverScreenshotTest {
         mScreenshotRule.checkScreenshot(mHostRule.mHostView, "buttonTests_buttonDefaultColors")
     }
 
+    @Test
+    fun buttonTests_filledButtonNoText_iconIsCentered() {
+        // TODO: until b/479573471 is fixed, icons will be off center. When bug is fixed, goldens
+        //  will need to be regenerated
+        TestGlanceAppWidget.uiDefinition = {
+            ButtonComponentsScreenshotTests.FilledButtonNoTextTest()
+        }
+        mHostRule.startHost()
+        mScreenshotRule.checkScreenshot(
+            mHostRule.mHostView,
+            "buttonTests_filledButtonNoText_iconIsCentered",
+        )
+    }
+
     /**
      * Button should ignore [androidx.glance.BackgroundModifier]. It does not support background
      * images, and background color should be set via [androidx.glance.ButtonColors].
@@ -677,7 +693,9 @@ class GlanceAppWidgetReceiverScreenshotTest {
                     text = "Button w/incorrect bg modifier: image",
                     onClick = {},
                     modifier =
-                        GlanceModifier.background(imageProvider = ImageProvider(R.drawable.compose)),
+                        GlanceModifier.background(
+                            imageProvider = ImageProvider(R.drawable.compose)
+                        ),
                 )
                 Spacer(GlanceModifier.size(4.dp))
 
@@ -1043,7 +1061,8 @@ private fun CheckBoxScreenshotTest() {
                     fontWeight = FontWeight.Medium,
                     fontStyle = FontStyle.Italic,
                 ),
-            colors = CheckboxDefaults.colors(checkedColor = Color.Red, uncheckedColor = Color.Green),
+            colors =
+                CheckboxDefaults.colors(checkedColor = Color.Red, uncheckedColor = Color.Green),
         )
     }
 }
@@ -1308,6 +1327,31 @@ private object ButtonComponentsScreenshotTests {
                 Space()
                 CircleIconButton(imageProvider = icon, contentDescription = null, onClick = onClick)
             }
+        }
+    }
+
+    @Composable
+    fun FilledButtonNoTextTest() {
+        Row(
+            GlanceModifier.fillMaxWidth()
+                .padding(8.dp)
+                .background(GlanceTheme.colors.surfaceVariant)
+        ) {
+            OutlineButton(
+                text = "",
+                icon = ImageProvider(R.drawable.filled_oval),
+                contentColor = GlanceTheme.colors.onSurface,
+                onClick = {},
+                modifier = GlanceModifier.defaultWeight().height(48.dp),
+            )
+            Spacer(GlanceModifier.width(8.dp))
+            OutlineButton(
+                text = "",
+                icon = ImageProvider(R.drawable.filled_oval),
+                contentColor = GlanceTheme.colors.onSurface,
+                onClick = {},
+                modifier = GlanceModifier.defaultWeight().height(48.dp),
+            )
         }
     }
 }

@@ -16,8 +16,8 @@
 
 package androidx.camera.camera2.pipe.compat
 
-import android.content.Context
 import android.graphics.ColorSpace
+import android.hardware.HardwareBuffer
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
@@ -34,9 +34,10 @@ import android.hardware.camera2.params.InputConfiguration
 import android.hardware.camera2.params.MultiResolutionStreamInfo
 import android.hardware.camera2.params.OutputConfiguration
 import android.hardware.camera2.params.SessionConfiguration
+import android.media.Image
 import android.media.ImageReader
 import android.media.ImageWriter
-import android.os.Handler
+import android.util.Range
 import android.util.Size
 import android.view.Surface
 import androidx.annotation.RequiresApi
@@ -44,105 +45,6 @@ import androidx.annotation.RequiresPermission
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.availableVideoStabilizationModes
 import java.util.concurrent.Executor
-
-@RequiresApi(23)
-internal object Api23Compat {
-    @JvmStatic
-    @Throws(CameraAccessException::class)
-    @Suppress("deprecation")
-    fun createReprocessableCaptureSession(
-        cameraDevice: CameraDevice,
-        inputConfig: InputConfiguration,
-        outputs: List<Surface>,
-        callback: CameraCaptureSession.StateCallback,
-        handler: Handler?,
-    ) {
-        cameraDevice.createReprocessableCaptureSession(inputConfig, outputs, callback, handler)
-    }
-
-    @JvmStatic
-    @Throws(CameraAccessException::class)
-    @Suppress("deprecation")
-    fun createConstrainedHighSpeedCaptureSession(
-        cameraDevice: CameraDevice,
-        outputs: List<Surface>,
-        stateCallback: CameraCaptureSession.StateCallback,
-        handler: Handler?,
-    ) {
-        cameraDevice.createConstrainedHighSpeedCaptureSession(outputs, stateCallback, handler)
-    }
-
-    @JvmStatic
-    @Throws(CameraAccessException::class)
-    fun createReprocessCaptureRequest(
-        cameraDevice: CameraDevice,
-        inputResult: TotalCaptureResult,
-    ): CaptureRequest.Builder {
-        return cameraDevice.createReprocessCaptureRequest(inputResult)
-    }
-
-    @JvmStatic
-    fun isReprocessable(cameraCaptureSession: CameraCaptureSession): Boolean {
-        return cameraCaptureSession.isReprocessable
-    }
-
-    @JvmStatic
-    fun getInputSurface(cameraCaptureSession: CameraCaptureSession): Surface? {
-        return cameraCaptureSession.inputSurface
-    }
-
-    @JvmStatic
-    fun newInputConfiguration(width: Int, height: Int, format: Int): InputConfiguration {
-        return InputConfiguration(width, height, format)
-    }
-
-    @JvmStatic
-    fun checkSelfPermission(context: Context, permission: String): Int {
-        return context.checkSelfPermission(permission)
-    }
-}
-
-@RequiresApi(24)
-internal object Api24Compat {
-    @JvmStatic
-    @Throws(CameraAccessException::class)
-    @Suppress("deprecation")
-    fun createCaptureSessionByOutputConfigurations(
-        cameraDevice: CameraDevice,
-        outputConfig: List<OutputConfiguration?>,
-        stateCallback: CameraCaptureSession.StateCallback,
-        handler: Handler?,
-    ) {
-        cameraDevice.createCaptureSessionByOutputConfigurations(
-            outputConfig,
-            stateCallback,
-            handler,
-        )
-    }
-
-    @JvmStatic
-    @Throws(CameraAccessException::class)
-    @Suppress("deprecation")
-    fun createReprocessableCaptureSessionByConfigurations(
-        cameraDevice: CameraDevice,
-        inputConfig: InputConfiguration,
-        outputs: List<OutputConfiguration?>,
-        stateCallback: CameraCaptureSession.StateCallback,
-        handler: Handler?,
-    ) {
-        cameraDevice.createReprocessableCaptureSessionByConfigurations(
-            inputConfig,
-            outputs,
-            stateCallback,
-            handler,
-        )
-    }
-
-    @JvmStatic
-    fun getSurfaceGroupId(outputConfiguration: OutputConfiguration): Int {
-        return outputConfiguration.surfaceGroupId
-    }
-}
 
 @RequiresApi(26)
 internal object Api26Compat {
@@ -282,6 +184,20 @@ internal object Api28Compat {
     fun discardFreeBuffers(imageReader: ImageReader) {
         imageReader.discardFreeBuffers()
     }
+
+    @JvmStatic
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> unwrapAsHardwareBuffer(image: Image, type: Class<T>): T? {
+        if (type == HardwareBuffer::class.java) {
+            return image.getHardwareBuffer() as T?
+        }
+        return null
+    }
+
+    @JvmStatic
+    fun getHardwareBuffer(image: Image): HardwareBuffer? {
+        return image.hardwareBuffer
+    }
 }
 
 @RequiresApi(29)
@@ -336,10 +252,9 @@ internal object Api31Compat {
             val inputData = inputConfigData.first()
             return InputConfiguration(inputData.width, inputData.height, inputData.format)
         }
-        val multiResolutionInput =
-            inputConfigData.map { input ->
-                MultiResolutionStreamInfo(input.width, input.height, cameraId)
-            }
+        val multiResolutionInput = inputConfigData.map { input ->
+            MultiResolutionStreamInfo(input.width, input.height, cameraId)
+        }
         return InputConfiguration(multiResolutionInput, inputConfigData.first().format)
     }
 
@@ -406,6 +321,19 @@ internal object Api31Compat {
         extension: Int,
         klass: Class<*>,
     ): List<Size> = extensionCharacteristics.getExtensionSupportedSizes(extension, klass)
+
+    @JvmStatic
+    fun getEstimatedCaptureLatencyRangeMillis(
+        extensionCharacteristics: CameraExtensionCharacteristics,
+        extension: Int,
+        captureSize: Size,
+        imageFormat: Int,
+    ): Range<Long>? =
+        extensionCharacteristics.getEstimatedCaptureLatencyRangeMillis(
+            extension,
+            captureSize,
+            imageFormat,
+        )
 }
 
 @RequiresApi(33)
@@ -496,6 +424,13 @@ internal object Api33Compat {
             }
             .build()
     }
+
+    @JvmStatic fun getDataSpace(image: Image) = image.dataSpace
+
+    @JvmStatic
+    fun setDataSpace(image: Image, value: Int) {
+        image.dataSpace = value
+    }
 }
 
 @RequiresApi(34)
@@ -579,5 +514,37 @@ internal object Api35Compat {
         outputs: List<OutputConfiguration>,
     ): SessionConfiguration {
         return SessionConfiguration(sessionType, outputs)
+    }
+
+    @JvmStatic
+    fun createCaptureRequest(
+        cameraDeviceSetup: CameraDevice.CameraDeviceSetup,
+        templateType: Int,
+    ): CaptureRequest.Builder {
+        return cameraDeviceSetup.createCaptureRequest(templateType)
+    }
+
+    @JvmStatic
+    fun getAvailableSessionCharacteristicsKeys(
+        cameraCharacteristics: CameraCharacteristics
+    ): List<CameraCharacteristics.Key<*>>? {
+        return cameraCharacteristics.availableSessionCharacteristicsKeys
+    }
+
+    @JvmStatic
+    fun getExtensionKeys(
+        extensionCharacteristics: CameraExtensionCharacteristics,
+        extension: Int,
+    ): Set<CameraCharacteristics.Key<*>> {
+        return extensionCharacteristics.getKeys(extension)
+    }
+
+    @JvmStatic
+    fun <T> getExtensionCharacteristic(
+        extensionCharacteristics: CameraExtensionCharacteristics,
+        extension: Int,
+        key: CameraCharacteristics.Key<T>,
+    ): T? {
+        return extensionCharacteristics.get(extension, key)
     }
 }

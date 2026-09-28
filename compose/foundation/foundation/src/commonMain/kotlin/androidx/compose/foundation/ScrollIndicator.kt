@@ -1,0 +1,72 @@
+/*
+ * Copyright 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.compose.foundation
+
+import androidx.annotation.IntRange
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.annotation.FrequentlyChangingValue
+
+/**
+ * Represents the state required to draw a scroll indicator (e.g., a scrollbar), which is typically
+ * provided by a scrollable component.
+ *
+ * For scrollable components with a large number of items, such as lazy layouts, implementations may
+ * need to provide a reasonable heuristic for properties like [scrollOffset] and [contentSize], as
+ * calculating the exact value might be computationally expensive or impossible.
+ */
+@Stable
+public interface ScrollIndicatorState {
+    /**
+     * The current scroll offset of the content from the visual start of the container, typically in
+     * pixels.
+     *
+     * For a vertical scrollable component, it's the offset from the top edge. For a horizontal
+     * scrollable component, it's the offset from the left edge in LTR or the right edge in RTL.
+     * This absolute offset is unaffected by reverse layout or reverse scrolling.
+     *
+     * For lazy layouts, this value may represent an estimated scroll offset.
+     *
+     * Implementations should return [Int.MAX_VALUE] if this value is not yet known.
+     */
+    @get:FrequentlyChangingValue @get:IntRange(from = 0) public val scrollOffset: Int
+
+    /**
+     * The total size of the scrollable content, typically in pixels.
+     *
+     * For a vertical scrollable component, this is the total height of the content. For a
+     * horizontal scrollable component, this is the total width of the content.
+     *
+     * For lazy layouts, this value may represent an estimated total size of content, and may change
+     * as [scrollOffset] changes.
+     *
+     * The scroll range (how far the content can scroll) can be determined by subtracting the
+     * [viewportSize] from this [contentSize].
+     *
+     * Implementations should return [Int.MAX_VALUE] if this value is not yet known.
+     */
+    @get:IntRange(from = 0) public val contentSize: Int
+
+    /**
+     * The size of the visible portion of the scrollable content, typically in pixels.
+     *
+     * For a vertical scrollable component, this is the height of the viewport. For a horizontal
+     * scrollable component, this is the width of the viewport.
+     *
+     * Implementations should return [Int.MAX_VALUE] if this value is not yet known.
+     */
+    @get:IntRange(from = 0) public val viewportSize: Int
+}

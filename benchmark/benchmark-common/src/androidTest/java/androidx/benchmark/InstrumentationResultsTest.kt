@@ -136,11 +136,10 @@ class InstrumentationResultsTest {
             )
         assertEquals(
             """
-                |foo
-                |  Metric   [min 0.0](file://iter0.trace),   [median 1.1](file://iter1.trace),   [max 2.2](file://iter2.trace)
-                |    Traces: Iteration [0](file://iter0.trace) [1](file://iter1.trace) [2](file://iter2.trace)
-                |
-            """
+            |foo
+            |  Metric   [min 0.0](file://iter0.trace),   [median 1.1](file://iter1.trace),   [max 2.2](file://iter2.trace)
+            |    Traces: Iteration [0](file://iter0.trace) [1](file://iter1.trace) [2](file://iter2.trace)
+            |"""
                 .trimMargin(),
             summary.summaryV2,
         )
@@ -164,12 +163,11 @@ class InstrumentationResultsTest {
             )
         assertEquals(
             """
-                |foo
-                |  Metric1   [min   0.0](file://iter0.trace),   [median   1.0](file://iter1.trace),   [max   2.0](file://iter2.trace)
-                |  Metric2   [min   0.0](file://iter2.trace),   [median 111.0](file://iter1.trace),   [max 222.0](file://iter0.trace)
-                |    Traces: Iteration [0](file://iter0.trace) [1](file://iter1.trace) [2](file://iter2.trace)
-                |
-            """
+            |foo
+            |  Metric1   [min   0.0](file://iter0.trace),   [median   1.0](file://iter1.trace),   [max   2.0](file://iter2.trace)
+            |  Metric2   [min   0.0](file://iter2.trace),   [median 111.0](file://iter1.trace),   [max 222.0](file://iter0.trace)
+            |    Traces: Iteration [0](file://iter0.trace) [1](file://iter1.trace) [2](file://iter2.trace)
+            |"""
                 .trimMargin(),
             summary.summaryV2,
         )
@@ -192,11 +190,10 @@ class InstrumentationResultsTest {
             )
         assertEquals(
             """
-                |foo
-                |  Metric1   P50   50.0,   P90   90.0,   P95   95.0,   P99   99.0
-                |    Traces: Iteration [0](file://iter0.trace) [1](file://iter1.trace) [2](file://iter2.trace)
-                |
-            """
+            |foo
+            |  Metric1   P50   50.0,   P90   90.0,   P95   95.0,   P99   99.0
+            |    Traces: Iteration [0](file://iter0.trace) [1](file://iter1.trace) [2](file://iter2.trace)
+            |"""
                 .trimMargin(),
             summary.summaryV2,
         )
@@ -218,17 +215,181 @@ class InstrumentationResultsTest {
             )
         assertEquals(
             """
-                |foo
-                |  Metric1   [min   0.0](file://iter0.trace),   [median   1.0](file://iter1.trace),   [max   2.0](file://iter2.trace)
-                |  Metric2   P50   50.0,   P90   90.0,   P95   95.0,   P99   99.0
-                |    Traces: Iteration [0](file://iter0.trace) [1](file://iter1.trace) [2](file://iter2.trace)
-                |
-            """
+            |foo
+            |  Metric1   [min   0.0](file://iter0.trace),   [median   1.0](file://iter1.trace),   [max   2.0](file://iter2.trace)
+            |  Metric2   P50   50.0,   P90   90.0,   P95   95.0,   P99   99.0
+            |    Traces: Iteration [0](file://iter0.trace) [1](file://iter1.trace) [2](file://iter2.trace)
+            |"""
                 .trimMargin(),
             summary.summaryV2,
         )
         // v1 is deprecated and should be the same as v2
         assertEquals(summary.summaryV1, summary.summaryV2)
+    }
+
+    @Test
+    public fun ideSummary_profilerResults() {
+        val single = MetricResult("Metric1", listOf(0.0, 1.0, 2.0))
+        val absoluteTracePaths = createAbsoluteTracePaths(3)
+        val profilerResults =
+            listOf(
+                Profiler.ResultFile.ofPerfettoTrace(
+                    label = "Method Trace Perfetto Iteration 0",
+                    absolutePath =
+                        File(Outputs.dirUsableByAppAndShell, "method_perfetto.trace").absolutePath,
+                ),
+                Profiler.ResultFile.ofMethodTrace(
+                    label = "Method Trace Iteration 0",
+                    absolutePath =
+                        File(Outputs.dirUsableByAppAndShell, "method.trace").absolutePath,
+                ),
+                Profiler.ResultFile.ofPerfettoTrace(
+                    label = "Memory Profiling Iteration 0",
+                    absolutePath =
+                        File(Outputs.dirUsableByAppAndShell, "memory.trace").absolutePath,
+                ),
+            )
+        val summary =
+            InstrumentationResults.ideSummary(
+                testName = "foo",
+                measurements =
+                    Measurements(
+                        singleMetrics = listOf(single),
+                        sampledMetrics = emptyList(),
+                    ),
+                iterationTracePaths = absoluteTracePaths,
+                profilerResults = profilerResults,
+            )
+        assertEquals(
+            """
+            |foo
+            |  Metric1   [min 0.0](file://iter0.trace),   [median 1.0](file://iter1.trace),   [max 2.0](file://iter2.trace)
+            |    Traces: Iteration [0](file://iter0.trace) [1](file://iter1.trace) [2](file://iter2.trace)
+            |    Profiling Traces:
+            |        [Method Trace Perfetto Iteration 0](file://method_perfetto.trace)
+            |        [Method Trace Iteration 0](file://method.trace)
+            |        [Memory Profiling Iteration 0](file://memory.trace)
+            |"""
+                .trimMargin(),
+            summary.summaryV2,
+        )
+    }
+
+    @Test
+    public fun ideSummary_profilerResults_onlyProfilerTraces() {
+        val single = MetricResult("Metric1", listOf(0.0, 1.0, 2.0))
+        val profilerResults =
+            listOf(
+                Profiler.ResultFile.ofPerfettoTrace(
+                    label = "Memory Profiling Iteration 0",
+                    absolutePath =
+                        File(Outputs.dirUsableByAppAndShell, "memory.trace").absolutePath,
+                )
+            )
+        val summary =
+            InstrumentationResults.ideSummary(
+                testName = "foo",
+                measurements =
+                    Measurements(
+                        singleMetrics = listOf(single),
+                        sampledMetrics = emptyList(),
+                    ),
+                iterationTracePaths = emptyList(),
+                profilerResults = profilerResults,
+            )
+        assertEquals(
+            """
+            |foo
+            |  Metric1   min 0.0,   median 1.0,   max 2.0
+            |    Profiling Traces:
+            |        [Memory Profiling Iteration 0](file://memory.trace)
+            |"""
+                .trimMargin(),
+            summary.summaryV2,
+        )
+    }
+
+    @Test
+    public fun ideSummary_treeDisplay_profilerResults() {
+        val single = MetricResult("Metric1", listOf(0.0, 1.0, 2.0))
+        val absoluteTracePaths = createAbsoluteTracePaths(3)
+        val profilerResults =
+            listOf(
+                Profiler.ResultFile.ofPerfettoTrace(
+                    label = "Method Trace Perfetto Iteration 0",
+                    absolutePath =
+                        File(Outputs.dirUsableByAppAndShell, "method_perfetto.trace").absolutePath,
+                ),
+                Profiler.ResultFile.ofPerfettoTrace(
+                    label = "Memory Profiling Iteration 0",
+                    absolutePath =
+                        File(Outputs.dirUsableByAppAndShell, "memory.trace").absolutePath,
+                ),
+            )
+        val summary =
+            InstrumentationResults.ideSummary(
+                testName = "foo",
+                measurements =
+                    Measurements(
+                        singleMetrics = listOf(single),
+                        sampledMetrics = emptyList(),
+                    ),
+                iterationTracePaths = absoluteTracePaths,
+                profilerResults = profilerResults,
+                useTreeDisplayFormat = true,
+            )
+        val nbsp = '\u00A0'
+        assertEquals(
+            """
+            |foo
+            |├── Metrics
+            |│$nbsp$nbsp$nbsp└──   Metric1   [min 0.0](file://iter0.trace),   [median 1.0](file://iter1.trace),   [max 2.0](file://iter2.trace)
+            |├── Traces
+            |│$nbsp$nbsp$nbsp└── Iteration [0](file://iter0.trace) [1](file://iter1.trace) [2](file://iter2.trace)
+            |└── Profiling Traces
+            |$nbsp$nbsp$nbsp$nbsp├── [Method Trace Perfetto Iteration 0](file://method_perfetto.trace)
+            |$nbsp$nbsp$nbsp$nbsp└── [Memory Profiling Iteration 0](file://memory.trace)
+            |"""
+                .trimMargin(),
+            summary.summaryV2,
+        )
+    }
+
+    @Test
+    public fun ideSummary_treeDisplay_onlyProfilerTraces() {
+        val single = MetricResult("Metric1", listOf(0.0, 1.0, 2.0))
+        val profilerResults =
+            listOf(
+                Profiler.ResultFile.ofPerfettoTrace(
+                    label = "Memory Profiling Iteration 0",
+                    absolutePath =
+                        File(Outputs.dirUsableByAppAndShell, "memory.trace").absolutePath,
+                )
+            )
+        val summary =
+            InstrumentationResults.ideSummary(
+                testName = "foo",
+                measurements =
+                    Measurements(
+                        singleMetrics = listOf(single),
+                        sampledMetrics = emptyList(),
+                    ),
+                iterationTracePaths = emptyList(),
+                profilerResults = profilerResults,
+                useTreeDisplayFormat = true,
+            )
+        val nbsp = '\u00A0'
+        assertEquals(
+            """
+            |foo
+            |├── Metrics
+            |│$nbsp$nbsp$nbsp└──   Metric1   min 0.0,   median 1.0,   max 2.0
+            |└── Profiling Traces
+            |$nbsp$nbsp$nbsp$nbsp└── [Memory Profiling Iteration 0](file://memory.trace)
+            |"""
+                .trimMargin(),
+            summary.summaryV2,
+        )
     }
 
     @Test
@@ -240,13 +401,16 @@ class InstrumentationResultsTest {
             InstrumentationResults.ideSummary(
                 testName = "foo",
                 measurements =
-                    Measurements(singleMetrics = listOf(metricResult), sampledMetrics = emptyList()),
+                    Measurements(
+                        singleMetrics = listOf(metricResult),
+                        sampledMetrics = emptyList(),
+                    ),
             )
         assertEquals(
             """
-                |warning
-                |string
-                |            0.0 ns    foo
+            |warning
+            |string
+            |            0.0 ns    foo
             """
                 .trimMargin(),
             summary.summaryV2,
@@ -273,13 +437,12 @@ class InstrumentationResultsTest {
             )
         assertEquals(
             """
-                |warning
-                |string
-                |foo
-                |  Metric   [min 0.0](file://iter0.trace),   [median 1.0](file://iter1.trace),   [max 2.0](file://iter2.trace)
-                |    Traces: Iteration [0](file://iter0.trace) [1](file://iter1.trace) [2](file://iter2.trace)
-                |
-            """
+            |warning
+            |string
+            |foo
+            |  Metric   [min 0.0](file://iter0.trace),   [median 1.0](file://iter1.trace),   [max 2.0](file://iter2.trace)
+            |    Traces: Iteration [0](file://iter0.trace) [1](file://iter1.trace) [2](file://iter2.trace)
+            |"""
                 .trimMargin(),
             summary.summaryV2,
         )

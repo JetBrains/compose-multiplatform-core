@@ -61,7 +61,7 @@ final class MouseInputHandler<K> extends MotionInputHandler<K> {
 
     @Override
     public boolean onDown(@NonNull MotionEvent e) {
-        if ((MotionEvents.isAltKeyPressed(e) && MotionEvents.isPrimaryMouseButtonPressed(e))
+        if ((MotionEvents.isAltKeyPressed(e) && MotionEvents.isPrimaryMouseButtonPressed(e, true))
                 || MotionEvents.isSecondaryMouseButtonPressed(e)) {
             return onRightClick(e);
         }
@@ -89,11 +89,7 @@ final class MouseInputHandler<K> extends MotionInputHandler<K> {
         }
 
         K key = item.getSelectionKey();
-        int hotspotness = MotionEvents.isCtrlKeyPressed(e)
-                ? ItemDetails.SELECTION_HOTSPOT_INSIDE_TOGGLE_MULTI
-                : item.classifySelectionHotspot(e);
-
-        switch (hotspotness) {
+        switch (item.classifySelectionHotspot(e)) {
             case ItemDetails.SELECTION_HOTSPOT_OUTSIDE:
                 if (!mSelectionTracker.isSelected(key)) {
                     focusItem(item);
@@ -128,7 +124,8 @@ final class MouseInputHandler<K> extends MotionInputHandler<K> {
 
     @Override
     public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
-        if (MotionEvents.isAltKeyPressed(e) || !MotionEvents.isPrimaryMouseButtonPressed(e)) {
+        if (MotionEvents.isAltKeyPressed(e)
+                || !MotionEvents.isPrimaryMouseButtonPressed(e, true)) {
             return false;
         }
 
@@ -147,23 +144,18 @@ final class MouseInputHandler<K> extends MotionInputHandler<K> {
         if (mFocusDelegate.hasFocusedItem() && MotionEvents.isShiftKeyPressed(e)) {
             mSelectionTracker.startRange(mFocusDelegate.getFocusedPosition());
             mSelectionTracker.extendRange(item.getPosition());
+        } else if (item.classifySelectionHotspot(e) == ItemDetails.SELECTION_HOTSPOT_OUTSIDE) {
+            focusItem(item);
         } else {
-            int hotspotness = MotionEvents.isCtrlKeyPressed(e)
-                    ? ItemDetails.SELECTION_HOTSPOT_INSIDE_TOGGLE_MULTI
-                    : item.classifySelectionHotspot(e);
-
-            if (hotspotness == ItemDetails.SELECTION_HOTSPOT_OUTSIDE) {
-                focusItem(item);
-            } else {
-                selectItem(item);
-            }
+            selectItem(item);
         }
         return true;
     }
 
     @Override
     public boolean onDoubleTap(@NonNull MotionEvent e) {
-        if (MotionEvents.isAltKeyPressed(e) || !MotionEvents.isPrimaryMouseButtonPressed(e)) {
+        if (MotionEvents.isAltKeyPressed(e)
+                || !MotionEvents.isPrimaryMouseButtonPressed(e, true)) {
             return false;
         }
 

@@ -33,10 +33,12 @@ import androidx.car.app.TestUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
 /** Tests for {@link GridItem}. */
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 @DoNotInstrument
 public class GridItemTest {
 
@@ -45,7 +47,6 @@ public class GridItemTest {
         GridItem gridItem = new GridItem.Builder().setTitle("Title").setImage(BACK).build();
 
         assertThat(BACK).isEqualTo(gridItem.getImage());
-        assertThat(gridItem.getImageType()).isEqualTo(GridItem.IMAGE_TYPE_LARGE);
         assertThat(gridItem.getTitle()).isNotNull();
         assertThat(gridItem.getText()).isNull();
         assertThat(gridItem.getBadge()).isNull();
@@ -199,8 +200,7 @@ public class GridItemTest {
     @Test
     public void create_setImagewithTypeAndBadge() {
         Badge b = new Badge.Builder().setHasDot(true).build();
-        GridItem gridItem = new GridItem.Builder().setTitle("Title")
-                .setImage(BACK, GridItem.IMAGE_TYPE_ICON, b).build();
+        GridItem gridItem = new GridItem.Builder().setTitle("Title").setImage(BACK, b).build();
 
         assertThat(gridItem.getBadge()).isEqualTo(b);
     }
@@ -270,5 +270,38 @@ public class GridItemTest {
         gridItem.getOnClickDelegate().sendClick(onDoneCallback);
         verify(onClickListener).onClick();
         verify(onDoneCallback).onSuccess(null);
+    }
+
+    @Test
+    public void setProgressBar() {
+        CarProgressBar bar = new CarProgressBar.Builder(0.5f).build();
+        GridItem gridItem = new GridItem.Builder().setTitle("Title").setImage(BACK)
+                .setProgressBar(bar).build();
+
+        assertThat(gridItem.getProgressBar()).isEqualTo(bar);
+    }
+
+    @Test
+    public void notEquals_differentProgressBar() {
+        CarProgressBar bar1 = new CarProgressBar.Builder(0.5f).build();
+        CarProgressBar bar2 = new CarProgressBar.Builder(0.6f).build();
+        GridItem gridItem = new GridItem.Builder().setTitle("Title").setImage(BACK)
+                .setProgressBar(bar1).build();
+        GridItem gridItem2 = new GridItem.Builder().setTitle("Title").setImage(BACK)
+                .setProgressBar(bar2).build();
+
+        assertThat(gridItem2).isNotEqualTo(gridItem);
+    }
+
+    @Test
+    public void textAndProgressBarSet_throws() {
+        CarProgressBar bar = new CarProgressBar.Builder(0.5f).build();
+        assertThrows(IllegalStateException.class,
+                () -> new GridItem.Builder()
+                        .setTitle("Title")
+                        .setImage(BACK)
+                        .setText("Text")
+                        .setProgressBar(bar)
+                        .build());
     }
 }

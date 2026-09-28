@@ -73,20 +73,19 @@ internal class CurvedRowChild(
     ): PartialLayoutInfo {
         // position children, sum angles.
         @Suppress("ListIterator")
-        var totalSweep =
-            children.sumOf { child ->
-                var childRadialPosition = parentOuterRadius
-                var childThickness = parentThickness
-                if (radialAlignment != null) {
-                    childRadialPosition =
-                        parentOuterRadius -
-                            radialAlignment.ratio * (parentThickness - child.estimatedThickness)
-                    childThickness = child.estimatedThickness
-                }
-
-                child.radialPosition(childRadialPosition, childThickness)
-                child.sweepRadians
+        val totalSweep = children.sumOf { child ->
+            var childRadialPosition = parentOuterRadius
+            var childThickness = parentThickness
+            if (radialAlignment != null) {
+                childRadialPosition =
+                    parentOuterRadius -
+                        radialAlignment.ratio * (parentThickness - child.estimatedThickness)
+                childThickness = child.estimatedThickness
             }
+
+            child.radialPosition(childRadialPosition, childThickness)
+            child.sweepRadians
+        }
 
         return PartialLayoutInfo(
             totalSweep,
@@ -96,15 +95,15 @@ internal class CurvedRowChild(
         )
     }
 
+    @Suppress("ListIterator")
     override fun doAngularPosition(
         parentStartAngleRadians: Float,
         parentSweepRadians: Float,
         centerOffset: Offset,
     ): Float {
-        val weights =
-            childrenInLayoutOrder.fastMap { node ->
-                (node.computeParentData() as? CurvedScopeParentData)?.weight ?: 0f
-            }
+        val weights = childrenInLayoutOrder.fastMap { node ->
+            (node.computeParentData() as? CurvedScopeParentData)?.weight ?: 0f
+        }
         val sumWeights = weights.sum()
         val extraSpace =
             parentSweepRadians -

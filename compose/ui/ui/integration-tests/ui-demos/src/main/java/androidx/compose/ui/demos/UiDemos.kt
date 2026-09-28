@@ -23,6 +23,8 @@ import androidx.compose.foundation.demos.text.SoftwareKeyboardControllerDemo
 import androidx.compose.integration.demos.common.ActivityDemo
 import androidx.compose.integration.demos.common.ComposableDemo
 import androidx.compose.integration.demos.common.DemoCategory
+import androidx.compose.ui.demos.accessibility.AccessibilityClippingDemo
+import androidx.compose.ui.demos.accessibility.AccessibilityShapeOffscreenDemo
 import androidx.compose.ui.demos.accessibility.LinearProgressIndicatorDemo
 import androidx.compose.ui.demos.accessibility.NestedContainersFalseDemo
 import androidx.compose.ui.demos.accessibility.NestedContainersTrueDemo
@@ -31,6 +33,7 @@ import androidx.compose.ui.demos.accessibility.ScaffoldSampleDemo
 import androidx.compose.ui.demos.accessibility.ScaffoldSampleScrollDemo
 import androidx.compose.ui.demos.accessibility.ScrollingColumnDemo
 import androidx.compose.ui.demos.accessibility.SimpleRtlLayoutDemo
+import androidx.compose.ui.demos.accessibility.TextBoundingBoxDemo
 import androidx.compose.ui.demos.autofill.AutofillNavigation
 import androidx.compose.ui.demos.autofill.BTFResetCredentialsDemo
 import androidx.compose.ui.demos.autofill.BasicSecureTextFieldAutofillDemo
@@ -62,6 +65,7 @@ import androidx.compose.ui.demos.focus.ScrollableLazyRowFocusDemo
 import androidx.compose.ui.demos.focus.ScrollableRowFocusDemo
 import androidx.compose.ui.demos.focus.TwoDimensionalFocusSearchDemo
 import androidx.compose.ui.demos.gestures.ButtonMetaStateDemo
+import androidx.compose.ui.demos.gestures.ConditionallyPlacedUiWithPointerInput
 import androidx.compose.ui.demos.gestures.DetectTapGesturesDemo
 import androidx.compose.ui.demos.gestures.DetectTapPressureGesturesDemo
 import androidx.compose.ui.demos.gestures.DoubleTapGestureFilterDemo
@@ -89,9 +93,13 @@ import androidx.compose.ui.demos.gestures.RawDragGestureFilterDemo
 import androidx.compose.ui.demos.gestures.ScaleGestureFilterDemo
 import androidx.compose.ui.demos.gestures.ScrollGestureFilterDemo
 import androidx.compose.ui.demos.gestures.VerticalScrollerInDrawerDemo
+import androidx.compose.ui.demos.graphics.BlurDemos
+import androidx.compose.ui.demos.graphics.GraphicsShapesDemo
+import androidx.compose.ui.demos.graphics.ShadowsDemo
 import androidx.compose.ui.demos.input.TouchModeDemo
 import androidx.compose.ui.demos.keyinput.InterceptEnterToSendMessageDemo
 import androidx.compose.ui.demos.keyinput.KeyInputDemo
+import androidx.compose.ui.demos.meshgradient.MeshGradientPlaygroundDemo
 import androidx.compose.ui.demos.modifier.CommunicatingModifierDemo
 import androidx.compose.ui.demos.modifier.LazyColumnDemo
 import androidx.compose.ui.demos.modifier.MovableContentDemo
@@ -176,6 +184,9 @@ private val GestureDemos =
                     ComposableDemo("Pointer Input Lambda Stats w/ external function") {
                         PointerInputLambdaExecutionsUsingExternalFunctions()
                     },
+                    ComposableDemo("Conditionally Placed UI with Pointer Input") {
+                        ConditionallyPlacedUiWithPointerInput()
+                    },
                 ),
             ),
             DemoCategory(
@@ -233,6 +244,10 @@ private val GraphicsDemos =
             ComposableDemo("VectorGraphicsDemo") { VectorGraphicsDemo() },
             ComposableDemo("DeclarativeGraphicsDemo") { DeclarativeGraphicsDemo() },
             ActivityDemo("Painter Resources Demo", PainterResourcesDemoActivity::class),
+            ComposableDemo("Shadow's Demo") { ShadowsDemo() },
+            ComposableDemo("MeshGradient Playground") { MeshGradientPlaygroundDemo() },
+            ComposableDemo("Blur Demos") { BlurDemos() },
+            ComposableDemo("Polygon Shape") { GraphicsShapesDemo() },
         ),
     )
 
@@ -335,6 +350,9 @@ val AccessibilityDemos =
             ComposableDemo("Linear Progress Indicator") { LinearProgressIndicatorDemo() },
             ComposableDemo("Dual LTR and RTL Scene") { SimpleRtlLayoutDemo() },
             ComposableDemo("Scrolling Tooltip scene") { SampleScrollingTooltipScreen() },
+            ComposableDemo("Accessibility Shapes") { AccessibilityShapeOffscreenDemo() },
+            ComposableDemo("Accessibility Clipping Demo") { AccessibilityClippingDemo() },
+            ComposableDemo("Text Bounding Boxes") { TextBoundingBoxDemo() },
         ),
     )
 

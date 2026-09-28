@@ -23,7 +23,6 @@ import androidx.annotation.RequiresApi
 import androidx.collection.mutableObjectFloatMapOf
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ContentTransform
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.SeekableTransitionState
 import androidx.compose.animation.core.Spring
@@ -56,9 +55,11 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.currentStateAsState
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination
@@ -103,6 +104,8 @@ internal fun PredictiveBackNavHost(
 
     val navigateBack: () -> Unit = { navController.popBackStack() }
 
+    val transitionsInProgress by wearNavigator.transitionsInProgress.collectAsState()
+
     DisposableEffect(lifecycleOwner) {
         // Setup the navController with proper owners
         navController.setLifecycleOwner(lifecycleOwner)
@@ -143,15 +146,14 @@ internal fun PredictiveBackNavHost(
     // Use PredictiveBackHandler instead of BackHandler on API >= 35
     var progress by remember { mutableFloatStateOf(0f) }
     var inPredictiveBack by remember { mutableStateOf(false) }
+    var isAnimationRunning by remember { mutableStateOf(false) }
     val transitionState = remember { SeekableTransitionState(current) }
     PredictiveBackHandler(userSwipeEnabled && backStack.size > 1) { backEvent ->
         inPredictiveBack = true
         progress = 0f
         try {
             backEvent.collect { progress = it.progress }
-            Animatable(progress).animateTo(1f, TRANSITION_ANIMATION_SPEC) { progress = value }
-            inPredictiveBack = false
-            navigateBack()
+            isAnimationRunning = true
         } catch (e: CancellationException) {
             inPredictiveBack = false
         }
@@ -161,7 +163,18 @@ internal fun PredictiveBackNavHost(
     val transition = rememberTransition(transitionState, label = "entry")
 
     if (inPredictiveBack && previous != null) {
-        LaunchedEffect(progress) { transitionState.seekTo(progress, previous) }
+        if (!isAnimationRunning) {
+            // When user is still swiping, progress will be reported by PredictiveBackHandler
+            LaunchedEffect(progress) { transitionState.seekTo(progress, previous) }
+        } else {
+            // Run animation after backHandler is processed
+            LaunchedEffect(Unit) {
+                transitionState.animateTo(previous, TRANSITION_ANIMATION_SPEC)
+                navigateBack()
+                isAnimationRunning = false
+                inPredictiveBack = false
+            }
+        }
     } else {
         LaunchedEffect(current) {
             if (transitionState.currentState != current) {
@@ -230,16 +243,17 @@ internal fun PredictiveBackNavHost(
             ) {
                 Box(
                     modifier =
-                        Modifier.background(
-                                scrimColor,
-                                if (isRoundDevice) CircleShape else RectangleShape,
-                            )
+                        Modifier.clip(if (isRoundDevice) CircleShape else RectangleShape)
+                            .background(scrimColor)
                             .fillMaxSize()
                             .hierarchicalFocusGroup(currentEntry == current)
                 ) {
                     // while in the scope of the composable, we provide the navBackStackEntry as the
                     // ViewModelStoreOwner and LifecycleOwner
-                    if (currentEntry.lifecycle.currentState != Lifecycle.State.DESTROYED) {
+                    if (
+                        currentEntry.lifecycle.currentStateAsState().value !=
+                            Lifecycle.State.DESTROYED
+                    ) {
                         currentEntry.LocalOwnersProvider(stateHolder) {
                             DestinationContent(backStackEntry = currentEntry)
                         }
@@ -261,9 +275,9 @@ internal fun PredictiveBackNavHost(
             }
         }
     }
-    LaunchedEffect(transition.currentState, transition.targetState) {
-        if (transition.currentState == transition.targetState) {
-            backStack.forEach { entry -> wearNavigator.onTransitionComplete(entry) }
+    if (transition.currentState == transition.targetState && !isAnimationRunning) {
+        LaunchedEffect(transition.currentState, transition.targetState, isAnimationRunning) {
+            transitionsInProgress.forEach { entry -> wearNavigator.onTransitionComplete(entry) }
             zIndices.forEach { key, _ ->
                 if (key != transition.targetState.id) zIndices.remove(key)
             }

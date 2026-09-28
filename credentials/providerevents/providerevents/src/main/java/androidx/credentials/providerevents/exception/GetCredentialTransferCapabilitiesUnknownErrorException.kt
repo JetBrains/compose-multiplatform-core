@@ -17,9 +17,7 @@
 package androidx.credentials.providerevents.exception
 
 /** The request cannot be processed due to unknown error */
-public class GetCredentialTransferCapabilitiesUnknownErrorException(
-    errorMessage: CharSequence? = null
-) :
+public class GetCredentialTransferCapabilitiesUnknownErrorException(errorMessage: String? = null) :
     GetCredentialTransferCapabilitiesException(
         TYPE_GET_CREDENTIAL_TRANSFER_CAPABILITIES_UNKNOWN_ERROR_EXCEPTION,
         errorMessage,

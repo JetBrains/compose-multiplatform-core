@@ -20,11 +20,12 @@ import android.content.pm.ApplicationInfo;
 import android.os.Build;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.core.view.OnApplyWindowInsetsListener;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * An {@link OnApplyWindowInsetsListener} that applies {@link WindowInsetsCompat WindowInsets} to
@@ -75,9 +76,8 @@ public final class WindowInsetsApplier implements OnApplyWindowInsetsListener {
         return true;
     }
 
-    @NonNull
     @Override
-    public WindowInsetsCompat onApplyWindowInsets(@NonNull View v,
+    public @NonNull WindowInsetsCompat onApplyWindowInsets(@NonNull View v,
             @NonNull WindowInsetsCompat insets) {
         ViewPager2 viewPager = (ViewPager2) v;
 
@@ -113,17 +113,14 @@ public final class WindowInsetsApplier implements OnApplyWindowInsetsListener {
 
     @SuppressWarnings("deprecation") // consumeSystemWindowInsets, consumeStableInsets
     private WindowInsetsCompat consumeAllInsets(@NonNull WindowInsetsCompat insets) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            if (WindowInsetsCompat.CONSUMED.toWindowInsets() != null) {
-                return WindowInsetsCompat.CONSUMED;
-            }
-            // On API < 29, WindowInsetsCompat.CONSUMED can fail initialization because it uses
-            // reflection to create the CONSUMED WindowInsets.
-            // When that happens, fall back to consuming everything in the given insets. The given
-            // insets is guaranteed to hold non-null WindowInsets because those were created by the
-            // platform. We only have to consume insets that were in API < 29.
-            return insets.consumeSystemWindowInsets().consumeStableInsets();
+        if (WindowInsetsCompat.CONSUMED.toWindowInsets() != null) {
+            return WindowInsetsCompat.CONSUMED;
         }
-        return insets;
+        // On API < 29, WindowInsetsCompat.CONSUMED can fail initialization because it uses
+        // reflection to create the CONSUMED WindowInsets.
+        // When that happens, fall back to consuming everything in the given insets. The given
+        // insets is guaranteed to hold non-null WindowInsets because those were created by the
+        // platform. We only have to consume insets that were in API < 29.
+        return insets.consumeSystemWindowInsets().consumeStableInsets();
     }
 }

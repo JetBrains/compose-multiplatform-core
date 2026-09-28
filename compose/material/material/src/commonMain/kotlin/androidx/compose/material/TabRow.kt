@@ -129,9 +129,10 @@ import kotlinx.coroutines.launch
  *   inside this lambda will be measured and placed evenly across the TabRow, each taking up equal
  *   space.
  */
+@Suppress("ComposableLambdaInMeasurePolicy")
 @Composable
 @UiComposable
-fun TabRow(
+public fun TabRow(
     selectedTabIndex: Int,
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colors.primarySurface,
@@ -153,10 +154,9 @@ fun TabRow(
             val tabMeasurables = subcompose(TabSlots.Tabs, tabs)
             val tabCount = tabMeasurables.size
             val tabWidth = (tabRowWidth / tabCount)
-            val tabPlaceables =
-                tabMeasurables.fastMap {
-                    it.measure(constraints.copy(minWidth = tabWidth, maxWidth = tabWidth))
-                }
+            val tabPlaceables = tabMeasurables.fastMap {
+                it.measure(constraints.copy(minWidth = tabWidth, maxWidth = tabWidth))
+            }
 
             val tabRowHeight = tabPlaceables.fastMaxBy { it.height }?.height ?: 0
 
@@ -218,9 +218,10 @@ fun TabRow(
  *   element inside this lambda will be measured and placed evenly across the TabRow, each taking up
  *   equal space.
  */
+@Suppress("ComposableLambdaInMeasurePolicy")
 @Composable
 @UiComposable
-fun ScrollableTabRow(
+public fun ScrollableTabRow(
     selectedTabIndex: Int,
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colors.primarySurface,
@@ -313,8 +314,8 @@ fun ScrollableTabRow(
  * @property width the width of this tab
  */
 @Immutable
-class TabPosition internal constructor(val left: Dp, val width: Dp) {
-    val right: Dp
+public class TabPosition internal constructor(public val left: Dp, public val width: Dp) {
+    public val right: Dp
         get() = left + width
 
     override fun equals(other: Any?): Boolean {
@@ -339,7 +340,7 @@ class TabPosition internal constructor(val left: Dp, val width: Dp) {
 }
 
 /** Contains default implementations and values used for TabRow. */
-object TabRowDefaults {
+public object TabRowDefaults {
     /**
      * Default [Divider], which will be positioned at the bottom of the [TabRow], underneath the
      * indicator.
@@ -349,7 +350,7 @@ object TabRowDefaults {
      * @param color color of the divider
      */
     @Composable
-    fun Divider(
+    public fun Divider(
         modifier: Modifier = Modifier,
         thickness: Dp = DividerThickness,
         color: Color = LocalContentColor.current.copy(alpha = DividerOpacity),
@@ -366,7 +367,7 @@ object TabRowDefaults {
      * @param color color of the indicator
      */
     @Composable
-    fun Indicator(
+    public fun Indicator(
         modifier: Modifier = Modifier,
         height: Dp = IndicatorHeight,
         color: Color = LocalContentColor.current,
@@ -381,7 +382,7 @@ object TabRowDefaults {
      * @param currentTabPosition [TabPosition] of the currently selected tab. This is used to
      *   calculate the offset of the indicator this modifier is applied to, as well as its width.
      */
-    fun Modifier.tabIndicatorOffset(currentTabPosition: TabPosition): Modifier =
+    public fun Modifier.tabIndicatorOffset(currentTabPosition: TabPosition): Modifier =
         composed(
             inspectorInfo =
                 debugInspectorInfo {
@@ -406,16 +407,16 @@ object TabRowDefaults {
         }
 
     /** Default opacity for the color of [Divider] */
-    const val DividerOpacity = 0.12f
+    public const val DividerOpacity: Float = 0.12f
 
     /** Default thickness for [Divider] */
-    val DividerThickness = 1.dp
+    public val DividerThickness: Dp = 1.dp
 
     /** Default height for [Indicator] */
-    val IndicatorHeight = 2.dp
+    public val IndicatorHeight: Dp = 2.dp
 
     /** The default padding from the starting edge before a tab in a [ScrollableTabRow]. */
-    val ScrollableTabRowPadding = 52.dp
+    public val ScrollableTabRowPadding: Dp = 52.dp
 }
 
 private enum class TabSlots {
@@ -481,7 +482,8 @@ private class ScrollableTabData(
         }
 }
 
-private val ScrollableTabRowMinimumTabWidth = 90.dp
+private val ScrollableTabRowMinimumTabWidth
+    get() = 90.dp
 
 /** [AnimationSpec] used when scrolling to a tab that is not fully visible. */
 private val ScrollableTabRowScrollSpec: AnimationSpec<Float> =

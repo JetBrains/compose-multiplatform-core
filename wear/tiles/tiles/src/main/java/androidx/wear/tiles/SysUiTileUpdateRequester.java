@@ -44,8 +44,11 @@ import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /** Variant of {@link TileUpdateRequester} which requests an update from the Wear SysUI app. */
 class SysUiTileUpdateRequester implements TileUpdateRequester {
@@ -71,8 +74,21 @@ class SysUiTileUpdateRequester implements TileUpdateRequester {
     @GuardedBy("mLock")
     final Set<PendingRequest> mPendingRequests = new HashSet<>();
 
+    private final Executor mUnbindExecutor;
+
     public SysUiTileUpdateRequester(@NonNull Context appContext) {
         this.mAppContext = appContext;
+        this.mUnbindExecutor =
+                TestDetector.isRunningInTest()
+                        ? Runnable::run // Main thread executor
+                        : Executors.newSingleThreadExecutor(
+                                r -> new Thread(r, "WrTilesUpdReq"));
+    }
+
+    @VisibleForTesting
+    SysUiTileUpdateRequester(@NonNull Context appContext, @NonNull Executor unbindExecutor) {
+        this.mAppContext = appContext;
+        this.mUnbindExecutor = unbindExecutor;
     }
 
     @Override
@@ -194,7 +210,19 @@ class SysUiTileUpdateRequester implements TileUpdateRequester {
                             sendTileUpdateRequest(pendingRequest, updateRequesterService);
                         }
 
-                        mAppContext.unbindService(this);
+                        mUnbindExecutor.execute(
+                                () -> {
+                                    try {
+                                        mAppContext.unbindService(this);
+                                    } catch (IllegalArgumentException
+                                            | IllegalStateException
+                                            | NoSuchElementException e) {
+                                        // This can happen if before this callback is executed, the
+                                        // service has already been unbound by the system or
+                                        // disconnected.
+                                        Log.w(TAG, "Service is not bound.", e);
+                                    }
+                                });
                     }
 
                     @Override

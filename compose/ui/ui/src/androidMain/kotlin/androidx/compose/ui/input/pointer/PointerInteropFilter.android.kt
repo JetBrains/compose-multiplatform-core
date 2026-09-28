@@ -20,6 +20,9 @@ import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.MotionEvent.ACTION_CANCEL
 import android.view.MotionEvent.ACTION_DOWN
+import android.view.MotionEvent.ACTION_HOVER_ENTER
+import android.view.MotionEvent.ACTION_HOVER_EXIT
+import android.view.MotionEvent.ACTION_HOVER_MOVE
 import android.view.MotionEvent.ACTION_MOVE
 import android.view.MotionEvent.ACTION_OUTSIDE
 import android.view.MotionEvent.ACTION_POINTER_DOWN
@@ -29,11 +32,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewParent
 import androidx.compose.runtime.remember
-import androidx.compose.ui.ComposeUiFlags.isPointerInteropFilterDispatchingFixEnabled
+import androidx.compose.ui.AndroidComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.AndroidComposeView
 import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastAll
@@ -64,7 +68,7 @@ import androidx.compose.ui.viewinterop.AndroidViewHolder
  * @see [View.onTouchEvent]
  * @see [ViewParent.requestDisallowInterceptTouchEvent]
  */
-fun Modifier.pointerInteropFilter(
+public fun Modifier.pointerInteropFilter(
     requestDisallowInterceptTouchEvent: (RequestDisallowInterceptTouchEvent)? = null,
     onTouchEvent: (MotionEvent) -> Boolean,
 ): Modifier =
@@ -87,10 +91,10 @@ fun Modifier.pointerInteropFilter(
  * Function that can be passed to [pointerInteropFilter] and then later invoked which provides an
  * analog to [ViewParent.requestDisallowInterceptTouchEvent].
  */
-class RequestDisallowInterceptTouchEvent : (Boolean) -> Unit {
+public class RequestDisallowInterceptTouchEvent : (Boolean) -> Unit {
     internal var pointerInteropFilter: PointerInteropFilter? = null
 
-    override fun invoke(disallowIntercept: Boolean) {
+    public override fun invoke(disallowIntercept: Boolean) {
         pointerInteropFilter?.disallowIntercept = disallowIntercept
     }
 }
@@ -99,6 +103,7 @@ class RequestDisallowInterceptTouchEvent : (Boolean) -> Unit {
  * Similar to the 2 argument overload of [pointerInteropFilter], but connects directly to an
  * [AndroidViewHolder] for more seamless interop with Android.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 internal fun Modifier.pointerInteropFilter(view: AndroidViewHolder): Modifier {
     val filter = PointerInteropFilter()
     filter.onTouchEvent = { motionEvent ->
@@ -110,9 +115,27 @@ internal fun Modifier.pointerInteropFilter(view: AndroidViewHolder): Modifier {
             ACTION_POINTER_UP,
             ACTION_OUTSIDE,
             ACTION_CANCEL -> view.dispatchTouchEvent(motionEvent)
-            // ACTION_HOVER_ENTER,
-            // ACTION_HOVER_MOVE,
-            // ACTION_HOVER_EXIT,
+            ACTION_HOVER_ENTER,
+            ACTION_HOVER_MOVE,
+            ACTION_HOVER_EXIT -> {
+                val owner = view.layoutNode.owner as? AndroidComposeView
+                // In AndroidComposeView.dispatchHoverEvent(), all hover MotionEvents (including
+                // finger touch exploration and hardware mouse/stylus hover) are first sent to
+                // AndroidComposeViewAccessibilityDelegateCompat.dispatchHoverEvent(). When touch
+                // exploration is active, the accessibility delegate acts as the sole dispatcher of
+                // hover events to androidViewsHandler: it forwards hover to uncovered interop views
+                // and blocks hover when covered by Compose semantics nodes. Returning false here
+                // avoids bypassing non-pointer-input Compose semantics overlays (e.g. Text) and
+                // prevents duplicate hover dispatches to uncovered interop views.
+                if (
+                    AndroidComposeUiFlags.isInteropHoverZOrderEnabled &&
+                        owner?.isTouchExplorationEnabled == true
+                ) {
+                    false
+                } else {
+                    view.dispatchGenericMotionEvent(motionEvent)
+                }
+            }
             // ACTION_BUTTON_PRESS,
             // ACTION_BUTTON_RELEASE,
             else -> view.dispatchGenericMotionEvent(motionEvent)
@@ -220,10 +243,9 @@ internal class PointerInteropFilter : PointerInputModifier {
             ) {
                 val changes = pointerEvent.changes
 
-                val isMoveEvent =
-                    changes.fastAll {
-                        !it.changedToDownIgnoreConsumed() && !it.changedToUpIgnoreConsumed()
-                    }
+                val isMoveEvent = changes.fastAll {
+                    !it.changedToDownIgnoreConsumed() && !it.changedToUpIgnoreConsumed()
+                }
 
                 val hasUnconsumedMove = isMoveEvent && changes.fastAll { !it.isConsumed }
 
@@ -236,7 +258,7 @@ internal class PointerInteropFilter : PointerInputModifier {
                         changes.fastAny {
                             it.changedToDownIgnoreConsumed() || it.changedToUpIgnoreConsumed()
                         } ||
-                        (hasUnconsumedMove && isPointerInteropFilterDispatchingFixEnabled)
+                        (hasUnconsumedMove)
 
                 if (state !== DispatchToViewState.NotDispatching) {
                     if (pass == PointerEventPass.Initial && dispatchDuringInitialTunnel) {
@@ -251,23 +273,17 @@ internal class PointerInteropFilter : PointerInputModifier {
                         pass == PointerEventPass.Main &&
                             isMoveEvent &&
                             pointerEvent == lastEventDispatchedToInitialPass &&
-                            disallowIntercept &&
-                            isPointerInteropFilterDispatchingFixEnabled
+                            disallowIntercept
                     ) {
                         changes.fastForEach { it.consume() }
                     }
 
-                    val dispatchToFinalCriteria =
-                        if (isPointerInteropFilterDispatchingFixEnabled) {
-                            pass == PointerEventPass.Final &&
-                                !dispatchDuringInitialTunnel &&
-                                // this was already dispatched during the initial pass
-                                pointerEvent != lastEventDispatchedToInitialPass
-                        } else {
-                            pass == PointerEventPass.Final && !dispatchDuringInitialTunnel
-                        }
-
-                    if (dispatchToFinalCriteria) {
+                    if (
+                        pass == PointerEventPass.Final &&
+                            !dispatchDuringInitialTunnel &&
+                            // this was already dispatched during the initial pass
+                            pointerEvent != lastEventDispatchedToInitialPass
+                    ) {
                         dispatchToView(pointerEvent, true)
                     }
                 }
@@ -278,11 +294,7 @@ internal class PointerInteropFilter : PointerInputModifier {
                         reset()
                     }
 
-                    if (
-                        pointerEvent == lastEventDispatchedToInitialPass &&
-                            isMoveEvent &&
-                            isPointerInteropFilterDispatchingFixEnabled
-                    ) {
+                    if (pointerEvent == lastEventDispatchedToInitialPass && isMoveEvent) {
                         // we've reached the final pass, if the motion event that was sent
                         // during the initial pass was consumed, it means Compose claimed it
                         // so we should stop dispatching to the View
@@ -353,11 +365,7 @@ internal class PointerInteropFilter : PointerInputModifier {
                     }
                     if (state === DispatchToViewState.Dispatching) {
                         // If the Android View claimed the event, consume all changes.
-                        if (isPointerInteropFilterDispatchingFixEnabled) {
-                            if (shouldConsume) changes.fastForEach { it.consume() }
-                        } else {
-                            changes.fastForEach { it.consume() }
-                        }
+                        if (shouldConsume) changes.fastForEach { it.consume() }
 
                         pointerEvent.internalPointerEvent?.suppressMovementConsumption =
                             !disallowIntercept
@@ -396,7 +404,7 @@ internal class PointerInteropFilter : PointerInputModifier {
  *
  * If you need to handle and consume [MotionEvent]s, use [pointerInteropFilter].
  */
-fun Modifier.motionEventSpy(watcher: (motionEvent: MotionEvent) -> Unit): Modifier =
+public fun Modifier.motionEventSpy(watcher: (motionEvent: MotionEvent) -> Unit): Modifier =
     this.pointerInput(watcher) {
         interceptOutOfBoundsChildEvents = true
         awaitPointerEventScope {

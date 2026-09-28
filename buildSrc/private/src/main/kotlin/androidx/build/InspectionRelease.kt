@@ -16,18 +16,16 @@
 
 package androidx.build
 
+import androidx.inspection.gradle.GenerateInspectionPlatformVersionTask
 import androidx.inspection.gradle.InspectionExtension
 import androidx.inspection.gradle.InspectionPlugin
 import androidx.inspection.gradle.createConsumeInspectionConfiguration
-import androidx.inspection.gradle.createConsumeNonDexedInspectionConfiguration
-import java.io.File
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
+import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.withType
 
-/**
- * Copies artifacts prepared by InspectionPlugin into $destDir/inspection and
- * $destDir/inspection-nondexed
- */
+/** Copies artifacts prepared by InspectionPlugin into $destDir/inspection */
 fun Project.publishInspectionArtifacts() {
     project.afterEvaluate {
         if (project.plugins.hasPlugin(InspectionPlugin::class.java)) {
@@ -36,11 +34,14 @@ fun Project.publishInspectionArtifacts() {
                 createConsumeInspectionConfiguration(),
                 "inspection",
             )
-            publishInspectionConfiguration(
-                "copyUndexedInspectionArtifacts",
-                createConsumeNonDexedInspectionConfiguration(),
-                "inspection-nondexed",
-            )
+            tasks.withType<GenerateInspectionPlatformVersionTask>().configureEach {
+                it.inspectionProjectVersion.set(
+                    extensions
+                        .getByType<AndroidXExtension>()
+                        .LibraryVersions["INSPECTION"]
+                        .toString()
+                )
+            }
         }
     }
 }
@@ -54,10 +55,10 @@ internal fun Project.publishInspectionConfiguration(
     val sync =
         tasks.register(name, SingleFileCopy::class.java) {
             it.dependsOn(configuration)
-            it.sourceFile = project.provider { project.files(configuration).singleFile }
+            it.sourceFile.set(project.files(configuration).singleFile)
             val extension = project.extensions.getByType(InspectionExtension::class.java)
             val fileName = extension.name ?: "${project.name}.jar"
-            it.destinationFile = File(File(getDistributionDirectory(), dirName), fileName)
+            it.destinationFile.set(getDistributionDirectory().file("$dirName/$fileName"))
         }
     addToBuildOnServer(sync)
 }

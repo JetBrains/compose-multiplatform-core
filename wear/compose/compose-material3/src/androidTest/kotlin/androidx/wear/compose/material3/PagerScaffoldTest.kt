@@ -19,11 +19,16 @@ package androidx.wear.compose.material3
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.foundation.withoutVisualEffect
 import androidx.compose.runtime.Composable
@@ -35,7 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
@@ -202,6 +207,40 @@ class PagerScaffoldTest {
         rule.onNodeWithTag(EHB_TAG + "0").captureToImage().assertContainsColor(EHB_COLOR)
     }
 
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun modifier_on_scaffold_works() {
+        val indicatorColor = Color.Red
+        val backgroundColor = Color.Green
+        val horizontalPagerState = PagerState { 5 }
+        rule.setContentWithTheme {
+            Box(Modifier.size(150.dp).testTag(TEST_TAG)) {
+                HorizontalPagerScaffold(
+                    pagerState = horizontalPagerState,
+                    modifier = Modifier.fillMaxSize(),
+                    pageIndicator = {
+                        HorizontalPageIndicator(
+                            pagerState = horizontalPagerState,
+                            backgroundColor = indicatorColor,
+                        )
+                    },
+                ) {
+                    Box(Modifier.fillMaxSize().background(backgroundColor))
+                }
+
+                // Obscure the top part of the screen, to avoid detecting the indicator when it is
+                // in the wrong position (top left)
+                Box(
+                    Modifier.align(Alignment.TopCenter)
+                        .size(150.dp, 75.dp)
+                        .background(backgroundColor)
+                )
+            }
+        }
+
+        rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(indicatorColor)
+    }
+
     @RequiresApi(Build.VERSION_CODES.O)
     fun create_pager_scaffold_and_swipe_one_page(
         orientation: Orientation,
@@ -209,16 +248,18 @@ class PagerScaffoldTest {
         pageIndicatorAnimationSpec: AnimationSpec<Float>?,
     ) {
         rule.setContentWithTheme {
-            if (orientation == Orientation.Horizontal) {
-                TestHorizontalPagerScaffold(
-                    pageIndicatorColor = pageIndicatorColor,
-                    pageIndicatorAnimationSpec = pageIndicatorAnimationSpec,
-                )
-            } else {
-                TestVerticalPagerScaffold(
-                    pageIndicatorColor = pageIndicatorColor,
-                    pageIndicatorAnimationSpec = pageIndicatorAnimationSpec,
-                )
+            Box(Modifier.windowInsetsPadding(WindowInsets.Companion.navigationBars)) {
+                if (orientation == Orientation.Horizontal) {
+                    TestHorizontalPagerScaffold(
+                        pageIndicatorColor = pageIndicatorColor,
+                        pageIndicatorAnimationSpec = pageIndicatorAnimationSpec,
+                    )
+                } else {
+                    TestVerticalPagerScaffold(
+                        pageIndicatorColor = pageIndicatorColor,
+                        pageIndicatorAnimationSpec = pageIndicatorAnimationSpec,
+                    )
+                }
             }
         }
 
@@ -285,8 +326,7 @@ class PagerScaffoldTest {
             ) {
                 HorizontalPager(
                     state = pagerState,
-                    flingBehavior =
-                        PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState),
+                    flingBehavior = PagerScaffoldDefaults.snapWithSpringFlingBehavior(pagerState),
                 ) { page ->
                     AnimatedPage(pageIndex = page, pagerState = pagerState) {
                         ScreenScaffold {
@@ -325,8 +365,7 @@ class PagerScaffoldTest {
             ) {
                 VerticalPager(
                     state = pagerState,
-                    flingBehavior =
-                        PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState),
+                    flingBehavior = PagerScaffoldDefaults.snapWithSpringFlingBehavior(pagerState),
                 ) { page ->
                     AnimatedPage(pageIndex = page, pagerState = pagerState) {
                         ScreenScaffold {

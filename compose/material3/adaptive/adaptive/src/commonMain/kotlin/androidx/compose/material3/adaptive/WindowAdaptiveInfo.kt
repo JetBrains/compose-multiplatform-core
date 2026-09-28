@@ -30,14 +30,40 @@ import androidx.window.core.layout.WindowSizeClass
  * that uses the default [WindowSizeClass] constructor and the default [Posture] calculation
  * functions to retrieve [WindowSizeClass] and [Posture].
  *
+ * Note that this function is meant to replace [currentWindowAdaptiveInfo] and support L and XL
+ * width size classes by default.
+ *
+ * @return [WindowAdaptiveInfo] of the provided context
+ */
+@Composable
+@Suppress("DEPRECATION")
+public fun currentWindowAdaptiveInfoV2(): WindowAdaptiveInfo =
+    currentWindowAdaptiveInfo(supportLargeAndXLargeWidth = true)
+
+/**
+ * Calculates and returns [WindowAdaptiveInfo] of the provided context. It's a convenient function
+ * that uses the default [WindowSizeClass] constructor and the default [Posture] calculation
+ * functions to retrieve [WindowSizeClass] and [Posture].
+ *
  * @param supportLargeAndXLargeWidth `true` to support the large and extra-large window width size
  *   classes, which makes the returned [WindowSizeClass] be calculated based on the breakpoints that
  *   include large and extra-large widths.
  * @return [WindowAdaptiveInfo] of the provided context
  */
+@Deprecated(
+    message = "Please use V2 version of this function to support L and XL width size classes.",
+    replaceWith = ReplaceWith("currentWindowAdaptiveInfoV2"),
+    DeprecationLevel.WARNING,
+)
 @Composable
-fun currentWindowAdaptiveInfo(supportLargeAndXLargeWidth: Boolean = false): WindowAdaptiveInfo {
-    val windowSize = currentWindowDpSize()
+public fun currentWindowAdaptiveInfo(
+    supportLargeAndXLargeWidth: Boolean = false
+): WindowAdaptiveInfo {
+    // Workaround (b/358626778): Directly using WindowInfo.containerDpSize breaks tests based on
+    //   DeviceConfigurationOverride.ForcedSize. Those clients need to migrate to
+    //   DeviceConfigurationOverride.WindowSize when its available.
+    val windowSize =
+        with(LocalDensity.current) { LocalWindowInfo.current.containerSize.toSize().toDpSize() }
     return WindowAdaptiveInfo(
         windowSizeClass =
             if (supportLargeAndXLargeWidth) {
@@ -54,9 +80,14 @@ fun currentWindowAdaptiveInfo(supportLargeAndXLargeWidth: Boolean = false): Wind
  *
  * @return an [DpSize] that represents the current window size.
  */
+@Deprecated(
+    message = "Going to be removed in the next version. Prefer LocalWindowInfo instead",
+    replaceWith = ReplaceWith("LocalWindowInfo.current.containerDpSize"),
+    DeprecationLevel.WARNING,
+)
+@ExperimentalMaterial3AdaptiveApi
 @Composable
-fun currentWindowDpSize(): DpSize =
-    with(LocalDensity.current) { currentWindowSize().toSize().toDpSize() }
+public fun currentWindowDpSize(): DpSize = LocalWindowInfo.current.containerDpSize
 
 /**
  * Returns and automatically update the current window size. It's a convenient function of getting
@@ -64,7 +95,13 @@ fun currentWindowDpSize(): DpSize =
  *
  * @return an [IntSize] that represents the current window size.
  */
-@Composable fun currentWindowSize(): IntSize = LocalWindowInfo.current.containerSize
+@Deprecated(
+    message = "Prefer LocalWindowInfo instead",
+    replaceWith = ReplaceWith("LocalWindowInfo.current.containerSize"),
+    DeprecationLevel.WARNING,
+)
+@Composable
+public fun currentWindowSize(): IntSize = LocalWindowInfo.current.containerSize
 
 /**
  * This class collects window info that affects adaptation decisions. An adaptive layout is supposed
@@ -75,7 +112,10 @@ fun currentWindowDpSize(): DpSize =
  * @constructor create an instance of [WindowAdaptiveInfo]
  */
 @Immutable
-class WindowAdaptiveInfo(val windowSizeClass: WindowSizeClass, val windowPosture: Posture) {
+public class WindowAdaptiveInfo(
+    public val windowSizeClass: WindowSizeClass,
+    public val windowPosture: Posture,
+) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is WindowAdaptiveInfo) return false

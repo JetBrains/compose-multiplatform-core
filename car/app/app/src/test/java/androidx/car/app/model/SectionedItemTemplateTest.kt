@@ -18,11 +18,14 @@ package androidx.car.app.model
 
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
+@Suppress("DEPRECATION") // Tests must still test deprecated fields/methods.
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class SectionedItemTemplateTest {
     class MyCustomSection : Section<Row>()
 
@@ -86,6 +89,42 @@ class SectionedItemTemplateTest {
         assertThat(template.isAlphabeticalIndexingAllowed).isTrue()
     }
 
+    // This is a compat layer test to verify that apps still setting the old field will have the
+    // setting respected in the new field.
+    @Test
+    fun getAlphabeticalIndexingStrategy_returnsIgnoreArticlesAndSymbols_whenDeprecatedAlphabeticalIndexingAllowedFieldIsSet() {
+        val template = SectionedItemTemplate.Builder().setAlphabeticalIndexingAllowed(true).build()
+
+        assertThat(template.alphabeticalIndexingStrategy)
+            .isEqualTo(
+                SectionedItemTemplate.ALPHABETICAL_INDEXING_TITLE_IGNORE_ARTICLES_AND_SYMBOLS
+            )
+        assertThat(template.isAlphabeticalIndexingAllowed).isTrue()
+    }
+
+    @Test
+    fun getAlphabeticalIndexingStrategy() {
+        val template =
+            SectionedItemTemplate.Builder()
+                .setAlphabeticalIndexingStrategy(
+                    SectionedItemTemplate.ALPHABETICAL_INDEXING_TITLE_AS_IS
+                )
+                .build()
+
+        assertThat(template.alphabeticalIndexingStrategy)
+            .isEqualTo(SectionedItemTemplate.ALPHABETICAL_INDEXING_TITLE_AS_IS)
+        assertThat(template.isAlphabeticalIndexingAllowed).isTrue()
+    }
+
+    @Test
+    fun getAlphabeticalIndexingStrategy_defaultValue_returnsDisabled() {
+        val template = SectionedItemTemplate.Builder().build()
+
+        assertThat(template.alphabeticalIndexingStrategy)
+            .isEqualTo(SectionedItemTemplate.ALPHABETICAL_INDEXING_DISABLED)
+        assertThat(template.isAlphabeticalIndexingAllowed).isFalse()
+    }
+
     @Test
     fun getScrollStatePersistenceStrategy() {
         val template =
@@ -104,7 +143,7 @@ class SectionedItemTemplateTest {
         val template = SectionedItemTemplate.Builder().build()
 
         assertThat(template.scrollStatePersistenceStrategy)
-            .isEqualTo(SectionedItemTemplate.SCROLL_STATE_RESET_TO_TOP)
+            .isEqualTo(SectionedItemTemplate.SCROLL_STATE_PRESERVE_INDEX)
     }
 
     @Test
@@ -128,6 +167,70 @@ class SectionedItemTemplateTest {
         } catch (e: IllegalArgumentException) {
             assertThat(e.message).contains("are allowed in SectionedItemTemplate")
         }
+    }
+
+    @Test
+    fun build_allowsSpotlightSection() {
+        val section =
+            SpotlightSection.Builder(CarIcon.APP_ICON)
+                .setTitle("Spotlight")
+                .addItem(CondensedItem.Builder().setTitle("Item").build())
+                .build()
+        val template = SectionedItemTemplate.Builder().addSection(section).build()
+
+        assertThat(template.sections).containsExactly(section)
+    }
+
+    @Test
+    fun build_throwsException_whenChipSectionIsNotFirst() {
+        try {
+            SectionedItemTemplate.Builder()
+                .addSection(RowSection.Builder().build())
+                .addSection(buildChipSection())
+                .build()
+            assertWithMessage("Expected builder to throw exception, but it didn't").fail()
+        } catch (e: IllegalArgumentException) {
+            assertThat(e.message).contains("must be the first section")
+        }
+    }
+
+    @Test
+    fun build_throwsException_whenMultipleChipSections() {
+        try {
+            SectionedItemTemplate.Builder()
+                .addSection(buildChipSection())
+                .addSection(buildChipSection())
+                .build()
+            assertWithMessage("Expected builder to throw exception, but it didn't").fail()
+        } catch (e: IllegalArgumentException) {
+            assertThat(e.message).contains("Only one ChipSection is allowed")
+        }
+    }
+
+    @Test
+    fun build_allowsChipSectionAsFirstSection() {
+        val section = buildChipSection()
+        val template = SectionedItemTemplate.Builder().addSection(section).build()
+
+        assertThat(template.sections).containsExactly(section)
+    }
+
+    @Test
+    fun build_withCondensedSection_containsCondensedSection() {
+        val item = CondensedItem.Builder().setTitle("Title").build()
+        val section = CondensedSection.Builder().addItem(item).build()
+        val template = SectionedItemTemplate.Builder().addSection(section).build()
+
+        assertThat(template.sections).containsExactly(section)
+    }
+
+    @Test
+    fun build_allowsBannerSection() {
+        val banner = Banner.Builder().setTitle("Primary").build()
+        val section = BannerSection.Builder().addItem(banner).build()
+        val template = SectionedItemTemplate.Builder().addSection(section).build()
+
+        assertThat(template.sections).containsExactly(section)
     }
 
     @Test
@@ -196,6 +299,32 @@ class SectionedItemTemplateTest {
     }
 
     @Test
+    fun getSearchHeader() {
+        val searchHeader =
+            SearchHeader.Builder(object : SearchCallback {})
+                .setInitialSearchText("initial")
+                .setSearchHint("hint")
+                .setShowKeyboardByDefault(false)
+                .setStartHeaderAction(Action.BACK)
+                .build()
+
+        val template = SectionedItemTemplate.Builder().setSearchHeader(searchHeader).build()
+
+        assertThat(template.searchHeader).isEqualTo(searchHeader)
+        assertThat(template.header).isNull()
+    }
+
+    @Test
+    fun build_withBothHeaderAndSearchHeader_throwsException() {
+        val searchHeader = SearchHeader.Builder(object : SearchCallback {}).build()
+        val builder = SectionedItemTemplate.Builder()
+        builder.setHeader(testHeader)
+        builder.setSearchHeader(searchHeader)
+
+        assertThrows(IllegalArgumentException::class.java) { builder.build() }
+    }
+
+    @Test
     fun toBuilder_build_returnsEquivalentObject() {
         val template = createFullyPopulatedTemplate()
 
@@ -228,4 +357,10 @@ class SectionedItemTemplateTest {
 
     private fun createRowWithMediaAction(): Row =
         Row.Builder().setTitle("Bananas").addAction(Action.MEDIA_PLAYBACK).build()
+
+    private fun buildChipSection(): ChipSection {
+        return ChipSection.Builder()
+            .addItem(Chip.Builder().setTitle("Chip").setOnClickListener {}.build())
+            .build()
+    }
 }

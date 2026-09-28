@@ -17,10 +17,12 @@
 package androidx.appsearch.testutil;
 
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.localstorage.AppSearchLogger;
 import androidx.appsearch.localstorage.stats.CallStats;
 import androidx.appsearch.localstorage.stats.InitializeStats;
 import androidx.appsearch.localstorage.stats.OptimizeStats;
+import androidx.appsearch.localstorage.stats.PersistToDiskStats;
 import androidx.appsearch.localstorage.stats.PutDocumentStats;
 import androidx.appsearch.localstorage.stats.QueryStats;
 import androidx.appsearch.localstorage.stats.RemoveStats;
@@ -36,9 +38,8 @@ import java.util.List;
 
 /**
  * Non-thread-safe simple logger implementation for testing.
- *
- * @exportToFramework:hide
  */
+@HideInPlatform
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public final class SimpleTestLogger implements AppSearchLogger {
     /** Holds {@link CallStats} after logging. */
@@ -59,6 +60,8 @@ public final class SimpleTestLogger implements AppSearchLogger {
     public @Nullable SchemaMigrationStats mSchemaMigrationStats;
     /** Holds {@link SearchSessionStats} after logging. */
     public @NonNull List<SearchSessionStats> mSearchSessionsStats = new ArrayList<>();
+    /** Holds {@link PersistToDiskStats} after logging. */
+    public @NonNull PersistToDiskStats mPersistToDiskStats;
 
     @Override
     public void logStats(@NonNull CallStats stats) {
@@ -103,5 +106,10 @@ public final class SimpleTestLogger implements AppSearchLogger {
     @Override
     public void logStats(@NonNull List<SearchSessionStats> searchSessionsStats) {
         mSearchSessionsStats.addAll(searchSessionsStats);
+    }
+
+    @Override
+    public void logStats(@NonNull PersistToDiskStats stats) {
+        mPersistToDiskStats = stats;
     }
 }

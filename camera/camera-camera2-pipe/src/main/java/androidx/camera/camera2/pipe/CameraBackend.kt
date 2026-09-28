@@ -17,6 +17,7 @@ package androidx.camera.camera2.pipe
 
 import androidx.annotation.RestrictTo
 import androidx.camera.camera2.pipe.graph.GraphListener
+import androidx.camera.featurecombinationquery.CameraDeviceSetupCompat
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -137,6 +138,11 @@ public interface CameraBackend {
 
     /** Performs initialization for checking if a [CameraGraph.Config] is supported. */
     public fun prewarmIsConfigSupported(cameraId: CameraId) {}
+
+    @Deprecated("Use prewarmIsConfigSupported instead")
+    public suspend fun prewarmGraphConfigQuery(cameraId: CameraId): CameraDeviceSetupCompat? {
+        return null
+    }
 
     /**
      * Checks if a [CameraGraph.Config] is supported by the device.

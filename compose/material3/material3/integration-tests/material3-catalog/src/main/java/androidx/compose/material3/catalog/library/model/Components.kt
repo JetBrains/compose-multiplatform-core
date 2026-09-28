@@ -123,6 +123,18 @@ private val Buttons =
         examples = ButtonsExamples,
     )
 
+private val ButtonGroups =
+    Component(
+        id = nextId(),
+        name = "Button Groups",
+        description =
+            "button groups is a container for material components that adds an animation on press",
+        guidelinesUrl = "$ComponentGuidelinesUrl/button-groups",
+        docsUrl = "$PackageSummaryUrl#buttongroups",
+        sourceUrl = "$Material3SourceUrl/ButtonGroup.kt",
+        examples = ButtonGroupsExamples,
+    )
+
 private val Card =
     Component(
         id = nextId(),
@@ -230,6 +242,31 @@ private val FloatingActionButtons =
         sourceUrl = "$Material3SourceUrl/FloatingActionButton.kt",
         examples = FloatingActionButtonsExamples,
     )
+
+private val FloatingActionButtonMenu =
+    Component(
+        id = nextId(),
+        name = "FAB Menu",
+        description = "The FAB Menu displays additional key actions on click of a FAB.",
+        // No FAB Menu icon
+        guidelinesUrl = "$ComponentGuidelinesUrl/fab-menu",
+        docsUrl = "$PackageSummaryUrl#floatingactionbuttonmenu",
+        sourceUrl = "$Material3SourceUrl/FloatingActionButtonMenu.kt",
+        examples = FloatingActionButtonMenuExamples,
+    )
+
+private val FloatingToolbars =
+    Component(
+        id = nextId(),
+        name = "Floating Toolbar",
+        description = "A floating toolbar displays key actions above the content.",
+        // No floating app bar icon
+        guidelinesUrl = "$ComponentGuidelinesUrl/floating-toolbars",
+        docsUrl = "$DocsUrl#floatingtoolbar",
+        sourceUrl = "$Material3SourceUrl/FloatingToolbar.kt",
+        examples = FloatingToolbarsExamples,
+    )
+
 private val IconButtons =
     Component(
         id = nextId(),
@@ -254,6 +291,21 @@ private val Lists =
         docsUrl = "$PackageSummaryUrl#listitem",
         sourceUrl = "$Material3SourceUrl/ListItem.kt",
         examples = ListsExamples,
+    )
+
+private val LoadingIndicators =
+    Component(
+        id = nextId(),
+        name = "Loading indicators",
+        description =
+            "Loading indicators express an unspecified wait time or display the length of " +
+                "a loading process.",
+        // No loading indicator icon
+        guidelinesUrl = "$ComponentGuidelinesUrl/loading-indicators",
+        tintIcon = true,
+        docsUrl = "$PackageSummaryUrl#loadingindicator",
+        sourceUrl = "$Material3SourceUrl/LoadingIndicator.kt",
+        examples = LoadingIndicatorsExamples,
     )
 
 private val Menus =
@@ -365,6 +417,18 @@ private val RadioButtons =
         examples = RadioButtonsExamples,
     )
 
+private val ScrollField =
+    Component(
+        id = nextId(),
+        name = "Scroll field",
+        description = "Scroll field allows the user to select a value, e.g. time.",
+        // No scroll field icon
+        guidelinesUrl = "$ComponentGuidelinesUrl/scroll-field",
+        docsUrl = "", // TODO(b/441573791):  Add docs when available.
+        sourceUrl = "$Material3SourceUrl/ScrollField.kt",
+        examples = ScrollFieldExamples,
+    )
+
 private val SearchBars =
     Component(
         id = nextId(),
@@ -391,6 +455,17 @@ private val SegmentedButtons =
         examples = SegmentedButtonExamples,
     )
 
+private val ToggleButtons =
+    Component(
+        id = nextId(),
+        name = "ToggleButtons",
+        description = "Toggle buttons provide a selectable button that animates on press.",
+        guidelinesUrl = "", // No guidelines yet
+        docsUrl = "", // No docs yet
+        sourceUrl = "$Material3SourceUrl/ToggleButton.kt",
+        examples = ToggleButtonsExamples,
+    )
+
 private val Sliders =
     Component(
         id = nextId(),
@@ -415,6 +490,17 @@ private val Snackbars =
         docsUrl = "$DocsUrl#snackbar",
         sourceUrl = "$Material3SourceUrl/Snackbar.kt",
         examples = SnackbarsExamples,
+    )
+
+private val SplitButtons =
+    Component(
+        id = nextId(),
+        name = "Split Button",
+        description = "Split buttons let user perform additional actions besides the main action",
+        guidelinesUrl = "", // No guidelines yet
+        docsUrl = "", // No docs yet
+        sourceUrl = "$Material3SourceUrl/SplitButton.kt",
+        examples = SplitButtonExamples,
     )
 
 private val Switches =
@@ -492,6 +578,20 @@ private val TopAppBar =
         examples = TopAppBarExamples,
     )
 
+private val Typography =
+    Component(
+        id = nextId(),
+        name = "Typography",
+        description =
+            "The Material Design type scale includes a range of contrasting styles that " +
+                "support the needs of your product and its content.",
+        // No typography icon
+        guidelinesUrl = "$StyleGuidelinesUrl/typography",
+        docsUrl = "$PackageSummaryUrl#typography",
+        sourceUrl = "$Material3SourceUrl/Typography.kt",
+        examples = TypographyExamples,
+    )
+
 /** Components for the catalog, ordered alphabetically by name. */
 val Components =
     listOf(
@@ -500,6 +600,7 @@ val Components =
         BottomAppBars,
         BottomSheets,
         Buttons,
+        ButtonGroups,
         Card,
         Carousel,
         Checkboxes,
@@ -508,8 +609,11 @@ val Components =
         Dialogs,
         ExtendedFloatingActionButton,
         FloatingActionButtons,
+        FloatingActionButtonMenu,
+        FloatingToolbars,
         IconButtons,
         Lists,
+        LoadingIndicators,
         Menus,
         NavigationBar,
         NavigationDrawer,
@@ -518,14 +622,18 @@ val Components =
         ProgressIndicators,
         PullToRefreshIndicators,
         RadioButtons,
+        ScrollField,
         SearchBars,
         SegmentedButtons,
         Sliders,
         Snackbars,
+        SplitButtons,
         Switches,
         Tabs,
         TextFields,
         TimePickers,
+        ToggleButtons,
         Tooltips,
         TopAppBar,
+        Typography,
     )

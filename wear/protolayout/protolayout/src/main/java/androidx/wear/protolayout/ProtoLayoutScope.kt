@@ -22,15 +22,18 @@ import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope
 import androidx.annotation.VisibleForTesting
+import androidx.core.os.BundleCompat
 import androidx.wear.protolayout.ResourceBuilders.ImageResource
 import androidx.wear.protolayout.ResourceBuilders.Resources
+import androidx.wear.protolayout.expression.VersionBuilders.VersionInfo
 import java.util.Objects
 
 /**
  * A scope object responsible for handling internal details of ProtoLayout layouts and Tiles.
  *
  * Object of this class, in Tiles cases, can be obtained via
- * `androidx.wear.tiles.RequestBuilders#TileRequest.getScope`.
+ * `androidx.wear.tiles.RequestBuilders#TileRequest.getScope` and shouldn't be created manually as
+ * it could lead to wrong tile behaviour, such as not correctly rendering resources.
  *
  * Some example of usage:
  * * Used for registering Android resources automatically instead of manually via
@@ -40,8 +43,8 @@ import java.util.Objects
  */
 @MainThread
 public class ProtoLayoutScope
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public constructor() {
+@JvmOverloads
+constructor(private val rendererVersionInfo: VersionInfo = DEFAULT_RENDERER_VERSION) {
     /**
      * Maps String key to the [ImageResource] type describing it in ProtoLayout terms.
      *
@@ -62,6 +65,30 @@ public constructor() {
     @VisibleForTesting internal val pendingIntents: Bundle = Bundle()
 
     /**
+     * Defines the capabilities or features that a renderer can support.
+     *
+     * Support for each feature requires a certain minimum renderer version, which must be checked
+     * against the current [VersionInfo].
+     */
+    public enum class RendererCapability(private val minMinorVersion: Int) {
+        /** Indicates support for clickable response with PendingIntent. */
+        PENDING_INTENT_ACTION(526),
+        /** Indicates support for customizing Lottie animation by specifying color for slot. */
+        LOTTIE_COLOR_FOR_SLOT(527);
+
+        /**
+         * Returns whether this capability is supported by a renderer with the given [versionInfo].
+         */
+        internal fun isSupported(versionInfo: VersionInfo): Boolean =
+            versionInfo.major > 1 ||
+                (versionInfo.major == 1 && versionInfo.minor >= minMinorVersion)
+    }
+
+    /** Checks if the current tile renderer supports a specific capability. */
+    public fun hasCapability(capability: RendererCapability): Boolean =
+        capability.isSupported(rendererVersionInfo)
+
+    /**
      * Registers the given Android resource that corresponds to the given String ProtoLayout
      * resources ID and maps it to the given [ImageResource] type.
      */
@@ -73,7 +100,15 @@ public constructor() {
     /** Registers the given [PendingIntent] with given clickable ID. */
     @RestrictTo(Scope.LIBRARY)
     public fun registerPendingIntent(id: String, intent: PendingIntent) {
-        pendingIntents.putParcelable(id, intent)
+        val storedIntent: PendingIntent? =
+            BundleCompat.getParcelable(pendingIntents, id, PendingIntent::class.java)
+        if (storedIntent != null && storedIntent != intent) {
+            throw IllegalArgumentException(
+                "Duplicate use of clickable ID \"$id\" for PendingIntents."
+            )
+        } else if (storedIntent == null) {
+            pendingIntents.putParcelable(id, intent)
+        }
     }
 
     /**
@@ -97,16 +132,14 @@ public constructor() {
      *
      * Bundle contains (key, value) pairs of [android.os.Parcelable], where `key` is String ID
      * corresponding to the [ModifiersBuilders.Clickable] ID, and `value` is [PendingIntent].
+     *
+     * PendingIntent is registered when building a [ModifiersBuilders.Clickable] which sets a
+     * [PendingIntent] as its click response.
      */
-    // TODO: b/427954838 - Add example API in KDocs on where this is registered.
     public fun collectPendingIntents(): Bundle = pendingIntents.clone() as Bundle
 
-    /** Clears mappings for resources and pending intents. */
-    @RestrictTo(Scope.LIBRARY_GROUP_PREFIX)
-    public fun clear() {
-        resources.clear()
-        pendingIntents.clear()
-    }
+    /** Returns whether this scope has any registered [Resources] or not. */
+    public fun hasResources(): Boolean = !resources.isEmpty()
 
     /**
      * Generates String version of hash codes for all [resources].
@@ -117,4 +150,8 @@ public constructor() {
     private fun hashedResources(): String =
         Objects.hash(resources.toSortedMap().map { (id, res) -> Pair(id, res).hashCode() }.toList())
             .toString()
+
+    private companion object {
+        private val DEFAULT_RENDERER_VERSION = VersionInfo.Builder().setMajor(1).setMajor(0).build()
+    }
 }

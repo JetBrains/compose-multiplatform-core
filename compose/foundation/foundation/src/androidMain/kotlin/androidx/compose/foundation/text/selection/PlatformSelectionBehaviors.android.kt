@@ -17,6 +17,7 @@
 package androidx.compose.foundation.text.selection
 
 import android.content.Context
+import android.graphics.drawable.Drawable
 import android.os.Build
 import android.text.TextUtils
 import android.view.textclassifier.TextClassification
@@ -34,6 +35,7 @@ import androidx.compose.foundation.text.selection.TextClassifierHelperMethods.cr
 import androidx.compose.foundation.text.selection.TextClassifierHelperMethods.hasLegacyAssistItem
 import androidx.compose.foundation.text.selection.TextClassifierHelperMethods.toAndroidLocaleList
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,10 +44,10 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.util.fastForEachIndexed
 import kotlin.coroutines.CoroutineContext
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -61,7 +63,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  * a [CoroutineContext] not backed by a worker thread may lead to performance issues or unexpected
  * behavior with [TextClassifier].
  */
-val LocalTextClassifierCoroutineContext =
+public val LocalTextClassifierCoroutineContext: ProvidableCompositionLocal<CoroutineContext> =
     staticCompositionLocalOf<CoroutineContext> { Dispatchers.IO }
 
 /**
@@ -83,7 +85,7 @@ private const val TEXT_CLASSIFICATION_TIMEOUT_MILLIS = 200L
 @RequiresApi(28)
 @VisibleForTesting
 internal var PlatformSelectionBehaviorsFactory:
-    (CoroutineContext, Context, SelectedTextType, LocaleList?) -> PlatformSelectionBehaviors? =
+    (CoroutineContext, Context, SelectedTextType, LocaleList) -> PlatformSelectionBehaviors? =
     { coroutineContext, context, selectionType, localeList ->
         PlatformSelectionBehaviorsImpl(coroutineContext, context, selectionType, localeList)
     }
@@ -92,7 +94,7 @@ internal var PlatformSelectionBehaviorsFactory:
 @Composable
 internal actual fun rememberPlatformSelectionBehaviors(
     selectedTextType: SelectedTextType,
-    localeList: LocaleList?,
+    localeList: LocaleList,
 ): PlatformSelectionBehaviors? {
     if (Build.VERSION.SDK_INT < 28) {
         // Smart selection features are not supported under API 28.
@@ -110,7 +112,7 @@ internal class PlatformSelectionBehaviorsImpl(
     private val coroutineContext: CoroutineContext,
     private val context: Context,
     private val selectedTextType: SelectedTextType,
-    private val localeList: LocaleList?,
+    private val localeList: LocaleList,
 ) : PlatformSelectionBehaviors {
     private val mutex = Mutex()
     private var textClassificationSession: TextClassifier? = null
@@ -118,12 +120,11 @@ internal class PlatformSelectionBehaviorsImpl(
     // The textClassificationResult stores the result of the latest text classification operation.
     // It is a MutableState because changes to this value should trigger a rebuild of the
     // ContextMenuData which depend on this classification data.
-    private var textClassificationResult: TextClassificationResult? by mutableStateOf(null)
+    @VisibleForTesting
+    internal var textClassificationResult: TextClassificationResult? by mutableStateOf(null)
 
     private val androidLocalList
-        get() =
-            localeList?.let { toAndroidLocaleList(it) }
-                ?: android.os.LocaleList(Locale.current.platformLocale)
+        get() = toAndroidLocaleList(localeList)
 
     override suspend fun suggestSelectionForLongPressOrDoubleClick(
         text: CharSequence,
@@ -147,14 +148,13 @@ internal class PlatformSelectionBehaviorsImpl(
                     suggestedSelection.selectionEndIndex,
                 )
             if (Build.VERSION.SDK_INT >= 31 && suggestedSelection.textClassification != null) {
-                mutex.withLock {
-                    textClassificationResult =
-                        TextClassificationResult(
-                            text,
-                            newSelection,
-                            suggestedSelection.textClassification!!,
-                        )
-                }
+                val result =
+                    createTextClassificationResult(
+                        text,
+                        newSelection,
+                        suggestedSelection.textClassification!!,
+                    )
+                mutex.withLock { textClassificationResult = result }
             } else {
                 classifyText(text, newSelection, this)
             }
@@ -200,10 +200,25 @@ internal class PlatformSelectionBehaviorsImpl(
                 .setDefaultLocales(androidLocalList)
                 .build()
         val textClassification = textClassifier.classifyText(request)
+        val result = createTextClassificationResult(text, selection, textClassification)
 
-        mutex.withLock {
-            textClassificationResult = TextClassificationResult(text, selection, textClassification)
-        }
+        mutex.withLock { textClassificationResult = result }
+    }
+
+    /** Load the icons and return the [TextClassificationResult] object. */
+    private fun createTextClassificationResult(
+        text: CharSequence,
+        selection: TextRange,
+        textClassification: TextClassification,
+    ): TextClassificationResult {
+        val icons =
+            List(textClassification.actions.size) { index ->
+                textClassification.actions[index]
+                    .takeIf { index == 0 || it.shouldShowIcon() }
+                    ?.icon
+                    ?.loadDrawable(context)
+            }
+        return TextClassificationResult(text, selection, textClassification, icons)
     }
 
     private val AssistantItemKey = Any()
@@ -213,23 +228,43 @@ internal class PlatformSelectionBehaviorsImpl(
         selection: TextRange,
         child: TextContextMenuBuilderScope.() -> Unit,
     ) {
-        val textClassification = tryGetTextClassification(text, selection)
-        if (textClassification == null) {
+        val result = tryGetTextClassificationResult(text, selection)
+        if (result == null) {
             child()
             return
         }
 
+        val textClassification = result.textClassification
         if (textClassification.actions.isNotEmpty()) {
-            textClassificationItem(AssistantItemKey, textClassification, index = 0)
+            textClassificationItem(
+                AssistantItemKey,
+                textClassification,
+                index = 0,
+                icon = result.icons[0],
+            )
         } else if (textClassification.hasLegacyAssistItem()) {
-            textClassificationItem(AssistantItemKey, textClassification, index = -1)
+            @Suppress("DEPRECATION")
+            // The legacy item is denoted by the index == -1.
+            textClassificationItem(
+                AssistantItemKey,
+                textClassification,
+                index = -1,
+                icon = textClassification.icon,
+            )
         }
 
         child()
 
-        textClassification.actions.fastForEachIndexed { index, remoteAction ->
+        textClassification.actions.fastForEachIndexed { index, _ ->
+            // Index 0 is the primary item, which is added above specially to handle the legacy
+            // assistItem fallback.
             if (index > 0) {
-                textClassificationItem(AssistantItemKey, textClassification, index = index)
+                textClassificationItem(
+                    AssistantItemKey,
+                    textClassification,
+                    index = index,
+                    icon = result.icons[index],
+                )
             }
         }
     }
@@ -243,7 +278,10 @@ internal class PlatformSelectionBehaviorsImpl(
      *    whenever the states that creates it update. This means context menu data might update even
      *    if the context menu is not shown.
      */
-    fun tryGetTextClassification(text: CharSequence, selection: TextRange): TextClassification? {
+    fun tryGetTextClassificationResult(
+        text: CharSequence,
+        selection: TextRange,
+    ): TextClassificationResult? {
         val acquired = mutex.tryLock()
         if (!acquired) {
             // There is an ongoing text classification operation. This is possible only
@@ -254,7 +292,7 @@ internal class PlatformSelectionBehaviorsImpl(
         }
         val textClassificationResult = textClassificationResult
         return if (textClassificationResult?.canReuse(text, selection) == true) {
-                textClassificationResult.textClassification
+                textClassificationResult
             } else {
                 null
             }
@@ -265,31 +303,31 @@ internal class PlatformSelectionBehaviorsImpl(
         block: suspend TextClassifier.() -> T
     ): T? {
         return withContext(coroutineContext) {
-            val textClassificationSession =
-                mutex.withLock {
-                    val session = this@PlatformSelectionBehaviorsImpl.textClassificationSession
+            val textClassificationSession = mutex.withLock {
+                val session = this@PlatformSelectionBehaviorsImpl.textClassificationSession
 
-                    if (session == null || session.isDestroyed) {
-                        withTimeoutOrNull(TEXT_CLASSIFIER_INITIALIZATION_TIMEOUT_MILLIS) {
-                            createTextClassificationSession(context, selectedTextType).also {
-                                this@PlatformSelectionBehaviorsImpl.textClassificationSession = it
-                            }
+                if (session == null || session.isDestroyed) {
+                    withTimeoutOrNull(TEXT_CLASSIFIER_INITIALIZATION_TIMEOUT_MILLIS.milliseconds) {
+                        createTextClassificationSession(context, selectedTextType).also {
+                            this@PlatformSelectionBehaviorsImpl.textClassificationSession = it
                         }
-                    } else {
-                        session
                     }
+                } else {
+                    session
                 }
-            withTimeoutOrNull(TEXT_CLASSIFICATION_TIMEOUT_MILLIS) {
+            }
+            withTimeoutOrNull(TEXT_CLASSIFICATION_TIMEOUT_MILLIS.milliseconds) {
                 textClassificationSession?.block()
             }
         }
     }
 }
 
-private data class TextClassificationResult(
+internal data class TextClassificationResult(
     val text: CharSequence,
     val selection: TextRange,
     val textClassification: TextClassification,
+    val icons: List<Drawable?>,
 )
 
 private fun TextClassificationResult.canReuse(text: CharSequence, selection: TextRange): Boolean {
@@ -299,6 +337,17 @@ private fun TextClassificationResult.canReuse(text: CharSequence, selection: Tex
 /**
  * Add platform specific items to the context menu, including both smart suggested items by
  * [TextClassifier] and `PROCESS_TEXT` item.
+ *
+ * @param context the context used to retrieve platform items
+ * @param editable true if the text is editable, false otherwise. This information is needed to
+ *   filter out platform items that only apply to editable or non-editable text.
+ * @param text the text on which the platform items will be evaluated. Usually the full text content
+ *   of a text component
+ * @param selection the selection range in the [text]. The platform items will be evaluated based on
+ *   the selection
+ * @param platformSelectionBehaviors the platform behaviors that provides smart suggestions
+ * @param child the scope where standard context menu items will be added. This allows platform
+ *   items to be positioned appropriately relative to the standard items
  */
 internal fun TextContextMenuBuilderScope.addPlatformTextContextMenuItems(
     context: Context,
@@ -353,6 +402,20 @@ internal object TextClassifierHelperMethods {
         }
     }
 
+    /**
+     * Check if a legacy assist item (from API 26 and 27) is present.
+     *
+     * In Android 9 (API 28), [TextClassification.getActions] was introduced to provide a list of
+     * [android.app.RemoteAction] objects. Prior to API 28, text classifiers provided a single
+     * action using properties like [TextClassification.getIcon], [TextClassification.getLabel],
+     * [TextClassification.getIntent], and [TextClassification.getOnClickListener].
+     *
+     * Even though Compose's minimum supported API for this feature is API 28, this fallback is
+     * still needed. A custom [TextClassifier] provided by an OEM or another app might have been
+     * built for an older API version. When invoked on a newer API level, such a [TextClassifier]
+     * might still return a [TextClassification] object using the older API format, leaving the
+     * modern [TextClassification.getActions] list empty.
+     */
     @Suppress("DEPRECATION")
     internal fun TextClassification.hasLegacyAssistItem(): Boolean {
         // Check whether we have the UI data and action.

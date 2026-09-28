@@ -18,7 +18,6 @@ package androidx.camera.core.impl
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.params.SessionConfiguration
-import android.os.Build
 import android.util.Range
 import android.view.Surface
 import androidx.camera.camera2.impl.Camera2ImplConfig
@@ -42,7 +41,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class SessionConfigTest {
     private var mMockSurface0: DeferrableSurface? = null
     private var mMockSurface1: DeferrableSurface? = null

@@ -75,10 +75,8 @@ class AnchorPlacementTest {
                     setOf(PlaneOrientation.VERTICAL, PlaneOrientation.HORIZONTAL)
             )
 
-        assertThat(anchorPlacement.anchorablePlaneOrientations).hasSize(2)
-        assertThat(anchorPlacement.anchorablePlaneOrientations).contains(PlaneOrientation.VERTICAL)
         assertThat(anchorPlacement.anchorablePlaneOrientations)
-            .contains(PlaneOrientation.HORIZONTAL)
+            .containsExactly(PlaneOrientation.VERTICAL, PlaneOrientation.HORIZONTAL)
     }
 
     @Test
@@ -93,10 +91,40 @@ class AnchorPlacementTest {
                     )
             )
 
-        assertThat(anchorPlacement.anchorablePlaneSemanticTypes).hasSize(3)
-        assertThat(anchorPlacement.anchorablePlaneSemanticTypes).contains(PlaneSemanticType.CEILING)
-        assertThat(anchorPlacement.anchorablePlaneSemanticTypes).contains(PlaneSemanticType.FLOOR)
-        assertThat(anchorPlacement.anchorablePlaneSemanticTypes).contains(PlaneSemanticType.WALL)
+        assertThat(anchorPlacement.anchorablePlaneSemanticTypes)
+            .containsExactly(
+                PlaneSemanticType.CEILING,
+                PlaneSemanticType.FLOOR,
+                PlaneSemanticType.WALL,
+            )
+    }
+
+    @Test
+    fun anchorPlacementAddingToSemanticTypesAfterCreation_doesNotUpdateAnchorPlacement() {
+        val anchorSemanticSet: MutableSet<PlaneSemanticType> =
+            mutableSetOf(PlaneSemanticType.CEILING, PlaneSemanticType.FLOOR)
+        val anchorPlacement =
+            AnchorPlacement.createForPlanes(anchorablePlaneSemanticTypes = anchorSemanticSet)
+
+        // Add an extra semantic type and verify that it is not added in the AnchorPlacement.
+        anchorSemanticSet.add(PlaneSemanticType.WALL)
+
+        assertThat(anchorPlacement.anchorablePlaneSemanticTypes)
+            .containsExactly(PlaneSemanticType.CEILING, PlaneSemanticType.FLOOR)
+    }
+
+    @Test
+    fun anchorPlacementAddingToOrientationsAfterCreation_doesNotUpdateAnchorPlacement() {
+        val anchorOrientationSet: MutableSet<PlaneOrientation> =
+            mutableSetOf(PlaneOrientation.VERTICAL)
+        val anchorPlacement =
+            AnchorPlacement.createForPlanes(anchorablePlaneOrientations = anchorOrientationSet)
+
+        // Add an extra orientation and verify that it is not added in the AnchorPlacement.
+        anchorOrientationSet.add(PlaneOrientation.HORIZONTAL)
+
+        assertThat(anchorPlacement.anchorablePlaneOrientations)
+            .containsExactly(PlaneOrientation.VERTICAL)
     }
 
     @Test
@@ -112,7 +140,7 @@ class AnchorPlacementTest {
 
         assertThat(anchorPlacementString)
             .isEqualTo(
-                "AnchorPlacement(anchorablePlaneOrientations=[1], anchorablePlaneSemanticTypes=[2, 3])"
+                "AnchorPlacement(anchorablePlaneOrientations=[VERTICAL], anchorablePlaneSemanticTypes=[CEILING, TABLE])"
             )
     }
 

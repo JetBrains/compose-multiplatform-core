@@ -22,6 +22,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.PowerManager;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.RestrictTo;
 import androidx.core.content.ContextCompat;
 import androidx.work.Configuration;
@@ -68,6 +69,7 @@ public class Processor implements ForegroundProcessor {
     private Set<String> mCancelledIds;
 
     private final List<ExecutionListener> mOuterListeners;
+    private final List<ForegroundListener> mForegroundListeners;
     private final Object mLock;
 
     public Processor(
@@ -83,6 +85,7 @@ public class Processor implements ForegroundProcessor {
         mForegroundWorkMap = new HashMap<>();
         mCancelledIds = new HashSet<>();
         mOuterListeners = new ArrayList<>();
+        mForegroundListeners = new ArrayList<>();
         mForegroundLock = null;
         mLock = new Object();
         mWorkRuns = new HashMap<>();
@@ -191,19 +194,30 @@ public class Processor implements ForegroundProcessor {
     @Override
     public void startForeground(@NonNull String workSpecId,
             @NonNull ForegroundInfo foregroundInfo) {
+        List<ForegroundListener> listeners;
+        WorkGenerationalId generationalId;
+
         synchronized (mLock) {
             Logger.get().info(TAG, "Moving WorkSpec (" + workSpecId + ") to the foreground");
             WorkerWrapper wrapper = mEnqueuedWorkMap.remove(workSpecId);
-            if (wrapper != null) {
-                if (mForegroundLock == null) {
-                    mForegroundLock = WakeLocks.newWakeLock(mAppContext, FOREGROUND_WAKELOCK_TAG);
-                    mForegroundLock.acquire();
-                }
-                mForegroundWorkMap.put(workSpecId, wrapper);
-                Intent intent = createStartForegroundIntent(mAppContext,
-                        wrapper.getWorkGenerationalId(), foregroundInfo);
-                ContextCompat.startForegroundService(mAppContext, intent);
+            if (wrapper == null) {
+                return;
             }
+            if (mForegroundLock == null) {
+                mForegroundLock = WakeLocks.newWakeLock(mAppContext, FOREGROUND_WAKELOCK_TAG);
+                mForegroundLock.acquire();
+            }
+            mForegroundWorkMap.put(workSpecId, wrapper);
+            Intent intent = createStartForegroundIntent(mAppContext,
+                    wrapper.getWorkGenerationalId(), foregroundInfo);
+            ContextCompat.startForegroundService(mAppContext, intent);
+
+            listeners = new ArrayList<>(mForegroundListeners);
+            generationalId = wrapper.getWorkGenerationalId();
+        }
+
+        for (ForegroundListener listener : listeners) {
+            listener.onForegroundChanged(generationalId, true);
         }
     }
 
@@ -313,6 +327,42 @@ public class Processor implements ForegroundProcessor {
     }
 
     /**
+     * Adds a {@link ForegroundListener} to track when work is promoted to foreground.
+     *
+     * @param listener The {@link ForegroundListener} to add
+     */
+    public void addForegroundListener(@NonNull ForegroundListener listener) {
+        synchronized (mLock) {
+            mForegroundListeners.add(listener);
+        }
+    }
+
+    /**
+     * Removes a tracked {@link ForegroundListener}.
+     *
+     * @param listener The {@link ForegroundListener} to remove
+     */
+    public void removeForegroundListener(@NonNull ForegroundListener listener) {
+        synchronized (mLock) {
+            mForegroundListeners.remove(listener);
+        }
+    }
+
+    /**
+     * Returns {@code true} if the given {@link WorkGenerationalId} is running within the context
+     * of a system Foreground Service.
+     *
+     * @param id The {@link WorkGenerationalId} to query
+     * @return {@code true} if the work is running in a Foreground Service
+     */
+    public boolean isForeground(@NonNull WorkGenerationalId id) {
+        synchronized (mLock) {
+            WorkerWrapper wrapper = mForegroundWorkMap.get(id.getWorkSpecId());
+            return wrapper != null && wrapper.getWorkGenerationalId().equals(id);
+        }
+    }
+
+    /**
      * Adds an {@link ExecutionListener} to track when work finishes.
      *
      * @param executionListener The {@link ExecutionListener} to add
@@ -335,8 +385,10 @@ public class Processor implements ForegroundProcessor {
     }
 
     private void onExecuted(@NonNull WorkerWrapper wrapper, boolean needsReschedule) {
+        List<ExecutionListener> listeners;
+        WorkGenerationalId id;
         synchronized (mLock) {
-            WorkGenerationalId id = wrapper.getWorkGenerationalId();
+            id = wrapper.getWorkGenerationalId();
             String workSpecId = id.getWorkSpecId();
             WorkerWrapper workerWrapper = getWorkerWrapperUnsafe(workSpecId);
             // can be called for another generation, so we shouldn't remove it
@@ -346,9 +398,10 @@ public class Processor implements ForegroundProcessor {
             Logger.get().debug(TAG,
                     getClass().getSimpleName() + " " + workSpecId
                             + " executed; reschedule = " + needsReschedule);
-            for (ExecutionListener executionListener : mOuterListeners) {
-                executionListener.onExecuted(id, needsReschedule);
-            }
+            listeners = new ArrayList<>(mOuterListeners);
+        }
+        for (ExecutionListener executionListener : listeners) {
+            executionListener.onExecuted(id, needsReschedule);
         }
     }
 
@@ -379,10 +432,12 @@ public class Processor implements ForegroundProcessor {
     private void runOnExecuted(final @NonNull WorkGenerationalId id, boolean needsReschedule) {
         mWorkTaskExecutor.getMainThreadExecutor().execute(
                 () -> {
+                    List<ExecutionListener> listeners;
                     synchronized (mLock) {
-                        for (ExecutionListener executionListener : mOuterListeners) {
-                            executionListener.onExecuted(id, needsReschedule);
-                        }
+                        listeners = new ArrayList<>(mOuterListeners);
+                    }
+                    for (ExecutionListener executionListener : listeners) {
+                        executionListener.onExecuted(id, needsReschedule);
                     }
                 }
         );
@@ -410,6 +465,7 @@ public class Processor implements ForegroundProcessor {
         }
     }
 
+    @GuardedBy("mLock")
     private @Nullable WorkerWrapper cleanUpWorkerUnsafe(@NonNull String id) {
         WorkerWrapper wrapper = mForegroundWorkMap.remove(id);
         boolean wasForeground = wrapper != null;
@@ -419,6 +475,13 @@ public class Processor implements ForegroundProcessor {
         mWorkRuns.remove(id);
         if (wasForeground) {
             stopForegroundService();
+            List<ForegroundListener> listeners = new ArrayList<>(mForegroundListeners);
+            WorkGenerationalId generationalId = wrapper.getWorkGenerationalId();
+            mWorkTaskExecutor.getSerialTaskExecutor().execute(() -> {
+                for (ForegroundListener listener : listeners) {
+                    listener.onForegroundChanged(generationalId, false);
+                }
+            });
         }
         return wrapper;
     }
@@ -434,7 +497,9 @@ public class Processor implements ForegroundProcessor {
             @Nullable WorkerWrapper wrapper, int stopReason) {
         if (wrapper != null) {
             wrapper.interrupt(stopReason);
-            Logger.get().debug(TAG, "WorkerWrapper interrupted for " + id);
+            Logger.get().debug(TAG, "WorkerWrapper interrupted for " + id + " ("
+                    + wrapper.getWorkSpec().workerClassName + ")"
+                    + ", reason: " + stopReason);
             return true;
         } else {
             Logger.get().debug(TAG, "WorkerWrapper could not be found for " + id);

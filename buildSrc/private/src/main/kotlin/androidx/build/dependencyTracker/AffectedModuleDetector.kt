@@ -16,6 +16,7 @@
 
 package androidx.build.dependencyTracker
 
+import androidx.build.AndroidXExtension
 import androidx.build.dependencyTracker.AffectedModuleDetector.Companion.ENABLE_ARG
 import androidx.build.getCheckoutRoot
 import androidx.build.getDistributionDirectory
@@ -26,12 +27,17 @@ import org.gradle.api.Action
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.artifacts.ProjectDependency
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.invocation.Gradle
 import org.gradle.api.logging.Logger
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
 import org.gradle.api.services.BuildServiceSpec
+import org.gradle.kotlin.dsl.getByType
 
 /**
  * The subsets we allow the projects to be partitioned into. This is to allow more granular testing.
@@ -113,23 +119,16 @@ abstract class AffectedModuleDetector(protected val logger: Logger?) {
             val enabledProvider = rootProject.providers.gradleProperty(ENABLE_ARG)
             val enabled = enabledProvider.isPresent && enabledProvider.get() != "false"
 
-            val distDir = rootProject.getDistributionDirectory()
-            val outputFile = distDir.resolve(LOG_FILE_NAME)
+            val outputFile = rootProject.getDistributionDirectory().file(LOG_FILE_NAME)
 
-            outputFile.writeText("")
-            val logger = FileLogger(outputFile)
-            logger.info("setup: enabled: $enabled")
             if (!enabled) {
                 val provider =
-                    setupWithParams(
-                        rootProject,
-                        { spec ->
-                            val params = spec.parameters
-                            params.acceptAll = true
-                            params.log = logger
-                        },
-                    )
-                logger.info("using AcceptAll")
+                    setupWithParams(rootProject) { spec ->
+                        val params = spec.parameters
+                        params.enabled.set(false)
+                        params.acceptAll = true
+                        params.logOutputFileProvider.set(outputFile)
+                    }
                 instance.wrapped = provider
                 return
             }
@@ -137,22 +136,32 @@ abstract class AffectedModuleDetector(protected val logger: Logger?) {
                 rootProject.providers.gradleProperty(BASE_COMMIT_ARG)
 
             gradle.taskGraph.whenReady {
-                logger.lifecycle("projects evaluated")
                 val projectGraph = ProjectGraph(rootProject)
-                val dependencyTracker = DependencyTracker(rootProject, logger.toLogger())
+                val dependencyMap = mutableMapOf<String, MutableSet<String>>()
+                rootProject.subprojects.forEach { project ->
+                    @Suppress("EagerGradleConfiguration")
+                    project.configurations.forEach { config ->
+                        config.dependencies.filterIsInstance<ProjectDependency>().forEach {
+                            dependency ->
+                            dependencyMap
+                                .getOrPut(dependency.path) { mutableSetOf() }
+                                .add(project.path)
+                        }
+                    }
+                }
                 val provider =
                     setupWithParams(rootProject) { spec ->
                         val params = spec.parameters
                         params.rootDir = rootProject.projectDir
+                        params.enabled.set(true)
+                        params.dependencyMap.set(dependencyMap)
                         params.checkoutRoot = rootProject.getCheckoutRoot()
                         params.projectGraph = projectGraph
-                        params.dependencyTracker = dependencyTracker
-                        params.log = logger
+                        params.logOutputFileProvider.set(outputFile)
                         params.baseCommitOverride = baseCommitOverride
                         params.gitChangedFilesProvider =
                             rootProject.getChangedFilesProvider(baseCommitOverride)
                     }
-                logger.info("using real detector")
                 instance.wrapped = provider
             }
         }
@@ -185,6 +194,8 @@ abstract class AffectedModuleDetector(protected val logger: Logger?) {
         @Throws(GradleException::class)
         @JvmStatic
         fun configureTaskGuard(task: Task) {
+            if (task.project.extensions.getByType<AndroidXExtension>().isIsolatedProjectsEnabled())
+                return
             val detector = getInstance(task.project)
             task.onlyIf { detector.shouldInclude(task) }
         }
@@ -214,9 +225,9 @@ class AffectedModuleDetectorWrapper : AffectedModuleDetector(logger = null) {
         return wrapped?.get()?.detector
             ?: throw GradleException(
                 """
-                        Tried to get the affected module detector implementation too early.
-                        You cannot access it until all projects are evaluated.
-            """
+                Tried to get the affected module detector implementation too early.
+                You cannot access it until all projects are evaluated.
+                """
                     .trimIndent()
             )
     }
@@ -243,12 +254,12 @@ abstract class AffectedModuleDetectorLoader :
     BuildService<AffectedModuleDetectorLoader.Parameters> {
     interface Parameters : BuildServiceParameters {
         var acceptAll: Boolean
-
+        val enabled: Property<Boolean>
+        val dependencyMap: MapProperty<String, Set<String>>
         var rootDir: File
         var checkoutRoot: File
         var projectGraph: ProjectGraph
-        var dependencyTracker: DependencyTracker
-        var log: FileLogger?
+        val logOutputFileProvider: RegularFileProperty
         var cobuiltTestPaths: Set<Set<String>>?
         var alwaysBuildIfExists: Set<String>?
         var ignoredPaths: Set<String>?
@@ -257,13 +268,21 @@ abstract class AffectedModuleDetectorLoader :
     }
 
     val detector: AffectedModuleDetector by lazy {
-        val logger = parameters.log!!
+        val file =
+            parameters.logOutputFileProvider.get().asFile.also { if (it.exists()) it.delete() }
+        val logger = FileLogger(file)
+        logger.info("setup: enabled: ${parameters.enabled.get()}")
         if (parameters.acceptAll) {
+            logger.info("using AcceptAll")
             AcceptAll(null)
         } else {
+            logger.lifecycle("projects evaluated")
+            logger.info("using real detector")
+            val dependencyTracker =
+                DependencyTracker(parameters.dependencyMap.get(), logger.toLogger())
             AffectedModuleDetectorImpl(
                 projectGraph = parameters.projectGraph,
-                dependencyTracker = parameters.dependencyTracker,
+                dependencyTracker = dependencyTracker,
                 logger = logger.toLogger(),
                 cobuiltTestPaths =
                     parameters.cobuiltTestPaths ?: AffectedModuleDetectorImpl.COBUILT_TEST_PATHS,

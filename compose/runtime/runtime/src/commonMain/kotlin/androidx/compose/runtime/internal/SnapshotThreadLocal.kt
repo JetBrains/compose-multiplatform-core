@@ -20,13 +20,15 @@ import androidx.compose.runtime.platform.makeSynchronizedObject
 import androidx.compose.runtime.platform.synchronized
 
 /**
- * This is similar to a [ThreadLocal] but has lower overhead because it avoids a weak reference.
- * This should only be used when the writes are delimited by a try...finally call that will clean up
- * the reference such as [androidx.compose.runtime.snapshots.Snapshot.enter] else the reference
- * could get pinned by the thread local causing a leak.
+ * This is similar to a
+ * [java.lang.ThreadLocal](https://developer.android.com/reference/java/lang/ThreadLocal) but has
+ * lower overhead because it avoids a weak reference. This should only be used when the writes are
+ * delimited by a try...finally call that will clean up the reference such as
+ * [androidx.compose.runtime.snapshots.Snapshot.enter] else the reference could get pinned by the
+ * thread local causing a leak.
  *
- * [ThreadLocal] can be used to implement the actual for platforms that do not exhibit the same
- * overhead for thread locals as the JVM and ART.
+ * [kotlin.native.concurrent.ThreadLocal] can be used to implement the actual for platforms that do
+ * not exhibit the same overhead for thread locals as the JVM and ART.
  */
 internal class SnapshotThreadLocal<T> {
     private val map = AtomicReference(emptyThreadMap)
@@ -34,12 +36,12 @@ internal class SnapshotThreadLocal<T> {
 
     private var mainThreadValue: T? = null
 
-    @Suppress("UNCHECKED_CAST")
     fun get(): T? {
         val threadId = currentThreadId()
         return if (threadId == MainThreadId) {
             mainThreadValue
         } else {
+            @Suppress("UNCHECKED_CAST")
             map.get().get(threadId) as T?
         }
     }
@@ -53,6 +55,57 @@ internal class SnapshotThreadLocal<T> {
                 val current = map.get()
                 if (current.trySet(key, value)) return
                 map.set(current.newWith(key, value))
+            }
+        }
+    }
+
+    /**
+     * Convenience method to set the value if it is not already set. Optimizes for less thread id
+     * checks and lookups.
+     *
+     * @return `true` if the local was empty and the value was set, `false` otherwise.
+     */
+    fun setIfEmpty(value: T?): Boolean {
+        val key = currentThreadId()
+        if (key == MainThreadId) {
+            if (mainThreadValue == null) {
+                mainThreadValue = value
+                return true
+            }
+            return false
+        } else {
+            synchronized(writeMutex) {
+                val current = map.get()
+                @Suppress("UNCHECKED_CAST") val currentVal = current.get(key) as T?
+                if (currentVal == null) {
+                    if (current.trySet(key, value)) return true
+                    map.set(current.newWith(key, value))
+                    return true
+                }
+                return false
+            }
+        }
+    }
+
+    /**
+     * Convenience method to replace the value. Optimizes for less thread id checks and lookups.
+     *
+     * @return previous value of the local or `null` if the local was empty.
+     */
+    fun replace(value: T?): T? {
+        val key = currentThreadId()
+        if (key == MainThreadId) {
+            val old = mainThreadValue
+            mainThreadValue = value
+            return old
+        } else {
+            synchronized(writeMutex) {
+                val current = map.get()
+                @Suppress("UNCHECKED_CAST") val old = current.get(key) as T?
+                if (!current.trySet(key, value)) {
+                    map.set(current.newWith(key, value))
+                }
+                return old
             }
         }
     }

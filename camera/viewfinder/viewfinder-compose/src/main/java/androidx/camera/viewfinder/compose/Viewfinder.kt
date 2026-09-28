@@ -23,14 +23,16 @@ import android.view.Surface
 import androidx.camera.viewfinder.compose.internal.ViewfinderEmbeddedExternalSurface
 import androidx.camera.viewfinder.compose.internal.ViewfinderExternalSurface
 import androidx.camera.viewfinder.compose.internal.ViewfinderExternalSurfaceScope
+import androidx.camera.viewfinder.compose.internal.ViewfinderSurfaceHolder
+import androidx.camera.viewfinder.core.FrameRenderedListener
 import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.camera.viewfinder.core.TransformationInfo
 import androidx.camera.viewfinder.core.TransformationInfo.Companion.DEFAULT
+import androidx.camera.viewfinder.core.TransformationMode
+import androidx.camera.viewfinder.core.ViewfinderDefaults
 import androidx.camera.viewfinder.core.ViewfinderSurfaceRequest
 import androidx.camera.viewfinder.core.ViewfinderSurfaceSessionScope
-import androidx.camera.viewfinder.core.impl.ImplementationModeCompat
 import androidx.camera.viewfinder.core.impl.OffsetF
-import androidx.camera.viewfinder.core.impl.RefCounted
 import androidx.camera.viewfinder.core.impl.ScaleFactorF
 import androidx.camera.viewfinder.core.impl.Transformations
 import androidx.camera.viewfinder.core.impl.ViewfinderSurfaceSessionImpl
@@ -54,6 +56,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.util.fastRoundToInt
+import java.util.concurrent.Executor
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
@@ -70,9 +73,10 @@ import kotlinx.coroutines.coroutineScope
  * [androidx.compose.foundation.AndroidEmbeddedExternalSurface] for [ImplementationMode.EMBEDDED] or
  * on [androidx.compose.foundation.AndroidExternalSurface] for [ImplementationMode.EXTERNAL]. These
  * can be set by the [ImplementationMode] argument in the [surfaceRequest] constructor. If
- * `implementationMode` is `null`, [ImplementationMode.EXTERNAL] is chosen by default, switching to
- * [ImplementationMode.EMBEDDED] on API levels 24 and below, or on devices with known compatibility
- * issues with the `EXTERNAL` mode.
+ * `implementationMode` is `null`, a default is chosen based on device compatibility. This default
+ * value, which can be retrieved from [ViewfinderDefaults.implementationMode], will be
+ * [ImplementationMode.EXTERNAL] by default, switching to [ImplementationMode.EMBEDDED] on API
+ * levels 24 and below, or on devices with known compatibility issues with the `EXTERNAL` mode.
  *
  * The [onInit] lambda, and the callback registered with [ViewfinderInitScope.onSurfaceSession], are
  * always called from the main thread. [onInit] will be called every time a new [surfaceRequest] is
@@ -96,7 +100,7 @@ import kotlinx.coroutines.coroutineScope
  * TODO(b/322420487): Add a sample with `@sample`
  */
 @Composable
-fun Viewfinder(
+public fun Viewfinder(
     surfaceRequest: ViewfinderSurfaceRequest,
     modifier: Modifier = Modifier,
     transformationInfo: TransformationInfo = DEFAULT,
@@ -112,8 +116,7 @@ fun Viewfinder(
             val surfaceHeight = surfaceRequest.height
             val implementationMode =
                 remember(surfaceRequest.implementationMode) {
-                    surfaceRequest.implementationMode
-                        ?: ImplementationModeCompat.chooseCompatibleMode()
+                    surfaceRequest.implementationMode ?: ViewfinderDefaults.implementationMode
                 }
 
             // Due to https://issuetracker.google.com/183864890, we should only perform
@@ -192,9 +195,7 @@ fun Viewfinder(
                     // the surface in layout
                     canTransformSurface = true
                     // Dispatch surface to registered onSurfaceSession callback
-                    viewfinderInitScope.dispatchOnSurfaceSession(
-                        viewfinderSurfaceHolder.refCountedSurface
-                    )
+                    viewfinderInitScope.dispatchOnSurfaceSession(viewfinderSurfaceHolder)
                 }
             }
         }
@@ -226,9 +227,15 @@ private fun TransformedSurface(
             val correctionMatrix = remember { Matrix() }
 
             transformationInfo.let {
+                val correctionDegrees =
+                    if (it.transformationMode == TransformationMode.DEFERRED) {
+                        displayRotationDegrees
+                    } else {
+                        0
+                    }
                 correctionMatrix.setFrom(
                     Transformations.getTextureViewCorrectionMatrix(
-                        displayRotationDegrees = displayRotationDegrees,
+                        displayRotationDegrees = correctionDegrees,
                         width = surfaceWidth,
                         height = surfaceHeight,
                     )
@@ -286,7 +293,7 @@ private fun ContentScale.toInternalContentScale():
  * The environment can be used to register a lambda to invoke when a new
  * [ViewfinderSurfaceSessionScope] is available.
  */
-interface ViewfinderInitScope {
+public interface ViewfinderInitScope {
     /**
      * Registers a callback to be invoked when a new [ViewfinderSurfaceSessionScope] is created.
      *
@@ -296,7 +303,7 @@ interface ViewfinderInitScope {
      *
      * The provided callback will always be invoked from the main thread.
      */
-    fun onSurfaceSession(block: suspend ViewfinderSurfaceSessionScope.() -> Unit)
+    public fun onSurfaceSession(block: suspend ViewfinderSurfaceSessionScope.() -> Unit)
 }
 
 private class ViewfinderInitScopeImpl(val viewfinderSurfaceRequest: ViewfinderSurfaceRequest) :
@@ -307,22 +314,58 @@ private class ViewfinderInitScopeImpl(val viewfinderSurfaceRequest: ViewfinderSu
         this.onSurfaceSession = block
     }
 
-    suspend fun dispatchOnSurfaceSession(refCountedSurface: RefCounted<Surface>) {
+    suspend fun dispatchOnSurfaceSession(viewfinderSurfaceHolder: ViewfinderSurfaceHolder) {
         onSurfaceSession?.let { block ->
-            refCountedSurface.acquire()?.let { surface ->
+            viewfinderSurfaceHolder.refCountedSurface.acquire()?.let { surface ->
                 ViewfinderSurfaceSessionImpl(surface, viewfinderSurfaceRequest) {
-                        refCountedSurface.release()
+                        viewfinderSurfaceHolder.refCountedSurface.release()
                     }
                     .use { surfaceSession ->
-                        coroutineScope {
-                            val receiver =
-                                object :
-                                    ViewfinderSurfaceSessionScope,
-                                    CoroutineScope by this@coroutineScope {
-                                    override val surface = surfaceSession.surface
-                                    override val request = surfaceSession.request
+                        val sessionListeners = mutableListOf<FrameRenderedListener>()
+                        try {
+                            coroutineScope {
+                                val receiver =
+                                    object :
+                                        ViewfinderSurfaceSessionScope,
+                                        CoroutineScope by this@coroutineScope {
+                                        override val surface = surfaceSession.surface
+                                        override val request = surfaceSession.request
+
+                                        override fun addFrameRenderedListener(
+                                            executor: Executor,
+                                            listener: FrameRenderedListener,
+                                        ) {
+                                            synchronized(sessionListeners) {
+                                                sessionListeners.add(listener)
+                                                viewfinderSurfaceHolder.addFrameRenderedListener(
+                                                    executor,
+                                                    listener,
+                                                )
+                                            }
+                                        }
+
+                                        override fun removeFrameRenderedListener(
+                                            listener: FrameRenderedListener
+                                        ) {
+                                            synchronized(sessionListeners) {
+                                                sessionListeners.remove(listener)
+                                                viewfinderSurfaceHolder.removeFrameRenderedListener(
+                                                    listener
+                                                )
+                                            }
+                                        }
+                                    }
+                                block.invoke(receiver)
+                            }
+                        } finally {
+                            synchronized(sessionListeners) {
+                                for (i in sessionListeners.indices) {
+                                    viewfinderSurfaceHolder.removeFrameRenderedListener(
+                                        sessionListeners[i]
+                                    )
                                 }
-                            block.invoke(receiver)
+                                sessionListeners.clear()
+                            }
                         }
                     }
             }

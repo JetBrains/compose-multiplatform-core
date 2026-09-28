@@ -27,14 +27,11 @@ import androidx.camera.video.internal.BufferProvider.State
 import androidx.concurrent.futures.await
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import java.nio.ByteBuffer
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -60,7 +57,6 @@ import org.mockito.invocation.InvocationOnMock
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class AudioEncoderTest {
 
     companion object {
@@ -265,57 +261,6 @@ class AudioEncoderTest {
 
         // Assert.
         verify(encoderCallback, timeout(5000L)).onEncodePaused()
-    }
-
-    @Test
-    fun pauseEncoder_presentationTimeShouldExcludePausedDuration() {
-        // Arrange.
-        // The test step is "start and wait data" -> "pause for a while" -> "resume and wait
-        // data", then make sure the timestamp of resume data doesn't include the pause duration.
-        // Make the pause duration = wait data timeout, then even the worst case, the difference
-        // between 2 data should be always smaller than pause duration if the pause duration is
-        // not included.
-        val timeoutWaitDataMs = 1500L
-        val pauseDurationMs = timeoutWaitDataMs
-
-        val presentationTimeUs = AtomicLong()
-        val encoderCallback = Mockito.mock(EncoderCallback::class.java)
-        var presentationTimeLatch = CountDownLatch(1)
-        Mockito.doAnswer { args: InvocationOnMock ->
-                val encodedData: EncodedData = args.getArgument(0)
-                presentationTimeUs.set(encodedData.presentationTimeUs)
-                presentationTimeLatch.countDown()
-                encodedData.close()
-                null
-            }
-            .`when`(encoderCallback)
-            .onEncodedData(any())
-        encoder.setEncoderCallback(encoderCallback, CameraXExecutors.directExecutor())
-
-        // Act.
-        fakeAudioLoop.start()
-        encoder.start()
-
-        // Get presentation time of encoded data before pause.
-        assertThat(presentationTimeLatch.await(timeoutWaitDataMs, TimeUnit.MILLISECONDS)).isTrue()
-        val presentationTimeBeforePause = presentationTimeUs.get()
-
-        encoder.pause()
-        Thread.sleep(pauseDurationMs)
-        presentationTimeLatch = CountDownLatch(1)
-        encoder.start()
-
-        // Get presentation time of encoded data after resume.
-        assertThat(presentationTimeLatch.await(timeoutWaitDataMs, TimeUnit.MILLISECONDS)).isTrue()
-        val presentationTimeAfterResume = presentationTimeUs.get()
-
-        // Assert.
-        assertThat(presentationTimeAfterResume).isGreaterThan(presentationTimeBeforePause)
-        val timeDiffMs =
-            TimeUnit.MICROSECONDS.toMillis(
-                presentationTimeAfterResume - presentationTimeBeforePause
-            )
-        assertThat(timeDiffMs).isAtMost(pauseDurationMs)
     }
 
     @Test

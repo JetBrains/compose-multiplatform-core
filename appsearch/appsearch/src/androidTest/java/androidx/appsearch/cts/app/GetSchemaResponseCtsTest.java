@@ -23,6 +23,7 @@ import static org.junit.Assert.assertThrows;
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.GetSchemaResponse;
 import androidx.appsearch.app.PackageIdentifier;
+import androidx.appsearch.app.PropertyPath;
 import androidx.appsearch.app.SchemaVisibilityConfig;
 import androidx.appsearch.app.SetSchemaRequest;
 import androidx.appsearch.flags.Flags;
@@ -36,6 +37,7 @@ import org.junit.Test;
 import org.junit.rules.RuleChain;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 public class GetSchemaResponseCtsTest {
@@ -552,5 +554,142 @@ public class GetSchemaResponseCtsTest {
                         .build();
         assertThat(response.getSchemaTypesVisibleToConfigs()).containsExactly("Email2",
                 ImmutableSet.of(schemaVisibilityConfig));
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS)
+    public void testSetAndGetSchemasWipeoutAccountPropertyPaths() {
+        PropertyPath propertyPath1 = new PropertyPath("path1");
+        PropertyPath propertyPath2 = new PropertyPath("path2");
+
+        GetSchemaResponse response = new GetSchemaResponse.Builder()
+                .setSchemaTypeWipeoutAccountPropertyPaths("Email",
+                        ImmutableSet.of(propertyPath1))
+                .setSchemaTypeWipeoutAccountPropertyPaths("Message",
+                        ImmutableSet.of(propertyPath1, propertyPath2))
+                .build();
+
+        // Verify the returned schemas
+        assertThat(response.getSchemasWipeoutAccountPropertyPaths()).containsExactly(
+                "Email",  ImmutableSet.of(propertyPath1),
+                "Message", ImmutableSet.of(propertyPath1, propertyPath2));
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS)
+    public void testGetEmptySchemasWipeoutAccountPropertyPaths() {
+        GetSchemaResponse response = new GetSchemaResponse.Builder().build();
+
+        assertThat(response.getSchemasWipeoutAccountPropertyPaths()).isEmpty();
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS)
+    public void testCopyConstructor_schemasWipeoutAccountPropertyPaths() {
+        PropertyPath propertyPath1 = new PropertyPath("path1");
+        PropertyPath propertyPath2 = new PropertyPath("path2");
+
+        GetSchemaResponse original = new GetSchemaResponse.Builder()
+                .setSchemaTypeWipeoutAccountPropertyPaths("Email",
+                        ImmutableSet.of(propertyPath1))
+                .build();
+
+        GetSchemaResponse rebuild = new GetSchemaResponse.Builder(original)
+                .setSchemaTypeWipeoutAccountPropertyPaths("Message",
+                        ImmutableSet.of(propertyPath1, propertyPath2))
+                .build();
+
+        assertThat(original.getSchemasWipeoutAccountPropertyPaths()).containsExactly(
+                "Email",  ImmutableSet.of(propertyPath1));
+
+        assertThat(rebuild.getSchemasWipeoutAccountPropertyPaths()).containsExactly(
+                "Email",  ImmutableSet.of(propertyPath1),
+                "Message", ImmutableSet.of(propertyPath1, propertyPath2));
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS)
+    public void testCopyConstructor_emptySchemasWipeoutAccountPropertyPaths() {
+        GetSchemaResponse original = new GetSchemaResponse.Builder().build();
+        GetSchemaResponse rebuild = new GetSchemaResponse.Builder(original).build();
+
+        assertThat(original.getSchemasWipeoutAccountPropertyPaths()).isEmpty();
+        assertThat(rebuild.getSchemasWipeoutAccountPropertyPaths()).isEmpty();
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS)
+    public void testRebuild_schemasWipeoutAccountPropertyPaths() {
+        PropertyPath propertyPath1 = new PropertyPath("path1");
+        PropertyPath propertyPath2 = new PropertyPath("path2");
+
+        GetSchemaResponse.Builder builder = new GetSchemaResponse.Builder()
+                .setSchemaTypeWipeoutAccountPropertyPaths("Email",
+                        ImmutableSet.of(propertyPath1));
+        GetSchemaResponse original = builder.build();
+
+        GetSchemaResponse rebuild = builder
+                .setSchemaTypeWipeoutAccountPropertyPaths("Message",
+                        ImmutableSet.of(propertyPath1, propertyPath2)).build();
+
+        assertThat(original.getSchemasWipeoutAccountPropertyPaths()).containsExactly(
+                "Email",  ImmutableSet.of(propertyPath1));
+
+        assertThat(rebuild.getSchemasWipeoutAccountPropertyPaths()).containsExactly(
+                "Email",  ImmutableSet.of(propertyPath1),
+                "Message", ImmutableSet.of(propertyPath1, propertyPath2));
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS)
+    public void testRebuild_emptySchemasWipeoutAccountPropertyPaths() {
+        GetSchemaResponse.Builder builder = new GetSchemaResponse.Builder();
+        GetSchemaResponse original = builder.build();
+        GetSchemaResponse rebuild = builder.build();
+
+        assertThat(original.getSchemasWipeoutAccountPropertyPaths()).isEmpty();
+        assertThat(rebuild.getSchemasWipeoutAccountPropertyPaths()).isEmpty();
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS)
+    public void testGetSchemaResponseBuilder_ClearSchemasWipeoutAccountPropertyPaths() {
+        PropertyPath propertyPath1 = new PropertyPath("path1");
+        PropertyPath propertyPath2 = new PropertyPath("path2");
+
+        GetSchemaResponse response = new GetSchemaResponse.Builder()
+                .setSchemaTypeWipeoutAccountPropertyPaths("Email",
+                        ImmutableSet.of(propertyPath1))
+                .setSchemaTypeWipeoutAccountPropertyPaths("Message",
+                        ImmutableSet.of(propertyPath1, propertyPath2))
+                .clearSchemaTypeWipeoutAccountPropertyPaths("Email")
+                .build();
+
+        // Verify the returned schemas
+        assertThat(response.getSchemasWipeoutAccountPropertyPaths()).containsExactly(
+                "Message", ImmutableSet.of(propertyPath1, propertyPath2));
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_PACKAGE_IDENTIFIER_MULTI_CERT)
+    public void testRebuild_multiCert() {
+        byte[] cert1 = new byte[32];
+        byte[] cert2 = new byte[32];
+        Arrays.fill(cert1, (byte) 1);
+        Arrays.fill(cert2, (byte) 2);
+
+        PackageIdentifier multiCertPkg =
+                new PackageIdentifier("com.package.foo", List.of(cert1, cert2));
+
+        GetSchemaResponse response =
+                new GetSchemaResponse.Builder()
+                        .addSchema(new AppSearchSchema.Builder("type1").build())
+                        .setPubliclyVisibleSchema("type1", multiCertPkg)
+                        .setSchemaTypeVisibleToPackages("type1", ImmutableSet.of(multiCertPkg))
+                        .build();
+
+        assertThat(response.getPubliclyVisibleSchemas()).containsExactly("type1", multiCertPkg);
+        assertThat(response.getSchemaTypesVisibleToPackages())
+                .containsExactly("type1", ImmutableSet.of(multiCertPkg));
     }
 }

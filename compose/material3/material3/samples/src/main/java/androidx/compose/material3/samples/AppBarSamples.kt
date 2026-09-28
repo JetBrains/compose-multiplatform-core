@@ -14,15 +14,31 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package androidx.compose.material3.samples
 
 import androidx.annotation.Sampled
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Attachment
 import androidx.compose.material.icons.filled.Check
@@ -40,12 +56,17 @@ import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FlexibleBottomAppBar
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MediumFlexibleTopAppBar
 import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
@@ -55,13 +76,22 @@ import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TwoRowsTopAppBar
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowSizeClass
 
@@ -70,7 +100,6 @@ import androidx.window.core.layout.WindowSizeClass
  *
  * The top app bar here does not react to any scroll events in the content under it.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -87,7 +116,20 @@ fun SimpleTopAppBar() {
                             TooltipDefaults.rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Above
                             ),
-                        tooltip = { PlainTooltip { Text("Menu") } },
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Menu"
+                                    }
+                            ) {
+                                Text("Menu")
+                            }
+                        },
                         state = rememberTooltipState(),
                     ) {
                         IconButton(onClick = { /* doSomething() */ }) {
@@ -101,7 +143,20 @@ fun SimpleTopAppBar() {
                             TooltipDefaults.rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Above
                             ),
-                        tooltip = { PlainTooltip { Text("Add to favorites") } },
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Add to favorites"
+                                    }
+                            ) {
+                                Text("Add to favorites")
+                            }
+                        },
                         state = rememberTooltipState(),
                     ) {
                         IconButton(onClick = { /* doSomething() */ }) {
@@ -116,7 +171,7 @@ fun SimpleTopAppBar() {
         },
         content = { innerPadding ->
             LazyColumn(
-                contentPadding = innerPadding,
+                modifier = Modifier.padding(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
@@ -132,10 +187,10 @@ fun SimpleTopAppBar() {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
+@Suppress("DEPRECATION") // Move to currentWindowAdaptiveInfoV2 when dependency is updated
 fun SimpleTopAppBarWithAdaptiveActions() {
     val sizeClass = currentWindowAdaptiveInfo().windowSizeClass
     // Material guidelines state 3 items max in compact, and 5 items max elsewhere.
@@ -168,7 +223,20 @@ fun SimpleTopAppBarWithAdaptiveActions() {
                             TooltipDefaults.rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Above
                             ),
-                        tooltip = { PlainTooltip { Text("Menu") } },
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Menu"
+                                    }
+                            ) {
+                                Text("Menu")
+                            }
+                        },
                         state = rememberTooltipState(),
                     ) {
                         IconButton(onClick = { /* doSomething() */ }) {
@@ -185,7 +253,21 @@ fun SimpleTopAppBarWithAdaptiveActions() {
                                     TooltipDefaults.rememberTooltipPositionProvider(
                                         TooltipAnchorPosition.Above
                                     ),
-                                tooltip = { PlainTooltip { Text("Overflow") } },
+                                tooltip = {
+                                    PlainTooltip(
+                                        modifier =
+                                            Modifier.semantics {
+                                                // TODO(b/496338253): Remove this modifier once bug
+                                                // where
+                                                // tooltip text is not announced
+                                                //  by a11y screen readers is resolved.
+                                                liveRegion = LiveRegionMode.Assertive
+                                                paneTitle = "Overflow"
+                                            }
+                                    ) {
+                                        Text("Overflow")
+                                    }
+                                },
                                 state = rememberTooltipState(),
                             ) {
                                 IconButton(onClick = { it.show() }) {
@@ -212,7 +294,7 @@ fun SimpleTopAppBarWithAdaptiveActions() {
         },
         content = { innerPadding ->
             LazyColumn(
-                contentPadding = innerPadding,
+                modifier = Modifier.padding(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
@@ -233,13 +315,102 @@ fun SimpleTopAppBarWithAdaptiveActions() {
  *
  * The top app bar here does not react to any scroll events in the content under it.
  */
+@Preview
+@Sampled
+@Composable
+fun SimpleTopAppBarWithSubtitle() {
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text("Simple TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                },
+                subtitle = { Text("Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                navigationIcon = {
+                    TooltipBox(
+                        positionProvider =
+                            TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Menu"
+                                    }
+                            ) {
+                                Text("Menu")
+                            }
+                        },
+                        state = rememberTooltipState(),
+                    ) {
+                        IconButton(onClick = { /* doSomething() */ }) {
+                            Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menu")
+                        }
+                    }
+                },
+                actions = {
+                    TooltipBox(
+                        positionProvider =
+                            TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Add to favorites"
+                                    }
+                            ) {
+                                Text("Add to favorites")
+                            }
+                        },
+                        state = rememberTooltipState(),
+                    ) {
+                        IconButton(onClick = { /* doSomething() */ }) {
+                            Icon(
+                                imageVector = Icons.Filled.Favorite,
+                                contentDescription = "Add to favorites",
+                            )
+                        }
+                    }
+                },
+                scrollBehavior = scrollBehavior,
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                modifier = Modifier.padding(innerPadding),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    )
+                }
+            }
+        },
+    )
+}
 
 /**
  * A sample for a simple use of [CenterAlignedTopAppBar].
  *
  * The top app bar here does not react to any scroll events in the content under it.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -256,7 +427,20 @@ fun SimpleCenterAlignedTopAppBar() {
                             TooltipDefaults.rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Above
                             ),
-                        tooltip = { PlainTooltip { Text("Menu") } },
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Menu"
+                                    }
+                            ) {
+                                Text("Menu")
+                            }
+                        },
                         state = rememberTooltipState(),
                     ) {
                         IconButton(onClick = { /* doSomething() */ }) {
@@ -270,7 +454,20 @@ fun SimpleCenterAlignedTopAppBar() {
                             TooltipDefaults.rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Above
                             ),
-                        tooltip = { PlainTooltip { Text("Add to favorites") } },
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Add to favorites"
+                                    }
+                            ) {
+                                Text("Add to favorites")
+                            }
+                        },
                         state = rememberTooltipState(),
                     ) {
                         IconButton(onClick = { /* doSomething() */ }) {
@@ -285,7 +482,7 @@ fun SimpleCenterAlignedTopAppBar() {
         },
         content = { innerPadding ->
             LazyColumn(
-                contentPadding = innerPadding,
+                modifier = Modifier.padding(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
@@ -302,10 +499,101 @@ fun SimpleCenterAlignedTopAppBar() {
 }
 
 /**
- * A sample for a simple use of small [CenterAlignedTopAppBar] with a subtitle.
+ * A sample for a simple use of center-aligned [TopAppBar] with a subtitle.
  *
  * The top app bar here does not react to any scroll events in the content under it.
  */
+@Preview
+@Sampled
+@Composable
+fun SimpleTopAppBarWithSubtitleAndCenterAligned() {
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text("Simple TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                },
+                subtitle = { Text("Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                titleHorizontalAlignment = Alignment.CenterHorizontally,
+                navigationIcon = {
+                    TooltipBox(
+                        positionProvider =
+                            TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Menu"
+                                    }
+                            ) {
+                                Text("Menu")
+                            }
+                        },
+                        state = rememberTooltipState(),
+                    ) {
+                        IconButton(onClick = { /* doSomething() */ }) {
+                            Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menu")
+                        }
+                    }
+                },
+                actions = {
+                    TooltipBox(
+                        positionProvider =
+                            TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Add to favorites"
+                                    }
+                            ) {
+                                Text("Add to favorites")
+                            }
+                        },
+                        state = rememberTooltipState(),
+                    ) {
+                        IconButton(onClick = { /* doSomething() */ }) {
+                            Icon(
+                                imageVector = Icons.Filled.Favorite,
+                                contentDescription = "Add to favorites",
+                            )
+                        }
+                    }
+                },
+                scrollBehavior = scrollBehavior,
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                modifier = Modifier.padding(innerPadding),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    )
+                }
+            }
+        },
+    )
+}
 
 /**
  * A sample for a pinned small [TopAppBar].
@@ -313,7 +601,6 @@ fun SimpleCenterAlignedTopAppBar() {
  * The top app bar here is pinned to its location and changes its container color when the content
  * under it is scrolled.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -330,7 +617,20 @@ fun PinnedTopAppBar() {
                             TooltipDefaults.rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Above
                             ),
-                        tooltip = { PlainTooltip { Text("Menu") } },
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Menu"
+                                    }
+                            ) {
+                                Text("Menu")
+                            }
+                        },
                         state = rememberTooltipState(),
                     ) {
                         IconButton(onClick = { /* doSomething() */ }) {
@@ -345,7 +645,20 @@ fun PinnedTopAppBar() {
                             TooltipDefaults.rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Above
                             ),
-                        tooltip = { PlainTooltip { Text("Add to favorites") } },
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Add to favorites"
+                                    }
+                            ) {
+                                Text("Add to favorites")
+                            }
+                        },
                         state = rememberTooltipState(),
                     ) {
                         IconButton(onClick = { /* doSomething() */ }) {
@@ -360,7 +673,20 @@ fun PinnedTopAppBar() {
                             TooltipDefaults.rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Above
                             ),
-                        tooltip = { PlainTooltip { Text("Add to starred") } },
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Add to starred"
+                                    }
+                            ) {
+                                Text("Add to starred")
+                            }
+                        },
                         state = rememberTooltipState(),
                     ) {
                         IconButton(onClick = { /* doSomething() */ }) {
@@ -373,7 +699,7 @@ fun PinnedTopAppBar() {
         },
         content = { innerPadding ->
             LazyColumn(
-                contentPadding = innerPadding,
+                modifier = Modifier.padding(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
@@ -390,10 +716,305 @@ fun PinnedTopAppBar() {
 }
 
 /**
+ * A sample for a pinned small [TopAppBar].
+ *
+ * The top app bar here is pinned to its location and changes its container color when the content
+ * under it is scrolled. The content of the [LazyColumn] is pre-scrolled.
+ */
+@Preview
+@Sampled
+@Composable
+fun PinnedTopAppBarWithPreScrolledLazyColumn() {
+    val lazyListState = rememberLazyListState(initialFirstVisibleItemIndex = 30)
+    // Pass the state to ensure the top app bar color updates correctly when content is reversed or
+    // pre-scrolled.
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(scrollableState = lazyListState)
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            TopAppBar(
+                title = { Text("TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                navigationIcon = {
+                    TooltipBox(
+                        positionProvider =
+                            TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Menu"
+                                    }
+                            ) {
+                                Text("Menu")
+                            }
+                        },
+                        state = rememberTooltipState(),
+                    ) {
+                        IconButton(onClick = { /* doSomething() */ }) {
+                            Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menu")
+                        }
+                    }
+                },
+                scrollBehavior = scrollBehavior,
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                state = lazyListState,
+                modifier = Modifier.padding(innerPadding),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    )
+                }
+            }
+        },
+    )
+}
+
+/**
+ * A sample for a pinned small [TopAppBar] that is scrolled with a reversed [LazyVerticalGrid].
+ *
+ * The top app bar here is pinned to its location and changes its container color when the content
+ * under it is scrolled.
+ */
+@Preview
+@Sampled
+@Composable
+fun PinnedTopAppBarWithReversedLazyGrid() {
+    val lazyGridState = rememberLazyGridState()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(scrollableState = lazyGridState)
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            TopAppBar(
+                title = { Text("TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                navigationIcon = {
+                    TooltipBox(
+                        positionProvider =
+                            TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Menu"
+                                    }
+                            ) {
+                                Text("Menu")
+                            }
+                        },
+                        state = rememberTooltipState(),
+                    ) {
+                        IconButton(onClick = { /* doSomething() */ }) {
+                            Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menu")
+                        }
+                    }
+                },
+                scrollBehavior = scrollBehavior,
+            )
+        },
+        content = { innerPadding ->
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 100.dp),
+                reverseLayout = true,
+                modifier = Modifier.padding(innerPadding),
+                state = lazyGridState,
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Box(Modifier.fillMaxWidth().height(50.dp)) {
+                        Text(
+                            text = list[it],
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        )
+                    }
+                }
+            }
+        },
+    )
+}
+
+/**
+ * A sample for a small [TopAppBar] that collapses when the content is scrolled up, and appears when
+ * the content scrolled down.
+ */
+@Preview
+@Sampled
+@Composable
+fun EnterAlwaysTopAppBar() {
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            TopAppBar(
+                title = { Text("TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                subtitle = { Text("Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                navigationIcon = {
+                    TooltipBox(
+                        positionProvider =
+                            TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Menu"
+                                    }
+                            ) {
+                                Text("Menu")
+                            }
+                        },
+                        state = rememberTooltipState(),
+                    ) {
+                        IconButton(onClick = { /* doSomething() */ }) {
+                            Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menu")
+                        }
+                    }
+                },
+                actions = {
+                    TooltipBox(
+                        positionProvider =
+                            TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Add to favorites"
+                                    }
+                            ) {
+                                Text("Add to favorites")
+                            }
+                        },
+                        state = rememberTooltipState(),
+                    ) {
+                        IconButton(onClick = { /* doSomething() */ }) {
+                            Icon(
+                                imageVector = Icons.Filled.Favorite,
+                                contentDescription = "Add to favorites",
+                            )
+                        }
+                    }
+                },
+                scrollBehavior = scrollBehavior,
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                modifier = Modifier.padding(innerPadding),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    )
+                }
+            }
+        },
+    )
+}
+
+/**
+ * A sample for a small [TopAppBar] that collapses when the content is scrolled up, and appears when
+ * the content is scrolled down, using a [Column] with reverse scrolling.
+ */
+@Preview
+@Sampled
+@Composable
+fun EnterAlwaysTopAppBarWithReverseScrolling() {
+    val scrollState = rememberScrollState()
+    val scrollBehavior =
+        // Pass this state to ensure the top app bar color updates correctly when content has
+        // reverse scrolling.
+        TopAppBarDefaults.enterAlwaysScrollBehavior(scrollableState = scrollState)
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            TopAppBar(
+                title = { Text("TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                navigationIcon = {
+                    TooltipBox(
+                        positionProvider =
+                            TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Menu"
+                                    }
+                            ) {
+                                Text("Menu")
+                            }
+                        },
+                        state = rememberTooltipState(),
+                    ) {
+                        IconButton(onClick = { /* doSomething() */ }) {
+                            Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menu")
+                        }
+                    }
+                },
+                scrollBehavior = scrollBehavior,
+            )
+        },
+        content = { innerPadding ->
+            Column(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .padding(paddingValues = innerPadding)
+                        .verticalScroll(state = scrollState, reverseScrolling = true),
+                verticalArrangement = Arrangement.Bottom,
+            ) {
+                (0..75).forEach {
+                    Box(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+                        Text(text = it.toString(), style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+            }
+        },
+    )
+}
+
+/**
  * A sample for a [MediumTopAppBar] that collapses when the content is scrolled up, and appears when
  * the content is completely scrolled back down.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -412,7 +1033,20 @@ fun ExitUntilCollapsedMediumTopAppBar() {
                             TooltipDefaults.rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Above
                             ),
-                        tooltip = { PlainTooltip { Text("Menu") } },
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Menu"
+                                    }
+                            ) {
+                                Text("Menu")
+                            }
+                        },
                         state = rememberTooltipState(),
                     ) {
                         IconButton(onClick = { /* doSomething() */ }) {
@@ -426,7 +1060,20 @@ fun ExitUntilCollapsedMediumTopAppBar() {
                             TooltipDefaults.rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Above
                             ),
-                        tooltip = { PlainTooltip { Text("Add to favorites") } },
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Add to favorites"
+                                    }
+                            ) {
+                                Text("Add to favorites")
+                            }
+                        },
                         state = rememberTooltipState(),
                     ) {
                         IconButton(onClick = { /* doSomething() */ }) {
@@ -442,7 +1089,148 @@ fun ExitUntilCollapsedMediumTopAppBar() {
         },
         content = { innerPadding ->
             LazyColumn(
-                contentPadding = innerPadding,
+                modifier = Modifier.padding(innerPadding),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    )
+                }
+            }
+        },
+    )
+}
+
+/**
+ * A sample for a [MediumFlexibleTopAppBar] that collapses when the content is scrolled up, and
+ * appears when the content is completely scrolled back down.
+ */
+@Preview
+@Sampled
+@Composable
+fun ExitUntilCollapsedMediumFlexibleTopAppBar() {
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            MediumFlexibleTopAppBar(
+                title = {
+                    Text("Medium TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                },
+                subtitle = { Text("Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                navigationIcon = {
+                    TooltipBox(
+                        positionProvider =
+                            TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Menu"
+                                    }
+                            ) {
+                                Text("Menu")
+                            }
+                        },
+                        state = rememberTooltipState(),
+                    ) {
+                        IconButton(onClick = { /* doSomething() */ }) {
+                            Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menu")
+                        }
+                    }
+                },
+                actions = {
+                    TooltipBox(
+                        positionProvider =
+                            TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Add to favorites"
+                                    }
+                            ) {
+                                Text("Add to favorites")
+                            }
+                        },
+                        state = rememberTooltipState(),
+                    ) {
+                        IconButton(onClick = { /* doSomething() */ }) {
+                            Icon(
+                                imageVector = Icons.Filled.Favorite,
+                                contentDescription = "Add to favorites",
+                            )
+                        }
+                    }
+                },
+                scrollBehavior = scrollBehavior,
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                modifier = Modifier.padding(innerPadding),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    )
+                }
+            }
+        },
+    )
+}
+
+/** A sample for a [MediumFlexibleTopAppBar] with a centered title and subtitle. */
+@Preview
+@Sampled
+@Composable
+fun MediumFlexibleTopAppBarWithSubtitleAndCenterAligned() {
+    Scaffold(
+        topBar = {
+            MediumFlexibleTopAppBar(
+                title = {
+                    Text("Medium TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                },
+                subtitle = { Text("Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                titleHorizontalAlignment = Alignment.CenterHorizontally,
+                navigationIcon = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menu")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            imageVector = Icons.Filled.Favorite,
+                            contentDescription = "Add to favorites",
+                        )
+                    }
+                },
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                modifier = Modifier.padding(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
@@ -462,7 +1250,6 @@ fun ExitUntilCollapsedMediumTopAppBar() {
  * A sample for a [LargeTopAppBar] that collapses when the content is scrolled up, and appears when
  * the content is completely scrolled back down.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -479,7 +1266,20 @@ fun ExitUntilCollapsedLargeTopAppBar() {
                             TooltipDefaults.rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Above
                             ),
-                        tooltip = { PlainTooltip { Text("Menu") } },
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Menu"
+                                    }
+                            ) {
+                                Text("Menu")
+                            }
+                        },
                         state = rememberTooltipState(),
                     ) {
                         IconButton(onClick = { /* doSomething() */ }) {
@@ -493,7 +1293,20 @@ fun ExitUntilCollapsedLargeTopAppBar() {
                             TooltipDefaults.rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Above
                             ),
-                        tooltip = { PlainTooltip { Text("Add to favorites") } },
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Add to favorites"
+                                    }
+                            ) {
+                                Text("Add to favorites")
+                            }
+                        },
                         state = rememberTooltipState(),
                     ) {
                         IconButton(onClick = { /* doSomething() */ }) {
@@ -509,7 +1322,7 @@ fun ExitUntilCollapsedLargeTopAppBar() {
         },
         content = { innerPadding ->
             LazyColumn(
-                contentPadding = innerPadding,
+                modifier = Modifier.padding(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val list = (0..75).map { it.toString() }
@@ -525,7 +1338,221 @@ fun ExitUntilCollapsedLargeTopAppBar() {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * A sample for a [LargeFlexibleTopAppBar] that collapses when the content is scrolled up, and
+ * appears when the content is completely scrolled back down.
+ */
+@Preview
+@Sampled
+@Composable
+fun ExitUntilCollapsedLargeFlexibleTopAppBar() {
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            LargeFlexibleTopAppBar(
+                title = { Text("Large TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                subtitle = { Text("Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                navigationIcon = {
+                    TooltipBox(
+                        positionProvider =
+                            TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Menu"
+                                    }
+                            ) {
+                                Text("Menu")
+                            }
+                        },
+                        state = rememberTooltipState(),
+                    ) {
+                        IconButton(onClick = { /* doSomething() */ }) {
+                            Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menu")
+                        }
+                    }
+                },
+                actions = {
+                    TooltipBox(
+                        positionProvider =
+                            TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Add to favorites"
+                                    }
+                            ) {
+                                Text("Add to favorites")
+                            }
+                        },
+                        state = rememberTooltipState(),
+                    ) {
+                        IconButton(onClick = { /* doSomething() */ }) {
+                            Icon(
+                                imageVector = Icons.Filled.Favorite,
+                                contentDescription = "Add to favorites",
+                            )
+                        }
+                    }
+                },
+                scrollBehavior = scrollBehavior,
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                modifier = Modifier.padding(innerPadding),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    )
+                }
+            }
+        },
+    )
+}
+
+/** A sample for a [LargeFlexibleTopAppBar] with a centered title and subtitle. */
+@Preview
+@Sampled
+@Composable
+fun LargeFlexibleTopAppBarWithSubtitleAndCenterAligned() {
+    Scaffold(
+        topBar = {
+            LargeFlexibleTopAppBar(
+                title = { Text("Large TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                subtitle = { Text("Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                titleHorizontalAlignment = Alignment.CenterHorizontally,
+                navigationIcon = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menu")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            imageVector = Icons.Filled.Favorite,
+                            contentDescription = "Add to favorites",
+                        )
+                    }
+                },
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                modifier = Modifier.padding(innerPadding),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    )
+                }
+            }
+        },
+    )
+}
+
+/**
+ * A sample for a [TwoRowsTopAppBar] that collapses when the content is scrolled up, and appears
+ * when the content is completely scrolled back down.
+ */
+@Preview
+@Sampled
+@Composable
+fun CustomTwoRowsTopAppBar() {
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            TwoRowsTopAppBar(
+                title = { expanded ->
+                    if (expanded) {
+                        Text("Expanded TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    } else {
+                        Text("Collapsed TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                },
+                subtitle = { expanded ->
+                    if (expanded) {
+                        Text(
+                            "Expanded Subtitle",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(bottom = 24.dp),
+                        )
+                    } else {
+                        Text("Collapsed Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                },
+                collapsedHeight = 64.dp,
+                expandedHeight = 156.dp,
+                navigationIcon = {
+                    TooltipBox(
+                        positionProvider =
+                            TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Menu"
+                                    }
+                            ) {
+                                Text("Menu")
+                            }
+                        },
+                        state = rememberTooltipState(),
+                    ) {
+                        IconButton(onClick = { /* doSomething() */ }) {
+                            Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menu")
+                        }
+                    }
+                },
+                scrollBehavior = scrollBehavior,
+            )
+        },
+        content = { innerPadding ->
+            Column(
+                Modifier.fillMaxWidth().padding(innerPadding).verticalScroll(rememberScrollState())
+            ) {
+                CompositionLocalProvider(
+                    LocalTextStyle provides MaterialTheme.typography.bodyLarge
+                ) {
+                    Text(text = remember { LoremIpsum().values.first() })
+                }
+            }
+        },
+    )
+}
+
 @Preview
 @Sampled
 @Composable
@@ -535,7 +1562,21 @@ fun SimpleBottomAppBar() {
             TooltipBox(
                 positionProvider =
                     TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-                tooltip = { PlainTooltip { Text("Menu") } },
+                tooltip = {
+                    PlainTooltip(
+                        modifier =
+                            Modifier.semantics {
+                                // TODO(b/496338253): Remove this modifier once bug where tooltip
+                                // text is
+                                // not announced
+                                //  by a11y screen readers is resolved.
+                                liveRegion = LiveRegionMode.Assertive
+                                paneTitle = "Menu"
+                            }
+                    ) {
+                        Text("Menu")
+                    }
+                },
                 state = rememberTooltipState(),
             ) {
                 IconButton(onClick = { /* doSomething() */ }) {
@@ -546,7 +1587,6 @@ fun SimpleBottomAppBar() {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -556,7 +1596,21 @@ fun BottomAppBarWithFAB() {
             TooltipBox(
                 positionProvider =
                     TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-                tooltip = { PlainTooltip { Text("Check") } },
+                tooltip = {
+                    PlainTooltip(
+                        modifier =
+                            Modifier.semantics {
+                                // TODO(b/496338253): Remove this modifier once bug where tooltip
+                                // text is
+                                // not announced
+                                //  by a11y screen readers is resolved.
+                                liveRegion = LiveRegionMode.Assertive
+                                paneTitle = "Check"
+                            }
+                    ) {
+                        Text("Check")
+                    }
+                },
                 state = rememberTooltipState(),
             ) {
                 IconButton(onClick = { /* doSomething() */ }) {
@@ -566,7 +1620,21 @@ fun BottomAppBarWithFAB() {
             TooltipBox(
                 positionProvider =
                     TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-                tooltip = { PlainTooltip { Text("Edit") } },
+                tooltip = {
+                    PlainTooltip(
+                        modifier =
+                            Modifier.semantics {
+                                // TODO(b/496338253): Remove this modifier once bug where tooltip
+                                // text is
+                                // not announced
+                                //  by a11y screen readers is resolved.
+                                liveRegion = LiveRegionMode.Assertive
+                                paneTitle = "Edit"
+                            }
+                    ) {
+                        Text("Edit")
+                    }
+                },
                 state = rememberTooltipState(),
             ) {
                 IconButton(onClick = { /* doSomething() */ }) {
@@ -578,7 +1646,21 @@ fun BottomAppBarWithFAB() {
             TooltipBox(
                 positionProvider =
                     TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-                tooltip = { PlainTooltip { Text("Add") } },
+                tooltip = {
+                    PlainTooltip(
+                        modifier =
+                            Modifier.semantics {
+                                // TODO(b/496338253): Remove this modifier once bug where tooltip
+                                // text is
+                                // not announced
+                                //  by a11y screen readers is resolved.
+                                liveRegion = LiveRegionMode.Assertive
+                                paneTitle = "Add"
+                            }
+                    ) {
+                        Text("Add")
+                    }
+                },
                 state = rememberTooltipState(),
             ) {
                 FloatingActionButton(
@@ -597,7 +1679,6 @@ fun BottomAppBarWithFAB() {
  * A sample for a [BottomAppBar] that collapses when the content is scrolled up, and appears when
  * the content scrolled down.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -613,7 +1694,20 @@ fun ExitAlwaysBottomAppBar() {
                             TooltipDefaults.rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Above
                             ),
-                        tooltip = { PlainTooltip { Text("Check") } },
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Check"
+                                    }
+                            ) {
+                                Text("Check")
+                            }
+                        },
                         state = rememberTooltipState(),
                     ) {
                         IconButton(onClick = { /* doSomething() */ }) {
@@ -625,7 +1719,20 @@ fun ExitAlwaysBottomAppBar() {
                             TooltipDefaults.rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Above
                             ),
-                        tooltip = { PlainTooltip { Text("Edit") } },
+                        tooltip = {
+                            PlainTooltip(
+                                modifier =
+                                    Modifier.semantics {
+                                        // TODO(b/496338253): Remove this modifier once bug where
+                                        //   tooltip text is not announced by a11y screen readers
+                                        //   is resolved.
+                                        liveRegion = LiveRegionMode.Assertive
+                                        paneTitle = "Edit"
+                                    }
+                            ) {
+                                Text("Edit")
+                            }
+                        },
                         state = rememberTooltipState(),
                     ) {
                         IconButton(onClick = { /* doSomething() */ }) {
@@ -640,7 +1747,21 @@ fun ExitAlwaysBottomAppBar() {
             TooltipBox(
                 positionProvider =
                     TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-                tooltip = { PlainTooltip { Text("Add") } },
+                tooltip = {
+                    PlainTooltip(
+                        modifier =
+                            Modifier.semantics {
+                                // TODO(b/496338253): Remove this modifier once bug where tooltip
+                                // text is
+                                // not announced
+                                //  by a11y screen readers is resolved.
+                                liveRegion = LiveRegionMode.Assertive
+                                paneTitle = "Add"
+                            }
+                    ) {
+                        Text("Add")
+                    }
+                },
                 state = rememberTooltipState(),
             ) {
                 FloatingActionButton(
@@ -670,4 +1791,492 @@ fun ExitAlwaysBottomAppBar() {
             }
         },
     )
+}
+
+/**
+ * A sample for a [FlexibleBottomAppBar] that collapses when the content is scrolled up, and appears
+ * when the content scrolled down. The content is spaced around.
+ */
+@Preview
+@Sampled
+@Composable
+fun ExitAlwaysBottomAppBarSpacedAround() {
+    val scrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
+    val icons =
+        listOf(
+            Icons.AutoMirrored.Filled.ArrowBack,
+            Icons.AutoMirrored.Filled.ArrowForward,
+            Icons.Filled.Add,
+            Icons.Filled.Check,
+            Icons.Filled.Edit,
+        )
+    val buttons = listOf("Back", "Forward", "Add", "Check", "Edit")
+
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        bottomBar = {
+            FlexibleBottomAppBar(
+                horizontalArrangement = Arrangement.SpaceAround,
+                contentPadding = PaddingValues(horizontal = 0.dp),
+                scrollBehavior = scrollBehavior,
+                content = {
+                    buttons.forEachIndexed { index, button ->
+                        TooltipBox(
+                            positionProvider =
+                                TooltipDefaults.rememberTooltipPositionProvider(
+                                    TooltipAnchorPosition.Above
+                                ),
+                            tooltip = {
+                                PlainTooltip(
+                                    modifier =
+                                        Modifier.semantics {
+                                            // TODO(b/496338253): Remove this modifier once bug
+                                            // where
+                                            // tooltip text is not announced
+                                            //  by a11y screen readers is resolved.
+                                            liveRegion = LiveRegionMode.Assertive
+                                            paneTitle = button
+                                        }
+                                ) {
+                                    Text(button)
+                                }
+                            },
+                            state = rememberTooltipState(),
+                        ) {
+                            if (index == 2) {
+                                FilledIconButton(
+                                    modifier = Modifier.width(56.dp),
+                                    onClick = { /* doSomething() */ },
+                                ) {
+                                    Icon(icons[index], contentDescription = button)
+                                }
+                            } else {
+                                IconButton(onClick = { /* doSomething() */ }) {
+                                    Icon(icons[index], contentDescription = button)
+                                }
+                            }
+                        }
+                    }
+                },
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                contentPadding = innerPadding,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    )
+                }
+            }
+        },
+    )
+}
+
+/**
+ * A sample for a [FlexibleBottomAppBar] that collapses when the content is scrolled up, and appears
+ * when the content scrolled down. The content is spaced between.
+ */
+@Preview
+@Sampled
+@Composable
+fun ExitAlwaysBottomAppBarSpacedBetween() {
+    val scrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
+    val icons =
+        listOf(
+            Icons.AutoMirrored.Filled.ArrowBack,
+            Icons.AutoMirrored.Filled.ArrowForward,
+            Icons.Filled.Add,
+            Icons.Filled.Check,
+            Icons.Filled.Edit,
+        )
+    val buttons = listOf("Back", "Forward", "Add", "Check", "Edit")
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        bottomBar = {
+            FlexibleBottomAppBar(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                scrollBehavior = scrollBehavior,
+                content = {
+                    buttons.forEachIndexed { index, button ->
+                        TooltipBox(
+                            positionProvider =
+                                TooltipDefaults.rememberTooltipPositionProvider(
+                                    TooltipAnchorPosition.Above
+                                ),
+                            tooltip = {
+                                PlainTooltip(
+                                    modifier =
+                                        Modifier.semantics {
+                                            // TODO(b/496338253): Remove this modifier once bug
+                                            // where
+                                            // tooltip text is not announced
+                                            //  by a11y screen readers is resolved.
+                                            liveRegion = LiveRegionMode.Assertive
+                                            paneTitle = button
+                                        }
+                                ) {
+                                    Text(button)
+                                }
+                            },
+                            state = rememberTooltipState(),
+                        ) {
+                            if (index == 2) {
+                                FilledIconButton(
+                                    modifier = Modifier.width(56.dp),
+                                    onClick = { /* doSomething() */ },
+                                ) {
+                                    Icon(icons[index], contentDescription = button)
+                                }
+                            } else {
+                                IconButton(onClick = { /* doSomething() */ }) {
+                                    Icon(icons[index], contentDescription = button)
+                                }
+                            }
+                        }
+                    }
+                },
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                contentPadding = innerPadding,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    )
+                }
+            }
+        },
+    )
+}
+
+/**
+ * A sample for a [FlexibleBottomAppBar] that collapses when the content is scrolled up, and appears
+ * when the content scrolled down. The content is spaced evenly.
+ */
+@Preview
+@Sampled
+@Composable
+fun ExitAlwaysBottomAppBarSpacedEvenly() {
+    val scrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
+    val icons =
+        listOf(
+            Icons.AutoMirrored.Filled.ArrowBack,
+            Icons.AutoMirrored.Filled.ArrowForward,
+            Icons.Filled.Add,
+            Icons.Filled.Check,
+            Icons.Filled.Edit,
+        )
+    val buttons = listOf("Back", "Forward", "Add", "Check", "Edit")
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        bottomBar = {
+            FlexibleBottomAppBar(
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                contentPadding = PaddingValues(horizontal = 0.dp),
+                scrollBehavior = scrollBehavior,
+                content = {
+                    buttons.forEachIndexed { index, button ->
+                        TooltipBox(
+                            positionProvider =
+                                TooltipDefaults.rememberTooltipPositionProvider(
+                                    TooltipAnchorPosition.Above
+                                ),
+                            tooltip = {
+                                PlainTooltip(
+                                    modifier =
+                                        Modifier.semantics {
+                                            // TODO(b/496338253): Remove this modifier once bug
+                                            // where
+                                            // tooltip text is not announced
+                                            //  by a11y screen readers is resolved.
+                                            liveRegion = LiveRegionMode.Assertive
+                                            paneTitle = button
+                                        }
+                                ) {
+                                    Text(button)
+                                }
+                            },
+                            state = rememberTooltipState(),
+                        ) {
+                            if (index == 2) {
+                                FilledIconButton(
+                                    modifier = Modifier.width(56.dp),
+                                    onClick = { /* doSomething() */ },
+                                ) {
+                                    Icon(icons[index], contentDescription = button)
+                                }
+                            } else {
+                                IconButton(onClick = { /* doSomething() */ }) {
+                                    Icon(icons[index], contentDescription = button)
+                                }
+                            }
+                        }
+                    }
+                },
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                contentPadding = innerPadding,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    )
+                }
+            }
+        },
+    )
+}
+
+/**
+ * A sample for a [FlexibleBottomAppBar] that collapses when the content is scrolled up, and appears
+ * when the content scrolled down. The content arrangement is fixed.
+ */
+@Preview
+@Sampled
+@Composable
+fun ExitAlwaysBottomAppBarFixed() {
+    val scrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
+    val icons =
+        listOf(
+            Icons.AutoMirrored.Filled.ArrowBack,
+            Icons.AutoMirrored.Filled.ArrowForward,
+            Icons.Filled.Add,
+            Icons.Filled.Check,
+            Icons.Filled.Edit,
+        )
+    val buttons = listOf("Back", "Forward", "Add", "Check", "Edit")
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        bottomBar = {
+            FlexibleBottomAppBar(
+                horizontalArrangement = BottomAppBarDefaults.FlexibleFixedHorizontalArrangement,
+                scrollBehavior = scrollBehavior,
+                content = {
+                    buttons.forEachIndexed { index, button ->
+                        TooltipBox(
+                            positionProvider =
+                                TooltipDefaults.rememberTooltipPositionProvider(
+                                    TooltipAnchorPosition.Above
+                                ),
+                            tooltip = {
+                                PlainTooltip(
+                                    modifier =
+                                        Modifier.semantics {
+                                            // TODO(b/496338253): Remove this modifier once bug
+                                            // where
+                                            // tooltip text is not announced
+                                            //  by a11y screen readers is resolved.
+                                            liveRegion = LiveRegionMode.Assertive
+                                            paneTitle = button
+                                        }
+                                ) {
+                                    Text(button)
+                                }
+                            },
+                            state = rememberTooltipState(),
+                        ) {
+                            if (index == 2) {
+                                FilledIconButton(
+                                    modifier = Modifier.width(56.dp),
+                                    onClick = { /* doSomething() */ },
+                                ) {
+                                    Icon(icons[index], contentDescription = button)
+                                }
+                            } else {
+                                IconButton(onClick = { /* doSomething() */ }) {
+                                    Icon(icons[index], contentDescription = button)
+                                }
+                            }
+                        }
+                    }
+                },
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                contentPadding = innerPadding,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    )
+                }
+            }
+        },
+    )
+}
+
+/**
+ * A sample for a vibrant [FlexibleBottomAppBar] that collapses when the content is scrolled up, and
+ * appears when the content scrolled down. The content arrangement is fixed.
+ */
+@Preview
+@Sampled
+@Composable
+fun ExitAlwaysBottomAppBarFixedVibrant() {
+    val scrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
+    val icons =
+        listOf(
+            Icons.AutoMirrored.Filled.ArrowBack,
+            Icons.AutoMirrored.Filled.ArrowForward,
+            Icons.Filled.Add,
+            Icons.Filled.Check,
+            Icons.Filled.Edit,
+        )
+    val buttons = listOf("Back", "Forward", "Add", "Check", "Edit")
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        bottomBar = {
+            FlexibleBottomAppBar(
+                horizontalArrangement = BottomAppBarDefaults.FlexibleFixedHorizontalArrangement,
+                scrollBehavior = scrollBehavior,
+                containerColor =
+                    MaterialTheme.colorScheme.primaryContainer, // TODO(b/356885344): tokens
+                content = {
+                    buttons.forEachIndexed { index, button ->
+                        TooltipBox(
+                            positionProvider =
+                                TooltipDefaults.rememberTooltipPositionProvider(
+                                    TooltipAnchorPosition.Above
+                                ),
+                            tooltip = {
+                                PlainTooltip(
+                                    modifier =
+                                        Modifier.semantics {
+                                            // TODO(b/496338253): Remove this modifier once bug
+                                            // where
+                                            // tooltip text is not announced
+                                            //  by a11y screen readers is resolved.
+                                            liveRegion = LiveRegionMode.Assertive
+                                            paneTitle = button
+                                        }
+                                ) {
+                                    Text(button)
+                                }
+                            },
+                            state = rememberTooltipState(),
+                        ) {
+                            if (index == 2) {
+                                FilledIconButton(
+                                    modifier = Modifier.width(56.dp),
+                                    onClick = { /* doSomething() */ },
+                                ) {
+                                    Icon(icons[index], contentDescription = button)
+                                }
+                            } else {
+                                IconButton(onClick = { /* doSomething() */ }) {
+                                    Icon(icons[index], contentDescription = button)
+                                }
+                            }
+                        }
+                    }
+                },
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                contentPadding = innerPadding,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    )
+                }
+            }
+        },
+    )
+}
+
+/** A sample for a [FlexibleBottomAppBar] with an overflow behavior when the content doesn't fit. */
+@Preview
+@Sampled
+@Composable
+fun BottomAppBarWithOverflow() {
+    val icons =
+        listOf(
+            Icons.AutoMirrored.Filled.ArrowBack,
+            Icons.AutoMirrored.Filled.ArrowForward,
+            Icons.Filled.Add,
+            Icons.Filled.Check,
+            Icons.Filled.Edit,
+            Icons.Filled.Favorite,
+        )
+    val items = listOf("Back", "Forward", "Add", "Check", "Edit", "Favorite")
+    FlexibleBottomAppBar(
+        contentPadding = PaddingValues(horizontal = 96.dp),
+        horizontalArrangement = BottomAppBarDefaults.FlexibleFixedHorizontalArrangement,
+    ) {
+        AppBarRow(
+            overflowIndicator = { menuState ->
+                TooltipBox(
+                    positionProvider =
+                        TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Above
+                        ),
+                    tooltip = {
+                        PlainTooltip(
+                            modifier =
+                                Modifier.semantics {
+                                    // TODO(b/496338253): Remove this modifier once bug where
+                                    // tooltip text
+                                    // is not announced
+                                    //  by a11y screen readers is resolved.
+                                    liveRegion = LiveRegionMode.Assertive
+                                    paneTitle = "Overflow"
+                                }
+                        ) {
+                            Text("Overflow")
+                        }
+                    },
+                    state = rememberTooltipState(),
+                ) {
+                    IconButton(
+                        onClick = {
+                            if (menuState.isShowing) {
+                                menuState.dismiss()
+                            } else {
+                                menuState.show()
+                            }
+                        }
+                    ) {
+                        Icon(imageVector = Icons.Filled.MoreVert, contentDescription = "Overflow")
+                    }
+                }
+            }
+        ) {
+            items.forEachIndexed { index, item ->
+                clickableItem(
+                    onClick = { /* doSomething() */ },
+                    icon = { Icon(icons[index], contentDescription = item) },
+                    label = item,
+                )
+            }
+        }
+    }
 }

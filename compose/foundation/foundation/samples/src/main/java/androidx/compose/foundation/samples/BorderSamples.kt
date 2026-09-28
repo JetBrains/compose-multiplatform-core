@@ -26,8 +26,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Button
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -59,7 +59,8 @@ fun BorderSampleWithBrush() {
     Text(
         "Text with gradient border",
         modifier =
-            Modifier.border(width = 2.dp, brush = gradientBrush, shape = CircleShape).padding(10.dp),
+            Modifier.border(width = 2.dp, brush = gradientBrush, shape = CircleShape)
+                .padding(10.dp),
     )
 }
 

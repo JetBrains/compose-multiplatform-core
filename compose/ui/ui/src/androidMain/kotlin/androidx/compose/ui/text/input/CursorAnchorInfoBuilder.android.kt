@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // b/552879150
+
 package androidx.compose.ui.text.input
 
 import android.graphics.Matrix
@@ -210,8 +212,15 @@ private object CursorAnchorInfoApi34Helper {
         innerTextFieldBounds: Rect,
     ): CursorAnchorInfo.Builder {
         if (!innerTextFieldBounds.isEmpty) {
-            val firstLine = textLayoutResult.getLineForVerticalPosition(innerTextFieldBounds.top)
-            val lastLine = textLayoutResult.getLineForVerticalPosition(innerTextFieldBounds.bottom)
+            val lastLineNumber = (textLayoutResult.lineCount - 1).coerceAtLeast(0)
+            val firstLine =
+                textLayoutResult
+                    .getLineForVerticalPosition(innerTextFieldBounds.top)
+                    .coerceIn(0, lastLineNumber)
+            val lastLine =
+                textLayoutResult
+                    .getLineForVerticalPosition(innerTextFieldBounds.bottom)
+                    .coerceIn(0, lastLineNumber)
             for (index in firstLine..lastLine) {
                 builder.addVisibleLineBounds(
                     textLayoutResult.getLineLeft(index),

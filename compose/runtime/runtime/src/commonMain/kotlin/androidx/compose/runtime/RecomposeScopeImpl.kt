@@ -19,9 +19,14 @@ package androidx.compose.runtime
 import androidx.collection.MutableObjectIntMap
 import androidx.collection.MutableScatterMap
 import androidx.collection.ScatterSet
-import androidx.compose.runtime.platform.makeSynchronizedObject
+import androidx.compose.runtime.composer.gapbuffer.GapAnchor
+import androidx.compose.runtime.composer.gapbuffer.SlotTable
+import androidx.compose.runtime.composer.gapbuffer.SlotWriter
+import androidx.compose.runtime.snapshots.IndirectState
 import androidx.compose.runtime.snapshots.fastAny
 import androidx.compose.runtime.snapshots.fastForEach
+import androidx.compose.runtime.tooling.ComposeToolingApi
+import androidx.compose.runtime.tooling.IdentifiableRecomposeScope
 
 /**
  * Represents a recomposable scope or section of the composition hierarchy. Can be used to manually
@@ -74,16 +79,15 @@ internal interface RecomposeScopeOwner {
     fun recordReadOf(value: Any)
 }
 
-private val callbackLock = makeSynchronizedObject()
-
 /**
  * A RecomposeScope is created for a region of the composition that can be recomposed independently
  * of the rest of the composition. The composer will position the slot table to the location stored
  * in [anchor] and call [block] when recomposition is requested. It is created by
  * [Composer.startRestartGroup] and is used to track how to restart the group.
  */
+@OptIn(ComposeToolingApi::class)
 internal class RecomposeScopeImpl(internal var owner: RecomposeScopeOwner?) :
-    ScopeUpdateScope, RecomposeScope {
+    ScopeUpdateScope, RecomposeScope, IdentifiableRecomposeScope {
 
     /** The backing store for the boolean flags tracked by the recompose scope. */
     private var flags: Int = 0
@@ -93,6 +97,11 @@ internal class RecomposeScopeImpl(internal var owner: RecomposeScopeOwner?) :
      * recompose scope.
      */
     var anchor: Anchor? = null
+
+    /** Access to anchor from tooling */
+    @ComposeToolingApi
+    override val identity: Any?
+        get() = anchor
 
     /**
      * Return whether the scope is valid. A scope becomes invalid when the slots it updates are
@@ -243,7 +252,7 @@ internal class RecomposeScopeImpl(internal var owner: RecomposeScopeOwner?) :
 
     private var currentToken = 0
     private var trackedInstances: MutableObjectIntMap<Any>? = null
-    private var trackedDependencies: MutableScatterMap<DerivedState<*>, Any?>? = null
+    private var trackedDependencies: MutableScatterMap<IndirectState<*>, Any?>? = null
     private var rereading: Boolean
         get() = getFlag(RereadingFlag)
         set(value) {
@@ -303,10 +312,10 @@ internal class RecomposeScopeImpl(internal var owner: RecomposeScopeOwner?) :
         return false
     }
 
-    fun recordDerivedStateValue(instance: DerivedState<*>, value: Any?) {
+    fun recordDerivedStateValue(instance: IndirectState<*>, value: Any?) {
         val trackedDependencies =
             trackedDependencies
-                ?: MutableScatterMap<DerivedState<*>, Any?>().also { trackedDependencies = it }
+                ?: MutableScatterMap<IndirectState<*>, Any?>().also { trackedDependencies = it }
 
         trackedDependencies[instance] = value
     }
@@ -331,26 +340,26 @@ internal class RecomposeScopeImpl(internal var owner: RecomposeScopeOwner?) :
         val trackedDependencies = trackedDependencies ?: return true
 
         return when (instances) {
-            is DerivedState<*> -> {
-                instances.checkDerivedStateChanged(trackedDependencies)
+            is IndirectState<*> -> {
+                instances.checkStateInvalidatedConditionally(trackedDependencies)
             }
             is ScatterSet<*> -> {
                 instances.isNotEmpty() &&
                     instances.any {
-                        it !is DerivedState<*> || it.checkDerivedStateChanged(trackedDependencies)
+                        it !is IndirectState<*> ||
+                            it.checkStateInvalidatedConditionally(trackedDependencies)
                     }
             }
             else -> true
         }
     }
 
-    private fun DerivedState<*>.checkDerivedStateChanged(
-        dependencies: MutableScatterMap<DerivedState<*>, Any?>
+    private fun IndirectState<*>.checkStateInvalidatedConditionally(
+        dependencies: MutableScatterMap<IndirectState<*>, Any?>
     ): Boolean {
         @Suppress("UNCHECKED_CAST")
-        this as DerivedState<Any?>
-        val policy = policy ?: structuralEqualityPolicy()
-        return !policy.equivalent(currentRecord.currentValue, dependencies[this])
+        this as IndirectState<Any?>
+        return this.isInvalidFor(dependencies[this])
     }
 
     fun rereadTrackedInstances() {
@@ -358,7 +367,13 @@ internal class RecomposeScopeImpl(internal var owner: RecomposeScopeOwner?) :
             trackedInstances?.let { trackedInstances ->
                 rereading = true
                 try {
-                    trackedInstances.forEach { value, _ -> owner.recordReadOf(value) }
+                    trackedInstances.forEach { value, _ ->
+                        if (value is ComputedState<*>) {
+                            value.value
+                        } else {
+                            owner.recordReadOf(value)
+                        }
+                    }
                 } finally {
                     rereading = false
                 }
@@ -389,7 +404,7 @@ internal class RecomposeScopeImpl(internal var owner: RecomposeScopeOwner?) :
                             val shouldRemove = instanceToken != token
                             if (shouldRemove) {
                                 composition.removeObservation(instance, this)
-                                if (instance is DerivedState<*>) {
+                                if (instance is IndirectState<*>) {
                                     composition.removeDerivedStateObservation(instance)
                                     trackedDependencies?.remove(instance)
                                 }
@@ -418,7 +433,7 @@ internal class RecomposeScopeImpl(internal var owner: RecomposeScopeOwner?) :
     companion object {
         internal fun adoptAnchoredScopes(
             slots: SlotWriter,
-            anchors: List<Anchor>,
+            anchors: List<GapAnchor>,
             newOwner: RecomposeScopeOwner,
         ) {
             if (anchors.isNotEmpty()) {
@@ -431,7 +446,7 @@ internal class RecomposeScopeImpl(internal var owner: RecomposeScopeOwner?) :
             }
         }
 
-        internal fun hasAnchoredRecomposeScopes(slots: SlotTable, anchors: List<Anchor>) =
+        internal fun hasAnchoredRecomposeScopes(slots: SlotTable, anchors: List<GapAnchor>) =
             anchors.isNotEmpty() &&
                 anchors.fastAny {
                     slots.ownsAnchor(it) &&

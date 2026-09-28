@@ -26,6 +26,7 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import androidx.testutils.defaultComposeScrollingMetrics
+import androidx.testutils.defaultMemoryMetrics
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -46,7 +47,7 @@ class VectorsListScrollBenchmark {
     fun start() {
         benchmarkRule.measureRepeated(
             packageName = PACKAGE_NAME,
-            metrics = defaultComposeScrollingMetrics(),
+            metrics = defaultComposeScrollingMetrics() + defaultMemoryMetrics(),
             compilationMode = CompilationMode.Full(),
             iterations = 5,
             setupBlock = {
@@ -60,7 +61,7 @@ class VectorsListScrollBenchmark {
             lazyColumn.setGestureMargin(device.displayWidth / 5)
             for (i in 1..8) {
                 // From center we scroll 2/3 of it which is 1/3 of the screen.
-                lazyColumn.drag(Point(0, lazyColumn.visibleCenter.y / 3))
+                lazyColumn.drag(Point(lazyColumn.visibleCenter.x, lazyColumn.visibleCenter.y / 3))
                 device.wait(Until.findObject(By.desc(COMPOSE_IDLE)), 3000)
             }
         }

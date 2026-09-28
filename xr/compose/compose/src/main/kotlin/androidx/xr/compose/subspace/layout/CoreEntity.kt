@@ -16,61 +16,88 @@
 
 package androidx.xr.compose.subspace.layout
 
-import android.util.Log
+import android.annotation.SuppressLint
+import android.content.Intent
+import android.os.Build
+import android.view.Surface
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.Density
+import androidx.xr.compose.subspace.ActionQueue
 import androidx.xr.compose.subspace.SceneCoreEntitySizeAdapter
 import androidx.xr.compose.subspace.SpatialPanelDefaults
+import androidx.xr.compose.subspace.draw.SpatialFeatheringEffect
+import androidx.xr.compose.subspace.draw.SpatialSmoothFeatheringEffect
 import androidx.xr.compose.subspace.node.SubspaceLayoutNode
 import androidx.xr.compose.unit.IntVolumeSize
-import androidx.xr.compose.unit.Meter
+import androidx.xr.compose.unit.metersToPx
+import androidx.xr.compose.unit.pxToMeters
+import androidx.xr.compose.unit.toIntVolumeSize
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.ActivityPanelEntity
+import androidx.xr.scenecore.AnchorSpace
 import androidx.xr.scenecore.Component
 import androidx.xr.scenecore.Entity
-import androidx.xr.scenecore.GroupEntity
+import androidx.xr.scenecore.GltfAnimation
+import androidx.xr.scenecore.GltfModelEntity
+import androidx.xr.scenecore.GltfModelNode
 import androidx.xr.scenecore.PanelEntity
+import androidx.xr.scenecore.PixelDensity
+import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.SurfaceEntity
 import androidx.xr.scenecore.scene
 import kotlin.math.PI
+import org.jetbrains.annotations.TestOnly
 
 /**
  * Wrapper class for Entities from SceneCore to provide convenience methods for working with
  * Entities from SceneCore.
  */
-internal sealed class CoreEntity(val entity: Entity) : OpaqueEntity {
+internal sealed class CoreEntity(val pixelDensity: PixelDensity, initialEntity: Entity? = null) :
+    OpaqueEntity {
+    /**
+     * If [entity] is null, this will contain the set of mutations that are queued to be applied to
+     * the entity once it is attached.
+     */
+    private val entityActionQueue =
+        ActionQueue(initialValue = initialEntity, isValid = { !it.isDisposed })
 
-    // This parameter is null for Composables without a layout, such as Orbiters and Spatial
-    // Dialogs.
+    protected val entity: Entity?
+        get() = entityActionQueue.value
+
+    /**
+     * This parameter is null for Composables without a layout, such as Orbiters and Spatial
+     * Dialogs.
+     */
     internal var layout: SubspaceLayoutNode? = null
         set(value) {
             field = value
-            updateEntityPose()
+            updatePoseFromLayout()
         }
 
-    private val density: Density?
-        get() = layout?.density
+    open val layoutPoseInPixels: Pose
+        get() = layout?.measurableLayout?.poseInParent ?: Pose.Identity
 
-    internal open fun updateEntityPose() {
-        val density = density ?: return
-
-        // Compose XR uses pixels, SceneCore uses meters.
-        val corePose = layoutPoseInPixels.convertPixelsToMeters(density)
-        if (entity.getPose() != corePose) {
-            entity.setPose(corePose)
+    internal open var poseInMeters: Pose
+        get() = entity?.getPose() ?: Pose.Identity
+        set(value) {
+            entityActionQueue.executeWhenAvailable { entity ->
+                if (entity.getPose() != value) {
+                    entity.setPose(value)
+                }
+            }
         }
-    }
 
-    open val layoutPoseInPixels
-        get() = layout?.measurableLayout?.poseInParentEntity ?: Pose.Identity
+    internal fun getPose(space: Space): Pose = entity?.getPose(space) ?: Pose.Identity
 
-    open fun dispose() {
-        entity.dispose()
-    }
+    /** Get the [Entity] associated with this [CoreEntity] for testing purposes. */
+    internal val semanticsEntity: Entity?
+        @TestOnly get() = entity
 
     /**
      * The volume size of the [CoreEntity] in pixels. Reading this value may trigger recomposition.
@@ -98,10 +125,12 @@ internal sealed class CoreEntity(val entity: Entity) : OpaqueEntity {
      * Note that an enabled entity may still be invisible if its alpha value is 0.
      */
     open var enabled: Boolean
-        get() = entity.isEnabled(includeParents = true)
+        get() = entity?.isEnabled(includeParents = true) ?: false
         set(value) {
-            if (entity.isEnabled(includeParents = false) != value) {
-                entity.setEnabled(value)
+            entityActionQueue.executeWhenAvailable { entity ->
+                if (entity.isEnabled(includeParents = false) != value) {
+                    entity.setEnabled(value)
+                }
             }
         }
 
@@ -111,10 +140,10 @@ internal sealed class CoreEntity(val entity: Entity) : OpaqueEntity {
      * Entity. This does not affect layout and other content will be laid out according to the
      * original scale of the entity.
      */
-    internal var scale = 1f
+    internal open var scale = 1f
         set(value) {
             if (field != value) {
-                entity.setScale(value)
+                entityActionQueue.executeWhenAvailable { it.setScale(value) }
             }
             field = value
         }
@@ -126,31 +155,66 @@ internal sealed class CoreEntity(val entity: Entity) : OpaqueEntity {
     internal var alpha = 1f
         set(value) {
             if (field != value) {
-                entity.setAlpha(value)
+                entityActionQueue.executeWhenAvailable { it.setAlpha(value) }
             }
             field = value
         }
 
+    /**
+     * SceneCore parents all newly-created non-Anchor entities under a world space point of
+     * reference for the activity space, which we save for future use.
+     */
+    private val originalParent: Entity? = entity?.parent
+
     open var parent: CoreEntity? = null
         set(value) {
             field = value
-
-            // Leave SceneCore's parent as-is if we're trying to clear it out. SceneCore
-            // parents all
-            // newly-created non-Anchor entities under a world space point of reference for the
-            // activity
-            // space, but we don't have access to it. To maintain this parent-is-not-null property,
-            // we use
-            // this hack to keep the original parent, even if it's not technically correct when
-            // we're
-            // trying to reparent a node. The correct parent will be set on the "set" part of the
-            // reparent.
-            //
-            // TODO(b/356952297): Remove this hack once we can save and restore the original parent.
-            if (value == null) return
-
-            entity.parent = value.entity
+            // When the Compose-level parent is set to null, restore the original parent
+            // (saved during the initial creation)
+            entityActionQueue.executeWhenAvailable { it.parent = value?.entity ?: originalParent }
         }
+
+    open var contentDescription: String?
+        get() = entity?.contentDescription.toString().takeIf { it.isNotEmpty() }
+        set(value) {
+            if (contentDescription == value) return
+
+            entityActionQueue.executeWhenAvailable { it.contentDescription = value ?: "" }
+        }
+
+    fun updatePoseFromLayout() {
+        if (isAnchoredToExternalSpace()) {
+            return
+        }
+
+        // Skip updating the pose from layout coordinate changes if a system-initiated movement/drag
+        // (e.g. via MovePolicy.system) is actively ongoing to prevent Compose from fighting or
+        // overriding the native drag orientation/position.
+        if (layout?.isSystemMoveOngoing == true) {
+            return
+        }
+
+        // Compose XR uses pixels, SceneCore uses meters.
+        poseInMeters = layoutPoseInPixels.pxToMeters(pixelDensity)
+    }
+
+    /**
+     * Returns whether this entity is anchored to an external [AnchorSpace].
+     *
+     * Modifiers like [SubspaceModifier.movable] with [MovePolicy.anchor] reparent the SceneCore
+     * [Entity] to an [AnchorSpace]. Once anchored outside the normal Compose parent-child
+     * hierarchy, conventional layout coordinates no longer apply.
+     */
+    // TODO(b/530612717): Make Anchorable Panel compatible with Pose-related SubspaceModifiers
+    private fun isAnchoredToExternalSpace(): Boolean {
+        return entity?.parent is AnchorSpace
+    }
+
+    open fun dispose() {
+        entityActionQueue.clear()
+        entityActionQueue.value?.let { it.parent = null }
+        entityActionQueue.value = null
+    }
 
     /**
      * Add a SceneCore [Component] to this entity.
@@ -158,8 +222,8 @@ internal sealed class CoreEntity(val entity: Entity) : OpaqueEntity {
      * @param component The [Component] to add.
      * @return true if the component was added successfully, false otherwise.
      */
-    fun addComponent(component: Component): Boolean {
-        return entity.addComponent(component)
+    fun addComponent(component: Component): Boolean? {
+        return entityActionQueue.executeWhenAvailable { it.addComponent(component) }
     }
 
     /**
@@ -168,25 +232,57 @@ internal sealed class CoreEntity(val entity: Entity) : OpaqueEntity {
      * @param component The [Component] to remove.
      */
     fun removeComponent(component: Component) {
-        entity.removeComponent(component)
+        entityActionQueue.executeWhenAvailable { it.removeComponent(component) }
+    }
+
+    fun onEntityAttached(onEntityAttached: (Entity) -> Unit) {
+        entityActionQueue.executeWhenAvailable(onEntityAttached)
+    }
+
+    fun attachEntity(entity: Entity) {
+        entityActionQueue.value?.parent = null
+        entityActionQueue.value = entity
+    }
+
+    override fun toString(): String = "CoreEntity(entity=$entity)"
+
+    /** Returns true if this CoreEntity wraps the given SceneCore [Entity]. */
+    fun isUnderlyingEntityEqualTo(otherEntity: Entity?): Boolean {
+        return entity != null && entity == otherEntity
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as CoreEntity
+
+        if (entity != other.entity) return false
+        if (entity == null) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return entity?.hashCode() ?: 0
     }
 }
 
-/** Wrapper class for group entities from SceneCore. */
-internal class CoreGroupEntity(entity: Entity) : CoreEntity(entity) {
-    init {
-        require(entity is GroupEntity) {
-            "Entity passed to CoreGroupEntity should be a GroupEntity."
-        }
-    }
-}
+/** Wrapper class for Entity interfaces from SceneCore. */
+internal class CoreGroupEntity(pixelDensity: PixelDensity, entity: Entity) :
+    CoreEntity(pixelDensity, entity)
 
 /**
  * Wrapper class for [PanelEntity] to provide convenience methods for working with panel entities
  * from SceneCore.
  */
-internal sealed class CoreBasePanelEntity(private val panelEntity: PanelEntity) :
-    CoreEntity(panelEntity), MovableCoreEntity, ResizableCoreEntity {
+internal sealed class CoreBasePanelEntity(
+    pixelDensity: PixelDensity,
+    panelEntity: PanelEntity?,
+) : CoreEntity(pixelDensity, panelEntity), InteractableCoreEntity {
+    private val panelEntity: PanelEntity?
+        get() = entity as? PanelEntity
+
     // Density set from setShape.
     private var shapeDensity: Density? = null
 
@@ -198,41 +294,40 @@ internal sealed class CoreBasePanelEntity(private val panelEntity: PanelEntity) 
      * If the width or height is zero or negative, the panel will be hidden. And the panel size will
      * be adjusted to 1 because the underlying implementation of the main panel entity does not
      * allow for zero or negative sizes.
+     *
+     * For the MainPanel, the [CoreBasePanelEntity] size and the [PanelEntity] size (SceneCore) may
+     * diverge. SceneCore uses the bounds from the WindowManager. Therefore unfortunately, it is
+     * impossible to unit test the case for this diverging behavior.
      */
     override var size: IntVolumeSize
         get() = super.size
         set(value) {
             if (super.size != value) {
                 super.size = value
-                panelEntity.sizeInPixels =
-                    IntSize2d(value.width.coerceAtLeast(1), value.height.coerceAtLeast(1))
+                panelEntity?.sizeInPixels =
+                    IntSize2d(size.width.coerceAtLeast(1), size.height.coerceAtLeast(1))
                 shapeDensity?.let { updateShape(it) }
             }
+
             updateEntityEnabledState()
         }
 
-    // Store the intended enabled state so we can refer to it in updateEntityEnabledState.
-    override var enabled: Boolean = true
-        set(value) {
-            field = value
-            updateEntityEnabledState()
-        }
-
-    /** Update the entity enabled state based on the intended enabled state and the panel size. */
+    /**
+     * Update the entity enabled state based on the panel size.
+     *
+     * In Compose for XR, layout measurement dictates entity size and visibility. The visibility
+     * state is dictated by the Compose layout size measurement. This means visibility will be set
+     * after layout completes. See [SubspaceLayoutNode.SubspaceMeasurableLayout.placeAt] and
+     * [CoreBasePanelEntity.size].
+     */
     private fun updateEntityEnabledState() {
-        if (enabled && (size.width <= 0 || size.height <= 0)) {
-            Log.w(
-                "CoreBasePanelEntity",
-                "Setting the panel size to 0 or less. The panel will be hidden.",
-            )
-        }
-        super.enabled = enabled && size.width > 0 && size.height > 0
+        super.enabled = size.width > 0 && size.height > 0
     }
 
     /** The [SpatialShape] of this [CoreBasePanelEntity]. */
     private var shape: SpatialShape = SpatialPanelDefaults.shape
 
-    /* Sets the [SpatialShape] of this [CoreBasePanelEntity] and updates the shape */
+    /** Sets the [SpatialShape] of this [CoreBasePanelEntity] and updates the shape. */
     fun setShape(shape: SpatialShape, density: Density) {
         this.shape = shape
         this.shapeDensity = density
@@ -245,7 +340,10 @@ internal sealed class CoreBasePanelEntity(private val panelEntity: PanelEntity) 
         if (shape is SpatialRoundedCornerShape) {
             val radius =
                 shape.computeCornerRadius(size.width.toFloat(), size.height.toFloat(), density)
-            panelEntity.cornerRadius = Meter.fromPixel(radius, density).toM()
+            val radiusMeters = radius.pxToMeters(pixelDensity)
+            if (panelEntity?.cornerRadius != radiusMeters) {
+                panelEntity?.cornerRadius = radiusMeters
+            }
         }
     }
 }
@@ -254,37 +352,80 @@ internal sealed class CoreBasePanelEntity(private val panelEntity: PanelEntity) 
  * Wrapper class for [PanelEntity] to provide convenience methods for working with panel entities
  * from SceneCore.
  */
-internal class CorePanelEntity(entity: PanelEntity) : CoreBasePanelEntity(entity)
+internal class CorePanelEntity(pixelDensity: PixelDensity, entity: PanelEntity) :
+    CoreBasePanelEntity(pixelDensity, entity)
+
+internal class CoreActivityPanelEntity(
+    pixelDensity: PixelDensity,
+    activityPanelEntity: ActivityPanelEntity,
+) : CoreBasePanelEntity(pixelDensity, activityPanelEntity) {
+    private val activityPanelEntity: ActivityPanelEntity?
+        get() = entity as? ActivityPanelEntity
+
+    fun startActivity(intent: Intent) {
+        activityPanelEntity?.startActivity(intent)
+    }
+}
 
 /**
  * Wrapper class for SceneCore's PanelEntity associated with the "main window" for the Activity.
  * This wrapper provides convenience methods for working with the main panel from SceneCore.
  */
-internal class CoreMainPanelEntity(session: Session) :
-    CoreBasePanelEntity(session.scene.mainPanelEntity) {
+internal class CoreMainPanelEntity(private val session: Session) :
+    CoreBasePanelEntity(session.scene.virtualPixelDensity, session.scene.mainPanelEntity) {
+
+    /**
+     * The original 2D window size captured before spatial layout modifiers alter the panel size.
+     * This will be null unless the main panel was rendered in a 3D layout.
+     */
+    private var defaultSizeInPixels: IntSize2d? = null
+
+    override var size: IntVolumeSize
+        get() = super.size
+        set(value) {
+            // Records the unconstrained 2D view dimensions as [defaultSizeInPixels] once valid
+            // (>1px) before spatial layout constraints alter the panel size. MainPanelEntityImpl
+            // fetches sizeInPixels from the WindowManager.
+            if (defaultSizeInPixels == null) {
+                val currentSize = session.scene.mainPanelEntity.sizeInPixels
+                if (currentSize.width > 1 && currentSize.height > 1) {
+                    defaultSizeInPixels = currentSize
+                }
+            }
+            super.size = value
+        }
+
+    /** Resets the main panel to its default 2D window state when returning to 2D. */
+    internal fun reset(density: Density, newParent: Entity?) {
+        val defaultSize = defaultSizeInPixels ?: return
+        session.scene.mainPanelEntity.parent = newParent
+        poseInMeters = Pose.Identity
+        alpha = 1f
+        size = IntVolumeSize(defaultSize.width, defaultSize.height, 0)
+        contentDescription = null
+        setShape(SpatialPanelDefaults.shape, density)
+        defaultSizeInPixels = null
+    }
 
     override fun dispose() {
-        // Do not call super.dispose() because we don't want to dispose the main panel entity.
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-        if (entity != (other as CoreMainPanelEntity).entity) return false
-        return true
-    }
-
-    override fun hashCode(): Int {
-        return entity.hashCode()
+        // [CoreMainPanelEntity] is backed by SceneCore's singleton "Main Panel Entity" which
+        // outlives individual composables and is never deleted. When [SpatialMainPanel] unmounts
+        // from a Subspace, we disable it and detach it from the scene graph. The full 2D window
+        // reset is handled by Subspace when all Subspaces exit (SceneCount == 0).
+        enabled = false
+        parent = null
     }
 }
 
 /** Wrapper class for surface entities from SceneCore. */
 internal class CoreSurfaceEntity(
+    pixelDensity: PixelDensity,
     internal val surfaceEntity: SurfaceEntity,
     private val localDensity: Density,
-) : CoreEntity(surfaceEntity), ResizableCoreEntity, MovableCoreEntity {
-    internal var stereoMode: Int
+) : CoreEntity(pixelDensity, surfaceEntity), InteractableCoreEntity {
+    private var pendingOnSurfaceDestroyed: ((Surface) -> Unit)? = null
+
+    internal var stereoMode: SurfaceEntity.StereoMode
         get() = surfaceEntity.stereoMode
         set(value) {
             if (value != surfaceEntity.stereoMode) {
@@ -292,34 +433,50 @@ internal class CoreSurfaceEntity(
             }
         }
 
-    private var currentFeatheringEffect: SpatialFeatheringEffect = ZeroFeatheringEffect
+    private var currentFeatheringEffect: SpatialFeatheringEffect? = null
 
     override var size: IntVolumeSize
         get() = super.size
         set(value) {
             if (super.size != value) {
                 super.size = value
-                surfaceEntity.canvasShape =
-                    SurfaceEntity.CanvasShape.Quad(
-                        Meter.fromPixel(size.width.toFloat(), localDensity).value,
-                        Meter.fromPixel(size.height.toFloat(), localDensity).value,
+                surfaceEntity.shape =
+                    SurfaceEntity.Shape.Quad(
+                        FloatSize2d(
+                            size.width.pxToMeters(pixelDensity),
+                            size.height.pxToMeters(pixelDensity),
+                        )
                     )
+
                 updateFeathering()
             }
         }
 
-    internal fun setFeatheringEffect(featheringEffect: SpatialFeatheringEffect) {
+    override fun dispose() {
+        pendingOnSurfaceDestroyed?.let { it(surfaceEntity.getSurface()) }
+        pendingOnSurfaceDestroyed = null
+        super.dispose()
+    }
+
+    internal fun setOnSurfaceDestroyed(onSurfaceDestroyed: (Surface) -> Unit) {
+        pendingOnSurfaceDestroyed = onSurfaceDestroyed
+    }
+
+    internal fun setFeatheringEffect(featheringEffect: SpatialFeatheringEffect?) {
         currentFeatheringEffect = featheringEffect
         updateFeathering()
     }
 
     private fun updateFeathering() {
-        (currentFeatheringEffect as? SpatialSmoothFeatheringEffect)?.let {
-            surfaceEntity.edgeFeather =
-                SurfaceEntity.EdgeFeatheringParams.SmoothFeather(
-                    it.size.toWidthPercent(size.width.toFloat(), localDensity),
-                    it.size.toHeightPercent(size.height.toFloat(), localDensity),
+        val featheringEffect = currentFeatheringEffect as? SpatialSmoothFeatheringEffect
+        if (featheringEffect != null) {
+            surfaceEntity.edgeFeatheringParams =
+                SurfaceEntity.EdgeFeatheringParams.RectangleFeather(
+                    featheringEffect.size.toWidthPercent(size.width.toFloat(), localDensity),
+                    featheringEffect.size.toHeightPercent(size.height.toFloat(), localDensity),
                 )
+        } else {
+            surfaceEntity.edgeFeatheringParams = SurfaceEntity.EdgeFeatheringParams.NoFeathering()
         }
     }
 }
@@ -330,13 +487,14 @@ internal class CoreSurfaceEntity(
  * to set and derive the size of the entity.
  */
 internal class AdaptableCoreEntity<T : Entity>(
+    pixelDensity: PixelDensity,
     val coreEntity: T,
     var sceneCoreEntitySizeAdapter: SceneCoreEntitySizeAdapter<T>? = null,
-) : CoreEntity(coreEntity) {
+) : CoreEntity(pixelDensity, coreEntity) {
     override var size: IntVolumeSize
-        get() = sceneCoreEntitySizeAdapter?.intrinsicSize?.invoke(coreEntity) ?: super.size
+        get() = sceneCoreEntitySizeAdapter?.currentSize(coreEntity) ?: super.size
         set(value) {
-            sceneCoreEntitySizeAdapter?.onLayoutSizeChanged?.let { coreEntity.it(value) }
+            sceneCoreEntitySizeAdapter?.onLayoutSizeChanged(coreEntity, value)
             super.size = value
         }
 }
@@ -346,12 +504,13 @@ internal class AdaptableCoreEntity<T : Entity>(
  * property, and should just be calculated upon instantiation to avoid head locking the sphere.
  */
 internal class CoreSphereSurfaceEntity(
+    pixelDensity: PixelDensity,
     internal val surfaceEntity: SurfaceEntity,
-    private val headPose: Pose?,
     val initialDensity: Density,
-) : CoreEntity(surfaceEntity) {
+) : CoreEntity(pixelDensity, surfaceEntity), InteractableCoreEntity {
+    private var pendingOnSurfaceDestroyed: ((Surface) -> Unit)? = null
 
-    internal var stereoMode: Int
+    internal var stereoMode: SurfaceEntity.StereoMode
         get() = surfaceEntity.stereoMode
         set(value) {
             if (value != surfaceEntity.stereoMode) {
@@ -359,73 +518,170 @@ internal class CoreSphereSurfaceEntity(
             }
         }
 
-    private var currentFeatheringEffect: SpatialFeatheringEffect = ZeroFeatheringEffect
+    private var isDisposed = false
+
+    override fun dispose() {
+        isDisposed = true
+        pendingOnSurfaceDestroyed?.let { it(surfaceEntity.getSurface()) }
+        pendingOnSurfaceDestroyed = null
+        super.dispose()
+    }
+
+    internal fun setOnSurfaceDestroyed(onSurfaceDestroyed: (Surface) -> Unit) {
+        pendingOnSurfaceDestroyed = onSurfaceDestroyed
+    }
+
+    internal var isBoundaryAvailable = true
+        set(value) {
+            if (field != value) {
+                field = value
+                updateFeathering()
+            }
+        }
+
+    private var currentFeatheringEffect: SpatialFeatheringEffect? = null
 
     // Layout's density is automatically updated during a configuration change, and may differ from
     // initialDensity.
     private val localDensity: Density
         get() = layout?.density ?: initialDensity
 
-    override val layoutPoseInPixels: Pose
-        get() =
-            super.layoutPoseInPixels.let {
-                it.copy(
-                    it.translation +
-                        (headPose?.translation?.convertMetersToPixels(localDensity) ?: Vector3())
-                )
-            }
-
-    /** The parent of spheres is always scene.activitySpaceRoot. Setting this has no affect. */
-    override var parent: CoreEntity? = null
-
     /** Radius in meters. */
     internal var radius: Float
-        get() = radiusFromShape(surfaceEntity.canvasShape)
+        get() = radiusFromShape(surfaceEntity.shape)
         set(value) {
-            val shape = surfaceEntity.canvasShape
+            val shape = surfaceEntity.shape
             if (value != radiusFromShape(shape)) {
-                if (shape is SurfaceEntity.CanvasShape.Vr180Hemisphere) {
-                    surfaceEntity.canvasShape = SurfaceEntity.CanvasShape.Vr180Hemisphere(value)
+                if (shape is SurfaceEntity.Shape.Hemisphere) {
+                    surfaceEntity.shape = SurfaceEntity.Shape.Hemisphere(value)
                 } else {
-                    surfaceEntity.canvasShape = SurfaceEntity.CanvasShape.Vr360Sphere(value)
+                    surfaceEntity.shape = SurfaceEntity.Shape.Sphere(value)
                 }
                 updateFeathering()
             }
         }
 
-    private fun radiusFromShape(shape: SurfaceEntity.CanvasShape): Float {
-        if (shape is SurfaceEntity.CanvasShape.Vr180Hemisphere) {
+    private fun radiusFromShape(shape: SurfaceEntity.Shape): Float {
+        if (shape is SurfaceEntity.Shape.Hemisphere) {
             return shape.radius
-        } else if (shape is SurfaceEntity.CanvasShape.Vr360Sphere) {
+        } else if (shape is SurfaceEntity.Shape.Sphere) {
             return shape.radius
         }
         throw IllegalStateException("Shape must be spherical")
     }
 
-    internal fun setFeatheringEffect(featheringEffect: SpatialFeatheringEffect) {
+    internal fun setFeatheringEffect(featheringEffect: SpatialFeatheringEffect?) {
         currentFeatheringEffect = featheringEffect
         updateFeathering()
     }
 
+    // When there is no boundary, we need a feathering value higher than 50 on 360 Surfaces to not
+    // obstruct the user's vision, hence we need the lint suppression.
+    @SuppressLint("Range")
     private fun updateFeathering() {
-        val semicircleArcLength = Meter((radius * PI).toFloat()).toPx(localDensity)
-        (currentFeatheringEffect as? SpatialSmoothFeatheringEffect)?.let {
-            val radiusX =
-                it.size.toWidthPercent(
-                    if (surfaceEntity.canvasShape is SurfaceEntity.CanvasShape.Vr180Hemisphere)
-                        semicircleArcLength / 2
-                    else semicircleArcLength,
-                    localDensity,
-                )
-            val radiusY = it.size.toHeightPercent(semicircleArcLength, localDensity)
-            surfaceEntity.edgeFeather =
-                SurfaceEntity.EdgeFeatheringParams.SmoothFeather(radiusX, radiusY)
+        if (isDisposed) {
+            // At the Compose level, dispose calls happen before we clear passthrough listeners,
+            // and since those passthrough listeners update feathering, this is at risk of being
+            // executed after the Entity is already disposed.
+            return
         }
+
+        surfaceEntity.edgeFeatheringParams =
+            if (!isBoundaryAvailable) {
+                val radius = if (isHemisphere) 0.5f else 0.7f
+                SurfaceEntity.EdgeFeatheringParams.RectangleFeather(radius, radius)
+            } else {
+                val semicircleArcLength = (radius * PI).toFloat().metersToPx(pixelDensity)
+                val featheringEffect = currentFeatheringEffect as? SpatialSmoothFeatheringEffect
+                if (featheringEffect != null) {
+                    val radiusX =
+                        featheringEffect.size.toWidthPercent(
+                            if (isHemisphere) semicircleArcLength / 2 else semicircleArcLength,
+                            localDensity,
+                        )
+                    val radiusY =
+                        featheringEffect.size.toHeightPercent(semicircleArcLength, localDensity)
+                    SurfaceEntity.EdgeFeatheringParams.RectangleFeather(radiusX, radiusY)
+                } else {
+                    SurfaceEntity.EdgeFeatheringParams.NoFeathering()
+                }
+            }
+    }
+
+    private val isHemisphere
+        get() = surfaceEntity.shape is SurfaceEntity.Shape.Hemisphere
+}
+
+internal class CoreModelEntity(pixelDensity: PixelDensity) : CoreEntity(pixelDensity) {
+    val nodes: List<GltfModelNode>
+        get() = (entity as? GltfModelEntity)?.nodes ?: emptyList()
+
+    /** Scale factor calculated to uniformly fit the [GltfModelEntity] within container bounds. */
+    private var gltfUniformScale = 1f
+
+    /**
+     * Explicit scale factor applied by modifiers such as [SubspaceModifier.movable]. This is null
+     * until a scale has been explicitly set.
+     */
+    private var userScale: Float? = null
+
+    /** Sets the user-defined scale factor and applies it to the [GltfModelEntity]. */
+    override var scale: Float
+        get() = super.scale
+        set(value) {
+            // CoreEntityAccumulator calls coreEntity.scale = it when modifiers (e.g. .scale(),
+            // .movable())  are applied during recomposition. Overriding scale intercepts those
+            // calls to update userScale, preserving gltfUniformScale.
+            if (userScale != value) {
+                userScale = value
+                syncCoreEntityCombinedScale()
+            }
+        }
+
+    /**
+     * The size of the glTF entity will be scaled uniformly such that it fits within the most
+     * restrictive dimension according to the constraints.
+     */
+    override var size: IntVolumeSize
+        get() = super.size
+        set(value) {
+            onEntity {
+                if (super.size != value) {
+                    val heightScale = value.height / (modelSize.height.toFloat().coerceAtLeast(1f))
+                    val widthScale = value.width / (modelSize.width.toFloat().coerceAtLeast(1f))
+                    val depthScale = value.depth / (modelSize.depth.toFloat().coerceAtLeast(1f))
+                    gltfUniformScale = minOf(heightScale, widthScale, depthScale)
+                    syncCoreEntityCombinedScale()
+                }
+                super.size = value
+            }
+        }
+
+    val modelSize: IntVolumeSize
+        get() =
+            (entity as? GltfModelEntity)
+                ?.getGltfModelBoundingBox()
+                ?.halfExtents
+                ?.times(2)
+                ?.toIntVolumeSize(pixelDensity) ?: IntVolumeSize.Zero
+
+    @OptIn(androidx.xr.scenecore.ExperimentalGltfAnimationApi::class)
+    val animations: List<GltfAnimation>?
+        @RequiresApi(Build.VERSION_CODES.O) get() = (entity as? GltfModelEntity)?.getAnimations()
+
+    /**
+     * Sets [gltfUniformScale] or [userScale] for the value of [CoreEntity.scale]. Depending on
+     * whether the scale has been manually modified. Then calls [CoreEntity]'s setter which updates
+     * [GltfModelEntity] scale in SceneCore.
+     */
+    private fun syncCoreEntityCombinedScale() {
+        super.scale = userScale ?: gltfUniformScale
+    }
+
+    private fun onEntity(action: GltfModelEntity.() -> Unit) {
+        onEntityAttached { entity -> (entity as GltfModelEntity).action() }
     }
 }
 
-/** [CoreEntity] types that implement this interface may have the ResizableComponent attached. */
-internal interface ResizableCoreEntity
-
-/** [CoreEntity] types that implement this interface may have the MovableComponent attached. */
-internal interface MovableCoreEntity
+/** [CoreEntity] types that implement this interface may have the InteractableComponent attached. */
+internal interface InteractableCoreEntity

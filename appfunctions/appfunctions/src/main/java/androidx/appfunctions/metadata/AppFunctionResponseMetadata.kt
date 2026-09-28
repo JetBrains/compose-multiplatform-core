@@ -16,13 +16,16 @@
 
 package androidx.appfunctions.metadata
 
-import androidx.annotation.RestrictTo
 import androidx.appsearch.annotation.Document
 
 /** Represents an AppFunction's response metadata. */
-public class AppFunctionResponseMetadata(
+public class AppFunctionResponseMetadata
+@JvmOverloads
+constructor(
     /** The schema of the return value type. */
-    public val valueType: AppFunctionDataTypeMetadata
+    public val valueType: AppFunctionDataTypeMetadata,
+    /** A description of the response and its intended use. */
+    public val description: String = "",
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -31,36 +34,41 @@ public class AppFunctionResponseMetadata(
         other as AppFunctionResponseMetadata
 
         if (valueType != other.valueType) return false
+        if (description != other.description) return false
 
         return true
     }
 
     override fun hashCode(): Int {
         var result = valueType.hashCode()
+        result = 31 * result + description.hashCode()
         return result
     }
 
     override fun toString(): String {
-        return "AppFunctionResponseMetadata(valueType=$valueType)"
+        return "AppFunctionResponseMetadata(valueType=$valueType, description=$description)"
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun toAppFunctionResponseMetadataDocument(): AppFunctionResponseMetadataDocument {
+    internal fun toAppFunctionResponseMetadataDocument(): AppFunctionResponseMetadataDocument {
         return AppFunctionResponseMetadataDocument(
-            valueType = valueType.toAppFunctionDataTypeMetadataDocument()
+            valueType = valueType.toAppFunctionDataTypeMetadataDocument(),
+            description = description,
         )
     }
 }
 
 /** Represents the persistent storage format of [AppFunctionResponseMetadata]. */
 @Document
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public data class AppFunctionResponseMetadataDocument(
-    @Document.Namespace public val namespace: String = APP_FUNCTION_NAMESPACE,
-    @Document.Id public val id: String = APP_FUNCTION_ID_EMPTY,
+internal data class AppFunctionResponseMetadataDocument(
+    @Document.Namespace val namespace: String = APP_FUNCTION_NAMESPACE,
+    @Document.Id val id: String = APP_FUNCTION_ID_EMPTY,
     /** The schema of the return type. */
-    @Document.DocumentProperty public val valueType: AppFunctionDataTypeMetadataDocument,
+    @Document.DocumentProperty val valueType: AppFunctionDataTypeMetadataDocument,
+    @Document.StringProperty val description: String? = null,
 ) {
-    public fun toAppFunctionResponseMetadata(): AppFunctionResponseMetadata =
-        AppFunctionResponseMetadata(valueType = valueType.toAppFunctionDataTypeMetadata())
+    fun toAppFunctionResponseMetadata(): AppFunctionResponseMetadata =
+        AppFunctionResponseMetadata(
+            valueType = valueType.toAppFunctionDataTypeMetadata(),
+            description = description ?: "",
+        )
 }

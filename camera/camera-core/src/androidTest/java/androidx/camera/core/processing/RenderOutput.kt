@@ -26,7 +26,6 @@ import android.os.Looper
 import android.view.Surface
 import androidx.annotation.RequiresApi
 import androidx.camera.testing.impl.GLUtil
-import androidx.test.filters.SdkSuppress
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.android.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
@@ -41,7 +40,6 @@ import kotlinx.coroutines.withTimeoutOrNull
 private const val WIDTH = 640
 private const val HEIGHT = 480
 
-@SdkSuppress(minSdkVersion = 21)
 abstract class RenderOutput<T> {
     abstract val surface: Surface
     protected abstract val imageFlow: Flow<T>
@@ -62,15 +60,14 @@ abstract class RenderOutput<T> {
 
     suspend fun await(imageCount: Int, timeoutInMs: Long): Boolean {
         val scope = CoroutineScope(handler.asCoroutineDispatcher())
-        val imageCollectJob =
-            scope.launch {
-                imageFlow.collectIndexed { index, image ->
-                    releaseImage(image)
-                    if (index >= imageCount) {
-                        scope.cancel()
-                    }
+        val imageCollectJob = scope.launch {
+            imageFlow.collectIndexed { index, image ->
+                releaseImage(image)
+                if (index >= imageCount) {
+                    scope.cancel()
                 }
             }
+        }
 
         return withTimeoutOrNull(timeoutInMs) {
             imageCollectJob.join()
@@ -90,7 +87,6 @@ enum class OutputType {
     SURFACE_TEXTURE,
 }
 
-@SdkSuppress(minSdkVersion = 21)
 private class SurfaceTextureOutput : RenderOutput<Unit>() {
     override val surface: Surface by ::outputSurface
 
@@ -127,19 +123,17 @@ private class SurfaceTextureOutput : RenderOutput<Unit>() {
     private val outputSurface = Surface(outputSurfaceTexture)
 }
 
-@SdkSuppress(minSdkVersion = 21)
 private class ImageReaderOutput : RenderOutput<Image>() {
     override val surface: Surface
         get() = imageReader.surface
 
     override val imageFlow = callbackFlow {
-        val listener =
-            ImageReader.OnImageAvailableListener {
-                val image = it.acquireLatestImage()
-                if (image != null) {
-                    trySend(image)
-                }
+        val listener = ImageReader.OnImageAvailableListener {
+            val image = it.acquireLatestImage()
+            if (image != null) {
+                trySend(image)
             }
+        }
         imageReader.setOnImageAvailableListener(listener, handler)
         awaitClose { imageReader.setOnImageAvailableListener({}, Handler(Looper.getMainLooper())) }
     }

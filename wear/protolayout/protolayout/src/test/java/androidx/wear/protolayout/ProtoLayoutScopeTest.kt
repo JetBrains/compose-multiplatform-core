@@ -21,11 +21,15 @@ import android.content.Intent
 import androidx.core.os.BundleCompat
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.wear.protolayout.ProtoLayoutScope.RendererCapability.LOTTIE_COLOR_FOR_SLOT
+import androidx.wear.protolayout.ProtoLayoutScope.RendererCapability.PENDING_INTENT_ACTION
 import androidx.wear.protolayout.ResourceBuilders.AndroidImageResourceByResId
 import androidx.wear.protolayout.ResourceBuilders.AndroidLottieResourceByResId
 import androidx.wear.protolayout.ResourceBuilders.ImageResource
 import androidx.wear.protolayout.ResourceBuilders.InlineImageResource
+import androidx.wear.protolayout.expression.VersionBuilders
 import com.google.common.truth.Truth.assertThat
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -46,6 +50,7 @@ class ProtoLayoutScopeTest {
         val collectedResources = scope.collectResources()
         val resourcesList = collectedResources.idToImageMapping
 
+        assertThat(scope.hasResources()).isTrue()
         assertThat(resourcesList).hasSize(1)
         assertThat(resourcesList).containsKey(id)
         assertThat(resourcesList[id]!!.toProto()).isEqualTo(image.toProto())
@@ -53,7 +58,8 @@ class ProtoLayoutScopeTest {
 
     @Test
     public fun multipleSameResourcesRegistered_versionStaysTheSame() {
-        val scope = ProtoLayoutScope()
+        val scope1 = ProtoLayoutScope()
+        val scope2 = ProtoLayoutScope()
         val image1 =
             ImageResource.Builder()
                 .setAndroidResourceByResId(
@@ -70,21 +76,18 @@ class ProtoLayoutScopeTest {
                 )
                 .build()
 
-        scope.registerResource("1", image1)
-        scope.registerResource("2", image2)
-        val collectedResources = scope.collectResources()
-        val resVersion = collectedResources.version
-        scope.clear()
+        scope1.registerResource("1", image1)
+        scope1.registerResource("2", image2)
+        scope2.registerResource("2", image2)
+        scope2.registerResource("1", image1)
 
-        scope.registerResource("2", image2)
-        scope.registerResource("1", image1)
-
-        assertThat(scope.collectResources().version).isEqualTo(resVersion)
+        assertThat(scope1.collectResources().version).isEqualTo(scope2.collectResources().version)
     }
 
     @Test
     public fun multipleSameResourcesRegistered_withDifferentId_versionIsDifferent() {
-        val scope = ProtoLayoutScope()
+        val scope1 = ProtoLayoutScope()
+        val scope2 = ProtoLayoutScope()
         val image1 =
             ImageResource.Builder()
                 .setAndroidResourceByResId(
@@ -101,16 +104,13 @@ class ProtoLayoutScopeTest {
                 )
                 .build()
 
-        scope.registerResource("1", image1)
-        scope.registerResource("2", image2)
-        val collectedResources = scope.collectResources()
-        val resVersion = collectedResources.version
-        scope.clear()
+        scope1.registerResource("1", image1)
+        scope1.registerResource("2", image2)
+        scope2.registerResource("11", image1)
+        scope2.registerResource("2", image2)
 
-        scope.registerResource("11", image1)
-        scope.registerResource("2", image2)
-
-        assertThat(scope.collectResources().version).isNotEqualTo(resVersion)
+        assertThat(scope1.collectResources().version)
+            .isNotEqualTo(scope2.collectResources().version)
     }
 
     @Test
@@ -127,21 +127,37 @@ class ProtoLayoutScopeTest {
     }
 
     @Test
-    public fun clear_EmptiesMappings() {
+    public fun twoPendingIntents_registerToSameId_throws() {
         val scope = ProtoLayoutScope()
+        val id = "test"
         val intent = PendingIntent.getActivity(getApplicationContext(), 1, Intent(), 1)
-        val image =
-            ImageResource.Builder()
-                .setAndroidResourceByResId(
-                    AndroidImageResourceByResId.Builder().setResourceId(1234).build()
-                )
-                .build()
+        scope.registerPendingIntent(id, intent)
+        val secondIntent = PendingIntent.getActivity(getApplicationContext(), 2, Intent(), 1)
 
-        scope.registerResource("id", image)
-        scope.registerPendingIntent("id", intent)
-        scope.clear()
+        assertThrows(IllegalArgumentException::class.java) {
+            scope.registerPendingIntent(id, secondIntent)
+        }
+    }
 
-        assertThat(scope.resources).isEmpty()
-        assertThat(scope.pendingIntents.isEmpty()).isTrue()
+    @Test
+    public fun hasCapability_withVersionBelowMinimum_returnsFalse() {
+        val scopeWithSchema1300 =
+            ProtoLayoutScope(
+                VersionBuilders.VersionInfo.Builder().setMajor(1).setMinor(300).build()
+            )
+
+        assertThat(scopeWithSchema1300.hasCapability(LOTTIE_COLOR_FOR_SLOT)).isFalse()
+        assertThat(scopeWithSchema1300.hasCapability(PENDING_INTENT_ACTION)).isFalse()
+    }
+
+    @Test
+    public fun hasCapability_withVersionMeetsMinimum_returnsTrue() {
+        val scopeWithSchema1600 =
+            ProtoLayoutScope(
+                VersionBuilders.VersionInfo.Builder().setMajor(1).setMinor(600).build()
+            )
+
+        assertThat(scopeWithSchema1600.hasCapability(LOTTIE_COLOR_FOR_SLOT)).isTrue()
+        assertThat(scopeWithSchema1600.hasCapability(PENDING_INTENT_ACTION)).isTrue()
     }
 }

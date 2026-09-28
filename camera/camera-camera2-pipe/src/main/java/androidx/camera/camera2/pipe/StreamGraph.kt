@@ -18,6 +18,8 @@ package androidx.camera.camera2.pipe
 
 import android.hardware.camera2.CameraExtensionSession
 import androidx.annotation.RestrictTo
+import androidx.camera.camera2.pipe.media.ImageSource
+import kotlinx.coroutines.flow.Flow
 
 /**
  * This defines a fixed set of inputs and outputs for a single [CameraGraph] instance.
@@ -45,6 +47,25 @@ public interface StreamGraph {
      * correctly or if the Android version is under 34 for extensions.
      */
     public fun getOutputLatency(streamId: StreamId, outputId: OutputId? = null): OutputLatency?
+
+    /** Get the [ImageSource] that was created for the given [StreamId]. */
+    public fun getImageSource(streamId: StreamId): ImageSource?
+
+    /**
+     * Flow of the real-time estimated availability for a specific set of streams(or a Frame). The
+     * availability here is a measure of the count of Frames that can be captured with these
+     * streams. It is constrained by the stream with the fewest available physical slots, as well as
+     * by the global memory budget.
+     */
+    public fun estimateAvailableFramesFlow(streamIds: Set<StreamId>): Flow<Int>
+
+    /**
+     * Current estimated availability for a specific set of streams(or a Frame). The availability
+     * here is a measure of the count of Frames that can be captured with these streams. It is
+     * constrained by the stream with the fewest available physical slots, as well as by the global
+     * memory budget.
+     */
+    public fun estimateAvailableFrames(streamIds: Set<StreamId>): Int
 
     /** Wrapper class for [CameraExtensionSession.StillCaptureLatency] object. */
     public data class OutputLatency(

@@ -14,38 +14,56 @@
  * limitations under the License.
  */
 
+@file:OptIn(
+    ExperimentalMetricApi::class,
+    ExperimentalBenchmarkConfigApi::class,
+    ExperimentalPerfettoCaptureApi::class,
+)
+
 package androidx.compose.integration.hero.pokedex.macrobenchmark
 
 import android.content.Intent
+import android.util.DisplayMetrics
+import androidx.benchmark.ExperimentalBenchmarkConfigApi
+import androidx.benchmark.ExperimentalConfig
+import androidx.benchmark.MemoryProfilingConfig
 import androidx.benchmark.macro.CompilationMode
 import androidx.benchmark.macro.ExperimentalMetricApi
 import androidx.benchmark.macro.FrameTimingGfxInfoMetric
 import androidx.benchmark.macro.MacrobenchmarkScope
-import androidx.benchmark.macro.junit4.MacrobenchmarkRule
+import androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi
 import androidx.compose.integration.hero.common.macrobenchmark.HeroMacrobenchmarkDefaults
+import androidx.compose.integration.hero.pokedex.macrobenchmark.internal.PokedexConstants.POKEDEX_TARGET_PACKAGE_NAME
+import androidx.compose.integration.hero.pokedex.macrobenchmark.internal.findObjectOrThrow
+import androidx.compose.integration.hero.pokedex.macrobenchmark.internal.waitOrThrow
 import androidx.test.filters.LargeTest
-import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
+import androidx.testutils.CpuFrequencyChangeMetric
 import androidx.testutils.createCompilationParams
 import androidx.testutils.defaultComposeScrollingMetrics
-import org.junit.Rule
+import androidx.testutils.defaultMemoryMetrics
+import androidx.tracing.Trace
+import kotlin.math.roundToInt
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-class PokedexScrollBenchmark(val compilationMode: CompilationMode) {
-    @get:Rule val benchmarkRule = MacrobenchmarkRule()
-
+class PokedexScrollBenchmark(
+    val compilationMode: CompilationMode,
+    val enableSharedTransitionScope: Boolean,
+    val enableSharedElementTransitions: Boolean,
+) : PokedexBenchmarkBase() {
     @Test
-    fun scrollHome() =
+    fun scrollHomeCompose() =
         benchmarkScroll(
             action = "$POKEDEX_TARGET_PACKAGE_NAME.POKEDEX_COMPOSE_ACTIVITY",
             setupBlock = {
+                device.waitForIdle()
                 val searchCondition = Until.hasObject(By.res("Pokemon"))
                 device.wait(searchCondition, 3_000)
                 val content = device.findObject(By.res("PokedexList"))
@@ -55,44 +73,138 @@ class PokedexScrollBenchmark(val compilationMode: CompilationMode) {
             measureBlock = { scrollActions(device.findObject(By.res("PokedexList"))) },
         )
 
-    @OptIn(ExperimentalMetricApi::class)
+    @Test
+    fun scrollHomeViews() =
+        benchmarkScroll(
+            action = "$POKEDEX_TARGET_PACKAGE_NAME.POKEDEX_VIEWS_HOME_ACTIVITY",
+            setupBlock = {
+                device.waitForIdle()
+                // Wait until we have content loaded
+                device.waitOrThrow(
+                    Until.hasObject(By.res(POKEDEX_TARGET_PACKAGE_NAME, "name")),
+                    3_000,
+                )
+                val content =
+                    device.findObjectOrThrow(By.res(POKEDEX_TARGET_PACKAGE_NAME, "PokedexList"))
+                // Set gesture margin to avoid triggering gesture navigation
+                content.setGestureMargin(device.displayWidth / 5)
+            },
+            measureBlock = {
+                scrollActions(
+                    device.findObjectOrThrow(By.res(POKEDEX_TARGET_PACKAGE_NAME, "PokedexList"))
+                )
+            },
+        )
+
+    @OptIn(ExperimentalMetricApi::class, ExperimentalBenchmarkConfigApi::class)
     private fun benchmarkScroll(
         action: String,
+        enableScrollbar: Boolean = true,
         setupBlock: MacrobenchmarkScope.() -> Unit,
         measureBlock: MacrobenchmarkScope.() -> Unit,
-    ) =
+    ) {
+
         benchmarkRule.measureRepeated(
             packageName = POKEDEX_TARGET_PACKAGE_NAME,
-            metrics = defaultComposeScrollingMetrics() + FrameTimingGfxInfoMetric(),
+            metrics =
+                defaultComposeScrollingMetrics() +
+                    FrameTimingGfxInfoMetric() +
+                    CpuFrequencyChangeMetric() +
+                    defaultMemoryMetrics(),
             compilationMode = compilationMode,
             iterations = HeroMacrobenchmarkDefaults.ITERATIONS,
+            experimentalConfig =
+                ExperimentalConfig(
+                    memoryProfilingConfig =
+                        MemoryProfilingConfig(
+                            isSampleArtHeapEnabled = true,
+                            isSampleNativeHeapEnabled = true,
+                        )
+                ),
             setupBlock = {
-                // Start out by deleting any existing data
-                val targetContext = InstrumentationRegistry.getInstrumentation().targetContext
-                targetContext.deleteDatabase("Pokedex.db")
+                // Start off by killing the existing process. After previous iterations, the
+                // activity might be running, and we wouldn't launch our setup activity as the
+                // process is already active.
+                killProcess()
+                databaseCleanupRule.deleteDatabaseFiles()
+                cacheCleanupRule.deleteCacheFiles()
 
                 val intent = Intent()
-                intent.action = action
+                intent.configure(
+                    action = action,
+                    enableSharedTransitionScope = enableSharedTransitionScope,
+                    enableSharedElementTransitions = enableSharedElementTransitions,
+                    enableScrollbar = enableScrollbar,
+                )
                 startActivityAndWait(intent)
                 setupBlock()
             },
             measureBlock = measureBlock,
         )
+    }
 
     private fun MacrobenchmarkScope.scrollActions(content: UiObject2) {
-        content.fling(Direction.DOWN)
-        device.waitForIdle()
-        content.fling(Direction.UP)
-        device.waitForIdle()
-        content.fling(Direction.DOWN)
-        device.waitForIdle()
-        content.fling(Direction.UP)
-        device.waitForIdle()
+        // Important: We perform up flings with the default fling speed, and down flings with a
+        // slightly lower speed. Injected input event velocity can be slightly varied, so the up
+        // fling could result in a gesture that hits the bounds and shows overscroll. We
+        // specifically only want to measure scroll here.
+        val upSpeed = (FLING_SPEED_DP_PER_SECOND * targetDisplayDensity).roundToInt()
+        val downSpeed = (upSpeed * OPPOSING_DIRECTION_FLING_FACTOR).roundToInt()
+        fun flingAndWaitForIdle(direction: Direction, speed: Int) {
+            trace("PokedexScrollBenchmark#fling($direction, speed=$speed)") {
+                content.fling(direction, speed)
+                device.waitForIdle()
+            }
+        }
+        flingAndWaitForIdle(Direction.DOWN, upSpeed)
+        flingAndWaitForIdle(Direction.UP, downSpeed)
+        flingAndWaitForIdle(Direction.DOWN, upSpeed)
+        flingAndWaitForIdle(Direction.UP, downSpeed)
     }
 
+    /** Density of the instrumentation's target context, in DP. */
+    private val MacrobenchmarkScope.targetDisplayDensity: Float
+        get() {
+            val uiContext = instrumentation.targetContext
+            val densityDpi = uiContext.resources.configuration.densityDpi
+            return densityDpi.toFloat() / DisplayMetrics.DENSITY_DEFAULT
+        }
+
     companion object {
-        @Parameterized.Parameters(name = "compilation={0}")
+        /** The fling speed used for flings, in dp per second. Copied from [UiObject2]. */
+        private const val FLING_SPEED_DP_PER_SECOND = 7_500
+
+        /**
+         * The factor to be applied to a [UiObject2.fling]s in an opposing direction. For example,
+         * after a DOWN fling with 7500f, we want to perform an UP fling with 7000f to work around
+         * UiAutomator/ADB issues with velocity from injected input events.
+         *
+         * The value of 0.92 has been found through rigorous estimation and tests on this benchmark.
+         */
+        private const val OPPOSING_DIRECTION_FLING_FACTOR = 0.92f
+
+        /**
+         * Parameters for the benchmark. Uses abbreviations because of file length limit for
+         * results. We use CompilationMode.Full() in CI to reduce the amount of benchmark
+         * permutations. compilation = Compilation Mode eSTS = enableSharedTransitionScope eSET =
+         * enableSharedElementTransition
+         */
+        @Parameterized.Parameters(name = "compilation={0},eSTS={1},eSET={2}")
         @JvmStatic
-        fun parameters() = createCompilationParams()
+        fun parameters(): List<Array<Any>> =
+            createCompilationParams(compilationModes = listOf(CompilationMode.Full())).flatMap {
+                compilationMode ->
+                PokedexSharedElementBenchmarkConfiguration.AllConfigurations.map { configuration ->
+                    arrayOf(*compilationMode, *configuration.asBenchmarkArguments())
+                }
+            }
     }
 }
+
+internal fun <R> trace(sectionName: String, block: () -> R): R =
+    try {
+        Trace.beginSection(sectionName)
+        block()
+    } finally {
+        Trace.endSection()
+    }

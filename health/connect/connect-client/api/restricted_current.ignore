@@ -1,0 +1,9 @@
+// Baseline format: 1.0
+AddedAbstractMethod: androidx.health.connect.client.HealthConnectClient#getChanges(String, int, kotlin.coroutines.Continuation<? super androidx.health.connect.client.response.ChangesResponse>):
+    Binary breaking change: Added method androidx.health.connect.client.HealthConnectClient.getChanges(String,int,kotlin.coroutines.Continuation<? super androidx.health.connect.client.response.ChangesResponse>)
+
+
+RemovedMethod: androidx.health.connect.client.records.ExerciseSegment#ExerciseSegment(java.time.Instant, java.time.Instant, int, int, int, kotlin.jvm.internal.DefaultConstructorMarker):
+    Binary breaking change: Removed constructor androidx.health.connect.client.records.ExerciseSegment(java.time.Instant,java.time.Instant,int,int,int,kotlin.jvm.internal.DefaultConstructorMarker)
+RemovedMethod: androidx.health.connect.client.records.ExerciseSessionRecord#ExerciseSessionRecord(java.time.Instant, java.time.ZoneOffset, java.time.Instant, java.time.ZoneOffset, androidx.health.connect.client.records.metadata.Metadata, int, String, String, java.util.List, java.util.List, androidx.health.connect.client.records.ExerciseRoute, String, int, kotlin.jvm.internal.DefaultConstructorMarker):
+    Binary breaking change: Removed constructor androidx.health.connect.client.records.ExerciseSessionRecord(java.time.Instant,java.time.ZoneOffset,java.time.Instant,java.time.ZoneOffset,androidx.health.connect.client.records.metadata.Metadata,int,String,String,java.util.List,java.util.List,androidx.health.connect.client.records.ExerciseRoute,String,int,kotlin.jvm.internal.DefaultConstructorMarker)

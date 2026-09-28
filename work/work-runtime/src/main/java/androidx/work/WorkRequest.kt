@@ -297,7 +297,7 @@ internal constructor(
                 (Build.VERSION.SDK_INT >= 24 && constraints.hasContentUriTriggers() ||
                     constraints.requiresBatteryNotLow() ||
                     constraints.requiresCharging() ||
-                    Build.VERSION.SDK_INT >= 23 && constraints.requiresDeviceIdle())
+                    constraints.requiresDeviceIdle())
             if (workSpec.expedited) {
                 require(!hasUnsupportedConstraints) {
                     "Expedited jobs only support network and storage constraints"

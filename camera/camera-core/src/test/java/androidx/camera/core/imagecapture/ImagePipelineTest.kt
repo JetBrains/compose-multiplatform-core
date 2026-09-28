@@ -83,7 +83,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 /** Unit tests for [ImagePipeline]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class ImagePipelineTest {
 
     companion object {
@@ -108,6 +108,9 @@ class ImagePipelineTest {
     @After
     fun tearDown() {
         imagePipeline.close()
+
+        // Process any pending looper updates to prevent leaks
+        shadowOf(getMainLooper()).idle()
     }
 
     @Test

@@ -208,10 +208,9 @@ public class ComplicationDataSourceInfoRetriever : AutoCloseable {
         val service: IProviderInfoService,
         var continuation: CancellableContinuation<ComplicationData?>?,
     ) : IPreviewComplicationDataCallback.Stub() {
-        val deathObserver: IBinder.DeathRecipient =
-            IBinder.DeathRecipient {
-                continuation?.resumeWithException(ServiceDisconnectedException())
-            }
+        val deathObserver: IBinder.DeathRecipient = IBinder.DeathRecipient {
+            continuation?.resumeWithException(ServiceDisconnectedException())
+        }
 
         init {
             service.asBinder().linkToDeath(deathObserver, 0)
@@ -407,7 +406,8 @@ public class ComplicationDataSourceInfo(
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public fun WireComplicationProviderInfo.toApiComplicationDataSourceInfo() =
+public fun WireComplicationProviderInfo.toApiComplicationDataSourceInfo():
+    ComplicationDataSourceInfo =
     ComplicationDataSourceInfo(
         appName!!,
         providerName!!,

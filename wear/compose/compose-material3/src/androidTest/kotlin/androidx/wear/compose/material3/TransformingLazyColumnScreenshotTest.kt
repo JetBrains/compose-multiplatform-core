@@ -17,12 +17,14 @@
 package androidx.wear.compose.material3
 
 import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -51,6 +53,7 @@ class TransformingLazyColumnScreenshotTest(
     @TestParameter val screenSize: ScreenSize,
     @TestParameter val component: ComponentType,
     @TestParameter val isAnimated: IsAnimated,
+    @TestParameter val isReverseLayout: IsReverseLayout,
 ) {
     @get:Rule val rule = createComposeRule()
 
@@ -93,6 +96,43 @@ class TransformingLazyColumnScreenshotTest(
         scrollBy(-200f)
     }
 
+    private val ARRANGEMENT_TEST_ITEMS = 3 // Only 4 items fit in the screen
+
+    @Test
+    fun transforming_lazy_column_center_arrangement() =
+        verifyTransformingLazyColumnScreenshot(
+            itemsCount = ARRANGEMENT_TEST_ITEMS,
+            verticalArrangement = Arrangement.Center,
+        )
+
+    @Test
+    fun transforming_lazy_column_bottom_arrangement() =
+        verifyTransformingLazyColumnScreenshot(
+            itemsCount = ARRANGEMENT_TEST_ITEMS,
+            verticalArrangement = Arrangement.Bottom,
+        )
+
+    @Test
+    fun transforming_lazy_column_center_arrangement_with_spaced_by() =
+        verifyTransformingLazyColumnScreenshot(
+            itemsCount = ARRANGEMENT_TEST_ITEMS,
+            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
+        )
+
+    @Test
+    fun transforming_lazy_column_bottom_arrangement_with_spaced_by() =
+        verifyTransformingLazyColumnScreenshot(
+            itemsCount = ARRANGEMENT_TEST_ITEMS,
+            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.Bottom),
+        )
+
+    @Test
+    fun transforming_lazy_column_minimum_vertical_content_padding() =
+        verifyTransformingLazyColumnScreenshot(
+            useMinimumVerticalContentPadding = true,
+            contentPadding = PaddingValues(0.dp),
+        )
+
     enum class ComponentType {
         BUTTON,
         CARD,
@@ -105,21 +145,36 @@ class TransformingLazyColumnScreenshotTest(
         NOT_ANIMATED,
     }
 
+    enum class IsReverseLayout {
+        REVERSE_LAYOUT,
+        NOT_REVERSE_LAYOUT,
+    }
+
     data class TestContext(
         val transformationSpec: TransformationSpec,
         val isAnimated: Boolean,
         val itemsCount: Int,
     ) {
-        fun Component(type: ComponentType, scope: TransformingLazyColumnScope) {
+        fun Component(
+            type: ComponentType,
+            scope: TransformingLazyColumnScope,
+            useMinimumVerticalContentPadding: Boolean = false,
+        ) {
             when (type) {
-                ComponentType.BUTTON -> Buttons(scope)
-                ComponentType.CARD -> Cards(scope)
-                ComponentType.BORDERED_BUTTON -> BorderedButtons(scope)
-                ComponentType.FULL_WIDTH_BUTTON -> Buttons(scope, Modifier.fillMaxWidth())
+                ComponentType.BUTTON -> Buttons(scope, useMinimumVerticalContentPadding)
+                ComponentType.CARD -> Cards(scope, useMinimumVerticalContentPadding)
+                ComponentType.BORDERED_BUTTON ->
+                    BorderedButtons(scope, useMinimumVerticalContentPadding)
+                ComponentType.FULL_WIDTH_BUTTON ->
+                    Buttons(scope, useMinimumVerticalContentPadding, Modifier.fillMaxWidth())
             }
         }
 
-        private fun Buttons(scope: TransformingLazyColumnScope, modifier: Modifier = Modifier) =
+        private fun Buttons(
+            scope: TransformingLazyColumnScope,
+            useMinimumVerticalContentPadding: Boolean,
+            modifier: Modifier = Modifier,
+        ) =
             with(scope) {
                 items(count = itemsCount) {
                     Button(
@@ -127,6 +182,13 @@ class TransformingLazyColumnScreenshotTest(
                         modifier =
                             modifier
                                 .transformedHeight(this, transformationSpec)
+                                .then(
+                                    if (useMinimumVerticalContentPadding)
+                                        Modifier.minimumVerticalContentPadding(
+                                            ButtonDefaults.minimumVerticalListContentPadding
+                                        )
+                                    else Modifier
+                                )
                                 .then(if (isAnimated) Modifier.animateItem() else Modifier),
                         transformation = SurfaceTransformation(transformationSpec),
                     ) {
@@ -135,13 +197,23 @@ class TransformingLazyColumnScreenshotTest(
                 }
             }
 
-        private fun BorderedButtons(scope: TransformingLazyColumnScope) =
+        private fun BorderedButtons(
+            scope: TransformingLazyColumnScope,
+            useMinimumVerticalContentPadding: Boolean,
+        ) =
             with(scope) {
                 items(count = itemsCount) {
                     OutlinedButton(
                         onClick = {},
                         modifier =
                             Modifier.transformedHeight(this, transformationSpec)
+                                .then(
+                                    if (useMinimumVerticalContentPadding)
+                                        Modifier.minimumVerticalContentPadding(
+                                            ButtonDefaults.minimumVerticalListContentPadding
+                                        )
+                                    else Modifier
+                                )
                                 .then(if (isAnimated) Modifier.animateItem() else Modifier),
                         transformation = SurfaceTransformation(transformationSpec),
                     ) {
@@ -150,13 +222,23 @@ class TransformingLazyColumnScreenshotTest(
                 }
             }
 
-        private fun Cards(scope: TransformingLazyColumnScope) =
+        private fun Cards(
+            scope: TransformingLazyColumnScope,
+            useMinimumVerticalContentPadding: Boolean,
+        ) =
             with(scope) {
                 items(count = itemsCount) {
                     Card(
                         onClick = {},
                         modifier =
                             Modifier.transformedHeight(this, transformationSpec)
+                                .then(
+                                    if (useMinimumVerticalContentPadding)
+                                        Modifier.minimumVerticalContentPadding(
+                                            CardDefaults.minimumVerticalListContentPadding
+                                        )
+                                    else Modifier
+                                )
                                 .then(if (isAnimated) Modifier.animateItem() else Modifier),
                         transformation = SurfaceTransformation(transformationSpec),
                     ) {
@@ -169,6 +251,12 @@ class TransformingLazyColumnScreenshotTest(
     private fun verifyTransformingLazyColumnScreenshot(
         itemsCount: Int = 100,
         contentPadding: PaddingValues = PaddingValues(),
+        verticalArrangement: Arrangement.Vertical =
+            Arrangement.spacedBy(
+                4.dp,
+                alignment = if (!reverseLayout) Alignment.Top else Alignment.Bottom,
+            ),
+        useMinimumVerticalContentPadding: Boolean = false,
         onIdle: suspend TransformingLazyColumnState.() -> Unit = {},
     ) {
         lateinit var state: TransformingLazyColumnState
@@ -182,7 +270,9 @@ class TransformingLazyColumnScreenshotTest(
                 TransformingLazyColumn(
                     state = state,
                     contentPadding = contentPadding,
+                    verticalArrangement = verticalArrangement,
                     modifier = Modifier.testTag(TEST_TAG),
+                    reverseLayout = reverseLayout,
                 ) {
                     with(
                         TestContext(
@@ -191,7 +281,11 @@ class TransformingLazyColumnScreenshotTest(
                             itemsCount = itemsCount,
                         )
                     ) {
-                        Component(component, this@TransformingLazyColumn)
+                        Component(
+                            component,
+                            this@TransformingLazyColumn,
+                            useMinimumVerticalContentPadding,
+                        )
                     }
                 }
             }
@@ -204,4 +298,7 @@ class TransformingLazyColumnScreenshotTest(
 
         rule.verifyScreenshot(testName, screenshotRule)
     }
+
+    private val reverseLayout
+        get() = isReverseLayout == IsReverseLayout.REVERSE_LAYOUT
 }

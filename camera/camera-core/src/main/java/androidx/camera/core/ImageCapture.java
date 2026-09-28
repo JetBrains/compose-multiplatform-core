@@ -128,6 +128,8 @@ import androidx.camera.core.internal.IoConfig;
 import androidx.camera.core.internal.ScreenFlashWrapper;
 import androidx.camera.core.internal.SupportedOutputSizesSorter;
 import androidx.camera.core.internal.TargetConfig;
+import androidx.camera.core.internal.compat.quirk.DeviceQuirks;
+import androidx.camera.core.internal.compat.quirk.SimultaneousRawJpegNotSupportedQuirk;
 import androidx.camera.core.internal.compat.quirk.SoftwareJpegEncodingPreferredQuirk;
 import androidx.camera.core.internal.compat.workaround.ExifRotationAvailability;
 import androidx.camera.core.internal.utils.ImageUtil;
@@ -178,7 +180,6 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @SuppressWarnings("unused")
 public final class ImageCapture extends UseCase {
-
     ////////////////////////////////////////////////////////////////////////////////////////////
     // [UseCase lifetime constant] - Stays constant for the lifetime of the UseCase. Which means
     // they could be created in the constructor.
@@ -289,6 +290,11 @@ public final class ImageCapture extends UseCase {
     /** The timeout in seconds within which screen flash UI changes have to be completed. */
     @RestrictTo(Scope.LIBRARY_GROUP)
     public static final long SCREEN_FLASH_UI_APPLY_TIMEOUT_SECONDS = 3;
+
+    private static final String ERROR_MSG_SCREEN_FLASH_NOT_SET =
+            "A ScreenFlash instance is required for FLASH_MODE_SCREEN but was not found. If value"
+                    + " from PreviewView.getScreenFlash() is set to ImageCapture.setScreenFlash(),"
+                    + " ensure PreviewView.setScreenFlashWindow() is invoked first.";
 
     /**
      * When flash is required for taking a picture, a normal one shot flash will be used.
@@ -409,6 +415,10 @@ public final class ImageCapture extends UseCase {
 
         mFlashType = useCaseConfig.getFlashType(FLASH_TYPE_ONE_SHOT_FLASH);
         mScreenFlashWrapper = ScreenFlashWrapper.from(useCaseConfig.getScreenFlash());
+
+        if (useCaseConfig.containsOption(OPTION_FLASH_MODE)) {
+            mFlashMode = useCaseConfig.getFlashMode();
+        }
     }
 
     private boolean isSessionProcessorEnabledInCurrentCamera() {
@@ -517,6 +527,21 @@ public final class ImageCapture extends UseCase {
             }
         }
 
+        // Disable ZSL if it's not supported by the camera with the given UseCaseConfig.
+        boolean isZslDisabled = Boolean.TRUE.equals(
+                builder.getMutableConfig().retrieveOption(OPTION_ZSL_DISABLED, false));
+        if (!isZslDisabled) {
+            Rect sensorRect = cameraInfo.getSensorRect();
+            Size activeArraySize = new Size(sensorRect.width(), sensorRect.height());
+            SupportedOutputSizesSorter sorter = new SupportedOutputSizesSorter(cameraInfo,
+                    activeArraySize);
+            List<Size> sortedSizes = sorter.getSortedSupportedOutputSizes(
+                    builder.getUseCaseConfig());
+            if (!cameraInfo.canSupportZsl(sortedSizes)) {
+                builder.getMutableConfig().insertOption(OPTION_ZSL_DISABLED, true);
+            }
+        }
+
         return builder.getUseCaseConfig();
     }
 
@@ -537,7 +562,6 @@ public final class ImageCapture extends UseCase {
      *
      * @see #setFeatureGroup
      */
-    @OptIn(markerClass = ExperimentalSessionConfig.class)
     private void applyFeatureGroupToConfig(UseCaseConfig.@NonNull Builder<?, ?, ?> builder) {
         Set<@NonNull GroupableFeature> featureGroup = getFeatureGroup();
 
@@ -655,7 +679,7 @@ public final class ImageCapture extends UseCase {
                 && flashMode != FLASH_MODE_OFF) {
             if (flashMode == FLASH_MODE_SCREEN) {
                 if (mScreenFlashWrapper.getBaseScreenFlash() == null) {
-                    throw new IllegalArgumentException("ScreenFlash not set for FLASH_MODE_SCREEN");
+                    throw new IllegalArgumentException(ERROR_MSG_SCREEN_FLASH_NOT_SET);
                 }
 
                 if (getCamera() != null && getCameraLens() != CameraSelector.LENS_FACING_FRONT) {
@@ -668,6 +692,9 @@ public final class ImageCapture extends UseCase {
         }
 
         synchronized (mLockedFlashMode) {
+            if (getFlashMode() == flashMode) {
+                return;
+            }
             mFlashMode = flashMode;
             trySetFlashModeToCameraControl();
         }
@@ -823,6 +850,12 @@ public final class ImageCapture extends UseCase {
 
             // TODO(b/122846516): Update session configuration and possibly reconfigure session.
         }
+    }
+
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    @Override
+    protected void onProviderRotationChanged(int rotation) {
+        setTargetRotation(rotation);
     }
 
     /**
@@ -1029,25 +1062,23 @@ public final class ImageCapture extends UseCase {
      *
      * <p>Some capabilities are only exposed on Extensions-enabled cameras. To get the correct
      * capabilities when Extensions are enabled, you need to pass the {@link CameraInfo} from the
-     * Extensions-enabled {@link Camera} instance. To do this, use the {@link CameraSelector}
-     * instance retrieved from
-     * {@link androidx.camera.extensions.ExtensionsManager#getExtensionEnabledCameraSelector(CameraSelector, int)}
-     * to invoke {@link androidx.camera.lifecycle.ProcessCameraProvider#bindToLifecycle} where
-     * you can skip use cases arguments if you'd like to query it before opening the camera. Then,
-     * use the returned {@link Camera} to get the {@link CameraInfo} instance.
+     * Extensions-enabled {@link Camera} instance. To do this, use an
+     * {@link androidx.camera.extensions.ExtensionSessionConfig} containing the desired extension
+     * mode to invoke
+     * {@link androidx.camera.lifecycle.ProcessCameraProvider#getCameraInfo(CameraSelector,
+     * androidx.camera.core.SessionConfig)}.
      *
-     * <p>>The following code snippet demonstrates how to enable postview:
-     *
+     * <p>The following code snippet demonstrates how to enable postview with an extension enabled:
      * <pre>{@code
-     * CameraSelector extensionCameraSelector =
-     *     extensionsManager.getExtensionEnabledCameraSelector(cameraSelector, ExtensionMode.NIGHT);
-     * Camera camera = cameraProvider.bindToLifecycle(activity, extensionCameraSelector);
+     * ExtensionSessionConfig config = new ExtensionSessionConfig(ExtensionMode.NIGHT,
+     *         extensionsManager);
+     * CameraInfo extensionCameraInfo = cameraProvider.getCameraInfo(cameraSelector, config);
      * ImageCaptureCapabilities capabilities =
-     *     ImageCapture.getImageCaptureCapabilities(camera.getCameraInfo());
+     *         ImageCapture.getImageCaptureCapabilities(extensionCameraInfo);
      * ImageCapture imageCapture = new ImageCapture.Builder()
-     *     .setPostviewEnabled(capabilities.isPostviewSupported())
-     *     .build();
-     * }}</pre>
+     *         .setPostviewEnabled(capabilities.isPostviewSupported())
+     *         .build();
+     * }</pre>
      *
      * @return {@link ImageCaptureCapabilities}
      */
@@ -1095,7 +1126,11 @@ public final class ImageCapture extends UseCase {
 
             if (isRawSupported()) {
                 formats.add(OUTPUT_FORMAT_RAW);
-                formats.add(OUTPUT_FORMAT_RAW_JPEG);
+                // Exclude simultaneous RAW+JPEG on devices where HAL cannot configure concurrent
+                // maximum-resolution RAW and JPEG streams.
+                if (DeviceQuirks.get(SimultaneousRawJpegNotSupportedQuirk.class) == null) {
+                    formats.add(OUTPUT_FORMAT_RAW_JPEG);
+                }
             }
 
             return formats;
@@ -1187,9 +1222,9 @@ public final class ImageCapture extends UseCase {
      * {@inheritDoc}
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @UiThread
     @Override
-    public void onStateDetached() {
+    @MainThread
+    public void onSessionStop() {
         abortImageCaptureRequests();
     }
 
@@ -1582,17 +1617,17 @@ public final class ImageCapture extends UseCase {
         checkMainThread();
         if (getFlashMode() == ImageCapture.FLASH_MODE_SCREEN
                 && mScreenFlashWrapper.getBaseScreenFlash() == null) {
-            throw new IllegalArgumentException("ScreenFlash not set for FLASH_MODE_SCREEN");
+            throw new IllegalArgumentException(ERROR_MSG_SCREEN_FLASH_NOT_SET);
         }
         Log.d(TAG, "takePictureInternal");
         CameraInternal camera = getCamera();
-        if (camera == null) {
+        if (camera == null || !isInSession()) {
             sendInvalidCameraError(executor, inMemoryCallback, onDiskCallback);
             return;
         }
         boolean isSimultaneousCapture = getCurrentConfig()
                 .getSecondaryInputFormat() != ImageFormat.UNKNOWN;
-        if (isSimultaneousCapture && secondaryOutputFileOptions == null) {
+        if (isSimultaneousCapture && secondaryOutputFileOptions == null && onDiskCallback != null) {
             throw new IllegalArgumentException(
                     "Simultaneous capture RAW and JPEG needs two output file options");
         }
@@ -1770,6 +1805,17 @@ public final class ImageCapture extends UseCase {
     public @Nullable ResolutionSelector getPostviewResolutionSelector() {
         return getCurrentConfig().retrieveOption(OPTION_POSTVIEW_RESOLUTION_SELECTOR,
                 null);
+    }
+
+    /**
+     * Returns whether the use case supports auto-rotation.
+     *
+     * @return true if the use case supports auto-rotation, false otherwise.
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    @Override
+    public boolean isAutoRotationSupported() {
+        return true;
     }
 
     /**
@@ -2099,7 +2145,7 @@ public final class ImageCapture extends UseCase {
         private static final int DEFAULT_SURFACE_OCCUPANCY_PRIORITY = 4;
         private static final StreamUseCase DEFAULT_STREAM_USE_CASE = StreamUseCase.STILL_CAPTURE;
         private static final int DEFAULT_ASPECT_RATIO = AspectRatio.RATIO_4_3;
-        private static final int DEFAULT_OUTPUT_FORMAT = OUTPUT_FORMAT_JPEG;
+        static final int DEFAULT_OUTPUT_FORMAT = OUTPUT_FORMAT_JPEG;
 
         private static final ResolutionSelector DEFAULT_RESOLUTION_SELECTOR =
                 new ResolutionSelector.Builder().setAspectRatioStrategy(
@@ -2508,6 +2554,11 @@ public final class ImageCapture extends UseCase {
             return mMutableConfig;
         }
 
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public @NonNull MutableConfig getInteropMutableConfig() {
+            return mMutableConfig;
+        }
+
         /**
          * {@inheritDoc}
          */
@@ -2515,6 +2566,41 @@ public final class ImageCapture extends UseCase {
         @Override
         public @NonNull ImageCaptureConfig getUseCaseConfig() {
             return new ImageCaptureConfig(OptionsBundle.from(mMutableConfig));
+        }
+
+        /**
+         * Applies interoperability configuration to this builder.
+         *
+         * <p>To configure Camera2 options, use {@code Camera2Interop.forImageCapture(configurator)}
+         * (from the {@code camera-camera2} artifact) to create a configurator, then pass it to
+         * this method.
+         *
+         * <p><b>Note:</b> Using Camera2 interop options can override internal CameraX
+         * configurations. The capture request keys for one-shot still captures (e.g.
+         * {@link ImageCapture#takePicture}) are determined by copying all repeating request keys
+         * (which may include keys added via
+         * {@link androidx.camera.core.SessionConfig.Builder#setInterop} or
+         * {@link CameraControl#applyInteropAsync}) and then overriding them with the still capture
+         * request keys configured here. If an option configured via interop conflicts with
+         * options required by CameraX internally, the option from Camera2Interop will override,
+         * which may result in unexpected behavior.
+         *
+         * <p><b>Warning:</b> Callbacks configured via interop receive raw
+         * {@link android.hardware.camera2.CameraCaptureSession} instances. Directly invoking
+         * state-altering methods on these raw objects (such as
+         * {@link android.hardware.camera2.CameraCaptureSession#close()} or
+         * {@link android.hardware.camera2.CameraCaptureSession#abortCaptures()}) bypasses CameraX
+         * pipeline management and may cause state desynchronization, stream interruption, or
+         * application crashes.
+         *
+         * @param configurator the configurator that sets the interoperability options
+         * @return this builder
+         */
+        @SuppressWarnings("MissingGetterMatchingBuilder")
+        public @NonNull Builder setInterop(
+                @NonNull InteropConfigurator<Builder> configurator) {
+            configurator.configure(this);
+            return this;
         }
 
         /**
@@ -2578,9 +2664,7 @@ public final class ImageCapture extends UseCase {
                 if (flashMode == FLASH_MODE_SCREEN) {
                     if (getMutableConfig().retrieveOption(OPTION_SCREEN_FLASH, null)
                             == null) {
-                        throw new IllegalArgumentException(
-                                "The flash mode is not allowed to set to FLASH_MODE_SCREEN "
-                                        + "without setting ScreenFlash");
+                        throw new IllegalArgumentException(ERROR_MSG_SCREEN_FLASH_NOT_SET);
                     }
                 }
             }

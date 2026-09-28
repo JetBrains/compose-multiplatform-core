@@ -19,6 +19,8 @@
     <string name="compose_material_3">Compose Material 3</string>
 
     <string name="back_button">Back</string>
+    <string name="search_samples">Search samples</string>
+    <string name="clear_text">Clear text</string>
     <string name="favorite_button">Pin screen</string>
     <string name="change_theme_button">Change theme</string>
     <string name="more_menu_button">External links</string>
@@ -41,6 +43,8 @@
     <string name="color_mode" description=" Material 3 Color Mode. [CHAR_LIMIT=NONE]">Color mode</string>
     <string name="font_scale" description="Font scale. [CHAR_LIMIT=NONE]">Font scale</string>
     <string name="text_direction" description="Text direction. [CHAR_LIMIT=NONE]">Text direction</string>
+    <string name="focus_indication_style" description="Focus indication style. [CHAR_LIMIT=NONE]">Focus indication style</string>
+
     <string name="reset_all" description="Reset all. [CHAR_LIMIT=NONE]">Reset all</string>
 
     <string name="mark_expressive_components" description="Mark expressive components with an expressive banner. [CHAR_LIMIT=NONE]">Mark expressive components</string>

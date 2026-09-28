@@ -53,6 +53,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class AppWidgetSessionTest {
 
     private val id = AppWidgetId(123)
@@ -102,17 +103,17 @@ class AppWidgetSessionTest {
     @Test
     fun processEmittableTree() = runMediumTest {
         measureTime {
-                val root =
-                    RemoteViewsRoot(maxDepth = 1).apply {
-                        children += EmittableText().apply { text = "hello" }
-                    }
-
-                session.processEmittableTree(context, root)
-                context.applyRemoteViews(session.lastRemoteViews.value!!).let {
-                    val text = assertIs<TextView>(it)
-                    assertThat(text.text).isEqualTo("hello")
+            val root =
+                RemoteViewsRoot(maxDepth = 1).apply {
+                    children += EmittableText().apply { text = "hello" }
                 }
+
+            session.processEmittableTree(context, root)
+            context.applyRemoteViews(session.lastRemoteViews.value!!).let {
+                val text = assertIs<TextView>(it)
+                assertThat(text.text).isEqualTo("hello")
             }
+        }
             .also { println("processEmittableTree test took: $it") }
     }
 
@@ -260,7 +261,9 @@ class AppWidgetSessionTest {
     fun recreateWithEvents() = runTest {
         session.runLambda("1")
         session.runLambda("2")
-        val options = bundleOf("key" to "value")
+        val options =
+            @Suppress("DEPRECATION") // bundleOf is deprecated
+            bundleOf("key" to "value")
         session.updateAppWidgetOptions(options)
         session.updateGlance()
         session.waitForReady()

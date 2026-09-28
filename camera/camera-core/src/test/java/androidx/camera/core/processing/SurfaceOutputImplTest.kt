@@ -18,7 +18,6 @@ package androidx.camera.core.processing
 
 import android.graphics.SurfaceTexture
 import android.opengl.Matrix
-import android.os.Build
 import android.os.Looper
 import android.util.Size
 import android.view.Surface
@@ -31,6 +30,8 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecu
 import androidx.camera.testing.fakes.FakeCamera
 import androidx.camera.testing.fakes.FakeCameraInfoInternal
 import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.Executor
+import java.util.concurrent.RejectedExecutionException
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -43,7 +44,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 /** Unit tests for [SurfaceOutputImpl]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class SurfaceOutputImplTest {
 
     companion object {
@@ -162,6 +163,20 @@ class SurfaceOutputImplTest {
 
         // Assert.
         assertThat(hasRequestedClose).isFalse()
+    }
+
+    @Test
+    fun requestClose_whenExecutorRejected_closesSurfaceOutput() {
+        // Arrange.
+        val surfaceOutImpl = createFakeSurfaceOutputImpl()
+        val rejectedExecutor = Executor { throw RejectedExecutionException() }
+        surfaceOutImpl.getSurface(rejectedExecutor) {}
+
+        // Act.
+        surfaceOutImpl.requestClose()
+
+        // Assert.
+        assertThat(surfaceOutImpl.isClosed).isTrue()
     }
 
     private fun createFakeSurfaceOutputImpl(camera: FakeCamera? = FakeCamera()) =

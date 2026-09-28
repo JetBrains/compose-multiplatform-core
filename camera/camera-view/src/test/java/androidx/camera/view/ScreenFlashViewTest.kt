@@ -17,17 +17,18 @@
 package androidx.camera.view
 
 import android.content.Context
-import android.os.Build
 import android.os.Looper.getMainLooper
 import android.view.Window
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.ScreenFlash
 import androidx.camera.core.ImageCapture.ScreenFlashListener
+import androidx.camera.core.impl.utils.futures.Futures
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Assert
 import org.junit.Assume
 import org.junit.Before
@@ -41,7 +42,7 @@ import org.robolectric.shadows.ShadowWindow
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class ScreenFlashViewTest {
     private val noOpListener = ScreenFlashListener {
         // no-op
@@ -57,6 +58,13 @@ class ScreenFlashViewTest {
         createWindow()
     }
 
+    @After
+    fun tearDown() {
+        screenFlashView.setController(null)
+        screenFlashView.setScreenFlashWindow(null)
+        shadowOf(getMainLooper()).idle()
+    }
+
     private fun createWindow() {
         try {
             window = ShadowWindow.create(appContext)
@@ -64,6 +72,12 @@ class ScreenFlashViewTest {
             Assume.assumeTrue("Failed to create shadow window", false)
         }
     }
+
+    private fun createCameraController(): LifecycleCameraController =
+        LifecycleCameraController(
+            appContext,
+            Futures.immediateFuture(FakeProcessCameraProviderWrapper()),
+        )
 
     private fun getScreenFlashAfterSettingWindow(assumeNoFailure: Boolean): ScreenFlash? {
         screenFlashView.setScreenFlashWindow(window)
@@ -168,7 +182,7 @@ class ScreenFlashViewTest {
 
     @Test
     fun validScreenFlashSetToCameraController_whenWindowSetAndThenControllerSet() {
-        val cameraController = LifecycleCameraController(appContext)
+        val cameraController = createCameraController()
 
         screenFlashView.setScreenFlashWindow(window)
         screenFlashView.setController(cameraController)
@@ -178,7 +192,7 @@ class ScreenFlashViewTest {
 
     @Test
     fun validScreenFlashSetToCameraController_whenControllerSetAndThenWindowSet() {
-        val cameraController = LifecycleCameraController(appContext)
+        val cameraController = createCameraController()
 
         screenFlashView.setController(cameraController)
         screenFlashView.setScreenFlashWindow(window)
@@ -188,7 +202,7 @@ class ScreenFlashViewTest {
 
     @Test
     fun nullScreenFlashInstanceSetToCameraController_whenControllerSetButNoWindowSet() {
-        val cameraController = LifecycleCameraController(appContext)
+        val cameraController = createCameraController()
 
         screenFlashView.setController(cameraController)
 
@@ -197,7 +211,7 @@ class ScreenFlashViewTest {
 
     @Test
     fun throwException_whenControllerSetWithScreenFlashModeButNoWindowSet() {
-        val cameraController = LifecycleCameraController(appContext)
+        val cameraController = createCameraController()
         cameraController.cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
         cameraController.imageCaptureFlashMode = ImageCapture.FLASH_MODE_SCREEN
 

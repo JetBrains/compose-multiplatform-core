@@ -333,6 +333,7 @@ public data class WorkSpec(
             projection = ["tag"],
         )
         val tags: List<String>,
+        @ColumnInfo(name = "worker_class_name") val workerClassName: String,
 
         // This is actually a 1-1 relationship. However Room 2.1 models the type as a List.
         // This will change in Room 2.2
@@ -370,6 +371,7 @@ public data class WorkSpec(
                 getPeriodicityOrNull(),
                 calculateNextRunTimeMillis(),
                 stopReason,
+                workerClassName,
             )
         }
 
@@ -461,6 +463,6 @@ public data class WorkSpec(
 
 public data class WorkGenerationalId(val workSpecId: String, val generation: Int)
 
-public fun WorkSpec.generationalId() = WorkGenerationalId(id, generation)
+public fun WorkSpec.generationalId(): WorkGenerationalId = WorkGenerationalId(id, generation)
 
 private const val NOT_ENQUEUED = -1L

@@ -40,7 +40,7 @@ import androidx.compose.runtime.Stable
  * @see modifierLocalProvider
  * @see modifierLocalConsumer
  */
-@Stable sealed class ModifierLocal<T> constructor(internal val defaultFactory: () -> T)
+@Stable public sealed class ModifierLocal<T> constructor(internal val defaultFactory: () -> T)
 
 /**
  * [ProvidableModifierLocal]s are [ModifierLocal]s that can be used to provide values using a
@@ -56,7 +56,7 @@ import androidx.compose.runtime.Stable
  * @see modifierLocalConsumer
  */
 @Stable
-class ProvidableModifierLocal<T>(defaultFactory: () -> T) : ModifierLocal<T>(defaultFactory)
+public class ProvidableModifierLocal<T>(defaultFactory: () -> T) : ModifierLocal<T>(defaultFactory)
 
 /**
  * Creates a [ProvidableModifierLocal] and specifies a default factory.
@@ -89,7 +89,7 @@ class ProvidableModifierLocal<T>(defaultFactory: () -> T) : ModifierLocal<T>(def
  * @see modifierLocalProvider
  * @see modifierLocalConsumer
  */
-fun <T> modifierLocalOf(defaultFactory: () -> T): ProvidableModifierLocal<T> =
+public fun <T> modifierLocalOf(defaultFactory: () -> T): ProvidableModifierLocal<T> =
     ProvidableModifierLocal(defaultFactory)
 
 /**
@@ -98,10 +98,10 @@ fun <T> modifierLocalOf(defaultFactory: () -> T): ProvidableModifierLocal<T> =
  *
  * @see modifierLocalOf
  */
-interface ModifierLocalReadScope {
+public interface ModifierLocalReadScope {
     /**
      * Read a [ModifierLocal] that was provided by other modifiers to the left of this modifier, or
      * above this modifier in the layout tree.
      */
-    val <T> ModifierLocal<T>.current: T
+    public val <T> ModifierLocal<T>.current: T
 }
