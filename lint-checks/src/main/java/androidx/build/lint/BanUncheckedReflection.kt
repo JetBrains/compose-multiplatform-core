@@ -28,11 +28,12 @@ import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
-import com.android.tools.lint.detector.api.VersionChecks.Companion.findPrecedingVersionCheckExitConstraints
 import com.android.tools.lint.detector.api.VersionChecks.Companion.getOuterVersionCheckConstraint
+import com.android.tools.lint.detector.api.VersionChecks.Companion.isPrecededByVersionCheckExit
 import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiMethod
 import org.jetbrains.uast.UCallExpression
+import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.getContainingUClass
 import org.jetbrains.uast.getContainingUMethod
@@ -117,3 +118,19 @@ class BanUncheckedReflection : Detector(), SourceCodeScanner {
         const val DEPRECATED_SINCE_API_ANNOTATION = "androidx.annotation.DeprecatedSinceApi"
     }
 }
+
+// TODO(Merge) Minor, Implement after merging 1fc8877e5b71d533b38cac31584664d33239cc97
+//  Use VersionChecks.findPrecedingVersionCheckExitConstraints once the fork's lint is upgraded.
+//  Until then, any preceding SDK_INT exit check suppresses the report, as before the merge.
+private fun findPrecedingVersionCheckExitConstraints(
+    context: JavaContext,
+    node: UElement,
+): ApiConstraint =
+    if (
+        isPrecededByVersionCheckExit(context, node, ApiConstraint.get(HIGHEST_KNOWN_API)) ||
+            isPrecededByVersionCheckExit(context, node, ApiConstraint.get(1))
+    ) {
+        ApiConstraint.atMost(HIGHEST_KNOWN_API - 1)
+    } else {
+        ApiConstraint.ALL
+    }
