@@ -398,8 +398,8 @@ public final class androidx/compose/foundation/content/TransferableContent$Sourc
 public final class androidx/compose/foundation/contextmenu/ComposableSingletons$ContextMenuUiKt {
 	public static final field INSTANCE Landroidx/compose/foundation/contextmenu/ComposableSingletons$ContextMenuUiKt;
 	public fun <init> ()V
-	public final fun getLambda$-1455401925$foundation ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$-1571120048$foundation ()Lkotlin/jvm/functions/Function8;
+	public final fun getLambda$-1455401925$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-1571120048$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function8;
 }
 
 public final class androidx/compose/foundation/draganddrop/DragAndDropSourceKt {
@@ -1769,6 +1769,22 @@ public abstract class androidx/compose/foundation/shape/CornerBasedShape : andro
 	public fun lerp (Ljava/lang/Object;F)Ljava/lang/Object;
 }
 
+public final class androidx/compose/foundation/shape/CornerRounding {
+	public static final field $stable I
+	public static final field Companion Landroidx/compose/foundation/shape/CornerRounding$Companion;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class androidx/compose/foundation/shape/CornerRounding$Companion {
+	public final fun dp-D5KLDUw (FF)Landroidx/compose/foundation/shape/CornerRounding;
+	public static synthetic fun dp-D5KLDUw$default (Landroidx/compose/foundation/shape/CornerRounding$Companion;FFILjava/lang/Object;)Landroidx/compose/foundation/shape/CornerRounding;
+	public final fun fraction (FF)Landroidx/compose/foundation/shape/CornerRounding;
+	public static synthetic fun fraction$default (Landroidx/compose/foundation/shape/CornerRounding$Companion;FFILjava/lang/Object;)Landroidx/compose/foundation/shape/CornerRounding;
+	public final fun getUnrounded ()Landroidx/compose/foundation/shape/CornerRounding;
+}
+
 public abstract interface class androidx/compose/foundation/shape/CornerSize {
 	public abstract fun toPx-TmRCtEA (JLandroidx/compose/ui/unit/Density;)F
 }
@@ -1820,77 +1836,51 @@ public final class androidx/compose/foundation/shape/MorphPolygonShapeKt {
 public abstract class androidx/compose/foundation/shape/PolygonShape : androidx/compose/ui/graphics/Shape {
 	public static final field $stable I
 	public static final field Companion Landroidx/compose/foundation/shape/PolygonShape$Companion;
+	public final fun copy ()Landroidx/compose/foundation/shape/PolygonShape;
+	public final fun createOutline-Pq9zytI (JLandroidx/compose/ui/unit/LayoutDirection;Landroidx/compose/ui/unit/Density;)Landroidx/compose/ui/graphics/Outline;
+	public final fun transform (Lkotlin/jvm/functions/Function1;)V
 }
 
 public final class androidx/compose/foundation/shape/PolygonShape$Companion {
-	public final fun absoluteRectangle (Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;)Landroidx/compose/foundation/shape/PolygonShape;
-	public static synthetic fun absoluteRectangle$default (Landroidx/compose/foundation/shape/PolygonShape$Companion;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
+	public final fun absoluteRectangle (Landroidx/compose/foundation/shape/CornerRounding;Landroidx/compose/foundation/shape/CornerRounding;Landroidx/compose/foundation/shape/CornerRounding;Landroidx/compose/foundation/shape/CornerRounding;)Landroidx/compose/foundation/shape/PolygonShape;
+	public static synthetic fun absoluteRectangle$default (Landroidx/compose/foundation/shape/PolygonShape$Companion;Landroidx/compose/foundation/shape/CornerRounding;Landroidx/compose/foundation/shape/CornerRounding;Landroidx/compose/foundation/shape/CornerRounding;Landroidx/compose/foundation/shape/CornerRounding;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
 	public final fun circle (I)Landroidx/compose/foundation/shape/PolygonShape;
 	public static synthetic fun circle$default (Landroidx/compose/foundation/shape/PolygonShape$Companion;IILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
 	public final fun pill (F)Landroidx/compose/foundation/shape/PolygonShape;
 	public static synthetic fun pill$default (Landroidx/compose/foundation/shape/PolygonShape$Companion;FILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
-	public final fun pillStar (IFFFLandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;)Landroidx/compose/foundation/shape/PolygonShape;
-	public static synthetic fun pillStar$default (Landroidx/compose/foundation/shape/PolygonShape$Companion;IFFFLandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
-	public final fun rectangle (Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;)Landroidx/compose/foundation/shape/PolygonShape;
-	public final fun rectangle (Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;)Landroidx/compose/foundation/shape/PolygonShape;
-	public static synthetic fun rectangle$default (Landroidx/compose/foundation/shape/PolygonShape$Companion;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
-	public final fun regularPolygon (ILandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;)Landroidx/compose/foundation/shape/PolygonShape;
-	public static synthetic fun regularPolygon$default (Landroidx/compose/foundation/shape/PolygonShape$Companion;ILandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
-	public final fun star (IFLandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;)Landroidx/compose/foundation/shape/PolygonShape;
-	public static synthetic fun star$default (Landroidx/compose/foundation/shape/PolygonShape$Companion;IFLandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
+	public final fun pillStar (IFFFLandroidx/compose/foundation/shape/CornerRounding;Landroidx/compose/foundation/shape/CornerRounding;)Landroidx/compose/foundation/shape/PolygonShape;
+	public static synthetic fun pillStar$default (Landroidx/compose/foundation/shape/PolygonShape$Companion;IFFFLandroidx/compose/foundation/shape/CornerRounding;Landroidx/compose/foundation/shape/CornerRounding;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
+	public final fun rectangle (Landroidx/compose/foundation/shape/CornerRounding;)Landroidx/compose/foundation/shape/PolygonShape;
+	public final fun rectangle (Landroidx/compose/foundation/shape/CornerRounding;Landroidx/compose/foundation/shape/CornerRounding;Landroidx/compose/foundation/shape/CornerRounding;Landroidx/compose/foundation/shape/CornerRounding;)Landroidx/compose/foundation/shape/PolygonShape;
+	public static synthetic fun rectangle$default (Landroidx/compose/foundation/shape/PolygonShape$Companion;Landroidx/compose/foundation/shape/CornerRounding;Landroidx/compose/foundation/shape/CornerRounding;Landroidx/compose/foundation/shape/CornerRounding;Landroidx/compose/foundation/shape/CornerRounding;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
+	public final fun regularPolygon (ILandroidx/compose/foundation/shape/CornerRounding;)Landroidx/compose/foundation/shape/PolygonShape;
+	public static synthetic fun regularPolygon$default (Landroidx/compose/foundation/shape/PolygonShape$Companion;ILandroidx/compose/foundation/shape/CornerRounding;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
+	public final fun star (IFLandroidx/compose/foundation/shape/CornerRounding;Landroidx/compose/foundation/shape/CornerRounding;)Landroidx/compose/foundation/shape/PolygonShape;
+	public static synthetic fun star$default (Landroidx/compose/foundation/shape/PolygonShape$Companion;IFLandroidx/compose/foundation/shape/CornerRounding;Landroidx/compose/foundation/shape/CornerRounding;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
 }
 
 public final class androidx/compose/foundation/shape/PolygonShapeGeometry {
 	public static final field $stable I
-	public static final field Companion Landroidx/compose/foundation/shape/PolygonShapeGeometry$Companion;
-	public synthetic fun <init> (Ljava/util/List;JLandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Ljava/util/List;JLandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Ljava/util/List;Landroidx/compose/ui/geometry/Size;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Ljava/util/List;JLandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/util/List;JLandroidx/compose/foundation/shape/CornerRounding;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/util/List;JLandroidx/compose/foundation/shape/CornerRounding;Ljava/util/List;Landroidx/compose/ui/geometry/Size;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/util/List;JLandroidx/compose/foundation/shape/CornerRounding;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Ljava/util/List;Ljava/util/List;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Ljava/util/List;Ljava/util/List;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCenter-F1C5BW0 ()J
 	public final fun getPerVertexRounding ()Ljava/util/List;
-	public final fun getRounding ()Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;
+	public final fun getRounding ()Landroidx/compose/foundation/shape/CornerRounding;
 	public final fun getVertices ()Ljava/util/List;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class androidx/compose/foundation/shape/PolygonShapeGeometry$Companion {
-	public final fun CornerRounding (FF)Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;
-	public final fun CornerRounding (IF)Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;
-	public static synthetic fun CornerRounding$default (Landroidx/compose/foundation/shape/PolygonShapeGeometry$Companion;FFILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;
-	public static synthetic fun CornerRounding$default (Landroidx/compose/foundation/shape/PolygonShapeGeometry$Companion;IFILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;
-	public final fun CornerRounding-D5KLDUw (FF)Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;
-	public static synthetic fun CornerRounding-D5KLDUw$default (Landroidx/compose/foundation/shape/PolygonShapeGeometry$Companion;FFILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;
-}
-
-public final class androidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding {
-	public static final field $stable I
-	public static final field Companion Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding$Companion;
-	public fun equals (Ljava/lang/Object;)Z
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class androidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding$Companion {
-	public final fun getUnrounded ()Landroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;
-}
-
 public final class androidx/compose/foundation/shape/PolygonShapeKt {
-	public static final fun PolygonShape (Landroidx/compose/foundation/shape/PolygonShapeGeometry;)Landroidx/compose/foundation/shape/PolygonShape;
 	public static final fun PolygonShape (Lkotlin/jvm/functions/Function1;)Landroidx/compose/foundation/shape/PolygonShape;
-	public static final fun scaledToFit (Landroidx/compose/foundation/shape/PolygonShape;Landroidx/compose/ui/layout/ContentScale;Landroidx/compose/ui/Alignment;)Landroidx/compose/foundation/shape/PolygonShape;
-	public static synthetic fun scaledToFit$default (Landroidx/compose/foundation/shape/PolygonShape;Landroidx/compose/ui/layout/ContentScale;Landroidx/compose/ui/Alignment;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
 	public static final fun toPolygonShape (Landroidx/compose/foundation/shape/AbsoluteCutCornerShape;)Landroidx/compose/foundation/shape/PolygonShape;
 	public static final fun toPolygonShape (Landroidx/compose/foundation/shape/AbsoluteRoundedCornerShape;)Landroidx/compose/foundation/shape/PolygonShape;
 	public static final fun toPolygonShape (Landroidx/compose/foundation/shape/CutCornerShape;)Landroidx/compose/foundation/shape/PolygonShape;
 	public static final fun toPolygonShape (Landroidx/compose/foundation/shape/RoundedCornerShape;)Landroidx/compose/foundation/shape/PolygonShape;
-	public static final fun transformed-38CYSgM (Landroidx/compose/foundation/shape/PolygonShape;FJLandroidx/compose/ui/layout/ContentScale;Landroidx/compose/ui/Alignment;)Landroidx/compose/foundation/shape/PolygonShape;
-	public static synthetic fun transformed-38CYSgM$default (Landroidx/compose/foundation/shape/PolygonShape;FJLandroidx/compose/ui/layout/ContentScale;Landroidx/compose/ui/Alignment;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
-	public static final fun transformed-V2T6pWw (Landroidx/compose/foundation/shape/PolygonShape;[FLandroidx/compose/ui/layout/ContentScale;Landroidx/compose/ui/Alignment;)Landroidx/compose/foundation/shape/PolygonShape;
-	public static synthetic fun transformed-V2T6pWw$default (Landroidx/compose/foundation/shape/PolygonShape;[FLandroidx/compose/ui/layout/ContentScale;Landroidx/compose/ui/Alignment;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShape;
 }
 
 public abstract interface class androidx/compose/foundation/shape/PolygonShapeScope : androidx/compose/ui/unit/Density {
@@ -1898,12 +1888,26 @@ public abstract interface class androidx/compose/foundation/shape/PolygonShapeSc
 	public abstract fun getSize-NH-jbRc ()J
 	public abstract fun polygon-0AR0LA0 (Ljava/util/List;Ljava/util/List;J)Landroidx/compose/foundation/shape/PolygonShapeGeometry;
 	public static synthetic fun polygon-0AR0LA0$default (Landroidx/compose/foundation/shape/PolygonShapeScope;Ljava/util/List;Ljava/util/List;JILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShapeGeometry;
-	public abstract fun polygon-Rg1IO4c (IFJLandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;)Landroidx/compose/foundation/shape/PolygonShapeGeometry;
-	public static synthetic fun polygon-Rg1IO4c$default (Landroidx/compose/foundation/shape/PolygonShapeScope;IFJLandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShapeGeometry;
-	public abstract fun polygon-d-4ec7I (Ljava/util/List;JLandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;)Landroidx/compose/foundation/shape/PolygonShapeGeometry;
-	public static synthetic fun polygon-d-4ec7I$default (Landroidx/compose/foundation/shape/PolygonShapeScope;Ljava/util/List;JLandroidx/compose/foundation/shape/PolygonShapeGeometry$CornerRounding;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShapeGeometry;
+	public abstract fun polygon-Rg1IO4c (IFJLandroidx/compose/foundation/shape/CornerRounding;)Landroidx/compose/foundation/shape/PolygonShapeGeometry;
+	public static synthetic fun polygon-Rg1IO4c$default (Landroidx/compose/foundation/shape/PolygonShapeScope;IFJLandroidx/compose/foundation/shape/CornerRounding;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShapeGeometry;
+	public abstract fun polygon-d-4ec7I (Ljava/util/List;JLandroidx/compose/foundation/shape/CornerRounding;)Landroidx/compose/foundation/shape/PolygonShapeGeometry;
+	public static synthetic fun polygon-d-4ec7I$default (Landroidx/compose/foundation/shape/PolygonShapeScope;Ljava/util/List;JLandroidx/compose/foundation/shape/CornerRounding;ILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShapeGeometry;
 	public abstract fun polygon-moWRBKg (ILjava/util/List;FJ)Landroidx/compose/foundation/shape/PolygonShapeGeometry;
 	public static synthetic fun polygon-moWRBKg$default (Landroidx/compose/foundation/shape/PolygonShapeScope;ILjava/util/List;FJILjava/lang/Object;)Landroidx/compose/foundation/shape/PolygonShapeGeometry;
+}
+
+public abstract interface class androidx/compose/foundation/shape/PolygonShapeTransformScope : androidx/compose/ui/unit/Density {
+	public abstract fun getLayoutDirection ()Landroidx/compose/ui/unit/LayoutDirection;
+	public abstract fun getSize-NH-jbRc ()J
+	public abstract fun rotate-Uv8p0NA (FJ)V
+	public static synthetic fun rotate-Uv8p0NA$default (Landroidx/compose/foundation/shape/PolygonShapeTransformScope;FJILjava/lang/Object;)V
+	public abstract fun scale-0AR0LA0 (FFJ)V
+	public static synthetic fun scale-0AR0LA0$default (Landroidx/compose/foundation/shape/PolygonShapeTransformScope;FFJILjava/lang/Object;)V
+	public abstract fun scaleToFit (Landroidx/compose/ui/layout/ContentScale;Landroidx/compose/ui/Alignment;)V
+	public static synthetic fun scaleToFit$default (Landroidx/compose/foundation/shape/PolygonShapeTransformScope;Landroidx/compose/ui/layout/ContentScale;Landroidx/compose/ui/Alignment;ILjava/lang/Object;)V
+	public abstract fun transform-58bKbWc ([F)V
+	public abstract fun translate (FF)V
+	public static synthetic fun translate$default (Landroidx/compose/foundation/shape/PolygonShapeTransformScope;FFILjava/lang/Object;)V
 }
 
 public final class androidx/compose/foundation/shape/RoundedCornerShape : androidx/compose/foundation/shape/CornerBasedShape {
@@ -2285,7 +2289,7 @@ public final class androidx/compose/foundation/style/Shadows$Simple : androidx/c
 	public static final field $stable I
 	public fun <init> (Landroidx/compose/ui/graphics/shadow/Shadow;)V
 	public fun equals (Ljava/lang/Object;)Z
-	public synthetic fun getLerpTarget$foundation ()Ljava/lang/Object;
+	public synthetic fun getLerpTarget$org_jetbrains_compose_foundation_foundation ()Ljava/lang/Object;
 	public final fun getShadow ()Landroidx/compose/ui/graphics/shadow/Shadow;
 	public fun hashCode ()I
 }
@@ -2573,23 +2577,23 @@ public final class androidx/compose/foundation/text/ClickableTextKt {
 public final class androidx/compose/foundation/text/ComposableSingletons$BasicTextFieldKt {
 	public static final field INSTANCE Landroidx/compose/foundation/text/ComposableSingletons$BasicTextFieldKt;
 	public fun <init> ()V
-	public final fun getLambda$-665310900$foundation ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$444370233$foundation ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$486633673$foundation ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$759698998$foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-665310900$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$444370233$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$486633673$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$759698998$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/foundation/text/ComposableSingletons$BasicTextField_desktopKt {
 	public static final field INSTANCE Landroidx/compose/foundation/text/ComposableSingletons$BasicTextField_desktopKt;
 	public fun <init> ()V
-	public final fun getLambda$-580413359$foundation ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$1808468638$foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-580413359$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$1808468638$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/foundation/text/ComposableSingletons$CoreTextFieldKt {
 	public static final field INSTANCE Landroidx/compose/foundation/text/ComposableSingletons$CoreTextFieldKt;
 	public fun <init> ()V
-	public final fun getLambda$559628295$foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$559628295$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/foundation/text/InlineTextContent {
@@ -2638,6 +2642,7 @@ public final class androidx/compose/foundation/text/KeyboardActionsKt {
 public final class androidx/compose/foundation/text/KeyboardOptions {
 	public static final field $stable I
 	public static final field Companion Landroidx/compose/foundation/text/KeyboardOptions$Companion;
+	public fun <init> ()V
 	public synthetic fun <init> (ILjava/lang/Boolean;IILandroidx/compose/ui/text/input/PlatformImeOptions;Ljava/lang/Boolean;Landroidx/compose/ui/text/intl/LocaleList;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (ILjava/lang/Boolean;IILandroidx/compose/ui/text/input/PlatformImeOptions;Ljava/lang/Boolean;Landroidx/compose/ui/text/intl/LocaleList;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (IZIIILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -2739,9 +2744,9 @@ public abstract interface class androidx/compose/foundation/text/contextmenu/dat
 public final class androidx/compose/foundation/text/contextmenu/internal/ComposableSingletons$DefaultTextContextMenuDropdownProvider_skikoKt {
 	public static final field INSTANCE Landroidx/compose/foundation/text/contextmenu/internal/ComposableSingletons$DefaultTextContextMenuDropdownProvider_skikoKt;
 	public fun <init> ()V
-	public final fun getLambda$-651812147$foundation ()Lkotlin/jvm/functions/Function5;
-	public final fun getLambda$1837043723$foundation ()Lkotlin/jvm/functions/Function5;
-	public final fun getLambda$1965104340$foundation ()Lkotlin/jvm/functions/Function5;
+	public final fun getLambda$-651812147$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function5;
+	public final fun getLambda$1837043723$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function5;
+	public final fun getLambda$1965104340$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function5;
 }
 
 public final class androidx/compose/foundation/text/contextmenu/modifier/TextContextMenuModifierKt {
@@ -3024,7 +3029,7 @@ public final class androidx/compose/foundation/v2/Scrollbar_desktopKt {
 public final class androidx/compose/foundation/window/ComposableSingletons$WindowDraggableArea_desktopKt {
 	public static final field INSTANCE Landroidx/compose/foundation/window/ComposableSingletons$WindowDraggableArea_desktopKt;
 	public fun <init> ()V
-	public final fun getLambda$358499693$foundation ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$358499693$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function2;
 }
 
 public final class androidx/compose/foundation/window/WindowDraggableArea_desktopKt {
