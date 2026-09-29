@@ -177,11 +177,12 @@ class GtkWindow private constructor(
         )
 
         // GTK's own seed list (differs from Wayland's). Noria seeds separate hasActiveAppearance
-        // and hasKeyboardFocus fields here; this fork collapses both into a single isFocused
-        // (see the field), so the one assignment stands in for both Noria fields.
+        // and hasKeyboardFocus fields here; this fork now keeps them split too (see the fields),
+        // so both are carried across independently instead of a single collapsed assignment.
         newWindow.size = size
         newWindow.contentSize = contentSize
-        newWindow.isFocused = isFocused
+        newWindow.hasActiveAppearance = hasActiveAppearance
+        newWindow.hasKeyboardFocus = hasKeyboardFocus
         newWindow.placement = placement
         newWindow.decoration = decoration
         newWindow.density = density
@@ -259,8 +260,28 @@ class GtkWindow private constructor(
         isUserResizableState.value = userResizable
     }
 
-    override var isFocused: Boolean by mutableStateOf(false)
+    // GTK/Wayland deliver two genuinely independent native signals that used to be collapsed into
+    // one field here (see the removed comment this replaced, and the still-live twin bug in
+    // LinuxWindow.kt): GdkToplevelState.FOCUSED / Wayland xdg_toplevel's ACTIVATED
+    // (decoration/appearance only — the Wayland spec explicitly warns "do not assume this means
+    // that the window actually has keyboard or pointer focus", read via KDT's WindowConfigure.active)
+    // versus GTK's gtk_window_is_active() (the genuine keyboard-input-routing signal, read via KDT's
+    // WindowKeyboardEnter/Leave). Whichever wrote last used to win, so an unrelated resize/maximize
+    // event could resend a stale cached WindowConfigure.active and stomp a more-recently-correct
+    // keyboard transition, or vice versa. They are now split, matching Noria's original model and
+    // the Window interface's own commented-out `hasActiveAppearance` placeholder.
+    internal var hasActiveAppearance: Boolean by mutableStateOf(false)
         private set
+
+    private var hasKeyboardFocus: Boolean by mutableStateOf(false)
+
+    // The Window interface's public `isFocused` is the keyboard-focus-equivalent every consumer in
+    // this codebase actually wants (caret blinking, IME, focusedWindow-for-activation, ...) —
+    // matching MacOsWindow, which only ever tracks nativeWindow.isKey. hasActiveAppearance has no
+    // consumer of its own yet; it exists so decoration-only code can read it later without
+    // reintroducing the conflation.
+    override val isFocused: Boolean
+        get() = hasKeyboardFocus
 
     override fun requestFocus() {
         onNativeWindowAsync { activate(null) }
@@ -581,7 +602,8 @@ class GtkWindow private constructor(
         // skipping only the close would leave a throwing husk that reuseWindow would still find.
         if (isDisposed || isMarkedForReuse) return
         isDisposed = true
-        isFocused = false
+        hasKeyboardFocus = false
+        hasActiveAppearance = false
         fileDialogResponses.values.forEach { it.cancel() }
         fileDialogResponses.clear()
         composeScene.close()
@@ -638,7 +660,7 @@ class GtkWindow private constructor(
                 composeScene.withFrameTransaction {
                     size = event.size.toDpSize()
                     contentSize = size
-                    isFocused = event.active
+                    hasActiveAppearance = event.active
                     placement = when {
                         event.fullscreen -> WindowPlacement.Fullscreen
                         event.maximized -> WindowPlacement.Maximized
@@ -682,7 +704,7 @@ class GtkWindow private constructor(
                     gtkTextInputSessionOwner.currentContext?.let { nativeWindow.textInputEnable(it) }
                 }
                 composeScene.withFrameTransaction {
-                    isFocused = true
+                    hasKeyboardFocus = true
                     inputStateTracker.updateStateAndSendEvents(event, density)
                 }
             }
@@ -694,7 +716,7 @@ class GtkWindow private constructor(
                     nativeWindow.textInputDisable()
                 }
                 composeScene.withFrameTransaction {
-                    isFocused = false
+                    hasKeyboardFocus = false
                     inputStateTracker.updateStateAndSendEvents(event, density)
                 }
             }
@@ -772,7 +794,8 @@ class GtkWindow private constructor(
                 if (!isDisposed) {
                     // When dispose() was called first, it already ran this cleanup; skip it here.
                     isDisposed = true
-                    isFocused = false
+                    hasKeyboardFocus = false
+                    hasActiveAppearance = false
                     fileDialogResponses.values.forEach { it.cancel() }
                     fileDialogResponses.clear()
                 }
