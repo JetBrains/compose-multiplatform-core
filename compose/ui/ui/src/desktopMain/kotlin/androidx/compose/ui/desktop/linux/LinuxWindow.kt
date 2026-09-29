@@ -159,7 +159,8 @@ private constructor(
 
         newWindow.size = size
         newWindow.contentSize = contentSize
-        newWindow.isFocused = isFocused
+        newWindow.hasActiveAppearance = hasActiveAppearance
+        newWindow.hasKeyboardFocus = hasKeyboardFocus
         newWindow.placement = placement
         newWindow.decoration = decoration
         newWindow.density = density
@@ -258,8 +259,28 @@ private constructor(
         isUserResizableState.value = userResizable
     }
 
-    override var isFocused: Boolean by mutableStateOf(false)
+    // Wayland delivers two genuinely independent native signals that used to be collapsed into one
+    // field here (see the identical, now-fixed bug in GtkWindow.kt): xdg_toplevel's ACTIVATED state
+    // (decoration/appearance only — the Wayland spec explicitly warns "do not assume this means
+    // that the window actually has keyboard or pointer focus", read via KDT's
+    // WindowConfigure.active) versus the compositor's keyboard-enter/leave events (the genuine
+    // keyboard-input-routing signal, read via KDT's WindowKeyboardEnter/Leave). Whichever wrote
+    // last used to win, so an unrelated resize/maximize/fullscreen event could resend a stale
+    // cached WindowConfigure.active and stomp a more-recently-correct keyboard transition, or vice
+    // versa. They are now split, matching Noria's original model and the Window interface's own
+    // commented-out `hasActiveAppearance` placeholder.
+    internal var hasActiveAppearance: Boolean by mutableStateOf(false)
         private set
+
+    private var hasKeyboardFocus: Boolean by mutableStateOf(false)
+
+    // The Window interface's public `isFocused` is the keyboard-focus-equivalent every consumer in
+    // this codebase actually wants (caret blinking, IME, focusedWindow-for-activation, ...) —
+    // matching MacOsWindow, which only ever tracks nativeWindow.isKey, and GtkWindow after its own
+    // split. hasActiveAppearance has no consumer of its own yet; it exists so decoration-only code
+    // can read it later without reintroducing the conflation.
+    override val isFocused: Boolean
+        get() = hasKeyboardFocus
 
     override fun requestFocus() {
         application.requestWindowActivation(id)
@@ -657,7 +678,7 @@ private constructor(
         composeScene.withFrameTransaction {
             size = event.size.toDpSize()
             contentSize = size
-            isFocused = event.active
+            hasActiveAppearance = event.active
             placement =
                 when {
                     event.fullscreen -> WindowPlacement.Fullscreen
@@ -710,14 +731,14 @@ private constructor(
 
             is Event.WindowKeyboardEnter -> {
                 composeScene.withFrameTransaction {
-                    isFocused = true
+                    hasKeyboardFocus = true
                     inputStateTracker.updateStateAndSendEvents(event, density)
                 }
             }
 
             is Event.WindowKeyboardLeave -> {
                 composeScene.withFrameTransaction {
-                    isFocused = false
+                    hasKeyboardFocus = false
                     inputStateTracker.updateStateAndSendEvents(event, density)
                 }
             }
