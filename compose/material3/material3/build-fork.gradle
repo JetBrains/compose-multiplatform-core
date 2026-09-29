@@ -36,13 +36,11 @@ plugins {
 }
 
 androidXMultiplatform {
-    redirect("androidx.compose.material3") {
-        androidLibrary {
-            compileSdk = 35
-            namespace = "org.jetbrains.androidx.compose.material3"
+    androidLibrary {
+        compileSdk = 35
+        namespace = "androidx.compose.material3"
 
-            androidResources.enable = true
-        }
+        androidResources.enable = true
     }
     desktop()
     mac()
@@ -67,6 +65,13 @@ androidXMultiplatform {
             api(project(":compose:foundation:foundation"))
             api(project(":compose:ui:ui-text"))
             api("androidx.graphics:graphics-shapes:1.1.0")
+        }
+
+        androidMain.dependencies {
+            api("androidx.annotation:annotation:1.8.1")
+            implementation("androidx.activity:activity-compose:1.8.2")
+            implementation("androidx.core:core-ktx:1.15.0")
+            implementation("androidx.lifecycle:lifecycle-viewmodel:2.10.0")
         }
 
         // TODO: Align naming: nonAndroidMain

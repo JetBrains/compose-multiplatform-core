@@ -18,6 +18,8 @@ package androidx.compose.material3
 
 import android.content.Context
 import android.graphics.Outline
+import android.graphics.RenderEffect
+import android.graphics.Shader
 import android.os.Build
 import android.view.ContextThemeWrapper
 import android.view.MotionEvent
@@ -52,6 +54,8 @@ import androidx.compose.ui.platform.ViewRootForInspector
 import androidx.compose.ui.semantics.dialog
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogWindowProvider
@@ -230,6 +234,7 @@ internal actual fun ModalBottomSheetDialog(
     onDismissRequest: () -> Unit,
     contentColor: Color,
     properties: ModalBottomSheetProperties,
+    blurBehindRadius: Dp,
     content: @Composable () -> Unit,
 ) {
     val view = LocalView.current
@@ -243,6 +248,7 @@ internal actual fun ModalBottomSheetDialog(
             ModalBottomSheetDialogWrapper(
                     onDismissRequest,
                     properties,
+                    blurBehindRadius,
                     contentColor,
                     view,
                     layoutDirection,
@@ -269,6 +275,7 @@ internal actual fun ModalBottomSheetDialog(
         dialog.updateParameters(
             onDismissRequest = onDismissRequest,
             properties = properties,
+            blurBehindRadius = blurBehindRadius,
             contentColor = contentColor,
             layoutDirection = layoutDirection,
         )
@@ -306,10 +313,11 @@ private class ModalBottomSheetDialogLayout(context: Context, override val window
 private class ModalBottomSheetDialogWrapper(
     private var onDismissRequest: () -> Unit,
     private var properties: ModalBottomSheetProperties,
+    private var blurBehindRadius: Dp,
     private var contentColor: Color,
     private val composeView: View,
     layoutDirection: LayoutDirection,
-    density: Density,
+    private val density: Density,
     dialogId: UUID,
 ) :
     ComponentDialog(
@@ -321,6 +329,7 @@ private class ModalBottomSheetDialogWrapper(
     ViewRootForInspector {
 
     private val dialogLayout: ModalBottomSheetDialogLayout
+    private var isBackdropBlurApplied = false
 
     // On systems older than Android S, there is a bug in the surface insets matrix math used by
     // elevation, so high values of maxSupportedElevation break accessibility services: b/232788477.
@@ -368,7 +377,7 @@ private class ModalBottomSheetDialogWrapper(
         )
 
         // Initial setup
-        updateParameters(onDismissRequest, properties, contentColor, layoutDirection)
+        updateParameters(onDismissRequest, properties, blurBehindRadius, contentColor, layoutDirection)
     }
 
     private fun setLayoutDirection(layoutDirection: LayoutDirection) {
@@ -399,13 +408,16 @@ private class ModalBottomSheetDialogWrapper(
     fun updateParameters(
         onDismissRequest: () -> Unit,
         properties: ModalBottomSheetProperties,
+        blurBehindRadius: Dp,
         contentColor: Color,
         layoutDirection: LayoutDirection,
     ) {
         this.onDismissRequest = onDismissRequest
         this.properties = properties
+        this.blurBehindRadius = blurBehindRadius
         this.contentColor = contentColor
         setSecurePolicy(properties.securePolicy)
+        updateBackdropBlur()
         setLayoutDirection(layoutDirection)
 
         // Window flags to span parent window.
@@ -431,7 +443,32 @@ private class ModalBottomSheetDialogWrapper(
     }
 
     fun disposeComposition() {
+        clearBackdropBlur()
         dialogLayout.disposeComposition()
+    }
+
+    private fun updateBackdropBlur() {
+        if (Build.VERSION.SDK_INT < 31) return
+        val radius = if (blurBehindRadius.isSpecified) {
+            with(density) { blurBehindRadius.toPx() }.coerceAtLeast(0f)
+        } else {
+            0f
+        }
+        if (radius > 0f) {
+            composeView.setRenderEffect(
+                RenderEffect.createBlurEffect(radius, radius, Shader.TileMode.CLAMP)
+            )
+            isBackdropBlurApplied = true
+        } else {
+            clearBackdropBlur()
+        }
+    }
+
+    private fun clearBackdropBlur() {
+        if (Build.VERSION.SDK_INT >= 31 && isBackdropBlurApplied) {
+            composeView.setRenderEffect(null)
+            isBackdropBlurApplied = false
+        }
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
