@@ -639,6 +639,8 @@ private constructor(
         // disposeReusableNativeWindowResources() (unmark + dispose) if never reclaimed.
         if (isDisposed || isMarkedForReuse) return
         isDisposed = true
+        hasKeyboardFocus = false
+        hasActiveAppearance = false
         application.windows.remove(id)
         composeScene.close()
         // The host frame driver goes with the scene it feeds: it owns a Job, the
@@ -659,6 +661,8 @@ private constructor(
 
     internal fun onClosed() {
         isDisposed = true
+        hasKeyboardFocus = false
+        hasActiveAppearance = false
         fileDialogResponses.values.forEach { it.cancel() }
         fileDialogResponses.clear()
         if (application.windows.isEmpty()) {
