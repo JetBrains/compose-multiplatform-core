@@ -19,8 +19,23 @@
 
 package androidx.compose.ui.util
 
+/**
+ * Measures [block] and adds its time to the total for [sectionName].
+ *
+ * The measurement is off until you set the `compose.trace.frames` system property to `true`.
+ * While the property is off, the only cost is one read of [ComposeFrameTrace.enabled]. See
+ * [ComposeFrameTrace] for the report.
+ */
 actual inline fun <T> trace(sectionName: String, block: () -> T): T {
-    return block()
+    if (!ComposeFrameTrace.enabled) {
+        return block()
+    }
+    val startNanos = System.nanoTime()
+    try {
+        return block()
+    } finally {
+        ComposeFrameTrace.stop(sectionName, startNanos)
+    }
 }
 
 actual fun traceValue(tag: String, value: Long) {

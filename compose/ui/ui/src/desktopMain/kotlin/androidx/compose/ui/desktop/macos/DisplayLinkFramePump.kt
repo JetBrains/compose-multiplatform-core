@@ -19,6 +19,7 @@
 package androidx.compose.ui.desktop.macos
 
 import androidx.compose.ui.desktop.logging.logger
+import androidx.compose.ui.util.ComposeFrameTrace
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.time.TimeSource
@@ -35,9 +36,20 @@ import kotlin.time.TimeSource
  * is zero-overhead.
  *
  * [onDisplayLinkTick] is called on the display-link thread; the frame body runs in
- * [dispatchOnMain]. The in-flight latch (a CAS over the tick's start time mark) is what keeps
- * at most one frame in the pipeline, and it also feeds the long-frame (> 10 ms) debug logging
- * in the completion callback.
+ * [dispatchOnMain]. The in-flight latch (a CAS over the tick's [FrameTimings]) is what keeps
+ * at most one frame in the pipeline, and it also carries the measurements that the completion
+ * callback logs.
+ *
+ * The log line splits the frame into three parts. `dispatch` is the wait on [dispatchOnMain].
+ * `prepare` is [preparePicture], which composes, measures, lays out and records the picture.
+ * `present` is the rest, so it holds [presentAsync] and the GPU. Only `prepare` is Compose
+ * work on the CPU. Two system properties control the log.
+ *  - `compose.frame.longFrameMs` sets the threshold in milliseconds. It defaults to 10.
+ *  - `compose.frame.logAll` logs every frame, not only a frame over the threshold. Use it to
+ *    get a distribution, because a threshold alone hides the frames that are fast.
+ *
+ * Set `compose.trace.frames` as well to append the [ComposeFrameTrace] section totals of the
+ * `prepare` part.
  */
 internal class DisplayLinkFramePump<P : AutoCloseable>(
     private val isDisposed: () -> Boolean,
@@ -51,14 +63,23 @@ internal class DisplayLinkFramePump<P : AutoCloseable>(
     private val logError: (Throwable, String) -> Unit,
 ) {
 
-    private class TimeMarkWrapper(val timeMark: TimeSource.Monotonic.ValueTimeMark)
+    /**
+     * The measurements of one frame. The display-link thread creates it. The main thread fills
+     * [dispatchNanos], [prepareNanos] and [sections] in. The thread that completes the present
+     * reads them, so the fields are volatile.
+     */
+    private class FrameTimings(val tickAt: TimeSource.Monotonic.ValueTimeMark) {
+        @Volatile var dispatchNanos: Long = 0
+        @Volatile var prepareNanos: Long = 0
+        @Volatile var sections: String? = null
+    }
 
-    private val frameStartTimeMark: AtomicReference<TimeMarkWrapper?> =
+    private val frameInFlight: AtomicReference<FrameTimings?> =
         AtomicReference(null)
 
     /** True while a frame is being prepared or presented (the latch is held). */
     val isFrameInFlight: Boolean
-        get() = frameStartTimeMark.load() != null
+        get() = frameInFlight.load() != null
 
     /**
      * Clears the in-flight latch unconditionally; returns true if it was held. Introspection /
@@ -66,66 +87,109 @@ internal class DisplayLinkFramePump<P : AutoCloseable>(
      *
      * Hazard: calling this while a frame is actually in flight (a present was dispatched via
      * [presentAsync] and hasn't completed yet) clears the latch out from under it. When that
-     * present's `onComplete` callback later runs, its `frameStartTimeMark.exchange(null)!!` finds
+     * present's `onComplete` callback later runs, its `frameInFlight.exchange(null)!!` finds
      * the latch already null and throws an NPE. Callers must only clear the *same* pump instance
      * they know has no in-flight present outstanding — there is no cross-check against
      * [isFrameInFlight] here. There is currently no production caller; this exists as a test-only
      * escape hatch for tests that need to reset pump state between cases.
      */
-    fun clearInFlight(): Boolean = frameStartTimeMark.exchange(null) != null
+    fun clearInFlight(): Boolean = frameInFlight.exchange(null) != null
 
     fun onDisplayLinkTick() {
-        val frameStartTimeMarkWrapper = TimeMarkWrapper(TimeSource.Monotonic.markNow())
+        val frameTimings = FrameTimings(TimeSource.Monotonic.markNow())
         if (
             !isDisposed() &&
             isFrameRequested() &&
-            frameStartTimeMark.compareAndSet(null, frameStartTimeMarkWrapper)
+            frameInFlight.compareAndSet(null, frameTimings)
         ) {
             dispatchOnMain {
                 setFrameRequested(false)
+                frameTimings.dispatchNanos =
+                    frameTimings.tickAt.elapsedNow().inWholeNanoseconds
                 try {
-                    preparePicture()?.let { presentablePicture ->
+                    measuredPreparePicture(frameTimings)?.let { presentablePicture ->
                         try {
                             presentAsync(
                                 presentablePicture,
                                 {
                                     presentablePicture.close()
-                                    val elapsedTime = frameStartTimeMark
-                                        .exchange(null)!!
-                                        .timeMark
-                                        .elapsedNow()
-                                    if (elapsedTime.inWholeMilliseconds > 10) {
-                                        logger.debug("Long frame: ${elapsedTime}")
-                                    }
+                                    logFrame(frameInFlight.exchange(null)!!)
                                 },
                             )
                         } catch (throwable: Throwable) {
                             logError(throwable, "Could not schedule frame presentation")
                             setFrameRequested(true)
-                            frameStartTimeMark.compareAndSet(
-                                frameStartTimeMarkWrapper,
+                            frameInFlight.compareAndSet(
+                                frameTimings,
                                 null,
                             )
                             presentablePicture.close()
                         }
                     } ?: run {
                         setFrameRequested(true)
-                        frameStartTimeMark.compareAndSet(
-                            frameStartTimeMarkWrapper,
+                        frameInFlight.compareAndSet(
+                            frameTimings,
                             null,
                         )
                     }
                 } catch (throwable: Throwable) {
                     logError(throwable, "Could not prepare frame")
                     setFrameRequested(true)
-                    frameStartTimeMark.compareAndSet(
-                        frameStartTimeMarkWrapper,
+                    frameInFlight.compareAndSet(
+                        frameTimings,
                         null,
                     )
                 }
             }
         }
     }
+
+    /**
+     * Runs [preparePicture] and records how long it took in [timings].
+     *
+     * The method throws what [preparePicture] throws, so the caller keeps its error paths and
+     * the latch invariant stays the same.
+     */
+    private fun measuredPreparePicture(timings: FrameTimings): P? {
+        ComposeFrameTrace.beginFrame()
+        val prepareAt = TimeSource.Monotonic.markNow()
+        try {
+            return preparePicture()
+        } finally {
+            timings.prepareNanos = prepareAt.elapsedNow().inWholeNanoseconds
+            timings.sections =
+                ComposeFrameTrace.endFrame()?.takeIf { it.sections.isNotEmpty() }?.format()
+        }
+    }
+
+    private fun logFrame(timings: FrameTimings) {
+        val totalNanos = timings.tickAt.elapsedNow().inWholeNanoseconds
+        if (!logEveryFrame && totalNanos < longFrameThresholdNanos) {
+            return
+        }
+        val presentNanos = totalNanos - timings.dispatchNanos - timings.prepareNanos
+        // Call the eager `debug(message)` overload on purpose. `ConsoleLogger.isDebugEnabled` is
+        // always false, so the `debug { }` lambda overload prints nothing, while the eager one
+        // prints. The early return above is what keeps the string off the hot path.
+        logger.debug(
+            buildString {
+                append("Frame: total=").append(formatMillis(totalNanos))
+                append(" dispatch=").append(formatMillis(timings.dispatchNanos))
+                append(" prepare=").append(formatMillis(timings.prepareNanos))
+                append(" present=").append(formatMillis(presentNanos))
+                timings.sections?.let { append(" | ").append(it) }
+            }
+        )
+    }
 }
 
 private val logger = logger<DisplayLinkFramePump<*>>()
+
+/** The threshold of the long-frame log, from the `compose.frame.longFrameMs` property. */
+private val longFrameThresholdNanos: Long =
+    (System.getProperty("compose.frame.longFrameMs")?.toLongOrNull() ?: 10L) * 1_000_000L
+
+/** True when every frame is logged, from the `compose.frame.logAll` property. */
+private val logEveryFrame: Boolean = System.getProperty("compose.frame.logAll").toBoolean()
+
+private fun formatMillis(nanos: Long): String = "%.3fms".format(nanos / 1_000_000.0)
