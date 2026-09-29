@@ -803,8 +803,13 @@ class PopupTest : SkikoComposeTestBase() {
         openPopup.value = true
         onNodeWithTag(popup.tag).assertIsDisplayed()
 
-        // It should not generate extra Exit/Enter events
-        background.events.assertReceivedNoEvents()
+        // It should not generate extra Exit/Enter events.
+        // Move events without position change are allowed, as they are delivered when
+        // ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled is true.
+        background.events.list.forEach {
+            assertThat(it.type).isEqualTo(PointerEventType.Move)
+            assertThat(it.changes.first().position).isEqualTo(Offset(5f, 5f))
+        }
     }
 
     @Test
