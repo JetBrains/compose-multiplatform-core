@@ -52,6 +52,8 @@ androidXMultiplatform {
             implementation("androidx.collection:collection:1.5.0")
             implementation(project(":compose:animation:animation"))
             implementation(project(":compose:ui:ui-util"))
+            // Older versions of lifecycle-runtime lint checks use a deleted lint API
+            implementation("androidx.lifecycle:lifecycle-runtime:2.10.0")
         }
 
         nonAndroidMain.dependsOn(commonMain)
