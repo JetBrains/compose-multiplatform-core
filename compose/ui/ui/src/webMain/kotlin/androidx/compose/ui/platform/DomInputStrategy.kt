@@ -118,6 +118,14 @@ internal class DomInputStrategy(
 
                 inputExt.firstRange = inputExt.getTargetRanges()[0]
 
+                // Line breaks are already inserted by Compose from the "keydown" event.
+                // If the browser applies them natively, it splits the contenteditable content
+                // into several nodes (Safari inserts <br> and wraps the rest into a <div>),
+                // which breaks the offset math relying on a single text node.
+                if (inputExt.inputType == "insertParagraph" || inputExt.inputType == "insertLineBreak") {
+                    evt.preventDefault()
+                }
+
                 // The browser applies the edit to the contenteditable element natively and moves
                 // the DOM caret. That caret move must not be translated into a SetSelectionCommand,
                 // otherwise it would shift the insertion point before the command is processed.

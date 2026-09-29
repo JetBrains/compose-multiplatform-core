@@ -184,6 +184,60 @@ class DomInputStrategyTest {
         }
     }
 
+    /**
+     * A line break is already inserted by Compose from the "keydown" event. If the browser is
+     * allowed to apply it natively, it splits the contenteditable content into several nodes
+     * (Safari inserts a `<br>` and wraps the rest into a `<div>`), which breaks the offset math
+     * relying on a single text node - every subsequent `beforeinput` reports a container-relative
+     * offset, and the caret jumps to the beginning of the text.
+     *
+     * See https://youtrack.jetbrains.com/issue/CMP-10753
+     */
+    @Test
+    fun lineBreakInputIsCancelledAndNotSentToCompose() = runTest {
+        for (inputType in listOf("insertParagraph", "insertLineBreak")) {
+            val communicator = RecordingCommunicator()
+            val strategy = DomInputStrategy(ImeOptions.Default, communicator)
+            val htmlInput = strategy.htmlInput
+
+            val host = document.createElement("div")
+            document.body!!.appendChild(host)
+            val shadowRoot = host.attachShadow(ShadowRootInit(ShadowRootMode.OPEN))
+
+            try {
+                shadowRoot.appendChild(htmlInput)
+                htmlInput.textContent = "line1\n"
+                htmlInput.focus()
+                awaitAnimationFrame()
+
+                val event = beforeInputWithTargetRange(
+                    inputType = inputType,
+                    data = null,
+                    startOffset = 6,
+                    endOffset = 6,
+                    cancelable = true
+                )
+                htmlInput.dispatchEvent(event)
+
+                // the collected events are processed here
+                awaitAnimationFrame()
+
+                assertTrue(
+                    event.defaultPrevented,
+                    "'$inputType' must be cancelled so that the browser doesn't split the DOM"
+                )
+                assertEquals(
+                    emptyList<EditCommand>(),
+                    communicator.editCommands,
+                    "'$inputType' must not produce edit commands - Compose already inserted the line break"
+                )
+            } finally {
+                strategy.dispose()
+                host.remove()
+            }
+        }
+    }
+
     private suspend fun awaitAnimationFrame() {
         suspendCancellableCoroutine { continuation ->
             window.requestAnimationFrame { continuation.resumeWith(Result.success(Unit)) }
