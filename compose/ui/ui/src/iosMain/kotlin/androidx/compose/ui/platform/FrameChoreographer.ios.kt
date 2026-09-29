@@ -40,7 +40,8 @@ import platform.Foundation.NSRunLoopCommonModes
 import platform.Foundation.NSSelectorFromString
 import platform.Foundation.NSTimeInterval
 import platform.QuartzCore.CADisplayLink
-import platform.UIKit.UIWindowScene
+import platform.UIKit.UIScreen
+import platform.UIKit.UIWindow
 import platform.darwin.NSInteger
 import platform.darwin.NSObject
 import platform.darwin.dispatch_async
@@ -51,23 +52,23 @@ import platform.objc.objc_setAssociatedObject
 
 /**
  * Manages recomposition, frame adjustment, and rendering synchronization for all Compose containers
- * inside a single `UIWindowScene`.
+ * inside a single `UIWindow`.
  */
 internal class FrameChoreographer private constructor(
-    scene: UIWindowScene,
+    window: UIWindow,
     val coroutineContext: CoroutineContext = Dispatchers.Main
 ) {
     companion object {
-        fun choreographerForScene(scene: UIWindowScene): FrameChoreographer {
-            return scene.frameChoreographer ?: FrameChoreographer(scene).also {
-                scene.frameChoreographer = it
+        fun choreographerForWindow(window: UIWindow): FrameChoreographer {
+            return window.frameChoreographer ?: FrameChoreographer(window).also {
+                window.frameChoreographer = it
             }
         }
 
         @TestOnly
-        fun configureForScene(scene: UIWindowScene, coroutineContext: CoroutineContext) {
-            scene.frameChoreographer?.dispose()
-            scene.frameChoreographer = FrameChoreographer(scene, coroutineContext)
+        fun configureForWindow(window: UIWindow, coroutineContext: CoroutineContext) {
+            window.frameChoreographer?.dispose()
+            window.frameChoreographer = FrameChoreographer(window, coroutineContext)
         }
 
         private const val FramesToAdvanceAfterInvalidation = 2
@@ -126,14 +127,15 @@ internal class FrameChoreographer private constructor(
     }
 
     private val displayLinkFrameRate = DisplayLinkFrameRate(displayLink).also {
-        val maximumFramesPerSecond = scene.screen.maximumFramesPerSecond
+        val screen = window.windowScene?.screen ?: UIScreen.mainScreen
+        val maximumFramesPerSecond = screen.maximumFramesPerSecond
         it.maximumFramesPerSecond = maximumFramesPerSecond
         it.preferredFramesPerSecond = maximumFramesPerSecond
     }
 
-    private val sceneRef = WeakReference(scene)
+    private val windowRef = WeakReference(window)
     private val foregroundStateListener = SceneForegroundStateListener(
-        getScene = { sceneRef.get() },
+        getScene = { windowRef.get()?.windowScene },
         onSceneForegroundStateChanged = { inForeground -> isSceneInForeground = inForeground }
     )
 
@@ -295,7 +297,7 @@ internal class FrameChoreographer private constructor(
 private val frameChoreographerAssociationKey: COpaquePointer = nativeHeap.alloc<IntVar>().ptr
 
 @OptIn(ExperimentalForeignApi::class)
-private var UIWindowScene.frameChoreographer: FrameChoreographer?
+private var UIWindow.frameChoreographer: FrameChoreographer?
     get() = objc_getAssociatedObject(this, frameChoreographerAssociationKey) as? FrameChoreographer
     set(value) {
         objc_setAssociatedObject(this, frameChoreographerAssociationKey, value, OBJC_ASSOCIATION_RETAIN)

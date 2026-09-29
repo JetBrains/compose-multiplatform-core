@@ -264,9 +264,9 @@ internal class ComposeContainer(
 
     fun initializeComposeScene() {
         sceneJob = Job()
-        val frameChoreographer = view.window?.windowScene
-            ?.let(FrameChoreographer::choreographerForScene)
-            ?: error("No window scene found")
+        val frameChoreographer = view.window
+            ?.let(FrameChoreographer::choreographerForWindow)
+            ?: error("No window found")
 
         val containerCoroutineContext =
             frameChoreographer.coroutineContext + motionDurationScale + sceneJob
@@ -671,9 +671,8 @@ internal var UIResponder.attachedCompositionContext: CompositionContext?
 
 internal fun UIResponder.findParentCompositionContext(): CompositionContext {
     if (this is UIWindow) {
-        return FrameChoreographer.choreographerForScene(
-            scene = windowScene ?: error("Window scene is null")
-        ).frameRecomposer.compositionContext
+        return FrameChoreographer.choreographerForWindow(this)
+            .frameRecomposer.compositionContext
     }
     this.attachedCompositionContext?.let {
         return it

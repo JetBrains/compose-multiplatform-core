@@ -313,9 +313,7 @@ internal suspend fun AwaitPointerEventScope.mouseSelection(
     }
 }
 
-internal class ClicksCounter(
-    private val viewConfiguration: ViewConfiguration
-) {
+internal class ClicksCounter(private val viewConfiguration: ViewConfiguration) {
     var clicks = 0
         private set
 
@@ -326,8 +324,8 @@ internal class ClicksCounter(
         val currentPrevClick = prevClick
         if (
             currentPrevClick != null &&
-            timeIsTolerable(currentPrevClick, newClick) &&
-            positionIsTolerable(currentPrevClick, newClick)
+                timeIsTolerable(currentPrevClick, newClick) &&
+                positionIsTolerable(currentPrevClick, newClick)
         ) {
             clicks += 1
         } else {

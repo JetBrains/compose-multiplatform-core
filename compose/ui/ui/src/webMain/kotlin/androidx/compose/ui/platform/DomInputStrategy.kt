@@ -118,6 +118,21 @@ internal class DomInputStrategy(
 
                 inputExt.firstRange = inputExt.getTargetRanges()[0]
 
+                // Line breaks are already inserted by Compose from the "keydown" event.
+                // If the browser applies them natively, it splits the contenteditable content
+                // into several nodes (Safari inserts <br> and wraps the rest into a <div>),
+                // which breaks the offset math relying on a single text node.
+                if (inputExt.inputType == "insertParagraph" || inputExt.inputType == "insertLineBreak") {
+                    evt.preventDefault()
+                }
+
+                // The browser applies the edit to the contenteditable element natively and moves
+                // the DOM caret. That caret move must not be translated into a SetSelectionCommand,
+                // otherwise it would shift the insertion point before the command is processed.
+                // Unlike typing, autocorrect/autosuggest insertions don't produce a "keydown" event,
+                // so the pause has to be set here as well.
+                pauseSelectionChangeListener = true
+
                 nativeInputEventsProcessor.registerEvent(evt)
             }
         })
@@ -132,7 +147,12 @@ internal class DomInputStrategy(
         })
 
         selectionChangeListener = listener@{ _ ->
-            if (pauseSelectionChangeListener || !isInputActive()) return@listener
+            // while there are collected but not yet processed events, the DOM selection is
+            // in an intermediate state and must not be propagated to Compose
+            if (pauseSelectionChangeListener ||
+                nativeInputEventsProcessor.isCheckpointScheduled ||
+                !isInputActive()
+            ) return@listener
 
             val currentSelection = getSelectionRange(htmlInput)
             val (start, end) = if (currentSelection != null) {
@@ -167,7 +187,7 @@ internal class DomInputStrategy(
     }
 
     @OptIn(ExperimentalWasmJsInterop::class)
-    private fun isInputActive(): Boolean {
+    internal fun isInputActive(): Boolean {
         val root = htmlInput.unsafeCast<NodeWithRootNode>().getRootNode()
         val rootActive = root?.activeElement
         return rootActive == htmlInput

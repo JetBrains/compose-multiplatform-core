@@ -71,7 +71,8 @@ private def configure(target, isDevice, architecture, testTarget) {
     def destination = isDevice ? "generic/platform=iOS" : "generic/platform=iOS Simulator"
 
     configureObjcUtils(target, xcodeProjectDir, sdkName, destination, architecture, isDevice, testTarget)
-    configureSwiftUtils(target, xcodeProjectDir, sdkName, destination, architecture)
+    // TODO: https://youtrack.jetbrains.com/issue/CMP-10868
+    // configureSwiftUtils(target, xcodeProjectDir, sdkName, destination, architecture)
 }
 
 private def configureObjcUtils(target, xcodeProjectDir, sdkName, destination, architecture, isDevice, testTarget) {

@@ -305,9 +305,8 @@ public suspend fun AwaitPointerEventScope.awaitFirstDown(
     awaitFirstDown(requireUnconsumed = requireUnconsumed, pass = PointerEventPass.Main)
 
 /**
- * Reads events until the first down is received. If [requireUnconsumed] is `true` and the first
- * down is consumed in the [PointerEventPass.Main] pass, that gesture is ignored. If it was down
- * caused by [PointerType.Mouse], this function reacts only on primary button.
+ * Reads events until the first down is received in the given [pass]. If [requireUnconsumed] is
+ * `true` and the first down is already consumed in the pass, that gesture is ignored.
  */
 public suspend fun AwaitPointerEventScope.awaitFirstDown(
     requireUnconsumed: Boolean = true,
