@@ -252,6 +252,22 @@ class FrameRecomposer(
         }
 
     /**
+     * Brings the frame domains up to date outside a frame: publishes what the world buffered and
+     * rotates every pin, as the start of [performFrame] does, without sending a frame. A host
+     * that composes between frames, such as a test runner setting a scene's content from the
+     * test body, calls this first, so that composition reads a view that includes what the
+     * caller created or wrote since the previous rotation; a standing pin taken earlier cannot
+     * read a state created after it. Inside a frame it does nothing: that frame's start rotated.
+     */
+    fun catchUpFrameDomains() {
+        if (isInFrame) return
+        composeThreadId = getCurrentThreadId()
+        performTrampolineDispatch()
+        drainFrameDomainContexts()
+        frameDomains.fastForEach { it.rotate() }
+    }
+
+    /**
      * Performs one host frame. Platforms call this once from their native frame callback before
      * running [androidx.compose.ui.scene.ComposeScene] measure/layout and draw phases.
      */

@@ -503,10 +503,10 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
 
     override fun setContent(composable: @Composable () -> Unit) {
         if (isOnUiThread()) {
-            scene.setContent(content = composable)
+            setSceneContent(composable)
         } else {
             runOnUiThread {
-                scene.setContent(content = composable)
+                setSceneContent(composable)
             }
 
             // Only wait for idleness if not on the UI thread. If we are on the UI thread, the
@@ -514,6 +514,18 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             // executing future tasks on the main thread.
             waitForIdle()
         }
+    }
+
+    /**
+     * The scene composes the content at once, and under frame isolation it composes in its
+     * standing pin, which was taken when the scene was created, before the test body ran. A state
+     * the body created since, the usual `val state = mutableStateOf(..)` above `setContent`,
+     * postdates that pin and cannot be read through it. A window's first composition comes with
+     * a frame, after the pin has rotated; here the rotation is done first instead.
+     */
+    private fun setSceneContent(composable: @Composable () -> Unit) {
+        if (frameIsolation) frameRecomposer.catchUpFrameDomains()
+        scene.setContent(content = composable)
     }
 
     override fun hasPendingWork(): Boolean {
