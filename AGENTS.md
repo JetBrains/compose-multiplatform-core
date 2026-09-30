@@ -2,7 +2,7 @@
 
 This is a fork of androidx monorepo dedicated for Compose Multiplatform (CMP) work.
 The purpose of the fork is to provide missing Kotlin targets for modules registered in `JetBrainsPublication.kt` (mainly Compose-related). 
-We add support for iOS, Web and Desktop. We do not validate, build and test Android in this fork.
+Generally we add support for iOS, Web and Desktop. and we do not validate, build and test Android. The full list of which targets are not maintained is defined in the associated `build-fork.gradle`, in the `redirect` block.
 
 The primary focus of Compose Multiplatform is the `./compose` directory.
 Most often, we work in `./compose/ui/ui` and `./compose/foundation/foundation`.
