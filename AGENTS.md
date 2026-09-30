@@ -1,7 +1,7 @@
 # Repository guidance
 
 This is a fork of androidx monorepo dedicated for Compose Multiplatform (CMP) work.
-The purpose of the fork is to provide missing Kotlin targets for Compose modules. 
+The purpose of the fork is to provide missing Kotlin targets for modules registered in `JetBrainsPublication.kt` (mainly Compose-related). 
 We add support for iOS, Web and Desktop. We do not validate, build and test Android in this fork.
 
 The primary focus of Compose Multiplatform is the `./compose` directory.
