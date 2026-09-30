@@ -16,6 +16,9 @@
 
 package androidx.compose.ui.test
 
+import androidx.compose.runtime.DataSourceContext
+import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.scene.defaultFrameIsolation
 import androidx.compose.ui.unit.Density
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
@@ -61,7 +64,12 @@ fun runDesktopComposeUiTest(
     }
 }
 
-@OptIn(InternalTestApi::class)
+/**
+ * @param dataSourceContext The [DataSourceContext] the test's scene reads its data sources through.
+ * @param frameIsolation Whether the test's scene runs in frame-cycle units; see
+ * [androidx.compose.ui.test.v2.runSkikoComposeUiTest].
+ */
+@OptIn(InternalTestApi::class, InternalComposeUiApi::class)
 @ExperimentalTestApi
 class DesktopComposeUiTest(
     width: Int = 1024,
@@ -71,6 +79,8 @@ class DesktopComposeUiTest(
     testTimeout: Duration = Duration.INFINITE,
     density: Density = Density(1f),
     useStandardTestDispatcherForComposition: Boolean,
+    dataSourceContext: DataSourceContext = DataSourceContext(),
+    frameIsolation: Boolean = defaultFrameIsolation,
 ) : SkikoComposeUiTest(
     width = width,
     height = height,
@@ -80,8 +90,31 @@ class DesktopComposeUiTest(
     density = density,
     semanticsOwnerListener = null,
     windowInsets = null,
-    useStandardTestDispatcherForComposition = useStandardTestDispatcherForComposition
+    useStandardTestDispatcherForComposition = useStandardTestDispatcherForComposition,
+    dataSourceContext = dataSourceContext,
+    frameIsolation = frameIsolation,
 ) {
+    /** The signature before `dataSourceContext` and `frameIsolation` existed; binaries still call it. */
+    @Deprecated("Kept for binary compatibility", level = DeprecationLevel.HIDDEN)
+    constructor(
+        width: Int = 1024,
+        height: Int = 768,
+        effectContext: CoroutineContext = EmptyCoroutineContext,
+        runTestContext: CoroutineContext = EmptyCoroutineContext,
+        testTimeout: Duration = Duration.INFINITE,
+        density: Density = Density(1f),
+        useStandardTestDispatcherForComposition: Boolean,
+    ) : this(
+        width = width,
+        height = height,
+        effectContext = effectContext,
+        runTestContext = runTestContext,
+        testTimeout = testTimeout,
+        density = density,
+        useStandardTestDispatcherForComposition = useStandardTestDispatcherForComposition,
+        dataSourceContext = DataSourceContext(),
+    )
+
     private val idlingResources = mutableSetOf<IdlingResource>()
 
     override fun areAllResourcesIdle(): Boolean {

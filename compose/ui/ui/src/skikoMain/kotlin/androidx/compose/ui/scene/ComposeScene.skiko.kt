@@ -347,6 +347,23 @@ fun ComposeScene.hasInvalidations(): Boolean =
     hasPendingMeasureOrLayout || hasPendingDraw
 
 /**
+ * Whether the scene's frame domain holds work that only the next host frame
+ * ([androidx.compose.ui.platform.FrameRecomposer.performFrame]) can carry out: invalidations
+ * published from outside the scene and waiting for the pin swap that makes them visible, or a
+ * member of the scene's [androidx.compose.runtime.DataSourceContext] holding data it has not
+ * published yet.
+ *
+ * Neither shows up as pending layout, draw or recomposition until that frame has run, so anything
+ * that decides "nothing left to do" from those signals alone - an idle wait in a test runner - would
+ * stop one frame early and observe content that has not caught up with its data yet.
+ *
+ * Can be called from any thread.
+ */
+@InternalComposeUiApi
+val ComposeScene.hasPendingFrameDomainWork: Boolean
+    get() = (this as? BaseComposeScene)?.hasPendingFrameDomainWork == true
+
+/**
  * Returns the current content size (in pixels) in infinity constraints.
  *
  * @throws IllegalStateException when [ComposeScene] content has lazy layouts without maximum

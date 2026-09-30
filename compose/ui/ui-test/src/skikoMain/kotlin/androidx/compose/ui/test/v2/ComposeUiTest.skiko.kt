@@ -16,10 +16,12 @@
 
 package androidx.compose.ui.test.v2
 
+import androidx.compose.runtime.DataSourceContext
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowInsets
+import androidx.compose.ui.scene.defaultFrameIsolation
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ComposeUiTestConfig
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -146,6 +148,13 @@ actual fun runComposeUiTest(block: suspend ComposeUiTest.() -> Unit): TestResult
  *   [runTestContext] and [effectContext] must not share [TestCoroutineScheduler].
  * @param testTimeout The [Duration] within which the test is expected to complete, otherwise a
  *   platform specific timeout exception will be thrown.
+ * @param dataSourceContext The [DataSourceContext] the test's scene reads its data sources through.
+ *   Content under test only sees a source, and is only invalidated by it, if the source is a member
+ *   of this context. Defaults to a fresh context with no sources besides snapshot state.
+ * @param frameIsolation Whether the test's scene runs in frame-cycle units, so that writes made
+ *   outside the content (by the test body, for instance) become visible to it only at the next
+ *   frame - the mode an isolating application runs its windows in. Defaults to the process-wide
+ *   setting; passing it here instead of changing that setting keeps the choice to this test.
  * @param block The suspendable test body.
  * @return A `TestResult` representing the outcome of the test execution.
  */
@@ -157,6 +166,8 @@ fun runSkikoComposeUiTest(
     effectContext: CoroutineContext = EmptyCoroutineContext,
     runTestContext: CoroutineContext = EmptyCoroutineContext,
     testTimeout: Duration = Duration.INFINITE,
+    dataSourceContext: DataSourceContext = DataSourceContext(),
+    frameIsolation: Boolean = defaultFrameIsolation,
     block: suspend SkikoComposeUiTest.() -> Unit,
 ): TestResult {
     return SkikoComposeUiTest(
@@ -169,9 +180,32 @@ fun runSkikoComposeUiTest(
             semanticsOwnerListener = null,
             windowInsets = null,
             useStandardTestDispatcherForComposition = true,
+            dataSourceContext = dataSourceContext,
+            frameIsolation = frameIsolation,
         )
         .runTest(block)
 }
+
+/** The signature before `dataSourceContext` and `frameIsolation` existed; binaries still call it. */
+@Deprecated("Kept for binary compatibility", level = DeprecationLevel.HIDDEN)
+@ExperimentalTestApi
+fun runSkikoComposeUiTest(
+    size: Size = Size(1024.0f, 768.0f),
+    density: Density = Density(1f),
+    effectContext: CoroutineContext = EmptyCoroutineContext,
+    runTestContext: CoroutineContext = EmptyCoroutineContext,
+    testTimeout: Duration = Duration.INFINITE,
+    block: suspend SkikoComposeUiTest.() -> Unit
+): TestResult =
+    runSkikoComposeUiTest(
+        size = size,
+        density = density,
+        effectContext = effectContext,
+        runTestContext = runTestContext,
+        testTimeout = testTimeout,
+        dataSourceContext = DataSourceContext(),
+        block = block,
+    )
 
 @InternalTestApi
 @OptIn(ExperimentalTestApi::class, InternalComposeUiApi::class)
@@ -184,6 +218,8 @@ fun runInternalSkikoComposeUiTest(
     testTimeout: Duration = Duration.INFINITE,
     semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? = null,
     windowInsets: PlatformWindowInsets? = null,
+    dataSourceContext: DataSourceContext = DataSourceContext(),
+    frameIsolation: Boolean = defaultFrameIsolation,
     block: suspend SkikoComposeUiTest.() -> Unit,
 ): TestResult {
     return SkikoComposeUiTest(
@@ -196,6 +232,8 @@ fun runInternalSkikoComposeUiTest(
             semanticsOwnerListener = semanticsOwnerListener,
             windowInsets = windowInsets,
             useStandardTestDispatcherForComposition = true,
+            dataSourceContext = dataSourceContext,
+            frameIsolation = frameIsolation,
         )
         .runTest(block)
 }

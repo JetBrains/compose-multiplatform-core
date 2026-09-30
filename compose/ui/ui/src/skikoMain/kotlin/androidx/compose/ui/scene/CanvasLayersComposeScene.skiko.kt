@@ -77,6 +77,9 @@ import kotlin.math.max
  * @param dataSourceContext The [DataSourceContext] this scene takes its frame-cycle units
  * from. Scenes sharing one context share its sources; the default is a fresh private
  * substrate-only context.
+ * @param frameIsolation Whether this scene runs its work in frame-cycle units taken from
+ * [dataSourceContext], so that publications from outside the scene become visible only at the next
+ * frame. Fixed for the scene's lifetime; defaults to the process-wide [defaultFrameIsolation].
  * @param invalidateLayout The function to be called when the content requires another
  * measure/layout pass.
  * @param invalidateDraw The function to be called when the content requires another draw pass.
@@ -92,6 +95,7 @@ fun CanvasLayersComposeScene(
     size: IntSize? = null,
     platformContext: PlatformContext = PlatformContext.Empty(),
     dataSourceContext: DataSourceContext = DataSourceContext(),
+    frameIsolation: Boolean = defaultFrameIsolation,
     invalidateLayout: () -> Unit = {},
     invalidateDraw: () -> Unit = {},
 ): ComposeScene = CanvasLayersComposeSceneImpl(
@@ -101,6 +105,7 @@ fun CanvasLayersComposeScene(
     size = size,
     platformContext = platformContext,
     dataSourceContext = dataSourceContext,
+    frameIsolation = frameIsolation,
     invalidateLayout = invalidateLayout,
     invalidateDraw = invalidateDraw,
 ).also {
@@ -117,11 +122,13 @@ private class CanvasLayersComposeSceneImpl(
     size: IntSize?,
     override val platformContext: PlatformContext,
     dataSourceContext: DataSourceContext,
+    frameIsolation: Boolean,
     invalidateLayout: () -> Unit = {},
     invalidateDraw: () -> Unit = {},
 ) : BaseComposeScene(
     frameRecomposer = frameRecomposer,
     dataSourceContext = dataSourceContext,
+    frameIsolation = frameIsolation,
     invalidateLayout = invalidateLayout,
     invalidateDraw = invalidateDraw,
 ), ComposeSceneContext {
