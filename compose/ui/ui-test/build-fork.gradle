@@ -112,7 +112,7 @@ androidXMultiplatform {
             dependencies {
                 implementation(libs.skikoAwtRuntime)
                 implementation(libs.skikoGaneshAwtRuntime)
-                implementation(libs.skikoRenderingAwtRuntime)
+                implementation(libs.skikoPlatformAwtRuntime)
             }
         }
 

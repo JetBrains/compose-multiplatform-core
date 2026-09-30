@@ -103,7 +103,7 @@ androidXMultiplatform {
             dependsOn(commonMain)
             dependencies {
                 api(project(":compose:ui:ui-skiko"))
-                implementation(libs.skikoRendering)
+                implementation(libs.skikoPlatform)
                 implementation(libs.skikoGanesh)
                 implementation(libs.atomicFu)
 
@@ -138,7 +138,7 @@ androidXMultiplatform {
                 implementation(libs.mockitoKotlin4)
                 implementation(libs.skikoAwtRuntime)
                 implementation(libs.skikoGaneshAwtRuntime)
-                implementation(libs.skikoRenderingAwtRuntime)
+                implementation(libs.skikoPlatformAwtRuntime)
                 implementation(libs.kotlinCoroutinesSwing)
                 implementation(libs.kotlinCoroutinesTest)
                 implementation(project(":compose:material:material"))
