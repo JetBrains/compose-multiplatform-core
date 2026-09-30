@@ -32,6 +32,7 @@ import androidx.compose.ui.node.dispatchForKind
 import androidx.compose.ui.node.layoutCoordinates
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastMap
 
 /**
  * Organizes pointers and the [PointerInputFilter]s that they hit into a hierarchy such that
@@ -631,14 +632,49 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                     event.type == PointerEventType.PanEnd
             if (ComposeUiFlags.isTrackpadPanHoverFixEnabled && isPan && isIn != hasEntered) {
                 // Create a synthetic Enter or Exit event to dispatch to hover listeners
-                // without altering the pan gesture event.
+                // without altering the pan gesture event. Construct new PointerInputChange
+                // instances instead of calling copy() so they do not share consumedDelegate with
+                // the original pan changes.
                 syntheticHoverEvent =
+<<<<<<< HEAD
                     PointerEvent(changesList, internalPointerEvent).also {
                         it.type = if (isIn) PointerEventType.Enter else PointerEventType.Exit
                     }
             } else if (event.type == PointerEventType.Move ||
                 event.type == PointerEventType.Enter ||
                 event.type == PointerEventType.Exit
+=======
+                    PointerEvent(
+                            changesList.fastMap {
+                                PointerInputChange(
+                                    id = it.id,
+                                    uptimeMillis = it.uptimeMillis,
+                                    position = it.position,
+                                    pressed = it.pressed,
+                                    pressure = it.pressure,
+                                    previousUptimeMillis = it.previousUptimeMillis,
+                                    previousPosition = it.previousPosition,
+                                    previousPressed = it.previousPressed,
+                                    isInitiallyConsumed = it.isConsumed,
+                                    type = it.type,
+                                    historical = it.historical,
+                                    scrollDelta = it.scrollDelta,
+                                    scaleFactor = it.scaleFactor,
+                                    panOffset = it.panOffset,
+                                    originalEventPosition = it.originalEventPosition,
+                                )
+                            },
+                            internalPointerEvent,
+                        )
+                        .also {
+                            it.type = if (isIn) PointerEventType.Enter else PointerEventType.Exit
+                        }
+            } else if (
+                isIn != wasIn &&
+                    (event.type == PointerEventType.Move ||
+                        event.type == PointerEventType.Enter ||
+                        event.type == PointerEventType.Exit)
+>>>>>>> aaed1077ae2ca17c16f33aa7a53137eb2b23fed3
             ) {
                 event.type = when {
                     !hasEntered && isIn -> PointerEventType.Enter
