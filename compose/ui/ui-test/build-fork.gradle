@@ -153,6 +153,13 @@ androidXMultiplatform {
         iosTest {
             dependsOn(darwinTest)
         }
+
+        // TestOwner and TestContext's constructor are @InternalTestApi so that an out-of-tree
+        // ComposeUiTest implementation can provide its own owner; this module's own uses of them
+        // are not the audience of that marker.
+        configureEach {
+            languageSettings.optIn("androidx.compose.ui.test.InternalTestApi")
+        }
     }
 }
 

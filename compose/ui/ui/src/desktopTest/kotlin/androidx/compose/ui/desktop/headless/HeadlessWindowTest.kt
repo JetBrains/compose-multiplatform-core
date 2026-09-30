@@ -17,17 +17,26 @@
 package androidx.compose.ui.desktop.headless
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.ComposeUIDispatcher
 import androidx.compose.ui.HeadlessTest
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.desktop.ApplicationSession
 import androidx.compose.ui.desktop.WindowCloseRequestReason
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.scene.ComposeSceneFeatureFlags
+import androidx.compose.ui.semantics.TestDataMode
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -148,6 +157,68 @@ class HeadlessWindowTest {
             frameTimes.all { it <= 48_000_000L },
             "a frame time exceeded the virtual clock, so wall-clock time leaked in: $frameTimes",
         )
+    }
+
+    /**
+     * A test harness drives input and reads semantics through the window's roots, so the set has to
+     * follow the layers as they come and go - a popup is a layer with a root of its own - and has
+     * to describe the same layers as [HeadlessWindow.semanticsOwners].
+     */
+    @OptIn(InternalComposeUiApi::class)
+    @Test
+    fun rootsForTestFollowTheWindowsLayersInTestDataMode() = runBlocking {
+        val previous = TestDataMode.isEnabled
+        TestDataMode.isEnabled = true
+        try {
+            var showPopup by mutableStateOf(false)
+            val window = app.createWindow(ApplicationSession(scope)) { }
+            window.setContent(onPreviewKeyEvent = { false }, onKeyEvent = { false }) {
+                Box(Modifier.fillMaxSize())
+                if (showPopup) {
+                    Popup { Box(Modifier.size(10.dp)) }
+                }
+            }
+            suspend fun renderAndCheck(nanoTime: Long, expectedRoots: Int) {
+                withContext(ComposeUIDispatcher) { window.render(nanoTime) }
+                app.awaitIdle()
+                assertEquals(expectedRoots, window.rootsForTest.size, "roots at frame $nanoTime")
+                assertEquals(
+                    window.semanticsOwners.toSet(),
+                    window.rootsForTest.map { it.semanticsOwner }.toSet(),
+                    "roots and semantics owners describe different layers at frame $nanoTime",
+                )
+            }
+
+            renderAndCheck(nanoTime = 1L, expectedRoots = 1)
+            showPopup = true
+            renderAndCheck(nanoTime = 2L, expectedRoots = 2)
+            showPopup = false
+            renderAndCheck(nanoTime = 3L, expectedRoots = 1)
+
+            withContext(ComposeUIDispatcher) { window.dispose() }
+            assertTrue(window.rootsForTest.isEmpty(), "a disposed window still reports roots")
+        } finally {
+            TestDataMode.isEnabled = previous
+        }
+    }
+
+    /** Outside test-data mode nothing registers, exactly as for semantics owners. */
+    @OptIn(InternalComposeUiApi::class)
+    @Test
+    fun rootsForTestStayEmptyOutsideTestDataMode() = runBlocking {
+        val previous = TestDataMode.isEnabled
+        TestDataMode.isEnabled = false
+        try {
+            val window = app.createWindow(ApplicationSession(scope)) { }
+            window.setContent(onPreviewKeyEvent = { false }, onKeyEvent = { false }) {
+                Box(Modifier.fillMaxSize())
+            }
+            withContext(ComposeUIDispatcher) { window.render(nanoTime = 1L) }
+            assertTrue(window.rootsForTest.isEmpty())
+            withContext(ComposeUIDispatcher) { window.dispose() }
+        } finally {
+            TestDataMode.isEnabled = previous
+        }
     }
 
     @Test

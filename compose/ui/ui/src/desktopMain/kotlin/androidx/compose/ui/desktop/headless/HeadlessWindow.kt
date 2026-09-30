@@ -52,6 +52,7 @@ import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.PlatformContext
+import androidx.compose.ui.platform.PlatformRootForTest
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
@@ -114,7 +115,12 @@ class HeadlessWindow internal constructor(
     // nothing observes it, so it has no business being observable.
     @Volatile
     private var isFrameRequestedState = false
-    internal val isFrameRequested: Boolean get() = isFrameRequestedState
+
+    /**
+     * Whether something asked for a frame since the last [render]. There is no display link to act
+     * on it, so whoever drives this window reads this to decide when to render.
+     */
+    val isFrameRequested: Boolean get() = isFrameRequestedState
 
     override var title: String = "Headless Window"
 
@@ -256,8 +262,21 @@ class HeadlessWindow internal constructor(
      */
     val semanticsOwners: Collection<SemanticsOwner> get() = semanticsOwnersState
 
+    private val rootsForTestState = mutableStateSetOf<PlatformRootForTest>()
+
+    /**
+     * The roots this window currently hosts, one per layer: what a test harness sends input
+     * through and reads the semantics tree from.
+     *
+     * Maintained by the platform context's listener the same way as [semanticsOwners], and like it
+     * only while [TestDataMode] is enabled - a root registers when it is created, so the mode has
+     * to be on before the window is.
+     */
+    @InternalComposeUiApi
+    val rootsForTest: Collection<PlatformRootForTest> get() = rootsForTestState
+
     private val platformContext: PlatformContext = object : PlatformContext by PlatformContext.Empty(),
-        PlatformContext.SemanticsOwnerListener {
+        PlatformContext.SemanticsOwnerListener, PlatformContext.RootForTestListener {
         override val windowInfo: WindowInfo
             get() = this@HeadlessWindow.windowInfo
         override val viewConfiguration: ViewConfiguration
@@ -290,6 +309,17 @@ class HeadlessWindow internal constructor(
         override fun onSemanticsChange(semanticsOwner: SemanticsOwner) = Unit
 
         override fun onLayoutChange(semanticsOwner: SemanticsOwner, semanticsNodeId: Int) = Unit
+
+        override val rootForTestListener: PlatformContext.RootForTestListener?
+            get() = if (TestDataMode.isEnabled) this else null
+
+        override fun onRootForTestCreated(root: PlatformRootForTest) {
+            rootsForTestState.add(root)
+        }
+
+        override fun onRootForTestDisposed(root: PlatformRootForTest) {
+            rootsForTestState.remove(root)
+        }
     }
 
     /**

@@ -26,7 +26,8 @@ import androidx.compose.ui.unit.Dp
  * assertions and actions.
  */
 public class TestContext
-internal constructor(
+@InternalTestApi
+constructor(
     internal val testOwner: TestOwner,
     internal val boundsAssertionTolerance: Dp = Dp.Unspecified,
 ) {
