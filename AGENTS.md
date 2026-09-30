@@ -37,11 +37,26 @@ Read these files when working in the corresponding project parts:
 When delegating, refer the subagent to those files too.
 Note: Since this a fork, new instruction files might get merged from the upstream. Ignore AOSP-specific instructions / gradle tasks / checks / verifications (majority of them are about Android)
 
-## General
-- **Git:** Do not create git commits unless explicitly requested.
-- In this fork we avoid introducing code changes in the common code (see above). Before changing any code in them, notify and request an approval when such a change is necessary.
-- Running Gradle tasks: 
+## General instructions
+
+### Git
+- Do not create git commits unless explicitly requested.
+
+### Gradle
+- Running Gradle tasks:
   - The output is usually very large and most of it is irrelevant. Unless it's necessary, avoid reading a full output by using `grep`, `tail`, etc.
   - Also, use `--console=plain`
   - When investigating a build failure, save the build output to a temporary file and then use `grep`.
-- API: Unless a feature is intended for GA, avoid introduction of public API changes. 
+
+### Introducing new changes
+- In this fork we avoid introducing code changes in the common code (see above). Before changing any code in them, notify and request an approval when such a change is necessary.
+- API: Unless a feature is intended for GA, avoid introduction of public API changes.
+
+### Changes Verification
+- Running the tests every time might take too long. Compile the tests before running. Choose the relevant task: `compileTestKotlinIosArm64`, `compileTestDevelopmentExecutableKotlinJs`, `compileTestDevelopmentExecutableKotlinWasmJs`, `desktopTestClasses`
+- When to run the tests: when working on the tests, or fixing the implementation, or when asked explicitly.
+- Which tests to run: for platform-specific changes run only platform tests. Otherwise, run the tests for all affected platforms.
+
+### Testing
+- We do not add tests in the `commonTest` folder. When it's possible, we add multiplatform tests to `skikoTest`.  Platform-specific tests should be added in the corresponding folder: `webTest`, `desktopTest`, `jvmTest`, `iosTest`, `iosInstrumentedTest`.
+- When applicable, use platform-specific gradle tasks to run the tests: `desktopTest`,  `iosSimulatorArm64Test`, `wasmJsBrowserTest`, `jsBrowserTest`. Also clean the tests results before running. Example: `./gradlew :compose:ui:ui:cleanAllTests :compose:ui:ui:deskopTest --no-build-cache | tail -n 10`. Allow a reasonable timeout (at least 5 minutes).
