@@ -61,10 +61,9 @@ fun Modifier.overlay(
 
         Modifier.onGloballyPositioned { anchorCoordinates ->
             overlayHostState.coordinates?.let {
-                overlay.anchorBounds = it.localBoundingBoxOf(
-                    anchorCoordinates, clipBounds =
-                        false
-                ).roundToIntRect()
+                overlay.onAnchorPositioned(
+                    it.localBoundingBoxOf(anchorCoordinates, clipBounds = false).roundToIntRect()
+                )
             }
         } then linkStrategy.anchorModifier(overlay.handle)
     }
