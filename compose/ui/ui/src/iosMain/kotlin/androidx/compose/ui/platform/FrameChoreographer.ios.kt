@@ -74,7 +74,6 @@ internal class FrameChoreographer private constructor(
         private const val FramesToAdvanceAfterInvalidation = 2
     }
 
-
     /**
      * Interface for receiving callbacks related to frame rendering and out-of-frame processing.
      */
