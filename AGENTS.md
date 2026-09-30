@@ -8,7 +8,24 @@ The primary focus of Compose Multiplatform is the `./compose` directory.
 Most often, we work in `./compose/ui/ui` and `./compose/foundation/foundation`.
 Also, we publish klibs for some other libraries: `./navigation`, `./navigation3`.
 
-In this fork, we apply fork-specific gradle files: `./gradle/libs-fork.versions.toml`, and `build-fork.gradle` in the modules, which co-exist with the upstream gradle files.
+The repo contains both the original AOSP code and additional fork-only code.
+
+The repo supports two modes: the original AOSP mode (`aospComposeProject.sh`), with the original set of modules, and fork mode, with a much smaller set of modules and its own build infrastructure. Fork mode is the primary mode and is used by default; AOSP mode is rarely needed.
+
+- Common code, used by both modes:
+  - `commonMain`, `commonTest`, and other source sets defined both in `build.gradle` and `build-fork.gradle` files
+  - Received from the upstream AOSP repo
+- Fork-only code:
+  - Independent build infrastructure: `settings-fork.gradle`, `buildSrc-fork`, `build-fork.gradle`, and `./gradle/libs-fork.versions.toml`
+  - if modules exists only in `settings-fork.gradle`, but not in `settings.gradle`, it may just contain `build.gradle` without `build-fork.gradle`
+  - iOS, desktop, JS, and WasmJS source sets, their combinations, and their corresponding test source sets
+  - `redirectversions.toml` — configures some targets and modules to depend on published AOSP artifacts instead of sources from this repo
+- AOSP-only code:
+  - Independent build infrastructure: `settings.gradle`, `buildSrc`, `build.gradle`, and `./gradle/libs.versions.toml`
+  - `androidMain` and its corresponding test source sets
+  - `*StubsMain` source sets - created in the upstream AOSP repo to ensure `commonMain` compilation on the all Kotlin targets
+  - iOS, desktop, JS, and WasmJS source sets for libraries and targets developed in AOSP
+  - `libraryversions.toml` - the current AOSP artifact versions planned to be published
 
 ## Instruction files
 
