@@ -69,6 +69,8 @@ internal class GenericPlatformOutOfFrameExecutor(
      */
     private var isDisposed = false
 
+    private val drainLambda = ::drain
+
     override val hasWorkScheduled: Boolean
         get() = queue.isNotEmpty()
 
@@ -81,7 +83,7 @@ internal class GenericPlatformOutOfFrameExecutor(
         queue.addLast(block)
 
         if (shouldSchedule) {
-            scheduleTask(::drain)
+            scheduleTask(drainLambda)
         }
     }
 
