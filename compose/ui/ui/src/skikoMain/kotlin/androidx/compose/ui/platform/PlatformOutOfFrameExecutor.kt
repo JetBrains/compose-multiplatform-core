@@ -18,6 +18,7 @@ package androidx.compose.ui.platform
 
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.node.OutOfFrameExecutor
+import androidx.compose.ui.util.trace
 
 /**
  * Platform-specific scheduler for work that should be deferred out of the current
@@ -42,4 +43,84 @@ interface PlatformOutOfFrameExecutor {
      * Runs pending work scheduled by [schedule] immediately for tests.
      */
     fun drainScheduledWorkForTest()
+}
+
+/**
+ * A generic implementation of [PlatformOutOfFrameExecutor] that uses the platform's
+ * "schedule-on-EDT" method to schedule the work.
+ *
+ * The platform must call [GenericPlatformOutOfFrameExecutor.onBeforeFrame] before executing each
+ * frame (recomposition etc.)
+ */
+internal class GenericPlatformOutOfFrameExecutor(
+    /** Schedules a task on the EDT. */
+    private val scheduleTask: (block: () -> Unit) -> Unit,
+    /** Returns whether the current thread is the EDT. */
+    private val isExecutingOnEdtThread: () -> Boolean
+) : PlatformOutOfFrameExecutor {
+
+    /**
+     * The queue of scheduled tasks.
+     */
+    private val queue = ArrayDeque<() -> Unit>()
+
+    /**
+     * Whether this executor has been disposed.
+     */
+    private var isDisposed = false
+
+    override val hasWorkScheduled: Boolean
+        get() = queue.isNotEmpty()
+
+    override fun schedule(block: () -> Unit) {
+        requireEdt()
+
+        if (isDisposed) return
+
+        val shouldSchedule = queue.isEmpty()
+        queue.addLast(block)
+
+        if (shouldSchedule) {
+            scheduleTask(::drain)
+        }
+    }
+
+    /**
+     * Runs all queued tasks.
+     */
+    private fun drain() {
+        trace("GenericPlatformOutOfFrameExecutor:outOfFrameExecutor") {
+            while (queue.isNotEmpty()) {
+                queue.removeLast().invoke()
+            }
+        }
+    }
+
+    override fun drainScheduledWorkForTest() = drain()
+
+    /**
+     * This must be called before a frame is executed.
+     */
+    fun onBeforeFrame() {
+        requireEdt()
+        if (isDisposed) return
+
+        drain()
+    }
+
+    /**
+     * Disposes of this executor.
+     *
+     * The queue is cleared and scheduled work is cancelled.
+     */
+    fun dispose() {
+        requireEdt()
+
+        isDisposed = true
+        queue.clear()
+    }
+
+    private fun requireEdt() {
+        require(isExecutingOnEdtThread()) { "Must be called on the event dispatching thread" }
+    }
 }
