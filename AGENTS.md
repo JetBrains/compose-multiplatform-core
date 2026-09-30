@@ -38,7 +38,6 @@ When delegating, refer the subagent to those files too.
 Note: Since this a fork, new instruction files might get merged from the upstream. Ignore AOSP-specific instructions / gradle tasks / checks / verifications (majority of them are about Android)
 
 ## General
-- **Git:** Use `git mv` when moving files to preserve history. 
 - **Git:** Do not create git commits unless explicitly requested.
 - In this fork we avoid introducing code changes in the `commonMain` and `commonTest` source sets. Before changing any code in them, notify and request an approval when such a change is necessary.
 - Running Gradle tasks: 
