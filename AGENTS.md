@@ -39,7 +39,7 @@ Note: Since this a fork, new instruction files might get merged from the upstrea
 
 ## General
 - **Git:** Do not create git commits unless explicitly requested.
-- In this fork we avoid introducing code changes in the `commonMain` and `commonTest` source sets. Before changing any code in them, notify and request an approval when such a change is necessary.
+- In this fork we avoid introducing code changes in the common code (see above). Before changing any code in them, notify and request an approval when such a change is necessary.
 - Running Gradle tasks: 
   - The output is usually very large and most of it is irrelevant. Unless it's necessary, avoid reading a full output by using `grep`, `tail`, etc.
   - Also, use `--console=plain`
