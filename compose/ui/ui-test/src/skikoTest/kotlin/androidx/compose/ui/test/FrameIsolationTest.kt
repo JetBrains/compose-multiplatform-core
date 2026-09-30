@@ -19,6 +19,7 @@ package androidx.compose.ui.test
 import androidx.compose.runtime.DataSource
 import androidx.compose.runtime.DataSourceContext
 import androidx.compose.runtime.invalidateDependants
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.test.v2.runSkikoComposeUiTest
 import kotlin.test.Test
@@ -77,6 +78,24 @@ class FrameIsolationTest {
             assertEquals(7, composed)
         }
     }
+
+    /**
+     * The scene's standing pin is taken when the scene is created, before the test body runs, and
+     * the first composition reads through it. A state the body creates before `setContent`, the
+     * most common test shape, postdates it, so the runner has to rotate the pin before composing.
+     */
+    @Test
+    fun aStateCreatedBeforeSetContentIsReadByTheFirstComposition() =
+        runSkikoComposeUiTest(frameIsolation = true) {
+            val state = mutableStateOf(1)
+            var composed = 0
+            setContent { composed = state.value }
+            assertEquals(1, composed)
+
+            state.value = 2
+            waitForIdle()
+            assertEquals(2, composed)
+        }
 
     @Test
     fun frameIsolationOnGivesTheSceneAFrameUnit() =
