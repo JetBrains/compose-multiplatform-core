@@ -636,14 +636,6 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                 // instances instead of calling copy() so they do not share consumedDelegate with
                 // the original pan changes.
                 syntheticHoverEvent =
-<<<<<<< HEAD
-                    PointerEvent(changesList, internalPointerEvent).also {
-                        it.type = if (isIn) PointerEventType.Enter else PointerEventType.Exit
-                    }
-            } else if (event.type == PointerEventType.Move ||
-                event.type == PointerEventType.Enter ||
-                event.type == PointerEventType.Exit
-=======
                     PointerEvent(
                             changesList.fastMap {
                                 PointerInputChange(
@@ -669,12 +661,9 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                         .also {
                             it.type = if (isIn) PointerEventType.Enter else PointerEventType.Exit
                         }
-            } else if (
-                isIn != wasIn &&
-                    (event.type == PointerEventType.Move ||
-                        event.type == PointerEventType.Enter ||
-                        event.type == PointerEventType.Exit)
->>>>>>> aaed1077ae2ca17c16f33aa7a53137eb2b23fed3
+            } else if (event.type == PointerEventType.Move ||
+                event.type == PointerEventType.Enter ||
+                event.type == PointerEventType.Exit
             ) {
                 event.type = when {
                     !hasEntered && isIn -> PointerEventType.Enter
