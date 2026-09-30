@@ -72,10 +72,27 @@ androidXMultiplatform {
             dependsOn(nonAndroidMain)
             dependsOn(nonAndroidExcludingWebMain)
             dependencies {
+                api(libs.skikoGanesh)
+                api(libs.skikoRendering)
                 runtimeOnly(libs.skikoAwtRuntime)
                 runtimeOnly(libs.skikoGaneshAwtRuntime)
                 runtimeOnly(libs.skikoPlatformAwtRuntime)
             }
+        }
+
+        webMain.dependencies {
+            api(libs.skikoGanesh)
+            api(libs.skikoRendering)
+        }
+
+        macosMain.dependencies {
+            api(libs.skikoGanesh)
+            api(libs.skikoRendering)
+        }
+
+        iosMain.dependencies {
+            api(libs.skikoGaneshGpuProvider)
+            api(libs.skikoRendering)
         }
 
         desktopTest {
