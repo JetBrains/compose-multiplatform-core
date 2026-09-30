@@ -72,6 +72,13 @@ internal class DomInputStrategy(
         val needsSelectionUpdate = !isInCompositionMode && (lastMeaningfulUpdate.selection != textFieldValue.selection)
         lastMeaningfulUpdate = textFieldValue
 
+        // Permanent opacity: 0 also suppresses Safari's keyboard avoidance when focusing a field.
+        // Keep the renderer opaque for a caret so Safari can reveal it above the keyboard.
+        // For a range, make it transparent before syncing DOM selection: iOS 27 Safari can
+        // otherwise take over a long press after Select All and omit pointerup, leaving the
+        // Compose gesture unfinished and its context menu hidden.
+        htmlInput.style.setProperty("opacity", if (textFieldValue.selection.collapsed) "1" else "0")
+
         if (needsTextUpdate) {
             htmlInput.textContent = textFieldValue.text
 
@@ -252,6 +259,12 @@ private fun ImeOptions.createDomElement(): HTMLElement {
     htmlElement.setAttribute("spellcheck", "false")
 
     htmlElement.setAttribute("contenteditable", "true")
+    // The input remains opaque for a caret so Safari can reveal it above the keyboard.
+    // Exclude it from hit testing so a following tap is still delivered to the Compose canvas.
+    htmlElement.style.setProperty("pointer-events", "none")
+    // Without clipping, iOS Safari can paint the native caret outside the narrow backing input.
+    htmlElement.style.setProperty("clip-path", "inset(0)")
+    htmlElement.style.setProperty("-webkit-clip-path", "inset(0)")
 
     val inputMode = when (keyboardType) {
         KeyboardType.Text -> "text"

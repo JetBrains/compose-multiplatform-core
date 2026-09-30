@@ -21,18 +21,23 @@ import kotlin.jvm.JvmInline
 
 // TODO replace MouseButton by this class after we upstream it
 
-@JvmInline
 /**
  * Represents the index of a pointer button.
  * See [PointerEvent.button], where [PointerButton] is used.
  */
+@JvmInline
 value class PointerButton(val index: Int) {
     companion object {
-        val Primary = PointerButton(0)
-        val Secondary = PointerButton(1)
-        val Tertiary = PointerButton(2)
-        val Back = PointerButton(3)
-        val Forward = PointerButton(4)
+        val Primary: PointerButton
+            get() = PointerButton(0)
+        val Secondary: PointerButton
+            get() = PointerButton(1)
+        val Tertiary: PointerButton
+            get() = PointerButton(2)
+        val Back: PointerButton
+            get() = PointerButton(3)
+        val Forward: PointerButton
+            get() = PointerButton(4)
     }
 }
 
