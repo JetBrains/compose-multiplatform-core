@@ -1,7 +1,7 @@
 # Repository guidance
 
 This is a fork of androidx monorepo dedicated for Compose Multiplatform (CMP) work.
-The purpose of the fork is to provide missing Kotlin targets for modules registered in `JetBrainsPublication.kt` (mainly Compose-related). 
+The purpose of the fork is to provide missing Kotlin targets for modules registered in `JetBrainsPublication.kt` (mainly Compose-related).
 Generally we add support for iOS, Web and Desktop. and we do not validate, build and test Android. The full list of which targets are not maintained is defined in the associated `build-fork.gradle`, in the `redirect` block.
 
 The primary focus of Compose Multiplatform is the `./compose` directory.
@@ -59,4 +59,4 @@ Note: Since this a fork, new instruction files might get merged from the upstrea
 
 ### Testing
 - We do not add tests in the `commonTest` folder. When it's possible, we add multiplatform tests to `skikoTest`.  Platform-specific tests should be added in the corresponding folder: `webTest`, `desktopTest`, `jvmTest`, `iosTest`, `iosInstrumentedTest`.
-- When applicable, use platform-specific gradle tasks to run the tests: `desktopTest`,  `iosSimulatorArm64Test`, `wasmJsBrowserTest`, `jsBrowserTest`. Also clean the tests results before running. Example: `./gradlew :compose:ui:ui:cleanAllTests :compose:ui:ui:deskopTest --no-build-cache | tail -n 10`. Allow a reasonable timeout (at least 5 minutes).
+- When applicable, use platform-specific gradle tasks to run the tests: `desktopTest`,  `iosSimulatorArm64Test`, `wasmJsBrowserTest`, `jsBrowserTest`. Also clean the tests results before running. Example: `./gradlew :compose:ui:ui:cleanAllTests :compose:ui:ui:desktopTest --no-build-cache | tail -n 10`. Allow a reasonable timeout (at least 5 minutes).
