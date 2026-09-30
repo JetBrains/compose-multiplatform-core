@@ -1460,6 +1460,7 @@ public final class androidx/compose/ui/desktop/headless/HeadlessWindow : android
 	public fun getTitle ()Ljava/lang/String;
 	public fun handleEventWithInputSession-ZmokQxo (Ljava/lang/Object;)Z
 	public fun isFocused ()Z
+	public final fun isFrameRequested ()Z
 	public fun isTextInputSessionActive ()Z
 	public fun isUserResizable ()Z
 	public final fun render (J)V

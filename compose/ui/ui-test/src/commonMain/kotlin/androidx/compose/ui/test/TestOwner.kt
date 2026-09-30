@@ -25,7 +25,8 @@ import androidx.compose.ui.semantics.getAllSemanticsNodes
  *
  * This is typically implemented by entities like test rule.
  */
-internal interface TestOwner {
+@InternalTestApi
+interface TestOwner {
     /**
      * Indicates whether the implicit [ComposeUiTest.waitForIdle] synchronization should be bypassed
      * before fetching semantics nodes.
