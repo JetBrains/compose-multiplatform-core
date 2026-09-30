@@ -62,7 +62,8 @@ internal interface Selectable {
      * Adds [SelectableInfo] representing this [Selectable] to the [SelectionLayoutBuilder].
      *
      * @param builder The builder to add the [SelectableInfo] to.
-     * @param isLast Whether this is the last selectable in the layout.
+     * @param isLast Whether this is the last selectable in the sequence of appends to the builder
+     *   before [SelectionLayoutBuilder.build] is called.
      */
     fun appendSelectableInfoToBuilder(builder: SelectionLayoutBuilder, isLast: Boolean)
 
