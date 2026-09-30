@@ -35,7 +35,7 @@ Read these files when working in the corresponding project parts:
 - `./compose/material3/material3/AGENTS.md`
 
 When delegating, refer the subagent to those files too.
-Note: Since this a fork, new instruction files might get merged from the upstream. Ignore android-specific instructions / gradle tasks / checks / verifications.
+Note: Since this a fork, new instruction files might get merged from the upstream. Ignore AOSP-specific instructions / gradle tasks / checks / verifications (majority of them are about Android)
 
 ## General
 - **Git:** Use `git mv` when moving files to preserve history. 
