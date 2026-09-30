@@ -69,6 +69,7 @@ import kotlinx.coroutines.withContext
 class FrameRecomposer(
     coroutineContext: CoroutineContext,
     private val invalidate: () -> Unit = {},
+    resilient: Boolean = true,
 ) : AutoCloseable {
     private val job = Job()
     private val coroutineScope = CoroutineScope(coroutineContext + job)
@@ -186,7 +187,7 @@ class FrameRecomposer(
             "FrameRecomposer requires a ContinuationInterceptor in its coroutineContext"
         }
         @OptIn(InternalComposeApi::class)
-        recomposer.setResilientModeEnabled(true)
+        if (resilient) recomposer.setResilientModeEnabled(true)
         coroutineScope.launch(
             frameDispatcher + frameClock,
             start = CoroutineStart.UNDISPATCHED
@@ -196,14 +197,29 @@ class FrameRecomposer(
         // Resilient mode captures a composition failure in errorState instead of tearing the
         // recomposer down; recover by reloading this host's compositions from their content
         // lambdas, so one bad frame doesn't leave a permanently dead window.
-        coroutineScope.launch(frameDispatcher + frameClock) {
-            @OptIn(ComposeToolingApi::class)
-            recomposer.asRecomposerInfo().errorState.collect { error ->
-                // The StateFlow replays its current value, so reacting to every emission would
-                // fire a gratuitous full reload at construction (initial null) and a second,
-                // state-destroying one after each error (the null written back by resetErrorState).
-                if (error != null) {
-                    // Not sure that it's correct, maybe we need to wait until the frame finishes
+        if (resilient) {
+            coroutineScope.launch(frameDispatcher + frameClock) {
+                var failedReloads = 0
+                @OptIn(ComposeToolingApi::class)
+                recomposer.asRecomposerInfo().errorState.collect { error ->
+                    // The StateFlow replays its current value, so reacting to every emission
+                    // would fire a gratuitous full reload at construction (initial null) and a
+                    // second, state-destroying one after each error (the null written back by
+                    // resetErrorState). A null that arrives here means a reload held: the
+                    // reload's own failure is captured synchronously, so the flow's latest
+                    // value is then the new error and the null in between is never seen.
+                    if (error == null) {
+                        failedReloads = 0
+                        return@collect
+                    }
+                    // A reload composes the same content against the same view, so one that
+                    // fails again is not going to recover: content that is broken, or a view
+                    // that stays stale until the next rotation. Retrying without end would
+                    // log every failure and never let the host report it. So after a few
+                    // consecutive failures the error leaves through this scope, as it would
+                    // without resilient mode, to the host's exception handler.
+                    if (failedReloads >= MaxConsecutiveFailedReloads) throw error.cause
+                    failedReloads++
                     simulateHotReload()
                 }
             }
@@ -384,3 +400,10 @@ class FrameRecomposer(
             trampolineDispatcher.flush()
         }
 }
+
+/**
+ * How many times in a row a failed reload is tried again before [FrameRecomposer] gives up on
+ * recovering a composition error and lets it escape. Two: the first reload is the recovery, the
+ * second shows the first was no accident.
+ */
+internal const val MaxConsecutiveFailedReloads = 2

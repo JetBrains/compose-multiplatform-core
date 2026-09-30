@@ -351,7 +351,9 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     }
 
     private fun createScene() {
-        frameRecomposer = FrameRecomposer(recomposerCoroutineScope.coroutineContext)
+        // Not resilient: a test wants a composition error to fail it, once, through
+        // [uncaughtExceptionHandler], not a reload of the same content that fails the same way.
+        frameRecomposer = FrameRecomposer(recomposerCoroutineScope.coroutineContext, resilient = false)
         scene = CanvasLayersComposeScene(
             frameRecomposer = frameRecomposer,
             density = density,
