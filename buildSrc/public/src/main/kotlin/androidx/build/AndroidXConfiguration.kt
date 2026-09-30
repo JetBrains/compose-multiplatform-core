@@ -43,8 +43,9 @@ enum class KotlinTarget(val apiVersion: KotlinVersion, val catalogVersion: Strin
     KOTLIN_2_1(KotlinVersion.KOTLIN_2_1, "kotlin21"),
     KOTLIN_2_2(KotlinVersion.KOTLIN_2_2, "kotlin22"),
     KOTLIN_2_3(KotlinVersion.KOTLIN_2_3, "kotlin23"),
+    KOTLIN_2_4(KotlinVersion.KOTLIN_2_4, "kotlin24"),
     DEFAULT(JETBRAINS_COMPILE_KOTLIN_VERSION),
-    LATEST(KOTLIN_2_3);
+    LATEST(KOTLIN_2_4);
 
     constructor(
         kotlinTarget: KotlinTarget

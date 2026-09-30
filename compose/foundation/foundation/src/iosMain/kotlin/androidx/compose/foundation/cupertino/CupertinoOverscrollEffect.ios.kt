@@ -17,9 +17,13 @@
 package androidx.compose.foundation.cupertino
 
 import androidx.compose.animation.core.AnimationState
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.EaseOutCubic
+import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.animateTo
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -54,7 +58,9 @@ import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.toSize
 import kotlin.math.abs
+import kotlin.math.exp
 import kotlin.math.sign
+import kotlin.math.sqrt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
@@ -375,15 +381,28 @@ internal class CupertinoOverscrollEffect(
 
         val spec = when (reason) {
             CupertinoSpringAnimationReason.FLING_FROM_OVERSCROLL -> {
-                spring(
-                    stiffness = 300f,
-                    visibilityThreshold = visibilityThreshold
-                )
+                val overscrollDp = abs(initialValue) / density
+
+                if (abs(initialVelocity) / density >=
+                    sqrt(FLING_FROM_OVERSCROLL_STIFFNESS) * overscrollDp
+                ) {
+                    spring(
+                        stiffness = FLING_FROM_OVERSCROLL_STIFFNESS,
+                        visibilityThreshold = visibilityThreshold
+                    )
+                } else {
+                    tween(
+                        durationMillis = easeOutReturnDurationMillis(overscrollDp),
+                        easing = Easing { fraction ->
+                            1f - exp(-EASE_OUT_RETURN_DECAY_RATE * fraction)
+                        }
+                    )
+                }
             }
 
             CupertinoSpringAnimationReason.POSSIBLE_SPRING_IN_THE_END -> {
                 spring(
-                    stiffness = 120f,
+                    stiffness = POSSIBLE_SPRING_IN_THE_END_STIFFNESS,
                     visibilityThreshold = visibilityThreshold
                 )
             }
@@ -448,8 +467,25 @@ internal class CupertinoOverscrollEffect(
     private fun rubberBandedValue(value: Float, dimension: Float, coefficient: Float) =
         sign(value) * (1f - (1f / (abs(value) * coefficient / dimension + 1f))) * dimension
 
+    /*
+     * Duration of the ease-out return animation for an overscroll of [overscrollDp] DPs.
+     */
+    private fun easeOutReturnDurationMillis(overscrollDp: Float): Int {
+        val fraction = (overscrollDp / EASE_OUT_RETURN_FULL_DURATION_DP).coerceIn(0f, 1f)
+
+        return (EASE_OUT_RETURN_MIN_DURATION_MILLIS +
+            fraction *
+            (EASE_OUT_RETURN_MAX_DURATION_MILLIS - EASE_OUT_RETURN_MIN_DURATION_MILLIS)).toInt()
+    }
+
     companion object Companion {
         private const val RUBBER_BAND_COEFFICIENT = 0.55f
+        private const val FLING_FROM_OVERSCROLL_STIFFNESS = 300f
+        private const val POSSIBLE_SPRING_IN_THE_END_STIFFNESS = 120f
+        private const val EASE_OUT_RETURN_FULL_DURATION_DP = 120f
+        private const val EASE_OUT_RETURN_MIN_DURATION_MILLIS = 200f
+        private const val EASE_OUT_RETURN_MAX_DURATION_MILLIS = 400f
+        private const val EASE_OUT_RETURN_DECAY_RATE = 6.625f
     }
 }
 

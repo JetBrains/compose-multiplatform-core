@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 @file:OptIn(ExperimentalMaterial3Api::class)
+@file:Suppress("DEPRECATION") // b/552879150
 
 package androidx.compose.material3
 
@@ -47,6 +48,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -210,6 +212,7 @@ import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastMap
+import androidx.compose.ui.util.fastMaxOfOrNull
 import androidx.compose.ui.zIndex
 import kotlin.jvm.JvmInline
 import kotlin.math.PI
@@ -981,26 +984,6 @@ public class TimePickerShapes(
  *   buttons to switch between hour and minutes
  * @property timeSelectorContentColor color used for the content of the display buttons to switch
  *   between hour and minutes
- * @param clockDialColor the color of the clock dial
- * @param selectorColor the color of the clock dial selector
- * @param containerColor the container color of the time picker
- * @param periodSelectorBorderColor the color used for the border of the AM/PM toggle
- * @param clockDialSelectedContentColor the color of the numbers of the clock dial when they are
- *   selected or overlapping with the selector
- * @param clockDialContentColor the color of the numbers of the clock dial when they are unselected
- * @param periodSelectorSelectedContainerColor the color used for the selected container of the
- *   AM/PM toggle
- * @param periodSelectorContainerColor the color used for the container of the AM/PM toggle
- * @param periodSelectorSelectedContentColor color used for the selected content of the AM/PM toggle
- * @param periodSelectorContentColor color used for the content of the AM/PM toggle
- * @param timeSelectorSelectedContainerColor color used for the selected container of the display
- *   buttons to switch between hour and minutes
- * @param timeSelectorContainerColor color used for the container of the display buttons to switch
- *   between hour and minutes
- * @param timeSelectorSelectedContentColor color used for the selected content of the display
- *   buttons to switch between hour and minutes
- * @param timeSelectorContentColor color used for the content of the display buttons to switch
- *   between hour and minutes
  * @constructor create an instance with arbitrary colors. See [TimePickerDefaults.colors] for the
  *   default implementation that follows Material specifications.
  */
@@ -1249,14 +1232,6 @@ public constructor(
  *   toggle
  * @property periodSelectorContentColor color used for the content of the AM/PM toggle
  * @property timeTextFieldColors the [TextFieldColors] used for the hour and minute text fields
- * @param containerColor the container color of the time input
- * @param periodSelectorBorderColor the color used for the border of the AM/PM toggle
- * @param periodSelectorSelectedContainerColor the color used for the selected container of the
- *   AM/PM toggle
- * @param periodSelectorContainerColor the color used for the container of the AM/PM toggle
- * @param periodSelectorSelectedContentColor color used for the selected content of the AM/PM toggle
- * @param periodSelectorContentColor color used for the content of the AM/PM toggle
- * @param timeTextFieldColors the [TextFieldColors] used for the hour and minute text fields
  * @constructor create an instance with arbitrary colors. See [TimeInputDefaults.colors] for the
  *   default implementation that follows Material specifications.
  */
@@ -1319,6 +1294,22 @@ public constructor(
                 periodSelectorContentColor.takeOrElse { this.periodSelectorContentColor },
             timeTextFieldColors = timeTextFieldColors ?: this.timeTextFieldColors,
         )
+
+    @Deprecated(
+        message = "Use periodSelectorContainerColor instead",
+        replaceWith = ReplaceWith("periodSelectorContainerColor"),
+        level = DeprecationLevel.HIDDEN,
+    )
+    public val periodSelectorUnselectedContainerColor: Color
+        get() = periodSelectorContainerColor
+
+    @Deprecated(
+        message = "Use periodSelectorContentColor instead",
+        replaceWith = ReplaceWith("periodSelectorContentColor"),
+        level = DeprecationLevel.HIDDEN,
+    )
+    public val periodSelectorUnselectedContentColor: Color
+        get() = periodSelectorContentColor
 
     @Stable
     internal fun periodSelectorContainerColor(selected: Boolean) =
@@ -1458,9 +1449,11 @@ private val VibrantPeriodToggleWidth
 private val VibrantPeriodToggleHeight
     get() = 120.dp
 private val UncontainedTimeFieldHeight
+    get() = 136.dp
+private val UncontainedToggleHeight
     get() = 140.dp
 private val VibrantPeriodToggleHorizontalHeight
-    get() = 48.dp
+    get() = 40.dp
 private val VibrantPeriodTogglePadding
     get() = 8.dp
 private val VibrantPeriodToggleLargePadding
@@ -1468,11 +1461,7 @@ private val VibrantPeriodToggleLargePadding
 private val VibrantHorizontalTimePickerGap
     get() = 52.dp
 private val VibrantVerticalTimePickerGap
-    get() = 36.dp
-private val VibrantTimePickerPaddingVertical
     get() = 12.dp
-private val VibrantTimePickerPaddingHorizontal
-    get() = 24.dp
 
 /**
  * A state object that can be hoisted to observe the time picker state. It holds the current values
@@ -1959,10 +1948,7 @@ internal fun VerticalTimePicker(
     shapes: TimePickerShapes? = null,
 ) {
     Column(
-        modifier =
-            modifier
-                .semantics { isTraversalGroup = true }
-                .padding(shapes.orVibrant(0.dp, VibrantTimePickerPaddingVertical)),
+        modifier = modifier.semantics { isTraversalGroup = true },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         VerticalClockDisplay(state = state, colors = colors, shapes = shapes)
@@ -1978,7 +1964,7 @@ internal fun VerticalTimePicker(
             colors = colors,
             autoSwitchToMinute = autoSwitchToMinute,
         )
-        Spacer(modifier = Modifier.height(ClockFaceBottomMargin))
+        Spacer(modifier = Modifier.height(shapes.orVibrant(ClockFaceBottomMargin, 0.dp)))
     }
 }
 
@@ -1991,10 +1977,7 @@ internal fun HorizontalTimePicker(
     shapes: TimePickerShapes? = null,
 ) {
     Row(
-        modifier =
-            modifier
-                .semantics { isTraversalGroup = true }
-                .padding(shapes.orVibrant(0.dp, VibrantTimePickerPaddingHorizontal)),
+        modifier = modifier.semantics { isTraversalGroup = true },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         HorizontalClockDisplay(state, colors, shapes)
@@ -2005,7 +1988,8 @@ internal fun HorizontalTimePicker(
                 )
         )
         ClockFace(
-            modifier = Modifier.then(ClockFaceSizeModifier()),
+            if (shapes != null) Modifier.size(ClockDialContainerSize)
+            else Modifier.then(ClockFaceSizeModifier()),
             state,
             colors,
             autoSwitchToMinute,
@@ -2077,13 +2061,9 @@ private fun TimeInputImpl(
     val hasSideControlColumn = toggle != null
     val fieldHeight =
         if (hasSideControlColumn) UncontainedTimeFieldHeight else VibrantTimeFieldHeight
+
     Row(
-        modifier =
-            modifier
-                .semantics { isTraversalGroup = true }
-                .then(
-                    shapes.orVibrant(Modifier, Modifier.padding(VibrantTimePickerPaddingVertical))
-                ),
+        modifier = modifier.semantics { isTraversalGroup = true },
         verticalAlignment = Alignment.Top,
     ) {
         val textStyle =
@@ -2194,9 +2174,9 @@ private fun TimeInputImpl(
             SideControlColumn(
                 modifier =
                     Modifier.padding(
-                            start = shapes.orVibrant(startPadding, VibrantPeriodToggleLargePadding)
+                            start = shapes.orVibrant(startPadding, PeriodTogglePaddingSmall)
                         )
-                        .size(width = 48.dp, height = fieldHeight),
+                        .height(UncontainedToggleHeight),
                 state = state,
                 colors = colors,
                 shapes = shapes,
@@ -2204,9 +2184,7 @@ private fun TimeInputImpl(
             )
         } else if (!state.is24hour) {
             Box(
-                Modifier.padding(
-                    start = shapes.orVibrant(startPadding, VibrantPeriodToggleLargePadding)
-                )
+                Modifier.padding(start = shapes.orVibrant(startPadding, VibrantPeriodTogglePadding))
             ) {
                 VerticalPeriodToggle(
                     modifier =
@@ -2278,13 +2256,9 @@ private fun TimeScrollImpl(
     val hasSideControlColumn = toggle != null
     val fieldHeight =
         if (hasSideControlColumn) UncontainedTimeFieldHeight else VibrantTimeFieldHeight
+
     Row(
-        modifier =
-            modifier
-                .semantics { isTraversalGroup = true }
-                .then(
-                    shapes.orVibrant(Modifier, Modifier.padding(VibrantTimePickerPaddingVertical))
-                ),
+        modifier = modifier.semantics { isTraversalGroup = true },
         verticalAlignment = Alignment.Top,
     ) {
         val textStyle =
@@ -2296,7 +2270,7 @@ private fun TimeScrollImpl(
                 .copy(textAlign = TextAlign.Center, color = colors.timeSelectorContentColor(true))
 
         val a11yServicesEnabled by rememberAccessibilityServiceState()
-        val errorHandler = rememberTimeInputErrorHandler(a11yServicesEnabled)
+        rememberTimeInputErrorHandler(a11yServicesEnabled)
         val hourSelectionDescription = getString(Strings.TimePickerHourSelection)
         val minuteSelectionDescription = getString(Strings.TimePickerMinuteSelection)
         val hourSuffix =
@@ -2321,10 +2295,11 @@ private fun TimeScrollImpl(
                 fieldAccessibilityDescription = { index ->
                     formatString(hourSuffix, if (state.is24hour) index else index + 1)
                 },
-                field = { index, selected ->
+                field = { index, selected, enabled ->
                     ScrollFieldDefaults.Item(
                         index = if (state.is24hour) index else index + 1,
                         selected = selected,
+                        enabled = enabled,
                     )
                 },
             )
@@ -2352,9 +2327,9 @@ private fun TimeScrollImpl(
             SideControlColumn(
                 modifier =
                     Modifier.padding(
-                            start = shapes.orVibrant(startPadding, PeriodTogglePaddingLarge)
+                            start = shapes.orVibrant(startPadding, PeriodTogglePaddingSmall)
                         )
-                        .size(width = 48.dp, height = fieldHeight),
+                        .height(UncontainedToggleHeight),
                 state = state,
                 colors = colors.toTimeInputColors(),
                 shapes = shapes,
@@ -2362,7 +2337,7 @@ private fun TimeScrollImpl(
             )
         } else if (!state.is24hour) {
             Box(
-                Modifier.padding(start = shapes.orVibrant(startPadding, PeriodTogglePaddingLarge))
+                Modifier.padding(start = shapes.orVibrant(startPadding, VibrantPeriodTogglePadding))
             ) {
                 VerticalPeriodToggle(
                     modifier =
@@ -2460,7 +2435,6 @@ private fun ClockDisplayNumbers(
     colors: TimePickerColors,
     shapes: TimePickerShapes? = null,
 ) {
-    val scope = rememberCoroutineScope()
     val isPortrait = defaultTimePickerLayoutType() == TimePickerLayoutType.Vertical
 
     val vibrantSelectorWidth =
@@ -2562,16 +2536,15 @@ private fun HorizontalPeriodToggle(
                         PeriodTogglePaddingSmall.roundToPx(),
                         VibrantSeparatorWidth.roundToPx(),
                     )
-                val items =
-                    measurables.fastMap { item ->
-                        item.measure(
-                            constraints.copy(
-                                minWidth = 0,
-                                minHeight = 0,
-                                maxWidth = ((constraints.maxWidth - gap) / 2).coerceAtLeast(0),
-                            )
+                val items = measurables.fastMap { item ->
+                    item.measure(
+                        constraints.copy(
+                            minWidth = 0,
+                            minHeight = 0,
+                            maxWidth = ((constraints.maxWidth - gap) / 2).coerceAtLeast(0),
                         )
-                    }
+                    )
+                }
                 layout(constraints.maxWidth, constraints.maxHeight) {
                     items[0].place(0, 0)
                     items[1].place(items[0].width + gap, 0)
@@ -2637,16 +2610,15 @@ private fun VerticalPeriodToggle(
                         PeriodTogglePaddingSmall.roundToPx(),
                         VibrantPeriodTogglePadding.roundToPx(),
                     )
-                val items =
-                    measurables.fastMap { item ->
-                        item.measure(
-                            constraints.copy(
-                                minWidth = 0,
-                                minHeight = 0,
-                                maxHeight = ((constraints.maxHeight - gap) / 2).coerceAtLeast(0),
-                            )
+                val items = measurables.fastMap { item ->
+                    item.measure(
+                        constraints.copy(
+                            minWidth = 0,
+                            minHeight = 0,
+                            maxHeight = ((constraints.maxHeight - gap) / 2).coerceAtLeast(0),
                         )
-                    }
+                    )
+                }
                 layout(constraints.maxWidth, constraints.maxHeight) {
                     items[0].place(0, 0)
                     items[1].place(0, items[0].height + gap)
@@ -2707,25 +2679,58 @@ private fun SideControlColumn(
     toggle: @Composable (() -> Unit)? = null,
 ) {
     val measurePolicy = MeasurePolicy { measurables, constraints ->
-        val items =
-            measurables.fastMap { item ->
-                item.measure(Constraints.fixed(48.dp.roundToPx(), 48.dp.roundToPx()))
-            }
-        layout(constraints.maxWidth, constraints.maxHeight) {
-            val tapTargetHeight = 48.dp.roundToPx()
-            val totalHeight = items.size * tapTargetHeight
-            var y = (constraints.maxHeight - totalHeight) / 2
+        val tapTargetSize = MinimumInteractiveSize.roundToPx()
+        val itemConstraints =
+            Constraints(
+                minHeight = tapTargetSize,
+                maxHeight = tapTargetSize,
+                maxWidth = constraints.maxWidth,
+            )
+        val items = measurables.fastMap { it.measure(itemConstraints) }
+        val maxItemWidth = items.fastMaxOfOrNull { it.width } ?: 0
+        val columnWidth =
+            maxItemWidth
+                .coerceAtLeast(tapTargetSize)
+                .coerceIn(constraints.minWidth, constraints.maxWidth)
+        layout(columnWidth, constraints.maxHeight) {
             if (items.size == 3) {
-                // For 3 items (AM, PM, Switch) in 140dp:
-                // We want 8dp gap between AM/PM visual (40dp) and 16dp between PM/Switch visual
-                // (24dp icon).
-                // This is achieved by placing 48dp tap targets at y=1dp, 49dp, 97dp.
-                // (140 - 144) / 2 = -2. Adding 3dp gives y=1dp.
-                y += 3.dp.roundToPx()
-            }
-            items.fastForEach {
-                it.place((constraints.maxWidth - it.width) / 2, y)
-                y += tapTargetHeight
+                // AM, PM, Switch in 140dp (UncontainedToggleHeight).
+                // Start tracking at visualY = 0dp (AM visual top aligns with top of number fields).
+                var visualY = 0.dp
+
+                // 1. AM Placement
+                // AM visual height is 40dp, tap target is 48dp. Offset is (48 - 40) / 2 = 4dp.
+                val amY = (visualY - 4.dp).roundToPx()
+
+                // 2. Advance visualY to PM visual top
+                // AM visual height (40dp) + gap (8dp) = 48dp
+                visualY += 40.dp + 8.dp
+                // PM visual height is 40dp, tap target is 48dp. Offset is (48 - 40) / 2 = 4dp.
+                val pmY = (visualY - 4.dp).roundToPx()
+
+                // 3. Advance visualY to Switch visual top
+                // PM visual height (40dp) + gap (16dp) = 56dp
+                visualY += 40.dp + 16.dp
+                // Switch visual height is 24dp, tap target is 48dp. Offset is (48 - 24) / 2 = 12dp.
+                val toggleY = (visualY - 12.dp).roundToPx()
+
+                items[0].place((columnWidth - items[0].width) / 2, amY)
+                items[1].place((columnWidth - items[1].width) / 2, pmY)
+                items[2].place((columnWidth - items[2].width) / 2, toggleY)
+            } else if (items.size == 1) {
+                // Toggle only (24h mode).
+                // Aligned to the bottom of the numbers frame (120dp).
+                // Toggle visual bottom at 120. Visual is 24dp. Top at 96.
+                // Tap target top at 96 - 12 = 84dp.
+                val toggleY = 84.dp.roundToPx()
+                items[0].place((columnWidth - items[0].width) / 2, toggleY)
+            } else {
+                val totalHeight = items.size * tapTargetSize
+                var y = (constraints.maxHeight - totalHeight) / 2
+                items.fastForEach {
+                    it.place((columnWidth - it.width) / 2, y)
+                    y += tapTargetSize
+                }
             }
         }
     }
@@ -2924,18 +2929,26 @@ private fun SideControlItem(
             pressedShape = RoundedCornerShape(12.dp),
             checkedShape = RoundedCornerShape(12.dp),
         )
-    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 48.dp) {
-        Box(modifier = modifier.size(48.dp), contentAlignment = Alignment.Center) {
+    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides MinimumInteractiveSize) {
+        Box(
+            modifier =
+                modifier.defaultMinSize(
+                    minWidth = MinimumInteractiveSize,
+                    minHeight = MinimumInteractiveSize,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
             ToggleButton(
                 checked = checked,
                 onCheckedChange = { onClick() },
                 modifier =
-                    Modifier.zIndex(if (checked) 0f else 1f).size(40.dp).semantics {
-                        selected = checked
-                    },
+                    Modifier.zIndex(if (checked) 0f else 1f)
+                        .height(40.dp)
+                        .defaultMinSize(minWidth = 40.dp)
+                        .semantics { selected = checked },
                 shapes = toggleButtonShapes,
                 colors = toggleButtonColors,
-                contentPadding = PaddingValues(0.dp),
+                contentPadding = PaddingValues(horizontal = 4.dp),
                 content = content,
             )
         }
@@ -3753,8 +3766,6 @@ private fun TimePickerTextField(
     vibrantHeight: Dp = VibrantTimeFieldHeight,
 ) {
     val focusRequester = remember { FocusRequester() }
-    val containerColor = MaterialTheme.colorScheme.errorContainer
-    val labelColor = MaterialTheme.colorScheme.onErrorContainer
     val textFieldColors = colors.timeTextFieldColors
     val selected = selection == state.selection
     val isValid =
@@ -4072,7 +4083,7 @@ internal class ClockFaceSizeModifier : LayoutModifier {
         measurable: Measurable,
         constraints: Constraints,
     ): MeasureResult {
-        var max = constraints.maxHeight.toDp()
+        val max = constraints.maxHeight.toDp()
         val size =
             when {
                 max >= TimePickerMaxHeight -> ClockDialContainerSize

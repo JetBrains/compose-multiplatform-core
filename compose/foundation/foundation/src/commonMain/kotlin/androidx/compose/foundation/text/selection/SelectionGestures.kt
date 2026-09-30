@@ -313,25 +313,25 @@ internal suspend fun AwaitPointerEventScope.mouseSelection(
     }
 }
 
-internal class ClicksCounter(
-    private val viewConfiguration: ViewConfiguration
-) {
+internal class ClicksCounter(private val viewConfiguration: ViewConfiguration) {
     var clicks = 0
+        private set
+
     private var prevClick: PointerInputChange? = null
 
-    fun update(event: PointerInputChange) {
-        val currentPrevEvent = prevClick
-        // Here and further event means upcoming event (new)
+    // CMP uses this where `PointerEvent` is not available; only `PointerInputChange`
+    fun update(newClick: PointerInputChange) {
+        val currentPrevClick = prevClick
         if (
-            currentPrevEvent != null &&
-            timeIsTolerable(currentPrevEvent, event) &&
-            positionIsTolerable(currentPrevEvent, event)
+            currentPrevClick != null &&
+                timeIsTolerable(currentPrevClick, newClick) &&
+                positionIsTolerable(currentPrevClick, newClick)
         ) {
             clicks += 1
         } else {
             clicks = 1
         }
-        prevClick = event
+        prevClick = newClick
     }
 
     fun timeIsTolerable(prevClick: PointerInputChange, newClick: PointerInputChange): Boolean =

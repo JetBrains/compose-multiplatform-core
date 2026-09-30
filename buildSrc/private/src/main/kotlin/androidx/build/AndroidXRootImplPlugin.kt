@@ -216,6 +216,7 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
         // ensure yarn install is complete before using it to install kotlin wasm tooling
         tasks.withType<KotlinToolingSetupTask>().configureEach {
             it.dependsOn(tasks.withType<KotlinNpmInstallTask>())
+            it.args.addAll(COMMON_YARN_ARGS)
         }
 
         tasks.withType<KotlinNpmInstallTask>().configureEach {
@@ -223,7 +224,7 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
                 "kotlinNpmInstall" -> it.dependsOn(createYarnRcFileTask)
                 "kotlinWasmNpmInstall" -> it.dependsOn(createWasmYarnRcFileTask)
             }
-            it.args.addAll(listOf("--ignore-engines", "--verbose"))
+            it.args.addAll(COMMON_YARN_ARGS)
             if (project.useYarnOffline()) {
                 it.args.add("--offline")
                 it.additionalFiles.plus(offlineMirrorStorage)
@@ -248,3 +249,4 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
 }
 
 internal const val AGGREGATE_BUILD_INFO_FILE_NAME = "androidx_aggregate_build_info.txt"
+private val COMMON_YARN_ARGS = listOf("--ignore-engines", "--verbose")

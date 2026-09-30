@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.Button
 import androidx.compose.material.Checkbox
@@ -48,6 +49,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.interop.runUIKitInstrumentedTestWithInterop
 import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitTextView
+import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitToggle
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -80,6 +82,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -205,17 +208,167 @@ class ComponentsAccessibilitySemanticTest {
             // Switch
             node {
                 isAccessibilityElement = true
-                traits(UIAccessibilityTraitButton)
+                traits(
+                    UIAccessibilityTraitButton,
+                    CMPAccessibilityTraitToggle
+                )
                 if (available(OS.Ios to OSVersion(major = 17))) {
                     traits(UIAccessibilityTraitToggleButton)
                 }
+                value = "0"
             }
             // Checkbox
             node {
                 isAccessibilityElement = true
-                traits(UIAccessibilityTraitButton)
+                traits(
+                    UIAccessibilityTraitButton,
+                    CMPAccessibilityTraitToggle
+                )
+                value = "0"
             }
-            // ToggleableState
+            // ToggleableState.On
+            node {
+                isAccessibilityElement = true
+                traits(
+                    UIAccessibilityTraitButton,
+                    CMPAccessibilityTraitToggle
+                )
+                value = "1"
+            }
+            // ToggleableState.Off
+            node {
+                isAccessibilityElement = true
+                traits(
+                    UIAccessibilityTraitButton,
+                    CMPAccessibilityTraitToggle
+                )
+                value = "0"
+            }
+            // ToggleableState.Indeterminate
+            node {
+                isAccessibilityElement = true
+                traits(
+                    UIAccessibilityTraitButton,
+                    CMPAccessibilityTraitToggle
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testToggleableRowSemantic() = runUIKitInstrumentedTest {
+        setContent {
+            Column {
+                Row(
+                    modifier = Modifier.toggleable(
+                        value = true,
+                        role = Role.Switch,
+                        onValueChange = {}
+                    )
+                ) {
+                    Text("Setting A")
+                    Switch(checked = true, onCheckedChange = null)
+                }
+                Row(
+                    modifier = Modifier.toggleable(
+                        value = false,
+                        role = Role.Switch,
+                        onValueChange = {}
+                    )
+                ) {
+                    Text("Setting B")
+                    Switch(checked = false, onCheckedChange = null)
+                }
+            }
+        }
+
+        assertAccessibilityTree {
+            node {
+                isAccessibilityElement = true
+                label = "Setting A"
+                traits(
+                    UIAccessibilityTraitButton,
+                    CMPAccessibilityTraitToggle
+                )
+                if (available(OS.Ios to OSVersion(major = 17))) {
+                    traits(UIAccessibilityTraitToggleButton)
+                }
+                value = "1"
+            }
+            node {
+                isAccessibilityElement = true
+                label = "Setting B"
+                traits(
+                    UIAccessibilityTraitButton,
+                    CMPAccessibilityTraitToggle
+                )
+                if (available(OS.Ios to OSVersion(major = 17))) {
+                    traits(UIAccessibilityTraitToggleButton)
+                }
+                value = "0"
+            }
+        }
+    }
+
+    @Test
+    fun testToggleableStateDescriptionTakesPrecedenceOverValue() = runUIKitInstrumentedTest {
+        setContent {
+            Column {
+                Switch(
+                    checked = true,
+                    onCheckedChange = {},
+                    modifier = Modifier.semantics { stateDescription = "Enabled" }
+                )
+                Switch(checked = false, onCheckedChange = {})
+            }
+        }
+
+        assertAccessibilityTree {
+            node {
+                isAccessibilityElement = true
+                traits(
+                    UIAccessibilityTraitButton,
+                    CMPAccessibilityTraitToggle
+                )
+                if (available(OS.Ios to OSVersion(major = 17))) {
+                    traits(UIAccessibilityTraitToggleButton)
+                }
+                value = "Enabled"
+            }
+            node {
+                isAccessibilityElement = true
+                traits(
+                    UIAccessibilityTraitButton,
+                    CMPAccessibilityTraitToggle
+                )
+                if (available(OS.Ios to OSVersion(major = 17))) {
+                    traits(UIAccessibilityTraitToggleButton)
+                }
+                value = "0"
+            }
+        }
+    }
+
+    @Test
+    fun testSelectedIsNotReportedAsToggle() = runUIKitInstrumentedTest {
+        setContent {
+            Column {
+                RadioButton(
+                    selected = true,
+                    onClick = {},
+                    modifier = Modifier.testTag("SelectedRadio")
+                )
+                RadioButton(
+                    selected = false,
+                    onClick = {},
+                    modifier = Modifier.testTag("UnselectedRadio")
+                )
+            }
+        }
+
+        // `Selected` is a distinct semantics property from `ToggleableState`: it must keep mapping
+        // to the selected trait and must not produce a toggle trait or a toggle value.
+        assertAccessibilityTree {
             node {
                 isAccessibilityElement = true
                 traits(
@@ -227,11 +380,9 @@ class ComponentsAccessibilitySemanticTest {
                 isAccessibilityElement = true
                 traits(UIAccessibilityTraitButton)
             }
-            node {
-                isAccessibilityElement = true
-                traits(UIAccessibilityTraitButton)
-            }
         }
+        assertNull(findNodeWithTag("SelectedRadio").value)
+        assertNull(findNodeWithTag("UnselectedRadio").value)
     }
 
     @Test
@@ -451,34 +602,44 @@ class ComponentsAccessibilitySemanticTest {
                     UIAccessibilityTraitNotEnabled
                 )
             }
+            // Switch
             node {
                 isAccessibilityElement = true
                 if (available(OS.Ios to OSVersion(major = 17))) {
                     traits(
                         UIAccessibilityTraitButton,
                         UIAccessibilityTraitToggleButton,
-                        UIAccessibilityTraitNotEnabled
+                        UIAccessibilityTraitNotEnabled,
+                        CMPAccessibilityTraitToggle
                     )
                 } else {
                     traits(
                         UIAccessibilityTraitButton,
-                        UIAccessibilityTraitNotEnabled
+                        UIAccessibilityTraitNotEnabled,
+                        CMPAccessibilityTraitToggle
                     )
                 }
+                value = "0"
             }
+            // Checkbox
             node {
                 isAccessibilityElement = true
                 traits(
                     UIAccessibilityTraitButton,
-                    UIAccessibilityTraitNotEnabled
+                    UIAccessibilityTraitNotEnabled,
+                    CMPAccessibilityTraitToggle
                 )
+                value = "0"
             }
+            // TriStateCheckbox
             node {
                 isAccessibilityElement = true
                 traits(
                     UIAccessibilityTraitButton,
-                    UIAccessibilityTraitNotEnabled
+                    UIAccessibilityTraitNotEnabled,
+                    CMPAccessibilityTraitToggle
                 )
+                value = "0"
             }
         }
     }

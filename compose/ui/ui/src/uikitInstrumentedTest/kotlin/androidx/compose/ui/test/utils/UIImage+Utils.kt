@@ -17,6 +17,7 @@
 package androidx.compose.ui.test.utils
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.IntRect
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
@@ -37,6 +38,28 @@ internal fun UIImage.forEachPixel(step: Int = 1, onPixel: (x: Int, y: Int, color
     withPixelReader { width, height, colorAt ->
         for (y in 0 until height step step) {
             for (x in 0 until width step step) {
+                onPixel(x, y, colorAt(x, y))
+            }
+        }
+    }
+}
+
+/**
+ * Visits pixels in [rect], whose coordinates are relative to this image.
+ */
+internal fun UIImage.forEachPixelInRect(
+    rect: IntRect,
+    step: Int = 1,
+    onPixel: (x: Int, y: Int, color: Color) -> Unit,
+) {
+    require(step > 0) { "step must be positive" }
+
+    withPixelReader { width, height, colorAt ->
+        require(rect.left >= 0 && rect.top >= 0 && rect.right <= width && rect.bottom <= height) {
+            "Rectangle $rect is outside the image bounds 0, 0, $width, $height"
+        }
+        for (y in rect.top until rect.bottom step step) {
+            for (x in rect.left until rect.right step step) {
                 onPixel(x, y, colorAt(x, y))
             }
         }

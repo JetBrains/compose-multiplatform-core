@@ -39,14 +39,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
-import platform.UIKit.UIWindowScene
+import platform.UIKit.UIWindow
 
 class ComposeSceneMediatorUnitTest {
     @Test
     fun testDisposedMediatorShouldNotCrash() {
         runBlocking {
             val context = Dispatchers.Main + Job()
-            val frameChoreographer = FrameChoreographer.choreographerForScene(UIWindowScene())
+            val frameChoreographer = makeFrameChoreographer()
             val mediator = makeMediator(
                 coroutineContext = context,
                 frameChoreographer = frameChoreographer,
@@ -92,7 +92,7 @@ class ComposeSceneMediatorUnitTest {
 
     private fun makeMediator(
         coroutineContext: CoroutineContext,
-        frameChoreographer: FrameChoreographer = FrameChoreographer.choreographerForScene(UIWindowScene()),
+        frameChoreographer: FrameChoreographer = makeFrameChoreographer(),
     ): ComposeSceneMediator = ComposeSceneMediator(
         frameChoreographer = frameChoreographer,
         onFocusBehavior = OnFocusBehavior.DoNothing,
@@ -122,4 +122,19 @@ class ComposeSceneMediatorUnitTest {
             )
         },
     )
+
+    private companion object {
+        /**
+         * Windows the tests created, kept alive for the whole test process.
+         */
+        private val retainedWindows = mutableListOf<UIWindow>()
+
+        /** Returns a fresh choreographer, bound to a window that is never released. */
+        fun makeFrameChoreographer(): FrameChoreographer {
+            val window = UIWindow()
+            retainedWindows.add(window)
+
+            return FrameChoreographer.choreographerForWindow(window)
+        }
+    }
 }

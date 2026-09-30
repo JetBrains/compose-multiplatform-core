@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.platform.accessibility
 
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
@@ -301,6 +302,25 @@ internal fun SemanticsConfiguration.getAriaLabel(): String? {
         this.contains(SemanticsProperties.EditableText) &&
             this.contains(SemanticsProperties.Text) ->
             this[SemanticsProperties.Text].fastJoinToString("\n") { it.text }
+        else -> null
+    }
+}
+
+internal fun SemanticsConfiguration.getAriaLive(roleId: Int): String? {
+    val isCollection = roleId == AriaRoleId.List || roleId == AriaRoleId.Grid
+
+    return when {
+        contains(SemanticsProperties.LiveRegion) -> {
+            when (this[SemanticsProperties.LiveRegion]) {
+                LiveRegionMode.Polite -> "polite"
+                LiveRegionMode.Assertive -> "assertive"
+                else -> "polite"
+            }
+        }
+        isCollection -> {
+            // Prevent VoiceOver from announcing every child added as a lazy collection scrolls.
+            "off"
+        }
         else -> null
     }
 }

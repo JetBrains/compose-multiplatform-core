@@ -24,6 +24,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.autofill.AutofillManager
 import androidx.compose.ui.UiMediaScope
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
@@ -44,6 +45,8 @@ import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.input.EditCommand
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
@@ -228,6 +231,15 @@ interface PlatformContext {
      */
     val prefetchScheduler: PlatformPrefetchScheduler get() = NoOpPlatformPrefetchScheduler
 
+    val accessibilityManager: AccessibilityManager get() = NoOpAccessibilityManager
+
+    val clipboard : Clipboard
+
+    // TODO https://youtrack.jetbrains.com/issue/CMP-7485
+    val autofillManager: AutofillManager?
+        get() = null
+
+    val uriHandler : UriHandler
     /**
      * Media-related information exposed to the composition.
      *
@@ -239,6 +251,11 @@ interface PlatformContext {
      */
     @ExperimentalMediaQueryApi
     val mediaScope: UiMediaScope get() = EmptyMediaScope
+
+    val fontFamilyResolver: FontFamily.Resolver
+
+    val soundEffect: SoundEffect
+        get() = NoSoundEffect
 
     interface RootForTestListener {
         fun onRootForTestCreated(root: PlatformRootForTest)
@@ -292,6 +309,15 @@ interface PlatformContext {
         override val inputModeManager: InputModeManager by lazy(LazyThreadSafetyMode.NONE) {
             DefaultInputModeManager()
         }
+        override val clipboard: Clipboard by lazy(LazyThreadSafetyMode.NONE) {
+            createPlatformClipboard()
+        }
+        override val uriHandler: UriHandler by lazy(LazyThreadSafetyMode.NONE) {
+            createPlatformUriHandler()
+        }
+        override val fontFamilyResolver: FontFamily.Resolver by lazy(LazyThreadSafetyMode.NONE) {
+            createFontFamilyResolver()
+        }
     }
 
     // This object must be immutable because it is used as a delegate in other ViewConfiguration
@@ -315,6 +341,16 @@ interface PlatformContext {
 
 private object EmptyPlatformScreenReader : PlatformScreenReader {
     override val isActive: Boolean = false
+}
+
+private object NoOpAccessibilityManager : AccessibilityManager {
+    override fun calculateRecommendedTimeoutMillis(
+        originalTimeoutMillis: Long,
+        containsIcons: Boolean,
+        containsText: Boolean,
+        containsControls: Boolean
+    ): Long = originalTimeoutMillis
+
 }
 
 private object NoOpPlatformPrefetchScheduler : PlatformPrefetchScheduler {

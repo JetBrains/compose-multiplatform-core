@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // b/552879150
+
 package androidx.compose.material3
 
 import androidx.annotation.FloatRange
@@ -95,6 +97,7 @@ import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.TextSelectionColors
+import androidx.compose.material3.MaterialTheme.LocalMaterialTheme
 import androidx.compose.material3.SearchBarDefaults.InputField
 import androidx.compose.material3.SearchBarDefaults.InputFieldHeight
 import androidx.compose.material3.SearchBarDefaults.inputFieldColors
@@ -264,12 +267,64 @@ public fun SearchBar(
     tonalElevation: Dp = SearchBarDefaults.TonalElevation,
     shadowElevation: Dp = SearchBarDefaults.ShadowElevation,
 ) {
+    SearchBarImpl(
+        state = state,
+        inputField = inputField,
+        modifier = modifier,
+        shape = shape,
+        containerColor = colors.containerColor,
+        contentColor = contentColorFor(colors.containerColor),
+        tonalElevation = tonalElevation,
+        shadowElevation = shadowElevation,
+    )
+}
+
+// Note that we cannot name this function as SearchBar as it will cause overload resolution
+// ambiguity. We will come back to this problem when we need to publish it.
+@Suppress("ComposableLambdaParameterNaming", "ComposableLambdaParameterPosition")
+@Composable
+internal fun StyleableSearchBar(
+    state: SearchBarState,
+    inputField: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    style: SearchBarStyle? = null,
+) {
+    val localTheme = LocalMaterialTheme.current
+    val styleScope = SearchBarStyleScope(theme = localTheme)
+    with(style ?: localTheme.componentProperties.searchBarProperties.style) {
+        styleScope.applyStyle()
+    }
+
+    SearchBarImpl(
+        state = state,
+        inputField = inputField,
+        modifier = modifier,
+        shape = styleScope.shape,
+        containerColor = styleScope.containerColor,
+        contentColor = contentColorFor(styleScope.containerColor),
+        tonalElevation = styleScope.tonalElevation,
+        shadowElevation = styleScope.shadowElevation,
+    )
+}
+
+@Suppress("ComposableLambdaParameterNaming", "ComposableLambdaParameterPosition")
+@Composable
+private fun SearchBarImpl(
+    state: SearchBarState,
+    inputField: @Composable () -> Unit,
+    modifier: Modifier,
+    shape: Shape,
+    containerColor: Color,
+    contentColor: Color,
+    tonalElevation: Dp,
+    shadowElevation: Dp,
+) {
     DisableSoftKeyboard {
         Surface(
             modifier = modifier.onGloballyPositioned { state.collapsedCoords = it },
             shape = shape,
-            color = colors.containerColor,
-            contentColor = contentColorFor(colors.containerColor),
+            color = containerColor,
+            contentColor = contentColor,
             tonalElevation = tonalElevation,
             shadowElevation = shadowElevation,
             content = inputField,
@@ -412,20 +467,123 @@ public fun AppBarWithSearch(
     windowInsets: WindowInsets = SearchBarDefaults.windowInsets,
     scrollBehavior: SearchBarScrollBehavior? = null,
 ) {
+    AppBarWithSearchImpl(
+        state = state,
+        inputField = inputField,
+        modifier = modifier,
+        navigationIcon = navigationIcon,
+        actions = actions,
+        shape = shape,
+        searchBarContainerColor = colors.searchBarColors.containerColor,
+        scrolledSearchBarContainerColor = colors.scrolledSearchBarContainerColor,
+        appBarContainerColor = colors.appBarContainerColor,
+        scrolledAppBarContainerColor = colors.scrolledAppBarContainerColor,
+        appBarNavigationIconColor = colors.appBarNavigationIconColor,
+        appBarActionIconColor = colors.appBarActionIconColor,
+        tonalElevation = tonalElevation,
+        shadowElevation = shadowElevation,
+        contentPadding = contentPadding,
+        windowInsets = windowInsets,
+        scrollBehavior = scrollBehavior,
+    )
+}
+
+// Note that we cannot name this function as AppBarWithSearch as it will cause overload resolution
+// ambiguity. We will come back to this problem when we need to publish it.
+@Suppress("ComposableLambdaParameterNaming", "ComposableLambdaParameterPosition")
+@Composable
+internal fun StyleableAppBarWithSearch(
+    state: SearchBarState,
+    inputField: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    navigationIcon: @Composable (() -> Unit)? = null,
+    actions: @Composable (RowScope.() -> Unit)? = null,
+    windowInsets: WindowInsets = SearchBarDefaults.windowInsets,
+    scrollBehavior: SearchBarScrollBehavior? = null,
+    style: AppBarWithSearchStyle? = null,
+) {
+    val localTheme = LocalMaterialTheme.current
+    val styleScope = AppBarWithSearchStyleScope(theme = localTheme)
+    with(style ?: localTheme.componentProperties.appBarWithSearchBarProperties.style) {
+        styleScope.applyStyle()
+    }
+
+    AppBarWithSearchImpl(
+        state = state,
+        inputField = inputField,
+        modifier = modifier,
+        navigationIcon = navigationIcon,
+        actions = actions,
+        shape = styleScope.shape,
+        searchBarContainerColor = styleScope.searchBarContainerColor,
+        scrolledSearchBarContainerColor = styleScope.scrolledSearchBarContainerColor,
+        appBarContainerColor = styleScope.appBarContainerColor,
+        scrolledAppBarContainerColor = styleScope.scrolledAppBarContainerColor,
+        appBarNavigationIconColor = styleScope.appBarNavigationIconColor,
+        appBarActionIconColor = styleScope.appBarActionIconColor,
+        tonalElevation = styleScope.tonalElevation,
+        shadowElevation = styleScope.shadowElevation,
+        contentPadding =
+            PaddingValues(
+                start = styleScope.contentPaddingStart,
+                top = styleScope.contentPaddingTop,
+                end = styleScope.contentPaddingEnd,
+                bottom = styleScope.contentPaddingBottom,
+            ),
+        windowInsets = windowInsets,
+        scrollBehavior = scrollBehavior,
+    )
+}
+
+@Suppress("ComposableLambdaParameterNaming", "ComposableLambdaParameterPosition")
+@Composable
+private fun AppBarWithSearchImpl(
+    state: SearchBarState,
+    inputField: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    navigationIcon: @Composable (() -> Unit)?,
+    actions: @Composable (RowScope.() -> Unit)?,
+    shape: Shape,
+    searchBarContainerColor: Color,
+    scrolledSearchBarContainerColor: Color,
+    appBarContainerColor: Color,
+    scrolledAppBarContainerColor: Color,
+    appBarNavigationIconColor: Color,
+    appBarActionIconColor: Color,
+    tonalElevation: Dp,
+    shadowElevation: Dp,
+    contentPadding: PaddingValues,
+    windowInsets: WindowInsets,
+    scrollBehavior: SearchBarScrollBehavior?,
+) {
     // TODO Load the motionScheme tokens from the component tokens file
     val animationSpec = MotionSchemeKeyTokens.DefaultEffects
 
     val isContainerTransparent =
-        remember(colors) { colors.appBarContainerColor == Color.Transparent }
+        remember(appBarContainerColor) { appBarContainerColor == Color.Transparent }
 
     val (targetAppBarContainerColor, targetSearchBarContainerColor) =
-        remember(colors, scrollBehavior) {
+        remember(
+                appBarContainerColor,
+                scrolledAppBarContainerColor,
+                searchBarContainerColor,
+                scrolledSearchBarContainerColor,
+                scrollBehavior,
+            ) {
                 derivedStateOf {
                     val overlappingFraction = scrollBehavior?.overlappedFraction() ?: 0f
                     val colorTransitionFraction = if (overlappingFraction > 0.01f) 1f else 0f
                     Pair(
-                        colors.appBarContainerColor(colorTransitionFraction),
-                        colors.searchBarContainerColor(colorTransitionFraction),
+                        getAppBarContainerColor(
+                            colorTransitionFraction,
+                            appBarContainerColor,
+                            scrolledAppBarContainerColor,
+                        ),
+                        getSearchBarContainerColor(
+                            colorTransitionFraction,
+                            searchBarContainerColor,
+                            scrolledSearchBarContainerColor,
+                        ),
                     )
                 }
             }
@@ -434,12 +592,8 @@ public fun AppBarWithSearch(
     val appBarContainerColor by
         animateColorAsState(targetAppBarContainerColor, animationSpec = animationSpec.value())
 
-    val searchBarColors by
-        remember(targetSearchBarContainerColor) {
-            mutableStateOf(
-                colors.searchBarColors.copy(containerColor = targetSearchBarContainerColor)
-            )
-        }
+    val searchBarContainerColor by
+        remember(targetSearchBarContainerColor) { mutableStateOf(targetSearchBarContainerColor) }
 
     Surface(
         backgroundColor = { appBarContainerColor },
@@ -459,7 +613,7 @@ public fun AppBarWithSearch(
             navigationIcon?.let {
                 Box(Modifier.padding(start = AppBarWithSearchHorizontalPadding)) {
                     CompositionLocalProvider(
-                        LocalContentColor provides colors.appBarNavigationIconColor,
+                        LocalContentColor provides appBarNavigationIconColor,
                         content = it,
                     )
                 }
@@ -469,7 +623,7 @@ public fun AppBarWithSearch(
                     !state.isExpanded ||
                     state.targetValue == SearchBarValue.Expanded // prevent flickering
             Box(modifier = Modifier.weight(1f).alpha(if (isVisible) 1f else 0f)) {
-                SearchBar(
+                SearchBarImpl(
                     state = state,
                     inputField = inputField,
                     modifier =
@@ -480,7 +634,8 @@ public fun AppBarWithSearch(
                             .widthIn(min = SearchBarMinWidth, max = SearchBarMaxWidth)
                             .align(Alignment.Center),
                     shape = shape,
-                    colors = searchBarColors,
+                    containerColor = searchBarContainerColor,
+                    contentColor = contentColorFor(searchBarContainerColor),
                     tonalElevation = if (isContainerTransparent) tonalElevation else 0.dp,
                     shadowElevation = if (isContainerTransparent) shadowElevation else 0.dp,
                 )
@@ -497,7 +652,7 @@ public fun AppBarWithSearch(
                     }
                 Box(Modifier.padding(end = AppBarWithSearchHorizontalPadding)) {
                     CompositionLocalProvider(
-                        LocalContentColor provides colors.appBarActionIconColor,
+                        LocalContentColor provides appBarActionIconColor,
                         content = actionsRow,
                     )
                 }
@@ -534,7 +689,6 @@ public fun AppBarWithSearch(
  *   ignored.
  * @param content the content of this search bar to display search results below the [inputField].
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 public fun ExpandedFullScreenContainedSearchBar(
     state: SearchBarState,
@@ -566,9 +720,55 @@ public fun ExpandedFullScreenContainedSearchBar(
             inputFieldPadding = PaddingValues(horizontal = FullScreenExpandedHorizontalPadding),
             modifier = modifier,
             collapsedShape = collapsedShape,
-            colors = colors,
+            containerColor = colors.containerColor,
+            contentColor = contentColorFor(colors.containerColor),
             tonalElevation = tonalElevation,
             shadowElevation = shadowElevation,
+            windowInsets = windowInsets(),
+            isContained = true,
+            content = content,
+        )
+    }
+}
+
+// Note that we cannot name this function as ExpandedFullScreenContainedSearchBar as it will cause
+// overload resolution ambiguity. We will come back to this problem when we need to publish it.
+@Composable
+internal fun StyleableExpandedFullScreenContainedSearchBar(
+    state: SearchBarState,
+    inputField: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    windowInsets: @Composable () -> WindowInsets = { SearchBarDefaults.fullScreenWindowInsets },
+    properties: DialogProperties = DialogProperties(),
+    style: SearchBarStyle? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    state.expandsToFullScreen = true
+    val localTheme = LocalMaterialTheme.current
+    val styleScope = SearchBarStyleScope(localTheme, ComponentState.expanded(state.isExpanded))
+    with(style ?: SearchBarStyle.ExpandedFullScreenContained) { styleScope.applyStyle() }
+
+    ExpandedFullScreenSearchBarImpl(state = state, properties = properties) {
+        focusRequester,
+        predictiveBackState ->
+        FullScreenSearchBarLayout(
+            state = state,
+            predictiveBackState = predictiveBackState,
+            inputField = {
+                Box(
+                    modifier = Modifier.focusRequester(focusRequester),
+                    propagateMinConstraints = true,
+                ) {
+                    inputField()
+                }
+            },
+            inputFieldPadding = PaddingValues(horizontal = FullScreenExpandedHorizontalPadding),
+            modifier = modifier,
+            collapsedShape = styleScope.shape,
+            containerColor = styleScope.containerColor,
+            contentColor = contentColorFor(styleScope.containerColor),
+            tonalElevation = styleScope.tonalElevation,
+            shadowElevation = styleScope.shadowElevation,
             windowInsets = windowInsets(),
             isContained = true,
             content = content,
@@ -634,7 +834,8 @@ public fun ExpandedFullScreenSearchBar(
             inputFieldPadding = PaddingValues(),
             modifier = modifier,
             collapsedShape = collapsedShape,
-            colors = colors,
+            containerColor = colors.containerColor,
+            contentColor = contentColorFor(colors.containerColor),
             tonalElevation = tonalElevation,
             shadowElevation = shadowElevation,
             windowInsets = windowInsets(),
@@ -647,7 +848,54 @@ public fun ExpandedFullScreenSearchBar(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+// Note that we cannot name this function as ExpandedFullScreenSearchBar as it will cause overload
+// resolution ambiguity. We will come back to this problem when we need to publish it.
+@Composable
+internal fun StyleableExpandedFullScreenSearchBar(
+    state: SearchBarState,
+    inputField: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    windowInsets: @Composable () -> WindowInsets = { SearchBarDefaults.fullScreenWindowInsets },
+    properties: DialogProperties = DialogProperties(),
+    style: SearchBarStyle? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    state.expandsToFullScreen = true
+    val localTheme = LocalMaterialTheme.current
+    val styleScope = SearchBarStyleScope(localTheme)
+    with(style ?: SearchBarStyle.ExpandedFullScreen) { styleScope.applyStyle() }
+
+    ExpandedFullScreenSearchBarImpl(state = state, properties = properties) {
+        focusRequester,
+        predictiveBackState ->
+        FullScreenSearchBarLayout(
+            state = state,
+            predictiveBackState = predictiveBackState,
+            inputField = {
+                Box(
+                    modifier = Modifier.focusRequester(focusRequester),
+                    propagateMinConstraints = true,
+                ) {
+                    inputField()
+                }
+            },
+            inputFieldPadding = PaddingValues(),
+            modifier = modifier,
+            collapsedShape = styleScope.shape,
+            containerColor = styleScope.containerColor,
+            contentColor = contentColorFor(styleScope.containerColor),
+            tonalElevation = styleScope.tonalElevation,
+            shadowElevation = styleScope.shadowElevation,
+            windowInsets = windowInsets(),
+            isContained = false,
+            content = {
+                HorizontalDivider(color = styleScope.dividerColor)
+                content()
+            },
+        )
+    }
+}
+
 @Composable
 private fun ExpandedFullScreenSearchBarImpl(
     state: SearchBarState,
@@ -712,7 +960,6 @@ private fun ExpandedFullScreenSearchBarImpl(
  *   ignored.
  * @param content the content of this search bar to display search results below the [inputField].
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 public fun ExpandedDockedSearchBarWithGap(
     state: SearchBarState,
@@ -747,12 +994,56 @@ public fun ExpandedDockedSearchBarWithGap(
             searchBarShape = shape,
             dropdownShape = dropdownShape,
             dropdownGapSize = dropdownGapSize,
-            colors = colors,
+            containerColor = colors.containerColor,
+            dividerColor = colors.dividerColor,
             tonalElevation = tonalElevation,
             shadowElevation = shadowElevation,
             content = content,
         )
     }
+
+// Note that we cannot name this function as ExpandedDockedSearchBarWithGap as it will cause
+// overload resolution ambiguity. We will come back to this problem when we need to publish it.
+@Composable
+internal fun StyleableExpandedDockedSearchBarWithGap(
+    state: SearchBarState,
+    inputField: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    properties: PopupProperties = PopupProperties(focusable = true, clippingEnabled = false),
+    style: ExpandedDockedSearchBarStyle? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val localTheme = LocalMaterialTheme.current
+    val styleScope = ExpandedDockedSearchBarStyleScope(localTheme)
+    with(style ?: ExpandedDockedSearchBarStyle.WithGap) { styleScope.applyStyle() }
+
+    ExpandedDockedSearchBarImpl(
+        state = state,
+        properties = properties,
+        scrimColor = styleScope.dropdownScrimColor,
+    ) { focusRequester ->
+        DockedSearchBarLayout(
+            state = state,
+            inputField = {
+                Box(
+                    modifier = Modifier.focusRequester(focusRequester),
+                    propagateMinConstraints = true,
+                ) {
+                    inputField()
+                }
+            },
+            modifier = modifier,
+            searchBarShape = styleScope.shape,
+            dropdownShape = styleScope.dropdownShape,
+            dropdownGapSize = styleScope.dropdownGapSize,
+            containerColor = styleScope.containerColor,
+            dividerColor = styleScope.dividerColor,
+            tonalElevation = styleScope.tonalElevation,
+            shadowElevation = styleScope.shadowElevation,
+            content = content,
+        )
+    }
+}
 
 /**
  * [ExpandedDockedSearchBar] represents a search bar that is currently expanding or in the expanded
@@ -810,14 +1101,57 @@ public fun ExpandedDockedSearchBar(
             searchBarShape = shape,
             dropdownShape = null,
             dropdownGapSize = null,
-            colors = colors,
+            containerColor = colors.containerColor,
+            dividerColor = colors.dividerColor,
             tonalElevation = tonalElevation,
             shadowElevation = shadowElevation,
             content = content,
         )
     }
 
-@OptIn(ExperimentalMaterial3Api::class)
+// Note that we cannot name this function as ExpandedDockedSearchBar as it will cause overload
+// resolution ambiguity. We will come back to this problem when we need to publish it.
+@Composable
+internal fun StyleableExpandedDockedSearchBar(
+    state: SearchBarState,
+    inputField: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    properties: PopupProperties = PopupProperties(focusable = true, clippingEnabled = false),
+    style: ExpandedDockedSearchBarStyle? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val localTheme = LocalMaterialTheme.current
+    val styleScope = ExpandedDockedSearchBarStyleScope(localTheme)
+    with(style ?: ExpandedDockedSearchBarStyle.Default) { styleScope.applyStyle() }
+
+    ExpandedDockedSearchBarImpl(
+        state = state,
+        properties = properties,
+        scrimColor = Color.Unspecified,
+    ) { focusRequester ->
+        DockedSearchBarLayout(
+            state = state,
+            inputField = {
+                Box(
+                    modifier = Modifier.focusRequester(focusRequester),
+                    propagateMinConstraints = true,
+                ) {
+                    inputField()
+                }
+            },
+            modifier = modifier,
+            searchBarShape = styleScope.shape,
+            dropdownShape = null,
+            dropdownGapSize = null,
+            containerColor = styleScope.containerColor,
+            dividerColor = styleScope.dividerColor,
+            tonalElevation = styleScope.tonalElevation,
+            shadowElevation = styleScope.shadowElevation,
+            content = content,
+        )
+    }
+}
+
 @Composable
 private fun ExpandedDockedSearchBarImpl(
     state: SearchBarState,
@@ -2680,7 +3014,8 @@ public class SearchBarColors(
 ) {
     @Deprecated(
         message = "Use overload that takes `inputFieldColors`",
-        replaceWith = ReplaceWith("SearchBarColors(containerColor, dividerColor, inputFieldColors)"),
+        replaceWith =
+            ReplaceWith("SearchBarColors(containerColor, dividerColor, inputFieldColors)"),
     )
     public constructor(
         containerColor: Color,
@@ -2804,6 +3139,21 @@ internal fun AppBarWithSearchColors.searchBarContainerColor(colorTransitionFract
     )
 }
 
+private fun getSearchBarContainerColor(
+    colorTransitionFraction: Float,
+    searchBarContainerColor: Color,
+    scrolledSearchBarContainerColor: Color,
+): Color {
+    if (scrolledSearchBarContainerColor == Color.Unspecified) {
+        return searchBarContainerColor
+    }
+    return androidx.compose.ui.graphics.lerp(
+        searchBarContainerColor,
+        scrolledSearchBarContainerColor,
+        FastOutLinearInEasing.transform(colorTransitionFraction),
+    )
+}
+
 /**
  * Represents the container color used for the app bar.
  *
@@ -2815,6 +3165,21 @@ internal fun AppBarWithSearchColors.searchBarContainerColor(colorTransitionFract
 @OptIn(ExperimentalMaterial3Api::class)
 @Stable
 internal fun AppBarWithSearchColors.appBarContainerColor(colorTransitionFraction: Float): Color {
+    if (scrolledAppBarContainerColor == Color.Unspecified) {
+        return appBarContainerColor
+    }
+    return androidx.compose.ui.graphics.lerp(
+        appBarContainerColor,
+        scrolledAppBarContainerColor,
+        FastOutLinearInEasing.transform(colorTransitionFraction),
+    )
+}
+
+private fun getAppBarContainerColor(
+    colorTransitionFraction: Float,
+    appBarContainerColor: Color,
+    scrolledAppBarContainerColor: Color,
+): Color {
     if (scrolledAppBarContainerColor == Color.Unspecified) {
         return appBarContainerColor
     }
@@ -3256,7 +3621,8 @@ private fun DockedSearchBarLayout(
     searchBarShape: Shape,
     dropdownShape: Shape?,
     dropdownGapSize: Dp?,
-    colors: SearchBarColors,
+    containerColor: Color,
+    dividerColor: Color,
     tonalElevation: Dp,
     shadowElevation: Dp,
     content: @Composable ColumnScope.() -> Unit,
@@ -3268,7 +3634,7 @@ private fun DockedSearchBarLayout(
             if (dropdownShape != null) {
                 Box(
                     modifier =
-                        Modifier.background(color = colors.containerColor, shape = searchBarShape)
+                        Modifier.background(color = containerColor, shape = searchBarShape)
                             .clip(searchBarShape)
                 ) {
                     inputField()
@@ -3278,8 +3644,7 @@ private fun DockedSearchBarLayout(
             }
         },
         modifier = modifier,
-        colors =
-            if (dropdownShape != null) colors.copy(containerColor = Color.Transparent) else colors,
+        containerColor = if (dropdownShape != null) Color.Transparent else containerColor,
         tonalElevation = tonalElevation,
         shadowElevation = shadowElevation,
         hasGap = dropdownGapSize != null,
@@ -3297,14 +3662,16 @@ private fun DockedSearchBarLayout(
                 AnimatedVisibility(
                     modifier =
                         Modifier.padding(top = dropdownGapSize ?: 0.dp)
-                            .background(color = colors.containerColor, shape = dropdownShape)
+                            .background(color = containerColor, shape = dropdownShape)
                             .clip(dropdownShape)
                             .alpha(state.contentProgress),
                     visible = hasSufficientProgress && state.targetValue == SearchBarValue.Expanded,
                     enter =
                         slideIn(
                             animationSpec = slideInSpec,
-                            initialOffset = { IntOffset(x = 0, y = (-it.height / 2f).roundToInt()) },
+                            initialOffset = {
+                                IntOffset(x = 0, y = (-it.height / 2f).roundToInt())
+                            },
                         ),
                     exit =
                         slideOut(
@@ -3316,7 +3683,7 @@ private fun DockedSearchBarLayout(
                 }
             } else {
                 Column {
-                    HorizontalDivider(color = colors.dividerColor)
+                    HorizontalDivider(color = dividerColor)
                     content()
                 }
             }
@@ -3330,7 +3697,7 @@ private fun DockedSearchBarLayoutImpl(
     state: SearchBarState,
     inputField: @Composable () -> Unit,
     modifier: Modifier,
-    colors: SearchBarColors,
+    containerColor: Color,
     tonalElevation: Dp,
     shadowElevation: Dp,
     hasGap: Boolean,
@@ -3341,8 +3708,8 @@ private fun DockedSearchBarLayoutImpl(
 
     Surface(
         shape = shape,
-        color = colors.containerColor,
-        contentColor = contentColorFor(colors.containerColor),
+        color = containerColor,
+        contentColor = contentColorFor(containerColor),
         tonalElevation = tonalElevation,
         shadowElevation = shadowElevation,
         modifier = modifier.imePadding(),
@@ -3375,8 +3742,9 @@ private fun DockedSearchBarLayoutImpl(
                 )
             val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
 
-            val inputFieldPlaceables =
-                inputFieldMeasurables.fastMap { it.measure(looseConstraints) }
+            val inputFieldPlaceables = inputFieldMeasurables.fastMap {
+                it.measure(looseConstraints)
+            }
             val inputFieldWidth = inputFieldPlaceables.fastMaxOfOrNull { it.width } ?: 0
             val inputFieldHeight = inputFieldPlaceables.fastMaxOfOrNull { it.height } ?: 0
 
@@ -3406,7 +3774,8 @@ private fun FullScreenSearchBarLayout(
     inputFieldPadding: PaddingValues,
     modifier: Modifier,
     collapsedShape: Shape,
-    colors: SearchBarColors,
+    containerColor: Color,
+    contentColor: Color,
     tonalElevation: Dp,
     shadowElevation: Dp,
     windowInsets: WindowInsets,
@@ -3414,24 +3783,26 @@ private fun FullScreenSearchBarLayout(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val backEvent by remember { derivedStateOf { predictiveBackState.value } }
-    val firstInProgressValue =
-        remember { mutableStateOf<BackEventProgress.InProgress?>(null) }
-            .apply {
-                when (val event = backEvent) {
-                    is BackEventProgress.InProgress -> if (value == null) value = event
-                    BackEventProgress.NotRunning -> value = null
-                    BackEventProgress.Completed -> Unit
-                }
+    val firstInProgressValue = remember {
+        mutableStateOf<BackEventProgress.InProgress?>(null)
+    }
+        .apply {
+            when (val event = backEvent) {
+                is BackEventProgress.InProgress -> if (value == null) value = event
+                BackEventProgress.NotRunning -> value = null
+                BackEventProgress.Completed -> Unit
             }
-    val lastInProgressValue =
-        remember { mutableStateOf<BackEventProgress.InProgress?>(null) }
-            .apply {
-                when (val event = backEvent) {
-                    is BackEventProgress.InProgress -> value = event
-                    BackEventProgress.NotRunning -> value = null
-                    BackEventProgress.Completed -> Unit
-                }
+        }
+    val lastInProgressValue = remember {
+        mutableStateOf<BackEventProgress.InProgress?>(null)
+    }
+        .apply {
+            when (val event = backEvent) {
+                is BackEventProgress.InProgress -> value = event
+                BackEventProgress.NotRunning -> value = null
+                BackEventProgress.Completed -> Unit
             }
+        }
 
     val density = LocalDensity.current
     val fullScreenShape = SearchBarDefaults.fullScreenShape
@@ -3485,8 +3856,8 @@ private fun FullScreenSearchBarLayout(
             Surface(
                 modifier = Modifier.layoutId(LayoutIdSurface),
                 shape = animatedShape,
-                color = colors.containerColor,
-                contentColor = contentColorFor(colors.containerColor),
+                color = containerColor,
+                contentColor = contentColor,
                 tonalElevation = tonalElevation,
                 shadowElevation = shadowElevation,
                 content = {},

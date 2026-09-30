@@ -220,6 +220,38 @@ class NativeInputEventsProcessorTest {
     }
 
     @Test
+    fun testInsertText_collapsed_target_range_pins_the_insertion_point() {
+        // see https://youtrack.jetbrains.com/issue/CMP-10753
+        // The browser applies the edit natively and moves the DOM caret, which could reach Compose
+        // as a selection change before the collected events are processed.
+        // The collapsed target range reported by the browser must win over the drifted caret.
+        val communicator = MockComposeCommandCommunicator(
+            TextFieldValue("Text line 0 \nText line 1", selection = TextRange(12))
+        )
+        val processor = TestNativeInputEventsProcessor(communicator)
+
+        processor.registerEvent(
+            beforeInput("insertText", "is").asInputEventExt().apply {
+                setFirstRange(12, 12)
+            }
+        )
+
+        // the caret has drifted while the event was waiting for the checkpoint
+        communicator.sendEditCommand(listOf(SetSelectionCommand(14, 14)))
+        communicator.editCommands.clear()
+
+        processor.manuallyRunCheckpoint(communicator.currentTextFieldValue())
+
+        assertEquals(2, communicator.editCommands.size)
+        val selectionCommand = communicator.editCommands[0]
+        assertTrue(selectionCommand is SetSelectionCommand)
+        assertEquals(12, selectionCommand.start)
+        assertEquals(12, selectionCommand.end)
+
+        assertEquals("Text line 0 is\nText line 1", communicator.currentTextFieldValue().text)
+    }
+
+    @Test
     fun testInsertCompositionText() {
         val communicator = MockComposeCommandCommunicator()
         val processor = TestNativeInputEventsProcessor(communicator)

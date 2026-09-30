@@ -42,6 +42,9 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile
 /** Plugin to apply common configuration for Compose projects. */
 class AndroidXComposeImplPlugin : Plugin<Project> {
     override fun apply(project: Project) {
+        // TODO: https://youtrack.jetbrains.com/issue/CMP-10868
+        // project.configureSwiftCompatibilityLinking()
+
         project.plugins.configureEach { plugin ->
             when (plugin) {
                 is AppPlugin,
