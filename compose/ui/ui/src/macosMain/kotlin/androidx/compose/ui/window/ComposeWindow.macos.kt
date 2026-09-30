@@ -101,7 +101,7 @@ private class ComposeWindow(
 
     // TODO: It must be shared between Compose instances.
     //  It's supposed to be stored in platform's root view or window.
-    private val frameRecomposer = FrameRecomposer(Dispatchers.Main) { skiaLayer.needRender() }
+    private val frameRecomposer = FrameRecomposer(Dispatchers.Main, invalidate = { skiaLayer.needRender() })
 
     // TODO: It cannot be used in case of shared [FrameRecomposer], replace this helper with calling
     //  - [frameRecomposer.performFrame] once per frame (across all instances) before platform views layout phase
