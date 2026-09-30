@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.selection.gestures.util.collapsed
@@ -36,7 +35,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.InjectionScope
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.dragAndDrop
@@ -521,27 +519,6 @@ internal class SelectionContainerPointerTest : AbstractSelectionContainerTest() 
             rule.runOnIdle { assertThat(state.selection!!.toTextRange()).isEqualTo(14.collapsed) }
         }
 
-    private fun testMouseSelection(
-        start: InjectionScope.() -> Offset,
-        end: InjectionScope.() -> Offset,
-        expectStartSelectableId: Int,
-        expectStartOffset: Int,
-        expectEndSelectableId: Int,
-        expectEndOffset: Int,
-        expectJoinedSelectedText: String,
-    ) {
-        rule.onSelectionContainer().performMouseInput { dragAndDrop(start = start(), end = end()) }
-        rule.runOnIdle {
-            val selection = state.selection
-            assertNotNull(selection)
-            assertThat(selection.start.selectableId).isEqualTo(expectStartSelectableId)
-            assertThat(selection.start.offset).isEqualTo(expectStartOffset)
-            assertThat(selection.end.selectableId).isEqualTo(expectEndSelectableId)
-            assertThat(selection.end.offset).isEqualTo(expectEndOffset)
-            assertThat(state.joinedSelectedText).isEqualTo(expectJoinedSelectedText)
-        }
-    }
-
     @Test
     fun mouseSelectionStartBetweenSelectablesVertically() = withMouseSelectionBetweenTextEnabled {
         val topText = "Top Text"
@@ -551,56 +528,38 @@ internal class SelectionContainerPointerTest : AbstractSelectionContainerTest() 
         createSelectionContainer {
             Column(
                 modifier = Modifier.fillMaxHeight(),
-                verticalArrangement = Arrangement.SpaceEvenly,
+                verticalArrangement = Arrangement.SpaceBetween,
             ) {
                 TestText(topText)
                 TestText(bottomText)
             }
         }
 
-        // Select from middle of container to start.
-        testMouseSelection(
-            start = { center },
-            end = { topLeft },
-            expectStartSelectableId = 1,
-            expectStartOffset = topText.length,
-            expectEndSelectableId = 1,
-            expectEndOffset = 0,
-            expectJoinedSelectedText = topText,
-        )
+        // Act. Select from middle of container to start.
+        rule.onSelectionContainer().performMouseInput { dragAndDrop(start = center, end = topLeft) }
 
-        // Select from middle of container to end.
-        testMouseSelection(
-            start = { center },
-            end = { bottomCenter },
-            expectStartSelectableId = 2,
-            expectStartOffset = 0,
-            expectEndSelectableId = 2,
-            expectEndOffset = bottomText.length,
-            expectJoinedSelectedText = bottomText,
-        )
+        // Assert
+        rule.runOnIdle {
+            val selection = state.selection
+            assertNotNull(selection)
+            assertThat(selection.end.selectableId).isEqualTo(1)
+            assertThat(selection.end.offset).isEqualTo(0)
+            assertThat(state.selectedTexts.joinToString(separator = "")).isEqualTo(topText)
+        }
 
-        // Select from start of container to end.
-        testMouseSelection(
-            start = { topCenter },
-            end = { bottomCenter },
-            expectStartSelectableId = 1,
-            expectStartOffset = 0,
-            expectEndSelectableId = 2,
-            expectEndOffset = bottomText.length,
-            expectJoinedSelectedText = topText + bottomText,
-        )
+        // Act. Select from middle of container to end.
+        rule.onSelectionContainer().performMouseInput {
+            dragAndDrop(start = center, end = bottomRight)
+        }
 
-        // Act. Select from end of container to start.
-        testMouseSelection(
-            start = { bottomCenter },
-            end = { topCenter },
-            expectStartSelectableId = 2,
-            expectStartOffset = bottomText.length,
-            expectEndSelectableId = 1,
-            expectEndOffset = 0,
-            expectJoinedSelectedText = topText + bottomText,
-        )
+        // Assert
+        rule.runOnIdle {
+            val selection = state.selection
+            assertNotNull(selection)
+            assertThat(selection.end.selectableId).isEqualTo(2)
+            assertThat(selection.end.offset).isEqualTo(bottomText.length)
+            assertThat(state.selectedTexts.joinToString(separator = "")).isEqualTo(bottomText)
+        }
     }
 
     @Test
@@ -612,78 +571,39 @@ internal class SelectionContainerPointerTest : AbstractSelectionContainerTest() 
         createSelectionContainer {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 TestText(leftText)
                 TestText(rightText)
             }
         }
 
-        // Select from middle of container to start.
-        testMouseSelection(
-            start = { center },
-            end = { centerLeft },
-            expectStartSelectableId = 1,
-            expectStartOffset = leftText.length,
-            expectEndSelectableId = 1,
-            expectEndOffset = 0,
-            expectJoinedSelectedText = leftText,
-        )
-
-        // Select from middle of container to end.
-        testMouseSelection(
-            start = { center },
-            end = { centerRight },
-            expectStartSelectableId = 2,
-            expectStartOffset = 0,
-            expectEndSelectableId = 2,
-            expectEndOffset = rightText.length,
-            expectJoinedSelectedText = rightText,
-        )
-
-        // Select from start of container to end.
-        testMouseSelection(
-            start = { centerLeft },
-            end = { centerRight },
-            expectStartSelectableId = 1,
-            expectStartOffset = 0,
-            expectEndSelectableId = 2,
-            expectEndOffset = rightText.length,
-            expectJoinedSelectedText = leftText + rightText,
-        )
-
-        // Act. Select from end of container to start.
-        testMouseSelection(
-            start = { centerRight },
-            end = { centerLeft },
-            expectStartSelectableId = 2,
-            expectStartOffset = rightText.length,
-            expectEndSelectableId = 1,
-            expectEndOffset = 0,
-            expectJoinedSelectedText = leftText + rightText,
-        )
-    }
-
-    @Test
-    fun selectWithMouseInsideAndDragRightUpAndOutside() = withMouseSelectionBetweenTextEnabled {
-        // Set up
-        createSelectionContainer {
-            Column(Modifier.testTag("column").padding(50.dp)) {
-                BasicText("Lorem\nipsum\ndolor", modifier = Modifier.testTag("text1"))
-                // The 2nd text is needed to reproduce the issue
-                BasicText("Hello")
-            }
+        // Act. Select from middle of container to start.
+        rule.onSelectionContainer().performMouseInput {
+            dragAndDrop(start = center, end = centerLeft)
         }
 
-        rule.onNodeWithTag("text1").performMouseInput {
-            updatePointerTo(center)
-            press()
-            moveTo(topRight + Offset(10f, 0f))
-        }
-
+        // Assert
         rule.runOnIdle {
-            // Verify it doesn't crash and selects something
-            assertThat(state.joinedSelectedText).isNotEmpty()
+            val selection = state.selection
+            assertNotNull(selection)
+            assertThat(selection.end.selectableId).isEqualTo(1)
+            assertThat(selection.end.offset).isEqualTo(0)
+            assertThat(state.selectedTexts.joinToString(separator = "")).isEqualTo(leftText)
+        }
+
+        // Act. Select from middle of container to end.
+        rule.onSelectionContainer().performMouseInput {
+            dragAndDrop(start = center, end = centerRight)
+        }
+
+        // Assert
+        rule.runOnIdle {
+            val selection = state.selection
+            assertNotNull(selection)
+            assertThat(selection.end.selectableId).isEqualTo(2)
+            assertThat(selection.end.offset).isEqualTo(rightText.length)
+            assertThat(state.selectedTexts.joinToString(separator = "")).isEqualTo(rightText)
         }
     }
 
@@ -698,6 +618,3 @@ internal class SelectionContainerPointerTest : AbstractSelectionContainerTest() 
         }
     }
 }
-
-private val SelectionState.joinedSelectedText
-    get() = selectedTexts.joinToString(separator = "")
