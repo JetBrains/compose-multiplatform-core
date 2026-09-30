@@ -53,15 +53,20 @@ import kotlin.concurrent.Volatile
  *
  * @property composeSceneContext the object that used to share "context" between multiple scenes
  * on the screen. Also, it provides a way for platform interaction that is required within a scene.
+ * @param frameIsolation Whether this scene runs its work in frame-cycle units (see
+ * [ComposeSceneFeatureFlags.isFrameIsolationEnabled]). A parameter rather than a read of the flag
+ * so that a host building its own scenes - a test runner, for one - can choose per scene instead
+ * of mutating process-wide state that every other scene constructed meanwhile would pick up.
  */
 @OptIn(InternalComposeUiApi::class, InternalComposeApi::class)
 internal abstract class BaseComposeScene(
     protected val frameRecomposer: FrameRecomposer,
     dataSourceContext: DataSourceContext = DataSourceContext(),
+    frameIsolation: Boolean = ComposeSceneFeatureFlags.isFrameIsolationEnabled,
     private val invalidateLayout: () -> Unit,
     private val invalidateDraw: () -> Unit,
 ) : ComposeScene {
-    private val isFrameIsolationEnabled = ComposeSceneFeatureFlags.isFrameIsolationEnabled
+    private val isFrameIsolationEnabled = frameIsolation
 
     /**
      * The scene's frame domain: carries the [DataSourceContext] (the flag-off composing path fans
@@ -207,7 +212,7 @@ internal abstract class BaseComposeScene(
      * change would request no frame at all and the UI would stay stale until something else
      * happened to render.
      */
-    private val hasPendingFrameDomainWork: Boolean
+    internal val hasPendingFrameDomainWork: Boolean
         get() =
             frameSnapshotHolder.hasPendingDelivery || frameSnapshotHolder.context.hasPendingAdvance
 

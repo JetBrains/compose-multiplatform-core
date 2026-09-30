@@ -16,6 +16,9 @@
 
 package androidx.compose.ui.test.v2
 
+import androidx.compose.runtime.DataSourceContext
+import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.scene.defaultFrameIsolation
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import kotlin.coroutines.CoroutineContext
@@ -41,8 +44,12 @@ import kotlinx.coroutines.test.TestCoroutineScheduler
  *   [runTestContext] and [effectContext] must not share [TestCoroutineScheduler].
  * @param testTimeout The [Duration] within which the test is expected to complete, otherwise a
  *   platform specific timeout exception will be thrown.
+ * @param dataSourceContext The [DataSourceContext] the test's scene reads its data sources through.
+ * @param frameIsolation Whether the test's scene runs in frame-cycle units; see
+ *   [runSkikoComposeUiTest].
  * @param block The suspendable test body.
  */
+@OptIn(InternalComposeUiApi::class)
 @ExperimentalTestApi
 fun runDesktopComposeUiTest(
     width: Int = 1024,
@@ -50,6 +57,8 @@ fun runDesktopComposeUiTest(
     effectContext: CoroutineContext = EmptyCoroutineContext,
     runTestContext: CoroutineContext = EmptyCoroutineContext,
     testTimeout: Duration = Duration.INFINITE,
+    dataSourceContext: DataSourceContext = DataSourceContext(),
+    frameIsolation: Boolean = defaultFrameIsolation,
     block: suspend DesktopComposeUiTest.() -> Unit
 ) {
     kotlinx.coroutines.test.runTest {
@@ -61,9 +70,32 @@ fun runDesktopComposeUiTest(
                 runTestContext = runTestContext,
                 testTimeout = testTimeout,
                 useStandardTestDispatcherForComposition = true,
+                dataSourceContext = dataSourceContext,
+                frameIsolation = frameIsolation,
             )
         ) {
             runTest { block() }
         }
     }
 }
+
+/** The signature before `dataSourceContext` and `frameIsolation` existed; binaries still call it. */
+@Deprecated("Kept for binary compatibility", level = DeprecationLevel.HIDDEN)
+@ExperimentalTestApi
+fun runDesktopComposeUiTest(
+    width: Int = 1024,
+    height: Int = 768,
+    effectContext: CoroutineContext = EmptyCoroutineContext,
+    runTestContext: CoroutineContext = EmptyCoroutineContext,
+    testTimeout: Duration = Duration.INFINITE,
+    block: suspend DesktopComposeUiTest.() -> Unit
+): Unit =
+    runDesktopComposeUiTest(
+        width = width,
+        height = height,
+        effectContext = effectContext,
+        runTestContext = runTestContext,
+        testTimeout = testTimeout,
+        dataSourceContext = DataSourceContext(),
+        block = block,
+    )

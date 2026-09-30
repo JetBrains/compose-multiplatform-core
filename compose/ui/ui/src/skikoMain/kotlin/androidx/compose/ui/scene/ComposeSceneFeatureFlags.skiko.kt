@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.scene
 
+import androidx.compose.ui.InternalComposeUiApi
+
 /**
  * Feature flags for [ComposeScene] behavior.
  */
@@ -32,11 +34,23 @@ internal object ComposeSceneFeatureFlags {
      *
      * On desktop this is initialized from the `compose.frameIsolation system property.
      *
-     * Read once per scene, at construction (see `BaseComposeScene.init`): a scene's
-     * isolation mode is fixed for its lifetime from whatever this flag's value was at
-     * that moment. Changing this flag afterwards has no effect on already-constructed
-     * scenes, only on ones constructed later. Tests that toggle this flag must set it
-     * before constructing the scene under test.
+     * Read once per scene, at construction, as the default of the scene's `frameIsolation`
+     * (which [CanvasLayersComposeScene] lets its caller override): a scene's isolation mode is
+     * fixed for its lifetime from whatever this flag's value was at that moment. Changing this
+     * flag afterwards has no effect on already-constructed scenes, only on ones constructed
+     * later. Tests that toggle this flag must set it before constructing the scene under test -
+     * or, where the factory allows it, pass `frameIsolation` and leave the process-wide value
+     * alone.
      */
     var isFrameIsolationEnabled: Boolean = false
 }
+
+/**
+ * The frame-isolation mode a scene factory applies when its caller does not choose one: the
+ * process-wide setting the platform entry points configure. Readable outside this module so that
+ * a host wrapping a factory (a test runner, say) can default to the same value instead of
+ * silently diverging from it.
+ */
+@InternalComposeUiApi
+val defaultFrameIsolation: Boolean
+    get() = ComposeSceneFeatureFlags.isFrameIsolationEnabled

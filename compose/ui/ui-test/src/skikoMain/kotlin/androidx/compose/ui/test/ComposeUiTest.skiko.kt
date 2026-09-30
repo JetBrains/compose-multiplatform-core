@@ -17,6 +17,7 @@
 package androidx.compose.ui.test
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DataSourceContext
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.draganddrop.DragAndDropTransferData
@@ -38,6 +39,8 @@ import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeScene
+import androidx.compose.ui.scene.defaultFrameIsolation
+import androidx.compose.ui.scene.hasPendingFrameDomainWork
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
@@ -135,6 +138,13 @@ private const val IDLING_RESOURCES_CHECK_INTERVAL_MS = 20L
 /**
  * @param effectContext The [CoroutineContext] used to run the composition. The context for
  * `LaunchedEffect`s and `rememberCoroutineScope` will be derived from this context.
+ * @param dataSourceContext The [DataSourceContext] the test's scene reads its data sources through.
+ * Content under test that reads a source only sees it, and is only invalidated by it, if the source
+ * is a member of this context.
+ * @param frameIsolation Whether the test's scene runs in frame-cycle units, so that writes made
+ * outside the content (by the test body, for instance) become visible to it only at the next frame.
+ * A per-test choice rather than the process-wide setting, so tests that need isolation do not
+ * change the mode of every other scene in the same process.
  */
 @ExperimentalTestApi
 @OptIn(InternalTestApi::class, InternalComposeUiApi::class)
@@ -148,6 +158,8 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     private val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener?,
     private val windowInsets: PlatformWindowInsets?,
     private val useStandardTestDispatcherForComposition: Boolean,
+    private val dataSourceContext: DataSourceContext = DataSourceContext(),
+    private val frameIsolation: Boolean = defaultFrameIsolation,
 ) : ComposeUiTest {
     constructor(
         width: Int = 1024,
@@ -334,6 +346,8 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             density = density,
             size = size,
             platformContext = TestContext(),
+            dataSourceContext = dataSourceContext,
+            frameIsolation = frameIsolation,
             invalidateLayout = { },
             invalidateDraw = { },
         )
@@ -375,7 +389,14 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         // Only an auto-advancing clock waits for recomposition/effects/frame work to drain.
         // With a frozen clock the test drives frames itself, so a parked withFrameNanos awaiter
         // only resumes when the test advances the clock - gating on it here would hang.
-        if (mainClock.autoAdvance && frameRecomposer.hasPendingWork()) {
+        // Frame-domain work belongs to the same category: with frame isolation on, a publication
+        // from outside the content (the test body writing to a data source) is not delivered to
+        // the composition until the next frame's pin swap, and until then nothing else here is
+        // pending - without this check the wait would return before the content caught up.
+        if (
+            mainClock.autoAdvance &&
+            (frameRecomposer.hasPendingWork() || scene.hasPendingFrameDomainWork)
+        ) {
             return false
         }
 
