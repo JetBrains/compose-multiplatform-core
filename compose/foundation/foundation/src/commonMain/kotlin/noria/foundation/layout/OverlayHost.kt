@@ -76,7 +76,13 @@ fun OverlayHost(
                         // isLive is read here, in measure, so its anchor-driven write reschedules
                         // this measure and empties the slot in the same frame. See the design at
                         // docs/superpowers/specs/2026-09-18-overlay-same-frame-removal-design.md.
-                        val slotContent: @Composable () -> Unit = if (overlay.isLive) {
+                        // isAnchored is read here for the same reason: the content reads
+                        // anchorBounds, which the anchor writes only once it has been positioned,
+                        // after a layout pass. This measure can run before that, see
+                        // OverlayState.anchorBounds, so the slot stays empty until the write
+                        // reschedules it.
+                        val showsContent = overlay.isLive && overlay.isAnchored
+                        val slotContent: @Composable () -> Unit = if (showsContent) {
                             {
                                 val overlayScope = remember(overlay) {
                                     object : OverlayScope {
@@ -161,7 +167,34 @@ internal class OverlayState(
 ) {
     var compositionContext by mutableStateOf(compositionContext)
     var content by mutableStateOf(content)
+
+    /**
+     * The anchor's bounds in the host, from the anchor's last `onGloballyPositioned`. Null until
+     * the anchor has been positioned once.
+     *
+     * That callback is dispatched after a layout pass, and skipped for a node the pass left
+     * measure-pending or unplaced. The overlay's content is composed from the host's measure,
+     * which is a different, shallower node, so nothing orders the two: an anchor composed at
+     * the end of a pass, after its callbacks were dispatched, and left measure-pending by its
+     * new modifiers is not positioned before the next pass measures the host. The host
+     * therefore keeps the slot empty until this is set, see [isAnchored]; only the content ever
+     * reads it, through [OverlayScope.anchorBounds], so it is never null there.
+     */
     var anchorBounds by mutableStateOf<IntRect?>(null)
+        private set
+
+    /**
+     * True once [anchorBounds] is set. The host's measure reads this rather than [anchorBounds],
+     * so the anchor's first position re-runs that measure and the anchor's later moves do not.
+     */
+    var isAnchored by mutableStateOf(false)
+        private set
+
+    fun onAnchorPositioned(bounds: IntRect) {
+        anchorBounds = bounds
+        isAnchored = true
+    }
+
     val handle = OverlayHandle()
 
     /**
