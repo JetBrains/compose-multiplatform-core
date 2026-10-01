@@ -21,14 +21,11 @@ The repo supports two modes:
   - Independent build infrastructure: `settings-fork.gradle`, `buildSrc-fork`, `build-fork.gradle`, and `./gradle/libs-fork.versions.toml`
   - if modules exists only in `settings-fork.gradle`, but not in `settings.gradle`, it may just contain `build.gradle` without `build-fork.gradle`
   - iOS, desktop, JS, and WasmJS source sets, their combinations, and their corresponding test source sets
-  - `redirectversions.toml` — pins versions used by redirects; the per-module build-fork.gradle redirect {} blocks declare which
-    targets redirect to upstream artifacts.
 - AOSP-only code:
   - Independent build infrastructure: `settings.gradle`, `buildSrc`, `build.gradle`, and `./gradle/libs.versions.toml`
   - `androidMain` and its corresponding test source sets
   - `*StubsMain` source sets - created in the upstream AOSP repo to ensure `commonMain` compilation on the all Kotlin targets
   - iOS, desktop, JS, and WasmJS source sets for libraries and targets developed in AOSP
-  - `libraryversions.toml` - the current AOSP artifact versions planned to be published
 
 ## Instruction files
 
