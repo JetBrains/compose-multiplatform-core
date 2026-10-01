@@ -277,9 +277,14 @@ internal fun SelectionLayoutBuilder.appendSelectableInfo(
     val currentXDirection = getXDirection(localPosition, bounds)
     val currentYDirection = getYDirection(localPosition, bounds)
 
-    fun previousDirection(forStartSlot: Boolean): Direction {
+    // Computes the direction for the "other" (non-dragged) handle
+    fun otherDirection(forStartSlot: Boolean): Direction {
+        // If there is no previous selection then we're just starting a selection gesture, so both
+        // handles are in the same spot.
         val previousSelection =
             previousSelection ?: return resolve2dDirection(currentXDirection, currentYDirection)
+
+        // If there is a previous selection, examine it to find the direction
         val anchor = if (forStartSlot) previousSelection.start else previousSelection.end
 
         // Check selectable order first
@@ -308,13 +313,13 @@ internal fun SelectionLayoutBuilder.appendSelectableInfo(
     val endXHandleDirection: Direction
     val endYHandleDirection: Direction
     if (isStartHandle) {
-        otherDirection = previousDirection(forStartSlot = false)
+        otherDirection = otherDirection(forStartSlot = false)
         startXHandleDirection = currentXDirection
         startYHandleDirection = currentYDirection
         endXHandleDirection = otherDirection
         endYHandleDirection = otherDirection
     } else {
-        otherDirection = previousDirection(forStartSlot = true)
+        otherDirection = otherDirection(forStartSlot = true)
         startXHandleDirection = otherDirection
         startYHandleDirection = otherDirection
         endXHandleDirection = currentXDirection
