@@ -15,6 +15,9 @@
  */
 package androidx.camera.video.internal.config
 
+import android.media.MediaCodecInfo.CodecProfileLevel.APVProfile422_10
+import android.media.MediaCodecInfo.CodecProfileLevel.APVProfile422_10HDR10
+import android.media.MediaCodecInfo.CodecProfileLevel.APVProfile422_10HDR10Plus
 import android.media.MediaCodecInfo.CodecProfileLevel.AV1ProfileMain10
 import android.media.MediaCodecInfo.CodecProfileLevel.AV1ProfileMain10HDR10
 import android.media.MediaCodecInfo.CodecProfileLevel.AV1ProfileMain10HDR10Plus
@@ -54,6 +57,7 @@ import androidx.camera.video.internal.encoder.VideoEncoderDataSpace.ENCODER_DATA
 import androidx.camera.video.internal.encoder.VideoEncoderDataSpace.ENCODER_DATA_SPACE_BT2020_PQ
 import androidx.camera.video.internal.encoder.VideoEncoderDataSpace.ENCODER_DATA_SPACE_BT709
 import androidx.camera.video.internal.encoder.VideoEncoderDataSpace.ENCODER_DATA_SPACE_UNSPECIFIED
+import androidx.camera.video.internal.encoder.VideoEncoderInfo
 import androidx.camera.video.internal.utils.DynamicRangeUtil
 
 /** A collection of utilities used for resolving and debugging video configurations. */
@@ -107,6 +111,12 @@ public object VideoConfigUtil {
                 // For Dolby Vision profile 9, we only support 9.2 (8-bit AVC SDR BT.709)
                 DolbyVisionProfileDvavSe to ENCODER_DATA_SPACE_BT709,
             )
+        val profApvMap =
+            mapOf<Int, VideoEncoderDataSpace>(
+                APVProfile422_10 to ENCODER_DATA_SPACE_BT2020_HLG,
+                APVProfile422_10HDR10 to ENCODER_DATA_SPACE_BT2020_PQ,
+                APVProfile422_10HDR10Plus to ENCODER_DATA_SPACE_BT2020_PQ,
+            )
         // Combine all mime type maps
         MIME_TO_DATA_SPACE_MAP =
             mutableMapOf(
@@ -114,6 +124,7 @@ public object VideoConfigUtil {
                 MediaFormat.MIMETYPE_VIDEO_AV1 to profAv1Map,
                 MediaFormat.MIMETYPE_VIDEO_VP9 to profVp9Map,
                 MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION to profDvMap,
+                MediaFormat.MIMETYPE_VIDEO_APV to profApvMap,
             )
         // --------------------------------------------------------------------------------------//
     }
@@ -169,16 +180,21 @@ public object VideoConfigUtil {
      */
     public fun getDynamicRangeDefaultMime(dynamicRange: DynamicRange): String? {
         return when (dynamicRange.encoding) {
-            DynamicRange.ENCODING_DOLBY_VISION ->
+            DynamicRange.ENCODING_DOLBY_VISION,
+            DynamicRange.ENCODING_DOLBY_VISION_SMPTE_2094_50 ->
                 // Dolby vision only supports dolby vision encoders
                 MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION
             DynamicRange.ENCODING_HLG,
+            DynamicRange.ENCODING_HLG_SMPTE_2094_50,
             DynamicRange.ENCODING_HDR10,
-            DynamicRange.ENCODING_HDR10_PLUS ->
+            DynamicRange.ENCODING_HDR10_SMPTE_2094_50,
+            DynamicRange.ENCODING_HDR10_PLUS,
+            DynamicRange.ENCODING_HDR10_PLUS_SMPTE_2094_50 ->
                 // For now most hdr formats default to h265 (HEVC), though VP9 or AV1 may also be
                 // supported.
                 MediaFormat.MIMETYPE_VIDEO_HEVC
-            DynamicRange.ENCODING_SDR ->
+            DynamicRange.ENCODING_SDR,
+            DynamicRange.ENCODING_SDR_SMPTE_2094_50 ->
                 // For SDR, default to h264 (AVC)
                 MediaFormat.MIMETYPE_VIDEO_AVC
             else -> null
@@ -194,6 +210,37 @@ public object VideoConfigUtil {
     public fun getDynamicRangesForMime(mime: String): Set<DynamicRange> {
         return DynamicRangeFormatComboRegistry.getDynamicRangesForVideoMime(mime)
     }
+
+    /**
+     * Resolves the set of supported [DynamicRange]s for the given video MIME type and
+     * [VideoEncoderInfo].
+     *
+     * 8-bit dynamic ranges (SDR) are supported across all hardware and software encoders.
+     *
+     * ### Enforcing Hardware Acceleration for 10-Bit HDR
+     * Android CDD §5.12 [C-6-2] mandates that devices supporting HDR capture via Camera2 APIs MUST
+     * provide at least one hardware-accelerated video encoder supporting that HDR technology.
+     * Android Camera CTS (`RecordingTest.java`, b/323028059) explicitly skips
+     * non-hardware-accelerated codecs (`!mediaCodec.getCodecInfo().isHardwareAccelerated()`) when
+     * testing 10-bit camera surface recording across all device models and HDR formats.
+     *
+     * Software encoders (e.g. `c2.android.av1.encoder`) lack the throughput to sustain real-time
+     * 10-bit camera surface feeds (`COLOR_FormatSurface`), leading to frame drops or crashes
+     * (b/559568631). Therefore, 10-bit HDR recording requires a hardware-accelerated encoder.
+     *
+     * @param mime The video MIME type to query.
+     * @param videoEncoderInfo The video encoder info to query.
+     * @return A [Set] of [DynamicRange]s supported for the given MIME type by the video encoder.
+     * @see getDynamicRangesForMime
+     */
+    public fun getSupportedDynamicRanges(
+        mime: String,
+        videoEncoderInfo: VideoEncoderInfo,
+    ): Set<DynamicRange> =
+        getDynamicRangesForMime(mime).filterTo(mutableSetOf()) { dynamicRange ->
+            dynamicRange.bitDepth == DynamicRange.BIT_DEPTH_8_BIT ||
+                videoEncoderInfo.isHardwareAccelerated
+        }
 
     /**
      * Resolves video related information into a [VideoEncoderConfig].

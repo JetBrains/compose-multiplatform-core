@@ -20,6 +20,7 @@ package androidx.compose.remote.creation.dsl
 
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.operations.layout.MultiClickModifier
+import androidx.compose.remote.core.operations.layout.animation.AnimationSpec
 import androidx.compose.remote.creation.RemoteComposeWriter
 import androidx.compose.remote.creation.modifiers.ClickActionModifier
 import androidx.compose.remote.creation.modifiers.RecordingModifier
@@ -223,6 +224,13 @@ public fun Modifier.fillParentMaxSize(fraction: Float = 1f): Modifier =
 public fun Modifier.border(width: Float, roundedCorner: Float, color: Int, shape: Int): Modifier =
     then(BorderModifier(width, roundedCorner, color, shape))
 
+public fun Modifier.border(
+    width: RcDp,
+    roundedCorner: RcDp,
+    color: RcColorValue,
+    shape: RcBorderShape = RcBorderShape.Rectangle,
+): Modifier = then(BorderModifier(width.value, roundedCorner.value, color.id, shape.value))
+
 /** dynamicBorder modifier. */
 public fun Modifier.dynamicBorder(
     width: Float,
@@ -231,12 +239,51 @@ public fun Modifier.dynamicBorder(
     shape: Int,
 ): Modifier = then(DynamicBorderModifier(width, roundedCorner, color, shape))
 
+public fun Modifier.dynamicBorder(
+    width: RcDp,
+    roundedCorner: RcDp,
+    color: RcColor,
+    shape: RcBorderShape = RcBorderShape.Rectangle,
+): Modifier =
+    then(DynamicBorderModifier(width.value, roundedCorner.value, color.id.toShort(), shape.value))
+
 /** visibility modifier. */
 public fun Modifier.visibility(visible: RcInteger): Modifier = then(VisibilityModifier(visible))
 
 /** animationSpec modifier. */
-public fun Modifier.animationSpec(animationId: Int): Modifier =
-    then(AnimationSpecModifier(animationId))
+public fun Modifier.animationSpec(
+    animationId: Int = -1,
+    motionDuration: Float = 300f,
+    motionEasingType: Int =
+        androidx.compose.remote.core.operations.utilities.easing.GeneralEasing.CUBIC_STANDARD,
+    visibilityDuration: Float = 300f,
+    visibilityEasingType: Int =
+        androidx.compose.remote.core.operations.utilities.easing.GeneralEasing.CUBIC_STANDARD,
+    enterAnimation: AnimationSpec.ANIMATION = AnimationSpec.ANIMATION.FADE_IN,
+    exitAnimation: AnimationSpec.ANIMATION = AnimationSpec.ANIMATION.FADE_OUT,
+    enterFunctionId: Int = -1,
+    exitFunctionId: Int = -1,
+    enterSequence: AnimationSpec.SEQUENCE = AnimationSpec.SEQUENCE.CONCURRENT,
+    exitSequence: AnimationSpec.SEQUENCE = AnimationSpec.SEQUENCE.CONCURRENT,
+): Modifier =
+    then(
+        AnimationSpecModifier(
+            animationId,
+            motionDuration,
+            motionEasingType,
+            visibilityDuration,
+            visibilityEasingType,
+            enterAnimation,
+            exitAnimation,
+            enterFunctionId,
+            exitFunctionId,
+            enterSequence,
+            exitSequence,
+        )
+    )
+
+public fun Modifier.animationSpec(spec: RcAnimationSpec): Modifier =
+    then(AnimationSpecModifier(spec.id))
 
 /** alignByBaseline modifier. */
 public fun Modifier.alignByBaseline(): Modifier = then(AlignByBaselineModifier)
@@ -272,9 +319,88 @@ public fun Modifier.marquee(
 /** zIndex modifier. */
 public fun Modifier.zIndex(value: Float): Modifier = then(ZIndexModifier(value))
 
+/** Builder scope for [Modifier.graphicsLayer]. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RcDslMarker
+public class GraphicsLayerScope {
+    internal val attributes: HashMap<Int, Any> = HashMap()
+
+    public var scaleX: Float
+        get() = (attributes[0] as? Float) ?: 1f
+        set(value) {
+            attributes[0] = value
+        }
+
+    public fun scaleX(value: RcFloat) {
+        attributes[0] = value
+    }
+
+    public var scaleY: Float
+        get() = (attributes[1] as? Float) ?: 1f
+        set(value) {
+            attributes[1] = value
+        }
+
+    public fun scaleY(value: RcFloat) {
+        attributes[1] = value
+    }
+
+    public var alpha: Float
+        get() = (attributes[11] as? Float) ?: 1f
+        set(value) {
+            attributes[11] = value
+        }
+
+    public fun alpha(value: RcFloat) {
+        attributes[11] = value
+    }
+
+    public var rotationZ: Float
+        get() = (attributes[4] as? Float) ?: 0f
+        set(value) {
+            attributes[4] = value
+        }
+
+    public fun rotationZ(value: RcFloat) {
+        attributes[4] = value
+    }
+
+    public var translationX: Float
+        get() = (attributes[7] as? Float) ?: 0f
+        set(value) {
+            attributes[7] = value
+        }
+
+    public fun translationX(value: RcDp) {
+        attributes[7] = value.value
+    }
+
+    public fun translationX(value: RcFloat) {
+        attributes[7] = value
+    }
+
+    public var translationY: Float
+        get() = (attributes[8] as? Float) ?: 0f
+        set(value) {
+            attributes[8] = value
+        }
+
+    public fun translationY(value: RcDp) {
+        attributes[8] = value.value
+    }
+
+    public fun translationY(value: RcFloat) {
+        attributes[8] = value
+    }
+}
+
 /** graphicsLayer modifier. */
 public fun Modifier.graphicsLayer(attributes: Map<Int, Any>): Modifier =
     then(GraphicsLayerModifier(attributes))
+
+/** graphicsLayer modifier with type-safe builder lambda. */
+public fun Modifier.graphicsLayer(block: GraphicsLayerScope.() -> Unit): Modifier =
+    graphicsLayer(GraphicsLayerScope().apply(block).attributes)
 
 /** Ripple modifier for standard material design touch feedback. */
 public fun Modifier.ripple(): Modifier = then(RippleModifierElement)
@@ -603,9 +729,49 @@ internal class VisibilityModifier(val visible: RcInteger) : Modifier.Element {
     }
 }
 
-internal class AnimationSpecModifier(val animationId: Int) : Modifier.Element {
+internal class AnimationSpecModifier(
+    val animationId: Int = -1,
+    val motionDuration: Float = 300f,
+    val motionEasingType: Int =
+        androidx.compose.remote.core.operations.utilities.easing.GeneralEasing.CUBIC_STANDARD,
+    val visibilityDuration: Float = 300f,
+    val visibilityEasingType: Int =
+        androidx.compose.remote.core.operations.utilities.easing.GeneralEasing.CUBIC_STANDARD,
+    val enterAnimation: AnimationSpec.ANIMATION = AnimationSpec.ANIMATION.FADE_IN,
+    val exitAnimation: AnimationSpec.ANIMATION = AnimationSpec.ANIMATION.FADE_OUT,
+    val enterFunctionId: Int = -1,
+    val exitFunctionId: Int = -1,
+    val enterSequence: AnimationSpec.SEQUENCE = AnimationSpec.SEQUENCE.CONCURRENT,
+    val exitSequence: AnimationSpec.SEQUENCE = AnimationSpec.SEQUENCE.CONCURRENT,
+) : Modifier.Element, androidx.compose.remote.creation.modifiers.RecordingModifier.Element {
     override fun applyTo(modifier: RecordingModifier) {
-        modifier.animationSpec(animationId)
+        modifier.animationSpec(
+            animationId,
+            motionDuration,
+            motionEasingType,
+            visibilityDuration,
+            visibilityEasingType,
+            enterAnimation,
+            exitAnimation,
+            enterFunctionId,
+            exitFunctionId,
+            enterSequence,
+            exitSequence,
+        )
+    }
+
+    override fun write(writer: RemoteComposeWriter) {
+        writer.addAnimationSpecModifier(
+            animationId,
+            motionDuration,
+            motionEasingType,
+            visibilityDuration,
+            visibilityEasingType,
+            AnimationSpec.packAnimation(enterAnimation, enterSequence),
+            AnimationSpec.packAnimation(exitAnimation, exitSequence),
+            enterFunctionId,
+            exitFunctionId,
+        )
     }
 }
 

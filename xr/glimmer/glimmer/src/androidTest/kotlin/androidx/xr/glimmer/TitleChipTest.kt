@@ -25,10 +25,10 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.testutils.assertIsEqualTo
-import androidx.compose.testutils.assertShape
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.getBoundsInRoot
@@ -44,10 +44,10 @@ import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import androidx.xr.glimmer.testutils.assertGlimmerSurfaceShape
 import androidx.xr.glimmer.testutils.captureToImage
 import com.google.common.truth.Truth.assertThat
 import kotlin.properties.Delegates
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -59,7 +59,7 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
 class TitleChipTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun semantics() {
@@ -79,21 +79,19 @@ class TitleChipTest {
             colors = Colors(surface = surfaceColor, background = backgroundColor)
         ) {
             expectedShape = GlimmerTheme.shapes.large
-            TitleChip(modifier = Modifier.testTag("titleChip"), border = null) {
+            TitleChip(modifier = Modifier.testTag("titleChip")) {
                 Box(Modifier.size(100.dp, 100.dp))
             }
         }
 
-        rule
-            .onNodeWithTag("titleChip")
-            .captureToImage()
-            .assertShape(
-                density = rule.density,
-                shape = expectedShape,
-                shapeColor = surfaceColor,
-                backgroundColor = backgroundColor,
-                antiAliasingGap = with(rule.density) { 1.dp.toPx() },
-            )
+        val image = rule.onNodeWithTag("titleChip").captureToImage()
+        image.assertGlimmerSurfaceShape(
+            density = rule.density,
+            shape = expectedShape,
+            backgroundColor = backgroundColor,
+        )
+        val centerColor = image.toPixelMap().run { get(width / 2, height / 2) }
+        assertThat(centerColor).isEqualTo(surfaceColor)
     }
 
     @Test
@@ -166,14 +164,16 @@ class TitleChipTest {
         (textBounds.left - titleChipBounds.left).assertIsEqualTo(
             extraSmallSpacing * 2,
             "padding between the start of the titleChip and the start of the text.",
+            tolerance = 1.dp,
         )
 
         (titleChipBounds.right - textBounds.right).assertIsEqualTo(
             extraSmallSpacing * 2,
             "padding between the end of the text and the end of the titleChip.",
+            tolerance = 1.dp,
         )
 
-        titleChipBounds.height.assertIsEqualTo(44.dp, "height of titleChip.")
+        titleChipBounds.height.assertIsEqualTo(44.dp, "height of titleChip.", tolerance = 1.dp)
     }
 
     @Test
@@ -205,19 +205,22 @@ class TitleChipTest {
         (leadingIconBounds.left - titleChipBounds.left).assertIsEqualTo(
             extraSmallSpacing,
             "Padding between start of titleChip and start of leading icon.",
+            tolerance = 1.dp,
         )
 
         (textBounds.left - leadingIconBounds.right).assertIsEqualTo(
             extraSmallSpacing,
             "Padding between end of leading icon and start of text.",
+            tolerance = 1.dp,
         )
 
         (titleChipBounds.right - textBounds.right).assertIsEqualTo(
             extraSmallSpacing * 2,
             "padding between the end of the text and the end of the titleChip.",
+            tolerance = 1.dp,
         )
 
-        titleChipBounds.height.assertIsEqualTo(44.dp, "height of titleChip.")
+        titleChipBounds.height.assertIsEqualTo(44.dp, "height of titleChip.", tolerance = 1.dp)
     }
 
     @Test

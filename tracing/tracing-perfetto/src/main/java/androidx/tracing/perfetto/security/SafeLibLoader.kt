@@ -29,6 +29,7 @@ internal class SafeLibLoader(context: Context) {
     fun loadLib(file: File, abiToSha256Map: Map<String, String>) {
         // ensure the file is in an approved location (and if not, copy it over to one)
         val safeLocationFile = copyToSafeLocation(file)
+        safeLocationFile.setReadOnly()
 
         // verify checksum of the file
         verifyChecksum(safeLocationFile, findAbiAwareSha(abiToSha256Map))
@@ -43,8 +44,9 @@ internal class SafeLibLoader(context: Context) {
      */
     private fun copyToSafeLocation(file: File): File {
         if (!file.exists()) throw FileNotFoundException("Cannot locate library file: $file")
-        val isInApprovedLocation =
-            approvedLocations.any { approvedLocation -> file.isDescendantOf(approvedLocation) }
+        val isInApprovedLocation = approvedLocations.any { approvedLocation ->
+            file.isDescendantOf(approvedLocation)
+        }
         return if (isInApprovedLocation) file
         else file.copyTo(approvedLocations.first().resolve(file.name), overwrite = true)
     }

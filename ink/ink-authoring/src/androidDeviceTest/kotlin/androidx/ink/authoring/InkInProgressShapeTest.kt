@@ -18,6 +18,7 @@ package androidx.ink.authoring
 import androidx.ink.brush.Brush
 import androidx.ink.brush.BrushFamily
 import androidx.ink.brush.BrushPaint
+import androidx.ink.brush.ExperimentalInkAnimationApi
 import androidx.ink.brush.InputToolType
 import androidx.ink.strokes.ImmutableStrokeInputBatch
 import androidx.ink.strokes.MutableStrokeInputBatch
@@ -27,15 +28,15 @@ import kotlin.test.assertNotNull
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalCustomShapeWorkflowApi::class)
+@OptIn(ExperimentalInkCustomShapeWorkflowApi::class, ExperimentalInkAnimationApi::class)
 @RunWith(AndroidJUnit4::class)
 class InkInProgressShapeTest {
 
     @Test
-    fun getUpdatedRegion_withTextureAnimationThatProgressed_shouldIncludeEntireStroke() {
+    fun getUpdatedRegion_withPaintAnimationThatProgressed_shouldIncludeEntireStroke() {
         val shape = InkInProgressShape()
 
-        // Create a brush with a texture animation.
+        // Create a brush with a brush paint animation.
         val brushSize = 10f
         val texture =
             BrushPaint.StampingTexture(
@@ -50,7 +51,7 @@ class InkInProgressShapeTest {
 
         shape.start(brush, systemElapsedTimeMillis = 0)
 
-        // Start a stroke with the texture-animated brush and an initial animation progress value.
+        // Start a stroke with the paint-animated brush and an initial animation progress value.
         shape.enqueueInputs(
             realInputs =
                 MutableStrokeInputBatch()
@@ -89,7 +90,7 @@ class InkInProgressShapeTest {
     }
 
     @Test
-    fun getUpdatedRegion_withTextureAnimationThatDidNotProgress_shouldIncludeOnlyNewPartOfStroke() {
+    fun getUpdatedRegion_withPaintAnimationThatDidNotProgress_shouldIncludeOnlyNewPartOfStroke() {
         // TODO: b/394129093 - Once the redraw bug is fixed, duplicate the above test without a
         // progress
         // update on the second add. Since the animation is still on the same progress, the modified

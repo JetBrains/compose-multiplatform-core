@@ -32,7 +32,6 @@ import android.util.Log;
 
 import androidx.heifwriter.test.R;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.FlakyTest;
 import androidx.test.filters.LargeTest;
 import androidx.test.filters.SmallTest;
 import androidx.test.rule.GrantPermissionRule;
@@ -54,7 +53,6 @@ import java.io.InputStream;
  * Test {@link HeifWriter}.
  */
 @RunWith(AndroidJUnit4.class)
-@FlakyTest
 public class HeifWriterTest extends TestBase {
     private static final String TAG = HeifWriterTest.class.getSimpleName();
 
@@ -285,6 +283,7 @@ public class HeifWriterTest extends TestBase {
                 outputPath, 1920, 1080, INPUT_MODE_SURFACE)
                 .setMaxImages(1)
                 .build();
+        heifWriter.start();
 
         try {
             byte[] exifData = new byte[100];
@@ -309,6 +308,7 @@ public class HeifWriterTest extends TestBase {
                 outputPath, 1920, 1080, INPUT_MODE_SURFACE)
                 .setMaxImages(1)
                 .build();
+        heifWriter.start();
 
         try {
             byte[] exifData = new byte[100];

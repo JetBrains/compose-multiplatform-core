@@ -41,10 +41,13 @@ internal constructor(
         } ?: RemoteStateInstanceKey(),
     )
 
-    internal enum class OperationKey : DebuggableOperation {
+    internal enum class OperationKey : RemoteOperation {
         Create {
             override fun toDebugString(args: List<RemoteStateCacheKey>) =
                 "arrayOf(${args.joinToDebugString()})"
+
+            override fun reconstruct(args: List<BaseRemoteState<*>>): BaseRemoteState<*> =
+                RemoteStringArray(args.fastMap { it as RemoteString })
         },
         Get {
             override val precedence: Int
@@ -52,10 +55,18 @@ internal constructor(
 
             override fun toDebugString(args: List<RemoteStateCacheKey>) =
                 args.formatArrayAccess(precedence)
+
+            override fun reconstruct(args: List<BaseRemoteState<*>>): BaseRemoteState<*> =
+                (args[0] as RemoteStringArray)[args[1] as RemoteInt]
         },
     }
 
     override fun writeToDocument(creationState: RemoteComposeCreationState): Int {
+        // If this instance represents an existing allocated ID (e.g. a formal parameter in a
+        // pattern definition), return that ID directly instead of writing to the document.
+        if (cacheKey is RemoteStateIdKey) {
+            return (cacheKey as RemoteStateIdKey).id
+        }
         val ids =
             constantValueOrNull!!.fastMap { it.getIdForCreationState(creationState) }.toIntArray()
         val nanId = creationState.document.addStringList(*ids)
@@ -63,14 +74,14 @@ internal constructor(
     }
 
     /** Array access operator for [RemoteStringArray] with an [Int] index. */
-    public operator fun get(v: Int): RemoteString {
-        return constantValueOrNull!![v]
-    }
+    public operator fun get(v: Int): RemoteString = constantValueOrNull?.get(v) ?: get(RemoteInt(v))
 
     /** Array access operator for [RemoteStringArray] with a [RemoteInt] index. */
     public operator fun get(v: RemoteInt): RemoteString {
-        v.constantValueOrNull?.let {
-            return constantValueOrNull!![it]
+        val constArray = constantValueOrNull
+        val constIndex = v.constantValueOrNull
+        if (constArray != null && constIndex != null) {
+            return constArray[constIndex]
         }
         return MutableRemoteString(
             constantValueOrNull = null,

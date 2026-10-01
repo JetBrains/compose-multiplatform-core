@@ -19,6 +19,7 @@
 
 package androidx.ink.storage
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
 import androidx.ink.strokes.ImmutableStrokeInputBatch
@@ -48,9 +49,7 @@ public fun StrokeInputBatch.encode(output: OutputStream) {
  *   `ink.proto.CodedStrokeInputBatch` proto message, or the corresponding [StrokeInputBatch] is
  *   invalid.
  */
-// TODO: b/522256938 - Add this annotation once we figure out what to do about this being a
-// breaking change (goes from can't handle to must handle for Java consumers).
-// @Throws(IOException::class)
+@Throws(IOException::class)
 public fun StrokeInputBatch.Companion.decode(input: InputStream): ImmutableStrokeInputBatch =
     decodeUncompressed(DecompressedBytes(input))
 
@@ -67,8 +66,9 @@ public object StrokeInputBatchSerialization {
      * [StrokeInputBatch.encode] instead.
      */
     @JvmStatic
-    public fun encode(strokeInputBatch: StrokeInputBatch, output: OutputStream): Unit =
+    public fun encode(strokeInputBatch: StrokeInputBatch, output: OutputStream) {
         strokeInputBatch.encode(output)
+    }
 
     /**
      * Write a gzip-compressed `ink.proto.CodedStrokeInputBatch` binary proto message representing
@@ -93,9 +93,7 @@ public object StrokeInputBatchSerialization {
      *   invalid.
      */
     @JvmStatic
-    // TODO: b/522256938 - Add this annotation once we figure out what to do about this being a
-    // breaking change (goes from can't handle to must handle for Java consumers).
-    // @Throws(IOException::class)
+    @Throws(IOException::class)
     public fun decode(input: InputStream): ImmutableStrokeInputBatch =
         StrokeInputBatch.decode(input)
 
@@ -118,6 +116,7 @@ public object StrokeInputBatchSerialization {
 }
 
 @UsedByNative
+@OptIn(InkInternalOnlyApi::class)
 actual internal object StrokeInputBatchSerializationNative {
     init {
         NativeLoader.load()

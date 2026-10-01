@@ -469,7 +469,8 @@ class RecordConvertersTest {
                     PlatformExerciseSegmentBuilder(
                             START_TIME.plusMillis(1),
                             START_TIME.plusMillis(10),
-                            PlatformExerciseSegmentType.EXERCISE_SEGMENT_TYPE_BARBELL_SHOULDER_PRESS,
+                            PlatformExerciseSegmentType
+                                .EXERCISE_SEGMENT_TYPE_BARBELL_SHOULDER_PRESS,
                         )
                         .setRepetitionsCount(10)
                         .build()
@@ -2116,7 +2117,7 @@ class RecordConvertersTest {
                 .setStartZoneOffset(START_ZONE_OFFSET)
                 .setEndZoneOffset(END_ZONE_OFFSET)
 
-        var sdkMindfulnessSession =
+        val sdkMindfulnessSession =
             platformMindfulnessSessionBuilder.build().toSdkRecord() as MindfulnessSessionRecord
 
         assertSdkRecord(sdkMindfulnessSession) {
@@ -2143,7 +2144,7 @@ class RecordConvertersTest {
                 .setStartZoneOffset(START_ZONE_OFFSET)
                 .setEndZoneOffset(END_ZONE_OFFSET)
 
-        var sdkMindfulnessSession =
+        val sdkMindfulnessSession =
             platformMindfulnessSessionBuilder.build().toSdkRecord() as MindfulnessSessionRecord
 
         assertSdkRecord(sdkMindfulnessSession) {
@@ -2168,7 +2169,7 @@ class RecordConvertersTest {
                 .setStartZoneOffset(START_ZONE_OFFSET)
                 .setEndZoneOffset(END_ZONE_OFFSET)
 
-        var sdkActivityIntensityRecord =
+        val sdkActivityIntensityRecord =
             platformActivityIntensityRecordBuilder.build().toSdkRecord() as ActivityIntensityRecord
 
         assertSdkRecord(sdkActivityIntensityRecord) {
@@ -2191,7 +2192,7 @@ class RecordConvertersTest {
                 .setStartZoneOffset(START_ZONE_OFFSET)
                 .setEndZoneOffset(END_ZONE_OFFSET)
 
-        var sdkActivityIntensityRecord =
+        val sdkActivityIntensityRecord =
             platformActivityIntensityRecordBuilder.build().toSdkRecord() as ActivityIntensityRecord
 
         assertSdkRecord(sdkActivityIntensityRecord) {

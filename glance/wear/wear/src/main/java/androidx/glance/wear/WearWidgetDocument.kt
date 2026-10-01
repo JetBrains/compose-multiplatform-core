@@ -16,7 +16,6 @@
 
 package androidx.glance.wear
 
-import android.annotation.SuppressLint
 import android.content.Context
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.capture.createCreationDisplayInfo
@@ -49,7 +48,6 @@ public class WearWidgetDocument(
 ) : WearWidgetData {
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @SuppressLint("RestrictedApiAndroidX")
     override suspend fun captureRawContent(
         context: Context,
         params: WearWidgetParams,
@@ -66,6 +64,7 @@ public class WearWidgetDocument(
                     ),
                 isInspectionMode = isInspectionMode,
             ),
+            params.rendererVersion.supportedOperations,
         ) {
             WearWidgetContainer(
                 horizontalPadding = params.horizontalPaddingDp.rdp,

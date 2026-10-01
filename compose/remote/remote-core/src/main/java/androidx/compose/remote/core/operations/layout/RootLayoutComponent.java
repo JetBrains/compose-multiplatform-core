@@ -29,6 +29,8 @@ import androidx.compose.remote.core.documentation.DocumentationBuilder;
 import androidx.compose.remote.core.operations.Header;
 import androidx.compose.remote.core.operations.layout.animation.RootAnimateMeasure;
 import androidx.compose.remote.core.operations.layout.measure.ComponentMeasure;
+import androidx.compose.remote.core.operations.layout.measure.ComponentMeasurePool;
+import androidx.compose.remote.core.operations.layout.measure.FlatMeasurePass;
 import androidx.compose.remote.core.operations.layout.measure.Measurable;
 import androidx.compose.remote.core.operations.layout.measure.MeasurePass;
 import androidx.compose.remote.core.operations.layout.modifiers.ComponentModifiers;
@@ -49,6 +51,72 @@ public class RootLayoutComponent extends Component {
     private boolean mHasTouchListeners = false;
     protected float mLastReportedOriginX = Float.NaN;
     protected float mLastReportedOriginY = Float.NaN;
+    private MeasurePass mMeasurePass = null;
+
+    private @NonNull MeasurePass getMeasurePass(@NonNull RemoteContext context) {
+        boolean useFlat =
+                context.getDocument() != null && context.getDocument().isFlatMeasurePassEnabled();
+        if (mMeasurePass == null
+                || (useFlat && !(mMeasurePass instanceof FlatMeasurePass))
+                || (!useFlat && (mMeasurePass instanceof FlatMeasurePass))) {
+            if (useFlat) {
+                int totalComponents = context.getDocument() != null
+                        ? context.getDocument().getComponentCount() : 16;
+                mMeasurePass = new FlatMeasurePass(totalComponents);
+            } else {
+                mMeasurePass = new MeasurePass();
+            }
+        }
+        return mMeasurePass;
+    }
+
+    private final java.util.ArrayList<Component> mDirtyBoundaries = new java.util.ArrayList<>();
+
+    /** Register a dirty boundary component for incremental measurement. */
+    public void registerDirtyBoundary(@NonNull Component boundary) {
+        if (!mDirtyBoundaries.contains(boundary)) {
+            mDirtyBoundaries.add(boundary);
+        }
+    }
+
+    /** Clear all registered dirty boundary components. */
+    public void clearDirtyBoundaries() {
+        mDirtyBoundaries.clear();
+    }
+
+    private void resetSubTreeMeasureState(
+            @NonNull Component component, @NonNull MeasurePass measure) {
+        ComponentMeasure m = measure.get(component);
+        m.setVisibility(component.mVisibility);
+        m.clearCache();
+
+        for (Operation op : component.getList()) {
+            if (op instanceof Component) {
+                resetSubTreeMeasureState((Component) op, measure);
+            }
+        }
+    }
+
+    /** Perform a partial layout pass on registered dirty boundaries. */
+    public void performPartialLayoutPass(@NonNull RemoteContext context) {
+        if (mDirtyBoundaries.isEmpty()) {
+            return;
+        }
+        MeasurePass measurePass = getMeasurePass(context);
+        measurePass.setContext(context);
+        for (Component boundary : mDirtyBoundaries) {
+            if (boundary.mNeedsMeasure) {
+                resetSubTreeMeasureState(boundary, measurePass);
+
+                float w = boundary.getWidth();
+                float h = boundary.getHeight();
+                boundary.measure(context.getPaintContext(), w, w, h, h, measurePass);
+                boundary.layout(context, measurePass);
+            }
+        }
+        mDirtyBoundaries.clear();
+        measurePass.setContext(null);
+    }
 
     public RootLayoutComponent(
             int componentId,
@@ -145,9 +213,17 @@ public class RootLayoutComponent extends Component {
         }
     }
 
+    @Override
+    public boolean needsMeasure() {
+        return mNeedsMeasure || !mDirtyBoundaries.isEmpty();
+    }
+
     /** This will measure then layout the tree of components */
     public void layout(@NonNull RemoteContext context) {
         if (!mNeedsMeasure) {
+            if (!mDirtyBoundaries.isEmpty()) {
+                performPartialLayoutPass(context);
+            }
             return;
         }
         if (context.isLayoutDebug()) {
@@ -160,8 +236,9 @@ public class RootLayoutComponent extends Component {
         context.mViewportWidth = newWidth;
         context.mViewportHeight = newHeight;
 
-        // TODO: reuse MeasurePass
-        MeasurePass measurePass = new MeasurePass();
+        MeasurePass measurePass = getMeasurePass(context);
+        measurePass.setContext(context);
+        measurePass.clear();
         ComponentMeasure self = measurePass.get(this);
         self.setX(0f);
         self.setY(0f);
@@ -182,6 +259,8 @@ public class RootLayoutComponent extends Component {
         self.setH(newHeight);
 
         layout(context, measurePass);
+        mDirtyBoundaries.clear();
+        measurePass.setContext(null);
         if (context.isLayoutDebug()) {
             DebugLog.display();
         }
@@ -201,8 +280,9 @@ public class RootLayoutComponent extends Component {
         context.mViewportWidth = newWidth;
         context.mViewportHeight = newHeight;
 
-        // TODO: reuse MeasurePass
-        MeasurePass measurePass = new MeasurePass();
+        MeasurePass measurePass = getMeasurePass(context);
+        measurePass.setContext(context);
+        measurePass.clear();
         ComponentMeasure self = measurePass.get(this);
         self.setX(0f);
         self.setY(0f);
@@ -236,6 +316,8 @@ public class RootLayoutComponent extends Component {
         self.setH(mHeight);
 
         layout(context, measurePass);
+        mDirtyBoundaries.clear();
+        measurePass.setContext(null);
     }
 
     @Override
@@ -252,10 +334,11 @@ public class RootLayoutComponent extends Component {
                 && mAnimationSpec.isAnimationEnabled()
                 && m.getAllowsAnimation()) {
             if (mAnimateMeasure == null) {
+                ComponentMeasurePool pool = context.getComponentMeasurePool();
                 ComponentMeasure origin =
-                        new ComponentMeasure(mComponentId, mX, mY, mWidth, mHeight, mVisibility);
+                        pool.obtain(mComponentId, mX, mY, mWidth, mHeight, mVisibility);
                 ComponentMeasure target =
-                        new ComponentMeasure(
+                        pool.obtain(
                                 mComponentId,
                                 m.getX(),
                                 m.getY(),
@@ -287,10 +370,14 @@ public class RootLayoutComponent extends Component {
                                     mAnimationSpec.getEnterAnimation(),
                                     mAnimationSpec.getExitAnimation(),
                                     mAnimationSpec.getMotionEasingType(),
-                                    mAnimationSpec.getVisibilityEasingType());
+                                    mAnimationSpec.getVisibilityEasingType(),
+                                    mAnimationSpec.getEnterFunctionId(),
+                                    mAnimationSpec.getExitFunctionId());
                 } else {
                     mLastReportedOriginX = targetOriginX;
                     mLastReportedOriginY = targetOriginY;
+                    pool.recycle(origin);
+                    pool.recycle(target);
                 }
             }
         }
@@ -350,8 +437,8 @@ public class RootLayoutComponent extends Component {
     /**
      * Display the component hierarchy
      *
-     * @param component the current component
-     * @param indent the current indentation level
+     * @param component  the current component
+     * @param indent     the current indentation level
      * @param serializer the serializer we write to
      */
     public void displayHierarchy(
@@ -396,7 +483,7 @@ public class RootLayoutComponent extends Component {
     /**
      * Read this operation and add it to the list of operations
      *
-     * @param buffer the buffer to read
+     * @param buffer     the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {

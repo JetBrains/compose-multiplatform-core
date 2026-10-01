@@ -26,7 +26,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -42,6 +44,7 @@ import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -50,7 +53,6 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.matchers.MSSIMMatcher
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -61,12 +63,13 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
     private val testTag = "SearchBar"
 
+    @Suppress("DEPRECATION")
     @Test
     fun searchBar_notExpanded() {
         rule.setMaterialContent(scheme.colorScheme) {
@@ -91,6 +94,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("searchBar_inactive_${scheme.name}")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun searchBar_focused_insetFocusRings() {
         val focusRequester = FocusRequester()
@@ -100,7 +104,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             @OptIn(ExperimentalMaterial3Api::class)
             CompositionLocalProvider(
                 LocalRippleThemeConfiguration provides
-                    RippleDefaults.InsetFocusRingRippleThemeConfiguration
+                    RippleDefaults.InsetFocusRingThemeConfiguration
             ) {
                 localInputModeManager = LocalInputModeManager.current
                 val expanded = false
@@ -132,6 +136,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("searchBar_focused_insetFocusRings_${scheme.name}")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun searchBar_disabled() {
         rule.setMaterialContent(scheme.colorScheme) {
@@ -157,6 +162,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("searchBar_disabled_${scheme.name}")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun searchBar_expanded() {
         rule.setMaterialContent(scheme.colorScheme) {
@@ -180,6 +186,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("searchBar_active_${scheme.name}")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun searchBar_expanded_withIcons() {
         rule.setMaterialContent(scheme.colorScheme) {
@@ -205,6 +212,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("searchBar_active_withIcons_${scheme.name}")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun searchBar_expanded_customColors() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -233,6 +241,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("searchBar_active_customColors")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun searchBar_shadow_notExpanded() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -258,6 +267,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("searchBar_shadow_inactive")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun searchBar_shadow_expanded() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -283,36 +293,42 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("searchBar_shadow_active")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun searchBar_predictiveBack_progress0() {
         rule.setMaterialContent(lightColorScheme()) { SearchBarPredictiveBack(progress = 0f) }
         assertAgainstGolden("searchBar_predictiveBack_progress0")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun searchBar_predictiveBack_progress25() {
         rule.setMaterialContent(lightColorScheme()) { SearchBarPredictiveBack(progress = 0.25f) }
         assertAgainstGolden("searchBar_predictiveBack_progress25")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun searchBar_predictiveBack_progress50() {
         rule.setMaterialContent(lightColorScheme()) { SearchBarPredictiveBack(progress = 0.50f) }
         assertAgainstGolden("searchBar_predictiveBack_progress50")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun searchBar_predictiveBack_progress75() {
         rule.setMaterialContent(lightColorScheme()) { SearchBarPredictiveBack(progress = 0.75f) }
         assertAgainstGolden("searchBar_predictiveBack_progress75")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun searchBar_predictiveBack_progress100() {
         rule.setMaterialContent(lightColorScheme()) { SearchBarPredictiveBack(progress = 1f) }
         assertAgainstGolden("searchBar_predictiveBack_progress100")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun dockedSearchBar_notExpanded() {
         rule.setMaterialContent(scheme.colorScheme) {
@@ -335,6 +351,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("dockedSearchBar_inactive_${scheme.name}")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun dockedSearchBar_disabled() {
         rule.setMaterialContent(scheme.colorScheme) {
@@ -358,6 +375,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("dockedSearchBar_disabled_${scheme.name}")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun dockedSearchBar_expanded() {
         rule.setMaterialContent(scheme.colorScheme) {
@@ -379,6 +397,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("dockedSearchBar_active_${scheme.name}")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun dockedSearchBar_expanded_withIcons() {
         rule.setMaterialContent(scheme.colorScheme) {
@@ -402,6 +421,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("dockedSearchBar_active_withIcons_${scheme.name}")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun dockedSearchBar_expanded_customShape() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -424,6 +444,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("dockedSearchBar_active_customShape")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun dockedSearchBar_expanded_customColors() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -450,6 +471,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("dockedSearchBar_active_customColors")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun dockedSearchBar_shadow_notExpanded() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -473,6 +495,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("dockedSearchBar_shadow_inactive")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun dockedSearchBar_shadow_expanded() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -495,6 +518,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("dockedSearchBar_shadow_active")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun newSearchBar_collapsed() {
         rule.setMaterialContent(scheme.colorScheme) {
@@ -515,6 +539,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("searchBar_collapsed_${scheme.name}")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun newSearchBar_collapsed_shadow() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -536,6 +561,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("searchBar_collapsed_shadow")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun newSearchBar_collapsed_disabled() {
         rule.setMaterialContent(scheme.colorScheme) {
@@ -557,6 +583,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("searchBar_collapsed_disabled_${scheme.name}")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun newSearchBar_fullScreen_expanded() {
         rule.setMaterialContent(scheme.colorScheme) {
@@ -577,6 +604,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("searchBar_fullScreen_${scheme.name}")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun newSearchBar_fullScreen_expanded_withIcons() {
         rule.setMaterialContent(scheme.colorScheme) {
@@ -599,6 +627,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("searchBar_fullScreen_withIcons_${scheme.name}")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun newSearchBar_fullScreen_expanded_customColors() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -623,6 +652,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("searchBar_fullScreen_customColors")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun newSearchBar_docked_expanded() {
         rule.setMaterialContent(scheme.colorScheme) {
@@ -643,6 +673,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("searchBar_docked_${scheme.name}")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun newSearchBar_docked_expanded_withIcons() {
         rule.setMaterialContent(scheme.colorScheme) {
@@ -665,6 +696,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("searchBar_docked_withIcons_${scheme.name}")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun newSearchBar_docked_expanded_customShape() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -686,6 +718,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("searchBar_docked_customShape")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun newSearchBar_docked_expanded_customColors() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -710,6 +743,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("searchBar_docked_customColors")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun appBarWithSearch_withNavigationIconAndActions() {
         rule.setMaterialContent(scheme.colorScheme) {
@@ -743,6 +777,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("appBarWithSearch_withNavigationIconAndActions_${scheme.name}")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun appBarWithSearch_withNavigationIconAndActions_dockedAndExpanded_withGap() {
         rule.setMaterialContent(scheme.colorScheme) {
@@ -765,6 +800,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             ) {
                 repeat(4) { idx ->
                     val resultText = "Suggestion $idx"
+                    @Suppress("DEPRECATION")
                     ListItem(
                         headlineContent = { Text(resultText) },
                         supportingContent = { Text("Additional info") },
@@ -783,6 +819,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun appBarWithSearch_withNavigationIconAndActions_fullScreenAndExpanded_contained() {
         rule.setMaterialContent(scheme.colorScheme) {
@@ -815,6 +852,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             ) {
                 repeat(4) { idx ->
                     val resultText = "Suggestion $idx"
+                    @Suppress("DEPRECATION")
                     ListItem(
                         headlineContent = { Text(resultText) },
                         supportingContent = { Text("Additional info") },
@@ -831,6 +869,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun appBarWithSearch_withoutNavigationIconAndActions() {
         rule.setMaterialContent(scheme.colorScheme) {
@@ -851,6 +890,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("appBarWithSearch_withoutNavigationIconAndActions_${scheme.name}")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun appBarWithSearch_withScrolledContainerColor() {
         rule.setMaterialContent(scheme.colorScheme) {
@@ -876,6 +916,34 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             )
         }
         assertAgainstGolden("appBarWithSearch_withScrolledContainerColor_${scheme.name}")
+    }
+
+    @Test
+    fun searchBar_withStyle() {
+        rule.setMaterialContent(scheme.colorScheme) {
+            val searchBarState = rememberSearchBarState()
+            StyleableSearchBar(
+                modifier = Modifier.testTag(testTag),
+                state = searchBarState,
+                inputField = { TestInputField(searchBarState) },
+            )
+        }
+        assertAgainstGolden("searchBar_withStyle_${scheme.name}")
+    }
+
+    @Test
+    fun appBarWithSearchBar_withStyle() {
+        rule.setMaterialContent(scheme.colorScheme) {
+            val searchBarState = rememberSearchBarState()
+            StyleableAppBarWithSearch(
+                modifier = Modifier.testTag(testTag),
+                state = searchBarState,
+                inputField = { TestInputField(searchBarState) },
+                navigationIcon = { Icon(Icons.Filled.Menu, contentDescription = null) },
+                actions = { Icon(Icons.Filled.Settings, contentDescription = null) },
+            )
+        }
+        assertAgainstGolden("appBarWithSearchBar_withStyle_${scheme.name}")
     }
 
     private fun assertAgainstGolden(goldenName: String, threshold: Double = 0.98) {
@@ -905,6 +973,27 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         }
     }
 
+    @Composable
+    private fun TestInputField(searchBarState: SearchBarState) {
+        SearchBarDefaults.InputField(
+            textFieldState = rememberTextFieldState(),
+            searchBarState = searchBarState,
+            onSearch = {},
+            placeholder = { Text(modifier = Modifier.clearAndSetSemantics {}, text = "Search") },
+            leadingIcon = {
+                IconButton(onClick = {}) {
+                    Icon(imageVector = Icons.Filled.Search, contentDescription = null)
+                }
+            },
+            trailingIcon = {
+                IconButton(onClick = {}) {
+                    Icon(imageVector = Icons.Filled.Person, contentDescription = null)
+                }
+            },
+        )
+    }
+
+    @Suppress("DEPRECATION")
     @Composable
     private fun SearchBarPredictiveBack(progress: Float) {
         val animationProgress = remember { Animatable(initialValue = 1 - progress) }

@@ -33,9 +33,8 @@ import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 
 /** The helper class to resolve AppFunction related symbols. */
 class AppFunctionSymbolResolver(private val resolver: Resolver) {
-
-    /** Resolves symbols annotated with @AppFunctionServiceEntryPoint. */
-    fun resolveAnnotatedAppFunctionServiceEntryPoints():
+    /** Resolves symbols annotated with @AppFunctionServiceEntryPoint without validation. */
+    fun resolveUnvalidatedAnnotatedAppFunctionServiceEntryPoints():
         List<AnnotatedAppFunctionServiceEntryPoint> {
         return resolver
             .getSymbolsWithAnnotation(
@@ -59,11 +58,18 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
                             it.annotations.findAnnotation(AppFunctionAnnotation.CLASS_NAME) != null
                         }
                         .toList()
-                val appFunctions =
-                    appFunctionDeclarations.map { AnnotatedAppFunction(it, it.docString) }
-                AnnotatedAppFunctionServiceEntryPoint(declaration, appFunctions).validate()
+                val appFunctions = appFunctionDeclarations.map {
+                    AnnotatedAppFunction(it, it.docString)
+                }
+                AnnotatedAppFunctionServiceEntryPoint(declaration, appFunctions)
             }
             .toList()
+    }
+
+    /** Resolves symbols annotated with @AppFunctionServiceEntryPoint. */
+    fun resolveAnnotatedAppFunctionServiceEntryPoints():
+        List<AnnotatedAppFunctionServiceEntryPoint> {
+        return resolveUnvalidatedAnnotatedAppFunctionServiceEntryPoints().map { it.validate() }
     }
 
     /** Resolves symbols annotated with @AppFunctionSchemaDefinition. */
@@ -88,7 +94,8 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
     }
 
     /**
-     * Resolves functions annotated with @AppFunction annotation ***that are not validated yet***.
+     * Resolves functions annotated with @AppFunctionDeclaration annotation ***that are not
+     * validated yet***.
      *
      * The caller should generally prefer using [resolveAnnotatedAppFunctions] to ensure that the
      * processor is working on validated AppFunctions. This should only be used when the visibility
@@ -104,7 +111,7 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
             .map { declaration ->
                 if (declaration !is KSFunctionDeclaration) {
                     throw ProcessingException(
-                        "Only functions can be annotated with @AppFunction",
+                        "Only functions can be annotated with @AppFunctionDeclaration",
                         declaration,
                     )
                 }
@@ -120,7 +127,7 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
             .groupBy { declaration ->
                 declaration.parentDeclaration as? KSClassDeclaration
                     ?: throw ProcessingException(
-                        "Top level functions cannot be annotated with @AppFunction ",
+                        "Top level functions cannot be annotated with @AppFunctionDeclaration ",
                         declaration,
                     )
             }
@@ -134,7 +141,7 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
             }
     }
 
-    /** Resolves valid functions annotated with @AppFunction annotation. */
+    /** Resolves valid functions annotated with @AppFunctionDeclaration annotation. */
     fun resolveAnnotatedAppFunctions(): List<AnnotatedAppFunctions> {
         return resolveUnvalidatedAnnotatedAppFunctions().map { annotatedAppFunction ->
             annotatedAppFunction.validate()
@@ -275,15 +282,16 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
             .groupBy { declaration ->
                 declaration.parentDeclaration as? KSClassDeclaration
                     ?: throw ProcessingException(
-                        "Top level functions cannot be annotated with @AppFunction ",
+                        "Top level functions cannot be annotated with @AppFunctionDeclaration ",
                         declaration,
                     )
             }
             .entries
             .sortedBy { it.key.qualifiedName?.asString() }
             .map { (classDeclaration, appFunctionsDeclarations) ->
-                val docstringMap =
-                    filteredAppFunctionComponents.associate { it.qualifiedName to it.docString }
+                val docstringMap = filteredAppFunctionComponents.associate {
+                    it.qualifiedName to it.docString
+                }
                 AnnotatedAppFunctions(
                         classDeclaration,
                         appFunctionsDeclarations.map {

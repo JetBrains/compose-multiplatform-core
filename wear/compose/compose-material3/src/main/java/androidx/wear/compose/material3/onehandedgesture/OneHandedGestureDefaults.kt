@@ -17,13 +17,40 @@
 package androidx.wear.compose.material3.onehandedgesture
 
 import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType
 import androidx.wear.compose.foundation.lazy.ScalingLazyListState
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumnState
 import androidx.wear.compose.foundation.pager.PagerState
+import androidx.wear.compose.material3.LocalContentColor
+import androidx.wear.compose.material3.MaterialTheme
 
 public object OneHandedGestureDefaults {
+    /** The default size constraints for the gesture indicator icon. */
+    public val indicatorSize: OneHandedGestureIndicatorSize = OneHandedGestureIndicatorSize.Medium
+
+    /** The tint color used for the gesture animation. */
+    public val indicatorTint: Color
+        @Composable get() = LocalContentColor.current
+
+    /** The tint color used for the scroll gesture animation icons. */
+    public val scrollIndicatorTint: Color
+        @Composable get() = MaterialTheme.colorScheme.onTertiary
+
+    /** The background color used behind the scroll gesture animations. */
+    public val scrollIndicatorBackgroundColor: Color
+        @Composable get() = MaterialTheme.colorScheme.tertiary
+
+    /** The tint color used for the pager gesture animation icons. */
+    public val pageIndicatorTint: Color
+        @Composable get() = MaterialTheme.colorScheme.onTertiary
+
+    /** The background color used behind the pager gesture animations. */
+    public val pageIndicatorBackgroundColor: Color
+        @Composable get() = MaterialTheme.colorScheme.tertiary
+
     /**
      * A scroll implementation tailored for use with [TransformingLazyColumnState].
      *
@@ -33,11 +60,21 @@ public object OneHandedGestureDefaults {
      * Sample demonstrating gesture handling with [TransformingLazyColumnState]:
      *
      * @sample androidx.wear.compose.material3.samples.OneHandedGestureTransformingLazyColumnSample
+     *
+     * <video
+     * src=https://developer.android.com/wear/images/design/WearComposeM3_OneHandedGestureTransformingLazyColumnSample_CompositeImage.mp4
+     * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+     *
      * @param scrollState The scroll state associated with a transforming lazy column.
+     * @param wrapAround Whether to automatically scroll back to the first item when reaching the
+     *   end of the content.
      */
-    public suspend fun scrollDown(scrollState: TransformingLazyColumnState) {
+    public suspend fun scrollDown(
+        scrollState: TransformingLazyColumnState,
+        wrapAround: Boolean = true,
+    ) {
         if (!scrollState.canScrollForward) {
-            scrollState.animateScrollToItem(0)
+            if (wrapAround) scrollState.animateScrollToItem(0)
             return
         }
 
@@ -53,11 +90,18 @@ public object OneHandedGestureDefaults {
      * Sample demonstrating gesture handling with [ScalingLazyListState]:
      *
      * @sample androidx.wear.compose.material3.samples.OneHandedGestureScalingLazyColumnSample
+     *
+     * <video
+     * src=https://developer.android.com/wear/images/design/WearComposeM3_OneHandedGestureScalingLazyColumnSample_CompositeImage.mp4
+     * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+     *
      * @param scrollState The scroll state associated with a scaling lazy column.
+     * @param wrapAround Whether to automatically scroll back to the first item when reaching the
+     *   end of the content.
      */
-    public suspend fun scrollDown(scrollState: ScalingLazyListState) {
+    public suspend fun scrollDown(scrollState: ScalingLazyListState, wrapAround: Boolean = true) {
         if (!scrollState.canScrollForward) {
-            scrollState.animateScrollToItem(0)
+            if (wrapAround) scrollState.animateScrollToItem(0)
             return
         }
 
@@ -74,11 +118,21 @@ public object OneHandedGestureDefaults {
      * Sample demonstrating gesture handling with [TransformingLazyColumnState]:
      *
      * @sample androidx.wear.compose.material3.samples.OneHandedGestureTransformingLazyColumnScrollToNextItemSample
+     *
+     * <video
+     * src=https://developer.android.com/wear/images/design/WearComposeM3_OneHandedGestureTransformingLazyColumnScrollToNextItemSample_CompositeImage.mp4
+     * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+     *
      * @param scrollState The scroll state associated with a transforming lazy column.
+     * @param wrapAround Whether to automatically scroll back to the first item when reaching the
+     *   end of the content.
      */
-    public suspend fun scrollToNextItem(scrollState: TransformingLazyColumnState) {
+    public suspend fun scrollDownToNextItem(
+        scrollState: TransformingLazyColumnState,
+        wrapAround: Boolean = true,
+    ) {
         if (!scrollState.canScrollForward) {
-            scrollState.animateScrollToItem(0)
+            if (wrapAround) scrollState.animateScrollToItem(0)
             return
         }
 
@@ -109,11 +163,21 @@ public object OneHandedGestureDefaults {
      * Sample demonstrating gesture handling with [ScalingLazyListState]:
      *
      * @sample androidx.wear.compose.material3.samples.OneHandedGestureScalingLazyColumnScrollToNextItemSample
+     *
+     * <video
+     * src=https://developer.android.com/wear/images/design/WearComposeM3_OneHandedGestureScalingLazyColumnScrollToNextItemSample_CompositeImage.mp4
+     * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+     *
      * @param scrollState The scroll state associated with a scaling lazy column.
+     * @param wrapAround Whether to automatically scroll back to the first item when reaching the
+     *   end of the content.
      */
-    public suspend fun scrollToNextItem(scrollState: ScalingLazyListState) {
+    public suspend fun scrollDownToNextItem(
+        scrollState: ScalingLazyListState,
+        wrapAround: Boolean = true,
+    ) {
         if (!scrollState.canScrollForward) {
-            scrollState.animateScrollToItem(0)
+            if (wrapAround) scrollState.animateScrollToItem(0)
             return
         }
 
@@ -154,10 +218,27 @@ public object OneHandedGestureDefaults {
      * Samples demonstrating gesture handling with horizontal and vertical pagers:
      *
      * @sample androidx.wear.compose.material3.samples.OneHandedGestureHorizontalPagerSample
+     *
+     * <video
+     * src=https://developer.android.com/wear/images/design/WearComposeM3_OneHandedGestureHorizontalPagerSample_CompositeImage.mp4
+     * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+     *
      * @sample androidx.wear.compose.material3.samples.OneHandedGestureVerticalPagerSample
+     *
+     * <video
+     * src=https://developer.android.com/wear/images/design/WearComposeM3_OneHandedGestureVerticalPagerSample_CompositeImage.mp4
+     * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+     *
      * @param pagerState The state of the pager to be animated.
+     * @param wrapAround Determines whether the pager should wrap around to the first page (index 0)
+     *   after reaching the last page.
      */
-    public suspend fun scrollToNextPage(pagerState: PagerState) {
-        pagerState.animateScrollToPage((pagerState.currentPage + 1) % pagerState.pageCount)
+    public suspend fun scrollToNextPage(pagerState: PagerState, wrapAround: Boolean = true) {
+        if (
+            pagerState.pageCount > 0 &&
+                (pagerState.currentPage < pagerState.pageCount - 1 || wrapAround)
+        ) {
+            pagerState.animateScrollToPage((pagerState.currentPage + 1) % pagerState.pageCount)
+        }
     }
 }

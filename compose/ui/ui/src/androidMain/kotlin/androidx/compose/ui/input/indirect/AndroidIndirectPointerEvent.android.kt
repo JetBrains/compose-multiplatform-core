@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.input.indirect
 
-import android.view.InputDevice
 import android.view.InputDevice.SOURCE_TOUCH_NAVIGATION
 import android.view.MotionEvent
 import android.view.MotionEvent.ACTION_DOWN
@@ -24,9 +23,10 @@ import android.view.MotionEvent.ACTION_MOVE
 import android.view.MotionEvent.ACTION_POINTER_DOWN
 import android.view.MotionEvent.ACTION_POINTER_UP
 import android.view.MotionEvent.ACTION_UP
-import androidx.compose.ui.ExperimentalIndirectPointerApi
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.HistoricalChange
 import androidx.compose.ui.input.pointer.PointerId
+import androidx.compose.ui.util.fastIsFinite
 import org.jetbrains.annotations.TestOnly
 
 internal class AndroidIndirectPointerEvent(
@@ -41,7 +41,7 @@ internal class AndroidIndirectPointerEvent(
 }
 
 /** Returns the underlying [MotionEvent] for additional information and cross module testing. */
-val IndirectPointerEvent.nativeEvent: MotionEvent
+public val IndirectPointerEvent.nativeEvent: MotionEvent
     get() = (this as AndroidIndirectPointerEvent).nativeEvent
 
 /**
@@ -49,7 +49,8 @@ val IndirectPointerEvent.nativeEvent: MotionEvent
  * [IndirectPointerEvent] from the system through [IndirectPointerInputModifierNode].
  *
  * If you need to test indirect pointer events, use
- * [SemanticsNodeInteractionsProvider.performIndirectPointerInput()].
+ * [SemanticsNodeInteractionsProvider.sendIndirectPointerInput()] where you do not need to manually
+ * create IndirectPointerEvents (instead calling higher-level functions).
  *
  * @param changes A list of [IndirectPointerInputChange] associated with the event
  * @param type Indicates the reason that the [IndirectPointerEvent] was sent.
@@ -57,7 +58,7 @@ val IndirectPointerEvent.nativeEvent: MotionEvent
  * @param motionEvent The [MotionEvent] to convert to an [IndirectPointerEvent].
  */
 @TestOnly
-fun IndirectPointerEvent(
+public fun IndirectPointerEvent(
     changes: List<IndirectPointerInputChange>,
     type: IndirectPointerEventType,
     primaryDirectionalMotionAxis: IndirectPointerEventPrimaryDirectionalMotionAxis,
@@ -71,37 +72,15 @@ fun IndirectPointerEvent(
     )
 }
 
-/**
- * Allows creation of a [IndirectPointerEvent] from a [MotionEvent] for cross module testing.
- * IMPORTANT NOTE 1: Primary axis is determined by properties of the [InputDevice] contained within
- * the [MotionEvent]. However, when manually creating a [MotionEvent], there is no way to set the
- * [InputDevice]. Therefore, this function allows you to manually set the primary axis for testing.
- * IMPORTANT NOTE 2: Since this is just a test function that doesn't maintain state for previous
- * [MotionEvent]s (like the Android Compose system does), you will need to pass a separate
- * [MotionEvent] to populate IndirectPointerInputChange's "previous" parameters (time, position, and
- * pressed).
- *
- * @param motionEvent The [MotionEvent] to convert to an [IndirectPointerEvent].
- * @param primaryDirectionalMotionAxis Primary directional motion axis for testing.
- * @param previousMotionEvent The [MotionEvent] for previous values (time, position, and pressed).
- */
-// TODO(b/499336763): Removed usages and delete function in followup CL.
-@ExperimentalIndirectPointerApi
-fun IndirectPointerEvent(
-    motionEvent: MotionEvent,
-    primaryDirectionalMotionAxis: IndirectPointerEventPrimaryDirectionalMotionAxis =
-        IndirectPointerEventPrimaryDirectionalMotionAxis.None,
-    previousMotionEvent: MotionEvent? = null,
-): IndirectPointerEvent {
-    val action = motionEvent.actionMasked
-    val changes =
-        createIndirectPointerInputChangesFromMotionEvents(motionEvent, previousMotionEvent)
-    return AndroidIndirectPointerEvent(
-        changes = changes,
-        type = convertActionToIndirectPointerEventType(action),
-        primaryDirectionalMotionAxis = primaryDirectionalMotionAxis,
-        nativeEvent = motionEvent,
-    )
+internal fun convertActionToIndirectPointerEventType(actionMasked: Int): IndirectPointerEventType {
+    return when (actionMasked) {
+        ACTION_UP,
+        ACTION_POINTER_UP -> IndirectPointerEventType.Release
+        ACTION_DOWN,
+        ACTION_POINTER_DOWN -> IndirectPointerEventType.Press
+        ACTION_MOVE -> IndirectPointerEventType.Move
+        else -> IndirectPointerEventType.Unknown
+    }
 }
 
 internal fun createIndirectPointerInputChangesFromMotionEvents(
@@ -118,12 +97,7 @@ internal fun createIndirectPointerInputChangesFromMotionEvents(
 
     val previousAction = previousMotionEvent?.actionMasked
     val previousMotionEventWasPressed =
-        when (previousAction) {
-            ACTION_DOWN,
-            ACTION_POINTER_DOWN,
-            ACTION_MOVE -> true
-            else -> false
-        }
+        previousAction?.let { isMotionEventPressed(previousAction) } ?: false
 
     val uptimeMillis = motionEvent.eventTime
     return List(motionEvent.pointerCount) { index ->
@@ -168,18 +142,9 @@ internal fun createIndirectPointerInputChangesFromMotionEvents(
             previousUptimeMillis = previousUptimeMillis,
             previousPosition = previousPosition,
             previousPressed = previousPressed,
+            motionEvent = motionEvent,
+            motionEventIndex = index,
         )
-    }
-}
-
-internal fun convertActionToIndirectPointerEventType(actionMasked: Int): IndirectPointerEventType {
-    return when (actionMasked) {
-        ACTION_UP,
-        ACTION_POINTER_UP -> IndirectPointerEventType.Release
-        ACTION_DOWN,
-        ACTION_POINTER_DOWN -> IndirectPointerEventType.Press
-        ACTION_MOVE -> IndirectPointerEventType.Move
-        else -> IndirectPointerEventType.Unknown
     }
 }
 
@@ -212,5 +177,101 @@ internal fun indirectPrimaryDirectionalScrollAxis(
     return IndirectPointerEventPrimaryDirectionalMotionAxis.None
 }
 
+// Keep in sync with the [AndroidInputDispatcher.android.kt] version.
+internal fun isMotionEventPressed(action: Int): Boolean =
+    when (action) {
+        ACTION_DOWN,
+        ACTION_POINTER_DOWN,
+        // Pointer up means only one of multiple pointers was lifted but another is still down,
+        // so it is still pressed.
+        ACTION_POINTER_UP,
+        ACTION_MOVE -> true
+        else -> false
+    }
+
 // TODO: Remove once platform supports device specifying preferred axis for scrolling.
 private const val RATIO_CUTOFF = 5f
+
+/**
+ * Platform-specific constructor helper for Android [MotionEvent] sources that extracts
+ * [HistoricalChange] events lazily.
+ */
+internal fun IndirectPointerInputChange(
+    id: PointerId,
+    uptimeMillis: Long,
+    position: Offset,
+    pressed: Boolean,
+    pressure: Float,
+    previousUptimeMillis: Long,
+    previousPosition: Offset,
+    previousPressed: Boolean,
+    // Required for providing historical information on-demand
+    motionEvent: MotionEvent,
+    motionEventIndex: Int,
+): IndirectPointerInputChange {
+    if (motionEvent.historySize > 0) {
+        return IndirectPointerInputChange(
+            id = id,
+            uptimeMillis = uptimeMillis,
+            position = position,
+            pressed = pressed,
+            pressure = pressure,
+            previousUptimeMillis = previousUptimeMillis,
+            previousPosition = previousPosition,
+            previousPressed = previousPressed,
+            historical = LazyHistoricalChangeList(motionEvent, motionEventIndex),
+        )
+    }
+
+    return IndirectPointerInputChange(
+        id = id,
+        uptimeMillis = uptimeMillis,
+        position = position,
+        pressed = pressed,
+        pressure = pressure,
+        previousUptimeMillis = previousUptimeMillis,
+        previousPosition = previousPosition,
+        previousPressed = previousPressed,
+    )
+}
+
+/**
+ * A lazy [List] implementation that computes the list of [HistoricalChange]s on-demand and clears
+ * its [MotionEvent] reference after first evaluation to release resources.
+ */
+private class LazyHistoricalChangeList(
+    private var motionEvent: MotionEvent?,
+    private val index: Int,
+) : AbstractList<HistoricalChange>() {
+    private var delegate: List<HistoricalChange>? = null
+
+    private fun getDelegate(): List<HistoricalChange> {
+        var result = delegate
+        if (result == null) {
+            val event = motionEvent!!
+            val historySize = event.historySize
+            val list = ArrayList<HistoricalChange>(historySize)
+            repeat(historySize) { pos ->
+                val x = event.getHistoricalX(index, pos)
+                val y = event.getHistoricalY(index, pos)
+                if (x.fastIsFinite() && y.fastIsFinite()) {
+                    list.add(
+                        HistoricalChange(
+                            uptimeMillis = event.getHistoricalEventTime(pos),
+                            position = Offset(x, y),
+                        )
+                    )
+                }
+            }
+            result = list
+            delegate = result
+            motionEvent = null // Release native/MotionEvent reference to prevent leaks
+        }
+        return result
+    }
+
+    override val size: Int
+        get() = getDelegate().size
+
+    override fun get(index: Int): HistoricalChange = getDelegate()[index]
+}

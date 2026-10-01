@@ -19,18 +19,20 @@ package androidx.camera.camera2.pipe
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
 import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
+import androidx.camera.camera2.pipe.graph.LatestFrameMetadataImpl
+import androidx.camera.common.CameraFrameNumber
+import androidx.camera.common.CameraId as CommonCameraId
+import androidx.camera.common.CaptureRequestWrapper
+import androidx.camera.common.CaptureResultWrapper
+import androidx.camera.common.Metadata
+import androidx.camera.common.UnsafeWrapper
 
 /**
- * A [FrameNumber] is the identifier that represents a specific exposure by the Camera. FrameNumbers
- * increase within a specific CameraCaptureSession, and are not created until the HAL begins
- * processing a request.
+ * A [CameraFrameNumber] is the identifier that represents a specific exposure by the Camera.
+ * FrameNumbers increase within a specific CameraCaptureSession, and are not created until the HAL
+ * begins processing a request.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@JvmInline
-public value class FrameNumber(public val value: Long) {
-    override fun toString(): String = "Frame-$value"
-}
-
 /** [FrameInfo] is a wrapper around [TotalCaptureResult]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface FrameInfo : UnsafeWrapper {
@@ -43,25 +45,95 @@ public interface FrameInfo : UnsafeWrapper {
     public operator fun get(camera: CameraId): FrameMetadata?
 
     public val camera: CameraId
-    public val frameNumber: FrameNumber
+    public val frameNumber: CameraFrameNumber
     public val requestMetadata: RequestMetadata
 }
 
 /** [FrameMetadata] is a wrapper around [CaptureResult]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public interface FrameMetadata : Metadata, UnsafeWrapper {
-    public operator fun <T> get(key: CaptureResult.Key<T>): T?
-
-    public fun <T> getOrDefault(key: CaptureResult.Key<T>, default: T): T
+public interface FrameMetadata : CaptureResultWrapper {
 
     public val camera: CameraId
-    public val frameNumber: FrameNumber
+    override val frameNumber: CameraFrameNumber
 
     /**
      * Extra metadata will override values defined by the wrapped CaptureResult object. This is
      * exposed separately to allow other systems to know what is altered relative to Camera2.
      */
     public val extraMetadata: Map<*, Any?>
+
+    override val cameraId: CommonCameraId
+        get() = CommonCameraId(camera.value)
+
+    override val captureRequest: CaptureRequestWrapper
+        get() = EmptyRequestMetadata
+}
+
+/**
+ * Holds aggregated parameter values across [CaptureResult.Key] and [Metadata.Key] types.
+ *
+ * An instance of this class represents a "snapshot" of the most recent parameters produced by the
+ * camera, including partial results.
+ *
+ * Values for different keys may come from different frame numbers, representing a sliding-window
+ * view of the latest state of the camera.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public interface LatestFrameMetadata : Metadata {
+
+    /** Returns the list of [CaptureResult.Key]s currently present in these parameters. */
+    public val keys: List<CaptureResult.Key<*>>
+
+    /** Returns the set of [Metadata.Key]s currently present in these parameters. */
+    override val metadataKeys: Set<Metadata.Key<*>>
+
+    public operator fun <T : Any> get(key: CaptureResult.Key<T>): T?
+
+    public fun <T : Any> getOrDefault(key: CaptureResult.Key<T>, default: T): T
+
+    /**
+     * Returns the [CameraFrameNumber] from which the value for the given [CaptureResult.Key] was
+     * read, or null if the key is not present in the snapshot.
+     */
+    public fun getFrameNumber(key: CaptureResult.Key<*>): CameraFrameNumber?
+
+    /**
+     * Returns the [CameraFrameNumber] from which the value for the given [Metadata.Key] was read,
+     * or null if the key is not present in the snapshot.
+     */
+    public fun getFrameNumber(key: Metadata.Key<*>): CameraFrameNumber?
+
+    public companion object {
+        /**
+         * Creates an instance of [LatestFrameMetadata] using the provided parameters and optional
+         * frame numbers.
+         */
+        @VisibleForTesting
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public operator fun invoke(
+            captureResultParameters: Map<CaptureResult.Key<*>, Any?>,
+            metadataParameters: Map<Metadata.Key<*>, Any?> = emptyMap(),
+            captureResultFrameNumbers: Map<CaptureResult.Key<*>, CameraFrameNumber?> = emptyMap(),
+            metadataFrameNumbers: Map<Metadata.Key<*>, CameraFrameNumber?> = emptyMap(),
+        ): LatestFrameMetadata {
+            val crKeys = captureResultParameters.keys.toTypedArray()
+            val crValues = Array(crKeys.size) { i -> captureResultParameters[crKeys[i]] }
+            val crFrameNumbers = Array(crKeys.size) { i -> captureResultFrameNumbers[crKeys[i]] }
+
+            val mdKeys = metadataParameters.keys.toTypedArray()
+            val mdValues = Array(mdKeys.size) { i -> metadataParameters[mdKeys[i]] }
+            val mdFrameNumbers = Array(mdKeys.size) { i -> metadataFrameNumbers[mdKeys[i]] }
+
+            return LatestFrameMetadataImpl(
+                crKeys,
+                crValues,
+                crFrameNumbers,
+                mdKeys,
+                mdValues,
+                mdFrameNumbers,
+            )
+        }
+    }
 }
 
 /**

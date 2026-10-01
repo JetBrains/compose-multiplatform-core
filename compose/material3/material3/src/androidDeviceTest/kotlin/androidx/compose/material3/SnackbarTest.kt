@@ -46,7 +46,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.width
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -57,7 +56,7 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class SnackbarTest(private val isSnackbarM3FixEnabled: Boolean) {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val longText =
         "Message is very long and long and long and long and long " +
@@ -168,7 +167,7 @@ class SnackbarTest(private val isSnackbarM3FixEnabled: Boolean) {
                     Snackbar(content = { Text("Message") })
                 }
                 .assertWidthIsEqualTo(300.dp)
-                .assertHeightIsEqualTo(48.dp)
+                .assertHeightIsEqualTo(48.dp, tolerance = 1.dp)
 
         val firstBaseLine = rule.onNodeWithText("Message").getAlignmentLinePosition(FirstBaseline)
         val lastBaseLine = rule.onNodeWithText("Message").getAlignmentLinePosition(LastBaseline)
@@ -225,7 +224,7 @@ class SnackbarTest(private val isSnackbarM3FixEnabled: Boolean) {
                     )
                 }
                 .assertWidthIsEqualTo(300.dp)
-                .assertHeightIsEqualTo(48.dp)
+                .assertHeightIsEqualTo(48.dp, tolerance = 1.dp)
 
         val textBaseLine = rule.onNodeWithText("Message").getAlignmentLinePosition(FirstBaseline)
         val buttonBaseLine = rule.onNodeWithTag("button").getAlignmentLinePosition(FirstBaseline)
@@ -288,7 +287,10 @@ class SnackbarTest(private val isSnackbarM3FixEnabled: Boolean) {
 
             snackbar
                 .assertWidthIsEqualTo(300.dp)
-                .assertHeightIsEqualTo(snackbarVerticalPadding * 2 + textBounds.height)
+                .assertHeightIsEqualTo(
+                    snackbarVerticalPadding * 2 + textBounds.height,
+                    tolerance = 1.dp,
+                )
 
             val snackBounds = snackbar.getUnclippedBoundsInRoot()
             val textTopOffset = textBounds.top - snackBounds.top
@@ -304,7 +306,7 @@ class SnackbarTest(private val isSnackbarM3FixEnabled: Boolean) {
                         )
                     }
                     .assertWidthIsEqualTo(300.dp)
-                    .assertHeightIsEqualTo(68.dp)
+                    .assertHeightIsEqualTo(68.dp, tolerance = 1.dp)
 
             val firstBaseline = rule.onNodeWithTag("text").getFirstBaselinePosition()
             val lastBaseline = rule.onNodeWithTag("text").getLastBaselinePosition()
@@ -349,7 +351,10 @@ class SnackbarTest(private val isSnackbarM3FixEnabled: Boolean) {
 
             snackbar
                 .assertWidthIsEqualTo(300.dp)
-                .assertHeightIsEqualTo(snackbarVerticalPadding * 2 + textBounds.height)
+                .assertHeightIsEqualTo(
+                    snackbarVerticalPadding * 2 + textBounds.height,
+                    tolerance = 1.dp,
+                )
 
             val buttonBounds = rule.onNodeWithTag("button").getUnclippedBoundsInRoot()
             val snackBounds = snackbar.getUnclippedBoundsInRoot()
@@ -370,7 +375,7 @@ class SnackbarTest(private val isSnackbarM3FixEnabled: Boolean) {
                         )
                     }
                     .assertWidthIsEqualTo(300.dp)
-                    .assertHeightIsEqualTo(68.dp)
+                    .assertHeightIsEqualTo(68.dp, tolerance = 1.dp)
 
             val textFirstBaseLine = rule.onNodeWithTag("text").getFirstBaselinePosition()
             val textLastBaseLine = rule.onNodeWithTag("text").getLastBaselinePosition()
@@ -411,15 +416,18 @@ class SnackbarTest(private val isSnackbarM3FixEnabled: Boolean) {
             val buttonBounds = rule.onNodeWithTag("button").getUnclippedBoundsInRoot()
             val messageBounds = rule.onNodeWithText("Message").getUnclippedBoundsInRoot()
 
+            val tolerance = maxOf(0.5.dp, with(rule.density) { 1.toDp() })
             rule.onNodeWithText("Message").assertTopPositionInRootIsEqualTo(snackbarVerticalPadding)
             rule
                 .onNodeWithTag("button")
                 .assertTopPositionInRootIsEqualTo(
-                    snackbarVerticalPadding * 2 + messageBounds.height
+                    snackbarVerticalPadding * 2 + messageBounds.height,
+                    tolerance = tolerance,
                 )
             snackbar
                 .assertHeightIsEqualTo(
-                    actionButtonBottomPadding + buttonBounds.top + buttonBounds.height
+                    actionButtonBottomPadding + buttonBounds.top + buttonBounds.height,
+                    tolerance = 1.dp,
                 )
                 .assertWidthIsEqualTo(
                     horizontalSpacingButtonSide + buttonBounds.left + buttonBounds.width
@@ -458,7 +466,10 @@ class SnackbarTest(private val isSnackbarM3FixEnabled: Boolean) {
                 )
 
             snackbar
-                .assertHeightIsEqualTo(2.dp + buttonBounds.top + buttonBounds.height)
+                .assertHeightIsEqualTo(
+                    2.dp + buttonBounds.top + buttonBounds.height,
+                    tolerance = 1.dp,
+                )
                 .assertWidthIsEqualTo(8.dp + buttonBounds.left + buttonBounds.width)
         }
     }

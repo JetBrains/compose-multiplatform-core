@@ -34,9 +34,9 @@ import androidx.compose.remote.creation.RemoteComposeWriter
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.creation.compose.capture.RecordingCanvas
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
-import androidx.compose.remote.creation.compose.test.R
 import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
 import androidx.compose.remote.creation.profile.Profile
+import androidx.compose.remote.player.compose.test.utils.R
 import androidx.compose.remote.player.core.platform.AndroidRemoteContext
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.asImageBitmap
@@ -55,7 +55,6 @@ import java.time.ZonedDateTime
 import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.sin
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -91,7 +90,7 @@ class RemoteBitmapFontTest {
         RemoteComposeCreationState(Size(WIDTH.toFloat(), HEIGHT.toFloat()), profile)
 
     private val recordingCanvas =
-        RecordingCanvas(Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888))
+        RecordingCanvas(Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888), creationState)
 
     private val font = ResourcesCompat.getFont(context, R.font.karla_regular)!!
 
@@ -102,11 +101,6 @@ class RemoteBitmapFontTest {
             ZonedDateTime.of(LocalDateTime.of(2025, 11, 20, 10, 30, 25), timeZone).toInstant(),
             timeZone,
         )
-
-    @Before
-    fun setUp() {
-        recordingCanvas.setRemoteComposeCreationState(creationState)
-    }
 
     @Test
     fun drawBitmapFontTextRun_glyphSpacingTest() {

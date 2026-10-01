@@ -58,7 +58,6 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.math.roundToInt
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -75,7 +74,7 @@ class LazyGridItemPlacementAnimationTest(private val config: Config) {
     private val reverseLayout: Boolean
         get() = config.reverseLayout
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     // the numbers should be divisible by 8 to avoid the rounding issues as we run 4 or 8 frames
     // of the animation.
@@ -2074,8 +2073,9 @@ class LazyGridItemPlacementAnimationTest(private val config: Config) {
                     keySelector = { it.config[SemanticsProperties.TestTag] },
                     valueTransform = { IntRect(it.positionInRoot.round(), it.size) },
                 )
-        val actualPositions =
-            expected.map { it.first to actualBounds.getValue(it.first.toString()).topLeft }
+        val actualPositions = expected.map {
+            it.first to actualBounds.getValue(it.first.toString()).topLeft
+        }
         val subject =
             if (fraction == null) {
                 assertThat(actualPositions)
@@ -2108,13 +2108,12 @@ class LazyGridItemPlacementAnimationTest(private val config: Config) {
             }
         )
         if (crossAxis != null) {
-            val actualCross =
-                expected.map {
-                    it.first to
-                        actualBounds.getValue(it.first.toString()).topLeft.let { offset ->
-                            if (isVertical) offset.x else offset.y
-                        }
-                }
+            val actualCross = expected.map {
+                it.first to
+                    actualBounds.getValue(it.first.toString()).topLeft.let { offset ->
+                        if (isVertical) offset.x else offset.y
+                    }
+            }
             assertWithMessage("CrossAxis" + if (fraction != null) "for fraction=$fraction" else "")
                 .that(actualCross)
                 .isEqualTo(crossAxis.map { it.first to it.second.roundToInt() })

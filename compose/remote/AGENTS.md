@@ -4,11 +4,15 @@ When investigating this codebase or performing tasks, you MUST recursively searc
 
 ## Documentation Map
 
+### General
+- [TESTING.md](TESTING.md): Best practices and guidelines for testing Remote Compose.
+
 ### Core Engine (`remote-core/doc/`)
 - `REMOTE_COMPOSE_ARCHITECTURE.md`: High-level system design and data flow.
 - `PROTOCOL_SPEC.md`: Binary format, opcodes, and field layouts.
 - `DATA_FLOW.md`: Lifecycle from server creation to client playback.
 - `EXPRESSION_ENGINE.md`: RPN logic, variable scoping, and math operations.
+- `COMPRESSION.md`: Compressed documents (`COMPRESS` header flag), creation, playback, and compatibility.
 
 ### Creation API (`remote-creation/doc/`)
 - `MODIFIER_REGISTRY.md`: Mapping of DSL methods to underlying operations.

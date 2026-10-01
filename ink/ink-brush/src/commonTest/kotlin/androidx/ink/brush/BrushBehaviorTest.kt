@@ -16,6 +16,7 @@
 
 package androidx.ink.brush
 
+import androidx.ink.brush.behavior.ConstantNode
 import androidx.ink.brush.behavior.DampingNode
 import androidx.ink.brush.behavior.EasingFunction
 import androidx.ink.brush.behavior.OutOfRange
@@ -26,10 +27,12 @@ import androidx.ink.brush.behavior.SourceNode.Source
 import androidx.ink.brush.behavior.TargetNode
 import androidx.ink.brush.behavior.TargetNode.Target
 import androidx.ink.brush.behavior.ToolTypeFilterNode
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.testing.awaitNativePointerCleanupAfter
 import androidx.kruth.assertThat
 import kotlin.test.Test
 
+@OptIn(InkInternalOnlyApi::class)
 class BrushBehaviorTest {
 
     fun createTestStepBehaviorTerminalNode() =
@@ -39,8 +42,8 @@ class BrushBehaviorTest {
             targetModifierRangeEnd = 1.7f,
             input =
                 DampingNode(
-                    dampingSource = ProgressDomain.TIME_IN_SECONDS,
-                    dampingGap = 0.001f,
+                    dampOver = ProgressDomain.TIME_IN_SECONDS,
+                    strength = 0.001f,
                     input =
                         ResponseNode(
                             responseCurve =
@@ -63,6 +66,7 @@ class BrushBehaviorTest {
     @Test
     fun brushBehaviorNativePointers_cleanedUpWhenOutOfScope() {
         awaitNativePointerCleanupAfter {
+            @Suppress("UNUSED_VARIABLE")
             val unused = BrushBehavior(createTestStepBehaviorTerminalNode())
         }
     }
@@ -110,8 +114,8 @@ class BrushBehaviorTest {
                     targetModifierRangeEnd = 1.75f,
                     input =
                         DampingNode(
-                            dampingSource = ProgressDomain.TIME_IN_SECONDS,
-                            dampingGap = 0.001f,
+                            dampOver = ProgressDomain.TIME_IN_SECONDS,
+                            strength = 0.001f,
                             input =
                                 ResponseNode(
                                     responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
@@ -139,8 +143,8 @@ class BrushBehaviorTest {
                     targetModifierRangeEnd = 1.75f,
                     input =
                         DampingNode(
-                            dampingSource = ProgressDomain.TIME_IN_SECONDS,
-                            dampingGap = 0.001f,
+                            dampOver = ProgressDomain.TIME_IN_SECONDS,
+                            strength = 0.001f,
                             input =
                                 ResponseNode(
                                     responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
@@ -165,6 +169,32 @@ class BrushBehaviorTest {
 
     @Test
     fun createEmptyBehavior() {
-        val unused = BrushBehavior(emptyList())
+        @Suppress("UNUSED_VARIABLE") val unused = BrushBehavior(emptyList())
+    }
+
+    @OptIn(ExperimentalInkCustomBrushApi::class)
+    @Test
+    fun calculateMinimumRequiredVersion_returnsExpectedValue() {
+        assertThat(
+                BrushBehavior(createTestStepBehaviorTerminalNode())
+                    .calculateMinimumRequiredVersion()
+            )
+            .isEqualTo(Version.V0)
+        // Test ProgressDomain, OutOfRange, and Node (via subtypes), which don't otherwise
+        // have a good testing home.
+        assertThat(ConstantNode(0.0f).calculateMinimumRequiredVersion()).isEqualTo(Version.V0)
+        assertThat(
+                TargetNode(
+                        target = Target.WIDTH_MULTIPLIER,
+                        targetModifierRangeStart = 1.0f,
+                        targetModifierRangeEnd = 1.75f,
+                        input = ConstantNode(0.0f),
+                    )
+                    .calculateMinimumRequiredVersion()
+            )
+            .isEqualTo(Version.V0)
+        assertThat(ProgressDomain.DISTANCE_IN_CENTIMETERS.calculateMinimumRequiredVersion())
+            .isEqualTo(Version.V0)
+        assertThat(OutOfRange.CLAMP.calculateMinimumRequiredVersion()).isEqualTo(Version.V0)
     }
 }

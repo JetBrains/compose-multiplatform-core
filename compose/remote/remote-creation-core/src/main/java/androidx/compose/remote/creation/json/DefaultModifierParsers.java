@@ -16,7 +16,12 @@
 package androidx.compose.remote.creation.json;
 
 import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.operations.layout.animation.AnimationSpec;
+import androidx.compose.remote.core.operations.layout.modifiers.HostNamedActionOperation;
+import androidx.compose.remote.core.operations.utilities.easing.GeneralEasing;
+import androidx.compose.remote.core.semantics.CoreSemantics;
 import androidx.compose.remote.creation.actions.Action;
+import androidx.compose.remote.creation.actions.HostAction;
 import androidx.compose.remote.creation.actions.ValueFloatChange;
 import androidx.compose.remote.creation.actions.ValueFloatExpressionChange;
 import androidx.compose.remote.creation.actions.ValueIntegerChange;
@@ -25,14 +30,23 @@ import androidx.compose.remote.creation.actions.ValueStringChange;
 import androidx.compose.remote.creation.dsl.RcFloat;
 import androidx.compose.remote.creation.dsl.VerticalScrollRcFloatModifier;
 import androidx.compose.remote.creation.modifiers.ClickActionModifier;
+import androidx.compose.remote.creation.modifiers.ComponentLayoutComputeModifier;
+import androidx.compose.remote.creation.modifiers.GraphicsLayerModifier;
 import androidx.compose.remote.creation.modifiers.IncludeReferencedOperationsModifier;
 import androidx.compose.remote.creation.modifiers.MacroCallModifier;
+import androidx.compose.remote.creation.modifiers.MarqueeModifier;
+import androidx.compose.remote.creation.modifiers.RippleModifier;
+import androidx.compose.remote.creation.modifiers.SemanticsModifier;
+import androidx.compose.remote.creation.modifiers.TouchActionModifier;
+import androidx.compose.remote.creation.modifiers.VisibilityModifier;
+import androidx.compose.remote.creation.modifiers.ZIndexModifier;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -60,24 +74,47 @@ class DefaultModifierParsers {
                 );
             } else if (paddingVal instanceof JSONArray) {
                 JSONArray pa = (JSONArray) paddingVal;
-                recordingModifier.padding(
-                        (float) pa.getDouble(0),
-                        (float) pa.getDouble(1),
-                        (float) pa.getDouble(2),
-                        (float) pa.getDouble(3)
-                );
+                if (pa.length() == 2) {
+                    float h = (float) pa.getDouble(0);
+                    float v = (float) pa.getDouble(1);
+                    recordingModifier.padding(h, v, h, v);
+                } else if (pa.length() >= 4) {
+                    recordingModifier.padding(
+                            (float) pa.getDouble(0),
+                            (float) pa.getDouble(1),
+                            (float) pa.getDouble(2),
+                            (float) pa.getDouble(3)
+                    );
+                } else if (pa.length() == 1) {
+                    recordingModifier.padding((float) pa.getDouble(0));
+                }
             } else {
                 recordingModifier.padding(parser.parseFloat(paddingVal));
             }
         });
         p.registerModifierParser("fillmaxwidth", (mod, key, recordingModifier, parser) -> {
-            recordingModifier.fillMaxWidth(parser.parseFloat(mod.get(key)));
+            Object val = mod.get(key);
+            if (val == null || val == org.json.JSONObject.NULL) {
+                recordingModifier.fillMaxWidth();
+            } else {
+                recordingModifier.fillMaxWidth(parser.parseFloat(val));
+            }
         });
         p.registerModifierParser("fillmaxheight", (mod, key, recordingModifier, parser) -> {
-            recordingModifier.fillMaxHeight(parser.parseFloat(mod.get(key)));
+            Object val = mod.get(key);
+            if (val == null || val == org.json.JSONObject.NULL) {
+                recordingModifier.fillMaxHeight();
+            } else {
+                recordingModifier.fillMaxHeight(parser.parseFloat(val));
+            }
         });
         p.registerModifierParser("fillmaxsize", (mod, key, recordingModifier, parser) -> {
-            recordingModifier.fillMaxSize(parser.parseFloat(mod.get(key)));
+            Object val = mod.get(key);
+            if (val == null || val == org.json.JSONObject.NULL) {
+                recordingModifier.fillMaxSize();
+            } else {
+                recordingModifier.fillMaxSize(parser.parseFloat(val));
+            }
         });
         p.registerModifierParser("width", (mod, key, recordingModifier, parser) -> {
             recordingModifier.width(parser.parseFloat(mod.get(key)));
@@ -86,9 +123,16 @@ class DefaultModifierParsers {
             recordingModifier.height(parser.parseFloat(mod.get(key)));
         });
         p.registerModifierParser("size", (mod, key, recordingModifier, parser) -> {
-            float sizeVal = parser.parseFloat(mod.get(key));
-            recordingModifier.width(sizeVal);
-            recordingModifier.height(sizeVal);
+            Object val = mod.get(key);
+            if (val instanceof JSONArray) {
+                JSONArray sa = (JSONArray) val;
+                recordingModifier.width((float) sa.getDouble(0));
+                recordingModifier.height((float) sa.getDouble(1));
+            } else {
+                float sizeVal = parser.parseFloat(val);
+                recordingModifier.width(sizeVal);
+                recordingModifier.height(sizeVal);
+            }
         });
         p.registerModifierParser("background", (mod, key, recordingModifier, parser) -> {
             String bg = mod.getString(key);
@@ -118,11 +162,45 @@ class DefaultModifierParsers {
             recordingModifier.border(width, corner, color, shape);
         });
         p.registerModifierParser("verticalscroll", (mod, key, recordingModifier, parser) -> {
-            RcFloat positionRc = new RcFloat(parser.getWriter(), parser.parseFloat(mod.get(key)));
-            recordingModifier.then(new VerticalScrollRcFloatModifier(positionRc));
+            Object val = mod.get(key);
+            if (val instanceof JSONObject) {
+                JSONObject obj = (JSONObject) val;
+                float pos = parser.parseFloat(obj.get("position"));
+                int notches = obj.optInt("notches", 0);
+                recordingModifier.verticalScroll(pos, notches);
+            } else {
+                RcFloat positionRc = new RcFloat(parser.getWriter(), parser.parseFloat(val));
+                recordingModifier.then(new VerticalScrollRcFloatModifier(positionRc));
+            }
         });
         p.registerModifierParser("horizontalscroll", (mod, key, recordingModifier, parser) -> {
-            recordingModifier.horizontalScroll(parser.parseFloat(mod.get(key)));
+            Object val = mod.get(key);
+            if (val instanceof JSONObject) {
+                JSONObject obj = (JSONObject) val;
+                float pos = parser.parseFloat(obj.get("position"));
+                int notches = obj.optInt("notches", 0);
+                recordingModifier.horizontalScroll(pos, notches);
+            } else {
+                recordingModifier.horizontalScroll(parser.parseFloat(val));
+            }
+        });
+        p.registerModifierParser("collapsiblepriority", (mod, key, recordingModifier, parser) -> {
+            Object val = mod.get(key);
+            int orientation = 0;
+            float priority = 0f;
+            if (val instanceof JSONObject) {
+                JSONObject obj = (JSONObject) val;
+                String orientStr = obj.optString("orientation", "horizontal");
+                orientation = orientStr.equalsIgnoreCase("vertical") ? 1 : 0;
+                priority = (float) obj.optDouble("priority", 0.0);
+            } else if (val instanceof JSONArray) {
+                JSONArray arr = (JSONArray) val;
+                orientation = arr.getInt(0);
+                priority = (float) arr.getDouble(1);
+            } else {
+                priority = parser.parseFloat(val);
+            }
+            recordingModifier.collapsiblePriority(orientation, priority);
         });
         p.registerModifierParser("widthin", (mod, key, recordingModifier, parser) -> {
             JSONArray wi = mod.getJSONArray(key);
@@ -138,8 +216,31 @@ class DefaultModifierParsers {
                     parser.parseFloat(hi.get(1))
             );
         });
+        p.registerModifierParser("requiredwidthin", (mod, key, recordingModifier, parser) -> {
+            JSONArray rwi = mod.getJSONArray(key);
+            recordingModifier.requiredWidthIn(
+                    parser.parseFloat(rwi.get(0)),
+                    parser.parseFloat(rwi.get(1))
+            );
+        });
+        p.registerModifierParser("requiredheightin", (mod, key, recordingModifier, parser) -> {
+            JSONArray rhi = mod.getJSONArray(key);
+            recordingModifier.requiredHeightIn(
+                    parser.parseFloat(rhi.get(0)),
+                    parser.parseFloat(rhi.get(1))
+            );
+        });
+        p.registerModifierParser("dimensionconstraints", (mod, key, recordingModifier, parser) -> {
+            JSONObject dc = mod.getJSONObject(key);
+            int type = dc.optInt("type", 0);
+            float min = parser.parseFloat(dc.get("min"));
+            float max = parser.parseFloat(dc.get("max"));
+            recordingModifier.then(
+                    new androidx.compose.remote.creation.modifiers.WidthInModifier(
+                            type, min, max));
+        });
         p.registerModifierParser("clip", (mod, key, recordingModifier, parser) -> {
-            recordingModifier.clip(parser.parseShape(mod.getJSONObject(key)));
+            recordingModifier.clip(parser.parseShape(mod.get(key)));
         });
         p.registerModifierParser("id", (mod, key, recordingModifier, parser) -> {
             recordingModifier.componentId(mod.getInt(key));
@@ -160,43 +261,274 @@ class DefaultModifierParsers {
             recordingModifier.then(new IncludeReferencedOperationsModifier(styleId));
         });
         p.registerModifierParser("onclick", (mod, key, recordingModifier, parser) -> {
-            Object clickVal = mod.get(key);
-            List<Action> actions = new ArrayList<>();
-            if (clickVal instanceof JSONArray) {
-                JSONArray arr = (JSONArray) clickVal;
-                for (int i = 0; i < arr.length(); i++) {
-                    actions.add(parseAction(arr.getJSONObject(i), parser));
-                }
-            } else if (clickVal instanceof JSONObject) {
-                actions.add(parseAction((JSONObject) clickVal, parser));
-            }
-            recordingModifier.then(new ClickActionModifier(actions));
+            recordingModifier.then(new ClickActionModifier(parseActions(mod.get(key), parser)));
         });
+        p.registerModifierParser("multiclick", (mod, key, recordingModifier, parser) -> {
+            JSONObject obj = mod.getJSONObject(key);
+            int clickType = obj.optInt("clickType", 0);
+            recordingModifier.then(new ClickActionModifier(
+                    parseActions(obj.get("actions"), parser), clickType));
+        });
+        p.registerModifierParser("ontouchdown", (mod, key, recordingModifier, parser) -> {
+            recordingModifier.then(new TouchActionModifier(
+                    TouchActionModifier.DOWN, parseActions(mod.get(key), parser)));
+        });
+        p.registerModifierParser("touchdown", (mod, key, recordingModifier, parser) -> {
+            recordingModifier.then(new TouchActionModifier(
+                    TouchActionModifier.DOWN, parseActions(mod.get(key), parser)));
+        });
+        p.registerModifierParser("ontouchup", (mod, key, recordingModifier, parser) -> {
+            recordingModifier.then(new TouchActionModifier(
+                    TouchActionModifier.UP, parseActions(mod.get(key), parser)));
+        });
+        p.registerModifierParser("touchup", (mod, key, recordingModifier, parser) -> {
+            recordingModifier.then(new TouchActionModifier(
+                    TouchActionModifier.UP, parseActions(mod.get(key), parser)));
+        });
+        p.registerModifierParser("ontouchcancel", (mod, key, recordingModifier, parser) -> {
+            recordingModifier.then(new TouchActionModifier(
+                    TouchActionModifier.CANCEL, parseActions(mod.get(key), parser)));
+        });
+        p.registerModifierParser("touchcancel", (mod, key, recordingModifier, parser) -> {
+            recordingModifier.then(new TouchActionModifier(
+                    TouchActionModifier.CANCEL, parseActions(mod.get(key), parser)));
+        });
+        p.registerModifierParser("drawwithcontent",
+                (mod, key, recordingModifier, parser) -> {
+                    recordingModifier.drawWithContent();
+                });
+        p.registerModifierParser("layoutcompute",
+                (mod, key, recordingModifier, parser) -> {
+                    int computeType = mod.getJSONObject(key).optInt("type", 0);
+                    recordingModifier.then(
+                            new ComponentLayoutComputeModifier(
+                                    computeType, changes -> {}));
+                });
+        p.registerModifierParser("spacedby", (mod, key, recordingModifier, parser) -> {
+            recordingModifier.spacedBy(parser.parseFloat(mod.get(key)));
+        });
+        p.registerModifierParser("animationspec", (mod, key, recordingModifier, parser) -> {
+            Object specVal = mod.get(key);
+            if (specVal instanceof JSONObject) {
+                JSONObject obj = (JSONObject) specVal;
+                int animationId = obj.optInt("animationId", -1);
+                float motionDuration = (float) obj.optDouble("motionDuration", 300.0);
+                int motionEasingType = parseEasingType(
+                        obj.has("motionEasingType")
+                                ? obj.get("motionEasingType")
+                                : obj.opt("motionEasing"),
+                        GeneralEasing.CUBIC_STANDARD);
+                float visibilityDuration = (float) obj.optDouble("visibilityDuration", 300.0);
+                int visibilityEasingType = parseEasingType(
+                        obj.has("visibilityEasingType")
+                                ? obj.get("visibilityEasingType")
+                                : obj.opt("visibilityEasing"),
+                        GeneralEasing.CUBIC_STANDARD);
+                int enterFnId = resolveFunctionId(
+                        obj.has("enterFunctionId")
+                                ? obj.get("enterFunctionId")
+                                : obj.opt("enterFunction"),
+                        parser);
+                int exitFnId = resolveFunctionId(
+                        obj.has("exitFunctionId")
+                                ? obj.get("exitFunctionId")
+                                : obj.opt("exitFunction"),
+                        parser);
+                AnimationSpec.ANIMATION enterAnim = parseAnimationType(
+                        obj.opt("enterAnimation"),
+                        enterFnId != -1
+                                ? AnimationSpec.ANIMATION.CUSTOM
+                                : AnimationSpec.ANIMATION.FADE_IN);
+                AnimationSpec.ANIMATION exitAnim = parseAnimationType(
+                        obj.opt("exitAnimation"),
+                        exitFnId != -1
+                                ? AnimationSpec.ANIMATION.CUSTOM
+                                : AnimationSpec.ANIMATION.FADE_OUT);
+                AnimationSpec.SEQUENCE enterSeq = parseSequenceType(
+                        obj.opt("enterSequence"), AnimationSpec.SEQUENCE.CONCURRENT);
+                AnimationSpec.SEQUENCE exitSeq = parseSequenceType(
+                        obj.opt("exitSequence"), AnimationSpec.SEQUENCE.CONCURRENT);
+                recordingModifier.animationSpec(
+                        animationId,
+                        motionDuration,
+                        motionEasingType,
+                        visibilityDuration,
+                        visibilityEasingType,
+                        enterAnim,
+                        exitAnim,
+                        enterFnId,
+                        exitFnId,
+                        enterSeq,
+                        exitSeq);
+            } else {
+                recordingModifier.animationSpec(mod.getInt(key));
+            }
+        });
+        p.registerModifierParser("alignbybaseline",
+                (mod, key, recordingModifier, parser) -> {
+                    recordingModifier.alignByBaseline();
+                });
+        p.registerModifierParser("fillparentmaxwidth",
+                (mod, key, recordingModifier, parser) -> {
+                    recordingModifier.fillParentMaxWidth(parser.parseFloat(mod.get(key)));
+                });
+        p.registerModifierParser("fillparentmaxheight",
+                (mod, key, recordingModifier, parser) -> {
+                    recordingModifier.fillParentMaxHeight(parser.parseFloat(mod.get(key)));
+                });
+        p.registerModifierParser("fillparentmaxsize",
+                (mod, key, recordingModifier, parser) -> {
+                    recordingModifier.fillParentMaxSize(parser.parseFloat(mod.get(key)));
+                });
+        p.registerModifierParser("graphicslayer",
+                (mod, key, recordingModifier, parser) -> {
+                    JSONObject gObj = mod.getJSONObject(key);
+                    GraphicsLayerModifier gMod = new GraphicsLayerModifier();
+                    Iterator<String> keys = gObj.keys();
+                    while (keys.hasNext()) {
+                        String k = keys.next();
+                        int attrId = -1;
+                        switch (k.toLowerCase()) {
+                            case "scalex": attrId = 0; break;
+                            case "scaley": attrId = 1; break;
+                            case "rotationz": attrId = 4; break;
+                            case "translationx": attrId = 7; break;
+                            case "translationy": attrId = 8; break;
+                            case "alpha": attrId = 11; break;
+                        }
+                        if (attrId != -1) {
+                            gMod.setFloatAttribute(attrId,
+                                    parser.parseFloat(gObj.get(k)));
+                        }
+                    }
+                    recordingModifier.then(gMod);
+                });
+        p.registerModifierParser("marquee", (mod, key, recordingModifier, parser) -> {
+            JSONObject mObj = mod.getJSONObject(key);
+            int iterations = mObj.optInt("iterations", Integer.MAX_VALUE);
+            int animationMode = mObj.optInt("animationMode", 0);
+            float repeatDelay = (float) mObj.optDouble("repeatDelayMillis", 1200);
+            float initialDelay = (float) mObj.optDouble("initialDelayMillis", 1200);
+            float spacing = (float) mObj.optDouble("spacing", 0);
+            float velocity = (float) mObj.optDouble("velocity", 0);
+            recordingModifier.then(new MarqueeModifier(iterations, animationMode,
+                    repeatDelay, initialDelay, spacing, velocity));
+        });
+        p.registerModifierParser("ripple", (mod, key, recordingModifier, parser) -> {
+            recordingModifier.then(new RippleModifier());
+        });
+        p.registerModifierParser("semantics", (mod, key, recordingModifier, parser) -> {
+            JSONObject sObj = mod.getJSONObject(key);
+            CoreSemantics semantics = new CoreSemantics();
+            if (sObj.has("contentDescription")) {
+                semantics.mContentDescriptionId =
+                        parser.resolveTextId(sObj.get("contentDescription"));
+            }
+            if (sObj.has("text")) {
+                semantics.mTextId = parser.resolveTextId(sObj.get("text"));
+            }
+            if (sObj.has("stateDescription")) {
+                semantics.mStateDescriptionId =
+                        parser.resolveTextId(sObj.get("stateDescription"));
+            }
+            semantics.mEnabled = sObj.optBoolean("enabled", true);
+            semantics.mClickable = sObj.optBoolean("clickable", false);
+            recordingModifier.then(new SemanticsModifier(semantics));
+        });
+        p.registerModifierParser("visibility", (mod, key, recordingModifier, parser) -> {
+            int valId = parser.resolveTextId(mod.get(key));
+            recordingModifier.then(new VisibilityModifier(valId));
+        });
+        p.registerModifierParser("zindex", (mod, key, recordingModifier, parser) -> {
+            float z = parser.parseFloat(mod.get(key));
+            recordingModifier.then(new ZIndexModifier(z));
+        });
+        p.registerModifierParser("offset", (mod, key, recordingModifier, parser) -> {
+            Object val = mod.get(key);
+            if (val instanceof JSONObject) {
+                JSONObject obj = (JSONObject) val;
+                float x = parser.parseFloat(obj.opt("x"));
+                float y = parser.parseFloat(obj.opt("y"));
+                recordingModifier.offset(x, y);
+            } else if (val instanceof JSONArray) {
+                JSONArray arr = (JSONArray) val;
+                float x = parser.parseFloat(arr.get(0));
+                float y = parser.parseFloat(arr.get(1));
+                recordingModifier.offset(x, y);
+            }
+        });
+    }
+
+    private static List<Action> parseActions(
+            Object clickVal, RemoteComposeJsonParser parser) throws JSONException {
+        List<Action> actions = new ArrayList<>();
+        if (clickVal instanceof JSONArray) {
+            JSONArray arr = (JSONArray) clickVal;
+            for (int i = 0; i < arr.length(); i++) {
+                actions.add(parseAction(arr.getJSONObject(i), parser));
+            }
+        } else if (clickVal instanceof JSONObject) {
+            actions.add(parseAction((JSONObject) clickVal, parser));
+        }
+        return actions;
     }
 
     private static Action parseAction(
             JSONObject obj, RemoteComposeJsonParser parser) throws JSONException {
-        String type = obj.getString("type");
-        int targetId = parser.resolveTextId(obj.get("targetId"));
+        String type = obj.getString("type").toLowerCase();
+        int targetId = obj.has("targetId") ? parser.resolveTextId(obj.get("targetId"))
+                : (obj.has("target") ? parser.resolveTextId(obj.get("target")) : -1);
         switch (type) {
-            case "ValueFloatExpressionChange": {
-                float valNan = parser.parseFloat(obj.get("value"));
+            case "hostaction":
+            case "hostnamedaction":
+            case "hostmetadataaction": {
+                if (obj.has("name")) {
+                    String name = obj.getString("name");
+                    if (obj.has("value")) {
+                        int actionType = obj.optInt("actionType",
+                                HostNamedActionOperation.STRING_TYPE);
+                        int valueId = parser.resolveTextId(obj.get("value"));
+                        return new HostAction(name, actionType, valueId);
+                    } else {
+                        return new HostAction(name);
+                    }
+                } else {
+                    int actionId = obj.getInt("actionId");
+                    if (obj.has("metadataId")) {
+                        int metadataId = obj.getInt("metadataId");
+                        return new HostAction(actionId, metadataId);
+                    } else {
+                        return new HostAction(actionId);
+                    }
+                }
+            }
+            case "valuefloatexpressionchange": {
+                Object valObj = obj.has("value") ? obj.get("value") : obj.get("expression");
+                float valNan = parser.parseFloat(valObj);
                 int valId = androidx.compose.remote.core.operations.Utils.idFromNan(valNan);
                 return new ValueFloatExpressionChange(targetId, valId);
             }
-            case "ValueFloatChange": {
+            case "valuefloatchange": {
                 float val = parser.parseFloat(obj.get("value"));
                 return new ValueFloatChange(targetId, val);
             }
-            case "ValueIntegerChange": {
+            case "valueintegerchange": {
                 int val = obj.getInt("value");
                 return new ValueIntegerChange(targetId, val);
             }
-            case "ValueIntegerExpressionChange": {
-                long val = obj.getLong("value");
-                return new ValueIntegerExpressionChange(targetId, val);
+            case "valueintegerexpressionchange": {
+                Object targetObj = obj.has("targetId") ? obj.get("targetId") : obj.get("target");
+                long intTargetId = parser.resolveIntegerVariable(targetObj);
+                Object valObj = obj.has("value") ? obj.get("value") : obj.get("expression");
+                long exprId;
+                if (valObj instanceof String) {
+                    exprId = parser.getExpressionParser().parseIntegerExpression((String) valObj);
+                } else {
+                    exprId = obj.getLong("value");
+                }
+                return new ValueIntegerExpressionChange(intTargetId, exprId);
             }
-            case "ValueStringChange": {
+            case "valuestringchange": {
                 Object valObj = obj.get("value");
                 if (valObj instanceof String) {
                     String s = (String) valObj;
@@ -214,5 +546,112 @@ class DefaultModifierParsers {
             default:
                 throw new JSONException("Unknown action type: " + type);
         }
+    }
+
+    private static int resolveFunctionId(Object val, RemoteComposeJsonParser parser)
+            throws JSONException {
+        if (val == null || val == JSONObject.NULL) {
+            return -1;
+        }
+        if (val instanceof Number) {
+            return ((Number) val).intValue();
+        }
+        if (val instanceof String) {
+            String str = (String) val;
+            String name = RemoteComposeJsonParser.isVariableRef(str)
+                    ? RemoteComposeJsonParser.getVariableNameFromRef(str)
+                    : str;
+            Float fnVal = parser.mVariables.get(name);
+            if (fnVal != null) {
+                if (Float.isNaN(fnVal)) {
+                    return androidx.compose.remote.core.operations.Utils.idFromNan(fnVal);
+                }
+                return fnVal.intValue();
+            }
+            return parser.resolveTextId(val);
+        }
+        return -1;
+    }
+
+    private static int parseEasingType(Object val, int defaultVal) {
+        if (val == null || val == JSONObject.NULL) {
+            return defaultVal;
+        }
+        if (val instanceof Number) {
+            return ((Number) val).intValue();
+        }
+        if (val instanceof String) {
+            switch (((String) val).toUpperCase(java.util.Locale.ROOT)) {
+                case "CUBIC_STANDARD":
+                case "STANDARD":
+                    return GeneralEasing.CUBIC_STANDARD;
+                case "CUBIC_ACCELERATE":
+                case "ACCELERATE":
+                    return GeneralEasing.CUBIC_ACCELERATE;
+                case "CUBIC_DECELERATE":
+                case "DECELERATE":
+                    return GeneralEasing.CUBIC_DECELERATE;
+                case "CUBIC_LINEAR":
+                case "LINEAR":
+                    return GeneralEasing.CUBIC_LINEAR;
+                case "CUBIC_ANTICIPATE":
+                case "ANTICIPATE":
+                    return GeneralEasing.CUBIC_ANTICIPATE;
+                case "CUBIC_OVERSHOOT":
+                case "OVERSHOOT":
+                    return GeneralEasing.CUBIC_OVERSHOOT;
+                default:
+                    return defaultVal;
+            }
+        }
+        return defaultVal;
+    }
+
+    private static AnimationSpec.ANIMATION parseAnimationType(
+            Object val, AnimationSpec.ANIMATION defaultVal) {
+        if (val == null || val == JSONObject.NULL) {
+            return defaultVal;
+        }
+        if (val instanceof Number) {
+            int ord = ((Number) val).intValue();
+            AnimationSpec.ANIMATION[] values = AnimationSpec.ANIMATION.values();
+            if (ord >= 0 && ord < values.length) {
+                return values[ord];
+            }
+            return defaultVal;
+        }
+        if (val instanceof String) {
+            try {
+                return AnimationSpec.ANIMATION.valueOf(
+                        ((String) val).toUpperCase(java.util.Locale.ROOT));
+            } catch (IllegalArgumentException e) {
+                return defaultVal;
+            }
+        }
+        return defaultVal;
+    }
+
+    private static AnimationSpec.SEQUENCE parseSequenceType(
+            Object val, AnimationSpec.SEQUENCE defaultVal) {
+        if (val == null || val == JSONObject.NULL) {
+            return defaultVal;
+        }
+        if (val instanceof Number) {
+            int ord = ((Number) val).intValue();
+            AnimationSpec.SEQUENCE[] values = AnimationSpec.SEQUENCE.values();
+            if (ord >= 0 && ord < values.length) {
+                return values[ord];
+            }
+            return defaultVal;
+        }
+        if (val instanceof String) {
+            try {
+                return AnimationSpec.SEQUENCE.valueOf(
+                        ((String) val).toUpperCase(java.util.Locale.ROOT));
+            } catch (IllegalArgumentException e) {
+                return defaultVal;
+            }
+        }
+        return defaultVal;
     }
 }

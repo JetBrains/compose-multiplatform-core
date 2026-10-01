@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package androidx.xr.compose.subspace.layout
 
 import android.content.pm.PackageManager
@@ -36,8 +35,10 @@ import androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_COARSE
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.AnchorPlacement
 import androidx.xr.scenecore.MovableComponent
+import androidx.xr.scenecore.PixelDensity
 import androidx.xr.scenecore.PlaneOrientation as SceneCorePlaneOrientation
 import androidx.xr.scenecore.PlaneSemanticType as SceneCorePlaneSemantic
+import androidx.xr.scenecore.scene
 
 /**
  * When the anchorable modifier is present and enabled, draggable UI controls will be shown that
@@ -45,21 +46,22 @@ import androidx.xr.scenecore.PlaneSemanticType as SceneCorePlaneSemantic
  * [SpatialPanels][androidx.xr.compose.subspace.SpatialPanel] at the moment. This modifier allows
  * the element to be anchored to a plane in the real world.
  *
- * This modifier requires requires [androidx.xr.runtime.Session.configure] to be called with
+ * This modifier requires [androidx.xr.runtime.Session.configure] to be called with
  * [androidx.xr.runtime.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL]. This configuration requires that
  * the `SCENE_UNDERSTANDING_COARSE` Android permission is granted. If not granted, the `anchorable`
  * functionality will be disabled, and the element will behave as if the anchorable modifier was not
  * applied.
  *
  * @param enabled true if this composable should be anchorable.
- * @param stickyPose if enabled, the user specified position will be retained when the modifier is
+ * @param stickyPose if enabled, the user-specified position will be retained when the modifier is
  *   disabled or removed.
- * @param anchorPlaneOrientations when supplied, this movable entity can be anchored to Horizontal
- *   or Vertical planes or both (ANY). Can be used without anchorPlaneSemantics being supplied.
+ * @param anchorPlaneOrientations when supplied, this movable entity can be anchored to horizontal
+ *   or vertical planes or both (ANY). Can be used without anchorPlaneSemantics being supplied.
  * @param anchorPlaneSemantics when supplied, this movable entity can be anchored to planes which
  *   match one of the supplied list of semantic interpretations, such as a "table" or "floor". Can
  *   be used without anchorPlaneOrientations being supplied.
  */
+@OptIn(ExperimentalMoveAnchorPolicy::class)
 internal fun SubspaceModifier.anchorable(
     enabled: Boolean = true,
     stickyPose: Boolean = true,
@@ -76,6 +78,7 @@ internal fun SubspaceModifier.anchorable(
         )
     )
 
+@OptIn(ExperimentalMoveAnchorPolicy::class)
 private class AnchorableElement(
     private val enabled: Boolean,
     private val stickyPose: Boolean,
@@ -123,6 +126,7 @@ private class AnchorableElement(
     }
 }
 
+@OptIn(ExperimentalMoveAnchorPolicy::class)
 internal class AnchorableNode(
     var enabled: Boolean,
     var stickyPose: Boolean,
@@ -141,6 +145,9 @@ internal class AnchorableNode(
 
     private inline val session: Session
         get() = checkNotNull(currentValueOf(LocalSession)) { "Movable requires a Session." }
+
+    private inline val pixelDensity: PixelDensity
+        get() = session.scene.virtualPixelDensity
 
     /** The scale of this entity when it is moved. */
     private var scaleFromMovement: Float = 1.0F
@@ -166,15 +173,13 @@ internal class AnchorableNode(
         val placeable = measurable.measure(constraints)
         return layout(placeable.width, placeable.height, placeable.depth) {
             // Place at the position calculated by SceneCore
-            placeable.place(
-                coreEntity.poseInMeters.convertMetersToPixels(currentValueOf(LocalDensity))
-            )
+            placeable.place(coreEntity.poseInMeters.metersToPx(pixelDensity))
         }
     }
 
     override fun onPlaced(coordinates: SubspaceLayoutCoordinates) {
         // Update the size of the component to match the final size of the layout.
-        component?.size = coordinates.size.toDimensionsInMeters(density)
+        component?.size = coordinates.size.toDimensionsInMeters(pixelDensity)
     }
 
     /** Updates the anchorable state of this CoreEntity. */
@@ -251,8 +256,9 @@ internal class AnchorableNode(
     }
 }
 
-/** Type of plane based on orientation i.e. Horizontal or Vertical. */
+/** Type of plane based on orientation, i.e., horizontal or vertical. */
 @JvmInline
+@ExperimentalMoveAnchorPolicy
 public value class PlaneOrientation
 private constructor(internal val value: Set<SceneCorePlaneOrientation>) {
     public companion object {
@@ -275,6 +281,7 @@ private constructor(internal val value: Set<SceneCorePlaneOrientation>) {
 
 /** Semantic plane types. */
 @JvmInline
+@ExperimentalMoveAnchorPolicy
 public value class PlaneSemantic
 private constructor(internal val value: Set<SceneCorePlaneSemantic>) {
     public companion object {

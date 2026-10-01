@@ -31,6 +31,7 @@ import androidx.room3.autoclose.AutoCloser
 import androidx.room3.autoclose.AutoCloserConfig
 import androidx.room3.autoclose.AutoClosingSQLiteDriver
 import androidx.room3.concurrent.CloseBarrier
+import androidx.room3.coroutines.DEFAULT_CONNECTION_POOL_TIMEOUT
 import androidx.room3.coroutines.TransactionElement
 import androidx.room3.coroutines.withTransactionContext
 import androidx.room3.migration.AutoMigrationSpec
@@ -54,6 +55,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
+import kotlin.time.Duration
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -433,6 +435,7 @@ public actual abstract class RoomDatabase actual constructor() {
         isReadOnly: Boolean,
         block: suspend (Transactor) -> R,
     ): R {
+        throwIfClosed()
         return connectionManager.useConnection(isReadOnly, block)
     }
 
@@ -571,6 +574,8 @@ public actual abstract class RoomDatabase actual constructor() {
         private var driver: SQLiteDriver? = null
         private var queryCoroutineContext: CoroutineContext? = null
         private var connectionPoolConfiguration: ConnectionPoolConfiguration? = null
+        private var connectionPoolTimeout: Duration = DEFAULT_CONNECTION_POOL_TIMEOUT
+        private var allowDataLossOnRecovery: Boolean = false
 
         private var inMemoryTrackingTableMode = true
 
@@ -1162,6 +1167,48 @@ public actual abstract class RoomDatabase actual constructor() {
         }
 
         /**
+         * Sets the timeout [Duration] to wait when acquiring a connection from the
+         * [androidx.room3.coroutines.ConnectionPool] before timing out and throwing an
+         * [androidx.sqlite.SQLiteException].
+         *
+         * Defaults to `30.seconds`.
+         *
+         * @param timeout The maximum duration to wait for a connection. Must be positive.
+         * @return This builder instance.
+         * @throws IllegalArgumentException if [timeout] is not positive.
+         */
+        @Suppress("MissingGetterMatchingBuilder")
+        @JvmName("setConnectionPoolTimeout")
+        public actual fun setConnectionPoolTimeout(timeout: Duration): Builder<T> = apply {
+            require(timeout.isPositive()) { "Timeout must be positive" }
+            this.connectionPoolTimeout = timeout
+        }
+
+        /**
+         * Sets whether Room is allowed to delete and recreate the database file during corruption
+         * recovery.
+         *
+         * During initialization, Room attempts to open and verify the database connection. If
+         * opening fails due to an [androidx.sqlite.SQLiteException] (such as file corruption) and
+         * cannot be resolved by an initial retry, Room enters a recovery flow:
+         * * If [allowDataLossOnRecovery] is `true`, Room deletes the corrupted database file along
+         *   with any companion journal files (`-wal`, `-shm`, `-journal`) and recreates the
+         *   database, resulting in data loss.
+         * * If [allowDataLossOnRecovery] is `false` (the default), Room rethrows the exception
+         *   without attempting recovery.
+         *
+         * @param allowDataLossOnRecovery whether database deletion and recreation is permitted on
+         *   corruption
+         * @return this builder instance
+         */
+        @JvmOverloads
+        @Suppress("BuilderSetStyle")
+        public actual fun allowDataLossOnRecovery(allowDataLossOnRecovery: Boolean): Builder<T> =
+            apply {
+                this.allowDataLossOnRecovery = allowDataLossOnRecovery
+            }
+
+        /**
          * Creates the databases and initializes it.
          *
          * By default, all RoomDatabases use in memory storage for TEMP tables and enables recursive
@@ -1246,6 +1293,8 @@ public actual abstract class RoomDatabase actual constructor() {
                         sqliteDriver = requireNotNull(driver),
                         queryCoroutineContext = queryCoroutineContext ?: Dispatchers.IO,
                         connectionPoolConfiguration = poolConfig,
+                        connectionPoolTimeout = connectionPoolTimeout,
+                        allowDataLossOnRecovery = allowDataLossOnRecovery,
                     )
                     .apply {
                         this.useTempTrackingTable = inMemoryTrackingTableMode

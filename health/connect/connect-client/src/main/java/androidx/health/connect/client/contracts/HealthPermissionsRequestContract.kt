@@ -20,10 +20,10 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.activity.result.contract.ActivityResultContract
-import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.permission.HealthPermissionsRequestAppContract
 import androidx.health.connect.client.permission.platform.HealthPermissionsRequestModuleContract
+import androidx.health.platform.client.service.HealthDataServiceConstants.DEFAULT_PROVIDER_PACKAGE_NAME
 
 /**
  * An [ActivityResultContract] to request Health permissions.
@@ -31,8 +31,8 @@ import androidx.health.connect.client.permission.platform.HealthPermissionsReque
  * It receives a set of permissions as input and returns a set with the granted permissions as
  * output.
  */
-class HealthPermissionsRequestContract(
-    providerPackageName: String = HealthConnectClient.DEFAULT_PROVIDER_PACKAGE_NAME
+public class HealthPermissionsRequestContract(
+    providerPackageName: String = DEFAULT_PROVIDER_PACKAGE_NAME
 ) : ActivityResultContract<Set<String>, Set<String>>() {
 
     private val delegate: ActivityResultContract<Set<String>, Set<String>> =

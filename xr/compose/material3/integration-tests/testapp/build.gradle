@@ -27,6 +27,7 @@ dependencies {
 
     implementation(project(":appcompat:appcompat"))
     implementation("androidx.activity:activity-compose:1.10.1")
+    implementation("androidx.core:core-ktx:1.17.0")
     implementation(project(":compose:foundation:foundation"))
     implementation(project(":compose:foundation:foundation-layout"))
     implementation(project(":compose:material3:material3"))
@@ -53,10 +54,7 @@ dependencies {
 }
 
 android {
-    compileSdk { version = release(37) }
-    defaultConfig {
-        minSdk { version = release(24) }
-    }
+    compileSdk { version = release(37) { minorApiLevel = 1 } }
     namespace = "androidx.xr.compose.material3.integration.testapp"
     buildTypes {
         release {

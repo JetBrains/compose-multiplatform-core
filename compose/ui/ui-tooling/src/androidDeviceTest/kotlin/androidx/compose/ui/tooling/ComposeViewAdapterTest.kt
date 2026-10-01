@@ -24,9 +24,12 @@ import androidx.compose.ui.tooling.animation.AnimatedContentComposeAnimation
 import androidx.compose.ui.tooling.animation.PreviewAnimationClock
 import androidx.compose.ui.tooling.animation.TransitionComposeAnimation
 import androidx.compose.ui.tooling.animation.UnsupportedComposeAnimation
+import androidx.compose.ui.tooling.data.CallGroup
+import androidx.compose.ui.tooling.data.Group
 import androidx.compose.ui.tooling.data.UiToolingDataApi
 import androidx.compose.ui.tooling.preview.PreviewWrapperProvider
 import androidx.compose.ui.tooling.test.R
+import androidx.compose.ui.unit.IntRect
 import androidx.test.filters.LargeTest
 import androidx.test.filters.MediumTest
 import java.util.concurrent.CountDownLatch
@@ -67,8 +70,17 @@ class ComposeViewAdapterTest {
         className: String,
         methodName: String,
         previewWrapperProvider: Class<out PreviewWrapperProvider>? = null,
+        lookaheadAnimationVisualDebuggingEnabled: Boolean = false,
+        lookaheadAnimationVisualDebuggingKeyLabelEnabled: Boolean = false,
     ): List<ViewInfo> {
-        initAndWaitForDraw(className, methodName, previewWrapperProvider = previewWrapperProvider)
+        initAndWaitForDraw(
+            className,
+            methodName,
+            previewWrapperProvider = previewWrapperProvider,
+            lookaheadAnimationVisualDebuggingEnabled = lookaheadAnimationVisualDebuggingEnabled,
+            lookaheadAnimationVisualDebuggingKeyLabelEnabled =
+                lookaheadAnimationVisualDebuggingKeyLabelEnabled,
+        )
         activityTestRule.runOnUiThread { assertTrue(composeViewAdapter.viewInfos.isNotEmpty()) }
 
         return composeViewAdapter.viewInfos
@@ -82,6 +94,8 @@ class ComposeViewAdapterTest {
         methodName: String,
         designInfoProvidersArgument: String? = null,
         previewWrapperProvider: Class<out PreviewWrapperProvider>? = null,
+        lookaheadAnimationVisualDebuggingEnabled: Boolean = false,
+        lookaheadAnimationVisualDebuggingKeyLabelEnabled: Boolean = false,
     ) {
         val committedAndDrawn = CountDownLatch(1)
         val committed = AtomicBoolean(false)
@@ -99,6 +113,9 @@ class ComposeViewAdapterTest {
                         committedAndDrawn.countDown()
                     }
                 },
+                lookaheadAnimationVisualDebuggingEnabled = lookaheadAnimationVisualDebuggingEnabled,
+                lookaheadAnimationVisualDebuggingKeyLabelEnabled =
+                    lookaheadAnimationVisualDebuggingKeyLabelEnabled,
             )
         }
 
@@ -108,6 +125,49 @@ class ComposeViewAdapterTest {
 
         // Wait for the first draw after the Composable has been committed.
         committedAndDrawn.await()
+    }
+
+    @Test
+    fun sharedTransitionWithDebuggingRendersCorrectly() {
+        val className = "androidx.compose.ui.tooling.SharedTransitionPreviewKt"
+        assertRendersCorrectly(className, "PreviewWithSharedElement")
+
+        assertRendersCorrectly(className, "PreviewWithDebuggingEnabled")
+
+        assertRendersCorrectly(
+            className,
+            "PreviewWithSharedElement",
+            lookaheadAnimationVisualDebuggingEnabled = true,
+        )
+
+        assertRendersCorrectly(
+            className,
+            "PreviewWithDebuggingEnabled",
+            lookaheadAnimationVisualDebuggingEnabled = true,
+        )
+
+        assertRendersCorrectly(
+            className,
+            "PreviewWithSharedElement",
+            lookaheadAnimationVisualDebuggingEnabled = true,
+            lookaheadAnimationVisualDebuggingKeyLabelEnabled = true,
+        )
+
+        assertRendersCorrectly(
+            className,
+            "PreviewWithDebuggingEnabled",
+            lookaheadAnimationVisualDebuggingEnabled = true,
+            lookaheadAnimationVisualDebuggingKeyLabelEnabled = true,
+        )
+    }
+
+    @Test
+    fun sharedTransitionRendersCorrectlyWithDebugging() {
+        assertRendersCorrectly(
+            "androidx.compose.ui.tooling.SharedTransitionPreviewKt",
+            "PreviewWithSharedElement",
+            lookaheadAnimationVisualDebuggingEnabled = true,
+        )
     }
 
     @Test
@@ -244,7 +304,8 @@ class ComposeViewAdapterTest {
         checkAnimationsAreSubscribed(
             "AllAnimations",
             unsupported = listOf("animateContentSize", "TargetBasedAnimation", "DecayAnimation"),
-            supported = listOf("checkBoxAnim", "Crossfade", "InfiniteTransition", "AnimatedContent"),
+            supported =
+                listOf("checkBoxAnim", "Crossfade", "InfiniteTransition", "AnimatedContent"),
         )
         AnimateXAsStateComposeAnimation.testOverrideAvailability(true)
     }
@@ -729,6 +790,36 @@ class ComposeViewAdapterTest {
     }
 
     @Test
+    fun designInfoProviderCoordinatesTest() {
+        val group =
+            CallGroup(
+                key = null,
+                name = null,
+                location = null,
+                identity = null,
+                box = IntRect(10, 20, 100, 200),
+                parameters = emptyList(),
+                data =
+                    listOf(
+                        object {
+                            @Suppress("UNUSED")
+                            fun getDesignInfo(x: Int, y: Int, args: String): String = "x=$x, y=$y"
+                        }
+                    ),
+                children = emptyList(),
+                isInline = false,
+            )
+        val method =
+            ComposeViewAdapter::class
+                .java
+                .getDeclaredMethod("getDesignInfoOrNull", Group::class.java, IntRect::class.java)
+                .apply { isAccessible = true }
+
+        val result = method.invoke(composeViewAdapter, group, group.box) as? String
+        assertEquals("x=10, y=20", result)
+    }
+
+    @Test
     fun testPreviewWrapper() {
         val viewInfos =
             assertRendersCorrectly(
@@ -779,6 +870,49 @@ class ComposeViewAdapterTest {
     @Test
     fun subcompositionDesignInfoProviderTest() {
         checkDesignInfoList("ScaffoldDesignInfoProvider", "A", "ObjectA, x=0, y=0")
+    }
+
+    @Test
+    fun testFakeOnBackPressedDispatcherOwnerExistsInComposeViewAdapter() {
+        val composeViewAdapterClass = ComposeViewAdapter::class.java
+        val field = composeViewAdapterClass.getDeclaredField("FakeOnBackPressedDispatcherOwner")
+        field.isAccessible = true
+        val fakeOnBackPressedDispatcherOwner = field.get(composeViewAdapter)
+
+        val actualMethods =
+            fakeOnBackPressedDispatcherOwner.javaClass.declaredMethods
+                .map { method ->
+                    val params = method.parameterTypes.joinToString(",") { it.simpleName }
+                    "${method.name}($params): ${method.returnType.simpleName}"
+                }
+                .toSet()
+
+        val expectedMethods =
+            listOf(
+                // Back navigation APIs
+                "canBackPress(): boolean",
+                "onBackPressStarted(String): void",
+                "onBackPressProgress(float,String): void",
+                "onBackPressCompleted(): void",
+                "onBackPressCancelled(): void",
+                // Forward navigation APIs
+                "canForwardPress(): boolean",
+                "onForwardPressStarted(String): void",
+                "onForwardPressProgress(float,String): void",
+                "onForwardPressCompleted(): void",
+                "onForwardPressCancelled(): void",
+                // History navigation APIs
+                "getHistory(): List",
+                "getCurrentIndex(): int",
+                "backToState(Object): boolean",
+            )
+
+        for (expectedMethod in expectedMethods) {
+            assertTrue(
+                "Method '$expectedMethod' should be present in FakeOnBackPressedDispatcherOwner",
+                actualMethods.contains(expectedMethod),
+            )
+        }
     }
 
     private fun checkDesignInfoList(

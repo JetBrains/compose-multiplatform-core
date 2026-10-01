@@ -46,6 +46,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -64,18 +65,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaItem.DrmConfiguration
 import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
+import androidx.xr.compose.spatial.OrbiterPosition
+import androidx.xr.compose.spatial.OrbiterPosition.EdgeAlignment
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialColumn
@@ -96,17 +98,17 @@ import androidx.xr.compose.subspace.layout.SpatialInputEvent
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.height
+import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.requiredSizeIn
-import androidx.xr.compose.subspace.layout.transformingMovable
-import androidx.xr.compose.subspace.layout.transformingResizable
+import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.subspace.media.PointSourceExoplayerAudioOutput
 import androidx.xr.compose.subspace.media.spatializedAudioOutput
 import androidx.xr.compose.testapp.common.isDrmSupported
 import androidx.xr.compose.testapp.common.isMvHevcSupported
 import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
-import androidx.xr.compose.unit.Meter
+import androidx.xr.compose.unit.DpVolumeOffset
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
@@ -123,7 +125,6 @@ import androidx.xr.scenecore.SurfaceEntity
 import androidx.xr.scenecore.scene
 import java.io.File
 import kotlin.math.roundToInt
-import kotlinx.coroutines.launch
 
 class SpatialComposeVideoPlayer : ComponentActivity() {
     private val TAG = "SpatialComposeVideoPlayer"
@@ -177,59 +178,65 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        lifecycleScope.launch {
-            val sessionResult = Session.create(context = this@SpatialComposeVideoPlayer)
-            if (sessionResult is SessionCreateSuccess) {
-                session = sessionResult.session
-                session.configure(
-                    Config.Builder().setDeviceTracking(DeviceTrackingMode.SPATIAL).build()
+        // For a transparent SpatialMainPanel.
+        window.setBackgroundDrawableResource(android.R.color.transparent)
+
+        val file = File(defaultVideoUri)
+        if (file.exists()) {
+            mediaUriState.value = Uri.fromFile(file)
+        }
+
+        if (!File(drmVideoUri).exists()) {
+            Toast.makeText(
+                    this@SpatialComposeVideoPlayer,
+                    "Drm file does not exist. Please adb push the asset if using drm.",
+                    Toast.LENGTH_LONG,
                 )
-                session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
+                .show()
+        }
 
-                val file = File(defaultVideoUri)
-                if (file.exists()) {
-                    mediaUriState.value = Uri.fromFile(file)
+        setContent {
+            var sessionCreated by remember { mutableStateOf(false) }
+
+            if (sessionCreated) {
+                Box(
+                    modifier =
+                        Modifier.fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.25f))
+                            .padding(16.dp)
+                ) {
+                    Button(onClick = { releaseMediaPlayer() }) { Text("Close") }
                 }
 
-                if (!File(drmVideoUri).exists()) {
-                    Toast.makeText(
-                            this@SpatialComposeVideoPlayer,
-                            "Drm file does not exist. Please adb push the asset if using drm.",
-                            Toast.LENGTH_LONG,
+                Subspace(
+                    modifier =
+                        SubspaceModifier.requiredSizeIn(
+                            maxWidth = Dp.Infinity,
+                            maxHeight = Dp.Infinity,
+                            maxDepth = Dp.Infinity,
                         )
-                        .show()
+                ) {
+                    VideoOptionsContent(session)
                 }
+            }
 
-                // For a transparent SpatialMainPanel.
-                window.setBackgroundDrawableResource(android.R.color.transparent)
-
-                setContent {
-                    Box(
-                        modifier =
-                            Modifier.fillMaxSize()
-                                .background(Color.Black.copy(alpha = 0.25f))
-                                .padding(16.dp)
-                    ) {
-                        Button(onClick = { releaseMediaPlayer() }) { Text("Close") }
-                    }
-
-                    Subspace(
-                        modifier =
-                            SubspaceModifier.requiredSizeIn(
-                                maxWidth = Dp.Infinity,
-                                maxHeight = Dp.Infinity,
-                                maxDepth = Dp.Infinity,
-                            )
-                    ) {
-                        VideoOptionsContent(session)
-                    }
+            LaunchedEffect(Unit) {
+                val sessionResult = Session.create(context = this@SpatialComposeVideoPlayer)
+                if (sessionResult is SessionCreateSuccess) {
+                    session = sessionResult.session
+                    session.configure(
+                        Config.Builder().setDeviceTracking(DeviceTrackingMode.SPATIAL).build()
+                    )
+                    session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
+                    sessionCreated = true
+                } else {
+                    finish()
                 }
-            } else {
-                finish()
             }
         }
     }
 
+    @Suppress("DEPRECATION")
     @OptIn(ExperimentalComposeApi::class)
     @Composable
     private fun VideoOptionsContent(session: Session) {
@@ -259,20 +266,25 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
 
         if (videoPlaying && surfaceType == SpatialExternalSurfaceType.HEMISPHERE) {
             SpatialBox {
+                val density = LocalDensity.current
+                val pixelDensity = session.scene.virtualPixelDensity
                 // Simple animation to verify radius recomposition is efficient.
                 val animatedRadius = remember { Animatable(500f) }
                 val animatedOffset = remember { Animatable(initialValue = -1000f) }
                 LaunchedEffect(Unit) {
                     animatedRadius.animateTo(
-                        targetValue = Meter(15f).toDp().value,
-                        animationSpec = tween(durationMillis = 2000, easing = FastOutLinearInEasing),
+                        targetValue =
+                            with(density) { pixelDensity.convertMetersToPixels(15f).toDp().value },
+                        animationSpec =
+                            tween(durationMillis = 2000, easing = FastOutLinearInEasing),
                     )
                 }
                 // An initial offset is necessary to perceive the radius animation.
                 LaunchedEffect(Unit) {
                     animatedOffset.animateTo(
                         targetValue = 0f,
-                        animationSpec = tween(durationMillis = 2000, easing = FastOutLinearInEasing),
+                        animationSpec =
+                            tween(durationMillis = 2000, easing = FastOutLinearInEasing),
                     )
                 }
                 SpatialExternalSurfaceHemisphere(
@@ -305,7 +317,7 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                         },
                 ) {
                     onSurfaceCreated {
-                        val player = ExoPlayer.Builder(this@SpatialComposeVideoPlayer).build()
+                        val player = ExoPlayer.Builder(applicationContext).build()
                         exoPlayer = player
                         player.setVideoSurface(it)
                         player.setMediaItem(getMediaItem())
@@ -349,7 +361,7 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                         },
                 ) {
                     onSurfaceCreated {
-                        val player = ExoPlayer.Builder(this@SpatialComposeVideoPlayer).build()
+                        val player = ExoPlayer.Builder(applicationContext).build()
                         exoPlayer = player
                         player.setVideoSurface(it)
                         player.setMediaItem(getMediaItem())
@@ -367,7 +379,7 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
             }
         } else {
             SpatialColumn {
-                SpatialPanel(SubspaceModifier.height(600.dp).width(600.dp).transformingMovable()) {
+                SpatialPanel(SubspaceModifier.height(600.dp).width(600.dp).movable()) {
                     CommonTestScaffold(
                         title = "Video Player Tests",
                         showBottomBar = true,
@@ -777,13 +789,13 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
             modifier =
                 SubspaceModifier.width(600.dp)
                     .height(600.dp)
-                    .transformingMovable()
+                    .movable()
                     .spatializedAudioOutput(audioOutput)
         ) {
             AndroidExternalSurface {
                 onSurface { surface, _, _ ->
                     val player =
-                        ExoPlayer.Builder(this@SpatialComposeVideoPlayer)
+                        ExoPlayer.Builder(applicationContext)
                             .setAudioOutputProvider(audioOutput.audioOutputProvider)
                             .build()
                     exoPlayer = player
@@ -889,7 +901,7 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                     check(width >= 0 && height >= 0) { "Video dimensions must be positive" }
                     // Resize the canvas to match the video aspect ratio - accounting for the stereo
                     // mode.
-                    var dimensions = getCanvasAspectRatio(surfaceEntity!!.stereoMode, width, height)
+                    val dimensions = getCanvasAspectRatio(surfaceEntity!!.stereoMode, width, height)
                     surfaceEntity!!.shape = SurfaceEntity.Shape.Quad(dimensions)
 
                     // Resize the MovableComponent to match the canvas dimensions.
@@ -925,7 +937,10 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
             )
         oldFeatheringType = featheringType
 
-        val audioOutput = remember { PointSourceExoplayerAudioOutput(session, PointSourceParams()) }
+        val audioOutput =
+            remember(useDrmState.value) {
+                PointSourceExoplayerAudioOutput(session, PointSourceParams())
+            }
 
         // The resizable modifier overrides the automatic width/height resizing logic when switching
         // stereo modes.
@@ -938,8 +953,8 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                         if (stereoMode == StereoMode.TopBottom) videoHeight / 2 else videoHeight
                     )
                     .spatializedAudioOutput(audioOutput)
-                    .transformingMovable()
-                    .transformingResizable(),
+                    .movable()
+                    .resizable(),
             interactionPolicy =
                 InteractionPolicy.clickable {
                     if (isPaused) exoPlayer?.play() else exoPlayer?.pause()
@@ -952,7 +967,7 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
         ) {
             onSurfaceCreated {
                 val player =
-                    ExoPlayer.Builder(this@SpatialComposeVideoPlayer)
+                    ExoPlayer.Builder(applicationContext)
                         .setAudioOutputProvider(audioOutput.audioOutputProvider)
                         .build()
                 exoPlayer = player
@@ -999,12 +1014,16 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
             }
 
             // Offset avoids depth perception issues when playing stereoscopic video.
-            Orbiter(position = ContentEdge.Bottom, offset = 48.dp) {
+            Orbiter(
+                position =
+                    OrbiterPosition.BottomCenter(
+                        EdgeAlignment.Outside,
+                        offset = DpVolumeOffset(y = -48.dp),
+                    )
+            ) {
                 Button(
-                    onClick = {
-                        if (isPaused) exoPlayer?.play() else exoPlayer?.pause()
-                        isPaused = !isPaused
-                    }
+                    modifier = Modifier.width(150.dp),
+                    onClick = { if (isPaused) exoPlayer?.play() else exoPlayer?.pause() },
                 ) {
                     Text(text = if (isPaused) "Play" else "Pause")
                 }

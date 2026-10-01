@@ -34,7 +34,8 @@ internal class RemoteBoxNode : RemoteComposeNode() {
     var layoutDirection: LayoutDirection = LayoutDirection.Ltr
 
     override fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
-        val recordingModifier = creationState.toRecordingModifier(modifier)
+        val scope = overriddenScope(creationState)
+        val recordingModifier = scope.toRecordingModifier(modifier)
         creationState.document.startBox(
             recordingModifier,
             horizontalAlignment.toRemote(layoutDirection),
@@ -51,6 +52,8 @@ internal class RemoteBoxNode : RemoteComposeNode() {
  * `RemoteBox` allows you to wrap multiple children and position them using [contentAlignment]. In
  * Remote Compose, this layout is recorded as a Box command.
  *
+ * @sample androidx.compose.remote.creation.compose.samples.RemoteBoxSample
+ * @sample androidx.compose.remote.creation.compose.samples.RemoteBoxStackingSample
  * @param modifier The modifier to be applied to this box.
  * @param contentAlignment The default alignment inside the Box.
  * @param content The content of the box.

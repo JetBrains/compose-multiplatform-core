@@ -496,8 +496,7 @@ fun <T> levitateAsDialogSample(): ThreePaneScaffoldNavigator<T> {
 fun <T> levitateAsBottomSheetSample(): ThreePaneScaffoldNavigator<T> {
     val scaffoldDirective = calculatePaneScaffoldDirective(currentWindowAdaptiveInfoV2())
     val dragToResizeState = rememberDragToResizeState(dockedEdge = DockedEdge.Bottom)
-    var navigator: ThreePaneScaffoldNavigator<T>? = null
-    navigator =
+    val navigator: ThreePaneScaffoldNavigator<T> =
         rememberSupportingPaneScaffoldNavigator<T>(
             scaffoldDirective = scaffoldDirective,
             adaptStrategies =
@@ -881,7 +880,9 @@ private fun DetailPaneContent(
         backButton = {
             BackButton(
                 visible = !scaffoldNavigator.isExpanded(ListDetailPaneScaffoldRole.List),
-                onClick = { coroutineScope.launch { scaffoldNavigator.navigateBack(backBehavior) } },
+                onClick = {
+                    coroutineScope.launch { scaffoldNavigator.navigateBack(backBehavior) }
+                },
             )
         },
     ) {
@@ -1009,7 +1010,9 @@ private fun ExtraPaneContent(
         backButton = {
             BackButton(
                 visible = scaffoldNavigator.canNavigateBack(backBehavior),
-                onClick = { coroutineScope.launch { scaffoldNavigator.navigateBack(backBehavior) } },
+                onClick = {
+                    coroutineScope.launch { scaffoldNavigator.navigateBack(backBehavior) }
+                },
             )
         },
     ) {

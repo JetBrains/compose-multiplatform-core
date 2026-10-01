@@ -19,6 +19,7 @@ package androidx.xr.compose.subspace.layout
 import android.content.Intent
 import android.view.View
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,25 +30,40 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.arcore.Anchor
+import androidx.xr.arcore.AnchorCreateSuccess
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialAndroidViewPanel
 import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
+import androidx.xr.compose.subspace.rememberSpatialActivityPanelController
 import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.configureFakeSession
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
 import androidx.xr.compose.testing.session
 import androidx.xr.compose.unit.IntVolumeSize
+import androidx.xr.compose.unit.pxToMeters
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.AnchorSpace
 import androidx.xr.scenecore.Entity
+import androidx.xr.scenecore.GltfModel
+import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.PanelEntity
+import androidx.xr.scenecore.scene
+import androidx.xr.scenecore.testing.MemoryUtils
 import com.google.common.truth.Truth.assertThat
+import java.lang.ref.WeakReference
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -75,12 +91,11 @@ class CoreEntityTest {
         var mutableSizeCount = 0
 
         composeTestRule.setContent {
+            val session = assertNotNull(composeTestRule.session)
             val coreEntity = remember {
                 CoreGroupEntity(
-                        Entity.create(
-                            session = assertNotNull(composeTestRule.session),
-                            name = "Test",
-                        )
+                        session.scene.virtualPixelDensity,
+                        Entity.create(session = session, name = "Test"),
                     )
                     .apply { this.size = IntVolumeSize(size, size, size) }
             }
@@ -193,10 +208,14 @@ class CoreEntityTest {
     @Test
     fun coreBasePanelEntity_activityPanel_enabledStateFollowsSizeChanges() {
         var size by mutableStateOf(100.dp)
+
         composeTestRule.setContent {
             Subspace {
                 SpatialActivityPanel(
-                    intent = Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
+                    controller =
+                        rememberSpatialActivityPanelController(
+                            Intent(composeTestRule.activity, SpatialPanelActivity::class.java)
+                        ),
                     SubspaceModifier.width(size).height(size).testTag("panel"),
                 )
             }
@@ -216,10 +235,62 @@ class CoreEntityTest {
     }
 
     @Test
+    fun corePanelEntity_removedFromScene_freesUnderlyingEntity() {
+        var showPanel by mutableStateOf(true)
+        composeTestRule.setContent {
+            Subspace {
+                if (showPanel) {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {}
+                }
+            }
+        }
+
+        // Get a weak reference to the Entity so that we can verify that it's garbage collected.
+        val entityRef =
+            WeakReference(
+                composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode().semanticsEntity
+            )
+        assertThat(entityRef.get()).isNotNull()
+        showPanel = false
+
+        composeTestRule.waitForIdle()
+        MemoryUtils.assertGarbageCollected(entityRef)
+    }
+
+    @Test
+    fun coreActivityPanelEntity_removedFromScene_freesUnderlyingEntity() {
+        var showPanel by mutableStateOf(true)
+        composeTestRule.setContent {
+            Subspace {
+                if (showPanel) {
+                    SpatialActivityPanel(
+                        controller =
+                            rememberSpatialActivityPanelController(
+                                Intent(composeTestRule.activity, SpatialPanelActivity::class.java)
+                            ),
+                        SubspaceModifier.testTag("panel"),
+                    )
+                }
+            }
+        }
+
+        // Get a weak reference to the Entity so that we can verify that it's garbage collected.
+        val entityRef =
+            WeakReference(
+                composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode().semanticsEntity
+            )
+        assertThat(entityRef.get()).isNotNull()
+        showPanel = false
+
+        composeTestRule.waitForIdle()
+        MemoryUtils.assertGarbageCollected(entityRef)
+    }
+
+    @Test
     fun attachEntity_onExistingCoreEntity_replacesAndDisposesOldEntity() {
         val session = composeTestRule.configureFakeSession()
         val initialEntity = Entity.create(session = session, name = "Initial")
-        val coreEntity = CoreGroupEntity(initialEntity)
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, initialEntity)
         val newEntity = Entity.create(session = session, name = "New")
 
         coreEntity.attachEntity(newEntity)
@@ -230,12 +301,30 @@ class CoreEntityTest {
     }
 
     @Test
+    fun coreEntity_dispose_freesUnderlyingEntity() {
+        val session = composeTestRule.configureFakeSession()
+        var coreEntity: CoreGroupEntity? = null
+        fun setInitialEntity() {
+            val initialEntity = Entity.create(session = session, name = "Entity")
+            coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, initialEntity)
+        }
+        setInitialEntity()
+        // Get a weak reference to the Entity so that we can verify that it's garbage collected.
+        val entityRef = WeakReference(coreEntity!!.semanticsEntity)
+        assertThat(entityRef.get()).isNotNull()
+
+        coreEntity.dispose()
+
+        MemoryUtils.assertGarbageCollected(entityRef)
+    }
+
+    @Test
     fun parent_setParent_updatesEntityParent() {
         val session = composeTestRule.configureFakeSession()
         val testEntity = Entity.create(session = assertNotNull(session), name = "Initial")
-        val parentCoreEntity = CoreGroupEntity(testEntity)
+        val parentCoreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
         val childEntity = Entity.create(session = assertNotNull(session), name = "Child")
-        val childCoreEntity = CoreGroupEntity(childEntity)
+        val childCoreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, childEntity)
 
         childCoreEntity.parent = parentCoreEntity
 
@@ -246,10 +335,10 @@ class CoreEntityTest {
     fun parent_setParentToNull_restoresOriginalParent() {
         val session = composeTestRule.configureFakeSession()
         val testEntity = Entity.create(session = session, name = "Initial")
-        val parentCoreEntity = CoreGroupEntity(testEntity)
+        val parentCoreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
         val childEntity = Entity.create(session = session, name = "Child")
         val originalParent = childEntity.parent
-        val childCoreEntity = CoreGroupEntity(childEntity)
+        val childCoreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, childEntity)
 
         childCoreEntity.parent = parentCoreEntity
         assertThat(childEntity.parent).isNotEqualTo(originalParent)
@@ -262,7 +351,7 @@ class CoreEntityTest {
     fun poseInMeters_setPose_updatesEntityPose() {
         val session = composeTestRule.configureFakeSession()
         val testEntity = Entity.create(session = assertNotNull(session), name = "Initial")
-        val coreEntity = CoreGroupEntity(testEntity)
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
         val newPose = Pose(Vector3(5f, 5f, 5f))
 
         coreEntity.poseInMeters = newPose
@@ -274,7 +363,7 @@ class CoreEntityTest {
     fun poseInMeters_setSamePose_doesNotUpdateEntity() {
         val session = composeTestRule.configureFakeSession()
         val testEntity = Entity.create(session = session, name = "Initial")
-        val coreEntity = CoreGroupEntity(testEntity)
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
         val initialPose = testEntity.getPose()
 
         // We can't directly check if setPose was called, but we can ensure
@@ -288,7 +377,7 @@ class CoreEntityTest {
     fun enabled_setEnabled_updatesEntityEnabledState() {
         val session = composeTestRule.configureFakeSession()
         val testEntity = Entity.create(session = assertNotNull(session), name = "Initial")
-        val coreEntity = CoreGroupEntity(testEntity)
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
         testEntity.setEnabled(true)
 
         coreEntity.enabled = false
@@ -300,7 +389,7 @@ class CoreEntityTest {
     fun scale_setScale_updatesEntityScale() {
         val session = composeTestRule.configureFakeSession()
         val testEntity = Entity.create(session = assertNotNull(session), name = "Initial")
-        val coreEntity = CoreGroupEntity(testEntity)
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
         val newScale = 2.5f
 
         coreEntity.scale = newScale
@@ -309,10 +398,51 @@ class CoreEntityTest {
     }
 
     @Test
+    fun coreModelEntity_scaleGetterAndSetter_updatesOnlyWhenValueChanges() {
+        val session = composeTestRule.configureFakeSession()
+        val coreModelEntity = CoreModelEntity(session.scene.virtualPixelDensity)
+
+        // Initial scale is 1.0f
+        assertThat(coreModelEntity.scale).isEqualTo(1.0f)
+
+        // Branch 1: Set a different value (2.0f), should update scale
+        coreModelEntity.scale = 2.0f
+        assertThat(coreModelEntity.scale).isEqualTo(2.0f)
+
+        // Branch 2: Set the exact same value again (2.0f), no-op path where userScale == value
+        coreModelEntity.scale = 2.0f
+        assertThat(coreModelEntity.scale).isEqualTo(2.0f)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun coreModelEntity_sizeGetterAndSetter_updatesSizeAndSyncsCombinedScale() = runTest {
+        val session = composeTestRule.configureFakeSession()
+        val coreModelEntity = CoreModelEntity(session.scene.virtualPixelDensity)
+        @Suppress("NewApi")
+        val gltfModel = GltfModel.create(session, java.nio.file.Paths.get("test.glb"))
+        val gltfEntity = GltfModelEntity.create(session, gltfModel)
+        coreModelEntity.attachEntity(gltfEntity)
+
+        val newSize = IntVolumeSize(400, 400, 400)
+        coreModelEntity.size = newSize
+
+        assertThat(coreModelEntity.size).isEqualTo(newSize)
+        // modelSize is 2000x2000x2000px, so gltfUniformScale = 400/2000 = 0.2f (non-one)
+        assertThat(coreModelEntity.scale).isEqualTo(0.2f)
+
+        // Setting the exact same size again hits the no-op path (super.size == value)
+        val currentScale = coreModelEntity.scale
+        coreModelEntity.size = newSize
+        assertThat(coreModelEntity.size).isEqualTo(newSize)
+        assertThat(coreModelEntity.scale).isEqualTo(currentScale)
+    }
+
+    @Test
     fun alpha_setAlpha_updatesEntityAlpha() {
         val session = composeTestRule.configureFakeSession()
         val testEntity = Entity.create(session = assertNotNull(session), name = "Initial")
-        val coreEntity = CoreGroupEntity(testEntity)
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
         val newAlpha = 0.5f
 
         coreEntity.alpha = newAlpha
@@ -324,7 +454,7 @@ class CoreEntityTest {
     fun contentDescription_setContentDescription_updatesEntityContentDescription() {
         val session = composeTestRule.configureFakeSession()
         val testEntity = Entity.create(session = assertNotNull(session), name = "Initial")
-        val coreEntity = CoreGroupEntity(testEntity)
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
         val description = "Test Description"
 
         coreEntity.contentDescription = description
@@ -337,7 +467,7 @@ class CoreEntityTest {
     fun contentDescription_setNull_updatesEntityWithEmptyStringAndReturnsNull() {
         val session = composeTestRule.configureFakeSession()
         val testEntity = Entity.create(session = assertNotNull(session), name = "Initial")
-        val coreEntity = CoreGroupEntity(testEntity)
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
 
         coreEntity.contentDescription = null
 
@@ -349,10 +479,166 @@ class CoreEntityTest {
     fun contentDescription_returnsNull_whenUnderlyingEntityHasEmptyString() {
         val session = composeTestRule.configureFakeSession()
         val testEntity = Entity.create(session = assertNotNull(session), name = "Initial")
-        val coreEntity = CoreGroupEntity(testEntity)
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
 
         testEntity.contentDescription = ""
 
         assertThat(coreEntity.contentDescription).isNull()
+    }
+
+    @Test
+    fun updatePoseFromLayout_whenIsAnchoredToExternalSpaceIsTrue_doesNotUpdatePose() {
+        val session = composeTestRule.configureFakeSession()
+        val testEntity = Entity.create(session = session, name = "TestEntity")
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
+
+        val anchorResult = Anchor.create(session, Pose.Identity)
+        val success = assertIs<AnchorCreateSuccess>(anchorResult)
+        val anchorSpace = AnchorSpace.create(session, anchor = success.anchor)
+        testEntity.parent = anchorSpace
+
+        val customPose = Pose(Vector3(1f, 2f, 3f))
+        testEntity.setPose(customPose)
+
+        coreEntity.updatePoseFromLayout()
+
+        // Pose remains customPose because updatePoseFromLayout returned early when anchored to
+        // AnchorSpace.
+        assertThat(testEntity.getPose()).isEqualTo(customPose)
+    }
+
+    @Test
+    fun updatePoseFromLayout_whenIsAnchoredToExternalSpaceIsFalse_updatesPoseFromLayout() {
+        val session = composeTestRule.configureFakeSession()
+        val testEntity = Entity.create(session = session, name = "TestEntity")
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
+
+        val customPose = Pose(Vector3(1f, 2f, 3f))
+        testEntity.setPose(customPose)
+
+        coreEntity.updatePoseFromLayout()
+
+        // Pose is updated from layout (Pose.Identity) because entity is not anchored to
+        // AnchorSpace.
+        assertThat(testEntity.getPose()).isEqualTo(Pose.Identity)
+    }
+
+    @Test
+    fun coreMainPanelEntity_dispose_disablesAndDetaches() {
+        val session = composeTestRule.configureFakeSession()
+        val coreMainPanelEntity = CoreMainPanelEntity(assertNotNull(session))
+        coreMainPanelEntity.dispose()
+
+        assertThat(coreMainPanelEntity.enabled).isFalse()
+        assertThat(coreMainPanelEntity.parent).isNull()
+    }
+
+    @Test
+    fun coreMainPanelEntity_reset_restoresDefaultProperties() {
+        val session = composeTestRule.configureFakeSession()
+        val coreMainPanelEntity = CoreMainPanelEntity(assertNotNull(session))
+        val initialSize = session.scene.mainPanelEntity.sizeInPixels
+        coreMainPanelEntity.size = IntVolumeSize(500, 500, 0)
+        coreMainPanelEntity.poseInMeters = Pose(Vector3(1f, 2f, 3f))
+        coreMainPanelEntity.alpha = 0.5f
+        coreMainPanelEntity.contentDescription = "3D Main Panel"
+
+        coreMainPanelEntity.reset(Density(1f), null)
+
+        assertThat(coreMainPanelEntity.size)
+            .isEqualTo(IntVolumeSize(initialSize.width, initialSize.height, 0))
+        assertThat(coreMainPanelEntity.poseInMeters).isEqualTo(Pose.Identity)
+        assertThat(coreMainPanelEntity.alpha).isEqualTo(1.0f)
+        assertThat(coreMainPanelEntity.contentDescription).isNull()
+    }
+
+    @Test
+    fun coreMainPanelEntity_resetWithoutSizeMutation_doesNotModifyProperties() {
+        val session = composeTestRule.configureFakeSession()
+        val coreMainPanelEntity = CoreMainPanelEntity(assertNotNull(session))
+        coreMainPanelEntity.poseInMeters = Pose(Vector3(1f, 2f, 3f))
+        coreMainPanelEntity.alpha = 0.5f
+
+        coreMainPanelEntity.reset(Density(1f), null)
+
+        assertThat(coreMainPanelEntity.poseInMeters).isEqualTo(Pose(Vector3(1f, 2f, 3f)))
+        assertThat(coreMainPanelEntity.alpha).isEqualTo(0.5f)
+    }
+
+    @Test
+    fun coreMainPanelEntity_setShape_updatesAndRestoresCornerRadius() {
+        val session = composeTestRule.configureFakeSession()
+        val pixelDensity = session.scene.virtualPixelDensity
+        val coreMainPanelEntity = CoreMainPanelEntity(assertNotNull(session))
+        coreMainPanelEntity.size = IntVolumeSize(100, 200, 0)
+        val density = Density(1.0f)
+        val shape = SpatialRoundedCornerShape(CornerSize(25.dp))
+
+        coreMainPanelEntity.setShape(shape, density)
+
+        assertThat(session.scene.mainPanelEntity.cornerRadius)
+            .isEqualTo(25f.pxToMeters(pixelDensity))
+
+        // If the underlying entity's cornerRadius is externally modified, calling setShape
+        // with the same shape and density should override it back to the shape's corner radius.
+        session.scene.mainPanelEntity.cornerRadius = 0f
+        coreMainPanelEntity.setShape(shape, density)
+
+        assertThat(session.scene.mainPanelEntity.cornerRadius)
+            .isEqualTo(25f.pxToMeters(pixelDensity))
+
+        // Setting a different shape updates cornerRadius
+        val newShape = SpatialRoundedCornerShape(CornerSize(32.dp))
+        coreMainPanelEntity.setShape(newShape, density)
+
+        assertThat(session.scene.mainPanelEntity.cornerRadius)
+            .isEqualTo(32f.pxToMeters(pixelDensity))
+
+        // Setting a different density with the initial shape scales cornerRadius with density
+        val newDensity = Density(2.0f)
+        coreMainPanelEntity.setShape(shape, newDensity)
+
+        assertThat(session.scene.mainPanelEntity.cornerRadius)
+            .isEqualTo(50f.pxToMeters(pixelDensity))
+    }
+
+    @Test
+    fun corePanelEntity_setShape_updatesAndRestoresCornerRadius() {
+        val session = composeTestRule.configureFakeSession()
+        val pixelDensity = session.scene.virtualPixelDensity
+        val panelEntity =
+            PanelEntity.create(
+                assertNotNull(session),
+                View(composeTestRule.activity),
+                IntSize2d(100, 200),
+                "TestPanel",
+            )
+        val corePanelEntity = CorePanelEntity(pixelDensity, assertNotNull(panelEntity))
+        corePanelEntity.size = IntVolumeSize(100, 200, 0)
+        val density = Density(1.0f)
+        val shape = SpatialRoundedCornerShape(CornerSize(25.dp))
+
+        corePanelEntity.setShape(shape, density)
+
+        assertThat(panelEntity.cornerRadius).isEqualTo(25f.pxToMeters(pixelDensity))
+
+        // If the underlying entity's cornerRadius is externally modified, calling setShape
+        // with the same shape and density should override it back to the shape's corner radius.
+        panelEntity.cornerRadius = 0f
+        corePanelEntity.setShape(shape, density)
+
+        assertThat(panelEntity.cornerRadius).isEqualTo(25f.pxToMeters(pixelDensity))
+
+        // Setting a different shape updates cornerRadius
+        val newShape = SpatialRoundedCornerShape(CornerSize(32.dp))
+        corePanelEntity.setShape(newShape, density)
+
+        assertThat(panelEntity.cornerRadius).isEqualTo(32f.pxToMeters(pixelDensity))
+
+        // Setting a different density with the initial shape scales cornerRadius with density
+        val newDensity = Density(2.0f)
+        corePanelEntity.setShape(shape, newDensity)
+
+        assertThat(panelEntity.cornerRadius).isEqualTo(50f.pxToMeters(pixelDensity))
     }
 }

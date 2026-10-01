@@ -77,7 +77,6 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Ignore
@@ -99,7 +98,7 @@ class LazyListAnimateItemPlacementTest(private val config: Config) {
     private val isInLookaheadScope: Boolean
         get() = config.isInLookaheadScope
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     // the numbers should be divisible by 8 to avoid the rounding issues as we run 4 or 8 frames
     // of the animation.
@@ -1665,13 +1664,12 @@ class LazyListAnimateItemPlacementTest(private val config: Config) {
                     keySelector = { it.config.get(SemanticsProperties.TestTag) },
                     valueTransform = { IntRect(it.positionInRoot.round(), it.size) },
                 )
-        val actualOffsets =
-            expected.map {
-                it.first to
-                    actualBounds.getValue(it.first.toString()).let { bounds ->
-                        if (isVertical) bounds.top else bounds.left
-                    }
-            }
+        val actualOffsets = expected.map {
+            it.first to
+                actualBounds.getValue(it.first.toString()).let { bounds ->
+                    if (isVertical) bounds.top else bounds.left
+                }
+        }
         val subject =
             if (fraction == null) {
                 assertThat(actualOffsets)
@@ -1698,13 +1696,12 @@ class LazyListAnimateItemPlacementTest(private val config: Config) {
             }
         )
         if (crossAxis != null) {
-            val actualCrossOffset =
-                expected.map {
-                    it.first to
-                        actualBounds.getValue(it.first.toString()).let { bounds ->
-                            if (isVertical) bounds.left else bounds.top
-                        }
-                }
+            val actualCrossOffset = expected.map {
+                it.first to
+                    actualBounds.getValue(it.first.toString()).let { bounds ->
+                        if (isVertical) bounds.left else bounds.top
+                    }
+            }
             assertWithMessage("CrossAxis" + if (fraction != null) "for fraction=$fraction" else "")
                 .that(actualCrossOffset)
                 .isEqualTo(crossAxis.map { it.first to it.second.roundToInt() })

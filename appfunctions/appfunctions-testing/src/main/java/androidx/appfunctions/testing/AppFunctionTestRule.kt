@@ -20,7 +20,6 @@ import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.appfunctions.AppFunctionManager
-import androidx.appfunctions.internal.NullTranslatorSelector
 import androidx.appfunctions.testing.internal.FakeAppFunctionManagerApi
 import androidx.appfunctions.testing.internal.FakeAppFunctionReader
 import org.junit.rules.TestRule
@@ -35,7 +34,7 @@ import org.robolectric.shadows.ShadowSystemProperties
  * Prefer real system-level testing where possible. This rule is intended only for local tests that
  * simulate cross-app interactions via AppFunctions.
  *
- * Any functions annotated with [androidx.appfunctions.AppFunction] in test code will be
+ * Any functions annotated with [androidx.appfunctions.AppFunctionDeclaration] in test code will be
  * automatically registered in this environment during initialization, provided the
  * `appfunctions-compiler` is applied to the test configuration with the
  * `appfunctions:aggregateAppFunctions` compiler option set to true.
@@ -60,7 +59,7 @@ import org.robolectric.shadows.ShadowSystemProperties
  *
  * // Sample functions under test.
  * class ExampleFunctions {
- *     @AppFunction
+ *     @AppFunctionDeclaration
  *     suspend fun add(a: Int, b: Int): Int = a + b
  * }
  *
@@ -126,7 +125,7 @@ import org.robolectric.shadows.ShadowSystemProperties
  *
  * // Test file.
  * class TestFunctions {
- *     @AppFunction
+ *     @AppFunctionDeclaration
  *     fun testFun(parameters: TestParam): TestReturn { ... }
  * }
  *
@@ -154,7 +153,9 @@ public class AppFunctionTestRule(private val context: Context) : TestRule {
     // TODO: b/426219836 - Dynamic registration and changing app function enabled state API(s).
     // TODO: b/425327400 - Move to use Robolectric shadows
 
-    private val appFunctionReader = FakeAppFunctionReader(context)
+    // TODO(b/426219836): appFunctionReader is internal to set dynamic AppFunctionMetadata manually
+    //  in tests. Make it private once dynamic app functions are supported in test rule API.
+    internal val appFunctionReader = FakeAppFunctionReader(context)
     private val appFunctionManagerApi = FakeAppFunctionManagerApi(context, appFunctionReader)
 
     override fun apply(base: Statement?, description: Description?): Statement =
@@ -177,7 +178,6 @@ public class AppFunctionTestRule(private val context: Context) : TestRule {
             context = context,
             appFunctionReader = appFunctionReader,
             appFunctionManagerApi = appFunctionManagerApi,
-            translatorSelector = NullTranslatorSelector(),
         )
     }
 

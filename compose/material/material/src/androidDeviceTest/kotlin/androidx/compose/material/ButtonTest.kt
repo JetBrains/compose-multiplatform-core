@@ -80,7 +80,6 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.abs
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -89,7 +88,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ButtonTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun defaultSemantics() {
@@ -528,7 +527,8 @@ class ButtonTest {
             Button(
                 onClick = {},
                 contentPadding = PaddingValues(),
-                modifier = Modifier.requiredWidthIn(20.dp).requiredHeightIn(15.dp).testTag("button"),
+                modifier =
+                    Modifier.requiredWidthIn(20.dp).requiredHeightIn(15.dp).testTag("button"),
             ) {
                 Spacer(Modifier.requiredSize(10.dp))
             }

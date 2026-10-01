@@ -143,6 +143,22 @@ internal class CameraStateAdapterTest {
                 null,
                 isGraphActive,
             )
+        // Timeout (Active) -> FATAL (We didn't add it to Recoverable list, so it stays FATAL)
+        val nextStateWhenGraphStateErrorTimeoutActive =
+            cameraStateAdapter.calculateNextState(
+                CameraInternal.State.OPENING,
+                GraphStateError(CameraError.ERROR_CAMERA_OPEN_TIMEOUT, willAttemptRetry = false),
+                null,
+                isGraphActive = true,
+            )
+        // Timeout (Inactive) -> CLOSING (Swallows the error because it's an intentional abort)
+        val nextStateWhenGraphStateErrorTimeoutInactive =
+            cameraStateAdapter.calculateNextState(
+                CameraInternal.State.OPENING,
+                GraphStateError(CameraError.ERROR_CAMERA_OPEN_TIMEOUT, willAttemptRetry = false),
+                null,
+                isGraphActive = false,
+            )
         val nextStateWhenGraphStateErrorUnrecoverableWillNotRetry =
             cameraStateAdapter.calculateNextState(
                 CameraInternal.State.OPENING,
@@ -159,6 +175,13 @@ internal class CameraStateAdapterTest {
             .isEqualTo(CameraInternal.State.OPENING)
         assertThat(nextStateWhenGraphStateErrorRecoverableWillNotRetry!!.state)
             .isEqualTo(CameraInternal.State.PENDING_OPEN)
+        assertThat(nextStateWhenGraphStateErrorTimeoutActive!!.state)
+            .isEqualTo(CameraInternal.State.CLOSING)
+        assertThat(nextStateWhenGraphStateErrorTimeoutActive.error?.code)
+            .isEqualTo(CameraState.ERROR_CAMERA_FATAL_ERROR)
+        assertThat(nextStateWhenGraphStateErrorTimeoutInactive!!.state)
+            .isEqualTo(CameraInternal.State.OPENING)
+        assertThat(nextStateWhenGraphStateErrorTimeoutInactive.error).isNull()
         assertThat(nextStateWhenGraphStateErrorUnrecoverableWillNotRetry!!.state)
             .isEqualTo(CameraInternal.State.CLOSING)
     }
@@ -263,6 +286,13 @@ internal class CameraStateAdapterTest {
                 null,
                 isGraphActive,
             )
+        val nextStateWhenGraphStateErrorTimeoutInactive =
+            cameraStateAdapter.calculateNextState(
+                CameraInternal.State.CLOSING,
+                GraphStateError(CameraError.ERROR_CAMERA_OPEN_TIMEOUT, false),
+                CameraState.StateError.create(ERROR_OTHER_RECOVERABLE_ERROR),
+                isGraphActive = false,
+            )
 
         assertThat(nextStateWhenGraphStateStarting!!.state).isEqualTo(CameraInternal.State.OPENING)
         assertThat(nextStateWhenGraphStateStarted).isEqualTo(null)
@@ -270,6 +300,10 @@ internal class CameraStateAdapterTest {
         assertThat(nextStateWhenGraphStateStopped!!.state).isEqualTo(CameraInternal.State.CLOSED)
         assertThat(nextStateWhenGraphStateError!!.state).isEqualTo(CameraInternal.State.CLOSING)
         assertThat(nextStateWhenGraphStateError.error?.code).isEqualTo(ERROR_MAX_CAMERAS_IN_USE)
+        assertThat(nextStateWhenGraphStateErrorTimeoutInactive!!.state)
+            .isEqualTo(CameraInternal.State.CLOSING)
+        assertThat(nextStateWhenGraphStateErrorTimeoutInactive.error?.code)
+            .isEqualTo(ERROR_OTHER_RECOVERABLE_ERROR)
     }
 
     @Test
@@ -306,6 +340,19 @@ internal class CameraStateAdapterTest {
             )
         assertThat(nextStateWhenGraphStateError!!.state)
             .isEqualTo(CameraInternal.State.PENDING_OPEN)
+
+        // Timeout (Inactive) -> Stay PENDING but swallow the new error
+        val nextStateWhenGraphStateErrorTimeoutInactive =
+            cameraStateAdapter.calculateNextState(
+                CameraInternal.State.PENDING_OPEN,
+                GraphStateError(CameraError.ERROR_CAMERA_OPEN_TIMEOUT, false),
+                CameraState.StateError.create(ERROR_OTHER_RECOVERABLE_ERROR),
+                isGraphActive = false,
+            )
+        assertThat(nextStateWhenGraphStateErrorTimeoutInactive!!.state)
+            .isEqualTo(CameraInternal.State.PENDING_OPEN)
+        assertThat(nextStateWhenGraphStateErrorTimeoutInactive.error?.code)
+            .isEqualTo(ERROR_OTHER_RECOVERABLE_ERROR)
     }
 
     @Test
@@ -646,6 +693,26 @@ internal class CameraStateAdapterTest {
         assertThat(finalState.type).isEqualTo(CameraState.Type.CLOSED)
         assertThat(finalState.error).isNotNull()
         assertThat(finalState.error!!.code).isEqualTo(ERROR_CAMERA_REMOVED)
+    }
+
+    @Test
+    fun testEventsAreIgnored_afterGraphIsClosedAndStopped() {
+        // 1. Arrange: Setup graph and open it.
+        cameraStateAdapter.onGraphUpdated(cameraGraph1)
+        cameraStateAdapter.onGraphStateUpdated(cameraGraph1, GraphStateStarting)
+        cameraStateAdapter.onGraphStateUpdated(cameraGraph1, GraphStateStarted)
+        assertThat(cameraStateAdapter.cameraState.value?.type).isEqualTo(CameraState.Type.OPEN)
+
+        // 2. Act: Close the graph and wait for it to stop.
+        cameraStateAdapter.onGraphClosed(cameraGraph1)
+        cameraStateAdapter.onGraphStateUpdated(cameraGraph1, GraphStateStopped)
+        assertThat(cameraStateAdapter.cameraState.value?.type).isEqualTo(CameraState.Type.CLOSED)
+
+        // 3. Act: Send a new event from the OLD graph.
+        cameraStateAdapter.onGraphStateUpdated(cameraGraph1, GraphStateStarting)
+
+        // 4. Assert: State should still be CLOSED because the event from old graph is ignored.
+        assertThat(cameraStateAdapter.cameraState.value?.type).isEqualTo(CameraState.Type.CLOSED)
     }
 
     private class TestStateListener : Consumer<CameraState> {

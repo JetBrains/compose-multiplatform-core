@@ -17,7 +17,6 @@
 package androidx.compose.ui.window
 
 import android.content.pm.ActivityInfo
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,7 +35,6 @@ import androidx.core.view.WindowCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -49,7 +47,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class DialogWithNoStatusBarTest {
 
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     @Test
     fun fullScreenDialogPortraitNotDefaultWidthDecorFitsMatchesContainerSize() {
@@ -212,7 +210,7 @@ class DialogWithNoStatusBarTest {
         var mainContentHeight = 0
         var dialogWidth = 0
         var dialogHeight = 0
-        rule.runOnUiThread { rule.activity.enableEdgeToEdge() }
+        rule.runOnUiThread { WindowCompat.enableEdgeToEdge(rule.activity.window) }
         rule.activityRule.scenario.onActivity {
             WindowCompat.setDecorFitsSystemWindows(it.window, false)
         }
@@ -256,7 +254,7 @@ class DialogWithNoStatusBarTest {
         var mainContentHeight = 0
         var dialogWidth = 0
         var dialogHeight = 0
-        rule.runOnUiThread { rule.activity.enableEdgeToEdge() }
+        rule.runOnUiThread { WindowCompat.enableEdgeToEdge(rule.activity.window) }
         rule.activityRule.scenario.onActivity {
             WindowCompat.setDecorFitsSystemWindows(it.window, false)
         }

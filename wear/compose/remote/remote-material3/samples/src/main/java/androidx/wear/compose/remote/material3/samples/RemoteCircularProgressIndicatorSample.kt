@@ -24,11 +24,13 @@ import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.clickable
 import androidx.compose.remote.creation.compose.modifier.size
-import androidx.compose.remote.creation.compose.state.animateRemoteFloat
+import androidx.compose.remote.creation.compose.state.MutableRemoteFloat
+import androidx.compose.remote.creation.compose.state.animateRemoteFloatAsState
 import androidx.compose.remote.creation.compose.state.rdp
-import androidx.compose.remote.creation.compose.state.rememberMutableRemoteFloat
+import androidx.compose.remote.creation.compose.state.remoteTween
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.tooling.preview.PreviewWrapper
 import androidx.wear.compose.remote.material3.RemoteCircularProgressIndicator
 import androidx.wear.compose.remote.material3.previews.utils.RemoteComponentPreviewWrapper
@@ -62,8 +64,12 @@ public fun RemoteIndeterminateCircularProgressIndicatorSample(
 public fun RemoteCircularProgressIndicatorAnimatedSample(
     modifier: RemoteModifier = RemoteModifier.size(150.rdp)
 ) {
-    val progress = rememberMutableRemoteFloat { 0.25f.rf }
-    val animatedProgress = animateRemoteFloat(progress, 0.25f)
+    val progress = remember { MutableRemoteFloat { 0.25f.rf } }
+    val animatedProgress =
+        animateRemoteFloatAsState(
+            targetValue = progress,
+            animationSpec = remoteTween(durationMillis = 250),
+        )
 
     val toggleAction = valueChange(progress, ((progress + 0.25f) % 1f).createReference())
 

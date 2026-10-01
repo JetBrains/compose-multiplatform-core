@@ -107,8 +107,11 @@ class `$AttachmentFactory` : AppFunctionSerializableFactory<Attachment> {
         return Attachment(checkNotNull(appFunctionData.getString("uri")))
     }
 
-    override fun toAppFunctionData(appFunctionSerializable: Attachment): AppFunctionData {
-        return getAppFunctionDataBuilder("androidx.appfunctions.Attachment")
+    override fun toAppFunctionData(
+        spec: AppFunctionDataSpec?,
+        appFunctionSerializable: Attachment,
+    ): AppFunctionData {
+        return getAppFunctionDataBuilder(spec, "androidx.appfunctions.Attachment")
             .setString("uri", appFunctionSerializable.uri)
             .build()
     }
@@ -125,14 +128,21 @@ class `$NoteFactory` : AppFunctionSerializableFactory<Note> {
         )
     }
 
-    override fun toAppFunctionData(appFunctionSerializable: Note): AppFunctionData {
-        return getAppFunctionDataBuilder("androidx.appfunctions.Note")
+    override fun toAppFunctionData(
+        spec: AppFunctionDataSpec?,
+        appFunctionSerializable: Note,
+    ): AppFunctionData {
+        val attachmentFactory = `$AttachmentFactory`()
+        return getAppFunctionDataBuilder(spec, "androidx.appfunctions.Note")
             .setString("title", appFunctionSerializable.title)
             .setAppFunctionData(
                 "attachment",
-                AppFunctionData.serialize(
+                attachmentFactory.toAppFunctionData(
+                    spec?.getPropertyObjectSpec(
+                        "attachment",
+                        checkNotNull(Attachment::class.java.canonicalName),
+                    ),
                     appFunctionSerializable.attachment,
-                    Attachment::class.java,
                 ),
             )
             .build()
@@ -151,14 +161,21 @@ class `$OpenableNoteFactory` : AppFunctionSerializableFactory<OpenableNote> {
         )
     }
 
-    override fun toAppFunctionData(appFunctionSerializable: OpenableNote): AppFunctionData {
-        return getAppFunctionDataBuilder("androidx.appfunctions.OpenableNote")
+    override fun toAppFunctionData(
+        spec: AppFunctionDataSpec?,
+        appFunctionSerializable: OpenableNote,
+    ): AppFunctionData {
+        val attachmentFactory = `$AttachmentFactory`()
+        return getAppFunctionDataBuilder(spec, "androidx.appfunctions.OpenableNote")
             .setString("title", appFunctionSerializable.title)
             .setAppFunctionData(
                 "attachment",
-                AppFunctionData.serialize(
+                attachmentFactory.toAppFunctionData(
+                    spec?.getPropertyObjectSpec(
+                        "attachment",
+                        checkNotNull(Attachment::class.java.canonicalName),
+                    ),
                     appFunctionSerializable.attachment,
-                    Attachment::class.java,
                 ),
             )
             .setParcelable("intentToOpen", appFunctionSerializable.intentToOpen)

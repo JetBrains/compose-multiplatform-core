@@ -16,10 +16,12 @@
 
 package androidx.ink.strokes
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
 
 @UsedByNative
+@OptIn(InkInternalOnlyApi::class)
 internal actual object StrokeNative {
     init {
         NativeLoader.load()
@@ -40,30 +42,43 @@ internal actual object StrokeNative {
     @UsedByNative actual external fun newShallowCopyOfShape(nativePointer: Long): Long
 
     @UsedByNative actual external fun free(nativePointer: Long)
-}
-
-@UsedByNative
-internal actual object MultipleStrokesNative {
-    init {
-        NativeLoader.load()
-    }
 
     @UsedByNative
-    actual external fun createWithPartialErase(
+    actual external fun createWithSubtract(
         targetStrokePointer: Long,
-        eraserShapePointer: Long,
-        eraserA: Float,
-        eraserB: Float,
-        eraserC: Float,
-        eraserD: Float,
-        eraserE: Float,
-        eraserF: Float,
+        maskShapePointer: Long,
+        maskA: Float,
+        maskB: Float,
+        maskC: Float,
+        maskD: Float,
+        maskE: Float,
+        maskF: Float,
         strokeA: Float,
         strokeB: Float,
         strokeC: Float,
         strokeD: Float,
         strokeE: Float,
         strokeF: Float,
+    ): Long
+}
+
+@UsedByNative
+@OptIn(InkInternalOnlyApi::class)
+internal actual object MultipleStrokesNative {
+    init {
+        NativeLoader.load()
+    }
+
+    @UsedByNative
+    actual external fun createWithSplit(
+        targetStrokePointer: Long,
+        transformA: Float,
+        transformB: Float,
+        transformC: Float,
+        transformD: Float,
+        transformE: Float,
+        transformF: Float,
+        tolerance: Float,
     ): Long
 
     @UsedByNative actual external fun getStrokeCount(nativePointer: Long): Int

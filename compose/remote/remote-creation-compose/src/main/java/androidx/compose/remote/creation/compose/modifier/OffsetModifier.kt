@@ -17,19 +17,47 @@
 package androidx.compose.remote.creation.compose.modifier
 
 import androidx.annotation.RestrictTo
+import androidx.compose.remote.creation.compose.capture.RemoteDensityBehavior
 import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemoteStateScope
+import androidx.compose.remote.creation.modifiers.OffsetModifier as CreationOffsetModifier
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 
-internal class OffsetModifier(public val x: RemoteFloat, public val y: RemoteFloat) :
-    RemoteModifier.Element {
+internal class OffsetModifier(
+    public val x: RemoteFloat,
+    public val y: RemoteFloat,
+    private val xDp: RemoteDp? = null,
+    private val yDp: RemoteDp? = null,
+) : RemoteModifier.Element {
+
+    public constructor(
+        x: RemoteDp,
+        y: RemoteDp,
+    ) : this(
+        x = x.toPx(),
+        y = y.toPx(),
+        xDp = x,
+        yDp = y,
+    )
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun RemoteStateScope.toRecordingModifierElement(): RecordingModifier.Element {
-        return androidx.compose.remote.creation.modifiers.OffsetModifier(x.floatId, y.floatId)
+        val resolvedX =
+            if (densityBehavior == RemoteDensityBehavior.Dp) {
+                xDp?.value ?: (x / remoteDensity.density)
+            } else {
+                x
+            }
+        val resolvedY =
+            if (densityBehavior == RemoteDensityBehavior.Dp) {
+                yDp?.value ?: (y / remoteDensity.density)
+            } else {
+                y
+            }
+        return CreationOffsetModifier(resolvedX.floatId, resolvedY.floatId)
     }
 }
 
 public fun RemoteModifier.offset(x: RemoteDp, y: RemoteDp): RemoteModifier =
-    then(OffsetModifier(x.value, y.value))
+    then(OffsetModifier(x, y))

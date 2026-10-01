@@ -18,38 +18,39 @@ package androidx.xr.runtime
 import androidx.annotation.RestrictTo
 
 /**
- * Defines a configuration state of all available features to be set at runtime.
+ * Configuration state of all available features to be set at runtime.
  *
  * An instance of this class should be passed to [Session.configure] to set the current
  * configuration. Use [Builder] to specify individual configuration settings, and use
  * [Builder.build] to create an instance of [Config] to pass to [Session.configure].
  *
- * @property planeTracking Feature that allows tracking of and provides information about scene
- *   planes. See [PlaneTrackingMode].
- * @property handTracking Feature that allows tracking of the user's hands and hand joints. See
- *   [HandTrackingMode].
- * @property deviceTracking Feature that allows tracking of the AR device. See [DeviceTrackingMode].
- * @property depthEstimation Feature that allows more accurate information about scene depth and
- *   meshes. See [DepthEstimationMode].
- * @property anchorPersistence Feature that allows anchors to be persisted through sessions. See
- *   [AnchorPersistenceMode].
- * @property faceTracking Feature that allows the tracking of human faces. See [FaceTrackingMode].
- * @property geospatial Feature that allows geospatial localization and tracking. See
- *   [GeospatialMode].
- * @property augmentedObjectCategories Feature that allows tracking of recognizable objects in the
- *   environment. See [AugmentedObjectCategory].
- * @property eyeTracking Feature that allows tracking of the users gaze direction. See
- *   [EyeTrackingMode].
- * @property augmentedImageDatabase The current active [AugmentedImageDatabase]. If not empty, the
- *   image tracking feature will be enabled.
- * @property qrCodeTracking Feature that allows tracking of and provides information about QR codes.
- *   See [QrCodeTrackingMode].
- * @property qrCodeSizeMeters The physical size in meters of the QR code. If zero, the physical size
+ * @property planeTracking feature that allows tracking of and provides information about scene
+ *   planes. See [PlaneTrackingMode]
+ * @property handTracking feature that allows tracking of the user's hands and hand joints. See
+ *   [HandTrackingMode]
+ * @property deviceTracking feature that allows tracking of the AR device. See [DeviceTrackingMode]
+ * @property depthEstimation feature that allows more accurate information about scene depth and
+ *   meshes. See [DepthEstimationMode]
+ * @property anchorPersistence feature that allows anchors to be persisted through sessions. See
+ *   [AnchorPersistenceMode]
+ * @property faceTracking feature that allows the tracking of human faces. See [FaceTrackingMode]
+ * @property geospatial feature that allows geospatial localization and tracking. See
+ *   [GeospatialMode]
+ * @property augmentedObjectCategories feature that allows tracking of recognizable objects in the
+ *   environment. See [AugmentedObjectCategory]
+ * @property eyeTracking feature that allows tracking of the users gaze direction. See
+ *   [EyeTrackingMode]
+ * @property augmentedImageDatabase the current active [AugmentedImageDatabase]. If not empty, the
+ *   image tracking feature will be enabled
+ * @property qrCodeTracking feature that allows tracking of and provides information about QR codes
+ *   See [QrCodeTrackingMode]
+ * @property qrCodeSizeMeters the physical size in meters of the QR code. If zero, the physical size
  *   will be estimated if the device supports it. If physical size estimation is not supported,
  *   configuring the [Session] adding an entry with qrCodeSizeMeters being 0f or lower will throw an
  *   [IllegalStateException]. It requires [qrCodeTracking] to be different from
- *   [QrCodeTrackingMode.DISABLED].
+ *   [QrCodeTrackingMode.DISABLED]
  */
+@OptIn(ExperimentalSpatialAnnotationsApi::class)
 public class Config
 private constructor(
     public val planeTracking: PlaneTrackingMode,
@@ -64,14 +65,14 @@ private constructor(
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public val cameraFacingDirection: CameraFacingDirection,
     public val augmentedImageDatabase: AugmentedImageDatabase?,
-    public val qrCodeTracking: QrCodeTrackingMode = QrCodeTrackingMode.DISABLED,
+    public val qrCodeTracking: QrCodeTrackingMode,
     public val qrCodeSizeMeters: Float = 0f,
-    @OptIn(PreviewSpatialApi::class) private val sceneSignalTypes: Set<SceneSignalType>,
+    private val sceneSignalTypes: Set<SceneSignalType>,
+    private val spatialAnnotationTracking: SpatialAnnotationTrackingMode,
 ) {
     // TODO(b/513553206) - Remove this constructor when 1P apps are migrated to use Config.Builder.
     @JvmOverloads
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @OptIn(PreviewSpatialApi::class)
     public constructor(
         planeTracking: PlaneTrackingMode = PlaneTrackingMode.DISABLED,
         handTracking: HandTrackingMode = HandTrackingMode.DISABLED,
@@ -100,9 +101,9 @@ private constructor(
         qrCodeTracking,
         qrCodeSizeMeters,
         sceneSignalTypes = setOf(),
+        SpatialAnnotationTrackingMode.DISABLED,
     )
 
-    @OptIn(PreviewSpatialApi::class)
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Config) return false
@@ -121,11 +122,11 @@ private constructor(
         if (qrCodeTracking != other.qrCodeTracking) return false
         if (qrCodeSizeMeters != other.qrCodeSizeMeters) return false
         if (sceneSignalTypes != other.getSceneSignalTypes()) return false
+        if (spatialAnnotationTracking != other.spatialAnnotationTracking) return false
 
         return true
     }
 
-    @OptIn(PreviewSpatialApi::class)
     override fun hashCode(): Int {
         var result = planeTracking.hashCode()
         result = 31 * result + handTracking.hashCode()
@@ -141,12 +142,70 @@ private constructor(
         result = 31 * result + qrCodeTracking.hashCode()
         result = 31 * result + qrCodeSizeMeters.hashCode()
         result = 31 * result + sceneSignalTypes.hashCode()
+        result = 31 * result + spatialAnnotationTracking.hashCode()
         return result
     }
 
-    @PreviewSpatialApi
+    /**
+     * Returns a string representation of [Config] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String =
+        "Config(planeTracking=$planeTracking, handTracking=$handTracking, deviceTracking=$deviceTracking, " +
+            "depthEstimation=$depthEstimation, anchorPersistence=$anchorPersistence, faceTracking=$faceTracking, " +
+            "geospatial=$geospatial, augmentedObjectCategories=$augmentedObjectCategories, eyeTracking=$eyeTracking, " +
+            "cameraFacingDirection=$cameraFacingDirection, augmentedImageDatabase=$augmentedImageDatabase, " +
+            "qrCodeTracking=$qrCodeTracking, qrCodeSizeMeters=$qrCodeSizeMeters, " +
+            "spatialAnnotationTracking=$spatialAnnotationTracking" +
+            ")"
+
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun getSceneSignalTypes(): Set<SceneSignalType> = sceneSignalTypes
+
+    @ExperimentalSpatialAnnotationsApi
+    public fun getSpatialAnnotationTracking(): SpatialAnnotationTrackingMode =
+        spatialAnnotationTracking
+
+    // TODO(b/513553206) - Remove this function when 1P apps are migrated to use Config.Builder.
+    @JvmOverloads
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public fun copy(
+        planeTracking: PlaneTrackingMode = this.planeTracking,
+        handTracking: HandTrackingMode = this.handTracking,
+        deviceTracking: DeviceTrackingMode = this.deviceTracking,
+        depthEstimation: DepthEstimationMode = this.depthEstimation,
+        anchorPersistence: AnchorPersistenceMode = this.anchorPersistence,
+        faceTracking: FaceTrackingMode = this.faceTracking,
+        geospatial: GeospatialMode = this.geospatial,
+        augmentedObjectCategories: Set<AugmentedObjectCategory> = this.augmentedObjectCategories,
+        eyeTracking: EyeTrackingMode = this.eyeTracking,
+        cameraFacingDirection: CameraFacingDirection = this.cameraFacingDirection,
+        augmentedImageDatabase: AugmentedImageDatabase? = this.augmentedImageDatabase,
+        qrCodeTracking: QrCodeTrackingMode = this.qrCodeTracking,
+        qrCodeSizeMeters: Float = this.qrCodeSizeMeters,
+        sceneSignalTypes: Set<SceneSignalType> = this.sceneSignalTypes,
+    ): Config {
+        val newConfig =
+            Config(
+                planeTracking = planeTracking,
+                handTracking = handTracking,
+                deviceTracking = deviceTracking,
+                depthEstimation = depthEstimation,
+                anchorPersistence = anchorPersistence,
+                faceTracking = faceTracking,
+                geospatial = geospatial,
+                augmentedObjectCategories = augmentedObjectCategories,
+                eyeTracking = eyeTracking,
+                cameraFacingDirection = cameraFacingDirection,
+                augmentedImageDatabase = augmentedImageDatabase,
+                qrCodeTracking = qrCodeTracking,
+                qrCodeSizeMeters = qrCodeSizeMeters,
+                sceneSignalTypes = sceneSignalTypes,
+                spatialAnnotationTracking = this.spatialAnnotationTracking,
+            )
+        return newConfig
+    }
 
     /**
      * This class can be used to create a [Config] instance.
@@ -157,6 +216,7 @@ private constructor(
      * setter methods can be chained. [Builder.build] can be used to create a [Config] with the
      * configuration specified in the builder.
      */
+    @OptIn(ExperimentalSpatialAnnotationsApi::class)
     public class Builder
     internal constructor(
         private var planeTracking: PlaneTrackingMode,
@@ -172,11 +232,11 @@ private constructor(
         private var augmentedImageDatabase: AugmentedImageDatabase?,
         private var qrCodeTracking: QrCodeTrackingMode,
         private var qrCodeSizeMeters: Float,
-        @OptIn(PreviewSpatialApi::class) private var sceneSignalTypes: Set<SceneSignalType>,
+        private var sceneSignalTypes: Set<SceneSignalType>,
+        private var spatialAnnotationTracking: SpatialAnnotationTrackingMode,
     ) {
 
         /** Creates a [Builder] instance for a [Config] with default values. */
-        @OptIn(PreviewSpatialApi::class)
         public constructor() :
             this(
                 planeTracking = PlaneTrackingMode.DISABLED,
@@ -193,6 +253,7 @@ private constructor(
                 qrCodeTracking = QrCodeTrackingMode.DISABLED,
                 qrCodeSizeMeters = 0f,
                 sceneSignalTypes = emptySet(),
+                spatialAnnotationTracking = SpatialAnnotationTrackingMode.DISABLED,
             )
 
         /**
@@ -201,7 +262,6 @@ private constructor(
          *
          * @param config the configuration for the [Builder] instance
          */
-        @OptIn(PreviewSpatialApi::class)
         public constructor(
             config: Config
         ) : this(
@@ -219,6 +279,7 @@ private constructor(
             config.qrCodeTracking,
             config.qrCodeSizeMeters,
             config.sceneSignalTypes,
+            config.spatialAnnotationTracking,
         )
 
         /**
@@ -353,7 +414,7 @@ private constructor(
          *
          * The default value is null.
          *
-         * @param augmentedImageDatabase Nullable [AugmentedImageDatabase] value to configure the
+         * @param augmentedImageDatabase nullable [AugmentedImageDatabase] value to configure the
          *   [Session]
          * @return a [Builder] that builds a [Config] with the supplied augmented image database
          */
@@ -391,15 +452,32 @@ private constructor(
             return this
         }
 
-        @PreviewSpatialApi
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public fun setSceneSignalTypes(sceneSignalTypes: Set<SceneSignalType>): Builder {
             this.sceneSignalTypes = sceneSignalTypes
             return this
         }
 
+        /**
+         * Sets the [SpatialAnnotationTrackingMode] this [Builder] instance will use to build a
+         * [Config].
+         *
+         * The default value is [SpatialAnnotationTrackingMode.DISABLED].
+         *
+         * @param spatialAnnotationTracking [SpatialAnnotationTrackingMode] value to configure the
+         *   [Session]
+         * @return a [Builder] that builds a [Config] with the supplied spatial annotation tracking
+         *   mode
+         */
+        @ExperimentalSpatialAnnotationsApi
+        public fun setSpatialAnnotationTracking(
+            spatialAnnotationTracking: SpatialAnnotationTrackingMode
+        ): Builder {
+            this.spatialAnnotationTracking = spatialAnnotationTracking
+            return this
+        }
+
         /** Creates a new instance of [Config] with the configuration specified in this instance. */
-        @OptIn(PreviewSpatialApi::class)
         public fun build(): Config {
             return Config(
                 planeTracking,
@@ -416,6 +494,7 @@ private constructor(
                 qrCodeTracking,
                 qrCodeSizeMeters,
                 sceneSignalTypes,
+                spatialAnnotationTracking,
             )
         }
     }

@@ -19,13 +19,10 @@ package androidx.xr.arcore.testing
 import androidx.xr.arcore.testing.internal.FakePerceptionRuntime
 import androidx.xr.arcore.testing.internal.FakeRuntimeArDevice
 import androidx.xr.runtime.DeviceTrackingMode
-import androidx.xr.runtime.ExperimentalInertialTrackingApi
-import androidx.xr.runtime.PreviewSpatialApi
 import androidx.xr.runtime.math.Pose
 
 /**
- * An object that allows for controlling a simulation of the user's device in an ARCore unit test
- * environment.
+ * Controls simulated device in unit tests.
  *
  * @property pose the current pose of the device
  * @property isCameraTracking whether the AR Device is currently tracking the environment
@@ -39,9 +36,10 @@ public class ArDeviceTester internal constructor(private val arCoreTestRule: ArC
     private val isConfigured6Dof: Boolean
         get() = arCoreTestRule.runtime.config.deviceTracking == DeviceTrackingMode.SPATIAL
 
-    @OptIn(PreviewSpatialApi::class, ExperimentalInertialTrackingApi::class)
     private val isConfigured3Dof: Boolean
-        get() = arCoreTestRule.runtime.config.deviceTracking == DeviceTrackingMode.INERTIAL
+        get() =
+            arCoreTestRule.runtime.config.deviceTracking != DeviceTrackingMode.DISABLED &&
+                arCoreTestRule.runtime.config.deviceTracking != DeviceTrackingMode.SPATIAL
 
     public var pose: Pose = Pose()
         set(value) {

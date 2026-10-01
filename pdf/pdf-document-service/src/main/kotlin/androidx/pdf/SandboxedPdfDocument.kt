@@ -52,6 +52,7 @@ import androidx.pdf.utils.areCorePdfApisAvailableInSdk
 import androidx.pdf.utils.isAnnotationsFeatureAvailable
 import androidx.pdf.utils.isFormFillingAvailable
 import androidx.pdf.utils.isGetTopObjectAvailable
+import androidx.pdf.utils.isSignatureFeatureAvailable
 import androidx.pdf.utils.toAndroidClass
 import androidx.pdf.utils.toContentClass
 import java.util.Collections
@@ -66,6 +67,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
@@ -149,7 +151,8 @@ public class SandboxedPdfDocument(
                     isFormFillingAvailable() &&
                         (pageInfoFlags and PdfDocument.PAGE_INFO_INCLUDE_FORM_WIDGET) != 0L
                 ) {
-                    document.getFormWidgetInfos(pageNumber).map { it.toContentClass() }
+                    document.getFormWidgetInfos(pageNumber)?.mapNotNull { it.toContentClass() }
+                        ?: emptyList()
                 } else {
                     emptyList()
                 }
@@ -264,18 +267,27 @@ public class SandboxedPdfDocument(
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     override suspend fun getFormWidgetInfos(pageNum: Int, types: Long): List<FormWidgetInfo> {
         return withDocument { document ->
-            document.getFormWidgetInfosOfType(pageNum, getFormWidgetTypesArray(types)).map {
+            document.getFormWidgetInfosOfType(pageNum, getFormWidgetTypesArray(types))?.mapNotNull {
                 it.toContentClass()
-            }
+            } ?: emptyList()
         }
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 19)
     override suspend fun getTopPageObjectAtPosition(pageNum: Int, point: PointF): PdfObject? {
         val parcelablePdfObject = withDocument { document ->
             document.getTopPageObjectAtPosition(pageNum, point, intArrayOf())
         }
         return parcelablePdfObject?.toContent()
+    }
+
+    @OptIn(ExperimentalPdfApi::class)
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+    override suspend fun addPageObject(pageNum: Int, newObject: PdfObject): String {
+        val parcelableObject = newObject.toParcelable()
+
+        return withDocument { document -> document.addPageObject(pageNum, parcelableObject) }
     }
 
     override fun addOnPdfContentInvalidatedListener(
@@ -298,17 +310,19 @@ public class SandboxedPdfDocument(
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     override suspend fun applyEdit(record: FormEditInfo) {
-        val dirtyAreas = withDocument { document ->
-            document.applyEdit(record.pageNumber, record.toAndroidClass())
-        }
+        val dirtyAreas: List<Rect> =
+            withDocument { document ->
+                document.applyEdit(record.pageNumber, record.toAndroidClass())
+            } ?: listOf()
         onPdfContentInvalidatedListeners.forEach { (executor, listener) ->
             executor.execute { listener.onPdfContentInvalidated(record.pageNumber, dirtyAreas) }
         }
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
     override suspend fun applyEdits(editsDraft: EditsDraft): List<String> {
-        val parcelableOperations = editsDraft.getOperationsSortedByPage().map { it.toParcelable() }
+        val parcelableOperations = editsDraft.operations.map { it.toParcelable() }
 
         return batchPdfAnnotationsProcessor.process(parcelableOperations) { appliedBatchEdits ->
             appliedBatchEdits.forEach { appliedEdit ->
@@ -383,6 +397,7 @@ public class SandboxedPdfDocument(
         }
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     override fun addOnEditAppliedListener(
         executor: Executor,
         listener: PdfDocument.OnEditAppliedListener,
@@ -390,6 +405,7 @@ public class SandboxedPdfDocument(
         onEditsAppliedListenerEntries.add(OnEditsAppliedListenerEntry(executor, listener))
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     override fun removeOnEditAppliedListener(listener: PdfDocument.OnEditAppliedListener) {
         for (onEditsAppliedListener in onEditsAppliedListenerEntries) {
             if (onEditsAppliedListener.listener == listener) {
@@ -408,6 +424,7 @@ public class SandboxedPdfDocument(
             PdfFeature.FORM_FILLING -> isFormFillingAvailable()
             PdfFeature.ANNOTATIONS -> isAnnotationsFeatureAvailable()
             PdfFeature.IMAGE_EXTRACTION -> isGetTopObjectAvailable()
+            PdfFeature.SIGNATURE_HANDLING -> isSignatureFeatureAvailable()
             else -> false
         }
     }
@@ -417,6 +434,10 @@ public class SandboxedPdfDocument(
         if (refCount.decrementAndGet() > 0) return
 
         isDocumentClosedExplicitly.set(true)
+
+        closeScope.cancel()
+        connection.pendingJobs.forEach { it.cancel() }
+        connection.pendingJobs.clear()
 
         connection.disconnect()
 
@@ -436,7 +457,6 @@ public class SandboxedPdfDocument(
          *
          * @param scaledPageSizePx The desired size of the bitmap in pixels.
          * @param tileRegion The optional region of the page to render (null for the entire page).
-         * @param renderParams The render params used to render contents on the bitmap.
          * @return The bitmap of the specified page or region.
          */
         override suspend fun getBitmap(scaledPageSizePx: Size, tileRegion: Rect?): Bitmap {
@@ -571,21 +591,21 @@ public class SandboxedPdfDocument(
         if (types == PdfDocument.FORM_WIDGET_INCLUDE_ALL_TYPES) return intArrayOf()
 
         return buildList {
-                if (types and PdfDocument.FORM_WIDGET_INCLUDE_TEXTFIELD_TYPE != 0L)
-                    add(FormWidgetInfo.WIDGET_TYPE_TEXTFIELD)
-                if (types and PdfDocument.FORM_WIDGET_INCLUDE_PUSHBUTTON_TYPE != 0L)
-                    add(FormWidgetInfo.WIDGET_TYPE_PUSHBUTTON)
-                if (types and PdfDocument.FORM_WIDGET_INCLUDE_RADIOBUTTON_TYPE != 0L)
-                    add(FormWidgetInfo.WIDGET_TYPE_RADIOBUTTON)
-                if (types and PdfDocument.FORM_WIDGET_INCLUDE_CHECKBOX_TYPE != 0L)
-                    add(FormWidgetInfo.WIDGET_TYPE_CHECKBOX)
-                if (types and PdfDocument.FORM_WIDGET_INCLUDE_COMBOBOX_TYPE != 0L)
-                    add(FormWidgetInfo.WIDGET_TYPE_COMBOBOX)
-                if (types and PdfDocument.FORM_WIDGET_INCLUDE_LISTBOX_TYPE != 0L)
-                    add(FormWidgetInfo.WIDGET_TYPE_LISTBOX)
-                if (types and PdfDocument.FORM_WIDGET_INCLUDE_SIGNATURE_TYPE != 0L)
-                    add(FormWidgetInfo.WIDGET_TYPE_SIGNATURE)
-            }
+            if (types and PdfDocument.FORM_WIDGET_INCLUDE_TEXTFIELD_TYPE != 0L)
+                add(FormWidgetInfo.WIDGET_TYPE_TEXTFIELD)
+            if (types and PdfDocument.FORM_WIDGET_INCLUDE_PUSHBUTTON_TYPE != 0L)
+                add(FormWidgetInfo.WIDGET_TYPE_PUSHBUTTON)
+            if (types and PdfDocument.FORM_WIDGET_INCLUDE_RADIOBUTTON_TYPE != 0L)
+                add(FormWidgetInfo.WIDGET_TYPE_RADIOBUTTON)
+            if (types and PdfDocument.FORM_WIDGET_INCLUDE_CHECKBOX_TYPE != 0L)
+                add(FormWidgetInfo.WIDGET_TYPE_CHECKBOX)
+            if (types and PdfDocument.FORM_WIDGET_INCLUDE_COMBOBOX_TYPE != 0L)
+                add(FormWidgetInfo.WIDGET_TYPE_COMBOBOX)
+            if (types and PdfDocument.FORM_WIDGET_INCLUDE_LISTBOX_TYPE != 0L)
+                add(FormWidgetInfo.WIDGET_TYPE_LISTBOX)
+            if (types and PdfDocument.FORM_WIDGET_INCLUDE_SIGNATURE_TYPE != 0L)
+                add(FormWidgetInfo.WIDGET_TYPE_SIGNATURE)
+        }
             .toIntArray()
     }
 
@@ -594,10 +614,9 @@ public class SandboxedPdfDocument(
         val listener: PdfDocument.OnPdfContentInvalidatedListener,
     )
 
-    private data class OnEditsAppliedListenerEntry(
-        val executor: Executor,
-        val listener: PdfDocument.OnEditAppliedListener,
-    )
+    @OptIn(ExperimentalPdfApi::class)
+    private data class OnEditsAppliedListenerEntry
+    constructor(val executor: Executor, val listener: PdfDocument.OnEditAppliedListener)
 
     /**
      * Verifies that the document has not been explicitly closed.

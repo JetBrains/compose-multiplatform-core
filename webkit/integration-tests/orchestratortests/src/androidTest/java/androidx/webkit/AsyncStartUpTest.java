@@ -16,16 +16,13 @@
 
 package androidx.webkit;
 
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
-import android.webkit.WebSettings;
 
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import androidx.test.filters.SdkSuppress;
 import androidx.webkit.internal.StartupFeatures;
 import androidx.webkit.internal.WebViewFeatureInternal;
 import androidx.webkit.internal.WebViewGlueCommunicator;
@@ -53,7 +50,6 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>Each of these tests run in a separate test process.
  */
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class AsyncStartUpTest {
@@ -176,8 +172,13 @@ public class AsyncStartUpTest {
         final ResolvableFuture<WebViewStartUpResult> startUpFinishedFuture =
                 ResolvableFuture.create();
 
+        CountDownLatch latch = new CountDownLatch(1);
         // Triggers provider init.
-        new Handler(Looper.getMainLooper()).post(WebViewGlueCommunicator::getWebViewClassLoader);
+        new Handler(Looper.getMainLooper()).post(() -> {
+            WebViewGlueCommunicator.getWebViewClassLoader();
+            latch.countDown();
+        });
+        Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
         WebViewCompat.startUpWebView(ApplicationProvider.getApplicationContext(), config,
                 new WebViewOutcomeReceiver<WebViewStartUpResult, WebViewStartupException>() {
                     @Override
@@ -337,8 +338,13 @@ public class AsyncStartUpTest {
         final ResolvableFuture<WebViewStartUpResult> startUpFinishedFuture3 =
                 ResolvableFuture.create();
 
-        // Invoke provider init on main looper.
-        new Handler(Looper.getMainLooper()).post(WebViewGlueCommunicator::getWebViewClassLoader);
+        CountDownLatch latch = new CountDownLatch(1);
+        // Triggers provider init.
+        new Handler(Looper.getMainLooper()).post(() -> {
+            WebViewGlueCommunicator.getWebViewClassLoader();
+            latch.countDown();
+        });
+        Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
         WebViewCompat.startUpWebView(ApplicationProvider.getApplicationContext(), config,
                 new WebViewOutcomeReceiver<WebViewStartUpResult, WebViewStartupException>() {
                     @Override
@@ -514,9 +520,13 @@ public class AsyncStartUpTest {
                 .setShouldRunUiThreadStartUpTasks(false).build();
         final ResolvableFuture<WebViewStartUpResult> startUpFinishedFuture =
                 ResolvableFuture.create();
-
+        CountDownLatch latch = new CountDownLatch(1);
         // Triggers provider init.
-        new Handler(Looper.getMainLooper()).post(WebViewGlueCommunicator::getWebViewClassLoader);
+        new Handler(Looper.getMainLooper()).post(() -> {
+            WebViewGlueCommunicator.getWebViewClassLoader();
+            latch.countDown();
+        });
+        Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
         WebViewCompat.startUpWebView(ApplicationProvider.getApplicationContext(), config,
                 new WebViewOutcomeReceiver<WebViewStartUpResult, WebViewStartupException>() {
                     @Override
@@ -555,10 +565,10 @@ public class AsyncStartUpTest {
     @MediumTest
     public void testAsyncStartUp_returnsAsyncLocationsWhenInitializedAsync()
             throws Throwable {
-
+        Assume.assumeTrue(WebViewFeature.isFeatureSupported(WebViewFeature.GET_VARIATIONS_HEADER));
         CountDownLatch latch = new CountDownLatch(1);
         Executors.newSingleThreadExecutor().execute(() -> {
-                    WebSettings.getDefaultUserAgent(ApplicationProvider.getApplicationContext());
+                    WebViewCompat.getVariationsHeader();
                     latch.countDown();
                 }
         );

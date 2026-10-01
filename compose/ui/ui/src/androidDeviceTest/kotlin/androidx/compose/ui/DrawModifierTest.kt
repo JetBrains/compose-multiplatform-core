@@ -61,7 +61,6 @@ import androidx.test.filters.SdkSuppress
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -73,7 +72,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class DrawModifierTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
     @get:Rule val excessiveAssertions = AndroidOwnerExtraAssertionsRule()
     private lateinit var activity: TestActivity
     private lateinit var density: Density
@@ -203,11 +202,10 @@ class DrawModifierTest {
                         }
                     }
 
-                val paddingContent =
-                    Modifier.drawBehind {
-                        // Fill top half with innerColor -- should be clipped
-                        drawRect(model.innerColor, size = Size(size.width, size.height / 2f))
-                    }
+                val paddingContent = Modifier.drawBehind {
+                    // Fill top half with innerColor -- should be clipped
+                    drawRect(model.innerColor, size = Size(size.width, size.height / 2f))
+                }
                 Padding(size = (model.size * 3), modifier = contentDrawing.then(paddingContent)) {}
             }
         }
@@ -439,11 +437,10 @@ class DrawModifierTest {
         val outerColor = Color.Blue
         val innerColor = Color.White
         rule.setContent {
-            val colorModifier =
-                Modifier.drawBehind {
-                    drawRect(outerColor)
-                    drawRect(innerColor, topLeft = Offset(10f, 10f), size = Size(10f, 10f))
-                }
+            val colorModifier = Modifier.drawBehind {
+                drawRect(outerColor)
+                drawRect(innerColor, topLeft = Offset(10f, 10f), size = Size(10f, 10f))
+            }
             FixedSize(30, colorModifier)
         }
 
@@ -483,11 +480,10 @@ class DrawModifierTest {
         val innerColor = Color.White
         rule.runOnUiThread {
             activity.setContent {
-                val drawAndOffset =
-                    Modifier.drawWithContent {
-                        drawRect(outerColor)
-                        translate(10f, 10f) { this@drawWithContent.drawContent() }
-                    }
+                val drawAndOffset = Modifier.drawWithContent {
+                    drawRect(outerColor)
+                    translate(10f, 10f) { this@drawWithContent.drawContent() }
+                }
                 FixedSize(30, drawAndOffset) {
                     FixedSize(size = 10, modifier = AlignTopLeft.background(innerColor))
                 }
@@ -568,13 +564,12 @@ class DrawModifierTest {
     private fun composeNestedSquares(model: SquareModel) {
         rule.setContent {
             val fillColorModifier = Modifier.drawBehind { drawRect(model.innerColor) }
-            val innerDrawWithContentModifier =
-                Modifier.drawWithContent {
-                    drawRect(model.outerColor)
-                    val start = model.size.toFloat()
-                    val end = start * 2
-                    clipRect(start, start, end, end) { this@drawWithContent.drawContent() }
-                }
+            val innerDrawWithContentModifier = Modifier.drawWithContent {
+                drawRect(model.outerColor)
+                val start = model.size.toFloat()
+                val end = start * 2
+                clipRect(start, start, end, end) { this@drawWithContent.drawContent() }
+            }
             AtLeastSize(size = (model.size * 3), modifier = innerDrawWithContentModifier) {
                 AtLeastSize(size = (model.size * 3), modifier = fillColorModifier)
             }

@@ -33,36 +33,38 @@ import androidx.compose.remote.creation.compose.modifier.onTouchDown
 import androidx.compose.remote.creation.compose.modifier.onTouchUp
 import androidx.compose.remote.creation.compose.modifier.padding
 import androidx.compose.remote.creation.compose.modifier.size
+import androidx.compose.remote.creation.compose.state.MutableRemoteInt
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
-import androidx.compose.remote.creation.compose.state.rememberMutableRemoteInt
+import androidx.compose.remote.creation.compose.state.ri
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.integration.demos.common.RemoteDemo
 import androidx.compose.remote.tooling.preview.RemoteComponentPreview
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-@Suppress("RestrictedApiAndroidX")
+@Suppress("RestrictedApiAndroidX") // Referring to RemoteComponentPreview
 @Composable
 fun TouchActionDemo() {
     RemoteDemo(modifier = Modifier.fillMaxSize().padding(16.dp)) { TouchActionDemoContent() }
 }
 
-@Suppress("RestrictedApiAndroidX")
+@Suppress("RestrictedApiAndroidX") // Referring to plus
 @RemoteComponentPreview
 @Composable
 @RemoteComposable
 private fun TouchActionDemoContent() {
-    val downCounter = rememberMutableRemoteInt(0)
-    val upCounter = rememberMutableRemoteInt(0)
-    val cancelCounter = rememberMutableRemoteInt(0)
-    val onDownAction = valueChange(downCounter, downCounter + 1)
-    val onUpAction = valueChange(upCounter, upCounter + 1)
-    val onCancelAction = valueChange(cancelCounter, cancelCounter + 1)
+    val downCounter = remember { MutableRemoteInt(0) }
+    val upCounter = remember { MutableRemoteInt(0) }
+    val cancelCounter = remember { MutableRemoteInt(0) }
+    val onDownAction = valueChange(downCounter, downCounter + 1.ri)
+    val onUpAction = valueChange(upCounter, upCounter + 1.ri)
+    val onCancelAction = valueChange(cancelCounter, cancelCounter + 1.ri)
 
     RemoteColumn(modifier = RemoteModifier.fillMaxSize()) {
         RemoteRow {
@@ -82,7 +84,7 @@ private fun TouchActionDemoContent() {
                     .padding(RemoteDp(16.dp)),
             contentAlignment = RemoteAlignment.Center,
         ) {
-            RemoteText("Touch me!")
+            RemoteText("Touch me!".rs)
         }
         RemoteRow(modifier = RemoteModifier.padding(top = 24.rdp)) {
             RemoteText(

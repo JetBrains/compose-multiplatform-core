@@ -19,7 +19,6 @@ package androidx.xr.compose.testapp.spatialelevation
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -76,12 +75,14 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.LocalSpatialConfiguration
-import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
-import androidx.xr.compose.spatial.OrbiterOffsetType
+import androidx.xr.compose.spatial.OrbiterDefaults
+import androidx.xr.compose.spatial.OrbiterPosition
+import androidx.xr.compose.spatial.OrbiterPosition.EdgeAlignment
 import androidx.xr.compose.spatial.SpatialDialog
 import androidx.xr.compose.spatial.SpatialElevation
 import androidx.xr.compose.spatial.SpatialElevationLevel
@@ -93,17 +94,17 @@ import androidx.xr.compose.testapp.ui.components.TopBarWithBackArrow
 import androidx.xr.compose.testapp.ui.theme.IntegrationTestsAppTheme
 import androidx.xr.compose.testapp.ui.theme.Purple40
 import androidx.xr.compose.testapp.ui.theme.Purple80
+import androidx.xr.compose.unit.DpVolumeOffset
 import androidx.xr.scenecore.scene
 import kotlinx.coroutines.launch
 
 class SpatialElevation : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        WindowCompat.enableEdgeToEdge(window)
         setContent { IntegrationTestsAppTheme { SpatialElevationApp() } }
     }
 
-    @Suppress("DEPRECATION")
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     private fun SpatialElevationApp() {
@@ -115,9 +116,11 @@ class SpatialElevation : ComponentActivity() {
         var showPopup by remember { mutableStateOf(false) }
 
         Orbiter(
-            position = ContentEdge.Start,
-            offset = 8.dp,
-            offsetType = OrbiterOffsetType.Overlap,
+            position =
+                OrbiterPosition.CenterStart(
+                    EdgeAlignment.Outside,
+                    offset = DpVolumeOffset(x = (0).dp, y = 0.dp, z = OrbiterDefaults.Elevation),
+                )
         ) {
             NavigationRail(
                 modifier =
@@ -159,9 +162,11 @@ class SpatialElevation : ComponentActivity() {
             }
         }
         Orbiter(
-            position = ContentEdge.End,
-            offset = 80.dp,
-            offsetType = OrbiterOffsetType.OuterEdge,
+            position =
+                OrbiterPosition.CenterEnd(
+                    EdgeAlignment.Inside,
+                    offset = DpVolumeOffset(x = 90.dp, y = 0.dp, z = OrbiterDefaults.Elevation),
+                )
         ) {
             Row(
                 modifier = Modifier.animateContentSize(),

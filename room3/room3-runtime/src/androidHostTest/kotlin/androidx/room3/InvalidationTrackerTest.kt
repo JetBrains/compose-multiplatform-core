@@ -20,6 +20,7 @@ import androidx.annotation.RequiresApi
 import androidx.kruth.assertThat
 import androidx.kruth.assertThrows
 import androidx.room3.concurrent.AtomicBoolean
+import androidx.room3.coroutines.DEFAULT_CONNECTION_POOL_TIMEOUT
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.SQLiteStatement
@@ -85,6 +86,8 @@ class InvalidationTrackerTest {
                     sqliteDriver = sqliteDriver,
                     queryCoroutineContext = testCoroutineScope.coroutineContext,
                     connectionPoolConfiguration = SingleConnection,
+                    connectionPoolTimeout = DEFAULT_CONNECTION_POOL_TIMEOUT,
+                    allowDataLossOnRecovery = false,
                 )
                 .apply { this.preparedStatementCacheSize = 0 }
         )
@@ -304,14 +307,13 @@ class InvalidationTrackerTest {
         // Validates that a slow observer will finish notification after database closing
         val invalidatedLatch = CompletableDeferred<Unit>()
         val invalidated = AtomicBoolean(false)
-        val job =
-            backgroundScope.launch {
-                tracker.createFlow("a", emitInitialState = false).collect {
-                    invalidatedLatch.complete(Unit)
-                    assertThat(invalidated.compareAndSet(false, true)).isTrue()
-                    delay(100)
-                }
+        val job = backgroundScope.launch {
+            tracker.createFlow("a", emitInitialState = false).collect {
+                invalidatedLatch.complete(Unit)
+                assertThat(invalidated.compareAndSet(false, true)).isTrue()
+                delay(100)
             }
+        }
         sqliteDriver.setInvalidatedTables(0)
         tracker.refreshAsync()
         testScheduler.advanceUntilIdle()
@@ -472,12 +474,28 @@ class InvalidationTrackerTest {
         }
     }
 
-    private fun runTest(testBody: suspend TestScope.() -> Unit) =
-        testCoroutineScope.runTest {
-            testBody.invoke(this)
-            testScheduler.advanceUntilIdle()
-            roomDatabase.close()
-        }
+    @Test
+    fun throwIfDatabaseIsClosed() = runTest {
+        roomDatabase.close()
+
+        assertThrows<IllegalStateException> { tracker.createFlow("x").singleOrNull() }
+            .hasMessageThat()
+            .contains("Database is closed")
+
+        assertThrows<IllegalStateException> { tracker.sync() }
+            .hasMessageThat()
+            .contains("Database is closed")
+
+        assertThrows<IllegalStateException> { tracker.refresh("x") }
+            .hasMessageThat()
+            .contains("Database is closed")
+    }
+
+    private fun runTest(testBody: suspend TestScope.() -> Unit) = testCoroutineScope.runTest {
+        testBody.invoke(this)
+        testScheduler.advanceUntilIdle()
+        roomDatabase.close()
+    }
 
     /**
      * Start invalidation async and await for it to be done.

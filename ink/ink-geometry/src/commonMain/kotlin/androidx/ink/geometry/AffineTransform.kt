@@ -17,7 +17,6 @@
 package androidx.ink.geometry
 
 import androidx.annotation.FloatRange
-import androidx.annotation.RestrictTo
 import androidx.annotation.Size
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmOverloads
@@ -55,24 +54,23 @@ import kotlin.math.abs
  * this.
  */
 public abstract class AffineTransform internal constructor() {
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    /** Value in the first row, first column of the transform matrix. */
     public abstract val m00: Float
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    /** Value in the first row, second column of the transform matrix. */
     public abstract val m10: Float
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    /** Value in the first row, third column of the transform matrix. */
     public abstract val m20: Float
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    /** Value in the second row, first column of the transform matrix. */
     public abstract val m01: Float
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    /** Value in the second row, second column of the transform matrix. */
     public abstract val m11: Float
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    /** Value in the second row, third column of the transform matrix. */
     public abstract val m21: Float
 
     /**
      * Returns an immutable equivalent of this object. This will return itself if called on an
      * immutable instance.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public abstract fun toImmutable(): ImmutableAffineTransform
 
     /**
@@ -233,12 +231,12 @@ public abstract class AffineTransform internal constructor() {
      */
     public fun applyTransform(box: Box): ImmutableParallelogram {
         return AffineTransformNative.createTransformedParallelogram(
-            affineTransformA = m00,
-            affineTransformB = m10,
-            affineTransformC = m20,
-            affineTransformD = m01,
-            affineTransformE = m11,
-            affineTransformF = m21,
+            affineTransformM00 = m00,
+            affineTransformM10 = m10,
+            affineTransformM20 = m20,
+            affineTransformM01 = m01,
+            affineTransformM11 = m11,
+            affineTransformM21 = m21,
             parallelogramCenterX = box.xMin / 2 + box.xMax / 2,
             parallelogramCenterY = box.yMin / 2 + box.yMax / 2,
             parallelogramWidth = box.width,
@@ -258,12 +256,12 @@ public abstract class AffineTransform internal constructor() {
         outParallelogram: MutableParallelogram,
     ): MutableParallelogram {
         AffineTransformNative.populateTransformedParallelogram(
-            affineTransformA = m00,
-            affineTransformB = m10,
-            affineTransformC = m20,
-            affineTransformD = m01,
-            affineTransformE = m11,
-            affineTransformF = m21,
+            affineTransformM00 = m00,
+            affineTransformM10 = m10,
+            affineTransformM20 = m20,
+            affineTransformM01 = m01,
+            affineTransformM11 = m11,
+            affineTransformM21 = m21,
             parallelogramCenterX = box.xMin / 2 + box.xMax / 2,
             parallelogramCenterY = box.yMin / 2 + box.yMax / 2,
             parallelogramWidth = box.width,
@@ -285,12 +283,12 @@ public abstract class AffineTransform internal constructor() {
     public fun applyTransform(parallelogram: Parallelogram): ImmutableParallelogram {
         if (this == IDENTITY) return parallelogram.toImmutable()
         return AffineTransformNative.createTransformedParallelogram(
-            affineTransformA = m00,
-            affineTransformB = m10,
-            affineTransformC = m20,
-            affineTransformD = m01,
-            affineTransformE = m11,
-            affineTransformF = m21,
+            affineTransformM00 = m00,
+            affineTransformM10 = m10,
+            affineTransformM20 = m20,
+            affineTransformM01 = m01,
+            affineTransformM11 = m11,
+            affineTransformM21 = m21,
             parallelogramCenterX = parallelogram.center.x,
             parallelogramCenterY = parallelogram.center.y,
             parallelogramWidth = parallelogram.width,
@@ -310,12 +308,12 @@ public abstract class AffineTransform internal constructor() {
         outParallelogram: MutableParallelogram,
     ): MutableParallelogram {
         AffineTransformNative.populateTransformedParallelogram(
-            affineTransformA = m00,
-            affineTransformB = m10,
-            affineTransformC = m20,
-            affineTransformD = m01,
-            affineTransformE = m11,
-            affineTransformF = m21,
+            affineTransformM00 = m00,
+            affineTransformM10 = m10,
+            affineTransformM20 = m20,
+            affineTransformM01 = m01,
+            affineTransformM11 = m11,
+            affineTransformM21 = m21,
             parallelogramCenterX = parallelogram.center.x,
             parallelogramCenterY = parallelogram.center.y,
             parallelogramWidth = parallelogram.width,
@@ -393,25 +391,23 @@ public abstract class AffineTransform internal constructor() {
                 first.m21 == second.m21
 
         /** Returns a hash code for [affineTransform] using its [AffineTransform] properties. */
-        internal fun hash(affineTransform: AffineTransform): Int =
-            affineTransform.run {
-                var result = m00.hashCode()
-                result = 31 * result + m10.hashCode()
-                result = 31 * result + m20.hashCode()
-                result = 31 * result + m01.hashCode()
-                result = 31 * result + m11.hashCode()
-                result = 31 * result + m21.hashCode()
-                return result
-            }
+        internal fun hash(affineTransform: AffineTransform): Int = affineTransform.run {
+            var result = m00.hashCode()
+            result = 31 * result + m10.hashCode()
+            result = 31 * result + m20.hashCode()
+            result = 31 * result + m01.hashCode()
+            result = 31 * result + m11.hashCode()
+            result = 31 * result + m21.hashCode()
+            return result
+        }
 
         /**
          * Returns a string representation for [affineTransform] using its [AffineTransform]
          * properties.
          */
-        internal fun string(affineTransform: AffineTransform): String =
-            affineTransform.run {
-                "AffineTransform(m00=$m00, m10=$m10, m20=$m20, m01=$m01, m11=$m11, m21=$m21)"
-            }
+        internal fun string(affineTransform: AffineTransform): String = affineTransform.run {
+            "AffineTransform(m00=$m00, m10=$m10, m20=$m20, m01=$m01, m11=$m11, m21=$m21)"
+        }
 
         /**
          * Multiplies the [lhs] transform by the [rhs] transform as matrices, and stores the result
@@ -442,12 +438,12 @@ public abstract class AffineTransform internal constructor() {
 expect internal object AffineTransformNative {
 
     fun populateTransformedParallelogram(
-        affineTransformA: Float,
-        affineTransformB: Float,
-        affineTransformC: Float,
-        affineTransformD: Float,
-        affineTransformE: Float,
-        affineTransformF: Float,
+        affineTransformM00: Float,
+        affineTransformM10: Float,
+        affineTransformM20: Float,
+        affineTransformM01: Float,
+        affineTransformM11: Float,
+        affineTransformM21: Float,
         parallelogramCenterX: Float,
         parallelogramCenterY: Float,
         parallelogramWidth: Float,
@@ -458,12 +454,12 @@ expect internal object AffineTransformNative {
     )
 
     fun createTransformedParallelogram(
-        affineTransformA: Float,
-        affineTransformB: Float,
-        affineTransformC: Float,
-        affineTransformD: Float,
-        affineTransformE: Float,
-        affineTransformF: Float,
+        affineTransformM00: Float,
+        affineTransformM10: Float,
+        affineTransformM20: Float,
+        affineTransformM01: Float,
+        affineTransformM11: Float,
+        affineTransformM21: Float,
         parallelogramCenterX: Float,
         parallelogramCenterY: Float,
         parallelogramWidth: Float,

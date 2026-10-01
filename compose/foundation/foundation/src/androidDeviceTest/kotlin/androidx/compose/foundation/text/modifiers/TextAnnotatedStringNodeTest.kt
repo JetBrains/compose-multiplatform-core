@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TEST_LOCALE_LIST
 import androidx.compose.foundation.text.selection.fetchTextLayoutResult
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.getValue
@@ -40,7 +41,6 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.fail
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -48,7 +48,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class TextAnnotatedStringNodeTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
     val context: Context = InstrumentationRegistry.getInstrumentation().context
 
     @Test
@@ -58,6 +58,7 @@ class TextAnnotatedStringNodeTest {
                 AnnotatedString("text"),
                 TextStyle.Default,
                 createFontFamilyResolver(context),
+                TEST_LOCALE_LIST,
             )
         rule.setContent {
             Canvas(Modifier.fillMaxSize()) {
@@ -124,6 +125,7 @@ class TextAnnotatedStringNodeTest {
                 AnnotatedString("til"),
                 TextStyle.Default,
                 createFontFamilyResolver(context),
+                TEST_LOCALE_LIST,
             )
 
         val modifier =
@@ -152,6 +154,7 @@ class TextAnnotatedStringNodeTest {
                 AnnotatedString("til"),
                 TextStyle.Default,
                 createFontFamilyResolver(context),
+                TEST_LOCALE_LIST,
             )
 
         rule.setContent { Box(Modifier.fillMaxSize() then subject) }

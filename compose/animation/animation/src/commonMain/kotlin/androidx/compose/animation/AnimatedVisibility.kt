@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalDeferredTransitionApi::class)
-
 package androidx.compose.animation
 
 import androidx.compose.animation.EnterExitState.PostExit
@@ -23,12 +21,11 @@ import androidx.compose.animation.EnterExitState.PreEnter
 import androidx.compose.animation.EnterExitState.Visible
 import androidx.compose.animation.core.DeferredTransition
 import androidx.compose.animation.core.DeferredTransitionState
-import androidx.compose.animation.core.ExperimentalDeferredTransitionApi
-import androidx.compose.animation.core.ExperimentalTransitionApi
 import androidx.compose.animation.core.InternalAnimationApi
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.Transition
 import androidx.compose.animation.core.createChildTransition
+import androidx.compose.animation.core.rememberDeferredTransition
 import androidx.compose.animation.core.rememberTransition
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.internal.JvmDefaultWithCompatibility
@@ -37,14 +34,11 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.layout.IntrinsicMeasurable
@@ -125,6 +119,7 @@ import kotlin.math.max
  * @see fadeOut
  * @see shrinkOut
  * @see AnimatedVisibilityScope
+ * @see CapturedAnimatedVisibility
  */
 @Composable
 public fun AnimatedVisibility(
@@ -624,22 +619,20 @@ public fun <T> Transition<T>.AnimatedVisibility(
  *
  * [mutableTransform] A block to control the visual transformations during the deferred phase (e.g.,
  * for predictive back gestures) before the main transition begins. This is only active if the
- * [Transition] was created using [rememberTransition] with [DeferredTransitionState]. By default,
- * this is `null`, meaning no manual transformations are applied. This phase starts when
+ * [Transition] was created using [rememberDeferredTransition] with [DeferredTransitionState]. By
+ * default, this is `null`, meaning no manual transformations are applied. This phase starts when
  * [DeferredTransitionState.defer] is called and ends when [DeferredTransitionState.animateTo] is
  * called to start the automatic transition. During this phase, you can manually manipulate the
- * content's transformations (like [TransformScope.alpha] and [TransformScope.scale]). These
- * transformations are combined with (i.e., applied on top of) the transition's initial state.
- * Properties like alpha and scale are applied multiplicatively, while offset is applied additively.
- * Properties that are not manually set default to the transition's values. Once the transition
- * starts, the manually applied transformations are handed off to the configured [enter] and [exit]
- * transitions. For exiting content, a "sustain unless specified" policy is applied: if an exit
- * transition (e.g. `fadeOut`) is specified, the hand-off will animate towards the target value of
- * that transition. However, if no exit transition is specified for a given property (e.g.
- * `slideOut` is missing), that property will sustain its last manual value until the entire
- * transition completes. While in the deferred phase, entering content remains in the
- * [EnterExitState.PreEnter] state, and exiting content remains in the [EnterExitState.Visible]
- * state.
+ * content's transformations (like [TransformScope.alpha], [TransformScope.scale],
+ * [TransformScope.offset], and [TransformScope.veil]). Properties that are not manually set default
+ * to the transition's initial values during the deferred phase. Once the transition starts, the
+ * manually applied transformations are handed off to the configured [enter] and [exit] transitions.
+ * For exiting content, a "sustain unless specified" policy is applied: if an exit transition (e.g.
+ * `fadeOut`) is specified, the hand-off will animate towards the target value of that transition.
+ * However, if no exit transition is specified for a given property (e.g. `slideOut` is missing),
+ * that property will sustain its last manual value until the entire transition completes. While in
+ * the deferred phase, entering content remains in the [EnterExitState.PreEnter] state, and exiting
+ * content remains in the [EnterExitState.Visible] state.
  *
  * @sample androidx.compose.animation.samples.DeferredAnimatedVisibilitySample
  *
@@ -655,7 +648,6 @@ public fun <T> Transition<T>.AnimatedVisibility(
  * @see shrinkOut
  * @see AnimatedVisibilityScope
  */
-@ExperimentalDeferredTransitionApi
 @Composable
 public fun <T> DeferredTransition<T>.DeferredAnimatedVisibility(
     visible: (T) -> Boolean,
@@ -735,15 +727,21 @@ public interface AnimatedVisibilityScope {
                     properties["label"] = label
                 }
         ) {
-            this.then(transition.createModifier(enter, exit, label = label))
+            this.then(
+                transition.createEnterExitModifier(
+                    updateEnterExitModifierState(transition, enter, exit),
+                    label = label,
+                )
+            )
         }
 }
 
 internal class AnimatedVisibilityScopeImpl
-internal constructor(transition: Transition<EnterExitState>) : AnimatedVisibilityScope {
-    override var transition = transition
+internal constructor(
+    override var transition: Transition<EnterExitState>,
+    internal val sharedMutableTransformState: SharedMutableTransformState,
+) : AnimatedVisibilityScope {
     internal val targetSize = mutableStateOf(IntSize.Zero)
-    internal val sharedMutableTransformState = SharedMutableTransformState()
 }
 
 /**
@@ -788,7 +786,7 @@ internal fun interface OnLookaheadMeasured {
     fun invoke(size: IntSize)
 }
 
-@OptIn(ExperimentalTransitionApi::class, InternalAnimationApi::class)
+@OptIn(InternalAnimationApi::class)
 @Composable
 internal fun <T> AnimatedEnterExitImpl(
     transition: Transition<T>,
@@ -799,20 +797,16 @@ internal fun <T> AnimatedEnterExitImpl(
     shouldDisposeBlock: (EnterExitState, EnterExitState) -> Boolean,
     onLookaheadMeasured: OnLookaheadMeasured? = null,
     mutableTransformData: MutableTransform? = null,
+    forceVisible: Boolean = false,
     content: @Composable() AnimatedVisibilityScope.() -> Unit,
 ) {
     val localPendingTargetState = transition.pendingTargetState
-    var hasBeenPending by remember { mutableStateOf(false) }
-    transition.DeferredTransitionCleanupEffect { hasBeenPending = false }
-    if (localPendingTargetState != null && visible(localPendingTargetState)) {
-        hasBeenPending = true
-    }
 
     if (
-        visible(transition.targetState) ||
+        forceVisible ||
+            visible(transition.targetState) ||
             visible(transition.currentState) ||
             (localPendingTargetState != null && visible(localPendingTargetState)) ||
-            (hasBeenPending && transition.currentState != transition.targetState) ||
             transition.isSeeking ||
             transition.hasInitialValueAnimations
     ) {
@@ -827,43 +821,40 @@ internal fun <T> AnimatedEnterExitImpl(
         // tracking preserves the original exit boundaries. Without this, the tracking would
         // re-initialize with the new parameters (which could be ExitTransition.None in
         // AnimatedContent), causing the animation to lose its start/end values and snap.
-        val activeEnter = childTransition.trackActiveEnter(enter)
-        val activeExit = childTransition.trackActiveExit(exit)
-
-        val shouldDisposeBlockUpdated by rememberUpdatedState(shouldDisposeBlock)
+        val modifierState =
+            updateEnterExitModifierState(
+                childTransition,
+                enter,
+                exit,
+                mutableTransformData,
+            )
 
         val shouldDisposeAfterExit by
-            produceState(
-                initialValue =
-                    shouldDisposeBlock(childTransition.currentState, childTransition.targetState)
-            ) {
-                snapshotFlow { childTransition.exitFinished }
-                    .collect {
-                        value =
-                            if (it) {
-                                shouldDisposeBlockUpdated(
-                                    childTransition.currentState,
-                                    childTransition.targetState,
-                                )
-                            } else {
-                                false
-                            }
+            remember(childTransition, shouldDisposeBlock) {
+                derivedStateOf {
+                    if (childTransition.exitFinished) {
+                        shouldDisposeBlock(
+                            childTransition.currentState,
+                            childTransition.targetState,
+                        )
+                    } else {
+                        false
                     }
+                }
             }
 
         if (!childTransition.exitFinished || !shouldDisposeAfterExit) {
-            val scope = remember(transition) { AnimatedVisibilityScopeImpl(childTransition) }
-            scope.sharedMutableTransformState.mutableData = mutableTransformData
+            val scope =
+                remember(childTransition) {
+                    AnimatedVisibilityScopeImpl(childTransition, modifierState.transformState)
+                }
             Layout(
                 content = { scope.content() },
                 modifier =
                     modifier.then(
                         childTransition
-                            .createModifier(
-                                activeEnter,
-                                activeExit,
-                                trackActiveEnterExit = false,
-                                sharedMutableTransformState = scope.sharedMutableTransformState,
+                            .createEnterExitModifier(
+                                modifierState,
                                 label = "Built-in",
                             )
                             .then(
@@ -898,13 +889,12 @@ private class AnimatedEnterExitMeasurePolicy(val scope: AnimatedVisibilityScopeI
     ): MeasureResult {
         var maxWidth = 0
         var maxHeight = 0
-        val placeables =
-            measurables.fastMap {
-                it.measure(constraints).apply {
-                    maxWidth = max(maxWidth, width)
-                    maxHeight = max(maxHeight, height)
-                }
+        val placeables = measurables.fastMap {
+            it.measure(constraints).apply {
+                maxWidth = max(maxWidth, width)
+                maxHeight = max(maxHeight, height)
             }
+        }
         // Position the children.
         if (isLookingAhead) {
             hasLookaheadOccurred = true
@@ -939,7 +929,7 @@ private class AnimatedEnterExitMeasurePolicy(val scope: AnimatedVisibilityScopeI
 
 // This converts Boolean visible to EnterExitState
 @Composable
-private fun <T> Transition<T>.targetEnterExit(
+internal fun <T> Transition<T>.targetEnterExit(
     visible: (T) -> Boolean,
     targetState: T,
 ): EnterExitState =

@@ -27,7 +27,8 @@ internal class RemoteCanvasNode : RemoteComposeNode() {
     var onDraw: (RemoteDrawScope.() -> Unit) = {}
 
     override fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
-        val recordingModifier = creationState.toRecordingModifier(modifier)
+        val scope = overriddenScope(creationState)
+        val recordingModifier = scope.toRecordingModifier(modifier)
         creationState.document.startCanvas(recordingModifier)
 
         val drawWithContent = modifier.find<DrawWithContentModifier>()
@@ -40,7 +41,7 @@ internal class RemoteCanvasNode : RemoteComposeNode() {
             drawScope.onDraw()
         }
 
-        remoteCanvas.internalCanvas.buffer.flush(creationState)
+        remoteCanvas.flush()
 
         creationState.document.endCanvas()
     }
@@ -49,6 +50,8 @@ internal class RemoteCanvasNode : RemoteComposeNode() {
 /**
  * A Composable that provides a [RemoteDrawScope] for drawing operations in RemoteCompose.
  *
+ * @sample androidx.compose.remote.creation.compose.samples.RemoteCanvasSample
+ * @sample androidx.compose.remote.creation.compose.samples.RemoteCanvasAnimationSample
  * @param modifier The [RemoteModifier] to apply to this layout.
  * @param content The drawing commands to be executed on the remote canvas via [RemoteDrawScope].
  */

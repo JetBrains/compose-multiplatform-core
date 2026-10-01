@@ -26,11 +26,9 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assume.assumeFalse;
 
 import android.app.Activity;
 import android.content.Context;
-import android.os.Build;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -125,9 +123,9 @@ public class FocusSearchNavigationTest {
                 is(mLayoutDir));
     }
 
+    @SdkSuppress(maxSdkVersion = 36) // maxSdkVersion = 36 -> b/537525864
     @Test
     public void focusSearchForward() throws Throwable {
-        assumeFalse("Test fails on cuttlefish b/460512080", Build.MODEL.contains("Cuttlefish"));
         setup(20);
         requestFocus(mBefore);
         assertThat(mBefore, hasFocus());
@@ -176,7 +174,7 @@ public class FocusSearchNavigationTest {
     }
 
     // Fix for b/406190006 only works for API 26 and above
-    @SdkSuppress(minSdkVersion = 26)
+    @SdkSuppress(minSdkVersion = 26, maxSdkVersion = 36) // maxSdkVersion = 36 -> b/537525864
     @Test
     public void focusSearchBackwards_fixedBehavior() throws Throwable {
         setup(20);

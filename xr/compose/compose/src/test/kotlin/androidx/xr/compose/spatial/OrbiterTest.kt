@@ -46,6 +46,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.SpatialCapabilities
+import androidx.xr.compose.spatial.OrbiterPosition.EdgeAlignment
 import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
@@ -57,9 +58,9 @@ import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.configureFakeSession
 import androidx.xr.compose.testing.session
 import androidx.xr.compose.unit.DpVolumeOffset
-import androidx.xr.compose.unit.toMeter
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.runtime.PanelEntity as RtPanelEntity
+import androidx.xr.scenecore.runtime.PixelDimensions
 import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.scene
 import com.google.common.truth.Truth.assertThat
@@ -83,6 +84,10 @@ class OrbiterTest {
     val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     private val parentTestTag = "parent"
+
+    private fun Dp.toMeter(): Float = this.value / 2000f
+
+    private fun Float.toM(): Float = this
 
     @Test
     fun orbiter_inFullSpace_isElevated() {
@@ -355,7 +360,9 @@ class OrbiterTest {
 
     @Test
     fun orbiter_inMainPanel_usesMainPanelSize() {
-        val testMainPanelEntity = mock<RtPanelEntity>()
+        // Initial 2D window size.
+        val testMainPanelEntity =
+            mock<RtPanelEntity> { on { sizeInPixels }.thenReturn(PixelDimensions(1080, 2400)) }
 
         composeTestRule.configureFakeSession(
             sceneRuntime = { runtime ->
@@ -380,8 +387,6 @@ class OrbiterTest {
             .onNodeWithTag("orbiterContentBox")
             .assertWidthIsEqualTo(200.dp)
             .assertHeightIsEqualTo(200.dp)
-        // Check `getMainWindowSize` is never called.
-        verify(testMainPanelEntity, never()).sizeInPixels
     }
 
     @Test
@@ -438,6 +443,29 @@ class OrbiterTest {
             .onNodeWithTag("orbiterContentBox")
             .assertWidthIsEqualTo(200.dp)
             .assertHeightIsEqualTo(200.dp)
+    }
+
+    @Test
+    fun orbiter_whenParentSpatialPanelExceedsComposeConstraints_doesNotCrash() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(
+                    modifier =
+                        SubspaceModifier.width(100_000.dp)
+                            .height(100_000.dp)
+                            .testTag("hugeSpatialPanelParent")
+                ) {
+                    Orbiter(ContentEdge.Top) {
+                        Box(modifier = Modifier.size(50.dp).testTag("orbiterContentBox")) {
+                            Text("Orbiter content")
+                        }
+                    }
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithTag("orbiterContentBox").assertWidthIsEqualTo(50.dp)
+        composeTestRule.onNodeWithTag("orbiterContentBox").assertHeightIsEqualTo(50.dp)
     }
 
     @Test
@@ -1207,6 +1235,771 @@ class OrbiterTest {
             .isWithin(0.001f)
             .of(-55.dp.toMeter().toM())
         assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(45.dp.toMeter().toM())
+    }
+
+    @Test
+    fun alignment_offsetTypeOuterEdge_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    Orbiter(
+                        position =
+                            OrbiterPosition.TopCenter(
+                                EdgeAlignment.Outside,
+                                offset = DpVolumeOffset.Zero,
+                            )
+                    ) {
+                        Box(modifier = Modifier.size(10.dp))
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+        assertThat(orbiterEntity.getPose().translation.x).isWithin(0.001f).of(0f)
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(55.dp.toMeter().toM())
+    }
+
+    @Test
+    fun alignment_offsetTypeInnerEdge_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    Orbiter(
+                        position =
+                            OrbiterPosition.TopCenter(
+                                EdgeAlignment.Inside,
+                                offset = DpVolumeOffset.Zero,
+                            )
+                    ) {
+                        Box(modifier = Modifier.size(10.dp))
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+        assertThat(orbiterEntity.getPose().translation.x).isWithin(0.001f).of(0f)
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(45.dp.toMeter().toM())
+    }
+
+    @Test
+    fun alignment_offsetTypeOverlap_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    Orbiter(
+                        position =
+                            OrbiterPosition.TopCenter(
+                                EdgeAlignment.Center,
+                                offset = DpVolumeOffset.Zero,
+                            )
+                    ) {
+                        Box(modifier = Modifier.size(10.dp))
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+        assertThat(orbiterEntity.getPose().translation.x).isWithin(0.001f).of(0f)
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(50.dp.toMeter().toM())
+    }
+
+    @Test
+    fun alignment_cornerAlignment_offsetTypeOuterEdge_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    Orbiter(
+                        position =
+                            OrbiterPosition.TopStart(
+                                offset = DpVolumeOffset.Zero,
+                                horizontalEdgeAlignment = EdgeAlignment.Outside,
+                                verticalEdgeAlignment = EdgeAlignment.Outside,
+                            )
+                    ) {
+                        Box(modifier = Modifier.size(10.dp))
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+        assertThat(orbiterEntity.getPose().translation.x)
+            .isWithin(0.001f)
+            .of(-55.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(55.dp.toMeter().toM())
+    }
+
+    @Test
+    fun alignment_cornerAlignment_offsetTypeInnerEdge_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    Orbiter(
+                        position =
+                            OrbiterPosition.TopStart(
+                                offset = DpVolumeOffset.Zero,
+                                horizontalEdgeAlignment = EdgeAlignment.Inside,
+                                verticalEdgeAlignment = EdgeAlignment.Inside,
+                            )
+                    ) {
+                        Box(modifier = Modifier.size(10.dp))
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+        assertThat(orbiterEntity.getPose().translation.x)
+            .isWithin(0.001f)
+            .of(-45.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(45.dp.toMeter().toM())
+    }
+
+    @Test
+    fun alignment_cornerAlignment_offsetTypeOverlap_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    Orbiter(
+                        position =
+                            OrbiterPosition.TopStart(
+                                offset = DpVolumeOffset.Zero,
+                                horizontalEdgeAlignment = EdgeAlignment.Center,
+                                verticalEdgeAlignment = EdgeAlignment.Center,
+                            )
+                    ) {
+                        Box(modifier = Modifier.size(10.dp))
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+        assertThat(orbiterEntity.getPose().translation.x)
+            .isWithin(0.001f)
+            .of(-50.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(50.dp.toMeter().toM())
+    }
+
+    @Test
+    fun alignment_layoutDirectionRtl_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                        Orbiter(
+                            position =
+                                OrbiterPosition.TopStart(
+                                    offset = DpVolumeOffset.Zero,
+                                    horizontalEdgeAlignment = EdgeAlignment.Outside,
+                                    verticalEdgeAlignment = EdgeAlignment.Outside,
+                                )
+                        ) {
+                            Box(modifier = Modifier.size(10.dp))
+                        }
+                    }
+                }
+            }
+        }
+
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+        assertThat(orbiterEntity.getPose().translation.x).isWithin(0.001f).of(55.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(55.dp.toMeter().toM())
+    }
+
+    @Test
+    fun alignment_absoluteAlignment_layoutDirectionRtl_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                        Orbiter(
+                            position =
+                                OrbiterPosition.TopLeft(
+                                    offset = DpVolumeOffset.Zero,
+                                    horizontalEdgeAlignment = EdgeAlignment.Outside,
+                                    verticalEdgeAlignment = EdgeAlignment.Outside,
+                                )
+                        ) {
+                            Box(modifier = Modifier.size(10.dp))
+                        }
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+        // Absolute TopLeft should remain Left (-X) even in RTL
+        assertThat(orbiterEntity.getPose().translation.x)
+            .isWithin(0.001f)
+            .of(-55.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(55.dp.toMeter().toM())
+    }
+
+    @Test
+    fun alignment_absoluteAlignmentTopRight_layoutDirectionRtl_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                        Orbiter(
+                            position =
+                                OrbiterPosition.TopRight(
+                                    offset = DpVolumeOffset.Zero,
+                                    horizontalEdgeAlignment = EdgeAlignment.Outside,
+                                    verticalEdgeAlignment = EdgeAlignment.Outside,
+                                )
+                        ) {
+                            Box(modifier = Modifier.size(10.dp))
+                        }
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+
+        assertThat(orbiterEntity.getPose().translation.x).isWithin(0.001f).of(55.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(55.dp.toMeter().toM())
+    }
+
+    @Test
+    fun alignment_absoluteAlignmentCenterLeft_layoutDirectionRtl_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                        Orbiter(
+                            position =
+                                OrbiterPosition.CenterLeft(
+                                    EdgeAlignment.Outside,
+                                    offset = DpVolumeOffset.Zero,
+                                )
+                        ) {
+                            Box(modifier = Modifier.size(10.dp))
+                        }
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+
+        assertThat(orbiterEntity.getPose().translation.x)
+            .isWithin(0.001f)
+            .of(-55.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(0f)
+    }
+
+    @Test
+    fun alignment_absoluteAlignmentCenterRight_layoutDirectionRtl_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                        Orbiter(
+                            position =
+                                OrbiterPosition.CenterRight(
+                                    EdgeAlignment.Outside,
+                                    offset = DpVolumeOffset.Zero,
+                                )
+                        ) {
+                            Box(modifier = Modifier.size(10.dp))
+                        }
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+
+        assertThat(orbiterEntity.getPose().translation.x).isWithin(0.001f).of(55.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(0f)
+    }
+
+    @Test
+    fun alignment_absoluteAlignmentBottomLeft_layoutDirectionRtl_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                        Orbiter(
+                            position =
+                                OrbiterPosition.BottomLeft(
+                                    offset = DpVolumeOffset.Zero,
+                                    horizontalEdgeAlignment = EdgeAlignment.Outside,
+                                    verticalEdgeAlignment = EdgeAlignment.Outside,
+                                )
+                        ) {
+                            Box(modifier = Modifier.size(10.dp))
+                        }
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+
+        assertThat(orbiterEntity.getPose().translation.x)
+            .isWithin(0.001f)
+            .of(-55.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.y)
+            .isWithin(0.001f)
+            .of(-55.dp.toMeter().toM())
+    }
+
+    @Test
+    fun alignment_absoluteAlignmentBottomRight_layoutDirectionRtl_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                        Orbiter(
+                            position =
+                                OrbiterPosition.BottomRight(
+                                    offset = DpVolumeOffset.Zero,
+                                    horizontalEdgeAlignment = EdgeAlignment.Outside,
+                                    verticalEdgeAlignment = EdgeAlignment.Outside,
+                                )
+                        ) {
+                            Box(modifier = Modifier.size(10.dp))
+                        }
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+
+        assertThat(orbiterEntity.getPose().translation.x).isWithin(0.001f).of(55.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.y)
+            .isWithin(0.001f)
+            .of(-55.dp.toMeter().toM())
+    }
+
+    @Test
+    fun alignment_layoutDirectionRtl_withOffset_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                        Orbiter(
+                            position =
+                                OrbiterPosition.TopStart(
+                                    offset = DpVolumeOffset((-20).dp, 10.dp, 5.dp),
+                                    horizontalEdgeAlignment = EdgeAlignment.Outside,
+                                    verticalEdgeAlignment = EdgeAlignment.Outside,
+                                )
+                        ) {
+                            Box(modifier = Modifier.size(10.dp))
+                        }
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+
+        assertThat(orbiterEntity.getPose().translation.x).isWithin(0.001f).of(75.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(65.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.z).isWithin(0.001f).of(5.dp.toMeter().toM())
+    }
+
+    @Test
+    fun alignment_cornerAlignment_mixedEdgeOffsets_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    Orbiter(
+                        position =
+                            OrbiterPosition.TopStart(
+                                offset = DpVolumeOffset.Zero,
+                                horizontalEdgeAlignment = EdgeAlignment.Inside,
+                                verticalEdgeAlignment = EdgeAlignment.Outside,
+                            )
+                    ) {
+                        Box(modifier = Modifier.size(10.dp))
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+        // Inside horizontal alignment: panel_width/2 - orbiter_width/2 = 50.dp - 5.dp = 45.dp ->
+        // -45.dp
+        // Outside vertical alignment: panel_height/2 + orbiter_height/2 = 50.dp + 5.dp = 55.dp ->
+        // 55.dp
+        assertThat(orbiterEntity.getPose().translation.x)
+            .isWithin(0.001f)
+            .of(-45.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(55.dp.toMeter().toM())
+    }
+
+    @Test
+    fun orbiterEdgeOffsetType_offsetTypeOuterEdge_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    Orbiter(
+                        alignment =
+                            OrbiterAlignment.TopCenter(
+                                offset = DpVolumeOffset.Zero,
+                                edgeOffsetType = OrbiterEdgeOffsetType.OuterEdge,
+                            )
+                    ) {
+                        Box(modifier = Modifier.size(10.dp))
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+        assertThat(orbiterEntity.getPose().translation.x).isWithin(0.001f).of(0f)
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(55.dp.toMeter().toM())
+    }
+
+    @Test
+    fun orbiterEdgeOffsetType_offsetTypeInnerEdge_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    Orbiter(
+                        alignment =
+                            OrbiterAlignment.TopCenter(
+                                offset = DpVolumeOffset.Zero,
+                                edgeOffsetType = OrbiterEdgeOffsetType.InnerEdge,
+                            )
+                    ) {
+                        Box(modifier = Modifier.size(10.dp))
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+        assertThat(orbiterEntity.getPose().translation.x).isWithin(0.001f).of(0f)
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(45.dp.toMeter().toM())
+    }
+
+    @Test
+    fun orbiterEdgeOffsetType_offsetTypeOverlap_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    Orbiter(
+                        alignment =
+                            OrbiterAlignment.TopCenter(
+                                offset = DpVolumeOffset.Zero,
+                                edgeOffsetType = OrbiterEdgeOffsetType.None,
+                            )
+                    ) {
+                        Box(modifier = Modifier.size(10.dp))
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+        assertThat(orbiterEntity.getPose().translation.x).isWithin(0.001f).of(0f)
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(50.dp.toMeter().toM())
+    }
+
+    @Test
+    fun orbiterEdgeOffsetType_cornerAlignment_offsetTypeOuterEdge_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    Orbiter(
+                        alignment =
+                            OrbiterAlignment.TopStart(
+                                offset = DpVolumeOffset.Zero,
+                                edgeOffsetType = OrbiterEdgeOffsetType.OuterEdge,
+                            )
+                    ) {
+                        Box(modifier = Modifier.size(10.dp))
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+        assertThat(orbiterEntity.getPose().translation.x)
+            .isWithin(0.001f)
+            .of(-55.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(55.dp.toMeter().toM())
+    }
+
+    @Test
+    fun orbiterEdgeOffsetType_cornerAlignment_offsetTypeInnerEdge_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    Orbiter(
+                        alignment =
+                            OrbiterAlignment.TopStart(
+                                offset = DpVolumeOffset.Zero,
+                                edgeOffsetType = OrbiterEdgeOffsetType.InnerEdge,
+                            )
+                    ) {
+                        Box(modifier = Modifier.size(10.dp))
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+        assertThat(orbiterEntity.getPose().translation.x)
+            .isWithin(0.001f)
+            .of(-45.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(45.dp.toMeter().toM())
+    }
+
+    @Test
+    fun orbiterEdgeOffsetType_cornerAlignment_offsetTypeOverlap_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    Orbiter(
+                        alignment =
+                            OrbiterAlignment.TopStart(
+                                offset = DpVolumeOffset.Zero,
+                                edgeOffsetType = OrbiterEdgeOffsetType.None,
+                            )
+                    ) {
+                        Box(modifier = Modifier.size(10.dp))
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+        assertThat(orbiterEntity.getPose().translation.x)
+            .isWithin(0.001f)
+            .of(-50.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(50.dp.toMeter().toM())
+    }
+
+    @Test
+    fun orbiterEdgeOffsetType_layoutDirectionRtl_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                        Orbiter(
+                            alignment =
+                                OrbiterAlignment.TopStart(
+                                    offset = DpVolumeOffset.Zero,
+                                    edgeOffsetType = OrbiterEdgeOffsetType.OuterEdge,
+                                )
+                        ) {
+                            Box(modifier = Modifier.size(10.dp))
+                        }
+                    }
+                }
+            }
+        }
+
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+        assertThat(orbiterEntity.getPose().translation.x).isWithin(0.001f).of(55.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(55.dp.toMeter().toM())
+    }
+
+    @Test
+    fun orbiterEdgeOffsetType_absoluteAlignment_layoutDirectionRtl_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                        Orbiter(
+                            alignment =
+                                OrbiterAlignment.TopLeft(
+                                    offset = DpVolumeOffset.Zero,
+                                    edgeOffsetType = OrbiterEdgeOffsetType.OuterEdge,
+                                )
+                        ) {
+                            Box(modifier = Modifier.size(10.dp))
+                        }
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+        // Absolute TopLeft should remain Left (-X) even in RTL
+        assertThat(orbiterEntity.getPose().translation.x)
+            .isWithin(0.001f)
+            .of(-55.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(55.dp.toMeter().toM())
+    }
+
+    @Test
+    fun orbiterEdgeOffsetType_absoluteAlignmentTopRight_layoutDirectionRtl_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                        Orbiter(
+                            alignment =
+                                OrbiterAlignment.TopRight(
+                                    offset = DpVolumeOffset.Zero,
+                                    edgeOffsetType = OrbiterEdgeOffsetType.OuterEdge,
+                                )
+                        ) {
+                            Box(modifier = Modifier.size(10.dp))
+                        }
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+
+        assertThat(orbiterEntity.getPose().translation.x).isWithin(0.001f).of(55.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(55.dp.toMeter().toM())
+    }
+
+    @Test
+    fun orbiterEdgeOffsetType_absoluteAlignmentCenterLeft_layoutDirectionRtl_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                        Orbiter(
+                            alignment =
+                                OrbiterAlignment.CenterLeft(
+                                    offset = DpVolumeOffset.Zero,
+                                    edgeOffsetType = OrbiterEdgeOffsetType.OuterEdge,
+                                )
+                        ) {
+                            Box(modifier = Modifier.size(10.dp))
+                        }
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+
+        assertThat(orbiterEntity.getPose().translation.x)
+            .isWithin(0.001f)
+            .of(-55.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(0f)
+    }
+
+    @Test
+    fun orbiterEdgeOffsetType_absoluteAlignmentCenterRight_layoutDirectionRtl_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                        Orbiter(
+                            alignment =
+                                OrbiterAlignment.CenterRight(
+                                    offset = DpVolumeOffset.Zero,
+                                    edgeOffsetType = OrbiterEdgeOffsetType.OuterEdge,
+                                )
+                        ) {
+                            Box(modifier = Modifier.size(10.dp))
+                        }
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+
+        assertThat(orbiterEntity.getPose().translation.x).isWithin(0.001f).of(55.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(0f)
+    }
+
+    @Test
+    fun orbiterEdgeOffsetType_absoluteAlignmentBottomLeft_layoutDirectionRtl_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                        Orbiter(
+                            alignment =
+                                OrbiterAlignment.BottomLeft(
+                                    offset = DpVolumeOffset.Zero,
+                                    edgeOffsetType = OrbiterEdgeOffsetType.OuterEdge,
+                                )
+                        ) {
+                            Box(modifier = Modifier.size(10.dp))
+                        }
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+
+        assertThat(orbiterEntity.getPose().translation.x)
+            .isWithin(0.001f)
+            .of(-55.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.y)
+            .isWithin(0.001f)
+            .of(-55.dp.toMeter().toM())
+    }
+
+    @Test
+    fun orbiterEdgeOffsetType_absoluteAlignmentBottomRight_layoutDirectionRtl_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                        Orbiter(
+                            alignment =
+                                OrbiterAlignment.BottomRight(
+                                    offset = DpVolumeOffset.Zero,
+                                    edgeOffsetType = OrbiterEdgeOffsetType.OuterEdge,
+                                )
+                        ) {
+                            Box(modifier = Modifier.size(10.dp))
+                        }
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+
+        assertThat(orbiterEntity.getPose().translation.x).isWithin(0.001f).of(55.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.y)
+            .isWithin(0.001f)
+            .of(-55.dp.toMeter().toM())
+    }
+
+    @Test
+    fun orbiterEdgeOffsetType_layoutDirectionRtl_withOffset_positionsCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                        Orbiter(
+                            alignment =
+                                OrbiterAlignment.TopStart(
+                                    offset = DpVolumeOffset((-20).dp, 10.dp, 5.dp),
+                                    edgeOffsetType = OrbiterEdgeOffsetType.OuterEdge,
+                                )
+                        ) {
+                            Box(modifier = Modifier.size(10.dp))
+                        }
+                    }
+                }
+            }
+        }
+        val density = composeTestRule.density
+        val orbiterEntity = getOrbiterEntity(10.dp, density)
+
+        assertThat(orbiterEntity.getPose().translation.x).isWithin(0.001f).of(75.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.y).isWithin(0.001f).of(65.dp.toMeter().toM())
+        assertThat(orbiterEntity.getPose().translation.z).isWithin(0.001f).of(5.dp.toMeter().toM())
     }
 
     private fun getOrbiterEntity(size: Dp, density: Density): PanelEntity {

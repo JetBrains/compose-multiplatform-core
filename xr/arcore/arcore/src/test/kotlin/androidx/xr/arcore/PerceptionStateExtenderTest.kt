@@ -121,7 +121,7 @@ class PerceptionStateExtenderTest {
     }
 
     @Test
-    fun extend_notInitialized_throwsIllegalStateException(): Unit =
+    fun extend_notInitialized_throwsIllegalStateException() =
         runTest(testDispatcher) {
             val coreState = CoreState(timeSource.markNow())
 
@@ -480,7 +480,7 @@ class PerceptionStateExtenderTest {
     @Test
     fun extend_perceptionStateMapSizeExceedsMax_stateIsNull() =
         runTest(testDispatcher) {
-            var timeMark = timeSource.markNow()
+            val timeMark = timeSource.markNow()
             underTest.extend(CoreState(timeMark))
 
             repeat(PerceptionStateExtender.MAX_PERCEPTION_STATE_EXTENSION_SIZE) {

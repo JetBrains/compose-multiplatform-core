@@ -1,0 +1,129 @@
+/*
+ * Copyright 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.a2ui.compose.ui.catalog
+
+import androidx.a2ui.compose.runtime.A2uiComponentScope
+import androidx.a2ui.model.schema.A2uiArraySchema
+import androidx.a2ui.model.schema.A2uiSchemaKeyword
+import androidx.a2ui.model.schema.A2uiStringSchema
+import androidx.a2ui.model.schema.commontypes.A2uiAccessibilityAttributesSchema
+import androidx.a2ui.model.schema.commontypes.A2uiActionSchema
+import androidx.a2ui.model.schema.commontypes.A2uiCheckRuleSchema
+import androidx.a2ui.model.schema.commontypes.A2uiComponentIdSchema
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertIs
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
+
+@RunWith(JUnit4::class)
+class A2uiBasicCatalogV1ButtonTest {
+
+    @Test
+    fun interfaceDefaults_haveExpectedValues() {
+        val buttonComponent =
+            object : A2uiBasicCatalogV1.Button {
+                @Composable
+                override fun A2uiComponentScope.TypedContent(
+                    childId: String,
+                    variant: A2uiBasicCatalogV1.Button.Variant,
+                    action: Map<String, Any?>,
+                    accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
+                    checks: List<A2uiBasicCatalogV1.CheckRule>,
+                    modifier: Modifier,
+                ) {}
+            }
+
+        assertThat(buttonComponent.name).isEqualTo("Button")
+        assertThat(buttonComponent.description)
+            .isEqualTo("A clickable button that dispatches an action.")
+        assertThat(buttonComponent.properties)
+            .containsExactly(
+                A2uiBasicCatalogV1.Button.AccessibilityProperty,
+                A2uiBasicCatalogV1.WeightProperty,
+                A2uiBasicCatalogV1.Button.ChecksProperty,
+                A2uiBasicCatalogV1.Button.ChildProperty,
+                A2uiBasicCatalogV1.Button.VariantProperty,
+                A2uiBasicCatalogV1.Button.ActionProperty,
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun companionProperties_haveExpectedSchema() {
+        assertThat(A2uiBasicCatalogV1.Button.AccessibilityProperty.key).isEqualTo("accessibility")
+        assertThat(A2uiBasicCatalogV1.Button.AccessibilityProperty.isRequired).isFalse()
+        assertThat(A2uiBasicCatalogV1.Button.AccessibilityProperty.schema)
+            .isEqualTo(A2uiAccessibilityAttributesSchema.DEFAULT_INSTANCE)
+
+        assertThat(A2uiBasicCatalogV1.Button.ChecksProperty.key).isEqualTo("checks")
+        assertThat(A2uiBasicCatalogV1.Button.ChecksProperty.isRequired).isFalse()
+        val checksSchema =
+            assertIs<A2uiArraySchema>(A2uiBasicCatalogV1.Button.ChecksProperty.schema)
+        assertThat(checksSchema.items).isEqualTo(A2uiCheckRuleSchema.DEFAULT_INSTANCE)
+
+        assertThat(A2uiBasicCatalogV1.Button.ChildProperty.key).isEqualTo("child")
+        assertThat(A2uiBasicCatalogV1.Button.ChildProperty.isRequired).isTrue()
+        assertIs<A2uiComponentIdSchema>(A2uiBasicCatalogV1.Button.ChildProperty.schema)
+
+        assertThat(A2uiBasicCatalogV1.Button.VariantProperty.key).isEqualTo("variant")
+        assertThat(A2uiBasicCatalogV1.Button.VariantProperty.isRequired).isFalse()
+        val variantSchema =
+            assertIs<A2uiStringSchema>(A2uiBasicCatalogV1.Button.VariantProperty.schema)
+        assertThat(variantSchema.keywords)
+            .contains(A2uiSchemaKeyword.Enum(listOf("default", "primary", "borderless")))
+        assertThat(variantSchema.keywords)
+            .contains(A2uiSchemaKeyword.Default(A2uiBasicCatalogV1.Button.Variant.Secondary.value))
+
+        assertThat(A2uiBasicCatalogV1.Button.ActionProperty.key).isEqualTo("action")
+        assertThat(A2uiBasicCatalogV1.Button.ActionProperty.isRequired).isTrue()
+        assertIs<A2uiActionSchema>(A2uiBasicCatalogV1.Button.ActionProperty.schema)
+    }
+
+    @Test
+    fun variant_default_isSecondary() {
+        assertThat(A2uiBasicCatalogV1.Button.Variant.Default)
+            .isEqualTo(A2uiBasicCatalogV1.Button.Variant.Secondary)
+    }
+
+    @Test
+    fun variant_values_matchSpecificationStrings() {
+        assertThat(A2uiBasicCatalogV1.Button.Variant.Secondary.value).isEqualTo("default")
+        assertThat(A2uiBasicCatalogV1.Button.Variant.Primary.value).isEqualTo("primary")
+        assertThat(A2uiBasicCatalogV1.Button.Variant.Borderless.value).isEqualTo("borderless")
+    }
+
+    @Test
+    fun variant_fromValue_validStrings_returnsCorrespondingVariant() {
+        assertThat(A2uiBasicCatalogV1.Button.Variant.fromValue("default"))
+            .isEqualTo(A2uiBasicCatalogV1.Button.Variant.Secondary)
+        assertThat(A2uiBasicCatalogV1.Button.Variant.fromValue("primary"))
+            .isEqualTo(A2uiBasicCatalogV1.Button.Variant.Primary)
+        assertThat(A2uiBasicCatalogV1.Button.Variant.fromValue("borderless"))
+            .isEqualTo(A2uiBasicCatalogV1.Button.Variant.Borderless)
+    }
+
+    @Test
+    fun variant_fromValue_invalidOrEmptyString_fallsBackToDefault() {
+        assertThat(A2uiBasicCatalogV1.Button.Variant.fromValue("invalid_variant"))
+            .isEqualTo(A2uiBasicCatalogV1.Button.Variant.Default)
+        assertThat(A2uiBasicCatalogV1.Button.Variant.fromValue(""))
+            .isEqualTo(A2uiBasicCatalogV1.Button.Variant.Default)
+    }
+}

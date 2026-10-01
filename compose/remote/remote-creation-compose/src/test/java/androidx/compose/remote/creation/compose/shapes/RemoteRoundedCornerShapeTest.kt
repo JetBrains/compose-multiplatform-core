@@ -16,8 +16,46 @@
 
 package androidx.compose.remote.creation.compose.shapes
 
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import androidx.compose.remote.core.CoreDocument
+import androidx.compose.remote.core.RcProfiles
+import androidx.compose.remote.core.RemoteComposeBuffer
+import androidx.compose.remote.core.operations.Header
+import androidx.compose.remote.creation.RemoteComposeWriter
+import androidx.compose.remote.creation.RemoteComposeWriterAndroid
+import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
+import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
+import androidx.compose.remote.creation.compose.capture.RemoteDensity
+import androidx.compose.remote.creation.compose.capture.captureSingleRemoteDocument
+import androidx.compose.remote.creation.compose.layout.RemoteBox
+import androidx.compose.remote.creation.compose.layout.RemoteCanvas
+import androidx.compose.remote.creation.compose.layout.RemoteDrawScope
+import androidx.compose.remote.creation.compose.layout.RemoteOffset
+import androidx.compose.remote.creation.compose.layout.RemoteSize
+import androidx.compose.remote.creation.compose.modifier.RemoteModifier
+import androidx.compose.remote.creation.compose.modifier.background
+import androidx.compose.remote.creation.compose.modifier.clip
+import androidx.compose.remote.creation.compose.modifier.fillMaxSize
+import androidx.compose.remote.creation.compose.state.RemotePaint
+import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
+import androidx.compose.remote.creation.compose.state.remotePath
+import androidx.compose.remote.creation.compose.state.rf
+import androidx.compose.remote.creation.compose.util.TestRemoteComposeBuffer
+import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
+import androidx.compose.remote.creation.profile.Profile
+import androidx.compose.remote.player.core.platform.AndroidRemoteContext
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.SdkSuppress
+import com.google.common.truth.Truth.assertThat
+import java.io.ByteArrayInputStream
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -29,6 +67,41 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Config.TARGET_SDK])
 class RemoteRoundedCornerShapeTest {
+    private class MyRemoteComposeWriterAndroid(
+        profile: Profile,
+        buffer: RemoteComposeBuffer,
+        vararg tags: RemoteComposeWriter.HTag,
+    ) : RemoteComposeWriterAndroid(profile, buffer, *tags)
+
+    private fun createRemoteDrawScope(
+        width: Int = 100,
+        height: Int = 50,
+        fakeBuffer: TestRemoteComposeBuffer,
+    ): Pair<RemoteDrawScope, RemoteCanvas> {
+        val platform = AndroidxRcPlatformServices()
+        val profile =
+            Profile(CoreDocument.DOCUMENT_API_LEVEL, RcProfiles.PROFILE_ANDROIDX, platform) {
+                creationDisplayInfo,
+                profile,
+                callbacks ->
+                MyRemoteComposeWriterAndroid(
+                    profile,
+                    fakeBuffer,
+                    RemoteComposeWriter.hTag(Header.DOC_WIDTH, creationDisplayInfo.width),
+                    RemoteComposeWriter.hTag(Header.DOC_HEIGHT, creationDisplayInfo.height),
+                    RemoteComposeWriter.hTag(Header.DOC_PROFILES, RcProfiles.PROFILE_ANDROIDX),
+                )
+            }
+        val creationState =
+            RemoteComposeCreationState(
+                RemoteCreationDisplayInfo(width, height, 160, 1f),
+                null,
+                profile,
+            )
+        val remoteCanvas = RemoteCanvas(creationState)
+        return RemoteDrawScope(remoteCanvas) to remoteCanvas
+    }
+
     @Test
     fun copy_preservesValuesIfNotSpecified() {
         val shape = RemoteRoundedCornerShape(1.rdp, 2.rdp, 3.rdp, 4.rdp)
@@ -52,6 +125,219 @@ class RemoteRoundedCornerShapeTest {
         assertEquals(bottomEnd, (copied.bottomEnd as? RemoteDpCornerSize)?.size)
         assertEquals(bottomStart, (copied.bottomStart as? RemoteDpCornerSize)?.size)
     }
+
+    @Test
+    fun createOutline_uniformCorners() {
+        val shape = RemoteRoundedCornerShape(10.rdp)
+        val density = RemoteDensity(2f.rf, 1f.rf)
+        val outline = shape.createOutline(RemoteSize(100f.rf, 50f.rf), density, LayoutDirection.Ltr)
+
+        assertTrue(outline is RemoteOutline.Rounded)
+        val rounded = outline as RemoteOutline.Rounded
+        assertEquals(20f, rounded.topStart.constantValue)
+        assertEquals(20f, rounded.topEnd.constantValue)
+        assertEquals(20f, rounded.bottomEnd.constantValue)
+        assertEquals(20f, rounded.bottomStart.constantValue)
+    }
+
+    @Test
+    fun createOutline_withStrokeWidth() {
+        val shape = RemoteRoundedCornerShape(10.rdp)
+        val density = RemoteDensity(2f.rf, 1f.rf)
+        val outline =
+            shape.createOutline(
+                size = RemoteSize(100f.rf, 50f.rf),
+                density = density,
+                layoutDirection = LayoutDirection.Ltr,
+                strokeWidth = 10f.rf,
+            )
+
+        assertTrue(outline is RemoteOutline.Rounded)
+        val rounded = outline as RemoteOutline.Rounded
+        assertEquals(5f, rounded.offset.x.constantValue)
+        assertEquals(5f, rounded.offset.y.constantValue)
+        assertEquals(90f, rounded.size?.width?.constantValue)
+        assertEquals(40f, rounded.size?.height?.constantValue)
+        assertEquals(15f, rounded.topStart.constantValue)
+    }
+
+    @Test
+    fun drawOutline_rounded_withOffsetAndNullSize() {
+        val fakeBuffer = TestRemoteComposeBuffer()
+        val (drawScope, remoteCanvas) =
+            createRemoteDrawScope(width = 100, height = 50, fakeBuffer = fakeBuffer)
+        val outline =
+            RemoteOutline.Rounded(
+                topStart = 10f.rf,
+                topEnd = 10f.rf,
+                bottomEnd = 10f.rf,
+                bottomStart = 10f.rf,
+                offset = RemoteOffset(10f.rf, 20f.rf),
+                size = null,
+            )
+
+        drawScope.drawOutline(outline, RemotePaint())
+        remoteCanvas.flush()
+
+        assertThat(fakeBuffer.calls)
+            .containsExactly(
+                "addComponentValue(42, 0)",
+                "addComponentValue(43, 1)",
+                "addPaint",
+                "addAnimatedFloat(44) = ([42] 10.0 + )",
+                "addAnimatedFloat(45) = ([43] 20.0 + )",
+                "addDrawRoundRect(10.0, 20.0, ID(44), ID(45), 10.0, 10.0)",
+            )
+    }
+
+    @Test
+    fun drawOutline_rounded_withZeroOffsetAndNullSize() {
+        val fakeBuffer = TestRemoteComposeBuffer()
+        val (drawScope, remoteCanvas) =
+            createRemoteDrawScope(width = 100, height = 50, fakeBuffer = fakeBuffer)
+        val outline =
+            RemoteOutline.Rounded(
+                topStart = 10f.rf,
+                topEnd = 10f.rf,
+                bottomEnd = 10f.rf,
+                bottomStart = 10f.rf,
+                offset = RemoteOffset.Zero,
+                size = null,
+            )
+
+        drawScope.drawOutline(outline, RemotePaint())
+        remoteCanvas.flush()
+
+        assertThat(fakeBuffer.calls)
+            .containsExactly(
+                "addComponentValue(42, 0)",
+                "addComponentValue(43, 1)",
+                "addPaint",
+                "addDrawRoundRect(0.0, 0.0, ID(42), ID(43), 10.0, 10.0)",
+            )
+    }
+
+    @Test
+    fun drawOutline_rounded_withOffsetAndSize() {
+        val fakeBuffer = TestRemoteComposeBuffer()
+        val (drawScope, remoteCanvas) =
+            createRemoteDrawScope(width = 100, height = 50, fakeBuffer = fakeBuffer)
+        val outline =
+            RemoteOutline.Rounded(
+                topStart = 10f.rf,
+                topEnd = 10f.rf,
+                bottomEnd = 10f.rf,
+                bottomStart = 10f.rf,
+                offset = RemoteOffset(5f.rf, 5f.rf),
+                size = RemoteSize(90f.rf, 40f.rf),
+            )
+
+        drawScope.drawOutline(outline, RemotePaint())
+        remoteCanvas.flush()
+
+        assertThat(fakeBuffer.calls)
+            .containsExactly("addPaint", "addDrawRoundRect(5.0, 5.0, 95.0, 45.0, 10.0, 10.0)")
+    }
+
+    @Test
+    fun drawOutline_circleShape_withDynamicSize_usesDrawRoundRect() {
+        val fakeBuffer = TestRemoteComposeBuffer()
+        val (drawScope, remoteCanvas) =
+            createRemoteDrawScope(width = 100, height = 50, fakeBuffer = fakeBuffer)
+        val outline =
+            RemoteCircleShape.createOutline(
+                size = RemoteSize(drawScope.width, drawScope.height),
+                density = RemoteDensity(2f.rf, 1f.rf),
+                layoutDirection = LayoutDirection.Ltr,
+            )
+
+        drawScope.drawOutline(outline, RemotePaint())
+        remoteCanvas.flush()
+
+        assertThat(fakeBuffer.calls.any { it.startsWith("addDrawRoundRect(") }).isTrue()
+        assertThat(fakeBuffer.calls.any { it.startsWith("addDrawPath(") }).isFalse()
+    }
+
+    @Test
+    fun drawOutline_rectangle() {
+        val fakeBuffer = TestRemoteComposeBuffer()
+        val (drawScope, remoteCanvas) =
+            createRemoteDrawScope(width = 100, height = 50, fakeBuffer = fakeBuffer)
+        val outline =
+            RemoteOutline.Rectangle(
+                topLeft = RemoteOffset(10f.rf, 20f.rf),
+                size = RemoteSize(80f.rf, 30f.rf),
+            )
+
+        drawScope.drawOutline(outline, RemotePaint())
+        remoteCanvas.flush()
+
+        assertThat(fakeBuffer.calls)
+            .containsExactly("addPaint", "addDrawRect(10.0, 20.0, 90.0, 50.0)")
+    }
+
+    @Test
+    fun drawOutline_generic() {
+        val fakeBuffer = TestRemoteComposeBuffer()
+        val (drawScope, remoteCanvas) =
+            createRemoteDrawScope(width = 100, height = 50, fakeBuffer = fakeBuffer)
+        val path = drawScope.remotePath {
+            moveTo(0f.rf, 0f.rf)
+            lineTo(100f.rf, 50f.rf)
+        }
+        val outline = RemoteOutline.Generic(path)
+
+        drawScope.drawOutline(outline, RemotePaint())
+        remoteCanvas.flush()
+
+        assertThat(fakeBuffer.calls)
+            .containsExactly("addPaint", "addPathData(42)", "addDrawPath(42)")
+    }
+
+    @Test
+    fun drawOutline_generic_withBlock() {
+        val fakeBuffer = TestRemoteComposeBuffer()
+        val (drawScope, remoteCanvas) =
+            createRemoteDrawScope(width = 100, height = 50, fakeBuffer = fakeBuffer)
+        val outline = RemoteOutline.Generic {
+            moveTo(0f.rf, 0f.rf)
+            lineTo(100f.rf, 50f.rf)
+        }
+
+        drawScope.drawOutline(outline, RemotePaint())
+        remoteCanvas.flush()
+
+        assertThat(fakeBuffer.calls)
+            .containsExactly("addPaint", "addPathData(42)", "addDrawPath(42)")
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun zeroCornerRadii_initializeContext_doesNotCrashDuringDataPass() =
+        runTest(UnconfinedTestDispatcher()) {
+            val context: Context = ApplicationProvider.getApplicationContext()
+            val documentBytes =
+                captureSingleRemoteDocument(context) {
+                        RemoteBox(
+                            modifier =
+                                RemoteModifier.fillMaxSize()
+                                    .clip(RemoteRoundedCornerShape(0.rdp))
+                                    .background(Color.Red.rc)
+                        )
+                    }
+                    .bytes
+
+            val doc =
+                CoreDocument().apply {
+                    ByteArrayInputStream(documentBytes).use {
+                        initFromBuffer(RemoteComposeBuffer.fromInputStream(it))
+                    }
+                }
+            val remoteContext = AndroidRemoteContext()
+            remoteContext.useCanvas(Canvas(Bitmap.createBitmap(500, 500, Bitmap.Config.ARGB_8888)))
+            doc.initializeContext(remoteContext)
+            assertTrue(doc.docInfo.mNumberOfOps > 0)
+        }
 
     private fun haveSameInstances(
         shape1: RemoteCornerBasedShape,

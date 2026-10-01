@@ -45,7 +45,6 @@ import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -56,7 +55,7 @@ import org.junit.runners.Parameterized
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -344,7 +343,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
                 contentAlignment = Alignment.Center,
             ) {
                 val labels = listOf("S", "M", "T", "SA", "W", "All")
-                var selectedIndex = 2
+                val selectedIndex = 2
                 HorizontalFloatingToolbar(expanded = false) {
                     labels.forEachIndexed { index, labelString ->
                         if (selectedIndex == index) {
@@ -594,7 +593,7 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
                 contentAlignment = Alignment.Center,
             ) {
                 val labels = listOf("S", "M", "T", "SA", "W", "All")
-                var selectedIndex = 2
+                val selectedIndex = 2
                 VerticalFloatingToolbar(expanded = false) {
                     labels.forEachIndexed { index, labelString ->
                         if (selectedIndex == index) {

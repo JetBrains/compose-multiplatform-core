@@ -65,6 +65,24 @@ internal data class Keyline(
 internal class KeylineList internal constructor(keylines: List<Keyline>) :
     List<Keyline> by keylines {
 
+    val minSize: Float
+    val maxSize: Float
+
+    init {
+        var min = Float.MAX_VALUE
+        var max = 0f
+        keylines.fastForEach {
+            if (it.size < min) {
+                min = it.size
+            }
+            if (it.size > max) {
+                max = it.size
+            }
+        }
+        minSize = min
+        maxSize = max
+    }
+
     /**
      * Returns the index of the pivot keyline used to calculate all other keyline offsets and
      * unadjusted offsets.
@@ -311,7 +329,7 @@ private class KeylineListScopeImpl : KeylineListScope {
         // to the list. The last focal item index will be found when `create` is called by starting
         // from firstFocalIndex and incrementing the index until the next item's size does not
         // equal focalItemSize.
-        if (size > focalItemSize) {
+        if (!isAnchor && size > focalItemSize) {
             firstFocalIndex = tmpKeylines.lastIndex
             focalItemSize = size
         }
@@ -388,6 +406,7 @@ private class KeylineListScopeImpl : KeylineListScope {
     }
 
     private fun findLastFocalIndex(): Int {
+        if (firstFocalIndex < 0) return -1
         // Find the last focal index. Start from the first focal index and walk up the indices
         // while items remain the same size as the first focal item size - finding a contiguous
         // range of indices where item size is equal to focalItemSize.
@@ -433,6 +452,12 @@ private class KeylineListScopeImpl : KeylineListScope {
         itemSpacing: Float,
         tmpKeylines: List<TmpKeyline>,
     ): List<Keyline> {
+        // Return an empty list if there are no keylines or if the pivot index is invalid
+        // (e.g., when no focal items were added, such as when container or item size is
+        // non-positive).
+        if (tmpKeylines.isEmpty() || pivotIndex !in tmpKeylines.indices) {
+            return emptyList()
+        }
         val pivot = tmpKeylines[pivotIndex]
         val keylines = mutableListOf<Keyline>()
 

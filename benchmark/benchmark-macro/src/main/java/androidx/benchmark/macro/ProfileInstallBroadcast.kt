@@ -19,7 +19,6 @@ package androidx.benchmark.macro
 import android.annotation.SuppressLint
 import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.benchmark.Arguments
 import androidx.benchmark.Shell
@@ -27,7 +26,7 @@ import androidx.profileinstaller.ProfileInstallReceiver
 import androidx.profileinstaller.ProfileInstaller
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // temporary, revert
-object ProfileInstallBroadcast {
+public object ProfileInstallBroadcast {
     private val receiverName = ProfileInstallReceiver::class.java.name
 
     /**
@@ -36,7 +35,7 @@ object ProfileInstallBroadcast {
      *
      * Returned error strings aren't thrown, to let the calling function decide strictness.
      */
-    fun installProfile(packageName: String): String? {
+    public fun installProfile(packageName: String): String? {
         Log.d(TAG, "Profile Installer - Install profile")
         // For baseline profiles, we trigger this broadcast to force the baseline profile to be
         // installed synchronously
@@ -114,7 +113,7 @@ object ProfileInstallBroadcast {
      *
      * Returned error strings aren't thrown, to let the calling function decide strictness.
      */
-    fun skipFileOperation(
+    public fun skipFileOperation(
         packageName: String,
         @Suppress("SameParameterValue") operation: String,
     ): String? {
@@ -152,8 +151,7 @@ object ProfileInstallBroadcast {
      *
      * Returned error strings aren't thrown, to let the calling function decide strictness.
      */
-    @RequiresApi(24)
-    fun saveProfile(packageName: String): String? {
+    public fun saveProfile(packageName: String): String? {
         Log.d(TAG, "Profile Installer - Save Profile")
         val action = "androidx.profileinstaller.action.SAVE_PROFILE"
         val (result, _) = Shell.amBroadcast("-a $action $packageName/$receiverName")
@@ -180,7 +178,11 @@ object ProfileInstallBroadcast {
         }
     }
 
-    enum class Operation(val extraValue: String, val minimumVersion: String, val successCode: Int) {
+    public enum class Operation(
+        public val extraValue: String,
+        public val minimumVersion: String,
+        public val successCode: Int,
+    ) {
         DropShaderCache(
             extraValue = "DROP_SHADER_CACHE",
             minimumVersion = "1.3.0-alpha02",
@@ -252,10 +254,10 @@ object ProfileInstallBroadcast {
         }
     }
 
-    fun dropShaderCache(packageName: String): String? =
+    public fun dropShaderCache(packageName: String): String? =
         benchmarkOperation(packageName, Operation.DropShaderCache)
 
-    data class SaveProfileResult(val processCount: Int, val error: String?) {
+    public data class SaveProfileResult(val processCount: Int, val error: String?) {
         init {
             require(error == null || processCount > 0) {
                 "Error only valid if processes are found running," +
@@ -265,14 +267,13 @@ object ProfileInstallBroadcast {
     }
 
     @SuppressLint("BanThreadSleep")
-    @RequiresApi(24)
-    fun saveProfilesForAllProcesses(packageName: String): SaveProfileResult {
+    public fun saveProfilesForAllProcesses(packageName: String): SaveProfileResult {
         val processes = Shell.getRunningPidsAndProcessesForPackage(packageName)
         processes
             .sortedBy { it.processName }
             .forEach { runningProcess ->
                 Log.d(TAG, "Saving profiles for process $runningProcess")
-                if (runningProcess.processName.contains(":")) {
+                if (runningProcess.processName != packageName) {
                     // Only attempt the new broadcast on processes that require it -
                     // processes that aren't the main registered process
                     // this lets single process apps run with profileinstaller 1.3/1.4

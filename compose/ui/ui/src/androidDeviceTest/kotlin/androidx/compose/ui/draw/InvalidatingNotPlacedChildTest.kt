@@ -41,7 +41,6 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -50,7 +49,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class InvalidatingNotPlacedChildTest {
 
-    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createComposeRule()
 
     @get:Rule val excessiveAssertions = AndroidOwnerExtraAssertionsRule()
 
@@ -268,7 +267,7 @@ class InvalidatingNotPlacedChildTest {
         content: @Composable (State<Boolean>, State<Color>) -> Unit
     ) {
         val shouldPlace = mutableStateOf(true)
-        var color = mutableStateOf(Color.Gray)
+        val color = mutableStateOf(Color.Gray)
         composeTestRule.setContent {
             Box(Modifier.background(Color.Blue).testTag("node")) { content(shouldPlace, color) }
         }

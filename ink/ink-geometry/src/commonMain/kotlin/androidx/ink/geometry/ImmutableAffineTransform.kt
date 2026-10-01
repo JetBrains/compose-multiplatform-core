@@ -16,7 +16,6 @@
 
 package androidx.ink.geometry
 
-import androidx.annotation.RestrictTo
 import androidx.annotation.Size
 import kotlin.jvm.JvmStatic
 import kotlin.math.cos
@@ -39,17 +38,11 @@ import kotlin.math.sin
  */
 public class ImmutableAffineTransform
 public constructor(
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     override val m00: Float,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     override val m10: Float,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     override val m20: Float,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     override val m01: Float,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     override val m11: Float,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     override val m21: Float,
 ) : AffineTransform() {
 
@@ -61,7 +54,6 @@ public constructor(
         @Size(min = 6) values: FloatArray
     ) : this(values[0], values[1], values[2], values[3], values[4], values[5])
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public override fun toImmutable(): ImmutableAffineTransform = this
 
     /**
@@ -80,10 +72,14 @@ public constructor(
     override fun toString(): String = "Immutable${string(this)}"
 
     public companion object {
+        /** Returns a transformation that translates by the given [x] and [y] components. */
+        @JvmStatic
+        public fun translate(x: Float, y: Float): ImmutableAffineTransform =
+            ImmutableAffineTransform(1f, 0f, x, 0f, 1f, y)
+
         /** Returns a transformation that translates by the given [offset] vector. */
         @JvmStatic
-        public fun translate(offset: Vec): ImmutableAffineTransform =
-            ImmutableAffineTransform(1f, 0f, offset.x, 0f, 1f, offset.y)
+        public fun translate(offset: Vec): ImmutableAffineTransform = translate(offset.x, offset.y)
 
         /**
          * Returns a transformation that scales in both the x- and y-direction by the given pair of

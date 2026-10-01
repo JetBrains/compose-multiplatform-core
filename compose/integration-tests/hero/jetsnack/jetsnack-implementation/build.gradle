@@ -21,18 +21,18 @@ plugins {
 }
 
 android {
-    compileSdk { version = release(37) }
+    compileSdk { version = release(37) { minorApiLevel = 1 } }
     namespace = "androidx.compose.integration.hero.jetsnack.implementation"
 
     lint {
         // These projects should use the external lint checks to simulate real world development
-        disable += ['PrimitiveInCollection', 'AsCollectionCall']
+        disable += ["PrimitiveInCollection", "AsCollectionCall"]
     }
 
     buildTypes {
         release {
             minifyEnabled = false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
     }
 
@@ -51,7 +51,6 @@ dependencies {
     implementation(project(":compose:material3:material3"))
     implementation("androidx.compose.material:material-icons-core:1.6.7")
     implementation(project(":compose:runtime:runtime"))
-    implementation(project(":compose:runtime:runtime-tracing"))
     implementation(project(":compose:ui:ui"))
     implementation(project(":compose:ui:ui-tooling"))
 }

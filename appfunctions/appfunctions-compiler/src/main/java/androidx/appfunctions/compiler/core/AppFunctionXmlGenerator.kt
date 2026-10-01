@@ -106,19 +106,19 @@ class AppFunctionXmlGenerator(
         fileName: String,
         outputLocation: String? = null,
     ) {
-        val appFunctionMetadataList =
-            appFunctionsByClass.flatMap {
-                it.createAppFunctionMetadataList(
-                    resolvedAnnotatedSerializableProxies,
-                    appFunctionSerializablesDescriptionMap,
-                )
-            }
+        val appFunctionMetadataList = appFunctionsByClass.flatMap {
+            it.createAppFunctionMetadataList(
+                resolvedAnnotatedSerializableProxies,
+                appFunctionSerializablesDescriptionMap,
+            )
+        }
         generateXmlFromMetadata(
             appFunctionMetadataList,
             appFunctionsByClass.flatMap { it.getSourceFiles() }.toSet(),
             packageName,
             fileName,
             outputLocation,
+            componentId = null,
         )
     }
 
@@ -145,19 +145,21 @@ class AppFunctionXmlGenerator(
         fileName: String,
         outputLocation: String? = null,
     ) {
-        val appFunctionMetadataList =
-            appFunctionSignatures.map {
-                it.createAppFunctionMetadata(
-                    resolvedAnnotatedSerializableProxies,
-                    appFunctionSerializablesDescriptionMap,
-                )
-            }
+        val appFunctionMetadataList = appFunctionSignatures.map {
+            it.createAppFunctionMetadata(
+                resolvedAnnotatedSerializableProxies,
+                appFunctionSerializablesDescriptionMap,
+            )
+        }
         generateXmlFromMetadata(
             appFunctionMetadataList,
             appFunctionSignatures.flatMap { it.getSourceFiles() }.toSet(),
             packageName,
             fileName,
             outputLocation,
+            // Use file name to ensure there is no conflict with other top-level components
+            // that would override the database document when being indexed.
+            componentId = fileName,
         )
     }
 
@@ -171,12 +173,14 @@ class AppFunctionXmlGenerator(
         packageName: String,
         fileName: String,
         outputLocation: String? = null,
+        componentId: String? = null,
     ) {
         writeXml(
             appFunctionMetadataList = appFunctionMetadataList,
             dependencies = Dependencies(aggregating = true, *sourceFiles.toTypedArray()),
             packageName = packageName,
             fileName = fileName,
+            componentId = componentId,
             outputLocation = outputLocation,
         )
     }

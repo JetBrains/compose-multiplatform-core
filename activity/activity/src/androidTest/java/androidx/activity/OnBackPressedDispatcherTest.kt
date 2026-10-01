@@ -85,11 +85,10 @@ class OnBackPressedHandlerTest {
     @Test
     fun testIsEnabledWithinCallback() {
         var count = 0
-        val callback =
-            dispatcher.addCallback {
-                count++
-                isEnabled = false
-            }
+        val callback = dispatcher.addCallback {
+            count++
+            isEnabled = false
+        }
         assertWithMessage("Callback should be enabled by default").that(callback.isEnabled).isTrue()
         assertWithMessage("Dispatcher should have an enabled callback")
             .that(dispatcher.hasEnabledCallbacks())
@@ -609,7 +608,7 @@ class OnBackPressedHandlerTest {
     @Test
     fun testBothCallbacksAdded() {
         val handler = TestNavigationEventHandler()
-        dispatcher.eventDispatcher.addHandler(handler)
+        dispatcher.asNavigationEventDispatcher().addHandler(handler)
 
         val callback = CountingOnBackPressedCallback()
         dispatcher.addCallback(callback)
@@ -670,7 +669,7 @@ class OnBackPressedHandlerTest {
         dispatcher.addCallback(callback)
 
         val input = DirectNavigationEventInput()
-        dispatcher.eventDispatcher.addInput(input)
+        dispatcher.asNavigationEventDispatcher().addInput(input)
         input.backCompleted()
 
         assertWithMessage("Count should be incremented after dispatchOnCompleted")
@@ -682,7 +681,7 @@ class OnBackPressedHandlerTest {
     @Test
     fun testOnBackPressedDispatchesToNavigationEventHandler() {
         val handler = TestNavigationEventHandler()
-        dispatcher.eventDispatcher.addHandler(handler)
+        dispatcher.asNavigationEventDispatcher().addHandler(handler)
 
         dispatcher.onBackPressed()
 

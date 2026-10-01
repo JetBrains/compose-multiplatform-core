@@ -16,21 +16,21 @@
 
 package androidx.compose.remote.creation.compose.text
 
-import android.text.format.DateFormat
 import androidx.compose.remote.core.RemoteContext.FLOAT_TIME_IN_HR
 import androidx.compose.remote.core.RemoteContext.FLOAT_TIME_IN_MIN
+import androidx.compose.remote.core.operations.TextFromFloat.PAD_PRE_NONE
+import androidx.compose.remote.core.operations.TextFromFloat.PAD_PRE_ZERO
+import androidx.compose.remote.creation.compose.capture.LocalIs24HourFormat
 import androidx.compose.remote.creation.compose.state.RemoteBoolean
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.rf
-import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
-import java.text.DecimalFormat
 
 /**
  * Contains default values and helper methods for displaying time-related text in a remote context.
  */
+// TODO(b/564951851): Move RemoteTimeDefaults to androidx.wear.compose.remote.material3.
 public object RemoteTimeDefaults {
 
     /**
@@ -38,16 +38,13 @@ public object RemoteTimeDefaults {
      * Currently captured at recording time.
      */
     @Composable
-    public fun is24HourFormat(): RemoteBoolean =
-        RemoteBoolean(DateFormat.is24HourFormat(LocalContext.current))
-
-    internal val twoDigits = DecimalFormat("00")
+    public fun is24HourFormat(): RemoteBoolean = RemoteBoolean(LocalIs24HourFormat.current)
 
     /**
      * Creates a [RemoteString] representing the current time in either 12-hour or 24-hour format.
      *
      * The 24-hour format is represented as "HH:mm", while the 12-hour format is represented as
-     * "hh:mm AM/PM".
+     * "h:mm".
      *
      * @param is24HourFormat A [RemoteBoolean] indicating whether to use 24-hour format. Defaults to
      *   the system's current setting at the time of recording.
@@ -55,16 +52,16 @@ public object RemoteTimeDefaults {
      */
     @Composable
     public fun defaultTimeString(is24HourFormat: RemoteBoolean = is24HourFormat()): RemoteString {
-        val mins = (RemoteFloat(FLOAT_TIME_IN_MIN) % 60f).toRemoteString(twoDigits)
-        val hours24String: RemoteString = RemoteFloat(FLOAT_TIME_IN_HR).toRemoteString(twoDigits)
+        val mins = (RemoteFloat(FLOAT_TIME_IN_MIN) % 60f).toRemoteStringOptions(2, 0, PAD_PRE_ZERO)
+        val hours24String: RemoteString =
+            RemoteFloat(FLOAT_TIME_IN_HR).toRemoteStringOptions(2, 0, PAD_PRE_ZERO)
         val currentHour = RemoteFloat(FLOAT_TIME_IN_HR)
         val hour12: RemoteFloat =
             ((currentHour % 12f).isEqualTo(0.rf)).select(RemoteFloat(12f), currentHour % 12f)
-        val hours12String: RemoteString = hour12.toRemoteString(twoDigits)
-        val amPm: RemoteString = (currentHour.isLessThan(12.rf)).select(" AM".rs, " PM".rs)
+        val hours12String: RemoteString = hour12.toRemoteStringOptions(2, 0, PAD_PRE_NONE)
 
         val time24 = hours24String + ":" + mins
-        val time12 = hours12String + ":" + mins + amPm
+        val time12 = hours12String + ":" + mins
         return is24HourFormat.select(time24, time12)
     }
 }

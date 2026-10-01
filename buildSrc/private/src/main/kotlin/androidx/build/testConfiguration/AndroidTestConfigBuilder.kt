@@ -27,6 +27,7 @@ class ConfigBuilder {
     var isMacrobenchmark: Boolean = false
     var isPostsubmit: Boolean = true
     var useOrchestrator: Boolean = false
+    var maxShardCount: Int? = null
     lateinit var minSdk: String
     val tags = mutableListOf<String>()
     lateinit var testApkName: String
@@ -34,6 +35,8 @@ class ConfigBuilder {
     lateinit var testRunner: String
     val additionalApkKeys = mutableListOf<String>()
     val instrumentationArgsMap = mutableMapOf<String, String>()
+
+    fun maxShardCount(maxShardCount: Int?) = apply { this.maxShardCount = maxShardCount }
 
     fun configName(configName: String) = apply { this.configName = configName }
 
@@ -105,6 +108,13 @@ class ConfigBuilder {
         sb.append(MODULE_METADATA_TAG_OPTION.replace("APPLICATION_ID", applicationId))
             .append(WIFI_DISABLE_OPTION)
             .append(FLAKY_TEST_OPTION)
+        maxShardCount?.let { count ->
+            if (count == 1) {
+                sb.append(NOT_SHARDABLE_OPTION)
+            } else if (count > 1) {
+                sb.append(AJUR_MAX_SHARD_OPTION.replace("AJUR_MAX_SHARD", count.toString()))
+            }
+        }
         if (!isPostsubmit && (isMicrobenchmark || isMacrobenchmark)) {
             sb.append(BENCHMARK_PRESUBMIT_INST_ARGS)
         }
@@ -158,6 +168,11 @@ class ConfigBuilder {
         sb.append(TEST_BLOCK_OPEN)
             .append(RUNNER_OPTION.replace("TEST_RUNNER", testRunner))
             .append(PACKAGE_OPTION.replace("APPLICATION_ID", applicationId))
+            .apply {
+                if (useOrchestrator) {
+                    sb.append(ORCHESTRATOR_OPTION)
+                }
+            }
             .apply {
                 if (isPostsubmit) {
                     // These listeners should be unified eventually (b/331974955)
@@ -246,6 +261,20 @@ private val MODULE_METADATA_TAG_OPTION =
 private val WIFI_DISABLE_OPTION =
     """
     <option name="wifi:disable" value="true" />
+
+    """
+        .trimIndent()
+
+private val NOT_SHARDABLE_OPTION =
+    """
+    <option name="not-shardable" value="true" />
+
+    """
+        .trimIndent()
+
+private val AJUR_MAX_SHARD_OPTION =
+    """
+    <option name="ajur-max-shard" value="AJUR_MAX_SHARD" />
 
     """
         .trimIndent()
@@ -366,5 +395,11 @@ private val FLAKY_TEST_OPTION =
     """
     <option name="instrumentation-arg" key="notAnnotation" value="androidx.test.filters.FlakyTest" />
 
+    """
+        .trimIndent()
+
+private val ORCHESTRATOR_OPTION =
+    """
+    <option name="orchestrator" value="true" />
     """
         .trimIndent()

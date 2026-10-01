@@ -25,6 +25,7 @@ import androidx.compose.animation.core.rememberTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -68,6 +69,9 @@ import kotlinx.coroutines.launch
  *   by setting [visible] to false.
  * @param modifier Modifier to be applied to the dialog content.
  * @param properties An optional [DialogProperties] object for configuring the dialog's behavior.
+ *   When the system status bar is enabled on the device, [DialogProperties.usePlatformDefaultWidth]
+ *   and [DialogProperties.decorFitsSystemWindows] are overridden to false to ensure edge-to-edge
+ *   full width display.
  * @param content A composable function that defines the content of the dialog.
  */
 @Composable
@@ -106,7 +110,7 @@ public fun Dialog(
                     .collectLatest {
                         val scale = lerp(BackgroundMinScale, BackgroundMaxScale, it / screenWidthPx)
                         if (transitionState.currentState == DialogVisibility.Display) {
-                            scaffoldState.parentScale.floatValue = scale
+                            scaffoldState?.parentScale?.floatValue = scale
                             backgroundAnimatable.snapTo(scale)
                         }
                     }
@@ -118,16 +122,33 @@ public fun Dialog(
                         if (it) BackgroundMinScale else BackgroundMaxScale,
                         backgroundAnimationSpec,
                     ) {
-                        scaffoldState.parentScale.floatValue = value
+                        scaffoldState?.parentScale?.floatValue = value
                     }
                 }
         }
     }
 
     if (shouldShow) {
+        val isStatusBarEnabled = LocalStatusBarEnabled.current
+        val dialogProperties =
+            if (isStatusBarEnabled) {
+                // When GSB is enabled, force edge-to-edge and full width
+                // while preserving all other properties passed by the developer.
+                DialogProperties(
+                    dismissOnBackPress = properties.dismissOnBackPress,
+                    dismissOnClickOutside = properties.dismissOnClickOutside,
+                    securePolicy = properties.securePolicy,
+                    usePlatformDefaultWidth = false,
+                    decorFitsSystemWindows = false,
+                    windowTitle = properties.windowTitle,
+                )
+            } else {
+                properties
+            }
+
         androidx.compose.ui.window.Dialog(
             onDismissRequest = onDismissRequest,
-            properties = properties,
+            properties = dialogProperties,
         ) {
             // Disable System dialog animations
             val view = LocalView.current
@@ -135,33 +156,37 @@ public fun Dialog(
             dialogWindowProvider.window.setWindowAnimations(android.R.style.Animation)
             dialogWindowProvider.window.setDimAmount(0f)
 
+            StatusBarSuppression()
+
             val contentAlpha by animateContentAlpha(transition)
             val scale by animateDialogScale(transition)
 
-            SwipeToDismissBox(
-                state = swipeToDismissBoxState,
-                modifier =
-                    modifier.graphicsLayer {
-                        alpha = contentAlpha
-                        scaleX = scale
-                        scaleY = scale
+            CompositionLocalProvider(LocalInheritedShowStatusBar provides false) {
+                SwipeToDismissBox(
+                    state = swipeToDismissBoxState,
+                    modifier =
+                        modifier.graphicsLayer {
+                            alpha = contentAlpha
+                            scaleX = scale
+                            scaleY = scale
+                        },
+                    onDismissed = {
+                        onDismissRequest()
+                        // Reset state for the next time this dialog is shown.
+                        transitionState = MutableTransitionState(DialogVisibility.Hide)
                     },
-                onDismissed = {
-                    onDismissRequest()
-                    // Reset state for the next time this dialog is shown.
-                    transitionState = MutableTransitionState(DialogVisibility.Hide)
-                },
-            ) { isBackground ->
-                if (!isBackground) {
-                    Box(
-                        modifier =
-                            Modifier.matchParentSize()
-                                .background(MaterialTheme.colorScheme.background)
-                                .graphicsLayer {
-                                    compositingStrategy = CompositingStrategy.Offscreen
-                                }
-                    ) {
-                        content()
+                ) { isBackground ->
+                    if (!isBackground) {
+                        Box(
+                            modifier =
+                                Modifier.matchParentSize()
+                                    .background(MaterialTheme.colorScheme.background)
+                                    .graphicsLayer {
+                                        compositingStrategy = CompositingStrategy.Offscreen
+                                    }
+                        ) {
+                            content()
+                        }
                     }
                 }
             }
@@ -178,7 +203,7 @@ public fun Dialog(
     }
 
     // We want to be sure that background is scaled back to 1f after dialog is disposed.
-    DisposableEffect(Unit) { onDispose { scaffoldState.parentScale.floatValue = 1f } }
+    DisposableEffect(Unit) { onDispose { scaffoldState?.parentScale?.floatValue = 1f } }
 }
 
 @Composable

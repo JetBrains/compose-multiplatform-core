@@ -22,6 +22,7 @@ import androidx.ink.brush.BrushFamily
 import androidx.ink.brush.BrushPaint
 import androidx.ink.brush.BrushPaint.TilingTexture
 import androidx.ink.brush.BrushTip
+import androidx.ink.brush.ExperimentalInkBrushCompatibilityApi
 import androidx.ink.brush.Version
 import androidx.ink.brush.behavior.IntegralNode
 import androidx.ink.brush.behavior.OutOfRange
@@ -42,6 +43,7 @@ import kotlin.test.Test
  * this just covers basic plumbing, the tests for detailed error behavior are in the KMP-common
  * tests.
  */
+@OptIn(ExperimentalInkBrushCompatibilityApi::class)
 class JvmBrushFamilyExtensionsTest {
 
     private val textureId1: String = "texture_id_1"
@@ -162,8 +164,7 @@ class JvmBrushFamilyExtensionsTest {
                 it.toByteArray()
             }
         ByteArrayInputStream(encoded).use {
-            assertThat(BrushFamily.decode(it, maxVersion = Version.V0_JETPACK1_0_0))
-                .isEqualTo(original)
+            assertThat(BrushFamily.decode(it, maxVersion = Version.V0)).isEqualTo(original)
         }
     }
 
@@ -199,7 +200,7 @@ class JvmBrushFamilyExtensionsTest {
                 it.toByteArray()
             }
         ByteArrayInputStream(encoded).use {
-            assertThat(BrushFamilySerialization.decode(it, maxVersion = Version.V0_JETPACK1_0_0))
+            assertThat(BrushFamilySerialization.decode(it, maxVersion = Version.V0))
                 .isEqualTo(original)
         }
     }
@@ -211,7 +212,7 @@ class JvmBrushFamilyExtensionsTest {
         assertThat(
                 BrushFamilySerialization.decode(
                     BrushFamilySerialization.encode(original),
-                    maxVersion = Version.V0_JETPACK1_0_0,
+                    maxVersion = Version.V0,
                 )
             )
             .isEqualTo(original)
@@ -256,7 +257,7 @@ class JvmBrushFamilyExtensionsTest {
         // Test fallbacks
         val decoded1: BrushFamily
         ByteArrayInputStream(encoded).use {
-            decoded1 = BrushFamily.decode(it, maxVersion = Version.V0_JETPACK1_0_0)
+            decoded1 = BrushFamily.decode(it, maxVersion = Version.V0)
             assertThat(decoded1).isEqualTo(family1)
             assertThat(decoded1.hasFallbacks).isTrue()
         }
@@ -267,7 +268,7 @@ class JvmBrushFamilyExtensionsTest {
             }
         val decoded2: BrushFamily
         ByteArrayInputStream(encoded1).use {
-            decoded2 = BrushFamily.decode(it, maxVersion = Version.V1_JETPACK1_1_0_ALPHA01)
+            decoded2 = BrushFamily.decode(it, maxVersion = Version.V1)
             assertThat(decoded2).isEqualTo(family2)
             assertThat(decoded2.hasFallbacks).isTrue()
         }
@@ -326,7 +327,7 @@ class JvmBrushFamilyExtensionsTest {
         // Test fallbacks
         val decoded1: BrushFamily
         ByteArrayInputStream(encoded).use {
-            decoded1 = BrushFamilySerialization.decode(it, maxVersion = Version.V0_JETPACK1_0_0)
+            decoded1 = BrushFamilySerialization.decode(it, maxVersion = Version.V0)
             assertThat(decoded1).isEqualTo(family1)
             assertThat(decoded1.hasFallbacks).isTrue()
         }
@@ -337,8 +338,7 @@ class JvmBrushFamilyExtensionsTest {
             }
         val decoded2: BrushFamily
         ByteArrayInputStream(encoded1).use {
-            decoded2 =
-                BrushFamilySerialization.decode(it, maxVersion = Version.V1_JETPACK1_1_0_ALPHA01)
+            decoded2 = BrushFamilySerialization.decode(it, maxVersion = Version.V1)
             assertThat(decoded2).isEqualTo(family2)
             assertThat(decoded2.hasFallbacks).isTrue()
         }
@@ -395,13 +395,11 @@ class JvmBrushFamilyExtensionsTest {
             assertThat(decoded[1].hasFallbacks).isFalse()
         }
         // Test fallbacks
-        val decoded1 =
-            BrushFamilySerialization.decode(encoded, maxVersion = Version.V0_JETPACK1_0_0)
+        val decoded1 = BrushFamilySerialization.decode(encoded, maxVersion = Version.V0)
         assertThat(decoded1).isEqualTo(family1)
         assertThat(decoded1.hasFallbacks).isTrue()
         val encoded1 = BrushFamilySerialization.encode(decoded1)
-        val decoded2 =
-            BrushFamilySerialization.decode(encoded1, maxVersion = Version.V1_JETPACK1_1_0_ALPHA01)
+        val decoded2 = BrushFamilySerialization.decode(encoded1, maxVersion = Version.V1)
         assertThat(decoded2).isEqualTo(family2)
         assertThat(decoded2.hasFallbacks).isTrue()
         val encoded2 = BrushFamilySerialization.encode(decoded2)

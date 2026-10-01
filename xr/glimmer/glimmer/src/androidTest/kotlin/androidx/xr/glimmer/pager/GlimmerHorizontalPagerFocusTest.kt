@@ -35,22 +35,22 @@ import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.focus.onFocusEvent
+import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.ComposeUiTestConfig
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.SdkSuppress
 import androidx.xr.glimmer.Text
-import androidx.xr.glimmer.performIndirectSwipe
+import androidx.xr.glimmer.oneMoveSwipeAlongXAxis
 import androidx.xr.glimmer.setGlimmerThemeContent
 import androidx.xr.glimmer.testutils.createGlimmerRule
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import org.junit.Rule
@@ -66,7 +66,8 @@ import org.junit.runners.Parameterized
 class GlimmerHorizontalPagerFocusTest(private val config: GlimmerPagerParamConfig) :
     BaseParameterizedGlimmerPagerTest() {
 
-    @get:Rule(0) val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule(0)
+    val rule = createComposeRule(config = ComposeUiTestConfig(inputMode = InputMode.Keyboard))
 
     @get:Rule(1) val glimmerRule = createGlimmerRule()
 
@@ -206,7 +207,8 @@ class GlimmerHorizontalPagerFocusTest(private val config: GlimmerPagerParamConfi
             assertThat(page0FocusEvents[1].isFocused).isTrue()
             assertThat(page0FocusEvents[2].isFocused).isFalse()
 
-            assertThat(page1FocusEvents).isEmpty()
+            assertThat(page1FocusEvents).hasSize(1)
+            assertThat(page1FocusEvents[0].isFocused).isFalse()
 
             assertThat(page2FocusEvents).hasSize(2)
             assertThat(page2FocusEvents[0].isFocused).isFalse()
@@ -221,12 +223,10 @@ class GlimmerHorizontalPagerFocusTest(private val config: GlimmerPagerParamConfi
 
         rule.onNodeWithTag("Page 1").assertIsFocused()
         rule.runOnIdle {
-            assertThat(page0FocusEvents).hasSize(1)
-            assertThat(page0FocusEvents[0].isFocused).isFalse()
+            assertThat(page0FocusEvents).isEmpty()
 
-            assertThat(page1FocusEvents).hasSize(2)
-            assertThat(page1FocusEvents[0].isFocused).isFalse()
-            assertThat(page1FocusEvents[1].isFocused).isTrue()
+            assertThat(page1FocusEvents).hasSize(1)
+            assertThat(page1FocusEvents[0].isFocused).isTrue()
 
             assertThat(page2FocusEvents).hasSize(1)
             assertThat(page2FocusEvents[0].isFocused).isFalse()
@@ -416,9 +416,8 @@ class GlimmerHorizontalPagerFocusTest(private val config: GlimmerPagerParamConfi
 
         rule.onNodeWithTag("Page 0").assertIsFocused()
         rule.runOnIdle {
-            assertThat(page0FocusEvents).hasSize(2)
-            assertThat(page0FocusEvents[0].isFocused).isFalse()
-            assertThat(page0FocusEvents[1].isFocused).isTrue()
+            assertThat(page0FocusEvents).hasSize(1)
+            assertThat(page0FocusEvents[0].isFocused).isTrue()
 
             assertThat(page1FocusEvents).hasSize(1)
             assertThat(page1FocusEvents[0].isFocused).isFalse()
@@ -576,7 +575,8 @@ class GlimmerHorizontalPagerFocusTest(private val config: GlimmerPagerParamConfi
             assertThat(page0FocusEvents).hasSize(1)
             assertThat(page0FocusEvents[0].isFocused).isFalse()
 
-            assertThat(page1FocusEvents).isEmpty()
+            assertThat(page1FocusEvents).hasSize(1)
+            assertThat(page1FocusEvents[0].isFocused).isFalse()
 
             assertThat(page2FocusEvents).hasSize(2)
             assertThat(page2FocusEvents[0].isFocused).isFalse()
@@ -612,9 +612,7 @@ class GlimmerHorizontalPagerFocusTest(private val config: GlimmerPagerParamConfi
 
     private fun performIndirectSwipe(distancePx: Int, durationMillis: Long = 200L) {
         require(distancePx != 0)
-        rule
-            .onRoot()
-            .performIndirectSwipe(rule, distancePx.toFloat(), moveDuration = durationMillis)
+        rule.oneMoveSwipeAlongXAxis(distancePx.toFloat(), durationMillis)
     }
 
     suspend fun runOnUiThread(action: suspend () -> Unit) {

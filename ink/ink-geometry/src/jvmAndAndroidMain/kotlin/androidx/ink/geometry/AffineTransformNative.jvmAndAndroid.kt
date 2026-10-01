@@ -16,10 +16,12 @@
 
 package androidx.ink.geometry
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
 
 @UsedByNative
+@OptIn(InkInternalOnlyApi::class)
 actual internal object AffineTransformNative {
 
     init {
@@ -28,12 +30,12 @@ actual internal object AffineTransformNative {
 
     @UsedByNative
     actual external fun populateTransformedParallelogram(
-        affineTransformA: Float,
-        affineTransformB: Float,
-        affineTransformC: Float,
-        affineTransformD: Float,
-        affineTransformE: Float,
-        affineTransformF: Float,
+        affineTransformM00: Float,
+        affineTransformM10: Float,
+        affineTransformM20: Float,
+        affineTransformM01: Float,
+        affineTransformM11: Float,
+        affineTransformM21: Float,
         parallelogramCenterX: Float,
         parallelogramCenterY: Float,
         parallelogramWidth: Float,
@@ -45,12 +47,12 @@ actual internal object AffineTransformNative {
 
     @UsedByNative
     actual external fun createTransformedParallelogram(
-        affineTransformA: Float,
-        affineTransformB: Float,
-        affineTransformC: Float,
-        affineTransformD: Float,
-        affineTransformE: Float,
-        affineTransformF: Float,
+        affineTransformM00: Float,
+        affineTransformM10: Float,
+        affineTransformM20: Float,
+        affineTransformM01: Float,
+        affineTransformM11: Float,
+        affineTransformM21: Float,
         parallelogramCenterX: Float,
         parallelogramCenterY: Float,
         parallelogramWidth: Float,

@@ -45,7 +45,6 @@ import androidx.testutils.test
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.reflect.typeOf
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.serialization.Serializable
 import org.junit.Rule
 import org.junit.Test
@@ -54,7 +53,7 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class NavHostControllerTest {
-    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun testRememberNavController() {
@@ -70,8 +69,9 @@ class NavHostControllerTest {
             }
         }
 
-        val navigator =
-            composeTestRule.runOnIdle { navController.navigatorProvider[ComposeNavigator::class] }
+        val navigator = composeTestRule.runOnIdle {
+            navController.navigatorProvider[ComposeNavigator::class]
+        }
 
         // trigger recompose
         composeTestRule.runOnIdle { navController.navigate("second") }
@@ -97,8 +97,9 @@ class NavHostControllerTest {
             }
         }
 
-        val navigator =
-            composeTestRule.runOnIdle { navController.navigatorProvider[NoOpNavigator::class] }
+        val navigator = composeTestRule.runOnIdle {
+            navController.navigatorProvider[NoOpNavigator::class]
+        }
 
         // trigger recompose
         composeTestRule.runOnIdle { navController.navigate("second") }

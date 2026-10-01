@@ -31,8 +31,6 @@ public interface Entity : ScenePose {
     /**
      * Sets the parent Entity for this Entity. The child Entity's pose will be relative to the pose
      * of its parent.
-     *
-     * @param parent The parent entity.
      */
     public var parent: Entity?
 
@@ -145,8 +143,13 @@ public interface Entity : ScenePose {
     public fun removeInputEventListener(listener: InputEventListener)
 
     /**
-     * Dispose any system resources held by this entity, and transitively calls dispose() on all the
-     * children. Once disposed, Entity shouldn't be used again.
+     * Disposes system resources held by this entity.
+     *
+     * Once disposed, this [Entity] must not be used. Disposing an entity:
+     * * Detaches it from its [parent].
+     * * Detaches all child entities by setting their [parent] to `null`. The child entities
+     *   themselves are not disposed.
+     * * Removes all components.
      */
     public fun dispose()
 

@@ -19,7 +19,6 @@ package androidx.xr.compose.testapp.fragments
 import android.os.Bundle
 import android.os.Environment
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,17 +33,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
+import androidx.fragment.compose.content
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
+import androidx.xr.compose.spatial.OrbiterPosition
+import androidx.xr.compose.spatial.OrbiterPosition.EdgeAlignment
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialExternalSurface
@@ -56,11 +55,12 @@ import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.height
+import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
-import androidx.xr.compose.subspace.layout.transformingMovable
-import androidx.xr.compose.subspace.layout.transformingResizable
+import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testapp.common.isDrmSupported
+import androidx.xr.compose.unit.DpVolumeOffset
 
 /** A Fragment using spatial UI. */
 class VideoPlayerFragment : Fragment() {
@@ -78,20 +78,7 @@ class VideoPlayerFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View {
-        // Create a ComposeView, which is the bridge between the View system and Compose.
-        return ComposeView(requireContext()).apply {
-
-            // This strategy handles disposing the Composition when the Fragment's
-            // View lifecycle is destroyed, preventing memory leaks.
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
-
-            // Set the Compose content for this Fragment.
-            setContent {
-                MaterialTheme { Subspace { VideoInSpatialExternalSurface(StereoMode.Mono) } }
-            }
-        }
-    }
+    ) = content { MaterialTheme { Subspace { VideoInSpatialExternalSurface(StereoMode.Mono) } } }
 
     @Composable
     private fun VideoInSpatialExternalSurface(stereoMode: StereoMode) {
@@ -107,8 +94,8 @@ class VideoPlayerFragment : Fragment() {
                     .height(
                         if (stereoMode == StereoMode.TopBottom) videoHeight / 2 else videoHeight
                     )
-                    .transformingMovable()
-                    .transformingResizable(),
+                    .movable()
+                    .resizable(),
             interactionPolicy =
                 InteractionPolicy.clickable {
                     exoPlayer?.let {
@@ -125,7 +112,7 @@ class VideoPlayerFragment : Fragment() {
                 else SpatialExternalSurfaceProtection.None,
         ) {
             onSurfaceCreated {
-                val player = ExoPlayer.Builder(requireActivity()).build()
+                val player = ExoPlayer.Builder(requireActivity().applicationContext).build()
                 exoPlayer = player
                 player.setVideoSurface(it)
                 player.setMediaItem(getMediaItem())
@@ -163,8 +150,13 @@ class VideoPlayerFragment : Fragment() {
                 }
             }
 
-            @Suppress("DEPRECATION")
-            Orbiter(position = ContentEdge.Bottom, offset = 48.dp) {
+            Orbiter(
+                position =
+                    OrbiterPosition.BottomCenter(
+                        EdgeAlignment.Outside,
+                        offset = DpVolumeOffset(y = -48.dp),
+                    )
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Button(onClick = { useDrmState.value = !useDrmState.value }) {
                         Text(text = if (useDrmState.value) "Use non-drm video" else "Use drm video")

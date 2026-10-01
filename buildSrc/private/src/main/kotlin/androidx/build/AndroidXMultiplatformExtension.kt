@@ -17,8 +17,8 @@
 package androidx.build
 
 import androidx.build.clang.AndroidXClang
+import androidx.build.clang.ClangBuildService
 import androidx.build.clang.CombineObjectFilesTask
-import androidx.build.clang.KonanBuildService
 import androidx.build.clang.MultiTargetNativeCompilation
 import androidx.build.clang.NativeLibraryBundler
 import androidx.build.clang.configureCinterop
@@ -89,9 +89,9 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
      * Sets the `kotlin.stdlib.klib.dir` property which can be accessed inside the tests
      */
     fun provideKlibStdLibForTests() {
-        val konanBuildService = KonanBuildService.obtain(project)
+        val clangBuildService = ClangBuildService.obtain(project)
         // directory format of stdlib klib for use during tests
-        val stdLibKlibDir = konanBuildService.map { it.stdlibKlibDir() }
+        val stdLibKlibDir = clangBuildService.map { it.stdlibKlibDir() }
         project.tasks.withType(Test::class.java).configureEach { task ->
             task.inputs
                 .dir(stdLibKlibDir)
@@ -108,15 +108,6 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
 
     // Kotlin multiplatform plugin is only applied if at least one target / sourceset is added.
     private val kotlinExtensionDelegate = lazy {
-        project.afterEvaluate {
-            // Workaround for KT-77732
-            project.tasks
-                .named { it == "commonizeNativeDistribution" }
-                .configureEach { it.dependsOn("downloadKotlinNativeDistribution") }
-            project.tasks
-                .named { it == "downloadKotlinNativeDistribution" }
-                .configureEach { it.outputs.cacheIf { false } }
-        }
         project.validateMultiplatformPluginHasNotBeenApplied()
         project.plugins.apply(KotlinMultiplatformPluginWrapper::class.java)
         project.multiplatformExtension!!.also { it.applyAndroidXDefaultHierarchyTemplate() }
@@ -275,8 +266,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     ) {
         createCinterop(
             kotlinNativeCompilation =
-                nativeTarget.compilations.getByName(KotlinCompilation.MAIN_COMPILATION_NAME)
-                    as KotlinNativeCompilation,
+                nativeTarget.compilations.getByName(KotlinCompilation.MAIN_COMPILATION_NAME),
             nativeCompilation = nativeCompilation,
             cinteropName = cinteropName,
         )
@@ -931,3 +921,8 @@ fun Project.validatePublishedMultiplatformHasDefault() {
         )
     }
 }
+
+fun KotlinMultiplatformExtension.nativeTargets() =
+    targets.withType(KotlinNativeTarget::class.java).matching {
+        it.platformType == KotlinPlatformType.native
+    }

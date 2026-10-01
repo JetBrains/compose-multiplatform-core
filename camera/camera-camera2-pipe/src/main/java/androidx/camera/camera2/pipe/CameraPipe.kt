@@ -74,7 +74,7 @@ public interface CameraPipe {
     public fun createCameraGraphs(config: CameraGraph.ConcurrentConfig): List<CameraGraph>
 
     /**
-     * [FrameGraph] extends [CameraGraph] and provides tools to more easily interact with [Frame]'s,
+     * [FrameGraph] extends [CameraGraph] and provides tools to more easily interact with [Frame]s,
      * images, and metadata from the camera, while maintaining the capabilities of [CameraGraph].
      *
      * This creates a new [FrameGraph] that can be used to interact with a single Camera on the
@@ -157,14 +157,9 @@ public interface CameraPipe {
      *
      * @param strictModeEnabled disable all special treatment in
      *   [androidx.camera.camera2.pipe.compat.Camera2Quirks]
-     * @param cameraOpenAbortEnabled enable fast track camera open cancellation on superseding
-     *   requests
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public data class Flags(
-        val strictModeEnabled: Boolean = false,
-        val cameraOpenAbortEnabled: Boolean = false,
-    )
+    public data class Flags(val strictModeEnabled: Boolean = false)
 
     /**
      * Application level configuration for Camera2Interop callbacks. If set, these callbacks will be
@@ -182,6 +177,7 @@ public interface CameraPipe {
      * will be used to run asynchronous background work across [CameraPipe].
      * - [defaultLightweightExecutor] is used to run fast, non-blocking, lightweight tasks.
      * - [defaultBackgroundExecutor] is used to run blocking and/or io bound tasks.
+     * - [defaultBlockingExecutor] is used for tasks that may block threads, such as disk or I/O.
      * - [defaultCameraExecutor] is used on newer API versions to interact with CameraAPIs. This is
      *   split into a separate field since many camera operations are extremely latency sensitive.
      * - [defaultCameraHandler] is used on older API versions to interact with CameraAPIs. This is
@@ -386,10 +382,9 @@ internal class CameraPipeImpl(private val component: CameraPipeComponent) : Came
 
     /**
      * Performs a one-time, potentially slow initialization to fetch and cache
-     * CameraDeviceSetupCompat.
+     * [CameraDeviceSetupCompat].
      *
-     * @param graphConfig The camera graph configuration to prepare for a query.
-     * @return A [CameraDeviceSetupCompat] if the prewarm was successful, otherwise null.
+     * @param graphConfig the camera graph configuration to prepare for a query
      */
     override fun prewarmIsConfigSupported(graphConfig: CameraGraph.Config) {
         val backend = getBackend(graphConfig)

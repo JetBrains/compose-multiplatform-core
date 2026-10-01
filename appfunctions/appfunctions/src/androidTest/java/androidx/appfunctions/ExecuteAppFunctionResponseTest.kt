@@ -16,6 +16,7 @@
 
 package androidx.appfunctions
 
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.appfunctions.ExecuteAppFunctionResponse.Success.Companion.toCompatExecuteAppFunctionResponse
@@ -117,7 +118,7 @@ class ExecuteAppFunctionResponseTest {
         val uriGrant =
             AppFunctionUriGrant(
                 uri = android.net.Uri.parse("content://com.example/1"),
-                modeFlags = android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                modeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION,
             )
         val appFunctionData =
             AppFunctionData.Builder(
@@ -126,7 +127,12 @@ class ExecuteAppFunctionResponseTest {
                 )
                 .setAppFunctionData(
                     "uriGrant",
-                    AppFunctionData.serialize(uriGrant, AppFunctionUriGrant::class.java),
+                    AppFunctionData.serialize(
+                        URI_GRANT_OBJECT_METADATA,
+                        AppFunctionComponentsMetadata(),
+                        uriGrant,
+                        AppFunctionUriGrant::class.java,
+                    ),
                 )
                 .build()
 
@@ -140,8 +146,7 @@ class ExecuteAppFunctionResponseTest {
         assertThat(platformUriGrants).hasSize(1)
         assertThat(platformUriGrants[0].uri)
             .isEqualTo(android.net.Uri.parse("content://com.example/1"))
-        assertThat(platformUriGrants[0].modeFlags)
-            .isEqualTo(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        assertThat(platformUriGrants[0].modeFlags).isEqualTo(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
 
     private fun assumeAppFunctionExtensionLibraryAvailable() {
@@ -154,6 +159,26 @@ class ExecuteAppFunctionResponseTest {
     }
 
     companion object {
+        private val URI_GRANT_OBJECT_METADATA =
+            AppFunctionObjectTypeMetadata(
+                properties =
+                    mapOf(
+                        "uri" to
+                            AppFunctionObjectTypeMetadata(
+                                properties =
+                                    mapOf(
+                                        "uri" to AppFunctionStringTypeMetadata(isNullable = false)
+                                    ),
+                                required = listOf("uri"),
+                                isNullable = false,
+                                qualifiedName = "android.net.Uri",
+                            ),
+                        "modeFlags" to AppFunctionIntTypeMetadata(isNullable = false),
+                    ),
+                required = listOf("uri", "modeFlags"),
+                qualifiedName = "androidx.appfunctions.AppFunctionUriGrant",
+                isNullable = true,
+            )
         private val TEST_APP_FUNCTION_URI_GRANT_METADATA =
             AppFunctionMetadata(
                 name =
@@ -167,30 +192,7 @@ class ExecuteAppFunctionResponseTest {
                         AppFunctionParameterMetadata(
                             name = "uriGrant",
                             isRequired = false,
-                            dataType =
-                                AppFunctionObjectTypeMetadata(
-                                    properties =
-                                        mapOf(
-                                            "uri" to
-                                                AppFunctionObjectTypeMetadata(
-                                                    properties =
-                                                        mapOf(
-                                                            "uri" to
-                                                                AppFunctionStringTypeMetadata(
-                                                                    isNullable = false
-                                                                )
-                                                        ),
-                                                    required = listOf("uri"),
-                                                    isNullable = false,
-                                                    qualifiedName = "android.net.Uri",
-                                                ),
-                                            "modeFlags" to
-                                                AppFunctionIntTypeMetadata(isNullable = false),
-                                        ),
-                                    required = listOf("uri", "modeFlags"),
-                                    qualifiedName = "androidx.appfunctions.AppFunctionUriGrant",
-                                    isNullable = true,
-                                ),
+                            dataType = URI_GRANT_OBJECT_METADATA,
                         )
                     ),
                 response = AppFunctionResponseMetadata(AppFunctionUnitTypeMetadata(false)),
@@ -199,7 +201,7 @@ class ExecuteAppFunctionResponseTest {
                         packageName = "testPackage",
                         components = AppFunctionComponentsMetadata(),
                     ),
-                isEnabled = true,
+                scope = AppFunctionMetadata.SCOPE_GLOBAL,
             )
         private val TEST_APP_FUNCTION_METADATA =
             AppFunctionMetadata(
@@ -219,7 +221,7 @@ class ExecuteAppFunctionResponseTest {
                         packageName = "testPackage",
                         components = AppFunctionComponentsMetadata(),
                     ),
-                isEnabled = true,
+                scope = AppFunctionMetadata.SCOPE_GLOBAL,
             )
 
         private val TEST_APP_FUNCTION_DATA: AppFunctionData =

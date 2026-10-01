@@ -20,6 +20,7 @@ package androidx.ink.nativeloader.testing
 
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.NativePointerObserver
 import kotlin.jvm.JvmName
 import kotlinx.coroutines.CompletableDeferred
@@ -59,12 +60,17 @@ import kotlinx.coroutines.withTimeout
  *   the timeout specified by [timeoutMillis].
  */
 @VisibleForTesting
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@Suppress("MissingJvmstatic") // No JvmOverloads because of Kotlin trailing lambda
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+@InkInternalOnlyApi
 public fun awaitNativePointerCleanupAfter(
     onCleanup: ((Long) -> Unit)? = null,
     timeoutMillis: Long = 1000L,
     block: () -> Unit,
 ) {
+    // Ensure that we start with a clean slate, since a previous test may have exercised the case
+    // where a NativePointer was still referenced until the conclusion of the test.
+    GarbageCollectorController.collect()
     val cleanupsMapMutex = Mutex()
     val cleanupsToAwait = mutableMapOf<Long, CompletableDeferred<Unit>>()
     observingNativePointers(

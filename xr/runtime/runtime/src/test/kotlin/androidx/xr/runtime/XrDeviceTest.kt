@@ -30,6 +30,7 @@ import androidx.xr.runtime.testing.XrDeviceTestRule
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
+import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -80,7 +81,28 @@ class XrDeviceTest {
         assertThat(device1).isNotSameInstanceAs(device2)
     }
 
-    @OptIn(UnstableNativeResourceApi::class)
+    @Test
+    fun getCurrentDevice_whenActivityRecreated_returnsNewDevice() {
+        activityController.create()
+        val device1 = XrDevice.getCurrentDevice(activity)
+        activityController.recreate()
+        val activity2 = activityController.get()
+
+        val device2 = XrDevice.getCurrentDevice(activity2)
+
+        assertThat(device1).isNotSameInstanceAs(device2)
+    }
+
+    @Test
+    fun getCurrentDevice_whenContextDestroyed_throwsException() {
+        activityController.create()
+        XrDevice.getCurrentDevice(activity)
+
+        activityController.destroy()
+
+        assertThrows(IllegalStateException::class.java) { XrDevice.getCurrentDevice(activity) }
+    }
+
     @Test
     fun getCurrentDevice_withExtensions_addsExtensionsAndReturnsDevice() {
         androidx.xr.runtime.internal.XrInstanceManager.resetInitForTesting()

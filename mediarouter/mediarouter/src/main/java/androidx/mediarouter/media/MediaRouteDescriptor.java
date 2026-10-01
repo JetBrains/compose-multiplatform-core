@@ -26,6 +26,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 
 import androidx.annotation.RestrictTo;
+import androidx.core.os.BundleCompat;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -76,14 +77,19 @@ public final class MediaRouteDescriptor {
     static final String KEY_ALLOWED_PACKAGES = "allowedPackages";
 
     final Bundle mBundle;
-    @NonNull List<Set<String>> mRequiredPermissions;
+    @Nullable final String mRoutingControllerId;
+    @NonNull final List<Set<String>> mRequiredPermissions;
 
     MediaRouteDescriptor(Bundle bundle) {
-        this(bundle, List.of());
+        this(bundle, null, List.of());
     }
 
-    private MediaRouteDescriptor(Bundle bundle, @NonNull List<Set<String>> requiredPermissions) {
+    private MediaRouteDescriptor(
+            Bundle bundle,
+            @Nullable String routingControllerId,
+            @NonNull List<Set<String>> requiredPermissions) {
         mBundle = bundle;
+        mRoutingControllerId = routingControllerId;
         mRequiredPermissions = List.copyOf(requiredPermissions);
     }
 
@@ -108,10 +114,8 @@ public final class MediaRouteDescriptor {
      */
     @RestrictTo(LIBRARY)
     public @NonNull List<String> getGroupMemberIds() {
-        if (!mBundle.containsKey(KEY_GROUP_MEMBER_IDS)) {
-            return new ArrayList<>();
-        }
-        return new ArrayList<>(mBundle.getStringArrayList(KEY_GROUP_MEMBER_IDS));
+        ArrayList<String> ids = mBundle.getStringArrayList(KEY_GROUP_MEMBER_IDS);
+        return ids != null ? new ArrayList<>(ids) : new ArrayList<>();
     }
 
     /**
@@ -235,17 +239,17 @@ public final class MediaRouteDescriptor {
      * @return An {@link IntentSender} to start a settings activity.
      */
     public @Nullable IntentSender getSettingsActivity() {
-        return mBundle.getParcelable(KEY_SETTINGS_INTENT);
+        return BundleCompat.getParcelable(mBundle, KEY_SETTINGS_INTENT, IntentSender.class);
     }
 
     /**
      * Gets the route's {@link MediaControlIntent media control intent} filters.
      */
     public @NonNull List<IntentFilter> getControlFilters() {
-        if (!mBundle.containsKey(KEY_CONTROL_FILTERS)) {
-            return new ArrayList<>();
-        }
-        return new ArrayList<>(mBundle.getParcelableArrayList(KEY_CONTROL_FILTERS));
+        ArrayList<IntentFilter> filters =
+                BundleCompat.getParcelableArrayList(
+                        mBundle, KEY_CONTROL_FILTERS, IntentFilter.class);
+        return filters != null ? new ArrayList<>(filters) : new ArrayList<>();
     }
 
     /**
@@ -362,10 +366,8 @@ public final class MediaRouteDescriptor {
      * {@link #isVisibilityPublic} returns {@code false}.
      */
     public @NonNull Set<String> getAllowedPackages() {
-        if (!mBundle.containsKey(KEY_ALLOWED_PACKAGES)) {
-            return new HashSet<>();
-        }
-        return new HashSet<>(mBundle.getStringArrayList(KEY_ALLOWED_PACKAGES));
+        ArrayList<String> pkgs = mBundle.getStringArrayList(KEY_ALLOWED_PACKAGES);
+        return pkgs != null ? new HashSet<>(pkgs) : new HashSet<>();
     }
 
     /**
@@ -374,6 +376,25 @@ public final class MediaRouteDescriptor {
      */
     public @NonNull List<Set<String>> getRequiredPermissions() {
         return mRequiredPermissions;
+    }
+
+    /**
+     * Gets the {@link android.media.MediaRouter2.RoutingController#getId() routing controller id}
+     * associated with this route descriptor.
+     *
+     * <p>The routing session id is useful for populating the {@link
+     * android.media.session.MediaSession#setPlaybackToRemote volume provider's} {@link
+     * android.media.VolumeProvider#getVolumeControlId()}.
+     *
+     * <p>This value may be null if this descriptor is not representing a routing session from the
+     * {@link android.media.MediaRouter2} framework. Typically, this value will be available in
+     * descriptors from the {@link MediaRouter#getSelectedRoute() selected route} when {@link
+     * MediaRouterParams#isMediaTransferReceiverEnabled() media transfer is enabled} (which controls
+     * Android Output Switcher integration).
+     */
+    @Nullable
+    public String getRoutingControllerId() {
+        return mRoutingControllerId;
     }
 
     /**
@@ -391,7 +412,7 @@ public final class MediaRouteDescriptor {
                 + "id=" + getId()
                 + ", groupMemberIds=" + getGroupMemberIds()
                 + ", name=" + getName()
-                + ", description=" + getDescription()
+                + ", descr  iption=" + getDescription()
                 + ", iconUri=" + getIconUri()
                 + ", isEnabled=" + isEnabled()
                 + ", isSystemRoute=" + isSystemRoute()
@@ -412,6 +433,7 @@ public final class MediaRouteDescriptor {
                 + ", isVisibilityPublic=" + isVisibilityPublic()
                 + ", allowedPackages=" + Arrays.toString(getAllowedPackages().toArray())
                 + ", requiredPermissions=" + mRequiredPermissions
+                + ", routingControllerId=" + mRoutingControllerId
                 + " }";
     }
 
@@ -444,6 +466,7 @@ public final class MediaRouteDescriptor {
         private List<IntentFilter> mControlFilters = new ArrayList<>();
         private Set<String> mAllowedPackages = new HashSet<>();
         private List<Set<String>> mRequiredPermissions = new ArrayList<>();
+        private String mRoutingControllerId;
 
         /**
          * Creates a media route descriptor builder.
@@ -472,6 +495,7 @@ public final class MediaRouteDescriptor {
             mControlFilters = descriptor.getControlFilters();
             mAllowedPackages = descriptor.getAllowedPackages();
             mRequiredPermissions = descriptor.getRequiredPermissions();
+            mRoutingControllerId = descriptor.getRoutingControllerId();
         }
 
         /**
@@ -708,9 +732,9 @@ public final class MediaRouteDescriptor {
             }
 
             if (!filters.isEmpty()) {
-                for (IntentFilter filter : filters) {
-                    if (filter != null) {
-                        addControlFilter(filter);
+                for (Object filter : (Collection<?>) filters) {
+                    if (filter instanceof IntentFilter) {
+                        addControlFilter((IntentFilter) filter);
                     }
                 }
             }
@@ -890,13 +914,25 @@ public final class MediaRouteDescriptor {
         }
 
         /**
+         * Sets the routing controller id.
+         *
+         * @param routingControllerId Sets the routing controller id. May be null if not applicable.
+         * @see #getRoutingControllerId()
+         */
+        @NonNull
+        public Builder setRoutingControllerId(@Nullable String routingControllerId) {
+            mRoutingControllerId = routingControllerId;
+            return this;
+        }
+
+        /**
          * Builds the {@link MediaRouteDescriptor media route descriptor}.
          */
         public @NonNull MediaRouteDescriptor build() {
             mBundle.putParcelableArrayList(KEY_CONTROL_FILTERS, new ArrayList<>(mControlFilters));
             mBundle.putStringArrayList(KEY_GROUP_MEMBER_IDS, new ArrayList<>(mGroupMemberIds));
             mBundle.putStringArrayList(KEY_ALLOWED_PACKAGES, new ArrayList<>(mAllowedPackages));
-            return new MediaRouteDescriptor(mBundle, mRequiredPermissions);
+            return new MediaRouteDescriptor(mBundle, mRoutingControllerId, mRequiredPermissions);
         }
     }
 }

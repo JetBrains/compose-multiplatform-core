@@ -17,6 +17,9 @@
 package androidx.ink.brush.behavior
 
 import androidx.annotation.RestrictTo
+import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.Version
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.NativePointer
 
 /**
@@ -24,6 +27,7 @@ import androidx.ink.nativeloader.NativePointer
  * are immutable and their inputs must be chosen at construction time; therefore, they can only ever
  * be assembled into an acyclic graph.
  */
+@OptIn(InkInternalOnlyApi::class)
 public abstract class Node
 internal constructor(
     nativeAlloc: () -> Long,
@@ -31,11 +35,25 @@ internal constructor(
     public val inputs: List<ValueNode>,
 ) {
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    @InkInternalOnlyApi
     public val nativePointer: Long by NativePointer(nativeAlloc, NodeNative::free)
 
+    /**
+     * Returns the minimum required [Version] for this [Node].
+     *
+     * By default, decoding a [androidx.ink.brush.BrushFamily] containing a [Node] with a minimum
+     * required version higher than [Version.MAX_SUPPORTED] will fail.
+     */
+    @ExperimentalInkCustomBrushApi
+    public fun calculateMinimumRequiredVersion(): Version =
+        Version.fromInt(NodeNative.calculateMinimumRequiredVersion(nativePointer))
+
     public companion object {
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+        @InkInternalOnlyApi
+        @Suppress("MissingJvmstatic") // Internal-only API
         public fun wrapNative(
             nativeAlloc: () -> Long,
             nodeType: Int,
@@ -66,4 +84,6 @@ internal constructor(
  */
 expect internal object NodeNative {
     fun free(nodeNativePointer: Long)
+
+    fun calculateMinimumRequiredVersion(nativePointer: Long): Int
 }

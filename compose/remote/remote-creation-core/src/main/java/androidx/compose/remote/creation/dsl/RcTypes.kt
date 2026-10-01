@@ -21,6 +21,7 @@ package androidx.compose.remote.creation.dsl
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.operations.DrawTextAnchored
 import androidx.compose.remote.core.operations.MatrixFromPath
+import androidx.compose.remote.core.operations.SoundExpression
 import androidx.compose.remote.core.operations.TextFromFloat
 import androidx.compose.remote.core.operations.layout.modifiers.ShapeType
 import androidx.compose.remote.creation.Rc
@@ -29,14 +30,55 @@ import androidx.compose.remote.creation.RemoteComposeWriter
 import androidx.compose.remote.creation.dsl.RcTextFromFloatSpec.Companion.of
 
 /** Type-safe reference for remote text resources. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@JvmInline
-public value class RcText internal constructor(internal val id: Int)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) @JvmInline public value class RcText(public val id: Int)
 
 /** Type-safe reference for remote image resources. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @JvmInline
 public value class RcImage internal constructor(internal val id: Int)
+
+/** Type-safe reference for a remote component. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@JvmInline
+public value class RcComponent internal constructor(internal val id: Int)
+
+/** Type-safe reference for a raw inline PCM sound resource registered via [RcScope.addSound]. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@JvmInline
+public value class RcSound internal constructor(internal val id: Int)
+
+/**
+ * Type-safe reference for a sound synthesis expression registered via [RcScope.soundExpression].
+ * Pass to [RcScope.playSound] to trigger playback.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@JvmInline
+public value class RcSoundExpression internal constructor(internal val id: Int)
+
+/**
+ * Synthesis type for a [RcScope.soundExpression].
+ *
+ * Values mirror the NaN-encoded type constants in {@code SoundExpression.java} but the wire format
+ * is owned by remote-core, so this enum is platform-independent.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public enum class RcSoundType(internal val value: Int) {
+    /** A pure waveform tone defined by frequency (Hz), duration (s), and waveform kind. */
+    Tone(SoundExpression.TYPE_TONE)
+}
+
+/** Waveform shape for a [RcSoundType.Tone] sound expression. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public enum class RcWaveform(internal val value: Float) {
+    /** Smooth sinusoidal wave (default). */
+    Sine(SoundExpression.WAVEFORM_SINE),
+    /** Hard square wave. */
+    Square(SoundExpression.WAVEFORM_SQUARE),
+    /** Sawtooth wave. */
+    Sawtooth(SoundExpression.WAVEFORM_SAWTOOTH),
+    /** Triangle wave. */
+    Triangle(SoundExpression.WAVEFORM_TRIANGLE),
+}
 
 /**
  * Type-safe reference for remote color variables or expressions.
@@ -81,7 +123,7 @@ public value class RcTextList internal constructor(internal val id: Float)
 /** Type-safe reference for remote custom shaders. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @JvmInline
-public value class RcShader internal constructor(internal val id: Int)
+public value class RcShader(public val id: Int)
 
 /** Returns an [RcFloat] interpolated from [array] at [position]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -95,6 +137,19 @@ public fun animationTime(): RcFloat = RcFloat(null, floatArrayOf(Rc.Time.ANIMATI
 /** Returns an [RcFloat] representing the last touch event time. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun touchTime(): RcFloat = RcFloat(null, floatArrayOf(Rc.Touch.TOUCH_EVENT_TIME))
+
+/**
+ * The current touch X position, as an [RcFloat] expression. This is in window/event pixels; scale
+ * it into your drawing space (e.g. `touchPosX() * componentWidth() / windowWidth()`) when the
+ * document is rendered at a different size than the window. Use it as the touch input expression
+ * of.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun touchPosX(): RcFloat = RcFloat(null, floatArrayOf(Rc.Touch.POSITION_X))
+
+/** The current touch Y position, as an [RcFloat] expression. See [touchPosX]. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun touchPosY(): RcFloat = RcFloat(null, floatArrayOf(Rc.Touch.POSITION_Y))
 
 /**
  * Type-safe reference for remote integer/long variables or expressions.
@@ -501,6 +556,69 @@ public enum class RcConditionOp(internal val value: Byte) {
     Gte(Rc.Condition.GTE),
 }
 
+/** Represents a resolved logical condition between two float values. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class RcCondition
+internal constructor(
+    internal val op: RcConditionOp,
+    internal val a: RcFloat,
+    internal val b: RcFloat,
+)
+
+/** Infix equality comparison. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public infix fun RcFloat.eq(other: RcFloat): RcCondition =
+    RcCondition(RcConditionOp.Eq, this, other)
+
+/** Infix inequality comparison. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public infix fun RcFloat.neq(other: RcFloat): RcCondition =
+    RcCondition(RcConditionOp.Neq, this, other)
+
+/** Infix less-than comparison. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public infix fun RcFloat.lt(other: RcFloat): RcCondition =
+    RcCondition(RcConditionOp.Lt, this, other)
+
+/** Infix less-than-or-equal comparison. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public infix fun RcFloat.lte(other: RcFloat): RcCondition =
+    RcCondition(RcConditionOp.Lte, this, other)
+
+/** Infix greater-than comparison. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public infix fun RcFloat.gt(other: RcFloat): RcCondition =
+    RcCondition(RcConditionOp.Gt, this, other)
+
+/** Infix greater-than-or-equal comparison. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public infix fun RcFloat.gte(other: RcFloat): RcCondition =
+    RcCondition(RcConditionOp.Gte, this, other)
+
+/** Infix equality comparison with raw Float. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public infix fun RcFloat.eq(other: Float): RcCondition = eq(RcFloat(this.writer, other))
+
+/** Infix inequality comparison with raw Float. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public infix fun RcFloat.neq(other: Float): RcCondition = neq(RcFloat(this.writer, other))
+
+/** Infix less-than comparison with raw Float. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public infix fun RcFloat.lt(other: Float): RcCondition = lt(RcFloat(this.writer, other))
+
+/** Infix less-than-or-equal comparison with raw Float. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public infix fun RcFloat.lte(other: Float): RcCondition = lte(RcFloat(this.writer, other))
+
+/** Infix greater-than comparison with raw Float. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public infix fun RcFloat.gt(other: Float): RcCondition = gt(RcFloat(this.writer, other))
+
+/** Infix greater-than-or-equal comparison with raw Float. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public infix fun RcFloat.gte(other: Float): RcCondition = gte(RcFloat(this.writer, other))
+
 /**
  * Skip predicate for [RcScope.skip] / [RcScope.beginSkip]. Wraps `Rc.Skip.*` opcodes.
  *
@@ -890,6 +1008,31 @@ public value class RcSkipToken internal constructor(internal val offset: Int)
 @JvmInline
 public value class RcComponentId(public val id: Int)
 
+/** Type-safe reference for remote animation specs. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@JvmInline
+public value class RcAnimationSpec internal constructor(internal val id: Int)
+
+/** Type-safe reference for remote macros. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@JvmInline
+public value class RcMacro internal constructor(internal val id: Int)
+
+/** Type-safe reference for remote macro argument placeholders or blocks. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@JvmInline
+public value class RcMacroArg(public val paramId: Int)
+
+/** Type-safe reference for remote key-value data maps. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@JvmInline
+public value class RcDataMap internal constructor(internal val id: Int)
+
+/** Type-safe reference for remote raw font files. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@JvmInline
+public value class RcFont internal constructor(internal val id: Int)
+
 /**
  * Type-safe font-weight value (added alongside the existing [RcFontWeight] object of `Float`
  * constants — that object is preserved for backward compatibility).
@@ -1001,15 +1144,6 @@ public class CustomProperty {
     public val mIntValue: Int
     public val mFloatValue: Float
 
-    public val isFloat: Boolean
-        get() {
-            return (mDataType.toInt() and 1) == 1
-        }
-
-    public fun isString(): Boolean {
-        return (mDataType == STRING_PROP)
-    }
-
     public constructor(type: Short, dataType: Short, value: Int) {
         mType = type
         mDataType = dataType
@@ -1031,6 +1165,13 @@ public class CustomProperty {
         mIntValue = 0
     }
 
+    public constructor(type: Short, dataType: Short, value: RcInteger) {
+        mType = type
+        mDataType = dataType
+        mIntValue = value.toRawInt()
+        mFloatValue = 0f
+    }
+
     public fun getFloatValue(): RcFloat {
         return RcFloat(mFloatValue)
     }
@@ -1039,15 +1180,43 @@ public class CustomProperty {
         return RcText(mIntValue)
     }
 
+    public fun getIntValue(): RcInteger {
+        return RcInteger(mIntValue.toLong())
+    }
+
+    public fun getColorValue(): RcColor {
+        return RcColor(mIntValue)
+    }
+
     public companion object {
         public const val INT_PROP: Short = 0
         public const val FLOAT_PROP: Short = 1
         public const val STRING_PROP: Short = 2
         public const val FLOAT_RETURN: Short = 3
         public const val TEXT_RETURN: Short = 4
+        public const val INT_RETURN: Short = 5
+        public const val COLOR_RETURN: Short = 6
+        public const val COLOR_ID_PROP: Short = 7
+        public const val COLOR_PROP: Short = 8
+        public const val INT_ID_PROP: Short = 9
+
+        public fun int(type: Short, value: Int): CustomProperty =
+            CustomProperty(type, INT_PROP, value)
+
+        public fun int(type: Short, value: RcInteger): CustomProperty =
+            CustomProperty(type, INT_ID_PROP, value.toRawInt())
+
+        public fun float(type: Short, value: Float): CustomProperty =
+            CustomProperty(type, FLOAT_PROP, value)
+
+        public fun float(type: Short, value: RcFloat): CustomProperty =
+            CustomProperty(type, FLOAT_PROP, value)
 
         public fun color(type: Short, value: RcColorValue): CustomProperty =
-            CustomProperty(type, INT_PROP, value.id)
+            CustomProperty(type, COLOR_PROP, value.id)
+
+        public fun color(type: Short, value: RcColor): CustomProperty =
+            CustomProperty(type, COLOR_ID_PROP, value.id)
 
         public fun text(type: Short, value: RcText): CustomProperty =
             CustomProperty(type, STRING_PROP, value.id)
@@ -1060,6 +1229,16 @@ public class CustomProperty {
         public fun returnText(type: Short, scope: RcScope): CustomProperty {
             val id = (scope as RcScopeImpl).writer.nextId()
             return CustomProperty(type, TEXT_RETURN, id)
+        }
+
+        public fun returnInt(type: Short, scope: RcScope): CustomProperty {
+            val id = (scope as RcScopeImpl).writer.nextId()
+            return CustomProperty(type, INT_RETURN, id)
+        }
+
+        public fun returnColor(type: Short, scope: RcScope): CustomProperty {
+            val id = (scope as RcScopeImpl).writer.nextId()
+            return CustomProperty(type, COLOR_RETURN, id)
         }
     }
 }

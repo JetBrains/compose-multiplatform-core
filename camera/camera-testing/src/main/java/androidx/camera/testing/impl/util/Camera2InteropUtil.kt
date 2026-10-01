@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.camera.testing.impl.util
 
 import android.hardware.camera2.CameraCaptureSession
@@ -242,7 +244,8 @@ public object Camera2InteropUtil {
             throwAtTimeout: Boolean = true,
             verifyBlock:
                 (
-                    captureRequests: List<CaptureRequest>, captureResults: List<TotalCaptureResult>,
+                    captureRequests: List<CaptureRequest>,
+                    captureResults: List<TotalCaptureResult>,
                 ) -> Boolean =
                 { _, _ ->
                     true
@@ -268,7 +271,8 @@ public object Camera2InteropUtil {
             numOfCaptures: Int = _numOfCaptures,
             verifyBlock:
                 (
-                    captureRequests: List<CaptureRequest>, captureResults: List<TotalCaptureResult>,
+                    captureRequests: List<CaptureRequest>,
+                    captureResults: List<TotalCaptureResult>,
                 ) -> Boolean =
                 { _, _ ->
                     true
@@ -336,7 +340,7 @@ public object Camera2InteropUtil {
                         } else {
                             signal.completeExceptionally(
                                 TimeoutException(
-                                    "Test doesn't complete after waiting for $_numOfCaptures frames."
+                                    "Test doesn't complete after waiting for $initialCount frames."
                                 )
                             )
                         }
@@ -354,10 +358,13 @@ public object Camera2InteropUtil {
         val captureResults: MutableList<TotalCaptureResult> = mutableListOf(),
         val verifyBlock:
             (
-                captureRequests: List<CaptureRequest>, captureResults: List<TotalCaptureResult>,
+                captureRequests: List<CaptureRequest>,
+                captureResults: List<TotalCaptureResult>,
             ) -> Boolean =
             { _, _ ->
                 true
             },
-    )
+    ) {
+        internal val initialCount = count
+    }
 }

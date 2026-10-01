@@ -17,9 +17,14 @@
 package androidx.compose.remote.integration.demos.main
 
 import androidx.compose.material3.Text
+import androidx.compose.remote.integration.demos.integration.DragPropagationDemo
 import androidx.compose.remote.integration.demos.integration.GesturePropagationDemo
+import androidx.compose.remote.integration.demos.integration.GesturePropagationViewDemo
+import androidx.compose.remote.integration.demos.integration.HorizontalDragPropagationDemo
 import androidx.compose.remote.integration.demos.layout.RemoteBoxAlignmentsDemo
+import androidx.compose.remote.integration.demos.layout.RemoteFitBoxSharedElementsDemo
 import androidx.compose.remote.integration.demos.layout.RemoteFlowRowDemo
+import androidx.compose.remote.integration.demos.layout.RemoteStateLayoutSharedElementsDemo
 import androidx.compose.remote.integration.demos.layout.RemoteStateLayoutSimpleDemo
 import androidx.compose.remote.integration.demos.modifier.AlphaDemo
 import androidx.compose.remote.integration.demos.modifier.ClickableDemo
@@ -36,6 +41,7 @@ import androidx.compose.remote.integration.demos.modifier.scroll.NestedSnapScrol
 import androidx.compose.remote.integration.demos.modifier.scroll.VerticalScrollDemo
 import androidx.compose.remote.integration.demos.modifier.scroll.VerticalSnapScrollDemo
 import androidx.compose.remote.integration.demos.player.BitmapLoaderDemo
+import androidx.compose.remote.integration.demos.player.RemoteAnnotatedStringDemo
 import androidx.compose.remote.integration.demos.settings.SettingsScreen
 import androidx.compose.runtime.Composable
 
@@ -43,6 +49,8 @@ private object ScreenKeys {
     const val REMOTE_BOX_ALIGNMENT = "REMOTE_BOX_ALIGNMENT"
     const val REMOTE_FLOW_ROW = "REMOTE_FLOW_ROW"
     const val REMOTE_STATE_LAYOUT = "REMOTE_STATE_LAYOUT"
+    const val REMOTE_STATE_LAYOUT_SHARED_ELEMENTS = "REMOTE_STATE_LAYOUT_SHARED_ELEMENTS"
+    const val REMOTE_FIT_BOX_SHARED_ELEMENTS = "REMOTE_FIT_BOX_SHARED_ELEMENTS"
     const val CLICKABLE = "CLICKABLE"
     const val COMBINED_CLICKABLE = "COMBINED_CLICKABLE"
     const val PADDING = "PADDING"
@@ -58,7 +66,11 @@ private object ScreenKeys {
     const val NESTED_SNAP_SCROLL = "NESTED_SNAP_SCROLL"
     const val TOUCH_ACTION = "TOUCH_ACTION"
     const val BITMAP_LOADER = "BITMAP_LOADER"
+    const val REMOTE_ANNOTATED_STRING = "REMOTE_ANNOTATED_STRING"
     const val GESTURE_PROPAGATION = "GESTURE_PROPAGATION"
+    const val GESTURE_PROPAGATION_VIEW = "GESTURE_PROPAGATION_VIEW"
+    const val DRAG_PROPAGATION = "REMOTE_PLAYER_DRAG_PROPAGATION"
+    const val HORIZONTAL_DRAG_PROPAGATION = "REMOTE_PLAYER_HORIZONTAL_DRAG_PROPAGATION"
     const val SETTINGS = "SETTINGS"
 }
 
@@ -68,6 +80,8 @@ fun ComposableScreenNavigation(key: String, onNavigateUp: () -> Unit) {
         ScreenKeys.REMOTE_BOX_ALIGNMENT -> RemoteBoxAlignmentsDemo()
         ScreenKeys.REMOTE_FLOW_ROW -> RemoteFlowRowDemo()
         ScreenKeys.REMOTE_STATE_LAYOUT -> RemoteStateLayoutSimpleDemo()
+        ScreenKeys.REMOTE_STATE_LAYOUT_SHARED_ELEMENTS -> RemoteStateLayoutSharedElementsDemo()
+        ScreenKeys.REMOTE_FIT_BOX_SHARED_ELEMENTS -> RemoteFitBoxSharedElementsDemo()
         ScreenKeys.PADDING -> PaddingDemo()
         ScreenKeys.ALPHA -> AlphaDemo()
         ScreenKeys.ROTATE -> RotateDemo()
@@ -83,7 +97,11 @@ fun ComposableScreenNavigation(key: String, onNavigateUp: () -> Unit) {
         ScreenKeys.COMBINED_CLICKABLE -> CombinedClickableDemo()
         ScreenKeys.TOUCH_ACTION -> TouchActionDemo()
         ScreenKeys.BITMAP_LOADER -> BitmapLoaderDemo()
+        ScreenKeys.REMOTE_ANNOTATED_STRING -> RemoteAnnotatedStringDemo()
         ScreenKeys.GESTURE_PROPAGATION -> GesturePropagationDemo()
+        ScreenKeys.GESTURE_PROPAGATION_VIEW -> GesturePropagationViewDemo()
+        ScreenKeys.DRAG_PROPAGATION -> DragPropagationDemo()
+        ScreenKeys.HORIZONTAL_DRAG_PROPAGATION -> HorizontalDragPropagationDemo()
         ScreenKeys.SETTINGS -> SettingsScreen()
         else -> Text("Unknown screen: $key")
     }
@@ -111,6 +129,14 @@ val Screens =
                             ComposableScreen(
                                 key = ScreenKeys.REMOTE_STATE_LAYOUT,
                                 title = "RemoteStateLayout",
+                            ),
+                            ComposableScreen(
+                                key = ScreenKeys.REMOTE_STATE_LAYOUT_SHARED_ELEMENTS,
+                                title = "RemoteStateLayout Shared Elements",
+                            ),
+                            ComposableScreen(
+                                key = ScreenKeys.REMOTE_FIT_BOX_SHARED_ELEMENTS,
+                                title = "RemoteFitBox Shared Elements",
                             ),
                         ),
                 ),
@@ -164,7 +190,14 @@ val Screens =
                     title = "Player",
                     screens =
                         listOf(
-                            ComposableScreen(key = ScreenKeys.BITMAP_LOADER, title = "BitmapLoader")
+                            ComposableScreen(
+                                key = ScreenKeys.BITMAP_LOADER,
+                                title = "BitmapLoader",
+                            ),
+                            ComposableScreen(
+                                key = ScreenKeys.REMOTE_ANNOTATED_STRING,
+                                title = "Custom AnnotatedString",
+                            ),
                         ),
                 ),
                 Category(
@@ -175,7 +208,19 @@ val Screens =
                             ComposableScreen(
                                 key = ScreenKeys.GESTURE_PROPAGATION,
                                 title = "Gesture Propagation",
-                            )
+                            ),
+                            ComposableScreen(
+                                key = ScreenKeys.GESTURE_PROPAGATION_VIEW,
+                                title = "Gesture Propagation View Demo",
+                            ),
+                            ComposableScreen(
+                                key = ScreenKeys.DRAG_PROPAGATION,
+                                title = "Drag Propagation",
+                            ),
+                            ComposableScreen(
+                                key = ScreenKeys.HORIZONTAL_DRAG_PROPAGATION,
+                                title = "Horizontal Drag Propagation",
+                            ),
                         ),
                 ),
             ),

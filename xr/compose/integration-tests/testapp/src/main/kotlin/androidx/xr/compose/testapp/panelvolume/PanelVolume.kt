@@ -47,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -59,12 +60,11 @@ import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.draw.scale
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
+import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
-import androidx.xr.compose.subspace.layout.transformingMovable
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
-import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.scene
@@ -81,7 +81,7 @@ class PanelVolume : ComponentActivity() {
         val panelSize = SubspaceModifier.width(550.dp).height(300.dp)
         var checked by remember { mutableStateOf(false) }
 
-        SpatialPanel(modifier = panelSize.offset((-500).dp, 0.dp, 0.dp).transformingMovable()) {
+        SpatialPanel(modifier = panelSize.offset((-500).dp, 0.dp, 0.dp).movable()) {
             CommonTestScaffold(
                 title = "Panel Volume Test case",
                 showBottomBar = true,
@@ -128,17 +128,18 @@ class PanelVolume : ComponentActivity() {
     private fun SpatialContent() {
         val session = LocalSession.current ?: return
         var arrows by remember { mutableStateOf<GltfModel?>(null) }
-        val gltfEntity =
-            arrows?.let {
-                remember {
-                    GltfModelEntity.create(session, it, parent = session.scene.activitySpace)
-                }
+        val gltfEntity = arrows?.let {
+            remember {
+                GltfModelEntity.create(session, it, parent = session.scene.activitySpace)
             }
+        }
 
         LaunchedEffect(Unit) {
             arrows = GltfModel.create(session, Paths.get("models", "xyzArrows.glb"))
         }
 
+        val density = LocalDensity.current
+        val pixelDensity = session.scene.virtualPixelDensity
         val infiniteTransition = rememberInfiniteTransition()
         val panelYOffset by
             infiniteTransition.animateValue(
@@ -153,7 +154,7 @@ class PanelVolume : ComponentActivity() {
                     .height(200.dp)
                     .offset(y = panelYOffset)
                     .testTag("RootPanel")
-                    .transformingMovable()
+                    .movable()
         ) {
             Box(
                 modifier = Modifier.background(Color.LightGray).fillMaxSize(),
@@ -167,7 +168,16 @@ class PanelVolume : ComponentActivity() {
                                 factory = { gltfEntity },
                                 modifier =
                                     SubspaceModifier.scale(.3f)
-                                        .offset(x = 1.meters.toDp(), z = -0.5.meters.toDp()),
+                                        .offset(
+                                            x =
+                                                with(density) {
+                                                    pixelDensity.convertMetersToPixels(1f).toDp()
+                                                },
+                                            z =
+                                                with(density) {
+                                                    pixelDensity.convertMetersToPixels(-0.5f).toDp()
+                                                },
+                                        ),
                             )
                         }
                     }

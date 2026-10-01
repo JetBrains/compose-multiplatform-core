@@ -18,29 +18,38 @@ package androidx.compose.runtime.tracing
 
 import android.content.Context
 import androidx.compose.runtime.Composer
-import androidx.compose.runtime.CompositionTracer
 import androidx.compose.runtime.InternalComposeTracingApi
+import androidx.compose.runtime.tracing.internal.RecompositionTracerState
+import androidx.compose.runtime.tracing.internal.RecompositionTracingEnabledReceiver
+import androidx.startup.AppInitializer
 import androidx.startup.Initializer
-import androidx.tracing.perfetto.PerfettoSdkTrace
+
+// This is the initializer responsible in bootstrapping Tracing 2.0.
+// We cannot refer to this class directly, because apps in g3 are not using initializers at all.
+// They are expected to use something like Dagger to bootstrap tracing.
+// This also makes it possible for apps using TikTok tracing to do the right thing.
+internal const val CONNECTED_PROFILER_TRACING_INITIALIZER =
+    "androidx.tracing.profiler.ConnectedProfilerTracingInitializer"
 
 /**
- * Configures Perfetto SDK tracing in the app allowing for capturing Compose specific information
- * (e.g. Composable function names) in a Perfetto SDK trace
+ * Configures AndroidX Tracing in the app allowing for capturing Compose specific information (e.g.
+ * Composable function names) in a AndroidX trace
  */
 @OptIn(InternalComposeTracingApi::class)
 public class ComposeTracingInitializer : Initializer<Unit> {
     override fun create(context: Context) {
-        Composer.setTracer(
-            object : CompositionTracer {
-                override fun traceEventStart(key: Int, dirty1: Int, dirty2: Int, info: String) =
-                    PerfettoSdkTrace.beginSection(info)
+        val appInitializer = AppInitializer.getInstance(context)
+        val composeTracer = appInitializer.initializeComponent(ComposeTracerInitializer::class.java)
+        Composer.setTracer(composeTracer)
 
-                override fun traceEventEnd() = PerfettoSdkTrace.endSection()
-
-                override fun isTraceInProgress(): Boolean = PerfettoSdkTrace.isEnabled
-            }
-        )
+        if (RecompositionTracingEnabledReceiver.isEnabled(context)) {
+            RecompositionTracerState.startTracing(context)
+        }
     }
 
-    override fun dependencies(): List<Class<out Initializer<*>>> = emptyList()
+    override fun dependencies(): List<Class<out Initializer<*>>> {
+        @Suppress("UNCHECKED_CAST")
+        val klass = Class.forName(CONNECTED_PROFILER_TRACING_INITIALIZER) as Class<Initializer<*>>?
+        return listOfNotNull(ComposeTracerInitializer::class.java, klass)
+    }
 }

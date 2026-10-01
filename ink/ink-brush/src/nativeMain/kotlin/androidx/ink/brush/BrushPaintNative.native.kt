@@ -16,34 +16,44 @@
 
 package androidx.ink.brush
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
+import androidx.ink.nativeloader.cinterop.BrushPaintNative_calculateMinimumRequiredVersion
 import androidx.ink.nativeloader.cinterop.BrushPaintNative_create
 import androidx.ink.nativeloader.cinterop.BrushPaintNative_free
+import androidx.ink.nativeloader.cinterop.BrushPaintNative_getAnimationRepeatModeMinimumRequiredVersion
+import androidx.ink.nativeloader.cinterop.BrushPaintNative_getBlendModeMinimumRequiredVersion
 import androidx.ink.nativeloader.cinterop.BrushPaintNative_getColorFunctionCount
 import androidx.ink.nativeloader.cinterop.BrushPaintNative_getColorFunctionParametersTypeInt
 import androidx.ink.nativeloader.cinterop.BrushPaintNative_getSelfOverlapInt
 import androidx.ink.nativeloader.cinterop.BrushPaintNative_getTextureLayerCount
 import androidx.ink.nativeloader.cinterop.BrushPaintNative_getTextureLayerMappingInt
+import androidx.ink.nativeloader.cinterop.BrushPaintNative_getTextureOriginMinimumRequiredVersion
+import androidx.ink.nativeloader.cinterop.BrushPaintNative_getTextureSizeUnitMinimumRequiredVersion
+import androidx.ink.nativeloader.cinterop.BrushPaintNative_getTextureWrapMinimumRequiredVersion
 import androidx.ink.nativeloader.cinterop.BrushPaintNative_isCompatibleWithMeshFormat
 import androidx.ink.nativeloader.cinterop.BrushPaintNative_newCopyOfColorFunction
 import androidx.ink.nativeloader.cinterop.BrushPaintNative_newCopyOfTextureLayer
+import androidx.ink.nativeloader.cinterop.ColorFunctionNative_calculateMinimumRequiredVersion
 import androidx.ink.nativeloader.cinterop.ColorFunctionNative_computeReplaceColorLong
 import androidx.ink.nativeloader.cinterop.ColorFunctionNative_computeTransformedColorLong
+import androidx.ink.nativeloader.cinterop.ColorFunctionNative_createChromaMultiplier
 import androidx.ink.nativeloader.cinterop.ColorFunctionNative_createHueOffset
-import androidx.ink.nativeloader.cinterop.ColorFunctionNative_createLuminosityOffset
+import androidx.ink.nativeloader.cinterop.ColorFunctionNative_createLightnessOffset
 import androidx.ink.nativeloader.cinterop.ColorFunctionNative_createOpacityMultiplier
 import androidx.ink.nativeloader.cinterop.ColorFunctionNative_createReplaceColor
-import androidx.ink.nativeloader.cinterop.ColorFunctionNative_createSaturationMultiplier
 import androidx.ink.nativeloader.cinterop.ColorFunctionNative_free
+import androidx.ink.nativeloader.cinterop.ColorFunctionNative_getChromaMultiplier
 import androidx.ink.nativeloader.cinterop.ColorFunctionNative_getHueOffsetDegrees
-import androidx.ink.nativeloader.cinterop.ColorFunctionNative_getLuminosityOffset
+import androidx.ink.nativeloader.cinterop.ColorFunctionNative_getLightnessOffset
 import androidx.ink.nativeloader.cinterop.ColorFunctionNative_getOpacityMultiplier
-import androidx.ink.nativeloader.cinterop.ColorFunctionNative_getSaturationMultiplier
 import androidx.ink.nativeloader.cinterop.StampingTextureNative_create
 import androidx.ink.nativeloader.cinterop.StampingTextureNative_getAnimationColumns
 import androidx.ink.nativeloader.cinterop.StampingTextureNative_getAnimationDurationMillis
 import androidx.ink.nativeloader.cinterop.StampingTextureNative_getAnimationFrames
+import androidx.ink.nativeloader.cinterop.StampingTextureNative_getAnimationRepeatModeInt
 import androidx.ink.nativeloader.cinterop.StampingTextureNative_getAnimationRows
 import androidx.ink.nativeloader.cinterop.StampingTextureNative_getClientTextureId
+import androidx.ink.nativeloader.cinterop.TextureLayerNative_calculateMinimumRequiredVersion
 import androidx.ink.nativeloader.cinterop.TextureLayerNative_free
 import androidx.ink.nativeloader.cinterop.TextureLayerNative_getBlendModeInt
 import androidx.ink.nativeloader.cinterop.TextureLayerNative_getMappingInt
@@ -64,28 +74,27 @@ import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.toKString
 import kotlinx.cinterop.usePinned
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, InkInternalOnlyApi::class)
 actual internal object BrushPaintNative {
     actual fun create(
         textureLayerNativePointers: LongArray,
         colorFunctionNativePointers: LongArray,
         selfOverlapInt: Int,
-    ): Long =
-        textureLayerNativePointers.usePinned { pinnedTextureLayers ->
-            colorFunctionNativePointers.usePinned { pinnedColorFunctions ->
-                BrushPaintNative_create(
-                    jni_env_pass_through = null,
-                    if (textureLayerNativePointers.isEmpty()) null
-                    else pinnedTextureLayers.addressOf(0),
-                    textureLayerNativePointers.size,
-                    if (colorFunctionNativePointers.isEmpty()) null
-                    else pinnedColorFunctions.addressOf(0),
-                    colorFunctionNativePointers.size,
-                    selfOverlapInt,
-                    throwForNonOkStatusCallback,
-                )
-            }
+    ): Long = textureLayerNativePointers.usePinned { pinnedTextureLayers ->
+        colorFunctionNativePointers.usePinned { pinnedColorFunctions ->
+            BrushPaintNative_create(
+                jni_env_pass_through = null,
+                if (textureLayerNativePointers.isEmpty()) null
+                else pinnedTextureLayers.addressOf(0),
+                textureLayerNativePointers.size,
+                if (colorFunctionNativePointers.isEmpty()) null
+                else pinnedColorFunctions.addressOf(0),
+                colorFunctionNativePointers.size,
+                selfOverlapInt,
+                throwForNonOkStatusCallback,
+            )
         }
+    }
 
     actual fun free(nativePointer: Long) = BrushPaintNative_free(nativePointer)
 
@@ -114,6 +123,24 @@ actual internal object BrushPaintNative {
         nativePointer: Long,
         meshFormatNativePointer: Long,
     ): Boolean = BrushPaintNative_isCompatibleWithMeshFormat(nativePointer, meshFormatNativePointer)
+
+    actual fun calculateMinimumRequiredVersion(nativePointer: Long): Int =
+        BrushPaintNative_calculateMinimumRequiredVersion(nativePointer)
+
+    actual fun getBlendModeMinimumRequiredVersion(blendModeInt: Int): Int =
+        BrushPaintNative_getBlendModeMinimumRequiredVersion(blendModeInt)
+
+    actual fun getTextureWrapMinimumRequiredVersion(wrapInt: Int): Int =
+        BrushPaintNative_getTextureWrapMinimumRequiredVersion(wrapInt)
+
+    actual fun getTextureOriginMinimumRequiredVersion(originInt: Int): Int =
+        BrushPaintNative_getTextureOriginMinimumRequiredVersion(originInt)
+
+    actual fun getTextureSizeUnitMinimumRequiredVersion(sizeUnitInt: Int): Int =
+        BrushPaintNative_getTextureSizeUnitMinimumRequiredVersion(sizeUnitInt)
+
+    actual fun getAnimationRepeatModeMinimumRequiredVersion(animationRepeatModeInt: Int): Int =
+        BrushPaintNative_getAnimationRepeatModeMinimumRequiredVersion(animationRepeatModeInt)
 }
 
 @OptIn(ExperimentalForeignApi::class)
@@ -125,9 +152,12 @@ actual internal object TextureLayerNative {
 
     actual fun getBlendModeInt(nativePointer: Long): Int =
         TextureLayerNative_getBlendModeInt(nativePointer)
+
+    actual fun calculateMinimumRequiredVersion(nativePointer: Long): Int =
+        TextureLayerNative_calculateMinimumRequiredVersion(nativePointer)
 }
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, InkInternalOnlyApi::class)
 actual internal object TilingTextureNative {
     actual fun create(
         clientTextureId: String,
@@ -187,7 +217,7 @@ actual internal object TilingTextureNative {
         TilingTextureNative_getWrapYInt(nativePointer)
 }
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, InkInternalOnlyApi::class)
 actual internal object StampingTextureNative {
     actual fun create(
         clientTextureId: String,
@@ -195,6 +225,7 @@ actual internal object StampingTextureNative {
         animationRows: Int,
         animationColumns: Int,
         animationDurationMillis: Long,
+        animationRepeatMode: Int,
         blendMode: Int,
     ): Long =
         StampingTextureNative_create(
@@ -204,6 +235,7 @@ actual internal object StampingTextureNative {
             animationRows,
             animationColumns,
             animationDurationMillis,
+            animationRepeatMode,
             blendMode,
             throwForNonOkStatusCallback,
         )
@@ -222,9 +254,12 @@ actual internal object StampingTextureNative {
 
     actual fun getAnimationDurationMillis(nativePointer: Long): Long =
         StampingTextureNative_getAnimationDurationMillis(nativePointer)
+
+    actual fun getAnimationRepeatModeInt(nativePointer: Long): Int =
+        StampingTextureNative_getAnimationRepeatModeInt(nativePointer)
 }
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, InkInternalOnlyApi::class)
 actual internal object ColorFunctionNative {
     actual fun createOpacityMultiplier(multiplier: Float): Long =
         ColorFunctionNative_createOpacityMultiplier(
@@ -240,15 +275,15 @@ actual internal object ColorFunctionNative {
             throwForNonOkStatusCallback,
         )
 
-    actual fun createSaturationMultiplier(multiplier: Float): Long =
-        ColorFunctionNative_createSaturationMultiplier(
+    actual fun createChromaMultiplier(multiplier: Float): Long =
+        ColorFunctionNative_createChromaMultiplier(
             jni_env_pass_through = null,
             multiplier,
             throwForNonOkStatusCallback,
         )
 
-    actual fun createLuminosityOffset(offset: Float): Long =
-        ColorFunctionNative_createLuminosityOffset(
+    actual fun createLightnessOffset(offset: Float): Long =
+        ColorFunctionNative_createLightnessOffset(
             jni_env_pass_through = null,
             offset,
             throwForNonOkStatusCallback,
@@ -279,11 +314,11 @@ actual internal object ColorFunctionNative {
     actual fun getHueOffsetDegrees(nativePointer: Long): Float =
         ColorFunctionNative_getHueOffsetDegrees(nativePointer)
 
-    actual fun getSaturationMultiplier(nativePointer: Long): Float =
-        ColorFunctionNative_getSaturationMultiplier(nativePointer)
+    actual fun getChromaMultiplier(nativePointer: Long): Float =
+        ColorFunctionNative_getChromaMultiplier(nativePointer)
 
-    actual fun getLuminosityOffset(nativePointer: Long): Float =
-        ColorFunctionNative_getLuminosityOffset(nativePointer)
+    actual fun getLightnessOffset(nativePointer: Long): Float =
+        ColorFunctionNative_getLightnessOffset(nativePointer)
 
     actual fun computeReplaceColorLong(nativePointer: Long): Long =
         ColorFunctionNative_computeReplaceColorLong(
@@ -310,4 +345,7 @@ actual internal object ColorFunctionNative {
             colorSpace,
             composeColorLongFromComponentsCallback,
         )
+
+    actual fun calculateMinimumRequiredVersion(nativePointer: Long): Int =
+        ColorFunctionNative_calculateMinimumRequiredVersion(nativePointer)
 }

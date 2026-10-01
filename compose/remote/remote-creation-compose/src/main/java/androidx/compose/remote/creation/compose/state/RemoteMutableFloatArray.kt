@@ -22,6 +22,7 @@ import androidx.collection.MutableIntObjectMap
 import androidx.compose.remote.core.operations.Utils
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
+import androidx.compose.runtime.annotation.RememberInComposition
 
 /**
  * Represents a mutable array of floats.
@@ -31,6 +32,7 @@ import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationSta
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteMutableFloatArray
 /** Constructs a [RemoteMutableFloatArray] with [size] elements which are initialized to 0 */
+@RememberInComposition
 constructor(public val size: Int) : BaseRemoteState<List<RemoteFloat>>(RemoteStateArrayKey(size)) {
 
     public override val constantValueOrNull: List<RemoteFloat>? = null
@@ -47,10 +49,13 @@ constructor(public val size: Int) : BaseRemoteState<List<RemoteFloat>>(RemoteSta
         }
     private var generation = 0
 
-    internal enum class OperationKey : DebuggableOperation {
+    internal enum class OperationKey : RemoteOperation {
         Create {
             override fun toDebugString(args: List<RemoteStateCacheKey>) =
                 "mutableFloatArrayOf(${args.joinToDebugString()})"
+
+            override fun reconstruct(args: List<BaseRemoteState<*>>): BaseRemoteState<*> =
+                RemoteMutableFloatArray(args.size)
         },
         Get {
             override val precedence: Int
@@ -58,6 +63,9 @@ constructor(public val size: Int) : BaseRemoteState<List<RemoteFloat>>(RemoteSta
 
             override fun toDebugString(args: List<RemoteStateCacheKey>) =
                 args.formatArrayAccess(precedence)
+
+            override fun reconstruct(args: List<BaseRemoteState<*>>): BaseRemoteState<*> =
+                (args[0] as RemoteMutableFloatArray)[args[1] as RemoteInt]
         },
     }
 

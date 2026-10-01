@@ -17,6 +17,7 @@
 package androidx.compose.remote.creation.compose.capture
 
 import android.content.Context
+import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.Size
@@ -27,6 +28,21 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 
 private const val baseDensity = 160f
+
+/** Density behavior for the RemoteCompose document. */
+public enum class RemoteDensityBehavior(internal val value: Int) {
+    /**
+     * Legacy mode. Values are interpreted as pixels, but historically some layout properties might
+     * have behaved differently.
+     */
+    Legacy(CoreDocument.DENSITY_BEHAVIOR_LEGACY),
+
+    /** Values are interpreted as pixels. No density scaling is applied by the player. */
+    Pixels(CoreDocument.DENSITY_BEHAVIOR_PIXELS),
+
+    /** Values are interpreted as DP. Density scaling is applied by the player. */
+    Dp(CoreDocument.DENSITY_BEHAVIOR_DP),
+}
 
 /**
  * Represents the virtual display metrics and configuration used as guide values for rendering a
@@ -40,10 +56,12 @@ private const val baseDensity = 160f
  * @property isInspectionMode Whether the capture is happening in an inspection or preview
  *   environment (e.g. inside an IDE preview). Defaults to false.
  */
-public class RemoteCreationDisplayInfo(
+public class RemoteCreationDisplayInfo
+internal constructor(
     public val size: Size,
     public val density: Density,
     public val isInspectionMode: Boolean = false,
+    public val densityBehavior: RemoteDensityBehavior = RemoteDensityBehavior.Legacy,
 )
 
 /**
@@ -56,6 +74,8 @@ public class RemoteCreationDisplayInfo(
  *   density scaling.
  * @param isInspectionMode Whether the capture is happening in inspection mode (e.g. for a preview).
  *   Defaults to false.
+ * @param densityBehavior The [RemoteDensityBehavior] to use. Defaults to
+ *   [RemoteDensityBehavior.Legacy].
  * @return A [RemoteCreationDisplayInfo] object containing the specified display metrics.
  */
 public fun RemoteCreationDisplayInfo(
@@ -64,11 +84,13 @@ public fun RemoteCreationDisplayInfo(
     densityDpi: Int,
     fontScale: Float = 1.0f,
     isInspectionMode: Boolean = false,
+    densityBehavior: RemoteDensityBehavior = RemoteDensityBehavior.Legacy,
 ): RemoteCreationDisplayInfo {
     return RemoteCreationDisplayInfo(
         Size(width.toFloat(), height.toFloat()),
         Density(densityDpi / baseDensity, fontScale),
         isInspectionMode,
+        densityBehavior,
     )
 }
 
@@ -84,6 +106,8 @@ public fun RemoteCreationDisplayInfo(
  * @param fontScale The user preference for the scaling factor for fonts, relative to the base
  *   density scaling.
  * @param isInspectionMode Whether the capture is happening in inspection mode (e.g. for a preview).
+ * @param densityBehavior The [RemoteDensityBehavior] to use. Defaults to
+ *   [RemoteDensityBehavior.Legacy].
  * @return A [RemoteCreationDisplayInfo] object containing the specified display metrics.
  */
 @Composable
@@ -93,8 +117,16 @@ public fun createCreationDisplayInfo(
     densityDpi: Int = LocalConfiguration.current.densityDpi,
     fontScale: Float = LocalConfiguration.current.fontScale,
     isInspectionMode: Boolean = LocalInspectionMode.current,
+    densityBehavior: RemoteDensityBehavior = RemoteDensityBehavior.Legacy,
 ): RemoteCreationDisplayInfo {
-    return RemoteCreationDisplayInfo(width, height, densityDpi, fontScale, isInspectionMode)
+    return RemoteCreationDisplayInfo(
+        width = width,
+        height = height,
+        densityDpi = densityDpi,
+        densityBehavior = densityBehavior,
+        fontScale = fontScale,
+        isInspectionMode = isInspectionMode,
+    )
 }
 
 /**
@@ -107,6 +139,8 @@ public fun createCreationDisplayInfo(
  * @param size The size of the display.
  * @param isInspectionMode Whether the capture is happening in inspection mode (e.g. for a preview).
  *   Defaults to false.
+ * @param densityBehavior The [RemoteDensityBehavior] to use. Defaults to
+ *   [RemoteDensityBehavior.Legacy].
  * @return A [RemoteCreationDisplayInfo] object containing the display metrics from the context.
  */
 public fun createCreationDisplayInfo(
@@ -117,6 +151,7 @@ public fun createCreationDisplayInfo(
             height = context.resources.displayMetrics.heightPixels.toFloat(),
         ),
     isInspectionMode: Boolean = false,
+    densityBehavior: RemoteDensityBehavior = RemoteDensityBehavior.Legacy,
 ): RemoteCreationDisplayInfo {
     val resources = context.resources
     return RemoteCreationDisplayInfo(
@@ -125,6 +160,7 @@ public fun createCreationDisplayInfo(
         densityDpi = resources.displayMetrics.densityDpi,
         fontScale = resources.configuration.fontScale,
         isInspectionMode = isInspectionMode,
+        densityBehavior = densityBehavior,
     )
 }
 
@@ -141,4 +177,5 @@ internal fun RemoteCreationDisplayInfo.toCreationDisplayInfo() =
         /* width = */ this.size.width.toInt(),
         /* height = */ this.size.height.toInt(),
         /* mDensityDpi = */ (this.density.density * baseDensity).toInt(),
+        /* densityBehavior = */ this.densityBehavior.value,
     )

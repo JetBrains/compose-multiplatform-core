@@ -110,11 +110,10 @@ class LazyColumnMouseHoverTest {
                 .fetchSemanticsNodes()
 
         // 2. Find the node under the mouse
-        val nodeUnderMouse =
-            nodes.firstOrNull { node ->
-                // Use boundsInRoot to check if the point is inside the item
-                node.boundsInRoot.contains(mousePointer)
-            }
+        val nodeUnderMouse = nodes.firstOrNull { node ->
+            // Use boundsInRoot to check if the point is inside the item
+            node.boundsInRoot.contains(mousePointer)
+        }
 
         val itemTagUnderMouse = nodeUnderMouse?.config?.get(SemanticsProperties.TestTag)
 
@@ -184,11 +183,10 @@ class LazyColumnMouseHoverTest {
                 .fetchSemanticsNodes()
 
         // 2. Find the node under the mouse
-        val nodeUnderMouse =
-            nodes.firstOrNull { node ->
-                // Use boundsInRoot to check if the point is inside the item
-                node.boundsInRoot.contains(mousePointer)
-            }
+        val nodeUnderMouse = nodes.firstOrNull { node ->
+            // Use boundsInRoot to check if the point is inside the item
+            node.boundsInRoot.contains(mousePointer)
+        }
 
         val itemTagUnderMouse = nodeUnderMouse?.config?.get(SemanticsProperties.TestTag)
 
@@ -233,7 +231,7 @@ class LazyColumnMouseHoverTest {
             }
         }
 
-        val mousePointer = Offset(10f, 10f)
+        val mousePointer = with(rule.density) { Offset(5.dp.toPx(), 5.dp.toPx()) }
 
         // Hover over the first item in list
         rule.onNodeWithTag("lazyList").performMouseInput { enter(mousePointer) }
@@ -262,11 +260,10 @@ class LazyColumnMouseHoverTest {
                 .fetchSemanticsNodes()
 
         // 2. Find the node under the mouse
-        val nodeUnderMouse =
-            nodes.firstOrNull { node ->
-                // Use boundsInRoot to check if the point is inside the item
-                node.boundsInRoot.contains(mousePointer)
-            }
+        val nodeUnderMouse = nodes.firstOrNull { node ->
+            // Use boundsInRoot to check if the point is inside the item
+            node.boundsInRoot.contains(mousePointer)
+        }
 
         val itemTagUnderMouse = nodeUnderMouse?.config?.get(SemanticsProperties.TestTag)
 

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:kotlin.OptIn(androidx.xr.scenecore.ExperimentalGltfAnimationApi::class)
+
 package androidx.xr.scenecore.testapp.environment
 
 import android.annotation.SuppressLint
@@ -22,11 +24,11 @@ import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -35,7 +37,6 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.AlphaMode
-import androidx.xr.scenecore.GltfAnimationStartOptions
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.ImageBasedLightingAsset
@@ -82,7 +83,7 @@ class EnvironmentActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        WindowCompat.enableEdgeToEdge(window)
         setContentView(R.layout.activity_environment)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -266,9 +267,13 @@ class EnvironmentActivity : AppCompatActivity() {
             geometryEntity = dragonEntity
             dragonEntity.setEnabled(false)
             dragonEntity.nodes.find { it.name == "Dragon" }?.setMaterialOverride(khronosPbrMaterial)
-            dragonEntity.animations
+            dragonEntity
+                .getAnimations()
                 .find { it.name == "Fast_Flying" }
-                ?.start(GltfAnimationStartOptions(shouldLoop = true))
+                ?.apply {
+                    loop = true
+                    start()
+                }
 
             setImageBasedLightingAssetAndGeometry(
                 spatialEnvironmentPreference?.imageBasedLightingAsset,

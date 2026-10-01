@@ -48,7 +48,7 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) :
          * Returns the left hand.
          *
          * @param session the [Session] to retrieve the hand from
-         * @throws IllegalStateException if [androidx.xr.runtime.Config.handTracking] is set to
+         * @throws [IllegalStateException] if [androidx.xr.runtime.Config.handTracking] is set to
          *   [HandTrackingMode.DISABLED]
          * @sample androidx.xr.arcore.samples.getLeftHand
          */
@@ -69,7 +69,7 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) :
          * Returns the right hand.
          *
          * @param session the [Session] to retrieve the hand from
-         * @throws IllegalStateException if [androidx.xr.runtime.Config.handTracking] is set to
+         * @throws [IllegalStateException] if [androidx.xr.runtime.Config.handTracking] is set to
          *   [HandTrackingMode.DISABLED]
          * @sample androidx.xr.arcore.samples.getRightHand
          */
@@ -91,7 +91,7 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) :
          *
          * @param resolver the [ContentResolver] to use to retrieve the setting
          * @return the [HandSide] of the user's primary hand. If the setting is not configured,
-         *   returns [HandSide.UNKNOWN].
+         *   returns [HandSide.UNKNOWN]
          */
         @JvmStatic
         public fun getPrimaryHandSide(resolver: ContentResolver): androidx.xr.arcore.HandSide =
@@ -123,7 +123,7 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) :
      * @property handJointsBuffer the [FloatBuffer] containing the current state of the hand
      * @property handJoints a map of [HandJointType] to [Pose] representing the current pose of each
      *   joint in the hand
-     * @property owner self-reference to the object that owns this state.
+     * @property owner self-reference to the object that owns this state
      */
     public class State
     internal constructor(
@@ -219,6 +219,17 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) :
             return result
         }
 
+        /**
+         * Returns a string representation of [Hand.State] for debugging.
+         *
+         * Note: Not intended for production use.
+         */
+        override fun toString(): String {
+            val bufferInfo =
+                "Buffer(capacity=${handJointsBuffer.capacity()}, limit=${handJointsBuffer.limit()})"
+            return "State(trackingState=$trackingState, handJointsBuffer=$bufferInfo)"
+        }
+
         private companion object {
             private const val FLOATS_PER_POSE = 7
         }
@@ -249,4 +260,11 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) :
     }
 
     override fun hashCode(): Int = runtimeHand.hashCode()
+
+    /**
+     * Returns a string representation of [Hand] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String = "Hand(state=${state.value})"
 }

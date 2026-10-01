@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
+@file:kotlin.OptIn(androidx.xr.scenecore.ExperimentalGltfAnimationApi::class)
+
 package androidx.xr.scenecore.testapp.model
 
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Button
@@ -35,7 +38,6 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.GltfAnimation
-import androidx.xr.scenecore.GltfAnimationStartOptions
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.scene
@@ -44,8 +46,6 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.slider.Slider
 import java.nio.file.Paths
 import java.util.Collections
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.toJavaDuration
 import kotlinx.coroutines.launch
 
 const val TAG = "GltfModelAnimationActivity"
@@ -62,6 +62,7 @@ class GltfModelAnimationActivity : AppCompatActivity() {
     private lateinit var stopPlayGltfButton: Button
     private lateinit var pausePlayGltfButton: Button
     private lateinit var resumePlayGltfButton: Button
+    private lateinit var stopAllAnimationsButton: Button
 
     // UI and variable related to 'Loop' animation setup
     private lateinit var loopToggleButton: ToggleButton
@@ -93,12 +94,6 @@ class GltfModelAnimationActivity : AppCompatActivity() {
 
     private lateinit var session: Session
 
-    private companion object {
-        const val STATE_PLAYING = "PLAYING"
-        const val STATE_STOPPED = "STOPPED"
-        const val STATE_PAUSED = "PAUSED"
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -125,9 +120,16 @@ class GltfModelAnimationActivity : AppCompatActivity() {
         stopPlayGltfButton = findViewById(R.id.stop_play)
         pausePlayGltfButton = findViewById(R.id.pause_play)
         resumePlayGltfButton = findViewById(R.id.resume_play)
+        stopAllAnimationsButton = findViewById(R.id.stop_all_animations)
 
         loopToggleButton = findViewById(R.id.loop_toggle_button)
         loopToggleButton.isChecked = false
+        loopToggleButton.setOnCheckedChangeListener { _, isChecked ->
+            if (selectedIndexAtAnimationList < 0 || animations.isEmpty()) {
+                return@setOnCheckedChangeListener
+            }
+            animations[selectedIndexAtAnimationList].loop = isChecked
+        }
 
         speedText = findViewById(R.id.speed_textview)
         speedSlider = findViewById(R.id.speed_slider)
@@ -135,6 +137,9 @@ class GltfModelAnimationActivity : AppCompatActivity() {
         seekCurrentTimeText = findViewById(R.id.seek_current_time_text)
         seekPlaySlider = findViewById(R.id.seek_time_second_slider)
         seekEndText = findViewById(R.id.seek_end_text)
+        seekCurrentTimeText.visibility = View.GONE
+        seekPlaySlider.visibility = View.GONE
+        seekEndText.visibility = View.GONE
 
         animationStateText = findViewById(R.id.animation_current_state_text)
         animationList = findViewById(R.id.autoCompleteTextView)
@@ -148,30 +153,10 @@ class GltfModelAnimationActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            val animationOptions =
-                GltfAnimationStartOptions(
-                    shouldLoop = loopToggleButton.isChecked,
-                    speed = speedSlider.value,
-                    seekStartTime = seekPlaySlider.value.toDouble().seconds.toJavaDuration(),
-                )
-
-            val animationOptions2 = animationOptions.copy()
-            Log.d(TAG, "animationOptions2 is ${animationOptions2.toString()}")
-
-            val animationOptions3 = animationOptions.copy(true)
-            Log.d(TAG, "animationOptions3 is ${animationOptions3.toString()}")
-
-            val animationOptions4 = animationOptions.copy(true, 2f)
-            Log.d(TAG, "animationOptions4 is ${animationOptions4.toString()}")
-
-            val animationOptions5 = animationOptions.copy(true, 2f, 1.seconds.toJavaDuration())
-            Log.d(TAG, "animationOptions5 is ${animationOptions5.toString()}")
-
-            val animationOptions6 =
-                animationOptions.copy(true, seekStartTime = (.5).seconds.toJavaDuration())
-            Log.d(TAG, "animationOptions6 is ${animationOptions6.toString()}")
-
-            animations[selectedIndexAtAnimationList].start(animationOptions)
+            val animation = animations[selectedIndexAtAnimationList]
+            animation.loop = loopToggleButton.isChecked
+            animation.speed = speedSlider.value
+            animation.start()
         }
 
         stopPlayGltfButton.setOnClickListener {
@@ -198,18 +183,10 @@ class GltfModelAnimationActivity : AppCompatActivity() {
             animations[selectedIndexAtAnimationList].resume()
         }
 
-        seekPlaySlider.addOnChangeListener { _, value, fromUser ->
+        stopAllAnimationsButton.setOnClickListener { gltfModelEntity?.stopAllAnimations() }
+
+        seekPlaySlider.addOnChangeListener { _, value, _ ->
             seekCurrentTimeText.text = "Start time=$value"
-
-            if (fromUser) {
-                if (selectedIndexAtAnimationList < 0 || animations.isEmpty()) {
-                    return@addOnChangeListener
-                }
-
-                animations[selectedIndexAtAnimationList].seekTo(
-                    value.toDouble().seconds.toJavaDuration()
-                )
-            }
         }
 
         speedSlider.addOnChangeListener { _, value, _ ->
@@ -219,7 +196,7 @@ class GltfModelAnimationActivity : AppCompatActivity() {
                 return@addOnChangeListener
             }
 
-            animations[selectedIndexAtAnimationList].setSpeed(value)
+            animations[selectedIndexAtAnimationList].speed = value
         }
 
         setAllUiEnabled(false)
@@ -271,11 +248,13 @@ class GltfModelAnimationActivity : AppCompatActivity() {
 
         if (gltfModelEntity != null) {
 
-            animations = gltfModelEntity!!.animations
+            animations = gltfModelEntity!!.getAnimations()
             Log.w(TAG, "Animation total count is ${animations.size - 1}")
 
             // setup spinner item to show options in spinner
             val options = ArrayList<String>()
+
+            var firstAnimationName: String? = null
 
             for (i in 0..<animations.size) {
 
@@ -291,22 +270,29 @@ class GltfModelAnimationActivity : AppCompatActivity() {
                 printAnimationInfo(animations[i])
 
                 setupCallback(animations[i])
+
+                if (firstAnimationName == null) firstAnimationName = name
+            }
+
+            firstAnimationName?.let { name ->
+                val animation = gltfModelEntity?.getAnimations()?.firstOrNull { it.name == name }
+                if (animation != null) {
+                    Log.d(TAG, "Get Animation by Name Successfully.")
+                } else {
+                    Log.d(TAG, "Get Animation by Name failed. Animation '$name' not found.")
+                }
             }
 
             val adapter = ArrayAdapter<String?>(this, android.R.layout.simple_spinner_item, options)
             animationList.setAdapter(adapter)
-            animationList.setOnItemClickListener { parent, view, position, id ->
+            animationList.setOnItemClickListener { _, _, position, _ ->
                 selectedIndexAtAnimationList = position
 
                 animationStateText.text =
-                    when (animationStateMap[position]) {
-                        GltfAnimation.AnimationState.PLAYING -> STATE_PLAYING
-                        GltfAnimation.AnimationState.STOPPED -> STATE_STOPPED
-                        GltfAnimation.AnimationState.PAUSED -> STATE_PAUSED
-                        else -> STATE_STOPPED
-                    }
+                    animationStateMap[position]?.toString()
+                        ?: GltfAnimation.AnimationState.STOPPED.toString()
 
-                loopToggleButton.isChecked = false
+                loopToggleButton.isChecked = animations[position].loop
 
                 seekPlaySlider.value = 0f
                 seekPlaySlider.valueFrom = 0f
@@ -318,14 +304,14 @@ class GltfModelAnimationActivity : AppCompatActivity() {
                 speedSlider.value = 1f
             }
 
-            animationStateText.text = STATE_STOPPED
+            animationStateText.text = GltfAnimation.AnimationState.STOPPED.toString()
         }
     }
 
     fun printAnimationInfo(animation: GltfAnimation) {
         Log.w(TAG, "Animation index is ${animation.index}")
         Log.w(TAG, "Animation name is ${animation.name}")
-        Log.w(TAG, "Animation duration is ${animation.duration.toMillis() / 1000f} seconds")
+        Log.w(TAG, "Animation duration is ${animation.duration}")
     }
 
     fun setupCallback(animation: GltfAnimation) {
@@ -333,24 +319,18 @@ class GltfModelAnimationActivity : AppCompatActivity() {
             when (state) {
                 GltfAnimation.AnimationState.PLAYING -> {
                     Log.d(TAG, "${animation.name} animation is now playing!!")
-                    if (animation.index == selectedIndexAtAnimationList) {
-                        animationStateText.text = STATE_PLAYING
-                    }
                 }
 
                 GltfAnimation.AnimationState.STOPPED -> {
                     Log.d(TAG, "${animation.name} animation is now stopped!!")
-                    if (animation.index == selectedIndexAtAnimationList) {
-                        animationStateText.text = STATE_STOPPED
-                    }
                 }
 
                 GltfAnimation.AnimationState.PAUSED -> {
                     Log.d(TAG, "${animation.name} animation is now paused!!")
-                    if (animation.index == selectedIndexAtAnimationList) {
-                        animationStateText.text = STATE_PAUSED
-                    }
                 }
+            }
+            if (animation.index == selectedIndexAtAnimationList) {
+                animationStateText.text = state.toString()
             }
 
             animationStateMap[animation.index] = state
@@ -365,7 +345,7 @@ class GltfModelAnimationActivity : AppCompatActivity() {
         animations = emptyList()
         animationStateMap.clear()
         animationList.setText("Choose glTF Animations")
-        animationStateText.text = STATE_STOPPED
+        animationStateText.text = GltfAnimation.AnimationState.STOPPED.toString()
 
         selectedIndexAtAnimationList = -1
     }
@@ -378,6 +358,7 @@ class GltfModelAnimationActivity : AppCompatActivity() {
         stopPlayGltfButton.isEnabled = isEnabled
         pausePlayGltfButton.isEnabled = isEnabled
         resumePlayGltfButton.isEnabled = isEnabled
+        stopAllAnimationsButton.isEnabled = isEnabled
         loopToggleButton.isEnabled = isEnabled
 
         speedSlider.isEnabled = isEnabled

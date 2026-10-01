@@ -46,7 +46,6 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -57,7 +56,7 @@ import org.junit.runners.Parameterized
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class WideNavigationRailScreenshotTest(private val scheme: TestWrapper) {
 
-    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -77,6 +76,25 @@ class WideNavigationRailScreenshotTest(private val scheme: TestWrapper) {
             interactionSource = interactionSource,
             interaction = null,
             goldenIdentifier = "wideNavigationRail_${scheme.name}",
+        )
+    }
+
+    @Test
+    fun wideNavigationRail_withStyle() {
+        val interactionSource = MutableInteractionSource()
+
+        var scope: CoroutineScope? = null
+
+        composeTestRule.setMaterialContent(scheme.colorScheme) {
+            scope = rememberCoroutineScope()
+            DefaultStyleableWideNavigationRail(interactionSource, expanded = scheme.expanded)
+        }
+
+        assertWideNavigationRailMatches(
+            scope = scope!!,
+            interactionSource = interactionSource,
+            interaction = null,
+            goldenIdentifier = "wideNavigationRail_withStyle_${scheme.name}",
         )
     }
 
@@ -321,6 +339,55 @@ private fun DefaultWideNavigationRail(
                 onClick = {},
             )
             WideNavigationRailItem(
+                railExpanded = expanded,
+                icon = { Icon(Icons.Filled.Search, null) },
+                label = { Text("Search") },
+                selected = false,
+                enabled = !setUnselectedItemsAsDisabled,
+                onClick = {},
+            )
+        }
+    }
+}
+
+@Composable
+private fun DefaultStyleableWideNavigationRail(
+    interactionSource: MutableInteractionSource,
+    expanded: Boolean = false,
+    arrangement: Arrangement.Vertical = Arrangement.Top,
+    withHeader: Boolean = false,
+    setUnselectedItemsAsDisabled: Boolean = false,
+) {
+    val value =
+        if (expanded) WideNavigationRailValue.Expanded else WideNavigationRailValue.Collapsed
+    Box(Modifier.semantics(mergeDescendants = true) {}.testTag(Tag)) {
+        StyleableWideNavigationRail(
+            state = rememberWideNavigationRailState(value),
+            arrangement = arrangement,
+            header =
+                if (withHeader) {
+                    { Header() }
+                } else {
+                    null
+                },
+        ) {
+            StyleableWideNavigationRailItem(
+                railExpanded = expanded,
+                icon = { Icon(Icons.Filled.Favorite, null) },
+                label = { Text("Favorites") },
+                selected = true,
+                onClick = {},
+                interactionSource = interactionSource,
+            )
+            StyleableWideNavigationRailItem(
+                railExpanded = expanded,
+                icon = { Icon(Icons.Filled.Home, null) },
+                label = { Text("Home") },
+                selected = false,
+                enabled = !setUnselectedItemsAsDisabled,
+                onClick = {},
+            )
+            StyleableWideNavigationRailItem(
                 railExpanded = expanded,
                 icon = { Icon(Icons.Filled.Search, null) },
                 label = { Text("Search") },

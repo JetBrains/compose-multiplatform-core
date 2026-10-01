@@ -52,15 +52,18 @@ import kotlinx.coroutines.CompletableDeferred
 public class Recording
 internal constructor(
     private val context: Context,
-    recorder: Recorder,
+    public val recorder: Recorder,
     private val outputOptions: OutputOptions,
-    private val withAudio: Boolean,
+    public val withAudio: Boolean,
     private val initialAudioMuted: Boolean,
     private val asPersistentRecording: Boolean,
     private val callbackExecutor: Executor,
     private val defaultVerifyStatusCount: Int,
     private val defaultVerifyTimeoutMs: Long,
     private val defaultVerifyStatusTimeoutMs: Long,
+    private val defaultVerifyNoFinalizeTimeoutMs: Long = 2000L,
+    private val defaultVerifyOutputFile: Boolean = true,
+    private val onAction: ((Recording) -> Unit)? = null,
 ) {
     @SuppressLint("MissingPermission", "UnsafeOptInUsageError")
     private val pendingRecording: PendingRecording =
@@ -91,6 +94,7 @@ internal constructor(
                 }
                 listener.accept(it)
             }
+        onAction?.invoke(this)
         return this
     }
 
@@ -134,6 +138,7 @@ internal constructor(
     public fun stop() {
         if (this::recording.isInitialized) {
             recording.stop()
+            onAction?.invoke(this)
         } else {
             stoppedDeferred.complete(Unit)
         }
@@ -152,7 +157,7 @@ internal constructor(
     public fun verifyFinalize(
         timeoutMs: Long = defaultVerifyTimeoutMs,
         error: Int? = ERROR_NONE,
-        shouldSkipOutputFileVerification: Boolean = false,
+        verifyOutputFile: Boolean = defaultVerifyOutputFile,
     ): RecordingResult {
         try {
             val finalize =
@@ -162,9 +167,7 @@ internal constructor(
                     .that(finalize.error)
                     .isEqualTo(error)
             }
-            if (
-                !shouldSkipOutputFileVerification && finalize.outputResults.outputUri != Uri.EMPTY
-            ) {
+            if (verifyOutputFile && finalize.outputResults.outputUri != Uri.EMPTY) {
                 when (outputOptions) {
                     is FileOutputOptions,
                     is MediaStoreOutputOptions ->
@@ -181,8 +184,22 @@ internal constructor(
         }
     }
 
+    public fun verifyNoFinalize(timeoutMs: Long = defaultVerifyNoFinalizeTimeoutMs) {
+        var finalized = false
+        try {
+            listener.verifyEvent(Finalize::class.java, timeoutMs = timeoutMs)
+            finalized = true
+        } catch (_: AssertionError) {
+            // Timeout is expected
+        }
+        if (finalized) {
+            throw AssertionError("Finalize event was unexpectedly received.")
+        }
+    }
+
     public fun pause(): Recording {
         recording.pause()
+        onAction?.invoke(this)
         return this
     }
 
@@ -202,6 +219,7 @@ internal constructor(
 
     public fun resume(): Recording {
         recording.resume()
+        onAction?.invoke(this)
         return this
     }
 
@@ -212,8 +230,7 @@ internal constructor(
         return this
     }
 
-    // Expose if needed
-    private fun verifyResume() {
+    public fun verifyResume() {
         try {
             listener.verifyEvent(Resume::class.java).single()
         } catch (t: Throwable) {
@@ -223,6 +240,7 @@ internal constructor(
 
     public fun mute(muted: Boolean): Recording {
         recording.mute(muted)
+        onAction?.invoke(this)
         return this
     }
 

@@ -30,7 +30,6 @@ import androidx.camera.camera2.pipe.FrameCapture
 import androidx.camera.camera2.pipe.FrameGraph
 import androidx.camera.camera2.pipe.FrameInfo
 import androidx.camera.camera2.pipe.FrameMetadata
-import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.GraphState
 import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.Parameters
@@ -41,7 +40,10 @@ import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.config.FrameGraphCoroutineScope
 import androidx.camera.camera2.pipe.config.FrameGraphScope
 import androidx.camera.camera2.pipe.graph.Controller3A
+import androidx.camera.camera2.pipe.internal.FrameCaptureQueue
 import androidx.camera.camera2.pipe.internal.FrameDistributor
+import androidx.camera.camera2.pipe.internal.FrameGraphResourceTrimmer
+import androidx.camera.common.CameraFrameNumber
 import java.lang.Class
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -60,16 +62,21 @@ constructor(
     @FrameGraphCoroutineScope private val frameGraphCoroutineScope: CoroutineScope,
     private val controller3A: Controller3A,
     private val frameGraphFrameCaptureQueue: FrameGraphFrameCaptureQueue,
+    private val frameCaptureQueue: FrameCaptureQueue,
+    private val frameGraphResourceTrimmer: FrameGraphResourceTrimmer,
 ) : FrameGraph, CameraControls3A by cameraGraph {
     init {
         // Wire up the frameStartedListener.
         frameDistributor.frameStartedListener = frameGraphBuffers
+
+        // Update the trigger that the corresponding graph has been created.
+        frameGraphResourceTrimmer.onGraphCreated()
     }
 
     override val streams = cameraGraph.streams
 
     override val graphState: StateFlow<GraphState> = cameraGraph.graphState
-    override val latestFrameNumber: Flow<FrameNumber> = cameraGraph.latestFrameNumber
+    override val latestFrameNumber: Flow<CameraFrameNumber> = cameraGraph.latestFrameNumber
     override val latestFrameInfo: Flow<FrameInfo> = cameraGraph.latestFrameInfo
 
     override var isForeground: Boolean = cameraGraph.isForeground
@@ -138,6 +145,7 @@ constructor(
 
     override fun start() {
         cameraGraph.start()
+        frameGraphResourceTrimmer.onGraphStarted()
     }
 
     override fun stop() {
@@ -200,12 +208,19 @@ constructor(
     override fun close() {
         frameGraphFrameCaptureQueue.close()
         cameraGraph.close()
+        frameGraphResourceTrimmer.onGraphClosed()
         frameGraphCoroutineScope.cancel()
     }
 
     override fun toString() = cameraGraph.toString()
 
     private fun createSession(cameraGraphSession: CameraGraph.Session): FrameGraph.Session {
-        return FrameGraphSessionImpl(cameraGraphSession, frameGraphBuffers, controller3A)
+        return FrameGraphSessionImpl(
+            cameraGraphSession,
+            frameGraphBuffers,
+            controller3A,
+            frameCaptureQueue,
+            frameGraphResourceTrimmer,
+        )
     }
 }

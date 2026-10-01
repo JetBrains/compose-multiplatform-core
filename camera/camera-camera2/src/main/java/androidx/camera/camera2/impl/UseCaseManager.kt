@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.camera.camera2.impl
 
 import android.content.Context
@@ -91,7 +93,7 @@ public class UseCaseManager
 constructor(
     private val cameraPipe: CameraPipe,
     @GuardedBy("lock") private val cameraCoordinator: CameraCoordinator,
-    private val builder: UseCaseCameraComponent.Builder,
+    private val builder: Provider<UseCaseCameraComponent.Builder>,
     private val zslControl: ZslControl,
     private val lowLightBoostControl: LowLightBoostControl,
     @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN") // Java version required for Dagger
@@ -175,8 +177,9 @@ constructor(
             }
             Camera2Logger.debug { "Attaching $useCases from $this" }
 
-            val unattachedUseCases =
-                useCases.filter { useCase -> !attachedUseCases.contains(useCase) }
+            val unattachedUseCases = useCases.filter { useCase ->
+                !attachedUseCases.contains(useCase)
+            }
 
             // Notify session start to use cases
             for (useCase in unattachedUseCases) {
@@ -412,6 +415,7 @@ constructor(
             }
         }
         sessionProcessor?.deInitSession()
+        deferredUseCaseCameraConfig = null
     }
 
     @GuardedBy("lock")
@@ -437,7 +441,7 @@ constructor(
     @GuardedBy("lock")
     private fun beginComponentCreation(useCaseCameraConfig: UseCaseCameraConfig) {
         // Create and configure the new camera component.
-        _activeComponent = builder.config(useCaseCameraConfig).build()
+        _activeComponent = builder.get().config(useCaseCameraConfig).build()
 
         val newUseCaseCamera = checkNotNull(camera)
         newUseCaseCamera.start()
@@ -496,10 +500,9 @@ constructor(
             return false
         }
 
-        val hasActiveSurfaces =
-            runningUseCases.any {
-                it != meteringRepeating && it.sessionConfig.surfaces.isNotEmpty()
-            }
+        val hasActiveSurfaces = runningUseCases.any {
+            it != meteringRepeating && it.sessionConfig.surfaces.isNotEmpty()
+        }
         if (!hasActiveSurfaces) {
             return false
         }
@@ -685,11 +688,13 @@ constructor(
     private fun Collection<UseCase>.getSessionSurfacesConfigs(): List<SurfaceConfig> =
         mutableListOf<SurfaceConfig>().apply {
             this@getSessionSurfacesConfigs.forEach { useCase ->
-                useCase.sessionConfig.surfaces.forEach { deferrableSurface ->
+                val inputFormats = useCase.inputFormats
+                useCase.sessionConfig.surfaces.forEachIndexed { index, deferrableSurface ->
+                    val format = inputFormats.getOrElse(index) { inputFormats.first() }
                     add(
                         supportedSurfaceCombination.transformSurfaceConfig(
                             getCameraMode(),
-                            useCase.currentConfig.inputFormat,
+                            format,
                             deferrableSurface.prescribedSize,
                             useCase.currentConfig.streamUseCase,
                         )

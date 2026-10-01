@@ -20,8 +20,8 @@ import androidx.appsearch.annotation.Document
 import androidx.appsearch.app.AppSearchSchema
 import com.android.extensions.appfunctions.AppFunctionManager
 
-/** A mirror Document class of [android.app.appfunctions.AppFunctionRuntimeMetadata]. */
-@Document
+/** A mirror Document class of android.app.appfunctions.AppFunctionRuntimeMetadata. */
+@Document(name = AppFunctionRuntimeMetadata.SCHEMA_TYPE)
 internal data class AppFunctionRuntimeMetadata(
     @Document.Id val id: String,
     @Document.Namespace val namespace: String,
@@ -34,8 +34,8 @@ internal data class AppFunctionRuntimeMetadata(
     )
     val appFunctionStaticMetadataQualifiedId: String,
 ) {
-    public companion object {
-        public const val STATIC_METADATA_JOIN_PROPERTY: String =
-            "appFunctionStaticMetadataQualifiedId"
+    companion object {
+        const val SCHEMA_TYPE: String = "AppFunctionRuntimeMetadata"
+        const val STATIC_METADATA_JOIN_PROPERTY: String = "appFunctionStaticMetadataQualifiedId"
     }
 }

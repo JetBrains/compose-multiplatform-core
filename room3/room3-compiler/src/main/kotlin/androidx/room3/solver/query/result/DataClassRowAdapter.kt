@@ -17,6 +17,8 @@
 package androidx.room3.solver.query.result
 
 import androidx.room3.compiler.processing.XType
+import androidx.room3.ext.RoomMemberNames
+import androidx.room3.ext.SQLiteDriverTypeNames
 import androidx.room3.parser.ParsedQuery
 import androidx.room3.processor.Context
 import androidx.room3.processor.ProcessorErrors
@@ -66,14 +68,13 @@ class DataClassRowAdapter(
                         property
                     }
                 }
-            val notRequired =
-                remainingProperties.filter { property ->
-                    dataClass.constructor
-                        ?.params
-                        ?.filterIsInstance<Constructor.Param.PropertyParam>()
-                        ?.firstOrNull { it.property == property }
-                        ?.hasDefaultValue == true
-                }
+            val notRequired = remainingProperties.filter { property ->
+                dataClass.constructor
+                    ?.params
+                    ?.filterIsInstance<Constructor.Param.PropertyParam>()
+                    ?.firstOrNull { it.property == property }
+                    ?.hasDefaultValue == true
+            }
             remainingProperties.removeAll(notRequired)
             val nonNulls = remainingProperties.filter { it.nonNull }
             if (nonNulls.isNotEmpty()) {
@@ -126,33 +127,43 @@ class DataClassRowAdapter(
         stmtVarName: String,
         scope: CodeGenScope,
         indices: List<ColumnIndexVar>,
-    ) {
-        propertiesWithIndices =
-            indices.map { (column, indexVar) ->
-                val property = mapping.matchedProperties.first { it.columnName == column }
-                PropertyWithIndex(
-                    property = property,
-                    indexVar = indexVar,
-                    alwaysExists = info != null,
-                )
-            }
-        emitRelationCollectorsReady(stmtVarName, scope)
+    ): String {
+        propertiesWithIndices = indices.map { (column, indexVar) ->
+            val property = mapping.matchedProperties.first { it.columnName == column }
+            PropertyWithIndex(
+                property = property,
+                indexVar = indexVar,
+                alwaysExists = info != null,
+            )
+        }
+        return if (relationCollectors.isNotEmpty()) {
+            val bufferedStmtVarName = scope.getTmpVar("_bufferedStmt")
+            scope.builder.addLocalVal(
+                bufferedStmtVarName,
+                SQLiteDriverTypeNames.STATEMENT,
+                "%M(%L)",
+                RoomMemberNames.STATEMENT_UTIL_BUFFER_STATEMENT,
+                stmtVarName,
+            )
+            emitRelationCollectorsReady(bufferedStmtVarName, scope)
+            bufferedStmtVarName
+        } else {
+            stmtVarName
+        }
     }
 
     private fun emitRelationCollectorsReady(stmtVarName: String, scope: CodeGenScope) {
-        if (relationCollectors.isNotEmpty()) {
-            relationCollectors.forEach { it.writeInitCode(scope) }
-            scope.builder.apply {
-                beginControlFlow("while (%L.step())", stmtVarName).apply {
-                    relationCollectors.forEach {
-                        it.writeReadParentKeyCode(stmtVarName, propertiesWithIndices, scope)
-                    }
+        relationCollectors.forEach { it.writeInitCode(scope) }
+        scope.builder.apply {
+            beginControlFlow("while (%L.step())", stmtVarName).apply {
+                relationCollectors.forEach {
+                    it.writeReadParentKeyCode(stmtVarName, propertiesWithIndices, scope)
                 }
-                endControlFlow()
-                addStatement("%L.reset()", stmtVarName)
             }
-            relationCollectors.forEach { it.writeFetchRelationCall(scope) }
+            endControlFlow()
+            addStatement("%L.reset()", stmtVarName)
         }
+        relationCollectors.forEach { it.writeFetchRelationCall(scope) }
     }
 
     override fun convert(outVarName: String, stmtVarName: String, scope: CodeGenScope) {

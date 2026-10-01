@@ -199,7 +199,7 @@ class SaversTest {
                 letterSpacing = 2.em,
                 baselineShift = BaselineShift.Superscript,
                 textGeometricTransform = TextGeometricTransform(2f, 3f),
-                localeList = LocaleList(Locale("sr-Latn-SR"), Locale("sr-Cyrl-SR"), Locale.current),
+                localeList = LocaleList(Locale("sr-Latn-SR"), Locale("sr-Cyrl-SR"), Locale("en")),
                 background = Color.Blue,
                 textDecoration = TextDecoration.LineThrough,
                 shadow = Shadow(color = Color.Red, offset = Offset(2f, 2f), blurRadius = 4f),
@@ -482,7 +482,7 @@ class SaversTest {
 
     @Test
     fun test_LocaleList() {
-        val original = LocaleList(Locale("sr-Latn-SR"), Locale("sr-Cyrl-SR"), Locale.current)
+        val original = LocaleList(Locale("sr-Latn-SR"), Locale("sr-Cyrl-SR"), Locale("en-US"))
         val saved = with(LocaleList.Saver) { defaultSaverScope.save(original) }
 
         assertThat(LocaleList.Saver.restore(saved!!)).isEqualTo(original)
@@ -535,6 +535,64 @@ class SaversTest {
         val saved = save(original, TextMotion.Saver, defaultSaverScope)
         val restored: TextMotion? = restore(saved, TextMotion.Saver)
 
+        assertThat(restored).isEqualTo(original)
+    }
+
+    @Test
+    fun test_AnnotationSaver_ParagraphStyle() {
+        val original = ParagraphStyle(textAlign = TextAlign.Center)
+        val saved = save(original, AnnotatedString.Annotation.Saver, defaultSaverScope)
+        val restored: ParagraphStyle? = restore(saved, AnnotatedString.Annotation.Saver)
+        assertThat(restored).isEqualTo(original)
+    }
+
+    @Test
+    fun test_AnnotationSaver_SpanStyle() {
+        val original = SpanStyle(color = Color.Red)
+        val saved = save(original, AnnotatedString.Annotation.Saver, defaultSaverScope)
+        val restored: SpanStyle? = restore(saved, AnnotatedString.Annotation.Saver)
+        assertThat(restored).isEqualTo(original)
+    }
+
+    @Test
+    fun test_AnnotationSaver_VerbatimTtsAnnotation() {
+        val original = VerbatimTtsAnnotation("verbatim")
+        val saved = save(original, AnnotatedString.Annotation.Saver, defaultSaverScope)
+        val restored: VerbatimTtsAnnotation? = restore(saved, AnnotatedString.Annotation.Saver)
+        assertThat(restored).isEqualTo(original)
+    }
+
+    @OptIn(ExperimentalTextApi::class)
+    @Test
+    fun test_AnnotationSaver_UrlAnnotation() {
+        val original = UrlAnnotation("url")
+        val saved = save(original, AnnotatedString.Annotation.Saver, defaultSaverScope)
+        val restored: UrlAnnotation? = restore(saved, AnnotatedString.Annotation.Saver)
+        assertThat(restored).isEqualTo(original)
+    }
+
+    @Test
+    fun test_AnnotationSaver_LinkAnnotationUrl() {
+        val original = LinkAnnotation.Url("url", TextLinkStyles(SpanStyle(color = Color.Red)))
+        val saved = save(original, AnnotatedString.Annotation.Saver, defaultSaverScope)
+        val restored: LinkAnnotation.Url? = restore(saved, AnnotatedString.Annotation.Saver)
+        assertThat(restored).isEqualTo(original)
+    }
+
+    @Test
+    fun test_AnnotationSaver_LinkAnnotationClickable() {
+        val original =
+            LinkAnnotation.Clickable("tag", TextLinkStyles(SpanStyle(color = Color.Red)), null)
+        val saved = save(original, AnnotatedString.Annotation.Saver, defaultSaverScope)
+        val restored: LinkAnnotation.Clickable? = restore(saved, AnnotatedString.Annotation.Saver)
+        assertThat(restored).isEqualTo(original)
+    }
+
+    @Test
+    fun test_AnnotationSaver_StringAnnotation() {
+        val original = StringAnnotation("string")
+        val saved = save(original, AnnotatedString.Annotation.Saver, defaultSaverScope)
+        val restored: StringAnnotation? = restore(saved, AnnotatedString.Annotation.Saver)
         assertThat(restored).isEqualTo(original)
     }
 }

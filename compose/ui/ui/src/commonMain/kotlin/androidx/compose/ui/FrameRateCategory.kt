@@ -27,14 +27,19 @@ import kotlin.jvm.JvmInline
  * - High: Indicates a frame rate suitable for animations that require a high frame rate.
  */
 @JvmInline
-value class FrameRateCategory private constructor(internal val value: Float) {
-    companion object {
-        val Default = FrameRateCategory(Float.NaN)
-        val Normal = FrameRateCategory(-3f)
-        val High = FrameRateCategory(-4f)
+public value class FrameRateCategory private constructor(internal val value: Float) {
+    public companion object {
+        public val Default: FrameRateCategory
+            get() = FrameRateCategory(Float.NaN)
+
+        public val Normal: FrameRateCategory
+            get() = FrameRateCategory(-3f)
+
+        public val High: FrameRateCategory
+            get() = FrameRateCategory(-4f)
     }
 
-    override fun toString(): String {
+    public override fun toString(): String {
         val text =
             when (value) {
                 -3f -> "Normal"

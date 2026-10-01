@@ -23,18 +23,24 @@ import android.os.Bundle
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
-import androidx.ink.authoring.ExperimentalCustomShapeWorkflowApi
-import androidx.ink.authoring.ExperimentalLatencyDataApi
+import androidx.ink.authoring.ExperimentalInkCustomShapeWorkflowApi
+import androidx.ink.authoring.ExperimentalInkLatencyDataApi
 import androidx.ink.authoring.InkInProgressShape
 import androidx.ink.authoring.InkInProgressShapeRenderer
 import androidx.ink.brush.Brush
+import androidx.ink.brush.ExperimentalInkAnimationApi
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
+import androidx.ink.rendering.android.canvas.StrokePaintAnimationClock
 import androidx.ink.strokes.Stroke
 import java.util.concurrent.TimeUnit
 import org.mockito.kotlin.mock
 
 /** An [Activity] to support [CanvasInProgressStrokesRenderHelperV33]. */
-@OptIn(ExperimentalLatencyDataApi::class, ExperimentalCustomShapeWorkflowApi::class)
+@OptIn(
+    ExperimentalInkAnimationApi::class,
+    ExperimentalInkCustomShapeWorkflowApi::class,
+    ExperimentalInkLatencyDataApi::class,
+)
 @SuppressLint("UseSdkSuppress") // SdkSuppress is on the test class.
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 class CanvasInProgressStrokesRenderHelperV33TestActivity : Activity() {
@@ -60,7 +66,10 @@ class CanvasInProgressStrokesRenderHelperV33TestActivity : Activity() {
         renderHelper =
             CanvasInProgressStrokesRenderHelperV33(
                 mainView,
-                InkInProgressShapeRenderer(mockRenderer),
+                InkInProgressShapeRenderer(
+                    StrokePaintAnimationClock.STOPPED_CLOCK,
+                    canvasStrokeRenderer = mockRenderer,
+                ),
                 fakeThreads.uiThreadExecutor,
                 { fakeThreads.renderThreadExecutor.apply { isShutdown = false } },
             )

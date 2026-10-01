@@ -33,11 +33,17 @@ import android.media.MediaFormat.MIMETYPE_VIDEO_VP9
 import android.os.Build
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.DynamicRange.DOLBY_VISION_10_BIT
+import androidx.camera.core.DynamicRange.DOLBY_VISION_10_BIT_SMPTE_2094_50
 import androidx.camera.core.DynamicRange.DOLBY_VISION_8_BIT
+import androidx.camera.core.DynamicRange.DOLBY_VISION_8_BIT_SMPTE_2094_50
 import androidx.camera.core.DynamicRange.HDR10_10_BIT
+import androidx.camera.core.DynamicRange.HDR10_10_BIT_SMPTE_2094_50
 import androidx.camera.core.DynamicRange.HDR10_PLUS_10_BIT
+import androidx.camera.core.DynamicRange.HDR10_PLUS_10_BIT_SMPTE_2094_50
 import androidx.camera.core.DynamicRange.HLG_10_BIT
+import androidx.camera.core.DynamicRange.HLG_10_BIT_SMPTE_2094_50
 import androidx.camera.core.DynamicRange.SDR
+import androidx.camera.core.DynamicRange.SDR_SMPTE_2094_50
 import androidx.camera.video.MediaSpec.Companion.OUTPUT_FORMAT_MPEG_4
 import androidx.camera.video.MediaSpec.Companion.OUTPUT_FORMAT_WEBM
 
@@ -62,21 +68,29 @@ import androidx.camera.video.MediaSpec.Companion.OUTPUT_FORMAT_WEBM
 public object DynamicRangeFormatComboRegistry {
 
     // --- OS Gated Codec Constants ---
-    private val MIMETYPE_VIDEO_HEVC_GATED = MIMETYPE_VIDEO_HEVC.takeIf(minSdk = 24)
-    private val MIMETYPE_VIDEO_VP9_GATED = MIMETYPE_VIDEO_VP9.takeIf(minSdk = 24)
     private val MIMETYPE_AUDIO_OPUS_GATED = MIMETYPE_AUDIO_OPUS.takeIf(minSdk = 29)
     private val MIMETYPE_VIDEO_DOLBY_VISION_GATED = MIMETYPE_VIDEO_DOLBY_VISION.takeIf(minSdk = 33)
     private val MIMETYPE_VIDEO_AV1_GATED = MIMETYPE_VIDEO_AV1.takeIf(minSdk = 34)
+    // APV (Advanced Professional Video, ISO/IEC 23091-2) is an intra-frame professional video
+    // codec designed exclusively for 10-bit and 12-bit capture (b/553777957).
+    // Platform profile definitions (APVProfile422_10, etc.) only define 10/12-bit profiles:
+    // https://developer.android.com/reference/android/media/MediaCodecInfo.CodecProfileLevel#APVProfile422_10
     private val MIMETYPE_VIDEO_APV_GATED = MIMETYPE_VIDEO_APV.takeIf(minSdk = 36)
 
     private val registries: Map<DynamicRange, FormatComboRegistry> by lazy {
         mutableMapOf(
             SDR to buildSdrRegistry(),
+            SDR_SMPTE_2094_50 to buildSdrRegistry(),
             HLG_10_BIT to buildHlgRegistry(),
+            HLG_10_BIT_SMPTE_2094_50 to buildHlgRegistry(),
             HDR10_10_BIT to buildHdr10Registry(),
+            HDR10_10_BIT_SMPTE_2094_50 to buildHdr10Registry(),
             HDR10_PLUS_10_BIT to buildHdr10PlusRegistry(),
+            HDR10_PLUS_10_BIT_SMPTE_2094_50 to buildHdr10PlusRegistry(),
             DOLBY_VISION_8_BIT to buildDolbyVisionRegistry(),
+            DOLBY_VISION_8_BIT_SMPTE_2094_50 to buildDolbyVisionRegistry(),
             DOLBY_VISION_10_BIT to buildDolbyVisionRegistry(),
+            DOLBY_VISION_10_BIT_SMPTE_2094_50 to buildDolbyVisionRegistry(),
         )
     }
 
@@ -131,9 +145,10 @@ public object DynamicRangeFormatComboRegistry {
                                 MIMETYPE_VIDEO_AVC,
                                 MIMETYPE_VIDEO_MPEG4,
                                 MIMETYPE_VIDEO_H263,
-                                MIMETYPE_VIDEO_HEVC_GATED,
+                                MIMETYPE_VIDEO_HEVC,
                                 MIMETYPE_VIDEO_AV1_GATED,
-                                MIMETYPE_VIDEO_APV_GATED,
+                                // APV is excluded from SDR as it only supports 10-bit and higher
+                                // capture (b/553777957).
                             ),
                         audioMimes = standardMp4Audios,
                     )
@@ -141,7 +156,7 @@ public object DynamicRangeFormatComboRegistry {
 
                 container(OUTPUT_FORMAT_WEBM) {
                     support(
-                        videoMimes = listOfNotNull(MIMETYPE_VIDEO_VP8, MIMETYPE_VIDEO_VP9_GATED),
+                        videoMimes = listOfNotNull(MIMETYPE_VIDEO_VP8, MIMETYPE_VIDEO_VP9),
                         audioMimes = standardWebmAudios,
                     )
                 }
@@ -156,7 +171,7 @@ public object DynamicRangeFormatComboRegistry {
                     support(
                         videoMimes =
                             listOfNotNull(
-                                MIMETYPE_VIDEO_HEVC_GATED,
+                                MIMETYPE_VIDEO_HEVC,
                                 MIMETYPE_VIDEO_AV1_GATED,
                                 MIMETYPE_VIDEO_APV_GATED,
                             ),
@@ -175,7 +190,7 @@ public object DynamicRangeFormatComboRegistry {
                     support(
                         videoMimes =
                             listOfNotNull(
-                                MIMETYPE_VIDEO_HEVC_GATED,
+                                MIMETYPE_VIDEO_HEVC,
                                 MIMETYPE_VIDEO_AV1_GATED,
                                 MIMETYPE_VIDEO_APV_GATED,
                             ),
@@ -187,7 +202,7 @@ public object DynamicRangeFormatComboRegistry {
                 // designed to carry HDR10 static metadata in WebM/Matroska.
                 container(OUTPUT_FORMAT_WEBM) {
                     support(
-                        videoMimes = listOfNotNull(MIMETYPE_VIDEO_VP9_GATED),
+                        videoMimes = listOfNotNull(MIMETYPE_VIDEO_VP9),
                         audioMimes = standardWebmAudios,
                     )
                 }
@@ -197,11 +212,15 @@ public object DynamicRangeFormatComboRegistry {
     private fun buildHdr10PlusRegistry(): FormatComboRegistry =
         FormatComboRegistry.Builder()
             .apply {
-                // HDR10+ are standardized for MP4 via HEVC/AV1.
+                // HDR10+ are standardized for MP4 via HEVC/AV1/APV.
                 container(OUTPUT_FORMAT_MPEG_4) {
                     support(
                         videoMimes =
-                            listOfNotNull(MIMETYPE_VIDEO_HEVC_GATED, MIMETYPE_VIDEO_AV1_GATED),
+                            listOfNotNull(
+                                MIMETYPE_VIDEO_HEVC,
+                                MIMETYPE_VIDEO_AV1_GATED,
+                                MIMETYPE_VIDEO_APV_GATED,
+                            ),
                         audioMimes = standardMp4Audios,
                     )
                 }

@@ -17,11 +17,12 @@
 package androidx.xr.arcore.playservices
 
 import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorManager
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.arcore.runtime.TrackingState as RuntimeTrackingState
 import androidx.xr.runtime.DeviceTrackingMode
-import androidx.xr.runtime.ExperimentalInertialTrackingApi
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -35,10 +36,10 @@ import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.robolectric.Shadows.shadowOf
-import org.robolectric.shadows.ShadowSensor
+import org.robolectric.shadows.SensorBuilder
+import org.robolectric.shadows.SensorEventBuilder
 
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalInertialTrackingApi::class)
 class ArCoreDeviceTest {
     private lateinit var underTest: ArCoreDevice
     private lateinit var mockSession: ArCore1xSession
@@ -70,30 +71,22 @@ class ArCoreDeviceTest {
     }
 
     @Test
-    @Suppress("DEPRECATION")
     fun update_withInertialTrackingMode_usesSensorPoseAndSetsTracking() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val sensorManager =
-            context.getSystemService(Context.SENSOR_SERVICE) as android.hardware.SensorManager
+        val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val shadowSensorManager = shadowOf(sensorManager)
-        shadowSensorManager.addSensor(
-            org.robolectric.shadows.ShadowSensor.newInstance(
-                android.hardware.Sensor.TYPE_GAME_ROTATION_VECTOR
-            )
-        )
+        val sensor = SensorBuilder.newBuilder().setType(Sensor.TYPE_GAME_ROTATION_VECTOR).build()
+        shadowSensorManager.addSensor(sensor)
 
-        underTest.configureTracking(DeviceTrackingMode.INERTIAL, context)
+        underTest.configureTracking(createInertialDeviceTrackingMode(), context)
         underTest.resume()
 
         val eventValues = floatArrayOf(0f, 0f, 0f, 1f)
-        val sensorEvent = org.robolectric.shadows.ShadowSensorManager.createSensorEvent(4)
-        System.arraycopy(eventValues, 0, sensorEvent.values, 0, 4)
-        sensorEvent.sensor =
-            sensorManager.getDefaultSensor(android.hardware.Sensor.TYPE_GAME_ROTATION_VECTOR)
+        val sensorEvent = SensorEventBuilder.newBuilder(sensor, eventValues).build()
         shadowSensorManager.sendSensorEventToListeners(sensorEvent)
 
         val tempArray = FloatArray(4)
-        android.hardware.SensorManager.getQuaternionFromVector(tempArray, eventValues)
+        SensorManager.getQuaternionFromVector(tempArray, eventValues)
         val sensorRotation =
             Quaternion(x = tempArray[1], y = tempArray[2], z = tempArray[3], w = tempArray[0])
         val expectedRotation = Quaternion.fromEulerAngles(90f, 0f, 0f) * sensorRotation
@@ -113,7 +106,7 @@ class ArCoreDeviceTest {
     fun update_withInertialModeAndSensorMissing_returnsIdentityAndStopped() {
         val context = ApplicationProvider.getApplicationContext<Context>()
 
-        underTest.configureTracking(DeviceTrackingMode.INERTIAL, context)
+        underTest.configureTracking(createInertialDeviceTrackingMode(), context)
         underTest.resume()
 
         underTest.update(mockFrame)
@@ -123,32 +116,24 @@ class ArCoreDeviceTest {
     }
 
     @Test
-    @Suppress("DEPRECATION")
     fun update_withInertialModeAndNotResumed_returnsPaused() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val sensorManager =
-            context.getSystemService(Context.SENSOR_SERVICE) as android.hardware.SensorManager
+        val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val shadowSensorManager = shadowOf(sensorManager)
-        shadowSensorManager.addSensor(
-            org.robolectric.shadows.ShadowSensor.newInstance(
-                android.hardware.Sensor.TYPE_GAME_ROTATION_VECTOR
-            )
-        )
+        val sensor = SensorBuilder.newBuilder().setType(Sensor.TYPE_GAME_ROTATION_VECTOR).build()
+        shadowSensorManager.addSensor(sensor)
 
-        underTest.configureTracking(DeviceTrackingMode.INERTIAL, context)
+        underTest.configureTracking(createInertialDeviceTrackingMode(), context)
         underTest.resume()
 
         val eventValues = floatArrayOf(0f, 0f, 0f, 1f)
-        val sensorEvent = org.robolectric.shadows.ShadowSensorManager.createSensorEvent(4)
-        System.arraycopy(eventValues, 0, sensorEvent.values, 0, 4)
-        sensorEvent.sensor =
-            sensorManager.getDefaultSensor(android.hardware.Sensor.TYPE_GAME_ROTATION_VECTOR)
+        val sensorEvent = SensorEventBuilder.newBuilder(sensor, eventValues).build()
         shadowSensorManager.sendSensorEventToListeners(sensorEvent)
 
         underTest.pause()
 
         val tempArray = FloatArray(4)
-        android.hardware.SensorManager.getQuaternionFromVector(tempArray, eventValues)
+        SensorManager.getQuaternionFromVector(tempArray, eventValues)
         val sensorRotation =
             Quaternion(x = tempArray[1], y = tempArray[2], z = tempArray[3], w = tempArray[0])
         val expectedRotation = Quaternion.fromEulerAngles(90f, 0f, 0f) * sensorRotation
@@ -163,16 +148,13 @@ class ArCoreDeviceTest {
     @Test
     fun resume_inertialMode_registersSensorListener() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val sensorManager =
-            context.getSystemService(Context.SENSOR_SERVICE) as android.hardware.SensorManager
+        val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val shadowSensorManager = shadowOf(sensorManager)
         shadowSensorManager.addSensor(
-            org.robolectric.shadows.ShadowSensor.newInstance(
-                android.hardware.Sensor.TYPE_GAME_ROTATION_VECTOR
-            )
+            SensorBuilder.newBuilder().setType(Sensor.TYPE_GAME_ROTATION_VECTOR).build()
         )
 
-        underTest.configureTracking(DeviceTrackingMode.INERTIAL, context)
+        underTest.configureTracking(createInertialDeviceTrackingMode(), context)
         underTest.resume()
 
         assertThat(shadowSensorManager.listeners).hasSize(1)
@@ -181,19 +163,23 @@ class ArCoreDeviceTest {
     @Test
     fun pause_unregistersSensorListener() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val sensorManager =
-            context.getSystemService(Context.SENSOR_SERVICE) as android.hardware.SensorManager
+        val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val shadowSensorManager = shadowOf(sensorManager)
         shadowSensorManager.addSensor(
-            org.robolectric.shadows.ShadowSensor.newInstance(
-                android.hardware.Sensor.TYPE_GAME_ROTATION_VECTOR
-            )
+            SensorBuilder.newBuilder().setType(Sensor.TYPE_GAME_ROTATION_VECTOR).build()
         )
 
-        underTest.configureTracking(DeviceTrackingMode.INERTIAL, context)
+        underTest.configureTracking(createInertialDeviceTrackingMode(), context)
         underTest.resume()
         underTest.pause()
 
         assertThat(shadowSensorManager.listeners).isEmpty()
+    }
+
+    private fun createInertialDeviceTrackingMode(): DeviceTrackingMode {
+        val constructor =
+            DeviceTrackingMode::class.java.getDeclaredConstructor(Int::class.javaPrimitiveType!!)
+        constructor.isAccessible = true
+        return constructor.newInstance(2)
     }
 }

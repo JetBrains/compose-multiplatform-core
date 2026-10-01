@@ -18,6 +18,8 @@ package androidx.compose.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalAccessorScope
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.annotation.FrequentlyChangingValue
@@ -25,12 +27,15 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.node.currentValueOf
+import androidx.compose.ui.platform.LocalOwner
+import androidx.compose.ui.platform.computedDefaultOf
+import androidx.compose.ui.platform.noLocalProvidedFor
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.util.fastAny
 import kotlin.jvm.JvmInline
 
 /**
@@ -38,20 +43,20 @@ import kotlin.jvm.JvmInline
  * scope is used by [mediaQuery] to evaluate conditions based on the device and window state.
  */
 @ExperimentalMediaQueryApi
-interface UiMediaScope {
+public interface UiMediaScope {
     /**
      * The current posture of the application window.
      *
      * This reflects how the window is laid out on the screen, which may be affected by the device's
-     * physical state. See [Posture] for possible values.
+     * physical state. See [WindowPosture] for possible values.
      */
-    val windowPosture: Posture
+    public val windowPosture: WindowPosture
 
     /** The current width of the application window. */
-    @get:FrequentlyChangingValue val windowWidth: Dp
+    @get:FrequentlyChangingValue public val windowWidth: Dp
 
     /** The current height of the application window. */
-    @get:FrequentlyChangingValue val windowHeight: Dp
+    @get:FrequentlyChangingValue public val windowHeight: Dp
 
     /**
      * The highest-precision pointing device currently available.
@@ -61,7 +66,7 @@ interface UiMediaScope {
      * [PointerPrecision.Coarse] if both are present). See [PointerPrecision] for all possible
      * values.
      */
-    val pointerPrecision: PointerPrecision
+    public val pointerPrecision: PointerPrecision
 
     /**
      * The type of keyboard currently available or connected.
@@ -70,13 +75,13 @@ interface UiMediaScope {
      * on-screen soft keyboard ([KeyboardKind.Virtual]). If neither is detected, it returns
      * [KeyboardKind.None].
      */
-    val keyboardKind: KeyboardKind
+    public val keyboardKind: KeyboardKind
 
     /** Whether the microphone is supported on the current device. */
-    @get:Suppress("GetterSetterNames") val hasMicrophone: Boolean
+    @get:Suppress("GetterSetterNames") public val hasMicrophone: Boolean
 
     /** Whether the camera is supported on the current device. */
-    @get:Suppress("GetterSetterNames") val hasCamera: Boolean
+    @get:Suppress("GetterSetterNames") public val hasCamera: Boolean
 
     /**
      * The typical distance between the user and the device screen.
@@ -87,83 +92,195 @@ interface UiMediaScope {
      * Note that this is a broad categorization and does not represent a precise physical
      * measurement. It is based on the device type and its typical usage context.
      */
-    val viewingDistance: ViewingDistance
+    public val viewingDistance: ViewingDistance
 
     /**
-     * Describes the posture of the window, typically on a foldable device.
+     * Represents a single physical fold or hinge intersecting the window.
      *
-     * This represents the arrangement of the window's display area in relation to physical features
-     * like hinges or folds.
+     * A [WindowFold] describes a geometric screen feature that actively crosses the bounds of the
+     * current window. It maps directly to the state of underlying hardware hinge sensors.
      *
-     * Note that this describes the window's state, which may differ from the physical device
-     * posture. For example, if the device is in a half-folded state but the app is in split-screen
-     * mode on a single panel, the window posture will be [Posture.Flat].
+     * @param state The geometric layout state of the fold (e.g. [FoldState.Flat] or
+     *   [FoldState.HalfOpened]).
+     * @param orientation The axis of the fold relative to the window bounds (e.g.
+     *   [FoldOrientation.Horizontal] or [FoldOrientation.Vertical]).
+     */
+    @Immutable
+    @ExperimentalMediaQueryApi
+    public class WindowFold(public val state: FoldState, public val orientation: FoldOrientation) {
+        public override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is WindowFold) return false
+            return state == other.state && orientation == other.orientation
+        }
+
+        public override fun hashCode(): Int {
+            return state.value * 31 + orientation.value
+        }
+
+        public override fun toString(): String {
+            return "WindowFold(state=$state, orientation=$orientation)"
+        }
+    }
+
+    /**
+     * Represents the overall physical posture of the window, aggregating all underlying hardware
+     * folding features into a unified state.
+     *
+     * Note that this describes the *window's* state, which may differ from the physical device's
+     * posture. For example, if a foldable device is physically half-opened, but the current app is
+     * in split-screen mode entirely on one side of the hinge, the window is not intersected by the
+     * hinge and its posture will evaluate as [isFlat] == true.
+     *
+     * @param folds A list of all active [WindowFold] features intersecting the window.
+     */
+    @Immutable
+    @ExperimentalMediaQueryApi
+    public class WindowPosture(public val folds: List<WindowFold>) {
+        /**
+         * Whether the physical footprint of the window has no active bends disrupting its surface.
+         *
+         * This gracefully evaluates to `true` for traditional non-foldable slab devices, foldables
+         * that are completely opened to 180 degrees, and multi-window apps that do not span across
+         * a hinge.
+         */
+        public val isFlat: Boolean
+            get() = !folds.fastAny { it.state == FoldState.HalfOpened }
+
+        /**
+         * Whether the device is in a semi-open tabletop state, similar to a laptop.
+         *
+         * This evaluates to `true` if the window is intersected by at least one horizontal,
+         * half-opened hinge, logically splitting the horizontal display into top and bottom halves.
+         */
+        public val isTabletop: Boolean
+            get() = folds.fastAny {
+                it.state == FoldState.HalfOpened && it.orientation == FoldOrientation.Horizontal
+            }
+
+        public override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is WindowPosture) return false
+            return folds == other.folds
+        }
+
+        public override fun hashCode(): Int {
+            return folds.hashCode()
+        }
+
+        public override fun toString(): String {
+            return "WindowPosture(folds=$folds)"
+        }
+    }
+
+    /** Describes the layout fold state of the window, typically on a foldable device. */
+    @JvmInline
+    @ExperimentalMediaQueryApi
+    public value class FoldState internal constructor(internal val value: Int) {
+        public override fun toString(): String =
+            when (this) {
+                Flat -> "Flat"
+                HalfOpened -> "HalfOpened"
+                else -> "Unknown"
+            }
+
+        public companion object {
+            /**
+             * Represents a flat fold state, where the window's display area on a foldable device is
+             * flat (either fully open or closed). It's the default state for non-foldable devices,
+             * or when the window does not span across a hinge or fold (such as in split-screen mode
+             * on a single panel).
+             */
+            public val Flat: FoldState = FoldState(0)
+
+            /**
+             * Represents a device in a semi-open state. The window spans across a hinge or fold,
+             * splitting the display area into two logical parts.
+             */
+            public val HalfOpened: FoldState = FoldState(1)
+        }
+    }
+
+    /**
+     * Describes the hardware orientation of a physical folding hinge.
+     *
+     * This orientation is strictly relative to the bounds of the window, regardless of how the
+     * physical device is currently rotated in gravitational space.
      */
     @JvmInline
     @ExperimentalMediaQueryApi
-    value class Posture private constructor(private val description: String) {
-        override fun toString(): String = description
+    public value class FoldOrientation internal constructor(internal val value: Int) {
+        public override fun toString(): String =
+            when (this) {
+                Horizontal -> "Horizontal"
+                Vertical -> "Vertical"
+                else -> "Unknown"
+            }
 
-        companion object {
-            /**
-             * Represents a flat posture, where the window's display area on a foldable device is
-             * flat (either fully open or closed). It's the default posture for non-foldable
-             * devices, or when the window does not span across a hinge or fold (such as in
-             * split-screen mode on a single panel).
-             */
-            val Flat = Posture("Flat")
+        public companion object {
+            /** Represents a horizontal hinge or fold. */
+            public val Horizontal: FoldOrientation = FoldOrientation(0)
 
-            /**
-             * Represents a device in a semi-open state, similar to a laptop. The window spans
-             * across a horizontal fold or hinge, splitting the display area into two logical parts.
-             */
-            val Tabletop = Posture("Tabletop")
-
-            /**
-             * Represents a device in a semi-open state, folded similarly to an open book. The
-             * window spans across a vertical fold or hinge, splitting the display area into two
-             * logical parts.
-             */
-            val Book = Posture("Book")
+            /** Represents a vertical hinge or fold. */
+            public val Vertical: FoldOrientation = FoldOrientation(1)
         }
     }
 
     /** Describes the precision of the available pointing devices. */
     @JvmInline
     @ExperimentalMediaQueryApi
-    value class PointerPrecision private constructor(private val description: String) {
-        override fun toString(): String = description
+    public value class PointerPrecision private constructor(private val value: Int) {
+        public override fun toString(): String =
+            when (this) {
+                Fine -> "Fine"
+                Coarse -> "Coarse"
+                Blunt -> "Blunt"
+                None -> "None"
+                else -> "Unknown"
+            }
 
-        companion object {
+        public companion object {
             /**
              * Represents a pointing device with high precision, such as a mouse, trackpad, or
              * stylus.
              */
-            val Fine = PointerPrecision("Fine")
+            public val Fine: PointerPrecision
+                get() = PointerPrecision(0)
 
             /** Represents a pointing device with limited precision, such as a touchscreen. */
-            val Coarse = PointerPrecision("Coarse")
+            public val Coarse: PointerPrecision
+                get() = PointerPrecision(1)
 
             /** Represents a pointing device with low precision, such as a joystick. */
-            val Blunt = PointerPrecision("Blunt")
+            public val Blunt: PointerPrecision
+                get() = PointerPrecision(2)
 
             /** Indicates that no pointing device is available. */
-            val None = PointerPrecision("None")
+            public val None: PointerPrecision
+                get() = PointerPrecision(3)
         }
     }
 
     /** Describes the kind of keyboard available. */
     @JvmInline
     @ExperimentalMediaQueryApi
-    value class KeyboardKind private constructor(private val description: String) {
-        override fun toString(): String = description
+    public value class KeyboardKind private constructor(private val value: Int) {
+        public override fun toString(): String =
+            when (this) {
+                Physical -> "Physical"
+                Virtual -> "Virtual"
+                None -> "None"
+                else -> "Unknown"
+            }
 
-        companion object {
+        public companion object {
             /** Represents a physical hardware keyboard. */
-            val Physical = KeyboardKind("Physical")
+            public val Physical: KeyboardKind
+                get() = KeyboardKind(0)
 
             /** Represents an on-screen virtual keyboard (IME). */
-            val Virtual = KeyboardKind("Virtual")
+            public val Virtual: KeyboardKind
+                get() = KeyboardKind(1)
 
             /**
              * Indicates that no keyboard is currently available for input.
@@ -171,31 +288,41 @@ interface UiMediaScope {
              * This state occurs when no physical keyboard is connected to the device, and the
              * on-screen software keyboard (IME) is currently hidden or closed.
              */
-            val None = KeyboardKind("None")
+            public val None: KeyboardKind
+                get() = KeyboardKind(2)
         }
     }
 
     /** Describes the typical distance between the user and the screen. */
     @JvmInline
     @ExperimentalMediaQueryApi
-    value class ViewingDistance private constructor(private val description: String) {
-        override fun toString(): String = description
+    public value class ViewingDistance private constructor(private val value: Int) {
+        public override fun toString(): String =
+            when (this) {
+                Near -> "Near"
+                Medium -> "Medium"
+                Far -> "Far"
+                else -> "Unknown"
+            }
 
-        companion object {
+        public companion object {
             /**
              * Represents a device used within close range, such as a handheld phone, tablet,
              * laptop, or desktop monitor. This is the default for most personal devices.
              */
-            val Near = ViewingDistance("Near")
+            public val Near: ViewingDistance
+                get() = ViewingDistance(0)
 
             /**
              * Represents a device positioned slightly further away, such as an automotive device,
              * or a tablet in a dock mode.
              */
-            val Medium = ViewingDistance("Medium")
+            public val Medium: ViewingDistance
+                get() = ViewingDistance(1)
 
             /** Represents a device viewed from a significant distance, such as a television. */
-            val Far = ViewingDistance("Far")
+            public val Far: ViewingDistance
+                get() = ViewingDistance(2)
         }
     }
 }
@@ -209,9 +336,9 @@ interface UiMediaScope {
  * result in a runtime error.
  */
 @ExperimentalMediaQueryApi
-val LocalUiMediaScope =
-    staticCompositionLocalOf<UiMediaScope> {
-        error("CompositionLocal LocalUiMediaScope not present")
+public val LocalUiMediaScope: ProvidableCompositionLocal<UiMediaScope> =
+    computedDefaultOf("LocalUiMediaScope") {
+        LocalOwner.currentValue.uiMediaScope ?: noLocalProvidedFor("LocalUiMediaScope")
     }
 
 /**
@@ -232,7 +359,7 @@ val LocalUiMediaScope =
 @ExperimentalMediaQueryApi
 @Composable
 @ReadOnlyComposable
-inline fun <T> mediaQuery(query: UiMediaScope.() -> T): T = LocalUiMediaScope.current.query()
+public inline fun <T> mediaQuery(query: UiMediaScope.() -> T): T = LocalUiMediaScope.current.query()
 
 /**
  * Evaluates a query against the current [UiMediaScope], wrapped in a [derivedStateOf].
@@ -251,7 +378,7 @@ inline fun <T> mediaQuery(query: UiMediaScope.() -> T): T = LocalUiMediaScope.cu
  */
 @ExperimentalMediaQueryApi
 @Composable
-fun <T> derivedMediaQuery(query: UiMediaScope.() -> T): State<T> {
+public fun <T> derivedMediaQuery(query: UiMediaScope.() -> T): State<T> {
     val mediaScope = LocalUiMediaScope.current
     val currentQuery by rememberUpdatedState(query)
 
@@ -270,7 +397,7 @@ fun <T> derivedMediaQuery(query: UiMediaScope.() -> T): State<T> {
  * @return The immediate result of the query.
  */
 @ExperimentalMediaQueryApi
-inline fun <T> CompositionLocalAccessorScope.mediaQuery(query: UiMediaScope.() -> T): T =
+public inline fun <T> CompositionLocalAccessorScope.mediaQuery(query: UiMediaScope.() -> T): T =
     LocalUiMediaScope.currentValue.query()
 
 /**
@@ -289,5 +416,6 @@ inline fun <T> CompositionLocalAccessorScope.mediaQuery(query: UiMediaScope.() -
  * @return The immediate result of the query.
  */
 @ExperimentalMediaQueryApi
-inline fun <T> CompositionLocalConsumerModifierNode.mediaQuery(query: UiMediaScope.() -> T): T =
-    currentValueOf(LocalUiMediaScope).query()
+public inline fun <T> CompositionLocalConsumerModifierNode.mediaQuery(
+    query: UiMediaScope.() -> T
+): T = currentValueOf(LocalUiMediaScope).query()

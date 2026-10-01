@@ -19,7 +19,6 @@ package androidx.xr.compose.testapp.movablescalable
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,19 +37,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.draw.scale
+import androidx.xr.compose.subspace.layout.MovePolicy
 import androidx.xr.compose.subspace.layout.SpatialArrangement
 import androidx.xr.compose.subspace.layout.SpatialMoveEvent
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
-import androidx.xr.compose.subspace.layout.transformingMovable
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testapp.R
 import androidx.xr.compose.testapp.ui.components.ColumnWithCenterText
@@ -62,7 +62,7 @@ import androidx.xr.compose.unit.DpVolumeSize
 class MovableScalable : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        WindowCompat.enableEdgeToEdge(window)
         setContent { IntegrationTestsAppTheme { MovableScalableApp() } }
     }
 
@@ -108,7 +108,7 @@ class MovableScalable : ComponentActivity() {
                         .height(200.dp)
                         .width(200.dp)
                         .scale(scaleForPanel)
-                        .movable(onMove = customMovement)
+                        .movable(movePolicy = MovePolicy.custom(onMove = customMovement))
                 ) {
                     Box(
                         modifier = Modifier.background(Purple80).fillMaxSize(),
@@ -137,10 +137,7 @@ class MovableScalable : ComponentActivity() {
                     }
                 }
                 SpatialPanel(
-                    SubspaceModifier.offset(z = offsetZ)
-                        .height(200.dp)
-                        .width(200.dp)
-                        .transformingMovable()
+                    SubspaceModifier.offset(z = offsetZ).height(200.dp).width(200.dp).movable()
                 ) {
                     Box(
                         modifier = Modifier.background(Purple80).fillMaxSize(),

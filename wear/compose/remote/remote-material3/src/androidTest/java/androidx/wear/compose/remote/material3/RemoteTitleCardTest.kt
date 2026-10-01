@@ -29,8 +29,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.remote.material3.previews.RemoteTitleCardDefault
+import androidx.wear.compose.remote.material3.previews.RemoteTitleCardWithBorder
+import androidx.wear.compose.remote.material3.previews.RemoteTitleCardWithImage
 import androidx.wear.compose.remote.material3.previews.RemoteTitleCardWithTitleSubtitle
 import androidx.wear.compose.remote.material3.previews.RemoteTitleCardWithTitleTime
+import androidx.wear.compose.remote.material3.previews.RemoteTitleCardWithTwoLineTitle
 import androidx.wear.compose.remote.material3.util.ComponentContainer
 import androidx.wear.compose.remote.material3.util.SCREENSHOT_GOLDEN_DIRECTORY
 import org.junit.Rule
@@ -93,6 +96,26 @@ class RemoteTitleCardTest {
     }
 
     @Test
+    fun title_card_with_two_line_title() {
+        remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
+            remoteCreationDisplayInfo = creationDisplayInfo,
+        ) {
+            RemoteTitleCardWithTwoLineTitle()
+        }
+    }
+
+    @Test
+    fun title_card_with_border() {
+        remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
+            remoteCreationDisplayInfo = creationDisplayInfo,
+        ) {
+            RemoteTitleCardWithBorder()
+        }
+    }
+
+    @Test
     fun title_card_dynamic_color() {
         val colorOverrides = buildObjectIntMap {
             put("WearM3.primary", Color(0xFFB8D0A0).toArgb())
@@ -110,6 +133,16 @@ class RemoteTitleCardTest {
             },
         ) {
             ComponentContainer { RemoteTitleCardDefault() }
+        }
+    }
+
+    @Test
+    fun title_card_with_image() {
+        remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
+            remoteCreationDisplayInfo = creationDisplayInfo,
+        ) {
+            ComponentContainer { RemoteTitleCardWithImage() }
         }
     }
 }

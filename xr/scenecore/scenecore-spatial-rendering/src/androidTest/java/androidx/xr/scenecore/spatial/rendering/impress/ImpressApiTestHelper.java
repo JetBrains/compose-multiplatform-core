@@ -46,7 +46,7 @@ final class ImpressApiTestHelper {
             int nodeId, boolean enableCollider);
 
     static native void nativeSetExpectedSetGltfReformAffordanceEnabled(
-            int impressNodeId, boolean enabled, boolean systemMovable);
+            int impressNodeId, int reformFlag);
 
     static native void nativeSetExpectedAnimateGltfModel(
             int nodeId,
@@ -71,6 +71,9 @@ final class ImpressApiTestHelper {
 
     static native void nativeSetExpectedSetGltfModelAnimationSpeed(
             int nodeId, float speed, int channelId);
+
+    static native void nativeSetExpectedSetGltfModelAnimationLoop(
+            int nodeId, boolean loop, int channelId);
 
     static native void nativeSetExpectedSetGltfModelAnimationPlaybackTime(
             int nodeId, float playbackTime, int channelId);

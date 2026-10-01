@@ -730,6 +730,8 @@ public class GenericDocumentCtsTest {
     @Test
     public void testNestedProperties_arrayTypesInvalidPath() {
         GenericDocument doc = new GenericDocument.Builder<>("namespace", "id1", "schema1").build();
+        assertThrows(IllegalArgumentException.class, () -> doc.getPropertyString(""));
+        assertThrows(IllegalArgumentException.class, () -> doc.getPropertyString("]"));
         assertThrows(IllegalArgumentException.class, () -> doc.getPropertyString("."));
         assertThrows(IllegalArgumentException.class, () -> doc.getPropertyDocument("."));
         assertThrows(IllegalArgumentException.class, () -> doc.getPropertyBoolean("."));
@@ -1220,7 +1222,6 @@ public class GenericDocumentCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_GENERIC_DOCUMENT_OVER_IPC)
     public void testWriteToParcel() {
         GenericDocument inDoc =
                 new GenericDocument.Builder<>("namespace", "id1", "schema1")
@@ -1254,7 +1255,6 @@ public class GenericDocumentCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_GENERIC_DOCUMENT_OVER_IPC)
     public void testWriteToParcel_withEmptyDocArray() {
         GenericDocument inDoc =
                 new GenericDocument.Builder<>("namespace", "id1", "schema1")

@@ -16,10 +16,12 @@
 
 package androidx.ink.brush.behavior
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
 
 @UsedByNative
+@OptIn(InkInternalOnlyApi::class)
 actual internal object PolarTargetNodeNative {
     init {
         NativeLoader.load()
@@ -43,4 +45,6 @@ actual internal object PolarTargetNodeNative {
     @UsedByNative actual external fun getMagnitudeRangeStart(nativePointer: Long): Float
 
     @UsedByNative actual external fun getMagnitudeRangeEnd(nativePointer: Long): Float
+
+    @UsedByNative actual external fun getPolarTargetMinimumRequiredVersion(targetInt: Int): Int
 }

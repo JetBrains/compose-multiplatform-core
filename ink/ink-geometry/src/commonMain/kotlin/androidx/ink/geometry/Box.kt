@@ -17,7 +17,6 @@
 package androidx.ink.geometry
 
 import androidx.annotation.FloatRange
-import androidx.annotation.RestrictTo
 import kotlin.math.abs
 
 /**
@@ -122,7 +121,7 @@ public abstract class Box internal constructor() {
      * Returns an immutable copy of this object. This will return itself if called on an immutable
      * instance.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public abstract fun toImmutable(): ImmutableBox
+    public abstract fun toImmutable(): ImmutableBox
 
     /**
      * Compares this [Box] with [other], and returns true if the difference between [xMin] from
@@ -148,18 +147,18 @@ public abstract class Box internal constructor() {
 
         /** Returns a hash code for [box] using its [Box] properties. */
         // NOMUTANTS -- not testing exact hashCode values, just that equality implies same hashCode
-        fun hash(box: Box): Int =
-            box.run {
-                var result = xMin.hashCode()
-                result = 31 * result + yMin.hashCode()
-                result = 31 * result + xMax.hashCode()
-                result = 31 * result + yMax.hashCode()
-                return result
-            }
+        fun hash(box: Box): Int = box.run {
+            var result = xMin.hashCode()
+            result = 31 * result + yMin.hashCode()
+            result = 31 * result + xMax.hashCode()
+            result = 31 * result + yMax.hashCode()
+            return result
+        }
 
         /** Returns a string representation for [box] using its [Box] properties. */
-        fun string(box: Box): String =
-            box.run { "Box(xMin=$xMin, yMin=$yMin, xMax=$xMax, yMax=$yMax)" }
+        fun string(box: Box): String = box.run {
+            "Box(xMin=$xMin, yMin=$yMin, xMax=$xMax, yMax=$yMax)"
+        }
     }
 }
 

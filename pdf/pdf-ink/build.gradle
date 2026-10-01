@@ -50,11 +50,12 @@ dependencies {
     implementation("androidx.input:input-motionprediction:1.0.0")
     implementation("com.google.android.material:material:1.13.0")
     implementation("androidx.recyclerview:recyclerview:1.4.0")
+    // Older versions of lifecycle-runtime lint checks use a deleted lint API
+    implementation("androidx.lifecycle:lifecycle-runtime:2.10.0")
 
     testImplementation(libs.junit)
     testImplementation(libs.testRunner)
     testImplementation(libs.truth)
-    testImplementation(libs.robolectric)
     testImplementation(libs.testCoreKtx)
     testImplementation(libs.testExtJunitKtx)
     testImplementation(libs.kotlinCoroutinesTest)
@@ -67,6 +68,7 @@ dependencies {
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRules)
+    androidTestImplementation(libs.testUiautomator)
     androidTestImplementation(libs.kotlinCoroutinesTest)
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.bundles.espressoContrib)
@@ -81,4 +83,5 @@ androidx {
     inceptionYear = "2025"
     description = "Provide annotations support for PDF document using ink library"
     addGoldenImageAssets()
+    enableRobolectric()
 }

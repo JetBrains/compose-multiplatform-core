@@ -22,9 +22,11 @@ import android.graphics.PointF
 import android.graphics.RectF
 import android.os.DeadObjectException
 import android.os.SystemClock
+import android.util.SparseArray
 import android.view.MotionEvent
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfFeature
 import androidx.pdf.annotation.content.StampAnnotation
@@ -180,6 +182,7 @@ class InProgressHighlightViewTest {
         }
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     @Test
     fun textHighlight_withError_invokesErrorCallback() {
         val exception = DeadObjectException()
@@ -291,8 +294,13 @@ class InProgressHighlightViewTest {
 
     @Test
     fun touchEvents_upOutsidePage_usesLastValidPdfPointToFinalize() {
-        val pageBounds = RectF(0f, 0f, 150f, 150f)
-        setupActivity(pageInfoProvider = FakePageInfoProvider(pageBounds))
+        val pageRect = RectF(0f, 0f, 150f, 150f)
+        setupActivity(
+            pageInfoProvider =
+                PageInfoProvider().apply {
+                    setPageBounds(SparseArray<RectF>().apply { put(0, pageRect) })
+                }
+        )
 
         ActivityScenario.launch(PdfViewTestActivity::class.java).use { scenario ->
             val startViewPoint = PointF(50f, 50f)
@@ -341,7 +349,13 @@ class InProgressHighlightViewTest {
         }
     }
 
-    private fun setupActivity(pageInfoProvider: PageInfoProvider = FakePageInfoProvider()) {
+    @OptIn(ExperimentalPdfApi::class)
+    private fun setupActivity(
+        pageInfoProvider: PageInfoProvider =
+            PageInfoProvider().apply {
+                setPageBounds(SparseArray<RectF>().apply { put(0, RectF(0f, 0f, 500f, 500f)) })
+            }
+    ) {
         val pageText =
             PdfPageTextContent(bounds = listOf(RectF(10f, 10f, 100f, 100f)), text = "Sample Text")
         val fakePdfDocument =
@@ -369,6 +383,7 @@ class InProgressHighlightViewTest {
         return MotionEvent.obtain(now, now, action, x, y, 0)
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     internal class FakeTextBoundsProvider(private val pdfDocument: PdfDocument) :
         TextBoundsProvider {
         override suspend fun getTextBoundsBetweenPoints(

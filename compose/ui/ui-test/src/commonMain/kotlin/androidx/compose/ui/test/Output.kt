@@ -17,6 +17,7 @@
 package androidx.compose.ui.test
 
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.ColorProducer
 import androidx.compose.ui.semantics.AccessibilityAction
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
@@ -38,7 +39,7 @@ internal expect fun printToLog(tag: String, message: String)
  * @param maxDepth Max depth of the nodes in hierarchy to print. Zero will print just this node.
  *   Must not be negative.
  */
-fun SemanticsNodeInteraction.printToString(
+public fun SemanticsNodeInteraction.printToString(
     /*@IntRange(from = 0)*/
     maxDepth: Int = Int.MAX_VALUE
 ): String {
@@ -59,7 +60,7 @@ fun SemanticsNodeInteraction.printToString(
  * @param maxDepth Max depth of the nodes in hierarchy to print. Zero will print just this node.
  *   Must not be negative.
  */
-fun SemanticsNodeInteraction.printToLog(
+public fun SemanticsNodeInteraction.printToLog(
     tag: String,
     /*@IntRange(from = 0)*/
     maxDepth: Int = Int.MAX_VALUE,
@@ -80,7 +81,7 @@ fun SemanticsNodeInteraction.printToLog(
  * @param maxDepth Max depth of the nodes in hierarchy to print. Zero will print nodes in this
  *   collection only. Must not be negative.
  */
-fun SemanticsNodeInteractionCollection.printToString(
+public fun SemanticsNodeInteractionCollection.printToString(
     /*@IntRange(from = 0)*/
     maxDepth: Int = 0
 ): String {
@@ -106,7 +107,7 @@ fun SemanticsNodeInteractionCollection.printToString(
  * @param maxDepth Max depth of the nodes in hierarchy to print. Zero will print nodes in this
  *   collection only.
  */
-fun SemanticsNodeInteractionCollection.printToLog(
+public fun SemanticsNodeInteractionCollection.printToLog(
     tag: String,
     /*@IntRange(from = 0)*/
     maxDepth: Int = 0,
@@ -259,6 +260,8 @@ private fun StringBuilder.appendConfigInfo(config: SemanticsConfiguration, inden
                 // Save space if we there is text only in the object
                 append(value)
             }
+        } else if (value is ColorProducer) {
+            append(value.invoke())
         } else {
             append(value)
         }

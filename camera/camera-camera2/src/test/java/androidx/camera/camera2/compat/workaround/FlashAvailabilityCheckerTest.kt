@@ -25,8 +25,8 @@ import androidx.camera.camera2.impl.CameraProperties
 import androidx.camera.camera2.pipe.CameraExtensionMetadata
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
-import androidx.camera.camera2.pipe.Metadata
 import androidx.camera.camera2.testing.FakeCameraProperties
+import androidx.camera.common.Metadata
 import com.google.common.truth.Truth
 import java.lang.Class
 import java.nio.BufferUnderflowException
@@ -77,7 +77,6 @@ class FlashAvailabilityCheckerTest(
     private class TestCameraMetadata(
         private val mode: Mode = Mode.DEFAULT,
         private val characteristics: Map<CameraCharacteristics.Key<*>, Any?> = emptyMap(),
-        val metadata: Map<Metadata.Key<*>, Any?> = emptyMap(),
         cameraId: CameraId = CameraId("0"),
         override val keys: Set<CameraCharacteristics.Key<*>> = emptySet(),
         override val requestKeys: Set<CaptureRequest.Key<*>> = emptySet(),
@@ -102,14 +101,6 @@ class FlashAvailabilityCheckerTest(
             }
         }
 
-        @Suppress("UNCHECKED_CAST")
-        override fun <T> get(key: Metadata.Key<T>): T? = metadata[key] as T?
-
-        override fun <T> getOrDefault(key: CameraCharacteristics.Key<T>, default: T): T =
-            get(key) ?: default
-
-        override fun <T> getOrDefault(key: Metadata.Key<T>, default: T): T = get(key) ?: default
-
         override val camera: CameraId = cameraId
         override val isRedacted: Boolean = false
 
@@ -130,6 +121,11 @@ class FlashAvailabilityCheckerTest(
         override fun awaitExtensionMetadata(extension: Int): CameraExtensionMetadata {
             TODO("b/299356087 - Add support for fake extension metadata")
         }
+
+        override fun <T : Any> get(key: Metadata.Key<T>): T? = null
+
+        override val metadataKeys: Set<Metadata.Key<*>>
+            get() = emptySet()
 
         override fun <T : Any> unwrapAs(type: Class<T>): T? {
             TODO("Not yet implemented")

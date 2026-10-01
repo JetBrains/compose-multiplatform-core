@@ -201,12 +201,12 @@ internal class CredentialProviderGetSignInIntentController(context: Context) :
                 "When attempting to convert get response, " + "null credential found"
             )
         }
-        return GetCredentialResponse(cred)
+        return GetCredentialResponse(listOf(cred))
     }
 
     @VisibleForTesting
     fun createGoogleIdCredential(response: SignInCredential): GoogleIdTokenCredential {
-        var cred = GoogleIdTokenCredential.Builder().setId(response.id)
+        val cred = GoogleIdTokenCredential.Builder().setId(response.id)
         try {
             cred.setIdToken(response.googleIdToken!!)
         } catch (e: Exception) {

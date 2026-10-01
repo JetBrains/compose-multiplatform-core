@@ -23,6 +23,7 @@ import android.os.Bundle
 import androidx.annotation.RestrictTo
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.getInstance
+import androidx.lifecycle.ViewModelProvider.Companion.VIEW_MODEL_KEY
 import androidx.lifecycle.ViewModelProvider.NewInstanceFactory.Companion.instance
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.savedstate.SavedStateRegistryOwner
@@ -31,46 +32,46 @@ import java.lang.reflect.InvocationTargetException
 import kotlin.reflect.KClass
 
 /**
- * [androidx.lifecycle.ViewModelProvider.Factory] that can create ViewModels accessing and
- * contributing to a saved state via [SavedStateHandle] received in a constructor. If `defaultArgs`
- * bundle was passed into the constructor, it will provide default values in `SavedStateHandle`.
+ * [ViewModelProvider.Factory] that creates [ViewModel] instances with access to a
+ * [SavedStateHandle].
  *
- * If ViewModel is instance of [androidx.lifecycle.AndroidViewModel], it looks for a constructor
- * that receives an [Application] and [SavedStateHandle] (in this order), otherwise it looks for a
- * constructor that receives [SavedStateHandle] only. [androidx.lifecycle.AndroidViewModel] is only
- * supported if you pass a non-null [Application] instance.
+ * If the [ViewModel] is an instance of [AndroidViewModel], the factory looks for a constructor that
+ * accepts an [Application] and a [SavedStateHandle] (in that order). Otherwise, it looks for a
+ * constructor that accepts only a [SavedStateHandle]. [AndroidViewModel] is only supported if you
+ * pass a non-null [Application] instance.
+ *
+ * @see ViewModelProvider.Factory
+ * @see SavedStateHandle
  */
 public actual class SavedStateViewModelFactory : ViewModelProvider.Factory {
     private val application: Application?
-    private val owner: SavedStateRegistryOwner?
+    private val savedStateRegistryOwner: SavedStateRegistryOwner?
+    private val viewModelStoreOwner: ViewModelStoreOwner?
     private val defaultArgs: Bundle?
     private val factory: ViewModelProvider.Factory
 
     /**
-     * Constructs this factory.
+     * Constructs a new [SavedStateViewModelFactory].
      *
-     * When a factory is constructed this way, a component for which [SavedStateHandle] is scoped
-     * must have called [enableSavedStateHandles].
-     *
-     * @see [createSavedStateHandle] docs for more details.
+     * When constructed this way, the component for which the [SavedStateHandle] is scoped must have
+     * called [enableSavedStateHandles]. See [CreationExtras.createSavedStateHandle] for more
+     * details.
      */
     public actual constructor() {
         this.application = null
-        this.owner = null
+        this.savedStateRegistryOwner = null
+        this.viewModelStoreOwner = null
         this.defaultArgs = null
         this.factory = AndroidViewModelFactory()
     }
 
     /**
-     * Creates [SavedStateViewModelFactory].
+     * Constructs a new [SavedStateViewModelFactory].
      *
-     * [androidx.lifecycle.ViewModel] created with this factory can access to saved state scoped to
-     * the given `activity`.
-     *
-     * @param application an application. If null, [AndroidViewModel] instances will not be
+     * @param application application instance. If null, [AndroidViewModel] instances will not be
      *   supported.
      * @param owner [SavedStateRegistryOwner] that will provide restored state for created
-     *   [ViewModels][androidx.lifecycle.ViewModel]
+     *   [ViewModel]s. Must implement [ViewModelStoreOwner] to support state retention.
      */
     public constructor(
         application: Application?,
@@ -78,21 +79,17 @@ public actual class SavedStateViewModelFactory : ViewModelProvider.Factory {
     ) : this(application, owner, null)
 
     /**
-     * Creates [SavedStateViewModelFactory].
+     * Constructs a new [SavedStateViewModelFactory].
      *
-     * [androidx.lifecycle.ViewModel] created with this factory can access to saved state scoped to
-     * the given `activity`.
+     * When constructed this way, any [CreationExtras] provided to [create] will override the state
+     * configured here. It is not possible to mix the arguments received here with [CreationExtras].
      *
-     * When a factory is constructed this way, if you add any [CreationExtras] those arguments will
-     * be used instead of the state passed in here. It is not possible to mix the arguments received
-     * here with the [CreationExtras].
-     *
-     * @param application an application. If null, [AndroidViewModel] instances will not be
+     * @param application application instance. If null, [AndroidViewModel] instances will not be
      *   supported.
      * @param owner [SavedStateRegistryOwner] that will provide restored state for created
-     *   [ViewModels][androidx.lifecycle.ViewModel]
-     * @param defaultArgs values from this `Bundle` will be used as defaults by [SavedStateHandle]
-     *   if there is no previously saved state or previously saved state misses a value by such key.
+     *   [ViewModel]s. Must implement [ViewModelStoreOwner] to support state retention.
+     * @param defaultArgs default values to populate the [SavedStateHandle] if no state is restored
+     * @throws IllegalArgumentException if the [owner] does not implement [ViewModelStoreOwner]
      */
     @SuppressLint("LambdaLast")
     public constructor(
@@ -100,7 +97,11 @@ public actual class SavedStateViewModelFactory : ViewModelProvider.Factory {
         owner: SavedStateRegistryOwner,
         defaultArgs: Bundle?,
     ) {
-        this.owner = owner
+        require(owner is ViewModelStoreOwner) {
+            "SavedStateRegistryOwner must implement ViewModelStoreOwner to support SavedStateHandles"
+        }
+        this.savedStateRegistryOwner = owner
+        this.viewModelStoreOwner = owner
         this.defaultArgs = defaultArgs
         this.application = application
         this.factory =
@@ -130,7 +131,7 @@ public actual class SavedStateViewModelFactory : ViewModelProvider.Factory {
                 extras[VIEW_MODEL_STORE_OWNER_KEY] != null
 
         if (!hasCreationExtras) {
-            checkNotNull(owner) {
+            checkNotNull(savedStateRegistryOwner) {
                 "SAVED_STATE_REGISTRY_OWNER_KEY and VIEW_MODEL_STORE_OWNER_KEY must be provided " +
                     "in the creation extras to successfully create a ViewModel."
             }
@@ -166,14 +167,14 @@ public actual class SavedStateViewModelFactory : ViewModelProvider.Factory {
      * Creates a new instance of the given `Class`.
      *
      * @param key a key associated with the requested ViewModel
-     * @param modelClass a `Class` whose instance is requested
-     * @return a newly created ViewModel
+     * @param modelClass [Class] of the [ViewModel] to create
+     * @return new [ViewModel] instance of type [T]
      * @throws UnsupportedOperationException if there is no lifecycle
      */
     public fun <T : ViewModel> create(key: String, modelClass: Class<T>): T {
         // Fail fast if instantiated via the empty constructor, as that requires
         // the modern CreationExtras pathway to provide the SavedStateRegistryOwner.
-        if (owner == null) {
+        if (savedStateRegistryOwner == null || viewModelStoreOwner == null) {
             throw UnsupportedOperationException(
                 "SavedStateViewModelFactory constructed with empty constructor supports only " +
                     "calls to create(modelClass: Class<T>, extras: CreationExtras)."
@@ -202,16 +203,29 @@ public actual class SavedStateViewModelFactory : ViewModelProvider.Factory {
             }
         }
 
-        val controller = SavedStateHandleController(key, owner, defaultArgs)
-        val viewModel =
-            if (isAndroidViewModel && hasApplication) {
-                newInstance(modelClass, constructor, application, controller.handle)
-            } else {
-                newInstance(modelClass, constructor, controller.handle)
+        // Register controller under host. Ensures createSavedStateHandle() resolves it.
+        SavedStateHandleController.getOrCreate(savedStateRegistryOwner, viewModelStoreOwner)
+        attachSavedStateHandleOnNextRecreation(savedStateRegistryOwner)
+
+        // Construct CreationExtras. Preserves owner default extras, overrides with factory keys.
+        val extras =
+            CreationExtras(initialExtras = viewModelStoreOwner.defaultViewModelCreationExtras) {
+                this[SAVED_STATE_REGISTRY_OWNER_KEY] = savedStateRegistryOwner
+                this[VIEW_MODEL_STORE_OWNER_KEY] = viewModelStoreOwner
+                this[VIEW_MODEL_KEY] = key
+                if (defaultArgs != null) {
+                    this[DEFAULT_ARGS_KEY] = defaultArgs
+                }
             }
 
-        viewModel.addCloseable(SavedStateHandleController.TAG, controller)
-        return viewModel
+        // Retrieve SavedStateHandle from registered controller via CreationExtras.
+        val handle = extras.createSavedStateHandle()
+
+        return if (isAndroidViewModel && hasApplication) {
+            newInstance(modelClass, constructor, application, handle)
+        } else {
+            newInstance(modelClass, constructor, handle)
+        }
     }
 
     /**

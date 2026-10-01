@@ -17,11 +17,18 @@
 package androidx.appfunctions
 
 import android.annotation.SuppressLint
+import android.os.CancellationSignal
 import androidx.annotation.RestrictTo
 import androidx.appfunctions.internal.AppFunctionInventory
 import androidx.appfunctions.internal.Dependencies
 import androidx.appfunctions.internal.Dispatchers
+import androidx.appfunctions.metadata.AppFunctionMetadata
 import com.android.extensions.appfunctions.AppFunctionService
+import java.util.function.Consumer
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 /** The implementation of [AppFunctionService] from extension library. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -30,23 +37,45 @@ public class ExtensionAppFunctionService : ExtensionsAppFunctionService() {
 
     private lateinit var delegate: AppFunctionServiceDelegate
 
+    private lateinit var scope: CoroutineScope
+
     override fun onCreate() {
         super.onCreate()
+        scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
         delegate =
             AppFunctionServiceDelegate(
                 this@ExtensionAppFunctionService,
                 Dispatchers.Main,
-                checkNotNull(Dependencies.aggregatedAppFunctionInventory),
                 Dependencies.aggregatedAppFunctionInvoker,
-                Dependencies.translatorSelector,
             )
     }
 
-    override suspend fun executeFunction(
-        request: ExecuteAppFunctionRequest
+    override fun onDestroy() {
+        scope.cancel()
+        super.onDestroy()
+    }
+
+    override fun onExecuteFunction(
+        request: ExecuteAppFunctionRequest,
+        metadata: AppFunctionMetadata,
+        cancellationSignal: CancellationSignal,
+        callback: Consumer<ExecuteAppFunctionResponse>,
+    ) {
+        val job = scope.launch {
+            val response = executeFunction(request, metadata)
+            // We don't check isActive here since AppFunction implementation is expected
+            // to return ERROR_CANCELLED when the operation is caneled.
+            callback.accept(response)
+        }
+        cancellationSignal.setOnCancelListener { job.cancel() }
+    }
+
+    private suspend fun executeFunction(
+        request: ExecuteAppFunctionRequest,
+        metadata: AppFunctionMetadata,
     ): ExecuteAppFunctionResponse =
         try {
-            delegate.executeFunction(request)
+            delegate.executeFunction(request, metadata)
         } catch (e: AppFunctionException) {
             ExecuteAppFunctionResponse.Error(e)
         } catch (e: Exception) {

@@ -65,8 +65,8 @@ public class ArDevice internal constructor(internal val runtimeArDevice: Runtime
      * Contains the current state of the AR Device tracking.
      *
      * @property devicePose the current [Pose] of the device
-     * @property trackingState The current [androidx.xr.arcore.TrackingState]
-     * @property owner self-reference to the object that owns this state.
+     * @property trackingState the current [androidx.xr.arcore.TrackingState]
+     * @property owner self-reference to the object that owns this state
      */
     public class State
     internal constructor(
@@ -88,6 +88,14 @@ public class ArDevice internal constructor(internal val runtimeArDevice: Runtime
             result = 31 * result + owner.hashCode()
             return result
         }
+
+        /**
+         * Returns a string representation of [ArDevice.State] for debugging.
+         *
+         * Note: Not intended for production use.
+         */
+        override fun toString(): String =
+            "State(devicePose=$devicePose, trackingState=$trackingState)"
     }
 
     private val _state = MutableStateFlow<State>(State(Pose(), TrackingState.STOPPED, owner = this))
@@ -113,4 +121,11 @@ public class ArDevice internal constructor(internal val runtimeArDevice: Runtime
     }
 
     override fun hashCode(): Int = runtimeArDevice.hashCode()
+
+    /**
+     * Returns a string representation of [ArDevice] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String = "ArDevice(state=${state.value})"
 }

@@ -35,7 +35,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -43,7 +42,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class FocusSearchNonPlacedItemsTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private lateinit var focusManager: FocusManager
     private val initialFocus: FocusRequester = FocusRequester()
@@ -455,15 +454,14 @@ class FocusSearchNonPlacedItemsTest {
         ) { measurables, constraints ->
             var width = 0
             var height = 0
-            val placeables =
-                measurables.map {
-                    it.measure(constraints).run {
-                        val offset = IntOffset(width, height)
-                        width += this.width
-                        height = maxOf(height, this.height)
-                        Pair(this, offset)
-                    }
+            val placeables = measurables.map {
+                it.measure(constraints).run {
+                    val offset = IntOffset(width, height)
+                    width += this.width
+                    height = maxOf(height, this.height)
+                    Pair(this, offset)
                 }
+            }
 
             layout(width, height) {
                 placeables.forEachIndexed { index, placeable ->
@@ -491,15 +489,14 @@ class FocusSearchNonPlacedItemsTest {
         ) { measurables, constraints ->
             var width = 0
             var height = 0
-            val placeables =
-                measurables.map {
-                    it.measure(constraints).run {
-                        val offset = IntOffset(width, height)
-                        width = maxOf(width, this.width)
-                        height += this.height
-                        Pair(this, offset)
-                    }
+            val placeables = measurables.map {
+                it.measure(constraints).run {
+                    val offset = IntOffset(width, height)
+                    width = maxOf(width, this.width)
+                    height += this.height
+                    Pair(this, offset)
                 }
+            }
 
             layout(width, height) {
                 placeables.forEachIndexed { index, placeable ->

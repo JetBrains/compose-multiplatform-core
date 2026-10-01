@@ -17,7 +17,6 @@
 package androidx.xr.compose.subspace.layout
 
 import androidx.annotation.FloatRange
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.xr.compose.platform.LocalSession
@@ -26,9 +25,9 @@ import androidx.xr.compose.subspace.node.SubspaceLayoutModifierNode
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
 import androidx.xr.compose.subspace.node.currentValueOf
 import androidx.xr.compose.unit.DpVolumeSize
-import androidx.xr.compose.unit.Meter
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.compose.unit.constrain
+import androidx.xr.compose.unit.roundMetersToPx
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
@@ -82,9 +81,9 @@ public fun SubspaceModifier.size(size: Dp): SubspaceModifier =
     )
 
 /**
- * Declare the preferred size of the content to be exactly [width] dp along the x dimensions,
- * [height] dp along the y dimensions, and [depth] dp along the z dimension, of the Composable's
- * local coordinate space.
+ * Declare the preferred size of the content to be exactly [width] dp along the x dimension,
+ * [height] dp along the y dimension, and [depth] dp along the z dimension of the Composable's local
+ * coordinate space.
  *
  * @param width preferred width in [Dp].
  * @param height preferred height in [Dp].
@@ -128,8 +127,8 @@ public fun SubspaceModifier.size(size: DpVolumeSize): SubspaceModifier =
 
 /**
  * Constrain the size of the content to be between min and max dp as permitted by the incoming
- * measurement constraints. If the incoming constraints are more restrictive the requested size will
- * obey the incoming constraints and attempt to be as close as possible to the preferred size.
+ * measurement constraints. If the incoming constraints are more restrictive, the requested size
+ * will obey the incoming constraints and attempt to be as close as possible to the preferred size.
  *
  * @param minWidth The minimum width.
  * @param maxWidth The maximum width.
@@ -159,9 +158,10 @@ public fun SubspaceModifier.sizeIn(
     )
 
 /**
- * Constrain the width of the content to be between [min]dp and [max]dp as permitted by the incoming
- * measurement constraints. If the incoming constraints are more restrictive the requested size will
- * obey the incoming constraints and attempt to be as close as possible to the preferred size.
+ * Constrain the width of the content to be between [min] dp and [max] dp as permitted by the
+ * incoming measurement constraints. If the incoming constraints are more restrictive, the requested
+ * size will obey the incoming constraints and attempt to be as close as possible to the preferred
+ * size.
  *
  * @param min The minimum width.
  * @param max The maximum width.
@@ -172,8 +172,8 @@ public fun SubspaceModifier.widthIn(
 ): SubspaceModifier = this.then(SizeElement(minWidth = min, maxWidth = max, enforceIncoming = true))
 
 /**
- * Constrain the height of the content to be between [min]dp and [max]dp as permitted by the
- * incoming measurement constraints. If the incoming constraints are more restrictive the requested
+ * Constrain the height of the content to be between [min] dp and [max] dp as permitted by the
+ * incoming measurement constraints. If the incoming constraints are more restrictive, the requested
  * size will obey the incoming constraints and attempt to be as close as possible to the preferred
  * size.
  *
@@ -187,9 +187,10 @@ public fun SubspaceModifier.heightIn(
     this.then(SizeElement(minHeight = min, maxHeight = max, enforceIncoming = true))
 
 /**
- * Constrain the depth of the content to be between [min]dp and [max]dp as permitted by the incoming
- * measurement constraints. If the incoming constraints are more restrictive the requested size will
- * obey the incoming constraints and attempt to be as close as possible to the preferred size.
+ * Constrain the depth of the content to be between [min] dp and [max] dp as permitted by the
+ * incoming measurement constraints. If the incoming constraints are more restrictive, the requested
+ * size will obey the incoming constraints and attempt to be as close as possible to the preferred
+ * size.
  *
  * @param min The minimum depth.
  * @param max The maximum depth.
@@ -230,7 +231,6 @@ private class RecommendedSizeNode :
         constraints: VolumeConstraints,
     ): SubspaceMeasureResult {
         val session = currentValueOf(LocalSession)
-        val density = currentValueOf(LocalDensity)
 
         if (session == null) {
             val placeable = measurable.measure(constraints)
@@ -250,21 +250,21 @@ private class RecommendedSizeNode :
 
         val finalMaxWidth =
             if (constraints.maxWidth == VolumeConstraints.INFINITY) {
-                Meter(recommendedSizeMeters.width).roundToPx(density)
+                recommendedSizeMeters.width.roundMetersToPx(session.scene.virtualPixelDensity)
             } else {
                 constraints.maxWidth
             }
 
         val finalMaxHeight =
             if (constraints.maxHeight == VolumeConstraints.INFINITY) {
-                Meter(recommendedSizeMeters.height).roundToPx(density)
+                recommendedSizeMeters.height.roundMetersToPx(session.scene.virtualPixelDensity)
             } else {
                 constraints.maxHeight
             }
 
         val finalMaxDepth =
             if (constraints.maxDepth == VolumeConstraints.INFINITY) {
-                Meter(recommendedSizeMeters.depth).roundToPx(density)
+                recommendedSizeMeters.depth.roundMetersToPx(session.scene.virtualPixelDensity)
             } else {
                 constraints.maxDepth
             }
@@ -803,57 +803,56 @@ private class SizeNode(
         measurable: SubspaceMeasurable,
         constraints: VolumeConstraints,
     ): SubspaceMeasureResult {
-        val wrappedConstraints =
-            targetConstraints.let {
-                if (enforceIncoming) {
-                    constraints.constrain(targetConstraints)
-                } else {
-                    val resolvedMinWidth =
-                        if (minWidth != Dp.Unspecified) {
-                            targetConstraints.minWidth
-                        } else {
-                            constraints.minWidth.coerceAtMost(targetConstraints.maxWidth)
-                        }
-                    val resolvedMaxWidth =
-                        if (maxWidth != Dp.Unspecified) {
-                            targetConstraints.maxWidth
-                        } else {
-                            constraints.maxWidth.coerceAtLeast(targetConstraints.minWidth)
-                        }
-                    val resolvedMinHeight =
-                        if (minHeight != Dp.Unspecified) {
-                            targetConstraints.minHeight
-                        } else {
-                            constraints.minHeight.coerceAtMost(targetConstraints.maxHeight)
-                        }
-                    val resolvedMaxHeight =
-                        if (maxHeight != Dp.Unspecified) {
-                            targetConstraints.maxHeight
-                        } else {
-                            constraints.maxHeight.coerceAtLeast(targetConstraints.minHeight)
-                        }
-                    val resolvedMinDepth =
-                        if (minDepth != Dp.Unspecified) {
-                            targetConstraints.minDepth
-                        } else {
-                            constraints.minDepth.coerceAtMost(targetConstraints.maxDepth)
-                        }
-                    val resolvedMaxDepth =
-                        if (maxDepth != Dp.Unspecified) {
-                            targetConstraints.maxDepth
-                        } else {
-                            constraints.maxDepth.coerceAtLeast(targetConstraints.minDepth)
-                        }
-                    VolumeConstraints(
-                        resolvedMinWidth,
-                        resolvedMaxWidth,
-                        resolvedMinHeight,
-                        resolvedMaxHeight,
-                        resolvedMinDepth,
-                        resolvedMaxDepth,
-                    )
-                }
+        val wrappedConstraints = targetConstraints.let {
+            if (enforceIncoming) {
+                constraints.constrain(targetConstraints)
+            } else {
+                val resolvedMinWidth =
+                    if (minWidth != Dp.Unspecified) {
+                        targetConstraints.minWidth
+                    } else {
+                        constraints.minWidth.coerceAtMost(targetConstraints.maxWidth)
+                    }
+                val resolvedMaxWidth =
+                    if (maxWidth != Dp.Unspecified) {
+                        targetConstraints.maxWidth
+                    } else {
+                        constraints.maxWidth.coerceAtLeast(targetConstraints.minWidth)
+                    }
+                val resolvedMinHeight =
+                    if (minHeight != Dp.Unspecified) {
+                        targetConstraints.minHeight
+                    } else {
+                        constraints.minHeight.coerceAtMost(targetConstraints.maxHeight)
+                    }
+                val resolvedMaxHeight =
+                    if (maxHeight != Dp.Unspecified) {
+                        targetConstraints.maxHeight
+                    } else {
+                        constraints.maxHeight.coerceAtLeast(targetConstraints.minHeight)
+                    }
+                val resolvedMinDepth =
+                    if (minDepth != Dp.Unspecified) {
+                        targetConstraints.minDepth
+                    } else {
+                        constraints.minDepth.coerceAtMost(targetConstraints.maxDepth)
+                    }
+                val resolvedMaxDepth =
+                    if (maxDepth != Dp.Unspecified) {
+                        targetConstraints.maxDepth
+                    } else {
+                        constraints.maxDepth.coerceAtLeast(targetConstraints.minDepth)
+                    }
+                VolumeConstraints(
+                    resolvedMinWidth,
+                    resolvedMaxWidth,
+                    resolvedMinHeight,
+                    resolvedMaxHeight,
+                    resolvedMinDepth,
+                    resolvedMaxDepth,
+                )
             }
+        }
 
         val placeable = measurable.measure(wrappedConstraints)
         return layout(placeable.width, placeable.height, placeable.depth) {

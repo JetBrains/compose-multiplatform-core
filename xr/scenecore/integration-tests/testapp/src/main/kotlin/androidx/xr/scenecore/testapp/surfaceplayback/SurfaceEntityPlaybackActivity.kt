@@ -146,7 +146,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
                 check(entity == surfaceEntity) {
                     "Listener should only be attached to surfaceEntity."
                 }
-                var curParentPose = movieParent!!.getPose()
+                val curParentPose = movieParent!!.getPose()
                 // Apply the currentPose to the movieParent to move the surfaceEntity.
                 movieParent?.setPose(curParentPose.compose(currentPose))
             }
@@ -201,6 +201,15 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // The content must be installed before the Session is created. Creating a Session
+        // registers this Activity's window as an XR "window leash", and the platform reads
+        // Window.peekDecorView() without a null check when a compositor transform update
+        // arrives, which crashes the process if no content view has been set yet. The content
+        // renders nothing until the Session is ready.
+        // See b/562983987.
+        val sessionState = mutableStateOf<Session?>(null)
+        setContent { sessionState.value?.let { HelloWorld(it, activity) } }
+
         lifecycleScope.launch {
             val sessionResult = Session.create(context = this@SurfaceEntityPlaybackActivity)
             if (sessionResult is SessionCreateSuccess) {
@@ -230,7 +239,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
                     )
 
                 alphaMaskTexture = Texture.create(session, Paths.get("textures", "alpha_mask.png"))
-                setContent { HelloWorld(session, activity) }
+                sessionState.value = session
             } else {
                 finish()
             }
@@ -403,6 +412,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
         return view
     }
 
+    @Suppress("DEPRECATION")
     @Composable
     fun VideoPlayerControls(session: Session, arDevice: ArDevice) {
         var featherRadiusX by remember { mutableFloatStateOf(0.0f) }
@@ -518,9 +528,9 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
         var controlOffsetZ: Float = 0.0f
 
         Log.i(TAG, "SurfaceEntity visuals updated. Pose: $activePoseForVideo")
-        var rotation =
+        val rotation =
             Quaternion.fromAxisAngle(Vector3.Forward, currentVideoRotationDegrees.toFloat())
-        var newPose = surfaceEntity!!.getPose().compose(Pose(Vector3.Zero, rotation))
+        val newPose = surfaceEntity!!.getPose().compose(Pose(Vector3.Zero, rotation))
         surfaceEntity!!.setPose(newPose)
         controlPanelEntity!!.parent = movieParent!!
 
@@ -716,7 +726,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
 
                                         // Extract and update rotation
                                         var updateSurfaceEntityVisuals = false
-                                        var newRotation = videoFormat.rotationDegrees
+                                        val newRotation = videoFormat.rotationDegrees
                                         Log.d(TAG, "newRotation: $newRotation")
                                         if (currentVideoRotationDegrees != newRotation) {
                                             currentVideoRotationDegrees = newRotation
@@ -724,7 +734,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
                                         }
 
                                         // Extract and update pixel aspect ratio
-                                        var newPixelAspectRatio = videoFormat.pixelWidthHeightRatio
+                                        val newPixelAspectRatio = videoFormat.pixelWidthHeightRatio
                                         Log.d(TAG, "newPixelAspectRatio: $newPixelAspectRatio")
                                         if (currentPixelAspectRatio != newPixelAspectRatio) {
                                             currentPixelAspectRatio = newPixelAspectRatio

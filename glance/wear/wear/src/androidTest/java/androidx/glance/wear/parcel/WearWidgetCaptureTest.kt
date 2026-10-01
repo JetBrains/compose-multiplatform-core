@@ -38,7 +38,7 @@ import androidx.compose.remote.creation.compose.modifier.clickable
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.rdp
-import androidx.compose.remote.creation.profile.RcPlatformProfiles
+import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.player.core.RemoteDocument
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -56,17 +56,18 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.core.os.BundleCompat
+import androidx.glance.wear.GlanceWearProfiles
+import androidx.glance.wear.core.RendererVersion
 import androidx.glance.wear.core.WearWidgetRawContent
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 
 class WearWidgetCaptureTest {
 
-    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createComposeRule()
 
     companion object {
         val context: Context = ApplicationProvider.getApplicationContext()
@@ -92,7 +93,7 @@ class WearWidgetCaptureTest {
             RemoteColumn(modifier = RemoteModifier.fillMaxSize()) {
                 RemoteBox(modifier = RemoteModifier.size(100.rdp))
                 RemoteText(
-                    text = "text-0",
+                    text = "text-0".rs,
                     modifier =
                         RemoteModifier.clickable(
                             pendingIntentAction { localContext ->
@@ -101,7 +102,7 @@ class WearWidgetCaptureTest {
                         ),
                 )
                 RemoteText(
-                    text = "text-1",
+                    text = "text-1".rs,
                     modifier =
                         RemoteModifier.clickable(
                             pendingIntentAction { localContext ->
@@ -119,7 +120,13 @@ class WearWidgetCaptureTest {
             val context = LocalContext.current
             val data = remember { mutableStateOf<WearWidgetRawContent?>(null) }
             LaunchedEffect(Unit) {
-                data.value = WearWidgetCapture.capture(context, creationDisplayInfo, content)
+                data.value =
+                    WearWidgetCapture.capture(
+                        context,
+                        creationDisplayInfo,
+                        RendererVersion.SAFE_FALLBACK_SUPPORTED_OPERATIONS,
+                        content,
+                    )
             }
 
             Column {
@@ -202,7 +209,7 @@ class WearWidgetCaptureTest {
     fun pendingIntentCollection() = runTest {
         val creationDisplayInfo =
             RemoteCreationDisplayInfo(400, 400, context.resources.configuration.densityDpi)
-        val profile = RcPlatformProfiles.WEAR_WIDGETS
+        val profile = GlanceWearProfiles.wearWidgets()
         val result =
             captureSingleRemoteDocument(
                 creationDisplayInfo = creationDisplayInfo,

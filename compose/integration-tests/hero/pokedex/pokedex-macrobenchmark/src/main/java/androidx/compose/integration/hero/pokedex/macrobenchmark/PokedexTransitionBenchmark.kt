@@ -14,15 +14,21 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalBenchmarkConfigApi::class, ExperimentalPerfettoCaptureApi::class)
+
 package androidx.compose.integration.hero.pokedex.macrobenchmark
 
 import android.content.Intent
+import androidx.benchmark.ExperimentalBenchmarkConfigApi
+import androidx.benchmark.ExperimentalConfig
+import androidx.benchmark.MemoryProfilingConfig
 import androidx.benchmark.macro.CompilationMode
 import androidx.benchmark.macro.ExperimentalMetricApi
 import androidx.benchmark.macro.FrameTimingGfxInfoMetric
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.benchmark.macro.Metric
 import androidx.benchmark.macro.TraceSectionMetric
+import androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi
 import androidx.compose.integration.hero.common.macrobenchmark.HeroMacrobenchmarkDefaults
 import androidx.compose.integration.hero.pokedex.macrobenchmark.internal.PokedexConstants.POKEDEX_TARGET_PACKAGE_NAME
 import androidx.compose.integration.hero.pokedex.macrobenchmark.internal.byResContains
@@ -35,6 +41,7 @@ import androidx.test.uiautomator.Until
 import androidx.testutils.CpuFrequencyChangeMetric
 import androidx.testutils.createCompilationParams
 import androidx.testutils.defaultComposeScrollingMetrics
+import androidx.testutils.defaultMemoryMetrics
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -98,12 +105,22 @@ class PokedexTransitionBenchmark(
                 defaultComposeScrollingMetrics() +
                     FrameTimingGfxInfoMetric() +
                     transitionDurationMetrics +
-                    CpuFrequencyChangeMetric(),
+                    CpuFrequencyChangeMetric() +
+                    defaultMemoryMetrics(),
             compilationMode = compilationMode,
             iterations = iterations,
+            experimentalConfig =
+                ExperimentalConfig(
+                    memoryProfilingConfig =
+                        MemoryProfilingConfig(
+                            isSampleArtHeapEnabled = true,
+                            isSampleNativeHeapEnabled = true,
+                        )
+                ),
             setupBlock = {
                 killProcess()
                 databaseCleanupRule.deleteDatabaseFiles()
+                cacheCleanupRule.deleteCacheFiles()
 
                 val intent = Intent()
                 intent.configure(

@@ -18,7 +18,10 @@ package androidx.appfunctions.metadata
 
 import android.annotation.SuppressLint
 import android.app.PendingIntent
+import android.os.PatternMatcher
 import androidx.annotation.IntDef
+import androidx.annotation.RestrictTo
+import androidx.appfunctions.internal.PatternMatchers
 import androidx.appsearch.annotation.Document
 import java.util.Objects
 
@@ -343,7 +346,10 @@ constructor(
     }
 
     /** Gets a pseudo [AppFunctionObjectTypeMetadata] by merging the [matchAll] data types. */
-    internal fun getPseudoObjectTypeMetadata(
+    // This cannot be internal since integration-test needs to use it to verify the AllOf type
+    // serialization validation.
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun getPseudoObjectTypeMetadata(
         componentsMetadata: AppFunctionComponentsMetadata
     ): AppFunctionObjectTypeMetadata {
         val allProperties = mutableMapOf<String, AppFunctionDataTypeMetadata>()
@@ -526,15 +532,49 @@ constructor(
         return "AppFunctionOneOfTypeMetadata(matchOneOf=$matchOneOf, isNullable=$isNullable, description=$description)"
     }
 
-    internal fun getObjectMetadataForOneOfType(qualifiedName: String): AppFunctionDataTypeMetadata {
-        return matchOneOf.singleOrNull {
-            when (it) {
-                is AppFunctionObjectTypeMetadata -> it.qualifiedName == qualifiedName
-                is AppFunctionReferenceTypeMetadata -> it.referenceDataType == qualifiedName
-                is AppFunctionAllOfTypeMetadata -> it.qualifiedName == qualifiedName
-                else -> throw IllegalArgumentException("Unexpected data type $it for one of type")
+    internal fun getObjectMetadataForOneOfType(
+        qualifiedName: String,
+        componentsMetadata: AppFunctionComponentsMetadata,
+    ): AppFunctionObjectTypeMetadata {
+        fun resolveObjectType(
+            dataTypeMetadata: AppFunctionDataTypeMetadata
+        ): AppFunctionObjectTypeMetadata {
+            return when (dataTypeMetadata) {
+                is AppFunctionObjectTypeMetadata -> {
+                    dataTypeMetadata
+                }
+                is AppFunctionReferenceTypeMetadata -> {
+                    val resolved =
+                        componentsMetadata.dataTypes[dataTypeMetadata.referenceDataType]
+                            ?: throw IllegalArgumentException(
+                                "Unable to resolve ${dataTypeMetadata.referenceDataType}"
+                            )
+                    resolveObjectType(resolved)
+                }
+                is AppFunctionAllOfTypeMetadata -> {
+                    dataTypeMetadata.getPseudoObjectTypeMetadata(componentsMetadata)
+                }
+                else ->
+                    throw IllegalArgumentException(
+                        "Unable to resolve $dataTypeMetadata to object type"
+                    )
             }
-        } ?: throw IllegalArgumentException("$qualifiedName does not match any of the oneOf types")
+        }
+
+        val target =
+            matchOneOf.singleOrNull {
+                when (it) {
+                    is AppFunctionObjectTypeMetadata -> it.qualifiedName == qualifiedName
+                    is AppFunctionReferenceTypeMetadata -> it.referenceDataType == qualifiedName
+                    is AppFunctionAllOfTypeMetadata -> it.qualifiedName == qualifiedName
+                    else ->
+                        throw IllegalArgumentException("Unexpected data type $it for one of type")
+                }
+            }
+                ?: throw IllegalArgumentException(
+                    "$qualifiedName does not match any of the oneOf types"
+                )
+        return resolveObjectType(target)
     }
 
     override fun internalRequireSemanticallyEquivalentTo(
@@ -650,13 +690,12 @@ constructor(
      * Converts this [AppFunctionObjectTypeMetadata] to an [AppFunctionDataTypeMetadataDocument].
      */
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
-        val properties =
-            properties.map { (name, dataType) ->
-                AppFunctionNamedDataTypeMetadataDocument(
-                    name = checkNotNull(name),
-                    dataTypeMetadata = dataType.toAppFunctionDataTypeMetadataDocument(),
-                )
-            }
+        val properties = properties.map { (name, dataType) ->
+            AppFunctionNamedDataTypeMetadataDocument(
+                name = checkNotNull(name),
+                dataTypeMetadata = dataType.toAppFunctionDataTypeMetadataDocument(),
+            )
+        }
         return AppFunctionDataTypeMetadataDocument(
             type = TYPE,
             properties = properties,
@@ -1194,13 +1233,58 @@ constructor(
         "NullableCollection"
     )
     public val enumValues: Set<String>? = null,
+    /**
+     * The patternMatchers that string values must match.
+     *
+     * If null, no pattern constraint is applied, otherwise it must be non-empty and string values
+     * accepted by this data type must match at least one of these [PatternMatcher]s.
+     */
+    @get:Suppress(
+        // Null value is used to specify that the value was not set by the caller.
+        "NullableCollection"
+    )
+    public val patternMatchers: List<PatternMatcher>? = null,
+    /**
+     * The semantic format description for string values (e.g., `"uri"`).
+     *
+     * Provides a hint describing the expected format or semantic representation of the string
+     * values. A `null` value indicates that no format description is set.
+     */
+    public val format: String? = null,
 ) : AppFunctionDataTypeMetadata(isNullable = isNullable, description = description) {
 
     init {
         require(enumValues == null || enumValues.isNotEmpty()) {
             "If specified, enumValues cannot be empty."
         }
+        require(patternMatchers == null || patternMatchers.isNotEmpty()) {
+            "If specified, patternMatchers cannot be empty."
+        }
     }
+
+    /**
+     * [PatternMatcher] does not implement equals, so compare by (path, type) regardless of order.
+     */
+    private val patternKeys: Set<Pair<String, Int>>
+        get() = patternMatchers.orEmpty().mapTo(mutableSetOf()) { it.path to it.type }
+
+    /**
+     * A regular expression equivalent to [patternMatchers], or `null` if [patternMatchers] is null
+     * or contains a type that this library version cannot convert (for example, a type added in a
+     * newer SDK).
+     *
+     * Combines all [patternMatchers] into a single expression joined as alternatives (logical OR),
+     * so it matches a string value if and only if at least one of [patternMatchers] matches it. The
+     * expression uses ECMA-262 regular expression syntax and is derived from [patternMatchers]
+     * rather than stored.
+     *
+     * This is intended for describing the constraint to non-Android consumers. Do not use it to
+     * validate values: evaluating a regular expression derived from untrusted metadata risks
+     * catastrophic backtracking (ReDoS) and regex dialect mismatches. An
+     * [androidx.appfunctions.AppFunctionData] built with this metadata already validates string
+     * values against [patternMatchers].
+     */
+    public val regexPattern: String? by lazy { patternMatchers?.toRegexPatternOrNull() }
 
     /**
      * Converts this [AppFunctionStringTypeMetadata] to an [AppFunctionDataTypeMetadataDocument].
@@ -1210,21 +1294,34 @@ constructor(
             type = TYPE_STRING,
             isNullable = isNullable,
             description = description.ifEmpty { null },
+            enumValues = enumValues?.toList() ?: emptyList(),
+            patterns =
+                patternMatchers.orEmpty().map {
+                    AppFunctionStringPatternDocument(value = it.path, type = it.type.toLong())
+                },
+            format = format,
         )
     }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is AppFunctionStringTypeMetadata) return false
-        return super.equals(other)
+        return super.equals(other) &&
+            patternKeys == other.patternKeys &&
+            format == other.format &&
+            enumValues == other.enumValues
     }
 
     override fun hashCode(): Int {
-        return super.hashCode()
+        var result = super.hashCode()
+        result = 31 * result + patternKeys.hashCode()
+        result = 31 * result + (format?.hashCode() ?: 0)
+        result = 31 * result + (enumValues?.hashCode() ?: 0)
+        return result
     }
 
     override fun toString(): String {
-        return "AppFunctionStringTypeMetadata(isNullable=$isNullable, description=$description)"
+        return "AppFunctionStringTypeMetadata(isNullable=$isNullable, description=$description, patternMatchers=$patternMatchers, format=$format, enumValues=$enumValues)"
     }
 
     override fun internalRequireSemanticallyEquivalentTo(
@@ -1237,11 +1334,22 @@ constructor(
         require(otherResolved is AppFunctionStringTypeMetadata) {
             "Expect ${AppFunctionStringTypeMetadata::class.java} but found ${otherResolved.javaClass}"
         }
+        require(this.patternKeys == otherResolved.patternKeys) {
+            "Patterns mismatch for String type. Expected: ${this.patternMatchers}, actual: ${otherResolved.patternMatchers}"
+        }
+        require(this.format == otherResolved.format) {
+            "Format mismatch for String type. Expected: ${this.format}, actual: ${otherResolved.format}"
+        }
         require(this.enumValues == otherResolved.enumValues) {
             "Enum values mismatch for String type. " +
                 "Expected: ${this.enumValues}, " +
                 "actual: ${otherResolved.enumValues}"
         }
+    }
+
+    public companion object {
+        /** The format string representing a URI value. */
+        public const val FORMAT_URI: String = "uri"
     }
 }
 
@@ -1316,6 +1424,30 @@ internal data class AppFunctionNamedDataTypeMetadataDocument(
     @Document.DocumentProperty val dataTypeMetadata: AppFunctionDataTypeMetadataDocument,
 )
 
+/** Represents the persistent storage format of a single [PatternMatcher]. */
+@Document
+internal data class AppFunctionStringPatternDocument(
+    @Document.Namespace val namespace: String = APP_FUNCTION_NAMESPACE,
+    /** The id of the pattern. */
+    @Document.Id val id: String = APP_FUNCTION_ID_EMPTY,
+    /** The pattern string, i.e. [PatternMatcher.getPath]. */
+    @Document.StringProperty val value: String,
+    /** The pattern type, i.e. [PatternMatcher.getType]. */
+    @Document.LongProperty val type: Long,
+)
+
+/**
+ * Converts indexed patterns to [PatternMatcher]s, or null if there are none.
+ *
+ * @throws androidx.appfunctions.internal.InvalidPatternMatcherException if [PatternMatcher] rejects
+ *   any of the patterns.
+ */
+private fun List<AppFunctionStringPatternDocument>.toPatternMatchersOrNull():
+    List<PatternMatcher>? {
+    val matchers = map { PatternMatchers.create(it.value, it.type.toInt()) }
+    return matchers.ifEmpty { null }
+}
+
 /** Represents the persistent storage format of [AppFunctionDataTypeMetadata]. */
 @Document
 internal data class AppFunctionDataTypeMetadataDocument(
@@ -1369,6 +1501,10 @@ internal data class AppFunctionDataTypeMetadataDocument(
     @Document.StringProperty val description: String? = null,
     /** Enum values, that this data type is restricted to use. */
     @Document.StringProperty val enumValues: List<String> = emptyList(),
+    /** Pattern restrictions for String data type, matched with [PatternMatcher]. */
+    @Document.DocumentProperty val patterns: List<AppFunctionStringPatternDocument> = emptyList(),
+    /** Format restriction for String data type. */
+    @Document.StringProperty val format: String? = null,
 ) {
     @SuppressLint(
         // When doesn't handle @IntDef correctly.
@@ -1388,10 +1524,9 @@ internal data class AppFunctionDataTypeMetadataDocument(
                 check(properties.isNotEmpty()) {
                     "Properties must be present for object type can't be empty"
                 }
-                val propertiesMap =
-                    properties.associate {
-                        it.name to it.dataTypeMetadata.toAppFunctionDataTypeMetadata()
-                    }
+                val propertiesMap = properties.associate {
+                    it.name to it.dataTypeMetadata.toAppFunctionDataTypeMetadata()
+                }
                 AppFunctionObjectTypeMetadata(
                     properties = propertiesMap,
                     required = required,
@@ -1461,9 +1596,11 @@ internal data class AppFunctionDataTypeMetadataDocument(
                 )
             AppFunctionDataTypeMetadata.TYPE_STRING ->
                 AppFunctionStringTypeMetadata(
+                    patternMatchers = patterns.toPatternMatchersOrNull(),
+                    format = format,
+                    enumValues = enumValues.toSet().ifEmpty { null },
                     isNullable = isNullable,
                     description = description ?: "",
-                    enumValues = enumValues.toSet().ifEmpty { null },
                 )
             AppFunctionDataTypeMetadata.TYPE_PARCELABLE ->
                 AppFunctionParcelableTypeMetadata(

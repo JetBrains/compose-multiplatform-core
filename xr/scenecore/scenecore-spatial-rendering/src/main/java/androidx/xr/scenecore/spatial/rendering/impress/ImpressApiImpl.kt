@@ -37,6 +37,7 @@ import androidx.xr.scenecore.spatial.rendering.impress.ImpressApi.MediaBlendingM
 import androidx.xr.scenecore.spatial.rendering.impress.ImpressApi.StereoMode
 import com.google.ar.imp.view.View
 import java.io.IOException
+import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import kotlin.coroutines.resume
@@ -367,21 +368,44 @@ public class ImpressApiImpl : ImpressApi {
      * Enables reform affordance on an instanced gLTF model.
      *
      * @param impressNode The integer ID of the impress node for the instance of the gLTF
-     * @param enabled A boolean indicated whether to add or remove the reform affordance for the
-     *   gLTF model.
-     * @param systemMovable A boolean indicating whether to handle the move input events or not.
+     * @param reformAffordanceMask A bitmask indicating what reform affordances to enable.
      */
-    override fun setGltfReformAffordanceEnabled(
+    override fun setReformAffordanceEnabled(
         impressNode: ImpressNode,
-        enabled: Boolean,
-        systemMovable: Boolean,
+        reformAffordanceMask: Int,
     ): Unit =
         nSetGltfReformAffordanceEnabled(
             getViewNativeHandle(view),
             impressNode.handle,
-            enabled,
-            systemMovable,
+            reformAffordanceMask,
         )
+
+    override fun getReformAffordanceState(impressNode: ImpressNode): Int {
+        return nGetReformAffordanceState(getViewNativeHandle(view), impressNode.handle)
+    }
+
+    override fun setReformAffordanceSizeLimits(
+        impressNode: ImpressNode,
+        minSize: Float,
+        maxSize: Float,
+    ): Unit =
+        nSetReformAffordanceSizeLimits(
+            getViewNativeHandle(view),
+            impressNode.handle,
+            minSize,
+            maxSize,
+        )
+
+    override fun getRecommendedAffordanceTransform(impressNode: ImpressNode): Matrix4 {
+        val buffer = FloatArray(10)
+        nGetRecommendedAffordanceTransform(getViewNativeHandle(view), impressNode.handle, buffer)
+
+        return Matrix4.fromTrs(
+            Vector3(buffer[0], buffer[1], buffer[2]),
+            Quaternion(buffer[3], buffer[4], buffer[5], buffer[6]),
+            Vector3(buffer[7], buffer[8], buffer[9]),
+        )
+    }
 
     /**
      * Enables reform affordance on a custom mesh.
@@ -391,6 +415,7 @@ public class ImpressApiImpl : ImpressApi {
      *   for the custom mesh.
      * @param systemMovable A boolean indicating whether to handle the move input events or not.
      */
+    // TODO (b/520111090): Clean up redundant mesh reform affordance API
     override fun setCustomMeshReformAffordanceEnabled(
         node: ImpressNode,
         enableAffordance: Boolean,
@@ -517,6 +542,20 @@ public class ImpressApiImpl : ImpressApi {
         channel: Int,
     ): Unit =
         nSetGltfModelAnimationSpeed(getViewNativeHandle(view), impressNode.handle, speed, channel)
+
+    /**
+     * Sets whether an animation on an instanced glTF model should loop on a specific channel.
+     *
+     * @param impressNode The object of the Impress node for the instance of the glTF model.
+     * @param loop true if the animation should loop, false otherwise.
+     * @param channel The channel of the animation.
+     */
+    override fun setGltfModelAnimationLoop(
+        impressNode: ImpressNode,
+        loop: Boolean,
+        channel: Int,
+    ): Unit =
+        nSetGltfModelAnimationLoop(getViewNativeHandle(view), impressNode.handle, loop, channel)
 
     /**
      * Returns the number of animations on an instanced glTF model.
@@ -1717,6 +1756,63 @@ public class ImpressApiImpl : ImpressApi {
         nGetCustomMeshAabb(getViewNativeHandle(view), customMeshHandle, outAabb)
     }
 
+    override fun updateMeshBufferVertexData(
+        meshBufferHandle: Long,
+        bufferIndex: Int,
+        vertexData: ByteBuffer,
+        vertexDataOffset: Int,
+        vertexDataSize: Int,
+        destOffsetInBytes: Int,
+    ) {
+        nUpdateMeshBufferVertexData(
+            getViewNativeHandle(view),
+            meshBufferHandle,
+            bufferIndex,
+            destOffsetInBytes,
+            vertexData,
+            vertexDataOffset,
+            vertexDataSize,
+        )
+    }
+
+    override fun updateMeshBufferIndexData(
+        meshBufferHandle: Long,
+        indexData: ByteBuffer,
+        indexDataOffset: Int,
+        indexDataSize: Int,
+        destOffsetInBytes: Int,
+    ) {
+        nUpdateMeshBufferIndexData(
+            getViewNativeHandle(view),
+            meshBufferHandle,
+            destOffsetInBytes,
+            indexData,
+            indexDataOffset,
+            indexDataSize,
+        )
+    }
+
+    override fun setCustomMeshAabb(
+        customMeshHandle: Long,
+        centerX: Float,
+        centerY: Float,
+        centerZ: Float,
+        halfExtentX: Float,
+        halfExtentY: Float,
+        halfExtentZ: Float,
+    ) {
+        nUpdateCustomMeshAabb(
+            getViewNativeHandle(view),
+            customMeshHandle,
+            centerX,
+            centerY,
+            centerZ,
+            halfExtentX,
+            halfExtentY,
+            halfExtentZ,
+        )
+    }
+
     override fun destroyCustomMesh(customMeshHandle: Long): Unit =
         nDestroyCustomMesh(getViewNativeHandle(view), customMeshHandle)
 
@@ -1824,10 +1920,25 @@ public class ImpressApiImpl : ImpressApi {
     private external fun nSetGltfReformAffordanceEnabled(
         view: Long,
         impressNode: Int,
-        enabled: Boolean,
-        systemMovable: Boolean,
+        reformAffordanceMask: Int,
     )
 
+    private external fun nGetReformAffordanceState(view: Long, impressNode: Int): Int
+
+    private external fun nSetReformAffordanceSizeLimits(
+        view: Long,
+        impressNode: Int,
+        minSize: Float,
+        maxSize: Float,
+    )
+
+    private external fun nGetRecommendedAffordanceTransform(
+        view: Long,
+        impressNode: Int,
+        outTransform: FloatArray,
+    )
+
+    // TODO (b/520111090): Clean up redundant mesh reform affordance API
     private external fun nSetCustomMeshReformAffordanceEnabled(
         view: Long,
         impressNode: Int,
@@ -1866,6 +1977,13 @@ public class ImpressApiImpl : ImpressApi {
         view: Long,
         impressNode: Int,
         speed: Float,
+        channelId: Int,
+    )
+
+    private external fun nSetGltfModelAnimationLoop(
+        view: Long,
+        impressNode: Int,
+        loop: Boolean,
         channelId: Int,
     )
 
@@ -2570,5 +2688,35 @@ public class ImpressApiImpl : ImpressApi {
         nodeId: Int,
         offset: Int,
         transforms: FloatArray,
+    )
+
+    private external fun nUpdateMeshBufferVertexData(
+        view: Long,
+        meshBufferHandle: Long,
+        bufferIndex: Int,
+        destOffsetInBytes: Int,
+        vertexData: ByteBuffer,
+        vertexDataOffset: Int,
+        vertexDataSize: Int,
+    )
+
+    private external fun nUpdateMeshBufferIndexData(
+        view: Long,
+        meshBufferHandle: Long,
+        destOffsetInBytes: Int,
+        indexData: ByteBuffer,
+        indexDataOffset: Int,
+        indexDataSize: Int,
+    )
+
+    private external fun nUpdateCustomMeshAabb(
+        view: Long,
+        customMeshHandle: Long,
+        centerX: Float,
+        centerY: Float,
+        centerZ: Float,
+        halfExtentX: Float,
+        halfExtentY: Float,
+        halfExtentZ: Float,
     )
 }

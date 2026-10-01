@@ -24,17 +24,16 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
-import androidx.benchmark.BenchmarkState.Companion.METHOD_TRACING_ESTIMATED_SLOWDOWN_FACTOR
 import androidx.benchmark.BenchmarkState.Companion.METHOD_TRACING_MAX_DURATION_NS
 import androidx.benchmark.BenchmarkState.Companion.TAG
 import androidx.benchmark.Outputs.dateToFileName
 import androidx.benchmark.json.BenchmarkData.TestResult.ProfilerOutput
 import androidx.benchmark.perfetto.StackSamplingConfig
+import androidx.benchmark.perfetto.appendToPerfettoTrace
 import androidx.benchmark.simpleperf.ProfileSession
 import androidx.benchmark.simpleperf.RecordOptions
 import androidx.benchmark.vmtrace.ArtTrace
 import java.io.File
-import java.io.FileOutputStream
 
 /**
  * Profiler abstraction used for the timing stage.
@@ -49,25 +48,25 @@ import java.io.FileOutputStream
  * from warmup -> timing phase, when [start] would be called.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-sealed class Profiler() {
-    class ResultFile
+public sealed class Profiler() {
+    public class ResultFile
     private constructor(
-        val label: String,
-        val type: ProfilerOutput.Type,
-        val outputRelativePath: String,
-        val source: Profiler?,
-        val convertBeforeSync: (() -> Unit)? = null,
+        public val label: String,
+        public val type: ProfilerOutput.Type,
+        public val outputRelativePath: String,
+        public val source: Profiler?,
+        public val convertBeforeSync: (() -> Unit)? = null,
     ) {
 
-        fun embedInPerfettoTrace(perfettoTracePath: String) {
+        public fun embedInPerfettoTrace(perfettoTracePath: String) {
             source?.embedInPerfettoTrace(
                 File(Outputs.outputDirectory, outputRelativePath),
                 File(perfettoTracePath),
             )
         }
 
-        companion object {
-            fun ofPerfettoTrace(label: String, absolutePath: String) =
+        public companion object {
+            public fun ofPerfettoTrace(label: String, absolutePath: String): ResultFile =
                 ResultFile(
                     label = label,
                     outputRelativePath = Outputs.relativePathFor(absolutePath),
@@ -75,7 +74,7 @@ sealed class Profiler() {
                     source = null,
                 )
 
-            fun ofMethodTrace(label: String, absolutePath: String) =
+            public fun ofMethodTrace(label: String, absolutePath: String): ResultFile =
                 ResultFile(
                     label = label,
                     outputRelativePath = Outputs.relativePathFor(absolutePath),
@@ -83,13 +82,13 @@ sealed class Profiler() {
                     source = null,
                 )
 
-            fun of(
+            public fun of(
                 label: String,
                 type: ProfilerOutput.Type,
                 outputRelativePath: String,
                 source: Profiler,
                 convertBeforeSync: (() -> Unit)? = null,
-            ) =
+            ): ResultFile =
                 ResultFile(
                     label = label,
                     outputRelativePath = outputRelativePath,
@@ -100,15 +99,20 @@ sealed class Profiler() {
         }
     }
 
-    abstract fun start(traceUniqueName: String): ResultFile?
+    public abstract fun start(traceUniqueName: String): ResultFile?
 
-    /** Start profiling only if expected trace duration is unlikely to trigger an ANR */
-    fun startIfNotRiskingAnrDeadline(
+    /**
+     * Start profiling only if the estimated method trace duration on the main thread will not
+     * exceed [METHOD_TRACING_MAX_DURATION_NS] and risk triggering an Android OS ANR.
+     *
+     * When method tracing is skipped, reports an IDE warning and emits a trace section on the
+     * benchmark's Perfetto track so the skip reason is visible in the Perfetto trace.
+     */
+    public fun startIfNotRiskingAnrDeadline(
         traceUniqueName: String,
         estimatedDurationNs: Long,
     ): ResultFile? {
-        val estimatedMethodTraceDurNs =
-            estimatedDurationNs * METHOD_TRACING_ESTIMATED_SLOWDOWN_FACTOR
+        val estimatedMethodTraceDurNs = estimatedDurationNs * DeviceInfo.methodTracingSlowdownFactor
         return if (
             this == MethodTracing &&
                 Looper.myLooper() == Looper.getMainLooper() &&
@@ -125,42 +129,46 @@ sealed class Profiler() {
                     """
                     .trimIndent()
             )
+            InMemoryTracing.beginSection(
+                "Skipping method trace of estimated duration $expectedDurSec sec to avoid ANR"
+            )
+            InMemoryTracing.endSection()
             null
         } else {
             start(traceUniqueName)
         }
     }
 
-    abstract fun stop()
+    public abstract fun stop()
 
     internal open fun config(packageNames: List<String>): StackSamplingConfig? = null
 
-    open fun embedInPerfettoTrace(profilerTrace: File, perfettoTrace: File) {}
+    public open fun embedInPerfettoTrace(profilerTrace: File, perfettoTrace: File) {}
 
     /**
      * Measure exactly one loop (one repeat, one iteration).
      *
      * Generally only set for tracing profilers.
      */
-    open val requiresSingleMeasurementIteration = false
+    public open val requiresSingleMeasurementIteration: Boolean = false
 
     /** Generally only set for sampling profilers. */
-    open val requiresExtraRuntime = false
+    public open val requiresExtraRuntime: Boolean = false
 
     /**
      * Currently, debuggable is required to support studio-connected profiling.
      *
      * Remove this once stable Studio supports profileable.
      */
-    open val requiresDebuggable = false
+    public open val requiresDebuggable: Boolean = false
 
     /** Connected modes don't need dir, since library isn't doing the capture. */
-    open val requiresLibraryOutputDir = true
+    public open val requiresLibraryOutputDir: Boolean = true
 
-    companion object {
-        const val CONNECTED_PROFILING_SLEEP_MS = 20_000L
+    public companion object {
+        public const val CONNECTED_PROFILING_SLEEP_MS: Long = 20_000L
 
-        fun getByName(name: String): Profiler? =
+        public fun getByName(name: String): Profiler? =
             mapOf(
                     "MethodTracing" to MethodTracing,
                     "StackSampling" to
@@ -183,13 +191,23 @@ sealed class Profiler() {
                 )
                 .mapKeys { it.key.lowercase() }[name.lowercase()]
 
-        fun traceName(traceUniqueName: String, traceTypeLabel: String): String {
+        public fun traceName(traceUniqueName: String, traceTypeLabel: String): String {
             return Outputs.sanitizeFilename(
                 "$traceUniqueName-$traceTypeLabel-${dateToFileName()}.trace"
             )
         }
     }
 }
+
+/**
+ * Flag for [Debug.startMethodTracing] that enables low-overhead wall-clock timing when supported by
+ * the ART mainline module (`0x10`, `kTraceClockSourceWallClock`).
+ *
+ * Removes the expensive per-method thread-CPU clock read while keeping wall-clock timestamps.
+ *
+ * TODO: switch to platform-defined constant once available (b/329499422)
+ */
+internal const val TRACE_CLOCK_SOURCE_WALL_CLOCK = 0x10
 
 internal fun startRuntimeMethodTracing(
     traceFileName: String,
@@ -221,15 +239,7 @@ internal fun startRuntimeMethodTracing(
                 type = ProfilerOutput.Type.MethodTrace,
                 source = profiler,
             )
-            .also {
-                // NOTE: 0x10 flag enables low-overhead wall clock timing when ART module version
-                // supports
-                // it. Note that this doesn't affect trace parsing, since this doesn't affect wall
-                // clock,
-                // it only removes the expensive thread time clock which our parser doesn't use.
-                // TODO: switch to platform-defined constant once available (b/329499422)
-                Debug.startMethodTracing(path, bufferSize, 0x10)
-            }
+            .also { Debug.startMethodTracing(path, bufferSize, TRACE_CLOCK_SOURCE_WALL_CLOCK) }
     }
 }
 
@@ -274,8 +284,10 @@ internal object MethodTracing : Profiler() {
     override val requiresSingleMeasurementIteration: Boolean = true
 
     override fun embedInPerfettoTrace(profilerTrace: File, perfettoTrace: File) {
-        ArtTrace(profilerTrace)
-            .writeAsPerfettoTrace(FileOutputStream(perfettoTrace, /* append= */ true))
+        appendToPerfettoTrace(perfettoTrace = perfettoTrace, entryName = "MethodTrace.pb") {
+            outputStream ->
+            ArtTrace(profilerTrace).writeAsPerfettoTrace(outputStream)
+        }
     }
 
     var hasBeenUsed: Boolean = false

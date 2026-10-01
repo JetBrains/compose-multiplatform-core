@@ -84,7 +84,7 @@ internal fun Modifier.paneExpansionDraggable(
 )
 @ExperimentalMaterial3AdaptiveApi
 @Composable
-fun PaneExpansionState.defaultDragHandleSemantics(): SemanticsPropertyReceiver.() -> Unit {
+public fun PaneExpansionState.defaultDragHandleSemantics(): SemanticsPropertyReceiver.() -> Unit {
     val coroutineScope = rememberCoroutineScope()
     val contentDesc = getString(Strings.defaultPaneExpansionDragHandleContentDescription)
     val currentAnchor = currentAnchor
@@ -177,21 +177,19 @@ private fun Modifier.semanticsWithDefaults(
         delegableSemantics(mergeDescendants = true) {
             val contentDesc = getString(Strings.defaultPaneExpansionDragHandleContentDescription)
             val currentAnchor = state.currentAnchor
-            val stateDesc =
-                currentAnchor?.run {
-                    getString(
-                        Strings.defaultPaneExpansionDragHandleStateDescription,
-                        this@delegableSemantics.description,
-                    )
-                }
+            val stateDesc = currentAnchor?.run {
+                getString(
+                    Strings.defaultPaneExpansionDragHandleStateDescription,
+                    this@delegableSemantics.description,
+                )
+            }
             val nextAnchor = state.nextAnchor
-            val actionLabel =
-                nextAnchor?.run {
-                    getString(
-                        Strings.defaultPaneExpansionDragHandleActionDescription,
-                        this@delegableSemantics.description,
-                    )
-                }
+            val actionLabel = nextAnchor?.run {
+                getString(
+                    Strings.defaultPaneExpansionDragHandleActionDescription,
+                    this@delegableSemantics.description,
+                )
+            }
 
             contentDescription = contentDesc
             if (stateDesc != null) {

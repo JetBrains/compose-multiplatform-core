@@ -16,48 +16,106 @@
 
 package androidx.benchmark.macro
 
-import android.os.Build
-import android.util.Log
 import androidx.benchmark.Arguments
 import androidx.benchmark.ExperimentalBenchmarkConfigApi
 import androidx.benchmark.ExperimentalConfig
+import androidx.benchmark.MemoryProfilingConfig
 import androidx.benchmark.Outputs
 import androidx.benchmark.Profiler
 import androidx.benchmark.inMemoryTrace
 import androidx.benchmark.perfetto.PerfettoCapture
 import androidx.benchmark.perfetto.PerfettoCaptureWrapper
 import androidx.benchmark.perfetto.PerfettoConfig
-import androidx.benchmark.perfetto.UiState
-import androidx.benchmark.perfetto.appendUiState
 import androidx.benchmark.traceprocessor.Insight
 import androidx.benchmark.traceprocessor.PerfettoTrace
 import androidx.benchmark.traceprocessor.StartupInsights
 import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.tracing.trace
-import java.io.File
 
 /** A Profiler being used during a Macro Benchmark Phase. */
 internal interface PhaseProfiler {
-    /** Starts a Phase profiler. */
-    fun start()
+    /** Starts profiling for the iteration. */
+    fun start() {}
 
-    /** Stops a Phase profiler. */
-    fun stop(): List<Profiler.ResultFile>
+    /** Stops profiling for the iteration. */
+    fun stop() {}
+
+    /**
+     * Custom [PerfettoConfig] to use for the primary trace during this phase, or `null` to use the
+     * default benchmark configuration.
+     */
+    val perfettoConfig: PerfettoConfig?
+        get() = null
+
+    /**
+     * Creates or returns the [Profiler.ResultFile]s produced for this iteration.
+     *
+     * @param tracePath The absolute path to the Perfetto trace captured during this iteration.
+     * @param iteration The current iteration index.
+     */
+    fun createProfilerResultFiles(
+        tracePath: String,
+        iteration: Int,
+    ): List<Profiler.ResultFile>
 }
 
 /** A [PhaseProfiler] that performs method tracing. */
 internal class MethodTracingProfiler(private val scope: MacrobenchmarkScope) : PhaseProfiler {
+    private var resultFiles: List<Profiler.ResultFile> = emptyList()
+
     override fun start() {
+        resultFiles = emptyList()
         scope.startMethodTracing()
     }
 
-    override fun stop(): List<Profiler.ResultFile> {
-        return scope.stopMethodTracing()
+    override fun stop() {
+        resultFiles = scope.stopMethodTracing()
     }
+
+    override fun createProfilerResultFiles(
+        tracePath: String,
+        iteration: Int,
+    ): List<Profiler.ResultFile> =
+        listOf(
+            Profiler.ResultFile.ofPerfettoTrace(
+                label = "Method Trace Perfetto Iteration $iteration",
+                absolutePath = tracePath,
+            )
+        ) + resultFiles
+}
+
+/** A [PhaseProfiler] that performs memory profiling via Perfetto heap profiling (heapprofd). */
+@OptIn(ExperimentalBenchmarkConfigApi::class)
+internal class MemoryProfilingProfiler(
+    scope: MacrobenchmarkScope,
+    memoryProfilingConfig: MemoryProfilingConfig,
+) : PhaseProfiler {
+    override val perfettoConfig: PerfettoConfig =
+        PerfettoConfig.MemoryProfiling(scope.packageName, memoryProfilingConfig)
+
+    override fun createProfilerResultFiles(
+        tracePath: String,
+        iteration: Int,
+    ): List<Profiler.ResultFile> =
+        listOf(
+            Profiler.ResultFile.ofPerfettoTrace(
+                label = "Memory Profiling Iteration $iteration",
+                absolutePath = tracePath,
+            )
+        )
 }
 
 internal data class IterationResult(
-    val tracePath: String,
+    /**
+     * Absolute path to the Perfetto trace captured during this iteration, or `null` if this
+     * iteration was run for a phase profiler.
+     *
+     * Profiling phases (e.g. method tracing or memory profiling) route all their trace artifacts
+     * (including their primary Perfetto trace) through [profilerResultFiles] rather than
+     * [tracePath], so that regular measurement iteration traces and profiling traces are reported
+     * under separate sections in benchmark results and IDE summaries.
+     */
+    val tracePath: String?,
     val profilerResultFiles: List<Profiler.ResultFile>,
     val measurements: List<Metric.Measurement>,
     val insights: List<Insight>,
@@ -75,7 +133,8 @@ internal fun TraceProcessor.runPhase(
     profiler: PhaseProfiler?,
     metrics: List<Metric>,
     experimentalConfig: ExperimentalConfig?,
-    perfettoSdkConfig: PerfettoCapture.PerfettoSdkConfig?,
+    tracingLibraryConfig: PerfettoCapture.TracingLibraryConfig?,
+    traceSuffix: String? = null,
     setupBlock: MacrobenchmarkScope.() -> Unit,
     measureBlock: MacrobenchmarkScope.() -> Unit,
 ): List<IterationResult> {
@@ -100,40 +159,24 @@ internal fun TraceProcessor.runPhase(
 
             // Setup file labels.
             val iterString = iteration.toString().padStart(3, '0')
-            scope.fileLabel = "${uniqueName}_iter$iterString"
-
-            var profilerResultFiles: List<Profiler.ResultFile> = emptyList()
+            val fileSuffix = if (traceSuffix != null) "-$traceSuffix" else ""
+            scope.fileLabel = "${uniqueName}_iter$iterString$fileSuffix"
 
             val tracePath =
                 perfettoCollector.record(
                     fileLabel = scope.fileLabel,
                     config =
-                        experimentalConfig?.perfettoConfig
+                        profiler?.perfettoConfig
+                            ?: experimentalConfig?.perfettoConfig
                             ?: PerfettoConfig.Benchmark(
-                                /**
-                                 * Prior to API 24, every package name was joined into a single
-                                 * setprop which can overflow, and disable *ALL* app level tracing.
-                                 *
-                                 * For safety here, we only trace the macrobench package on newer
-                                 * platforms, and use reflection in the macrobench test process to
-                                 * trace important sections
-                                 *
-                                 * @see androidx.benchmark.macro.perfetto.ForceTracing
-                                 */
-                                appTagPackages =
-                                    if (Build.VERSION.SDK_INT >= 24) {
-                                        listOf(packageName, macrobenchmarkPackageName)
-                                    } else {
-                                        listOf(packageName)
-                                    },
+                                appTagPackages = listOf(packageName, macrobenchmarkPackageName),
                                 useStackSamplingConfig = true,
                             ),
-                    perfettoSdkConfig = perfettoSdkConfig,
-                    // Macrobench avoids in-memory tracing, as it doesn't want to either the parsing
-                    // errors from out of order events, or risk the memory cost of full ordering
-                    // during
-                    // trace analysis. If in-memory tracing would be useful, this full ordering cost
-                    // should be evaluated.
+                    tracingLibraryConfig = tracingLibraryConfig,
+                    // Macrobench avoids in-memory tracing, as it doesn't want to either the
+                    // parsing errors from out of order events, or risk the memory cost of full
+                    // ordering during trace analysis. If in-memory tracing would be useful,
+                    // this full ordering cost should be evaluated.
                     inMemoryTracingLabel = null,
                 ) {
                     try {
@@ -141,49 +184,59 @@ internal fun TraceProcessor.runPhase(
                         profiler?.let { trace("start profiler") { it.start() } }
                         trace("measureBlock") { measureBlock(scope) }
                     } finally {
-                        profiler?.let {
-                            trace("stop profiler") {
-                                // Keep track of Profiler Results.
-                                profilerResultFiles = it.stop()
-                            }
-                        }
+                        profiler?.let { trace("stop profiler") { it.stop() } }
                         trace("stop metrics") { metrics.forEach { it.stop() } }
                     }
                 }!!
 
-            // Append UI state to trace, so tools opening trace will highlight relevant
-            // parts in UI.
-            val uiState = UiState(highlightPackage = packageName)
-            Log.d(TAG, "Iteration $iteration captured $uiState")
-            File(tracePath).apply { appendUiState(uiState) }
+            val profilerResultFiles =
+                profiler?.createProfilerResultFiles(tracePath, iteration) ?: emptyList()
+            // When a profiler is active, all resulting traces (both the primary Perfetto trace and
+            // any profiler-specific trace files) are reported via [profilerResultFiles]. We set
+            // [iterationTracePath] to null so that profiling traces are not output under the
+            // standard measurement "Traces: Iteration X" list.
+            val iterationTracePath = if (profiler != null) null else tracePath
 
-            // Accumulate measurements
-            loadTrace(PerfettoTrace(tracePath)) {
+            // When metrics are empty (such as during a dedicated profiling phase like memory
+            // profiling),
+            // skip loading the trace into TraceProcessor to avoid unnecessary trace analysis
+            // overhead.
+            if (metrics.isEmpty()) {
                 IterationResult(
-                    tracePath = tracePath,
+                    tracePath = iterationTracePath,
                     profilerResultFiles = profilerResultFiles,
-                    measurements =
-                        inMemoryTrace("extract metrics") {
-                            metrics
-                                // capture list of Measurements
-                                .map { it.getMeasurements(captureInfo, this) }
-                                // merge together
-                                .reduceOrNull() { sum, element -> sum.merge(element) }
-                                ?: emptyList()
-                        },
-                    insights =
-                        if (experimentalConfig?.startupInsightsConfig?.isEnabled == true) {
-                            StartupInsights(helpUrlBase = Arguments.startupInsightsHelpUrlBase)
-                                .queryInsights(
-                                    session = this,
-                                    packageName = packageName,
-                                    traceLinkTitle = "$iteration",
-                                    traceLinkPath = Outputs.relativePathFor(tracePath),
-                                )
-                        } else {
-                            emptyList()
-                        },
+                    measurements = emptyList(),
+                    insights = emptyList(),
                 )
+            } else {
+                // Accumulate measurements
+                loadTrace(PerfettoTrace(tracePath)) {
+                    IterationResult(
+                        tracePath = iterationTracePath,
+                        profilerResultFiles = profilerResultFiles,
+                        measurements =
+                            inMemoryTrace("extract metrics") {
+                                metrics
+                                    // capture list of Measurements
+                                    .map { it.getMeasurements(captureInfo, this) }
+                                    // merge together
+                                    .reduceOrNull { sum, element -> sum.merge(element) }
+                                    ?: emptyList()
+                            },
+                        insights =
+                            if (experimentalConfig?.startupInsightsConfig?.isEnabled == true) {
+                                StartupInsights(helpUrlBase = Arguments.startupInsightsHelpUrlBase)
+                                    .queryInsights(
+                                        session = this,
+                                        packageName = packageName,
+                                        traceLinkTitle = "$iteration",
+                                        traceLinkPath = Outputs.relativePathFor(tracePath),
+                                    )
+                            } else {
+                                emptyList()
+                            },
+                    )
+                }
             }
         }
     } finally {

@@ -20,26 +20,13 @@ import androidx.kruth.assertThat
 import androidx.navigation3.runtime.NavKey
 import kotlin.test.Test
 
-private const val filterString = "filterString"
-
 class DeepLinkMatcherTest {
-    class TestDeepLinkMatcher(filters: List<Filter> = emptyList()) :
-        DeepLinkMatcher<TestKey>(filters) {
-        override fun matchRequest(request: DeepLinkRequest): MatchResult<TestKey>? {
-            return MatchResult(TestKey)
-        }
-    }
-
-    class TestFilter(val filter: String) : DeepLinkMatcher.Filter {
-        override fun filterRequest(request: DeepLinkRequest): Boolean {
-            return filter == filterString
-        }
-    }
 
     @Test
     fun match_emptyFilters() {
         val matcher = TestDeepLinkMatcher()
-        val request = DeepLinkRequest.fromUriString("https://example.com")
+        val request =
+            DeepLinkRequest.withStringExtra("https://example.com", MATCHER_STRING_FILTER_VALUE)
         val result = matcher.match(request)
         assertThat(result).isNotNull()
         assertThat(result?.key).isEqualTo(TestKey)
@@ -47,8 +34,9 @@ class DeepLinkMatcherTest {
 
     @Test
     fun match_filterPasses() {
-        val matcher = TestDeepLinkMatcher(filters = listOf(TestFilter(filterString)))
-        val request = DeepLinkRequest.fromUriString("https://example.com")
+        val matcher = TestDeepLinkMatcher(filters = listOf(TestFilter(MATCHER_STRING_FILTER_VALUE)))
+        val request =
+            DeepLinkRequest.withStringExtra("https://example.com", MATCHER_STRING_FILTER_VALUE)
         val result = matcher.match(request)
         assertThat(result).isNotNull()
         assertThat(result?.key).isEqualTo(TestKey)
@@ -57,7 +45,8 @@ class DeepLinkMatcherTest {
     @Test
     fun match_filterFails() {
         val matcher = TestDeepLinkMatcher(filters = listOf(TestFilter("wrongFilter")))
-        val request = DeepLinkRequest.fromUriString("https://example.com")
+        val request =
+            DeepLinkRequest.withStringExtra("https://example.com", MATCHER_STRING_FILTER_VALUE)
         val result = matcher.match(request)
         assertThat(result).isNull()
     }
@@ -66,9 +55,14 @@ class DeepLinkMatcherTest {
     fun match_allFiltersPass() {
         val matcher =
             TestDeepLinkMatcher(
-                filters = listOf(TestFilter(filterString), TestFilter(filterString))
+                filters =
+                    listOf(
+                        TestFilter(MATCHER_STRING_FILTER_VALUE),
+                        TestFilter(MATCHER_STRING_FILTER_VALUE),
+                    )
             )
-        val request = DeepLinkRequest.fromUriString("https://example.com")
+        val request =
+            DeepLinkRequest.withStringExtra("https://example.com", MATCHER_STRING_FILTER_VALUE)
         val result = matcher.match(request)
         assertThat(result).isNotNull()
         assertThat(result?.key).isEqualTo(TestKey)
@@ -78,9 +72,10 @@ class DeepLinkMatcherTest {
     fun match_someFiltersFail() {
         val matcher =
             TestDeepLinkMatcher(
-                filters = listOf(TestFilter(filterString), TestFilter("wrongFilter"))
+                filters = listOf(TestFilter(MATCHER_STRING_FILTER_VALUE), TestFilter("wrongFilter"))
             )
-        val request = DeepLinkRequest.fromUriString("https://example.com")
+        val request =
+            DeepLinkRequest.withStringExtra("https://example.com", MATCHER_STRING_FILTER_VALUE)
         val result = matcher.match(request)
         assertThat(result).isNull()
     }
@@ -94,7 +89,144 @@ class DeepLinkMatcherTest {
         assertThat(result1.compareTo(result2)).isEqualTo(0)
     }
 
+    @Test
+    fun match_mimeTypeFilter() {
+        val matcher =
+            TestDeepLinkMatcher(filters = listOf(DeepLinkMatcher.mimeTypeFilter("image/test")))
+
+        val request =
+            DeepLinkRequest(
+                uri = DeepLinkUri("https://example.com"),
+                extras = DeepLinkRequest.mimeTypeExtra("image/TEST"),
+            )
+        val result = matcher.match(request)
+        assertThat(result).isNotNull()
+
+        val request2 =
+            DeepLinkRequest(
+                uri = DeepLinkUri("https://example.com"),
+                extras = DeepLinkRequest.mimeTypeExtra("image/wrongMimeType"),
+            )
+        val result2 = matcher.match(request2)
+        assertThat(result2).isNull()
+    }
+
+    @Test
+    fun match_actionFilter() {
+        val matcher =
+            TestDeepLinkMatcher(filters = listOf(DeepLinkMatcher.actionFilter("ACTION.TEST")))
+        val request =
+            DeepLinkRequest(
+                uri = DeepLinkUri("https://example.com"),
+                extras = DeepLinkRequest.actionExtra("ACTION.test"),
+            )
+        val result = matcher.match(request)
+        assertThat(result).isNotNull()
+
+        val request2 =
+            DeepLinkRequest(
+                uri = DeepLinkUri("https://example.com"),
+                extras = DeepLinkRequest.actionExtra("wrongAction"),
+            )
+        val result2 = matcher.match(request2)
+        assertThat(result2).isNull()
+    }
+
+    @Test
+    fun compare_matcherClassesTypedOnDerivedKeys() {
+        val matcher1 =
+            object :
+                DeepLinkMatcher<
+                    TestInterfaceImplA,
+                    DeepLinkMatcher.MatchResult<TestInterfaceImplA>,
+                >() {
+                override fun matchRequest(
+                    request: DeepLinkRequest
+                ): MatchResult<TestInterfaceImplA> {
+                    return MatchResult(TestInterfaceImplA)
+                }
+            }
+        val matcher2 =
+            object :
+                DeepLinkMatcher<
+                    TestInterfaceImplB,
+                    DeepLinkMatcher.MatchResult<TestInterfaceImplB>,
+                >() {
+                override fun matchRequest(
+                    request: DeepLinkRequest
+                ): MatchResult<TestInterfaceImplB> {
+                    return MatchResult(TestInterfaceImplB)
+                }
+            }
+        val matchers:
+            List<DeepLinkMatcher<TestInterface, DeepLinkMatcher.MatchResult<TestInterface>>> =
+            listOf(matcher1, matcher2)
+
+        val request = DeepLinkRequest(DeepLinkUri("www.testuri.com"))
+
+        val results: List<DeepLinkMatcher.MatchResult<TestInterface>> = buildList {
+            matchers.forEach { add(it.match(request)!!) }
+        }
+        assertThat(results.size).isEqualTo(2)
+        assertThat(results.first().key).isEqualTo(TestInterfaceImplA)
+        assertThat(results.last().key).isEqualTo(TestInterfaceImplB)
+    }
+
+    @Test
+    fun compare_matcherClassesTypedOnBaseKeys() {
+        val matcher1 =
+            object : DeepLinkMatcher<TestInterface, DeepLinkMatcher.MatchResult<TestInterface>>() {
+                override fun matchRequest(request: DeepLinkRequest): MatchResult<TestInterface> {
+                    return MatchResult(TestInterfaceImplA)
+                }
+            }
+        val matcher2 =
+            object : DeepLinkMatcher<TestInterface, DeepLinkMatcher.MatchResult<TestInterface>>() {
+                override fun matchRequest(request: DeepLinkRequest): MatchResult<TestInterface> {
+                    return MatchResult(TestInterfaceImplB)
+                }
+            }
+        val matchers:
+            List<DeepLinkMatcher<TestInterface, DeepLinkMatcher.MatchResult<TestInterface>>> =
+            listOf(matcher1, matcher2)
+
+        val request = DeepLinkRequest(DeepLinkUri("https://www.testuri.com"))
+
+        val results: List<DeepLinkMatcher.MatchResult<TestInterface>> = buildList {
+            matchers.forEach { add(it.match(request)!!) }
+        }
+        assertThat(results.size).isEqualTo(2)
+        assertThat(results.first().key).isEqualTo(TestInterfaceImplA)
+        assertThat(results.last().key).isEqualTo(TestInterfaceImplB)
+    }
+
+    @Test
+    fun compare_sameMatcherClassTypedOnBaseKey() {
+        val matcher1 = TestHierarchicalDeepLinkMatcher(TestInterfaceImplA)
+        val matcher2 = TestHierarchicalDeepLinkMatcher(TestInterfaceImplB)
+
+        val matchers:
+            List<DeepLinkMatcher<TestInterface, DeepLinkMatcher.MatchResult<TestInterface>>> =
+            listOf(matcher1, matcher2)
+
+        val request = DeepLinkRequest(DeepLinkUri("https://www.testuri.com"))
+
+        val results: List<DeepLinkMatcher.MatchResult<TestInterface>> = buildList {
+            matchers.forEach { add(it.match(request)!!) }
+        }
+        assertThat(results.size).isEqualTo(2)
+        assertThat(results.first().key).isEqualTo(TestInterfaceImplA)
+        assertThat(results.last().key).isEqualTo(TestInterfaceImplB)
+    }
+
     private object First : NavKey
 
     private object Second : NavKey
+
+    private class TestHierarchicalDeepLinkMatcher(private val key: TestInterface) :
+        DeepLinkMatcher<TestInterface, DeepLinkMatcher.MatchResult<TestInterface>>() {
+        override fun matchRequest(request: DeepLinkRequest): MatchResult<TestInterface> {
+            return MatchResult(key)
+        }
+    }
 }

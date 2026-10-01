@@ -52,24 +52,22 @@ public final class CondensedItem implements Item {
      * The type of images supported within condensed items.
      */
     @RestrictTo(LIBRARY)
-    @IntDef(value = {IMAGE_TYPE_ICON, IMAGE_TYPE_SMALL, IMAGE_TYPE_LARGE})
+    @IntDef(value = {IMAGE_TYPE_SMALL, IMAGE_TYPE_MEDIUM, IMAGE_TYPE_LARGE})
     @Retention(RetentionPolicy.SOURCE)
     public @interface CondensedItemImageType {
     }
 
     /**
-     * Represents an icon to be displayed in the condensed item.
-     *
-     * <p>A tint color is expected to be provided via {@link CarIcon.Builder#setTint}. Otherwise, a
-     * default tint color as determined by the host will be applied.
+     * Represents a small icon-sized image to be displayed in the condensed item.
      */
-    public static final int IMAGE_TYPE_ICON = 1;
+    public static final int IMAGE_TYPE_SMALL = 1;
 
     /**
-     * Represents a small image. The host renders it with standard padding and scales
-     * the image to fit within the bounds.
+     * Represents a medium padded 1:1 square image to be displayed in the condensed item.
+     *
+     * <p>The host renders it with standard padding and scales the image to fit within the bounds.
      */
-    public static final int IMAGE_TYPE_SMALL = 2;
+    public static final int IMAGE_TYPE_MEDIUM = 2;
 
     /**
      * Represents a large image. The host renders it edge-to-edge, scaling the image
@@ -261,7 +259,7 @@ public final class CondensedItem implements Item {
         /**
          * Sets the title of the item.
          *
-         * <p>{@code title} must conform to {@link CarTextConstraints.TEXT_AND_ICON}.
+         * <p>{@code title} must conform to {@link CarTextConstraints#TEXT_AND_ICON}.
          *
          * @throws NullPointerException     if {@code title} is {@code null}
          * @throws IllegalArgumentException if {@code title} contains unsupported spans
@@ -276,7 +274,7 @@ public final class CondensedItem implements Item {
         /**
          * Sets the text of the item.
          *
-         * <p>{@code text} must conform to {@link CarTextConstraints.TEXT_WITH_COLORS_AND_ICON}.
+         * <p>{@code text} must conform to {@link CarTextConstraints#TEXT_WITH_COLORS_AND_ICON}.
          *
          * <p><strong>Note:</strong> This field is mutually exclusive with {@link #setProgressBar}.
          * If both are set, {@link #build()} will throw an {@link IllegalStateException}.
@@ -293,7 +291,7 @@ public final class CondensedItem implements Item {
         /**
          * Sets the text of the item.
          *
-         * <p>{@code text} must conform to {@link CarTextConstraints.TEXT_WITH_COLORS_AND_ICON}.
+         * <p>{@code text} must conform to {@link CarTextConstraints#TEXT_WITH_COLORS_AND_ICON}.
          *
          * <p><strong>Note:</strong> This field is mutually exclusive with {@link #setProgressBar}.
          * If both are set, {@link #build()} will throw an {@link IllegalStateException}.
@@ -311,14 +309,14 @@ public final class CondensedItem implements Item {
         /**
          * Sets the leading image of the item.
          *
-         * <p>The leading image will default to {@link #IMAGE_TYPE_SMALL}.
+         * <p>The leading image will default to {@link #IMAGE_TYPE_MEDIUM}.
          *
          * @throws NullPointerException     if {@code image} is {@code null}
          * @throws IllegalArgumentException if {@code image} contains unsupported icon types
          */
         @CanIgnoreReturnValue
         public @NonNull Builder setLeadingImage(@NonNull CarIcon image) {
-            return setLeadingImage(requireNonNull(image), IMAGE_TYPE_SMALL);
+            return setLeadingImage(requireNonNull(image), IMAGE_TYPE_MEDIUM);
         }
 
         /**
@@ -341,14 +339,14 @@ public final class CondensedItem implements Item {
         /**
          * Sets the trailing image of the item.
          *
-         * <p>The trailing image will default to {@link #IMAGE_TYPE_SMALL}.
+         * <p>The trailing image will default to {@link #IMAGE_TYPE_MEDIUM}.
          *
          * @throws NullPointerException     if {@code image} is {@code null}
          * @throws IllegalArgumentException if {@code image} contains unsupported icon types
          */
         @CanIgnoreReturnValue
         public @NonNull Builder setTrailingImage(@NonNull CarIcon image) {
-            return setTrailingImage(requireNonNull(image), IMAGE_TYPE_SMALL);
+            return setTrailingImage(requireNonNull(image), IMAGE_TYPE_MEDIUM);
         }
 
         /**

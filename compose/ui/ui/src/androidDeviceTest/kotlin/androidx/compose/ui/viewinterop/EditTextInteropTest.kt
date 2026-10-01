@@ -25,7 +25,6 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,7 +32,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class EditTextInteropTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     @Test
     fun hardwareKeyInEmbeddedView() {
@@ -52,10 +51,9 @@ class EditTextInteropTest {
         rule.runOnIdle { editText.requestFocus() }
 
         // Act.
-        val keyConsumed =
-            rule.runOnIdle {
-                ownerView.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_A))
-            }
+        val keyConsumed = rule.runOnIdle {
+            ownerView.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_A))
+        }
 
         // Assert.
         // TODO(b/171997891): Right now we just assert that we reach here without crashing. Once we

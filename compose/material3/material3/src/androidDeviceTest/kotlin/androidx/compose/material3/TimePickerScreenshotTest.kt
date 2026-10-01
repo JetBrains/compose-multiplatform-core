@@ -33,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,7 +44,7 @@ import org.junit.runners.Parameterized
 @OptIn(ExperimentalMaterial3Api::class)
 class TimePickerScreenshotTest(private val scheme: ColorSchemeWrapper) {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -184,6 +183,82 @@ class TimePickerScreenshotTest(private val scheme: ColorSchemeWrapper) {
 
     private fun ComposeContentTestRule.assertAgainstGolden(goldenName: String) {
         this.onNodeWithTag(TestTag).captureToImage().assertAgainstGolden(screenshotRule, goldenName)
+    }
+
+    @Test
+    fun richTimePicker_12h() {
+        rule.setMaterialContent(scheme.colorScheme) {
+            Box(Modifier.testTag(TestTag)) {
+                TimePicker(
+                    state =
+                        rememberTimePickerState(
+                            initialHour = 10,
+                            initialMinute = 23,
+                            is24Hour = false,
+                        ),
+                    shapes = TimePickerDefaults.shapes(),
+                )
+            }
+        }
+
+        rule.assertAgainstGolden("richTimePicker_12h_${scheme.name}")
+    }
+
+    @Test
+    fun richTimePicker_24h() {
+        rule.setMaterialContent(scheme.colorScheme) {
+            Box(Modifier.testTag(TestTag)) {
+                TimePicker(
+                    state =
+                        rememberTimePickerState(
+                            initialHour = 22,
+                            initialMinute = 23,
+                            is24Hour = true,
+                        ),
+                    shapes = TimePickerDefaults.shapes(),
+                )
+            }
+        }
+
+        rule.assertAgainstGolden("richTimePicker_24h_${scheme.name}")
+    }
+
+    @Test
+    fun richTimeInput_12h() {
+        rule.setMaterialContent(scheme.colorScheme) {
+            Box(Modifier.testTag(TestTag)) {
+                TimeInput(
+                    state =
+                        rememberTimePickerState(
+                            initialHour = 10,
+                            initialMinute = 23,
+                            is24Hour = false,
+                        ),
+                    shapes = TimePickerDefaults.shapes(),
+                )
+            }
+        }
+
+        rule.assertAgainstGolden("richTimeInput_12h_${scheme.name}")
+    }
+
+    @Test
+    fun richTimeInput_24h() {
+        rule.setMaterialContent(scheme.colorScheme) {
+            Box(Modifier.testTag(TestTag)) {
+                TimeInput(
+                    state =
+                        rememberTimePickerState(
+                            initialHour = 22,
+                            initialMinute = 23,
+                            is24Hour = true,
+                        ),
+                    shapes = TimePickerDefaults.shapes(),
+                )
+            }
+        }
+
+        rule.assertAgainstGolden("richTimeInput_24h_${scheme.name}")
     }
 
     companion object {

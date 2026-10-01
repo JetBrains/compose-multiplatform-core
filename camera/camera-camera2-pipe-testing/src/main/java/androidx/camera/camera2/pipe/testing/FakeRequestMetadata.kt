@@ -18,12 +18,12 @@ package androidx.camera.camera2.pipe.testing
 
 import android.hardware.camera2.CaptureRequest
 import android.view.Surface
-import androidx.camera.camera2.pipe.Metadata
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestMetadata
 import androidx.camera.camera2.pipe.RequestNumber
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.StreamId
+import androidx.camera.common.Metadata
 import java.lang.Class
 import kotlinx.atomicfu.atomic
 
@@ -43,10 +43,25 @@ public class FakeRequestMetadata(
     override val requestNumber: RequestNumber = nextFakeRequestNumber(),
 ) : FakeMetadata(request.extras.plus(metadata)), RequestMetadata {
 
-    @Suppress("UNCHECKED_CAST")
-    override fun <T> get(key: CaptureRequest.Key<T>): T? = requestParameters[key] as T?
+    override val metadataKeys: Set<Metadata.Key<*>>
+        get() = super<FakeMetadata>.metadataKeys
 
-    override fun <T> getOrDefault(key: CaptureRequest.Key<T>, default: T): T = get(key) ?: default
+    override fun <T : Any> get(key: Metadata.Key<T>): T? {
+        return super<FakeMetadata>.get(key)
+    }
+
+    override fun <T : Any> getOrDefault(key: Metadata.Key<T>, default: T): T {
+        return super<FakeMetadata>.getOrDefault(key, default)
+    }
+
+    override val keys: List<CaptureRequest.Key<*>>
+        get() = requestParameters.keys.toList()
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : Any> get(key: CaptureRequest.Key<T>): T? = requestParameters[key] as T?
+
+    override fun <T : Any> getOrDefault(key: CaptureRequest.Key<T>, default: T): T =
+        get(key) ?: default
 
     override fun <T : Any> unwrapAs(type: Class<T>): T? = null
 

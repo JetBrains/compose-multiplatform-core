@@ -21,21 +21,21 @@ package androidx.appfunctions
  * app functions.
  *
  * This annotation can be applied to:
- * - functions annotated with `@AppFunction` (to constrain the return value),
- * - parameters of `@AppFunction`,
+ * - functions annotated with `@AppFunctionDeclaration` (to constrain the return value),
+ * - parameters of `@AppFunctionDeclaration`,
  * - or properties within an `@AppFunctionSerializable`.
  *
  * ### Usage Example:
  * ```
  * // Constraining a function return value:
- * @AppFunction
+ * @AppFunctionDeclaration
  * @AppFunctionStringValueConstraint(enumValues = ["LOW", "MEDIUM", "HIGH"])
  * fun getPriorityLevel(): String {
  *     // Function body
  * }
  *
  * // Constraining a parameter:
- * @AppFunction
+ * @AppFunctionDeclaration
  * fun setMode(
  *     @AppFunctionStringValueConstraint(enumValues = ["AUTO", "MANUAL"])
  *     mode: String
@@ -58,9 +58,28 @@ public annotation class AppFunctionStringValueConstraint(
      * The list of allowed string values for the annotated element.
      *
      * These values are communicated to the agent or framework that interprets or invokes the
-     * `@AppFunction`. If any of the values carry special meaning (e.g., `"AUTO"` means automatic
-     * mode), such meanings should be documented clearly in the corresponding property, parameter,
-     * or function return KDoc.
+     * `@AppFunctionDeclaration`. If any of the values carry special meaning (e.g., `"AUTO"` means
+     * automatic mode), such meanings should be documented clearly in the corresponding property,
+     * parameter, or function return KDoc.
      */
-    val enumValues: Array<String> = []
+    val enumValues: Array<String> = [],
+    /**
+     * The patterns that string values must match. A value is valid if it matches any of the
+     * patterns. An empty array indicates no pattern constraint is applied.
+     *
+     * Each pattern is translated to a [android.os.PatternMatcher] in
+     * [androidx.appfunctions.metadata.AppFunctionStringTypeMetadata.patternMatchers].
+     *
+     * **Important:** Patterns are not validated at compile time. If [android.os.PatternMatcher]
+     * rejects any pattern (for example, a malformed
+     * [android.os.PatternMatcher.PATTERN_ADVANCED_GLOB]), the function using it is omitted from
+     * agents' search results. If the pattern is on a property of an [AppFunctionSerializable], all
+     * of the app's functions are omitted.
+     */
+    val patternMatchers: Array<AppFunctionPatternMatcher> = [],
+    /**
+     * The format description for string values (e.g. `"uri"`). An empty string indicates no format
+     * description is set.
+     */
+    val format: String = "",
 )

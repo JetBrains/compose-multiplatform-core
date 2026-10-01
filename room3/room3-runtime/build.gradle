@@ -109,7 +109,7 @@ androidXMultiplatform {
         }
         jvmTest {
             dependencies {
-                implementation(project(":sqlite:sqlite-bundled"))
+                implementation("androidx.sqlite:sqlite-bundled:2.7.1")
                 implementation(libs.kotlinTestJunit)
             }
         }
@@ -157,7 +157,6 @@ androidXMultiplatform {
             dependsOn(nonWebMain)
             dependsOn(jvmNativeWebMain)
             dependencies {
-                api(project(":sqlite:sqlite-framework"))
                 implementation(libs.atomicFu)
             }
         }

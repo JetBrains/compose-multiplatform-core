@@ -36,6 +36,7 @@ import java.util.UUID
  * [WorkMetricsInfo] for the same [WorkRequest]. Similarly, a [PeriodicWorkRequest] finishing starts
  * a new [WorkMetricsInfo] for the new period.
  */
+@ExperimentalWorkMetricsApi
 public class WorkMetricsInfo(
     /** The unique identifier for the [WorkRequest]. */
     public val workSpecId: UUID,
@@ -77,6 +78,12 @@ public class WorkMetricsInfo(
     public val finishTimeMillis: Long,
 
     /**
+     * The time in milliseconds it took for the worker to run when it actually returned a final
+     * result.
+     */
+    public val workerDurationMillis: Long,
+
+    /**
      * The number of times this work has started in this period. This can occur multiple times for
      * various reasons e.g. worker returns [Result.retry], worker is stopped, app is closed.
      */
@@ -90,6 +97,9 @@ public class WorkMetricsInfo(
 
     /** How many times this work stopped for each [WorkInfo.stopReason] in this period. */
     public val stopReasonCounts: Map<Int, Int> = emptyMap(),
+
+    /** The total time in milliseconds that this work ran across all its retries in this period. */
+    public val totalRuntimeMillis: Long = 0,
 ) {
     public enum class State {
         /**

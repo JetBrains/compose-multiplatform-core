@@ -24,7 +24,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusTarget
+import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.ComposeUiTestConfig
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -37,7 +39,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import org.junit.After
@@ -50,7 +51,8 @@ import org.junit.runners.Parameterized
 class GlimmerPagerStateTest(private val config: GlimmerPagerParamConfig) :
     BaseParameterizedGlimmerPagerTest() {
 
-    @get:Rule(0) val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule(0)
+    val rule = createComposeRule(config = ComposeUiTestConfig(inputMode = InputMode.Keyboard))
 
     @get:Rule(1) val glimmerRule = createGlimmerRule()
 
@@ -61,7 +63,7 @@ class GlimmerPagerStateTest(private val config: GlimmerPagerParamConfig) :
 
     @Test
     fun updateCurrentPage_updatesStateInsideScrollScope() = runTest {
-        val state = GlimmerPagerState { 10 }
+        val state = GlimmerPagerState(pageCount = { 10 })
 
         rule.setContent {
             GlimmerHorizontalPager(state = state, modifier = Modifier.fillMaxSize()) { page ->
@@ -79,7 +81,7 @@ class GlimmerPagerStateTest(private val config: GlimmerPagerParamConfig) :
 
     @Test
     fun updateTargetPage_updatesTargetPageInsideScrollScope() = runTest {
-        val state = GlimmerPagerState { 10 }
+        val state = GlimmerPagerState(pageCount = { 10 })
         var capturedTargetPage = -1
 
         rule.setContent {
@@ -105,7 +107,7 @@ class GlimmerPagerStateTest(private val config: GlimmerPagerParamConfig) :
 
     @Test
     fun requestScrollToPage_changesCurrentPageOnNextMeasurement() = runTest {
-        val state = GlimmerPagerState { 10 }
+        val state = GlimmerPagerState(pageCount = { 10 })
 
         rule.setContent {
             GlimmerParameterizedPager(
@@ -124,6 +126,54 @@ class GlimmerPagerStateTest(private val config: GlimmerPagerParamConfig) :
 
         assertThat(state.currentPage).isEqualTo(4)
         assertThat(state.currentPageOffsetFraction).isWithin(0.01f).of(0.2f)
+    }
+
+    @Test
+    fun scrollToPage_withOffsetFraction_updatesCurrentPageAndOffset() = runTest {
+        val state = GlimmerPagerState(pageCount = { 10 })
+
+        rule.setContent {
+            GlimmerParameterizedPager(
+                config = config,
+                modifier = Modifier.size(200.dp),
+                state = state,
+            ) { page ->
+                Page("Page $page")
+            }
+        }
+
+        rule.onNodeWithTag("Page 0").assertIsDisplayed()
+
+        runOnUiThread { state.scrollToPage(3, 0.25f) }
+        rule.waitForIdle()
+
+        assertThat(state.currentPage).isEqualTo(3)
+        assertThat(state.currentPageOffsetFraction).isWithin(0.01f).of(0.25f)
+    }
+
+    @Test
+    fun animateScrollToPage_withOffsetFraction_updatesCurrentPageAndOffset() = runTest {
+        val state = GlimmerPagerState(pageCount = { 10 })
+        lateinit var scope: CoroutineScope
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            GlimmerParameterizedPager(
+                config = config,
+                modifier = Modifier.size(200.dp),
+                state = state,
+            ) { page ->
+                Page("Page $page")
+            }
+        }
+
+        rule.onNodeWithTag("Page 0").assertIsDisplayed()
+
+        scope.launch { state.animateScrollToPage(3, 0.25f) }
+        rule.waitForIdle()
+
+        assertThat(state.currentPage).isEqualTo(3)
+        assertThat(state.currentPageOffsetFraction).isWithin(0.01f).of(0.25f)
     }
 
     @Test
@@ -197,7 +247,7 @@ class GlimmerPagerStateTest(private val config: GlimmerPagerParamConfig) :
 
     @Test
     fun scroll_withUserInputPriority_interruptsDefaultScroll() = runTest {
-        val state = GlimmerPagerState { 10 }
+        val state = GlimmerPagerState(pageCount = { 10 })
         var defaultScrollInterrupted = false
         var userInputScrollCompleted = false
 
@@ -239,7 +289,7 @@ class GlimmerPagerStateTest(private val config: GlimmerPagerParamConfig) :
 
     @Test
     fun settledPage_updatesOnlyWhenScrollFinished() = runTest {
-        val state = GlimmerPagerState { 10 }
+        val state = GlimmerPagerState(pageCount = { 10 })
         lateinit var scope: CoroutineScope
 
         rule.setContent {

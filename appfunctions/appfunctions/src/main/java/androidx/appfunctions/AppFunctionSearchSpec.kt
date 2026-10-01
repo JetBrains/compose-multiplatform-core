@@ -16,6 +16,13 @@
 
 package androidx.appfunctions
 
+import android.app.appfunctions.AppFunctionMetadata.PROPERTY_SCOPE
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.annotation.RestrictTo
+import androidx.appfunctions.metadata.AppFunctionMetadata.Companion.SCOPE_ACTIVITY
+import androidx.appfunctions.metadata.AppFunctionMetadata.Companion.SCOPE_GLOBAL
+import androidx.appfunctions.metadata.AppFunctionMetadata.Companion.scopeToScopeXmlValue
 import androidx.appfunctions.metadata.AppFunctionMetadataDocument
 import androidx.appfunctions.metadata.AppFunctionName
 
@@ -36,6 +43,8 @@ import androidx.appfunctions.metadata.AppFunctionName
  *   skipped.
  * @property functionNames The set of [AppFunctionName] to filter by, or null if this filter is
  *   skipped.
+ * @property scopes The set of [androidx.appfunctions.metadata.AppFunctionMetadata.scope] type to
+ *   filter by, or null if this filter is skipped.
  * @constructor Creates a new instance of [AppFunctionSearchSpec].
  */
 public class AppFunctionSearchSpec
@@ -43,7 +52,7 @@ public class AppFunctionSearchSpec
 constructor(
     @get:Suppress(
         // Null value is used to specify that the value was not set by the caller to be consistent
-        // with other string fields.
+        // with other fields.
         "NullableCollection"
     )
     public val packageNames: Set<String>? = null,
@@ -52,10 +61,16 @@ constructor(
     public val minSchemaVersion: Int = 0,
     @get:Suppress(
         // Null value is used to specify that the value was not set by the caller to be consistent
-        // with other string fields.
+        // with other fields.
         "NullableCollection"
     )
     public val functionNames: Set<AppFunctionName>? = null,
+    @get:Suppress(
+        // Null value is used to specify that the value was not set by the caller to be consistent
+        // with other fields.
+        "NullableCollection"
+    )
+    public val scopes: Set<Int>? = null,
 ) {
     init {
         require(minSchemaVersion >= 0) {
@@ -66,6 +81,14 @@ constructor(
         }
         require(functionNames == null || functionNames.isNotEmpty()) {
             "Cannot filter by empty set of function names."
+        }
+        require(scopes == null || scopes.isNotEmpty()) { "Cannot filter by empty set of scopes." }
+
+        if (scopes != null) {
+            val invalidScopes = scopes - setOf(SCOPE_GLOBAL, SCOPE_ACTIVITY)
+            require(invalidScopes.isEmpty()) {
+                "Unknown AppFunctionScope type(s): ${invalidScopes.joinToString()}"
+            }
         }
     }
 
@@ -90,9 +113,48 @@ constructor(
                 if (minSchemaVersion > 0) {
                     add("schemaVersion>=${minSchemaVersion}")
                 }
+                if (!scopes.isNullOrEmpty()) {
+                    val queryXmlScopes =
+                        scopes.mapNotNull { scopeToScopeXmlValue(it) }.toMutableSet()
+                    // Unset scope in app function document defaults to SCOPE_GLOBAL.
+                    if (scopes.contains(SCOPE_GLOBAL)) {
+                        queryXmlScopes.add("")
+                    }
+                    add("$PROPERTY_SCOPE:(${getOrQueryExpression(queryXmlScopes)})")
+                }
             }
             .joinToString(" ")
 
     private fun getOrQueryExpression(elements: Set<String>) =
         elements.joinToString(" OR ") { "\"$it\"" }
+
+    /**
+     * Converts [androidx.appfunctions.AppFunctionSearchSpec] to
+     * [android.app.appfunctions.AppFunctionSearchSpec].
+     */
+    @RequiresApi(Build.VERSION_CODES.CINNAMON_BUN)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun toPlatformSearchSpec(): android.app.appfunctions.AppFunctionSearchSpec {
+        return android.app.appfunctions.AppFunctionSearchSpec.Builder()
+            .setSchemaCategory(schemaCategory)
+            .setSchemaName(schemaName)
+            .setMinSchemaVersion(minSchemaVersion.toLong())
+            .setPackageNames(packageNames)
+            .setScopes(scopes)
+            .apply {
+                if (functionNames != null) {
+                    setFunctionNames(
+                        functionNames
+                            .map {
+                                android.app.appfunctions.AppFunctionName(
+                                    it.packageName,
+                                    it.functionIdentifier,
+                                )
+                            }
+                            .toSet()
+                    )
+                }
+            }
+            .build()
+    }
 }

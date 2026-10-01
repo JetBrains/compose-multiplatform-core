@@ -105,14 +105,20 @@ constructor(private val sessionLifecycleAdapter: CameraSessionLifecycleAdapter) 
     public fun onGraphClosed(cameraGraph: CameraGraph): Unit =
         synchronized(lock) {
             if (currentGraph == cameraGraph) {
+                val wasClosed = currentCameraInternalState == CameraInternal.State.CLOSED
                 // If we are still in a non-closed state, force a transition to CLOSED.
-                if (currentCameraInternalState != CameraInternal.State.CLOSED) {
+                if (!wasClosed) {
                     // Transition to closing state and we will wait for CameraGraph to stop
                     // and then transition to CLOSED state.
                     postCameraState(CameraInternal.State.CLOSING)
                     postCameraState(CameraInternal.State.CLOSED)
                 }
-                closedGraph = cameraGraph
+                if (wasClosed) {
+                    currentGraph = null
+                    closedGraph = null
+                } else {
+                    closedGraph = cameraGraph
+                }
                 currentCameraInternalState = CameraInternal.State.CLOSED
             }
         }
@@ -129,6 +135,15 @@ constructor(private val sessionLifecycleAdapter: CameraSessionLifecycleAdapter) 
             handleStateTransition(cameraGraph, graphState)
             if (cameraGraph == currentGraph) {
                 sessionLifecycleAdapter.dispatchSessionLifecycle(graphState)
+            }
+            if (graphState == GraphStateStopped && cameraGraph == closedGraph) {
+                Camera2Logger.debug {
+                    "Graph $cameraGraph is stopped and closed, clearing references."
+                }
+                if (currentGraph == cameraGraph) {
+                    currentGraph = null
+                }
+                closedGraph = null
             }
         }
     }
@@ -202,8 +217,20 @@ constructor(private val sessionLifecycleAdapter: CameraSessionLifecycleAdapter) 
         graphState: GraphState,
         currentError: CameraState.StateError?,
         isGraphActive: Boolean,
-    ): CombinedCameraState? =
-        when (currentState) {
+    ): CombinedCameraState? {
+        if (
+            !isGraphActive &&
+                graphState is GraphStateError &&
+                graphState.cameraError == CameraError.ERROR_CAMERA_OPEN_TIMEOUT
+        ) {
+            // Swallow the timeout error if the graph is inactive (intentional abort).
+            // This prevents a benign cancellation from surfacing as a FATAL error to the app,
+            // while allowing the normal shutdown sequence (Stopping -> Stopped) to transition the
+            // state.
+            return CombinedCameraState(currentState, currentError)
+        }
+
+        return when (currentState) {
             CameraInternal.State.CLOSED ->
                 when (graphState) {
                     GraphStateStarting -> CombinedCameraState(CameraInternal.State.OPENING)
@@ -259,6 +286,7 @@ constructor(private val sessionLifecycleAdapter: CameraSessionLifecycleAdapter) 
                 }
             else -> null
         }
+    }
 
     internal fun addCameraStateListener(executor: Executor, listener: Consumer<CameraState>) {
         synchronized(lock) { cameraStateListeners[listener] = executor }

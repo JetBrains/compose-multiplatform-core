@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-
 package androidx.compose.remote.creation.compose.shaders
 
 import androidx.annotation.RestrictTo
@@ -22,15 +20,14 @@ import androidx.compose.remote.core.operations.paint.PaintBundle
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.compose.layout.RemoteOffset
 import androidx.compose.remote.creation.compose.layout.RemoteSize
+import androidx.compose.remote.creation.compose.layout.toTileModeInt
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteFloat
-import androidx.compose.remote.creation.compose.state.RemoteMatrix3x3
 import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.TileMode as ComposeTileMode
-import androidx.compose.ui.graphics.toAndroidTileMode
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.util.fastMap
 
@@ -66,7 +63,7 @@ public fun RemoteBrush.Companion.radialGradient(
     center: RemoteOffset? = null,
     radius: RemoteFloat? = null,
     tileMode: ComposeTileMode = ComposeTileMode.Clamp,
-): RemoteBrush =
+): RemoteShaderBrush =
     RemoteRadialGradient(
         colors = List(colorStops.size) { i -> colorStops[i].second },
         stops = List(colorStops.size) { i -> colorStops[i].first },
@@ -103,7 +100,7 @@ public fun RemoteBrush.Companion.radialGradient(
     center: RemoteOffset? = null,
     radius: RemoteFloat? = null,
     tileMode: ComposeTileMode = ComposeTileMode.Clamp,
-): RemoteBrush =
+): RemoteShaderBrush =
     RemoteRadialGradient(
         colors = colors,
         stops = null,
@@ -120,7 +117,7 @@ public data class RemoteRadialGradient(
     private val center: RemoteOffset?,
     private val radius: RemoteFloat?,
     private val tileMode: ComposeTileMode = ComposeTileMode.Clamp,
-) : RemoteBrush() {
+) : RemoteShaderBrush() {
 
     override fun RemoteStateScope.createShader(size: RemoteSize): RemoteShader {
         val realCenter = center ?: size.center
@@ -150,7 +147,6 @@ public class RemoteRadialShader(
     public var positions: List<RemoteFloat>?,
     public var tileMode: ComposeTileMode,
 ) : RemoteShader() {
-    override var remoteMatrix3x3: RemoteMatrix3x3? = null
 
     override fun apply(creationState: RemoteComposeCreationState, paintBundle: PaintBundle) {
         var mask = 0
@@ -175,7 +171,7 @@ public class RemoteRadialShader(
             centerX.getFloatIdForCreationState(creationState),
             centerY.getFloatIdForCreationState(creationState),
             radius.getFloatIdForCreationState(creationState),
-            tileMode.toAndroidTileMode().ordinal,
+            tileMode.toTileModeInt(),
         )
     }
 }

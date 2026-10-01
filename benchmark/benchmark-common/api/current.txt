@@ -3,9 +3,11 @@ package androidx.benchmark {
 
   public final class BenchmarkState {
     method public boolean keepRunning();
+    method @BytecodeOnly @kotlin.PublishedApi internal boolean keepRunningInternal();
     method public void pauseTiming();
     method public void resumeTiming();
     field public static final androidx.benchmark.BenchmarkState.Companion Companion;
+    field @BytecodeOnly @kotlin.PublishedApi internal int iterationsRemaining;
   }
 
   public static final class BenchmarkState.Companion {
@@ -32,12 +34,28 @@ package androidx.benchmark {
 
   @SuppressCompatibility @androidx.benchmark.ExperimentalBenchmarkConfigApi public final class ExperimentalConfig {
     ctor public ExperimentalConfig();
-    ctor public ExperimentalConfig(optional androidx.benchmark.perfetto.PerfettoConfig? perfettoConfig, optional androidx.benchmark.StartupInsightsConfig? startupInsightsConfig);
-    ctor @BytecodeOnly public ExperimentalConfig(androidx.benchmark.perfetto.PerfettoConfig!, androidx.benchmark.StartupInsightsConfig!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public ExperimentalConfig(optional androidx.benchmark.perfetto.PerfettoConfig? perfettoConfig, optional androidx.benchmark.StartupInsightsConfig? startupInsightsConfig, optional androidx.benchmark.MemoryProfilingConfig? memoryProfilingConfig);
+    ctor @BytecodeOnly public ExperimentalConfig(androidx.benchmark.perfetto.PerfettoConfig!, androidx.benchmark.StartupInsightsConfig!, androidx.benchmark.MemoryProfilingConfig!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method @InaccessibleFromKotlin public androidx.benchmark.MemoryProfilingConfig? getMemoryProfilingConfig();
     method @InaccessibleFromKotlin public androidx.benchmark.perfetto.PerfettoConfig? getPerfettoConfig();
     method @InaccessibleFromKotlin public androidx.benchmark.StartupInsightsConfig? getStartupInsightsConfig();
+    property public androidx.benchmark.MemoryProfilingConfig? memoryProfilingConfig;
     property public androidx.benchmark.perfetto.PerfettoConfig? perfettoConfig;
     property public androidx.benchmark.StartupInsightsConfig? startupInsightsConfig;
+  }
+
+  @SuppressCompatibility @androidx.benchmark.ExperimentalBenchmarkConfigApi public enum InProcessTracingMode {
+    enum_constant public static final androidx.benchmark.InProcessTracingMode Disable;
+    enum_constant public static final androidx.benchmark.InProcessTracingMode Require;
+    enum_constant public static final androidx.benchmark.InProcessTracingMode UseIfAvailable;
+  }
+
+  @SuppressCompatibility @RequiresApi(29) @androidx.benchmark.ExperimentalBenchmarkConfigApi public final class MemoryProfilingConfig {
+    ctor public MemoryProfilingConfig(boolean isSampleArtHeapEnabled, boolean isSampleNativeHeapEnabled);
+    method @InaccessibleFromKotlin public boolean isSampleArtHeapEnabled();
+    method @InaccessibleFromKotlin public boolean isSampleNativeHeapEnabled();
+    property public boolean isSampleArtHeapEnabled;
+    property public boolean isSampleNativeHeapEnabled;
   }
 
   @SuppressCompatibility @androidx.benchmark.ExperimentalBenchmarkConfigApi public abstract class MetricCapture {
@@ -123,7 +141,7 @@ package androidx.benchmark {
 
 }
 
-package androidx.benchmark.perfetto {
+package @SuppressCompatibility androidx.benchmark.perfetto {
 
   @SuppressCompatibility @kotlin.RequiresOptIn @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION}) public @interface ExperimentalPerfettoCaptureApi {
   }
@@ -148,10 +166,10 @@ package androidx.benchmark.perfetto {
 package @SuppressCompatibility androidx.benchmark.traceprocessor {
 
   @SuppressCompatibility public final class PerfettoTraceKt {
-    method @SuppressCompatibility @RequiresApi(23) @androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi public static void record(androidx.benchmark.traceprocessor.PerfettoTrace.Companion, String fileLabel, androidx.benchmark.perfetto.PerfettoConfig config, optional String highlightPackage, optional String? userspaceTracingPackage, optional kotlin.jvm.functions.Function1<? super androidx.benchmark.traceprocessor.PerfettoTrace,kotlin.Unit>? traceCallback, kotlin.jvm.functions.Function0<kotlin.Unit> block);
-    method @SuppressCompatibility @RequiresApi(23) @androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi public static void record(androidx.benchmark.traceprocessor.PerfettoTrace.Companion, String fileLabel, optional java.util.List<java.lang.String> appTagPackages, optional String? userspaceTracingPackage, optional kotlin.jvm.functions.Function1<? super androidx.benchmark.traceprocessor.PerfettoTrace,kotlin.Unit>? traceCallback, kotlin.jvm.functions.Function0<kotlin.Unit> block);
-    method @BytecodeOnly @SuppressCompatibility @RequiresApi(23) @androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi public static void record$default(androidx.benchmark.traceprocessor.PerfettoTrace.Companion!, String!, androidx.benchmark.perfetto.PerfettoConfig!, String!, String!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function0!, int, Object!);
-    method @BytecodeOnly @SuppressCompatibility @RequiresApi(23) @androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi public static void record$default(androidx.benchmark.traceprocessor.PerfettoTrace.Companion!, String!, java.util.List!, String!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function0!, int, Object!);
+    method @SuppressCompatibility @androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi public static void record(androidx.benchmark.traceprocessor.PerfettoTrace.Companion, String fileLabel, androidx.benchmark.perfetto.PerfettoConfig config, optional String? userspaceTracingPackage, optional kotlin.jvm.functions.Function1<? super androidx.benchmark.traceprocessor.PerfettoTrace,kotlin.Unit>? traceCallback, kotlin.jvm.functions.Function0<kotlin.Unit> block);
+    method @SuppressCompatibility @androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi public static void record(androidx.benchmark.traceprocessor.PerfettoTrace.Companion, String fileLabel, optional java.util.List<java.lang.String> appTagPackages, optional String? userspaceTracingPackage, optional kotlin.jvm.functions.Function1<? super androidx.benchmark.traceprocessor.PerfettoTrace,kotlin.Unit>? traceCallback, kotlin.jvm.functions.Function0<kotlin.Unit> block);
+    method @BytecodeOnly @SuppressCompatibility @androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi public static void record$default(androidx.benchmark.traceprocessor.PerfettoTrace.Companion!, String!, androidx.benchmark.perfetto.PerfettoConfig!, String!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function0!, int, Object!);
+    method @BytecodeOnly @SuppressCompatibility @androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi public static void record$default(androidx.benchmark.traceprocessor.PerfettoTrace.Companion!, String!, java.util.List!, String!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function0!, int, Object!);
   }
 
 }

@@ -47,10 +47,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assume.assumeFalse
 import org.junit.Rule
 import org.junit.Test
@@ -61,7 +61,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class TextFieldTripleTapTest : FocusedWindowTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
     @get:Rule val platformSelectionBehaviorsRule = PlatformSelectionBehaviorsRule()
 
     private val TAG = "BasicTextField"
@@ -193,6 +193,7 @@ class TextFieldTripleTapTest : FocusedWindowTest {
         assertThat(state.selection).isEqualTo(TextRange(0, 11))
     }
 
+    @SdkSuppress(minSdkVersion = 25) // b/538602770
     @Test
     fun tripleTapThen_dragDown_selectsFromCurrentToTargetParagraph_ltr() {
         assumeFalse(

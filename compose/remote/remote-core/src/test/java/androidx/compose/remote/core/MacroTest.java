@@ -54,7 +54,7 @@ import java.util.List;
 
 public class MacroTest {
 
-    private static class MockRemoteContext extends RemoteContext {
+    static class MockRemoteContext extends RemoteContext {
         @Override
         public void loadPathData(int instanceId, int winding, float @NonNull [] floatPath) {}
 
@@ -136,6 +136,12 @@ public class MacroTest {
 
         @Override
         public void hapticEffect(int type) {}
+
+        @Override
+        public void loadSound(int soundId, byte @NonNull [] data) {}
+
+        @Override
+        public void playSound(int soundId) {}
 
         @Override
         public void loadBitmap(

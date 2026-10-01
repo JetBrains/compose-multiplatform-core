@@ -17,11 +17,22 @@
 package androidx.compose.remote.creation.dsl
 
 import androidx.compose.remote.core.RcPlatformServices
+import androidx.compose.remote.core.RemoteContext.FLOAT_ACCELERATION_X
+import androidx.compose.remote.core.RemoteContext.FLOAT_ACCELERATION_Y
+import androidx.compose.remote.core.RemoteContext.FLOAT_ACCELERATION_Z
 import androidx.compose.remote.core.RemoteContext.FLOAT_ANIMATION_DELTA_TIME
 import androidx.compose.remote.core.RemoteContext.FLOAT_CALENDAR_MONTH
 import androidx.compose.remote.core.RemoteContext.FLOAT_CONTINUOUS_SEC
+import androidx.compose.remote.core.RemoteContext.FLOAT_GYRO_ROT_X
+import androidx.compose.remote.core.RemoteContext.FLOAT_GYRO_ROT_Y
+import androidx.compose.remote.core.RemoteContext.FLOAT_GYRO_ROT_Z
+import androidx.compose.remote.core.RemoteContext.FLOAT_LIGHT
+import androidx.compose.remote.core.RemoteContext.FLOAT_MAGNETIC_X
+import androidx.compose.remote.core.RemoteContext.FLOAT_MAGNETIC_Y
+import androidx.compose.remote.core.RemoteContext.FLOAT_MAGNETIC_Z
 import androidx.compose.remote.core.RemoteContext.FLOAT_OFFSET_TO_UTC
 import androidx.compose.remote.core.operations.BitmapFontData
+import androidx.compose.remote.core.operations.DrawMesh2D
 import androidx.compose.remote.core.operations.DrawTextOnCircle
 import androidx.compose.remote.core.operations.Utils
 import androidx.compose.remote.core.operations.layout.managers.Custom
@@ -39,10 +50,10 @@ internal open class RcScopeImpl(internal val writer: RemoteComposeWriter) : RcSc
         modifier: Modifier,
         horizontal: RcHorizontalPositioning,
         vertical: RcVerticalPositioning,
-        content: RcScope.() -> Unit,
+        content: RcBoxScope.() -> Unit,
     ) {
         writer.startBox(modifier.toRecordingModifier(), horizontal.value, vertical.value)
-        RcScopeImpl(writer).content()
+        RcBoxScopeImpl(writer).content()
         writer.endBox()
     }
 
@@ -73,49 +84,78 @@ internal open class RcScopeImpl(internal val writer: RemoteComposeWriter) : RcSc
         modifier: Modifier,
         content: RcScope.() -> Unit,
     ) {
-        val corePropList: List<Custom.CustomProperty> =
-            properties.map {
-                when (it.mDataType) {
-                    CustomProperty.INT_PROP ->
-                        Custom.CustomProperty(
-                            it.mType,
-                            Custom.CustomProperty.INT_PROP,
-                            it.mIntValue,
-                        )
+        val corePropList: List<Custom.CustomProperty> = properties.map {
+            when (it.mDataType) {
+                CustomProperty.INT_PROP ->
+                    Custom.CustomProperty(
+                        it.mType,
+                        Custom.CustomProperty.INT_PROP,
+                        it.mIntValue,
+                    )
 
-                    CustomProperty.STRING_PROP ->
-                        Custom.CustomProperty(
-                            it.mType,
-                            Custom.CustomProperty.STRING_PROP,
-                            it.mIntValue,
-                        )
+                CustomProperty.STRING_PROP ->
+                    Custom.CustomProperty(
+                        it.mType,
+                        Custom.CustomProperty.STRING_PROP,
+                        it.mIntValue,
+                    )
 
-                    CustomProperty.FLOAT_PROP ->
-                        Custom.CustomProperty(
-                            it.mType,
-                            Custom.CustomProperty.FLOAT_PROP,
-                            it.mFloatValue,
-                        )
+                CustomProperty.FLOAT_PROP ->
+                    Custom.CustomProperty(
+                        it.mType,
+                        Custom.CustomProperty.FLOAT_PROP,
+                        it.mFloatValue,
+                    )
 
-                    CustomProperty.FLOAT_RETURN ->
-                        Custom.CustomProperty(
-                            it.mType,
-                            Custom.CustomProperty.FLOAT_RETURN,
-                            it.mFloatValue,
-                        )
+                CustomProperty.FLOAT_RETURN ->
+                    Custom.CustomProperty(
+                        it.mType,
+                        Custom.CustomProperty.FLOAT_RETURN,
+                        it.mFloatValue,
+                    )
 
-                    CustomProperty.TEXT_RETURN ->
-                        Custom.CustomProperty(
-                            it.mType,
-                            Custom.CustomProperty.TEXT_RETURN,
-                            it.mIntValue,
-                        )
+                CustomProperty.TEXT_RETURN ->
+                    Custom.CustomProperty(
+                        it.mType,
+                        Custom.CustomProperty.TEXT_RETURN,
+                        it.mIntValue,
+                    )
 
-                    else -> {
-                        throw RuntimeException("UNKNOWN TYPE")
-                    }
+                CustomProperty.INT_RETURN ->
+                    Custom.CustomProperty(
+                        it.mType,
+                        Custom.CustomProperty.INT_RETURN,
+                        it.mIntValue,
+                    )
+                CustomProperty.COLOR_RETURN ->
+                    Custom.CustomProperty(
+                        it.mType,
+                        Custom.CustomProperty.COLOR_RETURN,
+                        it.mIntValue,
+                    )
+                CustomProperty.COLOR_PROP ->
+                    Custom.CustomProperty(
+                        it.mType,
+                        Custom.CustomProperty.COLOR_PROP,
+                        it.mIntValue,
+                    )
+                CustomProperty.COLOR_ID_PROP ->
+                    Custom.CustomProperty(
+                        it.mType,
+                        Custom.CustomProperty.COLOR_ID_PROP,
+                        it.mIntValue,
+                    )
+                CustomProperty.INT_ID_PROP ->
+                    Custom.CustomProperty(
+                        it.mType,
+                        Custom.CustomProperty.INT_ID_PROP,
+                        it.mIntValue,
+                    )
+                else -> {
+                    throw RuntimeException("UNKNOWN TYPE")
                 }
             }
+        }
         writer.startCustom(modifier.toRecordingModifier(), config, corePropList)
         RcScopeImpl(writer).content()
         writer.endCustom()
@@ -205,8 +245,36 @@ internal open class RcScopeImpl(internal val writer: RemoteComposeWriter) : RcSc
         return RcPath(writer.pathCombine(this.id, path2.id, op.value))
     }
 
-    override fun performHaptic(feedbackConstant: Int) {
-        writer.performHaptic(feedbackConstant)
+    override fun performHaptic(haptic: RcHaptic) {
+        writer.performHaptic(haptic.value)
+    }
+
+    override fun addSound(data: ByteArray): RcSound = RcSound(writer.addSound(data))
+
+    override fun soundExpression(
+        type: RcSoundType,
+        frequency: Float,
+        durationSeconds: Float,
+        waveform: RcWaveform,
+        leftVolume: Float,
+        rightVolume: Float,
+        rate: Float,
+    ): RcSoundExpression {
+        return RcSoundExpression(
+            writer.addSoundExpression(
+                type.value,
+                frequency,
+                durationSeconds,
+                waveform.value,
+                leftVolume,
+                rightVolume,
+                rate,
+            )
+        )
+    }
+
+    override fun playSound(expression: RcSoundExpression) {
+        writer.playSound(expression.id)
     }
 
     override fun wakeIn(seconds: Float) {
@@ -492,6 +560,32 @@ internal open class RcScopeImpl(internal val writer: RemoteComposeWriter) : RcSc
         writer.drawComponentContent()
     }
 
+    override fun defineVisibilityAnimation(
+        block:
+            RcCanvasScope.(
+                component: RcComponent,
+                progress: RcFloat,
+                width: RcFloat,
+                height: RcFloat,
+                x: RcFloat,
+                y: RcFloat,
+            ) -> Unit
+    ): Int {
+        val args = FloatArray(6)
+        val fid = writer.createFloatFunction(args)
+        val scope = RcCanvasScopeImpl(writer)
+        scope.block(
+            RcComponent(Utils.idFromNan(args[5])),
+            RcFloat(writer, args[0]),
+            RcFloat(writer, args[1]),
+            RcFloat(writer, args[2]),
+            RcFloat(writer, args[3]),
+            RcFloat(writer, args[4]),
+        )
+        writer.endFloatFunction()
+        return fid
+    }
+
     override fun applyPaint(block: RcPaint.() -> Unit) {
         writer.rcPaint.block()
         writer.rcPaint.commit()
@@ -764,6 +858,30 @@ internal open class RcScopeImpl(internal val writer: RemoteComposeWriter) : RcSc
     override fun utcOffset(): RcFloat = RcFloat(writer, FLOAT_OFFSET_TO_UTC)
 
     override fun month(): RcFloat = RcFloat(writer, FLOAT_CALENDAR_MONTH)
+
+    // sensors
+
+    override fun accelerometerX(): RcFloat = RcFloat(writer, FLOAT_ACCELERATION_X)
+
+    override fun accelerometerY(): RcFloat = RcFloat(writer, FLOAT_ACCELERATION_Y)
+
+    override fun accelerometerZ(): RcFloat = RcFloat(writer, FLOAT_ACCELERATION_Z)
+
+    override fun gyroscopeX(): RcFloat = RcFloat(writer, FLOAT_GYRO_ROT_X)
+
+    override fun gyroscopeY(): RcFloat = RcFloat(writer, FLOAT_GYRO_ROT_Y)
+
+    override fun gyroscopeZ(): RcFloat = RcFloat(writer, FLOAT_GYRO_ROT_Z)
+
+    override fun magnetometerX(): RcFloat = RcFloat(writer, FLOAT_MAGNETIC_X)
+
+    override fun magnetometerY(): RcFloat = RcFloat(writer, FLOAT_MAGNETIC_Y)
+
+    override fun magnetometerZ(): RcFloat = RcFloat(writer, FLOAT_MAGNETIC_Z)
+
+    override fun ambientLightLevel(): RcFloat = RcFloat(writer, FLOAT_LIGHT)
+
+    // components
 
     override fun componentWidth(): RcFloat = RcFloat(writer, writer.addComponentWidthValue())
 
@@ -1115,15 +1233,6 @@ internal open class RcScopeImpl(internal val writer: RemoteComposeWriter) : RcSc
         )
     }
 
-    override fun drawBitmap(image: RcImage, left: RcFloat, top: RcFloat) {
-        writer.drawBitmap(
-            image.id,
-            left.withWriter(writer).toFloat(),
-            top.withWriter(writer).toFloat(),
-            null,
-        )
-    }
-
     override fun drawScaledBitmap(
         image: RcImage,
         srcLeft: Float,
@@ -1188,14 +1297,26 @@ internal open class RcScopeImpl(internal val writer: RemoteComposeWriter) : RcSc
         return RcImage(writer.createBitmap(width, height))
     }
 
+    override fun createOffscreenBitmap(): RcImage {
+        return RcImage(writer.createOffscreenBitmap())
+    }
+
+    override fun drawComponentToBitmap(component: RcComponent, image: RcImage) {
+        writer.drawComponentToBitmap(component.id, image.id)
+    }
+
+    override fun drawComponentToBitmap(image: RcImage) {
+        writer.drawComponentToBitmap(image.id)
+    }
+
     override fun drawOnBitmap(
         image: RcImage,
         mode: DrawOnBitmapMode,
         color: RcColorValue,
-        block: RcScope.() -> Unit,
+        block: RcCanvasScope.() -> Unit,
     ) {
         writer.drawOnBitmap(image.id, mode.value, color.id)
-        RcScopeImpl(writer).block()
+        RcCanvasScopeImpl(writer).block()
         writer.drawOnBitmap(0)
     }
 
@@ -1219,6 +1340,70 @@ internal open class RcScopeImpl(internal val writer: RemoteComposeWriter) : RcSc
 
     override fun Float.format(whole: Int, decimal: Int, flags: Int): RcText {
         return RcText(writer.createTextFromFloat(this, whole, decimal, flags))
+    }
+
+    override infix fun RcText.merge(other: RcText): RcText {
+        return RcText(writer.textMerge(this.id, other.id))
+    }
+
+    override fun RcText.subtext(start: RcFloat, length: RcFloat): RcText {
+        return RcText(
+            writer.textSubtext(
+                this.id,
+                start.withWriter(writer).toFloat(),
+                length.withWriter(writer).toFloat(),
+            )
+        )
+    }
+
+    override fun RcText.subtext(start: Float, length: Float): RcText = subtext(start.rf, length.rf)
+
+    override val RcText.length: RcFloat
+        get() = RcFloat(writer, writer.textLength(this.id))
+
+    override fun defineMacro(
+        name: String,
+        parameters: List<String>,
+        content: RcScope.(Map<String, RcMacroArg>) -> Unit,
+    ): RcMacro {
+        val paramIds = parameters.map { writer.definePatternParameter(it) }.toIntArray()
+        val macroId = writer.definePattern(name, paramIds)
+        val argMap =
+            parameters
+                .mapIndexed { index, paramName -> paramName to RcMacroArg(paramIds[index]) }
+                .toMap()
+
+        content(argMap)
+        writer.endPatternDefine()
+        return RcMacro(macroId)
+    }
+
+    override fun RcMacro.inflate(arguments: Map<String, Any>) {
+        val argIds =
+            arguments.values
+                .map { valArg ->
+                    when (valArg) {
+                        is RcFloat -> writer.cacheData(valArg.id.toInt())
+                        is RcInteger -> writer.cacheData(valArg.id.toInt())
+                        is RcText -> valArg.id
+                        is RcColor -> valArg.id
+                        is Number -> writer.cacheData(valArg.toFloat().toInt())
+                        is String -> writer.addText(valArg)
+                        else -> writer.cacheData(valArg.hashCode())
+                    }
+                }
+                .toIntArray()
+        writer.addPatternInflation(this.id, argIds)
+    }
+
+    override fun RcMacroArg.insertArgument() {
+        writer.addPatternArgument(this.paramId)
+    }
+
+    override fun RcMacroArg.insertBlock(content: RcScope.() -> Unit) {
+        writer.addPatternBlock(this.paramId)
+        content()
+        writer.endPatternBlock()
     }
 
     override val Int.rf: RcFloat
@@ -1307,6 +1492,133 @@ internal open class RcScopeImpl(internal val writer: RemoteComposeWriter) : RcSc
             fraction.withWriter(writer).toFloat(),
             vOffset.withWriter(writer).toFloat(),
             flags,
+        )
+    }
+
+    /**
+     * An unset channel stays null all the way to the wire, where a zero-length group is what
+     * distinguishes "the layout decides" from "the author asked for zero".
+     *
+     * The writer is qualified because `RcFloat` has a nullable `writer` of its own that would
+     * otherwise shadow the scope's.
+     */
+    private fun RcFloat?.toExpression(): FloatArray? =
+        this?.withWriter(this@RcScopeImpl.writer)?.toArray()
+
+    override fun remoteMesh2D(
+        layout: RcMeshLayout,
+        uCount: Int,
+        vCount: Int,
+        path: RcPath?,
+        block: RcMesh2DScope.() -> Unit,
+    ): RcMesh {
+        val scope = RcMesh2DScope(writer).apply(block)
+        return RcMesh(
+            writer.addMesh2D(
+                layout.value,
+                uCount,
+                vCount,
+                scope.x.toExpression(),
+                scope.y.toExpression(),
+                scope.texU.toExpression(),
+                scope.texV.toExpression(),
+                scope.alpha.toExpression(),
+                scope.red.toExpression(),
+                scope.green.toExpression(),
+                scope.blue.toExpression(),
+                scope.width.toExpression(),
+                0,
+                path?.id ?: 0,
+            )
+        )
+    }
+
+    override fun remoteMesh2DValues(
+        verts: FloatArray,
+        indices: IntArray?,
+        uv: FloatArray?,
+        colors: IntArray?,
+        halfFloat: Boolean,
+        layout: RcMeshLayout,
+        uCount: Int,
+        vCount: Int,
+    ): RcMesh =
+        RcMesh(
+            writer.addMesh2DValues(
+                indices ?: IntArray(verts.size / 2) { it },
+                verts,
+                uv,
+                colors,
+                halfFloat,
+                layout.value,
+                uCount,
+                vCount,
+            )
+        )
+
+    override fun remoteMesh2DPathStrip(
+        path: RcPath,
+        segments: Int,
+        widths: FloatArray,
+        positions: FloatArray?,
+    ): RcMesh = RcMesh(writer.addMesh2DPathStrip(path.id, segments, widths, positions))
+
+    override fun remoteMesh2DPathStrip(
+        path: RcPath,
+        segments: Int,
+        widths: Array<RcFloat>,
+        positions: Array<RcFloat>?,
+    ): RcMesh =
+        RcMesh(
+            writer.addMesh2DPathStrip(
+                path.id,
+                segments,
+                // Each control point collapses to one wire float: a literal, or the NaN id of a
+                // variable the mesh then listens to.
+                FloatArray(widths.size) { widths[it].withWriter(writer).toFloat() },
+                positions?.let { p -> FloatArray(p.size) { p[it].withWriter(writer).toFloat() } },
+            )
+        )
+
+    override fun remoteMesh2DRoundStrip(
+        path: RcPath,
+        segments: Int,
+        widths: FloatArray,
+        positions: FloatArray?,
+    ): RcMesh = RcMesh(writer.addMesh2DRoundStrip(path.id, segments, widths, positions))
+
+    override fun remoteMesh2DRoundStrip(
+        path: RcPath,
+        segments: Int,
+        widths: Array<RcFloat>,
+        positions: Array<RcFloat>?,
+    ): RcMesh =
+        RcMesh(
+            writer.addMesh2DRoundStrip(
+                path.id,
+                segments,
+                FloatArray(widths.size) { widths[it].withWriter(writer).toFloat() },
+                positions?.let { p -> FloatArray(p.size) { p[it].withWriter(writer).toFloat() } },
+            )
+        )
+
+    override fun drawMesh2D(mesh: RcMesh, image: RcImage?, blend: RcMeshBlend?) {
+        // Untextured meshes have only their vertex colours; textured ones modulate by default,
+        // which is what makes a tinted bitmap the no-argument case.
+        val resolved = blend ?: if (image == null) RcMeshBlend.ColorsOnly else RcMeshBlend.Modulate
+        writer.drawMesh2D(mesh.id, resolved.value, image?.id ?: DrawMesh2D.NO_IMAGE)
+    }
+
+    override fun matrixFromMesh2D(mesh: RcMesh, u: Float, v: Float, apply: RcMeshMatrix) {
+        writer.matrixFromMesh2D(mesh.id, u, v, apply.value)
+    }
+
+    override fun matrixFromMesh2D(mesh: RcMesh, u: RcFloat, v: RcFloat, apply: RcMeshMatrix) {
+        writer.matrixFromMesh2D(
+            mesh.id,
+            u.withWriter(writer).toFloat(),
+            v.withWriter(writer).toFloat(),
+            apply.value,
         )
     }
 
@@ -1454,6 +1766,25 @@ internal open class RcScopeImpl(internal val writer: RemoteComposeWriter) : RcSc
         )
     }
 
+    override fun impulseProcess(block: RcImpulseScope.() -> Unit) {
+        writer.impulseProcess(
+            object : Runnable {
+                override fun run() {
+                    RcImpulseScopeImpl(writer).block()
+                }
+            }
+        )
+    }
+
+    override fun runAction(block: RcRunActionScope.() -> Unit) {
+        writer.startRunActions()
+        val scope = RcActionScopeImpl()
+        scope.block()
+        val actions = scope.build(writer)
+        actions.map { writer.addAction(it) }
+        writer.endRunActions()
+    }
+
     override fun skip(type: Short, value: Int, block: RcScope.() -> Unit) {
         val offset = writer.beginSkip(type, value)
         this.block()
@@ -1479,7 +1810,195 @@ internal open class RcScopeImpl(internal val writer: RemoteComposeWriter) : RcSc
     }
 
     override fun RcDynamicPath.quadTo(x1: Float, y1: Float, x2: Float, y2: Float) {
-        writer.pathAppendQuadTo(id, x1, y2, x2, y2)
+        writer.pathAppendQuadTo(id, x1, y1, x2, y2)
+    }
+
+    override fun RcDynamicPath.cubicTo(
+        x1: Float,
+        y1: Float,
+        x2: Float,
+        y2: Float,
+        x3: Float,
+        y3: Float,
+    ) {
+        writer.pathAppendCubicTo(id, x1, y1, x2, y2, x3, y3)
+    }
+
+    override fun RcDynamicPath.arcTo(
+        left: Float,
+        top: Float,
+        right: Float,
+        bottom: Float,
+        startAngle: Float,
+        sweepAngle: Float,
+        forceMoveTo: Boolean,
+    ) {
+        val rx = kotlin.math.abs(right - left) / 2.0f
+        val ry = kotlin.math.abs(bottom - top) / 2.0f
+        if (rx == 0f || ry == 0f || sweepAngle == 0f) {
+            return
+        }
+        val cx = (left + right) / 2.0f
+        val cy = (top + bottom) / 2.0f
+        val startRad = Math.toRadians(startAngle.toDouble())
+        val sweepRad = Math.toRadians(sweepAngle.toDouble())
+
+        val startX = cx + rx * kotlin.math.cos(startRad)
+        val startY = cy + ry * kotlin.math.sin(startRad)
+
+        if (forceMoveTo) {
+            moveTo(startX.toFloat(), startY.toFloat())
+        } else {
+            lineTo(startX.toFloat(), startY.toFloat())
+        }
+
+        val segments =
+            kotlin.math.max(
+                1,
+                kotlin.math.ceil(kotlin.math.abs(sweepRad) / (Math.PI / 2.0)).toInt(),
+            )
+        for (i in 0 until segments) {
+            val s1 = startRad + i * sweepRad / segments
+            val s2 = startRad + (i + 1) * sweepRad / segments
+
+            val t = 4.0 / 3.0 * kotlin.math.tan((s2 - s1) / 4.0)
+
+            val xstart = cx + rx * kotlin.math.cos(s1)
+            val ystart = cy + ry * kotlin.math.sin(s1)
+
+            val xend = cx + rx * kotlin.math.cos(s2)
+            val yend = cy + ry * kotlin.math.sin(s2)
+
+            val cp1x = xstart - t * rx * kotlin.math.sin(s1)
+            val cp1y = ystart + t * ry * kotlin.math.cos(s1)
+
+            val cp2x = xend + t * rx * kotlin.math.sin(s2)
+            val cp2y = yend - t * ry * kotlin.math.cos(s2)
+
+            cubicTo(
+                cp1x.toFloat(),
+                cp1y.toFloat(),
+                cp2x.toFloat(),
+                cp2y.toFloat(),
+                xend.toFloat(),
+                yend.toFloat(),
+            )
+        }
+    }
+
+    override fun RcDynamicPath.arcTo(
+        x0: Float,
+        y0: Float,
+        rx: Float,
+        ry: Float,
+        angle: Float,
+        largeArc: Boolean,
+        sweep: Boolean,
+        x1: Float,
+        y1: Float,
+    ) {
+        if (rx == 0f || ry == 0f) {
+            lineTo(x1, y1)
+            return
+        }
+        val alpha = Math.toRadians(angle.toDouble())
+        val cosAlpha = kotlin.math.cos(alpha)
+        val sinAlpha = kotlin.math.sin(alpha)
+
+        val dx = (x0 - x1).toDouble() / 2.0
+        val dy = (y0 - y1).toDouble() / 2.0
+        val x1_ = cosAlpha * dx + sinAlpha * dy
+        val y1_ = -sinAlpha * dx + cosAlpha * dy
+
+        var rx_ = kotlin.math.abs(rx.toDouble())
+        var ry_ = kotlin.math.abs(ry.toDouble())
+        val check = (x1_ * x1_) / (rx_ * rx_) + (y1_ * y1_) / (ry_ * ry_)
+        if (check > 1.0) {
+            val s = kotlin.math.sqrt(check)
+            rx_ *= s
+            ry_ *= s
+        }
+
+        val sign = if (largeArc == sweep) -1.0 else 1.0
+        val numerator = (rx_ * rx_ * ry_ * ry_) - (rx_ * rx_ * y1_ * y1_) - (ry_ * ry_ * x1_ * x1_)
+        val denominator = (rx_ * rx_ * y1_ * y1_) + (ry_ * ry_ * x1_ * x1_)
+        val root = kotlin.math.sqrt(kotlin.math.max(0.0, numerator / denominator))
+        val cx_ = sign * root * rx_ * y1_ / ry_
+        val cy_ = -sign * root * ry_ * x1_ / rx_
+
+        val cx = cosAlpha * cx_ - sinAlpha * cy_ + (x0 + x1) / 2.0
+        val cy = sinAlpha * cx_ + cosAlpha * cy_ + (y0 + y1) / 2.0
+
+        val theta1 = kotlin.math.atan2((y1_ - cy_) / ry_, (x1_ - cx_) / rx_)
+        var dTheta = kotlin.math.atan2((-y1_ - cy_) / ry_, (-x1_ - cx_) / rx_) - theta1
+
+        if (sweep && dTheta < 0) {
+            dTheta += 2 * Math.PI
+        } else if (!sweep && dTheta > 0) {
+            dTheta -= 2 * Math.PI
+        }
+
+        val segments =
+            kotlin.math.max(1, kotlin.math.ceil(kotlin.math.abs(dTheta) / (Math.PI / 2.0)).toInt())
+        for (i in 0 until segments) {
+            val s1 = theta1 + i * dTheta / segments
+            val s2 = theta1 + (i + 1) * dTheta / segments
+
+            val t = 4.0 / 3.0 * kotlin.math.tan((s2 - s1) / 4.0)
+
+            val xstart =
+                cosAlpha * rx_ * kotlin.math.cos(s1) - sinAlpha * ry_ * kotlin.math.sin(s1) + cx
+            val ystart =
+                sinAlpha * rx_ * kotlin.math.cos(s1) + cosAlpha * ry_ * kotlin.math.sin(s1) + cy
+
+            val xend =
+                cosAlpha * rx_ * kotlin.math.cos(s2) - sinAlpha * ry_ * kotlin.math.sin(s2) + cx
+            val yend =
+                sinAlpha * rx_ * kotlin.math.cos(s2) + cosAlpha * ry_ * kotlin.math.sin(s2) + cy
+
+            val cp1x =
+                xstart +
+                    t *
+                        (-cosAlpha * rx_ * kotlin.math.sin(s1) -
+                            sinAlpha * ry_ * kotlin.math.cos(s1))
+            val cp1y =
+                ystart +
+                    t *
+                        (-sinAlpha * rx_ * kotlin.math.sin(s1) +
+                            cosAlpha * ry_ * kotlin.math.cos(s1))
+
+            val cp2x =
+                xend -
+                    t *
+                        (-cosAlpha * rx_ * kotlin.math.sin(s2) -
+                            sinAlpha * ry_ * kotlin.math.cos(s2))
+            val cp2y =
+                yend -
+                    t *
+                        (-sinAlpha * rx_ * kotlin.math.sin(s2) +
+                            cosAlpha * ry_ * kotlin.math.cos(s2))
+
+            cubicTo(
+                cp1x.toFloat(),
+                cp1y.toFloat(),
+                cp2x.toFloat(),
+                cp2y.toFloat(),
+                xend.toFloat(),
+                yend.toFloat(),
+            )
+        }
+    }
+
+    override fun RcDynamicPath.arcTo(
+        rx: Float,
+        ry: Float,
+        angle: Float,
+        largeArc: Boolean,
+        sweep: Boolean,
+        x: Float,
+        y: Float,
+    ) {
+        arcTo(0f, 0f, rx, ry, angle, largeArc, sweep, x, y)
     }
 
     override fun RcDynamicPath.getPath(): RcPath {
@@ -1511,6 +2030,53 @@ internal open class RcScopeImpl(internal val writer: RemoteComposeWriter) : RcSc
         val valueVal = value.withWriter(writer).toFloat()
         writer.setArrayValue(arrayId, indexVal, valueVal)
     }
+
+    // ###############################################
+
+    override fun componentContentWidth(): RcFloat {
+        return RcFloat(this.writer, this.writer.addComponentContentWidthValue())
+    }
+
+    override fun componentContentHeight(): RcFloat {
+        return RcFloat(this.writer, this.writer.addComponentContentHeightValue())
+    }
+
+    override fun componentX(): RcFloat {
+        return RcFloat(this.writer, this.writer.addComponentXValue())
+    }
+
+    override fun componentY(): RcFloat {
+        return RcFloat(this.writer, this.writer.addComponentYValue())
+    }
+
+    override fun componentRootX(): RcFloat {
+        return RcFloat(this.writer, this.writer.addComponentRootXValue())
+    }
+
+    override fun componentRootY(): RcFloat {
+        return RcFloat(this.writer, this.writer.addComponentRootYValue())
+    }
+
+    override fun rand(): RcFloat {
+        return RcFloat(this.writer, Rc.FloatExpression.RAND)
+    }
+
+    override fun index(): RcFloat {
+        return RcFloat(this.writer, Rc.FloatExpression.VAR1)
+    }
+
+    override val var1: RcFloat
+        get() = RcFloat(this.writer, floatArrayOf(Rc.FloatExpression.VAR1))
+
+    override fun rf(vararg elements: Float): RcFloat {
+        return RcFloat(this.writer, elements)
+    }
+
+    override fun rf(v: Number): RcFloat {
+        return RcFloat(this.writer, v.toFloat())
+    }
+
+    // ###############################################
 }
 
 private class RcImpulseScopeImpl(writer: RemoteComposeWriter) :
@@ -1525,6 +2091,8 @@ private class RcImpulseScopeImpl(writer: RemoteComposeWriter) :
         )
     }
 }
+
+private class RcBoxScopeImpl(writer: RemoteComposeWriter) : RcScopeImpl(writer), RcBoxScope
 
 private class RcColumnScopeImpl(writer: RemoteComposeWriter) : RcScopeImpl(writer), RcColumnScope {
     override fun Modifier.weight(weight: Float): Modifier =
@@ -1605,6 +2173,14 @@ internal class RcCanvasScopeImpl(writer: RemoteComposeWriter) : RcScopeImpl(writ
         )
     }
 
+    override fun translate(x: Float, y: Float) {
+        writer.translate(x, y)
+    }
+
+    override fun translate(x: RcFloat, y: RcFloat) {
+        writer.translate(x.withWriter(writer).toFloat(), y.withWriter(writer).toFloat())
+    }
+
     override fun loop(
         start: RcFloat,
         step: RcFloat,
@@ -1624,6 +2200,33 @@ internal class RcCanvasScopeImpl(writer: RemoteComposeWriter) : RcScopeImpl(writ
 
     override fun clipPath(path: RcPath) {
         writer.addClipPath(path.id)
+    }
+
+    override fun addTouch(
+        defValue: RcFloat,
+        min: RcFloat,
+        max: RcFloat,
+        stopMode: RcTouchStopMode,
+        velocity: RcFloat,
+        notchHaptic: RcHaptic,
+        touchSpec: FloatArray?,
+        easingSpec: FloatArray?,
+        exp: RcFloat,
+    ): RcFloat {
+        return RcFloat(
+            writer,
+            writer.addTouch(
+                defValue.withWriter(writer).toFloat(),
+                min.withWriter(writer).toFloat(),
+                max.withWriter(writer).toFloat(),
+                stopMode.value,
+                velocity.withWriter(writer).toFloat(),
+                notchHaptic.value,
+                touchSpec,
+                easingSpec,
+                *exp.array,
+            ),
+        )
     }
 
     override fun addTouch(

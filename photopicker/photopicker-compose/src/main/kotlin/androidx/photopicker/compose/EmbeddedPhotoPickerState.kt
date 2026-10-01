@@ -25,6 +25,7 @@ import android.widget.photopicker.EmbeddedPhotoPickerClient
 import android.widget.photopicker.EmbeddedPhotoPickerFeatureInfo
 import android.widget.photopicker.EmbeddedPhotoPickerProvider
 import android.widget.photopicker.EmbeddedPhotoPickerSession
+import androidx.annotation.RequiresApi
 import androidx.annotation.RequiresExtension
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
@@ -45,6 +46,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.withContext
@@ -61,6 +63,7 @@ import kotlinx.coroutines.withContext
  *
  * Callbacks to the underlying session are exposed here to push Compose state into the remote view.
  */
+@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @ExperimentalPhotoPickerComposeApi
 public interface EmbeddedPhotoPickerState {
 
@@ -233,6 +236,7 @@ internal interface ClientCallbacks {
  * @property selectedMedia A read-only set of URIs representing the currently selected media items.
  *   Updated internally based on granted/revoked permissions.
  */
+@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @RequiresExtension(extension = Build.VERSION_CODES.UPSIDE_DOWN_CAKE, version = 15)
 @ExperimentalPhotoPickerComposeApi
 internal class EmbeddedPhotoPickerStateImpl(
@@ -313,14 +317,16 @@ internal class EmbeddedPhotoPickerStateImpl(
         val innerClientCallback: EmbeddedPhotoPickerClient =
             createEmbeddedPhotoPickerClient(
                 onSessionOpened = {
-                    // Hoist the open session up to the main composable so that it can
-                    // be attached to the surface view.
-                    onReceiveSession(it)
-                    // Pass the session up to the state object for callback purposes.
                     openSession.set(it)
-                    // And finally, pass it to this suspend fun which will use it to run
-                    // the client.
-                    deferredSession.complete(it)
+                    if (deferredSession.complete(it)) {
+                        // Hoist the open session up to the main composable so that it can
+                        // be attached to the surface view.
+                        onReceiveSession(it)
+                    } else {
+                        // The coroutine was canceled before the session was opened.
+                        // Close the session immediately to prevent a leak.
+                        openSession.getAndSet(null)?.close()
+                    }
                 },
                 onSessionError = ::onSessionError,
                 onUriPermissionGranted = {
@@ -371,39 +377,43 @@ internal class EmbeddedPhotoPickerStateImpl(
                 }
                 .build()
 
-        provider.openSession(
-            /* hostToken =       */ checkNotNull(surfaceHostToken) {
-                "Expected surfaceHostToken to not be null"
-            },
-            /* displayId =       */ displayId,
-            /* width =           */ surfaceSize.width,
-            /* height =          */ surfaceSize.height,
-            /* featureInfo =     */ featureInfoWithLocalState,
-            @OptIn(ExperimentalStdlibApi::class)
-            // Fallback to Main.immediate if the dispatcher in this context is null.
-            // (i.e.) for Instrumented tests.
-            /* clientExecutor =  */ coroutineContext[CoroutineDispatcher]?.asExecutor()
-                ?: Dispatchers.Main.immediate.asExecutor(),
-            /* callback =        */ innerClientCallback,
-        )
-
-        // Acquire the session from the provider before starting the client.
-        val session = deferredSession.await()
-
-        // Pass the initial expanded state as the session starts for older extensions.
-        if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) < SDK_EXT_21) {
-            session.notifyPhotoPickerExpanded(isExpanded)
-        }
-
         try {
+            provider.openSession(
+                /* hostToken =       */ checkNotNull(surfaceHostToken) {
+                    "Expected surfaceHostToken to not be null"
+                },
+                /* displayId =       */ displayId,
+                /* width =           */ surfaceSize.width,
+                /* height =          */ surfaceSize.height,
+                /* featureInfo =     */ featureInfoWithLocalState,
+                @OptIn(ExperimentalStdlibApi::class)
+                // Fallback to Main.immediate if the dispatcher in this context is null.
+                // (i.e.) for Instrumented tests.
+                /* clientExecutor =  */ coroutineContext[CoroutineDispatcher]?.asExecutor()
+                    ?: Dispatchers.Main.immediate.asExecutor(),
+                /* callback =        */ innerClientCallback,
+            )
+
+            // Acquire the session from the provider before starting the client.
+            val session = deferredSession.await()
+
+            // Pass the initial expanded state as the session starts for older extensions.
+            if (
+                SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) < SDK_EXT_21
+            ) {
+                session.notifyPhotoPickerExpanded(isExpanded)
+            }
             awaitCancellation()
         } finally {
             // Clear the openSession reference to prevent any late calls (like isExpanded setter)
             // from attempting to interact with a closed session.
-            openSession.set(null)
-
-            // When this suspended function is cancelled clean up the session by closing it.
-            withContext(Dispatchers.Main.immediate) { session.close() }
+            openSession.getAndSet(null)?.let {
+                // When this suspended function is canceled clean up the session by closing it.
+                // NonCancellable is required here because withContext is a suspending function
+                // and would otherwise throw CancellationException during cancellation cleanup,
+                // preventing the session from being closed.
+                withContext(NonCancellable + Dispatchers.Main.immediate) { it.close() }
+            }
         }
     }
 
@@ -492,11 +502,14 @@ internal class EmbeddedPhotoPickerStateImpl(
  * activity or process recreation but the underlying EmbeddedPhotoPickerSession will be recreated
  * along with the activity. (When [EmbeddedPhotoPickerState#runSession] is next called.)
  *
- * If a clean state object is needed, be sure to provide some input keys that are unique.
+ * To reset the state and discard any saved values when certain inputs change, wrap this call in a
+ * [androidx.compose.runtime.key] block. For example:
+ * ```kotlin
+ * key(userId) {
+ *     rememberEmbeddedPhotoPickerState()
+ * }
+ * ```
  *
- * @param inputs A set of inputs such that, when any of them have changed, will cause the state to
- *   reset and `init` to be rerun. Note that state restoration DOES NOT validate against inputs
- *   provided before value was saved.
  * @param initialExpandedValue the initial expanded state of the photopicker. This property only
  *   affects the initial value, and has no further effect.
  * @param initialMediaSelection the initial set of media that should be selected inside of the
@@ -514,9 +527,9 @@ internal class EmbeddedPhotoPickerStateImpl(
  */
 @ExperimentalPhotoPickerComposeApi
 @Composable
+@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @RequiresExtension(extension = Build.VERSION_CODES.UPSIDE_DOWN_CAKE, version = 15)
 public fun rememberEmbeddedPhotoPickerState(
-    vararg inputs: Any?,
     initialExpandedValue: Boolean = false,
     initialMediaSelection: Set<Uri> = emptySet<Uri>(),
     onSessionError: (Throwable) -> Unit = {},
@@ -529,7 +542,7 @@ public fun rememberEmbeddedPhotoPickerState(
     val displayId = remember(context) { context.display.displayId }
 
     val state =
-        rememberSaveable(context, *inputs, saver = EmbeddedPhotoPickerStateImpl.saver) {
+        rememberSaveable(context, saver = EmbeddedPhotoPickerStateImpl.saver) {
                 EmbeddedPhotoPickerStateImpl(initialExpandedValue, initialMediaSelection)
             }
             .apply {

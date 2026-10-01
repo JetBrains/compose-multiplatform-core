@@ -30,12 +30,12 @@ plugins {
 
 dependencies {
     api(project(":activity:activity"))
-    api("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1") {
-        because 'Mirror activity dependency graph for -ktx artifacts'
+    api("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0") {
+        because "Mirror activity dependency graph for -ktx artifacts"
     }
-    api("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1")
+    api("androidx.lifecycle:lifecycle-viewmodel-ktx:2.10.0")
     api("androidx.savedstate:savedstate-ktx:1.2.1") {
-        because 'Mirror activity dependency graph for -ktx artifacts'
+        because "Mirror activity dependency graph for -ktx artifacts"
     }
 }
 
@@ -44,9 +44,10 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2018"
     description = "Kotlin extensions for 'activity' artifact"
+    doNotDocumentReason = "empty artifact maintained for compatibility"
 }
 
 android {
-    compileSdk { version = release(37) }
+    compileSdk { version = release(36) }
     namespace = "androidx.activity.ktx"
 }

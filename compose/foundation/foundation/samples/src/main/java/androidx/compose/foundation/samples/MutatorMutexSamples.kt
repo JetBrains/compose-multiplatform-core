@@ -19,7 +19,7 @@ package androidx.compose.foundation.samples
 import androidx.annotation.Sampled
 import androidx.compose.foundation.MutatorMutex
 import androidx.compose.foundation.layout.Row
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Stable
@@ -53,20 +53,19 @@ fun mutatorMutexStateObject() {
         private val mutatorMutex = MutatorMutex()
 
         /** Only one caller to [scroll] can be in progress at a time. */
-        suspend fun <R> scroll(block: suspend () -> R): R =
-            mutatorMutex.mutate {
-                isScrolling = true
-                try {
-                    block()
-                } finally {
-                    // MutatorMutex.mutate ensures mutual exclusion between blocks.
-                    // By setting back to false in the finally block inside mutate, we ensure that
-                    // we
-                    // reset the state upon cancellation before the next block starts to run (if
-                    // any).
-                    isScrolling = false
-                }
+        suspend fun <R> scroll(block: suspend () -> R): R = mutatorMutex.mutate {
+            isScrolling = true
+            try {
+                block()
+            } finally {
+                // MutatorMutex.mutate ensures mutual exclusion between blocks.
+                // By setting back to false in the finally block inside mutate, we ensure that
+                // we
+                // reset the state upon cancellation before the next block starts to run (if
+                // any).
+                isScrolling = false
             }
+        }
     }
 
     /** Arbitrary animations can be defined as extensions using only public API */

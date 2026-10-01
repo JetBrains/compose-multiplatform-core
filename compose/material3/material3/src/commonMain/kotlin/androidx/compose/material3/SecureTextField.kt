@@ -125,7 +125,7 @@ import androidx.compose.ui.unit.Density
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SecureTextField(
+public fun SecureTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -140,7 +140,7 @@ fun SecureTextField(
     supportingText: @Composable (() -> Unit)? = null,
     isError: Boolean = false,
     inputTransformation: InputTransformation? = null,
-    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.RevealLastTyped,
+    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.System,
     textObfuscationCharacter: Char = DefaultObfuscationCharacter,
     keyboardOptions: KeyboardOptions = SecureTextFieldKeyboardOptions,
     onKeyboardAction: KeyboardActionHandler? = null,
@@ -293,7 +293,7 @@ fun SecureTextField(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OutlinedSecureTextField(
+public fun OutlinedSecureTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -308,7 +308,7 @@ fun OutlinedSecureTextField(
     supportingText: @Composable (() -> Unit)? = null,
     isError: Boolean = false,
     inputTransformation: InputTransformation? = null,
-    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.RevealLastTyped,
+    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.System,
     textObfuscationCharacter: Char = DefaultObfuscationCharacter,
     keyboardOptions: KeyboardOptions = SecureTextFieldKeyboardOptions,
     onKeyboardAction: KeyboardActionHandler? = null,

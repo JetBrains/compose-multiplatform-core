@@ -17,12 +17,14 @@
 package androidx.compose.remote.creation.compose.modifier
 
 import androidx.annotation.RestrictTo
+import androidx.compose.remote.creation.compose.capture.RemoteDensityBehavior
 import androidx.compose.remote.creation.compose.layout.RemotePaddingValues
 import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
+import androidx.compose.remote.creation.modifiers.PaddingModifier as CreationPaddingModifier
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.ui.unit.LayoutDirection
 
@@ -31,7 +33,28 @@ internal class PaddingModifier(
     public val top: RemoteFloat,
     public val end: RemoteFloat,
     public val bottom: RemoteFloat,
+    internal val startDp: RemoteDp? = null,
+    internal val topDp: RemoteDp? = null,
+    internal val endDp: RemoteDp? = null,
+    internal val bottomDp: RemoteDp? = null,
 ) : RemoteModifier.Element {
+
+    public constructor(
+        start: RemoteDp,
+        top: RemoteDp,
+        end: RemoteDp,
+        bottom: RemoteDp,
+    ) : this(
+        start = start.toPx(),
+        top = top.toPx(),
+        end = end.toPx(),
+        bottom = bottom.toPx(),
+        startDp = start,
+        topDp = top,
+        endDp = end,
+        bottomDp = bottom,
+    )
+
     init {
         require(
             (!start.hasConstantValue || start.constantValue >= 0f) and
@@ -45,15 +68,52 @@ internal class PaddingModifier(
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun RemoteStateScope.toRecordingModifierElement(): RecordingModifier.Element {
-        val isLtr = layoutDirection == LayoutDirection.Ltr
-        return androidx.compose.remote.creation.modifiers.PaddingModifier(
-            (if (isLtr) start else end).floatId,
-            top.floatId,
-            (if (isLtr) end else start).floatId,
-            bottom.floatId,
+        val resolvedLeft = resolveLeft(this)
+        val resolvedTop = resolveTop(this)
+        val resolvedRight = resolveRight(this)
+        val resolvedBottom = resolveBottom(this)
+        return CreationPaddingModifier(
+            resolvedLeft.floatId,
+            resolvedTop.floatId,
+            resolvedRight.floatId,
+            resolvedBottom.floatId,
         )
     }
 }
+
+internal fun PaddingModifier.resolveStart(scope: RemoteStateScope): RemoteFloat =
+    if (scope.densityBehavior == RemoteDensityBehavior.Dp) {
+        startDp?.value ?: (start / scope.remoteDensity.density)
+    } else {
+        start
+    }
+
+internal fun PaddingModifier.resolveTop(scope: RemoteStateScope): RemoteFloat =
+    if (scope.densityBehavior == RemoteDensityBehavior.Dp) {
+        topDp?.value ?: (top / scope.remoteDensity.density)
+    } else {
+        top
+    }
+
+internal fun PaddingModifier.resolveEnd(scope: RemoteStateScope): RemoteFloat =
+    if (scope.densityBehavior == RemoteDensityBehavior.Dp) {
+        endDp?.value ?: (end / scope.remoteDensity.density)
+    } else {
+        end
+    }
+
+internal fun PaddingModifier.resolveBottom(scope: RemoteStateScope): RemoteFloat =
+    if (scope.densityBehavior == RemoteDensityBehavior.Dp) {
+        bottomDp?.value ?: (bottom / scope.remoteDensity.density)
+    } else {
+        bottom
+    }
+
+internal fun PaddingModifier.resolveLeft(scope: RemoteStateScope): RemoteFloat =
+    if (scope.layoutDirection == LayoutDirection.Ltr) resolveStart(scope) else resolveEnd(scope)
+
+internal fun PaddingModifier.resolveRight(scope: RemoteStateScope): RemoteFloat =
+    if (scope.layoutDirection == LayoutDirection.Ltr) resolveEnd(scope) else resolveStart(scope)
 
 /**
  * Adds padding to each edge of the content.
@@ -109,7 +169,7 @@ public fun RemoteModifier.padding(
     end: RemoteDp = 0.rdp,
     bottom: RemoteDp = 0.rdp,
 ): RemoteModifier {
-    return padding(start = start.toPx(), top = top.toPx(), end = end.toPx(), bottom = bottom.toPx())
+    return then(PaddingModifier(start = start, top = top, end = end, bottom = bottom))
 }
 
 /**

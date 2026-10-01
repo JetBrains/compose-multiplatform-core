@@ -16,20 +16,30 @@
 
 package androidx.appfunctions.internal
 
+import android.app.appfunctions.AppFunctionActivityId
 import android.app.appfunctions.AppFunctionManager as PlatformAppFunctionManager
+import android.app.appfunctions.AppFunctionRegistration
 import android.content.Context
 import android.os.Build
 import android.os.CancellationSignal
 import android.os.OutcomeReceiver
+import android.util.ArraySet
+import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.appfunctions.AppFunctionActivityState
 import androidx.appfunctions.AppFunctionException
 import androidx.appfunctions.AppFunctionManager
 import androidx.appfunctions.AppFunctionManager.Companion.APP_FUNCTION_STATE_DEFAULT
 import androidx.appfunctions.AppFunctionManager.Companion.APP_FUNCTION_STATE_DISABLED
 import androidx.appfunctions.AppFunctionManager.Companion.APP_FUNCTION_STATE_ENABLED
+import androidx.appfunctions.AppFunctionSearchSpec
 import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
 import androidx.appfunctions.ExecuteAppFunctionResponse.Success.Companion.toCompatExecuteAppFunctionResponse
+import androidx.appfunctions.ExperimentalAppFunctionsApi
+import androidx.appfunctions.RegisterAppFunctionRequest
+import androidx.appfunctions.internal.AppFunctionManagerApi.Companion.applyMissingRuntimeMetadataExceptionFix
+import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
 import androidx.appfunctions.metadata.AppFunctionMetadata
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.resume
@@ -39,8 +49,12 @@ import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.suspendCancellableCoroutine
 
 /** Provides the AppFunctionManager backend through the platform API. */
+@OptIn(ExperimentalAppFunctionsApi::class)
 @RequiresApi(Build.VERSION_CODES.BAKLAVA)
-internal class PlatformAppFunctionManagerApi(private val context: Context) : AppFunctionManagerApi {
+internal class PlatformAppFunctionManagerApi(
+    private val context: Context,
+    private val appFunctionReader: AppFunctionReader,
+) : AppFunctionManagerApi {
 
     private val appFunctionManager: PlatformAppFunctionManager by lazy {
         context.getSystemService(PlatformAppFunctionManager::class.java)
@@ -62,7 +76,9 @@ internal class PlatformAppFunctionManagerApi(private val context: Context) : App
                     }
 
                     override fun onError(error: Exception) {
-                        cont.resumeWithException(error)
+                        cont.resumeWithException(
+                            applyMissingRuntimeMetadataExceptionFix(functionId, error)
+                        )
                     }
                 },
             )
@@ -85,10 +101,93 @@ internal class PlatformAppFunctionManagerApi(private val context: Context) : App
                     }
 
                     override fun onError(error: Exception) {
+                        cont.resumeWithException(
+                            applyMissingRuntimeMetadataExceptionFix(functionId, error)
+                        )
+                    }
+                },
+            )
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.CINNAMON_BUN)
+    override suspend fun getAppFunctionActivityStates(
+        activityIds: Set<AppFunctionActivityId>
+    ): List<AppFunctionActivityState> {
+        val platformStates = suspendCancellableCoroutine { cont ->
+            appFunctionManager.getAppFunctionActivityStates(
+                activityIds,
+                Runnable::run,
+                object :
+                    OutcomeReceiver<
+                        List<android.app.appfunctions.AppFunctionActivityState>,
+                        Exception,
+                    > {
+                    override fun onResult(
+                        result: List<android.app.appfunctions.AppFunctionActivityState>?
+                    ) {
+                        if (result == null) {
+                            cont.resumeWithException(IllegalStateException("Something went wrong"))
+                        } else {
+                            cont.resume(
+                                result.map {
+                                    AppFunctionActivityState.fromPlatformAppFunctionActivityState(
+                                        it
+                                    )
+                                }
+                            )
+                        }
+                    }
+
+                    override fun onError(error: Exception) {
                         cont.resumeWithException(error)
                     }
                 },
             )
+        }
+
+        if (CallerAccessVerifier.isAtLeastCinnamonBunMinor2() || platformStates.isEmpty()) {
+            return platformStates
+        }
+
+        val allFunctionNames = platformStates.flatMap { it.functionNames }
+        if (allFunctionNames.isEmpty()) {
+            return platformStates
+        }
+        val targetPackages = allFunctionNames.map { it.packageName }.toSet()
+        val allMetadata =
+            appFunctionReader.searchAppFunctionsMetadata(
+                AppFunctionSearchSpec(packageNames = targetPackages)
+            )
+        val metadataMap = allMetadata.associateBy { it.name }
+
+        return platformStates.mapNotNull { activityState ->
+            val visibleFunctions =
+                activityState.functionNames.filter { functionName ->
+                    val metadata = metadataMap[functionName]
+                    val isVisible =
+                        metadata == null ||
+                            CallerAccessVerifier.canCallerDiscoverFunction(context, metadata)
+                    if (!isVisible) {
+                        Log.d(
+                            APP_FUNCTIONS_TAG,
+                            "Filtered out $functionName from activity state " +
+                                "${activityState.activityId}: caller cannot discover function " +
+                                "with accessLevel=${metadata?.accessLevel}",
+                        )
+                    }
+                    isVisible
+                }
+            if (visibleFunctions.isEmpty()) {
+                Log.d(
+                    APP_FUNCTIONS_TAG,
+                    "Dropped activity state ${activityState.activityId}: no functions visible " +
+                        "to caller",
+                )
+                null
+            } else {
+                AppFunctionActivityState(activityState.activityId, ArraySet(visibleFunctions))
+            }
         }
     }
 
@@ -96,6 +195,12 @@ internal class PlatformAppFunctionManagerApi(private val context: Context) : App
         request: ExecuteAppFunctionRequest,
         functionMetadata: AppFunctionMetadata,
     ): ExecuteAppFunctionResponse {
+        val platformRequest = request.toPlatformExecuteAppFunctionRequest()
+        CallerAccessVerifier.attachCallerVerificationTokens(
+            context,
+            functionMetadata.accessLevel,
+            platformRequest.extras,
+        )
         return suspendCancellableCoroutine { cont ->
             val cancellationSignal = CancellationSignal()
             // Wrapped in an AtomicReference so we can explicitly null it out. This protects the
@@ -109,7 +214,7 @@ internal class PlatformAppFunctionManagerApi(private val context: Context) : App
                 activeCont.set(null)
             }
             appFunctionManager.executeAppFunction(
-                request.toPlatformExecuteAppFunctionRequest(),
+                platformRequest,
                 Runnable::run,
                 cancellationSignal,
                 object :
@@ -138,6 +243,17 @@ internal class PlatformAppFunctionManagerApi(private val context: Context) : App
                 },
             )
         }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.CINNAMON_BUN)
+    @OptIn(ExperimentalAppFunctionsApi::class)
+    override fun registerAppFunctions(
+        requests: List<RegisterAppFunctionRequest>
+    ): AppFunctionRegistration {
+        val platformRequests = requests.map {
+            it.toPlatformRegisterAppFunctionRequest(appFunctionReader, context)
+        }
+        return appFunctionManager.registerAppFunctions(platformRequests)
     }
 
     private fun convertToPlatformEnabledState(

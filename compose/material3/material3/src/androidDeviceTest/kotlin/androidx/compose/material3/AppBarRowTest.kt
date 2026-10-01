@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,7 +38,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AppBarRowTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun appbarRow_itemsDisplayed_noOverflow() {
@@ -112,8 +111,6 @@ class AppBarRowTest {
     @Test
     fun appbarRow_overflowMenu_opensAndCloses() {
         rule.setContent {
-            var menuState by remember { mutableStateOf(false) }
-
             AppBarRow(
                 overflowIndicator = {
                     IconButton(

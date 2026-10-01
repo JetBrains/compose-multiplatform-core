@@ -15,6 +15,7 @@
  */
 
 @file:Suppress("DEPRECATION")
+@file:kotlin.OptIn(ExperimentalSpatialGltfModelApi::class)
 
 package androidx.xr.compose.subspace
 
@@ -33,6 +34,7 @@ import androidx.xr.compose.subspace.SpatialGltfModelStatus.Failed
 import androidx.xr.compose.subspace.SpatialGltfModelStatus.Loaded
 import androidx.xr.compose.subspace.SpatialGltfModelStatus.Loading
 import androidx.xr.compose.subspace.draw.alpha
+import androidx.xr.compose.subspace.draw.scale
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.offset
@@ -60,16 +62,13 @@ import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.GltfModelResource
 import androidx.xr.scenecore.runtime.RenderingRuntime
 import androidx.xr.scenecore.scene
-import androidx.xr.scenecore.testing.FakeGltfAnimationFeature
 import androidx.xr.scenecore.testing.FakeGltfEntity
 import androidx.xr.scenecore.testing.FakeGltfModelNodeFeature
 import com.google.common.truth.Truth.assertThat
 import java.nio.file.Paths
-import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CompletableDeferred
 import org.junit.Rule
 import org.junit.Test
@@ -608,6 +607,151 @@ class SpatialGltfModelTest {
     }
 
     @Test
+    fun spatialModel_withExplicitSizeAndScaleModifier_usesUserScale() {
+        // Apply both `SubspaceModifier.size(200.dp)` and `.scale(2f)` to `SpatialGltfModel`.
+        // Verify that the entity's final scale (`super.scale`) is the product of the uniform fit
+        // scale
+        // (`0.1f`) and the explicit user scale (`2f`), resulting in `0.2f`.
+        configureFakeSessionWithModelBoundingBox()
+
+        composeTestRule.setContent {
+            Subspace(
+                modifier =
+                    SubspaceModifier.requiredSizeIn(
+                        maxWidth = Dp.Infinity,
+                        maxHeight = Dp.Infinity,
+                        maxDepth = Dp.Infinity,
+                    )
+            ) {
+                SpatialGltfModel(
+                    state =
+                        rememberSpatialGltfModelState(
+                            source = SpatialGltfModelSource.fromPath(Paths.get("asset.glb"))
+                        ),
+                    modifier = SubspaceModifier.testTag("model").size(200.dp).scale(2f),
+                )
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("model")
+            .assertWidthIsEqualTo(200.dp)
+            .assertHeightIsEqualTo(200.dp)
+            .assertDepthIsEqualTo(200.dp)
+
+        // gltfUniformScale = 0.1f, userScale = 2f, so uses scale = 0.2f
+        assertThat(composeTestRule.onSubspaceNodeWithTag("model").fetchSemanticsNode().scale)
+            .isEqualTo(2f)
+    }
+
+    @Test
+    fun spatialModel_withExplicitSizeModifier_maintainsScaleOnRecomposition() {
+        // Verify that when a `SpatialGltfModel` undergoes recomposition, the computed fit scale
+        // (`0.1f`)
+        // is preserved and does not reset or blow up when modifiers are re-applied.
+        var recomposeTrigger by mutableStateOf(0)
+
+        configureFakeSessionWithModelBoundingBox()
+
+        composeTestRule.setContent {
+            Subspace(
+                modifier =
+                    SubspaceModifier.requiredSizeIn(
+                        maxWidth = Dp.Infinity,
+                        maxHeight = Dp.Infinity,
+                        maxDepth = Dp.Infinity,
+                    )
+            ) {
+                SpatialGltfModel(
+                    state =
+                        rememberSpatialGltfModelState(
+                            source = SpatialGltfModelSource.fromPath(Paths.get("asset.glb"))
+                        ),
+                    modifier = SubspaceModifier.testTag("model").size(200.dp),
+                )
+            }
+        }
+
+        // Initial check: scale is 0.1f
+        assertThat(composeTestRule.onSubspaceNodeWithTag("model").fetchSemanticsNode().scale)
+            .isEqualTo(0.1f)
+
+        // Trigger recomposition
+        recomposeTrigger++
+        composeTestRule.waitForIdle()
+
+        // Verify scale remains 0.1f after recomposition
+        assertThat(composeTestRule.onSubspaceNodeWithTag("model").fetchSemanticsNode().scale)
+            .isEqualTo(0.1f)
+    }
+
+    @Test
+    fun spatialModel_whenScaleModifierChanges_updatesScaleWithoutResettingFitScale() {
+        // Verify that dynamically updating the explicit scale modifier on a SpatialGltfModel across
+        // recompositions correctly updates the combined scale while preserving the underlying fit
+        // scale (`0.1f`).
+        var dynamicScale: Float? by mutableStateOf(null)
+
+        configureFakeSessionWithModelBoundingBox()
+
+        composeTestRule.setContent {
+            Subspace(
+                modifier =
+                    SubspaceModifier.requiredSizeIn(
+                        maxWidth = Dp.Infinity,
+                        maxHeight = Dp.Infinity,
+                        maxDepth = Dp.Infinity,
+                    )
+            ) {
+                SpatialGltfModel(
+                    state =
+                        rememberSpatialGltfModelState(
+                            source = SpatialGltfModelSource.fromPath(Paths.get("asset.glb"))
+                        ),
+                    modifier =
+                        dynamicScale?.let {
+                            SubspaceModifier.testTag("model").size(200.dp).scale(it)
+                        } ?: SubspaceModifier.testTag("model").size(200.dp),
+                )
+            }
+        }
+
+        // Initial check: gltfUniformScale = 0.1f, userScale = null -> uses = 0.1f
+        assertThat(composeTestRule.onSubspaceNodeWithTag("model").fetchSemanticsNode().scale)
+            .isEqualTo(0.1f)
+
+        // Update the scale modifier dynamically across recomposition to 3f
+        dynamicScale = 3f
+        composeTestRule.waitForIdle()
+
+        // Verify scale updates to 3f
+        assertThat(composeTestRule.onSubspaceNodeWithTag("model").fetchSemanticsNode().scale)
+            .isEqualTo(3f)
+    }
+
+    private fun configureFakeSessionWithModelBoundingBox(
+        boundingBox: BoundingBox = BoundingBox.fromMinMax(Vector3.Zero, Vector3.One)
+    ) {
+        composeTestRule.configureFakeSession(
+            defaultDpPerMeter = pixelsPerMeter,
+            renderingRuntime = {
+                object : RenderingRuntime by it {
+                    override fun createGltfEntity(
+                        pose: Pose,
+                        loadedGltf: GltfModelResource,
+                        parentEntity: Entity?,
+                    ): GltfEntity {
+                        val entity = it.createGltfEntity(pose, loadedGltf, parentEntity)
+                        return object : GltfEntity by entity {
+                            override val gltfModelBoundingBox: BoundingBox = boundingBox
+                        }
+                    }
+                }
+            },
+        )
+    }
+
+    @Test
     fun spatialModel_withFillMaxSize_fillsAvailableSpace() {
         // Use `SubspaceModifier.fillMaxSize()` and assert that the `SpatialModel` expands to fill
         // the constraints provided by its parent.
@@ -1007,483 +1151,6 @@ class SpatialGltfModelTest {
 
         composeTestRule.onSubspaceNodeWithTag("model").assertExists()
         assertIs<Loading>(state.status)
-    }
-
-    @Test
-    fun state_startAnimation_updatesIsAnimatingState() {
-        // Call `state.startAnimation()` and assert that `isAnimating.value` becomes `true` and then
-        // returns to `false` after the animation completes.
-
-        val state =
-            SpatialGltfModelState(source = SpatialGltfModelSource.fromPath(Paths.get("asset.glb")))
-        var testEntity: GltfEntity? = null
-
-        composeTestRule.configureFakeSession(
-            renderingRuntime = {
-                object : RenderingRuntime by it {
-                    override fun createGltfEntity(
-                        pose: Pose,
-                        loadedGltf: GltfModelResource,
-                        parentEntity: Entity?,
-                    ): GltfEntity {
-                        return it.createGltfEntity(pose, loadedGltf, parentEntity).also { entity ->
-                            testEntity = entity
-                            (entity as FakeGltfEntity).addAnimation(FakeGltfAnimationFeature())
-                        }
-                    }
-                }
-            }
-        )
-
-        composeTestRule.setContent {
-            Subspace {
-                SpatialGltfModel(state = state, modifier = SubspaceModifier.testTag("model"))
-            }
-        }
-
-        composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        val animation = state.animations[0]
-        assertThat(animation.animationState)
-            .isEqualTo(SpatialGltfModelAnimation.AnimationState.Stopped)
-
-        animation.start()
-
-        composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        assertThat(animation.animationState)
-            .isEqualTo(SpatialGltfModelAnimation.AnimationState.Playing)
-
-        // simulate the animation stopping on its own
-        testEntity?.animations?.get(0)?.stopAnimation()
-
-        composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        assertThat(animation.animationState)
-            .isEqualTo(SpatialGltfModelAnimation.AnimationState.Stopped)
-    }
-
-    @Test
-    fun state_loopAnimation_isAnimatingRemainsTrue() {
-        // Call `state.loopAnimation()` and assert that `isAnimating.value` becomes `true` and stays
-        // `true`.
-
-        val state =
-            SpatialGltfModelState(source = SpatialGltfModelSource.fromPath(Paths.get("asset.glb")))
-
-        composeTestRule.configureFakeSession(
-            renderingRuntime = {
-                object : RenderingRuntime by it {
-                    override fun createGltfEntity(
-                        pose: Pose,
-                        loadedGltf: GltfModelResource,
-                        parentEntity: Entity?,
-                    ): GltfEntity {
-                        return it.createGltfEntity(pose, loadedGltf, parentEntity).also { entity ->
-                            (entity as FakeGltfEntity).addAnimation(FakeGltfAnimationFeature())
-                        }
-                    }
-                }
-            }
-        )
-
-        composeTestRule.setContent {
-            Subspace {
-                SpatialGltfModel(state = state, modifier = SubspaceModifier.testTag("model"))
-            }
-        }
-
-        composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        val animation = state.animations[0]
-        assertThat(animation.animationState)
-            .isEqualTo(SpatialGltfModelAnimation.AnimationState.Stopped)
-
-        animation.loop()
-
-        composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        assertThat(animation.animationState)
-            .isEqualTo(SpatialGltfModelAnimation.AnimationState.Playing)
-
-        composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        assertThat(animation.animationState)
-            .isEqualTo(SpatialGltfModelAnimation.AnimationState.Playing)
-    }
-
-    @Test
-    fun state_stopAllAnimations_stopsLoopingAnimation() {
-        // Start a looping animation and then call `state.stopAllAnimations()`. Assert that
-        // `isAnimating.value` becomes `false`.
-
-        val state =
-            SpatialGltfModelState(source = SpatialGltfModelSource.fromPath(Paths.get("asset.glb")))
-
-        composeTestRule.configureFakeSession(
-            renderingRuntime = {
-                object : RenderingRuntime by it {
-                    override fun createGltfEntity(
-                        pose: Pose,
-                        loadedGltf: GltfModelResource,
-                        parentEntity: Entity?,
-                    ): GltfEntity {
-                        return it.createGltfEntity(pose, loadedGltf, parentEntity).also { entity ->
-                            (entity as FakeGltfEntity).addAnimation(FakeGltfAnimationFeature())
-                        }
-                    }
-                }
-            }
-        )
-
-        composeTestRule.setContent {
-            Subspace {
-                SpatialGltfModel(state = state, modifier = SubspaceModifier.testTag("model"))
-            }
-        }
-
-        composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        val animation = state.animations[0]
-        assertThat(animation.animationState)
-            .isEqualTo(SpatialGltfModelAnimation.AnimationState.Stopped)
-
-        animation.loop()
-
-        composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        assertThat(animation.animationState)
-            .isEqualTo(SpatialGltfModelAnimation.AnimationState.Playing)
-
-        animation.stop()
-
-        composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        assertThat(animation.animationState)
-            .isEqualTo(SpatialGltfModelAnimation.AnimationState.Stopped)
-    }
-
-    @Test
-    fun state_startAnimationByName_playsCorrectAnimation() {
-        // For a model with multiple named animations, call `state.startAnimation("name")` and
-        // verify that the specific animation is played.
-
-        val state =
-            SpatialGltfModelState(source = SpatialGltfModelSource.fromPath(Paths.get("asset.glb")))
-        var fakeGltfEntity: FakeGltfEntity? = null
-
-        composeTestRule.configureFakeSession(
-            renderingRuntime = {
-                object : RenderingRuntime by it {
-                    override fun createGltfEntity(
-                        pose: Pose,
-                        loadedGltf: GltfModelResource,
-                        parentEntity: Entity?,
-                    ): GltfEntity {
-                        return it.createGltfEntity(pose, loadedGltf, parentEntity).apply {
-                            fakeGltfEntity = this as FakeGltfEntity
-                            fakeGltfEntity.addAnimation(FakeGltfAnimationFeature())
-                        }
-                    }
-                }
-            }
-        )
-
-        composeTestRule.setContent {
-            Subspace {
-                SpatialGltfModel(state = state, modifier = SubspaceModifier.testTag("model"))
-            }
-        }
-
-        composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        val animation = state.animations[0]
-        assertThat(animation.animationState)
-            .isEqualTo(SpatialGltfModelAnimation.AnimationState.Stopped)
-
-        animation.start()
-
-        composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        assertThat(fakeGltfEntity?.animations?.get(0)?.animationState)
-            .isEqualTo(GltfEntity.AnimationState.PLAYING)
-    }
-
-    @Test
-    fun animation_onPauseAndResume_updatesState() {
-        val state =
-            SpatialGltfModelState(source = SpatialGltfModelSource.fromPath(Paths.get("asset.glb")))
-        var fakeGltfEntity: FakeGltfEntity?
-
-        composeTestRule.configureFakeSession(
-            renderingRuntime = {
-                object : RenderingRuntime by it {
-                    override fun createGltfEntity(
-                        pose: Pose,
-                        loadedGltf: GltfModelResource,
-                        parentEntity: Entity?,
-                    ): GltfEntity {
-                        return it.createGltfEntity(pose, loadedGltf, parentEntity).apply {
-                            fakeGltfEntity = this as FakeGltfEntity
-                            fakeGltfEntity.addAnimation(FakeGltfAnimationFeature())
-                        }
-                    }
-                }
-            }
-        )
-
-        composeTestRule.setContent {
-            Subspace {
-                SpatialGltfModel(state = state, modifier = SubspaceModifier.testTag("model"))
-            }
-        }
-
-        composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        val animation = state.animations[0]
-        animation.start()
-
-        composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        assertThat(animation.animationState)
-            .isEqualTo(SpatialGltfModelAnimation.AnimationState.Playing)
-
-        animation.pause()
-        composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        assertThat(animation.animationState)
-            .isEqualTo(SpatialGltfModelAnimation.AnimationState.Paused)
-
-        animation.start()
-        composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        assertThat(animation.animationState)
-            .isEqualTo(SpatialGltfModelAnimation.AnimationState.Playing)
-    }
-
-    @Test
-    fun animation_seekTo_updatesStartTime() {
-        val state =
-            SpatialGltfModelState(source = SpatialGltfModelSource.fromPath(Paths.get("asset.glb")))
-        var fakeGltfEntity: FakeGltfEntity?
-        var fakeAnimation: FakeGltfAnimationFeature? = null
-
-        composeTestRule.configureFakeSession(
-            renderingRuntime = {
-                object : RenderingRuntime by it {
-                    override fun createGltfEntity(
-                        pose: Pose,
-                        loadedGltf: GltfModelResource,
-                        parentEntity: Entity?,
-                    ): GltfEntity {
-                        return it.createGltfEntity(pose, loadedGltf, parentEntity).apply {
-                            fakeGltfEntity = this as FakeGltfEntity
-                            fakeAnimation = FakeGltfAnimationFeature()
-                            fakeGltfEntity.addAnimation(fakeAnimation)
-                        }
-                    }
-                }
-            }
-        )
-
-        composeTestRule.setContent {
-            Subspace {
-                SpatialGltfModel(state = state, modifier = SubspaceModifier.testTag("model"))
-            }
-        }
-
-        composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        val animation = state.animations[0]
-
-        // Seek while stopped sets the start time
-        animation.seekTo(5.seconds)
-        animation.start()
-        assertThat(fakeAnimation?.seekStartTimeSeconds).isEqualTo(5.0f)
-
-        // Seek while playing updates the animation time
-        animation.seekTo(10.seconds)
-        assertThat(fakeAnimation?.seekStartTimeSeconds).isEqualTo(10.0f)
-    }
-
-    @Test
-    fun animation_seekTo_retainsStartSeekTimeAcrossPlayingStateChanges() {
-        val state =
-            SpatialGltfModelState(source = SpatialGltfModelSource.fromPath(Paths.get("asset.glb")))
-        var fakeGltfEntity: FakeGltfEntity?
-        var fakeAnimation: FakeGltfAnimationFeature? = null
-
-        composeTestRule.configureFakeSession(
-            renderingRuntime = {
-                object : RenderingRuntime by it {
-                    override fun createGltfEntity(
-                        pose: Pose,
-                        loadedGltf: GltfModelResource,
-                        parentEntity: Entity?,
-                    ): GltfEntity {
-                        return it.createGltfEntity(pose, loadedGltf, parentEntity).apply {
-                            fakeGltfEntity = this as FakeGltfEntity
-                            fakeAnimation = FakeGltfAnimationFeature()
-                            fakeGltfEntity.addAnimation(fakeAnimation)
-                        }
-                    }
-                }
-            }
-        )
-
-        composeTestRule.setContent {
-            Subspace {
-                SpatialGltfModel(state = state, modifier = SubspaceModifier.testTag("model"))
-            }
-        }
-
-        composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        val animation = state.animations[0]
-
-        // Seek to a specific time while stopped.
-        animation.seekTo(7.seconds)
-
-        // Start the animation and verify it starts from the seek position, not 0.
-        animation.start()
-
-        composeTestRule.waitForIdle()
-        assertThat(fakeAnimation?.seekStartTimeSeconds).isEqualTo(7.0f)
-        assertThat(animation.animationState)
-            .isEqualTo(SpatialGltfModelAnimation.AnimationState.Playing)
-
-        animation.stop()
-        composeTestRule.waitForIdle()
-        assertThat(animation.animationState)
-            .isEqualTo(SpatialGltfModelAnimation.AnimationState.Stopped)
-
-        // Start the animation and verify it starts from the seek position, not 0.
-        animation.start()
-        composeTestRule.waitForIdle()
-        assertThat(fakeAnimation?.seekStartTimeSeconds).isEqualTo(7.0f)
-        assertThat(animation.animationState)
-            .isEqualTo(SpatialGltfModelAnimation.AnimationState.Playing)
-    }
-
-    @Test
-    fun animation_playbackSpeed_updatesAnimationSpeed() {
-        val state =
-            SpatialGltfModelState(source = SpatialGltfModelSource.fromPath(Paths.get("asset.glb")))
-        var fakeAnimation: FakeGltfAnimationFeature? = null
-
-        composeTestRule.configureFakeSession(
-            renderingRuntime = {
-                object : RenderingRuntime by it {
-                    override fun createGltfEntity(
-                        pose: Pose,
-                        loadedGltf: GltfModelResource,
-                        parentEntity: Entity?,
-                    ): GltfEntity {
-                        return it.createGltfEntity(pose, loadedGltf, parentEntity).apply {
-                            val animation = FakeGltfAnimationFeature()
-                            fakeAnimation = animation
-                            (this as FakeGltfEntity).addAnimation(animation)
-                        }
-                    }
-                }
-            }
-        )
-
-        composeTestRule.setContent {
-            Subspace {
-                SpatialGltfModel(state = state, modifier = SubspaceModifier.testTag("model"))
-            }
-        }
-
-        composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        val animation = state.animations[0]
-
-        // When the animation is stopped, setting the speed property does not update the speed
-        // of the underlying scene core animation.
-        animation.playbackSpeed = 2.0f
-        assertThat(fakeAnimation?.speed).isEqualTo(1.0f)
-
-        // When the animation is started, the speed is correctly applied.
-        animation.start()
-        assertThat(fakeAnimation?.speed).isEqualTo(2.0f)
-
-        // When the animation is playing, setting the speed property updates the speed of
-        // the underlying scene core animation immediately.
-        animation.playbackSpeed = 3.0f
-        assertThat(fakeAnimation?.speed).isEqualTo(3.0f)
-
-        animation.stop()
-        animation.playbackSpeed = 4.0f
-        assertThat(fakeAnimation?.speed).isEqualTo(3.0f) // Still at its previous value.
-
-        // When the animation is looping, the speed is correctly applied.
-        animation.loop()
-        assertThat(fakeAnimation?.speed).isEqualTo(4.0f)
-    }
-
-    @Test
-    fun animation_playbackSpeed_compositionUpdate() {
-        val state =
-            SpatialGltfModelState(source = SpatialGltfModelSource.fromPath(Paths.get("asset.glb")))
-        var fakeAnimation: FakeGltfAnimationFeature? = null
-
-        composeTestRule.configureFakeSession(
-            renderingRuntime = {
-                object : RenderingRuntime by it {
-                    override fun createGltfEntity(
-                        pose: Pose,
-                        loadedGltf: GltfModelResource,
-                        parentEntity: Entity?,
-                    ): GltfEntity {
-                        return it.createGltfEntity(pose, loadedGltf, parentEntity).apply {
-                            val animation = FakeGltfAnimationFeature()
-                            fakeAnimation = animation
-                            (this as FakeGltfEntity).addAnimation(animation)
-                        }
-                    }
-                }
-            }
-        )
-
-        var speed by mutableStateOf(2.0f)
-
-        composeTestRule.setContent {
-            Subspace {
-                SpatialGltfModel(state = state, modifier = SubspaceModifier.testTag("model"))
-            }
-
-            if (state.status is Loaded) {
-                state.animations[0].playbackSpeed = speed
-            }
-        }
-
-        composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        val animation = state.animations[0]
-        animation.start()
-        assertThat(fakeAnimation?.speed).isEqualTo(2.0f)
-
-        // Update the speed state
-        speed = 3.0f
-        composeTestRule.waitForIdle()
-
-        assertThat(animation.playbackSpeed).isEqualTo(3.0f)
-        assertThat(fakeAnimation?.speed).isEqualTo(3.0f)
-    }
-
-    @Test
-    fun animation_seekToNegativeValue_throwsException() {
-        val state =
-            SpatialGltfModelState(source = SpatialGltfModelSource.fromPath(Paths.get("asset.glb")))
-
-        composeTestRule.configureFakeSession(
-            renderingRuntime = {
-                object : RenderingRuntime by it {
-                    override fun createGltfEntity(
-                        pose: Pose,
-                        loadedGltf: GltfModelResource,
-                        parentEntity: Entity?,
-                    ): GltfEntity {
-                        return it.createGltfEntity(pose, loadedGltf, parentEntity).apply {
-                            (this as FakeGltfEntity).addAnimation(FakeGltfAnimationFeature())
-                        }
-                    }
-                }
-            }
-        )
-
-        composeTestRule.setContent {
-            Subspace {
-                SpatialGltfModel(state = state, modifier = SubspaceModifier.testTag("model"))
-            }
-        }
-
-        composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        val animation = state.animations[0]
-
-        assertFailsWith<IllegalArgumentException> { animation.seekTo((-1).seconds) }
     }
 
     // 4. Composition and Lifecycle

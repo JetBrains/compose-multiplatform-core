@@ -16,9 +16,11 @@
 
 package androidx.ink.brush
 
+import androidx.annotation.IntRange
 import androidx.annotation.RestrictTo
 import androidx.collection.MutableIntObjectMap
 import androidx.ink.brush.ImmutableCollections.unmodifiableList
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.NativePointer
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmName
@@ -31,6 +33,7 @@ import kotlin.jvm.JvmStatic
  *
  * [BrushFamily] objects are immutable.
  */
+@OptIn(InkInternalOnlyApi::class, ExperimentalInkCustomBrushApi::class)
 public class BrushFamily
 private constructor(
     nativeAlloc: () -> Long,
@@ -39,7 +42,8 @@ private constructor(
 ) {
 
     /** A handle to the underlying native [BrushFamily] object. */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    @InkInternalOnlyApi
     public val nativePointer: Long by NativePointer(nativeAlloc, BrushFamilyNative::free)
 
     /** An immutable list of the [BrushCoat]s that make up this [BrushFamily]. */
@@ -63,9 +67,14 @@ private constructor(
             }
 
     /** Client-provided identifier for this [BrushFamily]. */
-    // Cached to avoid converting C++ string to JVM string every time.
+    // Cached to avoid converting C++ string to JVM string every time. Uses lazy to avoid the
+    // opt-in annotation not applying to Java callers (can't be applied to getters, and just
+    // applies to the backing field if there is one).
+    @ExperimentalInkCustomBrushApi
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
-    public val clientBrushFamilyId: String = BrushFamilyNative.getClientBrushFamilyId(nativePointer)
+    public val clientBrushFamilyId: String by lazy {
+        BrushFamilyNative.getClientBrushFamilyId(nativePointer)
+    }
 
     /**
      * A multi-line, human-readable string with a description of the brush and how it works, with
@@ -75,15 +84,20 @@ private constructor(
     public val developerComment: String = BrushFamilyNative.getDeveloperComment(nativePointer)
 
     /**
-     * Returns the duration of a complete texture animation loop for an entire stroke with this
-     * brush family (such that each animated texture in the brush goes through an integral number of
-     * complete loops and returns to its starting frame), or zero if this family contains no
-     * animated textures. If nonzero, this duration will be no greater than 2^24 milliseconds (about
-     * 4.66 hours).
+     * Returns the duration of a complete paint animation loop for an entire stroke with this brush
+     * family (such that each animated paint in the brush goes through an integral number of
+     * complete loops and returns to its starting point), or zero if this family contains no
+     * animated brush paints. If nonzero, this duration will be no greater than 2^24 milliseconds
+     * (about 4.66 hours).
      */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
-    public val textureAnimationLoopDurationMillis: Long =
-        BrushFamilyNative.getTextureAnimationLoopDurationMillis(nativePointer)
+    @ExperimentalInkAnimationApi
+    @get:IntRange(from = 0, to = 1 shl 24)
+    // Uses lazy to avoid the opt-in annotation not applying to Java callers (can't be applied to
+    // getters, and just applies to the backing field if there is one).`
+    public val paintAnimationLoopDurationMillis: Long by lazy {
+        BrushFamilyNative.getPaintAnimationLoopDurationMillis(nativePointer)
+    }
 
     /**
      * Returns true if this [BrushFamily] contains serialized fallback data representing similar
@@ -95,8 +109,11 @@ private constructor(
      * [toBuilder].
      */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @ExperimentalInkBrushCompatibilityApi
     @get:JvmName("hasFallbacks")
-    public val hasFallbacks: Boolean = BrushFamilyNative.hasFallbacks(nativePointer)
+    // Uses lazy to avoid the opt-in annotation not applying to Java callers (can't be applied to
+    // getters, and just applies to the backing field if there is one).
+    public val hasFallbacks: Boolean by lazy { BrushFamilyNative.hasFallbacks(nativePointer) }
 
     /**
      * Returns the minimum required [Version] for this [BrushFamily].
@@ -135,6 +152,7 @@ private constructor(
      * @param clientBrushFamilyId Optional-provided identifier for this [BrushFamily].
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @ExperimentalInkCustomBrushApi
     public constructor(
         coats: List<BrushCoat>,
         inputModel: InputModel = InputModel.DEFAULT_INPUT_MODEL,
@@ -186,6 +204,7 @@ private constructor(
      * @param clientBrushFamilyId Optional-provided identifier for this [BrushFamily].
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @ExperimentalInkCustomBrushApi
     public constructor(
         tip: BrushTip = BrushTip(),
         paint: BrushPaint = BrushPaint(),
@@ -225,6 +244,7 @@ private constructor(
      * Java callers should use [Builder] instead.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @ExperimentalInkCustomBrushApi
     @Suppress("MissingJvmstatic") // no @JvmOverloads; not intended for Java callers
     public fun copy(
         coats: List<BrushCoat> = this.coats,
@@ -275,6 +295,7 @@ private constructor(
      * Java callers should use [Builder] instead.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @ExperimentalInkCustomBrushApi
     @Suppress("MissingJvmstatic") // no @JvmOverloads; not intended for Java callers
     public fun copy(
         coat: BrushCoat,
@@ -317,6 +338,7 @@ private constructor(
      * Java callers should use [Builder] instead.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @ExperimentalInkCustomBrushApi
     @Suppress("MissingJvmstatic") // no @JvmOverloads; not intended for Java callers
     public fun copy(
         tip: BrushTip,
@@ -374,6 +396,7 @@ private constructor(
 
         /** Sets the client ID for this brush family. */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+        @ExperimentalInkCustomBrushApi
         public fun setClientBrushFamilyId(clientBrushFamilyId: String): Builder {
             this.clientBrushFamilyId = clientBrushFamilyId
             return this
@@ -420,7 +443,9 @@ private constructor(
     // Companion object gets initialized before anything else.
     public companion object {
         /** Construct a [BrushFamily], taking a callback that heap-allocates a C++ `BrushFamily`. */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+        @InkInternalOnlyApi
+        @Suppress("MissingJvmstatic") // Internal-only API
         public fun wrapNative(nativeAlloc: () -> Long): BrushFamily = BrushFamily(nativeAlloc)
 
         /** Returns a new [BrushFamily.Builder]. */
@@ -436,6 +461,16 @@ private constructor(
     public abstract class InputModel internal constructor(nativeAlloc: () -> Long) {
 
         internal val nativePointer: Long by NativePointer(nativeAlloc, InputModelNative::free)
+
+        /**
+         * Returns the minimum required [Version] for this [InputModel].
+         *
+         * By default, decoding a [BrushFamily] containing an [InputModel] with a minimum required
+         * version higher than [Version.MAX_SUPPORTED] will fail.
+         */
+        @ExperimentalInkCustomBrushApi
+        public fun calculateMinimumRequiredVersion(): Version =
+            Version.fromInt(InputModelNative.calculateMinimumRequiredVersion(nativePointer))
 
         public companion object {
             internal fun wrapNative(inputModelType: Int, nativeAlloc: () -> Long): InputModel {
@@ -547,7 +582,7 @@ expect internal object BrushFamilyNative {
 
     fun getDeveloperComment(nativePointer: Long): String
 
-    fun getTextureAnimationLoopDurationMillis(nativePointer: Long): Long
+    fun getPaintAnimationLoopDurationMillis(nativePointer: Long): Long
 
     fun calculateMinimumRequiredVersion(nativePointer: Long): Int
 
@@ -561,6 +596,8 @@ expect internal object BrushFamilyNative {
 }
 
 expect internal object InputModelNative {
+    fun calculateMinimumRequiredVersion(nativePointer: Long): Int
+
     fun createNoParametersModel(type: Int): Long
 
     fun createSlidingWindowModel(windowDurationMillis: Long, upsamplingFrequencyHz: Int): Long

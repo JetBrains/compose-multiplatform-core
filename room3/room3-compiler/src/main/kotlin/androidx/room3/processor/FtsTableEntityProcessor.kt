@@ -27,6 +27,7 @@ import androidx.room3.FtsOptions.TOKENIZER_UNICODE61
 import androidx.room3.compiler.processing.XAnnotation
 import androidx.room3.compiler.processing.XType
 import androidx.room3.compiler.processing.XTypeElement
+import androidx.room3.ext.hasAnnotationOnPropertyOrField
 import androidx.room3.parser.FtsVersion
 import androidx.room3.parser.SQLTypeAffinity
 import androidx.room3.processor.EntityProcessor.Companion.extractForeignKeys
@@ -290,26 +291,25 @@ internal constructor(
                 }
             } ?: emptyList()
 
-        val keysFromPrimaryKeyAnnotations =
-            properties.mapNotNull { property ->
-                if (property.element.hasAnnotation(androidx.room3.PrimaryKey::class)) {
-                    PrimaryKey(
-                        declaredIn = property.element.enclosingElement,
-                        properties = Properties(property),
-                        autoGenerateId = true,
-                        algorithm = androidx.room3.PrimaryKey.Algorithm.AUTOINCREMENT,
-                    )
-                } else {
-                    null
-                }
+        val keysFromPrimaryKeyAnnotations = properties.mapNotNull { property ->
+            if (property.element.hasAnnotationOnPropertyOrField(androidx.room3.PrimaryKey::class)) {
+                PrimaryKey(
+                    declaredIn = property.element.enclosingElement,
+                    properties = Properties(property),
+                    autoGenerateId = true,
+                    algorithm = androidx.room3.PrimaryKey.Algorithm.AUTOINCREMENT,
+                )
+            } else {
+                null
             }
+        }
         val primaryKeys = keysFromEntityAnnotation + keysFromPrimaryKeyAnnotations
         if (primaryKeys.isEmpty()) {
             properties
                 .firstOrNull { it.columnName == "rowid" }
                 ?.let {
                     context.checker.check(
-                        it.element.hasAnnotation(androidx.room3.PrimaryKey::class),
+                        it.element.hasAnnotationOnPropertyOrField(androidx.room3.PrimaryKey::class),
                         it.element,
                         ProcessorErrors.MISSING_PRIMARY_KEYS_ANNOTATION_IN_ROW_ID,
                     )

@@ -16,18 +16,20 @@
 
 package androidx.ink.geometry
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.testing.awaitNativePointerCleanupAfter
 import androidx.kruth.assertThat
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 
+@OptIn(InkInternalOnlyApi::class)
 class PartitionedMeshTest {
 
     @Test
     fun partitionedMeshNativePointers_cleanedUpWhenOutOfScope() {
         awaitNativePointerCleanupAfter {
-            val unused = PartitionedMesh()
+            @Suppress("UNUSED_VARIABLE") val unused = PartitionedMesh()
         }
     }
 
@@ -245,7 +247,7 @@ class PartitionedMeshTest {
         assertThat(partitionedMesh.computeCoverage(intersectingMesh)).isGreaterThan(0f)
         assertThat(partitionedMesh.computeCoverage(externalMesh)).isEqualTo(0f)
         assertThat(partitionedMesh.computeCoverage(externalMesh, SCALE_TRANSFORM)).isEqualTo(0f)
-        val translateToIntersect = ImmutableAffineTransform.translate(ImmutableVec(-1.9f, -1.9f))
+        val translateToIntersect = ImmutableAffineTransform.translate(-1.9f, -1.9f)
         assertThat(partitionedMesh.computeCoverage(externalMesh, translateToIntersect))
             .isGreaterThan(0f)
     }
@@ -372,7 +374,7 @@ class PartitionedMeshTest {
         assertThat(partitionedMesh.computeCoverageIsGreaterThan(externalMesh, 0f)).isFalse()
         assertThat(partitionedMesh.computeCoverageIsGreaterThan(externalMesh, 0f, SCALE_TRANSFORM))
             .isFalse()
-        val translateToIntersect = ImmutableAffineTransform.translate(ImmutableVec(-1.9f, -1.9f))
+        val translateToIntersect = ImmutableAffineTransform.translate(-1.9f, -1.9f)
         assertThat(
                 partitionedMesh.computeCoverageIsGreaterThan(externalMesh, 0f, translateToIntersect)
             )

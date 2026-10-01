@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // b/552879150
+
 package androidx.compose.material3
 
 import androidx.compose.foundation.ScrollState
@@ -149,7 +151,7 @@ import kotlin.math.roundToInt
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OutlinedTextField(
+public fun OutlinedTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -309,7 +311,7 @@ fun OutlinedTextField(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OutlinedTextField(
+public fun OutlinedTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -466,7 +468,7 @@ fun OutlinedTextField(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OutlinedTextField(
+public fun OutlinedTextField(
     value: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
@@ -588,4 +590,5 @@ internal fun Modifier.outlineCutout(
         }
     }
 
-private val OutlinedTextFieldInnerPadding = 4.dp
+private val OutlinedTextFieldInnerPadding
+    get() = 4.dp

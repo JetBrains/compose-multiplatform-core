@@ -23,8 +23,9 @@ import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ripple.RippleAlpha
-import androidx.compose.material3.internal.ripple.RippleNodeConfig
-import androidx.compose.material3.internal.ripple.createRippleModifierNode
+import androidx.compose.material3.RippleThemeConfiguration.Focus
+import androidx.compose.material3.ripple.RippleNodeConfiguration
+import androidx.compose.material3.ripple.createRippleModifierNode
 import androidx.compose.material3.tokens.StateTokens
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ProvidableCompositionLocal
@@ -67,22 +68,29 @@ import androidx.compose.ui.unit.dp
  * [ripple] overload with a [ColorProducer] parameter. This will avoid unnecessary recompositions
  * when changing the color, and preserve existing ripple state when the color changes.
  *
+ * @sample androidx.compose.material3.samples.RippleSample
+ * @sample androidx.compose.material3.samples.InsetFocusRingRippleSample
+ * @sample androidx.compose.material3.samples.RippleConfigurationInsetFocusRingSample
  * @param bounded If true, ripples are clipped by the bounds of the target layout. Unbounded ripples
  *   always animate from the target layout center, bounded ripples animate from the touch position.
+ *   This bounding only applies to any opacity-based layers that are drawn, and doesn't affect inset
+ *   focus rings, if in use.
  * @param radius the radius for the ripple. If [Dp.Unspecified] is provided then the size will be
  *   calculated based on the target layout size.
  * @param color the color of the ripple state layers. This color is usually the same color used by
- *   the text or iconography in the component. This color will then have
- *   [RippleDefaults.RippleAlpha] applied to calculate the final color used to draw the ripple. If
- *   [Color.Unspecified] is provided the color used will be [LocalContentColor] instead. If inset
- *   focus rings are enabled, their colors will be provided by the theme or by an overridden
- *   [LocalRippleConfiguration].
- * @param focusRingShape if specified, the shape of the ripple that the focus ring indication will
- *   use, if inset focus ring indications are enabled. If left `null`, a default shape will be used,
- *   which will be a rounded rectangle based on the [radius] if specified, otherwise it will be just
- *   a [RectangleShape]. This [Shape] instance must remain the same during the lifetime of the
- *   ripple in composition. If the [Shape] needs to change, delegate from a single instance to the
- *   changing shape to preserve the instance requirement.
+ *   the text or iconography in the component. This color will then have an alpha applied to
+ *   calculate the final color used to draw the ripple. If [Color.Unspecified] is provided the color
+ *   used will be [LocalContentColor] instead. If inset focus rings are enabled, their colors will
+ *   be provided by the theme or by an overridden [LocalRippleConfiguration].
+ * @param focusRingShape this parameter is only used if inset focus rings are enabled, specifically
+ *   when the [RippleThemeConfiguration.focus] from [LocalRippleThemeConfiguration] is
+ *   [RippleThemeConfiguration.Focus.InsetRing]. When inset focus rings are enabled, the focus ring
+ *   shape will define the shape of the ripple that the focus ring indication will use if specified.
+ *   If left `null`, a default shape will be used, which will be a rounded rectangle based on the
+ *   [radius] if specified, otherwise it will be just a [RectangleShape]. This [Shape] instance must
+ *   remain the same during the lifetime of the ripple in composition. If the [Shape] needs to
+ *   change, delegate from a single instance to the changing shape to preserve the instance
+ *   requirement.
  * @param enablePressIndication if true, this ripple will draw the indication for press
  *   interactions. Set this to `false` to disable drawing any visuals for press interactions in this
  *   ripple.
@@ -96,7 +104,7 @@ import androidx.compose.ui.unit.dp
  *   Set this to `false` to disable drawing any visuals for drag interactions in this ripple.
  */
 @Stable
-fun ripple(
+public fun ripple(
     bounded: Boolean = true,
     radius: Dp = Dp.Unspecified,
     color: Color = Color.Unspecified,
@@ -154,6 +162,8 @@ fun ripple(
  *
  * @param bounded If true, ripples are clipped by the bounds of the target layout. Unbounded ripples
  *   always animate from the target layout center, bounded ripples animate from the touch position.
+ *   This bounding only applies to any opacity-based layers that are drawn, and doesn't affect inset
+ *   focus rings, if in use.
  * @param radius the radius for the ripple. If [Dp.Unspecified] is provided then the size will be
  *   calculated based on the target layout size.
  * @param color the color of the ripple. This color is usually the same color used by the text or
@@ -163,7 +173,7 @@ fun ripple(
  */
 @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
 @Stable
-fun ripple(
+public fun ripple(
     bounded: Boolean = true,
     radius: Dp = Dp.Unspecified,
     color: Color = Color.Unspecified,
@@ -201,25 +211,29 @@ fun ripple(
  * overload is optimized for Ripples that have dynamic colors that change over time, to reduce
  * unnecessary recompositions.
  *
+ * @sample androidx.compose.material3.samples.DynamicColorRippleSample
  * @param color the color of the ripple. This color is usually the same color used by the text or
- *   iconography in the component. This color will then have [RippleDefaults.RippleAlpha] applied to
- *   calculate the final color used to draw the ripple. If you are creating this [ColorProducer]
- *   outside of composition (where it will be automatically remembered), make sure that its instance
- *   is stable (such as by remembering the object that holds it), or remember the returned [ripple]
- *   object to make sure that ripple nodes are not being created each recomposition. If inset focus
- *   rings are enabled, their colors will
- *     * be provided by the theme or by an overridden [LocalRippleConfiguration].
- *
+ *   iconography in the component. This color will then have an alpha applied to calculate the final
+ *   color used to draw the ripple. If you are creating this [ColorProducer] outside of composition
+ *   (where it will be automatically remembered), make sure that its instance is stable (such as by
+ *   remembering the object that holds it), or remember the returned [ripple] object to make sure
+ *   that ripple nodes are not being created each recomposition. If inset focus rings are enabled,
+ *   their colors will be provided by the theme or by an overridden [LocalRippleConfiguration].
  * @param bounded If true, ripples are clipped by the bounds of the target layout. Unbounded ripples
  *   always animate from the target layout center, bounded ripples animate from the touch position.
+ *   This bounding only applies to any opacity-based layers that are drawn, and doesn't affect inset
+ *   focus rings, if in use.
  * @param radius the radius for the ripple. If [Dp.Unspecified] is provided then the size will be
  *   calculated based on the target layout size.
- * @param focusRingShape if specified, the shape of the ripple that the focus ring indication will
- *   use, if inset focus ring indications are enabled. If left `null`, a default shape will be used,
- *   which will be a rounded rectangle based on the [radius] if specified, otherwise it will be just
- *   a [RectangleShape]. This [Shape] instance must remain the same during the lifetime of the
- *   ripple in composition. If the [Shape] needs to change, delegate from a single instance to the
- *   changing shape to preserve the instance requirement.
+ * @param focusRingShape this parameter is only used if inset focus rings are enabled, specifically
+ *   when the [RippleThemeConfiguration.focus] from [LocalRippleThemeConfiguration] is
+ *   [RippleThemeConfiguration.Focus.InsetRing]. When inset focus rings are enabled, the focus ring
+ *   shape will define the shape of the ripple that the focus ring indication will use if specified.
+ *   If left `null`, a default shape will be used, which will be a rounded rectangle based on the
+ *   [radius] if specified, otherwise it will be just a [RectangleShape]. This [Shape] instance must
+ *   remain the same during the lifetime of the ripple in composition. If the [Shape] needs to
+ *   change, delegate from a single instance to the changing shape to preserve the instance
+ *   requirement.
  * @param enablePressIndication if true, this ripple will draw the indication for press
  *   interactions. Set this to `false` to disable drawing any visuals for press interactions in this
  *   ripple.
@@ -233,7 +247,7 @@ fun ripple(
  *   Set this to `false` to disable drawing any visuals for drag interactions in this ripple.
  */
 @Stable
-fun ripple(
+public fun ripple(
     color: ColorProducer,
     bounded: Boolean = true,
     radius: Dp = Dp.Unspecified,
@@ -285,12 +299,14 @@ fun ripple(
  *   object to make sure that ripple nodes are not being created each recomposition.
  * @param bounded If true, ripples are clipped by the bounds of the target layout. Unbounded ripples
  *   always animate from the target layout center, bounded ripples animate from the touch position.
+ *   This bounding only applies to any opacity-based layers that are drawn, and doesn't affect inset
+ *   focus rings, if in use.
  * @param radius the radius for the ripple. If [Dp.Unspecified] is provided then the size will be
  *   calculated based on the target layout size.
  */
 @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
 @Stable
-fun ripple(
+public fun ripple(
     color: ColorProducer,
     bounded: Boolean = true,
     radius: Dp = Dp.Unspecified,
@@ -307,7 +323,7 @@ fun ripple(
     )
 
 /** Default values used by [ripple]. */
-object RippleDefaults {
+public object RippleDefaults {
     /**
      * Represents the default [RippleAlpha] that will be used for a ripple to indicate different
      * states.
@@ -315,7 +331,7 @@ object RippleDefaults {
     @Deprecated(
         "Use other configuration options in RippleThemeConfiguration and RippleConfiguration"
     )
-    val RippleAlpha: RippleAlpha =
+    public val RippleAlpha: RippleAlpha =
         RippleAlpha(
             pressedAlpha = StateTokens.PressedStateLayerOpacity,
             focusedAlpha = StateTokens.FocusStateLayerOpacity,
@@ -323,17 +339,14 @@ object RippleDefaults {
             hoveredAlpha = StateTokens.HoverStateLayerOpacity,
         )
 
-    /**
-     * The default [RippleThemeConfiguration] that corresponds to an opacity based indication style.
-     */
-    val OpacityFocusRippleThemeConfiguration =
-        RippleThemeConfiguration(RippleThemeConfiguration.Focus.Opacity())
+    /** A [RippleThemeConfiguration] that corresponds to an opacity based indication style. */
+    public val OpacityFocusThemeConfiguration: RippleThemeConfiguration =
+        RippleThemeConfiguration(RippleThemeConfiguration.Focus.Opacity)
 
     /**
-     * The default [RippleThemeConfiguration] that corresponds to an inset focus ring based
-     * indication style.
+     * A [RippleThemeConfiguration] that corresponds to an inset focus ring based indication style.
      */
-    val InsetFocusRingRippleThemeConfiguration =
+    public val InsetFocusRingThemeConfiguration: RippleThemeConfiguration =
         RippleThemeConfiguration(
             RippleThemeConfiguration.Focus.InsetRing(
                 outerStrokeInset = 0.dp,
@@ -344,7 +357,7 @@ object RippleDefaults {
         )
 
     /** The default [RippleThemeConfiguration]. */
-    val ThemeConfiguration: RippleThemeConfiguration = OpacityFocusRippleThemeConfiguration
+    public val ThemeConfiguration: RippleThemeConfiguration = OpacityFocusThemeConfiguration
 }
 
 /**
@@ -359,8 +372,10 @@ object RippleDefaults {
  *   including disabling ripples and their indications. This takes next highest priority.
  * - [ripple] parameters allow specifying configuration for individual indication callsites in
  *   components.
+ *
+ * @sample androidx.compose.material3.samples.InsetFocusRingRippleSample
  */
-val LocalRippleThemeConfiguration: ProvidableCompositionLocal<RippleThemeConfiguration> =
+public val LocalRippleThemeConfiguration: ProvidableCompositionLocal<RippleThemeConfiguration> =
     compositionLocalOf {
         RippleDefaults.ThemeConfiguration
     }
@@ -380,32 +395,29 @@ val LocalRippleThemeConfiguration: ProvidableCompositionLocal<RippleThemeConfigu
  *
  * @param focus the themable configuration for the focus indication.
  */
-class RippleThemeConfiguration(val focus: Focus) {
+public class RippleThemeConfiguration(public val focus: Focus) {
     /** The configuration options for the focus indication for [RippleThemeConfiguration]. */
-    abstract class Focus private constructor() {
+    public sealed class Focus private constructor() {
         /** An opacity-based focus indication. */
-        class Opacity : Focus() {
-            override fun equals(other: Any?): Boolean {
-                if (this === other) return true
-                if (other !is Opacity) return false
-
-                return true
-            }
-
-            override fun hashCode(): Int = 1
-        }
+        public object Opacity : Focus()
 
         /**
          * An inset ring focus indication. This is drawn using two strokes, an outer stroke and an
-         * inner stroke.
+         * inner stroke. The inner stroke is drawn first, followed by the outer stroke.
          *
-         * The inner stroke is drawn first, followed by the outer stroke.
+         * As this describes the overall ripple theme, and the inset ring colors are use-site
+         * specific, the colors are configured in [RippleConfiguration.Focus.InsetRing] instead.
+         *
+         * @param outerStrokeInset the amount the outer stroke is inset
+         * @param outerStrokeWidth the width of the outer stroke
+         * @param innerStrokeInset the amount the inner stroke is inset
+         * @param innerStrokeWidth the width of the inner stroke
          */
-        class InsetRing(
-            val outerStrokeInset: Dp,
-            val outerStrokeWidth: Dp,
-            val innerStrokeInset: Dp,
-            val innerStrokeWidth: Dp,
+        public class InsetRing(
+            public val outerStrokeInset: Dp,
+            public val outerStrokeWidth: Dp,
+            public val innerStrokeInset: Dp,
+            public val innerStrokeWidth: Dp,
         ) : Focus() {
             override fun equals(other: Any?): Boolean {
                 if (this === other) return true
@@ -427,6 +439,8 @@ class RippleThemeConfiguration(val focus: Focus) {
                 return result
             }
         }
+
+        private object NonExhaustive : Focus()
     }
 }
 
@@ -449,16 +463,20 @@ class RippleThemeConfiguration(val focus: Focus) {
  *   including disabling ripples and their indications. This takes next highest priority.
  * - [ripple] parameters allow specifying configuration for individual indication callsites in
  *   components.
+ *
+ * @sample androidx.compose.material3.samples.RippleConfigurationOpacitySample
+ * @sample androidx.compose.material3.samples.RippleConfigurationInsetFocusRingSample
  */
-val LocalRippleConfiguration: ProvidableCompositionLocal<RippleConfiguration?> =
+public val LocalRippleConfiguration: ProvidableCompositionLocal<RippleConfiguration?> =
     compositionLocalWithComputedDefaultOf {
         RippleConfiguration()
     }
 
 /**
  * Local per-ripple configuration for the [ripple] appearance, provided using
- * [LocalRippleConfiguration]. In most cases the default values should be used, for custom design
- * system use cases you should instead build your own custom ripple using
+ * [LocalRippleConfiguration]. This is useful to override individual instances of ripples that are
+ * implemented internally to a specific component. In most cases the default values should be used,
+ * as for custom design system use cases you should instead build your own custom ripple using
  * [createRippleModifierNode]. To disable the ripple completely, provide `null` using
  * [LocalRippleConfiguration].
  *
@@ -469,11 +487,31 @@ val LocalRippleConfiguration: ProvidableCompositionLocal<RippleConfiguration?> =
  *   including disabling ripples and their indications. This takes next highest priority.
  * - [ripple] parameters allow specifying configuration for individual indication callsites in
  *   components.
+ *
+ * @property color the color override for the ripple. If [Color.Unspecified], then the default color
+ *   from the theme will be used instead. Note that if the ripple has a color explicitly set with
+ *   the parameter on [ripple], that will always be used instead of this value.
+ * @property focus the focus indication override for this ripple. If null, then the default
+ *   indication style will be used instead. This will only be applied if the style of focus
+ *   indication matches the one set by [LocalRippleThemeConfiguration] (opacity vs inset focus
+ *   ring). If the style doesn't match, then this configuration will be ignored and the default
+ *   indication style will be used instead.
  */
 @Immutable
-class RippleConfiguration
-internal constructor(val color: Color, val focus: Focus?, rippleAlpha: RippleAlpha?) {
-    val rippleAlpha: RippleAlpha? = rippleAlpha
+public class RippleConfiguration
+internal constructor(
+    public val color: Color,
+    public val focus: Focus?,
+    rippleAlpha: RippleAlpha?,
+) {
+    /** The [RippleAlpha] used to configure the opacity levels of the per-ripple configuration. */
+    @Deprecated(
+        "Use other configuration options in RippleThemeConfiguration, RippleConfiguration and ripple. " +
+            "Changing whether focus is displayed by opacity or inset focus rings is changed by providing " +
+            "different values with LocalRippleThemeConfiguration. Disabling individual types of interactions " +
+            "are displayed by a specific ripple can be done with the boolean parameters on ripple."
+    )
+    public val rippleAlpha: RippleAlpha? = rippleAlpha
 
     /**
      * Local per-ripple configuration for [ripple] appearance, provided using
@@ -486,7 +524,7 @@ internal constructor(val color: Color, val focus: Focus?, rippleAlpha: RippleAlp
      *   color from the theme will be used instead. Note that if the ripple has a color explicitly
      *   set with the parameter on [ripple], that will always be used instead of this value.
      */
-    constructor(color: Color = Color.Unspecified) : this(color, null, null)
+    public constructor(color: Color = Color.Unspecified) : this(color, null, null)
 
     /**
      * Local per-ripple configuration for [ripple] appearance, provided using
@@ -503,7 +541,7 @@ internal constructor(val color: Color, val focus: Focus?, rippleAlpha: RippleAlp
      *   color from the theme will be used instead. Note that if the ripple has a color explicitly
      *   set with the parameter on [ripple], that will always be used instead of this value.
      */
-    constructor(
+    public constructor(
         focus: Focus?,
         color: Color = Color.Unspecified,
     ) : this(color = color, focus = focus, rippleAlpha = null)
@@ -521,37 +559,41 @@ internal constructor(val color: Color, val focus: Focus?, rippleAlpha: RippleAlp
      *   alpha will be used instead.
      */
     @Deprecated(
-        "Use other configuration options in RippleThemeConfiguration and RippleConfiguration"
+        "Use other configuration options in RippleThemeConfiguration, RippleConfiguration and ripple. " +
+            "Changing whether focus is displayed by opacity or inset focus rings is changed by providing " +
+            "different values with LocalRippleThemeConfiguration. Disabling individual types of interactions " +
+            "are displayed by a specific ripple can be done with the boolean parameters on ripple."
     )
-    constructor(
+    public constructor(
         color: Color = Color.Unspecified,
         rippleAlpha: RippleAlpha? = null,
     ) : this(color = color, focus = null, rippleAlpha = rippleAlpha)
 
     /** The configuration options for the focus indication for [RippleConfiguration]. */
-    abstract class Focus private constructor() {
-        /** An opacity-based focus indication. */
-        class Opacity : Focus() {
-            override fun equals(other: Any?): Boolean {
-                if (this === other) return true
-                if (other !is Opacity) return false
-
-                return true
-            }
-
-            override fun hashCode(): Int = 1
-        }
+    public sealed class Focus private constructor() {
+        /**
+         * An opacity-based focus indication.
+         *
+         * This describes a user-site specific override for when opacity layer-based focus visuals
+         * are used. Currently, there are no configuration options for opacity.
+         */
+        public object Opacity : Focus()
 
         /**
          * An inset ring focus indication. This is drawn using two strokes, an outer stroke and an
-         * inner stroke.
+         * inner stroke. The inner stroke is drawn first, followed by the outer stroke.
          *
-         * The inner stroke is drawn first, followed by the outer stroke.
+         * As this describes a use-site specific override, this provides coloring overrides for an
+         * inset focus ring being drawn by an individual component. The inset ring dimensions are
+         * controlled by [RippleThemeConfiguration.Focus.InsetRing] instead.
          *
          * @param outerStrokeColor the color of the outer stroke.
          * @param innerStrokeColor the color of the inner stroke.
          */
-        class InsetRing(val outerStrokeColor: Color, val innerStrokeColor: Color) : Focus() {
+        public class InsetRing(
+            public val outerStrokeColor: Color,
+            public val innerStrokeColor: Color,
+        ) : Focus() {
             override fun equals(other: Any?): Boolean {
                 if (this === other) return true
                 if (other !is InsetRing) return false
@@ -568,6 +610,8 @@ internal constructor(val color: Color, val focus: Focus?, rippleAlpha: RippleAlp
                 return result
             }
         }
+
+        private object NonExhaustive : Focus()
     }
 
     override fun equals(other: Any?): Boolean {
@@ -576,7 +620,7 @@ internal constructor(val color: Color, val focus: Focus?, rippleAlpha: RippleAlp
 
         if (color != other.color) return false
         if (focus != other.focus) return false
-        if (rippleAlpha != other.rippleAlpha) return false
+        @Suppress("DEPRECATION") if (rippleAlpha != other.rippleAlpha) return false
 
         return true
     }
@@ -584,11 +628,13 @@ internal constructor(val color: Color, val focus: Focus?, rippleAlpha: RippleAlp
     override fun hashCode(): Int {
         var result = color.hashCode()
         result = 31 * result + (focus?.hashCode() ?: 0)
+        @Suppress("DEPRECATION")
         result = 31 * result + (rippleAlpha?.hashCode() ?: 0)
         return result
     }
 
     override fun toString(): String {
+        @Suppress("DEPRECATION")
         return "RippleConfiguration(color=$color, focus=$focus, rippleAlpha=$rippleAlpha)"
     }
 }
@@ -712,6 +758,159 @@ private class DelegatingThemeAwareRippleNode(
 ) : DelegatingNode(), CompositionLocalConsumerModifierNode, ObserverModifierNode {
     private var rippleNode: DelegatableNode? = null
 
+    // Cache variables for RippleNodeConfig and its component objects
+    private var cachedRippleConfiguration: RippleConfiguration? = null
+    private var cachedRippleThemeConfiguration: RippleThemeConfiguration? = null
+    private var cachedMotionScheme: MotionScheme? = null
+
+    private var cachedRippleNodeConfiguration: RippleNodeConfiguration? = null
+
+    // Calculation lambdas for the RippleConfiguration
+    private val calculateColor = ColorProducer {
+        val userDefinedColor = color()
+        if (userDefinedColor.isSpecified) {
+            userDefinedColor
+        } else {
+            // If this is null, the ripple will be removed, so this should always be non-null in
+            // normal use
+            val rippleConfiguration = currentValueOf(LocalRippleConfiguration)
+            if (rippleConfiguration?.color?.isSpecified == true) {
+                rippleConfiguration.color
+            } else {
+                currentValueOf(LocalContentColor)
+            }
+        }
+    }
+    private val calculateOuterStrokeColor = ColorProducer {
+        val rippleConfiguration = currentValueOf(LocalRippleConfiguration)
+
+        if (rippleConfiguration?.focus is RippleConfiguration.Focus.InsetRing) {
+            rippleConfiguration.focus.outerStrokeColor
+        } else {
+            currentValueOf(MaterialTheme.LocalMaterialTheme).colorScheme.secondary
+        }
+    }
+    private val calculateInnerStrokeColor = ColorProducer {
+        val rippleConfiguration = currentValueOf(LocalRippleConfiguration)
+
+        if (rippleConfiguration?.focus is RippleConfiguration.Focus.InsetRing) {
+            rippleConfiguration.focus.innerStrokeColor
+        } else {
+            currentValueOf(MaterialTheme.LocalMaterialTheme).colorScheme.onSecondary
+        }
+    }
+
+    private val calculateRippleNodeConfiguration = {
+        val motionScheme = currentValueOf(MaterialTheme.LocalMaterialTheme).motionScheme
+        val rippleThemeConfiguration = currentValueOf(LocalRippleThemeConfiguration)
+
+        // If this is null, the ripple will be removed, so this should always be non-null in
+        // normal use
+        val rippleConfiguration = currentValueOf(LocalRippleConfiguration)
+
+        val currentCachedRippleNodeConfiguration = cachedRippleNodeConfiguration
+
+        // Simple caching: we pull out all immutable objects that could change the resulting
+        // ripple node config. If we have a cached ripple node config and none of the immutable
+        // inputs changed, we can just keep using the cached ripple node config.
+        // Otherwise, we recreate the ripple node config and all of its components.
+        // Note that for some inputs (shape, bounded, radius, enabled***Indication) we recreate
+        // the entire node, so we don't have to worry about comparing those inputs.
+        if (
+            currentCachedRippleNodeConfiguration != null &&
+                cachedRippleThemeConfiguration == rippleThemeConfiguration &&
+                cachedRippleConfiguration == rippleConfiguration &&
+                cachedMotionScheme == motionScheme
+        ) {
+            currentCachedRippleNodeConfiguration
+        } else {
+            val pressConfiguration =
+                if (enablePressIndication) {
+                    RippleNodeConfiguration.PressConfiguration.Opacity(
+                        @Suppress("DEPRECATION") rippleConfiguration?.rippleAlpha?.pressedAlpha
+                            ?: StateTokens.PressedStateLayerOpacity
+                    )
+                } else {
+                    RippleNodeConfiguration.PressConfiguration.None
+                }
+
+            val focusConfiguration =
+                if (enableFocusIndication) {
+                    when (val focusTheme = rippleThemeConfiguration.focus) {
+                        is RippleThemeConfiguration.Focus.Opacity -> {
+                            @Suppress("DEPRECATION")
+                            val focusedAlpha =
+                                rippleConfiguration?.rippleAlpha?.focusedAlpha
+                                    ?: StateTokens.FocusStateLayerOpacity
+                            RippleNodeConfiguration.FocusConfiguration.Opacity(focusedAlpha)
+                        }
+                        is RippleThemeConfiguration.Focus.InsetRing -> {
+                            val outerStrokeInset = focusTheme.outerStrokeInset
+                            val outerStrokeWidth = focusTheme.outerStrokeWidth
+                            val innerStrokeInset = focusTheme.innerStrokeInset
+                            val innerStrokeWidth = focusTheme.innerStrokeWidth
+                            val focusingAnimationSpec = motionScheme.fastSpatialSpec<Float>()
+                            val unfocusingAnimationSpec = motionScheme.fastEffectsSpec<Float>()
+
+                            RippleNodeConfiguration.FocusConfiguration.InsetRing(
+                                shape = focusRingShape,
+                                outerStrokeInset = outerStrokeInset,
+                                outerStrokeWidth = outerStrokeWidth,
+                                outerStrokeColor = calculateOuterStrokeColor,
+                                innerStrokeInset = innerStrokeInset,
+                                innerStrokeWidth = innerStrokeWidth,
+                                innerStrokeColor = calculateInnerStrokeColor,
+                                focusingAnimationSpec = focusingAnimationSpec,
+                                unfocusingAnimationSpec = unfocusingAnimationSpec,
+                            )
+                        }
+                        else -> error("Unknown focus ripple theme configuration")
+                    }
+                } else {
+                    RippleNodeConfiguration.FocusConfiguration.None
+                }
+
+            val hoverConfiguration =
+                if (enableHoverIndication) {
+                    RippleNodeConfiguration.HoverConfiguration.Opacity(
+                        @Suppress("DEPRECATION") rippleConfiguration?.rippleAlpha?.hoveredAlpha
+                            ?: StateTokens.HoverStateLayerOpacity
+                    )
+                } else {
+                    RippleNodeConfiguration.HoverConfiguration.None
+                }
+
+            val dragConfiguration =
+                if (enableDragIndication) {
+                    RippleNodeConfiguration.DragConfiguration.Opacity(
+                        @Suppress("DEPRECATION") rippleConfiguration?.rippleAlpha?.draggedAlpha
+                            ?: StateTokens.DraggedStateLayerOpacity
+                    )
+                } else {
+                    RippleNodeConfiguration.DragConfiguration.None
+                }
+
+            val newConfig =
+                RippleNodeConfiguration(
+                    isBounded = bounded,
+                    radius = radius,
+                    color = calculateColor,
+                    pressConfiguration = pressConfiguration,
+                    focusConfiguration = focusConfiguration,
+                    hoverConfiguration = hoverConfiguration,
+                    dragConfiguration = dragConfiguration,
+                )
+
+            // Update the caches
+            cachedRippleNodeConfiguration = newConfig
+            cachedRippleThemeConfiguration = rippleThemeConfiguration
+            cachedRippleConfiguration = rippleConfiguration
+            cachedMotionScheme = motionScheme
+
+            newConfig
+        }
+    }
+
     override fun onAttach() {
         updateConfiguration()
     }
@@ -737,120 +936,11 @@ private class DelegatingThemeAwareRippleNode(
     }
 
     private fun attachNewRipple() {
-        val calculateColor = ColorProducer {
-            val userDefinedColor = color()
-            if (userDefinedColor.isSpecified) {
-                userDefinedColor
-            } else {
-                // If this is null, the ripple will be removed, so this should always be non-null in
-                // normal use
-                val rippleConfiguration = currentValueOf(LocalRippleConfiguration)
-                if (rippleConfiguration?.color?.isSpecified == true) {
-                    rippleConfiguration.color
-                } else {
-                    currentValueOf(LocalContentColor)
-                }
-            }
-        }
-        val calculateOuterStrokeColor = ColorProducer {
-            val rippleConfiguration = currentValueOf(LocalRippleConfiguration)
-
-            if (rippleConfiguration?.focus is RippleConfiguration.Focus.InsetRing) {
-                rippleConfiguration.focus.outerStrokeColor
-            } else {
-                currentValueOf(MaterialTheme.LocalMaterialTheme).colorScheme.secondary
-            }
-        }
-        val calculateInnerStrokeColor = ColorProducer {
-            val rippleConfiguration = currentValueOf(LocalRippleConfiguration)
-
-            if (rippleConfiguration?.focus is RippleConfiguration.Focus.InsetRing) {
-                rippleConfiguration.focus.innerStrokeColor
-            } else {
-                currentValueOf(MaterialTheme.LocalMaterialTheme).colorScheme.onSecondary
-            }
-        }
-
-        val calculateRippleNodeConfig = {
-            val motionScheme = currentValueOf(MaterialTheme.LocalMaterialTheme).motionScheme
-            val rippleThemeConfiguration = currentValueOf(LocalRippleThemeConfiguration)
-
-            // If this is null, the ripple will be removed, so this should always be non-null in
-            // normal use
-            val rippleConfiguration = currentValueOf(LocalRippleConfiguration)
-
-            RippleNodeConfig(
-                press =
-                    if (enablePressIndication) {
-                        @Suppress("DEPRECATION")
-                        RippleNodeConfig.Press.Opacity(
-                            rippleConfiguration?.rippleAlpha?.pressedAlpha
-                                ?: StateTokens.PressedStateLayerOpacity
-                        )
-                    } else {
-                        RippleNodeConfig.Press.None
-                    },
-                focus =
-                    if (enableFocusIndication) {
-                        when (rippleThemeConfiguration.focus) {
-                            is RippleThemeConfiguration.Focus.Opacity ->
-                                @Suppress("DEPRECATION")
-                                RippleNodeConfig.Focus.Opacity(
-                                    rippleConfiguration?.rippleAlpha?.focusedAlpha
-                                        ?: StateTokens.FocusStateLayerOpacity
-                                )
-                            is RippleThemeConfiguration.Focus.InsetRing ->
-                                RippleNodeConfig.Focus.InsetRing(
-                                    shape = focusRingShape,
-                                    outerStrokeInset =
-                                        rippleThemeConfiguration.focus.outerStrokeInset,
-                                    outerStrokeWidth =
-                                        rippleThemeConfiguration.focus.outerStrokeWidth,
-                                    outerStrokeColor = calculateOuterStrokeColor,
-                                    innerStrokeInset =
-                                        rippleThemeConfiguration.focus.innerStrokeInset,
-                                    innerStrokeWidth =
-                                        rippleThemeConfiguration.focus.innerStrokeWidth,
-                                    innerStrokeColor = calculateInnerStrokeColor,
-                                    focusingAnimationSpec = motionScheme.fastSpatialSpec(),
-                                    unfocusingAnimationSpec = motionScheme.fastEffectsSpec(),
-                                )
-                            else -> error("Unknown focus ripple theme configuration")
-                        }
-                    } else {
-                        RippleNodeConfig.Focus.None
-                    },
-                hover =
-                    if (enableHoverIndication) {
-                        @Suppress("DEPRECATION")
-                        RippleNodeConfig.Hover.Opacity(
-                            rippleConfiguration?.rippleAlpha?.hoveredAlpha
-                                ?: StateTokens.HoverStateLayerOpacity
-                        )
-                    } else {
-                        RippleNodeConfig.Hover.None
-                    },
-                drag =
-                    if (enableDragIndication) {
-                        @Suppress("DEPRECATION")
-                        RippleNodeConfig.Drag.Opacity(
-                            rippleConfiguration?.rippleAlpha?.draggedAlpha
-                                ?: StateTokens.DraggedStateLayerOpacity
-                        )
-                    } else {
-                        RippleNodeConfig.Drag.None
-                    },
-            )
-        }
-
         rippleNode =
             delegate(
                 createRippleModifierNode(
                     interactionSource = interactionSource,
-                    bounded = bounded,
-                    radius = radius,
-                    color = calculateColor,
-                    rippleNodeConfig = calculateRippleNodeConfig,
+                    rippleNodeConfiguration = calculateRippleNodeConfiguration,
                 )
             )
     }

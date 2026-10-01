@@ -126,9 +126,9 @@ object DelegatingTestRegistrar {
     private fun K2JVMCompilerArguments.addDelegatingTestRegistrars() {
         pluginClasspaths =
             buildList {
-                    pluginClasspaths?.let { addAll(it) }
-                    add(k2ResourcePathForSelfClassLoader)
-                }
+                addAll(pluginClasspaths)
+                add(k2ResourcePathForSelfClassLoader)
+            }
                 .toTypedArray()
     }
 }

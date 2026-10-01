@@ -27,6 +27,7 @@ import android.util.Size
 import android.util.SparseArray
 import androidx.annotation.OpenForTesting
 import androidx.annotation.RequiresExtension
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfDocument.Companion.LINEARIZATION_STATUS_UNKNOWN
 import androidx.pdf.PdfFeature
@@ -79,6 +80,7 @@ internal open class FakePdfDocument(
         return listOf()
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     override suspend fun getTopPageObjectAtPosition(pageNum: Int, point: PointF): PdfObject? {
         return null
     }
@@ -149,7 +151,14 @@ internal open class FakePdfDocument(
         query: String,
         pageRange: IntRange,
     ): SparseArray<List<PageMatchBounds>> {
-        return searchResults
+        val filtered = SparseArray<List<PageMatchBounds>>()
+        for (page in pageRange) {
+            val results = searchResults.get(page)
+            if (results != null) {
+                filtered.put(page, results)
+            }
+        }
+        return filtered
     }
 
     override suspend fun getPageInfos(pageRange: IntRange): List<PdfDocument.PageInfo> {

@@ -17,6 +17,7 @@
 package androidx.xr.glimmer
 
 import android.os.Build
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -29,13 +30,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertIsEqualTo
-import androidx.compose.testutils.assertShape
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.ComposeUiTestConfig
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
@@ -57,12 +63,13 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.matchers.MSSIMMatcher
+import androidx.xr.glimmer.internal.color.withTone
+import androidx.xr.glimmer.testutils.assertGlimmerSurfaceShape
 import androidx.xr.glimmer.testutils.captureToImage
 import androidx.xr.glimmer.testutils.createGlimmerRule
 import androidx.xr.glimmer.testutils.toIntArray
 import com.google.common.truth.Truth.assertThat
 import kotlin.properties.Delegates
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -74,7 +81,8 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
 class ButtonTest {
 
-    @get:Rule(0) val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule(0)
+    val rule = createComposeRule(config = ComposeUiTestConfig(inputMode = InputMode.Keyboard))
     @get:Rule(1) val glimmerRule = createGlimmerRule()
 
     @Test
@@ -155,21 +163,19 @@ class ButtonTest {
             colors = Colors(background = backgroundColor, surface = surfaceColor),
         ) {
             expectedShape = GlimmerTheme.shapes.large
-            Button(onClick = {}, modifier = Modifier.testTag("button"), border = null) {
+            Button(onClick = {}, modifier = Modifier.testTag("button")) {
                 Box(Modifier.size(100.dp, 100.dp))
             }
         }
 
-        rule
-            .onNodeWithTag("button")
-            .captureToImage()
-            .assertShape(
-                density = rule.density,
-                shape = expectedShape,
-                shapeColor = surfaceColor,
-                backgroundColor = backgroundColor,
-                antiAliasingGap = with(rule.density) { 1.dp.toPx() },
-            )
+        val image = rule.onNodeWithTag("button").captureToImage()
+        image.assertGlimmerSurfaceShape(
+            density = rule.density,
+            shape = expectedShape,
+            backgroundColor = backgroundColor,
+        )
+        val centerColor = image.toPixelMap().run { get(width / 2, height / 2) }
+        assertThat(centerColor).isEqualTo(surfaceColor)
     }
 
     @Test
@@ -479,7 +485,8 @@ class ButtonTest {
             Button(
                 onClick = {},
                 contentPadding = PaddingValues(),
-                modifier = Modifier.requiredWidthIn(20.dp).requiredHeightIn(15.dp).testTag("button"),
+                modifier =
+                    Modifier.requiredWidthIn(20.dp).requiredHeightIn(15.dp).testTag("button"),
             ) {
                 Spacer(Modifier.requiredSize(10.dp))
             }
@@ -500,7 +507,8 @@ class ButtonTest {
                 onClick = {},
                 buttonSize = ButtonSize.Large,
                 contentPadding = PaddingValues(),
-                modifier = Modifier.requiredWidthIn(20.dp).requiredHeightIn(15.dp).testTag("button"),
+                modifier =
+                    Modifier.requiredWidthIn(20.dp).requiredHeightIn(15.dp).testTag("button"),
             ) {
                 Spacer(Modifier.requiredSize(10.dp))
             }
@@ -511,6 +519,115 @@ class ButtonTest {
                 width.assertIsEqualTo(20.dp, "width")
                 height.assertIsEqualTo(15.dp, "height")
             }
+        }
+    }
+
+    @Test
+    fun button_focusedColor_usedWhenFocused() {
+        rule.mainClock.autoAdvance = false
+
+        val focusRequester = FocusRequester()
+        val interactionSource = MutableInteractionSource()
+        val buttonColor = Color.Red
+        val focusedButtonColor = Color.Yellow
+
+        rule.setGlimmerThemeContent {
+            Button(
+                onClick = {},
+                color = buttonColor,
+                focusedColor = focusedButtonColor,
+                interactionSource = interactionSource,
+                modifier = Modifier.focusRequester(focusRequester).testTag("button"),
+            ) {
+                Text("Send")
+            }
+        }
+
+        // Center of button should be unfocused button color
+        rule.onNodeWithTag("button").captureToImage().toPixelMap().run {
+            assertThat(get(width / 2, height / 2)).isEqualTo(buttonColor)
+        }
+
+        rule.runOnIdle { focusRequester.requestFocus() }
+
+        // Advance past enter animation
+        rule.mainClock.advanceTimeBy(1000)
+
+        rule.onNodeWithTag("button").captureToImage().toPixelMap().run {
+            assertThat(get(width / 2, height / 2)).isEqualTo(focusedButtonColor)
+        }
+    }
+
+    @Test
+    fun button_focusedColor_resolvesFocusedContentColor() {
+        val focusRequester = FocusRequester()
+        val interactionSource = MutableInteractionSource()
+        val color = Color.Black
+        val focusedColor = Color.White
+
+        var node: DelegatableNode? = null
+
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
+            Button(
+                onClick = {},
+                color = color,
+                focusedColor = focusedColor,
+                interactionSource = interactionSource,
+                modifier = Modifier.focusRequester(focusRequester).testTag("button"),
+            ) {
+                Box(Modifier.then(DelegatableNodeProviderElement { node = it })) {
+                    Text("Send")
+                }
+            }
+        }
+
+        // Initial background is black, so calculated content color should be white
+        rule.runOnIdle { assertThat(node!!.currentContentColor()).isEqualTo(Color.White) }
+
+        rule.runOnIdle { focusRequester.requestFocus() }
+        // Focused background is white, so calculated content color should be black
+        rule.runOnIdle { assertThat(node!!.currentContentColor()).isEqualTo(Color.Black) }
+    }
+
+    @Test
+    fun button_customFocusedContentColor_appliedWhenFocused() {
+        val focusRequester = FocusRequester()
+        val interactionSource = MutableInteractionSource()
+        val customFocusedContentColor = Color.Magenta
+        var node: DelegatableNode? = null
+
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
+            Button(
+                onClick = {},
+                focusedContentColor = customFocusedContentColor,
+                interactionSource = interactionSource,
+                modifier = Modifier.focusRequester(focusRequester).testTag("button"),
+            ) {
+                Box(Modifier.then(DelegatableNodeProviderElement { node = it })) {
+                    Text("Send")
+                }
+            }
+        }
+
+        rule.runOnIdle { assertThat(node!!.currentContentColor()).isEqualTo(Color.White) }
+
+        rule.runOnIdle { focusRequester.requestFocus() }
+        rule.runOnIdle {
+            assertThat(node!!.currentContentColor()).isEqualTo(customFocusedContentColor)
+        }
+    }
+
+    @Test
+    fun buttonDefaults_focusedColor() {
+        rule.setGlimmerThemeContent {
+            assertThat(ButtonDefaults.focusedColor())
+                .isEqualTo(ButtonDefaults.focusedColor(GlimmerTheme.colors.surface))
+            assertThat(ButtonDefaults.focusedColor())
+                .isEqualTo(GlimmerTheme.colors.surface.withTone(newTone = 34f))
+
+            val customColor = Color.Blue
+            assertThat(ButtonDefaults.focusedColor(customColor))
+                .isEqualTo(customColor.withTone(newTone = 34f))
         }
     }
 }

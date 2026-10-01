@@ -38,7 +38,6 @@ import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.MusicOff
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Label
 import androidx.compose.material3.MaterialTheme
@@ -80,27 +79,27 @@ import kotlinx.coroutines.launch
 @Sampled
 @Composable
 fun SliderSample() {
-    var sliderPosition by rememberSaveable { mutableStateOf(0f) }
+    val sliderState = rememberSliderState()
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-        Text(text = "%.2f".format(sliderPosition))
-        Slider(value = sliderPosition, onValueChange = { sliderPosition = it })
+        Text(text = "%.2f".format(sliderState.value))
+        Slider(state = sliderState, onValueChange = { sliderState.value = it })
     }
 }
 
 @Preview
 @Composable
 fun LegacySliderSample() {
-    var sliderPosition by rememberSaveable { mutableStateOf(0f) }
+    val sliderState = rememberSliderState()
     val interactionSource = remember { MutableInteractionSource() }
     val trackHeight = 4.dp
     val thumbSize = DpSize(20.dp, 20.dp)
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-        Text(text = "%.2f".format(sliderPosition))
+        Text(text = "%.2f".format(sliderState.value))
         Slider(
+            state = sliderState,
+            onValueChange = { sliderState.value = it },
             interactionSource = interactionSource,
             modifier = Modifier.requiredSizeIn(minWidth = thumbSize.width, minHeight = trackHeight),
-            value = sliderPosition,
-            onValueChange = { sliderPosition = it },
             thumb = {
                 val modifier =
                     Modifier.size(thumbSize)
@@ -134,15 +133,18 @@ fun StepsSliderSample() {
             // Only allow multiples of 10. Excluding the endpoints of `valueRange`,
             // there are 9 steps (10, 20, ..., 90).
             steps = 9,
-            valueRange = 0f..100f,
+            trackRange = 0f..100f,
+        )
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+        Text(text = "%.2f".format(sliderState.value))
+        Slider(
+            state = sliderState,
+            onValueChange = { sliderState.value = it },
             onValueChangeFinished = {
                 // launch some business logic update with the state you hold
                 // viewModel.updateSelectedSliderValue(sliderPosition)
             },
         )
-    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-        Text(text = "%.2f".format(sliderState.value))
-        Slider(state = sliderState)
     }
 }
 
@@ -151,13 +153,12 @@ fun StepsSliderSample() {
 @Sampled
 @Composable
 fun SliderWithCustomThumbSample() {
-    var sliderPosition by rememberSaveable { mutableStateOf(0f) }
+    val sliderState = rememberSliderState(trackRange = 0f..100f)
     val interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         Slider(
-            value = sliderPosition,
-            onValueChange = { sliderPosition = it },
-            valueRange = 0f..100f,
+            state = sliderState,
+            onValueChange = { sliderState.value = it },
             interactionSource = interactionSource,
             onValueChangeFinished = {
                 // launch some business logic update with the state you hold
@@ -167,7 +168,7 @@ fun SliderWithCustomThumbSample() {
                 Label(
                     label = {
                         PlainTooltip(modifier = Modifier.sizeIn(45.dp, 25.dp).wrapContentWidth()) {
-                            Text("%.2f".format(sliderPosition))
+                            Text("%.2f".format(sliderState.value))
                         }
                     },
                     interactionSource = interactionSource,
@@ -188,21 +189,19 @@ fun SliderWithCustomThumbSample() {
 @Sampled
 @Composable
 fun SliderWithCustomTrackAndThumbSample() {
-    val sliderState =
-        rememberSliderState(
-            valueRange = 0f..100f,
-            onValueChangeFinished = {
-                // launch some business logic update with the state you hold
-                // viewModel.updateSelectedSliderValue(sliderPosition)
-            },
-        )
+    val sliderState = rememberSliderState(trackRange = 0f..100f)
     val interactionSource = remember { MutableInteractionSource() }
     val colors = SliderDefaults.colors(thumbColor = Color.Red, activeTrackColor = Color.Red)
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         Text(text = "%.2f".format(sliderState.value))
         Slider(
             state = sliderState,
+            onValueChange = { sliderState.value = it },
             interactionSource = interactionSource,
+            onValueChangeFinished = {
+                // launch some business logic update with the state you hold
+                // viewModel.updateSelectedSliderValue(sliderPosition)
+            },
             thumb = {
                 SliderDefaults.Thumb(interactionSource = interactionSource, colors = colors)
             },
@@ -211,19 +210,11 @@ fun SliderWithCustomTrackAndThumbSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
 fun SliderWithTrackIconsSample() {
-    val sliderState =
-        rememberSliderState(
-            valueRange = 0f..100f,
-            onValueChangeFinished = {
-                // launch some business logic update with the state you hold
-                // viewModel.updateSelectedSliderValue(sliderPosition)
-            },
-        )
+    val sliderState = rememberSliderState(trackRange = 0f..100f)
     val interactionSource = remember { MutableInteractionSource() }
     val startIcon = rememberVectorPainter(Icons.Filled.MusicNote)
     val endIcon = rememberVectorPainter(Icons.Filled.MusicOff)
@@ -231,7 +222,12 @@ fun SliderWithTrackIconsSample() {
         Text(text = "%.2f".format(sliderState.value))
         Slider(
             state = sliderState,
+            onValueChange = { sliderState.value = it },
             interactionSource = interactionSource,
+            onValueChangeFinished = {
+                // launch some business logic update with the state you hold
+                // viewModel.updateSelectedSliderValue(sliderPosition)
+            },
             track = {
                 val iconSize = DpSize(20.dp, 20.dp)
                 val iconPadding = 10.dp
@@ -294,32 +290,28 @@ fun SliderWithTrackIconsSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
 fun CenteredSliderSample() {
-    val sliderState =
-        rememberSliderState(
-            valueRange = -50f..50f,
-            onValueChangeFinished = {
-                // launch some business logic update with the state you hold
-                // viewModel.updateSelectedSliderValue(sliderPosition)
-            },
-        )
+    val sliderState = rememberSliderState(trackRange = -50f..50f)
     val interactionSource = remember { MutableInteractionSource() }
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         Text(text = "%.2f".format(sliderState.value))
         Slider(
             state = sliderState,
+            onValueChange = { sliderState.value = it },
             interactionSource = interactionSource,
+            onValueChangeFinished = {
+                // launch some business logic update with the state you hold
+                // viewModel.updateSelectedSliderValue(sliderPosition)
+            },
             thumb = { SliderDefaults.Thumb(interactionSource = interactionSource) },
             track = { SliderDefaults.CenteredTrack(sliderState = sliderState) },
         )
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -330,32 +322,12 @@ fun VerticalSliderSample() {
             // Only allow multiples of 10. Excluding the endpoints of `valueRange`,
             // there are 9 steps (10, 20, ..., 90).
             steps = 9,
-            valueRange = 0f..100f,
+            trackRange = 0f..100f,
         )
     val snapAnimationSpec = MaterialTheme.motionScheme.fastEffectsSpec<Float>()
     var currentValue by rememberSaveable { mutableFloatStateOf(sliderState.value) }
     var animateJob: Job? by remember { mutableStateOf(null) }
     sliderState.shouldAutoSnap = false
-    sliderState.onValueChange = { newValue ->
-        currentValue = newValue
-        // only update the sliderState instantly if dragging
-        if (sliderState.isDragging) {
-            animateJob?.cancel()
-            sliderState.value = newValue
-        }
-    }
-    sliderState.onValueChangeFinished = {
-        animateJob =
-            coroutineScope.launch {
-                animate(
-                    initialValue = sliderState.value,
-                    targetValue = currentValue,
-                    animationSpec = snapAnimationSpec,
-                ) { value, _ ->
-                    sliderState.value = value
-                }
-            }
-    }
     val interactionSource = remember { MutableInteractionSource() }
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         Text(
@@ -370,9 +342,28 @@ fun VerticalSliderSample() {
                     .align(Alignment.CenterHorizontally)
                     .progressSemantics(
                         currentValue,
-                        sliderState.valueRange.start..sliderState.valueRange.endInclusive,
+                        sliderState.trackRange.start..sliderState.trackRange.endInclusive,
                         sliderState.steps,
                     ),
+            onValueChange = { newValue ->
+                currentValue = newValue
+                // only update the sliderState instantly if dragging
+                if (sliderState.isDragging) {
+                    animateJob?.cancel()
+                    sliderState.value = newValue
+                }
+            },
+            onValueChangeFinished = {
+                animateJob = coroutineScope.launch {
+                    animate(
+                        initialValue = sliderState.value,
+                        targetValue = currentValue,
+                        animationSpec = snapAnimationSpec,
+                    ) { value, _ ->
+                        sliderState.value = value
+                    }
+                }
+            },
             interactionSource = interactionSource,
             track = {
                 SliderDefaults.Track(
@@ -381,12 +372,11 @@ fun VerticalSliderSample() {
                     trackCornerSize = 12.dp,
                 )
             },
-            reverseDirection = true,
+            topToBottom = false,
         )
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -397,32 +387,12 @@ fun VerticalCenteredSliderSample() {
             // Only allow multiples of 10. Excluding the endpoints of `valueRange`,
             // there are 9 steps (10, 20, ..., 90).
             steps = 9,
-            valueRange = -50f..50f,
+            trackRange = -50f..50f,
         )
     val snapAnimationSpec = MaterialTheme.motionScheme.fastEffectsSpec<Float>()
     var currentValue by rememberSaveable { mutableFloatStateOf(sliderState.value) }
     var animateJob: Job? by remember { mutableStateOf(null) }
     sliderState.shouldAutoSnap = false
-    sliderState.onValueChange = { newValue ->
-        currentValue = newValue
-        // only update the sliderState instantly if dragging
-        if (sliderState.isDragging) {
-            animateJob?.cancel()
-            sliderState.value = newValue
-        }
-    }
-    sliderState.onValueChangeFinished = {
-        animateJob =
-            coroutineScope.launch {
-                animate(
-                    initialValue = sliderState.value,
-                    targetValue = currentValue,
-                    animationSpec = snapAnimationSpec,
-                ) { value, _ ->
-                    sliderState.value = value
-                }
-            }
-    }
     val interactionSource = remember { MutableInteractionSource() }
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         Text(
@@ -437,12 +407,31 @@ fun VerticalCenteredSliderSample() {
                     .align(Alignment.CenterHorizontally)
                     .progressSemantics(
                         currentValue,
-                        sliderState.valueRange.start..sliderState.valueRange.endInclusive,
+                        sliderState.trackRange.start..sliderState.trackRange.endInclusive,
                         sliderState.steps,
                     ),
+            onValueChange = { newValue ->
+                currentValue = newValue
+                // only update the sliderState instantly if dragging
+                if (sliderState.isDragging) {
+                    animateJob?.cancel()
+                    sliderState.value = newValue
+                }
+            },
+            onValueChangeFinished = {
+                animateJob = coroutineScope.launch {
+                    animate(
+                        initialValue = sliderState.value,
+                        targetValue = currentValue,
+                        animationSpec = snapAnimationSpec,
+                    ) { value, _ ->
+                        sliderState.value = value
+                    }
+                }
+            },
             interactionSource = interactionSource,
             track = { SliderDefaults.CenteredTrack(sliderState = sliderState) },
-            reverseDirection = true,
+            topToBottom = false,
         )
     }
 }
@@ -451,49 +440,49 @@ fun VerticalCenteredSliderSample() {
 @Sampled
 @Composable
 fun RangeSliderSample() {
-    val rangeSliderState =
-        rememberRangeSliderState(
-            0f,
-            100f,
-            valueRange = 0f..100f,
+    val rangeSliderState = rememberRangeSliderState(0f, 100f, trackRange = 0f..100f)
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+        val rangeStart = "%.2f".format(rangeSliderState.startValue)
+        val rangeEnd = "%.2f".format(rangeSliderState.endValue)
+        Text(text = "$rangeStart .. $rangeEnd")
+        RangeSlider(
+            state = rangeSliderState,
+            onValueChange = {
+                rangeSliderState.startValue = it.start
+                rangeSliderState.endValue = it.endInclusive
+            },
             onValueChangeFinished = {
                 // launch some business logic update with the state you hold
                 // viewModel.updateSelectedSliderValue(sliderPosition)
             },
         )
-    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-        val rangeStart = "%.2f".format(rangeSliderState.activeRangeStart)
-        val rangeEnd = "%.2f".format(rangeSliderState.activeRangeEnd)
-        Text(text = "$rangeStart .. $rangeEnd")
-        RangeSlider(state = rangeSliderState)
     }
 }
 
 @Preview
 @Composable
 fun LegacyRangeSliderSample() {
-    val rangeSliderState =
-        rememberRangeSliderState(
-            0f,
-            100f,
-            valueRange = 0f..100f,
-            onValueChangeFinished = {
-                // launch some business logic update with the state you hold
-                // viewModel.updateSelectedSliderValue(sliderPosition)
-            },
-        )
+    val rangeSliderState = rememberRangeSliderState(0f, 100f, trackRange = 0f..100f)
     val startInteractionSource = remember { MutableInteractionSource() }
     val endInteractionSource = remember { MutableInteractionSource() }
     val trackHeight = 4.dp
     val thumbSize = DpSize(20.dp, 20.dp)
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-        val rangeStart = "%.2f".format(rangeSliderState.activeRangeStart)
-        val rangeEnd = "%.2f".format(rangeSliderState.activeRangeEnd)
+        val rangeStart = "%.2f".format(rangeSliderState.startValue)
+        val rangeEnd = "%.2f".format(rangeSliderState.endValue)
         Text(text = "$rangeStart .. $rangeEnd")
         RangeSlider(
             state = rangeSliderState,
-            startInteractionSource = startInteractionSource,
-            endInteractionSource = endInteractionSource,
+            onValueChange = {
+                rangeSliderState.startValue = it.start
+                rangeSliderState.endValue = it.endInclusive
+            },
+            startThumbInteractionSource = startInteractionSource,
+            endThumbInteractionSource = endInteractionSource,
+            onValueChangeFinished = {
+                // launch some business logic update with the state you hold
+                // viewModel.updateSelectedSliderValue(sliderPosition)
+            },
             modifier = Modifier.requiredSizeIn(minWidth = thumbSize.width, minHeight = trackHeight),
             startThumb = {
                 val modifier =
@@ -540,20 +529,26 @@ fun StepRangeSliderSample() {
         rememberRangeSliderState(
             0f,
             100f,
-            valueRange = 0f..100f,
-            onValueChangeFinished = {
-                // launch some business logic update with the state you hold
-                // viewModel.updateSelectedSliderValue(sliderPosition)
-            },
+            trackRange = 0f..100f,
             // Only allow multiples of 10. Excluding the endpoints of `valueRange`,
             // there are 9 steps (10, 20, ..., 90).
             steps = 9,
         )
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-        val rangeStart = rangeSliderState.activeRangeStart.roundToInt()
-        val rangeEnd = rangeSliderState.activeRangeEnd.roundToInt()
+        val rangeStart = rangeSliderState.startValue.roundToInt()
+        val rangeEnd = rangeSliderState.endValue.roundToInt()
         Text(text = "$rangeStart .. $rangeEnd")
-        RangeSlider(state = rangeSliderState)
+        RangeSlider(
+            state = rangeSliderState,
+            onValueChange = {
+                rangeSliderState.startValue = it.start
+                rangeSliderState.endValue = it.endInclusive
+            },
+            onValueChangeFinished = {
+                // launch some business logic update with the state you hold
+                // viewModel.updateSelectedSliderValue(sliderPosition)
+            },
+        )
     }
 }
 
@@ -562,16 +557,7 @@ fun StepRangeSliderSample() {
 @Sampled
 @Composable
 fun RangeSliderWithCustomComponents() {
-    val rangeSliderState =
-        rememberRangeSliderState(
-            0f,
-            100f,
-            valueRange = 0f..100f,
-            onValueChangeFinished = {
-                // launch some business logic update with the state you hold
-                // viewModel.updateSelectedSliderValue(sliderPosition)
-            },
-        )
+    val rangeSliderState = rememberRangeSliderState(0f, 100f, trackRange = 0f..100f)
     val startInteractionSource = remember { MutableInteractionSource() }
     val endInteractionSource = remember { MutableInteractionSource() }
     val startThumbAndTrackColors =
@@ -580,13 +566,21 @@ fun RangeSliderWithCustomComponents() {
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         RangeSlider(
             state = rangeSliderState,
-            startInteractionSource = startInteractionSource,
-            endInteractionSource = endInteractionSource,
+            onValueChange = {
+                rangeSliderState.startValue = it.start
+                rangeSliderState.endValue = it.endInclusive
+            },
+            startThumbInteractionSource = startInteractionSource,
+            endThumbInteractionSource = endInteractionSource,
+            onValueChangeFinished = {
+                // launch some business logic update with the state you hold
+                // viewModel.updateSelectedSliderValue(sliderPosition)
+            },
             startThumb = {
                 Label(
                     label = {
                         PlainTooltip(modifier = Modifier.sizeIn(45.dp, 25.dp).wrapContentWidth()) {
-                            Text("%.2f".format(rangeSliderState.activeRangeStart))
+                            Text("%.2f".format(rangeSliderState.startValue))
                         }
                     },
                     interactionSource = startInteractionSource,
@@ -603,7 +597,7 @@ fun RangeSliderWithCustomComponents() {
                         PlainTooltip(
                             modifier = Modifier.requiredSize(45.dp, 25.dp).wrapContentWidth()
                         ) {
-                            Text("%.2f".format(rangeSliderState.activeRangeEnd))
+                            Text("%.2f".format(rangeSliderState.endValue))
                         }
                     },
                     interactionSource = endInteractionSource,

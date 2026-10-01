@@ -25,12 +25,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.ColorScheme
-import androidx.compose.material3.ExperimentalMaterial3ComponentOverrideApi
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarOverride
-import androidx.compose.material3.NavigationBarOverrideScope
 import androidx.compose.material3.Surface
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
@@ -41,11 +38,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.xr.compose.material3.XrNavigationBarOverride.NavigationBar
+import androidx.xr.compose.material3.XrNavigationBarTokens.OrbiterOffset
 import androidx.xr.compose.material3.tokens.XrTokens
-import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
-import androidx.xr.compose.spatial.OrbiterOffsetType
+import androidx.xr.compose.spatial.OrbiterDefaults
+import androidx.xr.compose.spatial.OrbiterPosition
+import androidx.xr.compose.spatial.OrbiterPosition.EdgeAlignment
+import androidx.xr.compose.unit.DpVolumeOffset
 
 /**
  * <a href="https://m3.material.io/components/navigation-bar/overview" class="external"
@@ -56,11 +55,11 @@ import androidx.xr.compose.spatial.OrbiterOffsetType
  * Navigation bars offer a persistent and convenient way to switch between primary destinations in
  * an app.
  *
- * [NavigationBar] should contain three to five [NavigationBarItem]s, each representing a singular
- * destination.
+ * [SpatialNavigationBar] should contain three to five [NavigationBarItem]s, each representing a
+ * singular destination.
  *
  * See [NavigationBarItem] for configuration specific to each item, and not the overall
- * [NavigationBar] component.
+ * [SpatialNavigationBar] component.
  *
  * @param modifier the [Modifier] to be applied to this navigation bar
  * @param containerColor the color used for the background of this navigation bar. Use
@@ -77,14 +76,14 @@ import androidx.xr.compose.spatial.OrbiterOffsetType
 // TODO(brandonjiang): Add a @sample tag and create a new sample project for XR.
 @ExperimentalMaterial3XrApi
 @Composable
-public fun NavigationBar(
+public fun SpatialNavigationBar(
     modifier: Modifier = Modifier,
     containerColor: Color = NavigationBarDefaults.containerColor,
     contentColor: Color = contentColorFor(containerColor),
     tonalElevation: Dp = NavigationBarDefaults.Elevation,
     content: @Composable RowScope.() -> Unit,
 ) {
-    HorizontalOrbiter(LocalNavigationBarOrbiterProperties.current) {
+    HorizontalOrbiter(LocalSpatialNavigationBarOrbiterProperties.current) {
         Surface(
             color = containerColor,
             contentColor = contentColor,
@@ -114,40 +113,30 @@ internal object XrNavigationBarTokens {
     val ContainerHeight = 80.0.dp
 }
 
-/** [NavigationBarOverride] that uses the XR-specific [NavigationBar]. */
-@ExperimentalMaterial3XrApi
-@OptIn(ExperimentalMaterial3ComponentOverrideApi::class)
-internal object XrNavigationBarOverride : NavigationBarOverride {
-    @Composable
-    override fun NavigationBarOverrideScope.NavigationBar() {
-        NavigationBar(
-            modifier = modifier,
-            containerColor = containerColor,
-            contentColor = contentColor,
-            tonalElevation = tonalElevation,
-            content = content,
-        )
-    }
-}
-
 /**
- * The default [HorizontalOrbiterProperties] used by [NavigationBar] if none is specified in
- * [LocalNavigationBarOrbiterProperties].
+ * The default [OrbiterProperties] used by [SpatialNavigationBar] if none is specified in
+ * [LocalSpatialNavigationBarOrbiterProperties].
  */
 @ExperimentalMaterial3XrApi
-public val DefaultNavigationBarOrbiterProperties: HorizontalOrbiterProperties =
-    HorizontalOrbiterProperties(
-        position = ContentEdge.Horizontal.Bottom,
-        offset = XrNavigationBarTokens.OrbiterOffset,
-        offsetType = OrbiterOffsetType.InnerEdge,
-        alignment = Alignment.CenterHorizontally,
+public val DefaultSpatialNavigationBarOrbiterProperties: OrbiterProperties =
+    OrbiterProperties(
+        position =
+            OrbiterPosition.BottomCenter(
+                EdgeAlignment.Outside,
+                offset =
+                    DpVolumeOffset(
+                        0.dp,
+                        -XrNavigationBarTokens.OrbiterOffset,
+                        OrbiterDefaults.Elevation,
+                    ),
+            ),
         shape = XrTokens.ContainerShape,
     )
 
-/** The [HorizontalOrbiterProperties] used by [NavigationBar]. */
+/** The [OrbiterProperties] used by [SpatialNavigationBar]. */
 @ExperimentalMaterial3XrApi
-public val LocalNavigationBarOrbiterProperties:
-    ProvidableCompositionLocal<HorizontalOrbiterProperties> =
+public val LocalSpatialNavigationBarOrbiterProperties:
+    ProvidableCompositionLocal<OrbiterProperties> =
     compositionLocalOf {
-        DefaultNavigationBarOrbiterProperties
+        DefaultSpatialNavigationBarOrbiterProperties
     }

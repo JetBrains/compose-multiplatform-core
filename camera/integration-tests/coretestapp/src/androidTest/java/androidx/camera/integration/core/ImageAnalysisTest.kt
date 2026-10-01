@@ -15,6 +15,7 @@
  */
 package androidx.camera.integration.core
 
+import android.Manifest
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.ImageFormat
@@ -59,6 +60,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.LabTestRule
+import androidx.camera.testing.impl.LabTestUtil
 import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.camera.testing.impl.WakelockEmptyActivityRule
 import androidx.camera.testing.impl.fakes.FakeImageReaderProxy
@@ -67,6 +69,7 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
+import androidx.test.rule.GrantPermissionRule
 import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
@@ -103,6 +106,10 @@ internal class ImageAnalysisTest(
     val cameraRule =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(PreTestCameraIdList(cameraConfig))
 
+    @get:Rule
+    val storageRule: GrantPermissionRule =
+        GrantPermissionRule.grant(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+
     @get:Rule val labTest: LabTestRule = LabTestRule()
 
     @get:Rule val wakelockEmptyActivityRule = WakelockEmptyActivityRule()
@@ -119,12 +126,11 @@ internal class ImageAnalysisTest(
     private val context: Context = ApplicationProvider.getApplicationContext()
 
     @GuardedBy("analysisResultLock") private val analysisResults = mutableSetOf<ImageProperties>()
-    private val analyzer =
-        ImageAnalysis.Analyzer { image ->
-            synchronized(analysisResultLock) { analysisResults.add(ImageProperties(image)) }
-            analysisResultsSemaphore.release()
-            image.close()
-        }
+    private val analyzer = ImageAnalysis.Analyzer { image ->
+        synchronized(analysisResultLock) { analysisResults.add(ImageProperties(image)) }
+        analysisResultsSemaphore.release()
+        image.close()
+    }
     private lateinit var analysisResultsSemaphore: Semaphore
     private lateinit var handlerThread: HandlerThread
     private lateinit var handler: Handler
@@ -686,24 +692,8 @@ internal class ImageAnalysisTest(
         if (Build.VERSION.SDK_INT < 29) {
             assertThat(isSupported).isFalse()
         } else {
-            (cameraInfo as CameraInfoInternal).getSupportedResolutions(ImageFormat.PRIVATE).let {
-                outputSizes ->
-                val maxResolution = SizeUtil.getMaxSize(outputSizes)!!
-                assertThat(isSupported)
-                    .isEqualTo(
-                        try {
-                            HardwareBuffer.isSupported(
-                                maxResolution.width,
-                                maxResolution.height,
-                                ImageFormat.PRIVATE,
-                                1,
-                                HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE,
-                            )
-                        } catch (e: IllegalArgumentException) {
-                            false
-                        }
-                    )
-            }
+            val supportedFormats = (cameraInfo as CameraInfoInternal).supportedOutputFormats
+            assertThat(isSupported).isEqualTo(supportedFormats.contains(ImageFormat.PRIVATE))
         }
     }
 
@@ -938,16 +928,25 @@ internal class ImageAnalysisTest(
                         ) {
                             val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
                             bitmap.copyPixelsFromBuffer(java.nio.ByteBuffer.wrap(rgbaArray))
+                            if (currentFrame == framesToSkip + 1) {
+                                LabTestUtil.saveTestBitmap(
+                                    bitmap,
+                                    "ImageAnalysisTest_verifyHardwareBufferContentWithMLKit_lens${cameraSelector.lensFacing}_${width}x${height}_rot${image.imageInfo.rotationDegrees}_${System.currentTimeMillis()}",
+                                )
+                            }
 
                             val inputImage =
                                 InputImage.fromBitmap(bitmap, image.imageInfo.rotationDegrees)
-                            barcodeScanner.process(inputImage).addOnSuccessListener { barcodes ->
-                                barcodes.forEach { barcode ->
-                                    if ("Hi, CamX!" == barcode.displayValue) {
-                                        latchForBarcodeDetect.countDown()
+                            barcodeScanner
+                                .process(inputImage)
+                                .addOnSuccessListener { barcodes ->
+                                    barcodes.forEach { barcode ->
+                                        if ("Hi, CamX!" == barcode.displayValue) {
+                                            latchForBarcodeDetect.countDown()
+                                        }
                                     }
                                 }
-                            }
+                                .addOnCompleteListener { bitmap.recycle() }
                         }
                     }
                 }

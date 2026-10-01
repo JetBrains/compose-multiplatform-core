@@ -55,6 +55,7 @@ import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.SoftwareKeyboardController
+import androidx.compose.ui.platform.TaskDispatchers
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
@@ -150,24 +151,23 @@ class PointerInputEventProcessorTest {
 
         val offset = Offset(100f, 200f)
         val previousEvents = mutableListOf<PointerInputEventData>()
-        val events =
-            pointerTypes.mapIndexed { index, pointerType ->
-                previousEvents +=
-                    PointerInputEventData(
-                        id = PointerId(index.toLong()),
-                        uptime = index.toLong(),
-                        positionOnScreen = Offset(offset.x + index, offset.y + index),
-                        position = Offset(offset.x + index, offset.y + index),
-                        originalEventPosition = Offset(offset.x + index, offset.y + index),
-                        down = true,
-                        pressure = 1.0f,
-                        type = pointerType,
-                        scaleGestureFactor = 0f,
-                        panGestureOffset = Offset.Zero,
-                    )
-                val data = previousEvents.map { it.copy(uptime = index.toLong()) }
-                PointerInputEvent(index.toLong(), data)
-            }
+        val events = pointerTypes.mapIndexed { index, pointerType ->
+            previousEvents +=
+                PointerInputEventData(
+                    id = PointerId(index.toLong()),
+                    uptime = index.toLong(),
+                    positionOnScreen = Offset(offset.x + index, offset.y + index),
+                    position = Offset(offset.x + index, offset.y + index),
+                    originalEventPosition = Offset(offset.x + index, offset.y + index),
+                    down = true,
+                    pressure = 1.0f,
+                    type = pointerType,
+                    scaleGestureFactor = 0f,
+                    panGestureOffset = Offset.Zero,
+                )
+            val data = previousEvents.map { it.copy(uptime = index.toLong()) }
+            PointerInputEvent(index.toLong(), data)
+        }
 
         // Act
 
@@ -3027,6 +3027,9 @@ private class TestOwner : Owner {
         get() = TODO("Not yet implemented")
 
     override val windowInfo: WindowInfo
+        get() = TODO("Not yet implemented")
+
+    override val taskDispatchers: TaskDispatchers
         get() = TODO("Not yet implemented")
 
     override val rectManager: RectManager = RectManager()

@@ -49,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -174,30 +175,29 @@ class PersistentAnchorsActivity : ComponentActivity() {
                 session.scene.perceptionSpace,
             )
         val panelSizeInMeters = mainPanelEntity.size
-        val newStatus =
-            cameraStates.mapIndexed { index, cameraState ->
-                val isInView =
-                    isPanelInView(
-                        cameraPoseInPerceptionSpace = cameraState.pose,
-                        cameraFov =
-                            FieldOfView(
-                                cameraState.fieldOfView.angleLeft,
-                                cameraState.fieldOfView.angleRight,
-                                cameraState.fieldOfView.angleUp,
-                                cameraState.fieldOfView.angleDown,
-                            ),
-                        panelPoseInPerceptionSpace = panelPoseInPerceptionSpace,
-                        panelSizeInMeters = panelSizeInMeters,
-                    )
-                val cameraName =
-                    when {
-                        renderViewpoints.size == 1 -> "CameraView"
-                        index == 0 -> "Left Eye CameraView"
-                        index == 1 -> "Right Eye CameraView"
-                        else -> "CameraView ${index + 1}"
-                    }
-                cameraName to isInView
-            }
+        val newStatus = cameraStates.mapIndexed { index, cameraState ->
+            val isInView =
+                isPanelInView(
+                    cameraPoseInPerceptionSpace = cameraState.pose,
+                    cameraFov =
+                        FieldOfView(
+                            cameraState.fieldOfView.angleLeft,
+                            cameraState.fieldOfView.angleRight,
+                            cameraState.fieldOfView.angleUp,
+                            cameraState.fieldOfView.angleDown,
+                        ),
+                    panelPoseInPerceptionSpace = panelPoseInPerceptionSpace,
+                    panelSizeInMeters = panelSizeInMeters,
+                )
+            val cameraName =
+                when {
+                    renderViewpoints.size == 1 -> "CameraView"
+                    index == 0 -> "Left Eye CameraView"
+                    index == 1 -> "Right Eye CameraView"
+                    else -> "CameraView ${index + 1}"
+                }
+            cameraName to isInView
+        }
         panelInViewStatus.value = newStatus
     }
 
@@ -245,14 +245,14 @@ class PersistentAnchorsActivity : ComponentActivity() {
      * Checks if a rectangular panel is fully visible within the camera's field of view. Assumes the
      * camera looks down -Z axis.
      *
-     * @param cameraPoseInPerceptionSpace The position and orientation of the camera in perception
-     *   space.
-     * @param cameraFov The camera's field of view, defined by four angles.
-     * @param panelPoseInPerceptionSpace The position and orientation of the panel in perception
-     *   space.
-     * @param panelSizeInMeters The width and height of the panel.
-     * @return Returns true if all four corners of the panel are within the camera's field of view,
-     *   and false otherwise.
+     * @param cameraPoseInPerceptionSpace the position and orientation of the camera in perception
+     *   space
+     * @param cameraFov the camera's field of view, defined by four angles
+     * @param panelPoseInPerceptionSpace the position and orientation of the panel in perception
+     *   space
+     * @param panelSizeInMeters the width and height of the panel
+     * @return returns true if all four corners of the panel are within the camera's field of view,
+     *   and false otherwise
      */
     private fun isPanelInView(
         cameraPoseInPerceptionSpace: Pose,
@@ -342,6 +342,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
                         .fillMaxWidth()
                         .padding(innerPadding)
                         .verticalScroll(rememberScrollState())
+                        .zIndex(0f)
             ) {
                 for (uuid in uuidsState.value) {
                     Row(
@@ -377,7 +378,8 @@ class PersistentAnchorsActivity : ComponentActivity() {
                 Modifier.background(color = Color.LightGray)
                     .fillMaxHeight()
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
+                    .padding(horizontal = 20.dp)
+                    .zIndex(2f),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -461,7 +463,8 @@ class PersistentAnchorsActivity : ComponentActivity() {
                 Modifier.background(color = Color.White)
                     .fillMaxHeight()
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
+                    .padding(horizontal = 20.dp)
+                    .zIndex(1f),
             verticalArrangement = Arrangement.Center,
         ) {
             Text(

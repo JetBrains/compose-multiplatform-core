@@ -45,7 +45,6 @@ import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.GltfFeature
 import androidx.xr.scenecore.runtime.InputEventListener
 import androidx.xr.scenecore.runtime.InteractableComponent
-import androidx.xr.scenecore.runtime.LoggingEntity
 import androidx.xr.scenecore.runtime.MediaPlayerExtensionsWrapper
 import androidx.xr.scenecore.runtime.MeshEntity
 import androidx.xr.scenecore.runtime.MeshFeature
@@ -79,8 +78,8 @@ import androidx.xr.scenecore.runtime.SurfaceEntity
 import androidx.xr.scenecore.runtime.SurfaceFeature
 import androidx.xr.scenecore.runtime.TrackableComponent
 import androidx.xr.scenecore.runtime.TypeHolder
-import androidx.xr.scenecore.runtime.impl.OpenXrScenePose
 import androidx.xr.scenecore.runtime.impl.PerceptionSpaceScenePoseImpl
+import androidx.xr.scenecore.runtime.impl.PlatformReferenceScenePose
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.convertPerceivedResolution
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.convertSpatialCapabilities
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.convertSpatialVisibility
@@ -137,8 +136,8 @@ private constructor(
     private val perceptionSpaceScenePose: PerceptionSpaceScenePoseImpl
     private val isBoundaryConsentGrantedCache: AtomicBoolean
     private val spatialApiVersion: Int
-    private var activity: Activity?
-    private var isDestroyed = false
+    @Volatile private var activity: Activity?
+    @Volatile private var isDestroyed = false
     private var spatialVisibilityHandler: Pair<Executor, Consumer<SpatialVisibility>>? = null
     private var boundaryConsentObserver: ContentObserver? = null
     @VisibleForTesting internal var isExtensionVisibilityStateCallbackRegistered: Boolean = false
@@ -206,7 +205,7 @@ private constructor(
         lazySpatialStateProvider =
             Supplier<SpatialState> {
                 spatialState.updateAndGet { oldState ->
-                    oldState ?: xrExtensions.getSpatialState(activity)
+                    oldState ?: this.activity?.let { xrExtensions.getSpatialState(it) }
                 }!!
             }
         setSpatialStateCallback()
@@ -250,6 +249,7 @@ private constructor(
         if (isDestroyed) {
             return
         }
+        isDestroyed = true
 
         // Dispose entities first while extensions and activity are still valid.
         sceneNodeRegistry.getAllEntities().forEach(Entity::dispose)
@@ -258,7 +258,10 @@ private constructor(
         spatialEnvironmentImpl.dispose()
         clearKeyEntitySubscription(false)
         spatialModeChangeListener = null
-        xrExtensions.clearSpatialStateCallback(activity)
+        activity?.let {
+            // TODO: b/540038561 - XrExtensions should deregister callbacks on Activity teardown
+            xrExtensions.clearSpatialStateCallback(it)
+        }
 
         unregisterBoundaryConsentStateListener()
         boundaryConsentListeners.clear()
@@ -269,14 +272,25 @@ private constructor(
         updateExtensionsVisibilityCallback()
 
         // TODO: b/376934871 - Check async results.
-        xrExtensions.detachSpatialScene(activity, { it.run() }) { _: XrExtensionResult -> }
+        activity?.let {
+            xrExtensions.detachSpatialScene(it, { runnable -> runnable.run() }) {
+                _: XrExtensionResult ->
+            }
+        }
+
+        // Guarantee a valid state snapshot is preserved before clearing activity so late accesses
+        // never crash lazySpatialStateProvider
+        if (spatialState.get() == null) {
+            activity?.let { spatialState.set(xrExtensions.getSpatialState(it)) }
+        }
+
+        // TODO: b/540037068 - Ensure Activity is garbage collected even if destroy() isn't called.
         activity = null
-        isDestroyed = true
         scheduledExecutorService.shutdown()
     }
 
     override fun getScenePoseFromPerceptionPose(pose: Pose): ScenePose {
-        return OpenXrScenePose(activitySpace, pose)
+        return PlatformReferenceScenePose(activitySpace, pose)
     }
 
     override fun createPanelEntity(
@@ -480,23 +494,16 @@ private constructor(
         return entity
     }
 
-    @Deprecated("Use createEntity instead.")
-    override fun createGroupEntity(pose: Pose, name: String, parent: Entity?): Entity {
-        return createEntity(pose, name, parent)
-    }
-
-    override fun createLoggingEntity(pose: Pose): LoggingEntity {
-        val entity = LoggingEntityImpl(checkNotNull(activity))
-        entity.setPose(pose, Space.PARENT)
-        return entity
-    }
-
     // Note that this is called on the Activity's UI thread so we should be careful to not block it.
     // It is synchronized because we assume this.spatialState cannot be updated elsewhere during the
     // execution of this method.
     @VisibleForTesting
     @Synchronized
     public fun onSpatialStateChanged(newSpatialState: SpatialState) {
+
+        if (isDestroyed) {
+            return
+        }
         val previousSpatialState = spatialState.getAndSet(newSpatialState)
         val spatialCapabilitiesChanged =
             previousSpatialState == null ||
@@ -589,14 +596,35 @@ private constructor(
 
     @Synchronized
     private fun updateExtensionsVisibilityCallback() {
+        val currentActivity = activity
+        if (
+            isDestroyed ||
+                currentActivity == null ||
+                currentActivity.isDestroyed ||
+                currentActivity.isFinishing
+        ) {
+            if (isExtensionVisibilityStateCallbackRegistered) {
+                try {
+                    currentActivity?.let { xrExtensions.clearVisibilityStateCallback(it) }
+                } catch (_: RuntimeException) {
+                    // Safe to ignore during teardown: the activity is being destroyed, so a
+                    // failure to clear the callback is harmless.
+                }
+                isExtensionVisibilityStateCallbackRegistered = false
+            }
+            return
+        }
+
         val shouldHaveCallback =
             spatialVisibilityHandler != null || perceivedResolutionChangedListeners.isNotEmpty()
 
         if (shouldHaveCallback && !isExtensionVisibilityStateCallbackRegistered) {
             // Register the combined callback
             try {
-                xrExtensions.setVisibilityStateCallback(activity, scheduledExecutorService) {
-                    visibilityStateEvent ->
+                xrExtensions.setVisibilityStateCallback(
+                    currentActivity,
+                    scheduledExecutorService,
+                ) { visibilityStateEvent ->
                     // Dispatch to SpatialVisibility listener
                     spatialVisibilityHandler?.let { (executor, listener) ->
                         visibilityStateEvent?.let { event ->
@@ -626,7 +654,7 @@ private constructor(
         } else if (!shouldHaveCallback && isExtensionVisibilityStateCallbackRegistered) {
             // Clear the combined callback
             try {
-                xrExtensions.clearVisibilityStateCallback(activity)
+                xrExtensions.clearVisibilityStateCallback(currentActivity)
                 isExtensionVisibilityStateCallbackRegistered = false
             } catch (e: RuntimeException) {
                 throw RuntimeException("Could not clear VisibilityStateCallback: " + e.message)
@@ -636,22 +664,26 @@ private constructor(
 
     override fun requestFullSpaceMode() {
         // TODO: b/376934871 - Check async results.
-        xrExtensions.requestFullSpaceMode(
-            activity,
-            /* requestEnter= */ true,
-            { it.run() },
-            { _: XrExtensionResult -> },
-        )
+        activity?.let {
+            xrExtensions.requestFullSpaceMode(
+                it,
+                /* requestEnter= */ true,
+                { runnable -> runnable.run() },
+                { _: XrExtensionResult -> },
+            )
+        }
     }
 
     override fun requestHomeSpaceMode() {
         // TODO: b/376934871 - Check async results.
-        xrExtensions.requestFullSpaceMode(
-            activity,
-            /* requestEnter= */ false,
-            { it.run() },
-            { _: XrExtensionResult -> },
-        )
+        activity?.let {
+            xrExtensions.requestFullSpaceMode(
+                it,
+                /* requestEnter= */ false,
+                { runnable -> runnable.run() },
+                { _: XrExtensionResult -> },
+            )
+        }
     }
 
     override fun setFullSpaceMode(bundle: Bundle): Bundle {
@@ -663,10 +695,13 @@ private constructor(
     }
 
     override fun enablePanelDepthTest(enabled: Boolean) {
-        xrExtensions.enablePanelDepthTest(activity, enabled)
+        activity?.let { xrExtensions.enablePanelDepthTest(it, enabled) }
     }
 
     override fun setPreferredAspectRatio(activity: Activity, preferredRatio: Float) {
+        if (isDestroyed) {
+            return
+        }
         // TODO: b/376934871 - Check async results.
         xrExtensions.setPreferredAspectRatio(
             activity,
@@ -776,7 +811,11 @@ private constructor(
         boundaryConsentObserver =
             object : ContentObserver(Handler(Looper.getMainLooper())) {
                 override fun onChange(selfChange: Boolean) {
+                    if (isDestroyed) {
+                        return
+                    }
                     scheduledExecutorService.execute {
+                        if (isDestroyed) return@execute
                         // Recalculate the current state
                         val newGrantedState = calculateBoundaryConsentState()
 
@@ -842,7 +881,7 @@ private constructor(
         if (spatialApiVersion >= 2) {
             try {
                 keyEntityTransformCloseable!!.close()
-                xrExtensions.underlyingObject.clearSpatialContinuityHint(activity)
+                activity?.let { xrExtensions.underlyingObject.clearSpatialContinuityHint(it) }
             } catch (e: IOException) {
                 if (throwException) {
                     // Re-throw as an unchecked exception but include the original cause.
@@ -863,12 +902,15 @@ private constructor(
         if (spatialApiVersion >= 2) {
             keyEntityTransformCloseable =
                 entity.getNode().subscribeToTransform(scheduledExecutorService) { nodeTransform ->
+                    if (isDestroyed) return@subscribeToTransform
                     val transform = getMatrix(nodeTransform!!.transform)
-                    xrExtensions.underlyingObject.setSpatialContinuityHint(
-                        activity,
-                        getPositionFromTransform(transform),
-                        getRotationFromTransform(transform),
-                    )
+                    activity?.let {
+                        xrExtensions.underlyingObject.setSpatialContinuityHint(
+                            it,
+                            getPositionFromTransform(transform),
+                            getRotationFromTransform(transform),
+                        )
+                    }
                 }
         }
     }

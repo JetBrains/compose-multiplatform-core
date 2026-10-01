@@ -33,7 +33,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.Density
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 
 /**
@@ -42,8 +41,7 @@ import org.junit.Rule
  */
 abstract class AnchoredDraggableBackwardsCompatibleTest(private val testNewBehavior: Boolean) {
 
-    val testDispatcher = StandardTestDispatcher()
-    @get:Rule val rule = createComposeRule(testDispatcher)
+    @get:Rule val rule = createComposeRule()
 
     fun <T> createStateAndModifier(
         initialValue: T,
@@ -121,7 +119,8 @@ abstract class AnchoredDraggableBackwardsCompatibleTest(private val testNewBehav
             with(rule.density) { AnchoredDraggableMinFlingVelocity.toPx() }
         },
         snapAnimationSpec: AnimationSpec<Float> = AnchoredDraggableDefaults.SnapAnimationSpec,
-        decayAnimationSpec: DecayAnimationSpec<Float> = AnchoredDraggableDefaults.DecayAnimationSpec,
+        decayAnimationSpec: DecayAnimationSpec<Float> =
+            AnchoredDraggableDefaults.DecayAnimationSpec,
     ) =
         if (testNewBehavior) {
             val resolvedVelocityThreshold = velocityThreshold()

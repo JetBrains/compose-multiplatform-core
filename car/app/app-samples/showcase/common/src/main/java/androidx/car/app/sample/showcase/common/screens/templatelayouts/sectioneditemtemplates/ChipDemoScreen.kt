@@ -25,6 +25,7 @@ import androidx.car.app.annotations.RequiresCarApi
 import androidx.car.app.model.Action
 import androidx.car.app.model.CarColor
 import androidx.car.app.model.CarIcon
+import androidx.car.app.model.CarIconStyle
 import androidx.car.app.model.Chip
 import androidx.car.app.model.ChipSection
 import androidx.car.app.model.ChipStyle
@@ -48,7 +49,7 @@ import androidx.core.graphics.drawable.IconCompat
  *   a single chip using [Chip#setStyle] when the chip is selected
  */
 @OptIn(ExperimentalCarApi::class)
-@RequiresCarApi(8)
+@RequiresCarApi(9)
 class ChipDemoScreen(carContext: CarContext) : Screen(carContext) {
     private val mSectionStyle =
         ChipStyle.Builder()
@@ -115,10 +116,9 @@ class ChipDemoScreen(carContext: CarContext) : Screen(carContext) {
             DemoChip("Start icon only") { isSelected, onClick ->
                 Chip.Builder()
                     .setStartIcon(
-                        CarIcon.Builder(
-                                IconCompat.createWithResource(carContext, R.drawable.ic_face_24px)
-                            )
-                            .build()
+                        CarIcon.createTintedIcon(
+                            IconCompat.createWithResource(carContext, R.drawable.ic_face_24px)
+                        )
                     )
                     .setSelected(isSelected)
                     .setOnClickListener(onClick)
@@ -135,10 +135,9 @@ class ChipDemoScreen(carContext: CarContext) : Screen(carContext) {
                 Chip.Builder()
                     .setTitle("Start + Text")
                     .setStartIcon(
-                        CarIcon.Builder(
-                                IconCompat.createWithResource(carContext, R.drawable.ic_face_24px)
-                            )
-                            .build()
+                        CarIcon.createTintedIcon(
+                            IconCompat.createWithResource(carContext, R.drawable.ic_face_24px)
+                        )
                     )
                     .setSelected(isSelected)
                     .setOnClickListener(onClick)
@@ -171,10 +170,9 @@ class ChipDemoScreen(carContext: CarContext) : Screen(carContext) {
                 Chip.Builder()
                     .setTitle("Custom1")
                     .setStartIcon(
-                        CarIcon.Builder(
-                                IconCompat.createWithResource(carContext, R.drawable.ic_face_24px)
-                            )
-                            .build()
+                        CarIcon.createTintedIcon(
+                            IconCompat.createWithResource(carContext, R.drawable.ic_face_24px)
+                        )
                     )
                     .setEndIcon(CarIcon.ALERT)
                     .setSelected(isSelected)
@@ -202,9 +200,11 @@ class ChipDemoScreen(carContext: CarContext) : Screen(carContext) {
                     .setTitle("Custom2")
                     .setStartIcon(
                         CarIcon.Builder(
-                                IconCompat.createWithResource(carContext, R.drawable.ic_face_24px)
+                                IconCompat.createWithResource(carContext, R.drawable.ic_face_24px),
+                                CarIconStyle.Builder(CarIconStyle.TINTED)
+                                    .setTint(customCurrentIconColor)
+                                    .build(),
                             )
-                            .setTint(customCurrentIconColor)
                             .build()
                     )
                     .setSelected(isSelected)

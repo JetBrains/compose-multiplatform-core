@@ -28,6 +28,7 @@ import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteComposeOperation;
 import androidx.compose.remote.core.RemoteContext;
+import androidx.compose.remote.core.VariableSupport;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
 import androidx.compose.remote.core.operations.utilities.IntMap;
@@ -35,10 +36,19 @@ import androidx.compose.remote.core.operations.utilities.IntMap;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.zip.DataFormatException;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
 
 /**
  * Describe some basic information for a RemoteCompose document
@@ -47,7 +57,7 @@ import java.util.List;
  * dimensions of the document in pixels.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class Header extends Operation implements RemoteComposeOperation {
+public class Header extends Operation implements RemoteComposeOperation, VariableSupport {
     private static final int OP_CODE = Operations.HEADER;
     private static final String CLASS_NAME = "Header";
     private static final int MAGIC_NUMBER = 0x048C0000; // to uniquely identify the protocol
@@ -150,6 +160,52 @@ public class Header extends Operation implements RemoteComposeOperation {
      */
     public static final short DOC_DENSITY_BEHAVIOR = 27;
 
+    /** Specify layout optimization level: 0 = none, 1 = partial, 2 = all */
+    public static final short FEATURE_OPTIMIZATION_LEVEL = 28;
+
+    /**
+     * Controls the usage of API ViewParent#requestDisallowInterceptTouchEvent when handling gesture
+     * propagation between RemoteCompose and host views. 0: disabled, 1: enabled.
+     */
+    public static final short FEATURE_DISALLOW_INTERCEPT_TOUCH = 29;
+
+    /**
+     * Controls whether CanvasOperations within LayoutComponents are evaluated during the DATA pass.
+     * 0: disabled, 1: enabled.
+     */
+    public static final short FEATURE_DATA_PASS_CANVAS_OPS = 30;
+
+    /**
+     * Compression of everything that follows the header: {@link #COMPRESSION_NONE} (or absent) for
+     * none, {@link #COMPRESSION_DEFLATE} for a zlib stream. The header itself is never compressed,
+     * so a compressed document can still be peeked with {@link #readDirect(InputStream)}. See
+     * {@link #compressDocument} and {@link #decompressDocument}.
+     */
+    public static final short COMPRESS = 31;
+
+    /** {@link #COMPRESS} value: the operations are stored as is. */
+    public static final int COMPRESSION_NONE = 0;
+
+    /** {@link #COMPRESS} value: the operations are a zlib (RFC 1950) DEFLATE stream. */
+    public static final int COMPRESSION_DEFLATE = 1;
+
+    /**
+     * Directions in which the document scrolls: {@link #SCROLL_HORIZONTAL}, {@link
+     * #SCROLL_VERTICAL}, or both combined. {@link CoreDocument#hasHorizontalScroll()} and {@link
+     * CoreDocument#hasVerticalScroll()} report these directions on top of the scroll containers
+     * they find, so a document can declare scrolling they can't find, e.g. a scroll driven by a
+     * touch expression. It can only add directions: a document with a scroll container reports it
+     * whatever this property says. Other bits are reserved: writers reject them, players ignore
+     * them.
+     */
+    public static final short DOC_SCROLL = 32;
+
+    /** {@link #DOC_SCROLL} flag: the document scrolls horizontally. */
+    public static final int SCROLL_HORIZONTAL = 1;
+
+    /** {@link #DOC_SCROLL} flag: the document scrolls vertically. */
+    public static final int SCROLL_VERTICAL = 2;
+
     /** The object is an integer */
     private static final short DATA_TYPE_INT = 0;
 
@@ -181,6 +237,11 @@ public class Header extends Operation implements RemoteComposeOperation {
         FEATURE_ARRAY_LISTENERS,
         FEATURE_CLICK_VERSION,
         DOC_DENSITY_BEHAVIOR,
+        FEATURE_OPTIMIZATION_LEVEL,
+        FEATURE_DISALLOW_INTERCEPT_TOUCH,
+        FEATURE_DATA_PASS_CANVAS_OPS,
+        COMPRESS,
+        DOC_SCROLL,
     };
     private static final String[] KEY_NAMES = {
         "DOC_WIDTH",
@@ -200,8 +261,25 @@ public class Header extends Operation implements RemoteComposeOperation {
         "LT_RESIZE",
         "ARRAY_LISTENERS",
         "CLICK_VERSION",
-        "DENSITY_BEHAVIOR"
+        "DENSITY_BEHAVIOR",
+        "OPTIMIZATION_LEVEL",
+        "DISALLOW_INTERCEPT_TOUCH",
+        "DATA_PASS_CANVAS_OPS",
+        "COMPRESS",
+        "DOC_SCROLL"
     };
+
+    /** Offset of the property count in a properties header: opcode, then major, minor, patch. */
+    private static final int PROPERTY_COUNT_OFFSET = 1 + 3 * 4;
+
+    /** Offset of the first property in a properties header. */
+    private static final int PROPERTIES_OFFSET = PROPERTY_COUNT_OFFSET + 4;
+
+    /** Size of an INT property: tag, value length, value. */
+    private static final int INT_PROPERTY_SIZE = 2 + 2 + 4;
+
+    /** Size of the chunks used to deflate and inflate documents. */
+    private static final int CHUNK_SIZE = 8 * 1024;
 
     /**
      * It encodes the version of the document (following semantic versioning) as well as the
@@ -253,6 +331,14 @@ public class Header extends Operation implements RemoteComposeOperation {
             this.mDensity = getFloat(DOC_DENSITY_AT_GENERATION, 1);
             this.mProfiles = getInt(DOC_PROFILES, 0);
         }
+    }
+
+    /** Put a feature or property into the header. */
+    public void put(short key, @NonNull Object value) {
+        if (mProperties == null) {
+            mProperties = new IntMap<>();
+        }
+        mProperties.put(key, value);
     }
 
     public int getProfiles() {
@@ -314,7 +400,29 @@ public class Header extends Operation implements RemoteComposeOperation {
 
     @Override
     public void write(@NonNull WireBuffer buffer) {
-        apply(buffer, mWidth, mHeight, mDensity, mCapabilities);
+        if (mProperties != null && mProperties.size() > 0) {
+            int size = mProperties.size();
+            short[] types = new short[size];
+            Object[] values = new Object[size];
+            List<Integer> keys = new ArrayList<>(mProperties.keySet());
+            Collections.sort(keys); // Sort for deterministic output
+            int i = 0;
+            for (Integer key : keys) {
+                types[i] = key.shortValue();
+                values[i] = mProperties.get(key);
+                i++;
+            }
+            int apiLevel = versionToApiLevel(MAJOR_VERSION, MINOR_VERSION);
+            if (apiLevel < 7) {
+                throw new IllegalStateException(
+                        "Header has properties but apiLevel is "
+                                + apiLevel
+                                + " which is less than 7");
+            }
+            apply(buffer, apiLevel, types, values);
+        } else {
+            apply(buffer, mWidth, mHeight, mDensity, mCapabilities);
+        }
     }
 
     @NonNull
@@ -345,6 +453,16 @@ public class Header extends Operation implements RemoteComposeOperation {
                 + "]"
                 + prop;
     }
+
+    @Override
+    public void registerListening(@NonNull RemoteContext context) {
+        if (context.getDensityBehavior() == CoreDocument.DENSITY_BEHAVIOR_DP) {
+            context.listensTo(RemoteContext.ID_DENSITY, this);
+        }
+    }
+
+    @Override
+    public void updateVariables(@NonNull RemoteContext context) {}
 
     @Override
     public void apply(@NonNull RemoteContext context) {
@@ -383,7 +501,7 @@ public class Header extends Operation implements RemoteComposeOperation {
         return OP_CODE;
     }
 
-    /** Apply the header to the wire buffer */
+    /** Apply flat header to the wire buffer */
     public static void apply(
             @NonNull WireBuffer buffer, int width, int height, float density, long capabilities) {
         buffer.start(OP_CODE);
@@ -396,7 +514,7 @@ public class Header extends Operation implements RemoteComposeOperation {
         buffer.writeLong(capabilities);
     }
 
-    /** Apply the header to the wire buffer */
+    /** Apply map-based header (supports properties) to the wire buffer */
     public static void apply(
             @NonNull WireBuffer buffer,
             int apiLevel,
@@ -533,22 +651,13 @@ public class Header extends Operation implements RemoteComposeOperation {
     }
 
     /**
-     * Peeks and returns the Header api level
+     * Map major and minor version to API level.
      *
-     * @return api level, -1 if not found
+     * @param majorVersion Major version
+     * @param minorVersion Minor version
+     * @return API level, -1 if unknown
      */
-    public static int peekApiLevel(@NonNull WireBuffer buffer) {
-        if (buffer.getIndex() != 0) {
-            throw new IllegalStateException(
-                    "Invalid buffer reading position; can't read the header");
-        }
-        int headerOpId = buffer.readByte();
-        if (headerOpId != Operations.HEADER) {
-            return -1;
-        }
-        int majorVersion = buffer.readInt();
-        int minorVersion = buffer.readInt();
-        buffer.setIndex(0);
+    private static int versionToApiLevel(int majorVersion, int minorVersion) {
         if (majorVersion >= 0x10000) {
             if ((majorVersion & 0xFFFF0000) != MAGIC_NUMBER) {
                 return -1;
@@ -573,6 +682,27 @@ public class Header extends Operation implements RemoteComposeOperation {
             return 6;
         }
         return -1;
+    }
+
+    /**
+     * Peeks and returns the Header api level
+     *
+     * @return api level, -1 if not found
+     */
+    public static int peekApiLevel(@NonNull WireBuffer buffer) {
+        if (buffer.getIndex() != 0) {
+            throw new IllegalStateException(
+                    "Invalid buffer reading position; can't read the header");
+        }
+        int headerOpId = buffer.readByte();
+        if (headerOpId != Operations.HEADER) {
+            buffer.setIndex(0);
+            return -1;
+        }
+        int majorVersion = buffer.readInt();
+        int minorVersion = buffer.readInt();
+        buffer.setIndex(0);
+        return versionToApiLevel(majorVersion, minorVersion);
     }
 
     /**
@@ -733,8 +863,160 @@ public class Header extends Operation implements RemoteComposeOperation {
                 buffer.writeShort(tag);
                 buffer.writeShort(8);
                 buffer.writeLong((Long) values[i]);
+            } else {
+                throw new IllegalArgumentException(
+                        "Unsupported property type: "
+                                + (values[i] == null ? "null" : values[i].getClass().getName()));
             }
         }
+    }
+
+    /**
+     * Compresses a document: everything after the header becomes a zlib stream, and a {@link
+     * #COMPRESS} property is appended to the header. The rest of the header is copied as is, which
+     * keeps the document's version, and stays uncompressed so {@link #readDirect(InputStream)} can
+     * still peek at it. Players decompress transparently while inflating the document.
+     *
+     * @param document an uncompressed document with a properties (API level 7+) header
+     * @param size the number of valid bytes in {@code document}
+     * @return a new array holding the compressed document, or a copy of {@code document} if it is
+     *     already compressed
+     * @throws IllegalArgumentException if the header is invalid or legacy (without properties)
+     */
+    public static byte @NonNull [] compressDocument(byte @NonNull [] document, int size) {
+        ByteArrayInputStream stream = new ByteArrayInputStream(document, 0, size);
+        try {
+            Header header = readDirect(stream);
+            int headerSize = size - stream.available();
+            if (header.mProperties == null) {
+                throw new IllegalArgumentException(
+                        "Compression needs a header with properties (API level 7+)");
+            }
+            Object compression = header.get(COMPRESS);
+            if (compression != null && !Integer.valueOf(COMPRESSION_NONE).equals(compression)) {
+                return Arrays.copyOf(document, size);
+            }
+            byte[] head = new byte[headerSize + INT_PROPERTY_SIZE];
+            int headSize = copyHeaderWithoutCompress(document, headerSize, head, 1);
+            ByteBuffer.wrap(head, headSize, INT_PROPERTY_SIZE)
+                    .putShort((short) (COMPRESS | (DATA_TYPE_INT << 10)))
+                    .putShort((short) 4)
+                    .putInt(COMPRESSION_DEFLATE);
+            ByteArrayOutputStream out = new ByteArrayOutputStream(size / 2 + INT_PROPERTY_SIZE);
+            out.write(head, 0, headSize + INT_PROPERTY_SIZE);
+            Deflater deflater = new Deflater();
+            try {
+                deflater.setInput(document, headerSize, size - headerSize);
+                deflater.finish();
+                byte[] chunk = new byte[CHUNK_SIZE];
+                while (!deflater.finished()) {
+                    out.write(chunk, 0, deflater.deflate(chunk));
+                }
+            } finally {
+                deflater.end();
+            }
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Invalid document header", e);
+        }
+    }
+
+    /**
+     * Decompresses a document made by {@link #compressDocument}: inflates everything after the
+     * header and drops the {@link #COMPRESS} property, restoring the original document.
+     *
+     * @param document a document, compressed or not
+     * @param size the number of valid bytes in {@code document}
+     * @return a new array holding the uncompressed document, or a copy of {@code document} if it
+     *     isn't compressed
+     * @throws IOException if the header is invalid or uses an unsupported compression, or if the
+     *     compressed data is corrupted, truncated, followed by extra bytes, or inflates to more
+     *     than {@link Limits#MAX_DECOMPRESSED_SIZE} bytes
+     */
+    public static byte @NonNull [] decompressDocument(byte @NonNull [] document, int size)
+            throws IOException {
+        ByteArrayInputStream stream = new ByteArrayInputStream(document, 0, size);
+        Header header = readDirect(stream);
+        int headerSize = size - stream.available();
+        Object compression = header.get(COMPRESS);
+        if (compression == null || Integer.valueOf(COMPRESSION_NONE).equals(compression)) {
+            return Arrays.copyOf(document, size);
+        }
+        if (!Integer.valueOf(COMPRESSION_DEFLATE).equals(compression)) {
+            throw new IOException("Unsupported document compression " + compression);
+        }
+        byte[] head = new byte[headerSize];
+        int headSize = copyHeaderWithoutCompress(document, headerSize, head, 0);
+        ByteArrayOutputStream out =
+                new ByteArrayOutputStream((int) Math.min(4L * size, Limits.BUFFER_SIZE));
+        out.write(head, 0, headSize);
+        Inflater inflater = new Inflater();
+        try {
+            inflater.setInput(document, headerSize, size - headerSize);
+            byte[] chunk = new byte[CHUNK_SIZE];
+            long inflated = 0;
+            while (!inflater.finished()) {
+                int count = inflater.inflate(chunk);
+                if (count == 0 && !inflater.finished()) {
+                    throw new IOException(
+                            inflater.needsInput()
+                                    ? "Truncated compressed document"
+                                    : "Invalid compressed document");
+                }
+                inflated += count;
+                if (inflated > Limits.MAX_DECOMPRESSED_SIZE) {
+                    throw new IOException(
+                            "Decompressed document exceeds "
+                                    + Limits.MAX_DECOMPRESSED_SIZE
+                                    + " bytes");
+                }
+                out.write(chunk, 0, count);
+            }
+            if (inflater.getRemaining() > 0) {
+                throw new IOException("Unexpected data after the compressed document");
+            }
+        } catch (DataFormatException e) {
+            throw new IOException("Corrupted compressed document", e);
+        } finally {
+            inflater.end();
+        }
+        return out.toByteArray();
+    }
+
+    /**
+     * Copies the properties header that starts {@code document} into {@code out}, without its
+     * {@link #COMPRESS} properties and with {@code extraProperties} added to the property count,
+     * and returns the number of bytes written. Properties are walked using their stored length, and
+     * must end exactly where {@link #readDirect} found the end of the header.
+     */
+    private static int copyHeaderWithoutCompress(
+            byte @NonNull [] document, int headerSize, byte @NonNull [] out, int extraProperties)
+            throws IOException {
+        ByteBuffer in = ByteBuffer.wrap(document, 0, headerSize);
+        int count = in.getInt(PROPERTY_COUNT_OFFSET);
+        System.arraycopy(document, 0, out, 0, PROPERTY_COUNT_OFFSET);
+        int read = PROPERTIES_OFFSET;
+        int written = PROPERTIES_OFFSET;
+        int kept = 0;
+        int i = 0;
+        while (i < count && read + 4 <= headerSize) {
+            int end = read + 4 + (in.getShort(read + 2) & 0xFFFF);
+            if (end > headerSize) {
+                break;
+            }
+            if ((in.getShort(read) & 0x3F) != COMPRESS) {
+                System.arraycopy(document, read, out, written, end - read);
+                written += end - read;
+                kept++;
+            }
+            read = end;
+            i++;
+        }
+        if (i != count || read != headerSize) {
+            throw new IOException("Malformed header properties");
+        }
+        ByteBuffer.wrap(out).putInt(PROPERTY_COUNT_OFFSET, kept + extraProperties);
+        return written;
     }
 
     /**

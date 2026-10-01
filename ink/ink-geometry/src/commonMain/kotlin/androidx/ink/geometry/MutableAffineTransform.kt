@@ -16,7 +16,6 @@
 
 package androidx.ink.geometry
 
-import androidx.annotation.RestrictTo
 import androidx.annotation.Size
 import kotlin.math.cos
 import kotlin.math.sin
@@ -38,25 +37,12 @@ import kotlin.math.sin
  *   input, there is another public constructor for that.
  */
 public class MutableAffineTransform
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public constructor(
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     override var m00: Float,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     override var m10: Float,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     override var m20: Float,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     override var m01: Float,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     override var m11: Float,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     override var m21: Float,
 ) : AffineTransform() {
 
@@ -103,7 +89,6 @@ public constructor(
         m21 = values[5]
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun toImmutable(): ImmutableAffineTransform =
         if (this == AffineTransform.IDENTITY) {
             AffineTransform.IDENTITY
@@ -147,6 +132,24 @@ public constructor(
     }
 
     /**
+     * Fills this [MutableAffineTransform] with a transformation that translates by the given [x]
+     * and [y] offset components.
+     *
+     * Returns the modified instance to allow chaining calls.
+     *
+     * @return `this`
+     */
+    public fun populateFromTranslation(x: Float, y: Float): MutableAffineTransform {
+        m00 = 1f
+        m10 = 0f
+        m20 = x
+        m01 = 0f
+        m11 = 1f
+        m21 = y
+        return this
+    }
+
+    /**
      * Fills this [MutableAffineTransform] with a transformation that translates by the given
      * [offset] vector.
      *
@@ -154,15 +157,8 @@ public constructor(
      *
      * @return `this`
      */
-    public fun populateFromTranslation(offset: Vec): MutableAffineTransform {
-        m00 = 1f
-        m10 = 0f
-        m20 = offset.x
-        m01 = 0f
-        m11 = 1f
-        m21 = offset.y
-        return this
-    }
+    public fun populateFromTranslation(offset: Vec): MutableAffineTransform =
+        populateFromTranslation(offset.x, offset.y)
 
     /**
      * Fills this [MutableAffineTransform] with a transformation that scales in both the x and y

@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.compose.foundation.text.input.internal
 
 import android.view.View
 import android.view.inputmethod.CursorAnchorInfo
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
+import androidx.compose.foundation.text.TEST_LOCALE_LIST
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.text.AnnotatedString
@@ -66,6 +69,7 @@ import org.mockito.kotlin.verify
 class LegacyTextInputMethodRequestCursorAnchorInfoTest {
     private val context = getInstrumentation().context
     private val coroutineScope = CoroutineScope(Dispatchers.Unconfined)
+    private val defaultLocaleList = TEST_LOCALE_LIST
     private val defaultDensity = Density(density = 1f)
     private val fontFamilyMeasureFont =
         Font(resId = R.font.sample_font, weight = FontWeight.Normal, style = FontStyle.Normal)
@@ -403,6 +407,7 @@ class LegacyTextInputMethodRequestCursorAnchorInfoTest {
                 density = defaultDensity,
                 layoutDirection = LayoutDirection.Ltr,
                 fontFamilyResolver = fontFamilyResolver,
+                defaultLocaleList = defaultLocaleList,
                 constraints = Constraints(maxWidth = width),
             )
 
@@ -413,6 +418,7 @@ class LegacyTextInputMethodRequestCursorAnchorInfoTest {
                 constraints = Constraints(maxWidth = width),
                 density = input.density,
                 fontFamilyResolver = fontFamilyResolver,
+                defaultLocaleList = defaultLocaleList,
                 overflow = TextOverflow.Clip,
             )
 

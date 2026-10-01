@@ -50,7 +50,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
@@ -60,7 +59,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class ViewIntegrationTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
     @get:Rule val excessiveAssertions = AndroidOwnerExtraAssertionsRule()
     private lateinit var activity: TestActivity
     private lateinit var density: Density
@@ -161,12 +160,11 @@ class ViewIntegrationTest {
         lateinit var view: ComposeView
         var size by mutableStateOf(10.dp)
         var measuredSize = 0.dp
-        val sizeModifier =
-            Modifier.layout { measurable, constraints ->
-                measuredSize = size
-                val pxSize = size.roundToPx()
-                layout(pxSize, pxSize) { measurable.measure(constraints).place(0, 0) }
-            }
+        val sizeModifier = Modifier.layout { measurable, constraints ->
+            measuredSize = size
+            val pxSize = size.roundToPx()
+            layout(pxSize, pxSize) { measurable.measure(constraints).place(0, 0) }
+        }
         rule.runOnUiThread {
             view = ComposeView(activity)
             view.setContent { Box(Modifier.background(Color.Blue).then(sizeModifier)) }

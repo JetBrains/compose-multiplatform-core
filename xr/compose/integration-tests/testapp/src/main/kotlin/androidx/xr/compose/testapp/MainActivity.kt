@@ -21,7 +21,6 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -65,21 +64,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
-import androidx.xr.compose.subspace.layout.transformingMovable
-import androidx.xr.compose.subspace.layout.transformingResizable
+import androidx.xr.compose.subspace.layout.movable
+import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testapp.accessibility.AccessibilityActivity
+import androidx.xr.compose.testapp.anchorable.AnchorableActivity
 import androidx.xr.compose.testapp.animation.Animation
 import androidx.xr.compose.testapp.curvedlayout.CurvedLayout
 import androidx.xr.compose.testapp.depthstacking.DepthStacking
 import androidx.xr.compose.testapp.focuschange.FSMFocusChangeActivity
 import androidx.xr.compose.testapp.focuschange.HSMFocusChangeActivity
 import androidx.xr.compose.testapp.followingsubspace.AnchorFollowingSubspaceActivity
-import androidx.xr.compose.testapp.followingsubspace.FollowingSubspaceActivity
+import androidx.xr.compose.testapp.followingsubspace.ViewFollowingSubspaceActivity
 import androidx.xr.compose.testapp.fragments.FragmentCompatibilityActivity
 import androidx.xr.compose.testapp.gravityaligned.GravityAlignedActivity
 import androidx.xr.compose.testapp.lifecycle.LifecycleDataStore
@@ -89,6 +90,7 @@ import androidx.xr.compose.testapp.lifecycle.RuntimeSessionActivity
 import androidx.xr.compose.testapp.modechange.ModeChange
 import androidx.xr.compose.testapp.movable.MovableActivity
 import androidx.xr.compose.testapp.movablescalable.MovableScalable
+import androidx.xr.compose.testapp.navigation.SpatialNavigationActivity
 import androidx.xr.compose.testapp.panelembeddedsubspace.PanelEmbeddedSubspace
 import androidx.xr.compose.testapp.panelvolume.PanelVolume
 import androidx.xr.compose.testapp.performance.LayoutPerformance
@@ -120,16 +122,12 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        WindowCompat.enableEdgeToEdge(window)
         obtainUserPermissions()
         setContent {
             Subspace {
                 SpatialPanel(
-                    modifier =
-                        SubspaceModifier.width(800.dp)
-                            .height(1000.dp)
-                            .transformingMovable()
-                            .transformingResizable()
+                    modifier = SubspaceModifier.width(800.dp).height(1000.dp).movable().resizable()
                 ) {
                     IntegrationTestsAppTheme {
                         val scrollBehavior =
@@ -306,11 +304,14 @@ class MainActivity : ComponentActivity() {
                             TestCase(getString(R.string.anchor_subspace_app_test)) {
                                 startTest<AnchorFollowingSubspaceActivity>()
                             },
-                            TestCase(getString(R.string.ardevice_subspace_test_case)) {
-                                startTest<FollowingSubspaceActivity>()
+                            TestCase(getString(R.string.view_subspace_test_case)) {
+                                startTest<ViewFollowingSubspaceActivity>()
                             },
                             TestCase(getString(R.string.rotatetolookatuser_test_case)) {
                                 startTest<RotateToLookAtUserActivity>()
+                            },
+                            TestCase(getString(R.string.anchorable_test_case)) {
+                                startTest<AnchorableActivity>()
                             },
                         ),
                     "Layout" to
@@ -341,6 +342,9 @@ class MainActivity : ComponentActivity() {
                             TestCase(getString(R.string.pose_test)) { startTest<Pose>() },
                             TestCase(getString(R.string.gravity_aligned_test_case)) {
                                 startTest<GravityAlignedActivity>()
+                            },
+                            TestCase(getString(R.string.spatial_navigation_test)) {
+                                startTest<SpatialNavigationActivity>()
                             },
                         ),
                     "Interaction" to

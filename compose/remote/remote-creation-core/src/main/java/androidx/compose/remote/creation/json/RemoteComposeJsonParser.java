@@ -16,13 +16,22 @@
 package androidx.compose.remote.creation.json;
 
 import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.RcPlatformServices;
+import androidx.compose.remote.core.RemotePathBase;
+import androidx.compose.remote.core.operations.AddMesh2D;
 import androidx.compose.remote.core.operations.ConditionalOperations;
+import androidx.compose.remote.core.operations.DrawMesh2D;
+import androidx.compose.remote.core.operations.DrawTextOnCircle;
 import androidx.compose.remote.core.operations.Header;
+import androidx.compose.remote.core.operations.MatrixFromMesh2D;
 import androidx.compose.remote.core.operations.NamedVariable;
 import androidx.compose.remote.core.operations.Utils;
 import androidx.compose.remote.core.operations.layout.managers.TextStyle;
+import androidx.compose.remote.core.operations.paint.PaintPathEffects;
 import androidx.compose.remote.core.operations.utilities.MatrixOperations;
+import androidx.compose.remote.core.operations.utilities.Mesh2DGenerator;
 import androidx.compose.remote.creation.RcPaint;
+import androidx.compose.remote.creation.RemoteComposeShader;
 import androidx.compose.remote.creation.RemoteComposeWriter;
 import androidx.compose.remote.creation.modifiers.CircleShape;
 import androidx.compose.remote.creation.modifiers.RecordingModifier;
@@ -36,9 +45,11 @@ import org.json.JSONObject;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -49,10 +60,14 @@ import java.util.Map;
 public class RemoteComposeJsonParser {
     private static final boolean DEBUG = false;
     private final RemoteComposeWriter mWriter;
+    public boolean mRemVars = false;
+    final Map<Integer, String> mRecordedVariables = new LinkedHashMap<>();
+    final Map<String, Integer> mMeshes = new HashMap<>();
     final Map<String, Integer> mColors = new HashMap<>();
     final Map<String, Integer> mPaths = new HashMap<>();
     final Map<String, Object> mBitmaps = new HashMap<>();
     final Map<String, Float> mVariables = new HashMap<>();
+    final Map<String, Long> mIntegerVariables = new HashMap<>();
     final Map<String, Float> mMatrices = new HashMap<>();
     final Map<String, Object> mDeferredVariables = new HashMap<>();
     final Map<String, Float> mEmittedVariables = new HashMap<>();
@@ -64,6 +79,57 @@ public class RemoteComposeJsonParser {
     private final Map<String, JsonModifierParser> mModifierParsers = new HashMap<>();
     private final ExpressionParser mExpressionParser;
     private final ResourceParser mResourceParser;
+
+    /**
+     * Set whether the parser is currently in the first traversal pass.
+     *
+     * @param remVars true if in the first pass, false otherwise
+     */
+    public void setRemVars(boolean remVars) {
+        mRemVars = remVars;
+    }
+
+    /**
+     * Expose whether the parser is currently in the first traversal pass.
+     *
+     * @return true if in the first pass, false otherwise
+     */
+    public boolean isRemVars() {
+        return mRemVars;
+    }
+
+    /**
+     * Record a variable by name and ID.
+     *
+     * @param name the variable name
+     * @param id   the variable ID
+     */
+    public void recordVariable(@Nullable String name, int id) {
+        if (name != null && !name.isEmpty()) {
+            mRecordedVariables.put(id, name);
+        }
+    }
+
+    /**
+     * Build a debug string of the recorded variables.
+     *
+     * @return a formatted string showing the recorded variables
+     */
+    public @NonNull String getDebugNamesString() {
+        if (mRecordedVariables.isEmpty()) {
+            return "Debug Names";
+        }
+        StringBuilder sb = new StringBuilder("Debug Names ");
+        boolean first = true;
+        for (Map.Entry<Integer, String> entry : mRecordedVariables.entrySet()) {
+            if (!first) {
+                sb.append(",");
+            }
+            first = false;
+            sb.append(entry.getKey()).append("=").append(entry.getValue());
+        }
+        return sb.toString();
+    }
 
     /**
      * Push a parsing segment onto the context path stack.
@@ -105,7 +171,7 @@ public class RemoteComposeJsonParser {
     /**
      * Register a custom procedural component parser.
      *
-     * @param type the lower-case type name (e.g. "custom_layout")
+     * @param type   the lower-case type name (e.g. "custom_layout")
      * @param parser the parser implementation
      */
     public void registerComponentParser(@NonNull String type, @NonNull JsonComponentParser parser) {
@@ -122,7 +188,7 @@ public class RemoteComposeJsonParser {
     /**
      * Register a custom layout modifier parser.
      *
-     * @param key the lower-case modifier key name (e.g. "custom_modifier")
+     * @param key    the lower-case modifier key name (e.g. "custom_modifier")
      * @param parser the parser implementation
      */
     public void registerModifierParser(@NonNull String key, @NonNull JsonModifierParser parser) {
@@ -208,8 +274,16 @@ public class RemoteComposeJsonParser {
             }
             short tag = parseHeaderTagStatic(key);
             Object value = header.get(key);
+            if (tag == Header.COMPRESS && value instanceof Boolean) {
+                // "compress": true is shorthand for DEFLATE, the only compression.
+                value = (Boolean) value ? Header.COMPRESSION_DEFLATE : Header.COMPRESSION_NONE;
+            }
+            if (tag == Header.DOC_SCROLL && value instanceof String) {
+                value = parseScrollDirections((String) value);
+            }
             tags.add(RemoteComposeWriter.hTag(tag, value));
         }
+        tags.sort(java.util.Comparator.comparingInt(RemoteComposeWriter.HTag::getTag));
         return tags.toArray(new RemoteComposeWriter.HTag[0]);
     }
 
@@ -228,20 +302,108 @@ public class RemoteComposeJsonParser {
         return 7;
     }
 
+    public static final @NonNull RcPlatformServices DEFAULT_PLATFORM = new RcPlatformServices() {
+        @Override
+        public float @NonNull [] pathToFloatArray(@NonNull Object path) {
+            if (path instanceof RemotePathBase) {
+                return ((RemotePathBase) path).getPath();
+            }
+            return new float[0];
+        }
+
+        @Override
+        public @NonNull Object parsePath(@NonNull String pathData) {
+            return new RemotePathBase(pathData);
+        }
+
+        @Override
+        public byte @Nullable [] imageToByteArray(@NonNull Object image) {
+            return new byte[0];
+        }
+
+        @Override
+        public int getImageWidth(@NonNull Object image) {
+            return 0;
+        }
+
+        @Override
+        public int getImageHeight(@NonNull Object image) {
+            return 0;
+        }
+
+        @Override
+        public boolean isAlpha8Image(@NonNull Object image) {
+            return false;
+        }
+
+        @Override
+        public void log(@NonNull LogCategory category, @NonNull String message) {
+        }
+    };
+
+    /**
+     * Parse a JSON RemoteCompose document directly into a ByteBuffer binary representation.
+     *
+     * @param json the JSON description of the RemoteCompose document
+     * @return a ByteBuffer containing the binary encoded RemoteCompose document
+     * @throws JSONException if JSON parsing fails
+     */
+    public static @NonNull ByteBuffer parseToByteBuffer(@NonNull String json) throws JSONException {
+        return parse(json, DEFAULT_PLATFORM);
+    }
+
+    /**
+     * Parse a JSON RemoteCompose document directly into a ByteBuffer binary representation.
+     *
+     * @param json the JSON description of the RemoteCompose document
+     * @return a ByteBuffer containing the binary encoded RemoteCompose document
+     * @throws JSONException if JSON parsing fails
+     */
+    public static @NonNull ByteBuffer parseToBuffer(@NonNull String json) throws JSONException {
+        return parseToByteBuffer(json);
+    }
+
+    /**
+     * Parse a JSON RemoteCompose document directly into a ByteBuffer binary representation.
+     *
+     * @param json     the JSON description of the RemoteCompose document
+     * @param platform platform services or null to use DEFAULT_PLATFORM
+     * @return a ByteBuffer containing the binary encoded RemoteCompose document
+     * @throws JSONException if JSON parsing fails
+     */
+    public static @NonNull ByteBuffer parse(
+            @NonNull String json,
+            @Nullable RcPlatformServices platform)
+            throws JSONException {
+        if (platform == null) {
+            platform = DEFAULT_PLATFORM;
+        }
+        int apiLevel = parseApiLevel(json);
+        RemoteComposeWriter.HTag[] tags = parseHeaderOnly(json);
+        java.util.Arrays.sort(tags, (a, b) -> Short.compare(a.getTag(), b.getTag()));
+        RemoteComposeWriter writer = new RemoteComposeWriter(platform, apiLevel, tags);
+        RemoteComposeJsonParser parser = new RemoteComposeJsonParser(writer);
+        parser.parse(json);
+        byte[] bytes = writer.encodeToByteArray();
+        return ByteBuffer.wrap(bytes);
+    }
+
     /**
      * Define a custom float variable by name.
      *
-     * @param name the variable identifier string
+     * @param name  the variable identifier string
      * @param value the floating point value to associate with the name
      */
     public void defineVariable(@NonNull String name, float value) {
+        int id = Float.isNaN(value) ? Utils.idFromNan(value) : (int) value;
+        recordVariable(name, id);
         mVariables.put(name, value);
     }
 
     /**
      * Register/define an image/bitmap resource by name.
      *
-     * @param name the unique name/key of the bitmap
+     * @param name   the unique name/key of the bitmap
      * @param bitmap the bitmap instance to associate
      */
     public void defineBitmap(@NonNull String name, @NonNull Object bitmap) {
@@ -257,10 +419,16 @@ public class RemoteComposeJsonParser {
     public void parse(@NonNull String json) throws JSONException {
         try {
             pushContext("root");
+            mRecordedVariables.clear();
             JSONObject root = new JSONObject(json);
             if (root.has("header")) {
-                mOrderedResources = root.getJSONObject("header")
-                        .optBoolean("orderedResources", false);
+                JSONObject header = root.getJSONObject("header");
+                mOrderedResources = header.optBoolean("orderedResources", false);
+                if (header.has("remVars")) {
+                    mRemVars = header.optBoolean("remVars", mRemVars);
+                } else if (header.has("rem_vars")) {
+                    mRemVars = header.optBoolean("rem_vars", mRemVars);
+                }
             }
             if (root.has("resources")) {
                 if (mOrderedResources) {
@@ -279,9 +447,7 @@ public class RemoteComposeJsonParser {
                         JSONObject item = normalizeComponent(arr.getJSONObject(i));
                         String type = item.optString("type");
                         String typeLower = type.toLowerCase();
-                        if (typeLower.equals("resources") || typeLower.equals("variable")
-                                || typeLower.equals("global") || typeLower.equals("definepattern")
-                                || typeLower.equals("referencedoperations")) {
+                        if (isFirstPassComponent(typeLower)) {
                             parseComponent(item);
                         }
                     }
@@ -294,9 +460,7 @@ public class RemoteComposeJsonParser {
                                 JSONObject item = normalizeComponent(arr.getJSONObject(i));
                                 String type = item.optString("type");
                                 String typeLower = type.toLowerCase();
-                                if (!typeLower.equals("resources") && !typeLower.equals("variable")
-                                        && !typeLower.equals("definepattern")
-                                        && !typeLower.equals("referencedoperations")) {
+                                if (!isFirstPassOnlyComponent(typeLower)) {
                                     parseComponent(item);
                                 }
                             }
@@ -312,18 +476,14 @@ public class RemoteComposeJsonParser {
                     String type = component.optString("type");
                     String typeLower = type.toLowerCase();
                     mInFirstPass = true;
-                    if (typeLower.equals("resources") || typeLower.equals("variable")
-                            || typeLower.equals("global") || typeLower.equals("definepattern")
-                            || typeLower.equals("referencedoperations")) {
+                    if (isFirstPassComponent(typeLower)) {
                         parseComponent(component);
                     }
                     mInFirstPass = false;
 
                     mWriter.root(() -> {
                         try {
-                            if (!typeLower.equals("resources") && !typeLower.equals("variable")
-                                    && !typeLower.equals("definepattern")
-                                    && !typeLower.equals("referencedoperations")) {
+                            if (!isFirstPassOnlyComponent(typeLower)) {
                                 parseComponent(component);
                             }
                             while (mGlobalNesting > 0) {
@@ -333,6 +493,20 @@ public class RemoteComposeJsonParser {
                             throw new RuntimeException(e);
                         }
                     });
+                    endGlobal();
+                }
+            }
+            if (mRemVars) {
+                for (Map.Entry<String, Long> entry : mIntegerVariables.entrySet()) {
+                    recordVariable(entry.getKey(), (int) (entry.getValue() & 0xFFFFFFFFL));
+                }
+                for (Map.Entry<String, Float> entry : mVariables.entrySet()) {
+                    float val = entry.getValue();
+                    int id = Float.isNaN(val) ? Utils.idFromNan(val) : (int) val;
+                    recordVariable(entry.getKey(), id);
+                }
+                if (!mRecordedVariables.isEmpty()) {
+                    mWriter.rem(getDebugNamesString());
                 }
             }
         } catch (JSONException e) {
@@ -356,32 +530,86 @@ public class RemoteComposeJsonParser {
         }
     }
 
+    static boolean isFirstPassComponent(String typeLower) {
+        return typeLower.equals("resources") || typeLower.equals("variable")
+                || typeLower.equals("global") || typeLower.equals("definepattern")
+                || typeLower.equals("referencedoperations")
+                || typeLower.equals("createfloatfunction")
+                || typeLower.equals("floatfunction")
+                || typeLower.equals("definevisibilityanimation")
+                || typeLower.equals("createoffscreenbitmap");
+    }
+
+    static boolean isFirstPassOnlyComponent(String typeLower) {
+        return typeLower.equals("resources") || typeLower.equals("variable")
+                || typeLower.equals("definepattern")
+                || typeLower.equals("referencedoperations")
+                || typeLower.equals("createfloatfunction")
+                || typeLower.equals("floatfunction")
+                || typeLower.equals("definevisibilityanimation")
+                || typeLower.equals("createoffscreenbitmap");
+    }
+
     private static short parseHeaderTagStatic(@NonNull String name) throws JSONException {
         switch (name) {
-            case "width": return Header.DOC_WIDTH;
-            case "height": return Header.DOC_HEIGHT;
-            case "contentDescription": return Header.DOC_CONTENT_DESCRIPTION;
+            case "width":
+                return Header.DOC_WIDTH;
+            case "height":
+                return Header.DOC_HEIGHT;
+            case "contentDescription":
+                return Header.DOC_CONTENT_DESCRIPTION;
             case "desiredFPS":
             case "fps":
                 return Header.DOC_DESIRED_FPS;
-            case "profiles": return Header.DOC_PROFILES;
-            case "theme": return Header.TEST_COLOR_THEME;
-            case "ltResize": return Header.FEATURE_LT_RESIZE;
-            case "densityBehavior": return Header.DOC_DENSITY_BEHAVIOR;
-            case "featurePaintMeasure": return Header.FEATURE_PAINT_MEASURE;
+            case "profiles":
+                return Header.DOC_PROFILES;
+            case "theme":
+                return Header.TEST_COLOR_THEME;
+            case "ltResize":
+                return Header.FEATURE_LT_RESIZE;
+            case "densityBehavior":
+                return Header.DOC_DENSITY_BEHAVIOR;
+            case "featurePaintMeasure":
+                return Header.FEATURE_PAINT_MEASURE;
+            case "disallowInterceptTouch":
+                return Header.FEATURE_DISALLOW_INTERCEPT_TOUCH;
+            case "dataPassCanvasOps":
+                return Header.FEATURE_DATA_PASS_CANVAS_OPS;
+            case "debug":
+                return Header.DEBUG;
+            case "compress":
+                return Header.COMPRESS;
+            case "scroll":
+                return Header.DOC_SCROLL;
             default:
                 throw new JSONException("Unknown header tag: " + name);
         }
     }
 
-
+    /** Parses a {@code "scroll"} header name: "horizontal", "vertical" or "both". */
+    private static int parseScrollDirections(@NonNull String name) throws JSONException {
+        switch (name) {
+            case "horizontal":
+                return Header.SCROLL_HORIZONTAL;
+            case "vertical":
+                return Header.SCROLL_VERTICAL;
+            case "both":
+                return Header.SCROLL_HORIZONTAL | Header.SCROLL_VERTICAL;
+            default:
+                throw new JSONException("Unknown scroll directions: " + name);
+        }
+    }
 
     int getHorizontalAlign(@NonNull JSONObject component, @NonNull String defaultValue) {
-        return parseHorizontalAlignment(component.optString("horizontalAlignment", defaultValue));
+        String align = component.optString("horizontalAlignment",
+                component.optString("horizontalArrangement", defaultValue));
+        return parseHorizontalAlignment(align);
     }
 
     int getVerticalAlign(@NonNull JSONObject component, @NonNull String defaultValue) {
-        return parseVerticalAlignment(component.optString("verticalAlignment", defaultValue));
+        String align = component.optString("verticalAlignment",
+                component.optString("verticalArrangement", defaultValue));
+        return parseVerticalAlignment(align);
     }
 
     /**
@@ -466,37 +694,53 @@ public class RemoteComposeJsonParser {
 
     private int parseHorizontalAlignment(String align) {
         switch (align.toLowerCase()) {
-            case "start": return 1;
-            case "center": return 2;
-            case "end": return 3;
-            case "spacebetween": return 6;
-            case "spaceevenly": return 7;
-            case "spacearound": return 8;
-            default: return 1;
+            case "start":
+                return 1;
+            case "center":
+                return 2;
+            case "end":
+                return 3;
+            case "spacebetween":
+                return 6;
+            case "spaceevenly":
+                return 7;
+            case "spacearound":
+                return 8;
+            default:
+                return 1;
         }
     }
 
     private int parseVerticalAlignment(String align) {
         switch (align.toLowerCase()) {
-            case "start": return 1;
-            case "top": return 4;
-            case "center": return 2;
-            case "bottom": return 5;
-            case "spacebetween": return 6;
-            case "spaceevenly": return 7;
-            case "spacearound": return 8;
-            default: return 4;
+            case "start":
+                return 1;
+            case "top":
+                return 4;
+            case "center":
+                return 2;
+            case "bottom":
+                return 5;
+            case "spacebetween":
+                return 6;
+            case "spaceevenly":
+                return 7;
+            case "spacearound":
+                return 8;
+            default:
+                return 4;
         }
     }
 
     void parseText(@NonNull JSONObject component,
             RecordingModifier modifier) throws JSONException {
-        Object value = component.opt("value");
+        Object value = component.has("value") ? component.opt("value") : component.opt("text");
         float textFromFloat = Float.NaN;
         int textFromFloatWhole = 0;
         int textFromFloatDecimal = 0;
         int textFromFloatFlags = 0;
-        if (component.has("textFromFloat")) {
+        boolean hasTextFromFloat = component.has("textFromFloat");
+        if (hasTextFromFloat) {
             JSONObject obj = component.getJSONObject("textFromFloat");
             textFromFloat = parseFloat(obj.get("value"));
             textFromFloatWhole = obj.optInt("whole", 0);
@@ -507,7 +751,7 @@ public class RemoteComposeJsonParser {
         int textId = -1;
         if (value != null) {
             textId = resolveTextId(value);
-        } else if (!Float.isNaN(textFromFloat)) {
+        } else if (hasTextFromFloat) {
             textId = mWriter.createTextFromFloat(
                     textFromFloat, textFromFloatWhole, textFromFloatDecimal, textFromFloatFlags);
         }
@@ -537,39 +781,84 @@ public class RemoteComposeJsonParser {
 
         float fontSize = component.has("fontSize")
                 ? parseFloat(component.get("fontSize"))
-                : TextStyle.DEFAULT_FONT_SIZE;
+                : (component.has("textSize")
+                        ? parseFloat(component.get("textSize"))
+                        : TextStyle.DEFAULT_FONT_SIZE);
 
         float fontWeight = component.has("fontWeight")
                 ? parseFloat(component.get("fontWeight"))
                 : TextStyle.DEFAULT_FONT_WEIGHT;
 
+        int textStyleId = component.optInt("textStyleId", -1);
+        float minFontSize = component.has("minFontSize")
+                ? parseFloat(component.get("minFontSize")) : -1f;
+        float maxFontSize = component.has("maxFontSize")
+                ? parseFloat(component.get("maxFontSize")) : -1f;
+
+        int fontStyle = 0;
+        String fontStyleStr = component.optString("fontStyle", null);
+        if ("italic".equalsIgnoreCase(fontStyleStr)) {
+            fontStyle = 1;
+        } else if (component.has("fontStyle")) {
+            fontStyle = component.optInt("fontStyle", 0);
+        }
+
+        String fontFamily = component.optString("fontFamily", null);
+        float letterSpacing = component.has("letterSpacing")
+                ? parseFloat(component.get("letterSpacing")) : 0f;
+        float lineHeightAdd = component.has("lineHeightAdd")
+                ? parseFloat(component.get("lineHeightAdd")) : 0f;
+        float lineHeightMultiplier = component.has("lineHeightMultiplier")
+                ? parseFloat(component.get("lineHeightMultiplier")) : 1f;
+
+        int lineBreakStrategy = component.optInt("lineBreakStrategy", 0);
+        int hyphenationFrequency = component.optInt("hyphenationFrequency", 0);
+        int justificationMode = component.optInt("justificationMode", 0);
+        boolean underline = component.optBoolean("underline", false);
+        boolean strikethrough = component.optBoolean("strikethrough", false);
+        boolean autoSize = component.optBoolean("autoSize", false);
+
+        String[] fontAxis = null;
+        float[] fontAxisValues = null;
+        if (component.has("fontAxis") && component.has("fontAxisValues")) {
+            JSONArray axisArr = component.getJSONArray("fontAxis");
+            JSONArray valArr = component.getJSONArray("fontAxisValues");
+            fontAxis = new String[axisArr.length()];
+            fontAxisValues = new float[valArr.length()];
+            for (int i = 0; i < axisArr.length(); i++) {
+                fontAxis[i] = axisArr.getString(i);
+                fontAxisValues[i] = (float) valArr.getDouble(i);
+            }
+        }
+
         mWriter.textComponent(
                 modifier,
                 textId,
-                -1, // textStyleId
+                textStyleId,
                 color,
-                colorId, // colorId
+                colorId,
                 fontSize,
-                -1f,
-                -1f,
-                0, // fontstyle
+                minFontSize,
+                maxFontSize,
+                fontStyle,
                 fontWeight,
-                null, // fontFamily
+                fontFamily,
                 parseTextAlign(component.optString("textAlign", "start")),
                 overflow,
                 maxLines,
-                0f, // letterspacing
-                0f, // lineHeightAdd
-                1f, // lineHeightMultiplier,
-                0, // lineBreakStrategy
-                0, // hyphenationFrequency
-                0, // justification mode
-                false, // undeerline
-                false, // strikethrough,
-                null, // explicitStringArray
-                null, // explicitFloatArray
-                false, // autosize,
-                0, () -> {});
+                letterSpacing,
+                lineHeightAdd,
+                lineHeightMultiplier,
+                lineBreakStrategy,
+                hyphenationFrequency,
+                justificationMode,
+                underline,
+                strikethrough,
+                fontAxis,
+                fontAxisValues,
+                autoSize,
+                0, () -> {
+                });
     }
 
     private int parseTextAlign(String align) {
@@ -611,6 +900,60 @@ public class RemoteComposeJsonParser {
         }
     }
 
+    void parseFloatFunction(@NonNull JSONObject command, boolean defaultVisibilityParams)
+            throws JSONException {
+        JSONArray paramsArr = command.optJSONArray("params");
+        if (paramsArr == null && command.has("parameters")) {
+            paramsArr = command.optJSONArray("parameters");
+        }
+        int paramCount = paramsArr != null
+                ? (defaultVisibilityParams ? Math.max(paramsArr.length(), 6) : paramsArr.length())
+                : (defaultVisibilityParams ? 6 : command.optInt("count", 0));
+        float[] args = new float[paramCount];
+        int fnId = mWriter.createFloatFunction(args);
+        String name = command.optString("name", null);
+        if (name != null) {
+            mVariables.put(name, (float) fnId);
+        }
+        Map<String, Float> savedVariables = new HashMap<>(mVariables);
+        Map<String, Object> savedDeferred = new HashMap<>(mDeferredVariables);
+        if (defaultVisibilityParams && paramCount >= 6) {
+            mVariables.put("progress", args[0]);
+            mVariables.put("w", args[1]);
+            mVariables.put("width", args[1]);
+            mVariables.put("h", args[2]);
+            mVariables.put("height", args[2]);
+            mVariables.put("x", args[3]);
+            mVariables.put("y", args[4]);
+            mVariables.put("id", args[5]);
+            mVariables.put("componentId", args[5]);
+        }
+        if (paramsArr != null) {
+            if (defaultVisibilityParams
+                    && paramsArr.length() == 6
+                    && ("id".equals(paramsArr.getString(0))
+                            || "componentId".equals(paramsArr.getString(0)))) {
+                mVariables.put(paramsArr.getString(0), args[5]);
+                for (int i = 1; i < 6; i++) {
+                    mVariables.put(paramsArr.getString(i), args[i - 1]);
+                }
+            } else {
+                for (int i = 0; i < paramsArr.length(); i++) {
+                    mVariables.put(paramsArr.getString(i), args[i]);
+                }
+            }
+        }
+        boolean prevFirstPass = mInFirstPass;
+        mInFirstPass = true;
+        parseCommands(command.getJSONArray("commands"));
+        mInFirstPass = prevFirstPass;
+        mWriter.endFloatFunction();
+        mVariables.clear();
+        mVariables.putAll(savedVariables);
+        mDeferredVariables.clear();
+        mDeferredVariables.putAll(savedDeferred);
+    }
+
     void parseCommand(@NonNull JSONObject command) throws JSONException {
         if (!command.has("type") && command.length() == 1) {
             String key = command.keys().next();
@@ -624,10 +967,14 @@ public class RemoteComposeJsonParser {
                 Iterator<String> keys = obj.keys();
                 while (keys.hasNext()) {
                     String k = keys.next();
+                    if ("type".equals(k)) {
+                        normalized.put("source", obj.get(k));
+                        continue;
+                    }
                     normalized.put(k, obj.get(k));
                 }
             } else {
-                if (key.equals("drawPath") || key.equals("pathAppendClose")) {
+                if (key.equalsIgnoreCase("drawPath") || key.equalsIgnoreCase("pathAppendClose")) {
                     normalized.put("path", val);
                 } else {
                     normalized.put("value", val);
@@ -635,7 +982,7 @@ public class RemoteComposeJsonParser {
             }
             command = normalized;
         }
-        String type = command.getString("type");
+        String type = command.getString("type").toLowerCase();
         switch (type) {
             case "paint":
                 RcPaint paint = mWriter.getRcPaint();
@@ -646,9 +993,10 @@ public class RemoteComposeJsonParser {
                         Iterator<String> keys = op.keys();
                         while (keys.hasNext()) {
                             String key = keys.next();
-                            switch (key) {
+                            switch (key.toLowerCase(java.util.Locale.ROOT)) {
                                 case "shader":
-                                    paint.setShader(op.getInt(key));
+                                case "runtimeshader":
+                                    paint.setShader(parseShader(op.get(key)));
                                     break;
                                 case "style":
                                     String style = op.getString(key);
@@ -660,8 +1008,10 @@ public class RemoteComposeJsonParser {
                                         paint.setStyle(2);
                                     }
                                     break;
-                                case "linearGradient": {
-                                    JSONObject g = op.getJSONObject("linearGradient");
+                                case "lineargradient": {
+                                    JSONObject g = op.has("linearGradient")
+                                            ? op.getJSONObject("linearGradient")
+                                            : op.getJSONObject(key);
                                     JSONArray colorsArr = g.getJSONArray("colors");
                                     int[] colors = new int[colorsArr.length()];
                                     int mask = 0;
@@ -694,17 +1044,27 @@ public class RemoteComposeJsonParser {
                                     );
                                     break;
                                 }
-                                case "pathEffect": {
-                                    JSONArray pe = op.optJSONArray(key);
-                                    if (pe == null) {
+                                case "patheffect": {
+                                    Object peVal = op.get(key);
+                                    if (peVal == null || peVal == JSONObject.NULL) {
                                         paint.setPathEffect(null);
-                                    } else {
-                                        float[] pathEffect = new float[pe.length()];
-                                        for (int j = 0; j < pe.length(); j++) {
-                                            pathEffect[j] = (float) pe.getDouble(j);
-                                        }
-                                        paint.setPathEffect(pathEffect);
+                                        break;
                                     }
+                                    JSONArray pe;
+                                    float phase = 0f;
+                                    if (peVal instanceof JSONObject) {
+                                        JSONObject peo = (JSONObject) peVal;
+                                        pe = peo.getJSONArray("intervals");
+                                        phase = (float) peo.optDouble("phase", 0.0);
+                                    } else {
+                                        pe = (JSONArray) peVal;
+                                    }
+                                    float[] intervals = new float[pe.length()];
+                                    for (int j = 0; j < pe.length(); j++) {
+                                        intervals[j] = parseFloat(pe.get(j));
+                                    }
+                                    paint.setPathEffect(
+                                            PaintPathEffects.dash(phase, intervals));
                                     break;
                                 }
                                 case "color":
@@ -720,9 +1080,21 @@ public class RemoteComposeJsonParser {
                                     paint.setAlpha(parseFloat(op.get(key)));
                                     break;
                                 case "width":
+                                case "strokewidth":
                                     paint.setStrokeWidth(parseFloat(op.get(key)));
                                     break;
-                                case "strokeCap": {
+                                case "strokejoin": {
+                                    String join = op.getString(key);
+                                    if (join.equalsIgnoreCase("round")) {
+                                        paint.setStrokeJoin(1);
+                                    } else if (join.equalsIgnoreCase("bevel")) {
+                                        paint.setStrokeJoin(2);
+                                    } else {
+                                        paint.setStrokeJoin(0);
+                                    }
+                                    break;
+                                }
+                                case "strokecap": {
                                     String cap = op.getString(key);
                                     if (cap.equalsIgnoreCase("round")) {
                                         paint.setStrokeCap(1);
@@ -733,10 +1105,17 @@ public class RemoteComposeJsonParser {
                                     }
                                     break;
                                 }
-                                case "textSize":
+                                case "textsize":
                                     paint.setTextSize(parseFloat(op.get(key)));
                                     break;
-                                case "sweepGradient": {
+                                case "radialgradient": {
+                                    JSONObject g = op.has("radialGradient")
+                                            ? op.getJSONObject("radialGradient")
+                                            : op.getJSONObject(key);
+                                    applyRadialGradient(paint, g);
+                                    break;
+                                }
+                                case "sweepgradient": {
                                     JSONObject g = op.getJSONObject("sweepGradient");
                                     JSONArray colorsArr = g.getJSONArray("colors");
                                     int[] colors = new int[colorsArr.length()];
@@ -771,8 +1150,10 @@ public class RemoteComposeJsonParser {
                         }
                     }
                 } else {
-                    if (command.has("shader")) {
-                        paint.setShader(command.getInt("shader"));
+                    if (command.has("runtimeShader")) {
+                        paint.setShader(parseShader(command.get("runtimeShader")));
+                    } else if (command.has("shader")) {
+                        paint.setShader(parseShader(command.get("shader")));
                     }
                     if (command.has("color")) {
                         String color = command.getString("color");
@@ -780,6 +1161,29 @@ public class RemoteComposeJsonParser {
                             paint.setColorId(parseColor(color));
                         } else {
                             paint.setColor(parseColor(color));
+                        }
+                    }
+                    if (command.has("alpha")) {
+                        paint.setAlpha(parseFloat(command.get("alpha")));
+                    }
+                    if (command.has("strokeJoin")) {
+                        String join = command.getString("strokeJoin");
+                        if (join.equalsIgnoreCase("round")) {
+                            paint.setStrokeJoin(1);
+                        } else if (join.equalsIgnoreCase("bevel")) {
+                            paint.setStrokeJoin(2);
+                        } else {
+                            paint.setStrokeJoin(0);
+                        }
+                    }
+                    if (command.has("strokeCap")) {
+                        String cap = command.getString("strokeCap");
+                        if (cap.equalsIgnoreCase("round")) {
+                            paint.setStrokeCap(1);
+                        } else if (cap.equalsIgnoreCase("square")) {
+                            paint.setStrokeCap(2);
+                        } else {
+                            paint.setStrokeCap(0);
                         }
                     }
                     if (command.has("style")) {
@@ -792,68 +1196,16 @@ public class RemoteComposeJsonParser {
                             paint.setStyle(2);
                         }
                     }
-                    if (command.has("linearGradient")) {
-                        JSONObject g = command.getJSONObject("linearGradient");
-                        JSONArray colorsArr = g.getJSONArray("colors");
-                        int[] colors = new int[colorsArr.length()];
-                        int mask = 0;
-                        for (int i = 0; i < colorsArr.length(); i++) {
-                            Object c = colorsArr.get(i);
-                            if (c instanceof String && (((String) c).startsWith("$colors.")
-                                    || ((String) c).startsWith("@colors."))) {
-                                mask |= (1 << i);
-                            }
-                            colors[i] = parseColor(c);
-                        }
-                        JSONArray stopsArr = g.optJSONArray("stops");
-                        float[] stops = null;
-                        if (stopsArr != null) {
-                            stops = new float[stopsArr.length()];
-                            for (int i = 0; i < stopsArr.length(); i++) {
-                                stops[i] = (float) stopsArr.getDouble(i);
-                            }
-                        }
-                        paint.setLinearGradient(
-                                g.has("x1") ? parseFloat(g.get("x1")) : 0f,
-                                g.has("y1") ? parseFloat(g.get("y1")) : 0f,
-                                g.has("x2") ? parseFloat(g.get("x2")) : 0f,
-                                g.has("y2") ? parseFloat(g.get("y2")) : 0f,
-                                colors,
-                                mask,
-                                stops,
-                                g.optInt("tileMode", 0)
-                        );
-                    }
-                    if (command.has("pathEffect")) {
-                        JSONArray pe = command.optJSONArray("pathEffect");
-                        if (pe == null) {
-                            paint.setPathEffect(null);
-                        } else {
-                            float[] pathEffect = new float[pe.length()];
-                            for (int i = 0; i < pe.length(); i++) {
-                                pathEffect[i] = (float) pe.getDouble(i);
-                            }
-                            paint.setPathEffect(pathEffect);
-                        }
-                    }
-                    if (command.has("alpha")) {
-                        paint.setAlpha(parseFloat(command.get("alpha")));
-                    }
-                    if (command.has("width")) {
-                        paint.setStrokeWidth(parseFloat(command.get("width")));
-                    }
-                    if (command.has("strokeCap")) {
-                        String cap = command.getString("strokeCap");
-                        if (cap.equalsIgnoreCase("round")) {
-                            paint.setStrokeCap(1);
-                        } else if (cap.equalsIgnoreCase("square")) {
-                            paint.setStrokeCap(2);
-                        } else {
-                            paint.setStrokeCap(0);
-                        }
+                    if (command.has("width") || command.has("strokeWidth")) {
+                        Object w = command.has("strokeWidth")
+                                ? command.get("strokeWidth") : command.get("width");
+                        paint.setStrokeWidth(parseFloat(w));
                     }
                     if (command.has("textSize")) {
                         paint.setTextSize(parseFloat(command.get("textSize")));
+                    }
+                    if (command.has("radialGradient")) {
+                        applyRadialGradient(paint, command.getJSONObject("radialGradient"));
                     }
                     if (command.has("sweepGradient")) {
                         JSONObject g = command.getJSONObject("sweepGradient");
@@ -887,11 +1239,11 @@ public class RemoteComposeJsonParser {
                 }
                 paint.commit();
                 break;
-            case "setColor":
+            case "setcolor":
                 mWriter.getRcPaint().setColor(parseColor(command.get("color")));
                 mWriter.getRcPaint().commit();
                 break;
-            case "setStyle": {
+            case "setstyle": {
                 String style = command.getString("style");
                 if (style.equalsIgnoreCase("fill")) {
                     mWriter.getRcPaint().setStyle(0);
@@ -903,11 +1255,11 @@ public class RemoteComposeJsonParser {
                 mWriter.getRcPaint().commit();
                 break;
             }
-            case "setStrokeWidth":
+            case "setstrokewidth":
                 mWriter.getRcPaint().setStrokeWidth(parseFloat(command.get("width")));
                 mWriter.getRcPaint().commit();
                 break;
-            case "drawRect":
+            case "drawrect":
                 mWriter.drawRect(
                         parseFloat(command.get("left")),
                         parseFloat(command.get("top")),
@@ -915,7 +1267,7 @@ public class RemoteComposeJsonParser {
                         parseFloat(command.get("bottom"))
                 );
                 break;
-            case "drawLine":
+            case "drawline":
                 mWriter.drawLine(
                         parseFloat(command.get("x1")),
                         parseFloat(command.get("y1")),
@@ -923,17 +1275,17 @@ public class RemoteComposeJsonParser {
                         parseFloat(command.get("y2"))
                 );
                 break;
-            case "drawPath":
+            case "drawpath":
                 mWriter.drawPath(parsePath(command.getString("path")));
                 break;
-            case "drawCircle":
+            case "drawcircle":
                 mWriter.drawCircle(
                         parseFloat(command.get("cx")),
                         parseFloat(command.get("cy")),
                         parseFloat(command.get("radius"))
                 );
                 break;
-            case "addBitmap": {
+            case "addbitmap": {
                 String imageName = command.getString("image");
                 Object bitmapObj = mBitmaps.get(imageName);
                 if (bitmapObj == null) {
@@ -946,7 +1298,7 @@ public class RemoteComposeJsonParser {
                 }
                 break;
             }
-            case "drawOval":
+            case "drawoval":
                 mWriter.drawOval(
                         parseFloat(command.get("left")),
                         parseFloat(command.get("top")),
@@ -954,7 +1306,7 @@ public class RemoteComposeJsonParser {
                         parseFloat(command.get("bottom"))
                 );
                 break;
-            case "drawRoundRect":
+            case "drawroundrect":
                 mWriter.drawRoundRect(
                         parseFloat(command.get("left")),
                         parseFloat(command.get("top")),
@@ -964,7 +1316,7 @@ public class RemoteComposeJsonParser {
                         parseFloat(command.get("ry"))
                 );
                 break;
-            case "drawArc":
+            case "drawarc":
                 mWriter.drawArc(
                         parseFloat(command.get("left")),
                         parseFloat(command.get("top")),
@@ -974,7 +1326,7 @@ public class RemoteComposeJsonParser {
                         parseFloat(command.get("sweepAngle"))
                 );
                 break;
-            case "drawTextAnchored": {
+            case "drawtextanchored": {
                 Object textObj = command.get("text");
                 int textId = resolveTextId(textObj);
                 mWriter.drawTextAnchored(
@@ -985,6 +1337,487 @@ public class RemoteComposeJsonParser {
                         parseFloat(command.get("panY")),
                         command.optInt("flags", 0)
                 );
+                break;
+            }
+            case "drawbitmap": {
+                int imageId = resolveTextId(command.get("image"));
+                String contentDescription = command.optString("contentDescription", null);
+                if (command.has("srcLeft")) {
+                    int imageWidth = command.optInt("imageWidth", 0);
+                    int imageHeight = command.optInt("imageHeight", 0);
+                    int srcLeft = command.getInt("srcLeft");
+                    int srcTop = command.getInt("srcTop");
+                    int srcRight = command.getInt("srcRight");
+                    int srcBottom = command.getInt("srcBottom");
+                    int dstLeft = command.getInt("dstLeft");
+                    int dstTop = command.getInt("dstTop");
+                    int dstRight = command.getInt("dstRight");
+                    int dstBottom = command.getInt("dstBottom");
+                    int contentDescriptionId = 0;
+                    if (contentDescription != null) {
+                        contentDescriptionId = mWriter.textCreateId(contentDescription);
+                    }
+                    mWriter.getBuffer().drawBitmap(imageId, imageWidth, imageHeight,
+                            srcLeft, srcTop, srcRight, srcBottom,
+                            dstLeft, dstTop, dstRight, dstBottom, contentDescriptionId);
+                } else {
+                    float left = parseFloat(command.get("left"));
+                    float top = parseFloat(command.get("top"));
+                    if (command.has("right") && command.has("bottom")) {
+                        float right = parseFloat(command.get("right"));
+                        float bottom = parseFloat(command.get("bottom"));
+                        mWriter.drawBitmap(imageId, left, top, right, bottom, contentDescription);
+                    } else {
+                        mWriter.drawBitmap(imageId, left, top, contentDescription);
+                    }
+                }
+                break;
+            }
+            case "drawbitmapint": {
+                int imageId = resolveTextId(command.get("image"));
+                int imageWidth = command.optInt("imageWidth", 0);
+                int imageHeight = command.optInt("imageHeight", 0);
+                int srcLeft = command.getInt("srcLeft");
+                int srcTop = command.getInt("srcTop");
+                int srcRight = command.getInt("srcRight");
+                int srcBottom = command.getInt("srcBottom");
+                int dstLeft = command.getInt("dstLeft");
+                int dstTop = command.getInt("dstTop");
+                int dstRight = command.getInt("dstRight");
+                int dstBottom = command.getInt("dstBottom");
+                String contentDescription = command.optString("contentDescription", null);
+                int contentDescriptionId = 0;
+                if (contentDescription != null) {
+                    contentDescriptionId = mWriter.textCreateId(contentDescription);
+                }
+                mWriter.getBuffer().drawBitmap(imageId, imageWidth, imageHeight,
+                        srcLeft, srcTop, srcRight, srcBottom,
+                        dstLeft, dstTop, dstRight, dstBottom, contentDescriptionId);
+                break;
+            }
+            case "drawscaledbitmap": {
+                int imageId = resolveTextId(command.get("image"));
+                float srcLeft = parseFloat(command.get("srcLeft"));
+                float srcTop = parseFloat(command.get("srcTop"));
+                float srcRight = parseFloat(command.get("srcRight"));
+                float srcBottom = parseFloat(command.get("srcBottom"));
+                float dstLeft = parseFloat(command.get("dstLeft"));
+                float dstTop = parseFloat(command.get("dstTop"));
+                float dstRight = parseFloat(command.get("dstRight"));
+                float dstBottom = parseFloat(command.get("dstBottom"));
+                int scaleType = command.optInt("scaleType", 0);
+                float scaleFactor = command.has("scaleFactor")
+                        ? parseFloat(command.get("scaleFactor")) : 1.0f;
+                String contentDescription = command.optString("contentDescription", null);
+                mWriter.drawScaledBitmap(
+                        imageId, srcLeft, srcTop, srcRight, srcBottom,
+                        dstLeft, dstTop, dstRight, dstBottom, scaleType,
+                        scaleFactor, contentDescription);
+                break;
+            }
+            case "drawbitmapfonttextrun": {
+                int textId = resolveTextId(command.get("text"));
+                int bitmapFontId = resolveTextId(command.get("bitmapFont"));
+                int start = command.optInt("start", 0);
+                int end = command.optInt("end", -1);
+                float x = parseFloat(command.get("x"));
+                float y = parseFloat(command.get("y"));
+                float glyphSpacing = command.has("glyphSpacing")
+                        ? parseFloat(command.get("glyphSpacing")) : 0f;
+                mWriter.drawBitmapFontTextRun(
+                        textId, bitmapFontId, start, end, x, y, glyphSpacing);
+                break;
+            }
+            case "drawbitmapfonttextrunonpath": {
+                int textId = resolveTextId(command.get("text"));
+                int bitmapFontId = resolveTextId(command.get("bitmapFont"));
+                int pathId = resolvePathId(command.get("path"));
+                int start = command.optInt("start", 0);
+                int end = command.optInt("end", -1);
+                float yAdj = command.has("yAdj") ? parseFloat(command.get("yAdj")) : 0f;
+                float glyphSpacing = command.has("glyphSpacing")
+                        ? parseFloat(command.get("glyphSpacing")) : 0f;
+                mWriter.getBuffer().addDrawBitmapFontTextRunOnPath(
+                        textId, bitmapFontId, pathId, start, end, yAdj, glyphSpacing);
+                break;
+            }
+            case "drawbitmaptextanchored": {
+                int textId = resolveTextId(command.get("text"));
+                int bitmapFontId = resolveTextId(command.get("bitmapFont"));
+                float start = command.has("start") ? parseFloat(command.get("start")) : 0f;
+                float end = command.has("end") ? parseFloat(command.get("end")) : -1f;
+                float x = parseFloat(command.get("x"));
+                float y = parseFloat(command.get("y"));
+                float panX = command.has("panX") ? parseFloat(command.get("panX")) : 0f;
+                float panY = command.has("panY") ? parseFloat(command.get("panY")) : 0f;
+                float glyphSpacing = command.has("glyphSpacing")
+                        ? parseFloat(command.get("glyphSpacing")) : 0f;
+                mWriter.drawBitmapTextAnchored(
+                        textId, bitmapFontId, start, end, x, y, panX, panY, glyphSpacing);
+                break;
+            }
+            case "drawtextrun": {
+                int textId = resolveTextId(command.get("text"));
+                int start = command.optInt("start", 0);
+                int end = command.optInt("end", -1);
+                int contextStart = command.optInt("contextStart", start);
+                int contextEnd = command.optInt("contextEnd", end);
+                float x = parseFloat(command.get("x"));
+                float y = parseFloat(command.get("y"));
+                boolean rtl = command.optBoolean("rtl", false);
+                mWriter.drawTextRun(textId, start, end, contextStart, contextEnd, x, y, rtl);
+                break;
+            }
+            case "drawtextonpath": {
+                int textId = resolveTextId(command.get("text"));
+                int pathId = resolvePathId(command.get("path"));
+                float hOffset = command.has("hOffset") ? parseFloat(command.get("hOffset")) : 0f;
+                float vOffset = command.has("vOffset") ? parseFloat(command.get("vOffset")) : 0f;
+                mWriter.drawTextOnPath(textId, pathId, hOffset, vOffset);
+                break;
+            }
+            case "drawtextoncircle": {
+                int textId = resolveTextId(command.get("text"));
+                float cx = parseFloat(command.get("cx"));
+                float cy = parseFloat(command.get("cy"));
+                float radius = parseFloat(command.get("radius"));
+                float startAngle = command.has("startAngle")
+                        ? parseFloat(command.get("startAngle")) : 0f;
+                float warpRadiusOffset = command.has("warpRadiusOffset")
+                        ? parseFloat(command.get("warpRadiusOffset")) : 0f;
+                String alignStr = command.optString("alignment", "center");
+                DrawTextOnCircle.Alignment align = DrawTextOnCircle.Alignment.CENTER;
+                if ("left".equalsIgnoreCase(alignStr)
+                        || "start".equalsIgnoreCase(alignStr)) {
+                    align = DrawTextOnCircle.Alignment.START;
+                } else if ("right".equalsIgnoreCase(alignStr)
+                        || "end".equalsIgnoreCase(alignStr)) {
+                    align = DrawTextOnCircle.Alignment.END;
+                }
+                String placeStr = command.optString("placement", "outside");
+                DrawTextOnCircle.Placement placement = DrawTextOnCircle.Placement.OUTSIDE;
+                if ("inside".equalsIgnoreCase(placeStr)) {
+                    placement = DrawTextOnCircle.Placement.INSIDE;
+                }
+                mWriter.drawTextOnCircle(
+                        textId, cx, cy, radius, startAngle, warpRadiusOffset, align, placement);
+                break;
+            }
+            case "drawsector": {
+                float left = parseFloat(command.get("left"));
+                float top = parseFloat(command.get("top"));
+                float right = parseFloat(command.get("right"));
+                float bottom = parseFloat(command.get("bottom"));
+                float startAngle = parseFloat(command.get("startAngle"));
+                float sweepAngle = parseFloat(command.get("sweepAngle"));
+                mWriter.drawSector(left, top, right, bottom, startAngle, sweepAngle);
+                break;
+            }
+            case "drawtweenpath": {
+                int path1Id = resolvePathId(command.get("path1"));
+                int path2Id = resolvePathId(command.get("path2"));
+                float tween = parseFloat(command.get("tween"));
+                float start = command.has("start") ? parseFloat(command.get("start")) : 0f;
+                float stop = command.has("stop") ? parseFloat(command.get("stop")) : 1f;
+                mWriter.drawTweenPath(path1Id, path2Id, tween, start, stop);
+                break;
+            }
+            case "createoffscreenbitmap": {
+                int id = mWriter.createOffscreenBitmap();
+                String varName = command.optString("name",
+                        command.optString("id",
+                                command.optString("varName",
+                                        command.optString("value", null))));
+                if (varName != null) {
+                    mVariables.put(varName, (float) id);
+                }
+                break;
+            }
+            case "drawcomponenttobitmap": {
+                Object bmVal = command.has("bitmap") ? command.get("bitmap")
+                        : (command.has("bitmapId") ? command.get("bitmapId")
+                        : command.get("value"));
+                int bitmapId = resolveTextId(bmVal);
+                if (command.has("componentId") || command.has("id")) {
+                    Object compVal = command.has("componentId")
+                            ? command.get("componentId")
+                            : command.get("id");
+                    int componentId = resolveTextId(compVal);
+                    mWriter.drawComponentToBitmap(componentId, bitmapId);
+                } else if (mVariables.containsKey("id")) {
+                    int componentId = resolveTextId("@id");
+                    mWriter.drawComponentToBitmap(componentId, bitmapId);
+                } else {
+                    mWriter.drawComponentToBitmap(bitmapId);
+                }
+                break;
+            }
+            case "drawtobitmap":
+            case "drawonbitmap": {
+                Object bmVal = command.has("bitmap") ? command.get("bitmap")
+                        : (command.has("bitmapId") ? command.get("bitmapId")
+                        : command.get("value"));
+                int bitmapId = resolveTextId(bmVal);
+                int mode = command.optInt("mode", 0);
+                int color = command.optInt("color", 0);
+                mWriter.drawOnBitmap(bitmapId, mode, color);
+                break;
+            }
+            case "drawcontent":
+            case "drawcomponentcontent": {
+                mWriter.drawComponentContent();
+                break;
+            }
+            case "clippath": {
+                int pathId = resolvePathId(command.get("path"));
+                mWriter.addClipPath(pathId);
+                break;
+            }
+            case "pathcombine": {
+                int path1Id = resolvePathId(command.get("path1"));
+                int path2Id = resolvePathId(command.get("path2"));
+                int op = command.optInt("op", 0);
+                int pathId = mWriter.pathCombine(path1Id, path2Id, (byte) op);
+                String idStr = command.optString("id", null);
+                if (idStr != null) {
+                    mPaths.put(idStr, pathId);
+                }
+                break;
+            }
+            case "pathtween": {
+                int path1Id = resolvePathId(command.get("path1"));
+                int path2Id = resolvePathId(command.get("path2"));
+                float tween = parseFloat(command.get("tween"));
+                int pathId = mWriter.pathTween(path1Id, path2Id, tween);
+                String idStr = command.optString("id", null);
+                if (idStr != null) {
+                    mPaths.put(idStr, pathId);
+                }
+                break;
+            }
+            case "skew": {
+                float skewX = parseFloat(command.get("skewX"));
+                float skewY = parseFloat(command.get("skewY"));
+                mWriter.skew(skewX, skewY);
+                break;
+            }
+            case "matrixfrompath": {
+                int pathId = resolvePathId(command.get("path"));
+                float fraction = parseFloat(command.get("fraction"));
+                float vOffset =
+                        command.has("vOffset") ? parseFloat(command.get("vOffset")) : 0f;
+                int flags = command.optInt("flags", 0);
+                mWriter.matrixFromPath(pathId, fraction, vOffset, flags);
+                break;
+            }
+            case "addmesh2d": {
+                parseAddMesh2D(command);
+                break;
+            }
+            case "drawmesh2d": {
+                Object meshRef =
+                        command.has("mesh") ? command.get("mesh") : command.get("meshId");
+                int meshId = resolveMeshId(meshRef);
+                int blend = parseMesh2DBlend(command);
+                int imageId =
+                        command.has("image")
+                                ? resolveTextId(command.get("image"))
+                                : DrawMesh2D.NO_IMAGE;
+                mWriter.drawMesh2D(meshId, blend, imageId);
+                break;
+            }
+            case "matrixfrommesh2d": {
+                Object meshRef =
+                        command.has("mesh") ? command.get("mesh") : command.get("meshId");
+                int meshId = resolveMeshId(meshRef);
+                float u = parseFloat(command.get("u"));
+                float v = parseFloat(command.get("v"));
+                int flags = parseMesh2DMatrixFlags(command);
+                mWriter.matrixFromMesh2D(meshId, u, v, flags);
+                break;
+            }
+            case "matrixconstant": {
+                JSONArray valArr = command.getJSONArray("values");
+                float[] values = new float[valArr.length()];
+                for (int i = 0; i < valArr.length(); i++) {
+                    Object item = valArr.get(i);
+                    if (item instanceof String) {
+                        String str = (String) item;
+                        if (str.startsWith("matrix:")) {
+                            values[i] = parseMatrixOperator(str.substring(7));
+                            continue;
+                        }
+                    }
+                    values[i] = parseFloat(item);
+                }
+                String name = command.optString("name", null);
+                boolean named = command.optBoolean("named", false);
+                int matrixId;
+                if (named && name != null) {
+                    matrixId = (int) mWriter.createNamedVariable(name, NamedVariable.FLOAT_TYPE);
+                } else {
+                    matrixId = command.optInt("id", mWriter.nextId());
+                }
+                if (name != null) {
+                    mVariables.put(name, Utils.asNan(matrixId));
+                    mMatrices.put(name, Utils.asNan(matrixId));
+                }
+                mWriter.getBuffer().addMatrixExpression(matrixId, values);
+                break;
+            }
+            case "matrixvectormath": {
+                float matrixId = parseFloat(command.get("matrix"));
+                short mathType = (short) command.optInt("type", command.optInt("mType", 0));
+                JSONArray fromArr = command.getJSONArray("from");
+                float[] from = new float[fromArr.length()];
+                for (int i = 0; i < fromArr.length(); i++) from[i] = parseFloat(fromArr.get(i));
+                JSONArray outArr = command.getJSONArray("out");
+                int[] outIds = new int[outArr.length()];
+                boolean named = command.optBoolean("named", false);
+                for (int i = 0; i < outArr.length(); i++) {
+                    Object item = outArr.get(i);
+                    int id;
+                    if (item instanceof String) {
+                        String name = (String) item;
+                        if (named) {
+                            float varId = mWriter.createNamedVariable(
+                                    name, NamedVariable.FLOAT_TYPE);
+                            id = Utils.idFromNan(varId);
+                            mVariables.put(name, varId);
+                        } else {
+                            id = mWriter.nextId();
+                            float varId = Utils.asNan(id);
+                            mVariables.put(name, varId);
+                        }
+                    } else {
+                        id = ((Number) item).intValue();
+                    }
+                    outIds[i] = id;
+                }
+                mWriter.getBuffer().addMatrixVectorMath(matrixId, mathType, from, outIds);
+                break;
+            }
+            case "textmeasure": {
+                int textId = resolveTextId(command.get("text"));
+                int mode = command.optInt("mode", 0);
+                String name = command.optString("name", null);
+                float val = mWriter.textMeasure(textId, mode);
+                if (name != null) {
+                    mVariables.put(name, val);
+                }
+                break;
+            }
+            case "bitmaptextmeasure": {
+                int textId = resolveTextId(command.get("text"));
+                int bmFontId = resolveTextId(command.get("bitmapFont"));
+                int mode = command.optInt("mode", 0);
+                float glyphSpacing = command.has("glyphSpacing")
+                        ? parseFloat(command.get("glyphSpacing")) : 0f;
+                String name = command.optString("name", null);
+                float val = mWriter.bitmapTextMeasure(textId, bmFontId, mode, glyphSpacing);
+                if (name != null) {
+                    mVariables.put(name, val);
+                }
+                break;
+            }
+            case "textlength": {
+                int textId = resolveTextId(command.get("text"));
+                String name = command.optString("name", null);
+                float val = mWriter.textLength(textId);
+                if (name != null) {
+                    mVariables.put(name, val);
+                }
+                break;
+            }
+            case "dynamicfloatarray":
+            case "dynamicfloatlist": {
+                int listId = command.optInt("id", mWriter.nextId());
+                float size = command.has("size") ? parseFloat(command.get("size")) : 0f;
+                String name = command.optString("name", null);
+                if (name != null) {
+                    mVariables.put(name, (float) listId);
+                }
+                mWriter.addDynamicFloatArray(listId, size);
+                break;
+            }
+            case "updatedynamicfloatlist": {
+                int listId = (int) parseFloat(command.get("list"));
+                float index = parseFloat(command.get("index"));
+                float value = parseFloat(command.get("value"));
+                mWriter.setArrayValue(listId, index, value);
+                break;
+            }
+            case "touchexpression": {
+                float defVal = command.has("defaultValue")
+                        ? parseFloat(command.get("defaultValue")) : 0f;
+                float min = command.has("min") ? parseFloat(command.get("min")) : Float.NaN;
+                float max = command.has("max") ? parseFloat(command.get("max")) : 1f;
+                int touchMode = command.optInt("touchMode", 0);
+                float velocityId = command.has("velocityId")
+                        ? parseFloat(command.get("velocityId")) : Float.NaN;
+                int touchEffects = command.optInt("touchEffects", 0);
+                JSONArray expArr = command.optJSONArray("expression");
+                float[] exp = new float[expArr != null ? expArr.length() : 0];
+                if (expArr != null) {
+                    for (int i = 0; i < expArr.length(); i++) {
+                        exp[i] = parseFloat(expArr.get(i));
+                    }
+                }
+                String name = command.optString("name", null);
+                float idVal = mWriter.addTouch(
+                        defVal, min, max, touchMode, velocityId, touchEffects, null, null, exp);
+                if (name != null) {
+                    mVariables.put(name, idVal);
+                }
+                break;
+            }
+            case "colorattribute": {
+                int baseColor = command.optInt("color", 0);
+                int typeOpt = command.optInt("colorType", command.optInt("type", 0));
+                short colorType = (short) command.optInt("attribute", typeOpt);
+                String name = command.optString("name", null);
+                float val = mWriter.getColorAttribute(baseColor, colorType);
+                if (name != null) {
+                    mVariables.put(name, val);
+                }
+                break;
+            }
+            case "imageattribute":
+            case "bitmapattribute": {
+                int bitmapId = resolveTextId(command.get("bitmap"));
+                short attr = (short) command.optInt("attribute", 0);
+                String name = command.optString("name", null);
+                float val = mWriter.bitmapAttribute(bitmapId, attr);
+                if (name != null) {
+                    mVariables.put(name, val);
+                }
+                break;
+            }
+            case "textattribute": {
+                int textId = resolveTextId(command.get("text"));
+                short attr = (short) command.optInt("attribute", 0);
+                String name = command.optString("name", null);
+                float val = mWriter.textAttribute(textId, attr);
+                if (name != null) {
+                    mVariables.put(name, val);
+                }
+                break;
+            }
+            case "timeattribute": {
+                int longId = command.optInt("timeId", 0);
+                short timeType = (short) command.optInt("type", 0);
+                JSONArray argsArr = command.optJSONArray("args");
+                int[] args = new int[argsArr != null ? argsArr.length() : 0];
+                if (argsArr != null) {
+                    for (int i = 0; i < argsArr.length(); i++) {
+                        args[i] = argsArr.getInt(i);
+                    }
+                }
+                String name = command.optString("name", null);
+                float val = mWriter.timeAttribute(longId, timeType, args);
+                if (name != null) {
+                    mVariables.put(name, val);
+                }
                 break;
             }
             case "rotate": {
@@ -1006,7 +1839,7 @@ public class RemoteComposeJsonParser {
                 );
                 break;
             }
-            case "matrixMultiply": {
+            case "matrixmultiply": {
                 float matrixId = parseFloat(command.get("matrix"));
                 short mType = (short) command.optInt("mType", 0);
                 JSONArray fromArr = command.getJSONArray("from");
@@ -1014,16 +1847,41 @@ public class RemoteComposeJsonParser {
                 for (int i = 0; i < fromArr.length(); i++) from[i] = parseFloat(fromArr.get(i));
                 JSONArray outArr = command.getJSONArray("out");
                 float[] out = new float[outArr.length()];
+                boolean named = command.optBoolean("named", false);
                 for (int i = 0; i < outArr.length(); i++) {
                     String name = outArr.getString(i);
-                    float id = mWriter.createNamedVariable(name, NamedVariable.FLOAT_TYPE);
+                    float id;
+                    if (named) {
+                        id = mWriter.createNamedVariable(name, NamedVariable.FLOAT_TYPE);
+                    } else {
+                        int intId = mWriter.nextId();
+                        id = Utils.asNan(intId);
+                    }
                     out[i] = id;
                     mVariables.put(name, id);
                 }
                 mWriter.addMatrixMultiply(matrixId, mType, from, out);
                 break;
             }
-            case "pathCreate": {
+            case "pathdata":
+            case "path": {
+                String id = command.optString("id", null);
+                Object data = command.get("data");
+                int pathId;
+                if (data instanceof JSONArray) {
+                    JSONArray arr = (JSONArray) data;
+                    float[] pathData = new float[arr.length()];
+                    for (int i = 0; i < arr.length(); i++) {
+                        pathData[i] = parseFloat(arr.get(i));
+                    }
+                    pathId = mWriter.addPathData(pathData);
+                } else {
+                    pathId = mWriter.addPathData(data.toString());
+                }
+                if (id != null) mPaths.put(id, pathId);
+                break;
+            }
+            case "pathcreate": {
                 String id = command.optString("id", null);
                 float x = parseFloat(command.get("x"));
                 float y = parseFloat(command.get("y"));
@@ -1031,17 +1889,36 @@ public class RemoteComposeJsonParser {
                 if (id != null) mPaths.put(id, pathId);
                 break;
             }
-            case "pathAppendLineTo":
+            case "pathappendlineto":
                 mWriter.pathAppendLineTo(
                         parsePath(command.getString("path")),
                         parseFloat(command.get("x")),
                         parseFloat(command.get("y"))
                 );
                 break;
-            case "pathAppendClose":
+            case "pathappendmoveto":
+                mWriter.pathAppendMoveTo(
+                        parsePath(command.getString("path")),
+                        parseFloat(command.get("x")),
+                        parseFloat(command.get("y"))
+                );
+                break;
+            case "pathappendquadto":
+                mWriter.pathAppendQuadTo(
+                        parsePath(command.getString("path")),
+                        parseFloat(command.get("x1")),
+                        parseFloat(command.get("y1")),
+                        parseFloat(command.get("x2")),
+                        parseFloat(command.get("y2"))
+                );
+                break;
+            case "pathappendreset":
+                mWriter.pathAppendReset(parsePath(command.getString("path")));
+                break;
+            case "pathappendclose":
                 mWriter.pathAppendClose(parsePath(command.getString("path")));
                 break;
-            case "pathExpression": {
+            case "pathexpression": {
                 String pathIdStr = command.getString("id");
                 float[] expX = parseFloatExpression(command.get("expressionX"));
                 float[] expY = parseFloatExpression(command.get("expressionY"));
@@ -1050,6 +1927,21 @@ public class RemoteComposeJsonParser {
                 float count = parseFloat(command.get("count"));
                 int flags = command.optInt("flags", 0);
                 int pathId = mWriter.addPathExpression(expX, expY, start, end, count, flags);
+                mPaths.put(pathIdStr, pathId);
+                break;
+            }
+            case "polarpathexpression": {
+                String pathIdStr = command.getString("id");
+                float[] expR = parseFloatExpression(command.get("expressionR"));
+                float start = parseFloat(command.get("start"));
+                float end = parseFloat(command.get("end"));
+                float count = parseFloat(command.get("count"));
+                float cx = parseFloat(command.has("centerX") ? command.get("centerX")
+                        : (command.has("cx") ? command.get("cx") : 0f));
+                float cy = parseFloat(command.has("centerY") ? command.get("centerY")
+                        : (command.has("cy") ? command.get("cy") : 0f));
+                int flags = command.optInt("flags", 0);
+                int pathId = mWriter.addPolarPathExpression(expR, start, end, count, cx, cy, flags);
                 mPaths.put(pathIdStr, pathId);
                 break;
             }
@@ -1092,7 +1984,7 @@ public class RemoteComposeJsonParser {
                 });
                 break;
             }
-            case "impulseProcess": {
+            case "impulseprocess": {
                 final JSONObject finalCommand = command;
                 mWriter.impulseProcess(() -> {
                     try {
@@ -1103,7 +1995,7 @@ public class RemoteComposeJsonParser {
                 });
                 break;
             }
-            case "createParticles": {
+            case "createparticles": {
                 JSONArray varsArray = command.getJSONArray("variables");
                 JSONArray initArray = command.getJSONArray("initialValues");
                 int count = command.getInt("count");
@@ -1123,7 +2015,7 @@ public class RemoteComposeJsonParser {
                 }
                 break;
             }
-            case "particlesLoop": {
+            case "particlesloop": {
                 float systemIdFloat = parseFloat(command.get("system"));
                 float[] restartExpr = command.has("restart")
                         ? parseFloatExpression(command.get("restart")) : null;
@@ -1144,11 +2036,180 @@ public class RemoteComposeJsonParser {
                 });
                 break;
             }
+            case "particlescomparison": {
+                float systemIdFloat = parseFloat(command.get("systemId"));
+                short flags = (short) command.optInt("flags", 0);
+                float min = parseFloat(command.get("min"));
+                float max = parseFloat(command.get("max"));
+                float[] condition = command.has("condition")
+                        ? parseFloatExpression(command.get("condition")) : null;
+                float[][] then1 = command.has("then1")
+                        ? parseFloatExpressions(command.getJSONArray("then1")) : null;
+                float[][] then2 = command.has("then2")
+                        ? parseFloatExpressions(command.getJSONArray("then2"))
+                        : (command.has("then")
+                                ? parseFloatExpressions(command.getJSONArray("then")) : null);
+                final JSONObject finalCommand = command;
+                Runnable subCmds = command.has("commands") ? () -> {
+                    try {
+                        parseCommands(finalCommand.getJSONArray("commands"));
+                    } catch (JSONException e) {
+                        throw new RuntimeException(e);
+                    }
+                } : null;
+                if (then2 != null) {
+                    mWriter.particlesComparison(systemIdFloat, flags, min, max,
+                            condition, then1, then2, subCmds);
+                } else {
+                    mWriter.particlesComparison(systemIdFloat, flags, min, max,
+                            condition, then1, subCmds);
+                }
+                break;
+            }
+            case "wakein":
+                mWriter.wakeIn(parseFloat(command.get("seconds")));
+                break;
+            case "performhaptic":
+                mWriter.performHaptic(command.getInt("constant"));
+                break;
+            case "playsound":
+                mWriter.playSound(resolveTextId(command.get("id")));
+                break;
+            case "setarrayvalue": {
+                int arrayId = resolveTextId(command.get("id"));
+                float index = parseFloat(command.get("index"));
+                float value = parseFloat(command.get("value"));
+                mWriter.setArrayValue(arrayId, index, value);
+                break;
+            }
+            case "callfloatfunction": {
+                int fnId = resolveTextId(command.get("id"));
+                JSONArray argsArr = command.getJSONArray("args");
+                float[] args = new float[argsArr.length()];
+                for (int i = 0; i < argsArr.length(); i++) {
+                    args[i] = parseFloat(argsArr.get(i));
+                }
+                mWriter.callFloatFunction(fnId, args);
+                break;
+            }
+            case "createfloatfunction":
+            case "floatfunction": {
+                parseFloatFunction(command, false);
+                break;
+            }
+            case "definevisibilityanimation": {
+                parseFloatFunction(command, true);
+                break;
+            }
+            case "clickarea": {
+                int id = resolveTextId(command.get("id"));
+                String contentDescription = command.optString("contentDescription", null);
+                float left = parseFloat(command.get("left"));
+                float top = parseFloat(command.get("top"));
+                float right = parseFloat(command.get("right"));
+                float bottom = parseFloat(command.get("bottom"));
+                String metadata = command.optString("metadata", null);
+                mWriter.addClickArea(id, contentDescription, left, top, right, bottom, metadata);
+                break;
+            }
+            case "textlookup": {
+                float arrId = parseFloat(command.get("array"));
+                float index = parseFloat(command.get("index"));
+                float res = mWriter.textLookup(arrId, index);
+                String varName = command.optString("varName", null);
+                if (varName != null) mVariables.put(varName, res);
+                break;
+            }
+            case "maplookup":
+            case "datamaplookup": {
+                int mapId = resolveTextId(command.get("map"));
+                String keyStr = command.getString("key");
+                int res = mWriter.mapLookup(mapId, keyStr);
+                String varName = command.optString("varName", null);
+                if (varName != null) mVariables.put(varName, (float) res);
+                break;
+            }
+            case "idlookup": {
+                float arrId = parseFloat(command.get("array"));
+                float index = parseFloat(command.get("index"));
+                float res = mWriter.idLookup(arrId, index);
+                String varName = command.optString("varName", null);
+                if (varName != null) mVariables.put(varName, res);
+                break;
+            }
+            case "debugmessage": {
+                String msg = command.getString("message");
+                float val = parseFloat(command.opt("value"));
+                int flag = command.optInt("flag", 0);
+                mWriter.addDebugMessage(msg, val, flag);
+                break;
+            }
+            case "rem": {
+                String text = command.optString("text",
+                        command.optString("value",
+                                command.optString("message",
+                                        command.optString("comment", ""))));
+                mWriter.rem(text);
+                break;
+            }
+            case "skip": {
+                short skipType = (short) command.optInt("type", 0);
+                int val = command.optInt("value", 0);
+                int offset = command.optInt("offset", 0);
+                mWriter.beginSkip(skipType, val);
+                if (command.has("commands")) {
+                    parseCommands(command.getJSONArray("commands"));
+                }
+                mWriter.endSkip(offset);
+                break;
+            }
+            case "runaction":
+            case "runactions": {
+                mWriter.startRunActions();
+                if (command.has("commands")) {
+                    parseCommands(command.getJSONArray("commands"));
+                }
+                mWriter.endRunActions();
+                break;
+            }
+            case "textsubtext": {
+                int txtId = resolveTextId(command.get("text"));
+                float start = parseFloat(command.get("start"));
+                float len = parseFloat(command.get("len"));
+                int id = mWriter.textSubtext(txtId, start, len);
+                String varName = command.optString("varName", null);
+                if (varName != null) {
+                    mVariables.put(varName, (float) id);
+                }
+                break;
+            }
+            case "texttransform": {
+                int txtId = resolveTextId(command.get("text"));
+                float start = parseFloat(command.get("start"));
+                float len = parseFloat(command.get("len"));
+                String opStr = command.getString("operation");
+                int op = 0;
+                if ("uppercase".equalsIgnoreCase(opStr)) {
+                    op = 1;
+                } else if ("lowercase".equalsIgnoreCase(opStr)) {
+                    op = 2;
+                } else if ("capitalize".equalsIgnoreCase(opStr)) {
+                    op = 3;
+                } else {
+                    op = command.optInt("operation", 0);
+                }
+                int id = mWriter.textTransform(txtId, start, len, op);
+                String varName = command.optString("varName", null);
+                if (varName != null) {
+                    mVariables.put(varName, (float) id);
+                }
+                break;
+            }
             case "variable": {
                 String varName = command.getString("name");
                 String varType = command.optString("vtype", "float");
                 boolean named = command.optBoolean("export", false);
-                if (varType.equals("floatArrays")) {
+                if (varType.equalsIgnoreCase("floatArrays")) {
                     JSONArray arr;
                     Object val = command.get("value");
                     if (val instanceof JSONObject) {
@@ -1169,14 +2230,14 @@ public class RemoteComposeJsonParser {
                         );
                     }
                     mVariables.put(varName, varVal);
-                } else if (varType.equals("path")) {
+                } else if (varType.equalsIgnoreCase("path")) {
                     String pathVal = command.getString("value");
                     int id = parsePath(pathVal);
                     if (named) {
                         mWriter.setStringName(id, varName);
                     }
                     mPaths.put(varName, id);
-                } else if (varType.equals("color")) {
+                } else if (varType.equalsIgnoreCase("color")) {
                     boolean commit = command.optBoolean("commit", false);
                     if (mInFirstPass || commit) {
                         int colorVal = parseColor(command.getString("value"));
@@ -1190,7 +2251,7 @@ public class RemoteComposeJsonParser {
                     } else {
                         mDeferredVariables.put(varName, command);
                     }
-                } else if (varType.equals("string")) {
+                } else if (varType.equalsIgnoreCase("string")) {
                     boolean commit = command.optBoolean("commit", false);
                     if (mInFirstPass || commit) {
                         int textId = resolveTextId(command.get("value"));
@@ -1198,6 +2259,23 @@ public class RemoteComposeJsonParser {
                         if (named) {
                             mWriter.setStringName(textId, varName);
                         }
+                    } else {
+                        mDeferredVariables.put(varName, command);
+                    }
+                } else if (varType.equalsIgnoreCase("integer")
+                        || varType.equalsIgnoreCase("int")) {
+                    boolean commit = command.optBoolean("commit", false);
+                    if (mInFirstPass || commit) {
+                        int intVal = command.optInt("value", 0);
+                        long intId;
+                        if (named) {
+                            intId = mWriter.addNamedInt(varName, intVal);
+                        } else {
+                            intId = mWriter.addInteger(intVal);
+                        }
+                        mIntegerVariables.put(varName, intId);
+                        int rawId = (int) (intId & 0xFFFFFFFFL);
+                        mVariables.put(varName, Utils.asNan(rawId));
                     } else {
                         mDeferredVariables.put(varName, command);
                     }
@@ -1241,7 +2319,7 @@ public class RemoteComposeJsonParser {
                             }
                         } else if (val instanceof JSONObject) {
                             JSONObject vo = (JSONObject) val;
-                            if (vo.optString("type", "").equals("textFromFloat")) {
+                            if (vo.optString("type", "").equalsIgnoreCase("textFromFloat")) {
                                 float floatVal = parseFloat(vo.get("value"));
                                 int after = vo.optInt("decimal", 3);
                                 int before = vo.optInt("whole", 0);
@@ -1249,7 +2327,7 @@ public class RemoteComposeJsonParser {
                                 varVal = (float) mWriter.createTextFromFloat(floatVal, before,
                                         after, flags);
                             } else if (vo.optString("type", "")
-                                    .equals("textMerge")) {
+                                    .equalsIgnoreCase("textMerge")) {
                                 int id1 = resolveTextId(vo.get("id1"));
                                 int id2 = resolveTextId(vo.get("id2"));
                                 varVal = (float) mWriter.textMerge(id1, id2);
@@ -1278,6 +2356,20 @@ public class RemoteComposeJsonParser {
                             } else {
                                 varVal = mWriter.addNamedFloat(varName, varVal);
                             }
+                        } else if (val instanceof String
+                                && (((String) val).equalsIgnoreCase("componentWidth()")
+                                || ((String) val).equalsIgnoreCase("componentWidth"))) {
+                            varVal = mWriter.addComponentWidthValue();
+                            if (named) {
+                                mWriter.setFloatName(Utils.idFromNan(varVal), varName);
+                            }
+                        } else if (val instanceof String
+                                && (((String) val).equalsIgnoreCase("componentHeight()")
+                                || ((String) val).equalsIgnoreCase("componentHeight"))) {
+                            varVal = mWriter.addComponentHeightValue();
+                            if (named) {
+                                mWriter.setFloatName(Utils.idFromNan(varVal), varName);
+                            }
                         } else {
                             if (val instanceof Number) {
                                 varVal = mWriter.addFloatConstant(((Number) val).floatValue());
@@ -1292,15 +2384,25 @@ public class RemoteComposeJsonParser {
                 }
                 break;
             }
-            case "conditionalOperations": {
+            case "conditionaloperations": {
                 String conditionStr = command.getString("condition");
                 byte type_val = 0;
                 switch (conditionStr.toLowerCase()) {
-                    case "gt": type_val = (byte) ConditionalOperations.TYPE_GT; break;
-                    case "ge": type_val = (byte) ConditionalOperations.TYPE_GTE; break;
-                    case "lt": type_val = (byte) ConditionalOperations.TYPE_LT; break;
-                    case "le": type_val = (byte) ConditionalOperations.TYPE_LTE; break;
-                    case "eq": type_val = (byte) ConditionalOperations.TYPE_EQ; break;
+                    case "gt":
+                        type_val = (byte) ConditionalOperations.TYPE_GT;
+                        break;
+                    case "ge":
+                        type_val = (byte) ConditionalOperations.TYPE_GTE;
+                        break;
+                    case "lt":
+                        type_val = (byte) ConditionalOperations.TYPE_LT;
+                        break;
+                    case "le":
+                        type_val = (byte) ConditionalOperations.TYPE_LTE;
+                        break;
+                    case "eq":
+                        type_val = (byte) ConditionalOperations.TYPE_EQ;
+                        break;
                 }
                 float v1 = parseFloat(command.get("v1"));
                 float v2 = parseFloat(command.get("v2"));
@@ -1328,7 +2430,7 @@ public class RemoteComposeJsonParser {
             case "restore":
                 mWriter.restore();
                 break;
-            case "clipRect":
+            case "cliprect":
                 mWriter.clipRect(
                         parseFloat(command.get("left")),
                         parseFloat(command.get("top")),
@@ -1337,10 +2439,23 @@ public class RemoteComposeJsonParser {
                 );
                 break;
             case "scale":
-                mWriter.scale(
-                        parseFloat(command.get("sx")),
-                        parseFloat(command.get("sy"))
-                );
+                if (command.has("pivotX") || command.has("centerX")) {
+                    float pivotX = command.has("pivotX") ? parseFloat(command.get("pivotX"))
+                            : parseFloat(command.get("centerX"));
+                    float pivotY = command.has("pivotY") ? parseFloat(command.get("pivotY"))
+                            : parseFloat(command.get("centerY"));
+                    mWriter.scale(
+                            parseFloat(command.get("sx")),
+                            parseFloat(command.get("sy")),
+                            pivotX,
+                            pivotY
+                    );
+                } else {
+                    mWriter.scale(
+                            parseFloat(command.get("sx")),
+                            parseFloat(command.get("sy"))
+                    );
+                }
                 break;
             case "resources":
                 if (command.has("resources")) {
@@ -1349,37 +2464,101 @@ public class RemoteComposeJsonParser {
                     mResourceParser.parseResources(command);
                 }
                 break;
+            case "fontdata":
+            case "addfont": {
+                int id = resolveTextId(command.get("id"));
+                JSONArray dataArr = command.getJSONArray("data");
+                byte[] data = new byte[dataArr.length()];
+                for (int i = 0; i < dataArr.length(); i++) {
+                    data[i] = (byte) dataArr.getInt(i);
+                }
+                mWriter.getBuffer().addFont(id, command.optInt("fontType", 0), data);
+                break;
+            }
+            case "componentvalue":
+            case "addcomponentvalue": {
+                int id = resolveTextId(command.get("id"));
+                int valueType = command.getInt("valueType");
+                mWriter.getBuffer().addComponentValue(id, valueType);
+                break;
+            }
+            case "textlookupint": {
+                int id = resolveTextId(command.get("id"));
+                float dataSetNan = parseFloat(command.get("dataSet"));
+                int indexId = resolveTextId(command.get("index"));
+                mWriter.getBuffer().textLookup(id, dataSetNan, indexId);
+                break;
+            }
+            case "datalistids":
+            case "idlist":
+            case "adddatalist": {
+                JSONArray idsArr = command.getJSONArray("list");
+                int[] ids = new int[idsArr.length()];
+                for (int i = 0; i < idsArr.length(); i++) {
+                    ids[i] = resolveTextId(idsArr.get(i));
+                }
+                mWriter.addList(ids);
+                break;
+            }
         }
     }
 
-    @NonNull Shape parseShape(@NonNull JSONObject obj) throws JSONException {
-        String type = obj.getString("type").toLowerCase();
-        switch (type) {
-            case "circle":
-                return new CircleShape();
-            case "rect":
-                return new RectShape(
-                        (float) obj.optDouble("left", 0),
-                        (float) obj.optDouble("top", 0),
-                        (float) obj.optDouble("right", 100),
-                        (float) obj.optDouble("bottom", 100)
-                );
-            case "roundrect":
-            case "roundedrect":
-                if (obj.has("radius")) {
-                    float r = (float) obj.optDouble("radius", 0);
-                    return new RoundedRectShape(r, r, r, r);
-                } else {
-                    return new RoundedRectShape(
-                            (float) obj.optDouble("topStart", 0),
-                            (float) obj.optDouble("topEnd", 0),
-                            (float) obj.optDouble("bottomStart", 0),
-                            (float) obj.optDouble("bottomEnd", 0)
-                    );
-                }
-            default:
-                throw new JSONException("Unknown shape type: " + type);
+    @NonNull Shape parseShape(@NonNull Object shapeVal) throws JSONException {
+        if (shapeVal instanceof Number) {
+            float r = ((Number) shapeVal).floatValue();
+            return new RoundedRectShape(r, r, r, r);
         }
+        if (shapeVal instanceof JSONObject) {
+            JSONObject obj = (JSONObject) shapeVal;
+            if (!obj.has("type") && obj.length() == 1) {
+                String key = obj.keys().next();
+                Object val = obj.get(key);
+                if (val instanceof Number) {
+                    float r = ((Number) val).floatValue();
+                    return new RoundedRectShape(r, r, r, r);
+                }
+                if (val instanceof JSONObject) {
+                    JSONObject inner = (JSONObject) val;
+                    if (!inner.has("type")) {
+                        inner.put("type", key);
+                    }
+                    return parseShape(inner);
+                }
+            }
+            String type = obj.optString("type", "roundedrect").toLowerCase();
+            switch (type) {
+                case "circle":
+                    return new CircleShape();
+                case "rect":
+                    return new RectShape(
+                            (float) obj.optDouble("left", 0),
+                            (float) obj.optDouble("top", 0),
+                            (float) obj.optDouble("right", 100),
+                            (float) obj.optDouble("bottom", 100)
+                    );
+                case "roundrect":
+                case "roundedrect":
+                    if (obj.has("radius")) {
+                        float r = (float) obj.optDouble("radius", 0);
+                        return new RoundedRectShape(r, r, r, r);
+                    } else {
+                        double r = obj.optDouble("roundedrect", obj.optDouble("roundrect", 0));
+                        if (r > 0) {
+                            float rf = (float) r;
+                            return new RoundedRectShape(rf, rf, rf, rf);
+                        }
+                        return new RoundedRectShape(
+                                (float) obj.optDouble("topStart", 0),
+                                (float) obj.optDouble("topEnd", 0),
+                                (float) obj.optDouble("bottomStart", 0),
+                                (float) obj.optDouble("bottomEnd", 0)
+                        );
+                    }
+                default:
+                    throw new JSONException("Unknown shape type: " + type);
+            }
+        }
+        throw new JSONException("Invalid shape format: " + shapeVal);
     }
 
     @NonNull RecordingModifier parseModifiers(
@@ -1415,7 +2594,7 @@ public class RemoteComposeJsonParser {
             Object val = command.get("value");
             if (val instanceof JSONObject) {
                 JSONObject vo = (JSONObject) val;
-                if (vo.has("type") && vo.getString("type").equals("textFromFloat")) {
+                if (vo.has("type") && vo.getString("type").equalsIgnoreCase("textFromFloat")) {
                     float floatVal = parseFloat(vo.get("value"));
                     int after = vo.optInt("after", 3);
                     if (vo.has("decimal")) after = vo.optInt("decimal", 3);
@@ -1429,7 +2608,7 @@ public class RemoteComposeJsonParser {
                     }
                     return (float) textId;
                 }
-                if (vo.has("type") && vo.getString("type").equals("textMerge")) {
+                if (vo.has("type") && vo.getString("type").equalsIgnoreCase("textMerge")) {
                     int id1 = resolveTextId(vo.get("id1"));
                     int id2 = resolveTextId(vo.get("id2"));
                     int mergedId = mWriter.textMerge(id1, id2);
@@ -1441,7 +2620,7 @@ public class RemoteComposeJsonParser {
                 }
             }
             String varType = command.optString("vtype", "float");
-            if (varType.equals("string")) {
+            if (varType.equalsIgnoreCase("string")) {
                 int textId = mWriter.textCreateId(command.getString("value"));
                 mVariables.put(name, (float) textId);
                 if (named) {
@@ -1469,6 +2648,103 @@ public class RemoteComposeJsonParser {
         return Float.NaN;
     }
 
+    /**
+     * Applies a {@code radialGradient} JSON object to {@code paint}. Supports both the classic
+     * single-circle form ({@code centerX}, {@code centerY}, {@code radius}) and the two-circle
+     * focal form ({@code startX}/{@code startY}/{@code startR} plus {@code endX}/{@code endY}/
+     * {@code endR}, or {@code focal*} layered on top of {@code center*}).
+     */
+    private void applyRadialGradient(@NonNull RcPaint paint, @NonNull JSONObject g)
+            throws JSONException {
+        JSONArray colorsArr = g.getJSONArray("colors");
+        int[] colors = new int[colorsArr.length()];
+        int mask = 0;
+        for (int j = 0; j < colorsArr.length(); j++) {
+            Object c = colorsArr.get(j);
+            if (c instanceof String
+                    && (((String) c).startsWith("$colors.")
+                    || ((String) c).startsWith("@colors."))) {
+                mask |= (1 << j);
+            }
+            colors[j] = parseColor(c);
+        }
+        JSONArray stopsArr = g.optJSONArray("stops");
+        float[] stops = null;
+        if (stopsArr != null) {
+            stops = new float[stopsArr.length()];
+            for (int j = 0; j < stopsArr.length(); j++) {
+                stops[j] = (float) stopsArr.getDouble(j);
+            }
+        }
+        int tileMode = g.optInt("tileMode", 0);
+        if (isFocalRadialGradient(g)) {
+            // Two-circle (focal) form. The end circle falls back to centerX/centerY/radius so the
+            // focal* keys can simply be layered on top of a regular radial gradient.
+            float endX = parseFloatKeys(g, 0f, "endX", "centerX");
+            float endY = parseFloatKeys(g, 0f, "endY", "centerY");
+            float endRadius = parseFloatKeys(g, 0f, "endR", "endRadius", "radius");
+            float startX = parseFloatKeys(g, endX, "startX", "focalX");
+            float startY = parseFloatKeys(g, endY, "startY", "focalY");
+            float startRadius =
+                    parseFloatKeys(g, 0f, "startR", "startRadius", "focalR", "focalRadius");
+            paint.setRadialGradient(
+                    startX,
+                    startY,
+                    startRadius,
+                    endX,
+                    endY,
+                    endRadius,
+                    colors,
+                    mask,
+                    stops,
+                    tileMode);
+        } else {
+            paint.setRadialGradient(
+                    parseFloat(g.get("centerX")),
+                    parseFloat(g.get("centerY")),
+                    parseFloat(g.get("radius")),
+                    colors,
+                    mask,
+                    stops,
+                    tileMode);
+        }
+    }
+
+    /**
+     * Keys that select the two-circle (focal) form of {@code radialGradient}. If none of these are
+     * present the gradient is parsed as the classic single-circle form.
+     */
+    private static final String[] FOCAL_RADIAL_KEYS = {
+        "startX", "startY", "startR", "startRadius",
+        "endX", "endY", "endR", "endRadius",
+        "focalX", "focalY", "focalR", "focalRadius"
+    };
+
+    /** Returns true if the gradient object uses the two-circle (focal) form. */
+    private static boolean isFocalRadialGradient(@NonNull JSONObject gradient) {
+        for (String k : FOCAL_RADIAL_KEYS) {
+            if (gradient.has(k)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Parses the first of {@code keys} present on {@code gradient}, or returns {@code defaultValue}
+     * when none are. Values may be plain numbers or expressions, as elsewhere in the parser.
+     */
+    private float parseFloatKeys(
+            @NonNull JSONObject gradient, float defaultValue, String @NonNull ... keys)
+            throws JSONException {
+        for (String k : keys) {
+            if (gradient.has(k)) {
+                return parseFloat(gradient.get(k));
+            }
+        }
+        return defaultValue;
+    }
+
     float parseFloat(@Nullable Object value) throws JSONException {
         if (value == null) return Float.NaN;
         if (value instanceof Number) {
@@ -1479,6 +2755,44 @@ public class RemoteComposeJsonParser {
             if (s.equals("Infinity")) return Float.POSITIVE_INFINITY;
             if (s.equals("-Infinity")) return Float.NEGATIVE_INFINITY;
             if (s.equals("max")) return Float.MAX_VALUE;
+            if (s.startsWith("path:") || s.startsWith("path.")) {
+                String pTag = s.substring(5).toUpperCase();
+                switch (pTag) {
+                    case "MOVE":
+                        return androidx.compose.remote.core.operations.PathData.MOVE_NAN;
+                    case "LINE":
+                        return androidx.compose.remote.core.operations.PathData.LINE_NAN;
+                    case "QUADRATIC":
+                    case "QUAD":
+                        return androidx.compose.remote.core.operations.PathData.QUADRATIC_NAN;
+                    case "CONIC":
+                        return androidx.compose.remote.core.operations.PathData.CONIC_NAN;
+                    case "CUBIC":
+                        return androidx.compose.remote.core.operations.PathData.CUBIC_NAN;
+                    case "CLOSE":
+                        return androidx.compose.remote.core.operations.PathData.CLOSE_NAN;
+                    case "DONE":
+                        return androidx.compose.remote.core.operations.PathData.DONE_NAN;
+                }
+            }
+            if (s.equalsIgnoreCase("componentWidth()") || s.equalsIgnoreCase("componentWidth")) {
+                return mWriter.addComponentWidthValue();
+            }
+            if (s.equalsIgnoreCase("componentHeight()") || s.equalsIgnoreCase("componentHeight")) {
+                return mWriter.addComponentHeightValue();
+            }
+            if (s.equalsIgnoreCase("timeInHr()") || s.equalsIgnoreCase("timeInHr")) {
+                return androidx.compose.remote.core.RemoteContext.FLOAT_TIME_IN_HR;
+            }
+            if (s.equalsIgnoreCase("timeInMin()") || s.equalsIgnoreCase("timeInMin")) {
+                return androidx.compose.remote.core.RemoteContext.FLOAT_TIME_IN_MIN;
+            }
+            if (s.equalsIgnoreCase("timeInSec()") || s.equalsIgnoreCase("timeInSec")) {
+                return androidx.compose.remote.core.RemoteContext.FLOAT_TIME_IN_SEC;
+            }
+            if (s.equalsIgnoreCase("continuousSec()") || s.equalsIgnoreCase("continuousSec")) {
+                return androidx.compose.remote.core.RemoteContext.FLOAT_CONTINUOUS_SEC;
+            }
             if (isVariableRef(s) && s.indexOf(' ') == -1) {
                 String name = getVariableNameFromRef(s);
                 Float id = mVariables.get(name);
@@ -1492,6 +2806,8 @@ public class RemoteComposeJsonParser {
                 String name = s.substring(10);
                 Float id = mMatrices.get(name);
                 if (id != null) return id;
+                id = mVariables.get(name);
+                if (id != null) return id;
             }
             if (mExpressionParser.isVariable(s)) {
                 return mExpressionParser.getVariableNan(s);
@@ -1501,6 +2817,53 @@ public class RemoteComposeJsonParser {
             return mExpressionParser.parseExpression(value);
         }
         return 0.0f;
+    }
+
+    int parseShader(@Nullable Object shaderVal) throws JSONException {
+        if (shaderVal == null) return 0;
+        if (shaderVal instanceof Number) return ((Number) shaderVal).intValue();
+        String agslSource = "";
+        JSONObject uniformsObj = null;
+        if (shaderVal instanceof String) {
+            agslSource = (String) shaderVal;
+        } else if (shaderVal instanceof JSONObject) {
+            JSONObject obj = (JSONObject) shaderVal;
+            if (obj.has("agsl")) {
+                agslSource = obj.getString("agsl");
+            } else if (obj.has("shader")) {
+                agslSource = obj.getString("shader");
+            } else if (obj.has("source")) {
+                agslSource = obj.getString("source");
+            }
+            if (obj.has("uniforms")) {
+                uniformsObj = obj.optJSONObject("uniforms");
+            }
+        }
+        if (agslSource.isEmpty()) {
+            return 0;
+        }
+        RemoteComposeShader rcShader = mWriter.createShader(agslSource);
+        if (uniformsObj != null) {
+            Iterator<String> keys = uniformsObj.keys();
+            while (keys.hasNext()) {
+                String uName = keys.next();
+                Object uVal = uniformsObj.get(uName);
+                if (uVal instanceof JSONArray) {
+                    JSONArray arr = (JSONArray) uVal;
+                    float[] floats = new float[arr.length()];
+                    for (int i = 0; i < arr.length(); i++) {
+                        floats[i] = parseFloat(arr.get(i));
+                    }
+                    rcShader.setFloatUniform(uName, floats);
+                } else if (agslSource.contains("uniform shader " + uName)) {
+                    rcShader.setBitmapUniform(uName, resolveTextId(uVal));
+                } else {
+                    float f = parseFloat(uVal);
+                    rcShader.setFloatUniform(uName, f);
+                }
+            }
+        }
+        return rcShader.commit();
     }
 
     int parseColor(@Nullable Object value) throws JSONException {
@@ -1553,29 +2916,54 @@ public class RemoteComposeJsonParser {
         return mWriter.addPathString(pathStr);
     }
 
+    int resolvePathId(@NonNull Object pathObj) throws JSONException {
+        if (pathObj instanceof Number) {
+            return ((Number) pathObj).intValue();
+        }
+        return parsePath(pathObj.toString());
+    }
 
 
     float parseMatrixOperator(String op) {
         switch (op) {
-            case "IDENTITY": return MatrixOperations.IDENTITY;
-            case "TRANSLATE_X": return MatrixOperations.TRANSLATE_X;
-            case "TRANSLATE_Y": return MatrixOperations.TRANSLATE_Y;
-            case "TRANSLATE_Z": return MatrixOperations.TRANSLATE_Z;
-            case "TRANSLATE2": return MatrixOperations.TRANSLATE2;
-            case "TRANSLATE3": return MatrixOperations.TRANSLATE3;
-            case "SCALE_X": return MatrixOperations.SCALE_X;
-            case "SCALE_Y": return MatrixOperations.SCALE_Y;
-            case "SCALE_Z": return MatrixOperations.SCALE_Z;
-            case "SCALE2": return MatrixOperations.SCALE2;
-            case "SCALE3": return MatrixOperations.SCALE3;
-            case "ROT_X": return MatrixOperations.ROT_X;
-            case "ROT_Y": return MatrixOperations.ROT_Y;
-            case "ROT_Z": return MatrixOperations.ROT_Z;
-            case "ROT_PZ": return MatrixOperations.ROT_PZ;
-            case "ROT_AXIS": return MatrixOperations.ROT_AXIS;
-            case "MUL": return MatrixOperations.MUL;
-            case "PROJECTION": return MatrixOperations.PROJECTION;
-            default: return 0;
+            case "IDENTITY":
+                return MatrixOperations.IDENTITY;
+            case "TRANSLATE_X":
+                return MatrixOperations.TRANSLATE_X;
+            case "TRANSLATE_Y":
+                return MatrixOperations.TRANSLATE_Y;
+            case "TRANSLATE_Z":
+                return MatrixOperations.TRANSLATE_Z;
+            case "TRANSLATE2":
+                return MatrixOperations.TRANSLATE2;
+            case "TRANSLATE3":
+                return MatrixOperations.TRANSLATE3;
+            case "SCALE_X":
+                return MatrixOperations.SCALE_X;
+            case "SCALE_Y":
+                return MatrixOperations.SCALE_Y;
+            case "SCALE_Z":
+                return MatrixOperations.SCALE_Z;
+            case "SCALE2":
+                return MatrixOperations.SCALE2;
+            case "SCALE3":
+                return MatrixOperations.SCALE3;
+            case "ROT_X":
+                return MatrixOperations.ROT_X;
+            case "ROT_Y":
+                return MatrixOperations.ROT_Y;
+            case "ROT_Z":
+                return MatrixOperations.ROT_Z;
+            case "ROT_PZ":
+                return MatrixOperations.ROT_PZ;
+            case "ROT_AXIS":
+                return MatrixOperations.ROT_AXIS;
+            case "MUL":
+                return MatrixOperations.MUL;
+            case "PROJECTION":
+                return MatrixOperations.PROJECTION;
+            default:
+                return 0;
         }
     }
 
@@ -1591,8 +2979,24 @@ public class RemoteComposeJsonParser {
             return num.intValue();
         } else if (textObj instanceof String) {
             String str = (String) textObj;
+            if (str.startsWith("$colors.") || str.startsWith("@colors.")) {
+                String name = str.substring(8);
+                Integer id = mColors.get(name);
+                if (id != null) {
+                    return id;
+                }
+            }
+            if (str.contains("@") && (str.contains("+") || str.contains("-")
+                    || str.contains("*") || str.contains("/") || str.contains("%"))) {
+                long exprId = getExpressionParser().parseIntegerExpression(str);
+                return (int) (exprId & 0xFFFFFFFFL);
+            }
             if (isVariableRef(str)) {
                 String name = getVariableNameFromRef(str);
+                if (mIntegerVariables.containsKey(name)) {
+                    long longVal = mIntegerVariables.get(name);
+                    return (int) (longVal & 0xFFFFFFFFL);
+                }
                 Float val = mVariables.get(name);
                 if (val == null && mDeferredVariables.containsKey(name)) {
                     val = resolveDeferredVariable(name);
@@ -1602,19 +3006,20 @@ public class RemoteComposeJsonParser {
                         return androidx.compose.remote.core.operations.Utils.idFromNan(val);
                     }
                     return (int) val.floatValue();
-                } else {
-                    throw new JSONException("Variable not found: " + name);
                 }
-            } else {
-                return mWriter.textCreateId(str);
             }
+            if (str.startsWith("#")) {
+                int colorVal = parseColor(str);
+                return mWriter.addColor(colorVal);
+            }
+            return mWriter.textCreateId(str);
         } else if (textObj instanceof JSONObject) {
             JSONObject vo = (JSONObject) textObj;
-            if (vo.has("type") && vo.getString("type").equals("textMerge")) {
+            if (vo.has("type") && vo.getString("type").equalsIgnoreCase("textMerge")) {
                 int id1 = resolveTextId(vo.get("id1"));
                 int id2 = resolveTextId(vo.get("id2"));
                 return mWriter.textMerge(id1, id2);
-            } else if (vo.has("type") && vo.getString("type").equals("textFromFloat")) {
+            } else if (vo.has("type") && vo.getString("type").equalsIgnoreCase("textFromFloat")) {
                 float val = parseFloat(vo.get("value"));
                 int after = vo.optInt("after", 3);
                 if (vo.has("decimal")) after = vo.optInt("decimal", 3);
@@ -1628,6 +3033,34 @@ public class RemoteComposeJsonParser {
         } else {
             throw new JSONException("Invalid text parameter: " + textObj);
         }
+    }
+
+    long resolveIntegerVariable(Object targetObj) throws JSONException {
+        if (targetObj instanceof Number) {
+            return ((Number) targetObj).longValue();
+        } else if (targetObj instanceof String) {
+            String str = (String) targetObj;
+            String name = isVariableRef(str) ? getVariableNameFromRef(str) : str;
+            if (mIntegerVariables.containsKey(name)) {
+                return mIntegerVariables.get(name);
+            }
+            if (mVariables.containsKey(name)) {
+                Float val = mVariables.get(name);
+                if (val != null) {
+                    int rawId = Utils.idFromNan(val);
+                    return (long) rawId + 0x100000000L;
+                }
+            }
+            long intId = mWriter.addNamedInt(name, 0);
+            mIntegerVariables.put(name, intId);
+            return intId;
+        }
+        throw new JSONException("Cannot resolve integer variable from " + targetObj);
+    }
+
+    int resolveIntegerId(Object obj) throws JSONException {
+        long val = resolveIntegerVariable(obj);
+        return (int) (val & 0xFFFFFFFFL);
     }
 
     float[] parseFloatExpression(Object expObj) throws JSONException {
@@ -1651,6 +3084,17 @@ public class RemoteComposeJsonParser {
         } else {
             throw new JSONException("Invalid float expression: " + expObj);
         }
+    }
+
+    float[][] parseFloatExpressions(JSONArray arr) throws JSONException {
+        if (arr == null) {
+            return null;
+        }
+        float[][] res = new float[arr.length()][];
+        for (int i = 0; i < arr.length(); i++) {
+            res[i] = parseFloatExpression(arr.get(i));
+        }
+        return res;
     }
 
     boolean isMathExpression(String s) {
@@ -1685,5 +3129,294 @@ public class RemoteComposeJsonParser {
             return s.substring(6);
         }
         return s.substring(1);
+    }
+
+    /**
+     * Resolve a mesh reference to the id the writer allocated for it.
+     *
+     * <p>A mesh may be referred to either by the {@code id} it was declared with - a name, or a
+     * number local to the document - or by the raw writer id. Names are looked up first, so a
+     * document that numbers its meshes 1, 2, 3 keeps working even though the writer's real ids are
+     * something else entirely.
+     */
+    int resolveMeshId(@NonNull Object meshObj) throws JSONException {
+        Integer named = mMeshes.get(meshObj.toString());
+        if (named != null) {
+            return named;
+        }
+        if (meshObj instanceof Number) {
+            return ((Number) meshObj).intValue();
+        }
+        throw new JSONException("Mesh not found: " + meshObj);
+    }
+
+    /**
+     * Parse how an {@code addMesh2D}'s vertices arrive.
+     *
+     * <p>Spelled {@code source} rather than {@code type} because {@code type} already names the
+     * command itself in the flat form. A document written in the nested form - {@code {"addMesh2D":
+     * {"type": "expression"}}} - may still spell it {@code type}; the command normaliser relocates
+     * it here.
+     */
+    private int parseMesh2DType(@NonNull JSONObject command) throws JSONException {
+        boolean halfFloat = command.optBoolean("halfFloat", false);
+        String defaultSource;
+        if (command.has("verts")) {
+            defaultSource = halfFloat ? "f16values" : "values";
+        } else if (command.has("widths")) {
+            defaultSource = "pathsplinestrip";
+        } else {
+            defaultSource = "expression";
+        }
+        String type = command.optString("source", defaultSource).toLowerCase();
+        switch (type) {
+            case "expression":
+                return AddMesh2D.TYPE_EXPRESSION;
+            case "values":
+                return halfFloat ? AddMesh2D.TYPE_F16_VALUES : AddMesh2D.TYPE_VALUES;
+            case "f16values":
+                return AddMesh2D.TYPE_F16_VALUES;
+            // Not "pathStrip": that already names a layout, and the two would read alike while
+            // meaning different meshes - one takes its width from an expression, this from a
+            // spline.
+            case "pathsplinestrip":
+            case "splinestrip":
+                return AddMesh2D.TYPE_PATH_SPLINE_STRIP;
+            // The same mesh with round ends. Never inferred: a squared off strip is what a bare
+            // widths list has always meant, so rounding stays something the author asks for.
+            case "splineroundstrip":
+            case "roundstrip":
+                return AddMesh2D.TYPE_SPLINE_ROUND_STRIP;
+            default:
+                throw new JSONException("Unknown mesh type: " + type);
+        }
+    }
+
+    /** Parse the {@code layout} field of an {@code addMesh2D} - what the (u, v) domain is. */
+    private int parseMesh2DLayout(@NonNull JSONObject command) throws JSONException {
+        String layout = command.optString("layout", "grid").toLowerCase();
+        switch (layout) {
+            case "grid":
+                return Mesh2DGenerator.LAYOUT_GRID;
+            case "polar":
+                return Mesh2DGenerator.LAYOUT_POLAR;
+            case "ring":
+                return Mesh2DGenerator.LAYOUT_RING;
+            case "strip":
+                return Mesh2DGenerator.LAYOUT_STRIP;
+            case "fan":
+                return Mesh2DGenerator.LAYOUT_FAN;
+            case "pathstrip":
+                return Mesh2DGenerator.LAYOUT_PATH_STRIP;
+            default:
+                throw new JSONException("Unknown mesh layout: " + layout);
+        }
+    }
+
+    /** Parse the {@code blend} field of a {@code drawMesh2D} - how colour and texel combine. */
+    private int parseMesh2DBlend(@NonNull JSONObject command) throws JSONException {
+        Object blend = command.opt("blend");
+        if (blend == null) {
+            // Untextured meshes have only their vertex colours; textured ones modulate by default,
+            // which is what makes a tinted bitmap the no-argument case.
+            return command.has("image") ? DrawMesh2D.BLEND_MODULATE : DrawMesh2D.BLEND_COLORS_ONLY;
+        }
+        if (blend instanceof Number) {
+            return ((Number) blend).intValue();
+        }
+        String name = blend.toString().toLowerCase();
+        switch (name) {
+            case "colors":
+            case "colorsonly":
+                return DrawMesh2D.BLEND_COLORS_ONLY;
+            case "modulate":
+                return DrawMesh2D.BLEND_MODULATE;
+            default:
+                throw new JSONException("Unknown mesh blend: " + name);
+        }
+    }
+
+    /**
+     * Parse the {@code flags} (or {@code apply}) field of a {@code matrixFromMesh2D} - how much of
+     * the mesh's local frame to apply. Accepts the raw int of the wire format or the readable name.
+     */
+    private int parseMesh2DMatrixFlags(@NonNull JSONObject command) throws JSONException {
+        Object flags = command.has("flags") ? command.get("flags") : command.opt("apply");
+        if (flags == null) {
+            return MatrixFromMesh2D.FLAG_FULL;
+        }
+        if (flags instanceof Number) {
+            return ((Number) flags).intValue();
+        }
+        String name = flags.toString().toLowerCase();
+        switch (name) {
+            case "origin":
+                return MatrixFromMesh2D.FLAG_ORIGIN;
+            case "rotation":
+                return MatrixFromMesh2D.FLAG_ROTATION;
+            case "scale":
+                return MatrixFromMesh2D.FLAG_SCALE;
+            case "full":
+                return MatrixFromMesh2D.FLAG_FULL;
+            default:
+                throw new JSONException("Unknown mesh matrix flags: " + name);
+        }
+    }
+
+    /**
+     * Read one expression field of an {@code addMesh2D}, or null when the document omits it.
+     *
+     * <p>An absent channel is a real signal rather than a gap to fill: an absent position means the
+     * layout's default geometry, an absent uv means the identity mapping, and absent colours mean
+     * the mesh carries none at all. Numbers are accepted as well as strings so a constant channel
+     * need not be quoted.
+     */
+    private float @Nullable [] parseMesh2DExpression(@NonNull JSONObject command, String field)
+            throws JSONException {
+        Object value = command.opt(field);
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number) {
+            return new float[]{((Number) value).floatValue()};
+        }
+        return parseFloatExpression(value);
+    }
+
+    /**
+     * Read an array of floats that may name variables, or null when the document omits it.
+     *
+     * <p>Used for the width control points of a spline path strip, where an entry may be a literal
+     * or a reference resolving to a NaN variable id, which is what lets the profile animate.
+     */
+    private float @Nullable [] parseMesh2DFloatArray(@NonNull JSONObject command, String field)
+            throws JSONException {
+        JSONArray array = command.optJSONArray(field);
+        if (array == null) {
+            return null;
+        }
+        float[] out = new float[array.length()];
+        for (int i = 0; i < out.length; i++) {
+            out[i] = parseFloat(array.get(i));
+        }
+        return out;
+    }
+
+    /** Parse an {@code addMesh2D} command in any of its forms. */
+    private void parseAddMesh2D(@NonNull JSONObject command) throws JSONException {
+        int type = parseMesh2DType(command);
+        int layout = parseMesh2DLayout(command);
+        int meshId;
+
+        if (type == AddMesh2D.TYPE_PATH_SPLINE_STRIP || type == AddMesh2D.TYPE_SPLINE_ROUND_STRIP) {
+            boolean round = type == AddMesh2D.TYPE_SPLINE_ROUND_STRIP;
+            String name = round ? "splineRoundStrip" : "pathSplineStrip";
+            Object pathRef = command.has("path") ? command.get("path") : command.opt("aux");
+            if (pathRef == null) {
+                throw new JSONException("addMesh2D of type " + name + " requires a path");
+            }
+            if (!command.has("segments")) {
+                // Required rather than defaulted, so the runtime cost of a mesh is visible at the
+                // place it is authored rather than buried in a default.
+                throw new JSONException("addMesh2D of type " + name + " requires segments");
+            }
+            float[] widths = parseMesh2DFloatArray(command, "widths");
+            if (widths == null) {
+                throw new JSONException("addMesh2D of type " + name + " requires widths");
+            }
+            float[] positions = parseMesh2DFloatArray(command, "pos");
+            if (positions == null) {
+                positions = parseMesh2DFloatArray(command, "positions");
+            }
+            int pathId = resolvePathId(pathRef);
+            int segments = command.getInt("segments");
+            meshId =
+                    round
+                            ? mWriter.addMesh2DRoundStrip(pathId, segments, widths, positions)
+                            : mWriter.addMesh2DPathStrip(pathId, segments, widths, positions);
+        } else if (type == AddMesh2D.TYPE_EXPRESSION) {
+            if (!command.has("uCount") || !command.has("vCount")) {
+                // Required rather than defaulted, so the runtime cost of a mesh is visible at the
+                // place it is authored rather than buried in a default.
+                throw new JSONException("addMesh2D of type expression requires uCount and vCount");
+            }
+            int uCount = command.getInt("uCount");
+            int vCount = command.getInt("vCount");
+            // A path strip follows a path, carried in the layout-dependent aux field. Spelled
+            // "path" for readability, matching matrixFromPath, with the wire name accepted too.
+            Object pathRef = command.has("path") ? command.get("path") : command.opt("aux");
+            int aux = pathRef == null ? 0 : resolvePathId(pathRef);
+            meshId =
+                    mWriter.addMesh2D(
+                            layout,
+                            uCount,
+                            vCount,
+                            parseMesh2DExpression(command, "x"),
+                            parseMesh2DExpression(command, "y"),
+                            parseMesh2DExpression(command, "texU"),
+                            parseMesh2DExpression(command, "texV"),
+                            parseMesh2DExpression(command, "alpha"),
+                            parseMesh2DExpression(command, "red"),
+                            parseMesh2DExpression(command, "green"),
+                            parseMesh2DExpression(command, "blue"),
+                            parseMesh2DExpression(command, "width"),
+                            command.optInt("flags", 0),
+                            aux);
+        } else {
+            JSONArray vertsArr = command.getJSONArray("verts");
+            float[] verts = new float[vertsArr.length()];
+            for (int i = 0; i < verts.length; i++) {
+                verts[i] = parseFloat(vertsArr.get(i));
+            }
+
+            int[] indices;
+            if (command.has("indices")) {
+                JSONArray indicesArr = command.getJSONArray("indices");
+                indices = new int[indicesArr.length()];
+                for (int i = 0; i < indices.length; i++) {
+                    indices[i] = indicesArr.getInt(i);
+                }
+            } else {
+                // No indices means "draw the vertices in order", the plain triangle list.
+                indices = new int[verts.length / 2];
+                for (int i = 0; i < indices.length; i++) {
+                    indices[i] = i;
+                }
+            }
+
+            float[] uv = null;
+            if (command.has("uv")) {
+                JSONArray uvArr = command.getJSONArray("uv");
+                uv = new float[uvArr.length()];
+                for (int i = 0; i < uv.length; i++) {
+                    uv[i] = (float) uvArr.getDouble(i);
+                }
+            }
+
+            int[] colors = null;
+            if (command.has("colors")) {
+                JSONArray colorsArr = command.getJSONArray("colors");
+                colors = new int[colorsArr.length()];
+                for (int i = 0; i < colors.length; i++) {
+                    colors[i] = parseColor(colorsArr.get(i));
+                }
+            }
+
+            meshId =
+                    mWriter.addMesh2DValues(
+                            indices,
+                            verts,
+                            uv,
+                            colors,
+                            type == AddMesh2D.TYPE_F16_VALUES,
+                            layout,
+                            command.optInt("uCount", 0),
+                            command.optInt("vCount", 0));
+        }
+
+        String idStr = command.optString("id", null);
+        if (idStr != null) {
+            mMeshes.put(idStr, meshId);
+        }
     }
 }

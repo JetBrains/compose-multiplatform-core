@@ -15,6 +15,7 @@
  */
 
 @file:Suppress("DEPRECATION")
+@file:OptIn(ExperimentalMoveAnchorPolicy::class)
 
 package androidx.xr.compose.subspace.layout
 
@@ -127,6 +128,8 @@ class AnchorableModifierTest {
             sceneRuntime = it
         }
         testDispatcher.scheduler.advanceUntilIdle()
+        // TODO: b/537470420 Remove once Anchors are properly detached in unit tests.
+        androidx.xr.arcore.testing.FakeRuntimeAnchor.anchorsCreatedCount = 0
     }
 
     @Test

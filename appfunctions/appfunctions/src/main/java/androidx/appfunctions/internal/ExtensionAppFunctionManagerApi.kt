@@ -16,6 +16,7 @@
 
 package androidx.appfunctions.internal
 
+import android.app.appfunctions.AppFunctionRegistration
 import android.content.Context
 import android.os.Build
 import android.os.CancellationSignal
@@ -30,6 +31,9 @@ import androidx.appfunctions.AppFunctionManager.Companion.APP_FUNCTION_STATE_ENA
 import androidx.appfunctions.AppFunctionSystemUnknownException
 import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
+import androidx.appfunctions.ExperimentalAppFunctionsApi
+import androidx.appfunctions.RegisterAppFunctionRequest
+import androidx.appfunctions.internal.AppFunctionManagerApi.Companion.applyMissingRuntimeMetadataExceptionFix
 import androidx.appfunctions.metadata.AppFunctionMetadata
 import com.android.extensions.appfunctions.AppFunctionManager as ExtensionAppFunctionManager
 import java.util.concurrent.atomic.AtomicReference
@@ -40,6 +44,7 @@ import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.suspendCancellableCoroutine
 
 /** Provides the AppFunctionManager backend through the sidecar extension. */
+@OptIn(ExperimentalAppFunctionsApi::class)
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 internal class ExtensionAppFunctionManagerApi(private val context: Context) :
     AppFunctionManagerApi {
@@ -52,6 +57,12 @@ internal class ExtensionAppFunctionManagerApi(private val context: Context) :
         request: ExecuteAppFunctionRequest,
         functionMetadata: AppFunctionMetadata,
     ): ExecuteAppFunctionResponse {
+        val platformExtensionRequest = request.toPlatformExtensionClass()
+        CallerAccessVerifier.attachCallerVerificationTokens(
+            context,
+            functionMetadata.accessLevel,
+            platformExtensionRequest.extras,
+        )
         return suspendCancellableCoroutine { cont ->
             val cancellationSignal = CancellationSignal()
             // Wrapped in an AtomicReference so we can explicitly null it out. This protects the
@@ -65,7 +76,7 @@ internal class ExtensionAppFunctionManagerApi(private val context: Context) :
                 activeCont.set(null)
             }
             appFunctionManager.executeAppFunction(
-                request.toPlatformExtensionClass(),
+                platformExtensionRequest,
                 Runnable::run,
                 cancellationSignal,
                 object :
@@ -119,7 +130,9 @@ internal class ExtensionAppFunctionManagerApi(private val context: Context) :
                     }
 
                     override fun onError(error: Exception) {
-                        cont.resumeWithException(error)
+                        cont.resumeWithException(
+                            applyMissingRuntimeMetadataExceptionFix(functionId, error)
+                        )
                     }
                 },
             )
@@ -142,7 +155,9 @@ internal class ExtensionAppFunctionManagerApi(private val context: Context) :
                     }
 
                     override fun onError(error: Exception) {
-                        cont.resumeWithException(error)
+                        cont.resumeWithException(
+                            applyMissingRuntimeMetadataExceptionFix(functionId, error)
+                        )
                     }
                 },
             )
@@ -163,6 +178,25 @@ internal class ExtensionAppFunctionManagerApi(private val context: Context) :
             return AppFunctionFunctionNotFoundException("App function not found.")
         }
         return exception
+    }
+
+    @RequiresApi(Build.VERSION_CODES.CINNAMON_BUN)
+    @OptIn(ExperimentalAppFunctionsApi::class)
+    override fun registerAppFunctions(
+        requests: List<RegisterAppFunctionRequest>
+    ): AppFunctionRegistration {
+        throw UnsupportedOperationException(
+            "Only supported on SDK 37+ which does not have extensions lib"
+        )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.CINNAMON_BUN)
+    override suspend fun getAppFunctionActivityStates(
+        activityIds: Set<android.app.appfunctions.AppFunctionActivityId>
+    ): List<androidx.appfunctions.AppFunctionActivityState> {
+        throw UnsupportedOperationException(
+            "Only supported on SDK 37+ which does not have extensions lib"
+        )
     }
 
     @ExtensionAppFunctionManager.EnabledState

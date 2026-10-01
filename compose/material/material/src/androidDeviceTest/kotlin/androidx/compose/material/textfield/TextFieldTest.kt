@@ -128,7 +128,6 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -146,7 +145,7 @@ class TextFieldTest {
     private val IconColorAlpha = 0.54f
     private val TextFieldTag = "textField"
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun testTextField_minimumHeight() {
@@ -956,7 +955,10 @@ class TextFieldTest {
                     modifier = Modifier.testTag(TextFieldTag),
                     state = state,
                     keyboardOptions =
-                        KeyboardOptions(imeAction = ImeAction.Go, keyboardType = KeyboardType.Email),
+                        KeyboardOptions(
+                            imeAction = ImeAction.Go,
+                            keyboardType = KeyboardType.Email,
+                        ),
                 )
             }
         }
@@ -1496,6 +1498,7 @@ class TextFieldTest {
         // Nothing to assert; just make sure it doesn't crash
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textField_stringOverload_doesNotCallOnValueChange_whenCompositionUpdatesOnly() {
         var callbackCounter = 0
