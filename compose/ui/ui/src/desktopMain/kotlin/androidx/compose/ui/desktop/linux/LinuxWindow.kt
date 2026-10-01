@@ -14,6 +14,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.desktop.WindowInspection
+import androidx.compose.ui.desktop.WindowInspectionImpl
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.desktop.ApplicationSession
@@ -479,6 +481,17 @@ private constructor(
     private val sceneRenderingScope = SingleComposeSceneRenderingScope(
         scheduleFrame = { isFrameRequested = true },
     )
+
+    private val windowInspection = WindowInspectionImpl(
+        frameRecomposer = frameRecomposer,
+        sessionProvider = { session },
+        density = { density },
+        requestRedraw = { isFrameRequested = true },
+    )
+
+    @OptIn(InternalComposeUiApi::class)
+    override val inspection: WindowInspection
+        get() = windowInspection
 
     private val composeScene: ComposeScene =
         CanvasLayersComposeScene(
@@ -957,7 +970,9 @@ private constructor(
                 )
                 .use { surface ->
                     surface.canvas.clear(Color.TRANSPARENT)
-                    with(sceneRenderingScope) { composeScene.render(frameRecomposer, surface.canvas.asComposeCanvas(), now) }
+                    val composeCanvas = surface.canvas.asComposeCanvas()
+                    with(sceneRenderingScope) { composeScene.render(frameRecomposer, composeCanvas, now) }
+                    windowInspection.renderOverlays(composeCanvas)
                     surface.flushAndSubmit()
                 }
             return
@@ -982,7 +997,9 @@ private constructor(
                     )!!
                     .use { surface ->
                         surface.canvas.clear(Color.TRANSPARENT)
-                        with(sceneRenderingScope) { composeScene.render(frameRecomposer, surface.canvas.asComposeCanvas(), now) }
+                        val composeCanvas = surface.canvas.asComposeCanvas()
+                        with(sceneRenderingScope) { composeScene.render(frameRecomposer, composeCanvas, now) }
+                        windowInspection.renderOverlays(composeCanvas)
                         surface.flushAndSubmit()
                     }
             }

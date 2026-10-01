@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composer
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.RecomposeScope
+import androidx.compose.runtime.RecomposeScopeImpl
 import androidx.compose.runtime.SnapshotMutationPolicy
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.currentRecomposeScope
@@ -301,7 +302,13 @@ internal class MemoSlot<T>(
         state.value = value
         if (!ownerComposing && previous !== Unset && !policy.equivalent(previous, value)) {
             // The block ran without the owner, for example after a change of its dependency.
-            owner?.invalidate()
+            // Report this slot as the invalidating instance so an attached
+            // CompositionObserver can attribute the recomposition to the memo rather than to
+            // an anonymous `invalidate()` call.
+            when (val owner = owner) {
+                is RecomposeScopeImpl -> owner.invalidateForResult(this)
+                else -> owner?.invalidate()
+            }
         }
     }
 

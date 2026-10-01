@@ -31,6 +31,8 @@ import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.desktop.WindowInspection
+import androidx.compose.ui.desktop.WindowInspectionImpl
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.desktop.ApplicationSession
@@ -346,6 +348,17 @@ class HeadlessWindow internal constructor(
         scheduleFrame = { isFrameRequestedState = true },
     )
 
+    private val windowInspection = WindowInspectionImpl(
+        frameRecomposer = frameRecomposer,
+        sessionProvider = { session },
+        density = { density },
+        requestRedraw = { isFrameRequestedState = true },
+    )
+
+    @OptIn(InternalComposeUiApi::class)
+    override val inspection: WindowInspection
+        get() = windowInspection
+
     private val composeScene: ComposeScene = try {
         CanvasLayersComposeScene(
             frameRecomposer = frameRecomposer,
@@ -402,7 +415,9 @@ class HeadlessWindow internal constructor(
         isFrameRequestedState = false
         val target = surfaceForCurrentSize()
         target.canvas.clear(Color.TRANSPARENT)
-        with(sceneRenderingScope) { composeScene.render(frameRecomposer, target.canvas.asComposeCanvas(), nanoTime) }
+        val composeCanvas = target.canvas.asComposeCanvas()
+        with(sceneRenderingScope) { composeScene.render(frameRecomposer, composeCanvas, nanoTime) }
+        windowInspection.renderOverlays(composeCanvas)
     }
 
     override fun captureScreenshot(): ImageBitmap {
