@@ -481,8 +481,7 @@ actual value class Key(val keyCode: Long) {
         actual val MoveHome: Key
             get() = Key(36)
 
-        actual val MoveEnd: Key
-            get() = Key(35)
+        actual val MoveEnd: Key = Key(35)
 
         actual val Apostrophe: Key
             get() = Key(222)
