@@ -31,8 +31,8 @@ import com.google.devtools.ksp.symbol.KSAnnotated
  * Generates the registry of all symbols that are needed for later aggregation processing.
  *
  * This includes
- * * @AppFunction - The function declaration that are needed for generating the aggregated
- *   inventory, invoker and function signature XML file.
+ * * @AppFunctionDeclaration - The function declaration that are needed for generating the
+ *   aggregated inventory, invoker and function signature XML file.
  * * @AppFunctionSchemaDefinition - The schema definition that are needed to generating a statically
  *   mapped inventory to look up AppFunctionMetadata with schema key.
  *
@@ -46,13 +46,13 @@ import com.google.devtools.ksp.symbol.KSAnnotated
  *
  * class NoteFunction: CreateNote {
  *   /** Creates a new note. */
- *   @AppFunction(isDescribedByKDoc = true)
+ *   @AppFunctionDeclaration(isDescribedByKDoc = true)
  *   override suspend fun createNote(): Note { ... }
  * }
  *
  * class TaskFunction: CreateTask {
  *   /** Creates a new task. */
- *   @AppFunction(isDescribedByKDoc = true)
+ *   @AppFunctionDeclaration(isDescribedByKDoc = true)
  *   override suspend fun createTask(): Task { ... }
  * }
  * ```
@@ -136,26 +136,25 @@ class AppFunctionComponentRegistryProcessor(private val codeGenerator: CodeGener
     private fun generateFunctionComponentRegistry(resolver: Resolver) {
         val annotatedAppFunctions =
             AppFunctionSymbolResolver(resolver).resolveAnnotatedAppFunctions()
-        val functionComponents =
-            annotatedAppFunctions.flatMap { annotatedAppFunction ->
-                buildList {
-                    for (appFunction in annotatedAppFunction.appFunctions) {
-                        val function = appFunction.appFunctionDeclaration
-                        add(
-                            AppFunctionComponent(
-                                qualifiedName = function.ensureQualifiedName(),
-                                sourceFiles = annotatedAppFunction.getSourceFiles(),
-                                docString =
-                                    if (appFunction.isDescribedByKDoc) {
-                                        function.docString ?: ""
-                                    } else {
-                                        ""
-                                    },
-                            )
+        val functionComponents = annotatedAppFunctions.flatMap { annotatedAppFunction ->
+            buildList {
+                for (appFunction in annotatedAppFunction.appFunctions) {
+                    val function = appFunction.appFunctionDeclaration
+                    add(
+                        AppFunctionComponent(
+                            qualifiedName = function.ensureQualifiedName(),
+                            sourceFiles = annotatedAppFunction.getSourceFiles(),
+                            docString =
+                                if (appFunction.isDescribedByKDoc) {
+                                    function.docString ?: ""
+                                } else {
+                                    ""
+                                },
                         )
-                    }
+                    )
                 }
             }
+        }
 
         AppFunctionComponentRegistryGenerator(codeGenerator)
             .generateRegistry(

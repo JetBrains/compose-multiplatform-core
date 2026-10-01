@@ -34,9 +34,14 @@ import androidx.compose.remote.core.operations.TouchExpression;
 import androidx.compose.remote.core.operations.layout.animation.AnimateMeasure;
 import androidx.compose.remote.core.operations.layout.animation.AnimationSpec;
 import androidx.compose.remote.core.operations.layout.managers.LayoutManager;
+import androidx.compose.remote.core.operations.layout.managers.StateLayout;
 import androidx.compose.remote.core.operations.layout.measure.ComponentMeasure;
+import androidx.compose.remote.core.operations.layout.measure.ComponentMeasurePool;
 import androidx.compose.remote.core.operations.layout.measure.Measurable;
 import androidx.compose.remote.core.operations.layout.measure.MeasurePass;
+import androidx.compose.remote.core.operations.layout.modifiers.ComponentModifiers;
+import androidx.compose.remote.core.operations.layout.modifiers.LayoutComputeOperation;
+import androidx.compose.remote.core.operations.layout.modifiers.ScrollModifierOperation;
 import androidx.compose.remote.core.operations.paint.PaintBundle;
 import androidx.compose.remote.core.operations.utilities.StringSerializer;
 import androidx.compose.remote.core.serialize.MapSerializer;
@@ -64,6 +69,7 @@ public class Component extends PaintOperation
     @Nullable protected Component mParent;
     protected int mAnimationId = -1;
     public int mVisibility = Visibility.VISIBLE;
+    public int mInternalLayoutIndex = -1; // index used by FlatMeasurePass
     public int mScheduledVisibility = Visibility.VISIBLE;
     @NonNull public ArrayList<Operation> mList = new ArrayList<>();
     public @Nullable PaintOperation
@@ -110,6 +116,54 @@ public class Component extends PaintOperation
     @NonNull
     public ArrayList<Operation> getList() {
         return mList;
+    }
+
+    /**
+     * Returns true if this component has horizontal scroll enabled.
+     *
+     * @return true if horizontal scroll is enabled
+     */
+    public boolean hasHorizontalScroll() {
+        for (Operation op : mList) {
+            if (op instanceof ScrollModifierOperation) {
+                if (((ScrollModifierOperation) op).isHorizontalScroll()) {
+                    return true;
+                }
+            } else if (op instanceof ComponentModifiers) {
+                if (((ComponentModifiers) op).hasHorizontalScroll()) {
+                    return true;
+                }
+            } else if (op instanceof Component) {
+                if (((Component) op).hasHorizontalScroll()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if this component has vertical scroll enabled.
+     *
+     * @return true if vertical scroll is enabled
+     */
+    public boolean hasVerticalScroll() {
+        for (Operation op : mList) {
+            if (op instanceof ScrollModifierOperation) {
+                if (((ScrollModifierOperation) op).isVerticalScroll()) {
+                    return true;
+                }
+            } else if (op instanceof ComponentModifiers) {
+                if (((ComponentModifiers) op).hasVerticalScroll()) {
+                    return true;
+                }
+            } else if (op instanceof Component) {
+                if (((Component) op).hasVerticalScroll()) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public float getX() {
@@ -434,6 +488,19 @@ public class Component extends PaintOperation
         return false;
     }
 
+    /** Returns true if any child component contains computed layout modifiers */
+    public boolean hasChildWithComputedLayout() {
+        for (Operation op : mList) {
+            if (op instanceof Component) {
+                Component child = (Component) op;
+                if (child.hasComputedLayout() || child.hasChildWithComputedLayout()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     /** Apply computed modifiers */
     public boolean applyComputedLayout(
             int type,
@@ -544,6 +611,36 @@ public class Component extends PaintOperation
     }
 
     /**
+     * Returns true if this component is currently holding its pre-change layout space while
+     * playing a BEFORE exit animation.
+     */
+    public boolean isHoldingLayoutForBeforeAnimation(@Nullable RemoteContext context) {
+        if (mFirstLayout
+                || context == null
+                || !context.isAnimationEnabled()
+                || !mAnimationSpec.isAnimationEnabled()) {
+            return false;
+        }
+        if (mVisibility != mScheduledVisibility
+                && Visibility.isVisible(mVisibility)
+                && (Visibility.isGone(mScheduledVisibility)
+                        || Visibility.isInvisible(mScheduledVisibility))) {
+            return mAnimationSpec.getExitSequence() == AnimationSpec.SEQUENCE.BEFORE;
+        }
+        return false;
+    }
+
+    /**
+     * Returns the effective visibility to use during measure passes.
+     */
+    public int getMeasureVisibility(@Nullable RemoteContext context) {
+        if (isHoldingLayoutForBeforeAnimation(context)) {
+            return mVisibility;
+        }
+        return mScheduledVisibility;
+    }
+
+    /**
      * Set the visibility of the component
      *
      * @param visibility can be VISIBLE, INVISIBLE or GONE
@@ -552,6 +649,9 @@ public class Component extends PaintOperation
         if (visibility != mVisibility || visibility != mScheduledVisibility) {
             mScheduledVisibility = visibility;
             invalidateMeasure();
+            if (mParent != null) {
+                mParent.invalidateMeasure();
+            }
         }
     }
 
@@ -591,38 +691,74 @@ public class Component extends PaintOperation
         m.setH(mHeight);
     }
 
+    /** Returns true if the component has dynamic position computed modifiers. */
+    public boolean hasDynamicPosition() {
+        for (Operation op : mList) {
+            if (op instanceof LayoutComputeOperation) {
+                if (((LayoutComputeOperation) op).getType()
+                        == LayoutComputeOperation.TYPE_POSITION) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /** Returns true if the component has dynamic size computed modifiers. */
+    public boolean hasDynamicSize() {
+        for (Operation op : mList) {
+            if (op instanceof LayoutComputeOperation) {
+                if (((LayoutComputeOperation) op).getType()
+                        == LayoutComputeOperation.TYPE_MEASURE) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     /**
      * Apply the measurement to the component.
      *
      * @param m the ComponentMeasure to apply
      */
     public void applyMeasure(@NonNull ComponentMeasure m) {
-        mWidth = m.getW();
-        mHeight = m.getH();
-        mX = m.getX();
-        mY = m.getY();
+        if (!hasDynamicPosition()) {
+            mX = m.getX();
+            mY = m.getY();
+        }
+        if (!hasDynamicSize()) {
+            mWidth = m.getW();
+            mHeight = m.getH();
+        }
         mVisibility = m.getVisibility();
     }
 
     @Override
     public void layout(@NonNull RemoteContext context, @NonNull MeasurePass measure) {
         ComponentMeasure m = measure.get(this);
+        int targetVisibility =
+                isHoldingLayoutForBeforeAnimation(context)
+                        ? mScheduledVisibility
+                        : m.getVisibility();
         if (!mFirstLayout
                 && context.isAnimationEnabled()
                 && mAnimationSpec.isAnimationEnabled()
                 && m.getAllowsAnimation()
-                && !(this instanceof LayoutComponentContent)) {
+                && !(this instanceof LayoutComponentContent)
+                && !(Visibility.isGone(mVisibility) && Visibility.isGone(targetVisibility))) {
             if (mAnimateMeasure == null) {
+                ComponentMeasurePool pool = context.getComponentMeasurePool();
                 ComponentMeasure origin =
-                        new ComponentMeasure(mComponentId, mX, mY, mWidth, mHeight, mVisibility);
+                        pool.obtain(mComponentId, mX, mY, mWidth, mHeight, mVisibility);
                 ComponentMeasure target =
-                        new ComponentMeasure(
+                        pool.obtain(
                                 mComponentId,
                                 m.getX(),
                                 m.getY(),
                                 m.getW(),
                                 m.getH(),
-                                m.getVisibility());
+                                targetVisibility);
                 if (!target.same(origin)) {
                     mAnimateMeasure =
                             new AnimateMeasure(
@@ -635,10 +771,20 @@ public class Component extends PaintOperation
                                     mAnimationSpec.getEnterAnimation(),
                                     mAnimationSpec.getExitAnimation(),
                                     mAnimationSpec.getMotionEasingType(),
-                                    mAnimationSpec.getVisibilityEasingType());
+                                    mAnimationSpec.getVisibilityEasingType(),
+                                    mAnimationSpec.getEnterFunctionId(),
+                                    mAnimationSpec.getExitFunctionId(),
+                                    mAnimationSpec.getEnterSequence(),
+                                    mAnimationSpec.getExitSequence());
+                } else {
+                    pool.recycle(origin);
+                    pool.recycle(target);
                 }
             } else {
+                int savedVis = m.getVisibility();
+                m.setVisibility(targetVisibility);
                 mAnimateMeasure.updateTarget(context, m, context.currentTime);
+                m.setVisibility(savedVis);
             }
         }
         if (mAnimateMeasure == null) {
@@ -665,6 +811,25 @@ public class Component extends PaintOperation
         if (mAnimateMeasure != null) {
             mAnimateMeasure.apply(context);
             updateComponentValues(context, mWidth, mHeight);
+            if (mAnimateMeasure.isDone()) {
+                boolean triggerLayout = mAnimateMeasure.isBeforeLayout();
+                mVisibility = mAnimateMeasure.getTarget().getVisibility();
+                ComponentMeasurePool pool = context.getComponentMeasurePool();
+                pool.recycle(mAnimateMeasure.getOriginal());
+                pool.recycle(mAnimateMeasure.getTarget());
+                mAnimateMeasure = null;
+                if (mParent != null) {
+                    clearNeedsBoundsAnimation();
+                }
+                if (triggerLayout) {
+                    invalidateMeasure();
+                    if (mParent != null) {
+                        mParent.invalidateMeasure();
+                    }
+                }
+            } else {
+                markNeedsBoundsAnimation();
+            }
         } else {
             if (mParent != null) {
                 clearNeedsBoundsAnimation();
@@ -1289,12 +1454,73 @@ public class Component extends PaintOperation
     }
 
     /**
+     * Returns true if this component contains dynamic computed operations or variable expressions.
+     */
+    public boolean hasDynamicComputes() {
+        for (Operation op : mList) {
+            if (op instanceof androidx.compose.remote.core.VariableSupport) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isRelayoutBoundary() {
+        return isRelayoutBoundary((CoreDocument) null);
+    }
+
+    /**
+     * Returns true if this node acts as a relayout boundary, meaning changes inside this node
+     * do not affect the size or position of its parent.
+     */
+    public boolean isRelayoutBoundary(@Nullable CoreDocument document) {
+        boolean enabled = document == null || document.isRelayoutBoundaryEnabled();
+        if (!enabled) {
+            return false;
+        }
+        if (hasComputedLayout()) {
+            return false;
+        }
+        if (this instanceof LayoutComponent) {
+            LayoutComponent lc = (LayoutComponent) this;
+            if (lc.getWidthModifier() != null && lc.getHeightModifier() != null) {
+                if (lc.getWidthModifier().isExact() && lc.getHeightModifier().isExact()) {
+                    return true;
+                }
+                if (lc.getWidthModifier().isFill() && lc.getHeightModifier().isFill()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Mark itself as needing to be remeasured, and walk back up the tree to mark each parents as
      * well.
      */
     public void invalidateMeasure() {
         needsRepaint();
         mNeedsMeasure = true;
+
+        try {
+            RootLayoutComponent root = getRoot();
+            if (root != null) {
+                Component p = mParent;
+                while (p != null) {
+                    p.mNeedsMeasure = true;
+                    if (p.isRelayoutBoundary()) {
+                        root.registerDirtyBoundary(p);
+                        break;
+                    }
+                    p = p.mParent;
+                }
+                return;
+            }
+        } catch (Exception e) {
+            // Fallback during inflation/setup
+        }
+
         Component p = mParent;
         while (p != null) {
             p.mNeedsMeasure = true;
@@ -1421,17 +1647,47 @@ public class Component extends PaintOperation
         if (context.isAnimationEnabled() && mAnimateMeasure != null) {
             mAnimateMeasure.paint(context);
             if (mAnimateMeasure.isDone()) {
+                boolean triggerLayout = mAnimateMeasure.isBeforeLayout();
+                mVisibility = mAnimateMeasure.getTarget().getVisibility();
+                ComponentMeasurePool pool = context.getContext().getComponentMeasurePool();
+                pool.recycle(mAnimateMeasure.getOriginal());
+                pool.recycle(mAnimateMeasure.getTarget());
                 mAnimateMeasure = null;
                 if (mParent != null) {
                     clearNeedsBoundsAnimation();
                 }
+                if (triggerLayout) {
+                    invalidateMeasure();
+                    if (mParent != null) {
+                        mParent.invalidateMeasure();
+                    }
+                }
                 needsRepaint();
             } else {
                 markNeedsBoundsAnimation();
+                needsRepaint();
             }
             return true;
         }
         return false;
+    }
+
+    /**
+     * Find an ancestor component of the specified class.
+     *
+     * @param clazz the target component class
+     * @param <T> the type of component
+     * @return the ancestor component instance if found, or null
+     */
+    public <T extends Component> @Nullable T findAncestor(@NonNull Class<T> clazz) {
+        Component p = mParent;
+        while (p != null) {
+            if (clazz.isInstance(p)) {
+                return clazz.cast(p);
+            }
+            p = p.mParent;
+        }
+        return null;
     }
 
     @Override
@@ -1456,6 +1712,18 @@ public class Component extends PaintOperation
         }
         if (applyAnimationAsNeeded(context)) {
             return;
+        }
+        if (mAnimationId != -1) {
+            StateLayout stateLayout = findAncestor(StateLayout.class);
+            if (stateLayout != null) {
+                Component shared =
+                        stateLayout.getSharedComponent(
+                                mAnimationId, stateLayout.measuredLayoutIndex);
+                if (shared != null && shared != this) {
+                    shared.paint(context);
+                    return;
+                }
+            }
         }
         if (isGone() || isInvisible()) {
             return;

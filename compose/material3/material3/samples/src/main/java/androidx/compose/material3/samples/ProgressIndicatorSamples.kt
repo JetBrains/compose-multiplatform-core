@@ -32,9 +32,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -50,10 +50,10 @@ import androidx.compose.ui.unit.dp
 @Sampled
 @Composable
 fun LinearProgressIndicatorSample() {
-    var progress by remember { mutableFloatStateOf(0.1f) }
+    val sliderState = rememberSliderState(0.1f)
     val animatedProgress by
         animateFloatAsState(
-            targetValue = progress,
+            targetValue = sliderState.value,
             animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
         )
 
@@ -62,10 +62,9 @@ fun LinearProgressIndicatorSample() {
         Spacer(Modifier.requiredHeight(30.dp))
         Text("Set progress:")
         Slider(
+            state = sliderState,
+            onValueChange = { sliderState.value = it },
             modifier = Modifier.width(300.dp),
-            value = progress,
-            valueRange = 0f..1f,
-            onValueChange = { progress = it },
         )
     }
 }
@@ -74,10 +73,10 @@ fun LinearProgressIndicatorSample() {
 @Sampled
 @Composable
 fun LinearWavyProgressIndicatorSample() {
-    var progress by remember { mutableFloatStateOf(0.1f) }
+    val sliderState = rememberSliderState(0.1f)
     val animatedProgress by
         animateFloatAsState(
-            targetValue = progress,
+            targetValue = sliderState.value,
             animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
         )
 
@@ -86,10 +85,9 @@ fun LinearWavyProgressIndicatorSample() {
         Spacer(Modifier.requiredHeight(30.dp))
         Text("Set progress:")
         Slider(
+            state = sliderState,
+            onValueChange = { sliderState.value = it },
             modifier = Modifier.width(300.dp),
-            value = progress,
-            valueRange = 0f..1f,
-            onValueChange = { progress = it },
         )
     }
 }
@@ -98,10 +96,10 @@ fun LinearWavyProgressIndicatorSample() {
 @Sampled
 @Composable
 fun LinearThickWavyProgressIndicatorSample() {
-    var progress by remember { mutableFloatStateOf(0.1f) }
+    val sliderState = rememberSliderState(0.1f)
     val animatedProgress by
         animateFloatAsState(
-            targetValue = progress,
+            targetValue = sliderState.value,
             animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
         )
 
@@ -121,10 +119,9 @@ fun LinearThickWavyProgressIndicatorSample() {
         Spacer(Modifier.requiredHeight(30.dp))
         Text("Set progress:")
         Slider(
+            state = sliderState,
+            onValueChange = { sliderState.value = it },
             modifier = Modifier.width(300.dp),
-            value = progress,
-            valueRange = 0f..1f,
-            onValueChange = { progress = it },
         )
     }
 }
@@ -147,10 +144,10 @@ fun IndeterminateLinearWavyProgressIndicatorSample() {
 @Sampled
 @Composable
 fun CircularProgressIndicatorSample() {
-    var progress by remember { mutableFloatStateOf(0.1f) }
+    val sliderState = rememberSliderState(0.1f)
     val animatedProgress by
         animateFloatAsState(
-            targetValue = progress,
+            targetValue = sliderState.value,
             animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
         )
 
@@ -159,10 +156,9 @@ fun CircularProgressIndicatorSample() {
         Spacer(Modifier.requiredHeight(30.dp))
         Text("Set progress:")
         Slider(
+            state = sliderState,
+            onValueChange = { sliderState.value = it },
             modifier = Modifier.width(300.dp),
-            value = progress,
-            valueRange = 0f..1f,
-            onValueChange = { progress = it },
         )
     }
 }
@@ -171,10 +167,10 @@ fun CircularProgressIndicatorSample() {
 @Sampled
 @Composable
 fun CircularWavyProgressIndicatorSample() {
-    var progress by remember { mutableFloatStateOf(0.1f) }
+    val sliderState = rememberSliderState(0.1f)
     val animatedProgress by
         animateFloatAsState(
-            targetValue = progress,
+            targetValue = sliderState.value,
             animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
         )
 
@@ -183,10 +179,9 @@ fun CircularWavyProgressIndicatorSample() {
         Spacer(Modifier.requiredHeight(30.dp))
         Text("Set progress:")
         Slider(
+            state = sliderState,
+            onValueChange = { sliderState.value = it },
             modifier = Modifier.width(300.dp),
-            value = progress,
-            valueRange = 0f..1f,
-            onValueChange = { progress = it },
         )
     }
 }
@@ -195,10 +190,10 @@ fun CircularWavyProgressIndicatorSample() {
 @Sampled
 @Composable
 fun CircularThickWavyProgressIndicatorSample() {
-    var progress by remember { mutableFloatStateOf(0.1f) }
+    val sliderState = rememberSliderState(0.1f)
     val animatedProgress by
         animateFloatAsState(
-            targetValue = progress,
+            targetValue = sliderState.value,
             animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
         )
     val thickStrokeWidth = with(LocalDensity.current) { 8.dp.toPx() }
@@ -216,10 +211,9 @@ fun CircularThickWavyProgressIndicatorSample() {
         Spacer(Modifier.requiredHeight(30.dp))
         Text("Set progress:")
         Slider(
+            state = sliderState,
+            onValueChange = { sliderState.value = it },
             modifier = Modifier.width(300.dp),
-            value = progress,
-            valueRange = 0f..1f,
-            onValueChange = { progress = it },
         )
     }
 }
@@ -241,10 +235,10 @@ fun IndeterminateCircularWavyProgressIndicatorSample() {
 @Preview
 @Composable
 fun LegacyLinearProgressIndicatorSample() {
-    var progress by remember { mutableFloatStateOf(0.1f) }
+    val sliderState = rememberSliderState(0.1f)
     val animatedProgress by
         animateFloatAsState(
-            targetValue = progress,
+            targetValue = sliderState.value,
             animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
         )
 
@@ -259,10 +253,9 @@ fun LegacyLinearProgressIndicatorSample() {
         Spacer(Modifier.requiredHeight(30.dp))
         Text("Set progress:")
         Slider(
+            state = sliderState,
+            onValueChange = { sliderState.value = it },
             modifier = Modifier.width(300.dp),
-            value = progress,
-            valueRange = 0f..1f,
-            onValueChange = { progress = it },
         )
     }
 }
@@ -282,10 +275,10 @@ fun LegacyIndeterminateLinearProgressIndicatorSample() {
 @Preview
 @Composable
 fun LegacyCircularProgressIndicatorSample() {
-    var progress by remember { mutableFloatStateOf(0.1f) }
+    val sliderState = rememberSliderState(0.1f)
     val animatedProgress by
         animateFloatAsState(
-            targetValue = progress,
+            targetValue = sliderState.value,
             animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
         )
 
@@ -299,10 +292,9 @@ fun LegacyCircularProgressIndicatorSample() {
         Spacer(Modifier.requiredHeight(30.dp))
         Text("Set progress:")
         Slider(
+            state = sliderState,
+            onValueChange = { sliderState.value = it },
             modifier = Modifier.width(300.dp),
-            value = progress,
-            valueRange = 0f..1f,
-            onValueChange = { progress = it },
         )
     }
 }

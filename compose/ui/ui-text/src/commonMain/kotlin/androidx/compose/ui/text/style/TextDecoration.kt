@@ -22,51 +22,51 @@ import androidx.compose.ui.util.fastFold
 import androidx.compose.ui.util.fastJoinToString
 
 /**
- * Defines a horizontal line to be drawn on the text.
+ * Defines text decorations such as underline or line-through.
  *
- * @property mask The integer representation of the TextDecoration.
+ * @property mask bitmask representing the combined decorations.
  */
 @Immutable
-class TextDecoration internal constructor(val mask: Int) {
+public class TextDecoration internal constructor(public val mask: Int) {
 
-    companion object {
-        @Stable val None: TextDecoration = TextDecoration(0x0)
+    public companion object {
+        @Stable public val None: TextDecoration = TextDecoration(0x0)
 
         /**
          * Draws a horizontal line below the text.
          *
          * @sample androidx.compose.ui.text.samples.TextDecorationUnderlineSample
          */
-        @Stable val Underline: TextDecoration = TextDecoration(0x1)
+        @Stable public val Underline: TextDecoration = TextDecoration(0x1)
 
         /**
          * Draws a horizontal line over the text.
          *
          * @sample androidx.compose.ui.text.samples.TextDecorationLineThroughSample
          */
-        @Stable val LineThrough: TextDecoration = TextDecoration(0x2)
+        @Stable public val LineThrough: TextDecoration = TextDecoration(0x2)
 
         /**
-         * Creates a decoration that includes all the given decorations.
+         * Combines multiple [TextDecoration]s into a single decoration.
          *
          * @sample androidx.compose.ui.text.samples.TextDecorationCombinedSample
-         * @param decorations The decorations to be added
+         * @param decorations decorations to combine.
          */
-        fun combine(decorations: List<TextDecoration>): TextDecoration {
+        public fun combine(decorations: List<TextDecoration>): TextDecoration {
             val mask = decorations.fastFold(0) { acc, decoration -> acc or decoration.mask }
             return TextDecoration(mask)
         }
 
         /**
-         * Construct a TextDecoration instance from the underlying [TextDecoration.mask]. This
-         * method will attempt to avoid allocations in cases of well known decorations, but is not
-         * guaranteed to not allocate.
+         * Creates a [TextDecoration] from a [mask].
          *
-         * @param mask The integer representation of the TextDecoration.
-         * @throws IllegalArgumentException if the [mask] is not recognized.
+         * Attempts to avoid allocations for well-known decorations.
+         *
+         * @param mask bitmask of the decoration.
+         * @throws IllegalArgumentException if [mask] is invalid.
          * @see androidx.compose.ui.text.style.TextDecoration.mask
          */
-        fun valueOf(mask: Int): TextDecoration {
+        public fun valueOf(mask: Int): TextDecoration {
             // Prevent creating an invalid TextDecoration combination.
             requirePrecondition((mask or 0b11) == 0b11) {
                 "The given mask=$mask is not recognized by TextDecoration."
@@ -81,24 +81,24 @@ class TextDecoration internal constructor(val mask: Int) {
     }
 
     /**
-     * Creates a decoration that includes both of the TextDecorations.
+     * Combines this decoration with [decoration].
      *
      * @sample androidx.compose.ui.text.samples.TextDecorationCombinedSample
      */
-    operator fun plus(decoration: TextDecoration): TextDecoration {
+    public operator fun plus(decoration: TextDecoration): TextDecoration {
         return TextDecoration(this.mask or decoration.mask)
     }
 
     /**
-     * Check whether this [TextDecoration] contains the given decoration.
+     * Checks if this decoration contains [other].
      *
-     * @param other The [TextDecoration] to be checked.
+     * @param other decoration to check.
      */
-    operator fun contains(other: TextDecoration): Boolean {
+    public operator fun contains(other: TextDecoration): Boolean {
         return (mask or other.mask) == mask
     }
 
-    override fun toString(): String {
+    public override fun toString(): String {
         if (mask == 0) {
             return "TextDecoration.None"
         }
@@ -116,14 +116,14 @@ class TextDecoration internal constructor(val mask: Int) {
         return "TextDecoration[${values.fastJoinToString(separator = ", ")}]"
     }
 
-    override fun equals(other: Any?): Boolean {
+    public override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is TextDecoration) return false
         if (mask != other.mask) return false
         return true
     }
 
-    override fun hashCode(): Int {
+    public override fun hashCode(): Int {
         return mask
     }
 }

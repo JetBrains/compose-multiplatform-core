@@ -128,7 +128,7 @@ private fun Project.listSbomConfigurationNamesForArchive(task: AbstractArchiveTa
     }
 
     if (excludeTaskNames.contains(taskName)) return listOf()
-    if (projectPath == ":compose:lint:internal-lint-checks")
+    if (projectPath.endsWith("internal-lint-checks"))
         return listOf() // we don't publish these lint checks
     if (projectPath.contains("integration-tests"))
         return listOf() // we don't publish integration tests
@@ -148,8 +148,10 @@ private fun Project.listSbomConfigurationNamesForArchive(task: AbstractArchiveTa
         // We separately validate that this list is correct in
         val shadowTask = task as? ShadowJar
         if (shadowTask != null) {
-            val configurations =
-                configurations.filter { conf -> shadowTask.configurations.contains(conf) }
+            @Suppress("EagerGradleConfiguration")
+            val configurations = configurations.filter { conf ->
+                shadowTask.configurations.contains(conf)
+            }
             return configurations.map { conf -> conf.name }
         }
     }
@@ -282,6 +284,8 @@ fun Project.configureSbomPublishing() {
                 sbomConfigurations.add(configuration.name)
             }
         }
+
+        sbomExtension.onlyUseLocalLicenses.set(true)
 
         sbomExtension.targets.create("release") { target ->
             val googleOrganization = "Organization: Google LLC"

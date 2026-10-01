@@ -16,16 +16,18 @@
 
 package androidx.ink.brush.behavior
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.cinterop.PolarTargetNodeNative_create
 import androidx.ink.nativeloader.cinterop.PolarTargetNodeNative_getAngleRangeEnd
 import androidx.ink.nativeloader.cinterop.PolarTargetNodeNative_getAngleRangeStart
 import androidx.ink.nativeloader.cinterop.PolarTargetNodeNative_getMagnitudeRangeEnd
 import androidx.ink.nativeloader.cinterop.PolarTargetNodeNative_getMagnitudeRangeStart
+import androidx.ink.nativeloader.cinterop.PolarTargetNodeNative_getPolarTargetMinimumRequiredVersion
 import androidx.ink.nativeloader.cinterop.PolarTargetNodeNative_getTargetInt
 import androidx.ink.nativeloader.throwForNonOkStatusCallback
 import kotlinx.cinterop.ExperimentalForeignApi
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, InkInternalOnlyApi::class)
 actual internal object PolarTargetNodeNative {
     actual fun create(
         polarTarget: Int,
@@ -58,4 +60,7 @@ actual internal object PolarTargetNodeNative {
 
     actual fun getMagnitudeRangeEnd(nativePointer: Long): Float =
         PolarTargetNodeNative_getMagnitudeRangeEnd(nativePointer)
+
+    actual fun getPolarTargetMinimumRequiredVersion(targetInt: Int): Int =
+        PolarTargetNodeNative_getPolarTargetMinimumRequiredVersion(targetInt)
 }

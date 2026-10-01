@@ -16,7 +16,6 @@
 
 package androidx.compose.material3.carousel
 
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.unit.Density
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -42,7 +41,6 @@ import kotlin.math.min
  * @param minSmallItemSize the minimum allowable size of small items in pixels
  * @param maxSmallItemSize the maximum allowable size of small items in pixels
  */
-@OptIn(ExperimentalMaterial3Api::class)
 internal fun multiBrowseKeylineList(
     density: Density,
     carouselMainAxisSize: Float,
@@ -157,7 +155,6 @@ internal fun multiBrowseKeylineList(
  * @param itemSize the size of large items, in pixels, in the main scrolling axis
  * @param itemSpacing the spacing between items in pixels
  */
-@OptIn(ExperimentalMaterial3Api::class)
 internal fun uncontainedKeylineList(
     density: Density,
     carouselMainAxisSize: Float,
@@ -202,20 +199,22 @@ internal fun uncontainedKeylineList(
  *
  * @param density The [Density] object that provides pixel density information of the device
  * @param carouselMainAxisSize The carousel container's pixel size in the main scrolling axis
- * @param maxItemSize The maximum size large items should be in the main scrolling axis. When null,
- *   a single large item will fill the viewport minus any required small item space. When not null,
- *   additional large items will be added as space allows.
+ * @param preferredItemSize The size large items should aim for in the main scrolling axis. The
+ *   arrangement whose large item size lands closest to it wins, so the final size may differ. When
+ *   null, a single large item will fill the viewport minus any required small item space. When not
+ *   null, additional large items will be added as space allows. Large items always end up bigger
+ *   than the small items beside them, which are never smaller than [minSmallItemSize], so sizes at
+ *   or below that bound cannot be honored.
  * @param itemSpacing the spacing between items in pixels
  * @param itemCount the number of items in the carousel
  * @param isCentered whether the large item should be centered in the viewport
  * @param minSmallItemSize the minimum allowable size of small items in pixels
  * @param maxSmallItemSize the maximum allowable size of small items in pixels
  */
-@OptIn(ExperimentalMaterial3Api::class)
 internal fun heroKeylineList(
     density: Density,
     carouselMainAxisSize: Float,
-    maxItemSize: Float?,
+    preferredItemSize: Float?,
     itemSpacing: Float,
     itemCount: Int,
     isCentered: Boolean = false,
@@ -239,7 +238,7 @@ internal fun heroKeylineList(
             else -> intArrayOf(1)
         }
 
-    val targetLargeSize = min(maxItemSize ?: carouselMainAxisSize, carouselMainAxisSize)
+    val targetLargeSize = min(preferredItemSize ?: carouselMainAxisSize, carouselMainAxisSize)
     // Visually balanced layouts should aim to use small items that are 1/3 the size of large items
     val targetSmallSize: Float = (targetLargeSize / 3f).coerceIn(minSmallItemSize, maxSmallItemSize)
 
@@ -338,7 +337,6 @@ internal fun createCenterAlignedKeylineList(
  * and arbitrarily chooses a size small enough such that there is a size disparity between the
  * medium and large sizes, but large enough to have a sufficient percentage cut off.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 private fun calculateMediumChildSize(
     minimumMediumSize: Float,
     largeItemSize: Float,

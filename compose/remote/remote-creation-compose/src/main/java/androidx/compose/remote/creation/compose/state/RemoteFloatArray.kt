@@ -18,6 +18,7 @@
 package androidx.compose.remote.creation.compose.state
 
 import androidx.annotation.RestrictTo
+import androidx.compose.remote.core.operations.NamedVariable
 import androidx.compose.remote.core.operations.Utils
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
@@ -29,6 +30,7 @@ public class RemoteFloatArray
 internal constructor(
     public override val constantValueOrNull: List<RemoteFloat>?,
     internal override val cacheKey: RemoteStateCacheKey,
+    internal val idProvider: ((creationState: RemoteComposeCreationState) -> Int)? = null,
 ) : BaseRemoteState<List<RemoteFloat>>(cacheKey) {
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -41,10 +43,19 @@ internal constructor(
         } ?: RemoteStateInstanceKey(),
     )
 
-    internal enum class OperationKey : DebuggableOperation {
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public constructor(vararg values: Float) : this(values.map { RemoteFloat(it) })
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public constructor(vararg values: RemoteFloat) : this(values.toList())
+
+    internal enum class OperationKey : RemoteOperation {
         Create {
             override fun toDebugString(args: List<RemoteStateCacheKey>) =
                 "arrayOf(${args.joinToDebugString()})"
+
+            override fun reconstruct(args: List<BaseRemoteState<*>>): BaseRemoteState<*> =
+                RemoteFloatArray(args.fastMap { it as RemoteFloat })
         },
         Get {
             override val precedence: Int
@@ -52,13 +63,61 @@ internal constructor(
 
             override fun toDebugString(args: List<RemoteStateCacheKey>) =
                 args.formatArrayAccess(precedence)
+
+            override fun reconstruct(args: List<BaseRemoteState<*>>): BaseRemoteState<*> {
+                val array = args[0] as RemoteFloatArray
+                return when (val index = args[1]) {
+                    is RemoteFloat -> array[index]
+                    is RemoteInt -> array[index]
+                    else -> throw IllegalArgumentException("Unsupported index type: $index")
+                }
+            }
+        },
+        IdList {
+            override fun toDebugString(args: List<RemoteStateCacheKey>) =
+                "${args[0].toDebugString()}.asIdList()"
+
+            override fun reconstruct(args: List<BaseRemoteState<*>>): BaseRemoteState<*> = args[0]
         },
     }
 
+    private val idListCacheKey: RemoteStateCacheKey =
+        RemoteOperationCacheKey.create(OperationKey.IdList, this)
+
     override fun writeToDocument(creationState: RemoteComposeCreationState): Int {
+        // If this instance represents an existing allocated ID (e.g. a formal parameter in a
+        // pattern definition), return that ID directly instead of writing to the document.
+        if (cacheKey is RemoteStateIdKey) {
+            return (cacheKey as RemoteStateIdKey).id
+        }
+        if (idProvider != null) {
+            return idProvider.invoke(creationState)
+        }
         val asFloat =
             with(creationState) { constantValueOrNull!!.fastMap { it.floatId }.toFloatArray() }
         return Utils.idFromNan(creationState.document.addFloatArray(asFloat))
+    }
+
+    /**
+     * Returns an ID for this array represented as an ID list collection.
+     *
+     * Writes each float element as a variable into the document and collects their IDs into a
+     * [androidx.compose.remote.core.operations.DataListIds], suitable for pattern iteration.
+     *
+     * @param creationState creation state associated with the document being written
+     * @return document ID allocated for the ID list
+     */
+    internal fun getIdListForCreationState(creationState: RemoteComposeCreationState): Int {
+        if (cacheKey is RemoteStateIdKey) {
+            return (cacheKey as RemoteStateIdKey).id
+        }
+        return creationState.getOrPutVariableId(idListCacheKey) {
+            val ids =
+                constantValueOrNull!!
+                    .fastMap { it.getIdForCreationState(creationState) }
+                    .toIntArray()
+            Utils.idFromNan(creationState.document.addList(ids))
+        }
     }
 
     /**
@@ -66,8 +125,10 @@ internal constructor(
      * dereference operation on a remote float array.
      */
     public operator fun get(v: RemoteFloat): RemoteFloat {
-        v.constantValueOrNull?.let {
-            return constantValueOrNull!![it.toInt()]
+        val constArray = constantValueOrNull
+        val constIndex = v.constantValueOrNull
+        if (constArray != null && constIndex != null) {
+            return constArray[constIndex.toInt()]
         }
         return RemoteFloatExpression(
             constantValueOrNull = null,
@@ -85,15 +146,18 @@ internal constructor(
      * Array access operator for [RemoteFloatArray] with an [Int] index. Performs a dereference
      * operation on a remote float array.
      */
-    public operator fun get(v: Int): RemoteFloat = constantValueOrNull!![v]
+    public operator fun get(v: Int): RemoteFloat =
+        constantValueOrNull?.get(v) ?: get(RemoteFloat(v.toFloat()))
 
     /**
      * Array access operator for [RemoteFloatArray] with a [RemoteInt] index. Performs a dereference
      * operation on a remote float array.
      */
     public operator fun get(v: RemoteInt): RemoteFloat {
-        v.constantValueOrNull?.let {
-            return constantValueOrNull!![it]
+        val constArray = constantValueOrNull
+        val constIndex = v.constantValueOrNull
+        if (constArray != null && constIndex != null) {
+            return constArray[constIndex]
         }
         return RemoteFloatExpression(
             constantValueOrNull = null,
@@ -110,6 +174,38 @@ internal constructor(
     private fun arrayForCreationState(creationState: RemoteComposeCreationState): FloatArray {
         return creationState.getOrPutFloatArray(cacheKey) {
             floatArrayOf(getFloatIdForCreationState(creationState))
+        }
+    }
+
+    public companion object {
+        /**
+         * Creates a named [RemoteFloatArray].
+         *
+         * @param name The unique name for this remote float array.
+         * @param defaultValue The initial [FloatArray] value for the named array.
+         * @param domain The domain of the named array (defaults to [RemoteState.Domain.User]).
+         * @return A [RemoteFloatArray] representing the named float array.
+         */
+        @JvmStatic
+        public fun createNamedRemoteFloatArray(
+            name: String,
+            defaultValue: FloatArray,
+            domain: RemoteState.Domain = RemoteState.Domain.User,
+        ): RemoteFloatArray {
+            return RemoteFloatArray(
+                constantValueOrNull = null,
+                cacheKey = RemoteNamedCacheKey(domain, name),
+                idProvider = { creationState ->
+                    val floatId = creationState.document.addFloatArray(defaultValue)
+                    val id = Utils.idFromNan(floatId)
+                    creationState.document.setNamedVariable(
+                        id,
+                        domain.prefixed(name),
+                        NamedVariable.FLOAT_ARRAY_TYPE,
+                    )
+                    id
+                },
+            )
         }
     }
 }

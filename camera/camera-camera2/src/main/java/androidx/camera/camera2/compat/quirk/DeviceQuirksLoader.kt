@@ -80,6 +80,14 @@ public object DeviceQuirksLoader {
         }
         if (
             quirkSettings.shouldEnableQuirk(
+                DngCreatorSizeMismatchQuirk::class.java,
+                DngCreatorSizeMismatchQuirk.load(),
+            )
+        ) {
+            quirks.add(DngCreatorSizeMismatchQuirk())
+        }
+        if (
+            quirkSettings.shouldEnableQuirk(
                 FlashAvailabilityBufferUnderflowQuirk::class.java,
                 FlashAvailabilityBufferUnderflowQuirk.isEnabled(),
             )
@@ -101,6 +109,14 @@ public object DeviceQuirksLoader {
             )
         ) {
             quirks.add(InvalidVideoProfilesQuirk())
+        }
+        if (
+            quirkSettings.shouldEnableQuirk(
+                ExcludePhysicalCameraIdQuirk::class.java,
+                ExcludePhysicalCameraIdQuirk.isEnabled(),
+            )
+        ) {
+            quirks.add(ExcludePhysicalCameraIdQuirk())
         }
         if (
             quirkSettings.shouldEnableQuirk(
@@ -189,6 +205,14 @@ public object DeviceQuirksLoader {
             )
         ) {
             quirks.add(CaptureSessionOnClosedNotCalledQuirk())
+        }
+        if (
+            quirkSettings.shouldEnableQuirk(
+                UnsupportedFormatsQuirk::class.java,
+                UnsupportedFormatsQuirk.isEnabled(),
+            )
+        ) {
+            quirks.add(UnsupportedFormatsQuirk())
         }
         if (
             quirkSettings.shouldEnableQuirk(ZslDisablerQuirk::class.java, ZslDisablerQuirk.load())

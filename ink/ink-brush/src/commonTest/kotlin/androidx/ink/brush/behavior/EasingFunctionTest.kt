@@ -16,14 +16,18 @@
 
 package androidx.ink.brush.behavior
 
+import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.Version
 import androidx.ink.brush.behavior.EasingFunction.Predefined
 import androidx.ink.geometry.ImmutableVec
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.testing.awaitNativePointerCleanupAfter
 import androidx.kruth.assertThat
 import kotlin.IllegalArgumentException
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
+@OptIn(InkInternalOnlyApi::class)
 class EasingFunctionTest {
 
     @Test
@@ -74,78 +78,101 @@ class EasingFunctionTest {
     }
 
     @Test
-    @Suppress("Range") // Testing error cases.
     fun cubicBezierConstructor_requiresValuesInRange() {
-        // arg x1 outside range [0,1]
+        // arg p1.x outside range [0,1]
         assertFailsWith<IllegalArgumentException> {
-            EasingFunction.CubicBezier(x1 = 1.1F, 1F, 3F, 4F)
+            EasingFunction.CubicBezier(p1 = ImmutableVec(1.1F, 1F), p2 = ImmutableVec(0.3F, 4F))
         }
         assertFailsWith<IllegalArgumentException> {
-            EasingFunction.CubicBezier(x1 = -0.2F, 3F, 1F, 4F)
+            EasingFunction.CubicBezier(p1 = ImmutableVec(-0.2F, 3F), p2 = ImmutableVec(0.1F, 4F))
         }
-        // arg x2 outside range [0,1]
+        // arg p2.x outside range [0,1]
         assertFailsWith<IllegalArgumentException> {
-            EasingFunction.CubicBezier(1F, 3F, x2 = 2F, 4F)
+            EasingFunction.CubicBezier(p1 = ImmutableVec(1F, 3F), p2 = ImmutableVec(2F, 4F))
         }
         assertFailsWith<IllegalArgumentException> {
-            EasingFunction.CubicBezier(1F, 3F, x2 = -0.5F, 4F)
+            EasingFunction.CubicBezier(p1 = ImmutableVec(1F, 3F), p2 = ImmutableVec(-0.5F, 4F))
         }
     }
 
     @Test
-    @Suppress("Range") // Testing error cases.
     fun cubicBezierConstructor_requiresFiniteValues() {
         assertFailsWith<IllegalArgumentException> {
-            EasingFunction.CubicBezier(x1 = Float.POSITIVE_INFINITY, 1F, 1F, 1F)
+            EasingFunction.CubicBezier(
+                p1 = ImmutableVec(Float.POSITIVE_INFINITY, 1F),
+                p2 = ImmutableVec(1F, 1F),
+            )
         }
         assertFailsWith<IllegalArgumentException> {
-            EasingFunction.CubicBezier(x1 = Float.NaN, 1F, 1F, 1F)
+            EasingFunction.CubicBezier(p1 = ImmutableVec(Float.NaN, 1F), p2 = ImmutableVec(1F, 1F))
         }
         assertFailsWith<IllegalArgumentException> {
-            EasingFunction.CubicBezier(1F, 1F, x2 = Float.POSITIVE_INFINITY, 1F)
+            EasingFunction.CubicBezier(
+                p1 = ImmutableVec(1F, 1F),
+                p2 = ImmutableVec(Float.POSITIVE_INFINITY, 1F),
+            )
         }
         assertFailsWith<IllegalArgumentException> {
-            EasingFunction.CubicBezier(1F, 1F, x2 = Float.NaN, 1F)
+            EasingFunction.CubicBezier(p1 = ImmutableVec(1F, 1F), p2 = ImmutableVec(Float.NaN, 1F))
         }
         assertFailsWith<IllegalArgumentException> {
-            EasingFunction.CubicBezier(1F, y1 = Float.POSITIVE_INFINITY, 1F, 1F)
+            EasingFunction.CubicBezier(
+                p1 = ImmutableVec(1F, Float.POSITIVE_INFINITY),
+                p2 = ImmutableVec(1F, 1F),
+            )
         }
         assertFailsWith<IllegalArgumentException> {
-            EasingFunction.CubicBezier(1F, y1 = Float.NaN, 1F, 1F)
+            EasingFunction.CubicBezier(p1 = ImmutableVec(1F, Float.NaN), p2 = ImmutableVec(1F, 1F))
         }
         assertFailsWith<IllegalArgumentException> {
-            EasingFunction.CubicBezier(1F, 1F, 1F, y2 = Float.POSITIVE_INFINITY)
+            EasingFunction.CubicBezier(
+                p1 = ImmutableVec(1F, 1F),
+                p2 = ImmutableVec(1F, Float.POSITIVE_INFINITY),
+            )
         }
         assertFailsWith<IllegalArgumentException> {
-            EasingFunction.CubicBezier(1F, 1F, 1F, y2 = Float.NaN)
+            EasingFunction.CubicBezier(p1 = ImmutableVec(1F, 1F), p2 = ImmutableVec(1F, Float.NaN))
         }
     }
 
     @Test
     fun cubicBezierHashCode_withIdenticalValues_matches() {
-        assertThat(EasingFunction.CubicBezier(1f, 2f, 0.3f, 4f).hashCode())
-            .isEqualTo(EasingFunction.CubicBezier(1f, 2f, 0.3f, 4f).hashCode())
+        assertThat(
+                EasingFunction.CubicBezier(ImmutableVec(1f, 2f), ImmutableVec(0.3f, 4f)).hashCode()
+            )
+            .isEqualTo(
+                EasingFunction.CubicBezier(ImmutableVec(1f, 2f), ImmutableVec(0.3f, 4f)).hashCode()
+            )
     }
 
     @Test
     fun cubicBezierEquals_checksEqualityOfValues() {
-        val original = EasingFunction.CubicBezier(1f, 2f, 0.3f, 4f)
+        val original = EasingFunction.CubicBezier(ImmutableVec(1f, 2f), ImmutableVec(0.3f, 4f))
 
         // Equal
         assertThat(original).isEqualTo(original) // Same instance.
-        assertThat(original).isEqualTo(EasingFunction.CubicBezier(1f, 2f, 0.3f, 4f)) // Same values.
+        assertThat(original)
+            .isEqualTo(
+                EasingFunction.CubicBezier(ImmutableVec(1f, 2f), ImmutableVec(0.3f, 4f))
+            ) // Same values.
 
         // Not equal
         assertThat(original).isNotNull()
         assertThat(original).isNotEqualTo(EasingFunction.Predefined.LINEAR) // Different type.
         assertThat(original)
-            .isNotEqualTo(EasingFunction.CubicBezier(0.9f, 0.8f, 0.7f, 0.6f)) // Values.
+            .isNotEqualTo(
+                EasingFunction.CubicBezier(ImmutableVec(0.9f, 0.8f), ImmutableVec(0.7f, 0.6f))
+            ) // Values.
     }
 
     @Test
     fun cubicBezierToString_returnsReasonableString() {
-        assertThat(EasingFunction.CubicBezier(1f, 2f, 0.3f, 4f).toString())
-            .isEqualTo("EasingFunction.CubicBezier(x1=1.0, y1=2.0, x2=0.3, y2=4.0)")
+        assertThat(
+                EasingFunction.CubicBezier(ImmutableVec(1f, 2f), ImmutableVec(0.3f, 4f)).toString()
+            )
+            .isEqualTo(
+                "EasingFunction.CubicBezier(p1=ImmutableVec(x=1.0, y=2.0), p2=ImmutableVec(x=0.3, y=4.0))"
+            )
     }
 
     @Test
@@ -160,7 +187,7 @@ class EasingFunctionTest {
 
     @Test
     fun linearConstructor_allowsEmptyList() {
-        val unused = EasingFunction.Linear(emptyList())
+        @Suppress("UNUSED_VARIABLE") val unused = EasingFunction.Linear(emptyList())
     }
 
     @Test
@@ -347,7 +374,32 @@ class EasingFunctionTest {
         awaitNativePointerCleanupAfter {
             // The logic under test is in the private superclass constructor, just pick a subclass
             // arbitrarily.
-            val unused = EasingFunction.CubicBezier(1f, 2f, 0.3f, 4f)
+            @Suppress("UNUSED_VARIABLE")
+            val unused = EasingFunction.CubicBezier(ImmutableVec(1f, 2f), ImmutableVec(0.3f, 4f))
         }
+    }
+
+    @OptIn(ExperimentalInkCustomBrushApi::class)
+    @Test
+    fun calculateMinimumRequiredVersion_returnsExpectedValue() {
+        assertThat(EasingFunction.Predefined.LINEAR.calculateMinimumRequiredVersion())
+            .isEqualTo(Version.V0)
+        assertThat(
+                EasingFunction.Linear(listOf(ImmutableVec(0.5f, 0.5f)))
+                    .calculateMinimumRequiredVersion()
+            )
+            .isEqualTo(Version.V0)
+        assertThat(
+                EasingFunction.CubicBezier(ImmutableVec(0.1f, 0.2f), ImmutableVec(0.3f, 0.4f))
+                    .calculateMinimumRequiredVersion()
+            )
+            .isEqualTo(Version.V0)
+        assertThat(
+                EasingFunction.Steps(1, EasingFunction.StepPosition.JUMP_START)
+                    .calculateMinimumRequiredVersion()
+            )
+            .isEqualTo(Version.V0)
+        assertThat(EasingFunction.StepPosition.JUMP_START.calculateMinimumRequiredVersion())
+            .isEqualTo(Version.V0)
     }
 }

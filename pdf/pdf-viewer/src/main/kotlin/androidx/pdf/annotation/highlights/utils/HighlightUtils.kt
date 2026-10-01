@@ -19,8 +19,10 @@ package androidx.pdf.annotation.highlights.utils
 import android.graphics.Matrix
 import android.graphics.PointF
 import android.graphics.RectF
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.annotation.content.PathPdfObject
 import androidx.pdf.annotation.content.PathPdfObject.PathInput
+import androidx.pdf.constants.PathOps
 import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.exceptions.RequestMetadata
 import androidx.pdf.util.TEXT_BOUNDS_REQUEST_NAME
@@ -44,6 +46,7 @@ internal fun List<RectF>.computeBoundingBox(): RectF {
 }
 
 /** Converts a list of [RectF] bounds into [PathPdfObject]s. */
+@OptIn(ExperimentalPdfApi::class)
 internal fun List<RectF>.toPathPdfObjects(color: Int): List<PathPdfObject> {
     return map { rect ->
         PathPdfObject(
@@ -51,11 +54,11 @@ internal fun List<RectF>.toPathPdfObjects(color: Int): List<PathPdfObject> {
             brushWidth = 0f,
             inputs =
                 listOf(
-                    PathInput(rect.left, rect.top, PathInput.MOVE_TO),
-                    PathInput(rect.right, rect.top, PathInput.LINE_TO),
-                    PathInput(rect.right, rect.bottom, PathInput.LINE_TO),
-                    PathInput(rect.left, rect.bottom, PathInput.LINE_TO),
-                    PathInput(rect.left, rect.top, PathInput.LINE_TO),
+                    PathInput(rect.left, rect.top, PathOps.MOVE_TO),
+                    PathInput(rect.right, rect.top, PathOps.LINE_TO),
+                    PathInput(rect.right, rect.bottom, PathOps.LINE_TO),
+                    PathInput(rect.left, rect.bottom, PathOps.LINE_TO),
+                    PathInput(rect.left, rect.top, PathOps.LINE_TO),
                 ),
         )
     }

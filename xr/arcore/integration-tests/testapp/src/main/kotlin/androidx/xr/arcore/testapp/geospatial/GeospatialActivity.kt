@@ -184,13 +184,6 @@ class GeospatialActivity : ComponentActivity() {
         sessionHelper.tryCreateSession()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        for (entity in anchorEntities) {
-            entity.parent = null
-        }
-    }
-
     @Composable
     private fun MainPanel(session: Session) {
         val geospatial = Geospatial.getInstance(session)
@@ -268,11 +261,12 @@ class GeospatialActivity : ComponentActivity() {
                 geospatialState.geospatialTrackingState ==
                     Geospatial.GeospatialTrackingState.RUNNING
             ) {
-                val poseResult =
-                    snapshotFlow { arDeviceState }
-                        .map { geospatial.createGeospatialPoseFromPose(it.devicePose) }
-                        .filterIsInstance<CreateGeospatialPoseFromPoseSuccess>()
-                        .first()
+                val poseResult = snapshotFlow {
+                    arDeviceState
+                }
+                    .map { geospatial.createGeospatialPoseFromPose(it.devicePose) }
+                    .filterIsInstance<CreateGeospatialPoseFromPoseSuccess>()
+                    .first()
 
                 try {
                     vpsAvailability =
@@ -281,7 +275,7 @@ class GeospatialActivity : ComponentActivity() {
                             poseResult.pose.longitude,
                         )
                 } catch (e: Exception) {
-                    logAndShowToast("checkVpsAvailability failed: $e", e)
+                    w("JetpackXR", "checkVpsAvailability failed: $e", e)
                     vpsAvailability = null
                 }
             }

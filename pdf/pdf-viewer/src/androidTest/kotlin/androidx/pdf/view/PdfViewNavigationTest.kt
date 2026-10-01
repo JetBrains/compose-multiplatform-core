@@ -121,6 +121,66 @@ class PdfViewNavigationTest {
     }
 
     @Test
+    fun testGotoLinkNavigation_withMouseClick() = runTest {
+        val linkBounds = RectF(0f, 0f, 100f, 200f)
+        val fakePdfDocument =
+            FakePdfDocument(
+                pages = List(20) { Point(100, 200) },
+                pageLinks =
+                    mapOf(
+                        0 to
+                            PdfDocument.PdfPageLinks(
+                                gotoLinks =
+                                    listOf(
+                                        PdfPageGotoLinkContent(
+                                            bounds = listOf(linkBounds),
+                                            destination =
+                                                PdfPageGotoLinkContent.Destination(
+                                                    pageNumber = VALID_PAGE_NUMBER,
+                                                    xCoordinate = 10f,
+                                                    yCoordinate = 40f,
+                                                    zoom = 1f,
+                                                ),
+                                        )
+                                    ),
+                                externalLinks = emptyList(),
+                            )
+                    ),
+            )
+        setupPdfView(100, 1000, fakePdfDocument)
+
+        var firstVisiblePage = 0
+        var visiblePagesCount = 0
+        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
+            fakePdfDocument.waitForLayout(untilPage = VALID_PAGE_NUMBER)
+            fakePdfDocument.waitForRender(untilPage = 0)
+
+            var tapX = 0f
+            var tapY = 0f
+            Espresso.onView(withId(PDF_VIEW_ID)).check { view, noViewFoundException ->
+                view ?: throw noViewFoundException
+                val pdfView = view as PdfView
+                val tapPoint = getTapPointFromContentBounds(pdfView, 0, linkBounds)
+                tapX = tapPoint.x
+                tapY = tapPoint.y
+            }
+
+            Espresso.onView(withId(PDF_VIEW_ID)).perform(performMouseClickOnCoords(tapX, tapY))
+            fakePdfDocument.waitForLayout(untilPage = VALID_PAGE_NUMBER)
+
+            Espresso.onView(withId(PDF_VIEW_ID)).check { view, noViewFoundException ->
+                view ?: throw noViewFoundException
+                val pdfView = view as PdfView
+                firstVisiblePage = pdfView.firstVisiblePage
+                visiblePagesCount = pdfView.visiblePagesCount
+            }
+            close()
+        }
+        assertThat(VALID_PAGE_NUMBER).isAtLeast(firstVisiblePage)
+        assertThat(VALID_PAGE_NUMBER).isAtMost(firstVisiblePage + visiblePagesCount - 1)
+    }
+
+    @Test
     fun testGotoLinkNavigation_withInvalidPage() = runTest {
         val linkBounds = RectF(0f, 0f, 100f, 200f)
         val fakePdfDocument =
@@ -184,6 +244,96 @@ class PdfViewNavigationTest {
     fun testExternalLinkNavigation_withValidUri() = runTest {
         val linkBounds = RectF(0f, 0f, 100f, 200f)
         val uri = Uri.parse(URI_WITH_VALID_SCHEME)
+        val fakePdfDocument =
+            FakePdfDocument(
+                pages = List(10) { Point(200, 200) },
+                pageLinks =
+                    mapOf(
+                        0 to
+                            PdfDocument.PdfPageLinks(
+                                gotoLinks = emptyList(),
+                                externalLinks =
+                                    listOf(
+                                        PdfPageLinkContent(bounds = listOf(linkBounds), uri = uri)
+                                    ),
+                            )
+                    ),
+            )
+        setupPdfView(200, 1000, fakePdfDocument)
+
+        Intents.init()
+        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
+            fakePdfDocument.waitForLayout(1)
+            fakePdfDocument.waitForRender(1)
+
+            var tapX = 0f
+            var tapY = 0f
+            Espresso.onView(withId(PDF_VIEW_ID)).check { view, noViewFoundException ->
+                view ?: throw noViewFoundException
+                val pdfView = view as PdfView
+                val tapPoint = getTapPointFromContentBounds(pdfView, 0, linkBounds)
+                tapX = tapPoint.x
+                tapY = tapPoint.y
+            }
+
+            Espresso.onView(withId(PDF_VIEW_ID)).perform(performSingleTapOnCoords(tapX, tapY))
+            close()
+        }
+        Espresso.onIdle()
+        Intents.intended(hasAction(Intent.ACTION_VIEW))
+        Intents.intended(hasData(uri))
+        Intents.release()
+    }
+
+    @Test
+    fun testExternalLinkNavigation_withInvalidScheme_isBlocked() = runTest {
+        val linkBounds = RectF(0f, 0f, 100f, 200f)
+        val uri = Uri.parse("javascript:alert(1)")
+        val fakePdfDocument =
+            FakePdfDocument(
+                pages = List(10) { Point(200, 200) },
+                pageLinks =
+                    mapOf(
+                        0 to
+                            PdfDocument.PdfPageLinks(
+                                gotoLinks = emptyList(),
+                                externalLinks =
+                                    listOf(
+                                        PdfPageLinkContent(bounds = listOf(linkBounds), uri = uri)
+                                    ),
+                            )
+                    ),
+            )
+        setupPdfView(200, 1000, fakePdfDocument)
+
+        Intents.init()
+        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
+            fakePdfDocument.waitForLayout(1)
+            fakePdfDocument.waitForRender(1)
+
+            var tapX = 0f
+            var tapY = 0f
+            Espresso.onView(withId(PDF_VIEW_ID)).check { view, noViewFoundException ->
+                view ?: throw noViewFoundException
+                val pdfView = view as PdfView
+                val tapPoint = getTapPointFromContentBounds(pdfView, 0, linkBounds)
+                tapX = tapPoint.x
+                tapY = tapPoint.y
+            }
+
+            Espresso.onView(withId(PDF_VIEW_ID)).perform(performSingleTapOnCoords(tapX, tapY))
+            close()
+        }
+        Espresso.onIdle()
+        val viewIntents = Intents.getIntents().filter { it.action == Intent.ACTION_VIEW }
+        assertThat(viewIntents).isEmpty()
+        Intents.release()
+    }
+
+    @Test
+    fun testExternalLinkNavigation_withUppercaseScheme_isAllowed() = runTest {
+        val linkBounds = RectF(0f, 0f, 100f, 200f)
+        val uri = Uri.parse("MAILTO:test@example.com")
         val fakePdfDocument =
             FakePdfDocument(
                 pages = List(10) { Point(200, 200) },

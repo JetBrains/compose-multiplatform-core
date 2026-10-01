@@ -19,6 +19,7 @@ package androidx.glance.wear.core
 import androidx.annotation.Dimension
 import androidx.annotation.RestrictTo
 import androidx.glance.wear.parcel.WearWidgetRequestParcel
+import androidx.glance.wear.proto.PlayerOperation
 import androidx.glance.wear.proto.WearWidgetRequestProto
 import java.util.Objects
 
@@ -57,7 +58,7 @@ public constructor(
     @get:Dimension(unit = Dimension.DP)
     public val cornerRadiusDp: Float,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public val rendererVersion: RendererVersion = RendererVersion(),
+    public val rendererVersion: RendererVersion = RendererVersion.SAFE_FALLBACK_VERSION,
 ) {
 
     /** Converts this object to [androidx.glance.wear.parcel.WearWidgetRequestParcel]. */
@@ -76,6 +77,8 @@ public constructor(
                 renderer_version_major = rendererVersion.major,
                 renderer_version_minor = rendererVersion.minor,
                 renderer_version_revision = rendererVersion.revision,
+                renderer_supported_operations =
+                    rendererVersion.supportedOperations.mapToList { PlayerOperation(it) },
             )
         return WearWidgetRequestParcel().apply { payload = requestProto.encode() }
     }
@@ -111,7 +114,9 @@ public constructor(
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public fun fromParcel(
             parcel: WearWidgetRequestParcel,
-            getDefaultRendererVersion: () -> RendererVersion = { RendererVersion() },
+            getDefaultRendererVersion: () -> RendererVersion = {
+                RendererVersion.SAFE_FALLBACK_VERSION
+            },
         ): WearWidgetParams {
             val requestProto = WearWidgetRequestProto.ADAPTER.decode(parcel.payload)
             return WearWidgetParams(
@@ -131,6 +136,14 @@ public constructor(
                             major = requestProto.renderer_version_major,
                             minor = requestProto.renderer_version_minor,
                             revision = requestProto.renderer_version_revision,
+                            supportedOperations =
+                                if (requestProto.renderer_supported_operations.isNotEmpty()) {
+                                    requestProto.renderer_supported_operations.toIntSet {
+                                        it.op_code
+                                    }
+                                } else {
+                                    RendererVersion.SAFE_FALLBACK_SUPPORTED_OPERATIONS
+                                },
                         )
                     },
             )

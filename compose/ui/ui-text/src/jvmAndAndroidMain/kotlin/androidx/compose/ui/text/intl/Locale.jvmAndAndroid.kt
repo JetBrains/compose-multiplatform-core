@@ -23,29 +23,43 @@ import java.util.Locale as JavaLocale
     message = "Use java.util.Locale directly instead",
     replaceWith = ReplaceWith("java.util.Locale"),
 )
-typealias PlatformLocale = JavaLocale
+public typealias PlatformLocale = JavaLocale
 
 @Immutable
-actual class Locale(val platformLocale: JavaLocale) {
-    actual companion object {
-        actual val current: Locale
-            get() = platformLocaleDelegate.current[0]
+public actual class Locale(public val platformLocale: JavaLocale) {
+    public actual companion object {
+        @Deprecated(
+            """
+                This method of accessing locale isn't backed by snapshot state, meaning
+                that updates to the locale won't notify any readers of this API. To correctly
+                read and observe the current locale for situations where it may change, you
+                should read from the composition local LocalLocale.
+                If you are in a composable function, call LocalLocale.current instead.
+                If you are not in a composable function, pass through the locale down to this usage
+                from an observable source, and ensure that the usage is invalidated correctly if
+                the locale changes.
+            """,
+            replaceWith =
+                ReplaceWith("LocalLocale.current", "androidx.compose.ui.platform.LocalLocale"),
+        )
+        public actual val current: Locale
+            get() = @Suppress("DEPRECATION") platformLocaleDelegate.current[0]
     }
 
-    actual constructor(languageTag: String) : this(parseLanguageTag(languageTag))
+    public actual constructor(languageTag: String) : this(parseLanguageTag(languageTag))
 
-    actual val language: String
+    public actual val language: String
         get() = platformLocale.language
 
-    actual val script: String
+    public actual val script: String
         get() = platformLocale.script
 
-    actual val region: String
+    public actual val region: String
         get() = platformLocale.country
 
-    actual fun toLanguageTag(): String = platformLocale.toLanguageTag()
+    public actual fun toLanguageTag(): String = platformLocale.toLanguageTag()
 
-    actual override operator fun equals(other: Any?): Boolean {
+    public actual override operator fun equals(other: Any?): Boolean {
         if (other == null) return false
         if (other !is Locale) return false
         if (this === other) return true
@@ -53,9 +67,9 @@ actual class Locale(val platformLocale: JavaLocale) {
     }
 
     // We don't use data class since we cannot offer copy function here.
-    actual override fun hashCode(): Int = toLanguageTag().hashCode()
+    public actual override fun hashCode(): Int = toLanguageTag().hashCode()
 
-    actual override fun toString(): String = toLanguageTag()
+    public actual override fun toString(): String = toLanguageTag()
 }
 
 private fun parseLanguageTag(languageTag: String): JavaLocale {

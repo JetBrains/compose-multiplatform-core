@@ -32,7 +32,6 @@ import androidx.compose.remote.creation.dsl.fillMaxSize
 import androidx.compose.remote.creation.dsl.onClick
 import androidx.compose.remote.creation.dsl.padding
 import androidx.compose.remote.creation.dsl.rsp
-import androidx.compose.remote.creation.dsl.setStrokeCap
 import androidx.compose.remote.creation.dsl.size
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
 import androidx.compose.remote.player.core.RemoteDocument
@@ -54,6 +53,7 @@ fun dslDemo(): ByteArray {
     return createRcBuffer(
         RcProfile(RcPlatformProfiles.ANDROIDX),
         HTag(Header.DOC_DENSITY_BEHAVIOR, CoreDocument.DENSITY_BEHAVIOR_DP),
+        experimental = true,
     ) {
         val count = remoteNamedFloat("count", 0f)
         val textVar = remoteNamedText("message", "Click me!")
@@ -195,12 +195,12 @@ fun dslSimpleDemo(): ByteArray {
                 val cy = h / 2f
                 val rad = min(cx, cy)
 
-                applyPaint { setColor(RcColorValue(0xFF000000.toInt())) }
+                paint { color(RcColorValue(0xFF000000.toInt())) }
                 drawRoundRect(0.rf, 0.rf, w, h, rad, rad)
 
-                applyPaint {
-                    setColor(RcColorValue(0xFFFFFFFF.toInt()))
-                    setStrokeWidth(8f.rf + 3f)
+                paint {
+                    color(RcColorValue(0xFFFFFFFF.toInt()))
+                    strokeWidth(11f)
                 }
 
                 val angle = seconds() * (2 * PI.toFloat() / 60f)
@@ -222,15 +222,15 @@ fun dslSimpleClock(): ByteArray {
                 val cy = h / 2f
                 val rad = min(cx, cy)
 
-                applyPaint {
-                    setColor(RcColorValue(0xFF0000FF.toInt())) // Blue
+                paint {
+                    color(RcColorValue(0xFF0000FF.toInt())) // Blue
                 }
                 drawRoundRect(0.rf, 0.rf, w, h, rad / 4f, rad / 4f)
 
-                applyPaint {
-                    setColor(RcColorValue(0xFF888888.toInt())) // Gray
-                    setStrokeWidth(32f)
-                    setStrokeCap(RcStrokeCap.Round)
+                paint {
+                    color(RcColorValue(0xFF888888.toInt())) // Gray
+                    strokeWidth(32f)
+                    strokeCap(RcStrokeCap.Round)
                 }
 
                 save {
@@ -242,9 +242,9 @@ fun dslSimpleClock(): ByteArray {
                     drawLine(cx, cy, cx, cy - rad / 2f)
                 }
 
-                applyPaint {
-                    setColor(RcColorValue(0xFFFFFFFF.toInt())) // White
-                    setStrokeWidth(4f)
+                paint {
+                    color(RcColorValue(0xFFFFFFFF.toInt())) // White
+                    strokeWidth(4f)
                 }
                 drawLine(
                     cx,

@@ -23,6 +23,7 @@ import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
+import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.player.core.RemoteDocument
 import androidx.compose.remote.tooling.preview.RemoteContentPreview
 import androidx.compose.remote.tooling.preview.RemoteDocumentPreview
@@ -34,8 +35,8 @@ import androidx.compose.ui.platform.LocalResources
 /**
  * Build a [RemoteDocument] from a [RemoteComposeContext] display it in the Android Studio Preview.
  */
+@Suppress("RestrictedApiAndroidX") // Referring to remote-creation, remote-player-core
 @Composable
-@Suppress("RestrictedApiAndroidX")
 internal fun RemoteDocumentPreview(remoteComposeContext: RemoteComposeContext) {
     val doc = remoteComposeContext.writer
     RemoteDocumentPreview(doc)
@@ -44,8 +45,8 @@ internal fun RemoteDocumentPreview(remoteComposeContext: RemoteComposeContext) {
 /**
  * Build a [RemoteDocument] from a [RemoteComposeWriter] display it in the Android Studio Preview.
  */
+@Suppress("RestrictedApiAndroidX") // Referring to remote-creation, remote-player-core
 @Composable
-@Suppress("RestrictedApiAndroidX")
 internal fun RemoteDocumentPreview(remoteComposeWriter: RemoteComposeWriter) {
     val buffer = remoteComposeWriter.buffer.buffer.cloneBytes()
     val remoteDocument = RemoteDocument(buffer)
@@ -55,7 +56,7 @@ internal fun RemoteDocumentPreview(remoteComposeWriter: RemoteComposeWriter) {
 
 /** Build a [RemoteDocument] from a raw resource id and display it in the Android Studio Preview. */
 @Composable
-@Suppress("RestrictedApiAndroidX")
+@Suppress("RestrictedApiAndroidX") // Referring to remote-player-core, remote-creation
 internal fun RemoteDocumentPreview(@RawRes resId: Int) {
     val resources = LocalResources.current
     val result by
@@ -75,7 +76,7 @@ internal fun RemoteDocumentPreview(@RawRes resId: Int) {
                 .onFailure {
                     RemoteContentPreview {
                         RemoteBox(modifier = RemoteModifier.fillMaxSize()) {
-                            RemoteText("Failed to load file with id: $resId")
+                            RemoteText("Failed to load file with id: $resId".rs)
                         }
                     }
                 }

@@ -52,7 +52,6 @@ import com.google.common.truth.Truth
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.random.Random
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -62,7 +61,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ContextualFlowRowColumnTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun testContextualFlowRow_wrapsToTheNextLine() {
@@ -375,8 +374,8 @@ class ContextualFlowRowColumnTest {
         val positions: MutableList<Offset> = mutableListOf()
         var seeMorePosition: Offset? = null
         var seeMoreSize: IntSize? = null
-        var mainAxisSpacing = 10
-        var crossAxisSpacing = 20
+        val mainAxisSpacing = 10
+        val crossAxisSpacing = 20
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides NoOpDensity) {
                 var maxLines by remember { mutableStateOf(2) }
@@ -441,8 +440,8 @@ class ContextualFlowRowColumnTest {
         val positions: MutableList<Offset> = mutableListOf()
         var seeMorePosition: Offset? = null
         var seeMoreSize: IntSize? = null
-        var mainAxisSpacing = 10
-        var crossAxisSpacing = 20
+        val mainAxisSpacing = 10
+        val crossAxisSpacing = 20
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides NoOpDensity) {
                 var maxLines by remember { mutableStateOf(2) }
@@ -2454,7 +2453,7 @@ class ContextualFlowRowColumnTest {
         //  * Visually: 123####
 
         val xPositions = mutableListOf<Float>()
-        var overflowState = mutableStateOf(ContextualFlowRowOverflow.Clip)
+        val overflowState = mutableStateOf(ContextualFlowRowOverflow.Clip)
         var seeMoreOrCollapse: ContextualFlowRowOverflow? = null
         var seeMoreXPosition: Float? = null
         var collapseXPosition: Float? = null
@@ -2516,15 +2515,14 @@ class ContextualFlowRowColumnTest {
                 }
             }
             xPositions.clear()
-            overflowState.value =
-                ContextualFlowRowOverflow.expandIndicator {
-                    Box(
-                        Modifier.size(20.dp).onGloballyPositioned {
-                            val positionInParent = it.positionInParent()
-                            seeMoreXPosition = positionInParent.x
-                        }
-                    )
-                }
+            overflowState.value = ContextualFlowRowOverflow.expandIndicator {
+                Box(
+                    Modifier.size(20.dp).onGloballyPositioned {
+                        val positionInParent = it.positionInParent()
+                        seeMoreXPosition = positionInParent.x
+                    }
+                )
+            }
         }
         advanceClock()
         rule.runOnIdle {
@@ -2620,7 +2618,7 @@ class ContextualFlowRowColumnTest {
         //  * Visually: 123####
 
         val yPositions = mutableListOf<Float>()
-        var overflowState = mutableStateOf(ContextualFlowColumnOverflow.Clip)
+        val overflowState = mutableStateOf(ContextualFlowColumnOverflow.Clip)
         var seeMoreOrCollapse: ContextualFlowColumnOverflow? = null
         var seeMoreYPosition: Float? = null
         var collapseYPosition: Float? = null
@@ -2683,15 +2681,14 @@ class ContextualFlowRowColumnTest {
                 }
             }
             yPositions.clear()
-            overflowState.value =
-                ContextualFlowColumnOverflow.expandIndicator {
-                    Box(
-                        Modifier.size(20.dp).onGloballyPositioned {
-                            val positionInParent = it.positionInParent()
-                            seeMoreYPosition = positionInParent.y
-                        }
-                    )
-                }
+            overflowState.value = ContextualFlowColumnOverflow.expandIndicator {
+                Box(
+                    Modifier.size(20.dp).onGloballyPositioned {
+                        val positionInParent = it.positionInParent()
+                        seeMoreYPosition = positionInParent.y
+                    }
+                )
+            }
         }
         // Continuing from the previous logic
         advanceClock()
@@ -2788,7 +2785,7 @@ class ContextualFlowRowColumnTest {
         //  * Visually: 123####
 
         val xPositions = mutableListOf<Float>()
-        var overflowState = mutableStateOf(ContextualFlowRowOverflow.Clip)
+        val overflowState = mutableStateOf(ContextualFlowRowOverflow.Clip)
         var seeMoreOrCollapse: ContextualFlowRowOverflow? = null
         var seeMoreXPosition: Float? = null
         var collapseXPosition: Float? = null
@@ -2849,15 +2846,14 @@ class ContextualFlowRowColumnTest {
                 }
             }
             xPositions.clear()
-            overflowState.value =
-                ContextualFlowRowOverflow.expandIndicator {
-                    Box(
-                        Modifier.size(20.dp).onGloballyPositioned {
-                            val positionInParent = it.positionInParent()
-                            seeMoreXPosition = positionInParent.x
-                        }
-                    )
-                }
+            overflowState.value = ContextualFlowRowOverflow.expandIndicator {
+                Box(
+                    Modifier.size(20.dp).onGloballyPositioned {
+                        val positionInParent = it.positionInParent()
+                        seeMoreXPosition = positionInParent.x
+                    }
+                )
+            }
         }
         advanceClock()
         rule.runOnIdle {
@@ -2994,7 +2990,7 @@ class ContextualFlowRowColumnTest {
         //  * Visually: 123####
 
         val yPositions = mutableListOf<Float>()
-        var overflowState = mutableStateOf(ContextualFlowColumnOverflow.Clip)
+        val overflowState = mutableStateOf(ContextualFlowColumnOverflow.Clip)
         var seeMoreOrCollapse: ContextualFlowColumnOverflow? = null
         var seeMoreYPosition: Float? = null
         var collapseYPosition: Float? = null
@@ -3056,15 +3052,14 @@ class ContextualFlowRowColumnTest {
                 }
             }
             yPositions.clear()
-            overflowState.value =
-                ContextualFlowColumnOverflow.expandIndicator {
-                    Box(
-                        Modifier.size(20.dp).onGloballyPositioned {
-                            val positionInParent = it.positionInParent()
-                            seeMoreYPosition = positionInParent.y
-                        }
-                    )
-                }
+            overflowState.value = ContextualFlowColumnOverflow.expandIndicator {
+                Box(
+                    Modifier.size(20.dp).onGloballyPositioned {
+                        val positionInParent = it.positionInParent()
+                        seeMoreYPosition = positionInParent.y
+                    }
+                )
+            }
         }
         advanceClock()
         rule.runOnIdle {

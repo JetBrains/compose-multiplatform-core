@@ -37,7 +37,6 @@ import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ComposableNode
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetAllParametersResponse
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetComposablesResponse
@@ -259,11 +258,11 @@ private const val TRACE_ANOTHER_ITEM =
     at androidx.compose.runtime.snapshots.SnapshotKt.readable(Snapshot.kt:2123)
     at androidx.compose.runtime.SnapshotMutableStateImpl.getValue(SnapshotState.kt:142)
     at androidx.compose.ui.inspection.testdata.RecompositionTestActivity.Item<any>(RecompositionTestActivity.kt:74)
-    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity.<any>(:0)
+    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity.<any>(<any>:0)
     at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(<any>:0)
     at androidx.compose.ui.inspection.testdata.RecompositionTestActivity.AnotherItem(RecompositionTestActivity.kt:99)
     at androidx.compose.ui.inspection.testdata.RecompositionTestActivity.Item(RecompositionTestActivity.kt:58)
-    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity.Item<any>(:6)
+    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity.Item<any>(<any>:6)
     at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(<any>:0)
     at androidx.compose.runtime.RecomposeScopeImpl.compose(RecomposeScopeImpl.kt:204)
     at androidx.compose.runtime.GapComposer.recomposeToGroupEnd(<composer>.kt:1678)
@@ -289,7 +288,7 @@ private const val UNFOLDED_TRACE_ANOTHER_ITEM =
 
 @LargeTest
 class RecompositionTest {
-    private val rule = createAndroidComposeRule<RecompositionTestActivity>(StandardTestDispatcher())
+    private val rule = createAndroidComposeRule<RecompositionTestActivity>()
 
     @get:Rule val chain = RuleChain.outerRule(JvmtiRule()).around(rule)!!
 

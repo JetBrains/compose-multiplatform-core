@@ -32,7 +32,6 @@ import androidx.navigation.plusAssign
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertWithMessage
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,7 +40,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ComposableFragmentNavigatorTest {
 
-    @get:Rule val testRule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val testRule = createAndroidComposeRule<TestActivity>()
 
     @Test
     fun inflateGraph() {
@@ -68,24 +67,23 @@ class ComposableFragmentNavigatorTest {
 
     @Test
     fun navigateWithArgsOverride() {
-        val navController =
-            testRule.runOnUiThread {
-                val controller =
-                    NavController(testRule.activity).apply {
-                        navigatorProvider +=
-                            FragmentNavigator(
-                                testRule.activity,
-                                testRule.activity.supportFragmentManager,
-                                R.id.fragment_container,
-                            )
-                        navigatorProvider += ComposableFragmentNavigator(navigatorProvider)
-                    }
-                Navigation.setViewNavController(
-                    testRule.activity.findViewById(R.id.fragment_container),
-                    controller,
-                )
-                controller
-            }
+        val navController = testRule.runOnUiThread {
+            val controller =
+                NavController(testRule.activity).apply {
+                    navigatorProvider +=
+                        FragmentNavigator(
+                            testRule.activity,
+                            testRule.activity.supportFragmentManager,
+                            R.id.fragment_container,
+                        )
+                    navigatorProvider += ComposableFragmentNavigator(navigatorProvider)
+                }
+            Navigation.setViewNavController(
+                testRule.activity.findViewById(R.id.fragment_container),
+                controller,
+            )
+            controller
+        }
 
         testRule.runOnUiThread {
             val args =

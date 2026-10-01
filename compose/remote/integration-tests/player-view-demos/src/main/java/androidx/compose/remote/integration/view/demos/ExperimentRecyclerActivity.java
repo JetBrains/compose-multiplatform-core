@@ -61,6 +61,7 @@ import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import androidx.compose.remote.core.CoreDocument.ShaderControl;
+import androidx.compose.remote.core.Limits;
 import androidx.compose.remote.core.RemoteComposeBuffer;
 import androidx.compose.remote.creation.RemoteComposeContext;
 import androidx.compose.remote.creation.RemoteComposeWriter;
@@ -79,6 +80,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -112,6 +114,10 @@ public class ExperimentRecyclerActivity extends Activity {
     public static final boolean BACKGROUND = false;
     private static final boolean NO_COMPOSE = false;
 
+    static {
+        Limits.DEFAULT_MAX_AVG_FPS = 120;
+    }
+
 
     public static @NonNull RemoteComposeBuffer getCurrentDoc() {
         return sCurrentBuffer;
@@ -133,14 +139,18 @@ public class ExperimentRecyclerActivity extends Activity {
 
         sPersonImage3 = BitmapFactory.decodeResource(context.getResources(),
                 R.drawable.mostly_cloudy);
-        ArrayList<RCDoc> list = new ArrayList<>(DemosCreation.getDemos(this));
-        list.addAll(getRemoteComposable(context));
+        ArrayList<RCDoc> list = new ArrayList<>(DemosCreation.getDemos(this, 4 + 2));
+        ArrayList<@NotNull RCDoc> cDocs = getRemoteComposable(context, "#/");
+        list.addAll(cDocs);
 
         return list;
     }
 
     RecyclerView mRecyclerView;
     LinearLayoutManager mLinearLayoutManager;
+    ToggleButton mLockButton;
+    /** Demo a Prev/Next step is heading for, or {@link RecyclerView#NO_POSITION} when settled. */
+    private int mStepTarget = RecyclerView.NO_POSITION;
     static int sScrWidth = 1080;
     static int sWidth = 1080;
     static int sHeight = 1080;
@@ -186,6 +196,7 @@ public class ExperimentRecyclerActivity extends Activity {
         LinearLayout docControl = new LinearLayout(this);
         docControl.setOrientation(LinearLayout.HORIZONTAL);
         ToggleButton lock = new ToggleButton(this);
+        mLockButton = lock;
         //        lock.setSwitchMinWidth(200);
         lock.setOnCheckedChangeListener(this::lock);
         lock.setText("lock Off");
@@ -210,6 +221,15 @@ public class ExperimentRecyclerActivity extends Activity {
                         mLinearLayoutManager.findViewByPosition(off)).getLeft();
                 if (left < -sScrWidth / 2) off++;
                 mTextView.setText("" + off);
+            }
+        });
+        // Re-lock once a Prev/Next step stops moving; see stepDemo.
+        mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(@NonNull RecyclerView rv, int newState) {
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    onStepSettled();
+                }
             }
         });
         docControl.addView(mTextView);
@@ -247,6 +267,32 @@ public class ExperimentRecyclerActivity extends Activity {
         layout.addView(docControl);
         LinearLayout row = new LinearLayout(this);
         float textSize = 15;
+
+        // ============ Demo stepping: unlock, scroll one demo, lock it again ============
+        // One tap per demo, so a screen recording can be driven without touching the list.
+        // Its own row above the Menu row, since the doc control row is already full.
+        LinearLayout stepRow = new LinearLayout(this);
+        Button prevDemo = new Button(this);
+        LinearLayout.LayoutParams prevParams = new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        prevParams.weight = 1;
+        prevDemo.setLayoutParams(prevParams);
+        prevDemo.setTextSize(textSize);
+        prevDemo.setText("Prev");
+        prevDemo.setOnClickListener(v -> stepDemo(-1));
+        stepRow.addView(prevDemo);
+
+        Button nextDemo = new Button(this);
+        LinearLayout.LayoutParams nextParams = new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        nextParams.weight = 1;
+        nextDemo.setLayoutParams(nextParams);
+        nextDemo.setTextSize(textSize);
+        nextDemo.setText("Next");
+        nextDemo.setOnClickListener(v -> stepDemo(1));
+        stepRow.addView(nextDemo);
+        layout.addView(stepRow);
+
         // ==================== ExperimentActivity  launch ==========================
 
         Button launch = new Button(this);
@@ -332,6 +378,96 @@ public class ExperimentRecyclerActivity extends Activity {
 
     void prevSection() {
 
+    }
+
+    /** Index of the demo currently filling the screen, or {@link RecyclerView#NO_POSITION}. */
+    private int currentDemoPosition() {
+        int off = mLinearLayoutManager.findFirstVisibleItemPosition();
+        if (off == RecyclerView.NO_POSITION) {
+            return RecyclerView.NO_POSITION;
+        }
+        View view = mLinearLayoutManager.findViewByPosition(off);
+        // The first visible item is still the previous demo once it is mostly scrolled off.
+        if (view != null && view.getLeft() < -sScrWidth / 2) {
+            off++;
+        }
+        return off;
+    }
+
+    /**
+     * Unlocks, smooth scrolls {@code direction} demos, then locks again once the scroll settles.
+     *
+     * <p>The lock is what holds a demo still for a screen recording, and a suppressed RecyclerView
+     * silently drops scroll requests, so stepping has to bracket the scroll rather than just issue
+     * it.
+     *
+     * <p>Taps land during a scroll as readily as between them, and count from wherever the step in
+     * flight is heading rather than from what is on screen at that instant - so three quick taps
+     * advance three demos, and a tap is never swallowed for arriving at an awkward moment.
+     */
+    private void stepDemo(int direction) {
+        int from = mStepTarget != RecyclerView.NO_POSITION ? mStepTarget : currentDemoPosition();
+        if (from == RecyclerView.NO_POSITION) {
+            return;
+        }
+        mStepTarget = Math.max(0, Math.min(mDocList.size() - 1, from + direction));
+
+        mRecyclerView.suppressLayout(false);
+        setLockToggle(false);
+        // Supersedes any smooth scroll already running.
+        mRecyclerView.smoothScrollToPosition(mStepTarget);
+    }
+
+    /**
+     * Locks the demo a step landed on, once the RecyclerView stops moving.
+     *
+     * <p>Going idle is not the same as having arrived - a touch on the list cancels a smooth scroll
+     * wherever it happens to be, and a slow demo can have one time out - so an unfinished scroll is
+     * snapped the rest of the way first. Locking on idle alone is what leaves the list frozen
+     * halfway between two demos.
+     */
+    private void onStepSettled() {
+        if (mStepTarget == RecyclerView.NO_POSITION) {
+            return;
+        }
+        View view = mLinearLayoutManager.findViewByPosition(mStepTarget);
+        if (view == null || Math.abs(view.getLeft()) > 2) {
+            int pending = mStepTarget;
+            mLinearLayoutManager.scrollToPositionWithOffset(mStepTarget, 0);
+            // The snap needs a layout pass before suppressLayout freezes it.
+            mRecyclerView.post(() -> {
+                if (mStepTarget == pending) {
+                    lockStep();
+                }
+            });
+            return;
+        }
+        lockStep();
+    }
+
+    private void lockStep() {
+        mStepTarget = RecyclerView.NO_POSITION;
+        lockCurrentDemo();
+    }
+
+    /** Freezes the RecyclerView on the demo now on screen. */
+    private void lockCurrentDemo() {
+        mRecyclerView.suppressLayout(true);
+        setLockToggle(true);
+    }
+
+    /**
+     * Moves the lock toggle to {@code checked} without running {@link #lock}, whose own scroll and
+     * suppress sequence would fight the one {@link #stepDemo} is in the middle of.
+     */
+    private void setLockToggle(boolean checked) {
+        if (mLockButton == null || mLockButton.isChecked() == checked) {
+            return;
+        }
+        mLockButton.setOnCheckedChangeListener(null);
+        mLockButton.setChecked(checked);
+        mLockButton.setBackgroundColor(checked ? 0xFFFFAAAA : 0xFFAAFFAA);
+        mLockButton.setOnCheckedChangeListener(this::lock);
     }
 
     void setUpMetrics() {
@@ -747,9 +883,11 @@ public class ExperimentRecyclerActivity extends Activity {
             super(context);
             setOrientation(VERTICAL);
             mPlayer = new RemoteComposePlayer(context);
-            mPlayer.setCustomSupport(new AndroidCustomSupport());
+            mPlayer.setCustomSupport(new AndroidCustomSupport(mPlayer));
             mTitle = new TextView(context);
             mStats = new TextView(context);
+            System.out.println("adding id listener");
+
             mPlayer.setShaderControl(new ShaderControl() {
                 @Override
                 public boolean isShaderValid(@NonNull String shader) {
@@ -961,6 +1099,9 @@ public class ExperimentRecyclerActivity extends Activity {
                 }
                 if (docData != null) {
                     mUi.mPlayer.setDocument(byteData);
+                    mUi.mPlayer.addIdActionListener((id, action) -> {
+                        System.out.println("action id: " + id + " action: \"" + action + "\"");
+                    });
                 }
             }
 

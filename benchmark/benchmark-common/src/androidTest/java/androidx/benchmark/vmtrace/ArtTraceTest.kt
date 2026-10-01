@@ -16,15 +16,24 @@
 
 package androidx.benchmark.vmtrace
 
+import androidx.benchmark.MethodTracing
 import androidx.benchmark.Outputs
+import androidx.benchmark.createTempFileFromAsset
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import perfetto.protos.ThreadDescriptor
+import perfetto.protos.Trace
 import perfetto.protos.TracePacket
 import perfetto.protos.TrackDescriptor
 import perfetto.protos.TrackEvent
@@ -76,6 +85,17 @@ class ArtTraceTest {
                 )
             }
 
+        // check for clock sync packet
+        tracePackets
+            .single {
+                it.clock_snapshot != null
+            }
+            .apply {
+                assertEquals(2, clock_snapshot!!.clocks.size)
+                assertEquals(1, clock_snapshot.clocks.filter { it.clock_id == 3 }.size)
+                assertEquals(1, clock_snapshot.clocks.filter { it.clock_id == 6 }.size)
+            }
+
         val targetIid =
             tracePackets
                 .first { it.interned_data != null }
@@ -117,6 +137,50 @@ class ArtTraceTest {
         assertEquals(
             tracePackets.count { it.track_event?.type == TrackEvent.Type.TYPE_SLICE_BEGIN },
             tracePackets.count { it.track_event?.type == TrackEvent.Type.TYPE_SLICE_END },
+        )
+    }
+
+    @Test
+    fun embedInPerfettoTrace_zipContainer() {
+        val artTraceFile = fromAssets("art-trace-test.trace")
+        val systemTraceFile = createTempFileFromAsset("api31_startup_cold", ".perfetto-trace")
+        val perfettoZipFile =
+            File.createTempFile("test-zip-trace", ".perfetto-trace", Outputs.dirUsableByAppAndShell)
+        ZipOutputStream(FileOutputStream(perfettoZipFile)).use { zipOut ->
+            zipOut.putNextEntry(ZipEntry("Trace_output.pb"))
+            zipOut.write(systemTraceFile.readBytes())
+            zipOut.closeEntry()
+        }
+
+        MethodTracing.embedInPerfettoTrace(
+            profilerTrace = artTraceFile,
+            perfettoTrace = perfettoZipFile,
+        )
+
+        // Read entries from the resulting ZIP
+        val entries = mutableMapOf<String, ByteArray>()
+        ZipInputStream(FileInputStream(perfettoZipFile)).use { zipIn ->
+            var entry = zipIn.nextEntry
+            while (entry != null) {
+                entries[entry.name] = zipIn.readBytes()
+                zipIn.closeEntry()
+                entry = zipIn.nextEntry
+            }
+        }
+
+        assertTrue(entries.containsKey("Trace_output.pb"))
+        assertTrue(entries.containsKey("MethodTrace.pb"))
+        val systemTraceBytes = systemTraceFile.readBytes()
+        assertEquals(systemTraceBytes.toList(), entries["Trace_output.pb"]!!.toList())
+
+        // Validate decoded MethodTrace.pb packets
+        val trace = Trace.ADAPTER.decode(entries["MethodTrace.pb"]!!)
+        assertTrue(
+            trace.packet.any { packet ->
+                packet.interned_data?.event_names?.any {
+                    it.name == "androidx.benchmark.vmtrace.ArtTraceTest.myTracedMethod: ()V"
+                } == true
+            }
         )
     }
 

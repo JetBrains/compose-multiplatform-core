@@ -37,6 +37,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.fail
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineName
@@ -242,15 +243,15 @@ abstract class BaseConnectionPoolTest {
         pool.useReaderConnection { initialConnection ->
             coroutineScope {
                 launch {
-                        pool.useReaderConnection { reusedConnection ->
-                            reusedConnection.usePrepared("SELECT * FROM Pet") {
-                                while (it.step()) {
-                                    count++
-                                }
+                    pool.useReaderConnection { reusedConnection ->
+                        reusedConnection.usePrepared("SELECT * FROM Pet") {
+                            while (it.step()) {
+                                count++
                             }
-                            assertThat(reusedConnection).isEqualTo(initialConnection)
                         }
+                        assertThat(reusedConnection).isEqualTo(initialConnection)
                     }
+                }
                     .join()
             }
         }
@@ -272,15 +273,15 @@ abstract class BaseConnectionPoolTest {
         pool.useReaderConnection { initialConnection ->
             coroutineScope {
                 async {
-                        pool.useReaderConnection { reusedConnection ->
-                            reusedConnection.usePrepared("SELECT * FROM Pet") {
-                                while (it.step()) {
-                                    count++
-                                }
+                    pool.useReaderConnection { reusedConnection ->
+                        reusedConnection.usePrepared("SELECT * FROM Pet") {
+                            while (it.step()) {
+                                count++
                             }
-                            assertThat(reusedConnection).isEqualTo(initialConnection)
                         }
+                        assertThat(reusedConnection).isEqualTo(initialConnection)
                     }
+                }
                     .await()
             }
         }
@@ -361,13 +362,12 @@ abstract class BaseConnectionPoolTest {
             .isEqualTo("Intermediate Error")
 
         pool.useWriterConnection { it.executeSQL("PRAGMA user_version = 5") }
-        val result =
-            pool.useReaderConnection {
-                it.usePrepared("PRAGMA user_version") {
-                    it.step()
-                    it.getLong(0)
-                }
+        val result = pool.useReaderConnection {
+            it.usePrepared("PRAGMA user_version") {
+                it.step()
+                it.getLong(0)
             }
+        }
         assertThat(result).isEqualTo(5)
         pool.close()
     }
@@ -634,6 +634,45 @@ abstract class BaseConnectionPoolTest {
     }
 
     @Test
+    fun cancelCoroutineDuringTransaction() = runTest {
+        val multiThreadContext = newFixedThreadPoolContext(2, "Test-Threads")
+        val driver = setupDriver()
+        val pool =
+            newConnectionPool(
+                driver = driver,
+                fileName = fileName,
+                maxNumOfReaders = 1,
+                maxNumOfWriters = 1,
+            )
+        pool.useWriterConnection { connection -> connection.executeSQL("CREATE TABLE t (id INT)") }
+        val insideTransaction = CompletableDeferred<Unit>()
+        val holdTransaction = CompletableDeferred<Unit>()
+        val job =
+            launch(multiThreadContext) {
+                pool.useWriterConnection { connection ->
+                    connection.withTransaction(Transactor.SQLiteTransactionType.DEFERRED) {
+                        executeSQL("INSERT INTO t VALUES (1)")
+                        insideTransaction.complete(Unit)
+                        holdTransaction.await()
+                    }
+                }
+            }
+        insideTransaction.await()
+        job.cancelAndJoin()
+
+        // Verify that after cancelling an in-flight transaction the connection can immediately be
+        // acquired again and the previous transaction was rolled back
+        pool.useWriterConnection { connection ->
+            connection.usePrepared("SELECT COUNT(*) FROM t") { stmt ->
+                assertThat(stmt.step()).isTrue()
+                assertThat(stmt.getLong(0)).isEqualTo(0)
+            }
+        }
+        pool.close()
+        multiThreadContext.close()
+    }
+
+    @Test
     fun stressCancelCoroutineAcquiringConnection() = runTest {
         val multiThreadContext = newFixedThreadPoolContext(3, "Test-Threads")
         val driver = setupDriver()
@@ -723,10 +762,10 @@ abstract class BaseConnectionPoolTest {
                 fileName = fileName,
                 maxNumOfReaders = 1,
                 maxNumOfWriters = 1,
+                timeout = 100.milliseconds,
             )
         check(pool is ConnectionPoolImpl)
         pool.onTimeout = THROW_TIMEOUT_EXCEPTION
-        pool.timeout = 100.milliseconds
 
         val firstBarrier = CompletableDeferred<Unit>()
         val secondBarrier = CompletableDeferred<Unit>()
@@ -772,10 +811,10 @@ abstract class BaseConnectionPoolTest {
                 fileName = fileName,
                 maxNumOfReaders = 1,
                 maxNumOfWriters = 1,
+                timeout = 100.milliseconds,
             )
         check(pool is ConnectionPoolImpl)
         pool.onTimeout = 0 // do nothing
-        pool.timeout = 100.milliseconds
 
         val items = mutableListOf<String>()
         coroutineScope {
@@ -1013,15 +1052,14 @@ abstract class BaseConnectionPoolTest {
         pool.useWriterConnection { connection ->
             connection.executeSQL("CREATE TEMP TABLE Cat (name)")
             val name = "Pelusa"
-            val result =
-                connection.exclusiveTransaction {
-                    val newName =
-                        usePrepared("INSERT INTO Cat (name) VALUES ('$name') RETURNING *") { stmt ->
-                            assertThat(stmt.step()).isTrue()
-                            stmt.getText(0).also { assertThat(it).isEqualTo(name) }
-                        }
-                    rollback(newName)
-                }
+            val result = connection.exclusiveTransaction {
+                val newName =
+                    usePrepared("INSERT INTO Cat (name) VALUES ('$name') RETURNING *") { stmt ->
+                        assertThat(stmt.step()).isTrue()
+                        stmt.getText(0).also { assertThat(it).isEqualTo(name) }
+                    }
+                rollback(newName)
+            }
             assertThat(result).isEqualTo(name)
         }
         pool.close()
@@ -1495,11 +1533,13 @@ abstract class BaseConnectionPoolTest {
         fileName: String,
         maxNumOfReaders: Int,
         maxNumOfWriters: Int,
+        timeout: Duration = DEFAULT_CONNECTION_POOL_TIMEOUT,
     ): ConnectionPool =
         newConnectionPool(
             connectionFactory = { driver.open(fileName) },
             maxNumOfReaders,
             maxNumOfWriters,
+            timeout = timeout,
         )
 
     private class TestingRollbackException : Throwable()

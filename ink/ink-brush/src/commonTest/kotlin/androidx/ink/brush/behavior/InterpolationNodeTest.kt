@@ -16,16 +16,21 @@
 
 package androidx.ink.brush.behavior
 
+import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.Version
 import androidx.ink.brush.behavior.InterpolationNode.Interpolation
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.testing.awaitNativePointerCleanupAfter
 import androidx.kruth.assertThat
 import kotlin.test.Test
 
+@OptIn(InkInternalOnlyApi::class)
 class InterpolationNodeTest {
 
     @Test
     fun interpolationNodeNativePointers_cleanedUpWhenOutOfScope() {
         awaitNativePointerCleanupAfter {
+            @Suppress("UNUSED_VARIABLE")
             val unused =
                 InterpolationNode(
                     Interpolation.LERP,
@@ -124,5 +129,11 @@ class InterpolationNodeTest {
             )
         assertThat(node1.hashCode()).isEqualTo(node2.hashCode())
         assertThat(node1.hashCode()).isNotEqualTo(node3.hashCode())
+    }
+
+    @OptIn(ExperimentalInkCustomBrushApi::class)
+    @Test
+    fun calculateMinimumRequiredVersion_returnsExpectedValue() {
+        assertThat(Interpolation.LERP.calculateMinimumRequiredVersion()).isEqualTo(Version.V0)
     }
 }

@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
-@file:Suppress("RestrictedApiAndroidX")
+@file:Suppress("RestrictedApiAndroidX") // Referring to CUBIC_DECELERATE
+
+// background, clamp, interpolateRemoteFloat, remote-core
 
 package androidx.compose.remote.integration.view.demos.examples
 
 import android.graphics.BitmapFactory
 import androidx.compose.remote.core.RemoteContext
-import androidx.compose.remote.creation.compose.layout.FitBox
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteColumn
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.creation.compose.layout.RemoteFitBox
 import androidx.compose.remote.creation.compose.layout.RemoteImage
 import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
@@ -45,9 +47,11 @@ import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.RemoteTextUnit
 import androidx.compose.remote.creation.compose.state.clamp
 import androidx.compose.remote.creation.compose.state.interpolateRemoteFloat
+import androidx.compose.remote.creation.compose.state.rb
 import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
+import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.compose.state.rsp
 import androidx.compose.remote.integration.view.demos.R
 import androidx.compose.runtime.Composable
@@ -123,7 +127,7 @@ fun DogeCalendar(currentTimeSeconds: Float = 1000f, animate: Boolean = true) {
     val loopTime = (time + (totalDuration * 1000f).rf) % totalDuration.rf
 
     RemoteBox(
-        modifier = RemoteModifier.fillMaxSize().background(Color.Black),
+        modifier = RemoteModifier.fillMaxSize().background(Color.Black.rc),
         contentAlignment = RemoteAlignment.Center,
     ) {
         DOGE_SCHEDULE.forEachIndexed { index, entry ->
@@ -132,8 +136,9 @@ fun DogeCalendar(currentTimeSeconds: Float = 1000f, animate: Boolean = true) {
             val easedProgress = interpolateRemoteFloat(progress, 0f.rf, 1f.rf, CUBIC_DECELERATE)
 
             // Check if we should be visible: current time is within [start, start + interval]
-            @Suppress("DEPRECATION")
-            val isVisible = (loopTime ge start.rf) and (loopTime lt (start + interval).rf)
+            val isVisible =
+                loopTime.isGreaterThanOrEqualTo(start.rf) and
+                    loopTime.isLessThan((start + interval).rf)
             val icon = icons[index % icons.size]
 
             DogeSlot(
@@ -165,7 +170,7 @@ private fun DogeSlot(
     ) {
         // Large Doge Image
         RemoteImage(
-            bitmap = icon,
+            remoteBitmap = icon.rb,
             contentDescription = RemoteString("Doge Icon"),
             modifier = RemoteModifier.size(300.rdp).padding(bottom = 24.rdp),
         )
@@ -193,10 +198,10 @@ private fun DogeSlot(
             )
 
             // Text
-            FitBox(modifier = RemoteModifier.padding(horizontal = 24.rdp)) {
+            RemoteFitBox(modifier = RemoteModifier.padding(horizontal = 24.rdp)) {
                 arrayOf(fontSize, 16.rsp, 14.rsp, 12.rsp, 10.rsp).forEach { size ->
                     RemoteText(
-                        text = "${entry.time}: ${entry.task}",
+                        text = "${entry.time}: ${entry.task}".rs,
                         fontSize = size,
                         color = Color.White.rc,
                         fontWeight = FontWeight.Medium,

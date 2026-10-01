@@ -43,6 +43,8 @@ public class `$NestedDerivedSerializableInputFunctions_AppFunctionInventory` : A
           isNullable = false,
           description = "",
           enumValues = null,
+          patternMatchers = null,
+          format = null,
       )
 
   private val COM_TESTDATA_NESTEDBASESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP:

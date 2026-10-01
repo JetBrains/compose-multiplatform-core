@@ -15,14 +15,13 @@
  */
 package androidx.xr.scenecore.spatial.core
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.graphics.Rect
-import android.util.Log
 import androidx.annotation.GuardedBy
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.PanelEntity
 import androidx.xr.scenecore.runtime.PixelDimensions
+import androidx.xr.scenecore.runtime.requiresApiLevel
 import com.android.extensions.xr.XrExtensionResult
 import com.android.extensions.xr.XrExtensions
 import com.android.extensions.xr.node.Node
@@ -37,7 +36,6 @@ import java.util.concurrent.atomic.AtomicReference
  * node. The content of this PanelEntity is assumed to have been previously defined and associated
  * with the Window Leash Node.
  */
-@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 internal class MainPanelEntityImpl(
     activity: Activity,
     node: Node,
@@ -47,9 +45,7 @@ internal class MainPanelEntityImpl(
 ) : BasePanelEntity(activity, node, extensions, sceneNodeRegistry, executor), PanelEntity {
     // Note that we expect the Node supplied here to be the WindowLeash node.
     init {
-        // Read the Pixel dimensions for the primary panel off the Activity's WindowManager. Note
-        // that this requires MinAPI 30.
-        // TODO(b/352827267): Enforce minSDK API strategy - go/androidx-api-guidelines#compat-newapi
+        // Read the Pixel dimensions for the primary panel off the Activity's WindowManager.
         super.sizeInPixels =
             PixelDimensions(boundsFromWindowManager.width(), boundsFromWindowManager.height())
         val cornerRadius = defaultCornerRadiusInMeters
@@ -94,19 +90,9 @@ internal class MainPanelEntityImpl(
             } catch (e: RejectedExecutionException) {
                 // Catch this exception to prevent the loop from terminating early,
                 // ensuring subsequent listeners are still notified.
-                Log.e(
-                    TAG,
-                    "Internal Error: Failed to notify OnSetSizeCompleteListener. " +
-                        "The internal executor rejected the task. Listener: $listener",
-                    e,
-                )
             } catch (e: RuntimeException) {
-                Log.e(
-                    TAG,
-                    "Internal Error: Unexpected exception thrown by an internal OnSetSizeCompleteListener. " +
-                        "Listener: $listener",
-                    e,
-                )
+                // Catch this exception to prevent the loop from terminating early,
+                // ensuring subsequent listeners are still notified.
             }
         }
     }
@@ -127,7 +113,7 @@ internal class MainPanelEntityImpl(
     @GuardedBy("resizeLock") private var latestDeferredPixelSizeRequest: PixelDimensions? = null
 
     private val boundsFromWindowManager: Rect
-        get() = activity!!.windowManager.currentWindowMetrics.bounds
+        get() = requiresApiLevel(30) { activity!!.windowManager.currentWindowMetrics.bounds }
 
     override var size: Dimensions
         get() {
@@ -220,9 +206,5 @@ internal class MainPanelEntityImpl(
             isSetSizePending.set(false)
             notifyOnSetSizeComplete()
         }
-    }
-
-    private companion object {
-        const val TAG = "MainPanelEntityImpl"
     }
 }

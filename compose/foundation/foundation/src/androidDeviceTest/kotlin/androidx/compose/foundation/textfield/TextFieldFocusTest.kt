@@ -80,7 +80,6 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -90,7 +89,7 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class TextFieldFocusTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
     private val inputMethodInterceptor = InputMethodInterceptor(rule)
 
     private val testKeyboardController = TestSoftwareKeyboardController(rule)
@@ -99,6 +98,7 @@ class TextFieldFocusTest {
     private fun TextFieldApp(dataList: List<FocusTestData>) {
         for (data in dataList) {
             val editor = remember { mutableStateOf("") }
+            @Suppress("DEPRECATION") // b/552879150
             BasicTextField(
                 value = editor.value,
                 modifier =
@@ -284,6 +284,7 @@ class TextFieldFocusTest {
                     focusRequester.requestFocus()
                 }
 
+                @Suppress("DEPRECATION") // b/552879150
                 BasicTextField(
                     value = "",
                     onValueChange = {},
@@ -370,6 +371,7 @@ class TextFieldFocusTest {
         testKeyboardController.assertShown()
     }
 
+    @SdkSuppress(minSdkVersion = 25) // b/538602207
     @Test
     fun basicTextField_checkFocusNavigation_onDPadLeft_hardwareKeyboard() {
         setupAndEnableBasicTextField()
@@ -389,6 +391,7 @@ class TextFieldFocusTest {
         rule.onNodeWithTag("test-text-field-1").assertSelection(TextRange(2))
     }
 
+    @SdkSuppress(minSdkVersion = 25) // b/538602207
     @Test
     fun basicTextField_checkFocusNavigation_onDPadRight_hardwareKeyboard() {
         setupAndEnableBasicTextField()
@@ -410,6 +413,7 @@ class TextFieldFocusTest {
         rule.onNodeWithTag("test-text-field-1").assertSelection(TextRange(1))
     }
 
+    @SdkSuppress(minSdkVersion = 25) // b/538602207
     @Test
     fun basicTextField_checkFocusNavigation_onDPadUp_hardwareKeyboard() {
         setupAndEnableBasicTextField()
@@ -429,6 +433,7 @@ class TextFieldFocusTest {
         rule.onNodeWithTag("test-text-field-1").assertSelection(TextRange(3))
     }
 
+    @SdkSuppress(minSdkVersion = 25) // b/538602207
     @Test
     fun basicTextField_checkFocusNavigation_onDPadDown_hardwareKeyboard() {
         setupAndEnableBasicTextField()
@@ -597,6 +602,7 @@ class TextFieldFocusTest {
         val focusRequester = remember { FocusRequester() }
         val modifier = if (requestFocus) Modifier.focusRequester(focusRequester) else Modifier
 
+        @Suppress("DEPRECATION") // b/552879150
         BasicTextField(
             value = textInput,
             onValueChange = { textInput = it },

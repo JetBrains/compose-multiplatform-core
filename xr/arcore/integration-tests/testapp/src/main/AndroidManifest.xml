@@ -23,15 +23,14 @@
   <uses-permission android:name="android.permission.EYE_TRACKING_COARSE" />
   <uses-permission android:name="android.permission.EYE_TRACKING_FINE" />
   <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="org.khronos.openxr.permission.OPENXR_SYSTEM" />
   <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-  <uses-permission android:name="android.permission.XR_EXPERIMENTAL_FEATURES" />
+  <uses-feature android:name="android.hardware.camera" android:required="false" />
+  <uses-permission android:name="android.permission.CAMERA" />
   <application
       android:label="JXR ARCore Tests"
       android:taskAffinity="">
-    <meta-data android:name="com.android.extensions.xr.uses_experimental_openxr_feature"
-        android:value="true"
-        tools:ignore="MetadataTagInsideApplicationTag" />
     <activity
         android:name=".MainActivity"
         android:exported="true"
@@ -70,6 +69,12 @@
         android:label="Hello AR Augmented Image"
         android:theme="@style/Theme.AppCompat.NoActionBar" />
     <activity
+        android:name=".helloar.HelloArSpatialAnnotationActivity"
+        android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen"
+        android:exported="true"
+        android:label="Hello AR Spatial Annotations"
+        />
+    <activity
         android:name=".helloar.HelloArQrCodeActivity"
         android:exported="true"
         android:label="Hello AR Qr Code"
@@ -107,6 +112,5 @@
         android:label="Native Data"
         android:process=":nativeTest"
         android:theme="@style/Theme.AppCompat.NoActionBar" />
-    <meta-data android:name="com.google.android.ar.API_KEY" android:value="AIzaSyAHi4Mj26DDlgztTGPe_3hiSiXBxkgM4ww"/>
   </application>
 </manifest>

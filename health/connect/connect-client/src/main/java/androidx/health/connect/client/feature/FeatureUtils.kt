@@ -20,7 +20,9 @@ package androidx.health.connect.client.feature
 
 import android.os.Build
 import androidx.annotation.RestrictTo
+import androidx.health.connect.client.ExperimentalDeviceDataSourceApi
 import androidx.health.connect.client.ExperimentalMatchmakingApi
+import androidx.health.connect.client.HealthConnectFeatures.Companion.FEATURE_DEVICE_DATA_PROVIDERS
 import androidx.health.connect.client.HealthConnectFeatures.Companion.FEATURE_MATCHMAKING
 import androidx.health.connect.client.HealthConnectFeatures.Companion.FEATURE_PERSONAL_HEALTH_RECORD
 import androidx.health.connect.client.HealthConnectFeatures.Companion.FEATURE_STATUS_AVAILABLE
@@ -28,6 +30,7 @@ import kotlin.reflect.KClass
 
 internal const val FEATURE_CONSTANT_NAME_PHR = "FEATURE_PERSONAL_HEALTH_RECORD"
 internal const val FEATURE_CONSTANT_NAME_MATCHMAKING = "FEATURE_MATCHMAKING"
+internal const val FEATURE_CONSTANT_NAME_DEVICE_DATA_PROVIDERS = "FEATURE_DEVICE_DATA_PROVIDERS"
 
 @OptIn(ExperimentalPersonalHealthRecordApi::class)
 internal fun isPersonalHealthRecordFeatureAvailableInPlatform(): Boolean {
@@ -47,6 +50,15 @@ internal fun isMatchmakingFeatureAvailableInPlatform(): Boolean {
         FEATURE_STATUS_AVAILABLE
 }
 
+@OptIn(ExperimentalDeviceDataSourceApi::class)
+internal fun isDeviceDataProvidersFeatureAvailableInPlatform(): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        return false
+    }
+    return HealthConnectFeaturesPlatformImpl.getFeatureStatus(FEATURE_DEVICE_DATA_PROVIDERS) ==
+        FEATURE_STATUS_AVAILABLE
+}
+
 /** Create an [UnsupportedOperationException] with given [featureConstantName] and [apiName]. */
 internal fun createExceptionDueToFeatureUnavailable(featureConstantName: String, apiName: String) =
     UnsupportedOperationException(
@@ -58,7 +70,7 @@ internal fun createExceptionDueToFeatureUnavailable(featureConstantName: String,
  * an [UnsupportedOperationException] pointing to `apiName`.
  */
 internal fun <T> withPhrFeatureCheck(kClass: KClass<*>, block: () -> T): T =
-    withPhrFeatureCheck("${kClass.simpleName}", block)
+    withPhrFeatureCheck(kClass.simpleName ?: "null", block)
 
 /**
  * Similar to [with], this method executes `block` if PHR feature is available, otherwise throwing
@@ -108,7 +120,7 @@ internal suspend fun <T> withPhrFeatureCheckSuspend(apiName: String, block: susp
  * throwing an [UnsupportedOperationException] pointing to `apiName`.
  */
 internal fun <T> withMatchmakingFeatureCheck(kClass: KClass<*>, block: () -> T): T =
-    withMatchmakingFeatureCheck("${kClass.simpleName}", block)
+    withMatchmakingFeatureCheck(kClass.simpleName ?: "null", block)
 
 /**
  * Similar to [with], this method executes `block` if Matchmaking feature is available, otherwise
@@ -156,5 +168,67 @@ internal suspend fun <T> withMatchmakingFeatureCheckSuspend(
         return block()
     } else {
         throw createExceptionDueToFeatureUnavailable(FEATURE_CONSTANT_NAME_MATCHMAKING, apiName)
+    }
+}
+
+/**
+ * Similar to [with], this method executes `block` if Device Data Providers feature is available,
+ * otherwise throwing an [UnsupportedOperationException] pointing to `apiName`.
+ */
+internal fun <T> withDeviceDataProvidersFeatureCheck(kClass: KClass<*>, block: () -> T): T =
+    withDeviceDataProvidersFeatureCheck("${kClass.simpleName}", block)
+
+/**
+ * Similar to [with], this method executes `block` if Device Data Providers feature is available,
+ * otherwise throwing an [UnsupportedOperationException] pointing to `apiName`.
+ */
+internal fun <T> withDeviceDataProvidersFeatureCheck(
+    kClass: KClass<*>,
+    methodName: String,
+    block: () -> T,
+): T = withDeviceDataProvidersFeatureCheck("${kClass.simpleName}#$methodName", block)
+
+/**
+ * Similar to [with], this method executes `block` if Device Data Providers feature is available,
+ * otherwise throwing an [UnsupportedOperationException] pointing to `apiName`.
+ */
+internal fun <T> withDeviceDataProvidersFeatureCheck(apiName: String, block: () -> T): T {
+    if (isDeviceDataProvidersFeatureAvailableInPlatform()) {
+        return block()
+    } else {
+        throw createExceptionDueToFeatureUnavailable(
+            FEATURE_CONSTANT_NAME_DEVICE_DATA_PROVIDERS,
+            apiName,
+        )
+    }
+}
+
+/**
+ * Similar to [with], this method executes `block` if Device Data Providers feature is available,
+ * otherwise throwing an [UnsupportedOperationException] pointing to `apiName`.
+ */
+internal suspend fun <T> withDeviceDataProvidersFeatureCheckSuspend(
+    kClass: KClass<*>,
+    methodName: String,
+    block: suspend () -> T,
+): T {
+    return withDeviceDataProvidersFeatureCheckSuspend("${kClass.simpleName}#$methodName", block)
+}
+
+/**
+ * Similar to [with], this method executes `block` if Device Data Providers feature is available,
+ * otherwise throwing an [UnsupportedOperationException] pointing to `apiName`.
+ */
+internal suspend fun <T> withDeviceDataProvidersFeatureCheckSuspend(
+    apiName: String,
+    block: suspend () -> T,
+): T {
+    if (isDeviceDataProvidersFeatureAvailableInPlatform()) {
+        return block()
+    } else {
+        throw createExceptionDueToFeatureUnavailable(
+            FEATURE_CONSTANT_NAME_DEVICE_DATA_PROVIDERS,
+            apiName,
+        )
     }
 }

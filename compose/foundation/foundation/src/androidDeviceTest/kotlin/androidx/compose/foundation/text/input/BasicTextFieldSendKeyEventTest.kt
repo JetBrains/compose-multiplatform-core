@@ -30,7 +30,6 @@ import androidx.compose.ui.test.requestFocus
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,7 +38,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 internal class BasicTextFieldSendKeyEventTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val immRule = ComposeInputMethodManagerTestRule()
 
@@ -52,17 +51,16 @@ internal class BasicTextFieldSendKeyEventTest {
         lateinit var imm: FakeInputMethodManager
         lateinit var originalFactory: ((View) -> ComposeInputMethodManager)
 
-        originalFactory =
-            immRule.setFactory {
-                val actualImm = originalFactory(it)
-                imm =
-                    object : FakeInputMethodManager() {
-                        override fun sendKeyEvent(event: KeyEvent) {
-                            actualImm.sendKeyEvent(event)
-                        }
+        originalFactory = immRule.setFactory {
+            val actualImm = originalFactory(it)
+            imm =
+                object : FakeInputMethodManager() {
+                    override fun sendKeyEvent(event: KeyEvent) {
+                        actualImm.sendKeyEvent(event)
                     }
-                imm
-            }
+                }
+            imm
+        }
 
         val state = TextFieldState()
         inputMethodInterceptor.setContent {
@@ -88,17 +86,16 @@ internal class BasicTextFieldSendKeyEventTest {
         lateinit var imm: FakeInputMethodManager
         lateinit var originalFactory: ((View) -> ComposeInputMethodManager)
 
-        originalFactory =
-            immRule.setFactory {
-                val actualImm = originalFactory(it)
-                imm =
-                    object : FakeInputMethodManager() {
-                        override fun sendKeyEvent(event: KeyEvent) {
-                            actualImm.sendKeyEvent(event)
-                        }
+        originalFactory = immRule.setFactory {
+            val actualImm = originalFactory(it)
+            imm =
+                object : FakeInputMethodManager() {
+                    override fun sendKeyEvent(event: KeyEvent) {
+                        actualImm.sendKeyEvent(event)
                     }
-                imm
-            }
+                }
+            imm
+        }
 
         val state = TextFieldState("abc")
         inputMethodInterceptor.setContent {

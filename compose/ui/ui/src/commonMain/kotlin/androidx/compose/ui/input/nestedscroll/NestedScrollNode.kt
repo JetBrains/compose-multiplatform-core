@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.input.nestedscroll
 
-import androidx.compose.ui.ComposeUiFlags.isClearNestedScrollCoroutineScopeFixEnabled
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -35,7 +34,7 @@ import kotlinx.coroutines.isActive
  * [Modifier.nestedScroll] since that implementation also uses this. Use this factory to create
  * nodes that can be delegated to.
  */
-fun nestedScrollModifierNode(
+public fun nestedScrollModifierNode(
     connection: NestedScrollConnection,
     dispatcher: NestedScrollDispatcher?,
 ): DelegatableNode {
@@ -65,8 +64,7 @@ internal class NestedScrollNode(
 
     override val traverseKey: Any = "androidx.compose.ui.input.nestedscroll.NestedScrollNode"
 
-    @OptIn(ExperimentalComposeUiApi::class)
-    private val nestedCoroutineScope: CoroutineScope
+    private val nestedCoroutineScope: CoroutineScope?
         get() {
             val parentCoroutineScope = parentNestedScrollNode?.nestedCoroutineScope
             return if (
@@ -77,10 +75,6 @@ internal class NestedScrollNode(
                 parentCoroutineScope
             } else {
                 resolvedDispatcher.scope
-                    ?: throw IllegalStateException(
-                        "in order to access nested coroutine scope you need to attach dispatcher to the " +
-                            "`Modifier.nestedScroll` first."
-                    )
             }
         }
 
@@ -174,10 +168,8 @@ internal class NestedScrollNode(
         // it has already been reused in a different node
         if (resolvedDispatcher.nestedScrollNode === this) {
             resolvedDispatcher.nestedScrollNode = null
-            if (isClearNestedScrollCoroutineScopeFixEnabled) {
-                resolvedDispatcher.scope = null
-                resolvedDispatcher.calculateNestedScrollScope = CancelledScope
-            }
+            resolvedDispatcher.scope = null
+            resolvedDispatcher.calculateNestedScrollScope = CancelledNestedScope
         }
     }
 
@@ -203,6 +195,7 @@ private fun <T : TraversableNode> T.findNearestAttachedAncestor(): T? {
     return node
 }
 
-private val CancelledScope: () -> CoroutineScope = {
+internal val CancelledNestedScope: () -> CoroutineScope = { CancelledScope }
+
+internal val CancelledScope: CoroutineScope =
     CoroutineScope(EmptyCoroutineContext).also { it.cancel() }
-}

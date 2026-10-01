@@ -50,7 +50,6 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -59,7 +58,7 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class WavyProgressIndicatorTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun nonMaterialSetContent() {
@@ -165,8 +164,9 @@ class WavyProgressIndicatorTest {
     @Test
     fun indeterminateLinearWavyProgressIndicator_Size() {
         rule.mainClock.autoAdvance = false
-        val contentToTest =
-            rule.setMaterialContentForSizeAssertions { LinearWavyProgressIndicator() }
+        val contentToTest = rule.setMaterialContentForSizeAssertions {
+            LinearWavyProgressIndicator()
+        }
 
         rule.mainClock.advanceTimeByFrame() // Kick off the animation
 
@@ -181,13 +181,12 @@ class WavyProgressIndicatorTest {
         val expectedWidth = 100.dp
         val expectedHeight = 10.dp
         val tag = "linear"
-        val contentToTest =
-            rule.setMaterialContentForSizeAssertions {
-                LinearWavyProgressIndicator(
-                    modifier = Modifier.size(expectedWidth, expectedHeight).testTag(tag),
-                    progress = { 0.5f },
-                )
-            }
+        val contentToTest = rule.setMaterialContentForSizeAssertions {
+            LinearWavyProgressIndicator(
+                modifier = Modifier.size(expectedWidth, expectedHeight).testTag(tag),
+                progress = { 0.5f },
+            )
+        }
 
         contentToTest.assertWidthIsEqualTo(expectedWidth).assertHeightIsEqualTo(expectedHeight)
     }
@@ -218,12 +217,11 @@ class WavyProgressIndicatorTest {
         val expectedWidth = 100.dp
         val expectedHeight = 10.dp
         val tag = "linear"
-        val contentToTest =
-            rule.setMaterialContentForSizeAssertions {
-                LinearWavyProgressIndicator(
-                    modifier = Modifier.size(expectedWidth, expectedHeight).testTag(tag)
-                )
-            }
+        val contentToTest = rule.setMaterialContentForSizeAssertions {
+            LinearWavyProgressIndicator(
+                modifier = Modifier.size(expectedWidth, expectedHeight).testTag(tag)
+            )
+        }
 
         contentToTest.assertWidthIsEqualTo(expectedWidth).assertHeightIsEqualTo(expectedHeight)
     }
@@ -528,8 +526,9 @@ class WavyProgressIndicatorTest {
     @Test
     fun indeterminateCircularWavyProgressIndicator_Size() {
         rule.mainClock.autoAdvance = false
-        val contentToTest =
-            rule.setMaterialContentForSizeAssertions { CircularWavyProgressIndicator() }
+        val contentToTest = rule.setMaterialContentForSizeAssertions {
+            CircularWavyProgressIndicator()
+        }
 
         rule.mainClock.advanceTimeByFrame() // Kick off the animation
 

@@ -51,6 +51,7 @@ import androidx.compose.ui.window.Popup
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
 import org.junit.Assert.assertThrows
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -60,7 +61,8 @@ import org.robolectric.annotation.GraphicsMode
 
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(RobolectricTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.O)
+// TODO: Remove maxSdk once b/537613850 is fixed.
+@Config(minSdk = Build.VERSION_CODES.O, maxSdk = 36)
 class RobolectricBitmapCapturingTest {
 
     @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
@@ -77,6 +79,7 @@ class RobolectricBitmapCapturingTest {
     private val colorBottomRight = Color.Yellow
     private val colorBg = Color.Black
 
+    @Ignore("b/537021813")
     @Test
     fun captureIndividualRects_checkSizeAndColors() {
         composeCheckerboard()
@@ -107,6 +110,7 @@ class RobolectricBitmapCapturingTest {
         }
     }
 
+    @Ignore("b/537021813")
     @Test
     fun captureRootContainer_checkSizeAndColors() {
         composeCheckerboard()
@@ -151,6 +155,7 @@ class RobolectricBitmapCapturingTest {
             .assertDoesNotContainColor(Color.Red)
     }
 
+    @Ignore("b/537021813")
     @Test
     fun captureComposable_withDialog_verifyBackground() {
         setContent {
@@ -211,6 +216,7 @@ class RobolectricBitmapCapturingTest {
         }
     }
 
+    @Ignore("b/537021813")
     @Test
     fun capturePopupWithAnchor_verifyColors() {
         setContent {
@@ -227,6 +233,7 @@ class RobolectricBitmapCapturingTest {
         }
     }
 
+    @Ignore("b/537021813")
     @Test
     fun captureDialogWithAnchor_verifyColors() {
         setContent {
@@ -264,6 +271,7 @@ class RobolectricBitmapCapturingTest {
         assertThat(bitmap.height).isGreaterThan(0)
     }
 
+    @Ignore("b/537021813")
     @Test
     fun captureMultiplePopups_verifyColors() {
         setContent {

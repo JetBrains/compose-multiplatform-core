@@ -601,34 +601,28 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
         }
 
         val visibleBounds = containerCoordinates.visibleBounds()
-        this.startHandlePosition =
-            startLayoutCoordinates?.let { handleCoordinates ->
-                // Set the new handle position only if the handle is in visible bounds or
-                // the handle is still dragging. If handle goes out of visible bounds during drag,
-                // handle popup is also removed from composition, halting the drag gesture. This
-                // affects multiple text selection when selected text is configured with maxLines=1
-                // and overflow=clip.
-                val handlePosition =
-                    startSelectable.getHandlePosition(selection, isStartHandle = true)
-                if (handlePosition.isUnspecified) return@let null
-                val position =
-                    containerCoordinates.localPositionOf(handleCoordinates, handlePosition)
-                position.takeIf {
-                    draggingHandle == Handle.SelectionStart || visibleBounds.containsInclusive(it)
-                }
+        this.startHandlePosition = startLayoutCoordinates?.let { handleCoordinates ->
+            // Set the new handle position only if the handle is in visible bounds or
+            // the handle is still dragging. If handle goes out of visible bounds during drag,
+            // handle popup is also removed from composition, halting the drag gesture. This
+            // affects multiple text selection when selected text is configured with maxLines=1
+            // and overflow=clip.
+            val handlePosition = startSelectable.getHandlePosition(selection, isStartHandle = true)
+            if (handlePosition.isUnspecified) return@let null
+            val position = containerCoordinates.localPositionOf(handleCoordinates, handlePosition)
+            position.takeIf {
+                draggingHandle == Handle.SelectionStart || visibleBounds.containsInclusive(it)
             }
+        }
 
-        this.endHandlePosition =
-            endLayoutCoordinates?.let { handleCoordinates ->
-                val handlePosition =
-                    endSelectable.getHandlePosition(selection, isStartHandle = false)
-                if (handlePosition.isUnspecified) return@let null
-                val position =
-                    containerCoordinates.localPositionOf(handleCoordinates, handlePosition)
-                position.takeIf {
-                    draggingHandle == Handle.SelectionEnd || visibleBounds.containsInclusive(it)
-                }
+        this.endHandlePosition = endLayoutCoordinates?.let { handleCoordinates ->
+            val handlePosition = endSelectable.getHandlePosition(selection, isStartHandle = false)
+            if (handlePosition.isUnspecified) return@let null
+            val position = containerCoordinates.localPositionOf(handleCoordinates, handlePosition)
+            position.takeIf {
+                draggingHandle == Handle.SelectionEnd || visibleBounds.containsInclusive(it)
             }
+        }
     }
 
     /** Returns non-nullable [containerLayoutCoordinates]. */
@@ -708,7 +702,7 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
                         }
                     }
                 },
-                createBoundarySelection = { selectable, isStart, offset, isCrossed ->
+                createBoundarySelection = { selectable, isStart, _, isCrossed ->
                     selectable.getSelectAllSelection()?.let { selectAll ->
                         if (isStart) {
                             if (isCrossed) {
@@ -955,10 +949,9 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
             if (currentSelection.start.selectableId == currentSelectableId) {
                 currentSelection.start.offset > currentOffset
             } else {
-                val startIndex =
-                    selectables.indexOfFirst {
-                        it.selectableId == currentSelection.start.selectableId
-                    }
+                val startIndex = selectables.indexOfFirst {
+                    it.selectableId == currentSelection.start.selectableId
+                }
                 startIndex > currentIndex
             }
 
@@ -1123,11 +1116,10 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
             ) -> Boolean
     ) {
         val sortedSelectables = selectionRegistrar.sort(requireContainerCoordinates())
-        val lastSelectableIndex =
-            sortedSelectables.indexOfLast {
-                val subSelection = selectionRegistrar.subselections[it.selectableId]
-                subSelection != null && subSelection.start.offset != subSelection.end.offset
-            }
+        val lastSelectableIndex = sortedSelectables.indexOfLast {
+            val subSelection = selectionRegistrar.subselections[it.selectableId]
+            subSelection != null && subSelection.start.offset != subSelection.end.offset
+        }
         // No selectable is selected.
         if (lastSelectableIndex == -1) return
 
@@ -1540,7 +1532,12 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
                     ComposeFoundationFlags.isMouseSelectionBetweenTextEnabled && !isInTouchMode,
             )
 
-        sortedSelectables.fastForEach { it.appendSelectableInfoToBuilder(builder) }
+        sortedSelectables.fastForEachIndexed { i, selectable ->
+            selectable.appendSelectableInfoToBuilder(
+                builder = builder,
+                isLast = i == sortedSelectables.lastIndex,
+            )
+        }
 
         return builder.build()
     }

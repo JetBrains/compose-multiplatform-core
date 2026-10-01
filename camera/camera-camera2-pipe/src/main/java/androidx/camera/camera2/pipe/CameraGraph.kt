@@ -20,6 +20,7 @@ import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraConstrainedHighSpeedCaptureSession
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CaptureRequest
+import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.params.MeteringRectangle
 import android.hardware.camera2.params.SessionConfiguration
 import android.os.Build
@@ -36,10 +37,16 @@ import androidx.camera.camera2.pipe.CameraGraph.RepeatingRequestRequirementsBefo
 import androidx.camera.camera2.pipe.CameraGraph.Session
 import androidx.camera.camera2.pipe.compat.Camera2Quirks
 import androidx.camera.camera2.pipe.core.Log
+import androidx.camera.common.CameraFrameNumber
+import androidx.camera.common.Metadata
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.map
 
 /** A [CameraGraph] represents the combined configuration and state of a camera. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -191,7 +198,7 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
          * request has started yet.
          *
          * The value represents how many repeating request captures need to be completed before a
-         * non-repeating capture. Note that CameraPipe may have its own logic to. When null,
+         * non-repeating capture. Note that CameraPipe may have its own logic too. When null,
          * CameraPipe will use its own logic to decide whether such a workaround is required. When
          * zero or negative, CameraPipe will disable such behavior.
          *
@@ -231,10 +238,10 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
 
         /**
          * Flag to close the camera capture session when the CameraGraph is stopped or closed. This
-         * is needed in cases where the app that do not wish to receive further frames, or in cases
+         * is needed in cases where the app does not wish to receive further frames, or in cases
          * where not closing the capture session before closing the camera device might cause the
          * camera close call itself to hang indefinitely.
-         * - Bug(s): b/277310425, b/277310425
+         * - Bug(s): b/277310425
          * - Device(s): Depends on the situation and the use case.
          * - API levels: All
          */
@@ -334,9 +341,6 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
          */
         public val METERING_REGIONS_DEFAULT: Array<MeteringRectangle> =
             arrayOf(MeteringRectangle(0, 0, 0, 0, 0))
-
-        /** Placeholder frame number for [Result3A] when a 3A method encounters an error. */
-        public val FRAME_NUMBER_INVALID: FrameNumber = FrameNumber(-1L)
     }
 
     /**
@@ -382,23 +386,6 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
         public fun submit(requests: List<Request>)
 
         /**
-         * Submit the [Request] to the camera, and aggregate the results into a [FrameCapture],
-         * which can be used to wait for the [Frame] to start using [FrameCapture.awaitFrame].
-         *
-         * The [FrameCapture] **must** be closed, or it will result in a memory leak.
-         */
-        public fun capture(request: Request): FrameCapture
-
-        /**
-         * Submit the [Request]s to the camera, and aggregate the results into a list of
-         * [FrameCapture]s, which can be used to wait for the associated [Frame] using
-         * [FrameCapture.awaitFrame].
-         *
-         * Each [FrameCapture] **must** be closed, or it will result in a memory leak.
-         */
-        public fun capture(requests: List<Request>): List<FrameCapture>
-
-        /**
          * Abort in-flight requests. This will abort *all* requests in the current
          * CameraCaptureSession as well as any requests that are enqueued, but that have not yet
          * been submitted to the camera.
@@ -442,8 +429,8 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
          * TODO(sushilnath@): Add support for specifying the AE, AF and AWB modes as well. The
          *   update of modes require special care if the desired lock behavior is immediate. In that
          *   case we have to submit a combination of repeating and single requests so that the AF
-         *   skips the initial state of the new mode's state machine and stays locks in the new mode
-         *   as well.
+         *   skips the initial state of the new mode's state machine and stays locked in the new
+         *   mode as well.
          */
         public suspend fun lock3A(
             aeMode: AeMode? = null,
@@ -479,7 +466,7 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
          *   [timeLimitNs] is reached.
          * @param frameLimit the maximum number of frames to wait before we give up waiting for this
          *   operation to complete.
-         * @param timeLimitNs the maximum time limit in ms we wait before we give up waiting for
+         * @param timeLimitNs the maximum time limit in ns we wait before we give up waiting for
          *   this operation to complete.
          * @return [Result3A], which will contain the latest frame number at which the auto-focus,
          *   auto-exposure, auto-white balance were unlocked as per the method arguments.
@@ -494,7 +481,7 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
         ): Deferred<Result3A>
 
         /**
-         * This methods does pre-capture metering sequence and locks auto-focus. Once the operation
+         * This method does pre-capture metering sequence and locks auto-focus. Once the operation
          * completes, we can proceed to take high-quality pictures.
          *
          * Note: Flash will be used during pre-capture metering and during image capture if the AE
@@ -507,7 +494,7 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
          *   or [timeLimitNs] is reached.
          * @param frameLimit the maximum number of frames to wait before we give up waiting for this
          *   operation to complete.
-         * @param timeLimitNs the maximum time limit in ms we wait before we give up waiting for
+         * @param timeLimitNs the maximum time limit in ns we wait before we give up waiting for
          *   this operation to complete.
          * @return [Result3A], which will contain the latest frame number at which the locks were
          *   applied or the frame number at which the method returned early because either frame
@@ -520,7 +507,7 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
         ): Deferred<Result3A>
 
         /**
-         * This methods does pre-capture metering sequence and locks auto-focus. Once the operation
+         * This method does pre-capture metering sequence and locks auto-focus. Once the operation
          * completes, we can proceed to take high-quality pictures.
          *
          * Note: Flash will be used during pre-capture metering and during image capture if the AE
@@ -531,7 +518,7 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
          * @param waitForAwb Whether to wait for AWB to converge/lock, disabled by default.
          * @param frameLimit the maximum number of frames to wait before we give up waiting for this
          *   operation to complete.
-         * @param timeLimitNs the maximum time limit in ms we wait before we give up waiting for
+         * @param timeLimitNs the maximum time limit in ns we wait before we give up waiting for
          *   this operation to complete.
          * @return [Result3A], which will contain the latest frame number at which the locks were
          *   applied or the frame number at which the method returned early because either frame
@@ -547,8 +534,8 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
         /**
          * After submitting pre-capture metering sequence needed by [lock3AForCapture] method, the
          * camera system can internally lock the auto-exposure routine for subsequent still image
-         * capture, and if not image capture request is submitted the auto-exposure may not resume
-         * it's normal scan. This method brings focus and exposure back to normal after high quality
+         * capture, and if no image capture request is submitted the auto-exposure may not resume
+         * its normal scan. This method brings focus and exposure back to normal after high quality
          * image captures using [lock3AForCapture] method.
          *
          * @param cancelAf Whether to trigger AF cancel, enabled by default.
@@ -591,8 +578,9 @@ public interface CameraGraphBase<TSession : Session> : AutoCloseable {
      */
     public val parameters: Parameters
 
-    /*
-     * This enables setting listeners directly. The listeners would receive callbacks similar to ones added in a [Request]. For detailed usage see [Listeners].
+    /**
+     * This enables setting listeners directly. The listeners would receive callbacks similar to
+     * ones added in a [Request]. For detailed usage see [RequestListeners].
      */
     public val listeners: RequestListeners
 
@@ -605,8 +593,8 @@ public interface CameraGraphBase<TSession : Session> : AutoCloseable {
      */
     public val graphState: StateFlow<GraphState>
 
-    /** Conflated flow of the most recent [FrameNumber]s emitted by this CameraGraph. */
-    public val latestFrameNumber: Flow<FrameNumber>
+    /** Conflated flow of the most recent [CameraFrameNumber]s emitted by this CameraGraph. */
+    public val latestFrameNumber: Flow<CameraFrameNumber>
 
     /** Conflated flow of the most recent [FrameInfo] instances emitted by this CameraGraph. */
     public val latestFrameInfo: Flow<FrameInfo>
@@ -664,7 +652,7 @@ public interface CameraGraphBase<TSession : Session> : AutoCloseable {
      * TODO(sushilnath@): Add support for specifying the AE, AF and AWB modes as well. The update of
      *   modes require special care if the desired lock behavior is immediate. In that case we have
      *   to submit a combination of repeating and single requests so that the AF skips the initial
-     *   state of the new mode's state machine and stays locks in the new mode as well.
+     *   state of the new mode's state machine and stays locked in the new mode as well.
      */
     public fun lock3A(
         aeMode: AeMode? = null,
@@ -700,7 +688,7 @@ public interface CameraGraphBase<TSession : Session> : AutoCloseable {
      *   [timeLimitNs] is reached.
      * @param frameLimit the maximum number of frames to wait before we give up waiting for this
      *   operation to complete.
-     * @param timeLimitNs the maximum time limit in ms we wait before we give up waiting for this
+     * @param timeLimitNs the maximum time limit in ns we wait before we give up waiting for this
      *   operation to complete.
      * @return [Result3A], which will contain the latest frame number at which the auto-focus,
      *   auto-exposure, auto-white balance were unlocked as per the method arguments.
@@ -784,10 +772,118 @@ public interface CameraGraphBase<TSession : Session> : AutoCloseable {
         scope: CoroutineScope,
         action: suspend CoroutineScope.(TSession) -> T,
     ): Deferred<T>
+
+    public companion object {
+        /**
+         * Subscribe to the latest values of a combined set of [CaptureResult.Key]s and
+         * [Metadata.Key]s.
+         *
+         * At least one of [resultKeys] or [metadataKeys] must be non-empty, otherwise
+         * [IllegalArgumentException] is thrown.
+         *
+         * The [listener] will be invoked synchronously on the calling thread (the camera callback
+         * thread). Ensure the callback executes quickly to avoid blocking internal camera
+         * processing.
+         *
+         * The callback is triggered only when the resolved value of any tracked key changes, or
+         * when a key transitions between being present and absent.
+         *
+         * Because the aggregator uses a sliding window to reconcile values across partial and total
+         * capture results, the returned parameters in [LatestFrameMetadata] may be skewed (i.e.,
+         * values for different keys may originate from different frame numbers).
+         * - If you require frame-aligned parameters (e.g., matching a specific image for
+         *   post-processing), use `latestFrameMetadata` or register a frame listener.
+         * - If you require the lowest possible latency for camera state changes (e.g., drawing
+         *   active AF/AE indicator regions on a viewfinder overlay), use this subscription
+         *   function.
+         */
+        /**
+         * Returns a [Flow] emitting the latest aggregated parameters for the requested set of
+         * [CaptureResult.Key]s and [Metadata.Key]s.
+         *
+         * Emits new values on the camera callback thread. Flow collections should map to a
+         * different dispatcher if performing heavy operations.
+         *
+         * Emits only when the resolved value of any tracked key changes, or when a key transitions
+         * between being present and absent.
+         *
+         * The flow is always conflated (slow consumers will drop intermediate updates to receive
+         * the most recent state).
+         * - Use frame-aligned listener versions (e.g. `latestFrameMetadata`) if values must align
+         *   perfectly to a single frame.
+         * - Use this Flow if low-latency updates are preferred (e.g. tracking viewfinder overlays).
+         */
+        @JvmStatic
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public fun CameraGraphBase<*>.subscribeToLatestFrameResults(
+            captureResultKeys: Set<CaptureResult.Key<*>> = emptySet(),
+            metadataKeys: Set<Metadata.Key<*>> = emptySet(),
+            filter: ((RequestMetadata) -> Boolean)? = null,
+        ): Flow<LatestFrameMetadata> {
+            return callbackFlow {
+                val listener =
+                    RequestListeners.createLatestFrameMetadataListener(
+                        captureResultKeys = captureResultKeys,
+                        metadataKeys = metadataKeys,
+                        filter = filter,
+                        listener = { trySend(it) },
+                    )
+                listeners.add(listener)
+                awaitClose { listeners.remove(listener) }
+            }
+                .conflate()
+        }
+
+        /**
+         * Returns a [Flow] emitting the latest value of a single [CaptureResult.Key].
+         *
+         * Emits new values on the camera callback thread.
+         *
+         * Emits only when the resolved value changes, or when it transitions between being present
+         * and absent.
+         *
+         * The flow is always conflated.
+         * - Use frame-aligned listener versions if values must align perfectly to a single frame.
+         * - Use this Flow if low-latency updates are preferred.
+         */
+        @JvmStatic
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public fun <T : Any> CameraGraphBase<*>.subscribeToLatestFrameResult(
+            captureResultKey: CaptureResult.Key<T>,
+            filter: ((RequestMetadata) -> Boolean)? = null,
+        ): Flow<T?> =
+            subscribeToLatestFrameResults(
+                    captureResultKeys = setOf(captureResultKey),
+                    filter = filter,
+                )
+                .map { it[captureResultKey] }
+
+        /**
+         * Returns a [Flow] emitting the latest value of a single [Metadata.Key].
+         *
+         * Emits new values on the camera callback thread.
+         *
+         * Emits only when the resolved value changes, or when it transitions between being present
+         * and absent.
+         *
+         * The flow is always conflated.
+         * - Use frame-aligned listener versions if values must align perfectly to a single frame.
+         * - Use this Flow if low-latency updates are preferred.
+         */
+        @JvmStatic
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public fun <T : Any> CameraGraphBase<*>.subscribeToLatestFrameResult(
+            metadataKey: Metadata.Key<T>,
+            filter: ((RequestMetadata) -> Boolean)? = null,
+        ): Flow<T?> =
+            subscribeToLatestFrameResults(metadataKeys = setOf(metadataKey), filter = filter).map {
+                it[metadataKey]
+            }
+    }
 }
 
 /**
- * GraphState represents public the public facing state of a [CameraGraph] instance. When created, a
+ * GraphState represents the public-facing state of a [CameraGraph] instance. When created, a
  * [CameraGraph] starts in [GraphStateStopped]. Calling [CameraGraph.start] puts the graph into
  * [GraphStateStarting], and [CameraGraph.stop] puts the graph into [GraphStateStopping]. Remaining
  * states are produced by the underlying camera as a result of these start/stop calls.

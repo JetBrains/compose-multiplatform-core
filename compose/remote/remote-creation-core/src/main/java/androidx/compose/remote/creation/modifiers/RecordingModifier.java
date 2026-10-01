@@ -19,6 +19,7 @@ import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.RemoteComposeBuffer;
 import androidx.compose.remote.core.operations.layout.MultiClickModifier;
 import androidx.compose.remote.core.operations.layout.animation.AnimationSpec.ANIMATION;
+import androidx.compose.remote.core.operations.layout.animation.AnimationSpec.SEQUENCE;
 import androidx.compose.remote.core.operations.layout.modifiers.DimensionConstraintsModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.DimensionModifierOperation;
 import androidx.compose.remote.creation.Rc;
@@ -112,6 +113,15 @@ public class RecordingModifier {
     }
 
     /**
+     * Add a drawWithContent modifier (no callback, default content drawing).
+     *
+     * @return RecordingModifier
+     */
+    public @NonNull RecordingModifier drawWithContent() {
+        return drawContent();
+    }
+
+    /**
      * Add a drawWithContent modifier
      *
      * @return RecordingModifier
@@ -179,6 +189,57 @@ public class RecordingModifier {
         mList.add(new AnimateSpecModifier(animationId,
                 motionDuration, motionEasingType, visibilityDuration, visibilityEasingType,
                 enterAnimation, exitAnimation));
+        return this;
+    }
+
+    /**
+     * Add an animation spec modifier with custom enter/exit function IDs
+     *
+     * @param animationId          the animation id
+     * @param motionDuration       the motion duration
+     * @param motionEasingType     the motion easing type
+     * @param visibilityDuration   the visibility duration
+     * @param visibilityEasingType the visibility easing type
+     * @param enterAnimation       the enter animation
+     * @param exitAnimation        the exit animation
+     * @param enterFunctionId      the enter function id
+     * @param exitFunctionId       the exit function id
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public @NonNull RecordingModifier animationSpec(int animationId,
+            float motionDuration,
+            int motionEasingType,
+            float visibilityDuration,
+            int visibilityEasingType,
+            @NonNull ANIMATION enterAnimation,
+            @NonNull ANIMATION exitAnimation,
+            int enterFunctionId,
+            int exitFunctionId) {
+        mList.add(new AnimateSpecModifier(animationId,
+                motionDuration, motionEasingType, visibilityDuration, visibilityEasingType,
+                enterAnimation, exitAnimation, enterFunctionId, exitFunctionId));
+        return this;
+    }
+
+    /**
+     * Add an animation spec modifier with custom enter/exit function IDs and sequences
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public @NonNull RecordingModifier animationSpec(int animationId,
+            float motionDuration,
+            int motionEasingType,
+            float visibilityDuration,
+            int visibilityEasingType,
+            @NonNull ANIMATION enterAnimation,
+            @NonNull ANIMATION exitAnimation,
+            int enterFunctionId,
+            int exitFunctionId,
+            @NonNull SEQUENCE enterSequence,
+            @NonNull SEQUENCE exitSequence) {
+        mList.add(new AnimateSpecModifier(animationId,
+                motionDuration, motionEasingType, visibilityDuration, visibilityEasingType,
+                enterAnimation, exitAnimation, enterFunctionId, exitFunctionId,
+                enterSequence, exitSequence));
         return this;
     }
 
@@ -323,6 +384,15 @@ public class RecordingModifier {
     }
 
     /**
+     * Add a horizontal scroll modifier with notches
+     */
+    public @NonNull RecordingModifier horizontalScroll(float position, int notches) {
+        mList.add(new ClipModifier(new RectShape(0, 0, 0, 0)));
+        mList.add(new ScrollModifier(ScrollModifier.HORIZONTAL, position, notches));
+        return this;
+    }
+
+    /**
      * Add a vertical scroll modifier
      */
     public @NonNull RecordingModifier verticalScroll() {
@@ -337,6 +407,15 @@ public class RecordingModifier {
     public @NonNull RecordingModifier verticalScroll(float position) {
         mList.add(new ClipModifier(new RectShape(0, 0, 0, 0)));
         mList.add(new ScrollModifier(ScrollModifier.VERTICAL, position, 0));
+        return this;
+    }
+
+    /**
+     * Add a vertical scroll modifier with notches
+     */
+    public @NonNull RecordingModifier verticalScroll(float position, int notches) {
+        mList.add(new ClipModifier(new RectShape(0, 0, 0, 0)));
+        mList.add(new ScrollModifier(ScrollModifier.VERTICAL, position, notches));
         return this;
     }
 

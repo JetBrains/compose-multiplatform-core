@@ -69,6 +69,7 @@ class CompilationTestHelper(
     fun compileAll(
         sourceFileNames: List<String>,
         processorOptions: Map<String, String> = emptyMap<String, String>(),
+        additionalClasspath: List<File> = emptyList(),
     ): CompilationReport {
         val sources =
             sourceFileNames.map { sourceFileName ->
@@ -106,7 +107,13 @@ class CompilationTestHelper(
                     sources = sources,
                     symbolProcessorProviders = symbolProcessorProviders,
                     processorOptions = processorOptions,
-                    kotlincArguments = listOf("-jvm-target", "11"),
+                    classpath = additionalClasspath,
+                    kotlincArguments =
+                        listOf(
+                            "-jvm-target",
+                            "11",
+                            "-opt-in=androidx.appfunctions.ExperimentalAppFunctionsApi",
+                        ),
                 ),
             )
 
@@ -281,6 +288,8 @@ class CompilationTestHelper(
         val diagnostics: Map<Diagnostic.Kind, List<DiagnosticMessage>>,
         /** A list of generated source files. */
         val generatedResourceFiles: List<GeneratedResourceFile>,
+        /** List of classpath folders that contain the produced .class files. */
+        val outputClasspath: List<File>,
     ) {
         /** Print the diagnostics result of type [kind]. */
         fun printDiagnostics(kind: Diagnostic.Kind): String {
@@ -306,6 +315,7 @@ class CompilationTestHelper(
                         result.generatedResources.map { resource ->
                             GeneratedResourceFile.create(resource, outputDir)
                         },
+                    outputClasspath = result.outputClasspath,
                 )
             }
         }

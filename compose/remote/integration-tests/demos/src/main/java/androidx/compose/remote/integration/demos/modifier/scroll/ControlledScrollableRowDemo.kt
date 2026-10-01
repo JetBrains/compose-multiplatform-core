@@ -27,38 +27,39 @@ import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.layout.RemoteRow
 import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
+import androidx.compose.remote.creation.compose.modifier.RemoteScrollState
 import androidx.compose.remote.creation.compose.modifier.background
 import androidx.compose.remote.creation.compose.modifier.clickable
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.fillMaxWidth
 import androidx.compose.remote.creation.compose.modifier.horizontalScroll
 import androidx.compose.remote.creation.compose.modifier.padding
-import androidx.compose.remote.creation.compose.modifier.rememberRemoteScrollState
 import androidx.compose.remote.creation.compose.modifier.size
+import androidx.compose.remote.creation.compose.state.MutableRemoteBoolean
 import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
-import androidx.compose.remote.creation.compose.state.rememberMutableRemoteBoolean
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.integration.demos.common.RemoteDemo
 import androidx.compose.remote.tooling.preview.RemoteComponentPreview
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 
-@Suppress("RestrictedApiAndroidX")
+@Suppress("RestrictedApiAndroidX") // Referring to RemoteComponentPreview
 @Composable
 fun ControlledScrollableRowDemo() {
     RemoteDemo(modifier = Modifier.fillMaxSize()) { ControlledScrollableRowDemoContent() }
 }
 
-@Suppress("RestrictedApiAndroidX")
+@Suppress("RestrictedApiAndroidX") // Referring to scrollBy
 @RemoteComponentPreview
 @Composable
 @RemoteComposable
 private fun ControlledScrollableRowDemoContent() {
-    val scrollState = rememberRemoteScrollState()
-    val useLargeScroll = rememberMutableRemoteBoolean(true)
+    val scrollState = remember { RemoteScrollState() }
+    val useLargeScroll = remember { MutableRemoteBoolean(true) }
     val scrollDelta = useLargeScroll.select(10000f.rf, 1000f.rf)
     RemoteColumn(modifier = RemoteModifier.fillMaxSize()) {
         RemoteRow(
@@ -84,7 +85,6 @@ private fun ControlledScrollableRowDemoContent() {
     }
 }
 
-@Suppress("RestrictedApiAndroidX")
 @Composable
 @RemoteComposable
 private fun Square(index: Int) {
@@ -104,7 +104,7 @@ private fun Square(index: Int) {
     }
 }
 
-@Suppress("RestrictedApiAndroidX")
+@Suppress("RestrictedApiAndroidX") // Referring to RemoteComponentPreview
 @Composable
 @RemoteComposable
 private fun Button(onClick: Action, content: @Composable @RemoteComposable () -> Unit) {

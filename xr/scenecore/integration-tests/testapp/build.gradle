@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import androidx.build.AndroidXConfig
 import androidx.build.ApkCopyHelperKt
 
 plugins {
@@ -25,7 +24,7 @@ plugins {
 
 android {
     namespace = "androidx.xr.scenecore.testapp"
-    compileSdk { version = release(36) }
+    compileSdk { version = release(37) }
 
     defaultConfig {
         applicationId = "androidx.xr.scenecore.testapp"
@@ -57,7 +56,7 @@ dependencies {
     implementation("androidx.compose.runtime:runtime:1.7.5")
     implementation("androidx.compose.ui:ui:1.7.5")
     implementation("androidx.compose.ui:ui-unit:1.7.5")
-    implementation("androidx.core:core-ktx:1.16.0")
+    implementation("androidx.core:core-ktx:1.17.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.activity:activity:1.10.1")
     implementation("androidx.constraintlayout:constraintlayout:2.2.1")
@@ -74,6 +73,10 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.testUiautomator)
+    androidTestImplementation(project(":xr:runtime:runtime-testing")) {
+        exclude group: "org.robolectric"
+    }
     androidTestImplementation(project(":xr:testutils"))
 
     androidTestUtil(libs.testOrchestrator)

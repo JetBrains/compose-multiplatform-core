@@ -16,15 +16,17 @@
 
 package androidx.ink.brush.behavior
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.cinterop.SourceNodeNative_create
 import androidx.ink.nativeloader.cinterop.SourceNodeNative_getOutOfRangeBehaviorInt
 import androidx.ink.nativeloader.cinterop.SourceNodeNative_getSourceInt
+import androidx.ink.nativeloader.cinterop.SourceNodeNative_getSourceMinimumRequiredVersion
 import androidx.ink.nativeloader.cinterop.SourceNodeNative_getValueRangeEnd
 import androidx.ink.nativeloader.cinterop.SourceNodeNative_getValueRangeStart
 import androidx.ink.nativeloader.throwForNonOkStatusCallback
 import kotlinx.cinterop.ExperimentalForeignApi
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, InkInternalOnlyApi::class)
 actual internal object SourceNodeNative {
     actual fun create(
         source: Int,
@@ -51,4 +53,7 @@ actual internal object SourceNodeNative {
 
     actual fun getOutOfRangeBehaviorInt(nativePointer: Long): Int =
         SourceNodeNative_getOutOfRangeBehaviorInt(nativePointer)
+
+    actual fun getSourceMinimumRequiredVersion(sourceInt: Int): Int =
+        SourceNodeNative_getSourceMinimumRequiredVersion(sourceInt)
 }

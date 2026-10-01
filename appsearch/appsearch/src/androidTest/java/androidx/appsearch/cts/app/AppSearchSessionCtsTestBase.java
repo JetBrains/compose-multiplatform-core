@@ -33,6 +33,7 @@ import static org.junit.Assume.assumeTrue;
 import android.content.Context;
 import android.util.Log;
 
+import androidx.appsearch.app.AppSearchAccount;
 import androidx.appsearch.app.AppSearchBatchResult;
 import androidx.appsearch.app.AppSearchResult;
 import androidx.appsearch.app.AppSearchSchema;
@@ -67,6 +68,7 @@ import androidx.appsearch.exceptions.AppSearchException;
 import androidx.appsearch.flags.Flags;
 import androidx.appsearch.testutil.AppSearchEmail;
 import androidx.appsearch.testutil.AppSearchTestUtils;
+import androidx.appsearch.testutil.flags.RequiresFlagsDisabled;
 import androidx.appsearch.testutil.flags.RequiresFlagsEnabled;
 import androidx.appsearch.usagereporting.ClickAction;
 import androidx.appsearch.usagereporting.DismissAction;
@@ -1405,7 +1407,6 @@ public abstract class AppSearchSessionCtsTestBase {
                                 + "not supported on this AppSearch implementation.");
     }
 
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_REPEATED_FIELD_JOINS)
     @Test
     public void testGetSchema_joinableValueTypeQualifiedIdRepeatedProperty() throws Exception {
         assumeTrue(mDb1.getFeatures().isFeatureSupported(Features.JOIN_SPEC_AND_QUALIFIED_ID));
@@ -1464,7 +1465,7 @@ public abstract class AppSearchSessionCtsTestBase {
             //   platform schema, platform SDK AppSearchSchema.StringPropertyConfig.Builder#build
             //   will throw this exception.
             // - New behavior in platform SDK does not throw IllegalStateException. If this test
-            //   runs against newer builds on Android C+ devices (with enableRepeatedFieldJoins()
+            //   runs against newer builds on Android C+ devices (with getAllowRepeatedFieldJoins()
             //   ON), then:
             //   - AppSearch and Icing WON't throw exception or return an error anymore.
             //   - Normally, this test should've been skipped since the feature is enabled, but
@@ -1867,7 +1868,7 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 // @exportToFramework:endStrip()
 
-    @SdkSuppress(minSdkVersion = 24) // b/441557822
+    @SdkSuppress(minSdkVersion = 25) // b/441557822
     @Test
     public void testPutHugeDocumentInBatch() throws Exception {
         // Schema registration
@@ -8924,7 +8925,6 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION)
     public void testQuery_matchScoreExpression() throws Exception {
         assumeTrue(mDb1.getFeatures().isFeatureSupported(Features.LIST_FILTER_QUERY_LANGUAGE));
         assumeTrue(
@@ -8983,7 +8983,6 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION)
     public void testQuery_listFilterQueryMatchScoreExpressionFunction_notSupported()
             throws Exception {
         assumeFalse(
@@ -9006,7 +9005,6 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION)
     public void testQuery_matchScoreExpressionFunctionWithoutEnablingFeatureFails()
             throws Exception {
         assumeTrue(mDb1.getFeatures().isFeatureSupported(Features.LIST_FILTER_QUERY_LANGUAGE));
@@ -14508,5 +14506,138 @@ public abstract class AppSearchSessionCtsTestBase {
     @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCORABLE_PROPERTY)
     public void testRankWithInvalidPropertyName() throws Exception {
         // TODO(b/379923400): Implement this test.
+    }
+
+    @Test
+    @RequiresFlagsDisabled(Flags.FLAG_ENABLE_ACCOUNT_PROPERTY_INCOMPATIBILITY_CHECK)
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS)
+    public void testSetSchema_promoteToAccountProperty_compatible() throws Exception {
+        assumeTrue(mDb1.getFeatures().isFeatureSupported(
+                Features.SET_SCHEMA_REQUEST_SET_WIPEOUT_ACCOUNT));
+
+        List<AppSearchSchema> schemas = ImmutableList.of(
+                new AppSearchSchema.Builder("Type")
+                        .addProperty(new AppSearchSchema.DocumentPropertyConfig.Builder("account",
+                                AppSearchAccount.SCHEMA_TYPE)
+                                .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                                .setShouldIndexNestedProperties(true)
+                                .build())
+                        .build(),
+                AppSearchAccount.SCHEMA);
+
+        mDb1.setSchemaAsync(new SetSchemaRequest.Builder()
+                .addSchemas(schemas)
+                .build()).get();
+
+        SetSchemaRequest request = new SetSchemaRequest.Builder()
+                .addSchemas(schemas)
+                .setSchemaTypeWipeoutAccountPropertyPaths(
+                        "Type", ImmutableSet.of(new PropertyPath("account")), true)
+                .build();
+
+        mDb1.setSchemaAsync(request).get();
+    }
+
+    @Test
+    @RequiresFlagsEnabled({
+            Flags.FLAG_ENABLE_ACCOUNT_PROPERTY_INCOMPATIBILITY_CHECK,
+            Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS
+    })
+    public void testSetSchema_promoteToAccountProperty_incompatible() throws Exception {
+        assumeTrue(mDb1.getFeatures().isFeatureSupported(
+                Features.SET_SCHEMA_REQUEST_SET_WIPEOUT_ACCOUNT));
+
+        List<AppSearchSchema> schemas = ImmutableList.of(
+                new AppSearchSchema.Builder("Type")
+                        .addProperty(new AppSearchSchema.DocumentPropertyConfig.Builder("account",
+                                AppSearchAccount.SCHEMA_TYPE)
+                                .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                                .setShouldIndexNestedProperties(true)
+                                .build())
+                        .build(),
+                AppSearchAccount.SCHEMA);
+
+        mDb1.setSchemaAsync(new SetSchemaRequest.Builder()
+                .addSchemas(schemas)
+                .build()).get();
+
+        SetSchemaRequest request = new SetSchemaRequest.Builder()
+                .addSchemas(schemas)
+                .setSchemaTypeWipeoutAccountPropertyPaths(
+                        "Type", ImmutableSet.of(new PropertyPath("account")), true)
+                .build();
+
+        ExecutionException executionException = assertThrows(ExecutionException.class,
+                () -> mDb1.setSchemaAsync(request).get());
+        assertThat(executionException).hasCauseThat().isInstanceOf(AppSearchException.class);
+        AppSearchException exception = (AppSearchException) executionException.getCause();
+        assertThat(exception.getResultCode()).isEqualTo(RESULT_INVALID_SCHEMA);
+        assertThat(exception).hasMessageThat().contains("Schema is incompatible.");
+    }
+
+    @Test
+    public void testQuery_resultCountPerPageZero() throws Exception {
+        // Schema registration
+        mDb1.setSchemaAsync(
+                        new SetSchemaRequest.Builder().addSchemas(AppSearchEmail.SCHEMA).build())
+                .get();
+
+        // Index a document
+        AppSearchEmail inEmail =
+                new AppSearchEmail.Builder("namespace", "id1")
+                        .setFrom("from@example.com")
+                        .setTo("to1@example.com", "to2@example.com")
+                        .setSubject("testPut example")
+                        .setBody("This is the body of the testPut email")
+                        .build();
+        checkIsBatchResultSuccess(
+                mDb1.putAsync(
+                        new PutDocumentsRequest.Builder().addGenericDocuments(inEmail).build()));
+
+        // Query with resultCountPerPage = 0.
+        SearchResults searchResults =
+                mDb1.search(
+                        "body",
+                        new SearchSpec.Builder()
+                                .setTermMatch(SearchSpec.TERM_MATCH_EXACT_ONLY)
+                                .setResultCountPerPage(0)
+                                .build());
+
+        // Get the first page. It should return 0 results.
+        List<SearchResult> results = searchResults.getNextPageAsync().get();
+        assertThat(results).isEmpty();
+    }
+
+    @Test
+    public void testQuery_resultCountPerPageGreaterThanZero_noMatch() throws Exception {
+        // Schema registration
+        mDb1.setSchemaAsync(
+                        new SetSchemaRequest.Builder().addSchemas(AppSearchEmail.SCHEMA).build())
+                .get();
+
+        // Index a document
+        AppSearchEmail inEmail =
+                new AppSearchEmail.Builder("namespace", "id1")
+                        .setFrom("from@example.com")
+                        .setTo("to1@example.com", "to2@example.com")
+                        .setSubject("testPut example")
+                        .setBody("This is the body of the testPut email")
+                        .build();
+        checkIsBatchResultSuccess(
+                mDb1.putAsync(
+                        new PutDocumentsRequest.Builder().addGenericDocuments(inEmail).build()));
+
+        // Query with resultCountPerPage = 5, but searching for a query that has no matches.
+        SearchResults searchResults =
+                mDb1.search(
+                        "nonMatchingQueryString",
+                        new SearchSpec.Builder()
+                                .setTermMatch(SearchSpec.TERM_MATCH_EXACT_ONLY)
+                                .setResultCountPerPage(5)
+                                .build());
+
+        // Get the first page. It should return 0 results.
+        List<SearchResult> results = searchResults.getNextPageAsync().get();
+        assertThat(results).isEmpty();
     }
 }

@@ -16,15 +16,15 @@
 
 package androidx.glance.wear.parcel
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
+import androidx.collection.IntSet
 import androidx.compose.remote.creation.compose.capture.CapturedDocument
 import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
 import androidx.compose.remote.creation.compose.capture.captureSingleRemoteDocument
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
-import androidx.compose.remote.creation.profile.RcPlatformProfiles
 import androidx.compose.runtime.Composable
+import androidx.glance.wear.GlanceWearProfiles
 import androidx.glance.wear.core.WearWidgetRawContent
 
 internal object WearWidgetCapture {
@@ -33,18 +33,17 @@ internal object WearWidgetCapture {
     /**
      * Directly capture a RemoteCompose document and gather the pending intents used in the layout.
      */
-    // TODO: b/514955693 - Remove lint suppress once RemoteCreationDisplayInfo is public.
-    @SuppressLint("RestrictedApiAndroidX")
     internal suspend fun capture(
         context: Context,
         creationDisplayInfo: RemoteCreationDisplayInfo,
+        supportedOperations: IntSet,
         content: @Composable @RemoteComposable () -> Unit,
     ): WearWidgetRawContent {
         val remoteDocument =
             captureSingleRemoteDocument(
                 context = context,
                 creationDisplayInfo = creationDisplayInfo,
-                profile = RcPlatformProfiles.WEAR_WIDGETS,
+                profile = GlanceWearProfiles.wearWidgets(supportedOperations),
                 content = content,
             )
         return WearWidgetRawContent(

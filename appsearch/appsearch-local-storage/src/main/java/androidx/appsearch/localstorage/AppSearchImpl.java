@@ -40,6 +40,7 @@ import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.app.AppSearchBatchResult;
 import androidx.appsearch.app.AppSearchBlobHandle;
 import androidx.appsearch.app.AppSearchResult;
@@ -146,6 +147,7 @@ import com.google.android.icing.proto.StatusProto;
 import com.google.android.icing.proto.StorageInfoProto;
 import com.google.android.icing.proto.StorageInfoResultProto;
 import com.google.android.icing.proto.SuggestionResponse;
+import com.google.android.icing.proto.SuggestionSpecProto;
 import com.google.android.icing.proto.TypePropertyMask;
 import com.google.android.icing.proto.UsageReport;
 
@@ -201,9 +203,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * </ul>
  *
  * <p>This class is thread safe.
- *
- * @exportToFramework:hide
  */
+@HideInPlatform
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @WorkerThread
 public final class AppSearchImpl implements Closeable {
@@ -229,8 +230,6 @@ public final class AppSearchImpl implements Closeable {
     @GuardedBy("mReadWriteLock")
     @VisibleForTesting
     IcingSearchEngineInterface mIcingSearchEngineLocked;
-
-    private boolean mResetVisibilityStore;
 
     @NonNull private final LaunchVmFeatures mLaunchVmFeatures;
 
@@ -421,8 +420,6 @@ public final class AppSearchImpl implements Closeable {
                 mIcingSearchEngineLocked = appSearchUserPlugins.getIcingSearchEngine();
                 maxInitRetries = 2;
             }
-            mResetVisibilityStore =
-                    Flags.enableResetVisibilityStore() || mLaunchVmFeatures.isVmEnabled();
 
             // The core initialization procedure. If any part of this fails, we bail into
             // resetLocked(), deleting all data (but hopefully allowing AppSearchImpl to come up).
@@ -430,8 +427,10 @@ public final class AppSearchImpl implements Closeable {
                 LogUtil.piiTrace(TAG, "icingSearchEngine.initialize, request");
                 InitializeResultProto initializeResultProto = mIcingSearchEngineLocked.initialize();
                 if (callStatsBuilder != null) {
-                    callStatsBuilder.addGetVmLatencyMillis(
-                            initializeResultProto.getGetVmLatencyMs());
+                    callStatsBuilder
+                            .addGetVmLatencyMillis(initializeResultProto.getGetVmLatencyMs())
+                            .addIcingSearchEngineResponseBytes(
+                                    initializeResultProto.getResponseBytes());
                 }
                 while (maxInitRetries > 0 && !isSuccess(initializeResultProto.getStatus())) {
                     Log.e(TAG, String.format(
@@ -441,8 +440,10 @@ public final class AppSearchImpl implements Closeable {
                     --maxInitRetries;
                     initializeResultProto = mIcingSearchEngineLocked.initialize();
                     if (callStatsBuilder != null) {
-                        callStatsBuilder.addGetVmLatencyMillis(
-                                initializeResultProto.getGetVmLatencyMs());
+                        callStatsBuilder
+                                .addGetVmLatencyMillis(initializeResultProto.getGetVmLatencyMs())
+                                .addIcingSearchEngineResponseBytes(
+                                        initializeResultProto.getResponseBytes());
                     }
                 }
                 LogUtil.piiTrace(
@@ -483,7 +484,10 @@ public final class AppSearchImpl implements Closeable {
                 LogUtil.piiTrace(TAG, "getSchema, request");
                 GetSchemaResultProto schemaResultProto = mIcingSearchEngineLocked.getSchema();
                 if (callStatsBuilder != null) {
-                    callStatsBuilder.addGetVmLatencyMillis(schemaResultProto.getGetVmLatencyMs());
+                    callStatsBuilder
+                            .addGetVmLatencyMillis(schemaResultProto.getGetVmLatencyMs())
+                            .addIcingSearchEngineResponseBytes(
+                                    schemaResultProto.getResponseBytes());
                 }
                 // GetSchema may return NOT_FOUND if we've initialized an empty instance.
                 while (maxInitRetries > 0
@@ -496,8 +500,10 @@ public final class AppSearchImpl implements Closeable {
                     --maxInitRetries;
                     schemaResultProto = mIcingSearchEngineLocked.getSchema();
                     if (callStatsBuilder != null) {
-                        callStatsBuilder.addGetVmLatencyMillis(
-                                schemaResultProto.getGetVmLatencyMs());
+                        callStatsBuilder
+                                .addGetVmLatencyMillis(schemaResultProto.getGetVmLatencyMs())
+                                .addIcingSearchEngineResponseBytes(
+                                        schemaResultProto.getResponseBytes());
                     }
                 }
                 LogUtil.piiTrace(TAG, "getSchema, response", schemaResultProto.getStatus(),
@@ -510,7 +516,10 @@ public final class AppSearchImpl implements Closeable {
                 StorageInfoResultProto storageInfoResult =
                         mIcingSearchEngineLocked.getStorageInfo();
                 if (callStatsBuilder != null) {
-                    callStatsBuilder.addGetVmLatencyMillis(storageInfoResult.getGetVmLatencyMs());
+                    callStatsBuilder
+                            .addGetVmLatencyMillis(storageInfoResult.getGetVmLatencyMs())
+                            .addIcingSearchEngineResponseBytes(
+                                    storageInfoResult.getResponseBytes());
                 }
                 while (maxInitRetries > 0 && !isSuccess(storageInfoResult.getStatus())) {
                     Log.e(TAG, String.format(
@@ -520,8 +529,10 @@ public final class AppSearchImpl implements Closeable {
                     --maxInitRetries;
                     storageInfoResult = mIcingSearchEngineLocked.getStorageInfo();
                     if (callStatsBuilder != null) {
-                        callStatsBuilder.addGetVmLatencyMillis(
-                                storageInfoResult.getGetVmLatencyMs());
+                        callStatsBuilder
+                                .addGetVmLatencyMillis(storageInfoResult.getGetVmLatencyMs())
+                                .addIcingSearchEngineResponseBytes(
+                                        storageInfoResult.getResponseBytes());
                     }
                 }
                 LogUtil.piiTrace(
@@ -596,12 +607,10 @@ public final class AppSearchImpl implements Closeable {
                                     - prepareSchemaAndNamespacesLatencyStartMillis));
                 }
 
-                if (mResetVisibilityStore) {
-                    // Move initialize Visibility Store in the try-catch reset block. We will
-                    // trigger reset if we cannot create Visibility Store properly.
-                    visibilityStoreMap = initializeVisibilityStore(mRevocableFileDescriptorStore,
-                            initStatsBuilder, callStatsBuilder);
-                }
+                // Move initialize Visibility Store in the try-catch reset block. We will
+                // trigger reset if we cannot create Visibility Store properly.
+                visibilityStoreMap = initializeVisibilityStore(mRevocableFileDescriptorStore,
+                        initStatsBuilder, callStatsBuilder);
 
                 if (Flags.enableSchemasWipeoutAccountPropertyPaths()) {
                     mAccountStoreLocked = AccountStore.create(icingDir);
@@ -616,14 +625,7 @@ public final class AppSearchImpl implements Closeable {
                     initStatsBuilder.setStatusCode(e.getResultCode());
                 }
                 resetLocked(initStatsBuilder, callStatsBuilder);
-                if (mResetVisibilityStore) {
-                    // After reset Icing, we should build and initialize VisibilityStore as well.
-                    visibilityStoreMap = initializeVisibilityStore(mRevocableFileDescriptorStore,
-                            initStatsBuilder, callStatsBuilder);
-                }
-            }
-            if (!mResetVisibilityStore) {
-                // Keep the old behaviour when flags are off.
+                // After reset Icing, we should build and initialize VisibilityStore as well.
                 visibilityStoreMap = initializeVisibilityStore(mRevocableFileDescriptorStore,
                         initStatsBuilder, callStatsBuilder);
             }
@@ -735,7 +737,6 @@ public final class AppSearchImpl implements Closeable {
             IcingSearchEngineInterface previousIcingSearchEngine = mIcingSearchEngineLocked;
             mIcingSearchEngineLocked = icingSearchEngineLocked;
             mLaunchVmFeatures.setVmEnabled(isVm1Enabled);
-            mResetVisibilityStore = Flags.enableResetVisibilityStore() || isVm1Enabled;
             return previousIcingSearchEngine;
         } finally {
             mReadWriteLock.writeLock().unlock();
@@ -880,7 +881,6 @@ public final class AppSearchImpl implements Closeable {
             mReadWriteLock.writeLock().unlock();
         }
     }
-
 
     /**
      * Updates the AppSearch schema for this app and dispatches change notifications, without
@@ -1170,6 +1170,14 @@ public final class AppSearchImpl implements Closeable {
                     setSchemaRequestProto);
             setSchemaResultProto =
                     mIcingSearchEngineLocked.setSchemaWithRequestProto(setSchemaRequestProto);
+            if (callStatsBuilder != null) {
+                callStatsBuilder
+                        .addGetVmLatencyMillis(setSchemaResultProto.getGetVmLatencyMs())
+                        .addIcingSearchEngineRequestBytes(
+                                setSchemaResultProto.getRequestBytes())
+                        .addIcingSearchEngineResponseBytes(
+                                setSchemaResultProto.getResponseBytes());
+            }
             deletedPrefixedTypes =
                     new ArraySet<>(setSchemaResultProto.getDeletedSchemaTypesList());
         } else {
@@ -1196,9 +1204,6 @@ public final class AppSearchImpl implements Closeable {
                     .setSkippedIcingInteraction(!containsSchemaChange);
             AppSearchLoggerHelper.copyNativeStats(setSchemaResultProto,
                     setSchemaStatsBuilder);
-        }
-        if (callStatsBuilder != null) {
-            callStatsBuilder.addGetVmLatencyMillis(setSchemaResultProto.getGetVmLatencyMs());
         }
 
         boolean isFailedPrecondition = setSchemaResultProto.getStatus().getCode()
@@ -1481,8 +1486,10 @@ public final class AppSearchImpl implements Closeable {
             GetAllNamespacesResultProto getAllNamespacesResultProto =
                     mIcingSearchEngineLocked.getAllNamespaces();
             if (callStatsBuilder != null) {
-                callStatsBuilder.addGetVmLatencyMillis(
-                        getAllNamespacesResultProto.getGetVmLatencyMs());
+                callStatsBuilder
+                        .addGetVmLatencyMillis(getAllNamespacesResultProto.getGetVmLatencyMs())
+                        .addIcingSearchEngineResponseBytes(
+                                getAllNamespacesResultProto.getResponseBytes());
             }
             LogUtil.piiTrace(
                     TAG,
@@ -1565,7 +1572,8 @@ public final class AppSearchImpl implements Closeable {
      *                                messages to observers for this change.
      * @param persistType             The persist type used to call PersistToDisk inside Icing at
      *                                the end of the Put request. If UNKNOWN, PersistToDisk will not
-     *                                be called. See also {@link #persistToDisk(PersistType.Code)}.
+     *                                be called. See also {@link #persistToDisk(String, int,
+     *                                PersistType.Code, AppSearchLogger, CallStats.Builder)}
      * @throws AppSearchException on IcingSearchEngine error.
      */
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
@@ -1677,7 +1685,8 @@ public final class AppSearchImpl implements Closeable {
      *                                messages to observers for this change.
      * @param persistType             The persist type used to call PersistToDisk inside Icing at
      *                                the end of the Put request. If UNKNOWN, PersistToDisk will not
-     *                                be called. See also {@link #persistToDisk(PersistType.Code)}.
+     *                                be called. See also
+     *                                {@link #persistToDisk(String, int, PersistType.Code, AppSearchLogger, CallStats.Builder)}.
      * @throws AppSearchException on IcingSearchEngine error.
      */
     private void batchPutDocuments(
@@ -1752,7 +1761,12 @@ public final class AppSearchImpl implements Closeable {
             //   ground truths and derived files have changed or not.
             mNeedsPersistToDisk.set(true);
             if (callStatsBuilder != null) {
-                callStatsBuilder.addGetVmLatencyMillis(batchPutResultProto.getGetVmLatencyMs());
+                callStatsBuilder
+                        .addGetVmLatencyMillis(batchPutResultProto.getGetVmLatencyMs())
+                        .addIcingSearchEngineRequestBytes(
+                                batchPutResultProto.getRequestBytes())
+                        .addIcingSearchEngineResponseBytes(
+                                batchPutResultProto.getResponseBytes());
             }
             // TODO(b/394875109) We can provide a better debug information for fast trace here.
             LogUtil.piiTrace(
@@ -1878,7 +1892,8 @@ public final class AppSearchImpl implements Closeable {
      * @throws AppSearchException on IcingSearchEngine error.
      *
      * @deprecated use {@link #batchPutDocuments(String, String, List,
-     *                          AppSearchBatchResult.Builder, boolean, AppSearchLogger)}
+     *                          AppSearchBatchResult.Builder, boolean, AppSearchLogger,
+     *                          PersistType.Code, CallStats.Builder)}
      */
     // TODO(b/394875109) keep this for now to make code sync easier.
     @Deprecated
@@ -1947,7 +1962,12 @@ public final class AppSearchImpl implements Closeable {
 
             // Logging stats
             if (callStatsBuilder != null) {
-                callStatsBuilder.addGetVmLatencyMillis(putResultProto.getGetVmLatencyMs());
+                callStatsBuilder
+                        .addGetVmLatencyMillis(putResultProto.getGetVmLatencyMs())
+                        .addIcingSearchEngineRequestBytes(
+                                putResultProto.getRequestBytes())
+                        .addIcingSearchEngineResponseBytes(
+                                putResultProto.getResponseBytes());
             }
             if (pStatsBuilder != null) {
                 pStatsBuilder
@@ -2099,7 +2119,12 @@ public final class AppSearchImpl implements Closeable {
             BlobProto result = mIcingSearchEngineLocked.openWriteBlob(blobHandleProto);
             mNeedsPersistToDisk.set(true);
             if (callStatsBuilder != null) {
-                callStatsBuilder.addGetVmLatencyMillis(result.getGetVmLatencyMs());
+                callStatsBuilder
+                        .addGetVmLatencyMillis(result.getGetVmLatencyMs())
+                        .addIcingSearchEngineRequestBytes(
+                                blobHandleProto.getSerializedSize())
+                        .addIcingSearchEngineResponseBytes(
+                                result.getSerializedSize());
             }
             pfd = retrieveFileDescriptorLocked(result,
                     ParcelFileDescriptor.MODE_CREATE | ParcelFileDescriptor.MODE_READ_WRITE);
@@ -2152,15 +2177,21 @@ public final class AppSearchImpl implements Closeable {
             }
             verifyCallingBlobHandle(packageName, databaseName, handle);
 
-            BlobProto result = mIcingSearchEngineLocked.removeBlob(
-                    BlobHandleToProtoConverter.toBlobHandleProto(handle));
+            PropertyProto.BlobHandleProto blobHandleProto =
+                    BlobHandleToProtoConverter.toBlobHandleProto(handle);
+            BlobProto result = mIcingSearchEngineLocked.removeBlob(blobHandleProto);
             if (callStatsBuilder != null) {
-                callStatsBuilder.addGetVmLatencyMillis(result.getGetVmLatencyMs());
+                callStatsBuilder
+                        .addGetVmLatencyMillis(result.getGetVmLatencyMs())
+                        .addIcingSearchEngineRequestBytes(
+                                blobHandleProto.getSerializedSize())
+                        .addIcingSearchEngineResponseBytes(
+                                result.getSerializedSize());
             }
             checkSuccess(result.getStatus());
             mNeedsPersistToDisk.set(true);
             if (Flags.enableAppSearchManageBlobFiles()) {
-                File blobFileToRemove = new File(mBlobFilesDir, result.getFileName());
+                File blobFileToRemove = getSafeBlobFileLocked(result.getFileName());
                 if (!blobFileToRemove.delete()) {
                     throw new AppSearchException(AppSearchResult.RESULT_IO_ERROR,
                             "Cannot delete the blob file: " + blobFileToRemove.getName());
@@ -2202,7 +2233,7 @@ public final class AppSearchImpl implements Closeable {
                 BlobHandleToProtoConverter.toBlobHandleProto(handle));
         checkSuccess(result.getStatus());
         mNeedsPersistToDisk.set(true);
-        File blobFile = new File(mBlobFilesDir, result.getFileName());
+        File blobFile = getSafeBlobFileLocked(result.getFileName());
         boolean fileExists = blobFile.exists();
         boolean digestMatches = false;
 
@@ -2239,7 +2270,7 @@ public final class AppSearchImpl implements Closeable {
                 throw new AppSearchException(AppSearchResult.RESULT_NOT_FOUND,
                         "Cannot find the blob for handle: " + handle);
             } else {
-                File blobFileToRemove = new File(mBlobFilesDir, removeResult.getFileName());
+                File blobFileToRemove = getSafeBlobFileLocked(removeResult.getFileName());
                 if (!blobFileToRemove.delete()) {
                     throw new AppSearchException(AppSearchResult.RESULT_IO_ERROR,
                             "Cannot delete the blob file: " + blobFileToRemove.getName());
@@ -2288,11 +2319,17 @@ public final class AppSearchImpl implements Closeable {
                 verifyBlobIntegrityLocked(handle);
             }
 
-            BlobProto result = mIcingSearchEngineLocked.commitBlob(
-                    BlobHandleToProtoConverter.toBlobHandleProto(handle));
+            PropertyProto.BlobHandleProto blobHandleProto =
+                    BlobHandleToProtoConverter.toBlobHandleProto(handle);
+            BlobProto result = mIcingSearchEngineLocked.commitBlob(blobHandleProto);
 
             if (callStatsBuilder != null) {
-                callStatsBuilder.addGetVmLatencyMillis(result.getGetVmLatencyMs());
+                callStatsBuilder
+                        .addGetVmLatencyMillis(result.getGetVmLatencyMs())
+                        .addIcingSearchEngineRequestBytes(
+                                blobHandleProto.getSerializedSize())
+                        .addIcingSearchEngineResponseBytes(
+                                result.getSerializedSize());
             }
             checkSuccess(result.getStatus());
             mNeedsPersistToDisk.set(true);
@@ -2342,10 +2379,16 @@ public final class AppSearchImpl implements Closeable {
             }
             verifyCallingBlobHandle(packageName, databaseName, handle);
             mRevocableFileDescriptorStore.checkBlobStoreLimit(packageName);
-            BlobProto result = mIcingSearchEngineLocked.openReadBlob(
-                    BlobHandleToProtoConverter.toBlobHandleProto(handle));
+            PropertyProto.BlobHandleProto blobHandleProto =
+                    BlobHandleToProtoConverter.toBlobHandleProto(handle);
+            BlobProto result = mIcingSearchEngineLocked.openReadBlob(blobHandleProto);
             if (callStatsBuilder != null) {
-                callStatsBuilder.addGetVmLatencyMillis(result.getGetVmLatencyMs());
+                callStatsBuilder
+                        .addGetVmLatencyMillis(result.getGetVmLatencyMs())
+                        .addIcingSearchEngineRequestBytes(
+                                blobHandleProto.getSerializedSize())
+                        .addIcingSearchEngineResponseBytes(
+                                result.getSerializedSize());
             }
             ParcelFileDescriptor pfd = retrieveFileDescriptorLocked(result,
                     ParcelFileDescriptor.MODE_READ_ONLY);
@@ -2413,7 +2456,12 @@ public final class AppSearchImpl implements Closeable {
 
             BlobProto result = mIcingSearchEngineLocked.openReadBlob(blobHandleProto);
             if (callStatsBuilder != null) {
-                callStatsBuilder.addGetVmLatencyMillis(result.getGetVmLatencyMs());
+                callStatsBuilder
+                        .addGetVmLatencyMillis(result.getGetVmLatencyMs())
+                        .addIcingSearchEngineRequestBytes(
+                                blobHandleProto.getSerializedSize())
+                        .addIcingSearchEngineResponseBytes(
+                                result.getSerializedSize());
             }
             ParcelFileDescriptor pfd = retrieveFileDescriptorLocked(result,
                     ParcelFileDescriptor.MODE_READ_ONLY);
@@ -2508,6 +2556,33 @@ public final class AppSearchImpl implements Closeable {
     }
 
     /**
+     * Resolves the given blob file name to a {@link File} object, verifying that it resides inside
+     * the designated blob files directory to prevent path traversal attempts.
+     *
+     * @param fileName The name of the blob file to resolve.
+     * @return The resolved {@link File} object.
+     * @throws AppSearchException if a path traversal attempt is detected.
+     * @throws IOException if an I/O error occurs while resolving canonical paths.
+     */
+    @NonNull
+    @GuardedBy("mReadWriteLock")
+    private File getSafeBlobFileLocked(@NonNull String fileName)
+            throws AppSearchException, IOException {
+        File blobFile = new File(mBlobFilesDir, fileName);
+        String canonicalBlobFilePath = blobFile.getCanonicalPath();
+        String canonicalBlobFilesDirPath = mBlobFilesDir.getCanonicalPath();
+        if (!canonicalBlobFilesDirPath.endsWith(File.separator)) {
+            canonicalBlobFilesDirPath += File.separator;
+        }
+        if (!canonicalBlobFilePath.startsWith(canonicalBlobFilesDirPath)) {
+            throw new AppSearchException(
+                    AppSearchResult.RESULT_SECURITY_ERROR,
+                    "Path traversal detected in blob file name: " + fileName);
+        }
+        return blobFile;
+    }
+
+    /**
      * Retrieves the {@link ParcelFileDescriptor} from a {@link BlobProto}.
      *
      * <p>This method handles retrieving the actual file descriptor from the provided
@@ -2526,7 +2601,7 @@ public final class AppSearchImpl implements Closeable {
             BlobProto blobProto, int mode) throws AppSearchException, IOException {
         checkSuccess(blobProto.getStatus());
         if (Flags.enableAppSearchManageBlobFiles()) {
-            File blobFile = new File(mBlobFilesDir, blobProto.getFileName());
+            File blobFile = getSafeBlobFileLocked(blobProto.getFileName());
             return ParcelFileDescriptor.open(blobFile, mode);
         } else {
             return ParcelFileDescriptor.adoptFd(blobProto.getFileDescriptor());
@@ -2860,13 +2935,17 @@ public final class AppSearchImpl implements Closeable {
                 mIcingSearchEngineLocked.get(finalNamespace, id, getResultSpec);
         LogUtil.piiTrace(TAG, "getDocument, response", getResultProto.getStatus(), getResultProto);
         if (callStatsBuilder != null) {
-            callStatsBuilder.addGetVmLatencyMillis(getResultProto.getGetVmLatencyMs());
+            callStatsBuilder
+                    .addGetVmLatencyMillis(getResultProto.getGetVmLatencyMs())
+                    .addIcingSearchEngineRequestBytes(
+                            getResultProto.getRequestBytes())
+                    .addIcingSearchEngineResponseBytes(
+                            getResultProto.getResponseBytes());
         }
         checkSuccess(getResultProto.getStatus());
 
         return getResultProto.getDocument();
     }
-
 
     /*
      * Returns a BatchGetResultProto from Icing. It contains GetResultProto for each id.
@@ -2888,7 +2967,12 @@ public final class AppSearchImpl implements Closeable {
         BatchGetResultProto batchGetResultProto =
                 mIcingSearchEngineLocked.batchGet(getResultSpec);
         if (callStatsBuilder != null) {
-            callStatsBuilder.addGetVmLatencyMillis(batchGetResultProto.getGetVmLatencyMs());
+            callStatsBuilder
+                    .addGetVmLatencyMillis(batchGetResultProto.getGetVmLatencyMs())
+                    .addIcingSearchEngineRequestBytes(
+                            batchGetResultProto.getRequestBytes())
+                    .addIcingSearchEngineResponseBytes(
+                            batchGetResultProto.getResponseBytes());
         }
         LogUtil.piiTrace(TAG, "getDocument, response",
                 batchGetResultProto.getStatus(),
@@ -3170,7 +3254,12 @@ public final class AppSearchImpl implements Closeable {
         SearchResultProto searchResultProto = mIcingSearchEngineLocked.search(
                 searchSpec, scoringSpec, resultSpec);
         if (callStatsBuilder != null) {
-            callStatsBuilder.addGetVmLatencyMillis(searchResultProto.getGetVmLatencyMs());
+            callStatsBuilder
+                    .addGetVmLatencyMillis(searchResultProto.getGetVmLatencyMs())
+                    .addIcingSearchEngineRequestBytes(
+                            searchResultProto.getRequestBytes())
+                    .addIcingSearchEngineResponseBytes(
+                            searchResultProto.getResponseBytes());
         }
         LogUtil.piiTrace(
                 TAG, "search, response", searchResultProto.getResultsCount(), searchResultProto);
@@ -3180,25 +3269,25 @@ public final class AppSearchImpl implements Closeable {
                     searchResultProto.getQueryStats().getLatencyMs());
         }
 
-
-        if (!Flags.enableClientSidePagination()) {
-            long nextPageToken = searchResultProto.getNextPageToken();
-            if (nextPageToken != SearchResultPage.EMPTY_PAGE_TOKEN
-                    && searchResultProto.getResultsCount() > 0
-                    && searchResultProto.getResultsCount() < resultSpec.getNumPerPage()) {
-                // Did not get a full page of results in the initial search. Do getNextPage until we
-                // get a full result page or we run out of results.
-                SearchResultProto.Builder finalSearchResultProtoBuilder =
-                        SearchResultProto.newBuilder(searchResultProto);
-                retrieveMoreResultsLocked(
-                        nextPageToken,
-                        /* remainingResultCount= */ resultSpec.getNumPerPage()
-                                - searchResultProto.getResultsCount(),
-                        finalSearchResultProtoBuilder,
-                        queryStatsBuilder,
-                        callStatsBuilder);
-                searchResultProto = finalSearchResultProtoBuilder.build();
-            }
+        long nextPageToken = searchResultProto.getNextPageToken();
+        if (nextPageToken != SearchResultPage.EMPTY_PAGE_TOKEN
+                && searchResultProto.getResultsCount() > 0
+                && searchResultProto.getResultsCount() < resultSpec.getNumPerPage()) {
+            // Did not get a full page of results in the initial search. Do getNextPage until we
+            // get a full result page, hit maxAccumulatedResultBytes limit, or we run out of
+            // results.
+            SearchResultProto.Builder finalSearchResultProtoBuilder =
+                    SearchResultProto.newBuilder(searchResultProto);
+            int initialResultBytes = searchResultProto.getResponseBytes();
+            retrieveMoreResultsLocked(
+                    nextPageToken,
+                    /* remainingResultCount= */ resultSpec.getNumPerPage()
+                            - searchResultProto.getResultsCount(),
+                    initialResultBytes,
+                    finalSearchResultProtoBuilder,
+                    queryStatsBuilder,
+                    callStatsBuilder);
+            searchResultProto = finalSearchResultProtoBuilder.build();
         }
         if (queryStatsBuilder != null) {
             queryStatsBuilder.setStatusCode(statusProtoToResultCode(searchResultProto.getStatus()));
@@ -3219,6 +3308,7 @@ public final class AppSearchImpl implements Closeable {
      * {@code searchResultProtoBuilder}.
      */
     private void retrieveMoreResultsLocked(long nextPageToken, int remainingResultCount,
+            int initialResultBytes,
             SearchResultProto.@NonNull Builder searchResultProtoBuilder,
             QueryStats.@Nullable Builder queryStatsBuilder,
             CallStats.@Nullable Builder callStatsBuilder) throws AppSearchException {
@@ -3226,7 +3316,13 @@ public final class AppSearchImpl implements Closeable {
         int totalAdditionalResults = 0;
         long additionalPageRetrievalLatencyStartMillis = SystemClock.elapsedRealtime();
 
-        while (nextPageToken != SearchResultPage.EMPTY_PAGE_TOKEN && remainingResultCount > 0) {
+        int accumulatedResultBytes = initialResultBytes;
+        int maxAccumulatedResultBytes = mConfig.getMaxAccumulatedResultBytes();
+
+        while (nextPageToken != SearchResultPage.EMPTY_PAGE_TOKEN
+                && remainingResultCount > 0
+                && (!Flags.enableClientSidePagination()
+                        || accumulatedResultBytes < maxAccumulatedResultBytes)) {
             GetNextPageRequestProto getNextPageRequest = GetNextPageRequestProto.newBuilder()
                     .setNextPageToken(nextPageToken)
                     .setMaxResultsToRetrieveFromPage(remainingResultCount)
@@ -3235,7 +3331,12 @@ public final class AppSearchImpl implements Closeable {
             SearchResultProto nextResultPageProto = mIcingSearchEngineLocked.getNextPage(
                     getNextPageRequest);
             if (callStatsBuilder != null) {
-                callStatsBuilder.addGetVmLatencyMillis(nextResultPageProto.getGetVmLatencyMs());
+                callStatsBuilder
+                        .addGetVmLatencyMillis(nextResultPageProto.getGetVmLatencyMs())
+                        .addIcingSearchEngineRequestBytes(
+                                nextResultPageProto.getRequestBytes())
+                        .addIcingSearchEngineResponseBytes(
+                                nextResultPageProto.getResponseBytes());
             }
             LogUtil.piiTrace(
                     TAG,
@@ -3244,6 +3345,7 @@ public final class AppSearchImpl implements Closeable {
                     nextResultPageProto);
             checkSuccess(nextResultPageProto.getStatus());
 
+            accumulatedResultBytes += nextResultPageProto.getResponseBytes();
             ++numAdditionalPages;
             nextPageToken = nextResultPageProto.getNextPageToken();
             mergeSearchResultProtos(nextResultPageProto, searchResultProtoBuilder);
@@ -3369,10 +3471,17 @@ public final class AppSearchImpl implements Closeable {
                 return new ArrayList<>();
             }
 
+            SuggestionSpecProto suggestionSpecProto =
+                    searchSuggestionSpecToProtoConverter.toSearchSuggestionSpecProto();
             SuggestionResponse response = mIcingSearchEngineLocked.searchSuggestions(
-                    searchSuggestionSpecToProtoConverter.toSearchSuggestionSpecProto());
+                    suggestionSpecProto);
             if (callStatsBuilder != null) {
-                callStatsBuilder.addGetVmLatencyMillis(response.getGetVmLatencyMs());
+                callStatsBuilder
+                        .addGetVmLatencyMillis(response.getGetVmLatencyMs())
+                        .addIcingSearchEngineRequestBytes(
+                                response.getRequestBytes())
+                        .addIcingSearchEngineResponseBytes(
+                                response.getResponseBytes());
             }
             checkSuccess(response.getStatus());
             List<SearchSuggestionResult> suggestions =
@@ -3485,7 +3594,12 @@ public final class AppSearchImpl implements Closeable {
                         .build();
             }
             if (callStatsBuilder != null) {
-                callStatsBuilder.addGetVmLatencyMillis(searchResultProto.getGetVmLatencyMs());
+                callStatsBuilder
+                        .addGetVmLatencyMillis(searchResultProto.getGetVmLatencyMs())
+                        .addIcingSearchEngineRequestBytes(
+                                searchResultProto.getRequestBytes())
+                        .addIcingSearchEngineResponseBytes(
+                                searchResultProto.getResponseBytes());
             }
             LogUtil.piiTrace(
                     TAG,
@@ -3494,21 +3608,28 @@ public final class AppSearchImpl implements Closeable {
                     searchResultProto);
             checkSuccess(searchResultProto.getStatus());
 
-            if (!Flags.enableClientSidePagination()) {
-                int remainingResultCount = searchResultProto.getQueryStats().getRequestedPageSize()
-                        - searchResultProto.getResultsCount();
-                if (nextPageToken != SearchResultPage.EMPTY_PAGE_TOKEN
-                        && searchResultProto.getResultsCount() > 0
-                        && remainingResultCount > 0) {
-                    SearchResultProto.Builder finalSearchResultsBuilder =
-                            SearchResultProto.newBuilder(searchResultProto);
-                    // Did not get a full page of results during the initial getNextPage. Do more
-                    // getNextPage calls until we get a full result page or we run out of results.
-                    retrieveMoreResultsLocked(searchResultProto.getNextPageToken(),
-                            remainingResultCount, finalSearchResultsBuilder, queryStatsBuilder,
-                            callStatsBuilder);
-                    searchResultProto = finalSearchResultsBuilder.build();
-                }
+            int remainingResultCount =
+                    Flags.enableClientSidePagination()
+                            ? maxResults - searchResultProto.getResultsCount()
+                            : searchResultProto.getQueryStats().getRequestedPageSize()
+                                    - searchResultProto.getResultsCount();
+            if (nextPageToken != SearchResultPage.EMPTY_PAGE_TOKEN
+                    && searchResultProto.getResultsCount() > 0
+                    && remainingResultCount > 0) {
+                SearchResultProto.Builder finalSearchResultsBuilder =
+                        SearchResultProto.newBuilder(searchResultProto);
+                int initialResultBytes = searchResultProto.getResponseBytes();
+                // Did not get a full page of results during the initial getNextPage. Do more
+                // getNextPage calls until we get a full result page, hit maxAccumulatedResultBytes
+                // limit, or run out of results.
+                retrieveMoreResultsLocked(
+                        searchResultProto.getNextPageToken(),
+                        remainingResultCount,
+                        initialResultBytes,
+                        finalSearchResultsBuilder,
+                        queryStatsBuilder,
+                        callStatsBuilder);
+                searchResultProto = finalSearchResultsBuilder.build();
             }
             if (queryStatsBuilder != null) {
                 queryStatsBuilder.setStatusCode(statusProtoToResultCode(
@@ -3532,16 +3653,6 @@ public final class AppSearchImpl implements Closeable {
                             Preconditions.checkNotNull(mNextPageTokensLocked.get(packageName));
                     nextPageTokensForPackage.remove(nextPageToken);
                 }
-            }
-
-            // In normal use case, the page token is guaranteed to be valid, so if page token not
-            // found flag is true, then it is mostly caused by pagination cache eviction. Therefore,
-            // throw an exception indicating that the search and pagination is aborted.
-            if (Flags.enableResultAborted()
-                    && Flags.enableThrowExceptionForNativeNotFoundPageToken()
-                    && searchResultProto.getPageTokenNotFound()) {
-                throw new AppSearchException(AppSearchResult.RESULT_ABORTED,
-                        "Page token not found. It is usually caused by pagination cache eviction.");
             }
 
             long rewriteSearchResultLatencyStartMillis = SystemClock.elapsedRealtime();
@@ -3635,11 +3746,20 @@ public final class AppSearchImpl implements Closeable {
      * @return a {@link HandleExpiredDocumentsResultProto} object with success code
      * @throws AppSearchException if Icing failed to handle expired documents
      */
-    public @NonNull HandleExpiredDocumentsResultProto handleExpiredDocuments()
-            throws AppSearchException {
+    public @NonNull HandleExpiredDocumentsResultProto handleExpiredDocuments(
+            CallStats.@Nullable Builder callStatsBuilder) throws AppSearchException {
+        long totalLatencyStartMillis = SystemClock.elapsedRealtime();
+        long javaLockAcquisitionEndTimeMillis = 0;
         mReadWriteLock.writeLock().lock();
         try {
+            javaLockAcquisitionEndTimeMillis = SystemClock.elapsedRealtime();
             throwIfClosedLocked();
+            if (callStatsBuilder != null) {
+                callStatsBuilder
+                        .setLastBlockingOperation(mLastReadOrWriteOperationLocked)
+                        .setLastBlockingOperationLatencyMillis(
+                                mLastReadOrWriteOperationLatencyMillisLocked);
+            }
 
             HandleExpiredDocumentsResultProto resultProto =
                     mIcingSearchEngineLocked.handleExpiredDocuments();
@@ -3653,6 +3773,12 @@ public final class AppSearchImpl implements Closeable {
 
             return resultProto;
         } finally {
+            logWriteOperationLatencyLocked(
+                    totalLatencyStartMillis,
+                    javaLockAcquisitionEndTimeMillis,
+                    /* totalLatencyEndMillis= */ SystemClock.elapsedRealtime(),
+                    BaseStats.INTERNAL_CALL_TYPE_HANDLE_EXPIRED_DOCUMENTS_JOB,
+                    callStatsBuilder);
             mReadWriteLock.writeLock().unlock();
         }
     }
@@ -3665,11 +3791,20 @@ public final class AppSearchImpl implements Closeable {
      * @throws AppSearchException if Icing failed to maintain ANN index.
      */
     public @NonNull MaintainAnnIndexResultProto maintainAnnIndex(
-            @NonNull MaintainAnnIndexOptions options)
+            @NonNull MaintainAnnIndexOptions options, CallStats.@Nullable Builder callStatsBuilder)
             throws AppSearchException {
+        long totalLatencyStartMillis = SystemClock.elapsedRealtime();
+        long javaLockAcquisitionEndTimeMillis = 0;
         mReadWriteLock.writeLock().lock();
         try {
+            javaLockAcquisitionEndTimeMillis = SystemClock.elapsedRealtime();
             throwIfClosedLocked();
+            if (callStatsBuilder != null) {
+                callStatsBuilder
+                        .setLastBlockingOperation(mLastReadOrWriteOperationLocked)
+                        .setLastBlockingOperationLatencyMillis(
+                                mLastReadOrWriteOperationLatencyMillisLocked);
+            }
 
             MaintainAnnIndexResultProto resultProto =
                     mIcingSearchEngineLocked.maintainAnnIndex(options);
@@ -3683,6 +3818,12 @@ public final class AppSearchImpl implements Closeable {
 
             return resultProto;
         } finally {
+            logWriteOperationLatencyLocked(
+                    totalLatencyStartMillis,
+                    javaLockAcquisitionEndTimeMillis,
+                    /* totalLatencyEndMillis= */ SystemClock.elapsedRealtime(),
+                    BaseStats.INTERNAL_CALL_TYPE_MAINTAIN_ANN_INDEX_JOB,
+                    callStatsBuilder);
             mReadWriteLock.writeLock().unlock();
         }
     }
@@ -3721,7 +3862,12 @@ public final class AppSearchImpl implements Closeable {
             LogUtil.piiTrace(TAG, "reportUsage, request", report.getDocumentUri(), report);
             ReportUsageResultProto result = mIcingSearchEngineLocked.reportUsage(report);
             if (callStatsBuilder != null) {
-                callStatsBuilder.addGetVmLatencyMillis(result.getGetVmLatencyMs());
+                callStatsBuilder
+                        .addGetVmLatencyMillis(result.getGetVmLatencyMs())
+                        .addIcingSearchEngineRequestBytes(
+                                result.getRequestBytes())
+                        .addIcingSearchEngineResponseBytes(
+                                result.getResponseBytes());
             }
             LogUtil.piiTrace(TAG, "reportUsage, response", result.getStatus(), result);
             checkSuccess(result.getStatus());
@@ -3783,7 +3929,12 @@ public final class AppSearchImpl implements Closeable {
                 GetResultProto getResult = mIcingSearchEngineLocked.get(
                         prefixedNamespace, documentId, GET_RESULT_SPEC_NO_PROPERTIES);
                 if (callStatsBuilder != null) {
-                    callStatsBuilder.addGetVmLatencyMillis(getResult.getGetVmLatencyMs());
+                    callStatsBuilder
+                            .addGetVmLatencyMillis(getResult.getGetVmLatencyMs())
+                            .addIcingSearchEngineRequestBytes(
+                                    getResult.getRequestBytes())
+                            .addIcingSearchEngineResponseBytes(
+                                    getResult.getResponseBytes());
                 }
                 LogUtil.piiTrace(TAG, "removeById, getResponse", getResult.getStatus(), getResult);
                 checkSuccess(getResult.getStatus());
@@ -3796,7 +3947,10 @@ public final class AppSearchImpl implements Closeable {
             DeleteResultProto deleteResultProto =
                     mIcingSearchEngineLocked.delete(prefixedNamespace, documentId);
             if (callStatsBuilder != null) {
-                callStatsBuilder.addGetVmLatencyMillis(deleteResultProto.getGetVmLatencyMs());
+                callStatsBuilder
+                        .addGetVmLatencyMillis(deleteResultProto.getGetVmLatencyMs())
+                        .addIcingSearchEngineResponseBytes(
+                                deleteResultProto.getResponseBytes());
             }
             LogUtil.piiTrace(
                     TAG, "removeById, response", deleteResultProto.getStatus(), deleteResultProto);
@@ -3981,7 +4135,12 @@ public final class AppSearchImpl implements Closeable {
                 mIcingSearchEngineLocked.deleteByQuery(finalSearchSpec,
                         returnDeletedDocumentInfo);
         if (callStatsBuilder != null) {
-            callStatsBuilder.addGetVmLatencyMillis(deleteResultProto.getGetVmLatencyMs());
+            callStatsBuilder
+                    .addGetVmLatencyMillis(deleteResultProto.getGetVmLatencyMs())
+                    .addIcingSearchEngineRequestBytes(
+                            deleteResultProto.getRequestBytes())
+                    .addIcingSearchEngineResponseBytes(
+                            deleteResultProto.getResponseBytes());
         }
         LogUtil.piiTrace(
                 TAG, "removeByQuery, response", deleteResultProto.getStatus(), deleteResultProto);
@@ -4159,7 +4318,10 @@ public final class AppSearchImpl implements Closeable {
             LogUtil.piiTrace(TAG, "getStorageInfo, request");
             StorageInfoResultProto storageInfoResult = mIcingSearchEngineLocked.getStorageInfo();
             if (callStatsBuilder != null) {
-                callStatsBuilder.addGetVmLatencyMillis(storageInfoResult.getGetVmLatencyMs());
+                callStatsBuilder
+                        .addGetVmLatencyMillis(storageInfoResult.getGetVmLatencyMs())
+                        .addIcingSearchEngineResponseBytes(
+                                storageInfoResult.getResponseBytes());
             }
             LogUtil.piiTrace(
                     TAG,
@@ -4314,8 +4476,18 @@ public final class AppSearchImpl implements Closeable {
                 if (Flags.enableAppSearchManageBlobFiles()) {
                     List<String> blobFileNames = blobStorageInfoProto.getBlobFileNamesList();
                     for (int j = 0; j < blobFileNames.size(); j++) {
-                        File blobFile = new File(mBlobFilesDir, blobFileNames.get(j));
-                        blobSizeBytes += blobFile.length();
+                        String blobFileName = blobFileNames.get(j);
+                        try {
+                            File blobFile = getSafeBlobFileLocked(blobFileName);
+                            blobSizeBytes += blobFile.length();
+                        } catch (AppSearchException | IOException e) {
+                            Log.e(
+                                    TAG,
+                                    "Path traversal/resolution error for blob storage info file"
+                                            + " name: "
+                                            + blobFileName,
+                                    e);
+                        }
                     }
                     blobCount += blobFileNames.size();
                 } else {
@@ -4411,8 +4583,10 @@ public final class AppSearchImpl implements Closeable {
                 mAccountStoreLocked.persistToDisk();
             }
             if (callStatsBuilder != null) {
-                callStatsBuilder.addGetVmLatencyMillis(
-                        persistToDiskResultProto.getGetVmLatencyMs());
+                callStatsBuilder
+                        .addGetVmLatencyMillis(persistToDiskResultProto.getGetVmLatencyMs())
+                        .addIcingSearchEngineResponseBytes(
+                                persistToDiskResultProto.getResponseBytes());
             }
             LogUtil.piiTrace(
                     TAG,
@@ -4669,7 +4843,10 @@ public final class AppSearchImpl implements Closeable {
         LogUtil.piiTrace(TAG, "icingSearchEngine.reset, request");
         ResetResultProto resetResultProto = mIcingSearchEngineLocked.reset();
         if (callStatsBuilder != null) {
-            callStatsBuilder.addGetVmLatencyMillis(resetResultProto.getGetVmLatencyMs());
+            callStatsBuilder
+                    .addGetVmLatencyMillis(resetResultProto.getGetVmLatencyMs())
+                    .addIcingSearchEngineResponseBytes(
+                            resetResultProto.getResponseBytes());
         }
         LogUtil.piiTrace(
                 TAG,
@@ -4818,7 +4995,10 @@ public final class AppSearchImpl implements Closeable {
         GetSchemaResultProto schemaProto = mIcingSearchEngineLocked.getSchema();
         LogUtil.piiTrace(TAG, "getSchema, response", schemaProto.getStatus(), schemaProto);
         if (callStatsBuilder != null) {
-            callStatsBuilder.addGetVmLatencyMillis(schemaProto.getGetVmLatencyMs());
+            callStatsBuilder
+                    .addGetVmLatencyMillis(schemaProto.getGetVmLatencyMs())
+                    .addIcingSearchEngineResponseBytes(
+                            schemaProto.getResponseBytes());
         }
         // TODO(b/161935693) check GetSchemaResultProto is success or not. Call reset() if it's not.
         // TODO(b/161935693) only allow GetSchemaResultProto NOT_FOUND on first run
@@ -5098,7 +5278,10 @@ public final class AppSearchImpl implements Closeable {
                     TAG,
                     "optimize, response", optimizeResultProto.getStatus(), optimizeResultProto);
             if (callStatsBuilder != null) {
-                callStatsBuilder.addGetVmLatencyMillis(optimizeResultProto.getGetVmLatencyMs());
+                callStatsBuilder
+                        .addGetVmLatencyMillis(optimizeResultProto.getGetVmLatencyMs())
+                        .addIcingSearchEngineResponseBytes(
+                                optimizeResultProto.getResponseBytes());
             }
             if (optimizeStatsBuilder != null) {
                 optimizeStatsBuilder.setStatusCode(
@@ -5120,10 +5303,22 @@ public final class AppSearchImpl implements Closeable {
                 List<String> blobFileNamesToRemove =
                         optimizeResultProto.getBlobFileNamesToRemoveList();
                 for (int i = 0; i < blobFileNamesToRemove.size(); i++) {
-                    File blobFileToRemove = new File(mBlobFilesDir, blobFileNamesToRemove.get(i));
-                    if (!blobFileToRemove.delete()) {
-                        Log.e(TAG, "Cannot delete the optimized blob file: "
-                                + blobFileToRemove.getName());
+                    String blobFileNameToRemove = blobFileNamesToRemove.get(i);
+                    try {
+                        File blobFileToRemove = getSafeBlobFileLocked(blobFileNameToRemove);
+                        if (!blobFileToRemove.delete()) {
+                            Log.e(
+                                    TAG,
+                                    "Cannot delete the optimized blob file: "
+                                            + blobFileToRemove.getName());
+                        }
+                    } catch (AppSearchException | IOException e) {
+                        Log.e(
+                                TAG,
+                                "Path traversal/resolution error for optimized blob file to"
+                                        + " remove: "
+                                        + blobFileNameToRemove,
+                                e);
                     }
                 }
             }

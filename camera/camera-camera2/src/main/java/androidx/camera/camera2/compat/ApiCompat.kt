@@ -16,11 +16,20 @@
 
 package androidx.camera.camera2.compat
 
+import android.content.Context
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CaptureRequest
+import android.hardware.camera2.CaptureResult
 import android.os.Build
+import android.util.Size
+import android.view.Display
 import android.view.Surface
+import android.view.WindowManager
 import androidx.annotation.RequiresApi
+import androidx.camera.camera2.pipe.FrameMetadata
+import androidx.camera.common.UnsafeWrapper
+import androidx.camera.common.unwrapAs
+import androidx.camera.core.impl.CameraCaptureResult
 
 @RequiresApi(Build.VERSION_CODES.N)
 internal object Api24Compat {
@@ -33,6 +42,40 @@ internal object Api24Compat {
         frameNumber: Long,
     ) {
         callback.onCaptureBufferLost(session, request, surface, frameNumber)
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.Q)
+internal object Api29Compat {
+    @JvmStatic
+    fun getActivePhysicalCameraId(result: CameraCaptureResult): String? {
+        val wrapper = result as? UnsafeWrapper
+        val physicalId =
+            wrapper
+                ?.unwrapAs<FrameMetadata>()
+                ?.get(CaptureResult.LOGICAL_MULTI_CAMERA_ACTIVE_PHYSICAL_ID)
+                ?: wrapper
+                    ?.unwrapAs<CaptureResult>()
+                    ?.get(CaptureResult.LOGICAL_MULTI_CAMERA_ACTIVE_PHYSICAL_ID)
+                ?: result.captureResult?.get(CaptureResult.LOGICAL_MULTI_CAMERA_ACTIVE_PHYSICAL_ID)
+        return physicalId?.ifEmpty { null }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.R)
+internal object Api30Compat {
+    @JvmStatic
+    fun getDisplaySize(context: Context, display: Display): Size {
+        val windowContext =
+            context
+                .createDisplayContext(display)
+                .createWindowContext(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, null)
+        val windowManager = windowContext.getSystemService(WindowManager::class.java)
+        val bounds =
+            checkNotNull(windowManager) { "WindowManager is not available." }
+                .maximumWindowMetrics
+                .bounds
+        return Size(bounds.width(), bounds.height())
     }
 }
 

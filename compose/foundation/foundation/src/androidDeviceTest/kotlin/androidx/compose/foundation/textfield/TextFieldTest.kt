@@ -92,6 +92,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalLocaleList
 import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.TextToolbar
@@ -176,7 +177,6 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Ignore
 import org.junit.Rule
@@ -187,7 +187,7 @@ import org.mockito.kotlin.mock
 @MediumTest
 @RunWith(ContextMenuFlagFlipperRunner::class)
 class TextFieldTest : FocusedWindowTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val inputMethodInterceptor = InputMethodInterceptor(rule)
     private val Tag = "textField"
@@ -305,7 +305,8 @@ class TextFieldTest : FocusedWindowTest {
                     BasicTextField(
                         value = "",
                         onValueChange = {},
-                        modifier = Modifier.weight(1f).onGloballyPositioned { size = it.size.width },
+                        modifier =
+                            Modifier.weight(1f).onGloballyPositioned { size = it.size.width },
                     )
                     Box(Modifier.size(boxSize))
                 }
@@ -365,7 +366,7 @@ class TextFieldTest : FocusedWindowTest {
                     baselineShift = BaselineShift.Superscript,
                     textGeometricTransform = TextGeometricTransform(2f, 3f),
                     localeList =
-                        LocaleList(Locale("sr-Latn-SR"), Locale("sr-Cyrl-SR"), Locale.current),
+                        LocaleList(Locale("sr-Latn-SR"), Locale("sr-Cyrl-SR"), Locale("en")),
                     background = Color.Blue,
                     textDecoration = TextDecoration.LineThrough,
                     shadow = Shadow(color = Color.Red, offset = Offset(2f, 2f), blurRadius = 4f),
@@ -1120,6 +1121,7 @@ class TextFieldTest : FocusedWindowTest {
                         style = textStyle,
                         density = density,
                         fontFamilyResolver = fontFamilyResolver,
+                        defaultLocaleList = LocalLocaleList.current,
                     )
                     .width
 
@@ -1157,6 +1159,7 @@ class TextFieldTest : FocusedWindowTest {
                         style = textStyle,
                         density = density,
                         fontFamilyResolver = fontFamilyResolver,
+                        defaultLocaleList = LocalLocaleList.current,
                     )
                     .width
 

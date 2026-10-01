@@ -19,6 +19,8 @@ package androidx.camera.core;
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntRange;
 import androidx.annotation.RestrictTo;
+import androidx.camera.core.impl.MutableConfig;
+import androidx.camera.core.impl.MutableOptionsBundle;
 import androidx.camera.core.impl.utils.futures.Futures;
 
 import com.google.common.util.concurrent.ListenableFuture;
@@ -57,6 +59,11 @@ public interface CameraControl {
      * set by either {@link ImageCapture#setFlashMode(int)} or
      * {@link ImageCapture.Builder#setFlashMode(int)}.
      *
+     * <p>Torch and low-light boost (see {@link #enableLowLightBoostAsync(boolean)}) are mutually
+     * exclusive and follow a "last setting wins" policy. Enabling the torch will automatically
+     * turn off low-light boost if it is active. Disabling the torch will not restore low-light
+     * boost.
+     *
      * @param torch true to turn on the torch, false to turn it off.
      * @return A {@link ListenableFuture} which is successful when the torch was changed to the
      * value specified. It fails when it is unable to change the torch state. Cancellation of
@@ -91,20 +98,25 @@ public interface CameraControl {
      * <p>Note that this mode may interact with other configurations:
      *
      * <ul>
-     * <li>When low-light boost is on, the flash or torch functionality may be unavailable.
+     * <li>Low-light boost and torch (see {@link #enableTorch(boolean)}) are mutually exclusive
+     * and follow a "last setting wins" policy. Enabling low-light boost will automatically turn
+     * off the torch if it is active, and enabling the torch will automatically turn off low-light
+     * boost.
+     * <li>When capturing a picture with {@link ImageCapture} while low-light boost is active,
+     * flash (if enabled by {@link ImageCapture#setFlashMode(int)}) is allowed to fire for the
+     * capture, and low-light boost will remain active for preview.
      * <li>When frame rate configuration results in an FPS exceeding 30, low-light boost will be
-     * disabled and the state will always be ({@link LowLightBoostState#OFF}).
+     * disabled and the state will always be {@link LowLightBoostState#OFF}.
      * </ul>
      *
-     * <p>Therefore, to use flash or torch functionality, low-light boost mode must be disabled.
-     * To ensure low-light boost mode functions correctly, the frame rate must not exceed 30 FPS.
+     * <p>To ensure low-light boost mode functions correctly, the frame rate must not exceed 30 FPS.
      *
      * @param lowLightBoost true to turn on the low-light boost mode, false to turn it off.
      * @return A {@link ListenableFuture} which is successful when the low-light boost mode was
      * changed to the value specified. It fails with {@link IllegalStateException} when low-light
-     * boost is not available due to the device does not support it or there is a settings
+     * boost is not available because the device does not support it or there is a settings
      * conflict. It fails with {@link OperationCanceledException} if a newer value is set or
-     * camera is closed. The failure reason will be provided in the exception' message.
+     * camera is closed. The failure reason will be provided in the exception's message.
      * Cancellation of this future is a no-op.
      * @see CameraInfo#isLowLightBoostSupported()
      */
@@ -122,7 +134,12 @@ public interface CameraControl {
      *
      * <p>Only one {@link FocusMeteringAction} is allowed to run at a time. If multiple
      * {@link FocusMeteringAction} are executed in a row, only the latest one will work and
-     * other actions will be cancelled.
+     * other actions will be cancelled. However, starting a new action does not unlock 3A
+     * components (AF, AE, or AWB) that were already locked by a previous action if they are not
+     * included in the new action's {@link FocusMeteringAction.Builder#setLockingMode(int) locking
+     * mode}; all 3A locks and continuous autofocus are only restored when
+     * {@link #cancelFocusAndMetering()} is called or the latest action's auto-cancel duration is
+     * reached.
      *
      * <p>If the {@link FocusMeteringAction} specifies more AF/AE/AWB points than what is
      * supported on the current device, only the first point and then in order up to the number of
@@ -162,9 +179,15 @@ public interface CameraControl {
     /**
      * Sets current zoom by ratio.
      *
-     * <p>It modifies both current zoomRatio and linearZoom so if apps are observing
-     * zoomRatio or linearZoom, they will get the update as well. If the ratio is
-     * smaller than {@link ZoomState#getMinZoomRatio()} or larger than
+     * <p>It modifies both current {@code zoomRatio} and {@code linearZoom} in
+     * {@link CameraInfo#getZoomState()}, so if apps are observing {@code zoomRatio} or
+     * {@code linearZoom}, they will get the update as well. When a valid ratio is provided, the
+     * {@link ZoomState} in {@link CameraInfo#getZoomState()} is updated immediately without
+     * waiting for the camera to apply the zoom, while the actual camera zoom adjustment is
+     * performed asynchronously and the returned {@link ListenableFuture} completes when the
+     * repeating request result contains the requested zoom ratio.
+     *
+     * <p>If the ratio is smaller than {@link ZoomState#getMinZoomRatio()} or larger than
      * {@link ZoomState#getMaxZoomRatio()}, the returned {@link ListenableFuture} will fail with
      * {@link IllegalArgumentException} and it won't modify current zoom ratio. It is the
      * applications' duty to clamp the ratio.
@@ -184,11 +207,17 @@ public interface CameraControl {
      * value, for use with slider UI elements (while {@link #setZoomRatio(float)} works well
      * for pinch-zoom gestures).
      *
-     * <p>It modifies both current zoomRatio and linearZoom so if apps are observing
-     * zoomRatio or linearZoom, they will get the update as well. If the linearZoom is not in
-     * the range [0..1], the returned {@link ListenableFuture} will fail with
-     * {@link IllegalArgumentException} and it won't modify current linearZoom and zoomRatio. It is
-     * application's duty to clamp the linearZoom within [0..1].
+     * <p>It modifies both current {@code zoomRatio} and {@code linearZoom} in
+     * {@link CameraInfo#getZoomState()}, so if apps are observing {@code zoomRatio} or
+     * {@code linearZoom}, they will get the update as well. When a valid {@code linearZoom} is
+     * provided, the {@link ZoomState} in {@link CameraInfo#getZoomState()} is updated immediately
+     * without waiting for the camera to apply the zoom, while the actual camera zoom adjustment is
+     * performed asynchronously and the returned {@link ListenableFuture} completes when the
+     * repeating request result contains the requested zoom ratio.
+     *
+     * <p>If the linearZoom is not in the range [0..1], the returned {@link ListenableFuture} will
+     * fail with {@link IllegalArgumentException} and it won't modify current linearZoom and
+     * zoomRatio. It is application's duty to clamp the linearZoom within [0..1].
      *
      * @return a {@link ListenableFuture} which is finished when current repeating request
      * result contains the requested linearZoom. It fails with
@@ -253,6 +282,51 @@ public interface CameraControl {
                 "Setting torch strength is not supported on the device."));
     }
 
+    /**
+     * Applies interoperability configuration to this camera control.
+     *
+     * <p>To configure Camera2 options, use {@code Camera2Interop.forCameraControl(configurator)}
+     * (from the {@code camera-camera2} artifact) to create a configurator, then pass it to this
+     * method.
+     *
+     * <p>All parameters set within a single {@code configurator} are applied together atomically in
+     * a single repeating capture request update. Subsequent calls to {@code applyInteropAsync} add
+     * to or update the existing parameters incrementally without clearing previously set keys,
+     * unless explicitly cleared via methods such as
+     * {@code CameraControlCamera2Interop.clearCaptureRequestOption} or
+     * {@code CameraControlCamera2Interop.clearAllCaptureRequestOptions}. This overwrites options
+     * set with {@code SessionConfigInterop} via {@link SessionConfig.Builder#setInterop}.
+     *
+     * <p><b>Note:</b> Using Camera2 interop options can override internal CameraX
+     * configurations. If an option configured via interop conflicts with options required by
+     * CameraX internally, the option from Camera2Interop will override, which may result in
+     * unexpected behavior or interfere with 3A routines and camera control APIs.
+     *
+     * <p><b>Warning:</b> Callbacks configured via interop receive raw
+     * {@link android.hardware.camera2.CameraCaptureSession} instances. Directly invoking
+     * state-altering methods on these raw objects (such as
+     * {@link android.hardware.camera2.CameraCaptureSession#close()} or
+     * {@link android.hardware.camera2.CameraCaptureSession#abortCaptures()}) bypasses CameraX
+     * pipeline management and may cause state desynchronization, stream interruption, or
+     * application crashes.
+     *
+     * @param configurator the configurator that sets the interoperability options
+     * @return a {@link ListenableFuture} which completes with a {@code null} result when all the
+     * interoperability options specified in the given configurator have been successfully updated
+     * in the underlying repeating capture request. The future fails with
+     * {@link CameraControl.OperationCanceledException} if a newer configuration is applied before
+     * this operation takes effect or if the camera is closed. Cancellation of this future is a
+     * no-op.
+     */
+    default @NonNull ListenableFuture<Void> applyInteropAsync(
+            @NonNull InteropConfigurator<? super CameraControl> configurator) {
+        return Futures.immediateFailedFuture(new OperationCanceledException("Not supported!"));
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    default @NonNull MutableConfig getInteropMutableConfig() {
+        return MutableOptionsBundle.create();
+    }
     /**
      * An exception representing a failure that the operation is canceled which might be caused by
      * a new value is set or camera is closed.

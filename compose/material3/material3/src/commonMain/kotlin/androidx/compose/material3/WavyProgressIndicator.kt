@@ -91,10 +91,11 @@ import androidx.compose.ui.util.fastCoerceIn
  * in this example:
  *
  * @sample androidx.compose.material3.samples.LinearThickWavyProgressIndicatorSample
+ *
+ * @material3expressive
  */
-@Material3ExpressiveApi
 @Composable
-fun LinearWavyProgressIndicator(
+public fun LinearWavyProgressIndicator(
     progress: () -> Float,
     modifier: Modifier = Modifier,
     color: Color = WavyProgressIndicatorDefaults.indicatorColor,
@@ -162,10 +163,11 @@ fun LinearWavyProgressIndicator(
  *   The value here represents a DP per seconds, and by default it's matched to the [wavelength] to
  *   render an animation that moves the wave by one wave length per second.
  * @sample androidx.compose.material3.samples.IndeterminateLinearWavyProgressIndicatorSample
+ *
+ * @material3expressive
  */
-@Material3ExpressiveApi
 @Composable
-fun LinearWavyProgressIndicator(
+public fun LinearWavyProgressIndicator(
     modifier: Modifier = Modifier,
     color: Color = WavyProgressIndicatorDefaults.indicatorColor,
     trackColor: Color = WavyProgressIndicatorDefaults.trackColor,
@@ -272,10 +274,11 @@ fun LinearWavyProgressIndicator(
  * in this example:
  *
  * @sample androidx.compose.material3.samples.CircularThickWavyProgressIndicatorSample
+ *
+ * @material3expressive
  */
-@Material3ExpressiveApi
 @Composable
-fun CircularWavyProgressIndicator(
+public fun CircularWavyProgressIndicator(
     progress: () -> Float,
     modifier: Modifier = Modifier,
     color: Color = WavyProgressIndicatorDefaults.indicatorColor,
@@ -343,10 +346,11 @@ fun CircularWavyProgressIndicator(
  *   speed may be slightly different, as the [wavelength] can be adjusted to ensure a continuous
  *   wave shape.
  * @sample androidx.compose.material3.samples.IndeterminateCircularWavyProgressIndicatorSample
+ *
+ * @material3expressive
  */
-@Material3ExpressiveApi
 @Composable
-fun CircularWavyProgressIndicator(
+public fun CircularWavyProgressIndicator(
     modifier: Modifier = Modifier,
     color: Color = WavyProgressIndicatorDefaults.indicatorColor,
     trackColor: Color = WavyProgressIndicatorDefaults.trackColor,
@@ -380,29 +384,28 @@ fun CircularWavyProgressIndicator(
 }
 
 /** Contains the default values used for wavy progress indicators */
-@Material3ExpressiveApi
-object WavyProgressIndicatorDefaults {
+public object WavyProgressIndicatorDefaults {
 
     /**
      * A default [AnimationSpec] that should be used when animating between progress in a
      * determinate progress indicator.
      */
-    val ProgressAnimationSpec: AnimationSpec<Float> =
+    public val ProgressAnimationSpec: AnimationSpec<Float> =
         tween(
             durationMillis = MotionTokens.DurationLong2.toInt(),
             easing = MotionTokens.EasingLinearCubicBezier,
         )
 
     /** A default active indicator [Color]. */
-    val indicatorColor: Color
+    public val indicatorColor: Color
         @Composable get() = ProgressIndicatorTokens.ActiveIndicatorColor.value
 
     /** A default track [Color]. */
-    val trackColor: Color
+    public val trackColor: Color
         @Composable get() = ProgressIndicatorTokens.TrackColor.value
 
     /** A default linear progress indicator active indicator [Stroke]. */
-    val linearIndicatorStroke: Stroke
+    public val linearIndicatorStroke: Stroke
         @Composable
         get() =
             Stroke(
@@ -414,7 +417,7 @@ object WavyProgressIndicatorDefaults {
             )
 
     /** A default circular progress indicator active indicator [Stroke]. */
-    val circularIndicatorStroke: Stroke
+    public val circularIndicatorStroke: Stroke
         @Composable
         get() =
             Stroke(
@@ -426,7 +429,7 @@ object WavyProgressIndicatorDefaults {
             )
 
     /** A default linear progress indicator track [Stroke]. */
-    val linearTrackStroke: Stroke
+    public val linearTrackStroke: Stroke
         @Composable
         get() =
             Stroke(
@@ -438,7 +441,7 @@ object WavyProgressIndicatorDefaults {
             )
 
     /** A default circular progress indicator track [Stroke]. */
-    val circularTrackStroke: Stroke
+    public val circularTrackStroke: Stroke
         @Composable
         get() =
             Stroke(
@@ -450,41 +453,41 @@ object WavyProgressIndicatorDefaults {
             )
 
     /** A default wavelength of a determinate linear progress indicator when it's in a wavy form. */
-    val LinearDeterminateWavelength: Dp = LinearProgressIndicatorTokens.ActiveWaveWavelength
+    public val LinearDeterminateWavelength: Dp = LinearProgressIndicatorTokens.ActiveWaveWavelength
 
     /** A default wavelength of a linear progress indicator when it's in a wavy form. */
-    val LinearIndeterminateWavelength: Dp =
+    public val LinearIndeterminateWavelength: Dp =
         LinearProgressIndicatorTokens.IndeterminateActiveWaveWavelength
 
     /** A default linear progress indicator container height. */
-    val LinearContainerHeight: Dp = LinearProgressIndicatorTokens.WaveHeight
+    public val LinearContainerHeight: Dp = LinearProgressIndicatorTokens.WaveHeight
 
     /** A default linear progress indicator container width. */
-    val LinearContainerWidth: Dp = 240.dp
+    public val LinearContainerWidth: Dp = 240.dp
 
     /** A default linear stop indicator size. */
-    val LinearTrackStopIndicatorSize: Dp = LinearProgressIndicatorTokens.StopSize
+    public val LinearTrackStopIndicatorSize: Dp = LinearProgressIndicatorTokens.StopSize
 
     /** A default circular progress indicator container size. */
-    val CircularContainerSize: Dp = CircularProgressIndicatorTokens.WaveSize
+    public val CircularContainerSize: Dp = CircularProgressIndicatorTokens.WaveSize
 
     /** A default wavelength of a circular progress indicator when it's in a wavy form. */
-    val CircularWavelength: Dp = CircularProgressIndicatorTokens.ActiveWaveWavelength
+    public val CircularWavelength: Dp = CircularProgressIndicatorTokens.ActiveWaveWavelength
 
     /**
      * A default gap size that appears in between the active indicator and the track at the linear
      * progress indicator.
      */
-    val LinearIndicatorTrackGapSize: Dp = LinearProgressIndicatorTokens.TrackActiveSpace
+    public val LinearIndicatorTrackGapSize: Dp = LinearProgressIndicatorTokens.TrackActiveSpace
 
     /**
      * A default gap size that appears in between the active indicator and the track at the circular
      * progress indicator.
      */
-    val CircularIndicatorTrackGapSize: Dp = CircularProgressIndicatorTokens.TrackActiveSpace
+    public val CircularIndicatorTrackGapSize: Dp = CircularProgressIndicatorTokens.TrackActiveSpace
 
     /** A function that returns a determinate indicator's amplitude for a given progress. */
-    val indicatorAmplitude: (progress: Float) -> Float = { progress ->
+    public val indicatorAmplitude: (progress: Float) -> Float = { progress ->
         // Sets the amplitude to the max on 10%, and back to zero on 95% of the progress.
         if (progress <= 0.1f || progress >= 0.95f) {
             0f

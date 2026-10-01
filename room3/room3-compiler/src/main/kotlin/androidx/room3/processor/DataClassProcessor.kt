@@ -22,13 +22,17 @@ import androidx.room3.Ignore
 import androidx.room3.PrimaryKey
 import androidx.room3.Relation
 import androidx.room3.compiler.processing.XExecutableElement
-import androidx.room3.compiler.processing.XFieldElement
+import androidx.room3.compiler.processing.XPropertyElement
 import androidx.room3.compiler.processing.XType
 import androidx.room3.compiler.processing.XTypeElement
 import androidx.room3.compiler.processing.XVariableElement
 import androidx.room3.compiler.processing.isVoid
+import androidx.room3.ext.getAnnotationOnPropertyOrField
+import androidx.room3.ext.hasAnnotationOnPropertyOrField
+import androidx.room3.ext.hasAnyAnnotationOnPropertyOrField
 import androidx.room3.ext.isCollection
 import androidx.room3.ext.isNotVoid
+import androidx.room3.ext.requireAnnotationOnPropertyOrField
 import androidx.room3.processor.ProcessorErrors.CANNOT_FIND_GETTER_FOR_PROPERTY
 import androidx.room3.processor.ProcessorErrors.CANNOT_FIND_SETTER_FOR_PROPERTY
 import androidx.room3.processor.autovalue.AutoValueDataClassProcessorDelegate
@@ -131,12 +135,12 @@ private constructor(
         // TODO handle conflicts with super: b/35568142
         val allProperties =
             element
-                .getAllFieldsIncludingPrivateSupers()
+                .getAllPropertiesIncludingPrivateSupers()
                 .filter {
-                    !it.hasAnnotation(Ignore::class) &&
+                    !it.hasAnnotationOnPropertyOrField(Ignore::class) &&
                         !it.isStatic() &&
                         (!it.isTransient() ||
-                            it.hasAnyAnnotation(
+                            it.hasAnyAnnotationOnPropertyOrField(
                                 ColumnInfo::class,
                                 Embedded::class,
                                 Relation::class,
@@ -144,13 +148,15 @@ private constructor(
                 }
                 .groupBy { property ->
                     context.checker.check(
-                        PROCESSED_ANNOTATIONS.count { property.hasAnnotation(it) } < 2,
+                        PROCESSED_ANNOTATIONS.count {
+                            property.hasAnnotationOnPropertyOrField(it)
+                        } < 2,
                         property,
                         ProcessorErrors.CANNOT_USE_MORE_THAN_ONE_DATA_CLASS_PROPERTY_ANNOTATION,
                     )
-                    if (property.hasAnnotation(Embedded::class)) {
+                    if (property.hasAnnotationOnPropertyOrField(Embedded::class)) {
                         Embedded::class
-                    } else if (property.hasAnnotation(Relation::class)) {
+                    } else if (property.hasAnnotationOnPropertyOrField(Relation::class)) {
                         Relation::class
                     } else {
                         null
@@ -178,28 +184,27 @@ private constructor(
                     )
                     .process()
             } ?: emptyList()
-        val myProperties =
-            unfilteredMyProperties.filterNot { ignoredColumns.contains(it.columnName) }
+        val myProperties = unfilteredMyProperties.filterNot {
+            ignoredColumns.contains(it.columnName)
+        }
         myProperties.forEach { property ->
             propertyBindingErrors[property]?.let { context.logger.e(property.element, it) }
         }
         val unfilteredEmbeddedProperties =
             allProperties[Embedded::class]?.mapNotNull { processEmbeddedProperty(declaredType, it) }
                 ?: emptyList()
-        val embeddedProperties =
-            unfilteredEmbeddedProperties.filterNot {
-                ignoredColumns.contains(it.property.columnName)
-            }
+        val embeddedProperties = unfilteredEmbeddedProperties.filterNot {
+            ignoredColumns.contains(it.property.columnName)
+        }
 
         val subProperties = embeddedProperties.flatMap { it.dataClass.properties }
         val properties = myProperties + subProperties
 
         val unfilteredCombinedProperties =
             unfilteredMyProperties + unfilteredEmbeddedProperties.map { it.property }
-        val missingIgnoredColumns =
-            ignoredColumns.filterNot { ignoredColumn ->
-                unfilteredCombinedProperties.any { it.columnName == ignoredColumn }
-            }
+        val missingIgnoredColumns = ignoredColumns.filterNot { ignoredColumn ->
+            unfilteredCombinedProperties.any { it.columnName == ignoredColumn }
+        }
         context.checker.check(
             missingIgnoredColumns.isEmpty(),
             element,
@@ -241,15 +246,13 @@ private constructor(
                 }
                 .toList()
 
-        val getterCandidates =
-            methods.filter {
-                it.element.parameters.size == 0 && it.resolvedType.returnType.isNotVoid()
-            }
+        val getterCandidates = methods.filter {
+            it.element.parameters.size == 0 && it.resolvedType.returnType.isNotVoid()
+        }
 
-        val setterCandidates =
-            methods.filter {
-                it.element.parameters.size == 1 && it.resolvedType.returnType.isVoid()
-            }
+        val setterCandidates = methods.filter {
+            it.element.parameters.size == 1 && it.resolvedType.returnType.isVoid()
+        }
 
         // don't try to find a constructor for binding to statement.
         val constructor =
@@ -452,7 +455,7 @@ private constructor(
 
     private fun processEmbeddedProperty(
         declaredType: XType,
-        variableElement: XFieldElement,
+        variableElement: XPropertyElement,
     ): EmbeddedProperty? {
         val asMemberType = variableElement.asMemberOf(declaredType)
         val asTypeElement = asMemberType.typeElement
@@ -468,7 +471,7 @@ private constructor(
             return null
         }
 
-        val embeddedAnnotation = variableElement.getAnnotation(Embedded::class)
+        val embeddedAnnotation = variableElement.getAnnotationOnPropertyOrField(Embedded::class)
         val propertyPrefix = embeddedAnnotation?.get("prefix")?.asString() ?: ""
         val inheritedPrefix = parent?.prefix ?: ""
         val embeddedProperty =
@@ -500,9 +503,9 @@ private constructor(
     private fun processRelationProperty(
         myProperties: List<Property>,
         container: XType,
-        relationElement: XFieldElement,
+        relationElement: XPropertyElement,
     ): androidx.room3.vo.Relation? {
-        val annotation = relationElement.requireAnnotation(Relation::class)
+        val annotation = relationElement.requireAnnotationOnPropertyOrField(Relation::class)
 
         val parentColumnNames = annotation["parentColumns"]?.asStringList() ?: emptyList()
         if (parentColumnNames.isEmpty()) {
@@ -512,10 +515,9 @@ private constructor(
             )
             return null
         }
-        val parentColumnNameToProperty =
-            parentColumnNames.associateWith { columnName ->
-                myProperties.firstOrNull { it.columnName == columnName }
-            }
+        val parentColumnNameToProperty = parentColumnNames.associateWith { columnName ->
+            myProperties.firstOrNull { it.columnName == columnName }
+        }
         val missingParentColumnNames = parentColumnNameToProperty.filterValues { it == null }.keys
         if (missingParentColumnNames.isNotEmpty()) {
             context.logger.e(
@@ -581,10 +583,9 @@ private constructor(
             )
             return null
         }
-        val entityColumnNameToProperty =
-            entityColumnNames.associateWith { columnName ->
-                entity.findPropertyByColumnName(columnName)
-            }
+        val entityColumnNameToProperty = entityColumnNames.associateWith { columnName ->
+            entity.findPropertyByColumnName(columnName)
+        }
         val missingEntityColumnNames = entityColumnNameToProperty.filterValues { it == null }.keys
         if (missingEntityColumnNames.isNotEmpty()) {
             context.logger.e(
@@ -640,8 +641,9 @@ private constructor(
 
                 val junctionParentColumnNames =
                     junctionAnnotation["parentColumns"]?.asStringList() ?: emptyList()
-                val junctionParentColumns =
-                    junctionParentColumnNames.ifEmpty { parentProperties.map { it.columnName } }
+                val junctionParentColumns = junctionParentColumnNames.ifEmpty {
+                    parentProperties.map { it.columnName }
+                }
                 if (junctionParentColumns.size != parentProperties.size) {
                     context.logger.e(
                         junctionElement,
@@ -672,8 +674,9 @@ private constructor(
 
                 val junctionEntityColumnNames =
                     junctionAnnotation["entityColumns"]?.asStringList() ?: emptyList()
-                val junctionEntityColumns =
-                    junctionEntityColumnNames.ifEmpty { entityProperties.map { it.columnName } }
+                val junctionEntityColumns = junctionEntityColumnNames.ifEmpty {
+                    entityProperties.map { it.columnName }
+                }
                 if (junctionEntityColumns.size != entityProperties.size) {
                     context.logger.e(
                         junctionElement,
@@ -1019,7 +1022,7 @@ private constructor(
         assignFromMethod: (DataClassFunction) -> Unit,
         reportAmbiguity: (List<String>) -> Unit,
     ): Boolean {
-        if (property.element.isPublic()) {
+        if (property.element.backingField?.isPublic() == true) {
             assignFromField()
             return true
         }

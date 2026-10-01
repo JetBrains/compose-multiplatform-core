@@ -79,7 +79,6 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 import kotlin.math.sqrt
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -93,7 +92,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class OnGlobalRectChangedTest {
 
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     @Test
     fun correctPositionInRootWhenMovingBothGrandParentAndNodeItself() {
@@ -545,15 +544,14 @@ class OnGlobalRectChangedTest {
 
         val changeLambda = mutableStateOf(true)
 
-        val layoutModifier =
-            Modifier.layout { measurable, constraints ->
-                layoutCalled = true
-                val placeable = measurable.measure(constraints)
-                layout(placeable.width, placeable.height) {
-                    placementCalled = true
-                    placeable.place(0, 0)
-                }
+        val layoutModifier = Modifier.layout { measurable, constraints ->
+            layoutCalled = true
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) {
+                placementCalled = true
+                placeable.place(0, 0)
             }
+        }
 
         rule.setContent {
             Box(
@@ -1222,7 +1220,8 @@ class OnGlobalRectChangedTest {
                 FixedSize(
                     30,
                     Modifier.padding(10).onLayoutRectChanged(0, 0) { rect = it },
-                ) { /* no-op */
+                ) {
+                    /* no-op */
                 }
             }
         }
@@ -1257,7 +1256,8 @@ class OnGlobalRectChangedTest {
             FixedSize(
                 30,
                 Modifier.offset { offset }.onLayoutRectChanged(1, 2000) { rect = it },
-            ) { /* no-op */
+            ) {
+                /* no-op */
             }
         }
 
@@ -1289,7 +1289,8 @@ class OnGlobalRectChangedTest {
                         Modifier.padding(10).background(Color.Red).onLayoutRectChanged(0, 0) {
                             coords = it.boundsInWindow
                         },
-                    ) { /* no-op */
+                    ) {
+                        /* no-op */
                     }
                 }
             }

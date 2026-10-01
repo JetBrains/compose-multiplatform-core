@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.computedStateOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -173,6 +174,42 @@ class ComposeBenchmark : ComposeBenchmarkBase() {
     }
 
     @Test
+    fun benchmark_10_computedState_reads_compose() = runBlockingTestWithFrameClock {
+        val state1 by mutableStateOf(1)
+        val state2 by mutableStateOf(3)
+        val state3 by mutableStateOf(6)
+        val list by computedStateOf { List(state1 + state2 + state3) { "$it" } }
+
+        measureCompose {
+            Column {
+                for (i in list.indices) {
+                    Text(list[i])
+                }
+            }
+        }
+    }
+
+    @Test
+    fun benchmark_10_computedState_reads_recompose() = runBlockingTestWithFrameClock {
+        var state1 by mutableStateOf(1)
+        var state2 by mutableStateOf(3)
+        val state3 by mutableStateOf(6)
+        val list by computedStateOf { List(state1 + state2 + state3) { "$it" } }
+
+        measureRecompose {
+            compose {
+                Column {
+                    for (i in list.indices) {
+                        Text(list[i])
+                    }
+                }
+            }
+            update { state1 += 1 }
+            reset { state1 = 1 }
+        }
+    }
+
+    @Test
     fun benchmark_reverse_list() = runBlockingTestWithFrameClock {
         val state =
             mutableStateListOf(
@@ -229,6 +266,11 @@ class ComposeBenchmark : ComposeBenchmarkBase() {
     @Test
     fun benchmark_g_group_eliding_focused_1000() = runBlockingTestWithFrameClock {
         measureCompose { repeat(1000) { MyLayout { SimpleText("Value: $it") } } }
+    }
+
+    @Test
+    fun benchmark_e_recursive_calls_1000() = runBlockingTestWithFrameClock {
+        measureCompose { RecursiveParamBenchmark(depth = 200, 0, 1, 2, 3, 4, 5, 6, 7, 8) }
     }
 }
 
@@ -295,5 +337,36 @@ fun HundredRects(model: ColorModel, narrow: Boolean = false) {
                 Rect(model.color)
             }
         else Rect()
+    }
+}
+
+@Composable
+fun RecursiveParamBenchmark(
+    depth: Int,
+    p0: Int,
+    p1: Int,
+    p2: Int,
+    p3: Int,
+    p4: Int,
+    p5: Int,
+    p6: Int,
+    p7: Int,
+    p8: Int,
+) {
+    if (depth > 0) {
+        // Changing arguments at each frame forces $composer.changed(...)
+        // to evaluate and execute the branchless bitwise dirty calculation
+        RecursiveParamBenchmark(
+            depth = depth - 1,
+            p0 = p0 + 1,
+            p1 = p1 xor 1,
+            p2 = p2 + 2,
+            p3 = p3 xor 3,
+            p4 = p4 + 4,
+            p5 = p5 xor 5,
+            p6 = p6 + 6,
+            p7 = p7 xor 7,
+            p8 = p8 + 8,
+        )
     }
 }

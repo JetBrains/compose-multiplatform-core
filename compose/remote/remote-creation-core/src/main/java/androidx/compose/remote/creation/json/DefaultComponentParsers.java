@@ -16,7 +16,14 @@
 package androidx.compose.remote.creation.json;
 
 import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.operations.layout.managers.Custom;
 import androidx.compose.remote.creation.modifiers.RecordingModifier;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Helper class to register default procedural components into the JSON parser.
@@ -79,7 +86,7 @@ class DefaultComponentParsers {
                     parser.getHorizontalAlign(component, "start"),
                     parser.getVerticalAlign(component, "top"),
                     component.optInt("maxColumns", Integer.MAX_VALUE),
-                    Integer.MAX_VALUE);
+                    component.optInt("maxLines", Integer.MAX_VALUE));
             parser.parseChildren(component.optJSONArray("children"));
             writer.endFlow();
         });
@@ -103,6 +110,38 @@ class DefaultComponentParsers {
                     parser.getVerticalAlign(component, "center"));
             parser.parseChildren(component.optJSONArray("children"));
             writer.endFitBox();
+        });
+        p.registerComponentParser("custom", (component, modifier, writer, parser) -> {
+            String config = component.optString("config", "");
+            List<Custom.CustomProperty> properties = new ArrayList<>();
+            if (component.has("properties")) {
+                JSONArray propsArr = component.getJSONArray("properties");
+                for (int i = 0; i < propsArr.length(); i++) {
+                    JSONObject pObj = propsArr.getJSONObject(i);
+                    short pType = (short) pObj.getInt("type");
+                    short pDataType = (short) pObj.getInt("dataType");
+                    if ((pDataType & 1) == 0) {
+                        properties.add(new Custom.CustomProperty(pType, pDataType,
+                                pObj.getInt("value")));
+                    } else {
+                        properties.add(new Custom.CustomProperty(pType, pDataType,
+                                (float) pObj.getDouble("value")));
+                    }
+                }
+            }
+            writer.startCustom(modifier, config, properties);
+            parser.parseChildren(component.optJSONArray("children"));
+            writer.endCustom();
+        });
+        p.registerComponentParser("stateLayout", (component, modifier, writer, parser) -> {
+            Object idxObj = component.has("indexId") ? component.get("indexId")
+                    : (component.has("stateId") ? component.get("stateId")
+                    : (component.has("index") ? component.get("index")
+                    : component.get("stateIndex")));
+            int indexId = parser.resolveIntegerId(idxObj);
+            writer.startStateLayout(modifier, indexId);
+            parser.parseChildren(component.optJSONArray("children"));
+            writer.endStateLayout();
         });
         p.registerComponentParser("text", (component, modifier, writer, parser) -> {
             parser.parseText(component, modifier);
@@ -130,9 +169,7 @@ class DefaultComponentParsers {
                                 children.getJSONObject(i));
                         String type = child.optString("type");
                         String typeLower = type.toLowerCase();
-                        if (typeLower.equals("resources") || typeLower.equals("variable")
-                                || typeLower.equals("global") || typeLower.equals("definepattern")
-                                || typeLower.equals("referencedoperations")) {
+                        if (RemoteComposeJsonParser.isFirstPassComponent(typeLower)) {
                             parser.parseComponent(child);
                         }
                     }
@@ -142,6 +179,35 @@ class DefaultComponentParsers {
                 parser.parseChildren(component.optJSONArray("children"));
             }
         });
+        p.registerComponentParser("createfloatfunction", (component, modifier, writer, parser) -> {
+            if (parser.isInFirstPass()) {
+                parser.parseFloatFunction(component, false);
+            }
+        });
+        p.registerComponentParser("floatfunction", (component, modifier, writer, parser) -> {
+            if (parser.isInFirstPass()) {
+                parser.parseFloatFunction(component, false);
+            }
+        });
+        p.registerComponentParser("definevisibilityanimation",
+                (component, modifier, writer, parser) -> {
+                    if (parser.isInFirstPass()) {
+                        parser.parseFloatFunction(component, true);
+                    }
+                });
+        p.registerComponentParser("createoffscreenbitmap",
+                (component, modifier, writer, parser) -> {
+                    if (parser.isInFirstPass()) {
+                        int id = writer.createOffscreenBitmap();
+                        String varName = component.optString("name",
+                                component.optString("id",
+                                        component.optString("varName",
+                                                component.optString("value", null))));
+                        if (varName != null) {
+                            parser.mVariables.put(varName, (float) id);
+                        }
+                    }
+                });
         p.registerComponentParser("definepattern", (component, modifier, writer, parser) -> {
             if (parser.isInFirstPass()) {
                 String name = component.getString("name");
@@ -312,6 +378,13 @@ class DefaultComponentParsers {
         p.registerComponentParser("include", (component, modifier, writer, parser) -> {
             int refId = parser.resolveTextId(component.get("value"));
             writer.addIncludeReferencedOperations(refId);
+        });
+        p.registerComponentParser("rem", (component, modifier, writer, parser) -> {
+            String text = component.optString("text",
+                    component.optString("value",
+                    component.optString("message",
+                    component.optString("comment", ""))));
+            writer.rem(text);
         });
     }
 }

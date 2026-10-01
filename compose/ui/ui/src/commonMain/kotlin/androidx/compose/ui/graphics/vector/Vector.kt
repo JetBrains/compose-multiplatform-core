@@ -43,60 +43,77 @@ import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.isUnspecified
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastRoundToInt
+import kotlin.math.abs
 import kotlin.math.ceil
 
-const val DefaultGroupName = ""
-const val DefaultRotation = 0.0f
-const val DefaultPivotX = 0.0f
-const val DefaultPivotY = 0.0f
-const val DefaultScaleX = 1.0f
-const val DefaultScaleY = 1.0f
-const val DefaultTranslationX = 0.0f
-const val DefaultTranslationY = 0.0f
+public const val DefaultGroupName: String = ""
+public const val DefaultRotation: Float = 0.0f
+public const val DefaultPivotX: Float = 0.0f
+public const val DefaultPivotY: Float = 0.0f
+public const val DefaultScaleX: Float = 1.0f
+public const val DefaultScaleY: Float = 1.0f
+public const val DefaultTranslationX: Float = 0.0f
+public const val DefaultTranslationY: Float = 0.0f
 
-val EmptyPath = emptyList<PathNode>()
+public val EmptyPath: List<PathNode> = emptyList<PathNode>()
 
-const val DefaultPathName = ""
-const val DefaultStrokeLineWidth = 0.0f
-const val DefaultStrokeLineMiter = 4.0f
-const val DefaultTrimPathStart = 0.0f
-const val DefaultTrimPathEnd = 1.0f
-const val DefaultTrimPathOffset = 0.0f
+public const val DefaultPathName: String = ""
+public const val DefaultStrokeLineWidth: Float = 0.0f
+public const val DefaultStrokeLineMiter: Float = 4.0f
+public const val DefaultTrimPathStart: Float = 0.0f
+public const val DefaultTrimPathEnd: Float = 1.0f
+public const val DefaultTrimPathOffset: Float = 0.0f
 
-val DefaultStrokeLineCap = StrokeCap.Butt
-val DefaultStrokeLineJoin = StrokeJoin.Miter
-val DefaultTintBlendMode = BlendMode.SrcIn
-val DefaultTintColor = Color.Transparent
-val DefaultFillType = PathFillType.NonZero
+public val DefaultStrokeLineCap: StrokeCap
+    get() = StrokeCap.Butt
+public val DefaultStrokeLineJoin: StrokeJoin
+    get() = StrokeJoin.Miter
+public val DefaultTintBlendMode: BlendMode
+    get() = BlendMode.SrcIn
+public val DefaultTintColor: Color
+    get() = Color.Transparent
+public val DefaultFillType: PathFillType
+    get() = PathFillType.NonZero
 
-inline fun PathData(block: PathBuilder.() -> Unit) =
+/**
+ * Maximum distance in pixels from an integer dimension for a draw size to be considered whole-pixel
+ * and eligible for sharing a [DrawCache]. Tolerates floating-point noise from density/ContentScale
+ * calculations (e.g. 53.000004f) while excluding genuinely fractional sizes (e.g. 23.5f).
+ */
+private const val SharedSizeTolerancePx = 0.01f
+
+public inline fun PathData(block: PathBuilder.() -> Unit): List<PathNode> =
     with(PathBuilder()) {
         block()
         nodes
     }
 
-fun addPathNodes(pathStr: String?) =
+public fun addPathNodes(pathStr: String?): List<PathNode> =
     if (pathStr == null) {
         EmptyPath
     } else {
         PathParser().parsePathString(pathStr).toNodes()
     }
 
-sealed class VNode {
+public sealed class VNode {
     /**
      * Callback invoked whenever the node in the vector tree is modified in a way that would change
      * the output of the Vector
      */
     internal open var invalidateListener: ((VNode) -> Unit)? = null
 
-    fun invalidate() {
+    public fun invalidate() {
         invalidateListener?.invoke(this)
     }
 
-    abstract fun DrawScope.draw()
+    public abstract fun DrawScope.draw()
 }
 
-internal class VectorComponent(val root: GroupComponent) : VNode() {
+internal class VectorComponent(
+    val root: GroupComponent,
+    private val drawCacheProvider: DrawCacheProvider? = null,
+) : VNode() {
 
     init {
         root.invalidateListener = { doInvalidate() }
@@ -111,10 +128,13 @@ internal class VectorComponent(val root: GroupComponent) : VNode() {
 
     private var isDirty = true
 
-    private val cacheDrawScope = DrawCache()
+    private var currentDrawCache: DrawCache? = null
+    private var currentSize: IntSize = IntSize.Zero
+    private var currentConfig: ImageBitmapConfig = ImageBitmapConfig.Argb8888
+    private var resizedAfterFirstDraw = false
 
     internal val cacheBitmapConfig: ImageBitmapConfig
-        get() = cacheDrawScope.mCachedImage?.config ?: ImageBitmapConfig.Argb8888
+        get() = currentDrawCache?.mCachedImage?.config ?: ImageBitmapConfig.Argb8888
 
     internal var invalidateCallback = {}
 
@@ -151,22 +171,80 @@ internal class VectorComponent(val root: GroupComponent) : VNode() {
                 ImageBitmapConfig.Argb8888
             }
 
-        if (isDirty || previousDrawSize != size || targetImageConfig != cacheBitmapConfig) {
+        if (!resizedAfterFirstDraw && previousDrawSize != Unspecified && previousDrawSize != size) {
+            resizedAfterFirstDraw = true
+            if (currentSize != IntSize.Zero) {
+                currentDrawCache = null
+            }
+        }
+        val roundedWidth = size.width.fastRoundToInt()
+        val roundedHeight = size.height.fastRoundToInt()
+        val useSharedCache =
+            drawCacheProvider != null &&
+                !resizedAfterFirstDraw &&
+                roundedWidth >= 1 &&
+                roundedHeight >= 1 &&
+                abs(size.width - roundedWidth) < SharedSizeTolerancePx &&
+                abs(size.height - roundedHeight) < SharedSizeTolerancePx
+
+        val targetSize =
+            if (useSharedCache) {
+                IntSize(roundedWidth, roundedHeight)
+            } else {
+                IntSize(ceil(size.width).toInt(), ceil(size.height).toInt())
+            }
+
+        var drawCache = currentDrawCache
+        var cacheChanged = false
+
+        if (useSharedCache) {
+            if (
+                drawCache == null || targetSize != currentSize || targetImageConfig != currentConfig
+            ) {
+                drawCache = drawCacheProvider.provide(targetSize, targetImageConfig)
+                cacheChanged = drawCache !== currentDrawCache
+                currentDrawCache = drawCache
+                currentSize = targetSize
+                currentConfig = targetImageConfig
+            }
+        } else if (drawCache == null) {
+            drawCache = DrawCache()
+            cacheChanged = true
+            currentDrawCache = drawCache
+        }
+
+        val needsRender =
+            if (useSharedCache) {
+                drawCache.mCachedImage == null
+            } else {
+                isDirty ||
+                    previousDrawSize != size ||
+                    cacheChanged ||
+                    targetImageConfig != cacheBitmapConfig
+            }
+
+        if (needsRender || cacheChanged) {
             tintFilter =
                 if (targetImageConfig == ImageBitmapConfig.Alpha8) {
                     ColorFilter.tint(root.tintColor.toOpaque())
                 } else {
                     null
                 }
-            rootScaleX = size.width / viewportSize.width
-            rootScaleY = size.height / viewportSize.height
-            cacheDrawScope.drawCachedImage(
+        }
+        if (needsRender) {
+            val scaleWidth = if (useSharedCache) targetSize.width.toFloat() else size.width
+            val scaleHeight = if (useSharedCache) targetSize.height.toFloat() else size.height
+            rootScaleX = scaleWidth / viewportSize.width
+            rootScaleY = scaleHeight / viewportSize.height
+            drawCache.drawCachedImage(
                 targetImageConfig,
-                IntSize(ceil(size.width).toInt(), ceil(size.height).toInt()),
+                targetSize,
                 this@draw,
                 layoutDirection,
                 drawVectorBlock,
             )
+        }
+        if (needsRender || cacheChanged) {
             isDirty = false
             previousDrawSize = size
         }
@@ -178,7 +256,7 @@ internal class VectorComponent(val root: GroupComponent) : VNode() {
             } else {
                 tintFilter
             }
-        cacheDrawScope.drawInto(this, alpha, targetFilter)
+        drawCache.drawInto(this, alpha, targetFilter)
     }
 
     override fun DrawScope.draw() {

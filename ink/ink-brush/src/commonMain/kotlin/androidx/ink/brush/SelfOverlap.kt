@@ -17,6 +17,7 @@
 package androidx.ink.brush
 
 import androidx.collection.MutableIntObjectMap
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import kotlin.jvm.JvmField
 
 /**
@@ -32,6 +33,17 @@ private constructor(@JvmField internal val value: Int, private val name: String)
     }
 
     override fun toString(): String = "SelfOverlap.$name"
+
+    /**
+     * Returns the minimum required [Version] for this [SelfOverlap].
+     *
+     * By default, decoding a [BrushFamily] containing a [SelfOverlap] with a minimum required
+     * version higher than [Version.MAX_SUPPORTED] will fail.
+     */
+    @OptIn(InkInternalOnlyApi::class)
+    @ExperimentalInkCustomBrushApi
+    public fun calculateMinimumRequiredVersion(): Version =
+        Version.fromInt(SelfOverlapNative.calculateMinimumRequiredVersion(value))
 
     public companion object {
         private val VALUE_TO_INSTANCE = MutableIntObjectMap<SelfOverlap>()
@@ -72,4 +84,8 @@ private constructor(@JvmField internal val value: Int, private val name: String)
          */
         @JvmField public val DISCARD: SelfOverlap = SelfOverlap(2, "DISCARD")
     }
+}
+
+expect internal object SelfOverlapNative {
+    fun calculateMinimumRequiredVersion(selfOverlapInt: Int): Int
 }

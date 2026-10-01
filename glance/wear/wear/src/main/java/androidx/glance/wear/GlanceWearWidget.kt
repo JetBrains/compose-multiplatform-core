@@ -25,6 +25,7 @@ import android.provider.Settings
 import android.util.Log
 import androidx.annotation.MainThread
 import androidx.annotation.VisibleForTesting
+import androidx.collection.intSetOf
 import androidx.compose.remote.creation.compose.RemoteComposeCreationComposeFlags
 import androidx.glance.wear.cache.WearWidgetCache
 import androidx.glance.wear.cache.WearWidgetCache.WidgetCacheMissException
@@ -81,7 +82,6 @@ internal constructor(
      * @param params the parameters that describe the widget for which the data is being provided.
      * @return the widget data as raw content.
      */
-    @SuppressLint("RestrictedApiAndroidX")
     @OptIn(androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi::class)
     internal suspend fun provideWidgetDataAsRawContentInternal(
         context: Context,
@@ -90,7 +90,8 @@ internal constructor(
         // We need this flag to be false (meaning empty axis won't be send and default normal weight
         // would be used, for the 1.6 renderer and the player that has a bug in it.
         RemoteComposeCreationComposeFlags.allowSendingEmptyFontAxis =
-            RendererVersion.fromPlHostPackage(context) > RendererVersion(1, 6, 0)
+            RendererVersion.fromPlHostPackage(context) >
+                RendererVersion(1, 6, 0, /* not important */ intSetOf())
         val widgetContent = provideWidgetData(context, params)
         return widgetContent.captureRawContent(context, params)
     }
@@ -153,6 +154,9 @@ internal constructor(
      *   by the calling application.
      */
     public suspend fun triggerUpdate(context: Context, instanceId: WidgetInstanceId) {
+        if (context.isDebuggableBuild()) {
+            updateClient.sendUpdateBroadcast(context, instanceId = instanceId)
+        }
         triggerUpdateInternal(context, instanceId, cachedHandle = null)
     }
 
@@ -167,18 +171,25 @@ internal constructor(
      */
     @SuppressLint("ListIterator") // Not running inside Compose code.
     public suspend fun triggerUpdateAll(context: Context) {
-        // In debugging mode (such as Emulator), we would always trigger a pull update instead of
-        // trying to use push mechanism.
-        if (context.isDebuggingEnabled()) {
-            GlanceWearWidgetManager(context).getProviderForWidget(this::class)?.let {
-                triggerPullUpdate(context, it, instanceId = null)
-                return@triggerUpdateAll
+        val isDebuggable = context.isDebuggableBuild()
+        val isDeveloperMode = context.isDeveloperModeEnabled()
+        if (isDebuggable || isDeveloperMode) {
+            GlanceWearWidgetManager(context).getProviderForWidget(this::class)?.let { provider ->
+                if (isDebuggable) {
+                    updateClient.sendUpdateBroadcast(context, provider = provider)
+                }
+                // In developer mode (such as Emulator), we would always trigger a pull update
+                // instead of trying to use push mechanism.
+                if (isDeveloperMode) {
+                    triggerPullUpdate(context, provider, instanceId = null)
+                    return@triggerUpdateAll
+                }
             }
         }
 
         val activeWidgets = fetchActiveWidgets(context)
         if (activeWidgets.isEmpty()) {
-            Log.i(TAG, "No active instances found to update.")
+            Log.i(TAG, "No active instances found in the system to update.")
             return
         }
         coroutineScope {
@@ -202,11 +213,7 @@ internal constructor(
         instanceId: WidgetInstanceId,
         cachedHandle: ActiveWearWidgetHandle? = null,
     ) {
-        if (context.isDebuggableBuild()) {
-            updateClient.sendUpdateBroadcast(context, instanceId = instanceId)
-        }
-
-        if (context.isDebuggingEnabled()) {
+        if (context.isDeveloperModeEnabled()) {
             GlanceWearWidgetManager(context).getProviderForWidget(this::class)?.let {
                 triggerPullUpdate(context, it, instanceId)
                 return@triggerUpdateInternal
@@ -281,19 +288,57 @@ internal constructor(
     internal open suspend fun fetchActiveWidgets(context: Context): List<ActiveWearWidgetHandle> =
         GlanceWearWidgetManager(context).fetchActiveWidgets(this::class)
 
-    internal companion object {
+    public companion object {
         private const val TAG = "GlanceWearWidget"
+
+        /**
+         * Category for widget provider configuration activities.
+         *
+         * The configuration activity launched for configuring a widget provider must specify this
+         * category in its intent filter.
+         *
+         * For example, in `AndroidManifest.xml`:
+         * ```xml
+         * <activity
+         *     android:name=".ProviderConfigurationActivity"
+         *     android:exported="true">
+         *     <intent-filter>
+         *         <action android:name="com.example.ACTION_CONFIGURE_WIDGET" />
+         *         <category android:name="com.google.android.clockwork.tiles.category.PROVIDER_CONFIG" />
+         *         <category android:name="android.intent.category.DEFAULT" />
+         *     </intent-filter>
+         * </activity>
+         * ```
+         */
+        public const val CATEGORY_PROVIDER_CONFIG: String =
+            "com.google.android.clockwork.tiles.category.PROVIDER_CONFIG"
+
+        /**
+         * Intent extra used to supply the widget instance ID ([Int], matching
+         * [WidgetInstanceId.id]) to a widget provider configuration activity.
+         */
+        @SuppressLint("ActionValue")
+        public const val EXTRA_CONFIG_WIDGET_ID: String =
+            "com.google.android.clockwork.EXTRA_PROVIDER_CONFIG_TILE_ID"
+
+        /**
+         * Intent extra used to supply the widget provider [ComponentName] (the
+         * [GlanceWearWidgetService]) to a widget provider configuration activity.
+         */
+        @SuppressLint("ActionValue")
+        public const val EXTRA_CONFIG_PROVIDER_COMPONENT: String =
+            "com.google.android.clockwork.EXTRA_CONFIG_PROVIDER_COMPONENT"
 
         private fun Context.isDebuggableBuild(): Boolean =
             (this.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
 
         /**
-         * Returns whether debugging is enabled for the device.
+         * Returns whether developer mode is enabled for the device.
          *
-         * Debugging is enabled if the device is an emulator or if the developer settings are
+         * Developer mode is enabled if the device is an emulator or if the developer settings are
          * enabled.
          */
-        internal fun Context.isDebuggingEnabled(): Boolean =
+        internal fun Context.isDeveloperModeEnabled(): Boolean =
             isEmulator() ||
                 Settings.Global.getInt(
                     contentResolver,
@@ -301,7 +346,7 @@ internal constructor(
                     0,
                 ) == 1
 
-        private fun Context.isEmulator(): Boolean =
+        private fun isEmulator(): Boolean =
             Build.HARDWARE.contains("goldfish") ||
                 Build.HARDWARE.contains("ranchu") ||
                 Build.HARDWARE.contains("cutf_cvm") ||
@@ -312,9 +357,9 @@ internal constructor(
          * test the logic that checks for 37 features.
          */
         // TODO: b/446828899 - Remove once we have 37 in robolectric.
-        @VisibleForTesting var forceIsAtLeast37ForTesting: Boolean? = null
+        @VisibleForTesting internal var forceIsAtLeast37ForTesting: Boolean? = null
 
-        fun isAtLeastC(): Boolean =
+        internal fun isAtLeastC(): Boolean =
             forceIsAtLeast37ForTesting
                 ?: (Build.VERSION.SDK_INT >= 37 ||
                     (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA &&

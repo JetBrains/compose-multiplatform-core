@@ -16,19 +16,23 @@
 
 package androidx.ink.brush.behavior
 
+import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.Version
 import androidx.ink.brush.behavior.SourceNode.Source
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.testing.awaitNativePointerCleanupAfter
 import androidx.kruth.assertThat
 import kotlin.IllegalArgumentException
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
+@OptIn(InkInternalOnlyApi::class)
 class SourceNodeTest {
 
     @Test
     fun sourceNodeNativePointers_cleanedUpWhenOutOfScope() {
         awaitNativePointerCleanupAfter {
-            val unused = SourceNode(Source.NORMALIZED_PRESSURE, 0f, 1f)
+            @Suppress("UNUSED_VARIABLE") val unused = SourceNode(Source.NORMALIZED_PRESSURE, 0f, 1f)
         }
     }
 
@@ -179,8 +183,8 @@ class SourceNodeTest {
                     sourceValueRangeEnd = Float.NaN, // Not finite.
                 )
             }
-        assertThat(sourceValueRangeStartError.message).contains("source")
-        assertThat(sourceValueRangeStartError.message).contains("finite")
+        assertThat(sourceValueRangeEndError.message).contains("source")
+        assertThat(sourceValueRangeEndError.message).contains("finite")
 
         // sourceValueRangeEnd == sourceValueRangeEnd
         val sourceValueRangeError =
@@ -206,5 +210,12 @@ class SourceNodeTest {
             }
         assertThat(sourceOutOfRangeBehaviorError.message).contains("TimeSince")
         assertThat(sourceOutOfRangeBehaviorError.message).contains("kClamp")
+    }
+
+    @OptIn(ExperimentalInkCustomBrushApi::class)
+    @Test
+    fun calculateMinimumRequiredVersion_returnsExpectedValue() {
+        assertThat(Source.NORMALIZED_PRESSURE.calculateMinimumRequiredVersion())
+            .isEqualTo(Version.V0)
     }
 }

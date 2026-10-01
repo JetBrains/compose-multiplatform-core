@@ -49,37 +49,51 @@ internal class KspRoundEnv(
         }
         checkNotNull(env)
         return buildSet {
-                env.resolver.getSymbolsWithAnnotation(annotationQualifiedName).forEach { symbol ->
-                    when (symbol) {
-                        is KSPropertyDeclaration -> add(env.wrapPropertyDeclaration(symbol))
-                        is KSClassDeclaration -> add(env.wrapClassDeclaration(symbol))
-                        is KSFunctionDeclaration ->
-                            env.wrapFunctionDeclaration(symbol).let { method ->
-                                add(method)
-                                (method as? KspMethodElement)?.syntheticStaticMethod?.let {
-                                    add(it)
-                                }
+            env.resolver.getSymbolsWithAnnotation(annotationQualifiedName).forEach { symbol ->
+                when (symbol) {
+                    is KSPropertyDeclaration ->
+                        env.wrapPropertyDeclaration(symbol).let { property ->
+                            if (property.hasAnnotation(annotationQualifiedName)) {
+                                add(property)
                             }
-                        is KSValueParameter -> add(env.wrapValueParameter(symbol))
-                        is KSPropertyGetter ->
-                            env.wrapPropertyDeclaration(symbol.receiver).let { property ->
-                                property.getter?.let { add(it) }
-                                property.getter?.syntheticStaticAccessor?.let { add(it) }
+                            val field = property.backingField
+                            if (field != null && field.hasAnnotation(annotationQualifiedName)) {
+                                add(field)
                             }
-                        is KSPropertySetter ->
-                            env.wrapPropertyDeclaration(symbol.receiver).let { property ->
-                                property.setter?.let { add(it) }
-                                property.setter?.syntheticStaticAccessor?.let { add(it) }
+                        }
+                    is KSClassDeclaration -> add(env.wrapClassDeclaration(symbol))
+                    is KSFunctionDeclaration ->
+                        env.wrapFunctionDeclaration(symbol).let { method ->
+                            add(method)
+                            (method as? KspMethodElement)?.syntheticStaticMethod?.let {
+                                add(it)
                             }
-                        else ->
-                            error("Unsupported $symbol with annotation $annotationQualifiedName")
-                    }
+                        }
+                    is KSValueParameter -> add(env.wrapValueParameter(symbol))
+                    is KSPropertyGetter ->
+                        env.wrapPropertyDeclaration(symbol.receiver).let { property ->
+                            property.getter?.let { add(it) }
+                            property.getter?.syntheticStaticAccessor?.let { add(it) }
+                        }
+                    is KSPropertySetter ->
+                        env.wrapPropertyDeclaration(symbol.receiver).let { property ->
+                            property.setter?.let { add(it) }
+                            property.setter?.syntheticStaticAccessor?.let { add(it) }
+                        }
+                    else -> error("Unsupported $symbol with annotation $annotationQualifiedName")
                 }
+            }
 
-                env.resolver.getPackagesWithAnnotation(annotationQualifiedName).forEach {
-                    packageName ->
-                    add(KspPackageElement(env, packageName))
-                }
+            env.resolver.getPackagesWithAnnotation(annotationQualifiedName).forEach { packageName ->
+                add(KspPackageElement(env, packageName))
+            }
+        }
+            .filter {
+                // Due to the bug in https://github.com/google/ksp/issues/1198, KSP may incorrectly
+                // copy annotations from a constructor KSValueParameter to its KSPropertyDeclaration
+                // which we remove manually, so check here to make sure this is in sync with the
+                // actual annotations on the element.
+                it.getAllAnnotations().any { it.qualifiedName == annotationQualifiedName }
             }
             .toSet()
     }

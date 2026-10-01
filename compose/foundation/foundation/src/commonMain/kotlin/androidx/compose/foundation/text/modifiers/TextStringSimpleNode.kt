@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.text.modifiers
 
-import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.internal.requirePreconditionNotNull
 import androidx.compose.foundation.text.DefaultMinLines
@@ -55,6 +54,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
@@ -75,6 +75,7 @@ internal class TextStringSimpleNode(
     private var text: String,
     private var style: TextStyle,
     private var fontFamilyResolver: FontFamily.Resolver,
+    private var defaultLocaleList: LocaleList,
     private var overflow: TextOverflow = TextOverflow.Clip,
     private var softWrap: Boolean = true,
     private var maxLines: Int = Int.MAX_VALUE,
@@ -93,16 +94,14 @@ internal class TextStringSimpleNode(
     private var _layoutCache: ParagraphLayoutCache? = null
     private val layoutCache: ParagraphLayoutCache
         get() {
-            val style =
-                if (ComposeFoundationFlags.isInheritedTextStyleEnabled)
-                    resolvedInheritedStyle ?: style
-                else style
+            val style = style
             if (_layoutCache == null) {
                 _layoutCache =
                     ParagraphLayoutCache(
                         text,
                         style,
                         fontFamilyResolver,
+                        defaultLocaleList,
                         overflow,
                         softWrap,
                         maxLines,
@@ -111,8 +110,6 @@ internal class TextStringSimpleNode(
             }
             return _layoutCache!!
         }
-
-    private var resolvedInheritedStyle: TextStyle? = null
 
     /**
      * Get the layout cache for the current state of the node during layout.
@@ -124,31 +121,9 @@ internal class TextStringSimpleNode(
      *   the density value of the returned cache.
      */
     private fun IntrinsicMeasureScope.getLayoutCacheForMeasure(): ParagraphLayoutCache {
-        if (ComposeFoundationFlags.isInheritedTextStyleEnabled) {
-            if (resolveInheritedStyle(StylePhase.Layout)) {
-                val style = resolvedInheritedStyle ?: style
-                layoutCache.update(
-                    text = text,
-                    style = style,
-                    fontFamilyResolver = fontFamilyResolver,
-                    overflow = overflow,
-                    softWrap = softWrap,
-                    maxLines = maxLines,
-                    minLines = minLines,
-                )
-            }
-        }
         val activeCache = getLayoutCache()
         activeCache.density = this@getLayoutCacheForMeasure
         return activeCache
-    }
-
-    private fun resolveInheritedStyle(phase: StylePhase): Boolean {
-        val previousStyle = resolvedInheritedStyle
-        val newInheritedStyle = inheritedTextStyle(phase, style)
-        resolvedInheritedStyle = newInheritedStyle
-        if (previousStyle == null) return false
-        return previousStyle != newInheritedStyle
     }
 
     /**
@@ -194,6 +169,7 @@ internal class TextStringSimpleNode(
         maxLines: Int,
         softWrap: Boolean,
         fontFamilyResolver: FontFamily.Resolver,
+        defaultLocaleList: LocaleList,
         overflow: TextOverflow,
     ): Boolean {
         var changed: Boolean
@@ -221,6 +197,11 @@ internal class TextStringSimpleNode(
             changed = true
         }
 
+        if (this.defaultLocaleList != defaultLocaleList) {
+            this.defaultLocaleList = defaultLocaleList
+            changed = true
+        }
+
         if (this.overflow != overflow) {
             this.overflow = overflow
             changed = true
@@ -231,16 +212,13 @@ internal class TextStringSimpleNode(
 
     /** request invalidate based on the results of [updateText] and [updateLayoutRelatedArgs] */
     fun doInvalidations(drawChanged: Boolean, textChanged: Boolean, layoutChanged: Boolean) {
-        if (drawChanged || textChanged || layoutChanged) {
-            resolvedInheritedStyle = null
-        }
-
         // bring caches up to date even if the node is detached in case it is used again later
         if (textChanged || layoutChanged) {
             layoutCache.update(
                 text = text,
                 style = style,
                 fontFamilyResolver = fontFamilyResolver,
+                defaultLocaleList = defaultLocaleList,
                 overflow = overflow,
                 softWrap = softWrap,
                 maxLines = maxLines,
@@ -295,6 +273,7 @@ internal class TextStringSimpleNode(
                 updatedText,
                 style,
                 fontFamilyResolver,
+                defaultLocaleList,
                 overflow,
                 softWrap,
                 maxLines,
@@ -307,6 +286,7 @@ internal class TextStringSimpleNode(
                     updatedText,
                     style,
                     fontFamilyResolver,
+                    defaultLocaleList,
                     overflow,
                     softWrap,
                     maxLines,
@@ -468,11 +448,7 @@ internal class TextStringSimpleNode(
                 canvas.clipRect(left = 0f, top = 0f, right = width, bottom = height)
             }
             try {
-                val style =
-                    if (ComposeFoundationFlags.isInheritedTextStyleEnabled) {
-                        resolveInheritedStyle(StylePhase.Draw)
-                        resolvedInheritedStyle ?: style
-                    } else style
+                val style = style
                 val textDecoration = style.textDecoration ?: TextDecoration.None
                 val shadow = style.shadow ?: Shadow.None
                 val drawStyle = style.drawStyle ?: Fill

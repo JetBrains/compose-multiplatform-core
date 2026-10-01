@@ -21,6 +21,7 @@ import androidx.compose.remote.creation.compose.capture.DefaultIconSize
 import androidx.compose.remote.creation.compose.capture.RemoteImageVector
 import androidx.compose.remote.creation.compose.capture.RemoteVectorGroup
 import androidx.compose.remote.creation.compose.capture.RemoteVectorPath
+import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteDrawScope
 import androidx.compose.remote.creation.compose.layout.RemoteOffset
 import androidx.compose.remote.creation.compose.layout.RemoteSize
@@ -32,11 +33,13 @@ import androidx.compose.remote.creation.compose.state.asRdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.RootGroupName
 import androidx.compose.ui.graphics.vector.VectorGroup
 import androidx.compose.ui.graphics.vector.VectorPath
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.isSpecified
 
 /**
  * A [RemotePainter] that support drawing either a Compose [ImageVector] or a [RemoteImageVector]
@@ -54,6 +57,8 @@ public class RemoteVectorPainter : RemotePainter() {
     internal var vector = RemoteVectorComponent(root)
 
     internal var autoMirror = false
+
+    internal var defaultSize: RemoteSize = RemoteSize(DefaultIconSize.rf, DefaultIconSize.rf)
 
     /** configures the intrinsic tint that may be defined on a VectorPainter */
     internal var intrinsicColorFilter: RemoteColorFilter?
@@ -91,31 +96,31 @@ public class RemoteVectorPainter : RemotePainter() {
     }
 
     override val intrinsicSize: RemoteSize
-        get() = RemoteSize(DefaultIconSize.rf, DefaultIconSize.rf)
+        get() = defaultSize
 }
 
 /**
  * Creates a [RemoteVectorPainter] from a [RemoteImageVector].
  *
  * @param vector The [RemoteImageVector] to create the painter for.
- * @param tintColor the tine color to apply to the image.
+ * @param tintColor the tint color to apply to the image.
  */
 public fun painterRemoteVector(
     vector: RemoteImageVector,
-    tintColor: RemoteColor = RemoteColor(Color.Black),
+    tintColor: RemoteColor = vector.tintColor,
 ): RemotePainter {
     return createVectorPainterFromRemoteImageVector(vector, tintColor, vector.tintBlendMode)
 }
 
 /**
- * Creates a [RemoteVectorPainter] from a [RemoteImageVector].
+ * Creates a [RemoteVectorPainter] from an [ImageVector].
  *
  * @param image the [ImageVector] to create the painter for.
- * @param tintColor the tine color to apply to the image.
+ * @param tintColor the tint color to apply to the image.
  */
 public fun painterRemoteVector(
     image: ImageVector,
-    tintColor: RemoteColor = RemoteColor(Color.Black),
+    tintColor: RemoteColor = RemoteColor(image.tintColor),
 ): RemotePainter {
     return createVectorPainterFromImageVector(image, tintColor)
 }
@@ -127,12 +132,30 @@ internal fun RemoteVectorPainter.configureRemoteVectorPainter(
     name: String = RootGroupName,
     intrinsicColorFilter: RemoteColorFilter?,
     autoMirror: Boolean = false,
+    defaultSize: RemoteSize = RemoteSize(DefaultIconSize.rf, DefaultIconSize.rf),
 ): RemoteVectorPainter = apply {
     this.root = root
     this.autoMirror = autoMirror
     this.intrinsicColorFilter = intrinsicColorFilter
     this.viewportSize = viewportSize
     this.name = name
+    this.defaultSize = defaultSize
+}
+
+private fun createColorFilter(
+    tintColor: RemoteColor,
+    tintBlendMode: BlendMode,
+): RemoteColorFilter? {
+    val constantColor = tintColor.constantValueOrNull
+    return if (constantColor != null) {
+        if (constantColor.isSpecified && constantColor != Color.Transparent) {
+            RemoteBlendModeColorFilter(tintColor, tintBlendMode)
+        } else {
+            null
+        }
+    } else {
+        RemoteBlendModeColorFilter(tintColor, tintBlendMode)
+    }
 }
 
 /** Helper method to create a VectorPainter instance from a RemoteImageVector */
@@ -143,13 +166,15 @@ internal fun createVectorPainterFromRemoteImageVector(
 ): RemoteVectorPainter {
     val root = RemoteGroupComponent().createGroupComponent(imageVector.root)
     val viewport = RemoteSize(imageVector.viewportWidth, imageVector.viewportHeight)
+    val defaultSize = RemoteSize(imageVector.defaultWidth, imageVector.defaultHeight)
     return RemoteVectorPainter()
         .configureRemoteVectorPainter(
             root = root,
             viewportSize = viewport,
             name = imageVector.name,
-            intrinsicColorFilter = RemoteBlendModeColorFilter(tintColor, blendMode),
+            intrinsicColorFilter = createColorFilter(tintColor, blendMode),
             autoMirror = imageVector.autoMirror,
+            defaultSize = defaultSize,
         )
 }
 
@@ -160,8 +185,14 @@ internal fun createVectorPainterFromImageVector(
 ): RemoteVectorPainter {
     val root = RemoteGroupComponent().createGroupComponent(imageVector.root)
 
-    val defaultSize =
-        RemoteSize(imageVector.defaultWidth.asRdp().toPx(), imageVector.defaultWidth.asRdp().toPx())
+    val defaultWidth =
+        if (imageVector.defaultWidth.isSpecified) imageVector.defaultWidth.asRdp().value
+        else DefaultIconSize.rf
+    val defaultHeight =
+        if (imageVector.defaultHeight.isSpecified) imageVector.defaultHeight.asRdp().value
+        else DefaultIconSize.rf
+    val defaultSize = RemoteSize(defaultWidth, defaultHeight)
+
     val viewportWidth =
         if (imageVector.viewportWidth.isNaN()) defaultSize.width else imageVector.viewportWidth.rf
     val viewportHeight =
@@ -173,8 +204,9 @@ internal fun createVectorPainterFromImageVector(
             root = root,
             viewportSize = viewport,
             name = imageVector.name,
-            intrinsicColorFilter = RemoteBlendModeColorFilter(tintColor, BlendMode.SrcIn),
+            intrinsicColorFilter = createColorFilter(tintColor, BlendMode.SrcIn),
             autoMirror = imageVector.autoMirror,
+            defaultSize = defaultSize,
         )
 }
 
@@ -188,6 +220,7 @@ internal fun RemoteGroupComponent.createGroupComponent(
                 RemotePathComponent().apply {
                     pathData = vectorNode.pathData.toRemotePathNodes()
                     name = vectorNode.name
+                    pathFillType = vectorNode.pathFillType
                     fill = vectorNode.fill
                     fillAlpha = vectorNode.fillAlpha.rf
                     stroke = vectorNode.stroke
@@ -212,6 +245,7 @@ internal fun RemoteGroupComponent.createGroupComponent(
                     translationY = vectorNode.translationY.rf
                     pivotX = vectorNode.pivotX.rf
                     pivotY = vectorNode.pivotY.rf
+                    clipPathData = vectorNode.clipPathData.toRemotePathNodes()
                     createGroupComponent(vectorNode)
                 }
             insertAt(index, remoteGroupComponent)
@@ -230,6 +264,7 @@ internal fun RemoteGroupComponent.createGroupComponent(
                 RemotePathComponent().apply {
                     pathData = vectorNode.pathData
                     name = vectorNode.name
+                    pathFillType = vectorNode.pathFillType
                     fill = vectorNode.fill
                     fillAlpha = vectorNode.fillAlpha
                     stroke = vectorNode.stroke
@@ -254,10 +289,38 @@ internal fun RemoteGroupComponent.createGroupComponent(
                     translationY = vectorNode.translationY
                     pivotX = vectorNode.pivotX
                     pivotY = vectorNode.pivotY
+                    clipPathData = vectorNode.clipPathData
                     createGroupComponent(vectorNode)
                 }
             insertAt(index, remoteGroupComponent)
         }
     }
     return this
+}
+
+/**
+ * Draws the vector painter into the provided [canvas].
+ *
+ * @param canvas The [RemoteCanvas] to draw onto.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun RemoteVectorPainter.draw(canvas: RemoteCanvas) {
+    with(canvas.drawScope) {
+        onDraw()
+    }
+}
+
+/**
+ * Draws the [RemoteImageVector] directly into the provided [canvas].
+ *
+ * @param canvas The [RemoteCanvas] to draw onto.
+ * @param tintColor The tint color to apply to the vector.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun RemoteImageVector.draw(
+    canvas: RemoteCanvas,
+    tintColor: RemoteColor = this.tintColor,
+) {
+    val painter = painterRemoteVector(this, tintColor) as RemoteVectorPainter
+    painter.draw(canvas)
 }

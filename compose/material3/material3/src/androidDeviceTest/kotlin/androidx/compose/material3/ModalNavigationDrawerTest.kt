@@ -18,6 +18,7 @@ package androidx.compose.material3
 
 import android.os.Build
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -75,7 +76,6 @@ import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Assume.assumeFalse
 import org.junit.Rule
@@ -86,7 +86,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ModalNavigationDrawerTest {
 
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     private val NavigationDrawerWidth = NavigationDrawerTokens.ContainerWidth
 
@@ -749,10 +749,12 @@ class ModalNavigationDrawerTest {
     @Test
     @LargeTest
     fun navigationDrawer_drawerIsClosed_whenBackPressedDuringOpen() {
+        var backPressed = false
         lateinit var drawerState: DrawerState
         rule.setMaterialContent(lightColorScheme()) {
             val scope = rememberCoroutineScope()
             drawerState = rememberDrawerState(DrawerValue.Closed)
+            BackHandler { backPressed = true }
             ModalNavigationDrawer(
                 drawerState = drawerState,
                 drawerContent = {
@@ -795,11 +797,12 @@ class ModalNavigationDrawerTest {
 
         rule.mainClock.autoAdvance = true
 
-        // Make sure drawer is fully closed
+        // Make sure drawer is fully closed and back press was consumed by the drawer
         rule.runOnIdle {
             assertThat(drawerState.currentValue).isEqualTo(DrawerValue.Closed)
             assertThat(drawerState.targetValue).isEqualTo(DrawerValue.Closed)
             assertThat(drawerState.isAnimationRunning).isEqualTo(false)
+            assertThat(backPressed).isFalse()
         }
     }
 
@@ -807,10 +810,12 @@ class ModalNavigationDrawerTest {
     @Test
     @LargeTest
     fun navigationDrawer_drawerIsClosed_whenBackPressedDuringClose() {
+        var backPressed = false
         lateinit var drawerState: DrawerState
         rule.setMaterialContent(lightColorScheme()) {
             val scope = rememberCoroutineScope()
             drawerState = rememberDrawerState(DrawerValue.Open)
+            BackHandler { backPressed = true }
             ModalNavigationDrawer(
                 drawerState = drawerState,
                 drawerContent = {
@@ -853,11 +858,12 @@ class ModalNavigationDrawerTest {
 
         rule.mainClock.autoAdvance = true
 
-        // Make sure drawer is fully closed
+        // Make sure drawer is fully closed and back press passed through to outer BackHandler
         rule.runOnIdle {
             assertThat(drawerState.currentValue).isEqualTo(DrawerValue.Closed)
             assertThat(drawerState.targetValue).isEqualTo(DrawerValue.Closed)
             assertThat(drawerState.isAnimationRunning).isEqualTo(false)
+            assertThat(backPressed).isTrue()
         }
     }
 }

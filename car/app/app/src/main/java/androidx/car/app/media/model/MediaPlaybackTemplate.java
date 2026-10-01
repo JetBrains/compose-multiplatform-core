@@ -16,6 +16,7 @@
 
 package androidx.car.app.media.model;
 
+import androidx.annotation.OptIn;
 import androidx.car.app.annotations.CarProtocol;
 import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.annotations.KeepFields;
@@ -37,6 +38,13 @@ import java.util.Objects;
  *
  * A pre requisite for using this template is the usage of {@link
  * MediaPlaybackManager#registerMediaPlaybackToken}.
+ *
+ * <p><b>Note:</b> Starting in Car API 9, all media apps will render with a persistent
+ * entrypoint to the full screen {@link MediaPlaybackTemplate}. The CAL Host may render that
+ * entrypoint as an action (on smaller screens) to a mini-controller bar (on larger screens).
+ * When a user clicks on this, the host will send a callback with the
+ * {@link androidx.car.app.media.MediaConstants#ACTION_SHOW_MEDIA_PLAYBACK} intent. All 3P Media
+ * Apps MUST handle this intent callback.
  */
 @RequiresCarApi(8)
 @CarProtocol
@@ -46,6 +54,9 @@ public class MediaPlaybackTemplate implements Template {
     @ExperimentalCarApi
     @RequiresCarApi(9)
     private final @Nullable Banner mBanner;
+    @ExperimentalCarApi
+    @RequiresCarApi(9)
+    private final @Nullable MediaPlaybackStyle mStyle;
 
     /**
      * Returns the {@link Header} to display in this template or not to display one if it is {@code
@@ -65,18 +76,27 @@ public class MediaPlaybackTemplate implements Template {
         return mBanner;
     }
 
+    /**
+     * Returns the {@link MediaPlaybackStyle} for this template or {@code null} if none was set.
+     */
+    @ExperimentalCarApi
+    @RequiresCarApi(9)
+    public @Nullable MediaPlaybackStyle getStyle() {
+        return mStyle;
+    }
+
     @Override
     public @NonNull String toString() {
         return "MediaPlaybackTemplate";
     }
 
-    @androidx.annotation.OptIn(markerClass = androidx.car.app.annotations.ExperimentalCarApi.class)
+    @OptIn(markerClass = ExperimentalCarApi.class)
     @Override
     public int hashCode() {
-        return Objects.hash(mHeader, mBanner);
+        return Objects.hash(mHeader, mBanner, mStyle);
     }
 
-    @androidx.annotation.OptIn(markerClass = androidx.car.app.annotations.ExperimentalCarApi.class)
+    @OptIn(markerClass = ExperimentalCarApi.class)
     @Override
     public boolean equals(@Nullable Object other) {
         if (this == other) {
@@ -88,20 +108,23 @@ public class MediaPlaybackTemplate implements Template {
         MediaPlaybackTemplate otherTemplate = (MediaPlaybackTemplate) other;
 
         return Objects.equals(mHeader, otherTemplate.mHeader)
-                && Objects.equals(mBanner, otherTemplate.mBanner);
+                && Objects.equals(mBanner, otherTemplate.mBanner)
+                && Objects.equals(mStyle, otherTemplate.mStyle);
     }
 
     /** Constructs an empty instance, used by serialization code. */
-    @androidx.annotation.OptIn(markerClass = androidx.car.app.annotations.ExperimentalCarApi.class)
+    @OptIn(markerClass = ExperimentalCarApi.class)
     private MediaPlaybackTemplate() {
         mHeader = null;
         mBanner = null;
+        mStyle = null;
     }
 
-    @androidx.annotation.OptIn(markerClass = androidx.car.app.annotations.ExperimentalCarApi.class)
+    @OptIn(markerClass = ExperimentalCarApi.class)
     MediaPlaybackTemplate(Builder builder) {
         mHeader = builder.mHeader;
         mBanner = builder.mBanner;
+        mStyle = builder.mStyle;
     }
 
     /** Builder for the {@link MediaPlaybackTemplate} */
@@ -110,6 +133,8 @@ public class MediaPlaybackTemplate implements Template {
         @Nullable Header mHeader;
         @ExperimentalCarApi
         @Nullable Banner mBanner;
+        @ExperimentalCarApi
+        @Nullable MediaPlaybackStyle mStyle;
 
         /**
          * Sets the {@link Header} for this template or {code null} to not display a {@link
@@ -135,6 +160,20 @@ public class MediaPlaybackTemplate implements Template {
             return this;
         }
 
+        /**
+         * Sets the {@link MediaPlaybackStyle} for this template or {@code null} to use default
+         * host styling.
+         *
+         * <p>Defaults to {@code null}, which means default host styling is used.
+         */
+        @ExperimentalCarApi
+        @RequiresCarApi(9)
+        public MediaPlaybackTemplate.@NonNull Builder setStyle(
+                @Nullable MediaPlaybackStyle style) {
+            this.mStyle = style;
+            return this;
+        }
+
         /** Constructs the template defined by this builder. */
         public @NonNull MediaPlaybackTemplate build() {
             return new MediaPlaybackTemplate(this);
@@ -144,11 +183,11 @@ public class MediaPlaybackTemplate implements Template {
         public Builder() {};
 
         /** Creates a new {@link Builder}, populated from the input {@link MediaPlaybackTemplate} */
-        @androidx.annotation.OptIn(markerClass =
-                androidx.car.app.annotations.ExperimentalCarApi.class)
+        @OptIn(markerClass = ExperimentalCarApi.class)
         public Builder(@NonNull MediaPlaybackTemplate template) {
             mHeader = template.getHeader();
             mBanner = template.getBanner();
+            mStyle = template.getStyle();
         }
     }
 }

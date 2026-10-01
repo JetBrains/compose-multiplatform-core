@@ -75,7 +75,6 @@ import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.Text
 import com.google.common.truth.Truth.assertThat
 import kotlin.String
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -85,7 +84,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class SwipeDismissableSceneStrategyTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private lateinit var backPressedDispatcher: OnBackPressedDispatcher
 
@@ -597,8 +596,8 @@ class SwipeDismissableSceneStrategyTest {
         // interrupt navigation with pop
         rule.runOnIdle { backStack.removeLastOrNull() }
 
-        // run half the transitions
-        rule.mainClock.advanceTimeBy(testDuration.toLong() / 2)
+        // run a small amount of the interrupted transition (which falls back to a fast spring)
+        rule.mainClock.advanceTimeBy(testDuration.toLong() / 20)
 
         // ensure text on the left side of the screen is visible (ensure screen slides out from
         // left to right)

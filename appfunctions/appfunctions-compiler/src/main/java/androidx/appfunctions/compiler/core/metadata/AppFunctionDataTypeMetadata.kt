@@ -17,6 +17,7 @@
 package androidx.appfunctions.compiler.core.metadata
 
 import androidx.appfunctions.compiler.core.IntrospectionHelper
+import androidx.appfunctions.compiler.core.ProcessingException
 import androidx.appfunctions.compiler.core.findAnnotation
 import androidx.appfunctions.compiler.core.requirePropertyValueOfType
 import com.google.devtools.ksp.symbol.KSAnnotation
@@ -135,13 +136,12 @@ data class AppFunctionObjectTypeMetadata(
     override val description: String,
 ) : AppFunctionDataTypeMetadata() {
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
-        val properties =
-            properties.map { (name, dataType) ->
-                AppFunctionNamedDataTypeMetadataDocument(
-                    name = checkNotNull(name),
-                    dataTypeMetadata = dataType.toAppFunctionDataTypeMetadataDocument(),
-                )
-            }
+        val properties = properties.map { (name, dataType) ->
+            AppFunctionNamedDataTypeMetadataDocument(
+                name = checkNotNull(name),
+                dataTypeMetadata = dataType.toAppFunctionDataTypeMetadataDocument(),
+            )
+        }
         return AppFunctionDataTypeMetadataDocument(
             type = TYPE,
             properties = properties,
@@ -256,10 +256,60 @@ data class AppFunctionDoubleTypeMetadata(
     }
 }
 
+/**
+ * Compile-time representation of an `android.os.PatternMatcher`.
+ *
+ * The compiler runs on the JVM and cannot construct `android.os.PatternMatcher`, so [type] mirrors
+ * its `PATTERN_*` constants. Any type is accepted, so that types added in newer SDKs work without a
+ * library update.
+ */
+data class AppFunctionStringPatternMetadata(val value: String, val type: Int) {
+    /** The `android.os.PatternMatcher` constant name for [type], or null if it is not known. */
+    val typeConstantName: String?
+        get() =
+            when (type) {
+                LITERAL -> IntrospectionHelper.PatternMatcherClass.PATTERN_LITERAL
+                PREFIX -> IntrospectionHelper.PatternMatcherClass.PATTERN_PREFIX
+                SIMPLE_GLOB -> IntrospectionHelper.PatternMatcherClass.PATTERN_SIMPLE_GLOB
+                ADVANCED_GLOB -> IntrospectionHelper.PatternMatcherClass.PATTERN_ADVANCED_GLOB
+                SUFFIX -> IntrospectionHelper.PatternMatcherClass.PATTERN_SUFFIX
+                else -> null
+            }
+
+    fun toAppFunctionStringPatternDocument(): AppFunctionStringPatternDocument =
+        AppFunctionStringPatternDocument(value = value, type = type)
+
+    companion object {
+        // Mirrors android.os.PatternMatcher constants.
+        const val LITERAL: Int = 0
+        const val PREFIX: Int = 1
+        const val SIMPLE_GLOB: Int = 2
+        const val ADVANCED_GLOB: Int = 3
+        const val SUFFIX: Int = 4
+
+        /** Creates an [AppFunctionStringPatternMetadata] from an `@AppFunctionPatternMatcher`. */
+        fun create(patternAnnotation: KSAnnotation): AppFunctionStringPatternMetadata {
+            val pattern =
+                patternAnnotation.requirePropertyValueOfType(
+                    IntrospectionHelper.AppFunctionPatternMatcherAnnotation.PROPERTY_PATTERN,
+                    String::class,
+                )
+            val type =
+                patternAnnotation.requirePropertyValueOfType(
+                    IntrospectionHelper.AppFunctionPatternMatcherAnnotation.PROPERTY_TYPE,
+                    Int::class,
+                )
+            return AppFunctionStringPatternMetadata(value = pattern, type = type)
+        }
+    }
+}
+
 data class AppFunctionStringTypeMetadata(
     override val isNullable: Boolean,
     override val description: String,
     val enumValues: Set<String>? = null,
+    val patterns: List<AppFunctionStringPatternMetadata> = emptyList(),
+    val format: String? = null,
 ) : AppFunctionDataTypeMetadata() {
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
         return AppFunctionDataTypeMetadataDocument(
@@ -267,31 +317,65 @@ data class AppFunctionStringTypeMetadata(
             isNullable = isNullable,
             description = description,
             enumValues = enumValues.orEmpty().toList(),
+            patterns = patterns.map { it.toAppFunctionStringPatternDocument() },
+            format = format,
         )
     }
 
     companion object {
+        const val FORMAT_URI: String = "uri"
+
         fun create(
             isNullable: Boolean,
             description: String,
             annotations: Sequence<KSAnnotation>,
         ): AppFunctionStringTypeMetadata {
-            return AppFunctionStringTypeMetadata(
-                isNullable,
-                description,
-                annotations
-                    .findAnnotation(
-                        IntrospectionHelper.AppFunctionStringValueConstraintAnnotation.CLASS_NAME
-                    )
+            val stringConstraintAnnotation =
+                annotations.findAnnotation(
+                    IntrospectionHelper.AppFunctionStringValueConstraintAnnotation.CLASS_NAME
+                )
+            val enumValues =
+                stringConstraintAnnotation
                     ?.requirePropertyValueOfType(
                         IntrospectionHelper.AppFunctionStringValueConstraintAnnotation
                             .PROPERTY_ENUM_VALUES,
-                        // Array properties are returned as ArrayList from KSP.
-                        java.util.ArrayList::class,
+                        ArrayList::class,
                     )
                     ?.map { String::class.cast(it) }
                     ?.toSet()
-                    ?.ifEmpty { null },
+                    ?.ifEmpty { null }
+            val patterns =
+                stringConstraintAnnotation
+                    ?.requirePropertyValueOfType(
+                        IntrospectionHelper.AppFunctionStringValueConstraintAnnotation
+                            .PROPERTY_PATTERN_MATCHERS,
+                        // Array properties are returned as ArrayList from KSP.
+                        ArrayList::class,
+                    )
+                    ?.map {
+                        val patternAnnotation =
+                            it as? KSAnnotation
+                                ?: throw ProcessingException(
+                                    "Unable to process $it (${it?.javaClass?.name}) as " +
+                                        "@AppFunctionPatternMatcher",
+                                    stringConstraintAnnotation,
+                                )
+                        AppFunctionStringPatternMetadata.create(patternAnnotation)
+                    } ?: emptyList()
+            val format =
+                stringConstraintAnnotation
+                    ?.requirePropertyValueOfType(
+                        IntrospectionHelper.AppFunctionStringValueConstraintAnnotation
+                            .PROPERTY_FORMAT,
+                        String::class,
+                    )
+                    ?.ifEmpty { null }
+            return AppFunctionStringTypeMetadata(
+                isNullable = isNullable,
+                description = description,
+                enumValues = enumValues,
+                patterns = patterns,
+                format = format,
             )
         }
     }
@@ -343,6 +427,16 @@ data class AppFunctionNamedDataTypeMetadataDocument(
     val dataTypeMetadata: AppFunctionDataTypeMetadataDocument,
 )
 
+data class AppFunctionStringPatternDocument(
+    val namespace: String = APP_FUNCTION_NAMESPACE,
+    val id: String = APP_FUNCTION_ID_EMPTY,
+    val value: String,
+    val type: Int,
+) {
+    fun toAppFunctionStringPatternMetadata(): AppFunctionStringPatternMetadata =
+        AppFunctionStringPatternMetadata(value = value, type = type)
+}
+
 data class AppFunctionDataTypeMetadataDocument(
     val namespace: String = APP_FUNCTION_NAMESPACE,
     val id: String = APP_FUNCTION_ID_EMPTY,
@@ -357,6 +451,8 @@ data class AppFunctionDataTypeMetadataDocument(
     val objectQualifiedName: String? = null,
     val description: String = "",
     val enumValues: List<String> = emptyList(),
+    val patterns: List<AppFunctionStringPatternDocument> = emptyList(),
+    val format: String? = null,
 ) {
     fun toAppFunctionDataTypeMetadata(): AppFunctionDataTypeMetadata =
         when (type) {
@@ -372,10 +468,9 @@ data class AppFunctionDataTypeMetadataDocument(
                 check(properties.isNotEmpty()) {
                     "Properties must be present for object type can't be empty"
                 }
-                val propertiesMap =
-                    properties.associate {
-                        it.name to it.dataTypeMetadata.toAppFunctionDataTypeMetadata()
-                    }
+                val propertiesMap = properties.associate {
+                    it.name to it.dataTypeMetadata.toAppFunctionDataTypeMetadata()
+                }
                 AppFunctionObjectTypeMetadata(
                     properties = propertiesMap,
                     required = required,
@@ -421,6 +516,8 @@ data class AppFunctionDataTypeMetadataDocument(
                     isNullable = isNullable,
                     description = description,
                     enumValues = enumValues.toSet().ifEmpty { null },
+                    patterns = patterns.map { it.toAppFunctionStringPatternMetadata() },
+                    format = format,
                 )
 
             AppFunctionDataTypeMetadata.TYPE_BOOLEAN ->

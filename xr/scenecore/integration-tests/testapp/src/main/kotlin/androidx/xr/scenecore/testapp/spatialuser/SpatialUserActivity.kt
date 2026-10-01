@@ -21,11 +21,11 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -74,12 +74,21 @@ class SpatialUserActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // The content view must be installed before the Session is created. Creating a Session
+        // registers this Activity's window as an XR "window leash", and the platform reads
+        // Window.peekDecorView() without a null check when a compositor transform update
+        // arrives, which crashes the process if no content view has been set yet.
+        // See b/562983987.
+        WindowCompat.enableEdgeToEdge(window)
+        setContentView(R.layout.common_test_panel)
+
         lifecycleScope.launch {
             session = SessionManager(this@SpatialUserActivity).createSession()
-            if (session == null) this@SpatialUserActivity.finish()
+            if (session == null) {
+                this@SpatialUserActivity.finish()
+                return@launch
+            }
 
-            enableEdgeToEdge()
-            setContentView(R.layout.common_test_panel)
             ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
                 val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
                 v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)

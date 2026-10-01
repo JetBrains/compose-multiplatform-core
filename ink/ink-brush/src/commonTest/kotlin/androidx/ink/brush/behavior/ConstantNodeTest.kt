@@ -16,18 +16,20 @@
 
 package androidx.ink.brush.behavior
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.testing.awaitNativePointerCleanupAfter
 import androidx.kruth.assertThat
 import kotlin.IllegalArgumentException
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
+@OptIn(InkInternalOnlyApi::class)
 class ConstantNodeTest {
 
     @Test
     fun constantNodeNativePointers_cleanedUpWhenOutOfScope() {
         awaitNativePointerCleanupAfter {
-            val unused = ConstantNode(42f)
+            @Suppress("UNUSED_VARIABLE") val unused = ConstantNode(42f)
         }
     }
 

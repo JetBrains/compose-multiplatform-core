@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package androidx.xr.compose.spatial
 
 import android.view.View
@@ -39,10 +40,14 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastMap
 import androidx.core.viewtree.getParentOrViewTreeDisjointParent
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.xr.compose.ExperimentalSpatialComposeApi
 import androidx.xr.compose.R
+import androidx.xr.compose.SpatialComposeFlags
 import androidx.xr.compose.platform.LocalComposeXrOwners
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialConfiguration
@@ -51,15 +56,17 @@ import androidx.xr.compose.platform.SessionSpatialConfiguration
 import androidx.xr.compose.platform.SpatialComposeScene
 import androidx.xr.compose.platform.disposableValueOf
 import androidx.xr.compose.platform.findNearestParentEntity
+import androidx.xr.compose.platform.getActivity
 import androidx.xr.compose.platform.getValue
-import androidx.xr.compose.subspace.AnchorTarget
 import androidx.xr.compose.subspace.ArDeviceTarget
-import androidx.xr.compose.subspace.FollowBehavior
-import androidx.xr.compose.subspace.FollowTarget
 import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialBoxScope
 import androidx.xr.compose.subspace.SubspaceComposable
-import androidx.xr.compose.subspace.TrackedDimensions
+import androidx.xr.compose.subspace.animation.follow.AnchorTarget
+import androidx.xr.compose.subspace.animation.follow.FollowMode
+import androidx.xr.compose.subspace.animation.follow.FollowTarget
+import androidx.xr.compose.subspace.animation.follow.TrackedDimensions
+import androidx.xr.compose.subspace.animation.follow.ViewTarget
 import androidx.xr.compose.subspace.layout.CoreGroupEntity
 import androidx.xr.compose.subspace.layout.SubspaceLayout
 import androidx.xr.compose.subspace.layout.SubspaceModifier
@@ -67,12 +74,13 @@ import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.recommendedSizeIfUnbounded
 import androidx.xr.compose.subspace.layout.rotate
 import androidx.xr.compose.unit.IntVolumeSize
-import androidx.xr.compose.unit.Meter
 import androidx.xr.compose.unit.VolumeConstraints
+import androidx.xr.compose.unit.metersToDp
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
+import androidx.xr.scenecore.AnchorSpace
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
@@ -92,13 +100,13 @@ private object SubspaceConstants {
  * Create a 3D area that the app can render spatial content into.
  *
  * Subspace creates a Compose for XR Spatial UI hierarchy (3D Scene Graph) in your application's
- * regular Compose UI tree. In this Subspace, You can use a `@SubspaceComposable` annotated
- * composable functions to create 3D UI elements.
+ * regular Compose UI tree. In this Subspace, you can use `@SubspaceComposable`-annotated composable
+ * functions to create 3D UI elements.
  *
  * Each call to Subspace creates a new, independent Spatial UI hierarchy. It does **not** inherit
  * the spatial position, orientation, or scale of any parent Subspace it is nested within. Its
  * position and scale are solely decided by the system's recommended position and scale. To create
- * an embedded Subspace within a SpatialPanel, Orbiter, SpatialPopup and etc, use the
+ * an embedded Subspace within a SpatialPanel, Orbiter, SpatialPopup, etc., use the
  * [PlanarEmbeddedSubspace] instead.
  *
  * By default, this Subspace is automatically bounded by the system's recommended content box. The
@@ -138,40 +146,6 @@ public fun Subspace(
 ) {
     Subspace(
         modifier = modifier,
-        allowUnboundedSubspace = false,
-        subspaceRootNode = LocalSubspaceRootNode.current,
-        content = content,
-    )
-}
-
-/**
- * Create a 3D area that the app can render spatial content into.
- *
- * @param modifier The [SubspaceModifier] to be applied to the content of this Subspace.
- * @param allowUnboundedSubspace If true, the default recommended content box constraints will not
- *   be applied, allowing the Subspace to be infinite. Unbounded Subspaces are considered unsafe
- *   because they can lead to poor performance or even a crash as the content expands to the maximum
- *   volume constraint size. In addition, content placed too far away may not be visible to the
- *   user. Defaults to false, providing a safe, bounded space within the system's recommended
- *   content box.
- * @param content The 3D content to render within this Subspace.
- */
-@Deprecated(
-    message =
-        "The allowUnboundedSubspace parameter is deprecated. To achieve unbounded behavior, use the requiredSizeIn modifier instead.",
-    replaceWith = ReplaceWith("Subspace(modifier, content)"),
-)
-@Composable
-@ComposableOpenTarget(index = -1)
-@Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
-public fun Subspace(
-    modifier: SubspaceModifier = SubspaceModifier,
-    allowUnboundedSubspace: Boolean,
-    content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit,
-) {
-    Subspace(
-        modifier = modifier,
-        allowUnboundedSubspace = allowUnboundedSubspace,
         subspaceRootNode = LocalSubspaceRootNode.current,
         content = content,
     )
@@ -193,8 +167,7 @@ public fun Subspace(
 @ComposableOpenTarget(index = -1)
 private fun Subspace(
     modifier: SubspaceModifier,
-    allowUnboundedSubspace: Boolean,
-    subspaceRootNode: Entity? = LocalSubspaceRootNode.current,
+    subspaceRootNode: Entity?,
     content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit,
 ) {
     // If not in XR, do nothing
@@ -203,7 +176,9 @@ private fun Subspace(
     val lifecycleOwner = LocalLifecycleOwner.current
     val context = LocalContext.current
     val session = LocalSession.current ?: return
+    val density = LocalDensity.current
     val compositionContext = rememberCompositionContext()
+    val coreMainPanelEntity = LocalComposeXrOwners.current.coreMainPanelEntity
     val subspaceRoot = remember {
         Entity.create(
             session = session,
@@ -221,17 +196,38 @@ private fun Subspace(
                 context = context,
                 jxrSession = session,
                 parentCompositionContext = compositionContext,
-                rootEntity = CoreGroupEntity(subspaceRoot),
+                rootEntity = CoreGroupEntity(session.scene.virtualPixelDensity, subspaceRoot),
             )
         ) {
             it.dispose()
             try {
                 if (SceneManager.getSceneCount(context) == 0) {
-                    session.scene.mainPanelEntity.setEnabled(true)
+                    @OptIn(ExperimentalSpatialComposeApi::class)
+                    if (SpatialComposeFlags.isMainPanelResetOnSubspaceDisposeEnabled) {
+                        // Last remaining Subspace is disposed. If the Activity is active,
+                        // reset the main panel when transitioning back to 2D content.
+                        val isActivityActive =
+                            lifecycleOwner.lifecycle.currentState != Lifecycle.State.DESTROYED &&
+                                context.getActivity()?.isFinishing != true
+                        if (isActivityActive) {
+                            session.scene.mainPanelEntity.apply {
+                                // Main panel will always need to be re-enabled.
+                                setEnabled(true)
+
+                                // Restore original 2D window properties if rendered in 3D.
+                                coreMainPanelEntity?.reset(
+                                    density = density,
+                                    newParent = subspaceRootNode,
+                                )
+                            }
+                        }
+                    } else {
+                        session.scene.mainPanelEntity.setEnabled(true)
+                    }
                 }
             } catch (_: IllegalStateException) {
-                // TODO(b/450063142) The shutdown order of Impress, SceneCore, and Compose should be
-                //  fixed to avoid having to catch this exception here.
+                // TODO(b/450063142) The shutdown order of Impress, SceneCore, and Compose
+                // should be fixed to avoid having to catch this exception here.
                 // When this Composable is disposed, it's possible the Activity is already
                 // being destroyed, which also destroys the underlying session. Accessing
                 // `session.scene` would then throw an IllegalStateException, as checked
@@ -243,12 +239,7 @@ private fun Subspace(
     LaunchedEffect(subspaceRootNode) { subspaceRootNode?.let { subspaceRoot.parent = it } }
 
     scene.setContent {
-        val finalModifier =
-            if (allowUnboundedSubspace) {
-                modifier
-            } else {
-                SubspaceModifier.recommendedSizeIfUnbounded().then(modifier)
-            }
+        val finalModifier = SubspaceModifier.recommendedSizeIfUnbounded().then(modifier)
         SpatialBox(modifier = finalModifier, content = content)
     }
 }
@@ -291,6 +282,7 @@ public fun PlanarEmbeddedSubspace(
     val lifecycleOwner = LocalLifecycleOwner.current
     val context = LocalContext.current
     val session = LocalSession.current ?: return
+    val pixelDensity = session.scene.virtualPixelDensity
     val compositionContext = rememberCompositionContext()
     val coreEntity =
         checkNotNull(findNearestParentEntity()) { "CoreEntity unavailable for subspace" }
@@ -300,11 +292,12 @@ public fun PlanarEmbeddedSubspace(
     val planarEmbeddedSubspaceRootContainer by remember {
         disposableValueOf(
             CoreGroupEntity(
+                    pixelDensity,
                     Entity.create(
                         session = session,
                         name = SubspaceConstants.PLANAR_EMBEDDED_SUBSPACE_ROOT_CONTAINER_NAME,
                         parent = session.scene.activitySpace,
-                    )
+                    ),
                 )
                 .apply {
                     enabled = false
@@ -317,11 +310,12 @@ public fun PlanarEmbeddedSubspace(
     val scene by remember {
         val planarEmbeddedSubspaceRoot =
             CoreGroupEntity(
+                    pixelDensity,
                     Entity.create(
                         session = session,
                         name = SubspaceConstants.PLANAR_EMBEDDED_SUBSPACE_ROOT_CONTAINER_NAME,
                         parent = session.scene.activitySpace,
-                    )
+                    ),
                 )
                 .apply { parent = planarEmbeddedSubspaceRootContainer }
         disposableValueOf(
@@ -340,8 +334,9 @@ public fun PlanarEmbeddedSubspace(
     var subspaceContentPixelSize by remember { mutableStateOf(IntSize.Zero) }
     val parentSize = coreEntity.mutableSize.run { IntSize(width, height) }
     val density = LocalDensity.current
-    val placeholderDpSize =
-        subspaceContentPixelSize.run { with(density) { DpSize(width.toDp(), height.toDp()) } }
+    val placeholderDpSize = subspaceContentPixelSize.run {
+        with(density) { DpSize(width.toDp(), height.toDp()) }
+    }
     val view = LocalView.current
 
     // Render a Spacer in a Layout such that the measurable passed to the 2D layout has the same
@@ -360,24 +355,36 @@ public fun PlanarEmbeddedSubspace(
                 subspaceMeasurables,
                 _ ->
                 val volumeConstraints = view.findVolumeConstraints()
-                val placeables =
-                    subspaceMeasurables.map {
-                        it.measure(
-                            VolumeConstraints(
-                                minWidth = constraints.minWidth,
-                                maxWidth = constraints.maxWidth,
-                                minHeight = constraints.minHeight,
-                                maxHeight = constraints.maxHeight,
-                                minDepth = volumeConstraints?.minDepth ?: 0,
-                                maxDepth = volumeConstraints?.maxDepth ?: Int.MAX_VALUE,
-                            )
-                        )
+                val childConstraints =
+                    VolumeConstraints(
+                        minWidth = constraints.minWidth,
+                        maxWidth = constraints.maxWidth,
+                        minHeight = constraints.minHeight,
+                        maxHeight = constraints.maxHeight,
+                        minDepth = volumeConstraints?.minDepth ?: 0,
+                        maxDepth = volumeConstraints?.maxDepth ?: Int.MAX_VALUE,
+                    )
+                var maxContentWidth = 0
+                var maxContentHeight = 0
+                var maxContentDepth = 0
+                val placeables = subspaceMeasurables.fastMap {
+                    it.measure(childConstraints).also { placeable ->
+                        if (placeable.width > maxContentWidth) {
+                            maxContentWidth = placeable.width
+                        }
+                        if (placeable.height > maxContentHeight) {
+                            maxContentHeight = placeable.height
+                        }
+                        if (placeable.depth > maxContentDepth) {
+                            maxContentDepth = placeable.depth
+                        }
                     }
+                }
                 val measuredContentVolume =
                     IntVolumeSize(
-                            width = placeables.maxOf { it.width },
-                            height = placeables.maxOf { it.height },
-                            depth = placeables.maxOf { it.depth },
+                            width = maxContentWidth,
+                            height = maxContentHeight,
+                            depth = maxContentDepth,
                         )
                         .apply { subspaceContentPixelSize = IntSize(width, height) }
                 layout(
@@ -385,7 +392,7 @@ public fun PlanarEmbeddedSubspace(
                     measuredContentVolume.height,
                     measuredContentVolume.depth,
                 ) {
-                    placeables.forEach { it.place(Pose.Identity) }
+                    placeables.fastForEach { it.place(Pose.Identity) }
                 }
             }
         }
@@ -401,7 +408,13 @@ public fun PlanarEmbeddedSubspace(
             if (measuredPlaceholderSize != IntSize.Zero && parentSize != IntSize.Zero) {
                 val contentOffset = coordinates?.positionInRoot() ?: return@layout
                 val nextPose =
-                    calculatePose(contentOffset, parentSize, measuredPlaceholderSize, density)
+                    calculatePose(
+                        contentOffset,
+                        parentSize,
+                        measuredPlaceholderSize,
+                        density,
+                        pixelDensity = pixelDensity,
+                    )
                 planarEmbeddedSubspaceRootContainer.poseInMeters = nextPose
                 planarEmbeddedSubspaceRootContainer.enabled = true
             }
@@ -432,23 +445,24 @@ public annotation class ExperimentalFollowingSubspaceApi
  * solely by its `target` parameter. By default, this Subspace is automatically bounded by the
  * system's recommended content box, similar to [Subspace].
  *
- * When the target parameter is specified to be [FollowTarget.ArDevice], the content will be
- * positioned relative the view of the AR device. This is sometimes referred to as head-locked
- * content. For this API, it is required for device tracking to not be disabled in the session
- * configuration. If it is disabled, this API will not return anything. The session configuration
- * should resemble `session.configure( config =
+ * When the target parameter is specified to be
+ * [androidx.xr.compose.subspace.FollowTarget.ArDevice], the content will be positioned relative to
+ * the view of the AR device. This is sometimes referred to as head-locked content. For this API, it
+ * is required for device tracking to not be disabled in the session configuration. If it is
+ * disabled, this API will not return anything. The session configuration should resemble
+ * `session.configure( config =
  * Config.Builder(session.config).setDeviceTracking(DeviceTrackingMode.SPATIAL).build() )` The
- * [FollowTarget.ArDevice] is not compatible with [FollowBehavior.Tight]. Combining these together
- * will cause this composable to not be displayed. For a near tight experience, use
- * [FollowBehavior.Soft] with a low duration value such as
- * `FollowBehavior.Soft([FollowBehavior.Companion.MIN_SOFT_DURATION_MS])`
+ * [androidx.xr.compose.subspace.FollowTarget.ArDevice] is not compatible with
+ * [androidx.xr.compose.subspace.FollowBehavior.Tight]. Combining these together will cause this
+ * composable to not be displayed. For a near-tight experience, use
+ * [androidx.xr.compose.subspace.FollowBehavior.Soft] with a low duration value.
  *
- * When the target parameter is specified to be [FollowTarget.Anchor], the content will be
- * positioned around an anchor. This is useful for placing UI elements on real-world surfaces or at
- * specific spatial locations. The visual stability of the anchored content depends on the
- * underlying system's ability to track the [androidx.xr.scenecore.AnchorSpace]. For Creating,
- * loading, and persisting anchors, please check [androidx.xr.scenecore.AnchorSpace] for more
- * information
+ * When the target parameter is specified to be [androidx.xr.compose.subspace.FollowTarget.Anchor],
+ * the content will be positioned around an anchor. This is useful for placing UI elements on
+ * real-world surfaces or at specific spatial locations. The visual stability of the anchored
+ * content depends on the underlying system's ability to track the
+ * [androidx.xr.scenecore.AnchorSpace]. For creating, loading, and persisting anchors, please check
+ * [androidx.xr.scenecore.AnchorSpace] for more information.
  *
  * This composable is a no-op in non-XR environments (i.e., Phone and Tablet).
  *
@@ -467,51 +481,54 @@ public annotation class ExperimentalFollowingSubspaceApi
  *    smaller, manageable content areas that are less likely to collide.
  * 2. **Use Strategic Offsets**: Use `SubspaceModifier.offset` to position a Subspace. For example,
  *    a head-locked menu can be offset to appear in the user's peripheral vision, reducing the
- *    chance it will collide with central content.Also, consider placing different Subspace
+ *    chance it will collide with central content. Also, consider placing different Subspace
  *    instances at different depths. This ensures that if they overlap, their z-depth ordering will
  *    be clear and predictable. Note, however, that while the visual ordering may be clear, Jetpack
  *    XR doesn't guarantee predictable interaction behaviors between UI elements in separate,
  *    overlapping Subspaces.
  *
- * @sample androidx.xr.compose.samples.FollowingSubspaceSample
  * @param target Specifies an area which the Subspace will move towards.
- * @param behavior determines how the FollowingSubspace follows the target. It can be made to move
+ * @param behavior Determines how the FollowingSubspace follows the target. It can be made to move
  *   faster and be more responsive. The default is FollowBehavior.Soft().
  * @param modifier The [SubspaceModifier] to be applied to the content of this Subspace.
  * @param dimensions A set of boolean flags to determine the dimensions of movement that are
  *   tracked. Possible tracking dimensions are: translationX, translationY, translationZ, rotationX,
  *   rotationY, and rotationZ. By default, all dimensions are tracked. Any dimensions not listed
- *   will not be tracked. For example if translationY is not listed, this means the content will not
- *   move as the user moves vertically up and down.
+ *   will not be tracked. For example, if translationY is not listed, this means the content will
+ *   not move as the user moves vertically up and down.
  * @param content The 3D content to render within this Subspace.
+ * @deprecated Use [Subspace] with the follow parameter instead.
  */
 // TODO(b/446871230): Add unit tests for FollowingSubspace.
+@Deprecated(
+    message = "FollowingSubspace is deprecated. Use Subspace with the follow parameter instead."
+)
 @Composable
 @ComposableOpenTarget(index = -1)
-@Suppress("COMPOSE_APPLIER_CALL_MISMATCH")
+@Suppress("COMPOSE_APPLIER_CALL_MISMATCH", "DEPRECATION")
 @ExperimentalFollowingSubspaceApi
 public fun FollowingSubspace(
-    target: FollowTarget,
-    behavior: FollowBehavior,
+    target: androidx.xr.compose.subspace.FollowTarget,
+    behavior: androidx.xr.compose.subspace.FollowBehavior,
     modifier: SubspaceModifier = SubspaceModifier,
-    dimensions: TrackedDimensions = TrackedDimensions.All,
+    dimensions: androidx.xr.compose.subspace.TrackedDimensions =
+        androidx.xr.compose.subspace.TrackedDimensions.All,
     content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit,
 ) {
     // If not in XR, do nothing
     if (!LocalSpatialConfiguration.current.hasXrSpatialFeature) return
     val session = LocalSession.current ?: return
+    val pixelDensity = session.scene.virtualPixelDensity
 
     if (!validateFollowingSubspaceConfiguration(target, behavior, session.config)) return
 
     // If we're following an anchor and want the content to follow it as tightly as possible,
     // it's best to link them together in the scene graph rather than implement custom logic.
-    if (target is AnchorTarget && behavior == FollowBehavior.Tight) {
-        Subspace(
-            modifier = modifier,
-            subspaceRootNode = target.anchorSpace,
-            allowUnboundedSubspace = false,
-            content = content,
-        )
+    if (
+        target is androidx.xr.compose.subspace.AnchorTarget &&
+            behavior == androidx.xr.compose.subspace.FollowBehavior.Tight
+    ) {
+        Subspace(modifier = modifier, subspaceRootNode = target.anchorSpace, content = content)
         return
     }
 
@@ -531,7 +548,9 @@ public fun FollowingSubspace(
     LaunchedEffect(scale) { subspaceRootNode.setScale(scale) }
 
     val subspaceTrailingEntity by remember {
-        disposableValueOf(CoreGroupEntity(subspaceRootNode).apply { enabled = false }) {
+        disposableValueOf(
+            CoreGroupEntity(pixelDensity, subspaceRootNode).apply { enabled = false }
+        ) {
             it.dispose()
         }
     }
@@ -554,18 +573,15 @@ public fun FollowingSubspace(
     }
 
     val offsetPose = getInitialSubspaceOffset(target)
+    val density = LocalDensity.current
 
-    Subspace(
-        modifier = modifier,
-        allowUnboundedSubspace = false,
-        subspaceRootNode = subspaceRootNode,
-    ) {
+    Subspace(modifier = modifier, subspaceRootNode = subspaceRootNode) {
         SpatialBox(
             modifier =
                 SubspaceModifier.offset(
-                        Meter(offsetPose.translation.x).toDp(),
-                        Meter(offsetPose.translation.y).toDp(),
-                        Meter(offsetPose.translation.z).toDp(),
+                        offsetPose.translation.x.metersToDp(density, pixelDensity),
+                        offsetPose.translation.y.metersToDp(density, pixelDensity),
+                        offsetPose.translation.z.metersToDp(density, pixelDensity),
                     )
                     .rotate(offsetPose.rotation),
             content = content,
@@ -573,14 +589,149 @@ public fun FollowingSubspace(
     }
 }
 
-private fun getInitialSubspaceOffset(target: FollowTarget): Pose {
+/**
+ * Creates a 3D space that positions spatial UI content relative to a [FollowTarget].
+ *
+ * Each call to `Subspace` creates a new, independent spatial UI hierarchy. It does **not** inherit
+ * the spatial position, orientation, or scale of any parent `Subspace` it is nested within. Its
+ * scale is decided by the system's recommended scale. Its position in the world is determined
+ * solely by its `follow` parameter. By default, this Subspace is automatically bounded by the
+ * system's recommended content box, similar to [Subspace].
+ *
+ * When the `follow` parameter is specified to be [FollowTarget.view], the content will be
+ * positioned relative to the view of the AR device. This is sometimes referred to as head-locked
+ * content. For this API, it is required for device tracking to not be disabled in the session
+ * configuration. If it is disabled, this API will not return anything. The session configuration
+ * should resemble `session.configure( config =
+ * Config.Builder(session.config).setDeviceTracking(DeviceTrackingMode.SPATIAL).build() )`
+ *
+ * When the `follow` parameter is specified to be [FollowTarget.anchor], the content will be
+ * positioned around an anchor. This is useful for placing UI elements on real-world surfaces or at
+ * specific spatial locations. The visual stability of the anchored content depends on the
+ * underlying system's ability to track the [androidx.xr.scenecore.AnchorSpace]. For creating,
+ * loading, and persisting anchors, please check [androidx.xr.scenecore.AnchorSpace] for more
+ * information.
+ *
+ * This composable is a no-op in non-XR environments (i.e., Phone and Tablet).
+ *
+ * ## Managing Spatial Overlap
+ * Because each call to any kind of Subspace function creates an independent 3D scene, these spaces
+ * are not aware of one another. This can lead to a scenario where a moving `Subspace` (like a
+ * head-locked menu) can intersect with content in another stationary Subspace. This overlap can
+ * cause jarring visual artifacts and z-depth ordering issues (Z-fighting), creating a confusing
+ * user experience. A Subspace does not perform automatic collision avoidance between these
+ * independent Subspaces. It is the developer's responsibility to manage the layout and prevent
+ * these intersections or to introduce custom hit handling.
+ *
+ * ### Guidelines for Preventing Overlap:
+ * 1. **Control Volume Size**: Carefully define the bounds of your Subspace instances. Instead of
+ *    letting content fill the maximum recommended constraints, use sizing modifiers to create
+ *    smaller, manageable content areas that are less likely to collide.
+ * 2. **Use Strategic Offsets**: Use `SubspaceModifier.offset` to position a Subspace. For example,
+ *    a head-locked menu can be offset to appear in the user's peripheral vision, reducing the
+ *    chance it will collide with central content. Also, consider placing different Subspace
+ *    instances at different depths. This ensures that if they overlap, their z-depth ordering will
+ *    be clear and predictable. Note, however, that while the visual ordering may be clear, Jetpack
+ *    XR doesn't guarantee predictable interaction behaviors between UI elements in separate,
+ *    overlapping Subspaces.
+ *
+ * @sample androidx.xr.compose.samples.FollowingSubspaceSample
+ * @param follow Specifies an entity towards which the Subspace will move.
+ * @param modifier The [SubspaceModifier] to be applied to the content of this Subspace.
+ * @param content The 3D content to render within this Subspace.
+ */
+@Composable
+@ComposableOpenTarget(index = -1)
+@Suppress("COMPOSE_APPLIER_CALL_MISMATCH")
+@ExperimentalFollowingSubspaceApi
+public fun Subspace(
+    follow: FollowTarget,
+    modifier: SubspaceModifier = SubspaceModifier,
+    content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit,
+) {
+    // If not in XR, do nothing
+    if (!LocalSpatialConfiguration.current.hasXrSpatialFeature) return
+    val session = LocalSession.current ?: return
+    val pixelDensity = session.scene.virtualPixelDensity
+
+    if (!validateFollowingSubspaceConfiguration(follow, session.config)) return
+
+    // If we're following an anchor and want the content to follow it as tightly as possible across
+    // all dimensions, it's best to link them together in the scene graph rather than implement
+    // custom logic.
+    if (
+        follow is AnchorTarget &&
+            follow.mode == FollowMode.tight(dimensions = TrackedDimensions.All)
+    ) {
+        val anchorSpace = remember(follow.anchor) { AnchorSpace.create(session, follow.anchor) }
+        Subspace(modifier = modifier, subspaceRootNode = anchorSpace, content = content)
+        return
+    }
+
+    val subspaceRootNode = remember {
+        Entity.create(
+            session = session,
+            name = SubspaceConstants.FOLLOWING_SUBSPACE_ROOT_CONTAINER_NAME,
+            parent = session.scene.activitySpace,
+        )
+    }
+
+    // Implicitly subscribes this Composable to scale changes.
+    val scale =
+        (LocalSpatialConfiguration.current as? SessionSpatialConfiguration)?.recommendedScale
+            ?: 1.0f
+
+    LaunchedEffect(scale) { subspaceRootNode.setScale(scale) }
+
+    val subspaceTrailingEntity by remember {
+        disposableValueOf(
+            CoreGroupEntity(pixelDensity, subspaceRootNode).apply { enabled = false }
+        ) {
+            it.dispose()
+        }
+    }
+
+    val recenterSignal =
+        rememberRecenterSignal(
+            session = session,
+            follow = follow,
+            subspaceTrailingEntity = subspaceTrailingEntity,
+            subspaceRootNode = subspaceRootNode,
+        )
+
+    LaunchedEffect(follow, recenterSignal) {
+        follow.start(session = session, trailingEntity = subspaceTrailingEntity)
+    }
+
+    val offsetPose = getInitialSubspaceOffset(follow)
+    val density = LocalDensity.current
+
+    Subspace(modifier = modifier, subspaceRootNode = subspaceRootNode) {
+        SpatialBox(
+            modifier =
+                SubspaceModifier.offset(
+                        offsetPose.translation.x.metersToDp(density, pixelDensity),
+                        offsetPose.translation.y.metersToDp(density, pixelDensity),
+                        offsetPose.translation.z.metersToDp(density, pixelDensity),
+                    )
+                    .rotate(offsetPose.rotation),
+            content = content,
+        )
+    }
+}
+
+@OptIn(ExperimentalFollowingSubspaceApi::class)
+@Suppress("DEPRECATION")
+private fun getInitialSubspaceOffset(target: androidx.xr.compose.subspace.FollowTarget): Pose {
     return if (target is ArDeviceTarget) target.offset else Pose.Identity
 }
 
 @Composable
+@OptIn(ExperimentalFollowingSubspaceApi::class)
+@Suppress("DEPRECATION")
 private fun rememberRecenterSignal(
     session: Session,
-    target: FollowTarget,
+    target: androidx.xr.compose.subspace.FollowTarget,
     subspaceTrailingEntity: CoreGroupEntity,
     subspaceRootNode: Entity,
 ): Boolean {
@@ -590,7 +741,7 @@ private fun rememberRecenterSignal(
         val listener = Runnable {
             recenterSignal = !recenterSignal
             val targetValue = currentTargetState.value
-            if (targetValue is AnchorTarget) {
+            if (targetValue is androidx.xr.compose.subspace.AnchorTarget) {
                 // Anchors live outside the ActivitySpace, so if the ActivitySpace moves, the
                 // relative position to the anchor must be manually updated.
                 subspaceTrailingEntity.poseInMeters =
@@ -614,10 +765,11 @@ private fun rememberRecenterSignal(
 }
 
 /** Validates the configuration for [FollowingSubspace]. */
-@ExperimentalFollowingSubspaceApi
+@OptIn(ExperimentalFollowingSubspaceApi::class)
+@Suppress("DEPRECATION")
 private fun validateFollowingSubspaceConfiguration(
-    target: FollowTarget,
-    behavior: FollowBehavior,
+    target: androidx.xr.compose.subspace.FollowTarget,
+    behavior: androidx.xr.compose.subspace.FollowBehavior,
     config: Config,
 ): Boolean {
     // Following an AR device requires device tracking to be enabled.
@@ -626,7 +778,63 @@ private fun validateFollowingSubspaceConfiguration(
     }
 
     // Tight follow for AR devices was not performant enough to be supported at this time.
-    if (target is ArDeviceTarget && behavior == FollowBehavior.Tight) {
+    if (target is ArDeviceTarget && behavior == androidx.xr.compose.subspace.FollowBehavior.Tight) {
+        return false
+    }
+
+    return true
+}
+
+@OptIn(ExperimentalFollowingSubspaceApi::class)
+private fun getInitialSubspaceOffset(follow: FollowTarget): Pose {
+    return if (follow is ViewTarget) follow.offset else Pose.Identity
+}
+
+@Composable
+@OptIn(ExperimentalFollowingSubspaceApi::class)
+private fun rememberRecenterSignal(
+    session: Session,
+    follow: FollowTarget,
+    subspaceTrailingEntity: CoreGroupEntity,
+    subspaceRootNode: Entity,
+): Boolean {
+    var recenterSignal by remember { mutableStateOf(false) }
+    val currentTargetState = rememberUpdatedState(follow)
+    DisposableEffect(session) {
+        val listener = Runnable {
+            recenterSignal = !recenterSignal
+            val targetValue = currentTargetState.value
+            if (targetValue is AnchorTarget) {
+                // Anchors live outside the ActivitySpace, so if the ActivitySpace moves, the
+                // relative position to the anchor must be manually updated.
+                subspaceTrailingEntity.poseInMeters =
+                    session.scene.perceptionSpace.transformPoseTo(
+                        pose = targetValue.anchor.state.value.pose,
+                        destination = session.scene.activitySpace,
+                    )
+            } else {
+                // If the activity space moves, this should be the new origin.
+                subspaceRootNode.setPose(Pose.Identity)
+                subspaceTrailingEntity.poseInMeters = Pose.Identity
+            }
+        }
+        session.scene.activitySpace.addOriginChangedListener(listener)
+
+        onDispose {
+            if (session.lifecycleOwner.lifecycle.currentState != Lifecycle.State.DESTROYED) {
+                session.scene.activitySpace.removeOriginChangedListener(listener)
+            }
+        }
+    }
+
+    return recenterSignal
+}
+
+/** Validates the configuration for Subspace with [FollowTarget]. */
+@OptIn(ExperimentalFollowingSubspaceApi::class)
+private fun validateFollowingSubspaceConfiguration(follow: FollowTarget, config: Config): Boolean {
+    // Following an AR device requires device tracking to be enabled.
+    if (follow is ViewTarget && config.deviceTracking == DeviceTrackingMode.DISABLED) {
         return false
     }
 

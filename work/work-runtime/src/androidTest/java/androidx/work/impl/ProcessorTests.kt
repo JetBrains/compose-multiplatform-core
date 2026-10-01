@@ -28,6 +28,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.work.Configuration
 import androidx.work.DatabaseTest
 import androidx.work.ForegroundInfo
@@ -48,7 +49,10 @@ import java.util.concurrent.Executor
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -114,6 +118,7 @@ class ProcessorTests : DatabaseTest() {
         processor = Processor(context, configuration, taskExecutor, mDatabase)
     }
 
+    @SdkSuppress(minSdkVersion = 25) // b/560357724
     @Test
     @MediumTest
     fun testInterruptNotInCriticalSection() {
@@ -155,6 +160,7 @@ class ProcessorTests : DatabaseTest() {
         assertTrue(context.intents.isEmpty())
     }
 
+    @SdkSuppress(minSdkVersion = 25) // b/560357724
     @Test
     @MediumTest
     fun testStartForegroundStopWork() {
@@ -176,6 +182,7 @@ class ProcessorTests : DatabaseTest() {
         assertTrue(executionFinished.await(3, TimeUnit.SECONDS))
     }
 
+    @SdkSuppress(minSdkVersion = 25) // b/560357724
     @Test
     @MediumTest
     fun testInterruptStopsService() {
@@ -199,6 +206,7 @@ class ProcessorTests : DatabaseTest() {
         assertTrue(intent.filterEquals(stopIntentExpected))
     }
 
+    @SdkSuppress(minSdkVersion = 25) // b/560357724
     @Test
     @MediumTest
     fun testStartOldGenerationDoesntStopCurrentWorker() {
@@ -224,6 +232,7 @@ class ProcessorTests : DatabaseTest() {
         assertTrue(executionFinished.await(3, TimeUnit.SECONDS))
     }
 
+    @SdkSuppress(minSdkVersion = 25) // b/560357724
     @Test
     @MediumTest
     fun testStartNewGenerationDoesntStopCurrentWorker() {
@@ -250,6 +259,7 @@ class ProcessorTests : DatabaseTest() {
         assertTrue(executionFinished.await(3, TimeUnit.SECONDS))
     }
 
+    @SdkSuppress(minSdkVersion = 25) // b/560357724
     @Test
     @MediumTest
     fun testOldGenerationDoesntStart() {
@@ -268,6 +278,219 @@ class ProcessorTests : DatabaseTest() {
         processor.addExecutionListener(oldGenerationListener)
         assertFalse(processor.startWork(oldToken))
         assertTrue(called)
+    }
+
+    @SdkSuppress(minSdkVersion = 25) // b/560357724
+    @Test
+    @MediumTest
+    fun testListenerCanModifyListDuringRunOnExecuted() {
+        var firstListenerCalled = false
+        var secondListenerCalled = false
+
+        val secondListener = ExecutionListener { _, _ -> secondListenerCalled = true }
+
+        val firstListener =
+            object : ExecutionListener {
+                override fun onExecuted(id: WorkGenerationalId, needsReschedule: Boolean) {
+                    firstListenerCalled = true
+                    processor.removeExecutionListener(this)
+                    processor.addExecutionListener(secondListener)
+                }
+            }
+
+        processor.addExecutionListener(firstListener)
+
+        // 1. Test runOnExecuted pathway (startWork on non-existent work spec)
+        val nonExistentToken = StartStopToken(WorkGenerationalId("non-existent-id", 0))
+        assertFalse(processor.startWork(nonExistentToken))
+        assertTrue(firstListenerCalled)
+        // secondListener was added during the dispatch, so it shouldn't be called in the current
+        // dispatch pass
+        assertFalse(secondListenerCalled)
+
+        // Reset state to verify secondListener is now active and firstListener is removed
+        firstListenerCalled = false
+        secondListenerCalled = false
+
+        // 2. Test runOnExecuted pathway subsequent dispatch (to verify secondListener is now active
+        // and firstListener is removed)
+        val anotherNonExistentToken =
+            StartStopToken(WorkGenerationalId("another-non-existent-id", 0))
+        assertFalse(processor.startWork(anotherNonExistentToken))
+        assertTrue(secondListenerCalled)
+        assertFalse(firstListenerCalled)
+    }
+
+    @SdkSuppress(minSdkVersion = 25) // b/560357724
+    @Test
+    @MediumTest
+    fun testListenerCanModifyListDuringOnExecuted() {
+        var firstListenerCalled = false
+        var secondListenerCalled = false
+
+        val secondListener = ExecutionListener { _, _ -> secondListenerCalled = true }
+
+        val firstListener =
+            object : ExecutionListener {
+                override fun onExecuted(id: WorkGenerationalId, needsReschedule: Boolean) {
+                    firstListenerCalled = true
+                    processor.removeExecutionListener(this)
+                    processor.addExecutionListener(secondListener)
+                }
+            }
+
+        processor.addExecutionListener(firstListener)
+
+        // 1. Test onExecuted pathway
+        val request = OneTimeWorkRequest.Builder(LatchWorker::class.java).build()
+        insertWork(request)
+        val token = StartStopToken(WorkGenerationalId(request.workSpec.id, 0))
+        assertTrue(processor.startWork(token))
+        val worker = factory.awaitWorker(request.id)
+
+        // Use a CountDownLatch to block the test thread until the asynchronous worker completes
+        // and all preceding execution listeners (including the ones under test) have finished
+        // running.
+        val executionFinished = CountDownLatch(1)
+        processor.addExecutionListener { _, _ -> executionFinished.countDown() }
+
+        (worker as LatchWorker).mLatch.countDown()
+        assertTrue(executionFinished.await(3, TimeUnit.SECONDS))
+
+        assertTrue(firstListenerCalled)
+        // secondListener was added during the dispatch, so it shouldn't be called in the current
+        // dispatch pass
+        assertFalse(secondListenerCalled)
+
+        // 2. Test onExecuted pathway subsequent dispatch (to verify secondListener is now active
+        // and firstListener is removed)
+        firstListenerCalled = false
+        secondListenerCalled = false
+
+        val request2 = OneTimeWorkRequest.Builder(LatchWorker::class.java).build()
+        insertWork(request2)
+        val token2 = StartStopToken(WorkGenerationalId(request2.workSpec.id, 0))
+
+        assertTrue(processor.startWork(token2))
+        val worker2 = factory.awaitWorker(request2.id)
+
+        // Block until the second worker completes and all listeners have finished running
+        val executionFinished2 = CountDownLatch(1)
+        processor.addExecutionListener { _, _ -> executionFinished2.countDown() }
+
+        (worker2 as LatchWorker).mLatch.countDown()
+        assertTrue(executionFinished2.await(3, TimeUnit.SECONDS))
+
+        assertTrue(secondListenerCalled)
+        assertFalse(firstListenerCalled)
+    }
+
+    @SdkSuppress(minSdkVersion = 25) // b/560357724
+    @Test
+    @MediumTest
+    fun testForegroundStart_notifiesListener() = runBlocking {
+        val request = OneTimeWorkRequest.Builder(LatchWorker::class.java).build()
+        insertWork(request)
+        val id = request.workSpec.generationalId()
+        val startStopToken = StartStopToken(id)
+
+        val deferred = CompletableDeferred<Pair<WorkGenerationalId, Boolean>>()
+
+        val listener = ForegroundListener { generationalId, isForeground ->
+            deferred.complete(generationalId to isForeground)
+        }
+
+        processor.addForegroundListener(listener)
+
+        processor.startWork(startStopToken)
+
+        // Promote to foreground
+        processor.startForeground(startStopToken.id.workSpecId, foregroundInfo)
+
+        val (notifiedId, foregroundState) = withTimeout(3000) { deferred.await() }
+        assertEquals(id, notifiedId)
+        assertTrue(foregroundState)
+
+        // Clean up / stop work so it doesn't leak into teardown
+        val executionFinished = CompletableDeferred<Unit>()
+        processor.addExecutionListener { _, _ -> executionFinished.complete(Unit) }
+        val firstWorker = factory.awaitWorker(request.id)
+        (firstWorker as LatchWorker).mLatch.countDown()
+        withTimeout(3000) { executionFinished.await() }
+    }
+
+    @SdkSuppress(minSdkVersion = 25) // b/560357724
+    @Test
+    @MediumTest
+    fun testExecutionFinishes_notifiesForegroundListener() = runBlocking {
+        val request = OneTimeWorkRequest.Builder(LatchWorker::class.java).build()
+        insertWork(request)
+        val id = request.workSpec.generationalId()
+        val startStopToken = StartStopToken(id)
+
+        val deferred = CompletableDeferred<Pair<WorkGenerationalId, Boolean>>()
+
+        val listener = ForegroundListener { generationalId, isForeground ->
+            if (!isForeground) {
+                deferred.complete(generationalId to isForeground)
+            }
+        }
+
+        processor.addForegroundListener(listener)
+
+        processor.startWork(startStopToken)
+
+        // Promote to foreground
+        processor.startForeground(startStopToken.id.workSpecId, foregroundInfo)
+
+        // Clean up / stop foreground work
+        val executionFinished = CompletableDeferred<Unit>()
+        processor.addExecutionListener { _, _ -> executionFinished.complete(Unit) }
+        val firstWorker = factory.awaitWorker(request.id)
+        (firstWorker as LatchWorker).mLatch.countDown()
+        withTimeout(3000) { executionFinished.await() }
+
+        val (notifiedId, foregroundState) = withTimeout(3000) { deferred.await() }
+        assertEquals(id, notifiedId)
+        assertFalse(foregroundState)
+    }
+
+    @SdkSuppress(minSdkVersion = 25) // b/560357724
+    @Test
+    @MediumTest
+    fun testStopForegroundWork_notifiesListener() = runBlocking {
+        val request = OneTimeWorkRequest.Builder(LatchWorker::class.java).build()
+        insertWork(request)
+        val id = request.workSpec.generationalId()
+        val startStopToken = StartStopToken(id)
+
+        val deferred = CompletableDeferred<Pair<WorkGenerationalId, Boolean>>()
+
+        val listener = ForegroundListener { generationalId, isForeground ->
+            if (!isForeground) {
+                deferred.complete(generationalId to isForeground)
+            }
+        }
+
+        processor.addForegroundListener(listener)
+
+        processor.startWork(startStopToken)
+
+        // Promote to foreground
+        processor.startForeground(startStopToken.id.workSpecId, foregroundInfo)
+
+        val executionFinished = CompletableDeferred<Unit>()
+        processor.addExecutionListener { _, _ -> executionFinished.complete(Unit) }
+
+        // Stop foreground work explicitly
+        processor.stopForegroundWork(startStopToken, 0)
+
+        val (notifiedId, foregroundState) = withTimeout(3000) { deferred.await() }
+        assertEquals(id, notifiedId)
+        assertFalse(foregroundState)
+
+        // Wait for worker execution finish to clean up (stopForegroundWork interrupts LatchWorker)
+        withTimeout(3000) { executionFinished.await() }
     }
 
     @After

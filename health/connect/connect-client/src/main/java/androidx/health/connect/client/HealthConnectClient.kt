@@ -37,7 +37,11 @@ import androidx.health.connect.client.aggregate.AggregateMetric
 import androidx.health.connect.client.aggregate.AggregationResult
 import androidx.health.connect.client.aggregate.AggregationResultGroupedByDuration
 import androidx.health.connect.client.aggregate.AggregationResultGroupedByPeriod
+import androidx.health.connect.client.devicedatasource.DeviceDataSource
+import androidx.health.connect.client.devicedatasource.DeviceDataSourceCapabilities
+import androidx.health.connect.client.devicedatasource.GetDeviceDataSourcesResponse
 import androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi
+import androidx.health.connect.client.feature.FEATURE_CONSTANT_NAME_DEVICE_DATA_PROVIDERS
 import androidx.health.connect.client.feature.FEATURE_CONSTANT_NAME_MATCHMAKING
 import androidx.health.connect.client.feature.FEATURE_CONSTANT_NAME_PHR
 import androidx.health.connect.client.feature.HealthConnectFeaturesUnavailableImpl
@@ -49,10 +53,13 @@ import androidx.health.connect.client.matchmaking.MatchmakingResponse
 import androidx.health.connect.client.permission.HealthPermission.Companion.PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND
 import androidx.health.connect.client.permission.HealthPermission.Companion.PERMISSION_READ_MEDICAL_DATA_VACCINES
 import androidx.health.connect.client.permission.HealthPermission.Companion.PERMISSION_WRITE_MEDICAL_DATA
+import androidx.health.connect.client.records.BasalBodyTemperatureRecord
+import androidx.health.connect.client.records.BloodGlucoseRecord
 import androidx.health.connect.client.records.FhirResource
 import androidx.health.connect.client.records.MedicalDataSource
 import androidx.health.connect.client.records.MedicalResource
 import androidx.health.connect.client.records.MedicalResourceId
+import androidx.health.connect.client.records.OvulationTestRecord
 import androidx.health.connect.client.records.Record
 import androidx.health.connect.client.records.metadata.DataOrigin
 import androidx.health.connect.client.request.AggregateGroupByDurationRequest
@@ -74,17 +81,21 @@ import androidx.health.connect.client.response.ReadRecordResponse
 import androidx.health.connect.client.response.ReadRecordsResponse
 import androidx.health.connect.client.time.TimeRangeFilter
 import androidx.health.platform.client.HealthDataService
+import androidx.health.platform.client.service.HealthDataServiceConstants.DEFAULT_PROVIDER_MIN_VERSION_CODE
+import androidx.health.platform.client.service.HealthDataServiceConstants.DEFAULT_PROVIDER_PACKAGE_NAME
+import androidx.health.platform.client.utils.getPackageInfoCompat
+import androidx.health.platform.client.utils.isTargetSignatureValid
 import kotlin.reflect.KClass
 
 @JvmDefaultWithCompatibility
 /** Interface to access health and fitness records. */
-interface HealthConnectClient {
+public interface HealthConnectClient {
 
     /** Access operations related to permissions. */
-    val permissionController: PermissionController
+    public val permissionController: PermissionController
 
     /** Access operations related to feature availability. */
-    val features: HealthConnectFeatures
+    public val features: HealthConnectFeatures
         get() = HealthConnectFeaturesUnavailableImpl
 
     /**
@@ -118,7 +129,7 @@ interface HealthConnectClient {
      * [androidx.health.connect.client.records.metadata.Metadata.clientRecordVersion] takes
      * precedence.
      */
-    suspend fun insertRecords(records: List<Record>): InsertRecordsResponse
+    public suspend fun insertRecords(records: List<Record>): InsertRecordsResponse
 
     /**
      * Updates one or more [Record] of given UIDs to newly specified values. Update of multiple
@@ -130,7 +141,7 @@ interface HealthConnectClient {
      * @throws SecurityException For requests with unpermitted access.
      * @throws java.io.IOException For any disk I/O issues.
      */
-    suspend fun updateRecords(records: List<Record>)
+    public suspend fun updateRecords(records: List<Record>)
 
     /**
      * Deletes one or more [Record] by their identifiers. Deletion of multiple [Record] is executed
@@ -150,7 +161,7 @@ interface HealthConnectClient {
      *
      * @sample androidx.health.connect.client.samples.DeleteByUniqueIdentifier
      */
-    suspend fun deleteRecords(
+    public suspend fun deleteRecords(
         recordType: KClass<out Record>,
         recordIdsList: List<String>,
         clientRecordIdsList: List<String>,
@@ -171,7 +182,10 @@ interface HealthConnectClient {
      *
      * @sample androidx.health.connect.client.samples.DeleteByTimeRange
      */
-    suspend fun deleteRecords(recordType: KClass<out Record>, timeRangeFilter: TimeRangeFilter)
+    public suspend fun deleteRecords(
+        recordType: KClass<out Record>,
+        timeRangeFilter: TimeRangeFilter,
+    )
 
     /**
      * Reads one [Record] point with its [recordType] and [recordId].
@@ -185,7 +199,7 @@ interface HealthConnectClient {
      * @throws SecurityException For requests with unpermitted access.
      * @throws java.io.IOException For any disk I/O issues.
      */
-    suspend fun <T : Record> readRecord(
+    public suspend fun <T : Record> readRecord(
         recordType: KClass<T>,
         recordId: String,
     ): ReadRecordResponse<T>
@@ -204,7 +218,9 @@ interface HealthConnectClient {
      *
      * @sample androidx.health.connect.client.samples.ReadStepsRange
      */
-    suspend fun <T : Record> readRecords(request: ReadRecordsRequest<T>): ReadRecordsResponse<T>
+    public suspend fun <T : Record> readRecords(
+        request: ReadRecordsRequest<T>
+    ): ReadRecordsResponse<T>
 
     /**
      * Reads [AggregateMetric]s according to requested read criteria: [Record]s from
@@ -225,7 +241,7 @@ interface HealthConnectClient {
      *
      * @sample androidx.health.connect.client.samples.AggregateHeartRate
      */
-    suspend fun aggregate(request: AggregateRequest): AggregationResult
+    public suspend fun aggregate(request: AggregateRequest): AggregationResult
 
     /**
      * Reads [AggregateMetric]s according to requested read criteria specified in
@@ -250,7 +266,7 @@ interface HealthConnectClient {
      *
      * @sample androidx.health.connect.client.samples.AggregateIntoMinutes
      */
-    suspend fun aggregateGroupByDuration(
+    public suspend fun aggregateGroupByDuration(
         request: AggregateGroupByDurationRequest
     ): List<AggregationResultGroupedByDuration>
 
@@ -277,7 +293,7 @@ interface HealthConnectClient {
      *
      * @sample androidx.health.connect.client.samples.AggregateIntoMonths
      */
-    suspend fun aggregateGroupByPeriod(
+    public suspend fun aggregateGroupByPeriod(
         request: AggregateGroupByPeriodRequest
     ): List<AggregationResultGroupedByPeriod>
 
@@ -298,7 +314,7 @@ interface HealthConnectClient {
      * @throws SecurityException For requests with unpermitted access.
      * @see getChanges
      */
-    suspend fun getChangesToken(request: ChangesTokenRequest): String
+    public suspend fun getChangesToken(request: ChangesTokenRequest): String
 
     /**
      * Retrieves changes in Health Connect, from a specific point in time represented by provided
@@ -328,7 +344,7 @@ interface HealthConnectClient {
      * @throws SecurityException For requests with unpermitted access.
      * @see getChangesToken
      */
-    suspend fun getChanges(changesToken: String): ChangesResponse
+    public suspend fun getChanges(changesToken: String): ChangesResponse
 
     /**
      * Same as [getChanges] method but also allows specifying a preferred [pageSize].
@@ -345,7 +361,7 @@ interface HealthConnectClient {
      * @throws SecurityException For requests with unpermitted access.
      * @see getChangesToken
      */
-    suspend fun getChanges(
+    public suspend fun getChanges(
         changesToken: String,
         @IntRange(from = 1, to = 5000) pageSize: Int,
     ): ChangesResponse
@@ -410,7 +426,7 @@ interface HealthConnectClient {
      */
     @RequiresPermission("android.permission.health.WRITE_MEDICAL_DATA")
     @ExperimentalPersonalHealthRecordApi
-    suspend fun upsertMedicalResources(
+    public suspend fun upsertMedicalResources(
         requests: List<UpsertMedicalResourceRequest>
     ): List<MedicalResource> =
         throw createExceptionDueToFeatureUnavailable(
@@ -457,7 +473,7 @@ interface HealthConnectClient {
      * @sample androidx.health.connect.client.samples.ReadMedicalResourcesByRequestSample
      */
     @ExperimentalPersonalHealthRecordApi
-    suspend fun readMedicalResources(
+    public suspend fun readMedicalResources(
         request: ReadMedicalResourcesRequest
     ): ReadMedicalResourcesResponse =
         throw createExceptionDueToFeatureUnavailable(
@@ -501,7 +517,7 @@ interface HealthConnectClient {
      * @sample androidx.health.connect.client.samples.ReadMedicalResourcesByIdsSample
      */
     @ExperimentalPersonalHealthRecordApi
-    suspend fun readMedicalResources(ids: List<MedicalResourceId>): List<MedicalResource> =
+    public suspend fun readMedicalResources(ids: List<MedicalResourceId>): List<MedicalResource> =
         throw createExceptionDueToFeatureUnavailable(
             FEATURE_CONSTANT_NAME_PHR,
             "HealthConnectClient#readMedicalResources(ids: List<MedicalResourceId>)",
@@ -531,7 +547,7 @@ interface HealthConnectClient {
      */
     @RequiresPermission("android.permission.health.WRITE_MEDICAL_DATA")
     @ExperimentalPersonalHealthRecordApi
-    suspend fun deleteMedicalResources(ids: List<MedicalResourceId>): Unit =
+    public suspend fun deleteMedicalResources(ids: List<MedicalResourceId>): Unit =
         throw createExceptionDueToFeatureUnavailable(
             FEATURE_CONSTANT_NAME_PHR,
             "HealthConnectClient#deleteMedicalResources(ids: List<MedicalResourceId>)",
@@ -559,7 +575,7 @@ interface HealthConnectClient {
      */
     @RequiresPermission("android.permission.health.WRITE_MEDICAL_DATA")
     @ExperimentalPersonalHealthRecordApi
-    suspend fun deleteMedicalResources(request: DeleteMedicalResourcesRequest): Unit =
+    public suspend fun deleteMedicalResources(request: DeleteMedicalResourcesRequest): Unit =
         throw createExceptionDueToFeatureUnavailable(
             FEATURE_CONSTANT_NAME_PHR,
             "HealthConnectClient#deleteMedicalResources(request: DeleteMedicalResourcesRequest)",
@@ -600,7 +616,7 @@ interface HealthConnectClient {
      */
     @ExperimentalPersonalHealthRecordApi
     @RequiresPermission("android.permission.health.WRITE_MEDICAL_DATA")
-    suspend fun createMedicalDataSource(
+    public suspend fun createMedicalDataSource(
         request: CreateMedicalDataSourceRequest
     ): MedicalDataSource {
         throw createExceptionDueToFeatureUnavailable(
@@ -633,7 +649,7 @@ interface HealthConnectClient {
      */
     @ExperimentalPersonalHealthRecordApi
     @RequiresPermission("android.permission.health.WRITE_MEDICAL_DATA")
-    suspend fun deleteMedicalDataSourceWithData(id: String) {
+    public suspend fun deleteMedicalDataSourceWithData(id: String) {
         throw createExceptionDueToFeatureUnavailable(
             FEATURE_CONSTANT_NAME_PHR,
             "HealthConnectClient#deleteMedicalDataSourceWithData()",
@@ -683,7 +699,7 @@ interface HealthConnectClient {
      * @sample androidx.health.connect.client.samples.GetMedicalDataSourcesByRequestSample
      */
     @ExperimentalPersonalHealthRecordApi
-    suspend fun getMedicalDataSources(
+    public suspend fun getMedicalDataSources(
         request: GetMedicalDataSourcesRequest
     ): List<MedicalDataSource> {
         throw createExceptionDueToFeatureUnavailable(
@@ -736,7 +752,7 @@ interface HealthConnectClient {
      * @sample androidx.health.connect.client.samples.GetMedicalDataSourcesByIdsSample
      */
     @ExperimentalPersonalHealthRecordApi
-    suspend fun getMedicalDataSources(ids: List<String>): List<MedicalDataSource> {
+    public suspend fun getMedicalDataSources(ids: List<String>): List<MedicalDataSource> {
         throw createExceptionDueToFeatureUnavailable(
             FEATURE_CONSTANT_NAME_PHR,
             "HealthConnectClient#getMedicalDataSources()",
@@ -762,7 +778,9 @@ interface HealthConnectClient {
      * [UnsupportedOperationException] would be thrown if the feature is not available.
      */
     @ExperimentalMatchmakingApi
-    suspend fun checkIfMatchmakingIsPossible(request: MatchmakingRequest): MatchmakingResponse {
+    public suspend fun checkIfMatchmakingIsPossible(
+        request: MatchmakingRequest
+    ): MatchmakingResponse {
         throw createExceptionDueToFeatureUnavailable(
             FEATURE_CONSTANT_NAME_MATCHMAKING,
             "HealthConnectClient#checkIfMatchmakingIsPossible()",
@@ -826,34 +844,102 @@ interface HealthConnectClient {
      * [HealthConnectFeatures.FEATURE_MATCHMAKING] as an argument.
      */
     @ExperimentalMatchmakingApi
-    fun createMatchmakingIntent(request: MatchmakingRequest): Intent {
+    public fun createMatchmakingIntent(request: MatchmakingRequest): Intent {
         throw createExceptionDueToFeatureUnavailable(
             FEATURE_CONSTANT_NAME_MATCHMAKING,
             "HealthConnectClient#createMatchmakingIntent()",
         )
     }
 
-    companion object {
-        internal const val DEFAULT_PROVIDER_PACKAGE_NAME = "com.google.android.apps.healthdata"
+    /**
+     * Retrieves all available [DeviceDataSource]s.
+     *
+     * The returned list includes devices advertised by device data providers, filtered based on
+     * caller permissions. A device is included if the caller holds read permission for at least one
+     * data type supported by that device.
+     *
+     * This feature is dependent on the version of Health Connect installed on the device. To check
+     * if it is available, call [HealthConnectFeatures.getFeatureStatus] and pass
+     * [HealthConnectFeatures.FEATURE_DEVICE_DATA_PROVIDERS]. An [UnsupportedOperationException] is
+     * thrown if the feature is not available.
+     *
+     * @return [GetDeviceDataSourcesResponse] containing the list of available [DeviceDataSource]s
+     * @throws UnsupportedOperationException if the feature is not available
+     */
+    @ExperimentalDeviceDataSourceApi
+    public suspend fun getDeviceDataSources(): GetDeviceDataSourcesResponse {
+        throw createExceptionDueToFeatureUnavailable(
+            FEATURE_CONSTANT_NAME_DEVICE_DATA_PROVIDERS,
+            "HealthConnectClient#getDeviceDataSources()",
+        )
+    }
 
-        internal const val DEFAULT_PROVIDER_MIN_VERSION_CODE = 68623
+    /**
+     * Retrieves the [DeviceDataSource] for the current device.
+     *
+     * The caller must hold at least one Health Connect read permission.
+     *
+     * This feature is dependent on the version of Health Connect installed on the device. To check
+     * if it is available, call [HealthConnectFeatures.getFeatureStatus] and pass
+     * [HealthConnectFeatures.FEATURE_DEVICE_DATA_PROVIDERS]. An [UnsupportedOperationException] is
+     * thrown if the feature is not available.
+     *
+     * @return [DeviceDataSource] for the current device
+     * @throws UnsupportedOperationException if the feature is not available
+     * @throws SecurityException if the caller does not hold at least one read permission
+     */
+    @ExperimentalDeviceDataSourceApi
+    public suspend fun getCurrentDeviceDataSource(): DeviceDataSource {
+        throw createExceptionDueToFeatureUnavailable(
+            FEATURE_CONSTANT_NAME_DEVICE_DATA_PROVIDERS,
+            "HealthConnectClient#getCurrentDeviceDataSource()",
+        )
+    }
+
+    /**
+     * Returns record types that device data sources can provide.
+     *
+     * Use this method to avoid making unnecessary permission requests when reading device data if
+     * the record type is not provided by any device data source.
+     *
+     * Permission-sensitive record types (such as [BasalBodyTemperatureRecord],
+     * [BloodGlucoseRecord], and [OvulationTestRecord]) are excluded unless the caller holds read
+     * permissions for them.
+     *
+     * This feature is dependent on the version of Health Connect installed on the device. To check
+     * if it is available, call [HealthConnectFeatures.getFeatureStatus] and pass
+     * [HealthConnectFeatures.FEATURE_DEVICE_DATA_PROVIDERS]. An [UnsupportedOperationException] is
+     * thrown if the feature is not available.
+     *
+     * @return [DeviceDataSourceCapabilities] containing available record types
+     * @throws UnsupportedOperationException if the feature is not available
+     */
+    @ExperimentalDeviceDataSourceApi
+    public suspend fun getDeviceDataSourceCapabilities(): DeviceDataSourceCapabilities {
+        throw createExceptionDueToFeatureUnavailable(
+            FEATURE_CONSTANT_NAME_DEVICE_DATA_PROVIDERS,
+            "HealthConnectClient#getDeviceDataSourceCapabilities()",
+        )
+    }
+
+    public companion object {
         /**
          * Intent action to open Health Connect settings on this phone. Developers should use this
          * if they want to re-direct the user to Health Connect.
          */
         @get:JvmName("getHealthConnectSettingsAction")
         @JvmStatic
-        val ACTION_HEALTH_CONNECT_SETTINGS =
+        public val ACTION_HEALTH_CONNECT_SETTINGS: String =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
                 "android.health.connect.action.HEALTH_HOME_SETTINGS"
             else "androidx.health.ACTION_HEALTH_CONNECT_SETTINGS"
 
-        internal val ACTION_HEALTH_CONNECT_MANAGE_DATA =
+        internal val ACTION_HEALTH_CONNECT_MANAGE_DATA: String =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
                 "android.health.connect.action.MANAGE_HEALTH_DATA"
             else "androidx.health.ACTION_MANAGE_HEALTH_DATA"
 
-        internal val ACTION_HEALTH_CONNECT_MATCHMAKING =
+        internal val ACTION_HEALTH_CONNECT_MATCHMAKING: String =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
                 "android.health.connect.action.MATCHMAKING"
             else ""
@@ -864,7 +950,7 @@ interface HealthConnectClient {
          *
          * Apps should hide any integration points to Health Connect in this case.
          */
-        const val SDK_UNAVAILABLE = 1
+        public const val SDK_UNAVAILABLE: Int = 1
 
         /**
          * The Health Connect SDK APIs are currently unavailable, the provider is either not
@@ -872,20 +958,20 @@ interface HealthConnectClient {
          *
          * Apps may choose to redirect to package installers to find a suitable APK.
          */
-        const val SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED = 2
+        public const val SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED: Int = 2
 
         /**
          * The Health Connect SDK APIs are available.
          *
          * Apps can subsequently call [getOrCreate] to get an instance of [HealthConnectClient].
          */
-        const val SDK_AVAILABLE = 3
+        public const val SDK_AVAILABLE: Int = 3
 
         /** Availability Status. */
         @Retention(AnnotationRetention.SOURCE)
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @IntDef(value = [SDK_UNAVAILABLE, SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED, SDK_AVAILABLE])
-        annotation class AvailabilityStatus
+        public annotation class AvailabilityStatus
 
         /**
          * Determines whether the Health Connect SDK is available on this device at the moment.
@@ -899,7 +985,7 @@ interface HealthConnectClient {
         @JvmOverloads
         @JvmStatic
         @AvailabilityStatus
-        fun getSdkStatus(
+        public fun getSdkStatus(
             context: Context,
             providerPackageName: String = DEFAULT_PROVIDER_PACKAGE_NAME,
         ): Int {
@@ -907,11 +993,7 @@ interface HealthConnectClient {
                 in Build.VERSION_CODES.UPSIDE_DOWN_CAKE..Int.MAX_VALUE ->
                     Api34Impl.getSdkStatus(context)
                 in Build.VERSION_CODES.P..Build.VERSION_CODES.TIRAMISU ->
-                    if (isPackageInstalled(context.packageManager, providerPackageName)) {
-                        SDK_AVAILABLE
-                    } else {
-                        SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED
-                    }
+                    getProviderStatus(context.packageManager, providerPackageName)
                 else -> return SDK_UNAVAILABLE
             }
         }
@@ -958,14 +1040,21 @@ interface HealthConnectClient {
          *   implementation
          * @return Intent to open Health Connect data management screen.
          */
+        // TODO(b/540757251): Support signature checks for custom provider package names.
         @JvmOverloads
         @JvmStatic
-        fun getHealthConnectManageDataIntent(
+        public fun getHealthConnectManageDataIntent(
             context: Context,
             providerPackageName: String = DEFAULT_PROVIDER_PACKAGE_NAME,
         ): Intent {
             val pm = context.packageManager
             val manageDataIntent = Intent(ACTION_HEALTH_CONNECT_MANAGE_DATA)
+            if (
+                Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+                    providerPackageName.isNotEmpty()
+            ) {
+                manageDataIntent.setPackage(providerPackageName)
+            }
 
             return if (
                 getSdkStatus(context, providerPackageName) == SDK_AVAILABLE &&
@@ -973,26 +1062,40 @@ interface HealthConnectClient {
             ) {
                 manageDataIntent
             } else {
-                Intent(ACTION_HEALTH_CONNECT_SETTINGS)
+                Intent(ACTION_HEALTH_CONNECT_SETTINGS).apply {
+                    if (
+                        Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+                            providerPackageName.isNotEmpty() &&
+                            getSdkStatus(context, providerPackageName) == SDK_AVAILABLE
+                    ) {
+                        setPackage(providerPackageName)
+                    }
+                }
             }
         }
 
-        private fun isPackageInstalled(
+        private fun getProviderStatus(
             packageManager: PackageManager,
             packageName: String,
             versionCode: Int = DEFAULT_PROVIDER_MIN_VERSION_CODE,
-        ): Boolean {
+        ): Int {
             val packageInfo: PackageInfo =
-                try {
-                    @Suppress("Deprecation") // getPackageInfo deprecated in T
-                    packageManager.getPackageInfo(packageName, /* flags= */ 0)
-                } catch (e: PackageManager.NameNotFoundException) {
-                    return false
-                }
-            return (packageInfo.applicationInfo?.enabled == true) &&
+                getPackageInfoCompat(packageManager, packageName)
+                    ?: return SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED
+            if (packageInfo.applicationInfo?.enabled != true) {
+                return SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED
+            }
+            if (!isTargetSignatureValid(packageManager, packageName)) {
+                return SDK_UNAVAILABLE
+            }
+            if (
                 (packageName != DEFAULT_PROVIDER_PACKAGE_NAME ||
                     PackageInfoCompat.getLongVersionCode(packageInfo) >= versionCode) &&
-                hasBindableService(packageManager, packageName)
+                    hasBindableService(packageManager, packageName)
+            ) {
+                return SDK_AVAILABLE
+            }
+            return SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED
         }
 
         internal fun hasBindableService(

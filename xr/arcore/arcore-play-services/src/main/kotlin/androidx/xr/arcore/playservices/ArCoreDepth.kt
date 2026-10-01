@@ -30,7 +30,7 @@ import java.util.LinkedList
 import java.util.Queue
 
 /**
- * Provides depth data from ARCore through the [Depth] interface.
+ * Depth data from ARCore through the [Depth] interface.
  *
  * @property width the width of the depth maps
  * @property height the height of the depth maps
@@ -81,11 +81,11 @@ public class ArCoreDepth internal constructor() : Depth {
             return
         }
         try {
-            val currentRawDepthImage = lastFrame.acquireRawDepthImage16Bits()
+            val currentRawDepthImage = lastFrame.acquireRawDepthImageMeters()
             val currentRawConfidenceImage = lastFrame.acquireRawDepthConfidenceImage()
             val currentDepthImage =
                 if (depthEstimationMode != DepthEstimationMode.RAW_ONLY) {
-                    lastFrame.acquireDepthImage16Bits()
+                    lastFrame.acquireDepthImageMeters()
                 } else {
                     null
                 }
@@ -140,45 +140,40 @@ public class ArCoreDepth internal constructor() : Depth {
             when (depthEstimationMode) {
                 DepthEstimationMode.RAW_ONLY -> {
 
-                    val rawPlane = currentRawDepthImage.planes[0]
-                    convertDepthMapBuffer(
-                        rawPlane.buffer.order(ByteOrder.nativeOrder()),
-                        resolution.height,
-                        resolution.width,
-                    )
+                    rawDepthMap =
+                        currentRawDepthImage.planes[0]
+                            .buffer
+                            .order(ByteOrder.nativeOrder())
+                            .asFloatBuffer()
                     smoothDepthMap = null
                     smoothConfidenceMap = null
                 }
 
                 DepthEstimationMode.SMOOTH_ONLY -> {
 
-                    val smoothPlane = currentDepthImage!!.planes[0]
-                    convertDepthMapBuffer(
-                        smoothPlane.buffer.order(ByteOrder.nativeOrder()),
-                        resolution.height,
-                        resolution.width,
-                        false,
-                    )
+                    smoothDepthMap =
+                        currentDepthImage!!
+                            .planes[0]
+                            .buffer
+                            .order(ByteOrder.nativeOrder())
+                            .asFloatBuffer()
                     rawDepthMap = null
                     rawConfidenceMap = null
                 }
 
                 DepthEstimationMode.SMOOTH_AND_RAW -> {
 
-                    val rawPlane = currentRawDepthImage.planes[0]
-                    convertDepthMapBuffer(
-                        rawPlane.buffer.order(ByteOrder.nativeOrder()),
-                        resolution.height,
-                        resolution.width,
-                    )
-
-                    val smoothPlane = currentDepthImage!!.planes[0]
-                    convertDepthMapBuffer(
-                        smoothPlane.buffer.order(ByteOrder.nativeOrder()),
-                        resolution.height,
-                        resolution.width,
-                        false,
-                    )
+                    rawDepthMap =
+                        currentRawDepthImage.planes[0]
+                            .buffer
+                            .order(ByteOrder.nativeOrder())
+                            .asFloatBuffer()
+                    smoothDepthMap =
+                        currentDepthImage!!
+                            .planes[0]
+                            .buffer
+                            .order(ByteOrder.nativeOrder())
+                            .asFloatBuffer()
                 }
             }
         } catch (e: NotYetAvailableException) {
@@ -207,33 +202,13 @@ public class ArCoreDepth internal constructor() : Depth {
         }
     }
 
-    // TODO(b/444221417): Remove this once meters support has been implemented.
-    private fun convertDepthMapBuffer(
-        depthMapShortBuffer: ByteBuffer,
-        height: Int,
-        width: Int,
-        bufferIsRaw: Boolean = true,
-    ) {
-        val depthMap = if (bufferIsRaw) rawDepthMap!! else smoothDepthMap!!
-        val millimetersBuffer = depthMapShortBuffer.asShortBuffer()
-        for (x in 0..<width) {
-            for (y in 0..<height) {
-                val byteIndex = x + (y * width)
-                val depthSample = millimetersBuffer.get(byteIndex)
-                depthMap.put(byteIndex, depthSample.toFloat() / MILLIMETERS_PER_METER)
-            }
-        }
-    }
-
     internal fun dispose() {
         clearDepthImagesQueue()
     }
 
     private companion object {
-        /** Represents the value needed to convert millimeters to meters. */
-        private const val MILLIMETERS_PER_METER: Float = 1000.0F
         /**
-         * Represents the maximum number of images to keep in the depth map image queue.
+         * Maximum size of the depth map image queue.
          *
          * @see depthConfidenceImageBuffer
          */

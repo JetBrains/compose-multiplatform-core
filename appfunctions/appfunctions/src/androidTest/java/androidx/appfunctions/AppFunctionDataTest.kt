@@ -26,12 +26,14 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Parcel
 import android.os.Parcelable
+import android.os.PatternMatcher
 import android.os.ext.SdkExtensions
 import androidx.appfunctions.Attachment.Companion.ATTACHMENT_OBJECT_TYPE_METADATA
 import androidx.appfunctions.Note.Companion.NOTE_OBJECT_TYPE_METADATA
 import androidx.appfunctions.internal.AppFunctionUriGrantTestInventory.Companion.TEST_APP_FUNCTION_URI_GRANT_HOLDER_OBJECT_METADATA
 import androidx.appfunctions.internal.AppFunctionUriGrantTestInventory.Companion.TEST_COMPONENT_METADATA
 import androidx.appfunctions.internal.AppFunctionUriGrantTestInventory.Companion.TEST_NESTED_APP_FUNCTION_URI_GRANT_OBJECT_METADATA
+import androidx.appfunctions.internal.AppFunctionUriGrantTestInventory.Companion.URI_GRANT_OBJECT_TYPE_METADATA
 import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionBooleanTypeMetadata
@@ -1103,26 +1105,6 @@ class AppFunctionDataTest {
     }
 
     @Test
-    fun testSerialize() {
-        val note = Note(title = "Test Title", attachment = Attachment(uri = "Test Uri"))
-
-        val data = AppFunctionData.serialize(note, Note::class.java)
-
-        assertThat(data.getString("title")).isEqualTo("Test Title")
-        assertThat(data.getAppFunctionData("attachment")?.getString("uri")).isEqualTo("Test Uri")
-    }
-
-    @Test
-    fun testSerialize_withQualifiedName() {
-        val note = Note(title = "Test Title", attachment = Attachment(uri = "Test Uri"))
-
-        val data = AppFunctionData.serialize(note, "androidx.appfunctions.Note")
-
-        assertThat(data.getString("title")).isEqualTo("Test Title")
-        assertThat(data.getAppFunctionData("attachment")?.getString("uri")).isEqualTo("Test Uri")
-    }
-
-    @Test
     fun testDeserialize() {
         val data =
             AppFunctionData.Builder(
@@ -1190,15 +1172,6 @@ class AppFunctionDataTest {
 
         assertThat(note.title).isEqualTo("Test Title")
         assertThat(note.attachment.uri).isEqualTo("Test Uri")
-    }
-
-    @Test
-    fun testSerialize_missingFactory() {
-        val missingFactoryClass = MissingFactoryClass("test")
-
-        assertFailsWith(IllegalArgumentException::class) {
-            AppFunctionData.serialize(missingFactoryClass, MissingFactoryClass::class.java)
-        }
     }
 
     @Test
@@ -1363,6 +1336,8 @@ class AppFunctionDataTest {
                 .setAppFunctionData(
                     "firstGrant",
                     AppFunctionData.serialize(
+                        URI_GRANT_OBJECT_TYPE_METADATA,
+                        TEST_COMPONENT_METADATA,
                         AppFunctionUriGrant(
                             uri = Uri.parse("content://com.example/1"),
                             modeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION,
@@ -1379,6 +1354,8 @@ class AppFunctionDataTest {
                         .setAppFunctionData(
                             "secondGrant",
                             AppFunctionData.serialize(
+                                URI_GRANT_OBJECT_TYPE_METADATA,
+                                TEST_COMPONENT_METADATA,
                                 AppFunctionUriGrant(
                                     uri = Uri.parse("content://com.example/2"),
                                     modeFlags = Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
@@ -1392,6 +1369,8 @@ class AppFunctionDataTest {
                     "thirdGrants",
                     listOf(
                         AppFunctionData.serialize(
+                            URI_GRANT_OBJECT_TYPE_METADATA,
+                            TEST_COMPONENT_METADATA,
                             AppFunctionUriGrant(
                                 uri = Uri.parse("content://com.example/3-1"),
                                 modeFlags =
@@ -1401,6 +1380,8 @@ class AppFunctionDataTest {
                             AppFunctionUriGrant::class.java,
                         ),
                         AppFunctionData.serialize(
+                            URI_GRANT_OBJECT_TYPE_METADATA,
+                            TEST_COMPONENT_METADATA,
                             AppFunctionUriGrant(
                                 uri = Uri.parse("content://com.example/3-2"),
                                 modeFlags =
@@ -1519,31 +1500,6 @@ class AppFunctionDataTest {
         assertThat(data.getString("title")).isEqualTo("test")
         assertThat(data.getAppFunctionData("attachment")?.getString("uri")).isEqualTo("test")
         assertThat(data.getParcelable<PendingIntent>("intentToOpen")).isNotNull()
-    }
-
-    @Test
-    fun serializeAllOfTypeObject_allRequiredField_success() {
-        val data =
-            AppFunctionData.serialize(
-                OpenableNote(
-                    title = "test",
-                    attachment = Attachment(uri = "test"),
-                    intentToOpen =
-                        PendingIntent.getActivity(
-                            context,
-                            0,
-                            Intent(),
-                            PendingIntent.FLAG_IMMUTABLE,
-                        ),
-                ),
-                OpenableNote::class.java,
-            )
-
-        assertThat(data.getString("title")).isEqualTo("test")
-        assertThat(data.getAppFunctionData("attachment")?.getString("uri")).isEqualTo("test")
-        assertThat(data.getParcelable<PendingIntent>("intentToOpen")).isNotNull()
-        // Also ensure that read validation is applied
-        assertFailsWith<IllegalArgumentException> { data.getInt("intentToOpen") }
     }
 
     @Test
@@ -1684,7 +1640,10 @@ class AppFunctionDataTest {
                     mapOf(
                         "int" to AppFunctionIntTypeMetadata(isNullable = false),
                         "str" to
-                            AppFunctionStringTypeMetadata(isNullable = false, description = "desc2"),
+                            AppFunctionStringTypeMetadata(
+                                isNullable = false,
+                                description = "desc2",
+                            ),
                     ),
                 required = listOf("int", "str"),
                 qualifiedName = "TestName",
@@ -2180,6 +2139,248 @@ class AppFunctionDataTest {
 
         val targetSpec = AppFunctionDataSpec.create(spec2, AppFunctionComponentsMetadata())
         assertFailsWith<IllegalArgumentException> { targetSpec.validateDataSpecMatches(data) }
+    }
+
+    @Test
+    fun testReadWrite_stringPatternValue_conformanceSuccess() {
+        val stringTypeWithPattern =
+            AppFunctionStringTypeMetadata(
+                patternMatchers =
+                    listOf(PatternMatcher("content://", PatternMatcher.PATTERN_PREFIX)),
+                format = "uri",
+                isNullable = false,
+            )
+        val objectSpec =
+            AppFunctionObjectTypeMetadata(
+                properties = mapOf("uriParam" to stringTypeWithPattern),
+                required = listOf("uriParam"),
+                qualifiedName = "TestSpec",
+                isNullable = false,
+            )
+
+        val builder = AppFunctionData.Builder(objectSpec, AppFunctionComponentsMetadata())
+        builder.setString("uriParam", "content://media/external/images")
+        val data = builder.build()
+        assertThat(data.getString("uriParam")).isEqualTo("content://media/external/images")
+    }
+
+    @Test
+    fun testWrite_stringPatternValue_conformanceFailsForInvalidValues() {
+        val stringTypeWithPattern =
+            AppFunctionStringTypeMetadata(
+                patternMatchers =
+                    listOf(PatternMatcher("content://", PatternMatcher.PATTERN_PREFIX)),
+                format = "uri",
+                isNullable = false,
+            )
+        val objectSpec =
+            AppFunctionObjectTypeMetadata(
+                properties = mapOf("uriParam" to stringTypeWithPattern),
+                required = listOf("uriParam"),
+                qualifiedName = "TestSpec",
+                isNullable = false,
+            )
+
+        val builder = AppFunctionData.Builder(objectSpec, AppFunctionComponentsMetadata())
+        val exception =
+            assertFailsWith<IllegalArgumentException> {
+                builder.setString("uriParam", "http://example.com")
+            }
+        assertThat(exception).hasMessageThat().contains("expecting match with one of")
+    }
+
+    @Test
+    fun testValidateDataSpecMatches_stringPatternMismatch_throwsException() {
+        val stringTypeWithConflictingPattern =
+            AppFunctionStringTypeMetadata(
+                patternMatchers = listOf(PatternMatcher("http://", PatternMatcher.PATTERN_PREFIX)),
+                format = "uri",
+                isNullable = false,
+            )
+        val spec1 =
+            AppFunctionObjectTypeMetadata(
+                properties = mapOf("uriParam" to stringTypeWithConflictingPattern),
+                required = listOf("uriParam"),
+                qualifiedName = "TestSpec",
+                isNullable = false,
+            )
+
+        val stringTypeWithPattern =
+            AppFunctionStringTypeMetadata(
+                patternMatchers =
+                    listOf(PatternMatcher("content://", PatternMatcher.PATTERN_PREFIX)),
+                format = "uri",
+                isNullable = false,
+            )
+        val spec2 =
+            AppFunctionObjectTypeMetadata(
+                properties = mapOf("uriParam" to stringTypeWithPattern),
+                required = listOf("uriParam"),
+                qualifiedName = "TestSpec",
+                isNullable = false,
+            )
+
+        val data =
+            AppFunctionData.Builder(spec1, AppFunctionComponentsMetadata())
+                .setString("uriParam", "http://example.com")
+                .build()
+
+        val targetSpec = AppFunctionDataSpec.create(spec2, AppFunctionComponentsMetadata())
+        val exception =
+            assertFailsWith<IllegalArgumentException> { targetSpec.validateDataSpecMatches(data) }
+        assertThat(exception).hasMessageThat().contains("Patterns mismatch for String type")
+    }
+
+    @Test
+    fun testValidateDataSpecMatches_unconstrainedToConstrainedPattern_throwsException() {
+        val stringTypeWithoutPattern =
+            AppFunctionStringTypeMetadata(format = "uri", isNullable = false)
+        val spec1 =
+            AppFunctionObjectTypeMetadata(
+                properties = mapOf("uriParam" to stringTypeWithoutPattern),
+                required = listOf("uriParam"),
+                qualifiedName = "TestSpec",
+                isNullable = false,
+            )
+
+        val stringTypeWithPattern =
+            AppFunctionStringTypeMetadata(
+                patternMatchers =
+                    listOf(PatternMatcher("content://", PatternMatcher.PATTERN_PREFIX)),
+                format = "uri",
+                isNullable = false,
+            )
+        val spec2 =
+            AppFunctionObjectTypeMetadata(
+                properties = mapOf("uriParam" to stringTypeWithPattern),
+                required = listOf("uriParam"),
+                qualifiedName = "TestSpec",
+                isNullable = false,
+            )
+
+        val data =
+            AppFunctionData.Builder(spec1, AppFunctionComponentsMetadata())
+                .setString("uriParam", "content://media/123")
+                .build()
+
+        val targetSpec = AppFunctionDataSpec.create(spec2, AppFunctionComponentsMetadata())
+        val exception =
+            assertFailsWith<IllegalArgumentException> { targetSpec.validateDataSpecMatches(data) }
+        assertThat(exception).hasMessageThat().contains("Patterns mismatch for String type")
+    }
+
+    @Test
+    fun testValidateDataSpecMatches_nestedObjectConstraint_matchingPattern_succeeds() {
+        val uriInnerSpec =
+            AppFunctionStringTypeMetadata(
+                patternMatchers = listOf(PatternMatcher("content:", PatternMatcher.PATTERN_PREFIX)),
+                format = "uri",
+                isNullable = false,
+            )
+        val uriObjectSpec =
+            AppFunctionObjectTypeMetadata(
+                properties = mapOf("uri" to uriInnerSpec),
+                required = listOf("uri"),
+                qualifiedName = "android.net.Uri",
+                isNullable = false,
+            )
+        val outerSpec =
+            AppFunctionObjectTypeMetadata(
+                properties = mapOf("wallpaperUri" to uriObjectSpec),
+                required = listOf("wallpaperUri"),
+                qualifiedName = "OuterSpec",
+                isNullable = false,
+            )
+
+        val validUriData =
+            AppFunctionData.Builder(uriObjectSpec, AppFunctionComponentsMetadata())
+                .setString("uri", "content://media/external/images/1")
+                .build()
+
+        val outerData =
+            AppFunctionData.Builder(outerSpec, AppFunctionComponentsMetadata())
+                .setAppFunctionData("wallpaperUri", validUriData)
+                .build()
+
+        assertThat(outerData.getAppFunctionData("wallpaperUri")?.getString("uri"))
+            .isEqualTo("content://media/external/images/1")
+    }
+
+    @Test
+    fun testWrite_multiplePatterns_matchesAnyPattern() {
+        val stringTypeWithPatterns =
+            AppFunctionStringTypeMetadata(
+                patternMatchers =
+                    listOf(
+                        PatternMatcher("content:", PatternMatcher.PATTERN_PREFIX),
+                        PatternMatcher("file:", PatternMatcher.PATTERN_PREFIX),
+                    ),
+                format = "uri",
+                isNullable = false,
+            )
+        val objectSpec =
+            AppFunctionObjectTypeMetadata(
+                properties = mapOf("uriParam" to stringTypeWithPatterns),
+                required = listOf("uriParam"),
+                qualifiedName = "TestSpec",
+                isNullable = false,
+            )
+
+        AppFunctionData.Builder(objectSpec, AppFunctionComponentsMetadata())
+            .setString("uriParam", "content://media/1")
+        AppFunctionData.Builder(objectSpec, AppFunctionComponentsMetadata())
+            .setString("uriParam", "file:///sdcard/1")
+        assertFailsWith<IllegalArgumentException> {
+            AppFunctionData.Builder(objectSpec, AppFunctionComponentsMetadata())
+                .setString("uriParam", "http://example.com")
+        }
+    }
+
+    @Test
+    fun testWrite_suffixPattern_conformance() {
+        val stringTypeWithPattern =
+            AppFunctionStringTypeMetadata(
+                patternMatchers = listOf(PatternMatcher(".png", PatternMatcher.PATTERN_SUFFIX)),
+                isNullable = false,
+            )
+        val objectSpec =
+            AppFunctionObjectTypeMetadata(
+                properties = mapOf("fileName" to stringTypeWithPattern),
+                required = listOf("fileName"),
+                qualifiedName = "TestSpec",
+                isNullable = false,
+            )
+
+        AppFunctionData.Builder(objectSpec, AppFunctionComponentsMetadata())
+            .setString("fileName", "image.png")
+        assertFailsWith<IllegalArgumentException> {
+            AppFunctionData.Builder(objectSpec, AppFunctionComponentsMetadata())
+                .setString("fileName", "image.jpg")
+        }
+    }
+
+    @Test
+    fun testWrite_advancedGlobPattern_conformance() {
+        val stringTypeWithPattern =
+            AppFunctionStringTypeMetadata(
+                patternMatchers =
+                    listOf(PatternMatcher("[0-9]+", PatternMatcher.PATTERN_ADVANCED_GLOB)),
+                isNullable = false,
+            )
+        val objectSpec =
+            AppFunctionObjectTypeMetadata(
+                properties = mapOf("digits" to stringTypeWithPattern),
+                required = listOf("digits"),
+                qualifiedName = "TestSpec",
+                isNullable = false,
+            )
+
+        AppFunctionData.Builder(objectSpec, AppFunctionComponentsMetadata())
+            .setString("digits", "12345")
+        assertFailsWith<IllegalArgumentException> {
+            AppFunctionData.Builder(objectSpec, AppFunctionComponentsMetadata())
+                .setString("digits", "12a45")
+        }
     }
 
     companion object {

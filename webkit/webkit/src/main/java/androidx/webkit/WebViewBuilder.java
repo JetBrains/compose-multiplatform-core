@@ -84,7 +84,7 @@ public final class WebViewBuilder {
     /**
      * Create a new builder with settings initialized to the given preset Preset.
      *
-     * <p>Currently, only the {@link PRESET_LEGACY} preset is supported.
+     * <p>Currently, only the {@link #PRESET_LEGACY} preset is supported.
      */
     public WebViewBuilder(@Preset int preset) {
         if (preset != PRESET_LEGACY) {
@@ -102,7 +102,7 @@ public final class WebViewBuilder {
      * built WebView.
      *
      * <p>This needs to be called in order to allow specific origin patterns to inject JavaScript
-     * interfaces via {@link RestrictionAllowlist#addJavaScriptInterface(Object, String)}.
+     * interfaces via {@link RestrictionAllowlist.Builder#addJavaScriptInterface(Object, String)}.
      */
     // We prefer a one-directional switch in order to improve app code auditability.
     @SuppressWarnings("BuilderSetStyle")
@@ -117,15 +117,10 @@ public final class WebViewBuilder {
      * <p>If the profile does not exist, it will be created when {@link WebViewBuilder#build} is
      * called, as per {@link ProfileStore#getOrCreateProfile(String)}.
      *
-     * <p>
-     * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
-     * {@link WebViewFeature#MULTI_PROFILE}.
-     *
      * @param profileName The name of the profile to use.
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#MULTI_PROFILE}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#MULTI_PROFILE} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.MULTI_PROFILE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -154,17 +149,13 @@ public final class WebViewBuilder {
 
     /**
      * Constructs a new WebView with all the properties defined.
-     * <p>
-     * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
-     * {@link WebViewFeature#WEBVIEW_BUILDER_EXPERIMENTAL_V1}.
      *
      * @param context The Activity Context for the WebView.
      * @throws WebViewBuilderException if there was an issue with validation or constructing the
      *                                 WebView.
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#WEBVIEW_BUILDER_EXPERIMENTAL_V1}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#WEBVIEW_BUILDER_EXPERIMENTAL_V1} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @UiThread
     @RequiresFeature(
@@ -197,18 +188,14 @@ public final class WebViewBuilder {
      * <p>It is not permitted to call any other WebView APIs on the WebView before this. A WebView
      * may only have a builder configuration applied at most once. This API may not be used with
      * WebViews that were built with {@link WebViewBuilder#build(Context)}.
-     * <p>
-     * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
-     * {@link WebViewFeature#WEBVIEW_BUILDER_EXPERIMENTAL_V2}.
      *
      * @param webview The WebView to apply the config to.
      * @throws WebViewBuilderException if there was an issue with validation or constructing the
      *                                 WebView.
      * @throws IllegalStateException if the WebView has already been used or configured in some way.
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#WEBVIEW_BUILDER_EXPERIMENTAL_V2}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#WEBVIEW_BUILDER_EXPERIMENTAL_V2} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @UiThread
     @RequiresFeature(

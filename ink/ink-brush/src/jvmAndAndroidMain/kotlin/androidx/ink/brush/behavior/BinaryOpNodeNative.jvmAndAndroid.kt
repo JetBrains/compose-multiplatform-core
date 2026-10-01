@@ -16,10 +16,12 @@
 
 package androidx.ink.brush.behavior
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
 
 @UsedByNative
+@OptIn(InkInternalOnlyApi::class)
 actual internal object BinaryOpNodeNative {
     init {
         NativeLoader.load()
@@ -28,4 +30,6 @@ actual internal object BinaryOpNodeNative {
     @UsedByNative actual external fun create(operation: Int): Long
 
     @UsedByNative actual external fun getOperationInt(nativePointer: Long): Int
+
+    @UsedByNative actual external fun getOperationMinimumRequiredVersion(operationInt: Int): Int
 }

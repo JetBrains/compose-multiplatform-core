@@ -21,12 +21,13 @@ import android.os.Build
 import android.os.SystemClock
 import android.view.SurfaceView
 import androidx.graphics.surface.SurfaceControlCompat
-import androidx.ink.authoring.ExperimentalCustomShapeWorkflowApi
-import androidx.ink.authoring.ExperimentalLatencyDataApi
+import androidx.ink.authoring.ExperimentalInkCustomShapeWorkflowApi
+import androidx.ink.authoring.ExperimentalInkLatencyDataApi
 import androidx.ink.authoring.InProgressStrokeId
 import androidx.ink.authoring.InkInProgressShape
 import androidx.ink.authoring.internal.CanvasInProgressStrokesRenderHelperV33.Bounds
 import androidx.ink.brush.Brush
+import androidx.ink.brush.ExperimentalInkAnimationApi
 import androidx.ink.brush.StockBrushes
 import androidx.ink.geometry.MutableBox
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
@@ -63,7 +64,11 @@ import org.mockito.kotlin.whenever
  * level but covers the functionality of [CanvasInProgressStrokesRenderHelperV33] in a different way
  * than this test.
  */
-@OptIn(ExperimentalLatencyDataApi::class, ExperimentalCustomShapeWorkflowApi::class)
+@OptIn(
+    ExperimentalInkLatencyDataApi::class,
+    ExperimentalInkCustomShapeWorkflowApi::class,
+    ExperimentalInkAnimationApi::class,
+)
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 @SdkSuppress(
@@ -206,7 +211,7 @@ class CanvasInProgressStrokesRenderHelperV33Test {
 
             verify(mockCallback, times(1)).onDraw()
             verify(mockRenderer, times(1))
-                .draw(any(), any<InProgressStroke>(), any<Matrix>(), any<Float>())
+                .draw(any(), any<InProgressStroke>(), any<Matrix>(), any<Long>())
             verify(mockCallback, times(1)).onDrawComplete()
         }
     }
@@ -289,22 +294,19 @@ class CanvasInProgressStrokesRenderHelperV33Test {
     }
 
     @Test
-    fun onViewDetachedFromWindow_shouldRemoveSurfaceViewAndShutdownRenderThread() {
+    fun onViewDetachedFromWindow_shouldRemoveSurfaceView() {
         withActivity { activity ->
-            assertThat(activity.fakeThreads.renderThreadIsShutdown()).isFalse()
             assertThat(activity.mainView.childCount).isEqualTo(1)
             activity.rootView.removeView(activity.mainView)
             assertThat(activity.mainView.childCount).isEqualTo(0)
-            assertThat(activity.fakeThreads.renderThreadIsShutdown()).isTrue()
         }
     }
 
     @Test
-    fun onViewAttachedToWindow_shouldAddSurfaceViewAndCreateNewRenderThread() {
+    fun onViewAttachedToWindow_shouldAddSurfaceView() {
         withActivity { activity ->
             activity.rootView.removeView(activity.mainView)
             assertThat(activity.mainView.childCount).isEqualTo(0)
-            assertThat(activity.fakeThreads.renderThreadIsShutdown()).isTrue()
         }
     }
 

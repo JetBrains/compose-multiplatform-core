@@ -31,7 +31,7 @@ import androidx.credentials.playservices.controllers.CredentialProviderBaseContr
 /** An activity used to ensure all required API versions work as intended. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @Suppress("ForbiddenSuperClass")
-open class HiddenActivity : Activity() {
+public open class HiddenActivity : Activity() {
 
     private var resultReceiver: ResultReceiver? = null
     private var mWaitingForActivityResult = false
@@ -116,14 +116,14 @@ open class HiddenActivity : Activity() {
                 setupFailure(
                     resultReceiver!!,
                     CredentialProviderBaseController.Companion.GET_UNKNOWN,
-                    "During begin sign in, one tap ui intent sender " + "failure: " + "${e.message}",
+                    "During begin sign in, one tap ui intent sender failure: ${e.message}",
                 )
             }
             CredentialProviderBaseController.CREATE_PASSWORD_TAG -> {
                 setupFailure(
                     resultReceiver!!,
                     CredentialProviderBaseController.Companion.CREATE_UNKNOWN,
-                    "During save password, found UI intent sender " + "failure: ${e.message}",
+                    "During save password, found UI intent sender failure: ${e.message}",
                 )
             }
             CredentialProviderBaseController.CREATE_PUBLIC_KEY_CREDENTIAL_TAG -> {
@@ -138,7 +138,7 @@ open class HiddenActivity : Activity() {
                 setupFailure(
                     resultReceiver!!,
                     CredentialProviderBaseController.Companion.GET_UNKNOWN,
-                    "During get sign-in intent, one tap ui intent sender " + "failure: ${e.message}",
+                    "During get sign-in intent, one tap ui intent sender failure: ${e.message}",
                 )
             }
         }
@@ -188,7 +188,7 @@ open class HiddenActivity : Activity() {
         finish()
     }
 
-    companion object {
+    public companion object {
         private const val DEFAULT_VALUE: Int = 1
         private const val TAG = "HiddenActivity"
         private const val KEY_AWAITING_RESULT = "androidx.credentials.playservices.AWAITING_RESULT"

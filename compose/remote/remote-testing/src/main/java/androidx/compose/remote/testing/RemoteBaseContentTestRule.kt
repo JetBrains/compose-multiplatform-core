@@ -29,7 +29,6 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
@@ -41,19 +40,23 @@ import org.junit.runners.model.Statement
  * The [CoreDocument] player implementation should be provided, giving the flexibility for
  * developers to choose their own implementation.
  *
- * @param _composeTestRule [ComposeContentTestRule] to be used by this [TestRule].
+ * @param composeTestRule [ComposeContentTestRule] to be used by this [TestRule].
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class RemoteBaseContentTestRule(
-    private val _composeTestRule: ComposeContentTestRule? = null
-) : TestRule {
+public class RemoteBaseContentTestRule
+private constructor(
+    public val composeTestRule: ComposeContentTestRule,
+    private val isExternalRule: Boolean,
+) : TestRule, ComposeContentTestRule by composeTestRule {
 
-    /** [ComposeContentTestRule] used by this [TestRule]. */
-    public val composeTestRule: ComposeContentTestRule =
-        _composeTestRule ?: createComposeRule(StandardTestDispatcher())
+    public constructor(
+        composeTestRule: ComposeContentTestRule?
+    ) : this(composeTestRule ?: createComposeRule(), composeTestRule != null)
+
+    public constructor() : this(null)
 
     override fun apply(base: Statement, description: Description): Statement =
-        if (_composeTestRule == null) composeTestRule.apply(base, description)
+        if (!isExternalRule) composeTestRule.apply(base, description)
         else {
             object : Statement() {
                 override fun evaluate() {

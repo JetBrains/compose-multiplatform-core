@@ -34,7 +34,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,7 +44,7 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class ModalWideNavigationRailScreenshotTest {
 
-    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -64,6 +63,28 @@ class ModalWideNavigationRailScreenshotTest {
 
         assertModalExpandedNavigationRailMatches(
             goldenIdentifier = "wideNavigationRail_modalWideNavigationRail_darkTheme_defaultColors"
+        )
+    }
+
+    @Test
+    fun wideNavigationRail_withStyle_modalWideNavigationRail_lightTheme() {
+        composeTestRule.setMaterialContent(lightColorScheme()) {
+            DefaultStyleableModalWideNavigationRail()
+        }
+
+        assertModalExpandedNavigationRailMatches(
+            "wideNavigationRail_withStyle_modalWideNavigationRail_lightTheme_defaultColors"
+        )
+    }
+
+    @Test
+    fun wideNavigationRail_withStyle_modalWideNavigationRail_darkTheme() {
+        composeTestRule.setMaterialContent(darkColorScheme()) {
+            DefaultStyleableModalWideNavigationRail()
+        }
+
+        assertModalExpandedNavigationRailMatches(
+            "wideNavigationRail_withStyle_modalWideNavigationRail_darkTheme_defaultColors"
         )
     }
 
@@ -110,6 +131,42 @@ private fun DefaultModalWideNavigationRail() {
             onClick = {},
         )
         WideNavigationRailItem(
+            railExpanded = true,
+            icon = { Icon(Icons.Filled.Search, null) },
+            label = { Text("Search") },
+            selected = false,
+            onClick = {},
+        )
+    }
+}
+
+@Composable
+private fun DefaultStyleableModalWideNavigationRail() {
+    StyleableModalWideNavigationRail(
+        state = rememberWideNavigationRailState(WideNavigationRailValue.Expanded),
+        header = {
+            Column {
+                IconButton(modifier = Modifier.padding(start = 24.dp), onClick = {}) {
+                    Icon(Icons.Filled.Menu, "Menu")
+                }
+            }
+        },
+    ) {
+        StyleableWideNavigationRailItem(
+            railExpanded = true,
+            icon = { Icon(Icons.Filled.Favorite, null) },
+            label = { Text("Favorites") },
+            selected = true,
+            onClick = {},
+        )
+        StyleableWideNavigationRailItem(
+            railExpanded = true,
+            icon = { Icon(Icons.Filled.Home, null) },
+            label = { Text("Home") },
+            selected = false,
+            onClick = {},
+        )
+        StyleableWideNavigationRailItem(
             railExpanded = true,
             icon = { Icon(Icons.Filled.Search, null) },
             label = { Text("Search") },

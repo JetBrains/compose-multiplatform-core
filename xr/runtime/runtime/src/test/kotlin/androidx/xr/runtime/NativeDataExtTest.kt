@@ -26,13 +26,13 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-@OptIn(UnstableNativeResourceApi::class)
 class NativeDataExtTest {
 
     private lateinit var session: Session
     private val testDispatcher = StandardTestDispatcher()
 
-    // TODO(b/467096822) : Have these tests use the FakePerceptionRuntime once it is implemented.
+    // getNativeSessionData is deprecated, but we still need to test it until 1P support is removed.
+    @Suppress("DEPRECATION")
     @Test
     fun getNativeSessionData_unsupportedPerceptionRuntime_throwsIllegalStateException() =
         createTestSessionAndRunTest {

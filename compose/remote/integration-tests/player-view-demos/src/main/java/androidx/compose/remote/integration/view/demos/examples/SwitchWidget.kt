@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("RestrictedApiAndroidX")
+@file:Suppress("RestrictedApiAndroidX") // Referring to remote-core
 
 package androidx.compose.remote.integration.view.demos.examples
 
@@ -45,13 +45,13 @@ import androidx.compose.remote.creation.compose.state.RemoteInt
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
-import androidx.compose.remote.creation.compose.state.rememberMutableRemoteEnum
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.ri
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.integration.view.demos.examples.SwitchState.*
 import androidx.compose.remote.tooling.preview.RemoteContentPreview
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 
@@ -62,7 +62,7 @@ fun SwitchWidgetOnState(modifier: RemoteModifier = RemoteModifier, id: Int = 0) 
         modifier =
             modifier
                 .clip(RemoteRoundedCornerShape(20.rdp))
-                .background(Color(63, 81, 181, 255))
+                .background(Color(63, 81, 181, 255).rc)
                 .padding(2.rdp),
         contentAlignment = RemoteAlignment.CenterEnd,
     ) {
@@ -75,7 +75,7 @@ fun SwitchWidgetOnState(modifier: RemoteModifier = RemoteModifier, id: Int = 0) 
 
 @Preview
 @Composable
-private fun SwitchWidgetOnStatePreview() = RemoteContentPreview { SwitchWidgetOnState() }
+fun SwitchWidgetOnStatePreview() = RemoteContentPreview { SwitchWidgetOnState() }
 
 @Composable
 @RemoteComposable
@@ -85,7 +85,7 @@ fun SwitchWidgetOffState(modifier: RemoteModifier = RemoteModifier) {
             modifier
                 // todo: use the animationId
                 .clip(RemoteRoundedCornerShape(20.rdp))
-                .background(Color(100, 100, 100))
+                .background(Color(100, 100, 100).rc)
                 .padding(8.rdp)
                 .then(modifier),
         contentAlignment = RemoteAlignment.CenterStart,
@@ -99,7 +99,7 @@ fun SwitchWidgetOffState(modifier: RemoteModifier = RemoteModifier) {
 
 @Preview
 @Composable
-private fun SwitchWidgetOffStatePreview() = RemoteContentPreview { SwitchWidgetOffState() }
+fun SwitchWidgetOffStatePreview() = RemoteContentPreview { SwitchWidgetOffState() }
 
 @Composable
 @RemoteComposable
@@ -153,9 +153,9 @@ fun RowSwitch(
     modifier: RemoteModifier = RemoteModifier,
 ) {
     Row(modifier = modifier, verticalAlignment = RemoteAlignment.CenterVertically) {
-        RemoteText(label)
+        RemoteText(label.rs)
         SwitchWidget(state)
-        RemoteText("State value is ")
+        RemoteText("State value is ".rs)
         RemoteText(state.toRemoteString { it.name.rs })
     }
 }
@@ -168,7 +168,7 @@ fun StateInfo(
     modifier: RemoteModifier = RemoteModifier,
 ) {
     Row(modifier = modifier, verticalAlignment = RemoteAlignment.CenterVertically) {
-        RemoteText(label)
+        RemoteText(label.rs)
         RemoteText(state.toRemoteString { it.name.rs })
     }
 }
@@ -181,17 +181,17 @@ fun Divider(modifier: RemoteModifier = RemoteModifier) {
             modifier
                 .padding(start = 8.rdp, end = 8.rdp)
                 .size(2.rdp, 8.rdp)
-                .background(Color.LightGray)
+                .background(Color.LightGray.rc)
     )
 }
 
 @Composable
 @RemoteComposable
 fun SwitchWidgetDemo() {
-    RemoteColumn(modifier = Modifier.padding(8.rdp).background(Color.LightGray)) {
-        val checkedA = rememberMutableRemoteEnum(Off)
-        val checkedB = rememberMutableRemoteEnum(Off)
-        val checkedC = rememberMutableRemoteEnum(On)
+    RemoteColumn(modifier = Modifier.padding(8.rdp).background(Color.LightGray.rc)) {
+        val checkedA = remember { MutableRemoteEnum(Off) }
+        val checkedB = remember { MutableRemoteEnum(Off) }
+        val checkedC = remember { MutableRemoteEnum(On) }
 
         val visibilityModifierC = RemoteModifier.visibility(checkedC.visibility)
         RowSwitch(checkedA, "State A")
@@ -216,6 +216,6 @@ fun SwitchWidgetDemo() {
 val RemoteEnum<SwitchState>.visibility: RemoteInt
     get() = toRemoteInt { it.visibility }
 
-@Preview
+@Preview(widthDp = 400, heightDp = 800)
 @Composable
-private fun SwitchWidgetDemoPreview() = RemoteContentPreview { SwitchWidgetDemo() }
+fun SwitchWidgetDemoPreview() = RemoteContentPreview { SwitchWidgetDemo() }

@@ -140,7 +140,7 @@ class SurfaceEntityCustomMeshActivity : ComponentActivity() {
                 check(entity == surfaceEntity) {
                     "Listener should only be attached to surfaceEntity."
                 }
-                var curParentPose = movieParent!!.getPose()
+                val curParentPose = movieParent!!.getPose()
                 // Apply the currentPose to the movieParent to move the surfaceEntity.
                 movieParent?.setPose(curParentPose.compose(currentPose))
             }
@@ -167,6 +167,17 @@ class SurfaceEntityCustomMeshActivity : ComponentActivity() {
                     position(0)
                 }
             }
+
+        SurfaceEntity.Shape.TriangleMesh(positions = posBuffer, texCoords = texCoordsBuffer)
+    }
+
+    private val triangleMeshNonDirect by lazy {
+        // A single triangle pointing upwards, centered on the origin.
+        val positions = floatArrayOf(-0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f, 0.0f, 0.5f, 0.0f)
+        val texCoords = floatArrayOf(0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f)
+
+        val posBuffer = java.nio.FloatBuffer.wrap(positions)
+        val texCoordsBuffer = java.nio.FloatBuffer.wrap(texCoords)
 
         SurfaceEntity.Shape.TriangleMesh(positions = posBuffer, texCoords = texCoordsBuffer)
     }
@@ -391,6 +402,15 @@ class SurfaceEntityCustomMeshActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // The content must be installed before the Session is created. Creating a Session
+        // registers this Activity's window as an XR "window leash", and the platform reads
+        // Window.peekDecorView() without a null check when a compositor transform update
+        // arrives, which crashes the process if no content view has been set yet. The content
+        // renders nothing until the Session is ready.
+        // See b/562983987.
+        val sessionState = mutableStateOf<Session?>(null)
+        setContent { sessionState.value?.let { HelloWorld(it, activity) } }
+
         lifecycleScope.launch {
             val sessionResult = Session.create(context = this@SurfaceEntityCustomMeshActivity)
             if (sessionResult is SessionCreateSuccess) {
@@ -407,6 +427,7 @@ class SurfaceEntityCustomMeshActivity : ComponentActivity() {
                 // video canvases which appear behind it.
                 if (movableComponentMP == null) {
                     movableComponentMP = MovableComponent.createSystemMovable(session)
+                    @Suppress("UNUSED_VARIABLE")
                     val unused = session.scene.mainPanelEntity.addComponent(movableComponentMP!!)
                 }
 
@@ -419,7 +440,7 @@ class SurfaceEntityCustomMeshActivity : ComponentActivity() {
                     )
 
                 alphaMaskTexture = Texture.create(session, Paths.get("textures", "alpha_mask.png"))
-                setContent { HelloWorld(session, activity) }
+                sessionState.value = session
             } else {
                 finish()
             }
@@ -567,6 +588,7 @@ class SurfaceEntityCustomMeshActivity : ComponentActivity() {
         return view
     }
 
+    @Suppress("DEPRECATION")
     @Composable
     fun VideoPlayerControls(session: Session, arDevice: ArDevice) {
         var featherRadiusX by remember { mutableFloatStateOf(0.0f) }
@@ -717,6 +739,7 @@ class SurfaceEntityCustomMeshActivity : ComponentActivity() {
                     movableComponent!!.size = FloatSize3d(1.0f, 1.0f, 1.0f)
 
                     if (shape is SurfaceEntity.Shape.Quad) {
+                        @Suppress("UNUSED_VARIABLE")
                         val unused = surfaceEntity!!.addComponent(movableComponent!!)
                     }
                 }
@@ -836,6 +859,31 @@ class SurfaceEntityCustomMeshActivity : ComponentActivity() {
     }
 
     @Composable
+    fun TriangleMeshNonDirectButton(
+        session: Session,
+        arDevice: ArDevice,
+        activity: Activity,
+        enabled: Boolean = true,
+    ) {
+        PlayVideoButton(
+            session = session,
+            arDevice = arDevice,
+            activity = activity,
+            // For Testers: Note that this translates to "/sdcard/Download/vid_bigbuckbunny.mp4".
+            videoUri =
+                Environment.getExternalStorageDirectory().getPath() +
+                    "/Download/vid_bigbuckbunny.mp4",
+            stereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM,
+            pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
+            shape = SurfaceEntity.Shape.CustomMesh(leftEye = triangleMeshNonDirect),
+            buttonText = "Play Big Buck Bunny, Triangle Mesh (Non-Direct)",
+            buttonColor = VideoButtonColors.StandardPlayback,
+            enabled = enabled,
+            protected = false,
+        )
+    }
+
+    @Composable
     fun TriangleStripButton(
         session: Session,
         arDevice: ArDevice,
@@ -869,13 +917,12 @@ class SurfaceEntityCustomMeshActivity : ComponentActivity() {
 
     // We don't expect this to render correctly; The triangle fan will fall back to a triangle
     // list because it is not yet natively supported.
-    // TODO: b/474464351 - Crash in C++ after fallbacks from Triangle Fan to Triangles
     @Composable
     fun TriangleFanButton(
         session: Session,
         arDevice: ArDevice,
         activity: Activity,
-        enabled: Boolean = false,
+        enabled: Boolean = true,
         loop: Boolean = false,
     ) {
         PlayVideoButton(
@@ -887,7 +934,7 @@ class SurfaceEntityCustomMeshActivity : ComponentActivity() {
             videoUri =
                 Environment.getExternalStorageDirectory().getPath() +
                     "/Download/vid_bigbuckbunny.mp4",
-            stereoMode = SurfaceEntity.StereoMode.MONO,
+            stereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM,
             pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
             shape =
                 SurfaceEntity.Shape.CustomMesh(
@@ -933,6 +980,7 @@ class SurfaceEntityCustomMeshActivity : ComponentActivity() {
 
                     // High level testcases
                     TriangleMeshButton(session, arDevice, activity)
+                    TriangleMeshNonDirectButton(session, arDevice, activity)
                     TriangleStripButton(session, arDevice, activity)
                     TriangleFanButton(session, arDevice, activity)
                 } else {

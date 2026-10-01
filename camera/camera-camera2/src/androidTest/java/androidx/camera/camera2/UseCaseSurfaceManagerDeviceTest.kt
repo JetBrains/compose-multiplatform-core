@@ -38,7 +38,6 @@ import androidx.camera.core.impl.DeferrableSurfaces
 import androidx.camera.core.impl.ImmediateSurface
 import androidx.camera.core.impl.SessionConfig
 import androidx.camera.testing.impl.CameraUtil
-import androidx.camera.testing.impl.CameraUtil.CameraDeviceHolder
 import androidx.camera.testing.impl.RequireForegroundRule
 import androidx.camera.testing.impl.activity.Camera2TestActivity
 import androidx.camera.testing.impl.fakes.FakeUseCase
@@ -93,7 +92,6 @@ class UseCaseSurfaceManagerDeviceTest {
     }
 
     private lateinit var cameraId: String
-    private lateinit var cameraHolder: CameraDeviceHolder
     private lateinit var testSessionParameters: TestSessionParameters
     private lateinit var testUseCaseCamera: TestUseCaseCamera
 
@@ -111,10 +109,6 @@ class UseCaseSurfaceManagerDeviceTest {
         }
         if (::testSessionParameters.isInitialized) {
             testSessionParameters.cleanup()
-        }
-        if (::cameraHolder.isInitialized) {
-            CameraUtil.releaseCameraDevice(cameraHolder)
-            cameraHolder.closedFuture.get(3, TimeUnit.SECONDS)
         }
     }
 
@@ -293,13 +287,12 @@ class UseCaseSurfaceManagerDeviceTest {
         private val handlerThread: HandlerThread = HandlerThread(name).apply { start() }
 
         /** Image reader that unlocks the latch waiting for the first image data to appear. */
-        private val onImageAvailableListener =
-            ImageReader.OnImageAvailableListener { reader ->
-                reader.acquireNextImage()?.let { image ->
-                    image.close()
-                    repeatingOutputDataLatch.countDown()
-                }
+        private val onImageAvailableListener = ImageReader.OnImageAvailableListener { reader ->
+            reader.acquireNextImage()?.let { image ->
+                image.close()
+                repeatingOutputDataLatch.countDown()
             }
+        }
         private val imageReader: ImageReader =
             ImageReader.newInstance(640, 480, ImageFormat.YUV_420_888, 2).apply {
                 setOnImageAvailableListener(

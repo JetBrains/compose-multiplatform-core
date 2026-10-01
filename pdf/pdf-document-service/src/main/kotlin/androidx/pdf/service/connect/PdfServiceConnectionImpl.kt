@@ -21,11 +21,13 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.IBinder
+import android.os.RemoteException
 import androidx.pdf.PdfDocumentRemote
 import androidx.pdf.service.PdfDocumentServiceImpl
 import java.util.Queue
 import java.util.UUID
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -33,6 +35,8 @@ import kotlinx.coroutines.flow.update
 
 internal class PdfServiceConnectionImpl(override val context: Context) : PdfServiceConnection {
     private val _eventStateFlow: MutableStateFlow<ConnectionState> = MutableStateFlow(Disconnected)
+
+    private val isBound = AtomicBoolean(false)
 
     override val pendingJobs: Queue<Job> = ConcurrentLinkedQueue()
 
@@ -81,7 +85,9 @@ internal class PdfServiceConnectionImpl(override val context: Context) : PdfServ
 
     override suspend fun connect(uri: Uri) {
         val intent = createIntentForService(uri)
-        context.bindService(intent, /* conn= */ this, /* flags= */ Context.BIND_AUTO_CREATE)
+        isBound.set(
+            context.bindService(intent, /* conn= */ this, /* flags= */ Context.BIND_AUTO_CREATE)
+        )
         _eventStateFlow.first { it is Connected }
     }
 
@@ -91,10 +97,22 @@ internal class PdfServiceConnectionImpl(override val context: Context) : PdfServ
             // automatically server-side. Attempting a release on a closed document will result in
             // an exception. To prevent such release calls, the connection is marked as disconnected
             // before closing the document.
+            val binder = documentBinder
             _eventStateFlow.update { Disconnected }
 
-            documentBinder?.closePdfDocument()
-            context.unbindService(this)
+            try {
+                binder?.closePdfDocument()
+            } catch (_: RemoteException) {
+                // Service is already dead, OS will clean up server resources.
+            }
+        }
+
+        if (isBound.getAndSet(false)) {
+            try {
+                context.unbindService(this)
+            } catch (_: IllegalArgumentException) {
+                // Ignored: Service was not registered or already unbound
+            }
         }
     }
 

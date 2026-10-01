@@ -17,11 +17,18 @@
 package androidx.compose.remote.creation.compose.layout
 
 import androidx.annotation.RestrictTo
+import androidx.compose.remote.core.RcPlatformServices.RcPathArrayCreator
 import androidx.compose.remote.core.operations.ConditionalOperations
-import androidx.compose.remote.core.operations.Utils
+import androidx.compose.remote.core.operations.paint.PaintBundle
 import androidx.compose.remote.creation.RemotePath
+import androidx.compose.remote.creation.compose.capture.CanvasOp
 import androidx.compose.remote.creation.compose.capture.CanvasOperationBuffer
-import androidx.compose.remote.creation.compose.capture.RecordingCanvas
+import androidx.compose.remote.creation.compose.capture.PaintTracker
+import androidx.compose.remote.creation.compose.capture.PendingOp
+import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
+import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
+import androidx.compose.remote.creation.compose.modifier.RemoteModifier
+import androidx.compose.remote.creation.compose.shapes.MorphTweenUtility
 import androidx.compose.remote.creation.compose.state.MutableRemoteFloat
 import androidx.compose.remote.creation.compose.state.RemoteBoolean
 import androidx.compose.remote.creation.compose.state.RemoteFloat
@@ -29,35 +36,141 @@ import androidx.compose.remote.creation.compose.state.RemoteImageBitmap
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.remote.creation.compose.state.RemoteString
+import androidx.compose.remote.creation.compose.state.StandardRemotePaint
 import androidx.compose.ui.graphics.ClipOp
-import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.PathFillType
 import androidx.graphics.shapes.RoundedPolygon
 
 /**
- * A wrapper around [RecordingCanvas] that provides overloads for remote types and avoids platform
- * types in its public API where possible.
+ * A remote canvas providing overloads for remote types and avoiding platform types in its public
+ * API where possible.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteCanvas(
-    /** The underlying [RecordingCanvas] being wrapped. */
-    public val internalCanvas: RecordingCanvas
-) : RemoteStateScope by internalCanvas {
+    internal val creationState: RemoteComposeCreationState,
+    enableOptimizations: Boolean = false,
+) : RemoteStateScope by creationState {
+
+    public val creationDisplayInfo: RemoteCreationDisplayInfo = creationState.creationDisplayInfo
+
+    private val tracker: PaintTracker = PaintTracker()
+
+    private val buffer: CanvasOperationBuffer = CanvasOperationBuffer(enableOptimizations)
+
+    private var forceSendingPaint: Boolean = false
+
+    private var currentDrawToBitmapId: Int = 0
+
     public val drawScope: RemoteDrawScope = RemoteDrawScope(this)
     public val remote: RemoteAccess = RemoteAccess(drawScope)
 
+    /** Flushes recorded operations to the underlying creation state. */
+    internal fun flush() {
+        buffer.flush(creationState)
+    }
+
+    /** Draws the content of the component. */
+    internal fun drawComponentContent() {
+        recordRenderingOp { document.drawComponentContent() }
+    }
+
+    /** Emits a custom component with custom properties. */
+    internal fun custom(
+        config: String,
+        modifier: RemoteModifier = RemoteModifier,
+        content: (() -> Unit)? = null,
+        properties: RemoteCustomPropertiesScope.() -> Unit = {},
+    ) {
+        val scope = RemoteCustomPropertiesScope().apply(properties)
+        val childSpan =
+            if (content != null) {
+                val span = buffer.recordInChildSpan(content)
+                if (buffer.enableOptimizations) {
+                    buffer.optimizeSpan(span)
+                }
+                span
+            } else {
+                null
+            }
+
+        val op =
+            buffer.recordRenderingOp(
+                CanvasOp.CustomComponent(config, modifier, scope.entries, childSpan)
+            )
+        for (i in scope.entries.indices) {
+            val state = scope.entries[i].state
+            if (state != null) {
+                buffer.addRoots(op, state)
+            }
+        }
+    }
+
     /** Processes a [RemotePaint] object and serializes its changes to the remote document. */
     public fun usePaint(paint: RemotePaint?) {
-        paint?.let { recordRenderingOp(it) {} }
+        paint?.let {
+            val paintSnapshot = snapshotPaint(it)
+            recordRenderingOp { usePaintInternal(paintSnapshot) }
+        }
+    }
+
+    private fun snapshotPaint(paint: RemotePaint?): RemotePaint? = paint?.let {
+        StandardRemotePaint(it)
+    }
+
+    private fun usePaintInternal(paint: RemotePaint?) {
+        if (paint == null) {
+            return
+        }
+
+        val paintBundle = PaintBundle()
+
+        tracker.reset(forceSendingPaint || document.checkAndClearForceSendingNewPaint())
+        tracker.updateWithPaint(paint, paintBundle, creationState)
+
+        if (tracker.isChanged) {
+            document.buffer.addPaint(paintBundle)
+        }
+        forceSendingPaint = false
+    }
+
+    private fun recordRenderingOp(action: () -> Unit): CanvasOperationBuffer.SpanOp {
+        return buffer.recordRenderingOp(CanvasOp.Draw { action() })
+    }
+
+    private fun recordRenderingOp(
+        paint: RemotePaint?,
+        action: () -> Unit,
+    ): CanvasOperationBuffer.SpanOp {
+        val paintSnapshot = snapshotPaint(paint)
+        return recordRenderingOp {
+            usePaintInternal(paintSnapshot)
+            action()
+        }
+    }
+
+    private inline fun recordInOffscreenChildSpan(
+        bitmapId: Int,
+        action: () -> Unit,
+    ): CanvasOperationBuffer.Span {
+        val lastDrawToBitmapId = currentDrawToBitmapId
+        return buffer.recordInChildSpan {
+            currentDrawToBitmapId = bitmapId
+            try {
+                action()
+            } finally {
+                currentDrawToBitmapId = lastDrawToBitmapId
+            }
+        }
     }
 
     /** Saves the current canvas state. */
     public fun save() {
-        internalCanvas.save()
+        buffer.save()
     }
 
     /** Restores the previous canvas state. */
     public fun restore() {
-        internalCanvas.restore()
+        buffer.restore()
     }
 
     /**
@@ -67,7 +180,8 @@ public class RemoteCanvas(
      * @param dy The translation along the Y axis.
      */
     public fun translate(dx: RemoteFloat, dy: RemoteFloat) {
-        internalCanvas.translate(dx, dy)
+        val op = buffer.recordRenderingOp(CanvasOp.Transform(PendingOp.Translate(dx, dy)))
+        buffer.addRoots(op, dx, dy)
     }
 
     /**
@@ -77,7 +191,8 @@ public class RemoteCanvas(
      * @param sy The scale factor along the Y axis.
      */
     public fun scale(sx: RemoteFloat, sy: RemoteFloat) {
-        internalCanvas.scale(sx, sy)
+        val op = buffer.recordRenderingOp(CanvasOp.Transform(PendingOp.Scale(sx, sy, null, null)))
+        buffer.addRoots(op, sx, sy)
     }
 
     /**
@@ -89,7 +204,9 @@ public class RemoteCanvas(
      * @param pivot The pivot point around which to scale.
      */
     public fun scale(sx: RemoteFloat, sy: RemoteFloat, pivot: RemoteOffset) {
-        internalCanvas.scale(sx, sy, pivot.x, pivot.y)
+        val op =
+            buffer.recordRenderingOp(CanvasOp.Transform(PendingOp.Scale(sx, sy, pivot.x, pivot.y)))
+        buffer.addRoots(op, sx, sy, pivot.x, pivot.y)
     }
 
     /**
@@ -98,7 +215,8 @@ public class RemoteCanvas(
      * @param degrees The angle of rotation in degrees.
      */
     public fun rotate(degrees: RemoteFloat) {
-        internalCanvas.rotate(degrees)
+        val op = buffer.recordRenderingOp(CanvasOp.Transform(PendingOp.Rotate(degrees, null, null)))
+        buffer.addRoots(op, degrees)
     }
 
     /**
@@ -108,50 +226,13 @@ public class RemoteCanvas(
      * @param pivot The pivot point around which to rotate.
      */
     public fun rotate(degrees: RemoteFloat, pivot: RemoteOffset) {
-        // Temporarily use Android graphics Canvas rotate, with does translate/rotate/translate
-        internalCanvas.rotate(degrees, pivot.x, pivot.y)
+        rotate(degrees, pivot.x, pivot.y)
     }
 
-    /**
-     * Rotates the canvas by [degrees] around the pivot point ([centerX], [centerY]).
-     *
-     * @param degrees The angle of rotation in degrees.
-     * @param centerX The x-coordinate of the pivot point.
-     * @param centerY The y-coordinate of the pivot point.
-     */
-    public fun rotate(degrees: RemoteFloat, centerX: RemoteFloat, centerY: RemoteFloat) {
-        // Temporarily use Android graphics Canvas rotate
-        internalCanvas.rotate(degrees.floatId, centerX.floatId, centerY.floatId)
-    }
-
-    /**
-     * Applies a transformation [matrix] to the canvas.
-     *
-     * @param matrix The [Matrix] to concatenate with the current canvas transformation.
-     */
-    public fun transform(matrix: Matrix) {
-        internalCanvas.concat(
-            android.graphics.Matrix().apply {
-                matrix.values.let { v ->
-                    setValues(floatArrayOf(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8]))
-                }
-            }
-        )
-    }
-
-    private fun recordRenderingOp(action: () -> Unit): CanvasOperationBuffer.SpanOp {
-        return internalCanvas.buffer.recordRenderingOp(action)
-    }
-
-    private fun recordRenderingOp(
-        paint: RemotePaint?,
-        action: () -> Unit,
-    ): CanvasOperationBuffer.SpanOp {
-        val paintSnapshot = internalCanvas.snapshotPaint(paint)
-        return internalCanvas.buffer.recordRenderingOp {
-            internalCanvas.usePaintInternal(paintSnapshot)
-            action()
-        }
+    /** Rotates the canvas by [degrees] around the pivot point ([px], [py]). */
+    internal fun rotate(degrees: RemoteFloat, px: RemoteFloat, py: RemoteFloat) {
+        val op = buffer.recordRenderingOp(CanvasOp.Transform(PendingOp.Rotate(degrees, px, py)))
+        buffer.addRoots(op, degrees, px, py)
     }
 
     /**
@@ -168,7 +249,7 @@ public class RemoteCanvas(
             recordRenderingOp(paint) {
                 document.drawRect(left.floatId, top.floatId, right.floatId, bottom.floatId)
             }
-        internalCanvas.buffer.addRoots(op, left, top, right, bottom)
+        buffer.addRoots(op, left, top, right, bottom)
     }
 
     /**
@@ -195,7 +276,7 @@ public class RemoteCanvas(
                     ry.floatId,
                 )
             }
-        internalCanvas.buffer.addRoots(op, left, top, right, bottom, rx, ry)
+        buffer.addRoots(op, left, top, right, bottom, rx, ry)
     }
 
     public fun drawCircle(
@@ -208,7 +289,7 @@ public class RemoteCanvas(
             recordRenderingOp(paint) {
                 document.drawCircle(centerX.floatId, centerY.floatId, radius.floatId)
             }
-        internalCanvas.buffer.addRoots(op, centerX, centerY, radius)
+        buffer.addRoots(op, centerX, centerY, radius)
     }
 
     public fun drawOval(
@@ -222,7 +303,7 @@ public class RemoteCanvas(
             recordRenderingOp(paint) {
                 document.drawOval(left.floatId, top.floatId, right.floatId, bottom.floatId)
             }
-        internalCanvas.buffer.addRoots(op, left, top, right, bottom)
+        buffer.addRoots(op, left, top, right, bottom)
     }
 
     /**
@@ -263,7 +344,7 @@ public class RemoteCanvas(
                     )
                 }
             }
-        internalCanvas.buffer.addRoots(op, left, top, right, bottom, startAngle, sweepAngle)
+        buffer.addRoots(op, left, top, right, bottom, startAngle, sweepAngle)
     }
 
     public fun drawLine(
@@ -277,7 +358,7 @@ public class RemoteCanvas(
             recordRenderingOp(paint) {
                 document.drawLine(startX.floatId, startY.floatId, stopX.floatId, stopY.floatId)
             }
-        internalCanvas.buffer.addRoots(op, startX, startY, stopX, stopY)
+        buffer.addRoots(op, startX, startY, stopX, stopY)
     }
 
     /**
@@ -302,7 +383,7 @@ public class RemoteCanvas(
             recordRenderingOp(paint) {
                 document.drawTweenPath(path1, path2, tween.floatId, start.floatId, stop.floatId)
             }
-        internalCanvas.buffer.addRoots(op, path1, path2, tween, start, stop)
+        buffer.addRoots(op, path1, path2, tween, start, stop)
     }
 
     /** Draws text from [text] at ([x], [y]) using the specified [paint]. */
@@ -316,7 +397,7 @@ public class RemoteCanvas(
             recordRenderingOp(paint) {
                 document.drawTextRun(text.id, 0, -1, 0, -1, x.floatId, y.floatId, false)
             }
-        internalCanvas.buffer.addRoots(op, text, x, y)
+        buffer.addRoots(op, text, x, y)
     }
 
     public fun drawTextRun(
@@ -343,7 +424,7 @@ public class RemoteCanvas(
                     isRtl,
                 )
             }
-        internalCanvas.buffer.addRoots(op, text, x, y)
+        buffer.addRoots(op, text, x, y)
     }
 
     public fun drawAnchoredText(
@@ -366,7 +447,7 @@ public class RemoteCanvas(
                     flags,
                 )
             }
-        internalCanvas.buffer.addRoots(op, text, anchorX, anchorY, panx, pany)
+        buffer.addRoots(op, text, anchorX, anchorY, panx, pany)
     }
 
     public fun drawTextOnPath(
@@ -380,22 +461,40 @@ public class RemoteCanvas(
             recordRenderingOp(paint) {
                 document.drawTextOnPath(text.id, path, hOffset.floatId, vOffset.floatId)
             }
-        internalCanvas.buffer.addRoots(op, text, path, hOffset, vOffset)
+        buffer.addRoots(op, text, path, hOffset, vOffset)
     }
 
     /** Draws a path using the specified [paint]. */
-    public fun drawPath(path: RemotePath, paint: RemotePaint? = null) {
+    public fun drawPath(
+        path: RemotePath,
+        pathFillType: PathFillType = PathFillType.NonZero,
+        paint: RemotePaint? = null,
+    ) {
         val op =
             recordRenderingOp(paint) {
-                val pathId = document.addPathData(path)
+                val pathId =
+                    if (pathFillType == PathFillType.EvenOdd) {
+                        document.addPathData(path, 1)
+                    } else {
+                        document.addPathData(path)
+                    }
                 document.drawPath(pathId)
             }
-        internalCanvas.buffer.addRoots(op, path)
+        buffer.addRoots(op, path)
     }
 
     /** Draws a [RoundedPolygon] using the specified [paint]. */
     public fun drawRoundedPolygon(roundedPolygon: RoundedPolygon, paint: RemotePaint?) {
-        internalCanvas.drawRoundedPolygon(roundedPolygon, paint)
+        recordRenderingOp(paint) {
+            val pathData = MorphTweenUtility.cubicsToPathData(roundedPolygon.cubics)
+            val id =
+                document.addPathData(
+                    object : RcPathArrayCreator {
+                        override fun createFloatArray(): FloatArray = pathData
+                    }
+                )
+            document.buffer.addDrawPath(id)
+        }
     }
 
     /** Draws a morph between two [RoundedPolygon]s using the specified [paint]. */
@@ -405,7 +504,16 @@ public class RemoteCanvas(
         progress: RemoteFloat,
         paint: RemotePaint?,
     ) {
-        internalCanvas.drawRoundedPolygonMorph(from, to, progress, paint)
+        val op =
+            recordRenderingOp(paint) {
+                MorphTweenUtility.emitMorphAsTweens(
+                    document,
+                    from,
+                    to,
+                    progress.getFloatIdForCreationState(creationState),
+                )
+            }
+        buffer.addRoots(op, progress)
     }
 
     /** Draws a bitmap at ([left], [top]) using the specified [paint]. */
@@ -419,7 +527,7 @@ public class RemoteCanvas(
             recordRenderingOp(paint) {
                 document.drawBitmap(bitmap.id, left.floatId, top.floatId, "")
             }
-        internalCanvas.buffer.addRoots(op, bitmap, left, top)
+        buffer.addRoots(op, bitmap, left, top)
     }
 
     /** Draws a bitmap scaled to the destination rectangle. */
@@ -455,7 +563,7 @@ public class RemoteCanvas(
                     contentDescription ?: "",
                 )
             }
-        internalCanvas.buffer.addRoots(
+        buffer.addRoots(
             op,
             bitmap,
             srcLeft,
@@ -494,15 +602,7 @@ public class RemoteCanvas(
                     placement,
                 )
             }
-        internalCanvas.buffer.addRoots(
-            op,
-            text,
-            centerX,
-            centerY,
-            radius,
-            startAngle,
-            warpRadiusOffset,
-        )
+        buffer.addRoots(op, text, centerX, centerY, radius, startAngle, warpRadiusOffset)
     }
 
     /** Clips the current canvas state to the specified rectangle. */
@@ -513,10 +613,18 @@ public class RemoteCanvas(
         bottom: RemoteFloat,
         clipOp: ClipOp = ClipOp.Intersect,
     ) {
-        val op = recordRenderingOp {
-            document.clipRect(left.floatId, top.floatId, right.floatId, bottom.floatId)
-        }
-        internalCanvas.buffer.addRoots(op, left, top, right, bottom)
+        val op =
+            buffer.recordRenderingOp(
+                CanvasOp.Clip { writer ->
+                    writer.clipRect(
+                        left.getFloatIdForCreationState(creationState),
+                        top.getFloatIdForCreationState(creationState),
+                        right.getFloatIdForCreationState(creationState),
+                        bottom.getFloatIdForCreationState(creationState),
+                    )
+                }
+            )
+        buffer.addRoots(op, left, top, right, bottom)
     }
 
     /** Clips the current canvas state to the specified [path]. */
@@ -525,7 +633,7 @@ public class RemoteCanvas(
             val pathId = document.addPathData(path)
             document.addClipPath(pathId)
         }
-        internalCanvas.buffer.addRoots(op, path)
+        buffer.addRoots(op, path)
     }
 
     /**
@@ -533,48 +641,55 @@ public class RemoteCanvas(
      * true.
      */
     public fun drawConditionally(condition: RemoteBoolean, drawCommands: () -> Unit) {
-        val childSpan = internalCanvas.buffer.createChildSpan()
-
-        val prevInsertPoint = internalCanvas.buffer.insertPoint
-        internalCanvas.buffer.insertPoint = childSpan
-        drawCommands()
-        internalCanvas.buffer.insertPoint = prevInsertPoint
-
-        val op = recordRenderingOp {
-            document.conditionalOperations(
-                ConditionalOperations.TYPE_NEQ,
-                condition.toRemoteInt().toRemoteFloat().floatId,
-                0f,
-            )
-            internalCanvas.forceSendingPaint = true
-            childSpan.record()
-            internalCanvas.forceSendingPaint = true
-            document.endConditionalOperations()
+        val childSpan = buffer.recordInChildSpan(drawCommands)
+        if (buffer.enableOptimizations) {
+            buffer.optimizeSpan(childSpan)
         }
-        internalCanvas.buffer.addRoots(op, condition)
+        if (!childSpan.emitsWireCommands()) {
+            buffer.insertPoint.removeChildSpan(childSpan)
+            return
+        }
+
+        val op =
+            buffer.recordRenderingOp(
+                CanvasOp.DrawConditionally(condition, childSpan) { writer, creationState ->
+                    if (condition.hasConstantValue) {
+                        if (condition.constantValue) {
+                            childSpan.record(writer, creationState)
+                        }
+                    } else {
+                        writer.conditionalOperations(
+                            ConditionalOperations.TYPE_NEQ,
+                            condition.toRemoteInt().toRemoteFloat().floatId,
+                            0f,
+                        ) {
+                            forceSendingPaint = true
+                            childSpan.record(writer, creationState)
+                            forceSendingPaint = true
+                        }
+                    }
+                }
+            )
+        buffer.addRoots(op, condition)
     }
 
     /** Instructs the player to draw [drawCommands] into [bitmap]. */
     public fun drawToOffscreenBitmap(bitmap: RemoteImageBitmap, drawCommands: () -> Unit) {
         val bitmapId = bitmap.id
-        val lastDrawToBitmapId = internalCanvas.currentDrawToBitmapId
-        val childSpan = internalCanvas.buffer.createChildSpan()
+        val lastDrawToBitmapId = currentDrawToBitmapId
+        val childSpan = recordInOffscreenChildSpan(bitmapId, drawCommands)
 
-        val prevInsertPoint = internalCanvas.buffer.insertPoint
-        internalCanvas.buffer.insertPoint = childSpan
-        internalCanvas.currentDrawToBitmapId = bitmapId
-        drawCommands()
-        internalCanvas.currentDrawToBitmapId = lastDrawToBitmapId
-        internalCanvas.buffer.insertPoint = prevInsertPoint
-
-        val op = recordRenderingOp {
-            document.drawOnBitmap(bitmapId, 1, 0)
-            internalCanvas.forceSendingPaint = true
-            childSpan.record()
-            internalCanvas.forceSendingPaint = true
-            document.drawOnBitmap(lastDrawToBitmapId, 1, 0)
-        }
-        internalCanvas.buffer.addRoots(op, bitmap)
+        val op =
+            buffer.recordRenderingOp(
+                CanvasOp.Draw(switchesCanvas = true) { writer ->
+                    writer.drawOnBitmap(bitmapId, 1, 0)
+                    forceSendingPaint = true
+                    childSpan.record(writer, creationState)
+                    forceSendingPaint = true
+                    writer.drawOnBitmap(lastDrawToBitmapId, 1, 0)
+                }
+            )
+        buffer.addRoots(op, bitmap)
     }
 
     /**
@@ -587,24 +702,20 @@ public class RemoteCanvas(
         drawCommands: () -> Unit,
     ) {
         val bitmapId = bitmap.id
-        val lastDrawToBitmapId = internalCanvas.currentDrawToBitmapId
-        val childSpan = internalCanvas.buffer.createChildSpan()
+        val lastDrawToBitmapId = currentDrawToBitmapId
+        val childSpan = recordInOffscreenChildSpan(bitmapId, drawCommands)
 
-        val prevInsertPoint = internalCanvas.buffer.insertPoint
-        internalCanvas.buffer.insertPoint = childSpan
-        internalCanvas.currentDrawToBitmapId = bitmapId
-        drawCommands()
-        internalCanvas.currentDrawToBitmapId = lastDrawToBitmapId
-        internalCanvas.buffer.insertPoint = prevInsertPoint
-
-        val op = recordRenderingOp {
-            document.drawOnBitmap(bitmapId, 0, clearColor)
-            internalCanvas.forceSendingPaint = true
-            childSpan.record()
-            internalCanvas.forceSendingPaint = true
-            document.drawOnBitmap(lastDrawToBitmapId, 1, 0)
-        }
-        internalCanvas.buffer.addRoots(op, bitmap)
+        val op =
+            buffer.recordRenderingOp(
+                CanvasOp.Draw(switchesCanvas = true) { writer ->
+                    writer.drawOnBitmap(bitmapId, 0, clearColor)
+                    forceSendingPaint = true
+                    childSpan.record(writer, creationState)
+                    forceSendingPaint = true
+                    writer.drawOnBitmap(lastDrawToBitmapId, 1, 0)
+                }
+            )
+        buffer.addRoots(op, bitmap)
     }
 
     /**
@@ -617,26 +728,18 @@ public class RemoteCanvas(
         step: RemoteFloat,
         body: (index: RemoteFloat) -> Unit,
     ) {
-        val loopVariableId = document.createFloatId()
-        val loopVariable = MutableRemoteFloat(loopVariableId)
-        val childSpan = internalCanvas.buffer.createChildSpan()
+        val loopVariable = MutableRemoteFloat()
+        val childSpan = buffer.recordInChildSpan { body(loopVariable) }
 
-        val prevInsertPoint = internalCanvas.buffer.insertPoint
-        internalCanvas.buffer.insertPoint = childSpan
-        body(loopVariable)
-        internalCanvas.buffer.insertPoint = prevInsertPoint
-
-        val op = recordRenderingOp {
-            document.loop(
-                Utils.idFromNan(loopVariableId),
-                from.floatId,
-                step.floatId,
-                until.floatId,
-            ) {
-                childSpan.record()
-            }
-        }
-        internalCanvas.buffer.addRoots(op, from, until, step)
+        val op =
+            buffer.recordRenderingOp(
+                CanvasOp.Draw { writer ->
+                    writer.loop(loopVariable.id, from.floatId, step.floatId, until.floatId) {
+                        childSpan.record(writer, creationState)
+                    }
+                }
+            )
+        buffer.addRoots(op, from, until, step)
     }
 
     /** Starts a state layout. */

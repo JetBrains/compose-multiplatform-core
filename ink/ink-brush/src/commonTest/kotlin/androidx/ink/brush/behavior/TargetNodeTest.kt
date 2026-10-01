@@ -16,18 +16,24 @@
 
 package androidx.ink.brush.behavior
 
+import androidx.ink.brush.ExperimentalInkAnimationApi
+import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.Version
 import androidx.ink.brush.behavior.TargetNode.Target
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.testing.awaitNativePointerCleanupAfter
 import androidx.kruth.assertThat
 import kotlin.IllegalArgumentException
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
+@OptIn(ExperimentalInkAnimationApi::class, InkInternalOnlyApi::class)
 class TargetNodeTest {
 
     @Test
     fun targetNodeNativePointers_cleanedUpWhenOutOfScope() {
         awaitNativePointerCleanupAfter {
+            @Suppress("UNUSED_VARIABLE")
             val unused = TargetNode(Target.WIDTH_MULTIPLIER, 0f, 1f, ConstantNode(0f))
         }
     }
@@ -52,13 +58,12 @@ class TargetNodeTest {
             .isEqualTo("Target.POSITION_OFFSET_FORWARD_IN_MULTIPLES_OF_BRUSH_SIZE")
         assertThat(Target.POSITION_OFFSET_LATERAL_IN_MULTIPLES_OF_BRUSH_SIZE.toString())
             .isEqualTo("Target.POSITION_OFFSET_LATERAL_IN_MULTIPLES_OF_BRUSH_SIZE")
-        assertThat(Target.TEXTURE_ANIMATION_PROGRESS_OFFSET.toString())
-            .isEqualTo("Target.TEXTURE_ANIMATION_PROGRESS_OFFSET")
+        assertThat(Target.PAINT_ANIMATION_PROGRESS_OFFSET.toString())
+            .isEqualTo("Target.PAINT_ANIMATION_PROGRESS_OFFSET")
         assertThat(Target.HUE_OFFSET_IN_RADIANS.toString())
             .isEqualTo("Target.HUE_OFFSET_IN_RADIANS")
-        assertThat(Target.SATURATION_MULTIPLIER.toString())
-            .isEqualTo("Target.SATURATION_MULTIPLIER")
-        assertThat(Target.LUMINOSITY_OFFSET.toString()).isEqualTo("Target.LUMINOSITY_OFFSET")
+        assertThat(Target.CHROMA_MULTIPLIER.toString()).isEqualTo("Target.CHROMA_MULTIPLIER")
+        assertThat(Target.LIGHTNESS_OFFSET.toString()).isEqualTo("Target.LIGHTNESS_OFFSET")
         assertThat(Target.OPACITY_MULTIPLIER.toString()).isEqualTo("Target.OPACITY_MULTIPLIER")
     }
 
@@ -196,5 +201,11 @@ class TargetNodeTest {
                 )
             )
             .isFalse()
+    }
+
+    @OptIn(ExperimentalInkCustomBrushApi::class)
+    @Test
+    fun calculateMinimumRequiredVersion_returnsExpectedValue() {
+        assertThat(Target.WIDTH_MULTIPLIER.calculateMinimumRequiredVersion()).isEqualTo(Version.V0)
     }
 }

@@ -51,7 +51,6 @@ import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -60,7 +59,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class DateInputTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun dateInput() {
@@ -424,6 +423,24 @@ class DateInputTest {
             .assertContentDescriptionEquals(
                 expectedHeadlineStringFormat.format(fullDateDescription)
             )
+    }
+
+    @Test
+    fun dateInput_delimiterInsertedImmediately() {
+        lateinit var dateInputLabel: String
+        rule.setMaterialContent(lightColorScheme()) {
+            dateInputLabel = getString(string = Strings.DateInputLabel)
+            val state = rememberDatePickerState(initialDisplayMode = DisplayMode.Input)
+            DatePicker(state = state)
+        }
+
+        // Type 2 digits for month -> delimiter should immediately appear ("01/")
+        rule.onNodeWithText(dateInputLabel).performClick().performTextInput("01")
+        rule.onNodeWithText("01/").assertExists()
+
+        // Type 2 digits for day -> second delimiter should immediately appear ("01/27/")
+        rule.onNodeWithText("01/").performTextInput("27")
+        rule.onNodeWithText("01/27/").assertExists()
     }
 
     // Returns the given date's day as milliseconds from epoch. The returned value is for the day's

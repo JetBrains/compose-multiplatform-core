@@ -891,8 +891,13 @@ package androidx.core.app {
   public static final class NotificationCompat.ProjectedExtender implements androidx.core.app.NotificationCompat.Extender {
     ctor public NotificationCompat.ProjectedExtender();
     ctor public NotificationCompat.ProjectedExtender(android.app.Notification);
+    method public androidx.core.app.NotificationCompat.ProjectedExtender addAction(androidx.core.app.NotificationCompat.Action);
+    method public androidx.core.app.NotificationCompat.ProjectedExtender addActions(java.util.List<androidx.core.app.NotificationCompat.Action!>);
+    method public androidx.core.app.NotificationCompat.ProjectedExtender clearActions();
     method public androidx.core.app.NotificationCompat.Builder extend(androidx.core.app.NotificationCompat.Builder);
+    method public java.util.List<androidx.core.app.NotificationCompat.Action!> getActions();
     method public android.app.PendingIntent? getContentIntent();
+    method public boolean hasActions();
     method public androidx.core.app.NotificationCompat.ProjectedExtender setContentIntent(android.app.PendingIntent?);
   }
 
@@ -2472,6 +2477,11 @@ package androidx.core.os {
   public final class BundleKt {
     method public static android.os.Bundle bundleOf();
     method @Deprecated public static android.os.Bundle bundleOf(kotlin.Pair<java.lang.String,? extends java.lang.Object?>... pairs);
+    method @KotlinOnly public static inline <reified T extends android.os.Parcelable> android.os.Parcelable[]? getParcelableArrayCompat(android.os.Bundle, String key);
+    method @KotlinOnly public static inline <reified T extends android.os.Parcelable> java.util.ArrayList<T>? getParcelableArrayListCompat(android.os.Bundle, String key);
+    method @KotlinOnly public static inline <reified T extends android.os.Parcelable> T? getParcelableCompat(android.os.Bundle, String key);
+    method @KotlinOnly public static inline <reified T extends java.io.Serializable> T? getSerializableCompat(android.os.Bundle, String key);
+    method @KotlinOnly public static inline <reified T extends android.os.Parcelable> android.util.SparseArray<T>? getSparseParcelableArrayCompat(android.os.Bundle, String key);
   }
 
   @Deprecated public final class CancellationSignal {
@@ -2544,6 +2554,33 @@ package androidx.core.os {
     method public Object? unwrap();
     method @RequiresApi(24) public static androidx.core.os.LocaleListCompat wrap(android.os.LocaleList);
     method @Deprecated @RequiresApi(24) public static androidx.core.os.LocaleListCompat! wrap(Object!);
+  }
+
+  public final class MemorySnapshot {
+    method public static androidx.core.os.MemorySnapshot? capture();
+    method @InaccessibleFromKotlin public long getAnonRssBytes();
+    method @InaccessibleFromKotlin public long getFileRssBytes();
+    method @InaccessibleFromKotlin public long getPackageMemoryUsageBytes();
+    method @InaccessibleFromKotlin public long getProcessMemoryUsageBytes();
+    method @InaccessibleFromKotlin public long getRssBytes();
+    method @InaccessibleFromKotlin public long getRssHwmBytes();
+    method @InaccessibleFromKotlin public long getShmemRssBytes();
+    method @InaccessibleFromKotlin public long getSwapBytes();
+    method @InaccessibleFromKotlin public long getVssBytes();
+    property public long anonRssBytes;
+    property public long fileRssBytes;
+    property public long packageMemoryUsageBytes;
+    property public long processMemoryUsageBytes;
+    property public long rssBytes;
+    property public long rssHwmBytes;
+    property public long shmemRssBytes;
+    property public long swapBytes;
+    property public long vssBytes;
+    field public static final androidx.core.os.MemorySnapshot.Companion Companion;
+  }
+
+  public static final class MemorySnapshot.Companion {
+    method public androidx.core.os.MemorySnapshot? capture();
   }
 
   public final class MessageCompat {
@@ -3121,6 +3158,8 @@ package androidx.core.util {
     method public static int hashCode(Object?);
     method public static <T> T requireNonNull(T?);
     method public static <T> T requireNonNull(T?, String);
+    method public static <T> T requireNonNullElse(T?, T);
+    method public static <T> T requireNonNullElseGet(T?, androidx.core.util.Supplier<? extends T>);
     method public static String? toString(Object?, String?);
   }
 
@@ -3207,77 +3246,101 @@ package androidx.core.util {
   }
 
   public final class SparseArrayKt {
+    method public static inline <T> boolean all(android.util.SparseArray<T>, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,java.lang.Boolean> predicate);
+    method public static inline <T> boolean any(android.util.SparseArray<T>, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,java.lang.Boolean> predicate);
     method public static inline operator <T> boolean contains(android.util.SparseArray<T>, int key);
     method public static inline <T> boolean containsKey(android.util.SparseArray<T>, int key);
     method public static inline <T> boolean containsValue(android.util.SparseArray<T>, T value);
     method public static inline <T> void forEach(android.util.SparseArray<T>, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,kotlin.Unit> action);
     method public static inline <T> T getOrDefault(android.util.SparseArray<T>, int key, T defaultValue);
     method public static inline <T> T getOrElse(android.util.SparseArray<T>, int key, kotlin.jvm.functions.Function0<? extends T> defaultValue);
+    method public static inline <T> T getOrPut(android.util.SparseArray<T>, int key, kotlin.jvm.functions.Function0<? extends T> defaultValue);
     method @InaccessibleFromKotlin public static inline <T> int getSize(android.util.SparseArray<T>);
     method public static inline <T> boolean isEmpty(android.util.SparseArray<T>);
     method public static inline <T> boolean isNotEmpty(android.util.SparseArray<T>);
     method public static <T> kotlin.collections.IntIterator keyIterator(android.util.SparseArray<T>);
+    method public static inline <T> boolean none(android.util.SparseArray<T>, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,java.lang.Boolean> predicate);
     method public static operator <T> android.util.SparseArray<T> plus(android.util.SparseArray<T>, android.util.SparseArray<T> other);
     method public static <T> void putAll(android.util.SparseArray<T>, android.util.SparseArray<T> other);
     method public static <T> boolean remove(android.util.SparseArray<T>, int key, T value);
     method public static inline operator <T> void set(android.util.SparseArray<T>, int key, T value);
+    method public static <T> android.util.SparseArray<T> sparseArrayOf();
+    method public static <T> android.util.SparseArray<T> sparseArrayOf(kotlin.Pair<java.lang.Integer,? extends T>... pairs);
     method public static <T> java.util.Iterator<T> valueIterator(android.util.SparseArray<T>);
     property public static inline <T> int android.util.SparseArray<T>.size;
   }
 
   public final class SparseBooleanArrayKt {
+    method public static inline boolean all(android.util.SparseBooleanArray, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super java.lang.Boolean,java.lang.Boolean> predicate);
+    method public static inline boolean any(android.util.SparseBooleanArray, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super java.lang.Boolean,java.lang.Boolean> predicate);
     method public static inline operator boolean contains(android.util.SparseBooleanArray, int key);
     method public static inline boolean containsKey(android.util.SparseBooleanArray, int key);
     method public static inline boolean containsValue(android.util.SparseBooleanArray, boolean value);
     method public static inline void forEach(android.util.SparseBooleanArray, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super java.lang.Boolean,kotlin.Unit> action);
     method public static inline boolean getOrDefault(android.util.SparseBooleanArray, int key, boolean defaultValue);
     method public static inline boolean getOrElse(android.util.SparseBooleanArray, int key, kotlin.jvm.functions.Function0<java.lang.Boolean> defaultValue);
+    method public static inline boolean getOrPut(android.util.SparseBooleanArray, int key, kotlin.jvm.functions.Function0<java.lang.Boolean> defaultValue);
     method @InaccessibleFromKotlin public static inline int getSize(android.util.SparseBooleanArray);
     method public static inline boolean isEmpty(android.util.SparseBooleanArray);
     method public static inline boolean isNotEmpty(android.util.SparseBooleanArray);
     method public static kotlin.collections.IntIterator keyIterator(android.util.SparseBooleanArray);
+    method public static inline boolean none(android.util.SparseBooleanArray, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super java.lang.Boolean,java.lang.Boolean> predicate);
     method public static operator android.util.SparseBooleanArray plus(android.util.SparseBooleanArray, android.util.SparseBooleanArray other);
     method public static void putAll(android.util.SparseBooleanArray, android.util.SparseBooleanArray other);
     method public static boolean remove(android.util.SparseBooleanArray, int key, boolean value);
     method public static inline operator void set(android.util.SparseBooleanArray, int key, boolean value);
+    method public static android.util.SparseBooleanArray sparseBooleanArrayOf();
+    method public static android.util.SparseBooleanArray sparseBooleanArrayOf(kotlin.Pair<java.lang.Integer,java.lang.Boolean>... pairs);
     method public static kotlin.collections.BooleanIterator valueIterator(android.util.SparseBooleanArray);
     property public static inline int android.util.SparseBooleanArray.size;
   }
 
   public final class SparseIntArrayKt {
+    method public static inline boolean all(android.util.SparseIntArray, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super java.lang.Integer,java.lang.Boolean> predicate);
+    method public static inline boolean any(android.util.SparseIntArray, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super java.lang.Integer,java.lang.Boolean> predicate);
     method public static inline operator boolean contains(android.util.SparseIntArray, int key);
     method public static inline boolean containsKey(android.util.SparseIntArray, int key);
     method public static inline boolean containsValue(android.util.SparseIntArray, int value);
     method public static inline void forEach(android.util.SparseIntArray, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super java.lang.Integer,kotlin.Unit> action);
     method public static inline int getOrDefault(android.util.SparseIntArray, int key, int defaultValue);
     method public static inline int getOrElse(android.util.SparseIntArray, int key, kotlin.jvm.functions.Function0<java.lang.Integer> defaultValue);
+    method public static inline int getOrPut(android.util.SparseIntArray, int key, kotlin.jvm.functions.Function0<java.lang.Integer> defaultValue);
     method @InaccessibleFromKotlin public static inline int getSize(android.util.SparseIntArray);
     method public static inline boolean isEmpty(android.util.SparseIntArray);
     method public static inline boolean isNotEmpty(android.util.SparseIntArray);
     method public static kotlin.collections.IntIterator keyIterator(android.util.SparseIntArray);
+    method public static inline boolean none(android.util.SparseIntArray, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super java.lang.Integer,java.lang.Boolean> predicate);
     method public static operator android.util.SparseIntArray plus(android.util.SparseIntArray, android.util.SparseIntArray other);
     method public static void putAll(android.util.SparseIntArray, android.util.SparseIntArray other);
     method public static boolean remove(android.util.SparseIntArray, int key, int value);
     method public static inline operator void set(android.util.SparseIntArray, int key, int value);
+    method public static android.util.SparseIntArray sparseIntArrayOf();
+    method public static android.util.SparseIntArray sparseIntArrayOf(kotlin.Pair<java.lang.Integer,java.lang.Integer>... pairs);
     method public static kotlin.collections.IntIterator valueIterator(android.util.SparseIntArray);
     property public static inline int android.util.SparseIntArray.size;
   }
 
   public final class SparseLongArrayKt {
+    method public static inline boolean all(android.util.SparseLongArray, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super java.lang.Long,java.lang.Boolean> predicate);
+    method public static inline boolean any(android.util.SparseLongArray, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super java.lang.Long,java.lang.Boolean> predicate);
     method public static inline operator boolean contains(android.util.SparseLongArray, int key);
     method public static inline boolean containsKey(android.util.SparseLongArray, int key);
     method public static inline boolean containsValue(android.util.SparseLongArray, long value);
     method public static inline void forEach(android.util.SparseLongArray, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super java.lang.Long,kotlin.Unit> action);
     method public static inline long getOrDefault(android.util.SparseLongArray, int key, long defaultValue);
     method public static inline long getOrElse(android.util.SparseLongArray, int key, kotlin.jvm.functions.Function0<java.lang.Long> defaultValue);
+    method public static inline long getOrPut(android.util.SparseLongArray, int key, kotlin.jvm.functions.Function0<java.lang.Long> defaultValue);
     method @InaccessibleFromKotlin public static inline int getSize(android.util.SparseLongArray);
     method public static inline boolean isEmpty(android.util.SparseLongArray);
     method public static inline boolean isNotEmpty(android.util.SparseLongArray);
     method public static kotlin.collections.IntIterator keyIterator(android.util.SparseLongArray);
+    method public static inline boolean none(android.util.SparseLongArray, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super java.lang.Long,java.lang.Boolean> predicate);
     method public static operator android.util.SparseLongArray plus(android.util.SparseLongArray, android.util.SparseLongArray other);
     method public static void putAll(android.util.SparseLongArray, android.util.SparseLongArray other);
     method public static boolean remove(android.util.SparseLongArray, int key, long value);
     method public static inline operator void set(android.util.SparseLongArray, int key, long value);
+    method public static android.util.SparseLongArray sparseLongArrayOf();
+    method public static android.util.SparseLongArray sparseLongArrayOf(kotlin.Pair<java.lang.Integer,java.lang.Long>... pairs);
     method public static kotlin.collections.LongIterator valueIterator(android.util.SparseLongArray);
     property public static inline int android.util.SparseLongArray.size;
   }
@@ -3806,6 +3869,12 @@ package androidx.core.view {
     method @Deprecated public static boolean isQuickScaleEnabled(Object!);
     method @Deprecated public static void setQuickScaleEnabled(android.view.ScaleGestureDetector, boolean);
     method @Deprecated public static void setQuickScaleEnabled(Object!, boolean);
+  }
+
+  public final class ScreenOrientation {
+    method public static int getScreenOrientationFromRotation(@UiContext android.content.Context, int);
+    method public static boolean isLandscape(@UiContext android.content.Context, int);
+    method public static boolean isPortrait(@UiContext android.content.Context, int);
   }
 
   public class ScrollFeedbackProviderCompat {
@@ -4901,10 +4970,12 @@ package androidx.core.view.accessibility {
   }
 
   public static final class AccessibilityNodeInfoCompat.SelectionCompat {
+    ctor public AccessibilityNodeInfoCompat.SelectionCompat(android.os.Bundle);
     ctor public AccessibilityNodeInfoCompat.SelectionCompat(android.view.accessibility.AccessibilityNodeInfo.Selection?);
     ctor public AccessibilityNodeInfoCompat.SelectionCompat(androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionPositionCompat, androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionPositionCompat);
     method public androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionPositionCompat? getEnd();
     method public androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionPositionCompat? getStart();
+    method public android.os.Bundle toActionArguments();
     method public android.view.accessibility.AccessibilityNodeInfo.Selection? unwrap();
   }
 
@@ -4915,8 +4986,19 @@ package androidx.core.view.accessibility {
     ctor public AccessibilityNodeInfoCompat.SelectionPositionCompat(androidx.core.view.accessibility.AccessibilityNodeInfoCompat, int);
     method public androidx.core.view.accessibility.AccessibilityNodeInfoCompat? getNode();
     method public int getOffset();
+    method @SuppressCompatibility @androidx.core.view.accessibility.PreviewAccessibilityApi public int getOffsetType();
     method public android.view.View? getView();
     method public int getVirtualDescendantId();
+    field @SuppressCompatibility @androidx.core.view.accessibility.PreviewAccessibilityApi public static final int OFFSET_TYPE_CHILD = 1; // 0x1
+    field @SuppressCompatibility @androidx.core.view.accessibility.PreviewAccessibilityApi public static final int OFFSET_TYPE_TEXT = 0; // 0x0
+  }
+
+  @SuppressCompatibility @androidx.core.view.accessibility.PreviewAccessibilityApi public static final class AccessibilityNodeInfoCompat.SelectionPositionCompat.Builder {
+    ctor public AccessibilityNodeInfoCompat.SelectionPositionCompat.Builder(android.view.View, int);
+    ctor public AccessibilityNodeInfoCompat.SelectionPositionCompat.Builder(android.view.View, int, int);
+    ctor public AccessibilityNodeInfoCompat.SelectionPositionCompat.Builder(androidx.core.view.accessibility.AccessibilityNodeInfoCompat, int);
+    method public androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionPositionCompat build();
+    method public androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionPositionCompat.Builder setOffsetType(int);
   }
 
   public abstract static class AccessibilityNodeInfoCompat.StructuredDataInfoCompat {
@@ -5083,6 +5165,9 @@ package androidx.core.view.accessibility {
     field public static final int TYPE_MAGNIFICATION_OVERLAY = 6; // 0x6
     field public static final int TYPE_SPLIT_SCREEN_DIVIDER = 5; // 0x5
     field public static final int TYPE_SYSTEM = 3; // 0x3
+  }
+
+  @SuppressCompatibility @kotlin.RequiresOptIn(message="This is a preview accessibility API. It may be changed or removed in future releases.") @kotlin.annotation.MustBeDocumented @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY, kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS, kotlin.annotation.AnnotationTarget.CONSTRUCTOR, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.PROPERTY_SETTER, kotlin.annotation.AnnotationTarget.FIELD}) public @interface PreviewAccessibilityApi {
   }
 
 }
@@ -5333,17 +5418,20 @@ package androidx.core.widget {
     method public int getMaxScrollAmount();
     method public boolean hasNestedScrollingParent(int);
     method public boolean isFillViewport();
+    method public boolean isScrollToTopEnabled();
     method public boolean isSmoothScrollingEnabled();
     method public void onAttachedToWindow();
     method public void onNestedPreScroll(android.view.View, int, int, int[], int);
     method public void onNestedScroll(android.view.View, int, int, int, int, int);
     method public void onNestedScroll(android.view.View, int, int, int, int, int, int[]);
     method public void onNestedScrollAccepted(android.view.View, android.view.View, int, int);
+    method public boolean onScrollToTop(int);
     method public boolean onStartNestedScroll(android.view.View, android.view.View, int, int);
     method public void onStopNestedScroll(android.view.View, int);
     method public boolean pageScroll(int);
     method public void setFillViewport(boolean);
     method public void setOnScrollChangeListener(androidx.core.widget.NestedScrollView.OnScrollChangeListener?);
+    method public void setScrollToTopEnabled(boolean);
     method public void setSmoothScrollingEnabled(boolean);
     method public final void smoothScrollBy(int, int);
     method public final void smoothScrollBy(int, int, int);

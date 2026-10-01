@@ -44,7 +44,6 @@ dependencies {
 
 android {
     compileSdk { version = release(37) }
-
     namespace = "androidx.compose.material.ripple.benchmark"
 }
 

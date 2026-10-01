@@ -16,19 +16,25 @@
 
 package androidx.navigation3.runtime.deeplink
 
+import androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion.MimeTypeExtrasKey
 import androidx.navigation3.runtime.fastForEachOrForEach
 
 /**
- * Encompasses the logic to match a navigation key of type [T] against a [DeepLinkRequest].
+ * Represents a deep link that can be deep linked into when matched with a [DeepLinkRequest]. Each
+ * matcher is associated with a navigation key that supports this deep link.
  *
  * A navigation key can be associated with more than one [DeepLinkMatcher] if it supports different
  * forms of deep links.
  *
  * [T] The type of the navigation key associated with this deep link.
  *
+ * [R] The type of the [DeepLinkMatcher.MatchResult] returned by this deep link.
+ *
  * @param filters an optional list of [Filter] to apply to the [DeepLinkRequest] during matching
  */
-public abstract class DeepLinkMatcher<T : Any>(private val filters: List<Filter> = emptyList()) {
+public abstract class DeepLinkMatcher<out T : Any, out R : DeepLinkMatcher.MatchResult<T>>(
+    private val filters: List<Filter> = emptyList()
+) {
     /**
      * Matches a [DeepLinkRequest] to a [DeepLinkMatcher].
      *
@@ -36,11 +42,13 @@ public abstract class DeepLinkMatcher<T : Any>(private val filters: List<Filter>
      * [filters] and if all filters returns true, proceeds to call [matchRequest] to get the final
      * match result.
      *
-     * Returns [MatchResult] if it is a match, and returns null otherwise.
+     * [R] The type of the [DeepLinkMatcher.MatchResult] returned by this deep link.
+     *
+     * Returns [R] if it is a match, and returns null otherwise.
      *
      * @param request the [DeepLinkRequest] to match against
      */
-    public fun match(request: DeepLinkRequest): MatchResult<T>? {
+    public fun match(request: DeepLinkRequest): R? {
         // check filters first to avoid creating and discarding a key that doesn't match filters\
         filters.fastForEachOrForEach { filter ->
             val isMatch = filter.filterRequest(request)
@@ -59,7 +67,7 @@ public abstract class DeepLinkMatcher<T : Any>(private val filters: List<Filter>
      *
      * @param request the [DeepLinkRequest] to match against
      */
-    protected abstract fun matchRequest(request: DeepLinkRequest): MatchResult<T>?
+    protected abstract fun matchRequest(request: DeepLinkRequest): R?
 
     /**
      * A filter for a deep link, such as a mimeType.
@@ -79,18 +87,35 @@ public abstract class DeepLinkMatcher<T : Any>(private val filters: List<Filter>
         public fun filterRequest(request: DeepLinkRequest): Boolean
     }
 
+    // UnsafeVariance is safe here because the class and its function cannot mutate the key
     /**
      * The class that is returned when a [DeepLinkMatcher] matches with a [DeepLinkRequest]
      *
      * @param key the navigation key representing the deep link target
      */
-    public open class MatchResult<T>(public val key: T) : Comparable<MatchResult<T>> {
+    public open class MatchResult<out T : Any>(public val key: T) :
+        Comparable<MatchResult<@UnsafeVariance T>> {
         /**
          * Compares this [MatchResult] to [other] and returns an Int result.
          *
          * Returns zero if this result is equal to the other result, a negative number if it's less
          * than the other, or a positive number if it's greater than the other.
          */
-        public override fun compareTo(other: MatchResult<T>): Int = 0
+        public override fun compareTo(other: MatchResult<@UnsafeVariance T>): Int = 0
+    }
+
+    public companion object {
+        /**
+         * Creates a [DeepLinkMatcher.Filter] that filters a [DeepLinkRequest] with the mimeType
+         * defined on the [DeepLinkMatcher]. Matching is not case-sensitive.
+         *
+         * @param mimeType the action the filter by
+         * @return true if the mimeType exactly matches the [DeepLinkMatcher]'s action or if the
+         *   matcher did not define any actions, false otherwise.
+         */
+        public fun mimeTypeFilter(mimeType: String): Filter = Filter { request ->
+            val requestedMime = request.extras[MimeTypeExtrasKey]
+            mimeType.equals(requestedMime, true)
+        }
     }
 }

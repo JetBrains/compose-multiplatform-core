@@ -47,9 +47,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -78,6 +80,7 @@ import androidx.compose.ui.unit.min
 import androidx.compose.ui.util.fastFlatMap
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMapNotNull
+import androidx.wear.compose.foundation.LocalReduceMotion
 import androidx.wear.compose.material3.ButtonDefaults.buttonColors
 import androidx.wear.compose.material3.internal.Icons
 import androidx.wear.compose.material3.internal.Plurals
@@ -153,6 +156,8 @@ public fun TimePicker(
     colors: TimePickerColors = TimePickerDefaults.timePickerColors(),
     initialSelection: TimePickerSelection = TimePickerDefaults.timePickerSelection(timePickerType),
 ) {
+    StatusBarSuppression()
+
     val inspectionMode = LocalInspectionMode.current
     val fullyDrawn = remember { Animatable(if (inspectionMode) 1f else 0f) }
 
@@ -297,11 +302,11 @@ public fun TimePicker(
                         TimePickerSelection.Second -> secondString
                         TimePickerSelection.None ->
                             if (touchExplorationServicesEnabled) instructionHeadingString else ""
-                        else -> ""
+                        else -> null
                     }
 
                 FadeLabel(
-                    text = heading,
+                    text = heading ?: "",
                     animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
                     modifier =
                         Modifier.height(headingHeight)
@@ -311,7 +316,13 @@ public fun TimePicker(
                             )
                             .fillMaxWidth()
                             .align(Alignment.CenterHorizontally)
-                            .semantics(mergeDescendants = true) { heading() },
+                            .then(
+                                if (heading != null) {
+                                    Modifier.semantics(mergeDescendants = true) { heading() }
+                                } else {
+                                    Modifier.drawWithContent {}.clearAndSetSemantics {}
+                                }
+                            ),
                     color = colors.pickerLabelColor,
                     style = layoutConfig.labelTextStyle,
                     maxLines = maxTextLines,
@@ -376,8 +387,20 @@ public fun TimePicker(
         }
     }
 
+    val isReduceMotionEnabled = LocalReduceMotion.current
+
     if (!inspectionMode) {
-        LaunchedEffect(Unit) { fullyDrawn.animateTo(1f) }
+        LaunchedEffect(Unit) {
+            if (isReduceMotionEnabled) {
+                // Await one frame to allow the ScalingLazyColumn layout positioning to settle
+                // silently before revealing the UI, avoiding a 1-frame visual stutter where
+                // static elements (like the colon separator) appear before the digit columns.
+                withFrameNanos {}
+                fullyDrawn.snapTo(1f)
+            } else {
+                fullyDrawn.animateTo(1f)
+            }
+        }
     }
 }
 

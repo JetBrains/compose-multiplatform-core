@@ -27,22 +27,20 @@ import androidx.compose.ui.graphics.colorspace.ColorSpaces
  * current Android API level will safely fallback to the [ColorSpaces.Srgb] color space.
  */
 @ColorLong
-fun Color.toColorLong(): Long {
+public fun Color.toColorLong(): Long {
+    if (this == Color.Unspecified) return 0L
+
     val id = (this.value and 0x3FUL).toInt()
 
     if (id <= 15) return this.value.toLong()
 
-    if (id == ColorSpaces.Unspecified.id) return this.toArgb().toLong()
-
     if (
-        (id == ColorSpaces.Bt2020Hlg.id || id == ColorSpaces.Bt2020Pq.id) &&
-            Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+        id == ColorSpaces.Unspecified.id ||
+            ((id == ColorSpaces.Bt2020Hlg.id || id == ColorSpaces.Bt2020Pq.id) &&
+                Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) ||
+            (id == ColorSpaces.Oklab.id && Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA)
     ) {
-        return this.toArgb().toLong()
-    }
-
-    if (id == ColorSpaces.Oklab.id && Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
-        return this.toArgb().toLong()
+        return this.convert(ColorSpaces.Srgb).value.toLong()
     }
 
     return ((this.value and 0x3FUL.inv()) or ((this.value and 0x3FUL) - 1UL)).toLong()
@@ -55,7 +53,7 @@ fun Color.toColorLong(): Long {
  * Android's 64-bit [ColorLong] values as some color spaces differ, so this method handles the
  * conversion.
  */
-fun Color.Companion.fromColorLong(@ColorLong colorLong: Long): Color {
+public fun Color.Companion.fromColorLong(@ColorLong colorLong: Long): Color {
     val color =
         if (colorLong and 0x3F < 16) {
             colorLong
@@ -76,7 +74,7 @@ internal fun Color.toSupportedColorLong(): Long {
     return if (isColorSpaceSupported()) {
         this.toColorLong()
     } else {
-        this.convert(ColorSpaces.Srgb).toColorLong()
+        this.convert(ColorSpaces.Srgb).value.toLong()
     }
 }
 
@@ -84,7 +82,8 @@ internal fun Color.toSupportedColorLong(): Long {
 // (Paint, Shader, etc.)
 internal fun Color.isColorSpaceSupported(): Boolean {
     val id = (this.value and 0x3FUL).toInt()
-    return !(id == ColorSpaces.Oklab.id ||
+    return !(id == ColorSpaces.Unspecified.id ||
+        id == ColorSpaces.Oklab.id ||
         id == ColorSpaces.CieXyz.id ||
         id == ColorSpaces.CieLab.id)
 }

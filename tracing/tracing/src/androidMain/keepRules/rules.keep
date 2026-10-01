@@ -2,4 +2,3 @@
 -assumenosideeffects class androidx.tracing.ThreadTrack {
     public void assertThreadIdWhenNotOptimized(...);
 }
-

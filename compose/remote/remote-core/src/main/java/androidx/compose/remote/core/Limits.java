@@ -26,6 +26,9 @@ public class Limits {
     /** Default initial size of the wire buffer */
     public static final int BUFFER_SIZE = 1024 * 1024;
 
+    /** Maximum size in bytes of the operations of a compressed document, once decompressed */
+    public static int MAX_DECOMPRESSED_SIZE = 32 * 1024 * 1024;
+
     /** Maximum number of entries in the ID lookup table (bitmaps, fonts, etc.) */
     public static final int MAX_TABLE_SIZE = 1000;
 
@@ -44,8 +47,17 @@ public class Limits {
     /** Maximum memory allowed for bitmaps in a single player instance (in bytes) */
     public static int MAX_BITMAP_MEMORY = 20 * 1024 * 1024;
 
+    /** Maximum number of reusable offscreen bitmaps in the player pool */
+    public static final int MAX_BITMAP_POOL_SIZE = 8;
+
     /** Default maximum frames per second for the player */
     public static int DEFAULT_MAX_FPS = 60;
+
+    /** Default ceiling on the sustained average frames per second over the window */
+    public static int DEFAULT_MAX_AVG_FPS = 10;
+
+    /** Default duration of the averaging window in seconds */
+    public static int DEFAULT_WINDOW_SEC = 10;
 
     /** Absolute maximum frames per second for the player */
     public static int MAX_FPS = 120;
@@ -94,6 +106,46 @@ public class Limits {
 
     /** Maximum size and image header can be */
     public static final int MAX_IMAGE_HEADER_SIZE = 10000;
+
+    /** Maximum nested container depth allowed in a document */
+    public static final int MAX_NESTING_DEPTH = 256;
+
+    /** Allow host actions to be called from run actions */
+    public static boolean ENABLE_RUN_ACTION_HOST_ACTIONS = false;
+
+    /**
+     * Maximum vertices in a single 2D mesh.
+     *
+     * <p>Hard-capped by the platform: Android's {@code Canvas.drawVertices} takes {@code short[]}
+     * indices and Skia's {@code SkVertices} takes {@code uint16_t}, so 65535 is a ceiling rather
+     * than a policy choice. The value below is a deliberately stricter policy limit; raise it with
+     * evidence.
+     */
+    public static final int MAX_MESH_2D_VERTICES = 16384;
+
+    /** Maximum indices (3 per triangle) in a single 2D mesh. */
+    public static final int MAX_MESH_2D_INDICES = 49152;
+
+    /** Maximum meshes retained per document. Each holds its vertex arrays until replaced. */
+    public static final int MAX_MESH_2D_COUNT = 64;
+
+    /**
+     * Maximum {@code uCount * vCount} for a parametric mesh, before expansion to a triangle list.
+     *
+     * <p>This is the one an author trips: uCount and vCount multiply, so {@code 256 x 256} reads as
+     * two small numbers and is 65536 vertices. Checking the product at parse time is the difference
+     * between a clear rejection and a player-specific stall.
+     */
+    public static final int MAX_MESH_2D_GRID = 16384;
+
+    /**
+     * Maximum width control points on a spline path strip.
+     *
+     * <p>A ribbon's width profile is a shape, not a data set: a handful of control points and the
+     * monotonic fit does the rest. Anyone needing more than this wants the explicit vertex types
+     * instead.
+     */
+    public static final int MAX_MESH_2D_WIDTH_SAMPLES = 64;
 
     private Limits() {}
 }

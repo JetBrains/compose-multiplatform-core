@@ -26,6 +26,7 @@ import android.os.RemoteException
 import android.util.SparseArray
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.FakePdfDocument
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfFeature
@@ -38,6 +39,7 @@ import androidx.pdf.content.SelectionBoundary
 import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.ocr.FakeOcrProvider
 import androidx.pdf.ocr.FakeOcrResult
+import androidx.pdf.ocr.OcrProvider
 import androidx.pdf.ocr.OcrText
 import androidx.pdf.selection.model.ImageSelection
 import androidx.pdf.selection.model.TextSelection
@@ -45,6 +47,7 @@ import androidx.pdf.util.CONTENT_SELECTION_REQUEST_NAME
 import androidx.pdf.util.isImageSelectionAvailableInSdk
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -61,8 +64,10 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -71,6 +76,7 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 @org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
+@OptIn(ExperimentalPdfApi::class)
 class SelectionStateManagerTest {
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
@@ -856,8 +862,8 @@ class SelectionStateManagerTest {
                 errorFlow = errorFlow,
                 pageLayoutManager = null,
                 pageManager = null,
+                isImageSelectionEnabled = true,
             )
-        manager.isImageSelectionEnabled = true
 
         // Verify the initial state is null, as placeholders are filtered out
         assertNull(manager.selectionModel.value)
@@ -877,6 +883,42 @@ class SelectionStateManagerTest {
     }
 
     @Test
+    fun processInitialSelection_withOcrSelection_returnsNullAndStartsRefetch() = runTest {
+        // Create an OCR Selection
+        val topLeft = PdfPoint(0, 10f, 10f)
+        val bottomRight = PdfPoint(0, 90f, 90f)
+        val initialOcrSelection =
+            SelectionModel(
+                DocumentSelection(SparseArray()), // Exact content doesn't matter for restoration
+                UiSelectionBoundary(topLeft, false),
+                UiSelectionBoundary(bottomRight, false),
+                isOcr = true,
+            )
+
+        val mockOcrProvider = mock<OcrProvider>()
+        val manager =
+            SelectionStateManager(
+                fakePdfDocument,
+                testScope,
+                initialSelection = initialOcrSelection,
+                handleTouchTargetSizePx = HANDLE_TOUCH_TARGET_PX,
+                errorFlow = errorFlow,
+                pageLayoutManager = null,
+                pageManager = null,
+                ocrProvider = mockOcrProvider,
+            )
+
+        // Verify the initial state is null, as OCR selections are filtered out for re-fetch
+        assertNull(manager.selectionModel.value)
+
+        // Advance the coroutine to allow the background re-fetch to start
+        testDispatcher.scheduler.runCurrent()
+
+        // Verify that OCR was requested
+        verify(mockOcrProvider).recognizeText(any())
+    }
+
+    @Test
     fun processInitialSelection_withNullInitialSelection_remainsNull() = runTest {
         // Pass null as the initial selection
         val manager =
@@ -891,6 +933,93 @@ class SelectionStateManagerTest {
             )
 
         // Verify the selection model remains null
+        assertNull(manager.selectionModel.value)
+    }
+
+    @Test
+    fun processInitialSelection_withPlaceholderTextSelection_returnsNullAndStartsRefetch() =
+        runTest {
+            val startPoint = PdfPoint(0, 10f, 10f)
+            val endPoint = PdfPoint(0, 90f, 90f)
+            val placeholderSelection =
+                SelectionModel(
+                    documentSelection = DocumentSelection(SparseArray()),
+                    startBoundary = UiSelectionBoundary(startPoint, false),
+                    endBoundary = UiSelectionBoundary(endPoint, false),
+                    isPlaceholder = true,
+                )
+
+            val manager =
+                SelectionStateManager(
+                    pdfDocument,
+                    testScope,
+                    initialSelection = placeholderSelection,
+                    handleTouchTargetSizePx = HANDLE_TOUCH_TARGET_PX,
+                    errorFlow = errorFlow,
+                    pageLayoutManager = null,
+                    pageManager = null,
+                )
+
+            // Verify the initial state is null, as placeholders are filtered out
+            assertNull(manager.selectionModel.value)
+
+            // Advance the coroutine to allow the background re-fetch to complete
+            testDispatcher.scheduler.runCurrent()
+
+            // Verify the selection was re-fetched from pdfDocument
+            assertNotNull(manager.selectionModel.value)
+            assertThat(manager.selectionModel.value?.isPlaceholder).isFalse()
+            verify(pdfDocument, atLeastOnce())
+                .getSelectionBounds(eq(0), any<PointF>(), any<PointF>())
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun processInitialSelection_withPlaceholderTextSelection_timesOutAfterOneSecond() = runTest {
+        val slowPdfDocument =
+            object : FakePdfDocument() {
+                override suspend fun getSelectionBounds(
+                    pageNumber: Int,
+                    start: PointF,
+                    stop: PointF,
+                ): PageSelection {
+                    kotlinx.coroutines.delay(2000L)
+                    return PageSelection(
+                        0,
+                        SelectionBoundary(index = 0),
+                        SelectionBoundary(index = 10),
+                        emptyList(),
+                    )
+                }
+            }
+        val startPoint = PdfPoint(0, 10f, 10f)
+        val endPoint = PdfPoint(0, 90f, 90f)
+        val placeholderSelection =
+            SelectionModel(
+                documentSelection = DocumentSelection(SparseArray()),
+                startBoundary = UiSelectionBoundary(startPoint, false),
+                endBoundary = UiSelectionBoundary(endPoint, false),
+                isPlaceholder = true,
+            )
+
+        val manager =
+            SelectionStateManager(
+                slowPdfDocument,
+                testScope,
+                initialSelection = placeholderSelection,
+                handleTouchTargetSizePx = HANDLE_TOUCH_TARGET_PX,
+                errorFlow = errorFlow,
+                pageLayoutManager = null,
+                pageManager = null,
+            )
+
+        assertNull(manager.selectionModel.value)
+
+        // Advance virtual time past the 1000ms timeout
+        testScheduler.advanceTimeBy(1500L)
+        testScheduler.runCurrent()
+
+        // Verify selection model remains null due to timeout cancellation
         assertNull(manager.selectionModel.value)
     }
 
@@ -1257,6 +1386,51 @@ class SelectionStateManagerTest {
             selectionStateManager.selectionModel.value?.documentSelection?.selection
         assertThat(actualSelection).isInstanceOf(TextSelection::class.java)
         assertThat((actualSelection as TextSelection).text).isEqualTo("He")
+    }
+
+    @Test
+    fun maybeSelectContentAtPoint_ocrThrowsIllegalArgumentException_emitsError() = runTest {
+        if (!isImageSelectionAvailableInSdk()) return@runTest
+
+        val ocrProvider =
+            object : androidx.pdf.ocr.OcrProvider {
+                override suspend fun recognizeText(image: Bitmap): androidx.pdf.ocr.OcrResult? {
+                    throw IllegalArgumentException("Fake OCR failure")
+                }
+
+                override fun close() {}
+            }
+
+        val imageBounds = RectF(0f, 0f, 100f, 100f)
+        val imageObject =
+            ImagePdfObject(Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888), imageBounds)
+        whenever(pdfDocument.getTopPageObjectAtPosition(any(), any())).thenReturn(imageObject)
+
+        val errorFlowReplay = MutableSharedFlow<Throwable>(replay = 1)
+        val localManager =
+            SelectionStateManager(
+                pdfDocument,
+                testScope,
+                handleTouchTargetSizePx = HANDLE_TOUCH_TARGET_PX,
+                errorFlow = errorFlowReplay,
+                pageLayoutManager = null,
+                pageManager = null,
+            )
+        localManager.isImageSelectionEnabled = true
+        localManager.ocrProvider = ocrProvider
+
+        val selectionPoint = PointF(5f, 5f)
+        val selectionPdfPoint = PdfPoint(0, selectionPoint)
+
+        localManager.maybeSelectContentAtPoint(selectionPdfPoint)
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+        testDispatcher.scheduler.runCurrent()
+
+        val errors = errorFlowReplay.replayCache
+        assertThat(errors).hasSize(1)
+        val exception = errors[0] as RequestFailedException
+        assertThat(exception.requestMetadata.requestName).isEqualTo(CONTENT_SELECTION_REQUEST_NAME)
+        assertThat(exception.throwable).isInstanceOf(IllegalArgumentException::class.java)
     }
 }
 

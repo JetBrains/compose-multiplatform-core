@@ -346,4 +346,57 @@ class DeepLinkDecoderTest {
             decoder.decodeSerializableValue(serializer<MapKey>())
         }
     }
+
+    @Test
+    fun testDecodeEmptyString() {
+        val arguments = mapOf("name" to listOf(""), "age" to listOf("30"))
+        val decoder = DeepLinkDecoder(arguments)
+        val result = decoder.decodeSerializableValue(serializer<SimpleKey>())
+
+        assertThat(result).isEqualTo(SimpleKey("", 30))
+    }
+
+    @Test
+    fun testDecodeEmptyString_nullableIntFieldWithNullFallback() {
+        val arguments = mapOf("name" to listOf("john"), "age" to listOf(""))
+        val decoder = DeepLinkDecoder(arguments)
+        val result = decoder.decodeSerializableValue(serializer<NullableDefaultKey>())
+        assertThat(result).isEqualTo(NullableDefaultKey("john", null))
+    }
+
+    @Test
+    fun testDecodeEmptyString_nullableIntFieldNoFallbackFails() {
+        val arguments = mapOf("name" to listOf("john"), "age" to listOf(""))
+        val decoder = DeepLinkDecoder(arguments)
+        assertFailsWith<DeepLinkDecoderException> {
+            decoder.decodeSerializableValue(serializer<NullableKey>())
+        }
+    }
+
+    @Test
+    fun testDecodeEmptyString_nonNullableIntFails() {
+        val arguments = mapOf("name" to listOf("john"), "age" to listOf(""))
+        val decoder = DeepLinkDecoder(arguments)
+        assertFailsWith<DeepLinkDecoderException> {
+            decoder.decodeSerializableValue(serializer<SimpleKey>())
+        }
+    }
+
+    @Test
+    fun testDecodePolymorphic() {
+        val arguments = mapOf("name" to listOf("the name"), "owner" to listOf("the owner"))
+        val decoder = DeepLinkDecoder(arguments)
+        val decoded = decoder.decodeSerializableValue(serializer<SerializableConcrete>())
+        assertThat(decoded.name).isEqualTo("the name")
+        assertThat(decoded.owner).isEqualTo("the owner")
+    }
+
+    @Test
+    fun testDecodeNestedPolymorphic() {
+        val arguments = mapOf("name" to listOf("the name"), "owner" to listOf("the owner"))
+        val decoder = DeepLinkDecoder(arguments)
+        val decoded = decoder.decodeSerializableValue(serializer<SerializableConcreteArgKey>())
+        assertThat(decoded.derived.name).isEqualTo("the name")
+        assertThat(decoded.derived.owner).isEqualTo("the owner")
+    }
 }

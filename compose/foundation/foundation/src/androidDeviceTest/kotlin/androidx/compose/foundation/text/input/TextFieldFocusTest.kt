@@ -21,7 +21,6 @@ import android.view.InputDevice
 import android.view.InputDevice.SOURCE_DPAD
 import android.view.InputDevice.SOURCE_KEYBOARD
 import android.view.KeyEvent
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
@@ -99,16 +98,14 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalFoundationApi::class)
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 internal class TextFieldFocusTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
     private val inputMethodInterceptor = InputMethodInterceptor(rule)
 
     private val testKeyboardController = TestSoftwareKeyboardController(rule)
@@ -740,21 +737,25 @@ internal class TextFieldFocusTest {
         checkFocusNavigationDown(SOURCE_DPAD)
     }
 
+    @SdkSuppress(minSdkVersion = 25) // b/538602207
     @Test
     fun basicTextField_checkFocusNavigation_onDPadLeft_hardwareKeyboard() {
         checkFocusNavigationLeft(SOURCE_KEYBOARD)
     }
 
+    @SdkSuppress(minSdkVersion = 25) // b/538602207
     @Test
     fun basicTextField_checkFocusNavigation_onDPadRight_hardwareKeyboard() {
         checkFocusNavigationRight(SOURCE_KEYBOARD)
     }
 
+    @SdkSuppress(minSdkVersion = 25) // b/538602207
     @Test
     fun basicTextField_checkFocusNavigation_onDPadUp_hardwareKeyboard() {
         checkFocusNavigationUp(SOURCE_KEYBOARD)
     }
 
+    @SdkSuppress(minSdkVersion = 25) // b/538602207
     @Test
     fun basicTextField_checkFocusNavigation_onDPadDown_hardwareKeyboard() {
         checkFocusNavigationDown(SOURCE_DPAD)
@@ -1055,7 +1056,7 @@ internal class TextFieldFocusTest {
         rule: ComposeContentTestRule,
         keyCode: Int,
         count: Int = 1,
-    ) = keyPressOnPhysicalDevice(rule, keyCode, InputDevice.SOURCE_DPAD, count)
+    ) = keyPressOnPhysicalDevice(rule, keyCode, SOURCE_DPAD, count)
 
     /** Triggers a key press on the root node from a non-virtual keyboard device (if supported). */
     private fun keyPressOnKeyboardInputDevice(

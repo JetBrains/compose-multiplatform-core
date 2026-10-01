@@ -16,6 +16,9 @@
 
 package androidx.compose.remote.player.view.platform;
 
+import static android.graphics.fonts.FontStyle.FONT_WEIGHT_MAX;
+import static android.graphics.fonts.FontStyle.FONT_WEIGHT_MIN;
+
 import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
 
 import android.content.res.Resources;
@@ -68,9 +71,17 @@ public class AndroidFloatSystemVariables implements RemoteComposePlayer.FloatSys
                     float baseWeight = 400; // Normal
                     int userAdjustment = 0;
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) { // REMOVE IN PLATFORM
-                        userAdjustment = res.getConfiguration().fontWeightAdjustment;
+                        int adj = res.getConfiguration().fontWeightAdjustment;
+                        if (adj
+                                != android.content.res.Configuration
+                                        .FONT_WEIGHT_ADJUSTMENT_UNDEFINED) {
+                            userAdjustment = adj;
+                        }
                     } // REMOVE IN PLATFORM
-                    player.setLocalFloat(FONT_WEIGHT, (baseWeight + userAdjustment));
+                    float finalWeight = baseWeight + userAdjustment;
+                    finalWeight = Math.max(FONT_WEIGHT_MIN, Math.min(finalWeight, FONT_WEIGHT_MAX));
+
+                    player.setLocalFloat(FONT_WEIGHT, finalWeight);
             }
         }
     }

@@ -219,6 +219,13 @@ import java.util.Set;
  * information about the Paging library, see the
  * <a href="https://developer.android.com/topic/libraries/architecture/paging/">library
  * documentation</a>.
+ * <p>
+ * <h3>Focus Handling</h3>
+ * By default, RecyclerView is focusable. When focusable, focus search into the
+ * RecyclerView triggers focus enter handling (delegating to
+ * {@link LayoutManager#onFocusEnter} to select an appropriate item to receive focus).
+ * If RecyclerView is configured as non-focusable (e.g. via {@link #setFocusable(boolean)} set to
+ * {@code false}), focus enter navigation is bypassed and focus search skips the RecyclerView.
  */
 public class RecyclerView extends ViewGroup implements ScrollingView,
         NestedScrollingChild2, NestedScrollingChild3 {
@@ -240,6 +247,7 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
     private static final float INFLEXION = 0.35f; // Tension lines cross at (INFLEXION, 1)
     private static final float DECELERATION_RATE = (float) (Math.log(0.78) / Math.log(0.9));
     private final float mPhysicalCoef;
+    private boolean mIsTracingDrag = false;
 
     /**
      * On Kitkat and JB MR2, there is a bug which prevents DisplayList from being invalidated if
@@ -463,6 +471,7 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
 
     final Rect mTempRect = new Rect();
     private final Rect mTempRect2 = new Rect();
+    private Rect mTempRectFocusScroll;
     final RectF mTempRectF = new RectF();
     Adapter mAdapter;
     @VisibleForTesting
@@ -630,6 +639,7 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
     float mScaledVerticalScrollFactor = Float.MIN_VALUE;
 
     private boolean mPreserveFocusAfterLayout = true;
+    private boolean mScrollToTopEnabled = true;
 
     final ViewFlinger mViewFlinger = new ViewFlinger();
 
@@ -862,6 +872,7 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
             setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
         }
         mClipToPadding = a.getBoolean(R.styleable.RecyclerView_android_clipToPadding, true);
+        mScrollToTopEnabled = a.getBoolean(R.styleable.RecyclerView_isScrollToTopEnabled, true);
         mEnableFastScroller = a.getBoolean(R.styleable.RecyclerView_fastScrollEnabled, false);
         if (mEnableFastScroller) {
             StateListDrawable verticalThumbDrawable = (StateListDrawable) a
@@ -1794,9 +1805,28 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
         return mScrollState;
     }
 
+    private void beginDragTrace() {
+        if (!mIsTracingDrag) {
+            TraceCompat.beginAsyncSection("RecyclerView#drag", System.identityHashCode(this));
+            mIsTracingDrag = true;
+        }
+    }
+
+    private void endDragTrace() {
+        if (mIsTracingDrag) {
+            TraceCompat.endAsyncSection("RecyclerView#drag", System.identityHashCode(this));
+            mIsTracingDrag = false;
+        }
+    }
+
     void setScrollState(int state) {
         if (state == mScrollState) {
             return;
+        }
+        if (state == SCROLL_STATE_DRAGGING) {
+            beginDragTrace();
+        } else {
+            endDragTrace();
         }
         if (sVerboseLoggingEnabled) {
             Log.d(TAG, "setting scroll state to " + state + " from " + mScrollState,
@@ -2046,6 +2076,44 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
             return;
         }
         mLayout.smoothScrollToPosition(this, mState, position);
+    }
+
+    /**
+     * Sets whether this RecyclerView should consume system-level scroll-to-top events.
+     * <p>
+     * When set to true (default), this view will scroll to the top when a system trigger
+     * occurs, provided the view is currently scrolled down.
+     *
+     * @param enabled true to enable scroll-to-top behavior, false to disable.
+     */
+    public void setScrollToTopEnabled(boolean enabled) {
+        mScrollToTopEnabled = enabled;
+    }
+
+    /**
+     * Indicates whether this RecyclerView allows system-level scroll-to-top event consumption.
+     *
+     * @return True if scroll-to-top consumption is enabled, false otherwise.
+     */
+    public boolean isScrollToTopEnabled() {
+        return mScrollToTopEnabled;
+    }
+
+    /**
+     * Called when a scroll-to-top command is received.
+     *
+     * @param x The x-coordinate of the scroll-to-top command, in the coordinate
+     *          space of this view.
+     * @return true if the event was consumed and should not be propagated to other
+     *   potential handlers.
+     */
+    public boolean onScrollToTop(int x) {
+        if (mScrollToTopEnabled && getLayoutManager() != null
+                && getLayoutManager().canScrollVertically() && canScrollVertically(-1)) {
+            smoothScrollToPosition(0);
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -3615,9 +3683,65 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
                 (focused == null));
     }
 
+    void adjustRectForDecorationInsets(View child, Rect rect) {
+        final ViewGroup.LayoutParams lp = child.getLayoutParams();
+        if (lp instanceof LayoutParams) {
+            final LayoutParams rvLp = (LayoutParams) lp;
+            // Mirror requestChildOnScreen: avoid unsafe/outdated calculations if insets are dirty.
+            if (!rvLp.mInsetsDirty) {
+                final Rect insets = rvLp.mDecorInsets;
+                // Temporarily convert to layout-relative coordinates for boundary checking.
+                rect.offset(-child.getScrollX(), -child.getScrollY());
+                // Only expand edges that touch/match the child view bounds (to avoid expanding
+                // small sub-elements like text cursors).
+                if (rect.left <= 0) {
+                    rect.left -= insets.left;
+                }
+                if (rect.right >= child.getWidth()) {
+                    rect.right += insets.right;
+                }
+                if (rect.top <= 0) {
+                    rect.top -= insets.top;
+                }
+                if (rect.bottom >= child.getHeight()) {
+                    rect.bottom += insets.bottom;
+                }
+                // Convert back to scroll-relative coordinates expected by LayoutManager contract.
+                rect.offset(child.getScrollX(), child.getScrollY());
+            }
+        }
+    }
+
+    // Intercepts focus scroll requests on API >= 37.1 (where the platform triggers a
+    // second scroll request with un-decorated child bounds) to include item decorations.
+    // Otherwise, falls back to the legacy behavior of not including item decorations.
+    // See recyclerview/recyclerview/docs/recyclerview_focus_scroll_decor_offsets_design.md
     @Override
     public boolean requestChildRectangleOnScreen(View child, Rect rect, boolean immediate) {
+        if (SdkFullVersionCompat.isAtLeastCinnamonBunMinor1()) {
+            Rect tempRect = mTempRectFocusScroll;
+            if (tempRect == null) {
+                tempRect = new Rect();
+                mTempRectFocusScroll = tempRect;
+            }
+            tempRect.set(rect);
+            adjustRectForDecorationInsets(child, tempRect);
+            return mLayout.requestChildRectangleOnScreen(
+                    this, child, tempRect, immediate);
+        }
         return mLayout.requestChildRectangleOnScreen(this, child, rect, immediate);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * When set to {@code false} (or {@link #NOT_FOCUSABLE}), the RecyclerView will not attempt
+     * to perform focus enter navigation (via {@link LayoutManager#onFocusEnter}) when focus
+     * enters the view during focus search.
+     */
+    @Override
+    public void setFocusable(boolean focusable) {
+        super.setFocusable(focusable);
     }
 
     @Override
@@ -3626,8 +3750,16 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
             // Decide if we are going to treat this request for adding focusables as a focus enter
             boolean treatAsFocusEnter =
                     FOCUS_LOOPING_FIX_SUPPORTED
+                            // If the RecyclerView isn't focusable, don't try to add it to the
+                            // focusable views and expect it to have focus requested on it
+                            && isFocusable()
+                            // If we are in a re-entrant call because focus enter failed, don't
+                            // kick it off again
                             && !mHasFocusEnterFailed
+                            // If we have focus, we should only treat it as a focus enter if we
+                            // know that focus is leaving
                             && (!hasFocus() || mIsFocusLeaving)
+                            // Only treat forward and backward as a potential focus enter
                             && (direction == View.FOCUS_FORWARD
                                     || direction == View.FOCUS_BACKWARD);
 

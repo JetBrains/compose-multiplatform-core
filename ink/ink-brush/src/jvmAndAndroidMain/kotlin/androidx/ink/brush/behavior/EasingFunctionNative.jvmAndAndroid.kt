@@ -16,10 +16,12 @@
 
 package androidx.ink.brush.behavior
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
 
 @UsedByNative
+@OptIn(InkInternalOnlyApi::class)
 actual internal object EasingFunctionNative {
     init {
         NativeLoader.load()
@@ -67,4 +69,9 @@ actual internal object EasingFunctionNative {
     @UsedByNative actual external fun getStepsCount(nativePointer: Long): Int
 
     @UsedByNative actual external fun getStepsPositionInt(nativePointer: Long): Int
+
+    @UsedByNative actual external fun calculateMinimumRequiredVersion(nativePointer: Long): Int
+
+    @UsedByNative
+    actual external fun getStepPositionMinimumRequiredVersion(stepPositionInt: Int): Int
 }

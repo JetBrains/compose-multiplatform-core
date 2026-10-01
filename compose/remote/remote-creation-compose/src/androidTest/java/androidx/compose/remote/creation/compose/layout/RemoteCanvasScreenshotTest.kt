@@ -17,7 +17,6 @@
 package androidx.compose.remote.creation.compose.layout
 
 import android.content.Context
-import androidx.compose.remote.creation.RemotePath
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
@@ -25,12 +24,17 @@ import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
+import androidx.compose.remote.creation.compose.state.remotePath
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.compose.text.RemoteTypeface
-import androidx.compose.remote.creation.compose.vector.Builder
+import androidx.compose.remote.creation.compose.text.RemoteTypeface.Companion.create
 import androidx.compose.remote.player.compose.test.utils.ComposableWrappers
+import androidx.compose.remote.player.compose.test.utils.DownloadableTypefaceResolver
+import androidx.compose.remote.player.compose.test.utils.FallbackCreateTypefaceResolver
+import androidx.compose.remote.player.compose.test.utils.R
 import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.createMockContextWithFont
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.text.font.FontVariation
@@ -112,22 +116,22 @@ class RemoteCanvasScreenshotTest {
             playComposableWrapper = ComposableWrappers.blackBackground,
         ) {
             val paintNormal = RemotePaint {
-                typeface = RemoteTypeface.create("sans-serif", RemoteTypeface.Style.Normal)
+                typeface = create("sans-serif", RemoteTypeface.Style.Normal)
                 color = Color.White.rc
                 textSize = 30f.rf
             }
             val paintBold = RemotePaint {
-                typeface = RemoteTypeface.create("sans-serif", RemoteTypeface.Style.Bold)
+                typeface = create("sans-serif", RemoteTypeface.Style.Bold)
                 color = Color.White.rc
                 textSize = 30f.rf
             }
             val paintItalic = RemotePaint {
-                typeface = RemoteTypeface.create("sans-serif", RemoteTypeface.Style.Italic)
+                typeface = create("sans-serif", RemoteTypeface.Style.Italic)
                 color = Color.White.rc
                 textSize = 30f.rf
             }
             val paintBoldItalic = RemotePaint {
-                typeface = RemoteTypeface.create("sans-serif", RemoteTypeface.Style.BoldItalic)
+                typeface = create("sans-serif", RemoteTypeface.Style.BoldItalic)
                 color = Color.White.rc
                 textSize = 30f.rf
             }
@@ -144,7 +148,7 @@ class RemoteCanvasScreenshotTest {
     }
 
     @Test
-    fun remoteCanvas_drawPath_remotePathBuilder() {
+    fun remoteCanvas_drawPath_remotePathScope() {
         val width = 200
         val height = 200
         remoteComposeTestRule.runScreenshotTest(
@@ -157,20 +161,102 @@ class RemoteCanvasScreenshotTest {
                 ),
             playComposableWrapper = ComposableWrappers.blackBackground,
         ) {
-            val builder =
-                RemotePath.Builder {
-                    moveTo(10f.rf, 10f.rf)
-                    lineTo(190f.rf, 10f.rf)
-                    lineTo(100f.rf, 190f.rf)
+            RemoteCanvas(modifier = RemoteModifier.size(width.rdp, height.rdp)) {
+                val path = remotePath {
+                    moveTo(x = 10f.rf, y = 10f.rf)
+                    lineTo(x = 190f.rf, y = 10f.rf)
+                    lineTo(x = 100f.rf, y = 190f.rf)
                     close()
                 }
-
-            RemoteCanvas(modifier = RemoteModifier.size(width.rdp, height.rdp)) {
-                val path = builder.build(this)
 
                 val paint = RemotePaint {
                     color = Color.Red.rc
                     style = PaintingStyle.Fill
+                }
+                drawPath(path, paint)
+            }
+        }
+    }
+
+    @Test
+    fun remoteCanvas_drawText_customRemoteTypeface() {
+        val width = 400
+        val height = 120
+        val mockContext =
+            createMockContextWithFont(
+                baseContext = context,
+                fontInputStream = context.resources.openRawResource(R.font.inconsolata_regular),
+            )
+        val resolver =
+            DownloadableTypefaceResolver(
+                context = mockContext,
+                next = FallbackCreateTypefaceResolver(),
+                isBlocking = true,
+            )
+
+        remoteComposeTestRule.runScreenshotTest(
+            remoteCreationDisplayInfo =
+                RemoteCreationDisplayInfo(
+                    width,
+                    height,
+                    context.resources.displayMetrics.densityDpi,
+                    context.resources.configuration.fontScale,
+                ),
+            playComposableWrapper = ComposableWrappers.blackBackground,
+            typefaceResolver = resolver,
+        ) {
+            RemoteCanvas(modifier = RemoteModifier.size(width.rdp, height.rdp)) {
+                val paintDefault = RemotePaint {
+                    typeface = RemoteTypeface.Default
+                    color = Color.White.rc
+                    textSize = 14.rf * remoteDensity.density
+                }
+                val paintInconsolata = RemotePaint {
+                    typeface = create("google:inconsolata")
+                    color = Color.White.rc
+                    textSize = 14f.rf * remoteDensity.density
+                }
+                drawText("Hello Default!".rs, 10f.rf, 40f.rf, paintDefault)
+                drawText("Hello Inconsolata!".rs, 10f.rf, 90f.rf, paintInconsolata)
+            }
+        }
+    }
+
+    @Test
+    fun remoteCanvas_drawPath_addArc() {
+        val width = 300
+        val height = 300
+        remoteComposeTestRule.runScreenshotTest(
+            remoteCreationDisplayInfo =
+                RemoteCreationDisplayInfo(
+                    width,
+                    height,
+                    context.resources.displayMetrics.densityDpi,
+                    context.resources.configuration.fontScale,
+                ),
+            playComposableWrapper = ComposableWrappers.blackBackground,
+        ) {
+            RemoteCanvas(modifier = RemoteModifier.size(width.rdp, height.rdp)) {
+                val path = remotePath {
+                    // Arc 1: 0 to 90 degrees
+                    addArc(10f.rf, 10f.rf, 90f.rf, 90f.rf, 0f.rf, 90f.rf)
+                    // Arc 2: 90 to 270 degrees (sweep 180)
+                    addArc(110f.rf, 10f.rf, 190f.rf, 90f.rf, 90f.rf, 180f.rf)
+                    // Arc 3: -45 to 45 degrees
+                    addArc(210f.rf, 10f.rf, 290f.rf, 90f.rf, -45f.rf, 90f.rf)
+
+                    // Arc 4: Oval vertical
+                    addArc(10f.rf, 110f.rf, 70f.rf, 210f.rf, 0f.rf, 270f.rf)
+                    // Arc 5: Full circle
+                    addArc(110f.rf, 110f.rf, 190f.rf, 190f.rf, 0f.rf, 360f.rf)
+                    // Arc 6: Long sweep (e.g. 540 degrees)
+                    addArc(210f.rf, 110f.rf, 290f.rf, 190f.rf, 45f.rf, 540f.rf)
+                }
+
+                val paint = RemotePaint {
+                    color = Color.Cyan.rc
+                    style = PaintingStyle.Stroke
+                    strokeWidth = 3f.rf
                 }
                 drawPath(path, paint)
             }

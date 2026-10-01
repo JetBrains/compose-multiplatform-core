@@ -31,6 +31,7 @@ import androidx.car.app.CarContext;
 import androidx.car.app.Screen;
 import androidx.car.app.model.CarColor;
 import androidx.car.app.model.CarIcon;
+import androidx.car.app.model.CarIconStyle;
 import androidx.car.app.model.ForegroundCarColorSpan;
 import androidx.car.app.model.Header;
 import androidx.car.app.model.ItemList;
@@ -88,29 +89,27 @@ public final class TextAndIconsDemosScreen extends Screen {
     }
 
     private CarIcon buildCarIconWithResource(int imageId) {
-        return new CarIcon.Builder(
+        return CarIcon.createOriginalIcon(
                 IconCompat.createWithResource(
                         getCarContext(),
-                        imageId))
-                .build();
+                        imageId));
     }
 
     private CarIcon buildCarIconWithResource(int imageId, CarColor color) {
         return new CarIcon.Builder(
                 IconCompat.createWithResource(
                         getCarContext(),
-                        imageId))
-                .setTint(color)
+                        imageId),
+                new CarIconStyle.Builder(CarIconStyle.TINTED).setTint(color).build())
                 .build();
     }
 
     private CarIcon buildCarIconWithBitmap(int imageId) {
-        return new CarIcon.Builder(
+        return CarIcon.createOriginalIcon(
                 IconCompat.createWithBitmap(
                         BitmapFactory.decodeResource(
                                 getCarContext().getResources(),
-                                imageId)))
-                .build();
+                                imageId)));
     }
 
     /**
@@ -141,7 +140,7 @@ public final class TextAndIconsDemosScreen extends Screen {
     private Row buildRowForTemplate(int title, CarIcon image) {
         return new Row.Builder()
                 .setTitle(getCarContext().getString(title))
-                .setImage(image)
+                .setImage(image, Row.IMAGE_TYPE_SMALL)
                 .build();
     }
 

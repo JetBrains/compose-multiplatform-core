@@ -35,6 +35,7 @@ import androidx.compose.foundation.text.selection.TextClassifierHelperMethods.cr
 import androidx.compose.foundation.text.selection.TextClassifierHelperMethods.hasLegacyAssistItem
 import androidx.compose.foundation.text.selection.TextClassifierHelperMethods.toAndroidLocaleList
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,7 +44,6 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.util.fastForEachIndexed
 import kotlin.coroutines.CoroutineContext
@@ -63,7 +63,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  * a [CoroutineContext] not backed by a worker thread may lead to performance issues or unexpected
  * behavior with [TextClassifier].
  */
-val LocalTextClassifierCoroutineContext =
+public val LocalTextClassifierCoroutineContext: ProvidableCompositionLocal<CoroutineContext> =
     staticCompositionLocalOf<CoroutineContext> { Dispatchers.IO }
 
 /**
@@ -85,7 +85,7 @@ private const val TEXT_CLASSIFICATION_TIMEOUT_MILLIS = 200L
 @RequiresApi(28)
 @VisibleForTesting
 internal var PlatformSelectionBehaviorsFactory:
-    (CoroutineContext, Context, SelectedTextType, LocaleList?) -> PlatformSelectionBehaviors? =
+    (CoroutineContext, Context, SelectedTextType, LocaleList) -> PlatformSelectionBehaviors? =
     { coroutineContext, context, selectionType, localeList ->
         PlatformSelectionBehaviorsImpl(coroutineContext, context, selectionType, localeList)
     }
@@ -94,7 +94,7 @@ internal var PlatformSelectionBehaviorsFactory:
 @Composable
 internal actual fun rememberPlatformSelectionBehaviors(
     selectedTextType: SelectedTextType,
-    localeList: LocaleList?,
+    localeList: LocaleList,
 ): PlatformSelectionBehaviors? {
     if (Build.VERSION.SDK_INT < 28) {
         // Smart selection features are not supported under API 28.
@@ -112,7 +112,7 @@ internal class PlatformSelectionBehaviorsImpl(
     private val coroutineContext: CoroutineContext,
     private val context: Context,
     private val selectedTextType: SelectedTextType,
-    private val localeList: LocaleList?,
+    private val localeList: LocaleList,
 ) : PlatformSelectionBehaviors {
     private val mutex = Mutex()
     private var textClassificationSession: TextClassifier? = null
@@ -124,9 +124,7 @@ internal class PlatformSelectionBehaviorsImpl(
     internal var textClassificationResult: TextClassificationResult? by mutableStateOf(null)
 
     private val androidLocalList
-        get() =
-            localeList?.let { toAndroidLocaleList(it) }
-                ?: android.os.LocaleList(Locale.current.platformLocale)
+        get() = toAndroidLocaleList(localeList)
 
     override suspend fun suggestSelectionForLongPressOrDoubleClick(
         text: CharSequence,
@@ -305,22 +303,19 @@ internal class PlatformSelectionBehaviorsImpl(
         block: suspend TextClassifier.() -> T
     ): T? {
         return withContext(coroutineContext) {
-            val textClassificationSession =
-                mutex.withLock {
-                    val session = this@PlatformSelectionBehaviorsImpl.textClassificationSession
+            val textClassificationSession = mutex.withLock {
+                val session = this@PlatformSelectionBehaviorsImpl.textClassificationSession
 
-                    if (session == null || session.isDestroyed) {
-                        withTimeoutOrNull(
-                            TEXT_CLASSIFIER_INITIALIZATION_TIMEOUT_MILLIS.milliseconds
-                        ) {
-                            createTextClassificationSession(context, selectedTextType).also {
-                                this@PlatformSelectionBehaviorsImpl.textClassificationSession = it
-                            }
+                if (session == null || session.isDestroyed) {
+                    withTimeoutOrNull(TEXT_CLASSIFIER_INITIALIZATION_TIMEOUT_MILLIS.milliseconds) {
+                        createTextClassificationSession(context, selectedTextType).also {
+                            this@PlatformSelectionBehaviorsImpl.textClassificationSession = it
                         }
-                    } else {
-                        session
                     }
+                } else {
+                    session
                 }
+            }
             withTimeoutOrNull(TEXT_CLASSIFICATION_TIMEOUT_MILLIS.milliseconds) {
                 textClassificationSession?.block()
             }

@@ -23,7 +23,9 @@ import androidx.compose.testutils.assertIsEqualTo
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.ComposeUiTestConfig
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -31,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
 import androidx.xr.glimmer.setGlimmerThemeContent
 import androidx.xr.glimmer.testutils.createGlimmerRule
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,7 +43,8 @@ import org.junit.runners.Parameterized
 class GlimmerPagerAlignmentTest(private val config: GlimmerPagerParamConfig) :
     BaseParameterizedGlimmerPagerTest() {
 
-    @get:Rule(0) val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule(0)
+    val rule = createComposeRule(config = ComposeUiTestConfig(inputMode = InputMode.Keyboard))
 
     @get:Rule(1) val glimmerRule = createGlimmerRule()
 
@@ -55,6 +57,7 @@ class GlimmerPagerAlignmentTest(private val config: GlimmerPagerParamConfig) :
                 state = state,
                 modifier = Modifier.size(100.dp),
                 verticalAlignment = Alignment.Top,
+                pageIndicator = {},
             ) {
                 Box(Modifier.size(20.dp).background(Color.Red).testTag("page-0"))
             }
@@ -73,6 +76,7 @@ class GlimmerPagerAlignmentTest(private val config: GlimmerPagerParamConfig) :
                 state = state,
                 modifier = Modifier.size(100.dp),
                 verticalAlignment = Alignment.CenterVertically,
+                pageIndicator = {},
             ) {
                 Box(Modifier.size(20.dp).background(Color.Red).testTag("page-0"))
             }
@@ -91,6 +95,7 @@ class GlimmerPagerAlignmentTest(private val config: GlimmerPagerParamConfig) :
                 state = state,
                 modifier = Modifier.size(100.dp),
                 verticalAlignment = Alignment.Bottom,
+                pageIndicator = {},
             ) {
                 Box(Modifier.size(20.dp).background(Color.Red).testTag("page-0"))
             }

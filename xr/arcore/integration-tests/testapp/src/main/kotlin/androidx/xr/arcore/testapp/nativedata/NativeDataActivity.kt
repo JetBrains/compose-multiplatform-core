@@ -55,15 +55,13 @@ import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
+import androidx.xr.compose.subspace.layout.movable
+import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.size
-import androidx.xr.compose.subspace.layout.transformingMovable
-import androidx.xr.compose.subspace.layout.transformingResizable
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.UnstableNativeResourceApi
 import androidx.xr.runtime.XrDevice
 import androidx.xr.runtime.getNativeInstanceData
-import androidx.xr.runtime.getNativeSessionData
 import kotlin.coroutines.coroutineContext
 
 class NativeDataActivity : ComponentActivity() {
@@ -80,7 +78,6 @@ class NativeDataActivity : ComponentActivity() {
     private var getNativeDataResult by mutableStateOf("Not started")
     private var getNativeDataPassed by mutableStateOf(false)
 
-    @OptIn(UnstableNativeResourceApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -91,8 +88,8 @@ class NativeDataActivity : ComponentActivity() {
                     SpatialPanel(
                         modifier =
                             SubspaceModifier.size(DpVolumeSize(640.dp, 480.dp, 0.dp))
-                                .transformingMovable()
-                                .transformingResizable()
+                                .movable()
+                                .resizable()
                     ) {
                         TestResultsView()
                     }
@@ -240,7 +237,6 @@ class NativeDataActivity : ComponentActivity() {
         }
     }
 
-    @OptIn(UnstableNativeResourceApi::class)
     @Suppress("RestrictedApiAndroidX")
     private suspend fun runTests() {
         // Test 1: Invalid Extensions
@@ -301,12 +297,11 @@ class NativeDataActivity : ComponentActivity() {
                 try {
                     val device = XrDevice.getCurrentDevice(this)
                     val instanceData = device.getNativeInstanceData(this)
-                    val sessionData = result.session.getNativeSessionData()
 
                     if (
                         instanceData.instancePointer != 0L &&
                             instanceData.functionTablePointer != 0L &&
-                            sessionData.sessionPointer != 0L
+                            instanceData.sessionPointer != 0L
                     ) {
                         getNativeDataResult = "Success: Valid native handles retrieved."
                         getNativeDataPassed = true

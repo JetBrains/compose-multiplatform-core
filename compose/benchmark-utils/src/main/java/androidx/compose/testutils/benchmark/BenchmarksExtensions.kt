@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.testutils.ComposeExecutionControl
 import androidx.compose.testutils.ComposeTestCase
 import androidx.compose.testutils.ToggleableTestCase
@@ -33,6 +34,7 @@ import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.SubcomposeLayoutState
 import androidx.compose.ui.layout.SubcomposeSlotReusePolicy
 import androidx.compose.ui.unit.IntOffset
+import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 
 /**
@@ -174,6 +176,10 @@ fun <T> ComposeBenchmarkRule.toggleStateBenchmarkRecompose(
 /**
  * Measures measure time of the hierarchy after changing a state.
  *
+ * @param toggleCausesRecompose whether the benchmark will fail if there are no pending
+ *   recompositions after the state toggle. By default, this is true to enforce correctness in the
+ *   benchmark, but for components where the state toggle might not always cause a recomposition
+ *   this can be turned off.
  * @param assertOneRecomposition whether the benchmark will fail if there are pending recompositions
  *   after the first recomposition. By default this is true to enforce correctness in the benchmark,
  *   but for components that have animations after being recomposed this can be turned off to
@@ -191,6 +197,9 @@ fun <T> ComposeBenchmarkRule.toggleStateBenchmarkMeasure(
                 getTestCase().toggleState()
                 if (toggleCausesRecompose) {
                     recomposeAssertHadChanges()
+                } else {
+                    // Send state updates without recomposing, but still triggering other listeners
+                    Snapshot.sendApplyNotifications()
                 }
                 requestLayout()
                 if (assertOneRecomposition) {
@@ -208,6 +217,10 @@ fun <T> ComposeBenchmarkRule.toggleStateBenchmarkMeasure(
 /**
  * Measures layout time of the hierarchy after changing a state.
  *
+ * @param toggleCausesRecompose whether the benchmark will fail if there are no pending
+ *   recompositions after the state toggle. By default, this is true to enforce correctness in the
+ *   benchmark, but for components where the state toggle might not always cause a recomposition
+ *   this can be turned off.
  * @param assertOneRecomposition whether the benchmark will fail if there are pending recompositions
  *   after the first recomposition. By default this is true to enforce correctness in the benchmark,
  *   but for components that have animations after being recomposed this can be turned off to
@@ -226,6 +239,9 @@ fun <T> ComposeBenchmarkRule.toggleStateBenchmarkLayout(
                 getTestCase().toggleState()
                 if (toggleCausesRecompose) {
                     recomposeAssertHadChanges()
+                } else {
+                    // Send state updates without recomposing, but still triggering other listeners
+                    Snapshot.sendApplyNotifications()
                 }
                 requestLayout()
                 measure()
@@ -244,6 +260,10 @@ fun <T> ComposeBenchmarkRule.toggleStateBenchmarkLayout(
 /**
  * Measures draw time of the hierarchy after changing a state.
  *
+ * @param toggleCausesRecompose whether the benchmark will fail if there are no pending
+ *   recompositions after the state toggle. By default, this is true to enforce correctness in the
+ *   benchmark, but for components where the state toggle might not always cause a recomposition
+ *   this can be turned off.
  * @param assertOneRecomposition whether the benchmark will fail if there are pending recompositions
  *   after the first recomposition. By default this is true to enforce correctness in the benchmark,
  *   but for components that have animations after being recomposed this can be turned off to
@@ -262,6 +282,9 @@ fun <T> ComposeBenchmarkRule.toggleStateBenchmarkDraw(
                 getTestCase().toggleState()
                 if (toggleCausesRecompose) {
                     recomposeAssertHadChanges()
+                } else {
+                    // Send state updates without recomposing, but still triggering other listeners
+                    Snapshot.sendApplyNotifications()
                 }
                 if (assertOneRecomposition) {
                     assertNoPendingChanges()
@@ -274,6 +297,68 @@ fun <T> ComposeBenchmarkRule.toggleStateBenchmarkDraw(
             draw()
             runWithMeasurementDisabled { drawFinish() }
         }
+    }
+}
+
+/**
+ * Measures the time for semantics update after changing a state.
+ *
+ * @param toggleCausesRecompose whether the benchmark is expecting recomposition after the toggle.
+ *   By default, this is true to enforce correctness in the benchmark, but for components where the
+ *   state toggle might not always cause a recomposition this can be turned off.
+ * @param assertOneRecomposition whether the benchmark will fail if there are pending recompositions
+ *   after the first recomposition.
+ */
+fun <T> ComposeBenchmarkRule.toggleStateBenchmarkSemantics(
+    caseFactory: () -> T,
+    toggleCausesRecompose: Boolean = true,
+    assertOneRecomposition: Boolean = true,
+) where T : ComposeTestCase, T : ToggleableTestCase {
+    runBenchmarkFor(caseFactory) {
+        runOnUiThread {
+            doFramesUntilNoChangesPending()
+            setAccessibilityEnabled(true)
+        }
+        measureRepeatedOnUiThread {
+            runWithMeasurementDisabled {
+                getTestCase().toggleState()
+                if (toggleCausesRecompose) {
+                    recomposeAssertHadChanges()
+                } else {
+                    // Send state updates without recomposing, but still triggering other listeners
+                    Snapshot.sendApplyNotifications()
+                }
+                if (assertOneRecomposition) {
+                    assertNoPendingChanges()
+                }
+                requestLayout()
+                measure()
+                layout()
+                drawPrepare()
+                draw()
+                drawFinish()
+            }
+
+            updateSemantics()
+
+            runWithMeasurementDisabled {
+                // ccraik approved ;)
+                // The layout / draw update can result in significant amount of semantics work for
+                // system_server. We spin for small amount of time to allow async binder calls to
+                // be dequeued and processed.
+                spinForMs(10)
+            }
+        }
+
+        runOnUiThread { setAccessibilityEnabled(false) }
+    }
+}
+
+internal fun spinForMs(timeMillis: Long) {
+    // wait for 10ms to make sure that system server is able to process binder calls
+    val targetMs = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeMillis)
+    while (System.nanoTime() < targetMs) {
+        /* 💃💃💃 spin 💃💃💃 */
     }
 }
 

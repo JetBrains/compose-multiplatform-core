@@ -30,6 +30,7 @@ import androidx.car.app.constraints.ConstraintManager;
 import androidx.car.app.model.Action;
 import androidx.car.app.model.CarColor;
 import androidx.car.app.model.CarIcon;
+import androidx.car.app.model.CarIconStyle;
 import androidx.car.app.model.Header;
 import androidx.car.app.model.Pane;
 import androidx.car.app.model.PaneTemplate;
@@ -56,6 +57,8 @@ public final class PaneTemplateDemoScreen extends Screen implements DefaultLifec
 
     private @Nullable IconCompat mCommuteIcon;
 
+    private static final int IPC_LIST_SIZE_LIMIT = 100;
+
     public PaneTemplateDemoScreen(@NonNull CarContext carContext) {
         super(carContext);
         getLifecycle().addObserver(this);
@@ -79,7 +82,7 @@ public final class PaneTemplateDemoScreen extends Screen implements DefaultLifec
                         .setTitle(getCarContext().getString(R.string.first_row_title))
                         .addText(getCarContext().getString(R.string.first_row_text))
                         .addText(getCarContext().getString(R.string.first_row_text))
-                        .setImage(new CarIcon.Builder(mRowLargeIcon).build())
+                        .setImage(CarIcon.createTintedIcon(mRowLargeIcon))
                         .build();
             default:
                 return new Row.Builder()
@@ -104,13 +107,17 @@ public final class PaneTemplateDemoScreen extends Screen implements DefaultLifec
         int listLimit = getCarContext().getCarService(ConstraintManager.class).getContentLimit(
                 ConstraintManager.CONTENT_LIMIT_TYPE_PANE);
 
+        if (listLimit > IPC_LIST_SIZE_LIMIT) {
+            listLimit = IPC_LIST_SIZE_LIMIT;
+        }
+
         Pane.Builder paneBuilder = new Pane.Builder();
         for (int i = 0; i < listLimit; i++) {
             paneBuilder.addRow(createRow(i));
         }
 
         // Also set a large image outside of the rows.
-        paneBuilder.setImage(new CarIcon.Builder(mPaneImage).build());
+        paneBuilder.setImage(CarIcon.createOriginalIcon(mPaneImage));
 
         Action.Builder primaryActionBuilder = new Action.Builder()
                 .setTitle(getCarContext().getString(R.string.search_action_title))
@@ -139,11 +146,12 @@ public final class PaneTemplateDemoScreen extends Screen implements DefaultLifec
                                                 .show())
                                 .build());
 
+        CarIconStyle carIconStyle =
+                new CarIconStyle.Builder(CarIconStyle.TINTED).setTint(CarColor.BLUE).build();
         Action mapXAction = new Action.Builder()
                 .setTitle("Map+X this!")
                 .setIcon(
-                        new CarIcon.Builder(mCommuteIcon)
-                                .setTint(CarColor.BLUE)
+                        new CarIcon.Builder(mCommuteIcon, carIconStyle)
                                 .build())
                 .setOnClickListener(
                         () -> getScreenManager().push(new MapPaneDemoScreen(getCarContext())))

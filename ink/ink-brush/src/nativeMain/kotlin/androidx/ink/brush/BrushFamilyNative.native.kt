@@ -16,6 +16,7 @@
 
 package androidx.ink.brush
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.cinterop.BrushFamilyNative_calculateMinimumRequiredVersion
 import androidx.ink.nativeloader.cinterop.BrushFamilyNative_create
 import androidx.ink.nativeloader.cinterop.BrushFamilyNative_free
@@ -23,10 +24,11 @@ import androidx.ink.nativeloader.cinterop.BrushFamilyNative_getBrushCoatCount
 import androidx.ink.nativeloader.cinterop.BrushFamilyNative_getClientBrushFamilyId
 import androidx.ink.nativeloader.cinterop.BrushFamilyNative_getDeveloperComment
 import androidx.ink.nativeloader.cinterop.BrushFamilyNative_getInputModelType
-import androidx.ink.nativeloader.cinterop.BrushFamilyNative_getTextureAnimationLoopDurationMillis
+import androidx.ink.nativeloader.cinterop.BrushFamilyNative_getPaintAnimationLoopDurationMillis
 import androidx.ink.nativeloader.cinterop.BrushFamilyNative_hasFallbacks
 import androidx.ink.nativeloader.cinterop.BrushFamilyNative_newCopyOfBrushCoat
 import androidx.ink.nativeloader.cinterop.BrushFamilyNative_newCopyOfInputModel
+import androidx.ink.nativeloader.cinterop.InputModelNative_calculateMinimumRequiredVersion
 import androidx.ink.nativeloader.cinterop.InputModelNative_createNoParametersModel
 import androidx.ink.nativeloader.cinterop.InputModelNative_createSlidingWindowModel
 import androidx.ink.nativeloader.cinterop.InputModelNative_createSlidingWindowModelWithDefaultParameters
@@ -39,25 +41,24 @@ import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.toKString
 import kotlinx.cinterop.usePinned
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, InkInternalOnlyApi::class)
 actual internal object BrushFamilyNative {
     actual fun create(
         coatNativePointers: LongArray,
         inputModelPointer: Long,
         clientBrushFamilyId: String,
         developerComment: String,
-    ): Long =
-        coatNativePointers.usePinned { pinnedCoats ->
-            BrushFamilyNative_create(
-                jni_env_pass_through = null,
-                if (coatNativePointers.isEmpty()) null else pinnedCoats.addressOf(0),
-                coatNativePointers.size,
-                inputModelPointer,
-                clientBrushFamilyId,
-                developerComment,
-                throwForNonOkStatusCallback,
-            )
-        }
+    ): Long = coatNativePointers.usePinned { pinnedCoats ->
+        BrushFamilyNative_create(
+            jni_env_pass_through = null,
+            if (coatNativePointers.isEmpty()) null else pinnedCoats.addressOf(0),
+            coatNativePointers.size,
+            inputModelPointer,
+            clientBrushFamilyId,
+            developerComment,
+            throwForNonOkStatusCallback,
+        )
+    }
 
     actual fun free(nativePointer: Long) = BrushFamilyNative_free(nativePointer)
 
@@ -70,8 +71,8 @@ actual internal object BrushFamilyNative {
     actual fun getDeveloperComment(nativePointer: Long): String =
         BrushFamilyNative_getDeveloperComment(nativePointer)?.toKString() ?: ""
 
-    actual fun getTextureAnimationLoopDurationMillis(nativePointer: Long): Long =
-        BrushFamilyNative_getTextureAnimationLoopDurationMillis(nativePointer)
+    actual fun getPaintAnimationLoopDurationMillis(nativePointer: Long): Long =
+        BrushFamilyNative_getPaintAnimationLoopDurationMillis(nativePointer)
 
     actual fun calculateMinimumRequiredVersion(nativePointer: Long): Int =
         BrushFamilyNative_calculateMinimumRequiredVersion(nativePointer)
@@ -89,8 +90,11 @@ actual internal object BrushFamilyNative {
         BrushFamilyNative_newCopyOfInputModel(nativePointer)
 }
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, InkInternalOnlyApi::class)
 actual internal object InputModelNative {
+    actual fun calculateMinimumRequiredVersion(nativePointer: Long): Int =
+        InputModelNative_calculateMinimumRequiredVersion(nativePointer)
+
     actual fun createNoParametersModel(type: Int): Long =
         InputModelNative_createNoParametersModel(type)
 

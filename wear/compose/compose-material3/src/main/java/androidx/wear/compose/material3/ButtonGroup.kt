@@ -63,9 +63,18 @@ import kotlinx.coroutines.launch
  *
  * @sample androidx.wear.compose.material3.samples.ButtonGroupSample
  *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_ButtonGroupSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * Example of 3 buttons, the middle one bigger [ButtonGroup]:
  *
  * @sample androidx.wear.compose.material3.samples.ButtonGroupThreeButtonsSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_ButtonGroupThreeButtonsSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param modifier Modifier to be applied to the button group
  * @param spacing the amount of spacing between buttons
  * @param expansionWidth how much buttons grow when pressed
@@ -174,10 +183,9 @@ public fun ButtonGroup(
 
         // We know the width we want buttons to be, we can call measure now and pass that as a
         // constraint.
-        val placeables =
-            measurables.fastMapIndexed { ix, placeable ->
-                placeable.measure(constraints.copy(minWidth = widths[ix], maxWidth = widths[ix]))
-            }
+        val placeables = measurables.fastMapIndexed { ix, placeable ->
+            placeable.measure(constraints.copy(minWidth = widths[ix], maxWidth = widths[ix]))
+        }
 
         @Suppress("ListIterator")
         val height =
@@ -211,9 +219,18 @@ public fun ButtonGroup(
  *
  * @sample androidx.wear.compose.material3.samples.ButtonGroupSample
  *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_ButtonGroupSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * Example of 3 buttons, the middle one bigger [ButtonGroup]:
  *
  * @sample androidx.wear.compose.material3.samples.ButtonGroupThreeButtonsSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_ButtonGroupThreeButtonsSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param modifier Modifier to be applied to the button group
  * @param spacing the amount of spacing between buttons
  * @param expansionWidth how much buttons grow when pressed
@@ -441,34 +458,33 @@ internal class EnlargeOnPressNode(
 
     internal fun launchCollectionJob() {
         collectionJob?.cancel()
-        collectionJob =
-            coroutineScope.launch {
-                val pressInteractions = mutableListOf<PressInteraction.Press>()
+        collectionJob = coroutineScope.launch {
+            val pressInteractions = mutableListOf<PressInteraction.Press>()
 
-                launch {
-                    // Use collect here to ensure we don't lose any events.
-                    interactionSource.interactions
-                        .map { interaction ->
-                            when (interaction) {
-                                is PressInteraction.Press -> pressInteractions.add(interaction)
-                                is PressInteraction.Release ->
-                                    pressInteractions.remove(interaction.press)
-                                is PressInteraction.Cancel ->
-                                    pressInteractions.remove(interaction.press)
-                            }
-                            pressInteractions.isNotEmpty()
+            launch {
+                // Use collect here to ensure we don't lose any events.
+                interactionSource.interactions
+                    .map { interaction ->
+                        when (interaction) {
+                            is PressInteraction.Press -> pressInteractions.add(interaction)
+                            is PressInteraction.Release ->
+                                pressInteractions.remove(interaction.press)
+                            is PressInteraction.Cancel ->
+                                pressInteractions.remove(interaction.press)
                         }
-                        .distinctUntilChanged()
-                        .collectLatest { pressed ->
-                            if (pressed) {
-                                launch { pressedAnimatable.animateTo(1f, downAnimSpec) }
-                            } else {
-                                waitUntil { pressedAnimatable.value > 0.75f }
-                                pressedAnimatable.animateTo(0f, upAnimSpec)
-                            }
+                        pressInteractions.isNotEmpty()
+                    }
+                    .distinctUntilChanged()
+                    .collectLatest { pressed ->
+                        if (pressed) {
+                            launch { pressedAnimatable.animateTo(1f, downAnimSpec) }
+                        } else {
+                            waitUntil { pressedAnimatable.value > 0.75f }
+                            pressedAnimatable.animateTo(0f, upAnimSpec)
                         }
-                }
+                    }
             }
+        }
     }
 
     override fun Density.modifyParentData(parentData: Any?) =

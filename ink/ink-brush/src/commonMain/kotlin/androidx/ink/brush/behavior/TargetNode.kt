@@ -17,9 +17,14 @@
 package androidx.ink.brush.behavior
 
 import androidx.collection.MutableIntObjectMap
+import androidx.ink.brush.ExperimentalInkAnimationApi
+import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.Version
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import kotlin.jvm.JvmField
 
 /** A [TerminalNode] that consumes a single input to affect a scalar brush tip property. */
+@OptIn(InkInternalOnlyApi::class)
 public class TargetNode
 private constructor(
     nativeAlloc: () -> Long,
@@ -99,6 +104,16 @@ private constructor(
 
         override fun toString(): String = "Target." + name
 
+        /**
+         * Returns the minimum required [Version] for this [Target].
+         *
+         * By default, decoding a [androidx.ink.brush.BrushFamily] containing a [Target] with a
+         * minimum required version higher than [Version.MAX_SUPPORTED] will fail.
+         */
+        @ExperimentalInkCustomBrushApi
+        public fun calculateMinimumRequiredVersion(): Version =
+            Version.fromInt(TargetNodeNative.getTargetMinimumRequiredVersion(value))
+
         public companion object {
             private val VALUE_TO_INSTANCE = MutableIntObjectMap<Target>()
 
@@ -175,14 +190,16 @@ private constructor(
             public val POSITION_OFFSET_LATERAL_IN_MULTIPLES_OF_BRUSH_SIZE: Target =
                 Target(10, "POSITION_OFFSET_LATERAL_IN_MULTIPLES_OF_BRUSH_SIZE")
             /**
-             * Adds the target modifier to the initial texture animation progress value of the
-             * current particle (which is relevant only for strokes with an animated texture). The
-             * final progress offset is not clamped, but is effectively normalized (mod 1). If
-             * multiple behaviors have this target, they stack additively.
+             * Adds the target modifier to the initial brush paint animation progress value of the
+             * current particle (which is relevant only for strokes with an animated `BrushPaint`).
+             * The final progress offset is not clamped, but is effectively normalized (mod 2, to
+             * account for potential use of `AnimationRepeatMode.REVERSE`). If multiple behaviors
+             * have this target, they stack additively.
              */
+            @ExperimentalInkAnimationApi
             @JvmField
-            public val TEXTURE_ANIMATION_PROGRESS_OFFSET: Target =
-                Target(11, "TEXTURE_ANIMATION_PROGRESS_OFFSET")
+            public val PAINT_ANIMATION_PROGRESS_OFFSET: Target =
+                Target(11, "PAINT_ANIMATION_PROGRESS_OFFSET")
 
             // The following are targets for tip color adjustments, including opacity. Renderers can
             // apply
@@ -190,24 +207,26 @@ private constructor(
             // each
             // part of the stroke.
             /**
-             * Shifts the hue of the base brush color. A positive offset shifts around the hue wheel
-             * from red towards orange, while a negative offset shifts the other way, from red
-             * towards violet. The final hue offset is not clamped, but is effectively normalized
-             * (mod 2π). If multiple behaviors have this target, they stack additively.
+             * Shifts the hue of the base brush color, while maintaining the same level of perceived
+             * lightness. A positive offset shifts around the hue wheel from red towards orange,
+             * while a negative offset shifts the other way, from red towards violet. The final hue
+             * offset is not clamped, but is effectively normalized (mod 2π). If multiple behaviors
+             * have this target, they stack additively.
              */
             @JvmField public val HUE_OFFSET_IN_RADIANS: Target = Target(12, "HUE_OFFSET_IN_RADIANS")
             /**
-             * Scales the saturation of the base brush color. If multiple behaviors have one of
-             * these targets, they stack multiplicatively. The final saturation multiplier is
-             * clamped to [0, 2].
+             * Scales the chroma of the base brush color. A value greater than 1.0 makes the color
+             * more saturated, a value less than 1.0 makes the color less saturated, and a value of
+             * 0.0 makes the color grayscale. If multiple behaviors have one of these targets, they
+             * stack multiplicatively. The final chroma multiplier is clamped to [0, 2].
              */
-            @JvmField public val SATURATION_MULTIPLIER: Target = Target(13, "SATURATION_MULTIPLIER")
+            @JvmField public val CHROMA_MULTIPLIER: Target = Target(13, "CHROMA_MULTIPLIER")
             /**
-             * Shifts the luminosity of the base brush color. An offset of ±1.0 corresponds to
-             * changing the luminosity by up to ±100%. If multiple behaviors have this target, they
-             * stack additively. The final luminosity offset is clamped to [-1, 1].
+             * Shifts the perceived lightness of the base brush color. An offset of ±1.0 corresponds
+             * to changing the lightness by up to ±100%. If multiple behaviors have this target,
+             * they stack additively. The final lightness offset is clamped to [-1, 1].
              */
-            @JvmField public val LUMINOSITY_OFFSET: Target = Target(14, "LUMINOSITY_OFFSET")
+            @JvmField public val LIGHTNESS_OFFSET: Target = Target(14, "LIGHTNESS_OFFSET")
             /**
              * Scales the opacity of the base brush color. If multiple behaviors have one of these
              * targets, they stack multiplicatively. The final opacity multiplier is clamped to
@@ -232,4 +251,6 @@ expect internal object TargetNodeNative {
     fun getModifierRangeStart(nativePointer: Long): Float
 
     fun getModifierRangeEnd(nativePointer: Long): Float
+
+    fun getTargetMinimumRequiredVersion(targetInt: Int): Int
 }

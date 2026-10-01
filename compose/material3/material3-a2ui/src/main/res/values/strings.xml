@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copyright 2026 The Android Open Source Project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  -->
+
+<resources>
+    <string name="button_cancel">Cancel</string>
+    <string name="button_ok">OK</string>
+    <string name="error">Error</string>
+    <string name="select_date">Select date</string>
+    <string name="select_time">Select time</string>
+    <string name="choice_picker_placeholder_select_options">Select options</string>
+    <string name="choice_picker_placeholder_show_options">Show options</string>
+    <string name="choice_picker_placeholder_filter">Start typing to filter&#8230;</string>
+    <string name="choice_picker_no_matching_options">No matching options</string>
+    <string name="choice_picker_remove_option">Remove %1$s</string>
+    <string name="choice_picker_clear_search">Clear search filter</string>
+</resources>

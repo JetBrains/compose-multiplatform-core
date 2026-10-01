@@ -19,6 +19,7 @@ package androidx.compose.remote.creation.compose.modifier
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.test.base.GridScreenshotUI
@@ -51,72 +52,71 @@ class PaddingModifierTest {
     private val gridScreenshotUI = GridScreenshotUI()
 
     @Test
-    fun grid() =
-        remoteComposeTestRule.runScreenshotTest {
-            gridScreenshotUI.GridContent(
-                listOf(
-                    "padding start" to
-                        @RemoteComposable @Composable {
-                            PaddingItem(RemoteModifier.padding(start = 20.rdp))
-                        },
-                    "padding end" to
-                        @RemoteComposable @Composable {
-                            PaddingItem(RemoteModifier.padding(end = 20.rdp))
-                        },
-                    "padding all" to
-                        @RemoteComposable @Composable {
-                            PaddingItem(RemoteModifier.padding(20.rdp))
-                        },
-                    "padding top" to
-                        @RemoteComposable @Composable {
-                            PaddingItem(RemoteModifier.padding(top = 20.rdp))
-                        },
-                    "padding bottom" to
-                        @RemoteComposable @Composable {
-                            PaddingItem(RemoteModifier.padding(bottom = 20.rdp))
-                        },
-                    "Blank" to { Blank() },
-                    "padding vertical" to
-                        @RemoteComposable @Composable {
-                            PaddingItem(RemoteModifier.padding(vertical = 20.rdp))
-                        },
-                    "padding horizontal" to
-                        @RemoteComposable @Composable {
-                            PaddingItem(RemoteModifier.padding(horizontal = 20.rdp))
-                        },
-                    "Blank" to { Blank() },
-                    "padding start rf" to
-                        @RemoteComposable @Composable {
-                            PaddingItem(RemoteModifier.padding(start = 20f.rf))
-                        },
-                    "padding end rf" to
-                        @RemoteComposable @Composable {
-                            PaddingItem(RemoteModifier.padding(end = 20f.rf))
-                        },
-                    "padding all rf" to
-                        @RemoteComposable @Composable {
-                            PaddingItem(RemoteModifier.padding(20f.rf))
-                        },
-                    "padding top rf" to
-                        @RemoteComposable @Composable {
-                            PaddingItem(RemoteModifier.padding(top = 20f.rf))
-                        },
-                    "padding bottom rf" to
-                        @RemoteComposable @Composable {
-                            PaddingItem(RemoteModifier.padding(bottom = 20f.rf))
-                        },
-                    "Blank" to { Blank() },
-                    "padding vertical rf" to
-                        @RemoteComposable @Composable {
-                            PaddingItem(RemoteModifier.padding(vertical = 20.rf))
-                        },
-                    "padding horizontal rf" to
-                        @RemoteComposable @Composable {
-                            PaddingItem(RemoteModifier.padding(horizontal = 20.rf))
-                        },
-                )
+    fun grid() = remoteComposeTestRule.runScreenshotTest {
+        gridScreenshotUI.GridContent(
+            listOf(
+                "padding start" to
+                    @RemoteComposable @Composable {
+                        PaddingItem(RemoteModifier.padding(start = 20.rdp))
+                    },
+                "padding end" to
+                    @RemoteComposable @Composable {
+                        PaddingItem(RemoteModifier.padding(end = 20.rdp))
+                    },
+                "padding all" to
+                    @RemoteComposable @Composable {
+                        PaddingItem(RemoteModifier.padding(20.rdp))
+                    },
+                "padding top" to
+                    @RemoteComposable @Composable {
+                        PaddingItem(RemoteModifier.padding(top = 20.rdp))
+                    },
+                "padding bottom" to
+                    @RemoteComposable @Composable {
+                        PaddingItem(RemoteModifier.padding(bottom = 20.rdp))
+                    },
+                "Blank" to { Blank() },
+                "padding vertical" to
+                    @RemoteComposable @Composable {
+                        PaddingItem(RemoteModifier.padding(vertical = 20.rdp))
+                    },
+                "padding horizontal" to
+                    @RemoteComposable @Composable {
+                        PaddingItem(RemoteModifier.padding(horizontal = 20.rdp))
+                    },
+                "Blank" to { Blank() },
+                "padding start rf" to
+                    @RemoteComposable @Composable {
+                        PaddingItem(RemoteModifier.padding(start = 20f.rf))
+                    },
+                "padding end rf" to
+                    @RemoteComposable @Composable {
+                        PaddingItem(RemoteModifier.padding(end = 20f.rf))
+                    },
+                "padding all rf" to
+                    @RemoteComposable @Composable {
+                        PaddingItem(RemoteModifier.padding(20f.rf))
+                    },
+                "padding top rf" to
+                    @RemoteComposable @Composable {
+                        PaddingItem(RemoteModifier.padding(top = 20f.rf))
+                    },
+                "padding bottom rf" to
+                    @RemoteComposable @Composable {
+                        PaddingItem(RemoteModifier.padding(bottom = 20f.rf))
+                    },
+                "Blank" to { Blank() },
+                "padding vertical rf" to
+                    @RemoteComposable @Composable {
+                        PaddingItem(RemoteModifier.padding(vertical = 20.rf))
+                    },
+                "padding horizontal rf" to
+                    @RemoteComposable @Composable {
+                        PaddingItem(RemoteModifier.padding(horizontal = 20.rf))
+                    },
             )
-        }
+        )
+    }
 
     @Test
     fun rtl() =
@@ -151,8 +151,10 @@ class PaddingModifierTest {
     @RemoteComposable
     @Composable
     private fun PaddingItem(padding: RemoteModifier) {
-        RemoteBox(modifier = RemoteModifier.fillMaxSize().background(Color.Red)) {
-            RemoteBox(modifier = RemoteModifier.fillMaxSize().then(padding).background(Color.Blue))
+        RemoteBox(modifier = RemoteModifier.fillMaxSize().background(Color.Red.rc)) {
+            RemoteBox(
+                modifier = RemoteModifier.fillMaxSize().then(padding).background(Color.Blue.rc)
+            )
         }
     }
 

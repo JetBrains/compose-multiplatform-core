@@ -22,7 +22,7 @@ import kotlin.math.abs
 import kotlin.math.asin
 
 /**
- * Represents an immutable rigid transformation from one coordinate space to another.
+ * Immutable rigid transformation from one coordinate space to another.
  *
  * @property translation the translation component of this pose
  * @property rotation the rotation component of this pose
@@ -85,26 +85,23 @@ constructor(
     public fun rotate(rotation: Quaternion): Pose = Pose(this.translation, this.rotation * rotation)
 
     /**
-     * Transforms the provided [point] by the pose by applying both the [rotation] and the
-     * [translation] components of the pose. This is because a point represents a specific location
-     * in space. It needs to account for the position, scale and orientation of the space it is in.
+     * Transforms [point] using pose rotation and translation. A point represents a specific
+     * location in space and is affected by translation, scale, and orientation.
      */
     public infix fun transformPoint(point: Vector3): Vector3 = rotation * point + translation
 
     /**
-     * Transforms the provided [vector] by the pose by only applying the [rotation] component of the
-     * pose. This is because a vector represents a direction and magnitude, not a specific location.
-     * It only needs to account for the scale and orientation of the space it is in since it has no
-     * position.
+     * Transforms [vector] using only pose rotation. A vector represents a direction and magnitude,
+     * not a specific location. It only needs to account for the scale and orientation of the space
+     * it is in since it has no position.
      */
     public infix fun transformVector(vector: Vector3): Vector3 = rotation * vector
 
     /**
-     * Calculates a rotation to align this pose's local Z-axis [forward] with the given pose's [up]
-     * direction.
+     * Calculates rotation to align local Z-axis [forward] with [other]'s [up] direction.
      *
-     * @param other The given pose.
-     * @return A Quaternion representing the rotation to apply to the pose.
+     * @param other the given pose
+     * @return a Quaternion representing the rotation to apply to the pose
      */
     public fun getForwardVectorToUpRotation(other: Pose): Quaternion {
         val otherPoseUp = other.up.toNormalized()
@@ -120,11 +117,10 @@ constructor(
     }
 
     /**
-     * Calculates a rotation to align this pose's local Y-axis [up] with the given pose's up
-     * direction.
+     * Calculates rotation to align local Y-axis [up] with [other]'s up direction.
      *
-     * @param other The given pose.
-     * @return A Quaternion representing the rotation to apply to the pose.
+     * @param other the given pose
+     * @return a Quaternion representing the rotation to apply to the pose
      */
     public fun getUpVectorToUpRotation(other: Pose): Quaternion {
         val otherPoseUp: Vector3 = other.up.toNormalized()
@@ -152,7 +148,7 @@ constructor(
         if (forwardDirection.lengthSquared < EPSILON) {
             forwardDirection = newPose.forward
         }
-        return Quaternion.fromLookTowards(forwardDirection, otherPoseUp)
+        return fromLookTowards(forwardDirection, otherPoseUp)
     }
 
     /**
@@ -185,8 +181,7 @@ constructor(
         private const val EPSILON = 1e-6f
 
         /**
-         * Returns a new pose oriented to look at [target] from [eye] position with [up] as the up
-         * vector.
+         * Creates a pose looking at [target] from [eye] with [up] vector.
          *
          * @param eye the position from which to look at [target]
          * @param target the target position to look at
@@ -198,7 +193,10 @@ constructor(
         @JvmOverloads
         public fun fromLookAt(eye: Vector3, target: Vector3, up: Vector3 = Vector3.Up): Pose {
             val forward = (target - eye).toNormalized()
-            val rotation = Quaternion.fromLookTowards(forward, up)
+            // Since Quaternion.fromLookTowards aligns the local +Z axis (Vector3.Backward) with the
+            // target, we must pass the opposite direction to align local -Z (Vector3.Forward) with
+            // it, matching the Pose.forward definition.
+            val rotation = fromLookTowards(-forward, up)
 
             return Pose(eye, rotation)
         }
@@ -211,12 +209,12 @@ constructor(
          */
         @JvmStatic
         public fun distance(lhs: Pose, rhs: Pose): Float =
-            Vector3.Companion.distance(lhs.translation, rhs.translation)
+            Vector3.distance(lhs.translation, rhs.translation)
 
         /**
-         * Returns a new pose that is linearly interpolated between [start] and [end] using the
-         * interpolation amount [ratio]. The position is [lerped][Vector3.lerp], but the rotation
-         * will be [slerped][Quaternion.slerp] if the angles are far apart.
+         * Linearly interpolates between [start] and [end] by [ratio]. The position is
+         * [lerped][Vector3.lerp], but the rotation will be [slerped][Quaternion.slerp] if the
+         * angles are far apart.
          *
          * If [ratio] is outside of the range `[0, 1]`, the returned pose will be extrapolated.
          *
@@ -226,15 +224,14 @@ constructor(
          */
         @JvmStatic
         public fun lerp(start: Pose, end: Pose, ratio: Float): Pose {
-            val interpolatedPosition =
-                Vector3.Companion.lerp(start.translation, end.translation, ratio)
+            val interpolatedPosition = Vector3.lerp(start.translation, end.translation, ratio)
 
             val interpolatedRotation =
                 if (start.rotation.dot(end.rotation) < 0.9995f) { // Check if angle is large
-                    Quaternion.Companion.slerp(start.rotation, end.rotation, ratio)
+                    Quaternion.slerp(start.rotation, end.rotation, ratio)
                 } else {
                     // If the angle is small, lerp can be used for efficiency.
-                    Quaternion.Companion.lerp(start.rotation, end.rotation, ratio)
+                    Quaternion.lerp(start.rotation, end.rotation, ratio)
                 }
 
             return Pose(interpolatedPosition, interpolatedRotation)

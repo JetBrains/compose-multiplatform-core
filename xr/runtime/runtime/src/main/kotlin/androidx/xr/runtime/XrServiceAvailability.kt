@@ -20,7 +20,7 @@ import android.content.Context
 import android.os.Build
 import androidx.annotation.RestrictTo
 
-/** Provides information about the XR API availability. */
+/** XR API availability information. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public object XrServiceAvailability {
     /** Includes all supported states for the XR service availability. */
@@ -35,19 +35,30 @@ public object XrServiceAvailability {
             /** XR service is unsupported on the device. */
             @JvmField
             public val UNSUPPORTED: XrServiceAvailabilityStatus = XrServiceAvailabilityStatus(2)
-            /**
-             * XR service available on the device is older than the library API used by the client
-             * application.
-             */
+            /** Device XR service is older than the library API version. */
             @JvmField
             public val OUTDATED: XrServiceAvailabilityStatus = XrServiceAvailabilityStatus(3)
         }
+
+        /**
+         * Returns a string representation of [XrServiceAvailabilityStatus] for debugging.
+         *
+         * Note: Not intended for production use.
+         */
+        override fun toString(): String =
+            when (code) {
+                0 -> "UNKNOWN"
+                1 -> "AVAILABLE"
+                2 -> "UNSUPPORTED"
+                3 -> "OUTDATED"
+                else -> "UNKNOWN"
+            }
     }
 
     /**
      * Returns the [XrServiceAvailabilityStatus] of Projected XR features support.
      *
-     * @param context any [Context] object.
+     * @param context any [Context] object
      */
     @JvmStatic
     public fun checkProjectedServiceAvailability(context: Context): XrServiceAvailabilityStatus {

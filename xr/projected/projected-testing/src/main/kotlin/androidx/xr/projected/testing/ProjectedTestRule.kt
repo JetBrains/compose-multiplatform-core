@@ -19,6 +19,7 @@ package androidx.xr.projected.testing
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Application
+import android.app.PendingIntent
 import android.companion.virtual.VirtualDeviceManager
 import android.content.ComponentName
 import android.content.Context
@@ -51,9 +52,11 @@ import androidx.xr.projected.platform.IEngagementModeCallback
 import androidx.xr.projected.platform.IEngagementModeService
 import androidx.xr.projected.platform.IProjectedDeviceStateListener
 import androidx.xr.projected.platform.IProjectedInputEventListener
+import androidx.xr.projected.platform.IProjectedPermissionRequestCallback
 import androidx.xr.projected.platform.IProjectedService
 import androidx.xr.projected.platform.ProjectedDeviceState
 import androidx.xr.projected.platform.ProjectedInputEvent
+import androidx.xr.projected.platform.ProjectedPermissionRequestState
 import java.lang.reflect.Constructor
 import java.lang.reflect.Method
 import java.util.Collections
@@ -234,6 +237,17 @@ public class ProjectedTestRule : TestRule {
             field = value
         }
 
+    /**
+     * Retrieves the [PendingIntent] most recently registered by the application as the input
+     * receiver, or null if none is registered.
+     *
+     * Reflects the current state resulting from calls to
+     * [androidx.xr.projected.ProjectedActivityCompat.setActivityAsInputReceiver] and
+     * [androidx.xr.projected.ProjectedActivityCompat.clearActivityAsInputReceiver].
+     */
+    public var registeredInputReceiver: PendingIntent? = null
+        private set
+
     private val context: Application = ApplicationProvider.getApplicationContext()
     private val virtualDeviceManager =
         context.getSystemService(Context.VIRTUAL_DEVICE_SERVICE) as VirtualDeviceManager
@@ -264,6 +278,34 @@ public class ProjectedTestRule : TestRule {
                     batteryStateListeners.remove(listener)
                     null
                 }
+            on { launchProjectedPermissionRequest(any(), any()) } doAnswer
+                { invocation ->
+                    val callback = invocation.arguments[1] as IProjectedPermissionRequestCallback
+                    val pendingIntent =
+                        PendingIntent.getActivity(
+                            context,
+                            0,
+                            Intent(),
+                            PendingIntent.FLAG_IMMUTABLE,
+                        )
+                    callback.onProjectedPermissionRequestStateChanged(
+                        ProjectedPermissionRequestState.ALLOWED,
+                        pendingIntent,
+                    )
+                    null
+                }
+            on { finishProjectedPermissionRequest() } doAnswer { null }
+            on { setActivityAsInputReceiver(any()) } doAnswer
+                { invocation ->
+                    val intent = invocation.arguments[0] as PendingIntent
+                    registeredInputReceiver = intent
+                    null
+                }
+            on { clearActivityAsInputReceiver() } doAnswer
+                {
+                    registeredInputReceiver = null
+                    null
+                }
         }
     private val mockProjectedServiceStub =
         mock<IProjectedService.Stub> {
@@ -288,6 +330,7 @@ public class ProjectedTestRule : TestRule {
                     setOutputDevices(listOf(OUTPUT_PROJECTED_AUDIO_DEVICE_INFO))
                 }
                 batteryStateListeners.clear()
+                registeredInputReceiver = null
                 base?.evaluate()
             }
         }

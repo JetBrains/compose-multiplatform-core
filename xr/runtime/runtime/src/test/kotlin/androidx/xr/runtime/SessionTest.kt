@@ -18,10 +18,10 @@ package androidx.xr.runtime
 
 import android.Manifest
 import android.graphics.Bitmap
-import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.kruth.assertThrows
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -34,8 +34,10 @@ import kotlin.coroutines.ContinuationInterceptor
 import kotlin.test.assertFailsWith
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -43,6 +45,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -51,6 +54,7 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ActivityController
+import org.robolectric.shadows.ShadowLooper
 
 @RunWith(AndroidJUnit4::class)
 class SessionTest {
@@ -141,6 +145,188 @@ class SessionTest {
         assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
         assertThat((result as SessionCreateSuccess).session).isNotNull()
     }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun create_onWorkerThread_returnsSuccessResultWithNonNullSession() = runTest {
+        activityController.create()
+
+        val result =
+            withContext(StandardTestDispatcher(testScheduler)) {
+                Session.create(context = activity)
+            }
+
+        val session = (result as SessionCreateSuccess).session
+
+        assertThat(session).isNotNull()
+        assertThat(session.lifecycleOwner).isEqualTo(activity)
+    }
+
+    @Test
+    fun create_whenSessionExistsWithDifferentLifecycleOwner_throwsIllegalStateException() =
+        runTest {
+            activityController.create()
+            val sessionResult = Session.create(context = activity, lifecycleOwner = activity)
+            assertThat(sessionResult).isInstanceOf(SessionCreateSuccess::class.java)
+
+            val differentOwner =
+                object : LifecycleOwner {
+                    override val lifecycle: Lifecycle = activity.lifecycle
+                }
+
+            assertThrows<IllegalStateException> {
+                Session.create(context = activity, lifecycleOwner = differentOwner)
+            }
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun create_success_registersLifecycleObserver() = runTest {
+        activityController.create()
+        val lifecycleRegistry = activity.lifecycle as LifecycleRegistry
+        val initialObserverCount = lifecycleRegistry.observerCount
+
+        val result = Session.create(context = activity)
+
+        assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
+        assertThat(lifecycleRegistry.observerCount).isEqualTo(initialObserverCount + 1)
+    }
+
+    /**
+     * Tests in-flight cancellation during Session creation.
+     *
+     * In-flight cancellation occurs when the calling coroutine scope is cancelled (e.g. via
+     * timeout, parent scope cancellation, or sibling failure) while Session.create is actively
+     * executing.
+     *
+     * To deterministically simulate in-flight cancellation, we intercept the Lifecycle.addObserver
+     * call to cancel the calling coroutine's Job at the exact moment the observer is attached.
+     *
+     * Because observer registration executes under `MainExecutorDispatcher.immediate +
+     * NonCancellable`, the observer is added to the LifecycleRegistry. Upon exiting the
+     * NonCancellable block, `currentCoroutineContext().ensureActive()` detects the cancellation and
+     * throws a CancellationException.
+     *
+     * This test verifies that Session.create's try-catch block intercepts the
+     * CancellationException, deterministically calls `session.destroy()` to remove the observer
+     * from the LifecycleRegistry, and re-throws the CancellationException without leaking any
+     * observers.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun create_whenCancelledDuringCreation_doesNotLeakLifecycleObserver() = runTest {
+        activityController.create()
+
+        val job = Job()
+        val customLifecycleOwner =
+            object : LifecycleOwner {
+                val registry = LifecycleRegistry(this)
+                override val lifecycle =
+                    object : Lifecycle() {
+                        override val currentState: State
+                            get() = registry.currentState
+
+                        override fun addObserver(observer: LifecycleObserver) {
+                            registry.addObserver(observer)
+                            // Simulate in-flight cancellation occurring while Session.create is
+                            // actively attaching observers.
+                            job.cancel()
+                        }
+
+                        override fun removeObserver(observer: LifecycleObserver) {
+                            registry.removeObserver(observer)
+                        }
+                    }
+            }
+        customLifecycleOwner.registry.currentState = Lifecycle.State.CREATED
+
+        assertThrows<CancellationException> {
+            withContext(job) {
+                Session.create(context = activity, lifecycleOwner = customLifecycleOwner)
+            }
+        }
+
+        // Verify that the observer attached during NonCancellable execution was cleanly removed by
+        // session.destroy().
+        assertThat(customLifecycleOwner.registry.observerCount).isEqualTo(0)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun create_withDistinctLifecycleOwner_success_registersObserversOnBoth() = runTest {
+        activityController.create()
+        val activityLifecycle = activity.lifecycle as LifecycleRegistry
+        val customLifecycleOwner =
+            object : LifecycleOwner {
+                override val lifecycle = LifecycleRegistry(this)
+            }
+        customLifecycleOwner.lifecycle.currentState = Lifecycle.State.CREATED
+
+        val initialActivityObservers = activityLifecycle.observerCount
+        val initialCustomObservers = customLifecycleOwner.lifecycle.observerCount
+
+        val result = Session.create(context = activity, lifecycleOwner = customLifecycleOwner)
+
+        assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
+        assertThat(customLifecycleOwner.lifecycle.observerCount)
+            .isEqualTo(initialCustomObservers + 1)
+        assertThat(activityLifecycle.observerCount).isEqualTo(initialActivityObservers + 1)
+    }
+
+    /**
+     * Tests in-flight cancellation when Session is created with a distinct LifecycleOwner.
+     *
+     * When context is an Activity (LifecycleOwner) and a distinct LifecycleOwner is provided,
+     * Session.create registers observers on BOTH the custom LifecycleOwner and the host Activity
+     * context.
+     *
+     * This test verifies that when in-flight cancellation occurs during creation:
+     * 1. Cancellation is detected immediately after Main dispatch.
+     * 2. `session.destroy()` is executed in the catch block.
+     * 3. Observers on BOTH the custom LifecycleOwner AND the host Activity context are cleanly
+     *    detached without leakage.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun create_withDistinctLifecycleOwner_whenCancelledDuringCreation_doesNotLeakObserversOnEither() =
+        runTest {
+            activityController.create()
+            val activityLifecycle = activity.lifecycle as LifecycleRegistry
+            val initialActivityObservers = activityLifecycle.observerCount
+
+            val job = Job()
+            val customLifecycleOwner =
+                object : LifecycleOwner {
+                    val registry = LifecycleRegistry(this)
+                    override val lifecycle =
+                        object : Lifecycle() {
+                            override val currentState: State
+                                get() = registry.currentState
+
+                            override fun addObserver(observer: LifecycleObserver) {
+                                registry.addObserver(observer)
+                                // Simulate in-flight cancellation occurring while Session.create is
+                                // actively attaching observers.
+                                job.cancel()
+                            }
+
+                            override fun removeObserver(observer: LifecycleObserver) {
+                                registry.removeObserver(observer)
+                            }
+                        }
+                }
+            customLifecycleOwner.registry.currentState = Lifecycle.State.CREATED
+
+            assertThrows<CancellationException> {
+                withContext(job) {
+                    Session.create(context = activity, lifecycleOwner = customLifecycleOwner)
+                }
+            }
+
+            // Verify neither the custom LifecycleOwner nor the host Activity leaked any observers.
+            assertThat(customLifecycleOwner.registry.observerCount).isEqualTo(0)
+            assertThat(activityLifecycle.observerCount).isEqualTo(initialActivityObservers)
+        }
 
     @Test
     fun create_withActivityAndLifecycleOwner_usesProvidedLifecycleOwner() {
@@ -461,20 +647,20 @@ class SessionTest {
             val expectedDuration = 100.milliseconds
             val initialTimeMark = underTest.state.value.timeMark
 
-            // First resume and update
+            underTest.configure(underTest.config)
             activityController.resume()
-            shadowOf(Looper.getMainLooper()).idle()
+            ShadowLooper.idleMainLooper()
             advanceUntilIdle()
             val beforeTimeMark = underTest.state.value.timeMark
             check(beforeTimeMark != initialTimeMark)
             activityController.pause()
-            shadowOf(Looper.getMainLooper()).idle()
+            ShadowLooper.idleMainLooper()
             advanceUntilIdle()
             timeSource += expectedDuration
 
             stubRuntime.allowOneMoreCallToUpdate()
             activityController.resume()
-            shadowOf(Looper.getMainLooper()).idle()
+            ShadowLooper.idleMainLooper()
             advanceUntilIdle()
 
             val afterTimeMark = underTest.state.value.timeMark
@@ -489,11 +675,47 @@ class SessionTest {
             activityController.create().start()
             underTest = createSession(coroutineDispatcher = testDispatcher)
 
+            underTest.configure(underTest.config)
             activityController.resume() // Triggers update
             advanceUntilIdle()
 
             val stateExtender = underTest.stateExtenders.last() as StubStateExtender
             assertThat(stateExtender.extended).isNotEmpty()
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun resume_withoutConfigure_doesNotTriggerUpdateLoop() =
+        runTest(testDispatcher) {
+            activityController.create().start()
+            underTest = createSession(coroutineDispatcher = testDispatcher)
+
+            val initialTimeMark = underTest.state.value.timeMark
+            activityController.resume()
+            ShadowLooper.idleMainLooper()
+            advanceUntilIdle()
+
+            val beforeConfigTimeMark = underTest.state.value.timeMark
+            assertThat(beforeConfigTimeMark).isEqualTo(initialTimeMark)
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun configure_whileResumed_startsUpdateLoop() =
+        runTest(testDispatcher) {
+            activityController.create().start()
+            underTest = createSession(coroutineDispatcher = testDispatcher)
+
+            val initialTimeMark = underTest.state.value.timeMark
+            activityController.resume()
+            ShadowLooper.idleMainLooper()
+            advanceUntilIdle()
+            underTest.configure(underTest.config)
+            ShadowLooper.idleMainLooper()
+            advanceUntilIdle()
+
+            val afterConfigTimeMark = underTest.state.value.timeMark
+            assertThat(afterConfigTimeMark).isNotEqualTo(initialTimeMark)
         }
 
     @Test
@@ -533,13 +755,12 @@ class SessionTest {
         val activityController2 = Robolectric.buildActivity(ComponentActivity::class.java)
         val secondActivity = activityController2.get()
 
-        val underTest = createSession()
-        val secondSession =
-            (runBlocking {
-                    Session.create(context = secondActivity!!, coroutineContext = testDispatcher)
-                }
-                    as SessionCreateSuccess)
-                .session
+        createSession()
+        (runBlocking {
+                Session.create(context = secondActivity!!, coroutineContext = testDispatcher)
+            }
+                as SessionCreateSuccess)
+            .session
         activityController.create().start().resume()
         activityController2.create().start().resume()
 
@@ -560,12 +781,11 @@ class SessionTest {
         val activityController2 = Robolectric.buildActivity(ComponentActivity::class.java)
         val secondActivity = activityController2.get()
         underTest = createSession()
-        val secondSession =
-            (runBlocking {
-                    Session.create(context = secondActivity!!, coroutineContext = testDispatcher)
-                }
-                    as SessionCreateSuccess)
-                .session
+        (runBlocking {
+                Session.create(context = secondActivity!!, coroutineContext = testDispatcher)
+            }
+                as SessionCreateSuccess)
+            .session
         activityController2.create().start().resume()
         activityController2.destroy()
         activityController.create().start().resume()
@@ -609,6 +829,41 @@ class SessionTest {
         val stubRuntime = getStubRuntime()
         assertThat(stubRuntime.state).isEqualTo(StubPerceptionRuntime.State.DESTROYED)
     }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun destroy_whenLockHeld_stillDestroysRuntimes() =
+        runTest(testDispatcher) {
+            activityController.create().start().resume()
+            underTest = createSession(coroutineDispatcher = testDispatcher)
+            underTest.configure(underTest.config)
+
+            val stubRuntime = getStubRuntime()
+
+            // Start the update loop. It will block on the second update (due to the semaphore
+            // in StubPerceptionRuntime) while holding the Session's configurationMutex.
+            advanceUntilIdle()
+
+            // Trigger Session.destroy(). The pause() call internally cancels the updateJob,
+            // but the testDispatcher will not process the cancellation inline. Because the
+            // cancellation is queued, the lock is still held when destroy() uses tryLock().
+            // Thus, destroy() queues a fallback coroutine to clean up later.
+            activityController.pause().stop().destroy()
+
+            // Verify that the runtime is not destroyed yet because the fallback coroutine is queued
+            // and the lock hasn't been released by the cancelled updateJob.
+            assertThat(stubRuntime.state).isNotEqualTo(StubPerceptionRuntime.State.DESTROYED)
+
+            // Advance the testDispatcher to process the updateJob's cancellation, which will
+            // unlock the configurationMutex.
+            advanceUntilIdle()
+
+            // Finally, pump the MainLooper to allow the queued fallback coroutine to acquire the
+            // lock and execute destroyRuntimes().
+            ShadowLooper.idleMainLooper()
+
+            assertThat(stubRuntime.state).isEqualTo(StubPerceptionRuntime.State.DESTROYED)
+        }
 
     @Test
     fun destroy_closesSessionConnector() {
@@ -686,6 +941,71 @@ class SessionTest {
             .containsExactly("connector1", "extender1", "runtime2", "runtime1")
             .inOrder()
     }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun create_lifecycleOwnerDestroyedBeforeRegistration_destroysSession() =
+        runTest(testDispatcher) {
+            activityController.create().start()
+            val result = Session.create(context = activity, coroutineContext = testDispatcher)
+            assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
+            val session = (result as SessionCreateSuccess).session
+
+            // Destroy the activity before the registration coroutine executes on main thread.
+            activityController.destroy()
+
+            // Run the registration coroutine on the main thread.
+            ShadowLooper.idleMainLooper()
+            advanceUntilIdle()
+
+            // Verify that the session has been destroyed.
+            val stubRuntime = session.runtimes.filterIsInstance<StubPerceptionRuntime>().first()
+            assertThat(stubRuntime.state).isEqualTo(StubPerceptionRuntime.State.DESTROYED)
+
+            // Check that configure throws IllegalStateException because the session is destroyed.
+            assertFailsWith<IllegalStateException> { session.configure(Config.Builder().build()) }
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun create_distinctContextDestroyed_destroysSessionAndRemovesObservers() =
+        runTest(testDispatcher) {
+            activityController.create().start()
+            // Create a custom LifecycleOwner to act as the distinct lifecycleOwner,
+            // while the activity is the context.
+            val customLifecycleOwner =
+                object : LifecycleOwner {
+                    override val lifecycle = LifecycleRegistry(this)
+                }
+            customLifecycleOwner.lifecycle.currentState = Lifecycle.State.CREATED
+
+            val result =
+                Session.create(
+                    context = activity,
+                    coroutineContext = testDispatcher,
+                    lifecycleOwner = customLifecycleOwner,
+                )
+            assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
+            val session = (result as SessionCreateSuccess).session
+
+            // Let the registration coroutine run.
+            ShadowLooper.idleMainLooper()
+            advanceUntilIdle()
+
+            // At this point, the session should be active.
+            val stubRuntime = session.runtimes.filterIsInstance<StubPerceptionRuntime>().first()
+            assertThat(stubRuntime.state).isNotEqualTo(StubPerceptionRuntime.State.DESTROYED)
+
+            // Destroy the context (activity).
+            activityController.destroy()
+            ShadowLooper.idleMainLooper()
+
+            // The session should now be destroyed.
+            assertThat(stubRuntime.state).isEqualTo(StubPerceptionRuntime.State.DESTROYED)
+
+            // And verify that configuring throws IllegalStateException.
+            assertFailsWith<IllegalStateException> { session.configure(Config.Builder().build()) }
+        }
 
     private fun createSession(coroutineDispatcher: CoroutineDispatcher = testDispatcher): Session {
         val result = runBlocking {

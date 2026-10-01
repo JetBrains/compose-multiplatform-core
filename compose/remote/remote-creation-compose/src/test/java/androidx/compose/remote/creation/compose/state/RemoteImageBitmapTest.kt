@@ -17,6 +17,7 @@
 package androidx.compose.remote.creation.compose.state
 
 import android.graphics.Bitmap
+import androidx.compose.remote.creation.compose.state.RemoteImageBitmap.Companion.createOffscreenRemoteBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -29,7 +30,7 @@ class RemoteImageBitmapTest {
 
     @Test
     fun remoteBitmap_cacheKey() {
-        val bitmap = RemoteImageBitmap.createOffscreenRemoteBitmap(100, 100)
+        val bitmap = createOffscreenRemoteBitmap(100, 100)
 
         val cacheKey = bitmap.cacheKey
 
@@ -44,5 +45,27 @@ class RemoteImageBitmapTest {
         val constantValue = mutableBitmap.constantValueOrNull
 
         assertThat(constantValue).isEqualTo(imageBitmap)
+    }
+
+    @Test
+    fun remoteBitmap_urlStaticFactory() {
+        val url = "https://example.com/image.png"
+        val bitmap = RemoteImageBitmap(url)
+
+        assertThat(bitmap).isNotNull()
+        assertThat(bitmap.cacheKey).isEqualTo(RemoteConstantCacheKey(url))
+        assertThat(bitmap.constantValueOrNull).isNull()
+    }
+
+    @Test
+    fun remoteBitmap_widthTransform_reconstruction() {
+        val bitmap = Bitmap.createBitmap(10, 10, Bitmap.Config.ARGB_8888).asImageBitmap()
+        val remoteBitmap = RemoteImageBitmap(bitmap)
+        val width = remoteBitmap.width
+        val scale = RemoteFloat.createNamedRemoteFloat("scale", 2f)
+        val expr = width * scale
+
+        val replaced = expr.transform { if (it == scale) 3f.rf else null }
+        assertThat(replaced).isNotNull()
     }
 }

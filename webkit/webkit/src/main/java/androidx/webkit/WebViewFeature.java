@@ -143,6 +143,8 @@ public class WebViewFeature {
             NAVIGATION_LISTENER,
             WEBVIEW_NAVIGATE_EXPERIMENTAL_V1,
             DOWNLOAD_FAVICONS_ENABLED,
+            HTTP_CACHE_MANAGER,
+            CROSS_ORIGIN_ISOLATED_ALLOWLIST,
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
@@ -560,7 +562,7 @@ public class WebViewFeature {
     /**
      * Feature for {@link #isStartupFeatureSupported(Context, String)}.
      * This feature covers
-     * {@link ProcessGlobalConfig#setPartitionedCookiesEnabled(Context, Boolean)}
+     * {@link ProcessGlobalConfig#setPartitionedCookiesEnabled(Context, boolean)}
      */
     public static final String STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES =
             "STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES";
@@ -619,7 +621,11 @@ public class WebViewFeature {
      * This feature covers
      * {@link WebSettingsCompat#setAttributionRegistrationBehavior(WebSettings, int)}
      * {@link WebSettingsCompat#getAttributionRegistrationBehavior(WebSettings)}
+     *
+     * @deprecated In WebView version 152 and later, Attribution Reporting is no longer supported
+     * by WebView.
      */
+    @Deprecated
     public static final String ATTRIBUTION_REGISTRATION_BEHAVIOR =
             "ATTRIBUTION_REGISTRATION_BEHAVIOR";
 
@@ -668,7 +674,7 @@ public class WebViewFeature {
     /**
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers
-     * {@link WebSettingsCompat#setBackForwardCacheSettings(WebSettings, BackForwardCacheSettings)}
+     * {@link WebSettingsCompat#setBackForwardCacheEnabled(WebSettings, boolean)}
      * {@link WebSettingsCompat#getBackForwardCacheSettings(WebSettings)}
      */
     public static final String BACK_FORWARD_CACHE_SETTINGS = "BACK_FORWARD_CACHE_SETTINGS";
@@ -927,6 +933,13 @@ public class WebViewFeature {
     public static final String PRECONNECT = "PRECONNECT";
 
     /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers {@link Profile#enqueuePreconnect(String)}
+     */
+    @Profile.ExperimentalPreconnect
+    public static final String ENQUEUE_PRECONNECT = "ENQUEUE_PRECONNECT";
+
+    /**
      * Feature for {@link Profile#addQuicHints(Set)}.
      */
     @Profile.ExperimentalAddQuicHints
@@ -965,12 +978,44 @@ public class WebViewFeature {
             "WEBVIEW_NAVIGATE_EXPERIMENTAL_V1";
 
     /**
+     * When this feature is enabled,
+     * {@link WebViewCompat#navigate(WebView, String, NavigationParameters)}
+     * will drain the prefetch queue before navigating.
+     * <p>
+     * This will become the default behavior of
+     * {@link WebViewCompat#navigate(WebView, String, NavigationParameters)}.
+     */
+    @WebViewCompat.ExperimentalNavigate
+    public static final String WEBVIEW_NAVIGATE_DRAIN_PREFETCH =
+            "WEBVIEW_NAVIGATE_DRAIN_PREFETCH";
+
+    /**
      * Feature for
      * {@link WebSettingsCompat#setDownloadFaviconsEnabled(WebSettings, boolean)},
      * {@link WebSettingsCompat#getDownloadFaviconsEnabled(WebSettings)}
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final String DOWNLOAD_FAVICONS_ENABLED = "DOWNLOAD_FAVICONS_ENABLED";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers
+     * {@link Profile#getHttpCache()}
+     * {@link HttpCache#getDefaultQuotaBytes()}
+     * {@link HttpCache#isUsingDefaultQuota()}
+     * {@link HttpCache#useDefaultQuota()}
+     * {@link HttpCache#getQuotaBytes()}
+     * {@link HttpCache#setQuotaBytes(long)}
+     */
+    public static final String HTTP_CACHE_MANAGER = "HTTP_CACHE_MANAGER";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers
+     * {@link Profile#setCrossOriginIsolatedAllowlist(Set)}
+     * {@link Profile#getCrossOriginIsolatedAllowlist()}
+     */
+    public static final String CROSS_ORIGIN_ISOLATED_ALLOWLIST =
+            "CROSS_ORIGIN_ISOLATED_ALLOWLIST";
 
     /**
      * Return whether a feature is supported at run-time. This will check whether a feature is

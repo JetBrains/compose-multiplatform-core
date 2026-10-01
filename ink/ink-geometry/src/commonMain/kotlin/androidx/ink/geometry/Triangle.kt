@@ -18,7 +18,6 @@ package androidx.ink.geometry
 
 import androidx.annotation.FloatRange
 import androidx.annotation.IntRange
-import androidx.annotation.RestrictTo
 
 /**
  * A triangle defined by its three corners [p0], [p1] and [p2]. The order of these points matter - a
@@ -112,7 +111,7 @@ public abstract class Triangle internal constructor() {
      * Returns an immutable copy of this object. This will return itself if called on an immutable
      * instance.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public abstract fun toImmutable(): ImmutableTriangle
+    public abstract fun toImmutable(): ImmutableTriangle
 
     public fun isAlmostEqual(other: Triangle, @FloatRange(from = 0.0) tolerance: Float): Boolean =
         this === other ||
@@ -153,19 +152,19 @@ public abstract class Triangle internal constructor() {
                 Vec.areEquivalent(first.p2, second.p2)
 
         /** Returns a hash code for [triangle] using its [Triangle] properties. */
-        internal fun hash(triangle: Triangle): Int =
-            triangle.run {
-                31 * p0.x.hashCode() +
-                    p0.y.hashCode() +
-                    31 * p1.x.hashCode() +
-                    p1.y.hashCode() +
-                    31 * p2.x.hashCode() +
-                    p2.y.hashCode()
-            }
+        internal fun hash(triangle: Triangle): Int = triangle.run {
+            31 * p0.x.hashCode() +
+                p0.y.hashCode() +
+                31 * p1.x.hashCode() +
+                p1.y.hashCode() +
+                31 * p2.x.hashCode() +
+                p2.y.hashCode()
+        }
 
         /** Returns a string representation for [triangle] using its [Triangle] properties. */
-        internal fun string(triangle: Triangle): String =
-            triangle.run { "Triangle(p0=$p0, p1=$p1, p2=$p2)" }
+        internal fun string(triangle: Triangle): String = triangle.run {
+            "Triangle(p0=$p0, p1=$p1, p2=$p2)"
+        }
     }
 }
 

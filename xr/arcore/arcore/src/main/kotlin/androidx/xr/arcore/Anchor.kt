@@ -24,14 +24,14 @@ import androidx.xr.arcore.runtime.AnchorNotAuthorizedException as RtAnchorNotAut
 import androidx.xr.arcore.runtime.AnchorNotTrackingException as RtAnchorNotTrackingException
 import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException as RtAnchorResourcesExhaustedException
 import androidx.xr.arcore.runtime.AnchorRuntimeFailureException as RtAnchorRuntimeFailureException
-import androidx.xr.arcore.runtime.ExportableAnchor
 import androidx.xr.runtime.AnchorPersistenceMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 import java.util.UUID
-import kotlin.coroutines.Continuation
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -48,20 +48,22 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 @SuppressWarnings("HiddenSuperclass")
 public class Anchor
 internal constructor(
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val runtimeAnchor: RuntimeAnchor,
+    internal val runtimeAnchor: RuntimeAnchor,
     private val xrResourceManager: XrResourcesManager,
 ) : Trackable<Anchor.State>, Updatable() {
     public companion object {
         /**
          * Creates and attaches an [Anchor] at the given [pose].
          *
+         * Returns [AnchorCreateResourcesExhausted] if the runtime has run out of resources while
+         * attempting to create the anchor.
+         *
+         * Returns [AnchorCreateTrackingUnavailable] if tracking was unavailable while attempting to
+         * create the anchor.
+         *
          * @param session the [Session] that is used to create the anchor
          * @param pose the [Pose] that describes the location and orientation of the anchor
          * @return a subtype of [AnchorResult] based on the result of the operation
-         * @throws [AnchorCreateResourcesExhausted] if the runtime has run out of resources while
-         *   attempting to create the anchor
-         * @throws [AnchorCreateTrackingUnavailable] if tracking was unavailable while attempting to
-         *   create the anchor
          * @throws [AnchorRuntimeFailureException] if an unspecified error occurred in the runtime
          *   while attempting to create the anchor
          * @sample androidx.xr.arcore.samples.callCreateAnchor
@@ -84,12 +86,12 @@ internal constructor(
         }
 
         /**
-         * Retrieves all the [UUID] instances from [Anchor] objects that have been persisted by
-         * [persist] that are still present in the local storage.
+         * Retrieves persisted [Anchor] UUIDs in local storage.
          *
          * @param session the [Session] to retrieve the persisted anchor UUIDs from
+         * @return a list of [UUID]s representing the persisted anchors
          * @throws [IllegalStateException] if [Session.config] is set to
-         *   [androidx.xr.runtime.AnchorPersistenceMode.DISABLED].
+         *   [androidx.xr.runtime.AnchorPersistenceMode.DISABLED]
          */
         @JvmStatic
         public fun getPersistedAnchorUuids(session: Session): List<UUID> {
@@ -106,14 +108,15 @@ internal constructor(
          * was previously persisted. The [uuid] should be the return value of a previous call to
          * [persist].
          *
+         * Returns [AnchorCreateResourcesExhausted] if the runtime has run out of resources while
+         * attempting to create the anchor.
+         *
          * @param session the [Session] to load the anchor from
          * @param uuid the [UUID] of the anchor to load
          * @throws [IllegalStateException] if [Session.config] is set to
          *   [AnchorPersistenceMode.DISABLED]
          * @throws [AnchorInvalidUuidException] if [uuid] is not a [UUID] currently being tracked by
          *   the [Session]
-         * @throws [AnchorCreateResourcesExhausted] if the runtime has run out of resources while
-         *   attempting to create the anchor
          * @throws [AnchorNotAuthorizedException] if an authorization error occurred while
          *   attempting to create the anchor
          * @throws [AnchorRuntimeFailureException] if an unspecified error occurred in the runtime
@@ -201,6 +204,13 @@ internal constructor(
             result = 31 * result + trackingState.hashCode()
             return result
         }
+
+        /**
+         * Returns a string representation of [Anchor.State] for debugging.
+         *
+         * Note: Not intended for production use.
+         */
+        override fun toString(): String = "State(trackingState=$trackingState, pose=$pose)"
     }
 
     private val _state: MutableStateFlow<State> =
@@ -210,11 +220,10 @@ internal constructor(
 
     override val state: StateFlow<State> = _state.asStateFlow()
 
-    private var persistContinuation: Continuation<UUID>? = null
+    private val persistContinuationRef = AtomicReference<CancellableContinuation<UUID>?>(null)
 
     /**
-     * Stores this anchor in the application's local storage so that it can be shared across
-     * sessions.
+     * Stores this [Anchor] in local storage for cross-session use.
      *
      * @return the [UUID] that uniquely identifies this anchor
      * @throws [IllegalStateException] if [Session.config] is set to
@@ -228,7 +237,17 @@ internal constructor(
         }
         runtimeAnchor.persist()
         // Suspend the coroutine until the anchor is persisted.
-        return suspendCancellableCoroutine { persistContinuation = it }
+        return suspendCancellableCoroutine { continuation ->
+            if (persistContinuationRef.compareAndSet(null, continuation)) {
+                continuation.invokeOnCancellation {
+                    persistContinuationRef.compareAndSet(continuation, null)
+                }
+            } else {
+                continuation.resumeWithException(
+                    IllegalStateException("Persist already in progress")
+                )
+            }
+        }
     }
 
     /** Detaches this anchor. This anchor will no longer be updated or tracked. */
@@ -245,35 +264,36 @@ internal constructor(
 
     override fun hashCode(): Int = runtimeAnchor.hashCode()
 
+    /**
+     * Returns a string representation of [Anchor] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String = "Anchor(state=${state.value})"
+
     override suspend fun update() {
         _state.emit(State(runtimeAnchor.trackingState.toTrackingState(), runtimeAnchor.pose))
-        if (persistContinuation == null) {
-            return
-        }
+        val continuation = persistContinuationRef.get() ?: return
         when (runtimeAnchor.persistenceState) {
             RuntimeAnchor.PersistenceState.PENDING -> {
                 // Do nothing while we wait for the anchor to be persisted.
             }
             RuntimeAnchor.PersistenceState.PERSISTED -> {
-                persistContinuation?.resume(runtimeAnchor.uuid!!)
-                persistContinuation = null
+                if (persistContinuationRef.compareAndSet(continuation, null)) {
+                    continuation.resume(checkNotNull(runtimeAnchor.uuid))
+                }
             }
             RuntimeAnchor.PersistenceState.NOT_PERSISTED -> {
-                persistContinuation?.resumeWithException(
-                    RuntimeException("Anchor was not persisted.")
-                )
-                persistContinuation = null
+                if (persistContinuationRef.compareAndSet(continuation, null)) {
+                    continuation.resumeWithException(RuntimeException("Anchor was not persisted."))
+                }
             }
         }
     }
 
     /**
-     * If this anchor instance derives from [ExportableAnchor], an [IBinder] reference that
-     * represents the anchor.
+     * An [IBinder] reference that represents the anchor, or null if the anchor is not exportable.
      */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public val anchorToken: IBinder?
-        get() {
-            return if (runtimeAnchor is ExportableAnchor) runtimeAnchor.anchorToken else null
-        }
+    public val anchorToken: IBinder? = runtimeAnchor.anchorToken
 }

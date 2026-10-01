@@ -17,12 +17,23 @@
 package androidx.compose.ui.focus
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.interactionBarrier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,7 +41,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class FocusChangedTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun active_requestFocus() {
@@ -276,6 +287,476 @@ class FocusChangedTest {
             assertThat(focusState2.hasFocus).isTrue()
             assertThat(focusState3.isFocused).isTrue()
             assertThat(focusState4.isFocused).isTrue()
+        }
+    }
+
+    @Test
+    fun focusSearch_barrierBlocksFocusToBackground() {
+        // Arrange.
+        val (button1, button2, button3) = FocusRequester.createRefs()
+        var button2Focused = false
+        var button3Focused = false
+        lateinit var focusManager: FocusManager
+
+        rule.setFocusableContent {
+            focusManager = LocalFocusManager.current
+            Box(Modifier.size(200.dp)) {
+                // Button 1 (starts focused)
+                Box(Modifier.focusRequester(button1).focusTarget())
+
+                // Button 2 (behind barrier, should be blocked)
+                Box(
+                    Modifier.size(100.dp)
+                        .focusRequester(button2)
+                        .onFocusChanged { button2Focused = it.isFocused }
+                        .focusTarget()
+                )
+
+                // Barrier (covers Button 2)
+                Box(Modifier.size(100.dp).interactionBarrier())
+
+                // Button 3 (outside barrier, should be focusable)
+                Box(
+                    Modifier.offset(150.dp, 0.dp)
+                        .focusRequester(button3)
+                        .onFocusChanged { button3Focused = it.isFocused }
+                        .focusTarget()
+                )
+            }
+        }
+
+        rule.runOnIdle { button1.requestFocus() }
+
+        // Act: Move focus next
+        val moved = rule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) }
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(moved).isTrue()
+            assertThat(button2Focused).isFalse() // Skipped!
+            assertThat(button3Focused).isTrue() // Focused!
+        }
+    }
+
+    @Test
+    fun focusSearch_barrierDoesNotBlockFocusToChildren() {
+        // Arrange.
+        val (button1, button2) = FocusRequester.createRefs()
+        var button2Focused = false
+        lateinit var focusManager: FocusManager
+
+        rule.setFocusableContent {
+            focusManager = LocalFocusManager.current
+            Box(Modifier.size(200.dp)) {
+                // Button 1 (starts focused)
+                Box(Modifier.focusRequester(button1).focusTarget())
+
+                // Barrier
+                Box(Modifier.size(200.dp).interactionBarrier()) {
+                    // Button 2 (inside barrier, should NOT be blocked)
+                    Box(
+                        Modifier.size(100.dp)
+                            .focusRequester(button2)
+                            .onFocusChanged { button2Focused = it.isFocused }
+                            .focusTarget()
+                    )
+                }
+            }
+        }
+
+        rule.runOnIdle { button1.requestFocus() }
+
+        // Act: Move focus next
+        val moved = rule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) }
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(moved).isTrue()
+            assertThat(button2Focused).isTrue() // Focused!
+        }
+    }
+
+    @Test
+    fun dispatchKeyEvent_barrierBlocksKeyEventsToOccludedFocusedNode() {
+        // Arrange.
+        val button = FocusRequester()
+        var keyEventReceived = false
+        var showBarrier by mutableStateOf(false)
+        lateinit var focusOwner: FocusOwner
+
+        rule.setFocusableContent {
+            focusOwner = LocalFocusManager.current as FocusOwner
+            Box(Modifier.size(200.dp)) {
+                // Button that starts focused
+                Box(
+                    Modifier.size(100.dp)
+                        .focusRequester(button)
+                        .onKeyEvent {
+                            keyEventReceived = true
+                            true
+                        }
+                        .focusTarget()
+                )
+
+                // Barrier placed on top of the button
+                if (showBarrier) {
+                    Box(Modifier.size(100.dp).interactionBarrier())
+                }
+            }
+        }
+
+        rule.runOnIdle { button.requestFocus() }
+
+        // Act 1: Send key event before barrier - should succeed
+        rule.runOnIdle {
+            val event =
+                KeyEvent(
+                    android.view.KeyEvent(
+                        android.view.KeyEvent.ACTION_DOWN,
+                        android.view.KeyEvent.KEYCODE_A,
+                    )
+                )
+            val handled = focusOwner.dispatchKeyEvent(event)
+            assertThat(handled).isTrue()
+            assertThat(keyEventReceived).isTrue()
+        }
+
+        // Reset and show barrier on top of the focused button
+        keyEventReceived = false
+        rule.runOnIdle { showBarrier = true }
+
+        // Act 2: Send key event after barrier covers the button - should be blocked!
+        rule.runOnIdle {
+            val event =
+                KeyEvent(
+                    android.view.KeyEvent(
+                        android.view.KeyEvent.ACTION_DOWN,
+                        android.view.KeyEvent.KEYCODE_A,
+                    )
+                )
+            val handled = focusOwner.dispatchKeyEvent(event)
+            assertThat(handled).isFalse()
+            assertThat(keyEventReceived).isFalse()
+        }
+    }
+
+    @Test
+    fun activeFocusTarget_clearsFocusWhenBarrierPlacedOnTop() {
+        // Arrange.
+        val button = FocusRequester()
+        var buttonFocused = false
+        var showBarrier by mutableStateOf(false)
+
+        rule.setFocusableContent {
+            Box(Modifier.size(200.dp)) {
+                // Button that starts focused
+                Box(
+                    Modifier.size(100.dp)
+                        .focusRequester(button)
+                        .onFocusChanged { buttonFocused = it.isFocused }
+                        .focusTarget()
+                )
+
+                // Barrier placed on top of the button
+                if (showBarrier) {
+                    Box(Modifier.size(100.dp).interactionBarrier())
+                }
+            }
+        }
+
+        // Initially focus the button
+        rule.runOnIdle {
+            button.requestFocus()
+            assertThat(buttonFocused).isTrue()
+        }
+
+        // Act: Show barrier on top of the focused button
+        rule.runOnIdle { showBarrier = true }
+
+        // Assert: Active target becomes occluded and its focus is immediately cleared!
+        rule.runOnIdle { assertThat(buttonFocused).isFalse() }
+    }
+
+    @Test
+    fun requestFocus_rejectedWhenTargetIsOccludedByBarrier() {
+        // Arrange.
+        val button = FocusRequester()
+        var buttonFocused = false
+
+        rule.setFocusableContent {
+            Box(Modifier.size(200.dp)) {
+                // Button behind barrier
+                Box(
+                    Modifier.size(100.dp)
+                        .focusRequester(button)
+                        .onFocusChanged { buttonFocused = it.isFocused }
+                        .focusTarget()
+                )
+
+                // Barrier on top of button
+                Box(Modifier.size(100.dp).interactionBarrier())
+            }
+        }
+
+        // Act: Try requesting focus on occluded button
+        rule.runOnIdle { button.requestFocus() }
+
+        // Assert: Focus is rejected
+        rule.runOnIdle { assertThat(buttonFocused).isFalse() }
+    }
+
+    @Test
+    fun activeFocusTarget_retainsFocusWhenBarrierDoesNotCoverIt() {
+        // Arrange.
+        val button = FocusRequester()
+        var buttonFocused = false
+        var showBarrier by mutableStateOf(false)
+
+        rule.setFocusableContent {
+            Box(Modifier.size(300.dp)) {
+                // Button at (0, 0)
+                Box(
+                    Modifier.size(100.dp)
+                        .focusRequester(button)
+                        .onFocusChanged { buttonFocused = it.isFocused }
+                        .focusTarget()
+                )
+
+                // Barrier at (150, 0), does not occlude the button
+                if (showBarrier) {
+                    Box(Modifier.offset(150.dp, 0.dp).size(100.dp).interactionBarrier())
+                }
+            }
+        }
+
+        // Initially focus the button
+        rule.runOnIdle {
+            button.requestFocus()
+            assertThat(buttonFocused).isTrue()
+        }
+
+        // Act: Show barrier elsewhere
+        rule.runOnIdle { showBarrier = true }
+
+        // Assert: Button retains focus because it is not occluded
+        rule.runOnIdle { assertThat(buttonFocused).isTrue() }
+    }
+
+    @Test
+    fun activeFocusTarget_insideBarrierSubtree_retainsFocus() {
+        // Arrange.
+        val button = FocusRequester()
+        var buttonFocused = false
+
+        rule.setFocusableContent {
+            Box(Modifier.size(200.dp)) {
+                // Barrier with child inside
+                Box(Modifier.size(200.dp).interactionBarrier()) {
+                    Box(
+                        Modifier.size(100.dp)
+                            .focusRequester(button)
+                            .onFocusChanged { buttonFocused = it.isFocused }
+                            .focusTarget()
+                    )
+                }
+            }
+        }
+
+        // Act: Focus button inside barrier
+        rule.runOnIdle { button.requestFocus() }
+
+        // Assert: Button inside barrier gets and retains focus
+        rule.runOnIdle { assertThat(buttonFocused).isTrue() }
+    }
+
+    @Test
+    fun focusSearch_barrierClippedByParent_doesNotBlockOutsideVisibleBounds() {
+        // Arrange.
+        val (button1, coveredButton, outsideButton) = FocusRequester.createRefs()
+        var coveredButtonFocused = false
+        var outsideButtonFocused = false
+        lateinit var focusManager: FocusManager
+
+        rule.setFocusableContent {
+            focusManager = LocalFocusManager.current
+            Box(Modifier.size(300.dp)) {
+                Box(Modifier.offset(0.dp, 200.dp).size(20.dp).focusRequester(button1).focusTarget())
+
+                // Inside the 50.dp clipped barrier bounds -> occluded.
+                Box(
+                    Modifier.offset(10.dp, 10.dp)
+                        .size(20.dp)
+                        .focusRequester(coveredButton)
+                        .onFocusChanged { coveredButtonFocused = it.isFocused }
+                        .focusTarget()
+                )
+
+                // Outside the 50.dp clipped barrier bounds, inside the 300.dp unclipped bounds.
+                Box(
+                    Modifier.offset(70.dp, 10.dp)
+                        .size(50.dp)
+                        .focusRequester(outsideButton)
+                        .onFocusChanged { outsideButtonFocused = it.isFocused }
+                        .focusTarget()
+                )
+
+                Box(Modifier.size(50.dp).clipToBounds()) {
+                    Box(Modifier.requiredSize(300.dp).interactionBarrier())
+                }
+            }
+        }
+
+        rule.runOnIdle { button1.requestFocus() }
+
+        // Act.
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) }
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(coveredButtonFocused).isFalse()
+            assertThat(outsideButtonFocused).isTrue()
+        }
+    }
+
+    @Test
+    fun focusSearch_barrierBlocks_whenMultipleBarriersPresent() {
+        // Arrange.
+        val (button1, coveredButton, afterButton) = FocusRequester.createRefs()
+        var coveredButtonFocused = false
+        var afterButtonFocused = false
+        lateinit var focusManager: FocusManager
+
+        rule.setFocusableContent {
+            focusManager = LocalFocusManager.current
+            Box(Modifier.size(300.dp)) {
+                Box(Modifier.offset(0.dp, 200.dp).size(20.dp).focusRequester(button1).focusTarget())
+
+                // Covered by the second barrier -> occluded.
+                Box(
+                    Modifier.offset(120.dp, 10.dp)
+                        .size(40.dp)
+                        .focusRequester(coveredButton)
+                        .onFocusChanged { coveredButtonFocused = it.isFocused }
+                        .focusTarget()
+                )
+
+                // Outside the second barrier, inside the first barrier's unclipped bounds.
+                Box(
+                    Modifier.offset(200.dp, 10.dp)
+                        .size(40.dp)
+                        .focusRequester(afterButton)
+                        .onFocusChanged { afterButtonFocused = it.isFocused }
+                        .focusTarget()
+                )
+
+                // First barrier: clipped to 0.dp (empty bounds), skipped during occlusion check.
+                Box(Modifier.offset(165.dp, 40.dp).size(0.dp).clipToBounds()) {
+                    Box(Modifier.requiredSize(230.dp, 80.dp).interactionBarrier())
+                }
+
+                // Second barrier: active 60.dp barrier covering coveredButton.
+                Box(Modifier.offset(110.dp, 0.dp).size(60.dp).interactionBarrier())
+            }
+        }
+
+        rule.runOnIdle { button1.requestFocus() }
+
+        // Act.
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) }
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(coveredButtonFocused).isFalse()
+            assertThat(afterButtonFocused).isTrue()
+        }
+    }
+
+    @Test
+    fun focusSearch_barrierDismissed_focusTargetBecomesEligibleAgain() {
+        // Arrange.
+        val (button1, button2) = FocusRequester.createRefs()
+        var button2Focused = false
+        var showBarrier by mutableStateOf(true)
+        lateinit var focusManager: FocusManager
+
+        rule.setFocusableContent {
+            focusManager = LocalFocusManager.current
+            Box(Modifier.size(300.dp)) {
+                Box(Modifier.focusRequester(button1).focusTarget())
+
+                Box(
+                    Modifier.offset(200.dp, 0.dp)
+                        .size(50.dp)
+                        .focusRequester(button2)
+                        .onFocusChanged { button2Focused = it.isFocused }
+                        .focusTarget()
+                )
+
+                if (showBarrier) {
+                    Box(Modifier.offset(200.dp, 0.dp).size(50.dp).interactionBarrier())
+                }
+            }
+        }
+
+        rule.runOnIdle { button1.requestFocus() }
+
+        // While barrier is showing, moving focus skips button2.
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) }
+        rule.runOnIdle { assertThat(button2Focused).isFalse() }
+
+        // Act: Dismiss the barrier.
+        rule.runOnIdle { showBarrier = false }
+
+        // Return focus to button1 and traverse again.
+        rule.runOnIdle { button1.requestFocus() }
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) }
+
+        // Assert: button2 is no longer occluded and receives focus.
+        rule.runOnIdle { assertThat(button2Focused).isTrue() }
+    }
+
+    @Test
+    fun activeFocusTarget_barrierDismissed_targetCanBeRefocused() {
+        // Arrange.
+        val button = FocusRequester()
+        var buttonFocused = false
+        var showBarrier by mutableStateOf(false)
+
+        rule.setFocusableContent {
+            Box(Modifier.size(200.dp)) {
+                Box(
+                    Modifier.size(100.dp)
+                        .focusRequester(button)
+                        .onFocusChanged { buttonFocused = it.isFocused }
+                        .focusTarget()
+                )
+
+                if (showBarrier) {
+                    Box(Modifier.size(100.dp).interactionBarrier())
+                }
+            }
+        }
+
+        // Initially focus the button.
+        rule.runOnIdle {
+            button.requestFocus()
+            assertThat(buttonFocused).isTrue()
+        }
+
+        // Show barrier: active focus on occluded target is cleared.
+        rule.runOnIdle { showBarrier = true }
+        rule.runOnIdle { assertThat(buttonFocused).isFalse() }
+
+        // Dismiss barrier.
+        rule.runOnIdle { showBarrier = false }
+
+        // Focus does not automatically return without an explicit request or navigation.
+        rule.runOnIdle { assertThat(buttonFocused).isFalse() }
+
+        // Act & Assert: Target can now successfully reacquire focus once barrier is gone.
+        rule.runOnIdle {
+            assertThat(button.requestFocus()).isTrue()
+            assertThat(buttonFocused).isTrue()
         }
     }
 }

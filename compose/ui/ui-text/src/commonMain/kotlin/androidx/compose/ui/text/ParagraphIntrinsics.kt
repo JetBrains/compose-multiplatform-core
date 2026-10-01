@@ -18,15 +18,16 @@ package androidx.compose.ui.text
 
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.Density
 
 /** Calculates and presents the intrinsic width and height of text. */
-interface ParagraphIntrinsics {
+public interface ParagraphIntrinsics {
     /** The width for text if all soft wrap opportunities were taken. */
-    val minIntrinsicWidth: Float
+    public val minIntrinsicWidth: Float
 
     /** Returns the smallest width beyond which increasing the width never decreases the height. */
-    val maxIntrinsicWidth: Float
+    public val maxIntrinsicWidth: Float
 
     /**
      * Any [Paragraph] rendered using this [ParagraphIntrinsics] will be measured and drawn using
@@ -45,7 +46,7 @@ interface ParagraphIntrinsics {
      * impact of using this object after [hasStaleResolvedFonts] becomes true is stale resolutions
      * of async fonts for measurement and display.
      */
-    val hasStaleResolvedFonts: Boolean
+    public val hasStaleResolvedFonts: Boolean
         get() = false
 }
 
@@ -62,11 +63,11 @@ interface ParagraphIntrinsics {
     "Font.ResourceLoader is deprecated, instead use FontFamily.Resolver",
     ReplaceWith(
         "ParagraphIntrinsics(text, style, spanStyles, density, " +
-            "createFontFamilyResolver(resourceLoader), placeholders, true)",
+            "createFontFamilyResolver(resourceLoader), placeholders, true, Locale.current)",
         "androidx.compose.ui.text.font.createFontFamilyResolver",
     ),
 )
-expect fun ParagraphIntrinsics(
+public expect fun ParagraphIntrinsics(
     text: String,
     style: TextStyle,
     spanStyles: List<AnnotatedString.Range<SpanStyle>> = listOf(),
@@ -75,13 +76,14 @@ expect fun ParagraphIntrinsics(
     resourceLoader: Font.ResourceLoader,
 ): ParagraphIntrinsics
 
+@Suppress("DEPRECATION")
 @Deprecated(
     "Use an overload that takes `annotations` instead",
     ReplaceWith(
-        "ParagraphIntrinsics(text, style, spanStyles, density, fontFamilyResolver, placeholders, true)"
+        "ParagraphIntrinsics(text, style, spanStyles, density, fontFamilyResolver, placeholders, softWrap, Locale.current)"
     ),
 )
-expect fun ParagraphIntrinsics(
+public expect fun ParagraphIntrinsics(
     text: String,
     style: TextStyle,
     spanStyles: List<AnnotatedString.Range<SpanStyle>> = listOf(),
@@ -101,10 +103,10 @@ expect fun ParagraphIntrinsics(
 @Deprecated(
     "Use an override with `softWrap`",
     ReplaceWith(
-        "ParagraphIntrinsics(text, style, annotations, density, fontFamilyResolver, listOf(), true)"
+        "ParagraphIntrinsics(text, style, annotations, density, fontFamilyResolver, placeholders, true, LocaleList.current)"
     ),
 )
-expect fun ParagraphIntrinsics(
+public expect fun ParagraphIntrinsics(
     text: String,
     style: TextStyle,
     annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
@@ -121,12 +123,18 @@ expect fun ParagraphIntrinsics(
  * @param annotations The annotations to apply to the text.
  * @param density The [Density] of the display environment.
  * @param fontFamilyResolver The [FontFamily.Resolver] to resolve fonts.
+ * @param placeholders The list of [Placeholder] to be used in the text.
  * @param softWrap Whether the text should break at soft line breaks. When the intention is to lay
  *   out text as a single line, setting [softWrap] to false enables optimizations that avoid certain
  *   expensive calculations.
- * @param placeholders The list of [Placeholder] to be used in the text.
  */
-expect fun ParagraphIntrinsics(
+@Deprecated(
+    "Use an override with `defaultLocaleList`",
+    ReplaceWith(
+        "ParagraphIntrinsics(text, style, annotations, density, fontFamilyResolver, placeholders, softWrap, LocaleList.current)"
+    ),
+)
+public expect fun ParagraphIntrinsics(
     text: String,
     style: TextStyle,
     annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
@@ -134,4 +142,29 @@ expect fun ParagraphIntrinsics(
     fontFamilyResolver: FontFamily.Resolver,
     placeholders: List<AnnotatedString.Range<Placeholder>>,
     softWrap: Boolean,
+): ParagraphIntrinsics
+
+/**
+ * Factory method to create a [ParagraphIntrinsics].
+ *
+ * @param text The text to be measured.
+ * @param style The [TextStyle] to apply to the text.
+ * @param annotations The annotations to apply to the text.
+ * @param density The [Density] of the display environment.
+ * @param fontFamilyResolver The [FontFamily.Resolver] to resolve fonts.
+ * @param placeholders The list of [Placeholder] to be used in the text.
+ * @param softWrap Whether the text should break at soft line breaks. When the intention is to lay
+ *   out text as a single line, setting [softWrap] to false enables optimizations that avoid certain
+ *   expensive calculations.
+ * @param defaultLocaleList The default [LocaleList] to use to measure the text.
+ */
+public expect fun ParagraphIntrinsics(
+    text: String,
+    style: TextStyle,
+    annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
+    density: Density,
+    fontFamilyResolver: FontFamily.Resolver,
+    placeholders: List<AnnotatedString.Range<Placeholder>>,
+    softWrap: Boolean,
+    defaultLocaleList: LocaleList,
 ): ParagraphIntrinsics

@@ -27,6 +27,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DepthEstimationMode
 import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.ExperimentalSpatialAnnotationsApi
 import androidx.xr.runtime.EyeTrackingMode
 import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.GeospatialMode
@@ -45,6 +46,7 @@ import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.SessionCreateTimedOut
 import androidx.xr.runtime.SessionCreateUnknownError
 import androidx.xr.runtime.SessionCreateUnsupportedDevice
+import androidx.xr.runtime.SpatialAnnotationTrackingMode
 import androidx.xr.runtime.manifest.EYE_TRACKING_COARSE
 import androidx.xr.runtime.manifest.EYE_TRACKING_FINE
 import androidx.xr.runtime.manifest.FACE_TRACKING
@@ -54,10 +56,7 @@ import androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_COARSE
 import androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_FINE
 import kotlinx.coroutines.launch
 
-/**
- * Observer class to manage the lifecycle of the JXR Runtime Session based on the lifecycle owner
- * (activity).
- */
+/** Manages JXR Runtime Session lifecycle based on an Activity. */
 class SessionLifecycleHelper(
     val activity: ComponentActivity,
     val config: Config = Config.Builder().build(),
@@ -95,8 +94,13 @@ class SessionLifecycleHelper(
             }
     }
 
+    @OptIn(ExperimentalSpatialAnnotationsApi::class)
     private fun getRequiredPermissions(config: Config): List<String> {
         val permissions = mutableListOf<String>()
+        if (config.getSpatialAnnotationTracking() != SpatialAnnotationTrackingMode.DISABLED) {
+            permissions.add(android.Manifest.permission.CAMERA)
+            permissions.add(SCENE_UNDERSTANDING_FINE)
+        }
         if (config.planeTracking != PlaneTrackingMode.DISABLED) {
             permissions.add(SCENE_UNDERSTANDING_COARSE)
         }

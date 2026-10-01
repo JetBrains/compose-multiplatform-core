@@ -22,6 +22,7 @@ import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -50,7 +51,6 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -60,7 +60,7 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class NavigationBarScreenshotTest {
 
-    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -217,7 +217,7 @@ class NavigationBarScreenshotTest {
         composeTestRule.setMaterialContent(lightColorScheme()) {
             scope = rememberCoroutineScope()
             Box(Modifier.semantics(mergeDescendants = true) {}.testTag(Tag)) {
-                NavigationBar {
+                NavigationBar(windowInsets = NoWindowInsets) {
                     NavigationBarItem(
                         selected = true,
                         onClick = {},
@@ -246,11 +246,11 @@ class NavigationBarScreenshotTest {
             @OptIn(ExperimentalMaterial3Api::class)
             CompositionLocalProvider(
                 LocalRippleThemeConfiguration provides
-                    RippleDefaults.InsetFocusRingRippleThemeConfiguration
+                    RippleDefaults.InsetFocusRingThemeConfiguration
             ) {
                 localInputModeManager = LocalInputModeManager.current
                 Box(Modifier.semantics(mergeDescendants = true) {}.testTag(Tag)) {
-                    NavigationBar {
+                    NavigationBar(windowInsets = NoWindowInsets) {
                         NavigationBarItem(
                             icon = { Icon(Icons.Filled.Favorite, null) },
                             selected = true,
@@ -337,7 +337,7 @@ private fun DefaultNavigationBar(
     setUnselectedItemsAsDisabled: Boolean = false,
 ) {
     Box(modifier.semantics(mergeDescendants = true) {}.testTag(Tag)) {
-        NavigationBar {
+        NavigationBar(windowInsets = NoWindowInsets) {
             NavigationBarItem(
                 icon = { Icon(Icons.Filled.Favorite, null) },
                 selected = true,
@@ -361,3 +361,5 @@ private fun DefaultNavigationBar(
 }
 
 private const val Tag = "NavigationBar"
+
+private val NoWindowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp)

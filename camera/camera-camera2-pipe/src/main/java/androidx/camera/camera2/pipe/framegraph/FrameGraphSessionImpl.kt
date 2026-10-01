@@ -17,17 +17,62 @@
 package androidx.camera.camera2.pipe.framegraph
 
 import androidx.camera.camera2.pipe.CameraGraph
+import androidx.camera.camera2.pipe.FrameCapture
 import androidx.camera.camera2.pipe.FrameGraph
+import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.config.FrameGraphScope
 import androidx.camera.camera2.pipe.graph.Controller3A
+import androidx.camera.camera2.pipe.internal.FrameCaptureQueue
+import androidx.camera.camera2.pipe.internal.FrameGraphResourceTrimmer
 import kotlinx.atomicfu.atomic
+
+internal val frameGraphSessionIds = atomic(0)
 
 @FrameGraphScope
 internal class FrameGraphSessionImpl(
     private val cameraGraphSession: CameraGraph.Session,
     private val frameGraphBuffers: FrameGraphBuffers,
     private val controller3A: Controller3A,
+    private val frameCaptureQueue: FrameCaptureQueue,
+    private val frameGraphResourceTrimmer: FrameGraphResourceTrimmer,
 ) : FrameGraph.Session, CameraGraph.Session by cameraGraphSession {
+
+    override var repeatingRequest: Request?
+        get() = cameraGraphSession.repeatingRequest
+        set(value) {
+            cameraGraphSession.repeatingRequest = value
+            frameGraphResourceTrimmer.onRepeatingRequestUpdated(value)
+        }
+
+    override fun startRepeating(request: Request) {
+        cameraGraphSession.startRepeating(request)
+        frameGraphResourceTrimmer.onRepeatingRequestUpdated(request)
+    }
+
+    override fun stopRepeating() {
+        cameraGraphSession.stopRepeating()
+        frameGraphResourceTrimmer.onRepeatingRequestUpdated(null)
+    }
+
+    override fun capture(request: Request): FrameCapture {
+        val frameCapture = frameCaptureQueue.enqueue(request)
+        cameraGraphSession.submit(request)
+        // Signal the resource trimmer about change in the frame capture queue, to kick off any
+        // trimming to make room for upcoming images.
+        frameGraphResourceTrimmer.invalidate()
+        return frameCapture
+    }
+
+    override fun capture(requests: List<Request>): List<FrameCapture> {
+        val frameCaptures = frameCaptureQueue.enqueue(requests)
+        cameraGraphSession.submit(requests)
+        // Signal the resource trimmer about change in the frame capture queue, to kick off any
+        // trimming to make room for upcoming images.
+        frameGraphResourceTrimmer.invalidate()
+        return frameCaptures
+    }
+
+    private val debugId = frameGraphSessionIds.incrementAndGet()
     private val state3ASnapshot = controller3A.state3ASnapshot()
     private val closed = atomic(false)
 
@@ -42,4 +87,6 @@ internal class FrameGraphSessionImpl(
             cameraGraphSession.close()
         }
     }
+
+    override fun toString(): String = "FrameGraph.Session-$debugId"
 }

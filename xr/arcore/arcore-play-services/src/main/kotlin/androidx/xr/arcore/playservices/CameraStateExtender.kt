@@ -143,7 +143,7 @@ internal class CameraStateExtender : StateExtender {
                 /* near= */ 0.1f,
                 /* far= */ 100.0f,
             )
-            var viewMatrixData = FloatArray(16)
+            val viewMatrixData = FloatArray(16)
             camera.getViewMatrix(viewMatrixData, 0)
             return CameraState(
                 coreState.timeMark,
@@ -177,10 +177,7 @@ internal class CameraStateExtender : StateExtender {
     }
 }
 
-/**
- * Provides the latest [CameraState], which contains the latest information about the device camera,
- * such as pose, projection, and timestamp for the current frame.
- */
+/** Camera state containing information about the device camera. */
 @Suppress("ExperimentalPropertyAnnotation")
 public val CoreState.cameraState: CameraState?
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

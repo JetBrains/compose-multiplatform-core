@@ -26,25 +26,29 @@ import android.util.Size
 import androidx.camera.camera2.pipe.CameraExtensionMetadata
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
-import androidx.camera.camera2.pipe.Metadata
+import androidx.camera.common.Metadata
 import java.lang.Class
 
 /** Utility class for interacting with objects that require pre-populated Metadata. */
-public open class FakeMetadata(private val metadata: Map<Metadata.Key<*>, Any?> = emptyMap()) :
-    Metadata {
+public open class FakeMetadata(metadata: Map<Metadata.Key<*>, Any?> = emptyMap()) : Metadata {
+    private val commonMetadata: Map<Metadata.Key<*>, Any?> = metadata
+
     public companion object {
-        @JvmField public val TEST_KEY: Metadata.Key<Int> = Metadata.Key.create("test.key")
+        @JvmField public val TEST_KEY: Metadata.Key<Int> = Metadata.Key<Int>("test.key")
 
         @JvmField
-        public val TEST_KEY_ABSENT: Metadata.Key<Int> = Metadata.Key.create("test.key.absent")
+        public val TEST_KEY_ABSENT: Metadata.Key<Int> = Metadata.Key<Int>("test.key.absent")
     }
 
-    override fun <T> get(key: Metadata.Key<T>): T? = metadata[key] as T?
+    override fun <T : Any> get(key: Metadata.Key<T>): T? = commonMetadata[key] as T?
 
-    override fun <T> getOrDefault(key: Metadata.Key<T>, default: T): T {
-        val value = metadata[key]
+    override fun <T : Any> getOrDefault(key: Metadata.Key<T>, default: T): T {
+        val value = commonMetadata[key]
         return if (value == null) default else value as T
     }
+
+    override val metadataKeys: Set<Metadata.Key<*>>
+        get() = commonMetadata.keys
 }
 
 public interface DeviceTemplate {
@@ -81,6 +85,17 @@ public class FakeCameraMetadata(
 
     override fun <T> getOrDefault(key: CameraCharacteristics.Key<T>, default: T): T =
         get(key) ?: default
+
+    override fun <T : Any> get(key: Metadata.Key<T>): T? {
+        return super<FakeMetadata>.get(key)
+    }
+
+    override fun <T : Any> getOrDefault(key: Metadata.Key<T>, default: T): T {
+        return super<FakeMetadata>.getOrDefault(key, default)
+    }
+
+    override val metadataKeys: Set<Metadata.Key<*>>
+        get() = super<FakeMetadata>.metadataKeys
 
     override val camera: CameraId = cameraId
     override val isRedacted: Boolean = false
@@ -180,9 +195,9 @@ public class FakeCameraExtensionMetadata(
         return estimatedCaptureLatencyRangeMillis[imageFormat]?.get(captureSize)
     }
 
-    override fun <T> get(key: CameraCharacteristics.Key<T>): T? = characteristics[key] as T?
+    override fun <T : Any> get(key: CameraCharacteristics.Key<T>): T? = characteristics[key] as T?
 
-    override fun <T> getOrDefault(key: CameraCharacteristics.Key<T>, default: T): T =
+    override fun <T : Any> getOrDefault(key: CameraCharacteristics.Key<T>, default: T): T =
         get(key) ?: default
 
     override val keys: Set<CameraCharacteristics.Key<*>>

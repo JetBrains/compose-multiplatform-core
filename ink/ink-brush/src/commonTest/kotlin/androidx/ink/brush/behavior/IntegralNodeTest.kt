@@ -16,17 +16,20 @@
 
 package androidx.ink.brush.behavior
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.testing.awaitNativePointerCleanupAfter
 import androidx.kruth.assertThat
 import kotlin.IllegalArgumentException
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
+@OptIn(InkInternalOnlyApi::class)
 class IntegralNodeTest {
 
     @Test
     fun integralNodeNativePointers_cleanedUpWhenOutOfScope() {
         awaitNativePointerCleanupAfter {
+            @Suppress("UNUSED_VARIABLE")
             val unused =
                 IntegralNode(
                     ProgressDomain.TIME_IN_SECONDS,

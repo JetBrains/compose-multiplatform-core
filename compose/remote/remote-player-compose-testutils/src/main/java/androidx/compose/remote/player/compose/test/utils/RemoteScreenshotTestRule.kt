@@ -31,7 +31,9 @@ import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.profile.Profile
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
 import androidx.compose.remote.player.compose.RemoteDocumentPlayer
+import androidx.compose.remote.player.core.platform.AndroidCustomContext
 import androidx.compose.remote.player.core.platform.BitmapLoader
+import androidx.compose.remote.player.core.platform.TypefaceResolver
 import androidx.compose.remote.player.view.RemoteComposePlayer
 import androidx.compose.remote.testing.RemoteBaseContentTestRule.Player
 import androidx.compose.remote.testing.RemoteContentTestRule
@@ -61,19 +63,16 @@ class RemoteScreenshotTestRule(
     moduleDirectory: String,
     val remoteCreationDisplayInfo: RemoteCreationDisplayInfo,
     val matcher: BitmapMatcher? = null,
-    val bitmapLoader: BitmapLoader? = null,
 ) : TestRule {
 
     constructor(
         moduleDirectory: String,
         context: Context,
         matcher: BitmapMatcher? = null,
-        bitmapLoader: BitmapLoader? = null,
     ) : this(
         moduleDirectory = moduleDirectory,
         remoteCreationDisplayInfo = createCreationDisplayInfo(context),
         matcher = matcher,
-        bitmapLoader = bitmapLoader,
     )
 
     private val remoteContentTestRule: RemoteContentTestRule = RemoteContentTestRule()
@@ -100,12 +99,17 @@ class RemoteScreenshotTestRule(
      * Use when no interaction with the UI is needed before verifying the screenshot.
      */
     fun runScreenshotTest(
+        goldenScreenshotName: GoldenScreenshotName? = null,
         remoteCreationDisplayInfo: RemoteCreationDisplayInfo? = null,
+        // creation params
         profile: Profile = RcPlatformProfiles.ANDROIDX,
         creationComposableWrapper: ComposableWrapper = ComposableWrappers.noop,
         onCoreDocumentCreated: ((CoreDocument) -> Unit)? = null,
-        goldenScreenshotName: GoldenScreenshotName? = null,
+        // play params
         update: (RemoteComposePlayer) -> Unit = {},
+        bitmapLoader: BitmapLoader? = null,
+        typefaceResolver: TypefaceResolver? = null,
+        customSupport: AndroidCustomContext? = null,
         playComposableWrapper: ComposableWrapper = ComposableWrappers.noop,
         composable: @Composable @RemoteComposable () -> Unit,
     ) {
@@ -115,6 +119,9 @@ class RemoteScreenshotTestRule(
             creationComposableWrapper = creationComposableWrapper,
             onCoreDocumentCreated = onCoreDocumentCreated,
             update = update,
+            bitmapLoader = bitmapLoader,
+            typefaceResolver = typefaceResolver,
+            customSupport = customSupport,
             playComposableWrapper = playComposableWrapper,
             composable = composable,
         )
@@ -124,15 +131,16 @@ class RemoteScreenshotTestRule(
 
     fun setContent(
         remoteCreationDisplayInfo: RemoteCreationDisplayInfo? = null,
+        // creation params
         profile: Profile = RcPlatformProfiles.ANDROIDX,
-        creationComposableWrapper: (@Composable (composable: @Composable () -> Unit) -> Unit) = {
-            it()
-        },
+        creationComposableWrapper: ComposableWrapper = ComposableWrappers.noop,
         onCoreDocumentCreated: ((CoreDocument) -> Unit)? = null,
+        // play params
         update: (RemoteComposePlayer) -> Unit = {},
-        playComposableWrapper: (@Composable (composable: @Composable () -> Unit) -> Unit) = {
-            it()
-        },
+        bitmapLoader: BitmapLoader? = null,
+        typefaceResolver: TypefaceResolver? = null,
+        customSupport: AndroidCustomContext? = null,
+        playComposableWrapper: ComposableWrapper = ComposableWrappers.noop,
         composable: @Composable @RemoteComposable () -> Unit,
     ) {
         setContentInternal(
@@ -141,6 +149,9 @@ class RemoteScreenshotTestRule(
             creationComposableWrapper = creationComposableWrapper,
             onCoreDocumentCreated = getOnCoreDocumentCreated(onCoreDocumentCreated),
             update = update,
+            bitmapLoader = bitmapLoader,
+            typefaceResolver = typefaceResolver,
+            customSupport = customSupport,
             playComposableWrapper = playComposableWrapper,
             composable = composable,
         )
@@ -152,10 +163,15 @@ class RemoteScreenshotTestRule(
 
     private fun setContentInternal(
         remoteCreationDisplayInfo: RemoteCreationDisplayInfo,
+        // creation params
         profile: Profile,
         creationComposableWrapper: ComposableWrapper,
         onCoreDocumentCreated: ((CoreDocument) -> Unit)?,
+        // play params
         update: (RemoteComposePlayer) -> Unit,
+        bitmapLoader: BitmapLoader?,
+        typefaceResolver: TypefaceResolver?,
+        customSupport: AndroidCustomContext?,
         playComposableWrapper: ComposableWrapper,
         composable: @Composable @RemoteComposable () -> Unit,
     ) {
@@ -164,7 +180,13 @@ class RemoteScreenshotTestRule(
             profile = profile,
             creationComposableWrapper = creationComposableWrapper,
             onCoreDocumentCreated = onCoreDocumentCreated,
-            player = PlayerImpl(update = update, bitmapLoader = bitmapLoader),
+            player =
+                PlayerImpl(
+                    update = update,
+                    bitmapLoader = bitmapLoader,
+                    typefaceResolver = typefaceResolver,
+                    customSupport = customSupport,
+                ),
             playComposableWrapper =
                 customPlayComposableWrapper(remoteCreationDisplayInfo, playComposableWrapper),
             composable = composable,
@@ -257,6 +279,8 @@ class RemoteScreenshotTestRule(
     private class PlayerImpl(
         private val update: (RemoteComposePlayer) -> Unit = {},
         private val bitmapLoader: BitmapLoader? = null,
+        private val typefaceResolver: TypefaceResolver? = null,
+        private val customSupport: AndroidCustomContext? = null,
     ) : Player {
         @Composable
         override fun Play(coreDocument: CoreDocument, size: Size) {
@@ -266,6 +290,8 @@ class RemoteScreenshotTestRule(
                 documentHeight = size.height.toInt(),
                 update = update,
                 bitmapLoader = bitmapLoader,
+                typefaceResolver = typefaceResolver,
+                customSupport = customSupport,
             )
         }
     }

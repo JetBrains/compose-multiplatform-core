@@ -32,6 +32,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
@@ -122,8 +123,16 @@ class SharedOutputImageTest {
     @Test
     fun unwrapAsHardwareBufferReturnsHardwareBufferFromParentClass() {
         val imageHardwareBuffer = mock<HardwareBuffer>()
+        whenever(imageHardwareBuffer.width).thenReturn(IMAGE_WIDTH)
+        whenever(imageHardwareBuffer.height).thenReturn(IMAGE_HEIGHT)
         val fakeImageWithHardwareBuffer =
-            FakeImage(IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_FORMAT, IMAGE_TIMESTAMP, imageHardwareBuffer)
+            FakeImage(
+                IMAGE_WIDTH,
+                IMAGE_HEIGHT,
+                IMAGE_FORMAT,
+                IMAGE_TIMESTAMP,
+                hardwareBuffer = imageHardwareBuffer,
+            )
         val outputImage = OutputImage.from(streamId, outputId, fakeImageWithHardwareBuffer)
         val sharedImage = SharedOutputImage.from(outputImage)
 
@@ -137,8 +146,16 @@ class SharedOutputImageTest {
     @Test
     fun getHardwareBufferReturnsHardwareBufferFromParentClass() {
         val imageHardwareBuffer = mock<HardwareBuffer>()
+        whenever(imageHardwareBuffer.width).thenReturn(IMAGE_WIDTH)
+        whenever(imageHardwareBuffer.height).thenReturn(IMAGE_HEIGHT)
         val fakeImageWithHardwareBuffer =
-            FakeImage(IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_FORMAT, IMAGE_TIMESTAMP, imageHardwareBuffer)
+            FakeImage(
+                IMAGE_WIDTH,
+                IMAGE_HEIGHT,
+                IMAGE_FORMAT,
+                IMAGE_TIMESTAMP,
+                hardwareBuffer = imageHardwareBuffer,
+            )
         val outputImage = OutputImage.from(streamId, outputId, fakeImageWithHardwareBuffer)
         val sharedImage = SharedOutputImage.from(outputImage)
 

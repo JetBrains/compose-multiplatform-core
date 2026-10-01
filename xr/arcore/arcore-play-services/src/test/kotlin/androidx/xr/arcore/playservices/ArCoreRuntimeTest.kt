@@ -17,6 +17,8 @@
 package androidx.xr.arcore.playservices
 
 import android.app.Activity
+import android.hardware.Sensor
+import android.hardware.SensorManager
 import android.util.Range
 import androidx.kruth.assertThrows
 import androidx.test.core.app.ApplicationProvider
@@ -26,7 +28,6 @@ import androidx.xr.runtime.AnchorPersistenceMode
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DepthEstimationMode
 import androidx.xr.runtime.DeviceTrackingMode
-import androidx.xr.runtime.ExperimentalInertialTrackingApi
 import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.PlaneTrackingMode
@@ -69,13 +70,9 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.Shadows.shadowOf
-import org.robolectric.shadows.ShadowSensor
+import org.robolectric.shadows.SensorBuilder
 
-@OptIn(
-    ExperimentalCoroutinesApi::class,
-    androidx.xr.runtime.PreviewSpatialApi::class,
-    ExperimentalInertialTrackingApi::class,
-)
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 class ArCoreRuntimeTest {
 
@@ -489,11 +486,10 @@ class ArCoreRuntimeTest {
     fun resume_withInertialTracking_registersSensorListener() {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         val sensorManager =
-            context.getSystemService(android.content.Context.SENSOR_SERVICE)
-                as android.hardware.SensorManager
+            context.getSystemService(android.content.Context.SENSOR_SERVICE) as SensorManager
         val shadowSensorManager = shadowOf(sensorManager)
         shadowSensorManager.addSensor(
-            ShadowSensor.newInstance(android.hardware.Sensor.TYPE_GAME_ROTATION_VECTOR)
+            SensorBuilder.newBuilder().setType(Sensor.TYPE_GAME_ROTATION_VECTOR).build()
         )
         val perceptionManager = ArCorePerceptionManager(timeSource)
         val runtime = ArCoreRuntime(context, perceptionManager, timeSource, mockArCoreApk)
@@ -501,7 +497,7 @@ class ArCoreRuntimeTest {
         runtime._session = mockSession
         whenever(mockSession.config).thenReturn(mockArConfig)
 
-        runtime.configure(Config(deviceTracking = DeviceTrackingMode.INERTIAL))
+        runtime.configure(Config(deviceTracking = createInertialDeviceTrackingMode()))
         runtime.resume()
 
         assertThat(shadowSensorManager.listeners).hasSize(1)
@@ -512,11 +508,10 @@ class ArCoreRuntimeTest {
     fun pauseAndDestroy_withInertialTracking_unregistersSensorListener() {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         val sensorManager =
-            context.getSystemService(android.content.Context.SENSOR_SERVICE)
-                as android.hardware.SensorManager
+            context.getSystemService(android.content.Context.SENSOR_SERVICE) as SensorManager
         val shadowSensorManager = shadowOf(sensorManager)
         shadowSensorManager.addSensor(
-            ShadowSensor.newInstance(android.hardware.Sensor.TYPE_GAME_ROTATION_VECTOR)
+            SensorBuilder.newBuilder().setType(Sensor.TYPE_GAME_ROTATION_VECTOR).build()
         )
         val perceptionManager = ArCorePerceptionManager(timeSource)
         val runtime = ArCoreRuntime(context, perceptionManager, timeSource, mockArCoreApk)
@@ -524,7 +519,7 @@ class ArCoreRuntimeTest {
         runtime._session = mockSession
         whenever(mockSession.config).thenReturn(mockArConfig)
 
-        runtime.configure(Config(deviceTracking = DeviceTrackingMode.INERTIAL))
+        runtime.configure(Config(deviceTracking = createInertialDeviceTrackingMode()))
         runtime.resume()
         assertThat(shadowSensorManager.listeners).hasSize(1)
 
@@ -532,5 +527,12 @@ class ArCoreRuntimeTest {
         assertThat(shadowSensorManager.listeners).isEmpty()
 
         runtime.destroy()
+    }
+
+    private fun createInertialDeviceTrackingMode(): DeviceTrackingMode {
+        val constructor =
+            DeviceTrackingMode::class.java.getDeclaredConstructor(Int::class.javaPrimitiveType!!)
+        constructor.isAccessible = true
+        return constructor.newInstance(2)
     }
 }

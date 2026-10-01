@@ -54,10 +54,10 @@ import kotlin.reflect.KClass
  * [includedDataSources] and [excludedDataSources] cannot both be set at the same time.
  */
 @ExperimentalMatchmakingApi
-class MatchmakingRequest(
-    val recordTypes: Set<KClass<out Record>> = emptySet(),
-    val includedDataSources: Set<DataOrigin> = emptySet(),
-    val excludedDataSources: Set<DataOrigin> = emptySet(),
+public class MatchmakingRequest(
+    public val recordTypes: Set<KClass<out Record>> = emptySet(),
+    public val includedDataSources: Set<DataOrigin> = emptySet(),
+    public val excludedDataSources: Set<DataOrigin> = emptySet(),
 ) {
     /*
      * Android U devices with SDK extension 23 and later use the platform's validation
@@ -68,7 +68,7 @@ class MatchmakingRequest(
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
                 isAtLeastSdkExtension23()
         ) {
-            val unused = this.platformMatchmakingRequest
+            @Suppress("UNUSED_VARIABLE") val unused = this.platformMatchmakingRequest
         } else {
             require(includedDataSources.isEmpty() || excludedDataSources.isEmpty()) {
                 "Cannot set both includeDataSources and excludeDataSources"
@@ -84,12 +84,14 @@ class MatchmakingRequest(
                     .addRecordTypes(recordTypes.map { it.toPlatformRecordClass() }.toSet())
                     .apply {
                         if (includedDataSources.isNotEmpty()) {
+                            @Suppress("UNUSED_VARIABLE")
                             val unused =
                                 setIncludedDataSources(
                                     includedDataSources.map { it.toPlatformDataOrigin() }.toSet()
                                 )
                         }
                         if (excludedDataSources.isNotEmpty()) {
+                            @Suppress("UNUSED_VARIABLE")
                             val unused =
                                 setExcludedDataSources(
                                     excludedDataSources.map { it.toPlatformDataOrigin() }.toSet()

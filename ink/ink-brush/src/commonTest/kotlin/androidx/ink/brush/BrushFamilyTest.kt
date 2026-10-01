@@ -23,36 +23,42 @@ import androidx.ink.brush.BrushPaint.TilingTexture
 import androidx.ink.brush.behavior.BinaryOpNode
 import androidx.ink.brush.behavior.BinaryOpNode.BinaryOp
 import androidx.ink.brush.behavior.ConstantNode
-import androidx.ink.brush.behavior.DampingNode
-import androidx.ink.brush.behavior.EasingFunction
 import androidx.ink.brush.behavior.IntegralNode
 import androidx.ink.brush.behavior.OutOfRange
 import androidx.ink.brush.behavior.ProgressDomain
-import androidx.ink.brush.behavior.ResponseNode
 import androidx.ink.brush.behavior.SourceNode
 import androidx.ink.brush.behavior.SourceNode.Source
 import androidx.ink.brush.behavior.TargetNode
 import androidx.ink.brush.behavior.TargetNode.Target
-import androidx.ink.brush.behavior.ToolTypeFilterNode
+import androidx.ink.brush.samples.createBrushCoatWithPaintFallback
+import androidx.ink.brush.samples.createPressureToSizeBehavior
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.testing.awaitNativePointerCleanupAfter
 import androidx.kruth.assertThat
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
+@OptIn(
+    InkInternalOnlyApi::class,
+    ExperimentalInkBrushCompatibilityApi::class,
+    ExperimentalInkAnimationApi::class,
+    ExperimentalInkCustomBrushApi::class,
+)
 class BrushFamilyTest {
     @Test
     fun brushFamilyNativePointers_cleanedUpWhenOutOfScope() {
         // Ensure the default input model is initialized here so it doesn't get initialized lazily
         // below (since everything in the block is expected to be cleaned up).
-        val unused = BrushFamily.InputModel.DEFAULT_INPUT_MODEL
+        @Suppress("UNUSED_VARIABLE") val unused = BrushFamily.InputModel.DEFAULT_INPUT_MODEL
         awaitNativePointerCleanupAfter {
+            @Suppress("UNUSED_VARIABLE")
             val unused = BrushFamily(tip = BrushTip(), paint = BrushPaint())
         }
     }
 
     @Test
     fun constructor_usesPassedInCoats() {
-        val coat = BrushCoat(BrushTip(), BrushPaint())
+        val coat = createBrushCoatWithPaintFallback()
         val coats = listOf(coat)
         val family = BrushFamily(coats = coats)
         assertThat(family.coats).hasSize(1)
@@ -64,10 +70,7 @@ class BrushFamilyTest {
         val inputModel =
             InputModel.SlidingWindowModel(windowDurationMillis = 250, upsamplingFrequencyHz = 1)
         val family =
-            BrushFamily(
-                coats = listOf(BrushCoat(BrushTip(), BrushPaint())),
-                inputModel = inputModel,
-            )
+            BrushFamily(coats = listOf(createBrushCoatWithPaintFallback()), inputModel = inputModel)
         assertThat(family.inputModel).isSameInstanceAs(inputModel)
     }
 
@@ -155,7 +158,7 @@ class BrushFamilyTest {
     }
 
     @Test
-    fun textureAnimationLoopDurationMillis_returnsExpectedValue() {
+    fun paintAnimationLoopDurationMillis_returnsExpectedValue() {
         fun makeAnimatedCoat(animationDurationMillis: Long) =
             BrushCoat(
                 BrushPaint(
@@ -182,13 +185,15 @@ class BrushFamilyTest {
             BrushFamily(
                 listOf(makeAnimatedCoat(1000L), makeAnimatedCoat(1500L), makeAnimatedCoat(600L))
             )
-        assertThat(brushFamily.textureAnimationLoopDurationMillis).isEqualTo(3000L)
+        assertThat(brushFamily.paintAnimationLoopDurationMillis).isEqualTo(3000L)
     }
 
+    @OptIn(ExperimentalInkCustomBrushApi::class)
     @Test
     fun calculateMinimumRequiredVersion_returnsExpectedValue() {
-        assertThat(BrushFamily().calculateMinimumRequiredVersion())
-            .isEqualTo(Version.V0_JETPACK1_0_0)
+        assertThat(BrushFamily().calculateMinimumRequiredVersion()).isEqualTo(Version.V0)
+        assertThat(InputModel.PASSTHROUGH_MODEL.calculateMinimumRequiredVersion())
+            .isEqualTo(Version.V0)
     }
 
     @Test
@@ -215,8 +220,7 @@ class BrushFamilyTest {
                 )
             )
         val family = BrushFamily(tip = BrushTip(behaviors = listOf(behavior)))
-        assertThat(family.calculateMinimumRequiredVersion())
-            .isEqualTo(Version.V1_JETPACK1_1_0_ALPHA01)
+        assertThat(family.calculateMinimumRequiredVersion()).isEqualTo(Version.V1)
     }
 
     @Test
@@ -236,8 +240,7 @@ class BrushFamilyTest {
                 )
             )
         val family = BrushFamily(tip = BrushTip(behaviors = listOf(behavior)))
-        assertThat(family.calculateMinimumRequiredVersion())
-            .isEqualTo(Version.V1_JETPACK1_1_0_ALPHA01)
+        assertThat(family.calculateMinimumRequiredVersion()).isEqualTo(Version.V1)
     }
 
     @Test
@@ -257,7 +260,7 @@ class BrushFamilyTest {
                 )
             )
         val family = BrushFamily(tip = BrushTip(behaviors = listOf(behavior)))
-        assertThat(family.calculateMinimumRequiredVersion()).isEqualTo(Version.V0_JETPACK1_0_0)
+        assertThat(family.calculateMinimumRequiredVersion()).isEqualTo(Version.V0)
     }
 
     @Test
@@ -277,8 +280,7 @@ class BrushFamilyTest {
                 )
             )
         val family = BrushFamily(tip = BrushTip(behaviors = listOf(behavior)))
-        assertThat(family.calculateMinimumRequiredVersion())
-            .isEqualTo(Version.V1_JETPACK1_1_0_ALPHA01)
+        assertThat(family.calculateMinimumRequiredVersion()).isEqualTo(Version.V1)
     }
 
     @Test
@@ -388,37 +390,9 @@ class BrushFamilyTest {
 
     private val customBrushFamilyId = "inkpen"
 
-    /** Brush behavior with every field different from default values. */
-    private val customBehavior =
-        BrushBehavior(
-            TargetNode(
-                target = Target.HEIGHT_MULTIPLIER,
-                targetModifierRangeStart = 1.1f,
-                targetModifierRangeEnd = 1.7f,
-                input =
-                    DampingNode(
-                        dampingSource = ProgressDomain.TIME_IN_SECONDS,
-                        dampingGap = 0.001f,
-                        input =
-                            ResponseNode(
-                                responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
-                                input =
-                                    ToolTypeFilterNode(
-                                        enabledToolTypes = setOf(InputToolType.STYLUS),
-                                        input =
-                                            SourceNode(
-                                                source = Source.TILT_IN_RADIANS,
-                                                sourceValueRangeStart = 0.2f,
-                                                sourceValueRangeEnd = .8f,
-                                                sourceOutOfRangeBehavior = OutOfRange.MIRROR,
-                                            ),
-                                    ),
-                            ),
-                    ),
-            )
-        )
+    private val customBehavior = createPressureToSizeBehavior()
 
-    /** Brush tip with every field different from default values and non-empty behaviors. */
+    /** Brush tip with every field different from default values, and non-empty behaviors. */
     private val customTip =
         BrushTip(
             scaleX = 0.1f,
@@ -432,10 +406,7 @@ class BrushFamilyTest {
             behaviors = listOf(customBehavior),
         )
 
-    /**
-     * Brush Paint with every field different from default values, including non-empty texture
-     * layers.
-     */
+    /** Brush paint with non-empty texture layers. */
     private val customPaint =
         BrushPaint(
             listOf(

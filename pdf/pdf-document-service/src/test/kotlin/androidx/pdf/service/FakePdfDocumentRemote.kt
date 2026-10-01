@@ -39,7 +39,7 @@ import androidx.pdf.annotation.models.PdfObject
 import androidx.pdf.models.Dimensions
 import androidx.pdf.models.PaginatedObjects
 
-internal class FakePdfDocumentRemote : PdfDocumentRemote.Stub() {
+internal open class FakePdfDocumentRemote : PdfDocumentRemote.Stub() {
     private val behaviors = ArrayDeque<DraftEditResult>()
 
     fun setBehavior(result: DraftEditResult) {
@@ -126,8 +126,11 @@ internal class FakePdfDocumentRemote : PdfDocumentRemote.Stub() {
         TODO("Not yet implemented")
     }
 
+    var isClosed: Boolean = false
+        private set
+
     override fun closePdfDocument() {
-        TODO("Not yet implemented")
+        isClosed = true
     }
 
     override fun getFormWidgetInfos(pageNum: Int): List<FormWidgetInfo?>? {
@@ -174,6 +177,10 @@ internal class FakePdfDocumentRemote : PdfDocumentRemote.Stub() {
 
     override fun getPageObjects(pageNum: Int, types: Long): PaginatedObjects? {
         TODO("Not yet implemented")
+    }
+
+    override fun addPageObject(pageNumber: Int, pdfObject: PdfObject): String {
+        return "fake_embedded_object_${System.currentTimeMillis()}"
     }
 
     override fun getBatchedPageObjects(

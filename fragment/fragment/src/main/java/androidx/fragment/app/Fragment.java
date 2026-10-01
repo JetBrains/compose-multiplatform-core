@@ -317,6 +317,8 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
     @LayoutRes
     private int mContentLayoutId;
 
+    private final FragmentTracer mTracer = new FragmentTracer(this);
+
     private final AtomicInteger mNextLocalRequestCode = new AtomicInteger();
 
     private final ArrayList<OnPreAttachedListener> mOnPreAttachedListeners = new ArrayList<>();
@@ -707,13 +709,15 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
             mSavedViewState = null;
         }
         mCalled = false;
-        onViewStateRestored(savedInstanceState);
+        mTracer.trace("Fragment#onViewStateRestored",
+                () -> onViewStateRestored(savedInstanceState));
         if (!mCalled) {
             throw new SuperNotCalledException("Fragment " + this
                     + " did not call through to super.onViewStateRestored()");
         }
         if (mView != null) {
-            mViewLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
+            mTracer.trace("FragmentViewLifecycle#handleLifecycleEvent(ON_CREATE)", () ->
+                    mViewLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_CREATE));
         }
     }
 
@@ -1952,7 +1956,7 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
     /**
      * Restore the state of the child FragmentManager. Called by either
      * {@link #onCreate(Bundle)} for non-retained instance fragments or by
-     * {@link FragmentManager#moveToState(Fragment, int, int, int, boolean)}
+     * {@link FragmentManager#moveToState(int, boolean)}
      * for retained instance fragments.
      *
      * <p><strong>Postcondition:</strong> if there were child fragments to restore,
@@ -2280,10 +2284,11 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
      *
      * @deprecated {@link androidx.activity.ComponentActivity} now implements {@link MenuHost},
      * an interface that allows any component, including your activity itself, to add menu items
-     * by calling {@link #addMenuProvider(MenuProvider)} without forcing all components through
-     * this single method override. As this provides a consistent, optionally {@link Lifecycle}
-     * -aware, and modular way to handle menu creation and item selection, replace usages of this
-     * method with one or more calls to {@link #addMenuProvider(MenuProvider)} in your Activity's
+     * by calling {@link androidx.activity.ComponentActivity#addMenuProvider(MenuProvider)} without
+     * forcing all components through this single method override. As this provides a consistent,
+     * optionally {@link Lifecycle}-aware, and modular way to handle menu creation and item
+     * selection, replace usages of this method with one or more calls to
+     * {@link androidx.activity.ComponentActivity#addMenuProvider(MenuProvider)} in your Activity's
      * {@link #onCreate(Bundle)} method, having each provider override
      * {@link MenuProvider#onCreateMenu(Menu, MenuInflater)} to create their menu items.
      */
@@ -2308,12 +2313,12 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
      *
      * @deprecated {@link androidx.activity.ComponentActivity} now implements {@link MenuHost},
      * an interface that allows any component, including your activity itself, to add menu items
-     * by calling {@link #addMenuProvider(MenuProvider)} without forcing all components through
-     * this single method override. The {@link MenuProvider} interface uses a single
+     * by calling {@link MenuHost#addMenuProvider(MenuProvider)} without forcing all components
+     * through this single method override. The {@link MenuProvider} interface uses a single
      * {@link MenuProvider#onCreateMenu(Menu, MenuInflater)} method for managing both the creation
      * and preparation of menu items. Replace usages of this method with one or more calls to
-     * {@link #addMenuProvider(MenuProvider)} in your Activity's {@link #onCreate(Bundle)} method,
-     * moving any preparation of menu items to {@link MenuProvider#onPrepareMenu(Menu)}.
+     * {@link MenuHost#addMenuProvider(MenuProvider)} in your Activity's {@link #onCreate(Bundle)}
+     * method, moving any preparation of menu items to {@link MenuProvider#onPrepareMenu(Menu)}.
      */
     @MainThread
     @Deprecated
@@ -2329,14 +2334,14 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
      *
      * @deprecated {@link androidx.activity.ComponentActivity} now implements {@link MenuHost},
      * an interface that allows any component, including your activity itself, to add menu items
-     * by calling {@link #addMenuProvider(MenuProvider)} without forcing all components through
-     * this single method override. Each {@link MenuProvider} then provides a consistent, optionally
-     * {@link Lifecycle}-aware, and modular way to handle menu item selection for the menu items
-     * created by that provider. Replace usages of this method with one or more calls to
-     * {@link #removeMenuProvider(MenuProvider)} in your Activity's {@link #onCreate(Bundle)}
-     * method, whenever it is necessary to remove the individual {@link MenuProvider}. If a
-     * {@link MenuProvider} was added with Lifecycle-awareness, this removal will happen
-     * automatically.
+     * by calling {@link MenuHost#addMenuProvider(MenuProvider)} without forcing all components
+     * through this single method override. Each {@link MenuProvider} then provides a consistent,
+     * optionally {@link Lifecycle}-aware, and modular way to handle menu item selection for the
+     * menu items created by that provider. Replace usages of this method with one or more calls to
+     * {@link MenuHost#removeMenuProvider(MenuProvider)} in your Activity's
+     * {@link #onCreate(Bundle)} method, whenever it is necessary to remove the individual
+     * {@link MenuProvider}. If a {@link MenuProvider} was added with Lifecycle-awareness, this
+     * removal will happen automatically.
      */
     @MainThread
     @Deprecated
@@ -2363,13 +2368,13 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
      *
      * @deprecated {@link androidx.activity.ComponentActivity} now implements {@link MenuHost},
      * an interface that allows any component, including your activity itself, to add menu items
-     * by calling {@link #addMenuProvider(MenuProvider)} without forcing all components through
-     * this single method override. Each {@link MenuProvider} then provides a consistent, optionally
-     * {@link Lifecycle}-aware, and modular way to handle menu item selection for the menu items
-     * created by that provider. Replace usages of this method with one or more calls to
-     * {@link #addMenuProvider(MenuProvider)} in your Activity's {@link #onCreate(Bundle)} method,
-     * delegating menu item selection to the individual {@link MenuProvider} that created the menu
-     * items you wish to handle.
+     * by calling {@link MenuHost#addMenuProvider(MenuProvider)} without forcing all components
+     * through this single method override. Each {@link MenuProvider} then provides a consistent,
+     * optionally {@link Lifecycle}-aware, and modular way to handle menu item selection for the
+     * menu items created by that provider. Replace usages of this method with one or more calls to
+     * {@link MenuHost#addMenuProvider(MenuProvider)} in your Activity's {@link #onCreate(Bundle)}
+     * method, delegating menu item selection to the individual {@link MenuProvider} that created
+     * the menu items you wish to handle.
      */
     @SuppressWarnings("unused")
     @MainThread
@@ -2387,12 +2392,12 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
      *
      * @deprecated {@link androidx.activity.ComponentActivity} now implements {@link MenuHost},
      * an interface that allows any component, including your activity itself, to add menu items
-     * by calling {@link #addMenuProvider(MenuProvider)} without forcing all components through
-     * this single method override. The {@link MenuProvider} interface uses a single
+     * by calling {@link MenuHost#addMenuProvider(MenuProvider)} without forcing all components
+     * through this single method override. The {@link MenuProvider} interface uses a single
      * {@link MenuProvider#onCreateMenu(Menu, MenuInflater)} method for managing both the creation
      * and preparation of menu items. Replace usages of this method with one or more calls to
-     * {@link #addMenuProvider(MenuProvider)} in your Activity's {@link #onCreate(Bundle)} method,
-     * overriding {@link MenuProvider#onMenuClosed(Menu)} to delegate menu closing to the
+     * {@link MenuHost#addMenuProvider(MenuProvider)} in your Activity's {@link #onCreate(Bundle)}
+     * method, overriding {@link MenuProvider#onMenuClosed(Menu)} to delegate menu closing to the
      * individual {@link MenuProvider} that created the menu.
      */
     @SuppressWarnings("unused")
@@ -3034,7 +3039,7 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
         mChildFragmentManager.attachController(mHost, createFragmentContainer(), this);
         mState = ATTACHED;
         mCalled = false;
-        onAttach(mHost.getContext());
+        mTracer.trace("Fragment#onAttach", () -> onAttach(mHost.getContext()));
         if (!mCalled) {
             throw new SuperNotCalledException("Fragment " + this
                     + " did not call through to super.onAttach()");
@@ -3058,13 +3063,14 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
                 }
             }
         });
-        onCreate(savedInstanceState);
+        mTracer.trace("Fragment#onCreate", () -> onCreate(savedInstanceState));
         mIsCreated = true;
         if (!mCalled) {
             throw new SuperNotCalledException("Fragment " + this
                     + " did not call through to super.onCreate()");
         }
-        mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
+        mTracer.trace("FragmentLifecycle#handleLifecycleEvent(ON_CREATE)",
+                () -> mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE));
     }
 
     void performCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -3078,7 +3084,8 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
                     mViewLifecycleOwner.performRestore(mSavedViewRegistryState);
                     mSavedViewRegistryState = null;
                 });
-        mView = onCreateView(inflater, container, savedInstanceState);
+        mTracer.trace("Fragment#onCreateView", () ->
+                mView = onCreateView(inflater, container, savedInstanceState));
         if (mView != null) {
             // Initialize the view lifecycle
             mViewLifecycleOwner.initialize();
@@ -3106,12 +3113,15 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
     void performViewCreated() {
         // since calling super.onViewCreated() is not required, we do not need to set and check the
         // `mCalled` flag
-        Bundle savedInstanceState = null;
+        final Bundle savedInstanceState;
         if (mSavedFragmentState != null) {
             savedInstanceState = mSavedFragmentState.getBundle(
                     FragmentStateManager.SAVED_INSTANCE_STATE_KEY);
+        } else {
+            savedInstanceState = null;
         }
-        onViewCreated(mView, savedInstanceState);
+        mTracer.trace("Fragment#onViewCreated",
+                () -> onViewCreated(mView, savedInstanceState));
         mChildFragmentManager.dispatchViewCreated();
     }
 
@@ -3120,7 +3130,8 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
         mChildFragmentManager.noteStateNotSaved();
         mState = AWAITING_EXIT_EFFECTS;
         mCalled = false;
-        onActivityCreated(savedInstanceState);
+        mTracer.trace("Fragment#onActivityCreated",
+                () -> onActivityCreated(savedInstanceState));
         if (!mCalled) {
             throw new SuperNotCalledException("Fragment " + this
                     + " did not call through to super.onActivityCreated()");
@@ -3151,14 +3162,16 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
         mChildFragmentManager.execPendingActions(true);
         mState = STARTED;
         mCalled = false;
-        onStart();
+        mTracer.trace("Fragment#onStart", this::onStart);
         if (!mCalled) {
             throw new SuperNotCalledException("Fragment " + this
                     + " did not call through to super.onStart()");
         }
-        mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START);
+        mTracer.trace("FragmentLifecycle#handleLifecycleEvent(ON_START)",
+                () -> mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START));
         if (mView != null) {
-            mViewLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_START);
+            mTracer.trace("FragmentViewLifecycle#handleLifecycleEvent(ON_START)", () ->
+                    mViewLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_START));
         }
         mChildFragmentManager.dispatchStart();
     }
@@ -3169,14 +3182,16 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
         mChildFragmentManager.execPendingActions(true);
         mState = RESUMED;
         mCalled = false;
-        onResume();
+        mTracer.trace("Fragment#onResume", this::onResume);
         if (!mCalled) {
             throw new SuperNotCalledException("Fragment " + this
                     + " did not call through to super.onResume()");
         }
-        mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
+        mTracer.trace("FragmentLifecycle#handleLifecycleEvent(ON_RESUME)",
+                () -> mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME));
         if (mView != null) {
-            mViewLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
+            mTracer.trace("FragmentViewLifecycle#handleLifecycleEvent(ON_RESUME)", () ->
+                    mViewLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_RESUME));
         }
         mChildFragmentManager.dispatchResume();
     }
@@ -3277,19 +3292,21 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
     }
 
     void performSaveInstanceState(Bundle outState) {
-        onSaveInstanceState(outState);
+        mTracer.trace("Fragment#onSaveInstanceState", () -> onSaveInstanceState(outState));
     }
 
     @SuppressWarnings("ConstantConditions")
     void performPause() {
         mChildFragmentManager.dispatchPause();
         if (mView != null) {
-            mViewLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE);
+            mTracer.trace("FragmentViewLifecycle#handleLifecycleEvent(ON_PAUSE)",
+                    () -> mViewLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE));
         }
-        mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE);
+        mTracer.trace("FragmentLifecycle#handleLifecycleEvent(ON_PAUSE)",
+                () -> mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE));
         mState = AWAITING_ENTER_EFFECTS;
         mCalled = false;
-        onPause();
+        mTracer.trace("Fragment#onPause", this::onPause);
         if (!mCalled) {
             throw new SuperNotCalledException("Fragment " + this
                     + " did not call through to super.onPause()");
@@ -3300,12 +3317,14 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
     void performStop() {
         mChildFragmentManager.dispatchStop();
         if (mView != null) {
-            mViewLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_STOP);
+            mTracer.trace("FragmentViewLifecycle#handleLifecycleEvent(ON_STOP)",
+                    () -> mViewLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_STOP));
         }
-        mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP);
+        mTracer.trace("FragmentLifecycle#handleLifecycleEvent(ON_STOP)",
+                () -> mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP));
         mState = ACTIVITY_CREATED;
         mCalled = false;
-        onStop();
+        mTracer.trace("Fragment#onStop", this::onStop);
         if (!mCalled) {
             throw new SuperNotCalledException("Fragment " + this
                     + " did not call through to super.onStop()");
@@ -3317,11 +3336,12 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
         mChildFragmentManager.dispatchDestroyView();
         if (mView != null && mViewLifecycleOwner.getLifecycle().getCurrentState()
                         .isAtLeast(Lifecycle.State.CREATED)) {
-            mViewLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
+            mTracer.trace("FragmentViewLifecycle#handleLifecycleEvent(ON_DESTROY)",
+                    () -> mViewLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY));
         }
         mState = CREATED;
         mCalled = false;
-        onDestroyView();
+        mTracer.trace("Fragment#onDestroyView", this::onDestroyView);
         if (!mCalled) {
             throw new SuperNotCalledException("Fragment " + this
                     + " did not call through to super.onDestroyView()");
@@ -3336,11 +3356,12 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
 
     void performDestroy() {
         mChildFragmentManager.dispatchDestroy();
-        mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
+        mTracer.trace("FragmentLifecycle#handleLifecycleEvent(ON_DESTROY)",
+                () -> mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY));
         mState = ATTACHED;
         mCalled = false;
         mIsCreated = false;
-        onDestroy();
+        mTracer.trace("Fragment#onDestroy", this::onDestroy);
         if (!mCalled) {
             throw new SuperNotCalledException("Fragment " + this
                     + " did not call through to super.onDestroy()");
@@ -3350,7 +3371,7 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
     void performDetach() {
         mState = INITIALIZING;
         mCalled = false;
-        onDetach();
+        mTracer.trace("Fragment#onDetach", this::onDetach);
         mLayoutInflater = null;
         if (!mCalled) {
             throw new SuperNotCalledException("Fragment " + this

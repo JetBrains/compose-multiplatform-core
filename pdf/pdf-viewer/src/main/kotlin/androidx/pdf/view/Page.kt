@@ -28,6 +28,7 @@ import android.os.RemoteException
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
+import androidx.pdf.Highlight
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfFeature
 import androidx.pdf.exceptions.RequestFailedException
@@ -144,7 +145,9 @@ internal class Page(
         }
 
     internal var formWidgetIndexToInfoMap: Map<Int, FormWidgetInfo>? =
-        formWidgetInfos?.associateBy { it.widgetIndex }
+        formWidgetInfos?.associateBy {
+            it.widgetIndex
+        }
         private set
 
     //  Checks if the content of this page within the specified visible area is fully rendered.
@@ -227,11 +230,10 @@ internal class Page(
     private fun maybeFetchText() {
         if (!isAccessibilityEnabled || fetchTextJob?.isActive == true || isTextReady) return
 
-        fetchTextJob =
-            backgroundScope.launch {
-                joinAll(launch { maybeFetchPageText() }, launch { maybeFetchOcrText() })
-                onPageTextReady.invoke(pageNum)
-            }
+        fetchTextJob = backgroundScope.launch {
+            joinAll(launch { maybeFetchPageText() }, launch { maybeFetchOcrText() })
+            onPageTextReady.invoke(pageNum)
+        }
     }
 
     private suspend fun maybeFetchPageText() {
@@ -270,14 +272,13 @@ internal class Page(
     internal fun maybeUpdateFormWidgetInfos(formWidgetMetadataLoader: FormWidgetMetadataLoader) {
         val previousJob = fetchFormWidgetInfoJob
 
-        fetchFormWidgetInfoJob =
-            backgroundScope.launch {
-                // Cancel the previous job, since we want to fetch the latest set of widgets
-                previousJob?.cancelAndJoin()
-                ensureActive()
-                formWidgetInfos = formWidgetMetadataLoader.loadFormWidgetInfos(pageNum)
-                onFormWidgetReady(pageNum)
-            }
+        fetchFormWidgetInfoJob = backgroundScope.launch {
+            // Cancel the previous job, since we want to fetch the latest set of widgets
+            previousJob?.cancelAndJoin()
+            ensureActive()
+            formWidgetInfos = formWidgetMetadataLoader.loadFormWidgetInfos(pageNum)
+            onFormWidgetReady(pageNum)
+        }
     }
 
     fun draw(canvas: Canvas, locationInView: RectF, highlights: List<Highlight>) {

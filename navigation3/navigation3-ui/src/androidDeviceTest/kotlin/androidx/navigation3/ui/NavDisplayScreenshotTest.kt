@@ -36,7 +36,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.material3.Text
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -75,7 +74,6 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import kotlin.test.Test
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.runner.RunWith
 
@@ -83,7 +81,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class NavDisplayScreenshotTest {
-    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule("navigation3/navigation3-ui")
 
@@ -169,13 +167,8 @@ class NavDisplayScreenshotTest {
                 modifier = Modifier.testTag(navHostTag),
             ) {
                 when (it) {
-                    first -> NavEntry(first) { Text(first) }
-                    second ->
-                        NavEntry(second) {
-                            Box(Modifier.fillMaxSize().background(Color.Blue)) {
-                                Text(second, Modifier.size(50.dp))
-                            }
-                        }
+                    first -> NavEntry(first) { RedBox(first) }
+                    second -> NavEntry(second) { BlueBox(second) }
                     else -> error("Invalid key passed")
                 }
             }
@@ -229,7 +222,7 @@ class NavDisplayScreenshotTest {
                 modifier = Modifier.testTag(navHostTag),
             ) {
                 when (it) {
-                    first -> NavEntry(first) { Text(first) }
+                    first -> NavEntry(first) { RedBox(first) }
                     second ->
                         NavEntry(
                             second,
@@ -246,9 +239,7 @@ class NavDisplayScreenshotTest {
                                     }
                                 },
                         ) {
-                            Box(Modifier.fillMaxSize().background(Color.Blue)) {
-                                Text(second, Modifier.size(50.dp))
-                            }
+                            BlueBox(second)
                         }
                     else -> error("Invalid key passed")
                 }
@@ -365,7 +356,7 @@ class NavDisplayScreenshotTest {
         composeTestRule.mainClock.autoAdvance = false
         backPressedDispatcher.onBackPressed()
 
-        composeTestRule.mainClock.advanceTimeBy((duration / 2).toLong())
+        composeTestRule.mainClock.advanceTimeBy((duration / 20).toLong())
         // make sure popped entry is not blank screen
         composeTestRule
             .onNodeWithTag(navHostTag)

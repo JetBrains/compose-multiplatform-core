@@ -33,6 +33,7 @@ import androidx.camera.camera2.pipe.AwbMode
 import androidx.camera.camera2.pipe.CameraGraph.Constants3A.DEFAULT_FRAME_LIMIT
 import androidx.camera.camera2.pipe.CameraGraph.Constants3A.DEFAULT_TIME_LIMIT_NS
 import androidx.camera.camera2.pipe.CameraMetadata
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.hasFlashUnit
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsAutoFocusTrigger
 import androidx.camera.camera2.pipe.ControlMode
 import androidx.camera.camera2.pipe.Converge3ABehavior
@@ -43,6 +44,7 @@ import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.Result3A.Status
 import androidx.camera.camera2.pipe.config.CameraGraphScope
 import androidx.camera.camera2.pipe.core.Log.debug
+import androidx.camera.camera2.pipe.core.Log.warn
 import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
@@ -163,7 +165,8 @@ constructor(
         private val aePrecaptureAndAfCancelParams =
             mapOf<CaptureRequest.Key<*>, Any?>(
                 CONTROL_AF_TRIGGER to CONTROL_AF_TRIGGER_CANCEL,
-                CONTROL_AE_PRECAPTURE_TRIGGER to CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL,
+                CONTROL_AE_PRECAPTURE_TRIGGER to
+                    CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL,
             )
 
         private val unlock3APostCaptureAfUnlockedCondition =
@@ -198,7 +201,7 @@ constructor(
         retainLocks: Boolean = false,
     ): Deferred<Result3A> {
         // If the GraphProcessor does not have a repeating request we should update the current
-        // parameters, but should not invalidate or trigger set a new listener.
+        // parameters, but should not invalidate or set a new listener.
         if (graphProcessor.repeatingRequest == null) {
             graphState3A.update(
                 aeMode,
@@ -225,7 +228,7 @@ constructor(
         val aeLock: Boolean? = if (retainLocks && currentState3A.aeLock == true) true else null
         val awbLock: Boolean? = if (retainLocks && currentState3A.awbLock == true) true else null
 
-        // Update the 3A state of the graph. This will make sure then when GraphProcessor builds
+        // Update the 3A state of the graph. This will make sure that when GraphProcessor builds
         // the next request it will apply the 3A parameters corresponding to the updated 3A state
         // to the request.
         graphState3A.update(
@@ -423,6 +426,9 @@ constructor(
      * lockedTimeLimitNs) to complete.
      */
     suspend fun lock3A(
+        aeMode: AeMode? = null,
+        afMode: AfMode? = null,
+        awbMode: AwbMode? = null,
         aeRegions: List<MeteringRectangle>? = null,
         afRegions: List<MeteringRectangle>? = null,
         awbRegions: List<MeteringRectangle>? = null,
@@ -444,11 +450,31 @@ constructor(
             return deferredResult3AOk
         }
 
+        // Fetch the current 3A state snapshot before updating it, so that we can compare the
+        // previous
+        // modes with the new ones.
+        val currentState3A = state3ASnapshot()
+
         // Update the 3A state of camera graph with the given metering regions. If metering regions
         // are given as null, then they are ignored and the current metering regions continue to be
         // applied in subsequent requests to the camera device.
-        graphState3A.update(aeRegions = aeRegions, afRegions = afRegions, awbRegions = awbRegions)
-        graphProcessor.update3AParameters(graphState3A.toCaptureRequestParametersMap())
+        graphState3A.update(
+            aeMode = aeMode,
+            afMode = afMode,
+            awbMode = awbMode,
+            aeRegions = aeRegions,
+            afRegions = afRegions,
+            awbRegions = awbRegions,
+        )
+        var parameters = graphState3A.toCaptureRequestParametersMap()
+        if (
+            afLockBehavior == Lock3ABehavior.IMMEDIATE &&
+                afMode != currentState3A.afMode &&
+                afMode != null
+        ) {
+            parameters = parameters + parameterForAfTriggerStart
+        }
+        graphProcessor.update3AParameters(parameters)
 
         // If the GraphProcessor does not have a repeating request we should update the current
         // parameters, but should not invalidate or trigger set a new listener.
@@ -720,15 +746,6 @@ constructor(
         if (graphProcessor.repeatingRequest == null) {
             return deferredResult3ASubmitFailed
         }
-        return unlock3APostCaptureAndroidMAndAbove(cancelAf)
-    }
-
-    /**
-     * For API level 23 or newer versions, the sending a request with CONTROL_AE_PRECAPTURE_TRIGGER
-     * = CANCEL can be used to unlock the camera device's internally locked AE. REF :
-     * https://developer.android.com/reference/android/hardware/camera2/CaptureRequest#CONTROL_AE_PRECAPTURE_TRIGGER
-     */
-    private fun unlock3APostCaptureAndroidMAndAbove(cancelAf: Boolean = true): Deferred<Result3A> {
         debug { "unlock3APostCapture - sending a request to reset af and ae precapture metering." }
         val cancelParams = if (cancelAf) aePrecaptureAndAfCancelParams else aePrecaptureCancelParams
         if (!graphProcessor.trigger(cancelParams)) {
@@ -756,8 +773,16 @@ constructor(
      * To use [FlashMode.TORCH], either [AeMode.ON] or [AeMode.OFF] needs to be used, otherwise, the
      * flash mode is a no-op. If the current AE mode is neither of them, this function changes the
      * AE mode to [AeMode.ON] in order to enable the torch.
+     *
+     * If the camera device does not have a flash unit ([CameraMetadata.hasFlashUnit] is `false`),
+     * the torch cannot be enabled. In that case this function returns immediately with
+     * [Status.SUBMIT_FAILED] and leaves the current 3A state untouched.
      */
     fun setTorchOn(): Deferred<Result3A> {
+        if (!metadata.hasFlashUnit) {
+            warn { "setTorchOn - ${metadata.camera} does not have a flash unit, ignoring." }
+            return deferredResult3ASubmitFailed
+        }
         val currAeMode = graphState3A.current.aeMode
         val desiredAeMode =
             if (currAeMode == AeMode.ON || currAeMode == AeMode.OFF) null else AeMode.ON
@@ -805,6 +830,8 @@ constructor(
             return resultForLocked!!
         }
 
+        // TODO: If Af is already locked, we don't need to lock Af again. Update this part once we
+        // make sure of the side effects of removing this aeMode.
         var lastAeMode: AeMode? = null
         afTriggerStartAeMode?.let {
             lastAeMode = graphState3A.current.aeMode

@@ -19,15 +19,15 @@ package androidx.appfunctions
 /**
  * Annotation to mark [AppFunctionService] as an entry point.
  *
- * This annotation helps generate a service, bridging [AppFunctionService.executeFunction] and
- * [AppFunction]-annotated methods defined in the same class.
+ * This annotation helps generate a service, bridging [AppFunctionService.onExecuteFunction] and
+ * [AppFunctionDeclaration]-annotated methods defined in the same class.
  *
  * ### Example
  *
  * First, define your service:
  * ```
  * import androidx.appfunctions.AppFunctionServiceEntryPoint
- * import androidx.appfunctions.AppFunction
+ * import androidx.appfunctions.AppFunctionDeclaration
  * import androidx.appfunctions.AppFunctionService
  *
  * @AppFunctionServiceEntryPoint(
@@ -35,7 +35,7 @@ package androidx.appfunctions
  *   appFunctionXmlFileName = "my_service"
  * )
  * abstract class BaseMyAppFunctionService : AppFunctionService() {
- *   @AppFunction fun add(a: Int, b: Int): Int = a + b
+ *   @AppFunctionDeclaration fun add(a: Int, b: Int): Int = a + b
  * }
  * ```
  *
@@ -63,12 +63,12 @@ package androidx.appfunctions
  * artifacts:
  * - **A concrete service implementation:** The compiler generates a subclass of your abstract class
  *   (`BaseMyAppFunctionService` in the example above) with the name specified in the [serviceName]
- *   parameter. In addition to the generated `executeFunction` implementation, the function IDs that
- *   can be used with [AppFunctionManager.setAppFunctionEnabled] are also available in the companion
- *   object. The generated service has the following structure:
+ *   parameter. In addition to the generated `onExecuteFunction` implementation, the function IDs
+ *   that can be used with [AppFunctionManager.setAppFunctionEnabled] are also available in the
+ *   companion object. The generated service has the following structure:
  * ```
  * public class MyAppFunctionService : BaseMyAppFunctionService() {
- *   override suspend fun executeFunction(
+ *   override suspend fun onExecuteFunction(
  *     request: ExecuteAppFunctionRequest
  *   ): ExecuteAppFunctionResponse {
  *     return when (request.functionIdentifier) {
@@ -102,7 +102,7 @@ package androidx.appfunctions
  * @param serviceName The name of the generated service class.
  * @param appFunctionXmlFileName The name of the generated app function XML file.
  * @see androidx.appfunctions.AppFunctionService
- * @see androidx.appfunctions.AppFunction
+ * @see androidx.appfunctions.AppFunctionDeclaration
  */
 @Retention(AnnotationRetention.SOURCE)
 @Target(AnnotationTarget.CLASS)

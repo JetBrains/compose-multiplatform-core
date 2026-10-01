@@ -20,6 +20,7 @@ import androidx.annotation.RestrictTo
 import androidx.room3.migration.AutoMigrationSpec
 import androidx.sqlite.SQLiteDriver
 import kotlin.coroutines.CoroutineContext
+import kotlin.time.Duration
 
 /** Configuration class for a [RoomDatabase]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -51,4 +52,8 @@ public expect class DatabaseConfiguration {
     public val queryCoroutineContext: CoroutineContext
     /* The connection pool configuration. */
     public val connectionPoolConfiguration: ConnectionPoolConfiguration
+    /* The connection pool timeout. */
+    public val connectionPoolTimeout: Duration
+    /* Whether Room is allowed to delete and recreate the database file during corruption recovery. */
+    public val allowDataLossOnRecovery: Boolean
 }

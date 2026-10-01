@@ -63,115 +63,96 @@ class CameraGraphCameraControls3ATest {
         cameraGraph.start()
         cameraGraph.initializeSurfaces()
         cameraGraph.simulateCameraStarted()
-        testScope.advanceUntilIdle()
         val stream1 = cameraGraph.streams[streamConfig1]!!.id
         cameraGraph.useSessionIn(testScope) {
             it.startRepeating(Request(streams = listOf(stream1)))
         }
-        testScope.advanceUntilIdle()
         cameraGraph.simulateNextFrame()
-        testScope.advanceUntilIdle()
     }
 
     @Test
-    fun update3A_completesWithStatusOK() =
-        testScope.runTest {
-            val result3ADeferred = cameraGraph.update3A(aeMode = AeMode.OFF)
-            advanceUntilIdle()
+    fun update3A_completesWithStatusOK() = testScope.runTest {
+        val result3ADeferred = cameraGraph.update3A(aeMode = AeMode.OFF)
 
-            val frame = cameraGraph.simulateNextFrame()
-            frame.simulateTotalCaptureResult(
-                mapOf(CaptureResult.CONTROL_AE_MODE to CaptureResult.CONTROL_AE_MODE_OFF)
-            )
-            advanceUntilIdle()
+        val frame = cameraGraph.simulateNextFrame()
+        frame.simulateTotalCaptureResult(
+            mapOf(CaptureResult.CONTROL_AE_MODE to CaptureResult.CONTROL_AE_MODE_OFF)
+        )
+        advanceUntilIdle()
 
-            val result3A = result3ADeferred.await()
-            assertThat(result3A.status).isEqualTo(Result3A.Status.OK)
-            assertThat(result3A.frameMetadata).isNotNull()
-        }
+        val result3A = result3ADeferred.await()
+        assertThat(result3A.status).isEqualTo(Result3A.Status.OK)
+        assertThat(result3A.frameMetadata).isNotNull()
+    }
 
     @Test
-    fun lock3A_completesWithStatusOK() =
-        testScope.runTest {
-            val result3ADeferred =
-                cameraGraph.lock3A(afLockBehavior = Lock3ABehavior.AFTER_CURRENT_SCAN)
-            advanceUntilIdle()
+    fun lock3A_completesWithStatusOK() = testScope.runTest {
+        val result3ADeferred =
+            cameraGraph.lock3A(afLockBehavior = Lock3ABehavior.AFTER_CURRENT_SCAN)
 
-            cameraGraph
-                .simulateNextFrame()
-                .simulateTotalCaptureResult(
-                    mapOf(
-                        CaptureResult.CONTROL_AF_STATE to
-                            CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED
-                    )
-                )
-            advanceUntilIdle()
-
-            cameraGraph
-                .simulateNextFrame()
-                .simulateTotalCaptureResult(
-                    mapOf(
-                        CaptureResult.CONTROL_AF_STATE to
-                            CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED
-                    )
-                )
-            advanceUntilIdle()
-
-            val result3A = result3ADeferred.await()
-            assertThat(result3A.status).isEqualTo(Result3A.Status.OK)
-            assertThat(result3A.frameMetadata).isNotNull()
-        }
-
-    @Test
-    fun setTorchOn_completesWithStatusOK() =
-        testScope.runTest {
-            val result3ADeferred = cameraGraph.setTorchOn()
-            advanceUntilIdle()
-
-            val frame = cameraGraph.simulateNextFrame()
-            frame.simulateTotalCaptureResult(
+        cameraGraph
+            .simulateNextFrame()
+            .simulateTotalCaptureResult(
                 mapOf(
-                    CaptureResult.FLASH_MODE to CaptureResult.FLASH_MODE_TORCH,
-                    CaptureResult.CONTROL_AE_MODE to CaptureResult.CONTROL_AE_MODE_ON,
+                    CaptureResult.CONTROL_AF_STATE to CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED
                 )
             )
-            advanceUntilIdle()
 
-            val result3A = result3ADeferred.await()
-            assertThat(result3A.status).isEqualTo(Result3A.Status.OK)
-            assertThat(result3A.frameMetadata).isNotNull()
-        }
-
-    @Test
-    fun unlock3A_completesWithStatusOK() =
-        testScope.runTest {
-            val unlockResultDeferred = cameraGraph.unlock3A(ae = true)
-            advanceUntilIdle()
-
-            cameraGraph
-                .simulateNextFrame()
-                .simulateTotalCaptureResult(
-                    mapOf(
-                        CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_SEARCHING
-                    )
+        cameraGraph
+            .simulateNextFrame()
+            .simulateTotalCaptureResult(
+                mapOf(
+                    CaptureResult.CONTROL_AF_STATE to CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED
                 )
-            advanceUntilIdle()
+            )
+        advanceUntilIdle()
 
-            assertThat(unlockResultDeferred.await().status).isEqualTo(Result3A.Status.OK)
-            assertThat(unlockResultDeferred.await().frameMetadata).isNotNull()
-        }
+        val result3A = result3ADeferred.await()
+        assertThat(result3A.status).isEqualTo(Result3A.Status.OK)
+        assertThat(result3A.frameMetadata).isNotNull()
+    }
 
     @Test
-    fun lockThenUnlock_happensInOrder() =
-        testScope.runTest {
-            cameraGraph.lock3A(aeLockBehavior = Lock3ABehavior.IMMEDIATE)
-            cameraGraph.unlock3A(ae = true)
+    fun setTorchOn_completesWithStatusOK() = testScope.runTest {
+        val result3ADeferred = cameraGraph.setTorchOn()
 
-            advanceUntilIdle()
+        val frame = cameraGraph.simulateNextFrame()
+        frame.simulateTotalCaptureResult(
+            mapOf(
+                CaptureResult.FLASH_MODE to CaptureResult.FLASH_MODE_TORCH,
+                CaptureResult.CONTROL_AE_MODE to CaptureResult.CONTROL_AE_MODE_ON,
+            )
+        )
+        advanceUntilIdle()
 
-            val lockParams = cameraGraph.simulateNextFrame().requestSequence.requiredParameters
-            val unlockParams = cameraGraph.simulateNextFrame().requestSequence.requiredParameters
-            assertThat(lockParams).containsExactly(CaptureRequest.CONTROL_AE_LOCK, true)
-            assertThat(unlockParams).containsExactly(CaptureRequest.CONTROL_AE_LOCK, false)
-        }
+        val result3A = result3ADeferred.await()
+        assertThat(result3A.status).isEqualTo(Result3A.Status.OK)
+        assertThat(result3A.frameMetadata).isNotNull()
+    }
+
+    @Test
+    fun unlock3A_completesWithStatusOK() = testScope.runTest {
+        val unlockResultDeferred = cameraGraph.unlock3A(ae = true)
+
+        cameraGraph
+            .simulateNextFrame()
+            .simulateTotalCaptureResult(
+                mapOf(CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_SEARCHING)
+            )
+        advanceUntilIdle()
+
+        assertThat(unlockResultDeferred.await().status).isEqualTo(Result3A.Status.OK)
+        assertThat(unlockResultDeferred.await().frameMetadata).isNotNull()
+    }
+
+    @Test
+    fun lockThenUnlock_happensInOrder() = testScope.runTest {
+        cameraGraph.lock3A(aeLockBehavior = Lock3ABehavior.IMMEDIATE)
+        cameraGraph.unlock3A(ae = true)
+
+        val lockParams = cameraGraph.simulateNextFrame().requestSequence.requiredParameters
+        val unlockParams = cameraGraph.simulateNextFrame().requestSequence.requiredParameters
+        assertThat(lockParams).containsExactly(CaptureRequest.CONTROL_AE_LOCK, true)
+        assertThat(unlockParams).containsExactly(CaptureRequest.CONTROL_AE_LOCK, false)
+    }
 }

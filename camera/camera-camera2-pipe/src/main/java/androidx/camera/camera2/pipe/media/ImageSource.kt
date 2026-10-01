@@ -23,7 +23,8 @@ import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.ImageSourceConfig
 import androidx.camera.camera2.pipe.OutputId
 import androidx.camera.camera2.pipe.StreamId
-import androidx.camera.camera2.pipe.UnsafeWrapper
+import androidx.camera.common.UnsafeWrapper
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * An ImageSource produces images from a CameraStream via an [ImageListener].
@@ -72,6 +73,9 @@ public interface ImageSource : UnsafeWrapper, AutoCloseable {
      * [MultiResolutionImageReader].
      */
     public fun discardFreeBuffers()
+
+    /** Flow of the count of images that are currently open. */
+    public val openImages: StateFlow<Int>
 }
 
 /** Listener for handling [ImageWrapper]s as they are produced. */

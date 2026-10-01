@@ -30,6 +30,8 @@ import androidx.test.espresso.IdlingRegistry
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import java.io.IOException
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.junit.Assume.assumeTrue
 import org.junit.rules.TestRule
 import org.junit.runner.Description
@@ -154,7 +156,7 @@ public class RequireForegroundRule(private val preTestCheck: suspend () -> Unit)
                     kotlinx.coroutines.runBlocking { preTestCheck() }
 
                     val instrumentation = InstrumentationRegistry.getInstrumentation()
-                    val device = UiDevice.getInstance(instrumentation)
+                    val device = runBlocking { getUiDevice(instrumentation) }
 
                     device.setOrientationNatural()
                     device.waitForIdle(INITIAL_IDLE_TIMEOUT_MS)
@@ -170,8 +172,8 @@ public class RequireForegroundRule(private val preTestCheck: suspend () -> Unit)
                             backToHome(instrumentation)
                             device.unfreezeRotation()
                             device.waitForIdle(UI_STABILIZATION_TIMEOUT_MS)
-                        } catch (e: Exception) {
-                            Log.w(TAG, "Failed to gracefully clean up device state", e)
+                        } catch (t: Throwable) {
+                            Log.w(TAG, "Failed to gracefully clean up device state", t)
                         }
                     }
                 } catch (t: Throwable) {
@@ -212,6 +214,10 @@ public class RequireForegroundRule(private val preTestCheck: suspend () -> Unit)
         private const val DISMISS_LOCK_SCREEN_CODE = 82
         private const val ADB_SHELL_DISMISS_KEYGUARD_API23_AND_ABOVE = "wm dismiss-keyguard"
         private const val ADB_SHELL_SCREEN_ALWAYS_ON = "svc power stayon true"
+        private const val ADB_SHELL_DISABLE_CAMERA_SENSOR_PRIVACY_API31_AND_ABOVE =
+            "cmd sensor_privacy disable 0 camera"
+        private const val ADB_SHELL_DISABLE_MICROPHONE_SENSOR_PRIVACY_API31_AND_ABOVE =
+            "cmd sensor_privacy disable 0 microphone"
 
         /** The display foreground of the device is occupied that cannot execute UI related test. */
         public class ForegroundOccupiedError(message: String) : Exception(message)
@@ -234,7 +240,8 @@ public class RequireForegroundRule(private val preTestCheck: suspend () -> Unit)
             } catch (e: ActivityNotFoundException) {
                 Log.e(TAG, "Home screen not found, falling back to keyevent: ${e.message}")
                 try {
-                    UiDevice.getInstance(instrumentation).executeShellCommand("input keyevent 3")
+                    runBlocking { getUiDevice(instrumentation) }
+                        .executeShellCommand("input keyevent 3")
                 } catch (ioException: IOException) {
                     Log.e(TAG, "Failed to execute home keyevent", ioException)
                 }
@@ -261,19 +268,34 @@ public class RequireForegroundRule(private val preTestCheck: suspend () -> Unit)
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
 
-                activityRef =
-                    instrumentation.startActivitySync(startIntent) as ForegroundTestActivity
+                var retryCount = 0
+                while (retryCount < 3) {
+                    try {
+                        activityRef =
+                            instrumentation.startActivitySync(startIntent) as ForegroundTestActivity
+                        break
+                    } catch (e: RuntimeException) {
+                        Logger.w(
+                            TAG,
+                            "Failed to launch ForegroundTestActivity on attempt $retryCount",
+                            e,
+                        )
+                        retryCount++
+                        if (retryCount >= 3) throw e
+                        clearDeviceUI(instrumentation)
+                    }
+                }
                 instrumentation.waitForIdleSync()
 
-                IdlingRegistry.getInstance().register(activityRef.viewReadyIdlingResource)
+                IdlingRegistry.getInstance().register(activityRef!!.viewReadyIdlingResource)
                 Espresso.onIdle()
                 return
             } catch (e: Exception) {
                 Logger.d(TAG, "Fail to get foreground", e)
             } finally {
                 if (activityRef != null) {
-                    IdlingRegistry.getInstance().unregister(activityRef.viewReadyIdlingResource)
-                    instrumentation.runOnMainSync { activityRef.finish() }
+                    IdlingRegistry.getInstance().unregister(activityRef!!.viewReadyIdlingResource)
+                    instrumentation.runOnMainSync { activityRef?.finish() }
                     instrumentation.waitForIdleSync()
                 }
             }
@@ -288,7 +310,7 @@ public class RequireForegroundRule(private val preTestCheck: suspend () -> Unit)
         @SuppressLint("MissingPermission", "ObsoleteSdkInt")
         @Suppress("DEPRECATION")
         public fun clearDeviceUI(instrumentation: Instrumentation) {
-            val device = UiDevice.getInstance(instrumentation)
+            val device = runBlocking { getUiDevice(instrumentation) }
 
             try {
                 device.wakeUp()
@@ -318,7 +340,45 @@ public class RequireForegroundRule(private val preTestCheck: suspend () -> Unit)
                 instrumentation.targetContext.sendBroadcast(
                     Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)
                 )
+            } else {
+                try {
+                    device.executeShellCommand(
+                        ADB_SHELL_DISABLE_CAMERA_SENSOR_PRIVACY_API31_AND_ABOVE
+                    )
+                } catch (_: IOException) {}
+                try {
+                    device.executeShellCommand(
+                        ADB_SHELL_DISABLE_MICROPHONE_SENSOR_PRIVACY_API31_AND_ABOVE
+                    )
+                } catch (_: IOException) {}
+                try {
+                    val currentUser = device.executeShellCommand("am get-current-user").trim()
+                    if (currentUser.isNotEmpty() && currentUser != "0") {
+                        device.executeShellCommand("cmd sensor_privacy disable $currentUser camera")
+                        device.executeShellCommand(
+                            "cmd sensor_privacy disable $currentUser microphone"
+                        )
+                    }
+                } catch (_: IOException) {}
             }
+        }
+
+        internal suspend fun getUiDevice(instrumentation: Instrumentation): UiDevice {
+            var lastException: Exception? = null
+            for (i in 0 until 3) {
+                try {
+                    // Try to trigger connection by accessing uiAutomation
+                    instrumentation.uiAutomation
+                    return UiDevice.getInstance(instrumentation)
+                } catch (e: IllegalStateException) {
+                    lastException = e
+                    Logger.w(TAG, "Failed to get UiDevice instance, attempt ${i + 1}", e)
+                    if (i < 2) {
+                        delay(500)
+                    }
+                }
+            }
+            throw IllegalStateException("Failed to get UiDevice after retries", lastException)
         }
     }
 }

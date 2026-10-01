@@ -36,6 +36,7 @@ import androidx.car.app.model.AlertCallback;
 import androidx.car.app.model.CarColor;
 import androidx.car.app.model.CarIcon;
 import androidx.car.app.model.CarIconSpan;
+import androidx.car.app.model.CarIconStyle;
 import androidx.car.app.model.CarText;
 import androidx.car.app.model.DateTimeWithZone;
 import androidx.car.app.model.Distance;
@@ -181,6 +182,8 @@ public class RoutingDemoModelFactory {
         long nowUtcMillis = System.currentTimeMillis();
         long timeToDestinationMillis = TimeUnit.HOURS.toMillis(1) + TimeUnit.MINUTES.toMillis(55);
 
+        CarIconStyle carIconStyle =
+                new CarIconStyle.Builder(CarIconStyle.TINTED).setTint(CarColor.BLUE).build();
         return new TravelEstimate.Builder(
                 // The estimated distance to the destination.
                 Distance.create(112, Distance.UNIT_KILOMETERS),
@@ -196,8 +199,8 @@ public class RoutingDemoModelFactory {
                 .setTripIcon(
                         new CarIcon.Builder(
                                         IconCompat.createWithResource(
-                                                mCarContext, R.drawable.ic_face_24px))
-                                .setTint(CarColor.BLUE)
+                                                mCarContext, R.drawable.ic_face_24px),
+                                        carIconStyle)
                                 .build())
                 .build();
     }
@@ -240,6 +243,6 @@ public class RoutingDemoModelFactory {
     }
 
     private CarIcon createCarIcon(@DrawableRes int iconRes) {
-        return new CarIcon.Builder(IconCompat.createWithResource(mCarContext, iconRes)).build();
+        return CarIcon.createTintedIcon(IconCompat.createWithResource(mCarContext, iconRes));
     }
 }

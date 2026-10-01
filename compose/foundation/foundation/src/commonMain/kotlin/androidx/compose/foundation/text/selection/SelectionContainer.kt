@@ -37,6 +37,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLocaleList
 import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.util.fastForEach
 import kotlinx.coroutines.CoroutineStart
@@ -57,7 +58,7 @@ import kotlinx.coroutines.launch
  * @sample androidx.compose.foundation.samples.SelectionSample
  */
 @Composable
-fun SelectionContainer(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+public fun SelectionContainer(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     val state = rememberSelectionState()
     SelectionContainer(modifier = modifier, state = state, children = content)
 }
@@ -81,7 +82,7 @@ fun SelectionContainer(modifier: Modifier = Modifier, content: @Composable () ->
  * @sample androidx.compose.foundation.samples.SelectAllSample
  */
 @Composable
-fun SelectionContainer(
+public fun SelectionContainer(
     state: SelectionState,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
@@ -96,7 +97,7 @@ fun SelectionContainer(
  * @sample androidx.compose.foundation.samples.DisableSelectionSample
  */
 @Composable
-fun DisableSelection(content: @Composable () -> Unit) {
+public fun DisableSelection(content: @Composable () -> Unit) {
     CompositionLocalProvider(LocalSelectionRegistrar provides null, content = content)
 }
 
@@ -147,7 +148,7 @@ internal fun SelectionContainer(
     @OptIn(ExperimentalFoundationApi::class)
     if (ComposeFoundationFlags.isSmartSelectionEnabled) {
         manager.platformSelectionBehaviors =
-            rememberPlatformSelectionBehaviors(SelectedTextType.StaticText, null)
+            rememberPlatformSelectionBehaviors(SelectedTextType.StaticText, LocalLocaleList.current)
     }
     @OptIn(ExperimentalFoundationApi::class)
     if (

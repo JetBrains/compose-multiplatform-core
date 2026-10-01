@@ -58,8 +58,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * It currently supports three input modes: {@link #INPUT_MODE_BUFFER},
  * {@link #INPUT_MODE_SURFACE}, or {@link #INPUT_MODE_BITMAP}.
  *
- * Callback#onOutputFormatChanged(MediaCodec, MediaFormat)} and {@link
- * Callback#onDrainOutputBuffer(MediaCodec, ByteBuffer)}. If the client
+ * Callback#onOutputFormatChanged(EncoderBase, MediaFormat)} and {@link
+ * Callback#onDrainOutputBuffer(EncoderBase, ByteBuffer)}. If the client
  * requests to use grid, each tile will be sent back individually.
  *
  *
@@ -398,12 +398,15 @@ public class EncoderBase implements AutoCloseable,
         }
 
         MediaFormat codecFormat;
+        // Choose image encoder if useHeicEncoder is true, otherwise fall back to
+        // video encoder (HEVC or AV1)
         if (useHeicEncoder) {
             codecFormat = MediaFormat.createVideoFormat(
                 MediaFormat.MIMETYPE_IMAGE_ANDROID_HEIC, mWidth, mHeight);
         } else {
-            codecFormat = MediaFormat.createVideoFormat(
-                MediaFormat.MIMETYPE_VIDEO_HEVC, gridWidth, gridHeight);
+            String mime = MIME.equals("AVIF") ?
+                MediaFormat.MIMETYPE_VIDEO_AV1 : MediaFormat.MIMETYPE_VIDEO_HEVC;
+            codecFormat = MediaFormat.createVideoFormat(mime, gridWidth, gridHeight);
         }
 
         if (useGrid) {
@@ -428,6 +431,21 @@ public class EncoderBase implements AutoCloseable,
 
         codecFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 0);
         codecFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, colorFormat);
+        if (useBitDepth10) {
+            codecFormat.setInteger(
+                    MediaFormat.KEY_COLOR_STANDARD, MediaFormat.COLOR_STANDARD_BT2020);
+            codecFormat.setInteger(
+                    MediaFormat.KEY_COLOR_RANGE, MediaFormat.COLOR_RANGE_FULL);
+            codecFormat.setInteger(
+                    MediaFormat.KEY_COLOR_TRANSFER, MediaFormat.COLOR_TRANSFER_ST2084);
+        } else {
+            codecFormat.setInteger(
+                    MediaFormat.KEY_COLOR_STANDARD, MediaFormat.COLOR_STANDARD_BT601_NTSC);
+            codecFormat.setInteger(
+                    MediaFormat.KEY_COLOR_RANGE, MediaFormat.COLOR_RANGE_FULL);
+            codecFormat.setInteger(
+                    MediaFormat.KEY_COLOR_TRANSFER, MediaFormat.COLOR_TRANSFER_SDR_VIDEO);
+        }
         codecFormat.setInteger(MediaFormat.KEY_FRAME_RATE, mNumTiles);
 
         // When we're doing tiles, set the operating rate higher as the size

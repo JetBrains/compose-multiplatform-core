@@ -33,6 +33,7 @@ import androidx.compose.remote.creation.compose.state.RemoteColorFilter
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.text.RemoteTypeface
 import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asAndroidColorFilter
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontVariation
@@ -54,6 +55,7 @@ internal class PaintTracker {
     var typefaceIsItalic: Boolean = false
     var colorFilter: RemoteColorFilter? = null
     var blendMode: BlendMode? = null
+    var filterQuality: FilterQuality? = null
     var shader: RemoteShader? = null
     var usingShaderMatrix: Boolean = false
     var fontVariationSettings: FontVariation.Settings? = null
@@ -83,8 +85,11 @@ internal class PaintTracker {
     }
 
     @SuppressLint("ObsoleteSdkInt")
-    fun updateWithPaint(newPaint: RemotePaint, paintBundle: PaintBundle, scope: RecordingCanvas) {
-        val creationState = scope.creationState
+    fun updateWithPaint(
+        newPaint: RemotePaint,
+        paintBundle: PaintBundle,
+        creationState: RemoteComposeCreationState,
+    ) {
 
         // Color
         val targetRemoteColor = newPaint.color
@@ -99,7 +104,12 @@ internal class PaintTracker {
             colorIsId = true
         }
 
-        if (force || this.colorValue != colorVal || this.colorIsId != colorIsId) {
+        if (
+            force ||
+                this.remoteColor == null ||
+                this.colorValue != colorVal ||
+                this.colorIsId != colorIsId
+        ) {
             this.colorValue = colorVal
             this.colorIsId = colorIsId
             this.remoteColor = targetRemoteColor
@@ -235,33 +245,32 @@ internal class PaintTracker {
             paintBundle.setBlendMode(composeBlendMode.toInt())
         }
 
+        val targetFilterQuality = newPaint.filterQuality
+        updateIfChanged(targetFilterQuality, filterQuality) {
+            filterQuality = targetFilterQuality
+            paintBundle.setFilterBitmap(targetFilterQuality != FilterQuality.None)
+        }
+
         val targetShader = newPaint.shader
         if (force || this.shader != targetShader) {
-            this.shader = targetShader as? RemoteShader
-            when (targetShader) {
-                is RemoteShader -> {
-                    targetShader.apply(creationState, paintBundle)
-                    if (usingShaderMatrix || targetShader.remoteMatrix3x3 != null) {
-                        val remoteMatrix3x3 = targetShader.remoteMatrix3x3
-                        if (remoteMatrix3x3 != null) {
-                            paintBundle.setShaderMatrix(
-                                remoteMatrix3x3.getFloatIdForCreationState(creationState)
-                            )
-                            usingShaderMatrix = true
-                        } else {
-                            paintBundle.setShaderMatrix(0f)
-                            usingShaderMatrix = false
-                        }
+            this.shader = targetShader
+            if (targetShader != null) {
+                targetShader.apply(creationState, paintBundle)
+                val remoteMatrix3x3 = targetShader.remoteMatrix3x3
+                when {
+                    !remoteMatrix3x3.isIdentity -> {
+                        paintBundle.setShaderMatrix(
+                            remoteMatrix3x3.getFloatIdForCreationState(creationState)
+                        )
+                        usingShaderMatrix = true
+                    }
+                    usingShaderMatrix -> {
+                        paintBundle.setShaderMatrix(0f)
+                        usingShaderMatrix = false
                     }
                 }
-
-                null -> {
-                    paintBundle.setShader(0)
-                }
-
-                else -> {
-                    TODO("Support shader $targetShader")
-                }
+            } else {
+                paintBundle.setShader(0)
             }
             isChanged = true
         }

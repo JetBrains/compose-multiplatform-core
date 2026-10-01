@@ -16,6 +16,7 @@
 package androidx.compose.remote.core;
 
 import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.operations.layout.Component;
 import androidx.compose.remote.core.operations.layout.managers.LayoutManager;
 import androidx.compose.remote.core.operations.paint.PaintBundle;
 
@@ -252,6 +253,37 @@ public abstract class PaintContext {
      * @param vOffset vertical offset
      */
     public abstract void drawTextOnPath(int textId, int pathId, float hOffset, float vOffset);
+
+    /**
+     * Draws text along a circular arc.
+     *
+     * <p>Calculates text width with current paint metrics, determines the arc sweep angle based
+     * on the final radius ({@code radius + warpRadiusOffset}), and lays out text along an arc
+     * centered at ({@code centerX}, {@code centerY}).
+     *
+     * <p>Angles use standard degrees (0&deg; at 3 o'clock, 90&deg; at 6 o'clock, 180&deg;
+     * at 9 o'clock, 270&deg; at 12 o'clock).
+     *
+     * @param textId id of the text resource to draw
+     * @param centerX x-coordinate of the circle center in pixels
+     * @param centerY y-coordinate of the circle center in pixels
+     * @param radius base radius of the circle in pixels
+     * @param startAngle reference angle in degrees for text alignment
+     * @param warpRadiusOffset offset added to {@code radius} to adjust the final path radius
+     * @param alignment text alignment relative to {@code startAngle}: 0 (START), 1 (CENTER),
+     *     2 (END)
+     * @param placement arc direction and placement: 0 (OUTSIDE, clockwise), 1 (INSIDE,
+     *     counter-clockwise)
+     */
+    public void drawTextOnCircle(
+            int textId,
+            float centerX,
+            float centerY,
+            float radius,
+            float startAngle,
+            float warpRadiusOffset,
+            int alignment,
+            int placement) {}
 
     /**
      * Return the dimensions (left, top, right, bottom). Relative to a drawTextRun x=0, y=0;
@@ -559,6 +591,70 @@ public abstract class PaintContext {
     public abstract void matrixFromPath(int pathId, float fraction, float vOffset, int flags);
 
     /**
+     * Store the geometry of a 2D vertex mesh.
+     *
+     * <p>The engine does all the work - expression evaluation, half float widening, expanding a
+     * layout into a triangle list - and hands the backend flat arrays already in the shape {@code
+     * Canvas.drawVertices} and {@code SkVertices} want, so a backend copies rather than converts.
+     * Interleaved x,y is {@code SkPoint[]}; packed ARGB in an int32 is exactly {@code SkColor}'s
+     * layout.
+     *
+     * <p>Separate from {@link #drawMesh} because a mesh defined once and drawn repeatedly under
+     * different transforms should upload its vertices once. Backends that can cache get that for
+     * free; backends that cannot may treat this as a store and do the work in {@link #drawMesh}.
+     *
+     * <p>An empty array means the channel is absent.
+     *
+     * @param meshId the id to store the mesh under
+     * @param layout the mesh layout (one of {@code Mesh2DGenerator.LAYOUT_*})
+     * @param uCount samples along u
+     * @param vCount samples along v
+     * @param verts x,y interleaved
+     * @param uv u,v interleaved, normalised 0..1 with (0,0) at the top left, or empty
+     * @param colors packed ARGB per vertex, or empty
+     * @param indices triangle list
+     */
+    public void setMesh(
+            int meshId,
+            int layout,
+            int uCount,
+            int vCount,
+            float @NonNull [] verts,
+            float @NonNull [] uv,
+            int @NonNull [] colors,
+            int @NonNull [] indices) {}
+
+    /**
+     * Draw a 2D vertex mesh previously stored by {@link #setMesh}.
+     *
+     * <p><b>This must leave the paint exactly as it found it.</b> Whatever it sets - shader, blend
+     * mode, style, colour - must be restored before it returns, including when the draw throws, and
+     * a draw that follows it must render identically whether or not a mesh was drawn in between.
+     * This is a hard requirement rather than a nicety: paint is canvas state, and a backend that
+     * borrows it must give it back. Nothing errors when it does not; the shapes are all correct and
+     * simply the wrong colour, which is the hardest kind of defect to attribute.
+     *
+     * <p>A mesh draw is not a paint command. It composes with {@code save}/{@code restore} exactly
+     * as {@code drawRect} does, and a document should never need to wrap it in a save block
+     * defensively.
+     *
+     * @param meshId the mesh to draw
+     * @param blend how vertex colour and texel combine
+     * @param imageId the bitmap to sample, 0 for untextured
+     */
+    public void drawMesh(int meshId, int blend, int imageId) {}
+
+    /**
+     * Multiply the local frame of a 2D mesh at {@code (u, v)} into the current canvas matrix.
+     *
+     * @param meshId the mesh to sample
+     * @param u the u parameter, 0..1
+     * @param v the v parameter, 0..1
+     * @param flags which parts of the local frame to apply
+     */
+    public void matrixFromMesh(int meshId, float u, float v, int flags) {}
+
+    /**
      * Redirect drawing to a bitmap (0 = back to main canvas)
      *
      * @param bitmapId id of bitmap to draw to or 0 to draw to the canvas
@@ -611,5 +707,90 @@ public abstract class PaintContext {
      */
     public int getDensityBehavior() {
         return mContext.mDocument.mDensityBehavior;
+    }
+
+    private final java.util.ArrayList<Boolean> mOffscreenClipStack = new java.util.ArrayList<>();
+    private final java.util.ArrayList<Component>
+            mOffscreenCompStack = new java.util.ArrayList<>();
+    private final java.util.ArrayList<Integer> mOffscreenBitmapIdStack =
+            new java.util.ArrayList<>();
+    private @Nullable Component mOffscreenComponent = null;
+    private int mOffscreenBitmapId = 0;
+
+    /** Releases any active offscreen bitmaps back to the offscreen bitmap pool. */
+    public void releaseOffscreenBitmaps() {
+        androidx.compose.remote.core.operations.BitmapData.releaseOffscreenBitmaps(mContext);
+    }
+
+    /**
+     * Pushes an offscreen target component, bitmap ID, and clip flag onto the offscreen rendering
+     * stack.
+     *
+     * @param component the component currently being rendered offscreen, or null
+     * @param bitmapId the bitmap ID of the offscreen target
+     * @param clipped true if a clip rect was pushed on the offscreen canvas
+     */
+    public void pushOffscreenTarget(@Nullable Component component,
+            int bitmapId,
+            boolean clipped) {
+        mOffscreenCompStack.add(mOffscreenComponent);
+        mOffscreenBitmapIdStack.add(mOffscreenBitmapId);
+        mOffscreenClipStack.add(clipped);
+        mOffscreenComponent = component;
+        mOffscreenBitmapId = bitmapId;
+    }
+
+    /**
+     * Pops the current offscreen target component and returns whether a clip rect was pushed.
+     *
+     * @return true if a clip rect was pushed when this offscreen target was entered
+     */
+    public boolean popOffscreenTarget() {
+        mOffscreenComponent =
+                mOffscreenCompStack.isEmpty()
+                        ? null
+                        : mOffscreenCompStack.remove(mOffscreenCompStack.size() - 1);
+        mOffscreenBitmapId =
+                mOffscreenBitmapIdStack.isEmpty()
+                        ? 0
+                        : mOffscreenBitmapIdStack.remove(mOffscreenBitmapIdStack.size() - 1);
+        return !mOffscreenClipStack.isEmpty()
+                && mOffscreenClipStack.remove(mOffscreenClipStack.size() - 1);
+    }
+
+    /**
+     * Returns whether there is an active component offscreen target on the stack.
+     *
+     * @return true if currently inside a component offscreen target
+     */
+    public boolean hasActiveOffscreenTarget() {
+        return mOffscreenBitmapId != 0 || !mOffscreenBitmapIdStack.isEmpty();
+    }
+
+    /**
+     * Returns the bitmap ID of the enclosing offscreen target, or 0 if targeting the main canvas.
+     *
+     * @return the enclosing offscreen bitmap ID, or 0
+     */
+    public int getOffscreenBitmapId() {
+        return mOffscreenBitmapId;
+    }
+
+    /**
+     * Sets the component currently being rendered to an offscreen bitmap.
+     *
+     * @param component the offscreen target component, or null
+     */
+    public void setOffscreenComponent(@Nullable Component component) {
+        mOffscreenComponent = component;
+    }
+
+    /**
+     * Returns the component currently being rendered to an offscreen bitmap, if any.
+     *
+     * @return the offscreen target component, or null
+     */
+    public @Nullable Component getOffscreenComponent() {
+        return mOffscreenComponent;
     }
 }

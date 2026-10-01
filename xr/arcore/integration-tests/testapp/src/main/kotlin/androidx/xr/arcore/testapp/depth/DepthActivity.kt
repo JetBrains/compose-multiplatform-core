@@ -45,14 +45,16 @@ import androidx.xr.arcore.testapp.common.BackToMainActivityButton
 import androidx.xr.arcore.testapp.common.SessionLifecycleHelper
 import androidx.xr.arcore.testapp.depth.rendering.DepthRenderer
 import androidx.xr.arcore.testapp.depth.rendering.DepthTextureHandler
-import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
-import androidx.xr.compose.spatial.OrbiterOffsetType
+import androidx.xr.compose.spatial.OrbiterDefaults
+import androidx.xr.compose.spatial.OrbiterPosition
+import androidx.xr.compose.spatial.OrbiterPosition.EdgeAlignment
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.transformingMovable
+import androidx.xr.compose.subspace.layout.movable
+import androidx.xr.compose.unit.DpVolumeOffset
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DepthEstimationMode
 import androidx.xr.runtime.DeviceTrackingMode
@@ -184,16 +186,19 @@ class DepthActivity : ComponentActivity(), GLSurfaceView.Renderer {
     @Composable
     fun DepthMapPanel(view: View) {
         Subspace {
-            SpatialPanel(modifier = SubspaceModifier.transformingMovable()) {
+            SpatialPanel(modifier = SubspaceModifier.movable()) {
                 AndroidView(
                     modifier = Modifier.width(1200.dp).height(1200.dp),
                     factory = { _ -> surfaceView },
                 )
                 Orbiter(
-                    position = ContentEdge.Top,
-                    offset = 8.dp,
+                    position =
+                        OrbiterPosition.TopCenter(
+                            verticalEdgeAlignment = EdgeAlignment.Outside,
+                            offset =
+                                DpVolumeOffset(x = 0.dp, y = 8.dp, z = OrbiterDefaults.Elevation),
+                        ),
                     shape = SpatialRoundedCornerShape(CornerSize(16.dp)),
-                    offsetType = OrbiterOffsetType.InnerEdge,
                 ) {
                     Row(modifier = Modifier) {
                         BackToMainActivityButton()

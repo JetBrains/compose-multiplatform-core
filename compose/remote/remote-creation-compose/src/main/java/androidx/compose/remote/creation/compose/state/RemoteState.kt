@@ -19,10 +19,10 @@ package androidx.compose.remote.creation.compose.state
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.operations.Utils
 import androidx.compose.remote.creation.RemoteComposeWriter
-import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
+import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
-import androidx.compose.remote.player.core.state.RemoteDomains
+import androidx.compose.remote.creation.compose.layout.RemoteComposeNode
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 
@@ -65,7 +65,9 @@ public interface RemoteState<T> {
         get() = this
 
     /** Returns the expression as a human-readable string. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public fun toDebugString(): String
+    @Suppress("HiddenAbstractMethodInInterface")
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun toDebugString(): String
 
     /**
      * Represents the domain (namespace) for named remote states.
@@ -98,10 +100,10 @@ public interface RemoteState<T> {
          *
          * Recommended for application-specific state.
          */
-        public object User : Domain(RemoteDomains.USER.toString())
+        public object User : Domain(USER_DOMAIN)
 
         /** The system-defined domain, used for platform-level or framework state. */
-        public object System : Domain(RemoteDomains.SYSTEM.toString())
+        public object System : Domain(SYSTEM_DOMAIN)
 
         /** The domain for states that do not belong to any specific domain. */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public object None : Domain(null)
@@ -120,16 +122,22 @@ public interface RemoteState<T> {
     }
 }
 
-/** Common base interface for all Remote types. */
+/** The canonical domain identifier for user-defined state in the RemoteCompose wire protocol. */
+private const val USER_DOMAIN: String = "USER"
+
+/** The canonical domain identifier for system-defined state in the RemoteCompose wire protocol. */
+private const val SYSTEM_DOMAIN: String = "SYSTEM"
+
+/** Common base class for all Remote types. */
 public abstract class BaseRemoteState<T : Any>
 internal constructor(initialCacheKey: RemoteStateCacheKey) : RemoteState<T> {
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     internal open val cacheKey: RemoteStateCacheKey = initialCacheKey
 
     init {
-        // Register with RemoteOperationCacheKey.
-        if (initialCacheKey is RemoteOperationCacheKey) {
-            initialCacheKey.state = this
+        // Register with BaseRemoteStateCacheKey.
+        if (initialCacheKey is BaseRemoteStateCacheKey) {
+            initialCacheKey.setState(this)
         }
     }
 
@@ -138,6 +146,45 @@ internal constructor(initialCacheKey: RemoteStateCacheKey) : RemoteState<T> {
 
     /** The constant value or null if there isn't one. */
     public abstract override val constantValueOrNull: T?
+
+    /**
+     * Returns `true` if this [BaseRemoteState] is structurally equal to [other].
+     *
+     * Two remote states are structurally equal if:
+     * - They are the same instance (`this === other`).
+     * - Both evaluate to constant values and those constant values are equal.
+     * - Both are dynamic and have equal [cacheKey]s representing identical AST DAGs.
+     *
+     * @param other The other [BaseRemoteState] to compare with.
+     * @return `true` if structurally equal, `false` otherwise.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public open fun isStructurallyEqual(other: BaseRemoteState<*>?): Boolean {
+        if (this === other) return true
+        if (other == null) return false
+        return cacheKey == other.cacheKey
+    }
+
+    /**
+     * Traverses this [BaseRemoteState] expression DAG using the provided [visitor].
+     *
+     * @param visitor The visitor that inspects each node.
+     * @return The result of visiting this node.
+     */
+    internal open fun <R> accept(visitor: RemoteStateVisitor<R>): R =
+        cacheKey.accept(visitor, mutableMapOf())
+
+    /**
+     * Traverses this [BaseRemoteState] expression DAG using the provided [visitor].
+     *
+     * @param memo A memoization map to ensure shared DAG nodes are visited once.
+     * @param visitor The visitor that inspects each node.
+     * @return The result of visiting this node.
+     */
+    internal open fun <R> accept(
+        memo: MutableMap<RemoteStateCacheKey, R>,
+        visitor: RemoteStateVisitor<R>,
+    ): R = cacheKey.accept(visitor, memo)
 
     /**
      * Returns a new or cached id for this [RemoteState] within the [RemoteComposeCreationState].
@@ -192,36 +239,34 @@ public interface MutableRemoteState<T> : RemoteState<T> {
         get() = this
 }
 
+internal class RemoteHoistNode : RemoteComposeNode() {
+    var states: Array<out RemoteState<*>> = emptyArray()
+
+    override fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
+        for (state in states) {
+            if (state is BaseRemoteState<*>) {
+                state.getIdForCreationState(creationState)
+            }
+        }
+    }
+}
+
 /**
- * Remembers a named state value.
+ * Explicitly registers one or more [RemoteState] expressions to be hoisted and evaluated at the
+ * current container level in the document hierarchy.
  *
- * This function retrieves a named state from the current [RemoteComposeCreationState]. If the state
- * does not already exist, it is created using the provided `function`. This ensures that the same
- * named state instance is reused across all compositions of the document, identified by its `name`
- * and `domain`.
+ * This ensures the operations underlying the given states (such as string formatting or
+ * mathematical operations) are emitted at this container level, so that they are evaluated whenever
+ * this container is rendered, rather than being trapped inside a conditionally hidden child
+ * container (such as an inactive branch of a RemoteStateLayout).
  *
- * This method only caches the instance of the [RemoteState]. Avoiding writing the same value to the
- * document multiple times is handled by [BaseRemoteState.getIdForCreationState].
- *
- * @param T The type of the state object, which must extend [BaseRemoteState].
- * @param name A unique name to identify this state object within its domain.
- * @param domain The domain to which this named state belongs. See [RemoteState.Domain].
- * @param function A lambda that creates the state object if it doesn't already exist.
- * @return The existing or newly created state object of type [T].
+ * @param states The remote state expressions to hoist to the current container scope.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RemoteComposable
 @Composable
-internal inline fun <reified T : RemoteState<*>> rememberNamedState(
-    name: String,
-    domain: RemoteState.Domain,
-    noinline function: (RemoteComposeCreationState) -> T,
-): T {
-    return LocalRemoteComposeCreationState.current.getOrCreateNamedState(
-        T::class.java,
-        name,
-        domain,
-        function,
-    )
+public fun Hoist(vararg states: RemoteState<*>) {
+    RemoteComposeNode(factory = ::RemoteHoistNode, update = { set(states) { this.states = it } })
 }
 
 /** The cache key for this remote state within the RemoteComposeCreationState. */

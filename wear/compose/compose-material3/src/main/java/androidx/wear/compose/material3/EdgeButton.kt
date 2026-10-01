@@ -120,11 +120,10 @@ import kotlin.math.sqrt
  *
  * @sample androidx.wear.compose.material3.samples.ScaffoldWithTLCEdgeButtonSample
  *
- * Example of [EdgeButton] integrating with
- * [androidx.wear.compose.foundation.lazy.ScalingLazyColumn], where it is recommended to pass
- * autoCentering = null to achieve the correct spacing above the [EdgeButton]:
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_ScaffoldWithTLCEdgeButtonSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
  *
- * @sample androidx.wear.compose.material3.samples.ScaffoldWithSLCEdgeButtonSample
  * @param onClick Will be called when the user clicks the button
  * @param modifier Modifier to be applied to the button. When animating the button to appear/
  *   disappear from the screen, a Modifier.height can be used to change the height of the component,

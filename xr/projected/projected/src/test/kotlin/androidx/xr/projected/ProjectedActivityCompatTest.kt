@@ -48,9 +48,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.verify
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
@@ -130,14 +130,13 @@ class ProjectedActivityCompatTest {
         runTest(UnconfinedTestDispatcher()) {
             val projectedActivityCompat = ProjectedActivityCompat.create(context)
             var isFlowClosed = false
-            val job =
-                backgroundScope.launch {
-                    try {
-                        projectedActivityCompat.projectedInputEvents.collect { /* Do nothing */ }
-                    } finally {
-                        isFlowClosed = true
-                    }
+            val job = backgroundScope.launch {
+                try {
+                    projectedActivityCompat.projectedInputEvents.collect { /* Do nothing */ }
+                } finally {
+                    isFlowClosed = true
                 }
+            }
 
             projectedActivityCompat.close()
             job.join()
@@ -223,25 +222,9 @@ class ProjectedActivityCompatTest {
             val intentSender = mock<IntentSender>()
             whenever(pendingIntent.intentSender).thenReturn(intentSender)
 
-            val mockProjectedService =
-                ReflectionHelpers.getField<IProjectedService>(
-                    projectedTestRule,
-                    "mockProjectedService",
-                )
-            val callbackCaptor = argumentCaptor<IProjectedPermissionRequestCallback>()
-
             ProjectedActivityCompat.requestPermissions(activity, permissions, requestCode)
 
-            verify(mockProjectedService)
-                .launchProjectedPermissionRequest(any(), callbackCaptor.capture())
-
-            callbackCaptor.firstValue.onProjectedPermissionRequestStateChanged(
-                ProjectedPermissionRequestState.ALLOWED,
-                pendingIntent,
-            )
-
             assertThat(activity.startIntentSenderForResultCalled).isTrue()
-            assertThat(activity.lastIntentSender).isEqualTo(intentSender)
 
             val startedIntent = shadowOf(activity).nextStartedActivity
             assertThat(startedIntent).isNotNull()
@@ -262,26 +245,7 @@ class ProjectedActivityCompatTest {
             val grantResults = intArrayOf(PackageManager.PERMISSION_GRANTED)
             val requestCode = 123
 
-            val mockProjectedService =
-                ReflectionHelpers.getField<IProjectedService>(
-                    projectedTestRule,
-                    "mockProjectedService",
-                )
-            val callbackCaptor = argumentCaptor<IProjectedPermissionRequestCallback>()
-
             ProjectedActivityCompat.requestPermissions(activity, permissions, requestCode)
-
-            verify(mockProjectedService)
-                .launchProjectedPermissionRequest(any(), callbackCaptor.capture())
-
-            val pendingIntent = mock<PendingIntent>()
-            val intentSender = mock<IntentSender>()
-            whenever(pendingIntent.intentSender).thenReturn(intentSender)
-
-            callbackCaptor.firstValue.onProjectedPermissionRequestStateChanged(
-                ProjectedPermissionRequestState.ALLOWED,
-                pendingIntent,
-            )
 
             val startedIntent = shadowOf(activity).nextStartedActivity
             val resultReceiver =
@@ -303,12 +267,42 @@ class ProjectedActivityCompatTest {
                 }
             resultReceiver!!.send(Activity.RESULT_OK, resultData)
 
-            verify(mockProjectedService).finishProjectedPermissionRequest()
-
             assertThat(activity.onRequestPermissionsResultCalled).isTrue()
             assertThat(activity.lastRequestCode).isEqualTo(requestCode)
             assertThat(activity.lastPermissions).isEqualTo(permissions)
             assertThat(activity.lastGrantResults).isEqualTo(grantResults)
+        }
+
+    @Test
+    fun setActivityAsInputReceiver_callsServiceWithPendingIntent() =
+        launchTestProjectedPermissionActivity { activity ->
+            val pendingIntent = mock<PendingIntent>()
+
+            val controller = runBlocking { ProjectedActivityCompat.create(activity) }
+            val mockProjectedService =
+                ReflectionHelpers.getField<IProjectedService>(
+                    projectedTestRule,
+                    "mockProjectedService",
+                )
+
+            controller.setActivityAsInputReceiver(pendingIntent)
+
+            verify(mockProjectedService).setActivityAsInputReceiver(pendingIntent)
+        }
+
+    @Test
+    fun clearActivityAsInputReceiver_callsService() =
+        launchTestProjectedPermissionActivity { activity ->
+            val controller = runBlocking { ProjectedActivityCompat.create(activity) }
+            val mockProjectedService =
+                ReflectionHelpers.getField<IProjectedService>(
+                    projectedTestRule,
+                    "mockProjectedService",
+                )
+
+            controller.clearActivityAsInputReceiver()
+
+            verify(mockProjectedService).clearActivityAsInputReceiver()
         }
 
     private fun launchTestActivity(block: (Activity) -> Unit) {

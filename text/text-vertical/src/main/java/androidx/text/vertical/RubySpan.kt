@@ -53,7 +53,7 @@ constructor(
         HorizontalSpanImpl(
             { _, text, start, end -> LayoutKey(start, end, text) },
             { paint, bodyText, start, end ->
-                HorizontalRubySpanLayout(bodyText, start, end, text, paint, textScale)
+                HorizontalRubySpanLayout(bodyText, start, end, text, position, paint, textScale)
             },
         )
     }

@@ -19,6 +19,7 @@ import static androidx.compose.remote.core.documentation.DocumentedOperation.FLO
 import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
 
 import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.CoreDocument;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.PaintContext;
@@ -116,10 +117,15 @@ public class TextLayout extends LayoutManager implements VariableSupport, Access
         if (isAtLeastVersion7(context)) {
             if (Float.isNaN(mFontSize)) {
                 context.listensTo(Utils.idFromNan(mFontSize), this);
+            } else if (context.getDensityBehavior() == CoreDocument.DENSITY_BEHAVIOR_DP) {
+                context.listensTo(RemoteContext.ID_DENSITY, this);
             }
             if (mIsDynamicColorEnabled) {
                 context.listensTo(mColor, this);
             }
+        } else if (context.getDensityBehavior() == CoreDocument.DENSITY_BEHAVIOR_DP
+                && !Float.isNaN(mFontSize)) {
+            context.listensTo(RemoteContext.ID_DENSITY, this);
         }
     }
 
@@ -138,11 +144,16 @@ public class TextLayout extends LayoutManager implements VariableSupport, Access
 
     @Override
     public void updateVariables(@NonNull RemoteContext context) {
+        float prevFontSize = mFontSizeValue;
         if (isAtLeastVersion7(context)) {
             mFontSizeValue =
                     Float.isNaN(mFontSize)
                             ? context.getFloat(Utils.idFromNan(mFontSize))
                             : mFontSize;
+            if (context.getDensityBehavior() == CoreDocument.DENSITY_BEHAVIOR_DP
+                    && !Float.isNaN(mFontSize)) {
+                mFontSizeValue *= context.getDensity();
+            }
 
             mTextAlignValue = (short) (mTextAlign & 0xFFFF);
             if (mIsDynamicColorEnabled) {
@@ -158,8 +169,15 @@ public class TextLayout extends LayoutManager implements VariableSupport, Access
             }
         } else {
             mFontSizeValue = mFontSize;
+            if (context.getDensityBehavior() == CoreDocument.DENSITY_BEHAVIOR_DP
+                    && !Float.isNaN(mFontSize)) {
+                mFontSizeValue *= context.getDensity();
+            }
             mColorValue = mColor;
             mTextAlignValue = mTextAlign;
+        }
+        if (prevFontSize != mFontSizeValue && mComputedTextLayout != null) {
+            invalidateMeasure();
         }
         String cachedString = context.getText(mTextId);
         if (cachedString != null && cachedString.equalsIgnoreCase(mCachedString)) {
@@ -318,29 +336,42 @@ public class TextLayout extends LayoutManager implements VariableSupport, Access
             return;
         }
         int length = mCachedString.length();
-        if (mComputedTextLayout != null) {
-            context.drawComplexText(mComputedTextLayout);
-        } else {
-            float px = mTextX;
-            switch (mTextAlignValue) {
-                case TEXT_ALIGN_CENTER:
-                    px = (mWidth - mPaddingLeft - mPaddingRight - mTextW) / 2f;
-                    break;
-                case TEXT_ALIGN_RIGHT:
-                case TEXT_ALIGN_END:
-                    px = (mWidth - mPaddingLeft - mPaddingRight - mTextW);
-                    break;
-                case TEXT_ALIGN_LEFT:
-                case TEXT_ALIGN_START:
-                default:
-            }
+        float contentW = mWidth - mPaddingLeft - mPaddingRight;
+        float px = 0f;
+        switch (mTextAlignValue) {
+            case TEXT_ALIGN_CENTER:
+                px = (contentW - mTextW) / 2f;
+                break;
+            case TEXT_ALIGN_RIGHT:
+            case TEXT_ALIGN_END:
+                px = contentW - mTextW;
+                break;
+            case TEXT_ALIGN_LEFT:
+            case TEXT_ALIGN_START:
+            default:
+                px = 0f;
+        }
 
-            if (mTextW > (mWidth - mPaddingLeft - mPaddingRight)) {
+        if (mComputedTextLayout != null) {
+            context.save();
+            if (mOverflow != OVERFLOW_VISIBLE) {
+                context.clipRect(
+                        0f,
+                        0f,
+                        contentW,
+                        mHeight - mPaddingTop - mPaddingBottom);
+            }
+            context.translate(getScrollX() + px, getScrollY());
+            context.drawComplexText(mComputedTextLayout);
+            context.restore();
+        } else {
+            px += mTextX;
+            if (mTextW > contentW) {
                 context.save();
                 context.clipRect(
                         0f,
                         0f,
-                        mWidth - mPaddingLeft - mPaddingRight,
+                        contentW,
                         mHeight - mPaddingTop - mPaddingBottom);
                 context.translate(getScrollX(), getScrollY());
                 context.drawTextRun(mTextId, 0, length, 0, 0, px, mTextY, false);

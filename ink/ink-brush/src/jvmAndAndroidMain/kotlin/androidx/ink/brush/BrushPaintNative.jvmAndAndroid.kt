@@ -16,11 +16,13 @@
 
 package androidx.ink.brush
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
 
 /** Singleton wrapper around BrushPaint native JNI calls. */
 @UsedByNative
+@OptIn(InkInternalOnlyApi::class)
 actual internal object BrushPaintNative {
     init {
         NativeLoader.load()
@@ -56,9 +58,26 @@ actual internal object BrushPaintNative {
         nativePointer: Long,
         meshFormatNativePointer: Long,
     ): Boolean
+
+    @UsedByNative actual external fun calculateMinimumRequiredVersion(nativePointer: Long): Int
+
+    @UsedByNative actual external fun getBlendModeMinimumRequiredVersion(blendModeInt: Int): Int
+
+    @UsedByNative actual external fun getTextureWrapMinimumRequiredVersion(wrapInt: Int): Int
+
+    @UsedByNative actual external fun getTextureOriginMinimumRequiredVersion(originInt: Int): Int
+
+    @UsedByNative
+    actual external fun getTextureSizeUnitMinimumRequiredVersion(sizeUnitInt: Int): Int
+
+    @UsedByNative
+    actual external fun getAnimationRepeatModeMinimumRequiredVersion(
+        animationRepeatModeInt: Int
+    ): Int
 }
 
 @UsedByNative
+@OptIn(InkInternalOnlyApi::class)
 actual internal object TextureLayerNative {
     init {
         NativeLoader.load()
@@ -69,9 +88,12 @@ actual internal object TextureLayerNative {
     @UsedByNative actual external fun getMappingInt(nativePointer: Long): Int
 
     @UsedByNative actual external fun getBlendModeInt(nativePointer: Long): Int
+
+    @UsedByNative actual external fun calculateMinimumRequiredVersion(nativePointer: Long): Int
 }
 
 @UsedByNative
+@OptIn(InkInternalOnlyApi::class)
 actual internal object TilingTextureNative {
     init {
         NativeLoader.load()
@@ -114,6 +136,7 @@ actual internal object TilingTextureNative {
 }
 
 @UsedByNative
+@OptIn(InkInternalOnlyApi::class)
 actual internal object StampingTextureNative {
     init {
         NativeLoader.load()
@@ -126,6 +149,7 @@ actual internal object StampingTextureNative {
         animationRows: Int,
         animationColumns: Int,
         animationDurationMillis: Long,
+        animationRepeatMode: Int,
         blendMode: Int,
     ): Long
 
@@ -138,9 +162,12 @@ actual internal object StampingTextureNative {
     @UsedByNative actual external fun getAnimationColumns(nativePointer: Long): Int
 
     @UsedByNative actual external fun getAnimationDurationMillis(nativePointer: Long): Long
+
+    @UsedByNative actual external fun getAnimationRepeatModeInt(nativePointer: Long): Int
 }
 
 @UsedByNative
+@OptIn(InkInternalOnlyApi::class)
 actual internal object ColorFunctionNative {
     init {
         NativeLoader.load()
@@ -150,9 +177,9 @@ actual internal object ColorFunctionNative {
 
     @UsedByNative actual external fun createHueOffset(offsetDegrees: Float): Long
 
-    @UsedByNative actual external fun createSaturationMultiplier(multiplier: Float): Long
+    @UsedByNative actual external fun createChromaMultiplier(multiplier: Float): Long
 
-    @UsedByNative actual external fun createLuminosityOffset(offset: Float): Long
+    @UsedByNative actual external fun createLightnessOffset(offset: Float): Long
 
     @UsedByNative
     actual external fun createReplaceColor(
@@ -169,9 +196,9 @@ actual internal object ColorFunctionNative {
 
     @UsedByNative actual external fun getHueOffsetDegrees(nativePointer: Long): Float
 
-    @UsedByNative actual external fun getSaturationMultiplier(nativePointer: Long): Float
+    @UsedByNative actual external fun getChromaMultiplier(nativePointer: Long): Float
 
-    @UsedByNative actual external fun getLuminosityOffset(nativePointer: Long): Float
+    @UsedByNative actual external fun getLightnessOffset(nativePointer: Long): Float
 
     @UsedByNative actual external fun computeReplaceColorLong(nativePointer: Long): Long
 
@@ -184,4 +211,6 @@ actual internal object ColorFunctionNative {
         colorAlpha: Float,
         colorSpace: Int,
     ): Long
+
+    @UsedByNative actual external fun calculateMinimumRequiredVersion(nativePointer: Long): Int
 }

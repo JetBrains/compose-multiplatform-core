@@ -17,7 +17,6 @@
 package androidx.compose.animation.demos.layoutanimation
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.ExperimentalTransitionApi
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -57,8 +56,8 @@ fun AnimatedVisibilityLazyColumnDemo() {
 
         LaunchedEffect(model) {
             snapshotFlow {
-                    model.items.firstOrNull { it.visible.isIdle && !it.visible.targetState }
-                }
+                model.items.firstOrNull { it.visible.isIdle && !it.visible.targetState }
+            }
                 .collect {
                     if (it != null) {
                         model.pruneItems()
@@ -111,7 +110,6 @@ private class MyModel {
         item.visible.targetState = false
     }
 
-    @OptIn(ExperimentalTransitionApi::class)
     fun pruneItems() {
         _items.removeAll(items.filter { it.visible.isIdle && !it.visible.targetState })
     }

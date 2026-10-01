@@ -38,7 +38,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -47,7 +46,7 @@ class LazyListsReverseLayoutTest {
 
     private val ContainerTag = "ContainerTag"
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private var itemSize: Dp = Dp.Infinity
 
@@ -143,12 +142,11 @@ class LazyListsReverseLayoutTest {
 
         rule.onNodeWithTag(ContainerTag).scrollBy(y = -itemSize * 0.5f, density = rule.density)
 
-        val scrolled =
-            rule.runOnIdle {
-                assertThat(state.firstVisibleItemScrollOffset).isGreaterThan(0)
-                assertThat(state.firstVisibleItemIndex).isEqualTo(0)
-                with(rule.density) { state.firstVisibleItemScrollOffset.toDp() }
-            }
+        val scrolled = rule.runOnIdle {
+            assertThat(state.firstVisibleItemScrollOffset).isGreaterThan(0)
+            assertThat(state.firstVisibleItemIndex).isEqualTo(0)
+            with(rule.density) { state.firstVisibleItemScrollOffset.toDp() }
+        }
 
         rule.onNodeWithTag("2").assertTopPositionInRootIsEqualTo(-itemSize + scrolled)
         rule.onNodeWithTag("1").assertTopPositionInRootIsEqualTo(scrolled)
@@ -271,12 +269,11 @@ class LazyListsReverseLayoutTest {
 
         rule.onNodeWithTag(ContainerTag).scrollBy(x = -itemSize * 0.5f, density = rule.density)
 
-        val scrolled =
-            rule.runOnIdle {
-                assertThat(state.firstVisibleItemScrollOffset).isGreaterThan(0)
-                assertThat(state.firstVisibleItemIndex).isEqualTo(0)
-                with(rule.density) { state.firstVisibleItemScrollOffset.toDp() }
-            }
+        val scrolled = rule.runOnIdle {
+            assertThat(state.firstVisibleItemScrollOffset).isGreaterThan(0)
+            assertThat(state.firstVisibleItemIndex).isEqualTo(0)
+            with(rule.density) { state.firstVisibleItemScrollOffset.toDp() }
+        }
 
         rule.onNodeWithTag("2").assertLeftPositionInRootIsEqualTo(-itemSize + scrolled)
         rule.onNodeWithTag("1").assertLeftPositionInRootIsEqualTo(scrolled)
@@ -361,12 +358,11 @@ class LazyListsReverseLayoutTest {
 
         rule.onNodeWithTag(ContainerTag).scrollBy(x = itemSize * 0.5f, density = rule.density)
 
-        val scrolled =
-            rule.runOnIdle {
-                assertThat(state.firstVisibleItemScrollOffset).isGreaterThan(0)
-                assertThat(state.firstVisibleItemIndex).isEqualTo(0)
-                with(rule.density) { state.firstVisibleItemScrollOffset.toDp() }
-            }
+        val scrolled = rule.runOnIdle {
+            assertThat(state.firstVisibleItemScrollOffset).isGreaterThan(0)
+            assertThat(state.firstVisibleItemIndex).isEqualTo(0)
+            with(rule.density) { state.firstVisibleItemScrollOffset.toDp() }
+        }
 
         rule.onNodeWithTag("0").assertLeftPositionInRootIsEqualTo(-scrolled)
         rule.onNodeWithTag("1").assertLeftPositionInRootIsEqualTo(itemSize - scrolled)

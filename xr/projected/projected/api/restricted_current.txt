@@ -2,6 +2,7 @@
 package androidx.xr.projected {
 
   public final class BatteryState {
+    ctor public BatteryState(boolean isCharging, @IntRange(from=0L, to=100L) int batteryLevel);
     method @InaccessibleFromKotlin public int getBatteryLevel();
     method @InaccessibleFromKotlin public boolean isCharging();
     property public int batteryLevel;
@@ -9,11 +10,13 @@ package androidx.xr.projected {
   }
 
   @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public final class ProjectedActivityCompat implements java.lang.AutoCloseable {
+    method public void clearActivityAsInputReceiver();
     method public void close();
     method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static suspend Object? create(android.app.Activity activity, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedActivityCompat>);
     method @Deprecated public static suspend Object? create(android.content.Context context, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedActivityCompat>);
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.Flow<androidx.xr.projected.ProjectedInputEvent> getProjectedInputEvents();
     method @RequiresApi(android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM) @WorkerThread public static void requestPermissions(android.app.Activity activity, String[] permissions, @IntRange(from=0L) int requestCode);
+    method public void setActivityAsInputReceiver(android.app.PendingIntent intent);
     property public kotlinx.coroutines.flow.Flow<androidx.xr.projected.ProjectedInputEvent> projectedInputEvents;
     field public static final androidx.xr.projected.ProjectedActivityCompat.Companion Companion;
   }
@@ -110,24 +113,6 @@ package androidx.xr.projected {
 package @SuppressCompatibility androidx.xr.projected.experimental {
 
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This is an experimental API. It may be changed or removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalProjectedApi {
-  }
-
-}
-
-package @SuppressCompatibility androidx.xr.projected.permissions {
-
-  @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public final class ProjectedPermissionsRequestParams {
-    ctor public ProjectedPermissionsRequestParams(java.util.List<java.lang.String> permissions, String? rationale);
-    method @InaccessibleFromKotlin public java.util.List<java.lang.String> getPermissions();
-    method @InaccessibleFromKotlin public String? getRationale();
-    property public java.util.List<java.lang.String> permissions;
-    property public String? rationale;
-  }
-
-  @Deprecated @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public final class ProjectedPermissionsResultContract extends androidx.activity.result.contract.ActivityResultContract<java.util.List<? extends androidx.xr.projected.permissions.ProjectedPermissionsRequestParams>,java.util.Map<java.lang.String,? extends java.lang.Boolean>> {
-    ctor @Deprecated public ProjectedPermissionsResultContract();
-    method @Deprecated @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public android.content.Intent createIntent(android.content.Context context, java.util.List<androidx.xr.projected.permissions.ProjectedPermissionsRequestParams> input);
-    method @Deprecated public java.util.Map<java.lang.String,java.lang.Boolean> parseResult(int resultCode, android.content.Intent? intent);
   }
 
 }

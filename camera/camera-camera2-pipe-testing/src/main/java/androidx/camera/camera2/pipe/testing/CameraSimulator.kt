@@ -17,6 +17,7 @@
 package androidx.camera.camera2.pipe.testing
 
 import android.hardware.HardwareBuffer
+import android.hardware.camera2.CaptureResult
 import android.media.ImageReader
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraId
@@ -31,7 +32,7 @@ import androidx.camera.camera2.pipe.media.ImageSource
  *
  * The simulator does not make (many) assumptions about how the simulator will be used, and for this
  * reason it does not automatically put the underlying graph into a "started" state. In most cases,
- * the test will need start the [CameraGraph], [simulateCameraStarted], and either configure
+ * the test will need to start the [CameraGraph], [simulateCameraStarted], and either configure
  * surfaces for the [CameraGraph] or call [initializeSurfaces] to put the graph into a state where
  * it is able to send and simulate interactions with the camera. This mirrors the normal lifecycle
  * of a [CameraGraph]. Tests using [CameraSimulator]s should also close them after they've completed
@@ -65,10 +66,11 @@ public interface CameraSimulator {
      * or buffer production.
      */
     public fun simulateNextFrame(
-        advanceClockByNanos: Long = 33_366_666 // (2_000_000_000 / (60  / 1.001))
+        advanceClockByNanos: Long = 33_366_666, // (2_000_000_000 / (60  / 1.001))
+        advanceBarrier: Boolean = true,
     ): CameraGraphSimulator.FrameSimulator
 
-    /** Utility function to simulate the production of a [FakeImage]s for one or more streams. */
+    /** Utility function to simulate the production of [FakeImage]s for one or more streams. */
     public fun simulateImage(
         streamId: StreamId,
         imageTimestamp: Long,
@@ -99,4 +101,17 @@ public interface CameraSimulator {
         timestamp: Long,
         outputIds: Set<OutputId>,
     )
+
+    /**
+     * Utility function to simulate a Frame end-to-end.
+     *
+     * This will simulate the next frame, simulate expected outputs if multi-output streams exist,
+     * simulate images, and simulate capture completion.
+     */
+    public fun simulateAndCompleteNextFrame(
+        resultMetadata: Map<CaptureResult.Key<*>, Any?> = emptyMap(),
+        physicalCameraIds: Set<CameraId> = emptySet(),
+        hardwareBuffers: Map<OutputId, HardwareBuffer> = emptyMap(),
+        advanceClockByNanos: Long = 33_366_666,
+    ): CameraGraphSimulator.FrameSimulator
 }

@@ -16,6 +16,8 @@
 
 package androidx.ink.brush.behavior
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
+import androidx.ink.nativeloader.cinterop.EasingFunctionNative_calculateMinimumRequiredVersion
 import androidx.ink.nativeloader.cinterop.EasingFunctionNative_createCopyOf
 import androidx.ink.nativeloader.cinterop.EasingFunctionNative_createCubicBezier
 import androidx.ink.nativeloader.cinterop.EasingFunctionNative_createLinear
@@ -31,6 +33,7 @@ import androidx.ink.nativeloader.cinterop.EasingFunctionNative_getLinearPointX
 import androidx.ink.nativeloader.cinterop.EasingFunctionNative_getLinearPointY
 import androidx.ink.nativeloader.cinterop.EasingFunctionNative_getParametersType
 import androidx.ink.nativeloader.cinterop.EasingFunctionNative_getPredefinedValueInt
+import androidx.ink.nativeloader.cinterop.EasingFunctionNative_getStepPositionMinimumRequiredVersion
 import androidx.ink.nativeloader.cinterop.EasingFunctionNative_getStepsCount
 import androidx.ink.nativeloader.cinterop.EasingFunctionNative_getStepsPositionInt
 import androidx.ink.nativeloader.throwForNonOkStatusCallback
@@ -38,7 +41,7 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, InkInternalOnlyApi::class)
 actual internal object EasingFunctionNative {
 
     actual fun createCopyOf(otherEasingFunctionNativePointer: Long): Long =
@@ -123,4 +126,10 @@ actual internal object EasingFunctionNative {
 
     actual fun getStepsPositionInt(nativePointer: Long): Int =
         EasingFunctionNative_getStepsPositionInt(nativePointer)
+
+    actual fun calculateMinimumRequiredVersion(nativePointer: Long): Int =
+        EasingFunctionNative_calculateMinimumRequiredVersion(nativePointer)
+
+    actual fun getStepPositionMinimumRequiredVersion(stepPositionInt: Int): Int =
+        EasingFunctionNative_getStepPositionMinimumRequiredVersion(stepPositionInt)
 }

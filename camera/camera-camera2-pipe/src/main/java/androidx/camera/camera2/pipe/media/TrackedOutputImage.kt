@@ -21,8 +21,31 @@ import androidx.camera.camera2.pipe.OutputId
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.media.OutputImage.Companion.toLogString
-import kotlin.reflect.KClass
 import kotlinx.atomicfu.atomic
+
+/**
+ * Immutable value class to encode external use count (bits 1..31) and closed state (bit 0) into a
+ * single primitive int. This allows the state transitions can be performed atomically without
+ * locks.
+ */
+@JvmInline
+internal value class TrackedOutputImageState(val value: Int = 0) {
+    val externalUseCount: Int
+        get() = value ushr 1
+
+    val isClosed: Boolean
+        get() = (value and 1) != 0
+
+    val isEvictable: Boolean
+        get() = value == 0
+
+    fun withClosed(): TrackedOutputImageState = TrackedOutputImageState(value or 1)
+
+    fun withIncrementedUse(count: Int = 1): TrackedOutputImageState =
+        TrackedOutputImageState(value + (count shl 1))
+
+    fun withDecrementedUse(): TrackedOutputImageState = TrackedOutputImageState(value - 2)
+}
 
 /**
  * Base image type for images coming out of [ImageReaderImageSource]. It additionally tracks the
@@ -38,25 +61,18 @@ internal class TrackedOutputImage(
     val bytesPerImage =
         StreamFormat.bytesPerImage(StreamFormat(image.format), image.width, image.height)
 
-    private val closed = atomic(false)
-    private val externalUseCount = atomic(0)
-    private val isEvictable = atomic(false)
+    // TrackedOutputImageState to track external use count and closed state.
+    // Initial state is 0: closed = false, externalUseCount = 0, isEvictable = true.
+    private val state = atomic(TrackedOutputImageState(0).value)
 
     init {
-        // Note - right now we are tracking the evictable bytes for Image(s), we should also
-        // consider keeping track of the count of evictable image(s) for a particular stream
-        // irrespective of the byte size of the image.
         if (bytesPerImage > 0) {
             // Acquire memory budget for this image.
             memoryEstimator.incrementUsage(bytesPerImage)
         }
-        // Evaluate evictable state on creation
-        updateEvictableState()
+        // A newly created image with 0 external uses and not closed is evictable.
+        onEvictableStateChanged(isEvictable = true)
     }
-
-    @Suppress("UNCHECKED_CAST")
-    @Deprecated("Use the reified unwrapAs<T>() extension function instead")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? = unwrapAs(type.java)
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> unwrapAs(type: Class<T>): T? =
@@ -67,55 +83,64 @@ internal class TrackedOutputImage(
             else -> image.unwrapAs(type)
         }
 
-    fun incrementExternalUse() {
-        externalUseCount.incrementAndGet()
-        updateEvictableState()
-    }
+    fun incrementExternalUse() = updateState { it.withIncrementedUse(1) }
 
-    fun decrementExternalUse() {
-        externalUseCount.decrementAndGet()
-        updateEvictableState()
-    }
+    fun decrementExternalUse() = updateState { it.withDecrementedUse() }
 
     fun addExternalUse(count: Int) {
         if (count == 0) {
             return
         }
-        externalUseCount.getAndAdd(count)
-        updateEvictableState()
+        updateState { it.withIncrementedUse(count) }
     }
 
-    private fun updateEvictableState() {
+    private inline fun updateState(
+        transform: (TrackedOutputImageState) -> TrackedOutputImageState
+    ) {
         while (true) {
-            // Compute if it is evictable based on the current external use count and closed state.
-            val shouldBeEvictable = externalUseCount.value == 0 && !closed.value
-            val currentlyEvictable = isEvictable.value
-            if (shouldBeEvictable == currentlyEvictable) {
+            val currentStateValue = state.value
+            val currentState = TrackedOutputImageState(currentStateValue)
+            val nextState = transform(currentState)
+
+            if (currentState == nextState) {
                 return
             }
 
-            // Attempt to update the evictable state.
-            if (
-                isEvictable.compareAndSet(expect = currentlyEvictable, update = shouldBeEvictable)
-            ) {
-                if (bytesPerImage > 0) {
-                    if (shouldBeEvictable) {
-                        memoryEstimator.updateEvictable(bytesPerImage)
-                    } else {
-                        memoryEstimator.updateEvictable(-bytesPerImage)
-                    }
+            if (state.compareAndSet(currentStateValue, nextState.value)) {
+                if (currentState.isEvictable != nextState.isEvictable) {
+                    onEvictableStateChanged(nextState.isEvictable)
                 }
                 return
             }
-            // Try again if the update was not successful due to any concurrent updates.
+        }
+    }
+
+    private fun onEvictableStateChanged(isEvictable: Boolean) {
+        if (isEvictable) {
+            imageReaderImageSource.incrementEvictableImages()
+            if (bytesPerImage > 0) {
+                memoryEstimator.incrementEvictableBytes(bytesPerImage)
+            }
+        } else {
+            imageReaderImageSource.decrementEvictableImages()
+            if (bytesPerImage > 0) {
+                memoryEstimator.decrementEvictableBytes(bytesPerImage)
+            }
         }
     }
 
     override fun close() {
-        if (closed.compareAndSet(expect = false, update = true)) {
-            // Try to update the evictable math.
-            updateEvictableState()
-
+        var becameClosed = false
+        updateState { currentState ->
+            if (currentState.isClosed) {
+                becameClosed = false
+                currentState
+            } else {
+                becameClosed = true
+                currentState.withClosed()
+            }
+        }
+        if (becameClosed) {
             // Close underlying image exactly once, and close it *before* decrementImageCount
             // to ensure the imageCount does not get out of sync.
             imageReaderImageSource.closeAndDecrementImageCount(image)

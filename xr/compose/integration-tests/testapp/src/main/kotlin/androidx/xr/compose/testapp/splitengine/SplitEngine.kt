@@ -53,7 +53,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStoreOwner
-import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.SavedStateRegistryOwner
@@ -64,8 +63,6 @@ import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.GltfAnimation
-import androidx.xr.scenecore.GltfAnimationStartOptions
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.ImageBasedLightingAsset
@@ -88,19 +85,24 @@ class SplitEngine : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        lifecycleScope.launch {
-            val sessionResult = Session.create(context = this@SplitEngine)
-            if (sessionResult is SessionCreateSuccess) {
-                session = sessionResult.session
-                session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
+        setContent {
+            var sessionCreated by remember { mutableStateOf(false) }
 
-                setContent {
-                    var title = intent.getStringExtra("TITLE")
-                    if (title == null) title = "Split Engine Test"
-                    ComposeEntry(activity, title)
+            if (sessionCreated) {
+                var title = intent.getStringExtra("TITLE")
+                if (title == null) title = "Split Engine Test"
+                ComposeEntry(activity, title)
+            }
+
+            LaunchedEffect(Unit) {
+                val sessionResult = Session.create(context = this@SplitEngine)
+                if (sessionResult is SessionCreateSuccess) {
+                    session = sessionResult.session
+                    session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
+                    sessionCreated = true
+                } else {
+                    finish()
                 }
-            } else {
-                finish()
             }
         }
     }
@@ -320,7 +322,7 @@ class SplitEngine : ComponentActivity() {
                     }
 
                     if (glimmerModel.value != null) {
-                        ApiButton("Play\nGlimmer", modifier) {
+                        ApiButton("Show\nGlimmer", modifier) {
                             if (glimmerEntity.value == null) {
                                 glimmerEntity.value =
                                     GltfModelEntity.create(
@@ -330,10 +332,6 @@ class SplitEngine : ComponentActivity() {
                                         session.scene.activitySpace,
                                     )
                             }
-                            glimmerEntity.value!!
-                                .animations
-                                .firstOrNull()
-                                ?.start(GltfAnimationStartOptions(shouldLoop = false))
                         }
                     }
                 }
@@ -346,9 +344,6 @@ class SplitEngine : ComponentActivity() {
         val dragonModel = remember { mutableStateOf<GltfModel?>(null) }
         val dragonEntity = remember { mutableStateOf<GltfModelEntity?>(null) }
         var isChecked by remember { mutableStateOf(false) } // State for the switch
-        val dragonAnimationState = remember {
-            androidx.compose.runtime.mutableStateOf(GltfAnimation.AnimationState.STOPPED)
-        }
         val scope = rememberCoroutineScope()
 
         Card(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
@@ -402,46 +397,7 @@ class SplitEngine : ComponentActivity() {
         if (dragonEntity.value != null) {
             Card(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    ApiText(text = "Split-Engine APIs - Animation")
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        val modifier = Modifier.weight(1F)
-                        ApiButton("Animate Dragon Entity", modifier) {
-                            dragonEntity.value!!
-                                .animations
-                                .find { it.name == "Fast_Flying" }
-                                ?.start(GltfAnimationStartOptions(shouldLoop = false))
-                        }
-                        ApiButton("Loop Animate Dragon Entity", modifier) {
-                            val fastFlyingAnim =
-                                dragonEntity.value!!.animations.find { it.name == "Fast_Flying" }
-                            fastFlyingAnim?.start(GltfAnimationStartOptions(shouldLoop = true))
-
-                            dragonAnimationState.value =
-                                fastFlyingAnim?.animationState
-                                    ?: GltfAnimation.AnimationState.STOPPED
-                        }
-                        ApiButton("Stop Animate Dragon Entity", modifier) {
-                            dragonEntity.value!!.animations.forEach { anim ->
-                                if (anim.animationState == GltfAnimation.AnimationState.PLAYING) {
-                                    anim.stop()
-                                }
-                            }
-                            dragonAnimationState.value = GltfAnimation.AnimationState.STOPPED
-                        }
-                    }
-                }
-            }
-
-            Card(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    ApiText(text = "Split Engine APIs - Setting & Animation State")
+                    ApiText(text = "Split Engine APIs - Settings")
 
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -481,19 +437,6 @@ class SplitEngine : ComponentActivity() {
                                 }
                             },
                             modifier = Modifier.weight(1f),
-                        )
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        val stateValue = dragonAnimationState.value.toString()
-                        Text(
-                            text = "Animation State: $stateValue",
-                            modifier = Modifier.weight(1f),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
                         )
                     }
                 }

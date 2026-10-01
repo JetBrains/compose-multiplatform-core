@@ -18,7 +18,7 @@ package androidx.xr.runtime
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 
-/** Defines the valid integer constants for *stable* Spatial API versions. */
+/** Valid integer constants for *stable* Spatial API versions. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @Retention(AnnotationRetention.SOURCE)
 @IntDef(
@@ -26,6 +26,7 @@ import androidx.annotation.RestrictTo
     SpatialApiVersions.SPATIAL_API_V1,
     SpatialApiVersions.SPATIAL_API_V2,
     SpatialApiVersions.SPATIAL_API_V3,
+    SpatialApiVersions.SPATIAL_API_V4,
 )
 public annotation class SpatialApiVersion
 
@@ -44,15 +45,16 @@ public object SpatialApiVersions {
     public const val SPATIAL_API_V2: Int = 2
     /** API version 3. */
     public const val SPATIAL_API_V3: Int = 3
+    /** API version 4. */
+    public const val SPATIAL_API_V4: Int = 4
 
     /** The latest stable Spatial API version. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public const val LATEST_STABLE_API_LEVEL: Int = SPATIAL_API_V3
+    public const val LATEST_STABLE_API_LEVEL: Int = SPATIAL_API_V4
 }
 
 /**
- * Denotes that the annotated element should only be called on devices that support a given Spatial
- * API version.
+ * Annotates elements that require a specific Spatial API version.
  *
  * The Spatial API version required by an element is specified by the [value] parameter. The value
  * should be one of the constants from [androidx.xr.runtime.SpatialApiVersions].
@@ -79,7 +81,12 @@ public object SpatialApiVersions {
  * ```
  */
 @Retention(AnnotationRetention.RUNTIME)
-@Target(AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY, AnnotationTarget.CLASS)
+@Target(
+    AnnotationTarget.FUNCTION,
+    AnnotationTarget.PROPERTY,
+    AnnotationTarget.CLASS,
+    AnnotationTarget.CONSTRUCTOR,
+)
 public annotation class RequiresSpatialApi(
     /**
      * The minimum Spatial API version required. The value should be one of the constants from

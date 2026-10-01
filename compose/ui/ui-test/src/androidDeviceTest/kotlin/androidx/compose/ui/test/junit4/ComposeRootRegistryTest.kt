@@ -123,6 +123,27 @@ class ComposeRootRegistryTest {
                 .isEqualTo(listOf(Pair(composeRoot, true), Pair(composeRoot, false)))
         }
     }
+
+    @Test
+    fun getCurrentOrPreTearDownRoots() {
+        activityRule.scenario.onActivity { activity ->
+            activity.setContent {}
+            val composeRoot = activity.findRootForTest()
+
+            // When registry is set up, it returns active roots
+            assertThat(composeRootRegistry.getCurrentOrPreTearDownRoots())
+                .isEqualTo(setOf(composeRoot))
+
+            // When torn down, it returns the pre-teardown snapshot
+            composeRootRegistry.tearDownRegistry()
+            assertThat(composeRootRegistry.getCurrentOrPreTearDownRoots())
+                .isEqualTo(setOf(composeRoot))
+
+            // When cleared, it returns empty
+            composeRootRegistry.clearRegisteredComposeRootsBeforeTearDown()
+            assertThat(composeRootRegistry.getCurrentOrPreTearDownRoots()).isEmpty()
+        }
+    }
 }
 
 private fun Activity.findRootForTest(): ViewRootForTest {

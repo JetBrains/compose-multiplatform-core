@@ -16,20 +16,21 @@
 
 package androidx.ink.geometry
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.cinterop.AffineTransformNative_apply
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, InkInternalOnlyApi::class)
 actual internal object AffineTransformNative {
 
     actual fun populateTransformedParallelogram(
-        affineTransformA: Float,
-        affineTransformB: Float,
-        affineTransformC: Float,
-        affineTransformD: Float,
-        affineTransformE: Float,
-        affineTransformF: Float,
+        affineTransformM00: Float,
+        affineTransformM10: Float,
+        affineTransformM20: Float,
+        affineTransformM01: Float,
+        affineTransformM11: Float,
+        affineTransformM21: Float,
         parallelogramCenterX: Float,
         parallelogramCenterY: Float,
         parallelogramWidth: Float,
@@ -39,12 +40,12 @@ actual internal object AffineTransformNative {
         out: MutableParallelogram,
     ) {
         AffineTransformNative_apply(
-                affineTransformA,
-                affineTransformB,
-                affineTransformC,
-                affineTransformD,
-                affineTransformE,
-                affineTransformF,
+                affineTransformM00,
+                affineTransformM10,
+                affineTransformM20,
+                affineTransformM01,
+                affineTransformM11,
+                affineTransformM21,
                 parallelogramCenterX,
                 parallelogramCenterY,
                 parallelogramWidth,
@@ -65,12 +66,12 @@ actual internal object AffineTransformNative {
     }
 
     actual fun createTransformedParallelogram(
-        affineTransformA: Float,
-        affineTransformB: Float,
-        affineTransformC: Float,
-        affineTransformD: Float,
-        affineTransformE: Float,
-        affineTransformF: Float,
+        affineTransformM00: Float,
+        affineTransformM10: Float,
+        affineTransformM20: Float,
+        affineTransformM01: Float,
+        affineTransformM11: Float,
+        affineTransformM21: Float,
         parallelogramCenterX: Float,
         parallelogramCenterY: Float,
         parallelogramWidth: Float,
@@ -79,12 +80,12 @@ actual internal object AffineTransformNative {
         parallelogramShearFactor: Float,
     ): ImmutableParallelogram {
         return AffineTransformNative_apply(
-                affineTransformA,
-                affineTransformB,
-                affineTransformC,
-                affineTransformD,
-                affineTransformE,
-                affineTransformF,
+                affineTransformM00,
+                affineTransformM10,
+                affineTransformM20,
+                affineTransformM01,
+                affineTransformM11,
+                affineTransformM21,
                 parallelogramCenterX,
                 parallelogramCenterY,
                 parallelogramWidth,

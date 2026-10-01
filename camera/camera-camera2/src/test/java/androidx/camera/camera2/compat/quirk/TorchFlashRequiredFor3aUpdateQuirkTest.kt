@@ -19,7 +19,6 @@ package androidx.camera.camera2.compat.quirk
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraMetadata
 import androidx.camera.camera2.compat.StreamConfigurationMapCompat
-import androidx.camera.camera2.compat.workaround.OutputSizesCorrector
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.pipe.testing.HighEndDeviceTemplate
 import androidx.camera.core.impl.Quirks
@@ -62,22 +61,26 @@ class TorchFlashRequiredFor3AUpdateQuirkTest(
     }
 
     private fun getCameraQuirks(lensFacing: Int, externalFlashAeModeSupported: Boolean): Quirks {
+        val cameraCharacteristics = ShadowCameraCharacteristics.newCameraCharacteristics()
+        val shadowCharacteristics =
+            Shadow.extract<ShadowCameraCharacteristics>(cameraCharacteristics)
         val characteristicsMap =
             mutableMapOf<CameraCharacteristics.Key<*>, Any?>()
                 .apply {
                     this[CameraCharacteristics.LENS_FACING] = lensFacing
+                    shadowCharacteristics.set(CameraCharacteristics.LENS_FACING, lensFacing)
 
-                    this[CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES] =
+                    val modes =
                         if (externalFlashAeModeSupported) {
                             intArrayOf(CameraMetadata.CONTROL_AE_MODE_ON_EXTERNAL_FLASH)
                         } else intArrayOf(CameraMetadata.CONTROL_AE_MODE_ON)
+                    this[CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES] = modes
+                    shadowCharacteristics.set(
+                        CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES,
+                        modes,
+                    )
                 }
                 .toMap()
-
-        val cameraCharacteristics = ShadowCameraCharacteristics.newCameraCharacteristics()
-        val shadowCharacteristics =
-            Shadow.extract<ShadowCameraCharacteristics>(cameraCharacteristics)
-        characteristicsMap.forEach { entry -> shadowCharacteristics.set(entry.key, entry.value) }
 
         val cameraMetadata =
             FakeCameraMetadata.fromTemplate(
@@ -85,16 +88,8 @@ class TorchFlashRequiredFor3AUpdateQuirkTest(
                 characteristicsOverrides = characteristicsMap,
             )
 
-        return CameraQuirks(
-                cameraMetadata,
-                StreamConfigurationMapCompat(
-                    StreamConfigurationMapBuilder.newBuilder().build(),
-                    OutputSizesCorrector(
-                        cameraMetadata,
-                        StreamConfigurationMapBuilder.newBuilder().build(),
-                    ),
-                ),
-            )
+        val map = StreamConfigurationMapBuilder.newBuilder().build()
+        return CameraQuirks(cameraMetadata, StreamConfigurationMapCompat(map, cameraMetadata))
             .quirks
     }
 

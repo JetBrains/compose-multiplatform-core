@@ -17,7 +17,6 @@
 package androidx.benchmark.junit4
 
 import android.Manifest
-import android.os.Build
 import android.os.Looper
 import android.util.Log
 import androidx.annotation.RestrictTo
@@ -29,13 +28,10 @@ import androidx.benchmark.MicrobenchmarkConfig
 import androidx.benchmark.perfetto.PerfettoCapture
 import androidx.benchmark.perfetto.PerfettoCaptureWrapper
 import androidx.benchmark.perfetto.PerfettoConfig
-import androidx.benchmark.perfetto.UiState
-import androidx.benchmark.perfetto.appendUiState
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.rule.GrantPermissionRule
 import androidx.tracing.Trace
 import androidx.tracing.trace
-import java.io.File
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.FutureTask
 import java.util.concurrent.TimeUnit
@@ -65,7 +61,7 @@ import org.junit.runners.model.Statement
  * @sample androidx.benchmark.samples.benchmarkRuleSample
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-class BenchmarkRuleLegacy
+public class BenchmarkRuleLegacy
 private constructor(
     private val config: MicrobenchmarkConfig?,
     /**
@@ -78,10 +74,10 @@ private constructor(
      */
     @Suppress("UNUSED_PARAMETER") ignored: Boolean = true,
 ) : TestRule {
-    constructor() : this(config = null, ignored = true)
+    public constructor() : this(config = null, ignored = true)
 
     @ExperimentalBenchmarkConfigApi
-    constructor(config: MicrobenchmarkConfig) : this(config, ignored = true)
+    public constructor(config: MicrobenchmarkConfig) : this(config, ignored = true)
 
     internal // synthetic access
     var internalState = BenchmarkStateLegacy(config)
@@ -124,7 +120,7 @@ private constructor(
     @get:RestrictTo(RestrictTo.Scope.LIBRARY) public val scope: Scope = Scope()
 
     /** Handle used for controlling timing during [measureRepeated]. */
-    inner class Scope internal constructor() {
+    public inner class Scope internal constructor() {
         /**
          * Disable timing for a block of code.
          *
@@ -200,54 +196,40 @@ private constructor(
         internalState.traceUniqueName = uniqueName
 
         val tracePath =
-            PerfettoCaptureWrapper()
-                .record(
-                    fileLabel = uniqueName,
-                    config =
-                        PerfettoConfig.Benchmark(
-                            appTagPackages =
-                                if (config?.traceAppTagEnabled == true) {
-                                    listOf(getInstrumentation().context.packageName)
-                                } else {
-                                    emptyList()
-                                },
-                            useStackSamplingConfig = false,
-                        ),
-                    // TODO(290918736): add support for Perfetto SDK Tracing in
-                    //  Microbenchmark in other cases, outside of MicrobenchmarkConfig
-                    perfettoSdkConfig =
-                        if (
-                            config?.perfettoSdkTracingEnabled == true &&
-                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                        ) {
-                            PerfettoCapture.PerfettoSdkConfig(
-                                getInstrumentation().context.packageName,
-                                PerfettoCapture.PerfettoSdkConfig.InitialProcessState.Alive,
-                            )
-                        } else {
-                            null
-                        },
-
-                    // Optimize throughput in dryRunMode, since trace isn't useful, and extremely
-                    //   expensive on some emulators. Could alternately use UserspaceTracing if
-                    // desired
-                    // Additionally, skip on misconfigured devices to still enable benchmarking.
-                    enableTracing = !Arguments.dryRunMode && !DeviceInfo.misconfiguredForTracing,
-                    inMemoryTracingLabel = "Microbenchmark",
-                ) {
-                    trace(description.displayName) { base.evaluate() }
-                }
-                ?.apply {
-                    // trace completed, and copied into shell writeable dir
-                    val file = File(this)
-                    file.appendUiState(
-                        UiState(
-                            timelineStart = null,
-                            timelineEnd = null,
-                            highlightPackage = getInstrumentation().context.packageName,
+            PerfettoCaptureWrapper().record(
+                fileLabel = uniqueName,
+                config =
+                    PerfettoConfig.Benchmark(
+                        appTagPackages =
+                            if (config?.traceAppTagEnabled == true) {
+                                listOf(getInstrumentation().context.packageName)
+                            } else {
+                                emptyList()
+                            },
+                        useStackSamplingConfig = false,
+                    ),
+                // TODO(290918736): add support for Perfetto SDK Tracing in
+                //  Microbenchmark in other cases, outside of MicrobenchmarkConfig
+                tracingLibraryConfig =
+                    if (config?.perfettoSdkTracingEnabled == true) {
+                        PerfettoCapture.TracingLibraryConfig(
+                            targetPackage = getInstrumentation().context.packageName,
+                            processState =
+                                PerfettoCapture.TracingLibraryConfig.InitialProcessState.Alive,
                         )
-                    )
-                }
+                    } else {
+                        null
+                    },
+
+                // Optimize throughput in dryRunMode, since trace isn't useful, and extremely
+                //   expensive on some emulators. Could alternately use UserspaceTracing if
+                // desired
+                // Additionally, skip on misconfigured devices to still enable benchmarking.
+                enableTracing = !Arguments.dryRunMode && !DeviceInfo.misconfiguredForTracing,
+                inMemoryTracingLabel = "Microbenchmark",
+            ) {
+                trace(description.displayName) { base.evaluate() }
+            }
 
         internalState.report(
             fullClassName = description.className,
@@ -269,7 +251,7 @@ private constructor(
  * @sample androidx.benchmark.samples.benchmarkRuleSample
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-inline fun BenchmarkRuleLegacy.measureRepeated(
+public inline fun BenchmarkRuleLegacy.measureRepeated(
     crossinline block: BenchmarkRuleLegacy.Scope.() -> Unit
 ) {
     // Note: this is an extension function to discourage calling from Java.
@@ -309,7 +291,7 @@ inline fun BenchmarkRuleLegacy.measureRepeated(
  * @sample androidx.benchmark.samples.measureRepeatedOnMainThreadSample
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-inline fun BenchmarkRuleLegacy.measureRepeatedOnMainThread(
+public inline fun BenchmarkRuleLegacy.measureRepeatedOnMainThread(
     crossinline block: BenchmarkRuleLegacy.Scope.() -> Unit
 ) {
     check(Looper.myLooper() != Looper.getMainLooper()) {

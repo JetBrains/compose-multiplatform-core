@@ -34,6 +34,7 @@ import androidx.appfunctions.compiler.core.metadata.AppFunctionParcelableTypeMet
 import androidx.appfunctions.compiler.core.metadata.AppFunctionReferenceTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionSchemaMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionStringPatternMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionStringTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionUnitTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.CompileTimeAppFunctionMetadata
@@ -44,13 +45,16 @@ import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.C
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.PARAMETER_METADATA_LIST_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.RESPONSE_METADATA_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.SCHEMA_METADATA_PROPERTY_NAME
+import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.buildCodeBlock
+import com.squareup.kotlinpoet.joinToCode
 
 /** The helper class to build AppFunctionInventory class. */
 class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpec.Builder) {
@@ -63,6 +67,16 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
     fun addFunctionMetadataProperties(
         appFunctionMetadataList: List<CompileTimeAppFunctionMetadata>
     ) {
+        if (appFunctionMetadataList.any { it.accessLevel != null }) {
+            inventoryClassBuilder.addAnnotation(
+                AnnotationSpec.builder(IntrospectionHelper.OptInAnnotation.CLASS_NAME)
+                    .addMember(
+                        "%T::class",
+                        IntrospectionHelper.ExperimentalAppFunctionsApiAnnotation.CLASS_NAME,
+                    )
+                    .build()
+            )
+        }
         for (functionMetadata in appFunctionMetadataList) {
             val functionMetadataObjectClassBuilder =
                 TypeSpec.objectBuilder(getFunctionMetadataObjectClassName(functionMetadata.id))
@@ -120,6 +134,18 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                         add("response = %L,\n", RESPONSE_METADATA_PROPERTY_NAME)
                         if (functionMetadata.deprecation != null) {
                             add("deprecation = %L,\n", DEPRECATION_METADATA_PROPERTY_NAME)
+                        }
+                        if (functionMetadata.accessLevel != null) {
+                            add(
+                                "accessLevel = %L,\n",
+                                functionMetadata.accessLevel,
+                            )
+                        }
+                        if (functionMetadata.isCompatEnforcementEnabled != null) {
+                            add(
+                                "isCompatEnforcementEnabled = %L,\n",
+                                functionMetadata.isCompatEnforcementEnabled,
+                            )
                         }
                         unindent()
                         unindent()
@@ -615,6 +641,8 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                                     isNullable = %L,
                                     description = %S,
                                     enumValues = %L,
+                                    patternMatchers = %L,
+                                    format = %S,
                                 )
                                 """
                                     .trimIndent(),
@@ -626,6 +654,8 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                                     postfix = ")",
                                     transform = { "\"$it\"" },
                                 ),
+                                buildPatternMatcherListCodeBlock(patterns),
+                                format,
                             )
                         }
                     )
@@ -652,6 +682,41 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                     )
                     .build()
         }
+    }
+
+    /**
+     * Builds `PatternMatchers.createList("value" to PatternMatcher.PATTERN_X, ...)`, or `null` if
+     * [patterns] is empty.
+     *
+     * Patterns are not validated at compile time, so the generated code throws when the inventory
+     * is loaded if `android.os.PatternMatcher` rejects a pattern.
+     */
+    private fun buildPatternMatcherListCodeBlock(
+        patterns: List<AppFunctionStringPatternMetadata>
+    ): CodeBlock {
+        if (patterns.isEmpty()) return CodeBlock.of("null")
+        val pairs =
+            patterns
+                .map { pattern ->
+                    val typeConstantName = pattern.typeConstantName
+                    if (typeConstantName != null) {
+                        CodeBlock.of(
+                            "%S to %T.%L",
+                            pattern.value,
+                            IntrospectionHelper.PatternMatcherClass.CLASS_NAME,
+                            typeConstantName,
+                        )
+                    } else {
+                        // A type unknown to this library version, e.g. from a newer SDK.
+                        CodeBlock.of("%S to %L", pattern.value, pattern.type)
+                    }
+                }
+                .joinToCode()
+        return CodeBlock.of(
+            "%T.createList(%L)",
+            IntrospectionHelper.PATTERN_MATCHERS_HELPER_CLASS,
+            pairs,
+        )
     }
 
     /**
@@ -1269,9 +1334,8 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
      * @param componentName The name of the component.
      * @return The name of the property.
      */
-    private fun getObjectTypeMetadataPropertyNameForComponent(componentName: String): String {
-        return "${componentName.uppercase().replace(Regex("[.<>$]"), "_").replace("?", "_NULLABLE")}_OBJECT_DATA_TYPE"
-    }
+    private fun getObjectTypeMetadataPropertyNameForComponent(componentName: String): String =
+        "${componentName.uppercase().replace(Regex("[.<>$]"), "_").replace("?", "_NULLABLE")}_OBJECT_DATA_TYPE"
 
     /**
      * Generates the name of the property for the all of type metadata of a component.
@@ -1279,9 +1343,8 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
      * @param componentName The name of the component.
      * @return The name of the property.
      */
-    private fun getAllOfTypeMetadataPropertyNameForComponent(componentName: String): String {
-        return "${componentName.uppercase().replace(Regex("[.<>$]"), "_")}_ALL_OF_DATA_TYPE"
-    }
+    private fun getAllOfTypeMetadataPropertyNameForComponent(componentName: String): String =
+        "${componentName.uppercase().replace(Regex("[.<>$]"), "_")}_ALL_OF_DATA_TYPE"
 
     /**
      * Generates the name of the property for the one of type metadata of a component.
@@ -1289,11 +1352,11 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
      * @param componentName The name of the component.
      * @return The name of the property.
      */
-    private fun getOneOfTypeMetadataPropertyNameForComponent(componentName: String): String {
-        return "${componentName.uppercase().replace(Regex("[.<>$]"), "_")}_ONE_OF_DATA_TYPE"
-    }
+    private fun getOneOfTypeMetadataPropertyNameForComponent(componentName: String): String =
+        "${componentName.uppercase().replace(Regex("[.<>$]"), "_")}_ONE_OF_DATA_TYPE"
 
     companion object {
+
         /** Gets the name for generated AppFunctionInventory. */
         fun getAppFunctionInventoryClassName(functionClassName: String): String {
             return "$%s_AppFunctionInventory".format(functionClassName)

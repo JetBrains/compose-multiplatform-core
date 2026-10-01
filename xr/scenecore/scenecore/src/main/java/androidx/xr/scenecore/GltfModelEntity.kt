@@ -16,9 +16,7 @@
 
 package androidx.xr.scenecore
 
-import android.os.Build
 import androidx.annotation.MainThread
-import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.BoundingBox
@@ -27,7 +25,6 @@ import androidx.xr.scenecore.runtime.GltfEntity as RtGltfEntity
 import androidx.xr.scenecore.runtime.RenderingRuntime
 import androidx.xr.scenecore.runtime.SceneRuntime
 import java.util.Collections
-import java.util.concurrent.TimeUnit
 
 /**
  * GltfModelEntity is a concrete implementation of Entity that hosts a glTF model.
@@ -64,6 +61,8 @@ private constructor(rtGltfEntity: RtGltfEntity, entityRegistry: EntityRegistry) 
      * The returned list corresponds to the flattened array of nodes defined in the source glTF
      * file. The order of elements in this list is guaranteed to match the order of nodes in the
      * glTF file's `nodes` array.
+     *
+     * @throws IllegalStateException if the entity has been disposed.
      */
     public val nodes: List<GltfModelNode>
         @MainThread
@@ -72,7 +71,6 @@ private constructor(rtGltfEntity: RtGltfEntity, entityRegistry: EntityRegistry) 
             return _nodes
         }
 
-    @delegate:RequiresApi(Build.VERSION_CODES.O)
     private val _animations: List<GltfAnimation> by lazy {
         // The unique identifier of an animation is their index so we first get the
         // count of the nodes in the model from the native side.
@@ -89,12 +87,7 @@ private constructor(rtGltfEntity: RtGltfEntity, entityRegistry: EntityRegistry) 
                     rtGltfAnimation = feature,
                     index = feature.animationIndex,
                     name = feature.animationName,
-                    // The animation duration is in seconds [Float]. We convert it to the [Duration]
-                    // datatype.
-                    duration =
-                        java.time.Duration.ofMillis(
-                            (feature.animationDuration * TimeUnit.SECONDS.toMillis(1)).toLong()
-                        ),
+                    durationSeconds = feature.animationDuration,
                 )
             )
         }
@@ -108,14 +101,31 @@ private constructor(rtGltfEntity: RtGltfEntity, entityRegistry: EntityRegistry) 
      * The returned list corresponds to the array of animations defined in the source glTF file. The
      * order of elements in this list is guaranteed to match the order of animations in the glTF
      * file's `animations` array.
+     *
+     * @throws IllegalStateException if the entity has been disposed.
      */
-    @get:RequiresApi(Build.VERSION_CODES.O)
-    public val animations: List<GltfAnimation>
-        @MainThread
-        get() {
-            checkNotDisposed()
-            return _animations
+    @MainThread
+    public fun getAnimations(): List<GltfAnimation> {
+        checkNotDisposed()
+        return _animations
+    }
+
+    /**
+     * Stops all playing animations in this [GltfModelEntity].
+     *
+     * Calling this method stops all animations that are currently in the
+     * [GltfAnimation.AnimationState.PLAYING] or [GltfAnimation.AnimationState.PAUSED] state. If no
+     * animations are playing or paused, this method has no effect.
+     *
+     * @throws IllegalStateException if the entity has been disposed.
+     */
+    @MainThread
+    public fun stopAllAnimations() {
+        checkNotDisposed()
+        for (animation in _animations) {
+            animation.stop()
         }
+    }
 
     /**
      * Retrieves the axis-aligned bounding box (AABB) of an instanced glTF model in meters in the
@@ -140,7 +150,6 @@ private constructor(rtGltfEntity: RtGltfEntity, entityRegistry: EntityRegistry) 
      */
     // TODO - b/501059605: Make the property public and remove this getter.
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    @ExperimentalGltfComposeMethod
     public fun getGltfModelBoundingBox(): BoundingBox = gltfModelBoundingBox
 
     public companion object {
@@ -204,12 +213,3 @@ private constructor(rtGltfEntity: RtGltfEntity, entityRegistry: EntityRegistry) 
             )
     }
 }
-
-// Annotation for Gltf-specific restricted LIBRARY_GROUP_PREFIX APIs that have not been finalized.
-// The annotation itself is also restricted, to match the methods being annotated.
-@RequiresOptIn(
-    "This API is experimental and used exclusively by XR Compose. It is not supported for general use. (b/501059605)"
-)
-@Retention(AnnotationRetention.BINARY)
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public annotation class ExperimentalGltfComposeMethod

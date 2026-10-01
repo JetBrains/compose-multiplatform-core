@@ -17,6 +17,9 @@
 package androidx.ink.brush.behavior
 
 import androidx.collection.MutableIntObjectMap
+import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.Version
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import kotlin.jvm.JvmField
 
 /**
@@ -35,6 +38,17 @@ internal constructor(@JvmField internal val value: Int, private val name: String
     internal fun toSimpleString(): String = name
 
     override fun toString(): String = "ProgressDomain.$name"
+
+    /**
+     * Returns the minimum required [Version] for this [ProgressDomain].
+     *
+     * By default, decoding a [androidx.ink.brush.BrushFamily] containing a [ProgressDomain] with a
+     * minimum required version higher than [Version.MAX_SUPPORTED] will fail.
+     */
+    @OptIn(InkInternalOnlyApi::class)
+    @ExperimentalInkCustomBrushApi
+    public fun calculateMinimumRequiredVersion(): Version =
+        Version.fromInt(ProgressDomainNative.calculateMinimumRequiredVersion(value))
 
     public companion object {
 
@@ -62,4 +76,8 @@ internal constructor(@JvmField internal val value: Int, private val name: String
         /** Progress in input time since the start of the stroke, measured in seconds. */
         @JvmField public val TIME_IN_SECONDS: ProgressDomain = ProgressDomain(2, "TIME_IN_SECONDS")
     }
+}
+
+expect internal object ProgressDomainNative {
+    fun calculateMinimumRequiredVersion(domainInt: Int): Int
 }

@@ -20,7 +20,7 @@ import androidx.build.Version
 import androidx.build.checkapi.ApiLocation
 import java.io.File
 import javax.inject.Inject
-import org.gradle.api.file.Directory
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
@@ -41,7 +41,7 @@ import org.gradle.workers.WorkerExecutor
 internal abstract class GenerateApiTask @Inject constructor(workerExecutor: WorkerExecutor) :
     SourceMetalavaTask(workerExecutor) {
 
-    @get:Input var generateRestrictToLibraryGroupAPIs = true
+    @get:Input abstract val generateRestrictToLibraryGroupAPIs: Property<Boolean>
 
     /** Collection of text files to which API signatures will be written. */
     @get:Internal // already expressed by getTaskOutputs()
@@ -63,18 +63,22 @@ internal abstract class GenerateApiTask @Inject constructor(workerExecutor: Work
     /**
      * The directory where past API files are stored. Not all files in the directory are used, they
      * are filtered in [getPastApiFiles].
+     *
+     * This value is optional if the task does not generate API level metadata.
      */
-    @get:Internal abstract var projectApiDirectory: Directory
+    @get:Internal abstract val projectApiDirectory: DirectoryProperty
 
     /** An ordered list of the API files to use in generating the API level metadata JSON. */
     @InputFiles
     @PathSensitive(PathSensitivity.NONE)
     fun getPastApiFiles(): List<File> {
-        return getFilesForApiLevels(projectApiDirectory.asFileTree.files, currentVersion.get())
+        return projectApiDirectory.orNull?.let { projectApiDirectory ->
+            getFilesForApiLevels(projectApiDirectory.asFileTree.files, currentVersion.get())
+        } ?: emptyList()
     }
 
     @TaskAction
-    fun exec() {
+    open fun exec() {
         // Only require an android jar, sources, and a classpath when there is a main jvm/android
         // target that will have an API surface generated.
         if (hasJvmOrAndroidTarget.get()) {
@@ -90,26 +94,72 @@ internal abstract class GenerateApiTask @Inject constructor(workerExecutor: Work
 
         val levelsArgs =
             getGenerateApiLevelsArgs(
-                projectApiDirectory.asFile,
+                projectApiDirectory.asFile.get(),
                 getPastApiFiles(),
                 currentVersion.get(),
                 apiLocation.get().apiLevelsFile,
             )
 
         generateApi(
-            metalavaClasspath,
-            createProjectXmlFile(),
-            sourcePaths.files,
-            compiledSources.files.singleOrNull(),
-            apiLocation.get(),
+            createProjectXmlFile(sourceSets.get()),
             ApiLintMode.CheckBaseline(baselines.get().apiLintFile, targetsJavaConsumers.get()),
-            generateRestrictToLibraryGroupAPIs,
             levelsArgs,
-            kotlinSourceLevel.get(),
-            workerExecutor,
-            manifestPath.orNull?.asFile?.absolutePath,
             multiplatform.get(),
-            hasJvmOrAndroidTarget.get(),
         )
+    }
+
+    /**
+     * Generates all of the specified api files, as well as a version history JSON for the public
+     * API.
+     */
+    protected fun generateApi(
+        projectXml: File,
+        apiLintMode: ApiLintMode,
+        apiLevelsArgs: List<String>,
+        multiplatform: Boolean,
+    ) {
+        val generateApiConfigs: MutableList<Pair<GenerateApiMode, ApiLintMode>> =
+            mutableListOf(GenerateApiMode.PublicApi to apiLintMode)
+
+        // Generate `RestrictTo` APIs as a separate API surface. This does not make sense to do for
+        // projects without a jvm/android target, because the purpose of tracking `RestrictTo` is
+        // for
+        // maintaining binary compatibility, but metalava can only enforce binary compatibility for
+        // jvm
+        // based projects.
+        @Suppress("LiftReturnOrAssignment")
+        if (hasJvmOrAndroidTarget.get()) {
+            if (generateRestrictToLibraryGroupAPIs.get()) {
+                generateApiConfigs += GenerateApiMode.AllRestrictedApis to ApiLintMode.Skip
+            } else {
+                generateApiConfigs +=
+                    GenerateApiMode.RestrictToLibraryGroupPrefixApis to ApiLintMode.Skip
+            }
+        }
+
+        val args = buildList {
+            val traceFile = apiLocation.get().traceFile
+            // Remove existing trace file to write the new one.
+            traceFile.delete()
+            add("--trace-file")
+            add(traceFile.absolutePath)
+
+            addAll(
+                getMultiSurfaceArgs(projectXml, sourcePaths.files, includeCompiledSources = true)
+            )
+
+            generateApiConfigs.forEach { (generateApiMode, apiLintMode) ->
+                addAll(
+                    getSingleSurfaceArgs(
+                        apiLocation.get(),
+                        generateApiMode,
+                        apiLintMode,
+                        apiLevelsArgs,
+                        multiplatform,
+                    )
+                )
+            }
+        }
+        runWithArgs(args)
     }
 }

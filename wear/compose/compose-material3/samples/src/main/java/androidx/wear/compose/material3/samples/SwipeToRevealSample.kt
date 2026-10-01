@@ -32,8 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.CompositingStrategy
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
@@ -46,8 +44,10 @@ import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.Card
+import androidx.wear.compose.material3.CardDefaults
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.RevealValue
+import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.SwipeToReveal
 import androidx.wear.compose.material3.SwipeToRevealDefaults
 import androidx.wear.compose.material3.Text
@@ -68,7 +68,8 @@ fun SwipeToRevealSample() {
                 text = { Text("Delete") },
             )
         },
-        onSwipePrimaryAction = { /* This block is called when the full swipe gesture is performed. */
+        onSwipePrimaryAction = {
+            /* This block is called when the full swipe gesture is performed. */
         },
         secondaryAction = {
             SecondaryActionButton(
@@ -118,7 +119,8 @@ fun SwipeToRevealSingleActionCardSample() {
                 modifier = Modifier.height(SwipeToRevealDefaults.LargeActionButtonHeight),
             )
         },
-        onSwipePrimaryAction = { /* This block is called when the full swipe gesture is performed. */
+        onSwipePrimaryAction = {
+            /* This block is called when the full swipe gesture is performed. */
         },
         undoPrimaryAction = {
             UndoActionButton(
@@ -194,17 +196,13 @@ fun SwipeToRevealWithTransformingLazyColumnSample() {
                 },
                 revealState = revealState,
                 onSwipePrimaryAction = { messages.remove(message) },
+                transformation = SurfaceTransformation(transformationSpec),
                 modifier =
                     Modifier.transformedHeight(this@items, transformationSpec)
                         .animateItem()
-                        .graphicsLayer {
-                            with(transformationSpec) {
-                                applyContainerTransformation(scrollProgress)
-                            }
-                            // Is needed to disable clipping.
-                            compositingStrategy = CompositingStrategy.ModulateAlpha
-                            clip = false
-                        },
+                        .minimumVerticalContentPadding(
+                            CardDefaults.minimumVerticalListContentPadding
+                        ),
             ) {
                 TitleCard(
                     onClick = {},
@@ -274,7 +272,8 @@ fun SwipeToRevealWithScalingLazyColumnSample() {
                 onSwipePrimaryAction = { messages.remove(message) },
                 secondaryAction = {
                     SecondaryActionButton(
-                        onClick = { /* This block is called when the secondary action is executed. */
+                        onClick = {
+                            /* This block is called when the secondary action is executed. */
                         },
                         icon = { Icon(Icons.Outlined.MoreVert, contentDescription = "Options") },
                     )

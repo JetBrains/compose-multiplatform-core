@@ -43,14 +43,13 @@ import androidx.navigation3.scene.SceneStrategyScope
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import kotlin.test.Test
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class NavDisplayLifecycleTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun testNavigateForwardFiresLifecycleEventsInOrder() {
@@ -154,8 +153,8 @@ class NavDisplayLifecycleTest {
             .containsExactly(
                 "A" to "ON_RESUME",
                 "B" to "ON_RESUME",
-                "B" to "ON_PAUSE",
                 "A" to "ON_PAUSE",
+                "B" to "ON_PAUSE",
                 "A" to "ON_RESUME",
             )
             .inOrder()
@@ -376,9 +375,9 @@ class NavDisplayLifecycleTest {
     }
 }
 
-class MyCustomOverlayScene<T : Any>(
+data class MyCustomOverlayScene<T : Any>(
     override val key: Any,
-    entry: NavEntry<T>,
+    val entry: NavEntry<T>,
     override val previousEntries: List<NavEntry<T>>,
     override val overlaidEntries: List<NavEntry<T>>,
 ) : OverlayScene<T> {

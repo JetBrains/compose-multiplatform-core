@@ -143,7 +143,6 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
@@ -154,7 +153,7 @@ private const val Debug = false
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class LookaheadScopeTest {
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     @get:Rule val excessiveAssertions = AndroidOwnerExtraAssertionsRule()
 
@@ -2360,8 +2359,7 @@ class LookaheadScopeTest {
                 CompositionLocalProvider(LocalDensity provides Density(1f)) {
                     Row(Modifier.width(IntrinsicSize.Max)) {
                         Box(
-                            Modifier.fillMaxSize()
-                                .then(modifierList[iteration])
+                            Modifier.then(modifierList[iteration])
                                 .then(TestElement(lookaheadIntrinsicsResult, intrinsicsResult))
                                 .layout { measurable, constraints ->
                                     measurable.measure(constraints).run {
@@ -2821,12 +2819,11 @@ class LookaheadScopeTest {
                 modifier = modifier,
                 content = content,
                 measurePolicy = { measurables, constraints ->
-                    val placeableData =
-                        measurables.fastMap { measurable ->
-                            val data = measurable.getOffsetData()
-                            val placeable = measurable.measure(constraints)
-                            placeable to data
-                        }
+                    val placeableData = measurables.fastMap { measurable ->
+                        val data = measurable.getOffsetData()
+                        val placeable = measurable.measure(constraints)
+                        placeable to data
+                    }
 
                     layout(300, 300) {
                         placeableData.fastForEach { (placeable, offsetData) ->
@@ -4005,7 +4002,8 @@ class LookaheadScopeTest {
         lookaheadScope: LookaheadScope,
         onLookaheadPassCoordinates:
             (
-                lookaheadScopeCoordinates: LayoutCoordinates, layoutCoordinates: LayoutCoordinates,
+                lookaheadScopeCoordinates: LayoutCoordinates,
+                layoutCoordinates: LayoutCoordinates,
             ) -> Unit,
     ): Modifier =
         with(lookaheadScope) {
@@ -4027,7 +4025,8 @@ class LookaheadScopeTest {
         lookaheadScope: LookaheadScope,
         onApproachPassCoordinates:
             (
-                lookaheadScopeCoordinates: LayoutCoordinates, layoutCoordinates: LayoutCoordinates,
+                lookaheadScopeCoordinates: LayoutCoordinates,
+                layoutCoordinates: LayoutCoordinates,
             ) -> Unit,
     ): Modifier =
         with(lookaheadScope) {

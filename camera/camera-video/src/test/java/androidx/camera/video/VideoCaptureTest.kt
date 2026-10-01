@@ -67,6 +67,8 @@ import androidx.camera.core.RotationProvider
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.SurfaceRequest.TransformationInfo
 import androidx.camera.core.UseCase
+import androidx.camera.core.featuregroup.impl.ResolvedFeatureGroup
+import androidx.camera.core.impl.CameraControlInternal
 import androidx.camera.core.impl.CameraFactory
 import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.EncoderProfilesProxy
@@ -93,6 +95,8 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecu
 import androidx.camera.core.internal.CameraUseCaseAdapter
 import androidx.camera.core.internal.compat.quirk.SurfaceProcessingQuirk
 import androidx.camera.core.processing.DefaultSurfaceProcessor
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.testing.fakes.FakeAppConfig
 import androidx.camera.testing.fakes.FakeCamera
 import androidx.camera.testing.fakes.FakeCameraInfoInternal
@@ -1168,6 +1172,43 @@ class VideoCaptureTest {
     }
 
     @Test
+    fun setMirrorMode_mirrorModeIsChanged() {
+        // Arrange.
+        setupCamera()
+        createCameraUseCaseAdapter()
+        val videoCapture = createVideoCapture(mirrorMode = MIRROR_MODE_OFF)
+        addAndAttachUseCases(videoCapture)
+        assertThat(videoCapture.mirrorMode).isEqualTo(MIRROR_MODE_OFF)
+        assertThat(videoCapture.isSurfaceProcessingEnabled()).isFalse()
+
+        // Act.
+        videoCapture.mirrorMode = MIRROR_MODE_ON
+
+        // Assert.
+        assertThat(videoCapture.mirrorMode).isEqualTo(MIRROR_MODE_ON)
+        assertThat(videoCapture.isSurfaceProcessingEnabled()).isTrue()
+    }
+
+    @Test
+    fun activeVideoCaptureMirrorModeChange_transitionsSourceStateToConfiguring() {
+        // Arrange.
+        setupCamera()
+        createCameraUseCaseAdapter()
+        val videoOutput = createVideoOutput()
+        val videoCapture = createVideoCapture(videoOutput = videoOutput)
+        addAndAttachUseCases(videoCapture)
+
+        // Clear any initial calls during setup
+        videoOutput.sourceStateCalls.clear()
+
+        // Act: change mirror mode dynamically
+        videoCapture.mirrorMode = MIRROR_MODE_ON
+
+        // Assert: verify that CONFIGURING was passed to onSourceStateChanged on the video output!
+        assertThat(videoOutput.sourceStateCalls).contains(VideoOutput.SourceState.CONFIGURING)
+    }
+
+    @Test
     fun setTargetRotationInBuilder_rotationIsChanged() {
         // Act.
         val videoCapture = createVideoCapture(targetRotation = Surface.ROTATION_180)
@@ -1405,6 +1446,14 @@ class VideoCaptureTest {
     }
 
     @Test
+    fun suggestedStreamSpecHlgSmpte209450_isPropagatedToSurfaceRequest() {
+        testSurfaceRequestContainsExpected(
+            requestedDynamicRange = DynamicRange.HLG_10_BIT_SMPTE_2094_50,
+            expectedDynamicRange = DynamicRange.HLG_10_BIT_SMPTE_2094_50,
+        )
+    }
+
+    @Test
     fun suggestedStreamSpecSessionType_isPropagatedToSurfaceRequest() {
         testSurfaceRequestContainsExpected(
             sessionType = SESSION_TYPE_HIGH_SPEED,
@@ -1450,8 +1499,8 @@ class VideoCaptureTest {
         shadowOf(Looper.getMainLooper()).idle()
 
         // Assert.
-        var videoContentDegrees: Int
-        var metadataDegrees: Int
+        val videoContentDegrees: Int
+        val metadataDegrees: Int
         cameraInfo.getRelativeRotation(initialTargetRotation, requireMirroring).let {
             if (videoCapture.isSurfaceProcessingEnabled()) {
                 // If effect is enabled, the rotation is applied on video content but not metadata.
@@ -1692,6 +1741,36 @@ class VideoCaptureTest {
         assertThat(videoCapture.cropRect).isEqualTo(targetCropRect)
         assertThat(videoCapture.rotationDegrees)
             .isEqualTo(sourceRotationDegrees - targetRotationDegrees)
+    }
+
+    @Test
+    fun noAdjustCropRectAndRotation_withInProgressTransformationInfo_whenCameraHasNoTransform() {
+        // Arrange.
+        val inProgressCropRect = Rect(0, 0, 1024, 768)
+        val inProgressRotationDegrees = 90
+        var surfaceRequest: SurfaceRequest? = null
+        val videoOutput =
+            createVideoOutput(surfaceRequestListener = { request, _ -> surfaceRequest = request })
+        val videoCapture = createVideoCapture(videoOutput = videoOutput)
+        setupCamera(sensorRotation = 0, hasTransform = false)
+        createCameraUseCaseAdapter()
+        videoOutput.updateStreamInfo(
+            createStreamInfo(
+                transformationInfo =
+                    createTransformationInfo(
+                        cropRect = inProgressCropRect,
+                        rotationDegrees = inProgressRotationDegrees,
+                    )
+            )
+        )
+
+        // Act.
+        addAndAttachUseCases(videoCapture)
+
+        // Assert.
+        assertThat(surfaceRequest).isNotNull()
+        assertThat(videoCapture.cropRect).isNotEqualTo(inProgressCropRect)
+        assertThat(videoCapture.node).isNull()
     }
 
     private fun testAdjustCropRectToValidSize(
@@ -2299,6 +2378,230 @@ class VideoCaptureTest {
         }
     }
 
+    @Test
+    fun customVideoOutput_withDefaultMediaSpec_bindsSuccessfully() {
+        setupCamera()
+        createCameraUseCaseAdapter()
+        var requestedSurfaceRequest: SurfaceRequest? = null
+        val videoOutput = VideoOutput { surfaceRequest ->
+            surfaceRequestsToRelease.add(surfaceRequest)
+            requestedSurfaceRequest = surfaceRequest
+            surfaceRequest.willNotProvideSurface()
+        }
+
+        val videoCapture = createVideoCapture(videoOutput = videoOutput)
+
+        addAndAttachUseCases(videoCapture)
+
+        assertThat(requestedSurfaceRequest).isNotNull()
+    }
+
+    @Test
+    fun customVideoOutput_rotationDegreesNotZero_doesNotRequireSurfaceProcessing() {
+        setupCamera(sensorRotation = 90)
+        createCameraUseCaseAdapter()
+        var requestedSurfaceRequest: SurfaceRequest? = null
+        val videoOutput = VideoOutput { surfaceRequest ->
+            surfaceRequestsToRelease.add(surfaceRequest)
+            requestedSurfaceRequest = surfaceRequest
+            surfaceRequest.willNotProvideSurface()
+        }
+
+        val videoCapture = createVideoCapture(videoOutput = videoOutput)
+
+        addAndAttachUseCases(videoCapture)
+
+        assertThat(requestedSurfaceRequest).isNotNull()
+        assertThat(videoCapture.isSurfaceProcessingEnabled()).isFalse()
+    }
+
+    @Test
+    fun customVideoOutput_setResolutionSelector_selectsExpectedResolution() {
+        setupCamera()
+        createCameraUseCaseAdapter()
+        var requestedSurfaceRequest: SurfaceRequest? = null
+        val videoOutput = VideoOutput { surfaceRequest ->
+            surfaceRequestsToRelease.add(surfaceRequest)
+            requestedSurfaceRequest = surfaceRequest
+            surfaceRequest.willNotProvideSurface()
+        }
+        val resolutionSelector =
+            ResolutionSelector.Builder()
+                .setResolutionStrategy(
+                    ResolutionStrategy(
+                        RESOLUTION_1080P,
+                        ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER,
+                    )
+                )
+                .build()
+
+        val videoCapture =
+            createVideoCapture(videoOutput = videoOutput, resolutionSelector = resolutionSelector)
+
+        setSuggestedStreamSpec(RESOLUTION_1080P)
+        addAndAttachUseCases(videoCapture)
+
+        assertThat(requestedSurfaceRequest).isNotNull()
+        assertThat(requestedSurfaceRequest!!.resolution).isEqualTo(RESOLUTION_1080P)
+    }
+
+    @Test
+    fun customQualitySelector_andResolutionSelector_throwsException() {
+        setupCamera()
+        createCameraUseCaseAdapter()
+        val mediaSpec = createMediaSpec(qualitySelector = QualitySelector.from(HD))
+        val videoOutput = createVideoOutput(mediaSpec = mediaSpec)
+        val resolutionSelector =
+            ResolutionSelector.Builder()
+                .setResolutionStrategy(
+                    ResolutionStrategy(
+                        RESOLUTION_1080P,
+                        ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER,
+                    )
+                )
+                .build()
+
+        val videoCapture =
+            createVideoCapture(videoOutput = videoOutput, resolutionSelector = resolutionSelector)
+
+        val exception =
+            assertThrows(CameraUseCaseAdapter.CameraException::class.java) {
+                addAndAttachUseCases(videoCapture)
+            }
+        assertThat(exception.cause).isInstanceOf(IllegalArgumentException::class.java)
+    }
+
+    @Test
+    fun customQualitySelector_andCustomOrderedResolutions_throwsException() {
+        setupCamera()
+        createCameraUseCaseAdapter()
+        val mediaSpec = createMediaSpec(qualitySelector = QualitySelector.from(HD))
+        val videoOutput = createVideoOutput(mediaSpec = mediaSpec)
+        val videoCapture =
+            createVideoCapture(
+                videoOutput = videoOutput,
+                customOrderedResolutions = listOf(RESOLUTION_1080P),
+            )
+
+        val exception =
+            assertThrows(CameraUseCaseAdapter.CameraException::class.java) {
+                addAndAttachUseCases(videoCapture)
+            }
+        assertThat(exception.cause).isInstanceOf(IllegalArgumentException::class.java)
+    }
+
+    @Test
+    fun featureGroupQualitySelector_andResolutionSelector_throwsException() {
+        setupCamera()
+        createCameraUseCaseAdapter()
+        val resolutionSelector =
+            ResolutionSelector.Builder()
+                .setResolutionStrategy(
+                    ResolutionStrategy(
+                        RESOLUTION_1080P,
+                        ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER,
+                    )
+                )
+                .build()
+
+        val videoCapture = createVideoCapture(resolutionSelector = resolutionSelector)
+        val featureGroup = ResolvedFeatureGroup(setOf(GroupableFeatures.UHD_RECORDING))
+
+        val exception =
+            assertThrows(CameraUseCaseAdapter.CameraException::class.java) {
+                addAndAttachUseCases(videoCapture, featureGroup = featureGroup)
+            }
+        assertThat(exception.cause).isInstanceOf(IllegalArgumentException::class.java)
+    }
+
+    @Test
+    fun featureGroupQualitySelector_andCustomOrderedResolutions_throwsException() {
+        setupCamera()
+        createCameraUseCaseAdapter()
+        val videoCapture = createVideoCapture(customOrderedResolutions = listOf(RESOLUTION_1080P))
+        val featureGroup = ResolvedFeatureGroup(setOf(GroupableFeatures.UHD_RECORDING))
+
+        val exception =
+            assertThrows(CameraUseCaseAdapter.CameraException::class.java) {
+                addAndAttachUseCases(videoCapture, featureGroup = featureGroup)
+            }
+        assertThat(exception.cause).isInstanceOf(IllegalArgumentException::class.java)
+    }
+
+    @Test
+    fun updateVideoUsage_whenRecordingStartedPausedResumedStopped() {
+        setupCamera()
+        createCameraUseCaseAdapter()
+        val videoOutput = createVideoOutput()
+        val videoCapture = createVideoCapture(videoOutput)
+        addAndAttachUseCases(videoCapture)
+        val cameraControl = cameraUseCaseAdapter.cameraControl as CameraControlInternal
+
+        // Act 1 - isRecording is true after start.
+        videoOutput.updateIsSourceStreamRequired(true)
+        shadowOf(Looper.getMainLooper()).idle()
+        assertThat(cameraControl.isInVideoUsage).isTrue()
+
+        // Act 2 - isRecording is false after pause.
+        videoOutput.updateIsSourceStreamRequired(false)
+        shadowOf(Looper.getMainLooper()).idle()
+        assertThat(cameraControl.isInVideoUsage).isFalse()
+
+        // Act 3 - isRecording is true after resume.
+        videoOutput.updateIsSourceStreamRequired(true)
+        shadowOf(Looper.getMainLooper()).idle()
+        assertThat(cameraControl.isInVideoUsage).isTrue()
+
+        // Act 4 - isRecording is false after stop.
+        videoOutput.updateIsSourceStreamRequired(false)
+        shadowOf(Looper.getMainLooper()).idle()
+        assertThat(cameraControl.isInVideoUsage).isFalse()
+    }
+
+    @Test
+    fun updateVideoUsage_whenUnboundBeforeCompletingAndStartNewAfterRebind() {
+        setupCamera()
+        createCameraUseCaseAdapter()
+        val videoOutput = createVideoOutput()
+        val videoCapture = createVideoCapture(videoOutput)
+        addAndAttachUseCases(videoCapture)
+        val cameraControl = cameraUseCaseAdapter.cameraControl as CameraControlInternal
+
+        videoOutput.updateIsSourceStreamRequired(true)
+        shadowOf(Looper.getMainLooper()).idle()
+        assertThat(cameraControl.isInVideoUsage).isTrue()
+
+        // Act 1 - unbind before recording completes and check if isRecording is false.
+        detachAndRemoveUseCases(videoCapture)
+        assertThat(cameraControl.isInVideoUsage).isFalse()
+
+        // Act 2 - rebind and start new recording, check if isRecording is true now.
+        videoOutput.updateIsSourceStreamRequired(false)
+        addAndAttachUseCases(videoCapture)
+        videoOutput.updateIsSourceStreamRequired(true)
+        shadowOf(Looper.getMainLooper()).idle()
+        assertThat(cameraControl.isInVideoUsage).isTrue()
+    }
+
+    @Test
+    fun updateVideoUsage_whenLifecycleStoppedBeforeCompletingRecording() {
+        setupCamera()
+        createCameraUseCaseAdapter()
+        val videoOutput = createVideoOutput()
+        val videoCapture = createVideoCapture(videoOutput)
+        addAndAttachUseCases(videoCapture)
+        val cameraControl = cameraUseCaseAdapter.cameraControl as CameraControlInternal
+
+        videoOutput.updateIsSourceStreamRequired(true)
+        shadowOf(Looper.getMainLooper()).idle()
+        assertThat(cameraControl.isInVideoUsage).isTrue()
+
+        // Act - lifecycle stopped (detachUseCases).
+        cameraUseCaseAdapter.detachUseCases()
+        shadowOf(Looper.getMainLooper()).idle()
+        assertThat(cameraControl.isInVideoUsage).isFalse()
+    }
+
     private fun assertCustomOrderedResolutions(
         videoCapture: VideoCapture<out VideoOutput>,
         vararg expectedResolutions: Size,
@@ -2389,11 +2692,20 @@ class VideoCaptureTest {
         val onVerifyConfigException: IllegalArgumentException? = null,
         val surfaceRequestCallback: (SurfaceRequest, Timebase) -> Unit,
     ) : VideoOutput {
+        val sourceStateCalls = mutableListOf<VideoOutput.SourceState>()
+
+        override fun onSourceStateChanged(sourceState: VideoOutput.SourceState) {
+            sourceStateCalls.add(sourceState)
+        }
+
         private val streamInfoObservable: MutableStateObservable<StreamInfo> =
             MutableStateObservable.withInitialState(streamInfo)
 
         private val mediaSpecObservable: MutableStateObservable<MediaSpec> =
             MutableStateObservable.withInitialState(mediaSpec)
+
+        private val isSourceStreamRequiredObservable: MutableStateObservable<Boolean> =
+            MutableStateObservable.withInitialState(false)
 
         override fun onValidateConfig() {
             onVerifyConfigException?.let { throw it }
@@ -2414,6 +2726,13 @@ class VideoCaptureTest {
         override fun getStreamInfo(): Observable<StreamInfo> = streamInfoObservable
 
         override fun getMediaSpec(): Observable<MediaSpec> = mediaSpecObservable
+
+        override fun isSourceStreamRequired(): Observable<Boolean> =
+            isSourceStreamRequiredObservable
+
+        fun updateIsSourceStreamRequired(isRequired: Boolean) {
+            isSourceStreamRequiredObservable.setState(isRequired)
+        }
 
         override fun getMediaCapabilities(
             cameraInfo: CameraInfo,
@@ -2439,8 +2758,11 @@ class VideoCaptureTest {
         }
     }
 
-    private fun addAndAttachUseCases(vararg useCases: UseCase) {
-        cameraUseCaseAdapter.addUseCases(useCases.asList())
+    private fun addAndAttachUseCases(
+        vararg useCases: UseCase,
+        featureGroup: ResolvedFeatureGroup? = null,
+    ) {
+        cameraUseCaseAdapter.addUseCases(useCases.asList(), featureGroup)
         cameraUseCaseAdapter.attachUseCases()
         shadowOf(Looper.getMainLooper()).idle()
     }
@@ -2467,6 +2789,7 @@ class VideoCaptureTest {
         dynamicRange: DynamicRange? = null,
         videoEncoderInfoFinder: VideoEncoderInfo.Finder? = null,
         customOrderedResolutions: List<Size>? = null,
+        resolutionSelector: ResolutionSelector? = null,
     ): VideoCapture<VideoOutput> =
         VideoCapture.Builder(videoOutput ?: createVideoOutput())
             .setSessionOptionUnpacker { _, _, _ -> }
@@ -2482,6 +2805,7 @@ class VideoCaptureTest {
                         ?: VideoEncoderInfo.Finder { _ -> createVideoEncoderInfo() }
                 )
                 customOrderedResolutions?.let { setCustomOrderedResolutions(it) }
+                resolutionSelector?.let { setResolutionSelector(resolutionSelector) }
             }
             .build()
 

@@ -16,95 +16,165 @@
 
 package androidx.xr.compose.material3
 
-import androidx.compose.material3.DefaultSingleRowTopAppBarOverride
-import androidx.compose.material3.DefaultTwoRowsTopAppBarOverride
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ComponentOverrideApi
-import androidx.compose.material3.SingleRowTopAppBarOverride
-import androidx.compose.material3.SingleRowTopAppBarOverrideScope
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TwoRowsTopAppBarOverride
-import androidx.compose.material3.TwoRowsTopAppBarOverrideScope
+import androidx.compose.material3.TopAppBarColors
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
+import androidx.compose.material3.TwoRowsTopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.xr.compose.material3.XrSingleRowTopAppBarOverride.SingleRowTopAppBar
+import androidx.xr.compose.material3.XrSingleRowTopAppBarTokens.OrbiterOffset
+import androidx.xr.compose.material3.XrTwoRowsTopAppBarTokens.OrbiterOffset
 import androidx.xr.compose.material3.tokens.XrTokens
-import androidx.xr.compose.spatial.ContentEdge
-import androidx.xr.compose.spatial.OrbiterOffsetType
+import androidx.xr.compose.spatial.OrbiterDefaults
+import androidx.xr.compose.spatial.OrbiterPosition
+import androidx.xr.compose.spatial.OrbiterPosition.EdgeAlignment
+import androidx.xr.compose.unit.DpVolumeOffset
 
-/** [SingleRowTopAppBarOverride] that uses the XR-specific [SingleRowTopAppBar]. */
+/**
+ * XR-specific SingleRowTopAppBar that displays a single-row top app bar inside a top-aligned
+ * `Orbiter`.
+ *
+ * @param title the title to be displayed in the top app bar
+ * @param modifier the [Modifier] to be applied to this top app bar
+ * @param navigationIcon optional navigation icon to be displayed at the start of the top app bar
+ * @param actions optional actions to be displayed at the end of the top app bar
+ * @param windowInsets a window insets of the top app bar
+ * @param colors [TopAppBarColors] that will be used to resolve the colors used for this top app bar
+ * @param scrollBehavior a [TopAppBarScrollBehavior]
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @ExperimentalMaterial3XrApi
-@OptIn(ExperimentalMaterial3ComponentOverrideApi::class, ExperimentalMaterial3Api::class)
-internal object XrSingleRowTopAppBarOverride : SingleRowTopAppBarOverride {
-    @Composable
-    override fun SingleRowTopAppBarOverrideScope.SingleRowTopAppBar() {
-        HorizontalOrbiter(LocalSingleRowTopAppBarOrbiterProperties.current) {
-            // TODO(kmost): Expose as XR components that do not require the use of overrides.
-            //  Currently, this is not possible, as delegating to the default override impl requires
-            //  a SingleRowTopAppBarOverrideScope instance (which has an internal constructor).
-            with(DefaultSingleRowTopAppBarOverride) { SingleRowTopAppBar() }
-        }
+@Composable
+public fun SpatialTopAppBar(
+    title: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    navigationIcon: @Composable () -> Unit = {},
+    actions: @Composable RowScope.() -> Unit = {},
+    windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
+    colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
+    scrollBehavior: TopAppBarScrollBehavior? = null,
+) {
+    HorizontalOrbiter(LocalSpatialTopAppBarOrbiterProperties.current) {
+        TopAppBar(
+            title = title,
+            modifier = modifier,
+            navigationIcon = navigationIcon,
+            actions = actions,
+            windowInsets = windowInsets,
+            colors = colors,
+            scrollBehavior = scrollBehavior,
+        )
     }
 }
 
 /**
- * The default [HorizontalOrbiterProperties] used by XR [TopAppBar] if none is specified in
- * [LocalSingleRowTopAppBarOrbiterProperties].
+ * The default [OrbiterProperties] used by XR `TopAppBar` if none is specified in
+ * [LocalSpatialTopAppBarOrbiterProperties].
  */
 @ExperimentalMaterial3XrApi
-public val DefaultSingleRowTopAppBarOrbiterProperties: HorizontalOrbiterProperties =
-    HorizontalOrbiterProperties(
-        position = ContentEdge.Horizontal.Top,
-        offset = XrSingleRowTopAppBarTokens.OrbiterOffset,
-        offsetType = OrbiterOffsetType.InnerEdge,
-        alignment = Alignment.CenterHorizontally,
+public val DefaultSpatialTopAppBarOrbiterProperties: OrbiterProperties =
+    OrbiterProperties(
+        position =
+            OrbiterPosition.TopCenter(
+                EdgeAlignment.Inside,
+                offset =
+                    DpVolumeOffset(
+                        0.dp,
+                        XrSingleRowTopAppBarTokens.OrbiterOffset,
+                        OrbiterDefaults.Elevation,
+                    ),
+            ),
         shape = XrTokens.ContainerShape,
     )
 
-/** The [HorizontalOrbiterProperties] used by XR [TopAppBar]. */
+/** The [OrbiterProperties] used by XR [TopAppBar]. */
 @ExperimentalMaterial3XrApi
-public val LocalSingleRowTopAppBarOrbiterProperties:
-    ProvidableCompositionLocal<HorizontalOrbiterProperties> =
+public val LocalSpatialTopAppBarOrbiterProperties: ProvidableCompositionLocal<OrbiterProperties> =
     compositionLocalOf {
-        DefaultSingleRowTopAppBarOrbiterProperties
+        DefaultSpatialTopAppBarOrbiterProperties
     }
 
-/** [TwoRowsTopAppBarOverride] that uses the XR-specific [TwoRowsTopAppBar]. */
+/**
+ * XR-specific TwoRowsTopAppBar that displays a two-rows top app bar inside a top-aligned `Orbiter`.
+ *
+ * @param title the title to be displayed in the top app bar
+ * @param modifier the [Modifier] to be applied to this top app bar
+ * @param subtitle optional subtitle to be displayed in the top app bar
+ * @param navigationIcon optional navigation icon to be displayed at the start of the top app bar
+ * @param actions optional actions to be displayed at the end of the top app bar
+ * @param titleHorizontalAlignment the horizontal alignment of the title
+ * @param collapsedHeight the collapsed height of the top app bar
+ * @param expandedHeight the expanded height of the top app bar
+ * @param windowInsets a window insets of the top app bar
+ * @param colors [TopAppBarColors] that will be used to resolve the colors used for this top app bar
+ * @param scrollBehavior a [TopAppBarScrollBehavior]
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @ExperimentalMaterial3XrApi
-@OptIn(ExperimentalMaterial3ComponentOverrideApi::class, ExperimentalMaterial3Api::class)
-internal object XrTwoRowsTopAppBarOverride : TwoRowsTopAppBarOverride {
-    @Composable
-    override fun TwoRowsTopAppBarOverrideScope.TwoRowsTopAppBar() {
-        HorizontalOrbiter(LocalTwoRowsTopAppBarOrbiterProperties.current) {
-            // TODO(kmost): Expose as XR components that do not require the use of overrides.
-            //  Currently, this is not possible, as delegating to the default override impl requires
-            //  a TwoRowsTopAppBarOverrideScope instance (which has an internal constructor).
-            with(DefaultTwoRowsTopAppBarOverride) { TwoRowsTopAppBar() }
-        }
+@Composable
+public fun SpatialTwoRowsTopAppBar(
+    title: @Composable (expanded: Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    subtitle: (@Composable (expanded: Boolean) -> Unit)? = null,
+    navigationIcon: @Composable () -> Unit = {},
+    actions: @Composable RowScope.() -> Unit = {},
+    titleHorizontalAlignment: Alignment.Horizontal = Alignment.Start,
+    collapsedHeight: Dp = Dp.Unspecified,
+    expandedHeight: Dp = Dp.Unspecified,
+    windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
+    colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
+    scrollBehavior: TopAppBarScrollBehavior? = null,
+) {
+    HorizontalOrbiter(LocalTwoRowsTopAppBarOrbiterProperties.current) {
+        TwoRowsTopAppBar(
+            title = title,
+            modifier = modifier,
+            subtitle = subtitle,
+            navigationIcon = navigationIcon,
+            actions = actions,
+            titleHorizontalAlignment = titleHorizontalAlignment,
+            collapsedHeight = collapsedHeight,
+            expandedHeight = expandedHeight,
+            windowInsets = windowInsets,
+            colors = colors,
+            scrollBehavior = scrollBehavior,
+        )
     }
 }
 
 /**
- * The default [HorizontalOrbiterProperties] used by XR [TopAppBar] if none is specified in
+ * The default [OrbiterProperties] used by XR [TopAppBar] if none is specified in
  * [LocalTwoRowsTopAppBarOrbiterProperties].
  */
 @ExperimentalMaterial3XrApi
-public val DefaultTwoRowsTopAppBarOrbiterProperties: HorizontalOrbiterProperties =
-    HorizontalOrbiterProperties(
-        position = ContentEdge.Horizontal.Top,
-        offset = XrTwoRowsTopAppBarTokens.OrbiterOffset,
-        offsetType = OrbiterOffsetType.InnerEdge,
-        alignment = Alignment.CenterHorizontally,
+public val DefaultTwoRowsTopAppBarOrbiterProperties: OrbiterProperties =
+    OrbiterProperties(
+        position =
+            OrbiterPosition.TopCenter(
+                EdgeAlignment.Inside,
+                offset =
+                    DpVolumeOffset(
+                        0.dp,
+                        XrTwoRowsTopAppBarTokens.OrbiterOffset,
+                        OrbiterDefaults.Elevation,
+                    ),
+            ),
         shape = XrTokens.ContainerShape,
     )
 
-/** The [HorizontalOrbiterProperties] used by XR [TopAppBar]. */
+/** The [OrbiterProperties] used by XR [TopAppBar]. */
 @ExperimentalMaterial3XrApi
-public val LocalTwoRowsTopAppBarOrbiterProperties:
-    ProvidableCompositionLocal<HorizontalOrbiterProperties> =
+public val LocalTwoRowsTopAppBarOrbiterProperties: ProvidableCompositionLocal<OrbiterProperties> =
     compositionLocalOf {
         DefaultTwoRowsTopAppBarOrbiterProperties
     }

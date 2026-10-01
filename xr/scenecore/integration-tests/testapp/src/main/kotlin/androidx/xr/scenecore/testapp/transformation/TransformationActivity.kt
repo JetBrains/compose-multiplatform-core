@@ -20,11 +20,11 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import android.widget.Switch
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -93,7 +93,7 @@ class TransformationActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        WindowCompat.enableEdgeToEdge(window)
         setContentView(R.layout.transformation_activity_panel)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -154,7 +154,7 @@ class TransformationActivity : AppCompatActivity() {
                             if (panel == anchorDebugPanel) {
                                 anchorDebugPanel.view.setLine(
                                     "Anchor State",
-                                    anchorState.toFormattedString(),
+                                    anchorState.toString(),
                                 )
                             }
                             updateDebugTextPanel(panel.view, panel.trackedEntity!!, anchorState)
@@ -505,15 +505,6 @@ class TransformationActivity : AppCompatActivity() {
     private fun length(position: Vector3): Float {
         return sqrt(position.x * position.x + position.y * position.y + position.z * position.z)
     }
-
-    private fun AnchorSpace.State.toFormattedString(): String =
-        when (this) {
-            AnchorSpace.State.UNANCHORED -> "UNANCHORED"
-            AnchorSpace.State.ANCHORED -> "ANCHORED"
-            AnchorSpace.State.TIMED_OUT -> "TIMED_OUT"
-            AnchorSpace.State.ERROR -> "ERROR"
-            else -> "UNKNOWN"
-        }
 
     companion object {
         var onActivitySpaceUpdatedCount = 0

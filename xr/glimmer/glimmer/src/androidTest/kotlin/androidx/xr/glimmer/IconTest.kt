@@ -61,7 +61,6 @@ import androidx.test.filters.SdkSuppress
 import androidx.xr.glimmer.testutils.captureToImage
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -72,7 +71,7 @@ import org.junit.runner.RunWith
 // available below 33)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
 class IconTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val iconTag = "Icon"
 
@@ -522,7 +521,6 @@ class IconTest {
                             shape = RectangleShape,
                             color = Color.Black,
                             contentColor = contentColor,
-                            border = null,
                         )
                         .testTag(iconTag),
             )
@@ -573,7 +571,6 @@ class IconTest {
                             shape = RectangleShape,
                             color = Color.Black,
                             contentColor = contentColor,
-                            border = null,
                         )
                         .testTag(iconTag),
             )
@@ -625,7 +622,6 @@ class IconTest {
                             shape = RectangleShape,
                             color = Color.Black,
                             contentColor = contentColor,
-                            border = null,
                         )
                         .testTag(iconTag),
             )
@@ -677,7 +673,6 @@ class IconTest {
                             shape = RectangleShape,
                             color = Color.Black,
                             contentColor = Color.Blue,
-                            border = null,
                         )
                         .testTag(iconTag),
             )
@@ -720,7 +715,6 @@ class IconTest {
                             shape = RectangleShape,
                             color = Color.Black,
                             contentColor = Color.Blue,
-                            border = null,
                         )
                         .testTag(iconTag),
             )
@@ -764,7 +758,6 @@ class IconTest {
                             shape = RectangleShape,
                             color = Color.Black,
                             contentColor = Color.Blue,
-                            border = null,
                         )
                         .testTag(iconTag),
             )
@@ -807,7 +800,6 @@ class IconTest {
                             shape = RectangleShape,
                             color = Color.Black,
                             contentColor = Color.Blue,
-                            border = null,
                         )
                         .testTag(iconTag),
             )
@@ -858,7 +850,6 @@ class IconTest {
                             shape = RectangleShape,
                             color = Color.Black,
                             contentColor = Color.Blue,
-                            border = null,
                         )
                         .testTag(iconTag),
             )
@@ -910,7 +901,6 @@ class IconTest {
                             shape = RectangleShape,
                             color = Color.Black,
                             contentColor = Color.Blue,
-                            border = null,
                         )
                         .testTag(iconTag),
             )

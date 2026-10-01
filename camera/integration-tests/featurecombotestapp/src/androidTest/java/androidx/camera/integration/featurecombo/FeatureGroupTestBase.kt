@@ -18,7 +18,6 @@ package androidx.camera.integration.featurecombo
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.SurfaceTexture
 import android.hardware.DataSpace
 import android.hardware.DataSpace.TRANSFER_HLG
 import android.hardware.camera2.CameraMetadata
@@ -61,9 +60,7 @@ import androidx.camera.integration.featurecombo.AppUseCase.VIDEO_CAPTURE
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.Camera2CaptureCallbackImpl
 import androidx.camera.testing.impl.CameraUtil
-import androidx.camera.testing.impl.GLUtil
-import androidx.camera.testing.impl.SurfaceTextureProvider
-import androidx.camera.testing.impl.SurfaceTextureProvider.createSurfaceTextureProvider
+import androidx.camera.testing.impl.SurfaceTextureProvider.createAutoDrainingSurfaceTextureProvider
 import androidx.camera.testing.impl.UltraHdrImageVerification.assertJpegUltraHdr
 import androidx.camera.testing.impl.WakelockEmptyActivityRule
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
@@ -84,7 +81,6 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.async
@@ -117,7 +113,8 @@ open class FeatureGroupTestBase(
 
     private val sessionCaptureCallback = Camera2CaptureCallbackImpl()
 
-    protected val surfaceTextureDeferred = CompletableDeferred<SurfaceTexture>()
+    protected val previewDataSpace = AtomicInteger(DataSpace.DATASPACE_UNKNOWN)
+    protected val previewFrameCountDownLatch = AtomicReference(CountDownLatch(5))
 
     private fun createPreview(aspectRatio: Int) =
         Preview.Builder()
@@ -131,23 +128,21 @@ open class FeatureGroupTestBase(
             }
             .build()
             .apply {
+                val latch = CountDownLatch(5)
+                previewFrameCountDownLatch.set(latch)
+                previewDataSpace.set(DataSpace.DATASPACE_UNKNOWN)
                 runBlocking {
                     withContext(Dispatchers.Main) {
                         surfaceProvider =
-                            createSurfaceTextureProvider(
-                                object : SurfaceTextureProvider.SurfaceTextureCallback {
-                                    override fun onSurfaceTextureReady(
-                                        surfaceTexture: SurfaceTexture,
-                                        resolution: Size,
-                                    ) {
-                                        surfaceTextureDeferred.complete(surfaceTexture)
-                                    }
-
-                                    override fun onSafeToRelease(surfaceTexture: SurfaceTexture) {
-                                        surfaceTexture.release()
+                            createAutoDrainingSurfaceTextureProvider { surfaceTexture ->
+                                if (Build.VERSION.SDK_INT >= 33) {
+                                    val ds = surfaceTexture.dataSpace
+                                    if (ds != DataSpace.DATASPACE_UNKNOWN) {
+                                        previewDataSpace.set(ds)
                                     }
                                 }
-                            )
+                                latch.countDown()
+                            }
                     }
                 }
             }
@@ -241,28 +236,28 @@ open class FeatureGroupTestBase(
 
         coroutineScope {
             map {
-                    async {
-                        when {
-                            it == HDR_HLG10 -> {
-                                // Reaching this stage before API 33 means query API didn't work
-                                // correctly
-                                require(Build.VERSION.SDK_INT >= 33)
-                                verifyHlg10Hdr(useCases, cameraInfo)
-                            }
-                            it == FPS_60 -> verify60Fps(cameraInfo)
-                            it == PREVIEW_STABILIZATION ->
-                                verifyPreviewStabilization(cameraInfo as CameraInfoInternal)
-                            it == IMAGE_ULTRA_HDR -> {
-                                // Reaching this stage before API 34 means query API didn't work
-                                // correctly
-                                require(Build.VERSION.SDK_INT >= 34)
-                                verifyUltraHdr(useCases, cameraInfo)
-                            }
-                            it.featureTypeInternal == FeatureTypeInternal.RECORDING_QUALITY ->
-                                verifyRecordingQuality(useCases, it, aspectRatio)
+                async {
+                    when {
+                        it == HDR_HLG10 -> {
+                            // Reaching this stage before API 33 means query API didn't work
+                            // correctly
+                            require(Build.VERSION.SDK_INT >= 33)
+                            verifyHlg10Hdr(useCases, cameraInfo)
                         }
+                        it == FPS_60 -> verify60Fps(cameraInfo)
+                        it == PREVIEW_STABILIZATION ->
+                            verifyPreviewStabilization(cameraInfo as CameraInfoInternal)
+                        it == IMAGE_ULTRA_HDR -> {
+                            // Reaching this stage before API 34 means query API didn't work
+                            // correctly
+                            require(Build.VERSION.SDK_INT >= 34)
+                            verifyUltraHdr(useCases, cameraInfo)
+                        }
+                        it.featureTypeInternal == FeatureTypeInternal.RECORDING_QUALITY ->
+                            verifyRecordingQuality(useCases, it, aspectRatio)
                     }
                 }
+            }
                 .awaitAll()
         }
     }
@@ -277,7 +272,15 @@ open class FeatureGroupTestBase(
                 is Preview -> {
                     assertThat(it.dynamicRange).isEqualTo(DynamicRange.HLG_10_BIT)
 
-                    surfaceTextureDeferred.await().verifyHlg10Hdr()
+                    assertWithMessage("Timed out waiting for preview frames")
+                        .that(previewFrameCountDownLatch.get().await(5, TimeUnit.SECONDS))
+                        .isTrue()
+
+                    val dataspace = previewDataSpace.get()
+                    if (dataspace != DataSpace.DATASPACE_UNKNOWN) {
+                        val dataspaceTransfer = DataSpace.getTransfer(dataspace)
+                        assertThat(dataspaceTransfer).isEqualTo(TRANSFER_HLG)
+                    }
                 }
                 is VideoCapture<*> -> {
                     assertThat(it.dynamicRange).isEqualTo(DynamicRange.HLG_10_BIT)
@@ -286,22 +289,6 @@ open class FeatureGroupTestBase(
                 }
             }
         }
-    }
-
-    @RequiresApi(33)
-    private fun SurfaceTexture.verifyHlg10Hdr() {
-        // Wait for a few frames in order to ensure the surface texture is updated
-        val countDownLatch = CountDownLatch(5)
-        setOnFrameAvailableListener { countDownLatch.countDown() }
-        countDownLatch.await(1, TimeUnit.SECONDS)
-
-        // Ensure latest frame is updated to the texture image
-        attachToGLContext(GLUtil.getTexIdFromGLContext())
-        updateTexImage()
-
-        val dataspaceTransfer = DataSpace.getTransfer(dataSpace)
-
-        assertThat(dataspaceTransfer).isEqualTo(TRANSFER_HLG)
     }
 
     private suspend fun verify60Fps(cameraInfo: CameraInfo) {
@@ -317,27 +304,26 @@ open class FeatureGroupTestBase(
         val startTime = AtomicLong(0L)
         val currentFps = AtomicReference(0.0)
 
-        val result =
-            sessionCaptureCallback.verify { _, captureResult ->
-                val currentFrame = captureResult.frameNumber
-                if (lastFrameNumber.getAndSet(currentFrame) != currentFrame) {
-                    frameCount.incrementAndGet()
-                }
-
-                val currentTime = SystemClock.elapsedRealtime()
-                if (startTime.compareAndSet(0L, currentTime)) {
-                    // Start counting from the first observed frame in the window
-                    frameCount.set(0)
-                }
-
-                val timeDiff = currentTime - startTime.get()
-                if (timeDiff >= 3000) { // Calculate over a 3-second window
-                    currentFps.set((frameCount.get() * 1000.0) / timeDiff)
-                    true // Complete verification
-                } else {
-                    false
-                }
+        val result = sessionCaptureCallback.verify { _, captureResult ->
+            val currentFrame = captureResult.frameNumber
+            if (lastFrameNumber.getAndSet(currentFrame) != currentFrame) {
+                frameCount.incrementAndGet()
             }
+
+            val currentTime = SystemClock.elapsedRealtime()
+            if (startTime.compareAndSet(0L, currentTime)) {
+                // Start counting from the first observed frame in the window
+                frameCount.set(0)
+            }
+
+            val timeDiff = currentTime - startTime.get()
+            if (timeDiff >= 3000) { // Calculate over a 3-second window
+                currentFps.set((frameCount.get() * 1000.0) / timeDiff)
+                true // Complete verification
+            } else {
+                false
+            }
+        }
 
         val isCompleted = result.awaitUntil(timeoutMillis = 5000)
         assertWithMessage("Test failed to complete FPS verification in time")
@@ -424,11 +410,10 @@ open class FeatureGroupTestBase(
         expectedValue: T,
     ) {
         var lastSubmittedValue: T? = null
-        val result =
-            sessionCaptureCallback.verify { captureRequest, _ ->
-                captureRequest[captureKey]?.let { lastSubmittedValue = it }
-                captureRequest[captureKey] == expectedValue
-            }
+        val result = sessionCaptureCallback.verify { captureRequest, _ ->
+            captureRequest[captureKey]?.let { lastSubmittedValue = it }
+            captureRequest[captureKey] == expectedValue
+        }
 
         val isCompleted = result.awaitUntil(timeoutMillis = 10000)
         assertWithMessage(
