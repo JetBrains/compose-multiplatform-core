@@ -212,6 +212,14 @@ interface Window {
     fun Content(onLayout: (WindowData) -> Unit)
 
     fun triggerFullWindowRecomposition()
+
+    /**
+     * Tooling access to this window's recomposer and a content overlay, or `null` when the
+     * implementation does not support inspection.
+     */
+    @InternalComposeUiApi
+    val inspection: WindowInspection?
+        get() = null
 }
 
 interface PositionAwareWindow : Window {

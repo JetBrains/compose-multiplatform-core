@@ -71,6 +71,10 @@ object JetBrainsPublication {
             ),
             ComposeComponent(":compose:ui:ui-tooling-preview"),
             ComposeComponent(
+                ":compose:ui:ui-recomposition-inspector",
+                supportedPlatforms = ComposePlatforms.JVM_BASED
+            ),
+            ComposeComponent(
                 ":compose:ui:ui-uikit",
                 supportedPlatforms = ComposePlatforms.IOS
             ),

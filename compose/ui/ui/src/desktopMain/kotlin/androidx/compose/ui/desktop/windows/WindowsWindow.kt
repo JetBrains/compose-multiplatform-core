@@ -32,6 +32,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.desktop.WindowInspection
+import androidx.compose.ui.desktop.WindowInspectionImpl
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.desktop.ApplicationSession
@@ -601,6 +603,19 @@ class WindowsWindow internal constructor(
         scheduleFrame = { frameDispatcher.scheduleFrame() },
     )
 
+    private val windowInspection = WindowInspectionImpl(
+        frameRecomposer = frameRecomposer,
+        sessionProvider = { session },
+        density = { density },
+        requestRedraw = { frameDispatcher.scheduleFrame() },
+    )
+
+    @OptIn(InternalComposeUiApi::class)
+    override val inspection: WindowInspection
+        get() = windowInspection
+
+    private var contentState = mutableStateOf<(@Composable WindowScope.() -> Unit)?>(null)
+
     internal val composeScene: ComposeScene = CanvasLayersComposeScene(
         frameRecomposer = frameRecomposer,
         density = density,
@@ -860,9 +875,11 @@ class WindowsWindow internal constructor(
         if (!sceneContentInstalled) return false
         val physicalSize = latestPhysicalSize ?: return false
         angleViewContext.renderFrame(physicalSize, pixelGeometry) {
+            val composeCanvas = asComposeCanvas()
             with(sceneRenderingScope) {
-                composeScene.render(frameRecomposer, asComposeCanvas(), System.nanoTime())
+                composeScene.render(frameRecomposer, composeCanvas, System.nanoTime())
             }
+            windowInspection.renderOverlays(composeCanvas)
         }
         return true
     }
@@ -1120,7 +1137,6 @@ class WindowsWindow internal constructor(
     private var onPreviewKeyEvent: (KeyEvent) -> Boolean = { false }
     private var onKeyEvent: (KeyEvent) -> Boolean = { false }
 
-    private var contentState = mutableStateOf<(@Composable WindowScope.() -> Unit)?>(null)
     private var sceneContentInstalled = false
 
     @OptIn(InternalCoreApi::class)

@@ -31,6 +31,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.desktop.WindowInspection
+import androidx.compose.ui.desktop.WindowInspectionImpl
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.desktop.LocalTextInputSessionOwner
@@ -532,6 +534,19 @@ class MacOsWindow internal constructor(
         scheduleFrame = { isFrameRequested = true },
     )
 
+    private val windowInspection = WindowInspectionImpl(
+        frameRecomposer = frameRecomposer,
+        sessionProvider = { session },
+        density = { density },
+        requestRedraw = { isFrameRequested = true },
+    )
+
+    @OptIn(InternalComposeUiApi::class)
+    override val inspection: WindowInspection
+        get() = windowInspection
+
+    private var contentState = mutableStateOf<(@Composable WindowScope.() -> Unit)?>(null)
+
     internal val composeScene: ComposeScene = CanvasLayersComposeScene(
         frameRecomposer = frameRecomposer,
         density = density,
@@ -801,7 +816,9 @@ class MacOsWindow internal constructor(
         val canvas = pictureRecorder.beginRecording(bounds)
         canvas.clear(org.jetbrains.skia.Color.TRANSPARENT)
         val now = System.nanoTime()
-        with(sceneRenderingScope) { composeScene.render(frameRecomposer, canvas.asComposeCanvas(), now) }
+        val composeCanvas = canvas.asComposeCanvas()
+        with(sceneRenderingScope) { composeScene.render(frameRecomposer, composeCanvas, now) }
+        windowInspection.renderOverlays(composeCanvas)
         return PresentablePicture(pictureRecorder.finishRecordingAsPicture(), size)
     }
 
@@ -1036,7 +1053,6 @@ class MacOsWindow internal constructor(
     private var onPreviewKeyEvent: (KeyEvent) -> Boolean = { false }
     private var onKeyEvent: (KeyEvent) -> Boolean = { false }
 
-    private var contentState = mutableStateOf<(@Composable WindowScope.() -> Unit)?>(null)
     private var sceneContentInstalled = false
 
     @OptIn(InternalCoreApi::class)
