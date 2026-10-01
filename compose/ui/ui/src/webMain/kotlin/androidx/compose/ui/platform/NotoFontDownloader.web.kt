@@ -16,8 +16,19 @@
 
 package androidx.compose.ui.platform
 
+import androidx.collection.IntList
+import androidx.collection.ObjectList
+import androidx.collection.mutableIntListOf
+import androidx.collection.mutableIntSetOf
+import androidx.collection.mutableObjectListOf
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.platform.Font
+import androidx.compose.ui.util.fastAll
+import androidx.compose.ui.util.fastDistinctBy
+import androidx.compose.ui.util.fastFilterNotNull
+import androidx.compose.ui.util.fastFirstOrNull
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastMap
 import kotlin.collections.plusAssign
 import kotlinx.browser.window
 import org.jetbrains.skiko.loadBytesFromPath
@@ -27,12 +38,12 @@ import org.jetbrains.skiko.loadBytesFromPath
  * https://github.com/flutter/flutter/blob/master/engine/src/flutter/lib/web_ui/lib/src/engine/font_fallbacks.dart
  */
 internal class NotoFontDownloader : FallbackFontDownloader {
-    private val codePointsWithNoKnownFont = mutableSetOf<Int>()
+    private val codePointsWithNoKnownFont = mutableIntSetOf()
     private val codePointToComponents by lazy { UnicodePropertyLookup.create() }
 
     override suspend fun downloadFallbackFont(codepoints: Set<Int>): List<FontFamily> {
         val fontsToDownload = getFontsToDownload(codepoints)
-        val fonts = fontsToDownload.map { font ->
+        val fonts = fontsToDownload.fastMap { font ->
             val fontUrl = FONT_FALLBACK_BASE_URL + font.font.url
             try {
                 val bytes = loadBytesFromPath(fontUrl)
@@ -42,12 +53,12 @@ internal class NotoFontDownloader : FallbackFontDownloader {
                 null
             }
         }
-        if (fonts.isNotEmpty() && fonts.all { it == null }) {
+        if (fonts.isNotEmpty() && fonts.fastAll { it == null }) {
             // we need to throw an error because we want to retry it later
             error("Failed to download fallback fonts for codepoints: $codepoints")
         }
 
-        return fonts.filterNotNull()
+        return fonts.fastFilterNotNull()
     }
 
     internal fun getFontsToDownload(
@@ -56,8 +67,8 @@ internal class NotoFontDownloader : FallbackFontDownloader {
     ): List<IndexedNotoFont> {
         if (codepoints.isEmpty()) return emptyList()
 
-        val missingCodePoints = mutableListOf<Int>()
-        val requiredComponents = mutableListOf<FallbackFontComponent>()
+        val missingCodePoints = mutableIntListOf()
+        val requiredComponents = mutableObjectListOf<FallbackFontComponent>()
         val candidateFonts = mutableListOf<IndexedNotoFont>()
 
         for (codePoint in codepoints) {
@@ -74,13 +85,13 @@ internal class NotoFontDownloader : FallbackFontDownloader {
             }
         }
         if (missingCodePoints.isNotEmpty()) {
-            codePointsWithNoKnownFont += missingCodePoints
+            missingCodePoints.forEach { element -> codePointsWithNoKnownFont.plusAssign(element) }
         }
 
         if (requiredComponents.isEmpty()) return emptyList()
 
-        for (component in requiredComponents) {
-            for (font in component.fonts) {
+        requiredComponents.forEach { component ->
+            component.fonts.fastForEach { font ->
                 if (font.coverCount == 0) {
                     candidateFonts += font
                 }
@@ -94,8 +105,8 @@ internal class NotoFontDownloader : FallbackFontDownloader {
             val selectedFont = candidateFonts.selectFont(language)
             selectedFonts += selectedFont
 
-            for (component in selectedFont.coverComponents.toList()) {
-                for (font in component.fonts) {
+            selectedFont.coverComponents.toList().fastForEach { component ->
+                component.fonts.fastForEach { font ->
                     font.coverCount -= component.coverCount
                     font.coverComponents.remove(component)
                 }
@@ -105,11 +116,13 @@ internal class NotoFontDownloader : FallbackFontDownloader {
             candidateFonts.removeAll { it.coverCount == 0 }
         }
 
-        return selectedFonts.distinctBy { it.index }
+        return selectedFonts.fastDistinctBy { it.index }
     }
 
     internal fun getCodepointsWithNoKnownFont(): Set<Int> {
-        return codePointsWithNoKnownFont
+        return buildSet {
+            codePointsWithNoKnownFont.forEach(::add)
+        }
     }
 
     private fun List<IndexedNotoFont>.selectFont(language: String): IndexedNotoFont {
@@ -118,7 +131,7 @@ internal class NotoFontDownloader : FallbackFontDownloader {
         val bestFonts = mutableListOf<IndexedNotoFont>()
         var bestFont: IndexedNotoFont? = null
 
-        for (font in fonts) {
+        fonts.fastForEach { font ->
             when {
                 font.coverCount > maxCodePointsCovered -> {
                     bestFonts.clear()
@@ -126,6 +139,7 @@ internal class NotoFontDownloader : FallbackFontDownloader {
                     bestFont = font
                     maxCodePointsCovered = font.coverCount
                 }
+
                 font.coverCount == maxCodePointsCovered -> {
                     bestFonts += font
                     if (bestFont == null || font.index < bestFont.index) {
@@ -137,15 +151,15 @@ internal class NotoFontDownloader : FallbackFontDownloader {
 
         var bestFontForLanguage: IndexedNotoFont? = null
         if (bestFonts.size > 1) {
-            if (bestFonts.all { it.font.isCjkFont }) {
+            if (bestFonts.fastAll { it.font.isCjkFont }) {
                 bestFontForLanguage =
                     bestFonts.selectBestFontForLanguage(language)
                         ?: fonts.selectBestFontForLanguage(language)
             } else {
                 bestFont =
-                    bestFonts.firstOrNull { it.font.isNotoColorEmoji() }
-                        ?: bestFonts.firstOrNull { it.font.isNotoSansSymbols() }
-                        ?: bestFonts.firstOrNull { it.font.isNotoSansSC() }
+                    bestFonts.fastFirstOrNull { it.font.isNotoColorEmoji() }
+                        ?: bestFonts.fastFirstOrNull { it.font.isNotoSansSymbols() }
+                        ?: bestFonts.fastFirstOrNull { it.font.isNotoSansSC() }
                         ?: bestFont
             }
         }
@@ -156,11 +170,11 @@ internal class NotoFontDownloader : FallbackFontDownloader {
     private fun List<IndexedNotoFont>.selectBestFontForLanguage(language: String): IndexedNotoFont? {
         val fonts = this
         return when (language) {
-            "zh-Hans", "zh-CN", "zh-SG", "zh-MY" -> fonts.firstOrNull { it.font.isNotoSansSC() }
-            "zh-Hant", "zh-TW", "zh-MO" -> fonts.firstOrNull { it.font.isNotoSansTC() }
-            "zh-HK" -> fonts.firstOrNull { it.font.isNotoSansHK() }
-            "ja" -> fonts.firstOrNull { it.font.isNotoSansJP() }
-            "ko" -> fonts.firstOrNull { it.font.isNotoSansKR() }
+            "zh-Hans", "zh-CN", "zh-SG", "zh-MY" -> fonts.fastFirstOrNull { it.font.isNotoSansSC() }
+            "zh-Hant", "zh-TW", "zh-MO" -> fonts.fastFirstOrNull { it.font.isNotoSansTC() }
+            "zh-HK" -> fonts.fastFirstOrNull { it.font.isNotoSansHK() }
+            "ja" -> fonts.fastFirstOrNull { it.font.isNotoSansJP() }
+            "ko" -> fonts.fastFirstOrNull { it.font.isNotoSansKR() }
             else -> null
         }
     }
@@ -176,8 +190,8 @@ internal class FallbackFontComponent(val fonts: List<IndexedNotoFont>) {
 }
 
 private class UnicodePropertyLookup(
-    private val boundaries: List<Int>,
-    private val values: List<FallbackFontComponent>,
+    private val boundaries: IntList,
+    private val values: ObjectList<FallbackFontComponent>,
 ) {
     fun lookup(value: Int): FallbackFontComponent {
         var start = 0
@@ -202,8 +216,8 @@ private class UnicodePropertyLookup(
             val packedData = encodedNotoFontSetRanges
             val propertyEnumValues = decodeFontComponents(encodedNotoFontSets)
 
-            val boundaries = mutableListOf<Int>()
-            val values = mutableListOf<FallbackFontComponent>()
+            val boundaries = mutableIntListOf()
+            val values = mutableObjectListOf<FallbackFontComponent>()
 
             var start = 0
             var prefix = 0
@@ -240,7 +254,7 @@ private class UnicodePropertyLookup(
         }
 
         private fun decodeFontComponents(data: String): List<FallbackFontComponent> {
-            return data.split(',').map { componentData ->
+            return data.split(',').fastMap { componentData ->
                 FallbackFontComponent(decodeFontSet(componentData))
             }
         }

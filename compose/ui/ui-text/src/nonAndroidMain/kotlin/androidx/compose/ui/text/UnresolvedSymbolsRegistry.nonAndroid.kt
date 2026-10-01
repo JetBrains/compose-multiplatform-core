@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.text
 
+import androidx.collection.mutableObjectListOf
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.ui.text.platform.SynchronizedObject
 import androidx.compose.ui.text.platform.synchronized
@@ -31,7 +32,7 @@ class UnresolvedSymbolsRegistry {
 
     private val lock = SynchronizedObject()
     private val unresolvedCodepoints = mutableSetOf<Int>()
-    private val listeners = mutableListOf<WeakReference<Listener>>()
+    private val listeners = mutableObjectListOf<WeakReference<Listener>>()
 
     fun addListener(listener: Listener) {
         synchronized(lock) {
@@ -41,7 +42,7 @@ class UnresolvedSymbolsRegistry {
 
     fun removeListener(listener: Listener) {
         synchronized(lock) {
-            listeners.removeAll { it.get() == listener }
+            listeners.removeIf { it.get() == listener }
         }
     }
 
@@ -50,7 +51,7 @@ class UnresolvedSymbolsRegistry {
             val new = codepoints.filter { it !in unresolvedCodepoints }
             if (new.isEmpty()) return
             unresolvedCodepoints.addAll(new)
-            listeners.removeAll { it.get() == null }
+            listeners.removeIf { it.get() == null }
             listeners.forEach { it.get()?.onUnresolvedCodepoints(unresolvedCodepoints) }
         }
     }
@@ -58,7 +59,7 @@ class UnresolvedSymbolsRegistry {
     fun onNewFontInstalled() {
         synchronized(lock) {
             unresolvedCodepoints.clear()
-            listeners.removeAll { it.get() == null }
+            listeners.removeIf { it.get() == null }
             listeners.forEach { it.get()?.onNewFontInstalled() }
         }
     }
