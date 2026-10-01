@@ -16,6 +16,7 @@
 
 package androidx.compose.ui
 
+import androidx.compose.ui.interaction.HapticFeedbackSelectionTest
 import androidx.compose.ui.scroll.ScrollTest
 import androidx.compose.xctest.setupXCTestSuite
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -24,7 +25,8 @@ import platform.XCTest.XCTestSuite
 @Suppress("unused")
 @OptIn(ExperimentalForeignApi::class)
 fun testSuite(): XCTestSuite = setupXCTestSuite(
-    ScrollTest::testOverscrollAndFling,
+    ScrollTest::class,
+    HapticFeedbackSelectionTest::class,
     // Run all test cases from the tests
     // BasicInteractionTest::class,
     // LayersAccessibilityTest::class,
