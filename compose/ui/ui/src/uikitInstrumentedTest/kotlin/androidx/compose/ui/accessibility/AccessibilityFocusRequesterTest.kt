@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.getAccessibilityTree
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.runUIKitInstrumentedTestInPrimaryContainer
 import kotlin.experimental.ExperimentalNativeApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -76,7 +77,7 @@ class AccessibilityFocusRequesterTest {
     }
 
     @Test
-    fun testFocusRequesterSelectsFirstFocusableElement() = runUIKitInstrumentedTest {
+    fun testFocusRequesterSelectsFirstFocusableElement() = runUIKitInstrumentedTestInPrimaryContainer {
         val focusRequester = FocusRequester()
 
         setContent {
