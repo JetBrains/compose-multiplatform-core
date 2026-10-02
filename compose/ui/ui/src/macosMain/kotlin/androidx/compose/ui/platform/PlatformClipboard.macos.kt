@@ -19,7 +19,14 @@ package androidx.compose.ui.platform
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.text.AnnotatedString
 import platform.AppKit.NSPasteboard
+import platform.AppKit.NSPasteboardItem
+import platform.AppKit.NSPasteboardTypeHTML
 import platform.AppKit.NSPasteboardTypeString
+import platform.AppKit.NSPasteboardTypeURL
+
+private val PASTEBOARD_TYPE_STRING = checkNotNull(NSPasteboardTypeString)
+private val PASTEBOARD_TYPE_HTML = checkNotNull(NSPasteboardTypeHTML)
+private val PASTEBOARD_TYPE_URL = checkNotNull(NSPasteboardTypeURL)
 
 actual typealias NativeClipboard = NSPasteboard
 
@@ -49,28 +56,24 @@ private class NSPasteboardPlatformClipboardManager : ClipboardManager {
     }
 }
 
-internal class NSPasteboardPlatformClipboard : Clipboard {
+internal class NSPasteboardPlatformClipboard(
+    override val nativeClipboard: NativeClipboard = NSPasteboard.generalPasteboard
+) : Clipboard {
     override suspend fun getClipEntry(): ClipEntry? {
-        if (nativeClipboard.pasteboardItems == null) return null
-        if (nativeClipboard.pasteboardItems!!.isEmpty()) return null
+        val pasteboardItems =
+            nativeClipboard.pasteboardItems?.mapNotNull { it as? NSPasteboardItem } ?: return null
+        if (pasteboardItems.isEmpty()) return null
 
-        val str = nativeClipboard.stringForType(NSPasteboardTypeString)
-        if (str.isNullOrEmpty()) return null
-
-        return ClipEntry.withPlainText(str)
+        return ClipEntry(pasteboardItems)
     }
 
     override suspend fun setClipEntry(clipEntry: ClipEntry?) {
-        if (clipEntry?.plainText == null) {
-            nativeClipboard.clearContents()
-            return
+        val pasteboardItems = clipEntry?.pasteboardItems?.map { it.copyForClipboard() }.orEmpty()
+        nativeClipboard.clearContents()
+        if (pasteboardItems.isNotEmpty()) {
+            nativeClipboard.writeObjects(pasteboardItems)
         }
-        val plainText = clipEntry.plainText ?: return
-        nativeClipboard.setString(plainText, NSPasteboardTypeString)
     }
-
-    override val nativeClipboard: NativeClipboard
-        get() = NSPasteboard.generalPasteboard
 }
 
 @Suppress("DEPRECATION")
@@ -79,25 +82,92 @@ internal actual fun createPlatformClipboardManager(): ClipboardManager = NSPaste
 internal actual fun createPlatformClipboard(): Clipboard = NSPasteboardPlatformClipboard()
 
 /**
- * A wrapper for [platform.AppKit.NSPasteboard] items.
- * Currently, it operates only with string(s) - [platform.AppKit.NSPasteboardTypeString].
- * To access or set other data items, consider using [Clipboard.nativeClipboard].
+ * A wrapper for [platform.AppKit.NSPasteboardItem]s.
+ * The text APIs support plain text, HTML, and URLs. To access other representations, use
+ * [Clipboard.nativeClipboard].
  */
-actual class ClipEntry internal constructor() {
-
-    // TODO: https://youtrack.jetbrains.com/issue/CMP-1260
+actual class ClipEntry internal constructor(
+    internal val pasteboardItems: List<NSPasteboardItem> = emptyList()
+) {
     actual val clipMetadata: ClipMetadata
-        get() = TODO("ClipMetadata is not implemented. Consider using nativeClipboard")
+        get() = createClipMetadata()
 
-    internal var plainText: String? = null
+    actual suspend fun readText(): String? = readPlainText() ?: readHtml() ?: readUrl()
 
-    @ExperimentalComposeUiApi
-    fun getPlainText(): String? = plainText
+    actual suspend fun readPlainText(): String? = readRepresentation(PASTEBOARD_TYPE_STRING)
 
-    companion object {
-        @ExperimentalComposeUiApi
-        fun withPlainText(text: String): ClipEntry = ClipEntry().apply {
-            plainText = text
+    actual suspend fun readHtml(): String? = readRepresentation(PASTEBOARD_TYPE_HTML)
+
+    actual suspend fun readUrl(): String? = readRepresentation(PASTEBOARD_TYPE_URL)
+
+    private fun readRepresentation(type: String): String? {
+        val item = pasteboardItems.firstOrNull() ?: return null
+        return try {
+            item.stringForType(type)
+        } catch (_: Throwable) {
+            null
         }
     }
+
+    private fun createClipMetadata(): ClipMetadata {
+        val hasPlainText = pasteboardItems.any { it.types.contains(PASTEBOARD_TYPE_STRING) }
+        val hasHtml = pasteboardItems.any { it.types.contains(PASTEBOARD_TYPE_HTML) }
+        val hasUrl = pasteboardItems.any { it.types.contains(PASTEBOARD_TYPE_URL) }
+        return ClipMetadata(
+            hasTextValue = hasPlainText || hasHtml || hasUrl,
+            hasPlainTextValue = hasPlainText,
+            hasHtmlValue = hasHtml,
+            hasUrlValue = hasUrl,
+        )
+    }
+
+    @ExperimentalComposeUiApi
+    fun getPlainText(): String? = readRepresentation(PASTEBOARD_TYPE_STRING)
+
+    actual companion object {
+        actual fun withText(plainText: String, html: String?): ClipEntry =
+            ClipEntry(listOf(createPasteboardItem(plainText, html, null)))
+
+        actual fun withUrl(url: String, plainText: String?, html: String?): ClipEntry =
+            ClipEntry(listOf(createPasteboardItem(plainText, html, url)))
+
+        @ExperimentalComposeUiApi
+        fun withPlainText(text: String): ClipEntry = withText(text, null)
+    }
+}
+
+private fun createPasteboardItem(
+    plainText: String?,
+    html: String?,
+    url: String?,
+): NSPasteboardItem = NSPasteboardItem().apply {
+    plainText?.let { setString(it, PASTEBOARD_TYPE_STRING) }
+    html?.let { setString(it, PASTEBOARD_TYPE_HTML) }
+    url?.let { setString(it, PASTEBOARD_TYPE_URL) }
+}
+
+private fun NSPasteboardItem.copyForClipboard(): NSPasteboardItem {
+    val copy = NSPasteboardItem()
+    types.forEach { type ->
+        val pasteboardType = type as? String ?: return@forEach
+        val stringValue =
+            when (pasteboardType) {
+                PASTEBOARD_TYPE_STRING, PASTEBOARD_TYPE_HTML, PASTEBOARD_TYPE_URL ->
+                    stringForType(pasteboardType)
+                else -> null
+            }
+        if (stringValue != null) {
+            copy.setString(stringValue, pasteboardType)
+        } else {
+            val data = dataForType(pasteboardType)
+            if (data != null) {
+                copy.setData(data, pasteboardType)
+            } else {
+                propertyListForType(pasteboardType)?.let {
+                    copy.setPropertyList(it, pasteboardType)
+                }
+            }
+        }
+    }
+    return copy
 }

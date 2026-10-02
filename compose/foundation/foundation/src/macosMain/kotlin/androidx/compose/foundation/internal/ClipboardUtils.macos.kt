@@ -20,28 +20,29 @@ package androidx.compose.foundation.internal
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.NativeClipboard
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.platform.Clipboard
-
-
-internal actual suspend fun ClipEntry.readText(): String? = getPlainText()
+import platform.AppKit.NSPasteboardTypeHTML
+import platform.AppKit.NSPasteboardTypeString
+import platform.AppKit.NSPasteboardTypeURL
 
 internal actual suspend fun ClipEntry.readAnnotatedString(): AnnotatedString? {
-    val text = getPlainText() ?: return null
+    val text = readText() ?: return null
     return AnnotatedString(text)
 }
 
 internal actual fun AnnotatedString?.toClipEntry(): ClipEntry? {
     if (this == null) return null
-    return ClipEntry.withPlainText(this.text)
+    return ClipEntry.withText(this.text)
 }
 
-internal actual fun ClipEntry?.hasText(): Boolean = this?.getPlainText() != null
+internal actual fun ClipEntry?.hasText(): Boolean = this?.clipMetadata?.hasText() == true
 
 internal actual fun Clipboard.isReadSupported(): Boolean = true
 internal actual fun Clipboard.isWriteSupported(): Boolean = true
 
 internal fun NativeClipboard.hasText(): Boolean {
-    return this.types?.contains(platform.AppKit.NSPasteboardTypeString) ?: false
+    val types = this.types ?: return false
+    return types.contains(NSPasteboardTypeString)
 }
