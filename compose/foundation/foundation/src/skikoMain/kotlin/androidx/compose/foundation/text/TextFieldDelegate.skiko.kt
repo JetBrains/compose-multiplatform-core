@@ -43,21 +43,54 @@ internal fun TextFieldDelegate.Companion.cupertinoSetCursorOffsetFocused(
     showContextMenu: (Boolean) -> Unit,
     onValueChange: (TextFieldValue) -> Unit
 ) {
-    val offset =
-        offsetMapping.transformedToOriginal(textLayoutResult.getOffsetForPosition(position))
+    val transformedOffset = textLayoutResult.getOffsetForPosition(position)
+    val offset = offsetMapping.transformedToOriginal(transformedOffset)
     val currentValue = editProcessor.toTextFieldValue()
-    val currentText = textLayoutResult.value.layoutInput.text.toString()
     val previousOffset = currentValue.selection.start
 
-    val cursorDesiredOffset = determineCursorDesiredOffset(
-        offset = offset,
+    val cursorDesiredOffset = determineCursorDesiredOffsetForTap(
+        transformedOffset = transformedOffset,
+        offsetMapping = offsetMapping,
         textLayoutResult = textLayoutResult.value,
-        currentText = currentText
+        untransformedText = currentValue.text
     )
 
     showContextMenu(cursorDesiredOffset == offset && cursorDesiredOffset == previousOffset)
     onValueChange(
         editProcessor.toTextFieldValue().copy(selection = TextRange(cursorDesiredOffset))
+    )
+}
+
+/**
+ * Determines the desired cursor offset in the untransformed text for a tap at [transformedOffset].
+ *
+ * The Cupertino word-level adjustment ([determineCursorDesiredOffset]) looks up word boundaries,
+ * whitespaces and line edges in the laid out text. When a visual transformation changes the text
+ * (for example, inserts separators of a mask), offsets of the laid out text don't match offsets of
+ * the untransformed text, so the cursor is placed at the tapped character instead, the same way as
+ * in BasicTextField with TextFieldState.
+ *
+ * @param transformedOffset The offset of the tap in the laid out (transformed) text.
+ * @param offsetMapping The OffsetMapping object that maps the transformed offset to the original offset.
+ * @param textLayoutResult The TextLayoutResult of the laid out (transformed) text.
+ * @param untransformedText The text of the TextField value.
+ * @return The desired cursor offset in the untransformed text.
+ */
+internal fun determineCursorDesiredOffsetForTap(
+    transformedOffset: Int,
+    offsetMapping: OffsetMapping,
+    textLayoutResult: TextLayoutResult,
+    untransformedText: String
+): Int {
+    val offset = offsetMapping.transformedToOriginal(transformedOffset)
+    val layoutText = textLayoutResult.layoutInput.text.text
+    if (layoutText != untransformedText) {
+        return offset
+    }
+    return determineCursorDesiredOffset(
+        offset = offset,
+        textLayoutResult = textLayoutResult,
+        currentText = layoutText
     )
 }
 
