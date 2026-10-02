@@ -17,9 +17,12 @@
 package noria.foundation.layout
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -53,13 +56,24 @@ enum class AnchorPressPolicy {
  * @param anchorBounds the bounds of the anchor.
  * @param anchorPressPolicy what to do when the press lands on the anchor.
  * @param onOutsidePress receives the position of the press.
+ * @param parent the listener of the overlay that opened this one, if any. A press on this overlay
+ *   is a press on the parent too.
  */
 internal class OutsidePressListener(
     val overlayBounds: () -> IntRect?,
     val anchorBounds: () -> IntRect,
     val anchorPressPolicy: AnchorPressPolicy,
     val onOutsidePress: (IntOffset) -> Unit,
+    val parent: OutsidePressListener?,
 )
+
+/**
+ * The listener of the overlay whose content is being composed, or `null` outside any overlay.
+ *
+ * An overlay's content is composed with its anchor's `CompositionContext`, so the value reaches the
+ * content of every overlay opened from inside it, whichever host renders that one.
+ */
+private val LocalOutsidePressListener = staticCompositionLocalOf<OutsidePressListener?> { null }
 
 /**
  * The outside press listeners of one [OverlayHost].
@@ -84,12 +98,23 @@ internal class OutsidePressRegistry {
         if (listeners.isEmpty()) {
             return false
         }
+        // A submenu sits beside its menu, so its bounds alone would read a press on it as outside
+        // the menu, and the menu would close under the press. A press on an overlay is therefore a
+        // press on every overlay that opened it.
+        val pressed = hashSetOf<OutsidePressListener>()
+        for (listener in listeners) {
+            if (listener.overlayBounds()?.contains(position) == true) {
+                var opener: OutsidePressListener? = listener
+                while (opener != null && pressed.add(opener)) {
+                    opener = opener.parent
+                }
+            }
+        }
         var consume = false
         // A listener usually closes its overlay, and that unregisters the listener. Iterate over a
         // copy.
         for (listener in listeners.toList()) {
-            val overlayBounds = listener.overlayBounds() ?: continue
-            if (overlayBounds.contains(position)) {
+            if (listener.overlayBounds() == null || listener in pressed) {
                 continue
             }
             if (listener.anchorBounds().contains(position)) {
@@ -109,6 +134,10 @@ internal class OutsidePressRegistry {
  * Reports a press outside this overlay while the caller composes.
  *
  * The listener joins the registry of the host [key], which is always an ancestor of the caller.
+ *
+ * Pass the overlay's body as [content]. An overlay opened from inside it then belongs to this one,
+ * and a press on that overlay is not a press outside this one. The two must share a host for that:
+ * the registry compares bounds, and bounds are in the coordinates of their own host.
  */
 @Composable
 fun outsidePressListener(
@@ -117,22 +146,28 @@ fun outsidePressListener(
     anchorBounds: () -> IntRect,
     anchorPressPolicy: AnchorPressPolicy,
     onOutsidePress: (IntOffset) -> Unit,
+    content: @Composable () -> Unit = {},
 ) {
     val registry = key.current.outsidePressRegistry
     val currentOverlayBounds by rememberUpdatedState(overlayBounds)
     val currentAnchorBounds by rememberUpdatedState(anchorBounds)
     val currentOnOutsidePress by rememberUpdatedState(onOutsidePress)
-    DisposableEffect(registry, anchorPressPolicy) {
-        val listener =
+    val parent = LocalOutsidePressListener.current
+    val listener =
+        remember(anchorPressPolicy, parent) {
             OutsidePressListener(
                 overlayBounds = { currentOverlayBounds() },
                 anchorBounds = { currentAnchorBounds() },
                 anchorPressPolicy = anchorPressPolicy,
                 onOutsidePress = { currentOnOutsidePress(it) },
+                parent = parent,
             )
+        }
+    DisposableEffect(registry, listener) {
         registry.register(listener)
         onDispose { registry.unregister(listener) }
     }
+    CompositionLocalProvider(LocalOutsidePressListener provides listener, content)
 }
 
 /**

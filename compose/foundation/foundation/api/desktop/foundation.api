@@ -3445,7 +3445,7 @@ public final class noria/foundation/layout/LocalRepaintHighlightKt {
 }
 
 public final class noria/foundation/layout/OutsidePressKt {
-	public static final fun outsidePressListener (Landroidx/compose/runtime/ProvidableCompositionLocal;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lnoria/foundation/layout/AnchorPressPolicy;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;I)V
+	public static final fun outsidePressListener (Landroidx/compose/runtime/ProvidableCompositionLocal;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lnoria/foundation/layout/AnchorPressPolicy;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
 }
 
 public final class noria/foundation/layout/OverlayHandle {
