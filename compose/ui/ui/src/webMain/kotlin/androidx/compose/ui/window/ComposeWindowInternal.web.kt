@@ -655,7 +655,7 @@ internal class ComposeWindow(
                 LocalActiveClipEventsTarget provides clipEventsTargetProvider,
                 LocalComposeWindow provides this,
                 content = {
-                    installFallbackFontDownloader()
+                    installFallbackFontDownloader(configuration.fontFallbackUrl)
                     WithNestedScrollObserver(rootScrollObserver) {
                         interopContainer.TrackInteropPlacementContainer {
                             content()
