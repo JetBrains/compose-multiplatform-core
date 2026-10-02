@@ -97,4 +97,4 @@ public expect fun TransferableContent.hasMediaType(mediaType: MediaType): Boolea
  * representation of content e.g., if there is a URL pointing at another source. This function only
  * reads the explicit text that was transferred directly inside the [ClipEntry].
  */
-internal expect fun ClipEntry.readPlainText(): String?
+internal expect fun ClipEntry.readAllPlainText(): String?

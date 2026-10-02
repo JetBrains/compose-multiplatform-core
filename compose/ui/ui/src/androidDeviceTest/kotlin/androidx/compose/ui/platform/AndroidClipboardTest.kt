@@ -40,6 +40,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.argumentCaptor
@@ -264,6 +265,64 @@ class AndroidClipboardTest {
 
         assertThat(subject.getClip()?.clipMetadata?.clipDescription)
             .isSameInstanceAs(clipDescription)
+    }
+
+    @Test
+    fun clipEntry_withText_readsPlainTextAndHtml() = runTest {
+        val clipEntry = ClipEntry.withText("plain text", "<b>plain text</b>")
+
+        assertThat(clipEntry.readText()).isEqualTo("plain text")
+        assertThat(clipEntry.readPlainText()).isEqualTo("plain text")
+        assertThat(clipEntry.readHtml()).isEqualTo("<b>plain text</b>")
+        assertThat(clipEntry.readUrl()).isNull()
+        assertThat(clipEntry.clipMetadata.hasText()).isTrue()
+        assertThat(clipEntry.clipMetadata.hasPlainText()).isTrue()
+        assertThat(clipEntry.clipMetadata.hasHtml()).isTrue()
+        assertThat(clipEntry.clipMetadata.hasUrl()).isFalse()
+    }
+
+    @Test
+    fun clipEntry_withUrl_readsAllRepresentations() = runTest {
+        val url = "https://example.com"
+        val plainText = "Example"
+        val html = """<a href="$url">Example</a>"""
+        val clipEntry = ClipEntry.withUrl(url, plainText, html)
+
+        assertThat(clipEntry.readText()).isEqualTo(plainText)
+        assertThat(clipEntry.readPlainText()).isEqualTo(plainText)
+        assertThat(clipEntry.readHtml()).isEqualTo(html)
+        assertThat(clipEntry.readUrl()).isEqualTo(url)
+        assertThat(clipEntry.clipMetadata.hasText()).isTrue()
+        assertThat(clipEntry.clipMetadata.hasPlainText()).isTrue()
+        assertThat(clipEntry.clipMetadata.hasHtml()).isTrue()
+        assertThat(clipEntry.clipMetadata.hasUrl()).isTrue()
+    }
+
+    @Test
+    fun clipEntry_withUrl_withoutPlainText_readsHtmlAsText() = runTest {
+        val url = "https://example.com"
+        val html = "<a href=\"$url\">Example</a>"
+        val clipEntry = ClipEntry.withUrl(url, html = html)
+
+        assertThat(clipEntry.readText()).isEqualTo(html)
+        assertThat(clipEntry.readPlainText()).isNull()
+        assertThat(clipEntry.readHtml()).isEqualTo(html)
+        assertThat(clipEntry.readUrl()).isEqualTo(url)
+    }
+
+    @Test
+    fun clipEntry_withUrl_withoutFallback_readsUrlAsText() = runTest {
+        val url = "https://example.com"
+        val clipEntry = ClipEntry.withUrl(url)
+
+        assertThat(clipEntry.readText()).isEqualTo(url)
+        assertThat(clipEntry.readPlainText()).isNull()
+        assertThat(clipEntry.readHtml()).isNull()
+        assertThat(clipEntry.readUrl()).isEqualTo(url)
+        assertThat(clipEntry.clipMetadata.hasText()).isTrue()
+        assertThat(clipEntry.clipMetadata.hasPlainText()).isFalse()
+        assertThat(clipEntry.clipMetadata.hasHtml()).isFalse()
+        assertThat(clipEntry.clipMetadata.hasUrl()).isTrue()
     }
 
     @Test

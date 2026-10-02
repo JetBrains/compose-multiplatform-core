@@ -85,13 +85,61 @@ public expect class ClipEntry {
      * Calling this function does not trigger any content access warnings on any platform.
      */
     public val clipMetadata: ClipMetadata
+
+    /**
+     * Reads an available text representation, or returns null if none can be read.
+     *
+     * The result may be plain text, HTML, or a URL. Use [readPlainText], [readHtml], or [readUrl]
+     * to request a specific representation.
+     */
+    public suspend fun readText(): String?
+
+    /** Reads plain text, or returns null if unavailable or reading fails. */
+    public suspend fun readPlainText(): String?
+
+    /** Reads HTML markup, or returns null if unavailable or reading fails. */
+    public suspend fun readHtml(): String?
+
+    /** Reads a URL string, or returns null if unavailable or reading fails. */
+    public suspend fun readUrl(): String?
+
+
+    public companion object {
+        /**
+         * Creates an entry with [plainText] and optional [html] representations.
+         *
+         * The plain text serves as a fallback when HTML is not supported.
+         *
+         * @param plainText plain-text representation of the item
+         * @param html optional HTML representation of the same item
+         */
+        public fun withText(plainText: String, html: String? = null): ClipEntry
+
+        /**
+         * Creates a URL entry with optional plain-text and HTML representations.
+         *
+         * @param url URL string to write
+         * @param plainText optional plain-text fallback, such as the URL or a label
+         * @param html optional rich link representing the same URL
+         */
+        public fun withUrl(url: String, plainText: String? = null, html: String? = null): ClipEntry
+    }
 }
 
-/**
- * Platform specific protocol that describes an item in the native Clipboard. This object should not
- * contain any actual piece of data.
- */
-public expect class ClipMetadata
+/** Describes the available representations of a [ClipEntry] without reading its content. */
+public expect class ClipMetadata {
+    /** Reports whether any text is available, including plain text, HTML, or URL text. */
+    public fun hasText(): Boolean
+
+    /** Reports whether plain text is available. */
+    public fun hasPlainText(): Boolean
+
+    /** Reports whether HTML is available. */
+    public fun hasHtml(): Boolean
+
+    /** Reports whether a URL is available. */
+    public fun hasUrl(): Boolean
+}
 
 /** Native Clipboard specific to each platform. */
 @Deprecated("Use direct reference to platform type instead of typealias")

@@ -19,6 +19,7 @@ package androidx.compose.ui.platform
 import android.content.ClipData
 import android.content.ClipDescription
 import android.content.Context
+import android.net.Uri
 import android.os.Build
 import android.os.Parcel
 import android.text.Annotation
@@ -47,6 +48,7 @@ import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.util.fastForEach
 
 private const val PLAIN_TEXT_LABEL = "plain text"
+private const val URL_LABEL = "URL"
 
 /** Android implementation for [ClipboardManager]. */
 @Suppress("DEPRECATION")
@@ -111,6 +113,52 @@ public actual class ClipEntry(public val clipData: ClipData) {
 
     public actual val clipMetadata: ClipMetadata
         get() = clipData.description.toClipMetadata()
+
+    public actual suspend fun readText(): String? = readPlainText() ?: readHtml() ?: readUrl()
+
+    public actual suspend fun readPlainText(): String? = readFirstItem { item ->
+        item.text?.toString()
+    }
+
+    public actual suspend fun readHtml(): String? = readFirstItem { item -> item.htmlText }
+
+    public actual suspend fun readUrl(): String? = readFirstItem { item ->
+        item.uri?.toString()
+    }
+
+    public actual companion object {
+        public actual fun withText(plainText: String, html: String?): ClipEntry {
+            val clipData =
+                if (html == null) {
+                    ClipData.newPlainText(PLAIN_TEXT_LABEL, plainText)
+                } else {
+                    ClipData.newHtmlText(PLAIN_TEXT_LABEL, plainText, html)
+                }
+            return ClipEntry(clipData)
+        }
+
+        public actual fun withUrl(
+            url: String,
+            plainText: String?,
+            html: String?,
+        ): ClipEntry {
+            val mimeTypes = buildList {
+                add(ClipDescription.MIMETYPE_TEXT_URILIST)
+                if (plainText != null) add(ClipDescription.MIMETYPE_TEXT_PLAIN)
+                if (html != null) add(ClipDescription.MIMETYPE_TEXT_HTML)
+            }
+            val item = ClipData.Item(plainText, html, null, Uri.parse(url))
+            return ClipEntry(ClipData(URL_LABEL, mimeTypes.toTypedArray(), item))
+        }
+    }
+}
+
+private fun <T> ClipEntry.readFirstItem(transform: (ClipData.Item) -> T?): T? {
+    return try {
+        if (clipData.itemCount == 0) null else transform(clipData.getItemAt(0))
+    } catch (_: Exception) {
+        null
+    }
 }
 
 public fun ClipData.toClipEntry(): ClipEntry = ClipEntry(this)
@@ -121,7 +169,18 @@ public fun ClipData.toClipEntry(): ClipEntry = ClipEntry(this)
  */
 // Defining this class not as a typealias but a wrapper gives us flexibility in the future to
 // add more functionality in it.
-public actual class ClipMetadata(public val clipDescription: ClipDescription)
+public actual class ClipMetadata(public val clipDescription: ClipDescription) {
+    public actual fun hasText(): Boolean = clipDescription.hasMimeType("text/*")
+
+    public actual fun hasPlainText(): Boolean =
+        clipDescription.hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN)
+
+    public actual fun hasHtml(): Boolean =
+        clipDescription.hasMimeType(ClipDescription.MIMETYPE_TEXT_HTML)
+
+    public actual fun hasUrl(): Boolean =
+        clipDescription.hasMimeType(ClipDescription.MIMETYPE_TEXT_URILIST)
+}
 
 public fun ClipDescription.toClipMetadata(): ClipMetadata = ClipMetadata(this)
 
