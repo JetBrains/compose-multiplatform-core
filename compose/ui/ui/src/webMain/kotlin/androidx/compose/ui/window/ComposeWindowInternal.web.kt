@@ -523,6 +523,9 @@ internal class ComposeWindow(
         val webTextInputService = platformContext.textInputService as WebTextInputService
 
         addTypedEvent<TouchEvent>("touchstart", passive = false) { evt ->
+            if (!_windowInfo.isWindowFocused) {
+                restoreWindowFocusFromBackingInput()
+            }
             // preventDefault the touchstart if the corresponding pointerdown hits the active text input.
             // Pros: a long press (touchstart + ~500ms delay after it) triggers focus changes in iOS Safari,
             // and this is the only chance (the only event we have) to prevent that behavior,
@@ -698,6 +701,26 @@ internal class ComposeWindow(
         )
         archComponentsOwner.navigationEventDispatcherOwner
             .navigationEventDispatcher.addInput(navigationEventInput)
+    }
+
+    /**
+     * Requests native window focus through the active text input during a user gesture.
+     *
+     * On iOS Safari, a backing field can remain DOM-focused after the page loses native focus.
+     * WebKit's Document::setFocusedElement skips dispatchFocusEvent (and elementDidFocus) while
+     * the page is unfocused, so focusing a different element can update only the DOM focus.
+     * Two synchronous focus() calls ensure the backing field is selected first, then enter
+     * Element::focus's elementDidRefocus path, which can notify the UI process without that check.
+     * Both calls are unconditional: the DOM-active check in BackingDomInput.focus() would skip
+     * the refocus request. Window focus is still updated only by the browser's focus event.
+     *
+     * See: https://youtrack.jetbrains.com/issue/CMP-10883
+     */
+    private fun restoreWindowFocusFromBackingInput() {
+        val input = (platformContext.textInputService as WebTextInputService).getBackingInput()
+        if (input == null) return
+        input.focus()
+        input.focus()
     }
 
     private fun applyResizeAndScale(
