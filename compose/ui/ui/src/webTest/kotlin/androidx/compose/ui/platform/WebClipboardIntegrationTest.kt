@@ -20,7 +20,10 @@ import androidx.compose.ui.OnCanvasTests
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.browser.window
 import kotlinx.coroutines.test.runTest
 
@@ -36,6 +39,52 @@ class WebClipboardIntegrationTest : OnCanvasTests {
 
         assertNotNull(clipboard)
         assertEquals<Any>(window.navigator.clipboard, clipboard!!.nativeClipboard)
+    }
+
+    @Test
+    fun clipEntryWithText_readsPlainTextAndHtml() = runTest {
+        val clipEntry = ClipEntry.withText("plain text", "<b>plain text</b>")
+
+        assertEquals("plain text", clipEntry.readText())
+        assertEquals("plain text", clipEntry.readPlainText())
+        assertEquals("<b>plain text</b>", clipEntry.readHtml())
+        assertNull(clipEntry.readUrl())
+        assertTrue(clipEntry.clipMetadata.hasText())
+        assertTrue(clipEntry.clipMetadata.hasPlainText())
+        assertTrue(clipEntry.clipMetadata.hasHtml())
+        assertFalse(clipEntry.clipMetadata.hasUrl())
+    }
+
+    @Test
+    fun clipEntryWithUrl_readsAllRepresentations() = runTest {
+        val url = "https://example.com"
+        val plainText = "Example"
+        val html = """<a href="$url">Example</a>"""
+        val clipEntry = ClipEntry.withUrl(url, plainText, html)
+
+        assertEquals(plainText, clipEntry.readText())
+        assertEquals(plainText, clipEntry.readPlainText())
+        assertEquals(html, clipEntry.readHtml())
+        assertEquals(url, clipEntry.readUrl())
+        assertTrue(clipEntry.clipMetadata.hasText())
+        assertTrue(clipEntry.clipMetadata.hasPlainText())
+        assertTrue(clipEntry.clipMetadata.hasHtml())
+        assertTrue(clipEntry.clipMetadata.hasUrl())
+    }
+
+    @Test
+    fun clipEntryWithUrlWithoutPlainText_readsUrlAsText() = runTest {
+        val url = "https://example.com"
+        val clipEntry = ClipEntry.withUrl(url)
+
+        assertEquals(url, clipEntry.readText())
+        assertNull(clipEntry.readPlainText())
+        assertNull(clipEntry.readHtml())
+        assertEquals(url, clipEntry.readUrl())
+        assertTrue(clipEntry.clipMetadata.hasText())
+        assertFalse(clipEntry.clipMetadata.hasPlainText())
+        assertFalse(clipEntry.clipMetadata.hasHtml())
+        assertTrue(clipEntry.clipMetadata.hasUrl())
     }
 
     // TODO: we can't write or read the clipboard due to permissions requirement:
@@ -56,6 +105,6 @@ class WebClipboardIntegrationTest : OnCanvasTests {
 
         requestFocus() // focus is required to access the browser Clipboard
         clipboard!!.setClipEntry(null)
-        clipboard!!.setClipEntry(ClipEntry.withPlainText("test"))
+        clipboard!!.setClipEntry(ClipEntry.withText("test"))
     }
 }

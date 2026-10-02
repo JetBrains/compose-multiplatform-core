@@ -17,8 +17,6 @@
 @file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
 package androidx.compose.mpp.demo
 
-import androidx.compose.foundation.internal.readText
-import androidx.compose.ui.platform.ClipEntry
 import kotlin.wasm.unsafe.UnsafeWasmMemoryApi
 import kotlin.wasm.unsafe.withScopedMemoryAllocator
 import kotlinx.browser.window
@@ -28,14 +26,6 @@ import kotlinx.coroutines.await
 import org.khronos.webgl.ArrayBuffer
 import org.khronos.webgl.Int8Array
 import org.w3c.fetch.Response
-
-actual suspend fun ClipEntry?.getPlainText(): String? {
-    return this?.readText()
-}
-
-actual fun createClipEntryWithPlainText(text: String): ClipEntry {
-    return ClipEntry.withPlainText(text)
-}
 
 private suspend fun loadResAsync(url: String): Deferred<ArrayBuffer> {
     return window.fetch(url).await<Response>().arrayBuffer().asDeferred()

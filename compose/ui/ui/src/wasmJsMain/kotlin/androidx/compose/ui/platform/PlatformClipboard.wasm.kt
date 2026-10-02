@@ -21,10 +21,9 @@ package androidx.compose.ui.platform
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.text.AnnotatedString
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.getValue
-import kotlin.js.Promise
 import kotlinx.coroutines.await
-import org.w3c.files.Blob
 
 private val browserClipboard by lazy {
     getW3CClipboard()
@@ -122,34 +121,128 @@ constructor(
     @property:ExperimentalComposeUiApi
     val clipboardItems: JsArray<ClipboardItem>
 ) {
-
-    // TODO: https://youtrack.jetbrains.com/issue/CMP-1260
     actual val clipMetadata: ClipMetadata
-        get() = TODO("ClipMetadata is not implemented. Consider using nativeClipboard")
+        get() = createClipMetadata()
 
     @InternalComposeUiApi
     var fallbackPlainText: String? = null
 
-    companion object {
-        fun withPlainText(text: String): ClipEntry {
-            return when {
-                isFullClipboardApiSupported -> ClipEntry(
-                    if (isSecureContext) {
-                        createClipboardItemWithPlainText(text)
-                    } else {
-                        emptyClipboardItems()
-                    }
-                )
-                else -> ClipEntry(invalidClipboardItems())
-                    .apply { fallbackPlainText = text }
+    internal var fallbackPlainTextContent: String? = null
+    internal var fallbackHtml: String? = null
+    internal var fallbackUrl: String? = null
+
+    actual suspend fun readText(): String? = readPlainText() ?: readHtml() ?: readUrl()
+
+    actual suspend fun readPlainText(): String? =
+        fallbackPlainTextContent ?: readRepresentation(MIME_TYPE_PLAIN_TEXT)
+
+    actual suspend fun readHtml(): String? =
+        fallbackHtml ?: readRepresentation(MIME_TYPE_HTML)
+
+    actual suspend fun readUrl(): String? =
+        fallbackUrl ?: readRepresentation(MIME_TYPE_URL)
+
+    actual companion object {
+        actual fun withText(plainText: String, html: String?): ClipEntry {
+            return if (isFullClipboardApiSupported) {
+                ClipEntry(arrayOf(createClipboardItem(plainText, html, null)).toJsArray())
+            } else {
+                ClipEntry(invalidClipboardItems()).apply {
+                    fallbackPlainText = plainText
+                    fallbackPlainTextContent = plainText
+                    fallbackHtml = html
+                }
+            }
+        }
+
+        actual fun withUrl(url: String, plainText: String?, html: String?): ClipEntry {
+            return if (isFullClipboardApiSupported) {
+                ClipEntry(arrayOf(createClipboardItem(plainText, html, url)).toJsArray())
+            } else {
+                ClipEntry(invalidClipboardItems()).apply {
+                    fallbackPlainText = plainText ?: url
+                    fallbackPlainTextContent = plainText
+                    fallbackHtml = html
+                    fallbackUrl = url
+                }
             }
         }
     }
 }
 
+private const val MIME_TYPE_PLAIN_TEXT = "text/plain"
+private const val MIME_TYPE_HTML = "text/html"
+private const val MIME_TYPE_URL = "text/uri-list"
+
+private fun ClipEntry.createClipMetadata(): ClipMetadata {
+    var hasText =
+        fallbackPlainTextContent != null || fallbackHtml != null || fallbackUrl != null
+    var hasPlainText = fallbackPlainTextContent != null
+    var hasHtml = fallbackHtml != null
+    var hasUrl = fallbackUrl != null
+
+    var index = 0
+    while (index < clipboardItems.length) {
+        val item = clipboardItems[index]!!
+        hasText = hasText || item.hasTextMimeType()
+        hasPlainText = hasPlainText || item.hasMimeType(MIME_TYPE_PLAIN_TEXT)
+        hasHtml = hasHtml || item.hasMimeType(MIME_TYPE_HTML)
+        hasUrl = hasUrl || item.hasMimeType(MIME_TYPE_URL)
+        index++
+    }
+
+    return ClipMetadata(hasText, hasPlainText, hasHtml, hasUrl)
+}
+
+private suspend fun ClipEntry.readRepresentation(mimeType: String): String? {
+    if (clipboardItems.length == 0) return null
+    val item = clipboardItems[0] ?: return null
+    if (!item.hasMimeType(mimeType)) return null
+
+    return try {
+        val blob = item.getType(mimeType.toJsString()).await<W3CTemporaryBlob>()
+        blob.text().await<JsString>().toString()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Throwable) {
+        null
+    }
+}
+
+private fun ClipboardItem.hasMimeType(mimeType: String): Boolean =
+    clipboardItemHasMimeType(this, mimeType.toJsString())
+
+private fun ClipboardItem.hasTextMimeType(): Boolean = clipboardItemHasTextMimeType(this)
+
 @Suppress("UNUSED_PARAMETER")
-private fun createClipboardItemWithPlainText(text: String): JsArray<ClipboardItem> =
-    js("[new ClipboardItem({'text/plain': new Blob([text], { type: 'text/plain' })})]")
+private fun clipboardItemHasMimeType(item: ClipboardItem, mimeType: JsString): Boolean =
+    js("item.types.includes(mimeType)")
+
+@Suppress("UNUSED_PARAMETER")
+private fun clipboardItemHasTextMimeType(item: ClipboardItem): Boolean =
+    js("item.types.some(type => type.toLowerCase().startsWith('text/'))")
+
+@Suppress("UNUSED_PARAMETER")
+private fun createClipboardItem(
+    plainText: String?,
+    html: String?,
+    url: String?,
+): ClipboardItem =
+    js(
+        """(function() {
+            const data = {};
+            if (plainText !== null) {
+                data['text/plain'] = new Blob([plainText], { type: 'text/plain' });
+            }
+            if (html !== null) {
+                data['text/html'] = new Blob([html], { type: 'text/html' });
+            }
+            if (url !== null) {
+                data['text/uri-list'] = new Blob([url], { type: 'text/uri-list' });
+            }
+            return new ClipboardItem(data);
+        })()"""
+    )
 
 // Can't truly clear the clipboard, so setting the empty text
 private fun emptyClipboardItems(): JsArray<ClipboardItem> =

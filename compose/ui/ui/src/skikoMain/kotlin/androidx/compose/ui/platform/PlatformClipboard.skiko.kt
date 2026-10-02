@@ -16,8 +16,20 @@
 
 package androidx.compose.ui.platform
 
-// TODO: https://youtrack.jetbrains.com/issue/CMP-1260
-actual class ClipMetadata private constructor()
+actual class ClipMetadata internal constructor(
+    private val hasTextValue: Boolean,
+    private val hasPlainTextValue: Boolean,
+    private val hasHtmlValue: Boolean,
+    private val hasUrlValue: Boolean,
+) {
+    actual fun hasText(): Boolean = hasTextValue
+
+    actual fun hasPlainText(): Boolean = hasPlainTextValue
+
+    actual fun hasHtml(): Boolean = hasHtmlValue
+
+    actual fun hasUrl(): Boolean = hasUrlValue
+}
 
 @Suppress("DEPRECATION")
 internal expect fun createPlatformClipboardManager(): ClipboardManager

@@ -23,7 +23,6 @@ import kotlin.js.JsName
 import kotlin.js.JsString
 import kotlin.js.Promise
 import kotlin.js.js
-import org.w3c.files.Blob
 
 actual typealias NativeClipboard = W3CTemporaryClipboard
 
@@ -75,5 +74,12 @@ external class W3CTemporaryClipboard {
 @JsName("ClipboardItem")
 external interface ClipboardItem : JsAny {
     val types: JsArray<JsString>
-    fun getType(type: JsString): Promise<Blob>
+    fun getType(type: JsString): Promise<W3CTemporaryBlob>
+}
+
+/** A temporary binding for the browser Blob API's asynchronous text reader. */
+@ExperimentalComposeUiApi
+@JsName("Blob")
+external interface W3CTemporaryBlob : JsAny {
+    fun text(): Promise<JsString>
 }

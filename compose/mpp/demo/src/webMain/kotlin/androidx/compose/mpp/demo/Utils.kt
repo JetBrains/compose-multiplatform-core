@@ -16,13 +16,8 @@
 
 package androidx.compose.mpp.demo
 
-import androidx.compose.ui.platform.ClipEntry
 import kotlinx.browser.document
 import org.w3c.dom.HTMLDivElement
-
-expect suspend fun ClipEntry?.getPlainText(): String?
-
-expect fun createClipEntryWithPlainText(text: String): ClipEntry
 
 // Setting the colors to indicate the presence of the backing textarea or input, and its focus state
 internal fun setupBackingTextAreaDebugHints() {

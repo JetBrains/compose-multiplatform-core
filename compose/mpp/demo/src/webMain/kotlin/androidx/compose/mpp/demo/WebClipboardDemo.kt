@@ -29,6 +29,7 @@ import androidx.compose.material3.Button
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -48,7 +49,7 @@ fun WebClipboardDemo() {
             Spacer(modifier = Modifier.width(48.dp))
             Button(modifier = Modifier.testTag("copyButton"), onClick = {
                 coroutineScope.launch {
-                    clipboard.setClipEntry(createClipEntryWithPlainText(textFieldState1.text.toString()))
+                    clipboard.setClipEntry(ClipEntry.withText(textFieldState1.text.toString()))
                 }
             }) {
                 Text("Copy")
@@ -62,7 +63,7 @@ fun WebClipboardDemo() {
             Spacer(modifier = Modifier.width(48.dp))
             Button(modifier = Modifier.testTag("pasteButton"), onClick = {
                 coroutineScope.launch {
-                    val text = clipboard.getClipEntry().getPlainText() // uses readText, which is suppressed internal!
+                    val text = clipboard.getClipEntry()?.readPlainText() // uses readText, which is suppressed internal!
                     println("clipboard text: $text")
                     textFieldState2.setTextAndPlaceCursorAtEnd(
                         text ?: "null"
