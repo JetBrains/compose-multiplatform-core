@@ -24,10 +24,12 @@ import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextIndent
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import kotlin.math.ceil
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Ignore
@@ -481,6 +483,53 @@ class SkikoParagraphTest {
         assertEquals(1, paragraph.lineCount)
     }
 
+    @Test
+    fun maxIntrinsicWidth_includesFirstLineIndent() {
+        val text = "Bullet list item"
+        val textStyle = TextStyle(fontSize = 20.sp)
+
+        val plain = simpleIntrinsics(text, textStyle)
+        val indented = simpleIntrinsics(
+            text = text,
+            textStyle = textStyle.copy(textIndent = TextIndent(firstLine = 20.sp))
+        )
+
+        assertEquals(plain.maxIntrinsicWidth + 20f, indented.maxIntrinsicWidth)
+    }
+
+    @Test
+    fun paragraphAtItsMaxIntrinsicWidth_doesNotWrap_spIndent() {
+        assertSingleLineAtMaxIntrinsicWidth(TextIndent(firstLine = 20.sp), expectedIndentPx = 20f)
+    }
+
+    @Test
+    fun paragraphAtItsMaxIntrinsicWidth_doesNotWrap_emIndent() {
+        // The unit a bullet list uses, see Bullet.DefaultIndentation.
+        assertSingleLineAtMaxIntrinsicWidth(TextIndent(firstLine = 1.em), expectedIndentPx = 20f)
+    }
+
+    /** Expects the text laid out at its own intrinsic width to fit into a single line. */
+    private fun assertSingleLineAtMaxIntrinsicWidth(
+        textIndent: TextIndent,
+        expectedIndentPx: Float
+    ) {
+        val intrinsics = simpleIntrinsics(
+            // Skia drops the indentation when a single unbreakable run does not fit into what is
+            // left of the width, so the text needs several words.
+            text = "Bullet list item",
+            textStyle = TextStyle(fontSize = 20.sp, textIndent = textIndent)
+        )
+
+        val paragraph = Paragraph(
+            paragraphIntrinsics = intrinsics,
+            constraints = Constraints(maxWidth = ceil(intrinsics.maxIntrinsicWidth).toInt()),
+            overflow = TextOverflow.Clip
+        )
+
+        assertEquals(1, paragraph.lineCount)
+        assertEquals(expectedIndentPx, paragraph.getLineLeft(0))
+    }
+
     // Regression test for https://youtrack.jetbrains.com/issue/CMP-10034
     @Test
     fun getCursorRect_doesNotCrash_inRtlParagraphsWithNewlinesAndSpecialCharacters() {
@@ -507,6 +556,14 @@ class SkikoParagraphTest {
             }
         }
     }
+
+    private fun simpleIntrinsics(text: String, textStyle: TextStyle) = ParagraphIntrinsics(
+        text = text,
+        style = textStyle,
+        annotations = emptyList(),
+        density = defaultDensity,
+        fontFamilyResolver = fontFamilyResolver
+    )
 
     private fun simpleParagraph(text: String, textStyle: TextStyle = TextStyle()) = Paragraph(
         text = text,
