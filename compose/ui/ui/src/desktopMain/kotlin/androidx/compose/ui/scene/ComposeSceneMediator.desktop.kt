@@ -59,10 +59,12 @@ import androidx.compose.ui.platform.DesktopMediaScope
 import androidx.compose.ui.platform.DesktopTextInputService
 import androidx.compose.ui.platform.DesktopTextInputService2
 import androidx.compose.ui.platform.FrameRecomposer
+import androidx.compose.ui.platform.GenericPlatformOutOfFrameExecutor
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformComponent
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
+import androidx.compose.ui.platform.PlatformOutOfFrameExecutor
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.platform.UriHandler
@@ -95,6 +97,7 @@ import androidx.compose.ui.window.toDpOffset
 import java.awt.Component
 import java.awt.Cursor
 import java.awt.Dimension
+import java.awt.EventQueue
 import java.awt.Graphics2D
 import java.awt.Point
 import java.awt.Toolkit
@@ -206,6 +209,11 @@ internal class ComposeSceneMediator(
     val windowHandle by skiaLayerComponent::windowHandle
     val renderApi by skiaLayerComponent::renderApi
     val semanticsOwners: Collection<SemanticsOwner> by semanticsOwnerManager::semanticsOwners
+    val outOfFrameExecutor =
+        GenericPlatformOutOfFrameExecutor(
+            scheduleTask = { EventQueue.invokeLater(it) },
+            isExecutingOnEdtThread = { EventQueue.isDispatchThread() },
+        )
 
     private val canvasHolder: SkiaCanvasHolder = SkiaCanvasHolder()
     /**
@@ -753,6 +761,7 @@ internal class ComposeSceneMediator(
     }
 
     override fun onRender(canvas: SkCanvas, width: Int, height: Int, nanoTime: Long) = catchExceptions {
+        outOfFrameExecutor.onBeforeFrame()
         interopContainer.postponingExecutingScheduledUpdates {
             canvas.withSceneOffset {
                 with(sceneRenderingScope) {
@@ -930,6 +939,8 @@ internal class ComposeSceneMediator(
             get() = this@ComposeSceneMediator.semanticsOwnerManager
         override val isClearFocusOnMouseDownEnabled: Boolean
             get() = this@ComposeSceneMediator.isClearFocusOnMouseDownEnabled
+        override val outOfFrameExecutor: PlatformOutOfFrameExecutor
+            get() = this@ComposeSceneMediator.outOfFrameExecutor
     }
 
     private inner class DesktopPlatformComponent : PlatformComponent {
