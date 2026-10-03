@@ -23,8 +23,12 @@ import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.utils.CMPLayoutRegion
 import androidx.compose.ui.uikit.utils.CMPLayoutRegionAdaptivityAxisVertical
+import androidx.compose.ui.uikit.utils.CMPReservedRegion
+import androidx.compose.ui.uikit.utils.CMPReservedRegionFactory
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toPlatformInsets
+import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.util.lerp
 import platform.UIKit.UIDevice
 import platform.UIKit.UIUserInterfaceIdiom
@@ -113,6 +117,14 @@ internal class WindowInsetsManager(
 
         override val displayCutouts: List<Rect>
             get() {
+                if (CMPReservedRegionFactory.supportsReservedRegions()) {
+                    windowInsetsViews.firstNotNullOfOrNull { it() }?.let { view ->
+                        return CMPReservedRegionFactory.occlusionRegionsInView(view).map { region ->
+                            (region as CMPReservedRegion).frame.toDpRect().toRect(view.density)
+                        }
+                    }
+                }
+
                 val orientation = displayCutoutEffectiveInterfaceOrientation()
                 val safeAreaInsets = safeAreaInsets()
                 val sceneSize = sceneSize()
