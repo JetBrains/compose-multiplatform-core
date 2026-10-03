@@ -228,7 +228,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
 
     // Lazy on purpose: on JS Skia is only usable after onSkikoReady
     private val surface by lazy { Surface.makeRasterN32Premul(width, height) }
-    private val canvasHolder : SkiaCanvasHolder = SkiaCanvasHolder(surface.canvas)
+    private val canvasHolder by lazy { SkiaCanvasHolder(surface.canvas) }
     
     private val size = IntSize(width, height)
 
