@@ -68,6 +68,18 @@ val LocalPlatformPrefetchScheduler = staticCompositionLocalOf<PlatformPrefetchSc
     error("CompositionLocal LocalPlatformPrefetchScheduler not present")
 }
 
+/**
+ * CompositionLocal that provides an optional [PlatformBackgroundTextMeasurementExecutor] associated
+ * with the current scene. When not present, `null` will be provided.
+ *
+ * Intended for scheduling or performing background text measurement work on platforms that
+ * support off-main-thread text measurement.
+ */
+@InternalComposeUiApi
+val LocalPlatformBackgroundTextMeasurementExecutor = staticCompositionLocalOf<PlatformBackgroundTextMeasurementExecutor?> {
+    null
+}
+
 @OptIn(ExperimentalMediaQueryApi::class)
 @Composable
 internal fun ProvidePlatformCompositionLocals(
@@ -105,6 +117,7 @@ internal fun ProvidePlatformCompositionLocals(
         LocalPlatformScreenReader provides platformContext.screenReader,
         LocalPlatformWindowInsets provides platformContext.windowInsets,
         LocalPlatformPrefetchScheduler provides platformContext.prefetchScheduler,
+        LocalPlatformBackgroundTextMeasurementExecutor provides platformContext.backgroundTextMeasurementExecutor,
         androidx.lifecycle.compose.LocalLifecycleOwner provides platformContext.architectureComponentsOwner.lifecycleOwner,
         LocalSavedStateRegistryOwner provides platformContext.architectureComponentsOwner.savedStateRegistryOwner,
         LocalSaveableStateRegistry provides saveableStateRegistry,
