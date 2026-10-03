@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(org.jetbrains.skiko.ExperimentalSkikoApi::class)
+
 package androidx.compose.ui.window
 
 import androidx.collection.IntIntPair
@@ -23,8 +25,7 @@ import androidx.compose.ui.viewinterop.InteropSyncTransaction
 import kotlin.math.roundToInt
 import kotlinx.cinterop.*
 import org.jetbrains.skia.*
-import org.jetbrains.skia.gpu.ganesh.flushAndSubmit
-import org.jetbrains.skia.gpu.ganesh.makeFromBackendRenderTarget
+import org.jetbrains.skia.gpu.makeMetalContext
 import platform.Foundation.NSThread
 import platform.QuartzCore.*
 import platform.darwin.*
@@ -72,7 +73,7 @@ internal class LegacyMetalRedrawer(
     private val device = metalLayer.device as MTLDeviceProtocol?
         ?: throw IllegalStateException("CAMetalLayer.device can not be null")
     private val queue = getCachedCommandQueue(device)
-    private val context = DirectContext.makeMetal(device.objcPtr(), queue.objcPtr())
+    private val context = makeMetalContext(device.objcPtr(), queue.objcPtr())
     private val pictureRecorder = PictureRecorder()
     private val inflightCommandBuffersGroup = dispatch_group_create()
     // A guard flag to have proper assertion when draw() method is called recursively.
@@ -191,26 +192,16 @@ internal class LegacyMetalRedrawer(
                     return@autoreleasepool
                 }
 
-                val renderTarget = BackendRenderTarget.makeMetal(
-                    width,
-                    height,
+                val surface = context.makeSurface(
+                    width = width,
+                    height = height,
                     texturePtr = metalDrawablesHandler.drawableTexture(metalDrawable).rawValue
-                )
-
-                val surface = Surface.makeFromBackendRenderTarget(
-                    context,
-                    renderTarget,
-                    SurfaceOrigin.TOP_LEFT,
-                    SurfaceColorFormat.BGRA_8888,
-                    ColorSpace.sRGB,
-                    SurfaceProps(pixelGeometry = PixelGeometry.UNKNOWN)
                 )
 
                 if (surface == null) {
                     // TODO: anomaly, log
-                    // Logger.warn { "'Surface.makeFromBackendRenderTarget' returned null. Skipping the frame." }
+                    // Logger.warn { "'MetalContext.makeSurface' returned null. Skipping the frame." }
                     picture.close()
-                    renderTarget.close()
                     metalDrawablesHandler.releaseDrawable(metalDrawable)
                     return@autoreleasepool
                 }
@@ -230,10 +221,9 @@ internal class LegacyMetalRedrawer(
                 trace("MetalRedrawer:draw:encodeAndPresent") {
                     surface.canvas.drawPicture(picture)
                     picture.close()
-                    surface.flushAndSubmit()
+                    context.submit()
 
                     surface.close()
-                    renderTarget.close()
 
                     val commandBuffer = queue.commandBuffer()!!
                     commandBuffer.label = "Present"
