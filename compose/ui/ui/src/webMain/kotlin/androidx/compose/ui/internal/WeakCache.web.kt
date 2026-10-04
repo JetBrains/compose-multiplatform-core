@@ -18,25 +18,31 @@ package androidx.compose.ui.internal
 
 import androidx.collection.mutableObjectListOf
 import androidx.compose.ui.node.WeakReference
-
+import kotlin.js.ExperimentalWasmJsInterop
+import kotlin.js.JsAny
+import kotlin.js.JsReference
+import kotlin.js.get
+import kotlin.js.toJsReference
+import kotlin.js.unsafeCast
+@OptIn(ExperimentalWasmJsInterop::class)
 internal actual class WeakCache<T : Any> {
     private val values = mutableObjectListOf<WeakReference<T>>()
 
-    /**
-     * Add [element] to the collection as a [WeakReference].
-     */
-    actual fun push(element: T) {
-        clearWeakReferences()
-        values.add(WeakReference(element))
+    // When an element is finalized, we'll receive a callback to remove its WeakReference
+    // from the list. This avoids iterating the list on every operation, which would be
+    // expensive on web due to the JS-interop boundary for each WeakRef.deref() call.
+    private val registry = FinalizationRegistry { weakRefJsReference ->
+        val weakRef: WeakReference<T> = weakRefJsReference.unsafeCast<JsReference<WeakReference<T>>>().get()
+        values.remove(weakRef)
     }
 
-    /**
-     * Remove an element from the collection and return it.
-     * Returns `null` if no active element is available.
-     */
-    actual fun pop(): T? {
-        clearWeakReferences()
+    actual fun push(element: T) {
+        val weakRef = WeakReference(element)
+        values.add(weakRef)
+        registry.register(element.toJsReference(), weakRef.toJsReference())
+    }
 
+    actual fun pop(): T? {
         while (values.isNotEmpty()) {
             val item = values.removeAt(values.lastIndex).get()
             if (item != null) {
@@ -46,19 +52,12 @@ internal actual class WeakCache<T : Any> {
         return null
     }
 
-    /**
-     * The number of active elements currently in the collection.
-     */
     actual val size: Int
-        get() {
-            clearWeakReferences()
-            return values.size
-        }
+        get() = values.size
+}
 
-    /**
-     * Purges references that have been cleared by garbage collection.
-     */
-    private fun clearWeakReferences() {
-        values.removeIf { it.get() == null }
-    }
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/FinalizationRegistry
+@OptIn(ExperimentalWasmJsInterop::class)
+internal external class FinalizationRegistry(cleanupCallback: (JsAny) -> Unit) {
+    fun register(target: JsAny, heldValue: JsAny)
 }
