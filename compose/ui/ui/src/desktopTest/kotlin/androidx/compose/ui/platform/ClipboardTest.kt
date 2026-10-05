@@ -26,9 +26,12 @@ import java.awt.Dimension
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.StringSelection
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.junit.experimental.categories.Category
@@ -72,10 +75,109 @@ class ClipboardTest {
         val ce = clipboard!!.getClipEntry()
         assertNotNull(ce)
         assertEquals("test", ce.asAwtTransferable!!.getTransferData(DataFlavor.stringFlavor))
+        assertTrue(ce.clipMetadata.hasPlainText())
+        assertEquals("test", ce.readPlainText())
 
         clipboard!!.setClipEntry(null)
         assertNull(clipboard!!.getClipEntry())
         assertTrue(awtClipboard!!.availableDataFlavors.isEmpty())
+    }
+
+    @Test
+    fun clipEntry_withText_readsPlainTextAndHtml() = runTest {
+        val clipEntry = ClipEntry.withText("plain text", "<b>plain text</b>")
+
+        assertEquals("plain text", clipEntry.readText())
+        assertEquals("plain text", clipEntry.readPlainText())
+        assertEquals("<b>plain text</b>", clipEntry.readHtml())
+        assertNull(clipEntry.readUrl())
+        val metadata = clipEntry.clipMetadata
+        assertSame(metadata, clipEntry.clipMetadata)
+        assertTrue(metadata.hasText())
+        assertTrue(metadata.hasPlainText())
+        assertTrue(metadata.hasHtml())
+        assertFalse(metadata.hasUrl())
+    }
+
+    @Test
+    fun clipEntry_withUrl_readsAllRepresentations() = runTest {
+        val url = "https://example.com"
+        val plainText = "Example"
+        val html = "<a href=\"$url\">Example</a>"
+        val clipEntry = ClipEntry.withUrl(url, plainText, html)
+
+        assertEquals(plainText, clipEntry.readText())
+        assertEquals(plainText, clipEntry.readPlainText())
+        assertEquals(html, clipEntry.readHtml())
+        assertEquals(url, clipEntry.readUrl())
+        assertTrue(clipEntry.clipMetadata.hasText())
+        assertTrue(clipEntry.clipMetadata.hasPlainText())
+        assertTrue(clipEntry.clipMetadata.hasHtml())
+        assertTrue(clipEntry.clipMetadata.hasUrl())
+    }
+
+    @Test
+    fun clipEntry_withUrlWithoutPlainText_readsHtmlThenUrl() = runTest {
+        val url = "https://example.com"
+        val html = "<a href=\"$url\">Example</a>"
+        val clipEntry = ClipEntry.withUrl(url, html = html)
+
+        assertEquals(html, clipEntry.readText())
+        assertNull(clipEntry.readPlainText())
+        assertEquals(html, clipEntry.readHtml())
+        assertEquals(url, clipEntry.readUrl())
+    }
+
+    @Test
+    fun clipEntry_withUrlWithoutFallback_readsUrlAsText() = runTest {
+        val url = "https://example.com"
+        val clipEntry = ClipEntry.withUrl(url)
+
+        assertEquals(url, clipEntry.readText())
+        assertNull(clipEntry.readPlainText())
+        assertNull(clipEntry.readHtml())
+        assertEquals(url, clipEntry.readUrl())
+        assertTrue(clipEntry.clipMetadata.hasText())
+        assertFalse(clipEntry.clipMetadata.hasPlainText())
+        assertFalse(clipEntry.clipMetadata.hasHtml())
+        assertTrue(clipEntry.clipMetadata.hasUrl())
+    }
+
+    @Test
+    fun clipEntry_fromStringSelection_readsPlainText() = runTest {
+        val clipEntry = ClipEntry(StringSelection("test"))
+
+        assertEquals("test", clipEntry.readText())
+        assertEquals("test", clipEntry.readPlainText())
+        assertNull(clipEntry.readHtml())
+        assertNull(clipEntry.readUrl())
+        assertTrue(clipEntry.clipMetadata.hasPlainText())
+        assertFalse(clipEntry.clipMetadata.hasHtml())
+        assertFalse(clipEntry.clipMetadata.hasUrl())
+    }
+
+    @Test
+    fun clipboardRoundTripsClipEntry() = runTest {
+        val awtClipboard = java.awt.datatransfer.Clipboard("test")
+        val clipboard = AwtPlatformClipboard(awtClipboard)
+        val url = "https://example.com"
+        val plainText = "Example"
+        val html = "<a href=\"$url\">Example</a>"
+
+        clipboard.setClipEntry(ClipEntry.withUrl(url, plainText, html))
+        val clipEntry = assertNotNull(clipboard.getClipEntry())
+        assertEquals(plainText, clipEntry.readPlainText())
+        assertEquals(html, clipEntry.readHtml())
+        assertEquals(url, clipEntry.readUrl())
+
+        clipboard.setClipEntry(clipEntry)
+        val copiedClipEntry = assertNotNull(clipboard.getClipEntry())
+        assertEquals(plainText, copiedClipEntry.readPlainText())
+        assertEquals(html, copiedClipEntry.readHtml())
+        assertEquals(url, copiedClipEntry.readUrl())
+
+        clipboard.setClipEntry(null)
+        assertNull(clipboard.getClipEntry())
     }
 
     private fun clipboardTest(block: suspend WindowTestScope.() -> Unit) = runApplicationTest {
