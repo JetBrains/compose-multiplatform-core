@@ -19,11 +19,73 @@ package androidx.compose.ui.platform
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runComposeUiTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 
 @OptIn(ExperimentalTestApi::class)
 class UiKitPlatformClipboardTest {
+
+    @Test
+    fun clipEntry_withText_readsPlainTextAndHtml() = runTest {
+        val clipEntry = ClipEntry.withText("plain text", "<b>plain text</b>")
+
+        assertEquals("plain text", clipEntry.readText())
+        assertEquals("plain text", clipEntry.readPlainText())
+        assertEquals("<b>plain text</b>", clipEntry.readHtml())
+        assertNull(clipEntry.readUrl())
+        assertTrue(clipEntry.clipMetadata.hasText())
+        assertTrue(clipEntry.clipMetadata.hasPlainText())
+        assertTrue(clipEntry.clipMetadata.hasHtml())
+        assertFalse(clipEntry.clipMetadata.hasUrl())
+    }
+
+    @Test
+    fun clipEntry_withUrl_readsAllRepresentations() = runTest {
+        val url = "https://example.com"
+        val html = "<a href=\"$url\">Example</a>"
+        val clipEntry = ClipEntry.withUrl(url, "Example", html)
+
+        assertEquals("Example", clipEntry.readText())
+        assertEquals("Example", clipEntry.readPlainText())
+        assertEquals(html, clipEntry.readHtml())
+        assertEquals(url, clipEntry.readUrl())
+        assertTrue(clipEntry.clipMetadata.hasText())
+        assertTrue(clipEntry.clipMetadata.hasPlainText())
+        assertTrue(clipEntry.clipMetadata.hasHtml())
+        assertTrue(clipEntry.clipMetadata.hasUrl())
+    }
+
+    @Test
+    fun clipEntry_withUrlWithoutPlainText_readsHtmlThenUrl() = runTest {
+        val url = "https://example.com"
+        val html = "<a href=\"$url\">Example</a>"
+        val clipEntry = ClipEntry.withUrl(url, html = html)
+
+        assertEquals(html, clipEntry.readText())
+        assertNull(clipEntry.readPlainText())
+        assertEquals(html, clipEntry.readHtml())
+        assertEquals(url, clipEntry.readUrl())
+    }
+
+    @Test
+    fun clipEntry_withUrlWithoutFallback_readsUrlAsText() = runTest {
+        val url = "https://example.com"
+        val clipEntry = ClipEntry.withUrl(url)
+
+        assertEquals(url, clipEntry.readText())
+        assertNull(clipEntry.readPlainText())
+        assertNull(clipEntry.readHtml())
+        assertEquals(url, clipEntry.readUrl())
+        assertTrue(clipEntry.clipMetadata.hasText())
+        assertFalse(clipEntry.clipMetadata.hasPlainText())
+        assertFalse(clipEntry.clipMetadata.hasHtml())
+        assertTrue(clipEntry.clipMetadata.hasUrl())
+    }
 
     // TODO: consider writing instrumented tests for Clipboard
     // The unit tests can't use (copy/paste) the native UIPasteboard:

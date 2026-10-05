@@ -18,27 +18,62 @@ package androidx.compose.ui.platform
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.text.AnnotatedString
+import platform.Foundation.NSData
+import platform.Foundation.NSString
+import platform.Foundation.NSURL
+import platform.Foundation.NSURL.Companion.URLWithString
+import platform.Foundation.NSUTF8StringEncoding
+import platform.Foundation.create
 import platform.UIKit.UIPasteboard
+import platform.UIKit.UIPasteboardTypeListString
+import platform.UIKit.UIPasteboardTypeListURL
+
+private const val PASTEBOARD_TYPE_STRING = "public.utf8-plain-text"
+private const val PASTEBOARD_TYPE_HTML = "public.html"
+private const val PASTEBOARD_TYPE_URL = "public.url"
+
+private val PASTEBOARD_TYPE_STRINGS =
+    (UIPasteboardTypeListString.filterIsInstance<String>() + PASTEBOARD_TYPE_STRING).distinct()
+private val PASTEBOARD_TYPE_URLS =
+    (UIPasteboardTypeListURL.filterIsInstance<String>() + PASTEBOARD_TYPE_URL).distinct()
 
 actual typealias NativeClipboard = UIPasteboard
 
 private class IosClipboard : Clipboard {
     override suspend fun getClipEntry(): ClipEntry? {
-        if (nativeClipboard.numberOfItems() == 0L) return null
-        return ClipEntry().apply {
-            getPlainTextLambda = {
-                nativeClipboard.string
+        val clipboard = nativeClipboard
+        if (clipboard.numberOfItems() == 0L) return null
+        val readPlainTextLambda: (() -> String?)? =
+            if (clipboard.containsPasteboardTypes(PASTEBOARD_TYPE_STRINGS, inItemSet = null)) {
+                { readPasteboardValue(clipboard, PASTEBOARD_TYPE_STRINGS) ?: clipboard.string }
+            } else {
+                null
             }
-            hasPlainText = nativeClipboard.hasStrings
-        }
+        val readHtmlLambda: (() -> String?)? =
+            if (clipboard.containsPasteboardTypes(listOf(PASTEBOARD_TYPE_HTML), inItemSet = null)) {
+                { readPasteboardValue(clipboard, listOf(PASTEBOARD_TYPE_HTML)) }
+            } else {
+                null
+            }
+        val readUrlLambda: (() -> String?)? =
+            if (clipboard.containsPasteboardTypes(PASTEBOARD_TYPE_URLS, inItemSet = null)) {
+                {
+                    readPasteboardValue(clipboard, PASTEBOARD_TYPE_URLS)
+                        ?: clipboard.URL?.absoluteString
+                }
+            } else {
+                null
+            }
+        return ClipEntry(
+            readPlainTextLambda = readPlainTextLambda,
+            readHtmlLambda = readHtmlLambda,
+            readUrlLambda = readUrlLambda,
+            pasteboardItemsLambda = { clipboard.items },
+        )
     }
 
     override suspend fun setClipEntry(clipEntry: ClipEntry?) {
-        if (clipEntry == null) {
-            nativeClipboard.items = emptyList<Map<String, Any>>()
-        } else {
-            nativeClipboard.string = clipEntry.getPlainText()
-        }
+        nativeClipboard.items = clipEntry?.pasteboardItemsForClipboard() ?: emptyList<Any>()
     }
 
     /**
@@ -72,31 +107,98 @@ internal actual fun createPlatformClipboard(): Clipboard = IosClipboard()
 
 /**
  * A wrapper for [UIPasteboard] items.
- * Currently, it operates only with string(s) - [UIPasteboard.string].
- * To access or set other data items, consider using [Clipboard.nativeClipboard].
+ * The text APIs support plain text, HTML, and URLs. To access other representations, use
+ * [Clipboard.nativeClipboard].
  */
-actual class ClipEntry internal constructor() {
-
-    // TODO: https://youtrack.jetbrains.com/issue/CMP-1260
+actual class ClipEntry internal constructor(
+    private val readPlainTextLambda: (() -> String?)? = null,
+    private val readHtmlLambda: (() -> String?)? = null,
+    private val readUrlLambda: (() -> String?)? = null,
+    private val pasteboardItemsLambda: (() -> List<*>)? = null,
+) {
     actual val clipMetadata: ClipMetadata
-        get() = TODO("ClipMetadata is not implemented. Consider using nativeClipboard")
+        get() = createClipMetadata()
 
-    internal var getPlainTextLambda: () -> String? = { null }
-    internal var hasPlainText: Boolean = false
+    actual suspend fun readText(): String? = readPlainText() ?: readHtml() ?: readUrl()
 
-    @ExperimentalComposeUiApi
-    fun getPlainText(): String? = getPlainTextLambda.invoke()
+    actual suspend fun readPlainText(): String? = readPlainTextLambda?.invoke()
 
-    @ExperimentalComposeUiApi
-    fun hasPlainText(): Boolean {
-        return hasPlainText
+    actual suspend fun readHtml(): String? = readHtmlLambda?.invoke()
+
+    actual suspend fun readUrl(): String? = readUrlLambda?.invoke()
+
+    private fun createClipMetadata(): ClipMetadata {
+        val hasPlainText = readPlainTextLambda != null
+        val hasHtml = readHtmlLambda != null
+        val hasUrl = readUrlLambda != null
+        return ClipMetadata(
+            hasTextValue = hasPlainText || hasHtml || hasUrl,
+            hasPlainTextValue = hasPlainText,
+            hasHtmlValue = hasHtml,
+            hasUrlValue = hasUrl,
+        )
     }
 
-    companion object {
-        @ExperimentalComposeUiApi
-        fun withPlainText(text: String): ClipEntry = ClipEntry().apply {
-            getPlainTextLambda = { text }
-            hasPlainText = true
+    internal fun pasteboardItemsForClipboard(): List<*> =
+        pasteboardItemsLambda?.invoke() ?: emptyList<Any>()
+
+    @ExperimentalComposeUiApi
+    fun getPlainText(): String? = readPlainTextLambda?.invoke()
+
+    @ExperimentalComposeUiApi
+    fun hasPlainText(): Boolean = clipMetadata.hasPlainText()
+
+    actual companion object {
+        actual fun withText(plainText: String, html: String?): ClipEntry {
+            val pasteboardItems = listOf(createPasteboardItem(plainText, html, null))
+            return ClipEntry(
+                readPlainTextLambda = { plainText },
+                readHtmlLambda = html?.let { htmlValue -> { htmlValue } },
+                pasteboardItemsLambda = { pasteboardItems },
+            )
         }
+
+        actual fun withUrl(url: String, plainText: String?, html: String?): ClipEntry {
+            val pasteboardItems = listOf(createPasteboardItem(plainText, html, url))
+            return ClipEntry(
+                readPlainTextLambda = plainText?.let { plainTextValue -> { plainTextValue } },
+                readHtmlLambda = html?.let { htmlValue -> { htmlValue } },
+                readUrlLambda = { url },
+                pasteboardItemsLambda = { pasteboardItems },
+            )
+        }
+
+        @ExperimentalComposeUiApi
+        fun withPlainText(text: String): ClipEntry = withText(text)
     }
 }
+
+private fun readPasteboardValue(clipboard: UIPasteboard, types: List<String>): String? {
+    return try {
+        types.forEach { type ->
+            clipboard.valueForPasteboardType(type)?.toClipboardString()?.let { return it }
+        }
+        null
+    } catch (_: Throwable) {
+        null
+    }
+}
+
+private fun createPasteboardItem(
+    plainText: String?,
+    html: String?,
+    url: String?,
+): Map<String, Any> {
+    val item = mutableMapOf<String, Any>()
+    plainText?.let { item[PASTEBOARD_TYPE_STRING] = it }
+    html?.let { item[PASTEBOARD_TYPE_HTML] = it }
+    url?.let { item[PASTEBOARD_TYPE_URL] = URLWithString(it) ?: it }
+    return item
+}
+
+private fun Any.toClipboardString(): String? =
+    when (this) {
+        is NSURL -> absoluteString
+        is NSData -> NSString.create(data = this, encoding = NSUTF8StringEncoding)?.toString()
+        else -> toString()
+    }
