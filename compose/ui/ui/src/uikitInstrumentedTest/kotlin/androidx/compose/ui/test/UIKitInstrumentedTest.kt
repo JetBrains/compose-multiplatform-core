@@ -139,9 +139,12 @@ import platform.UIKit.endEditing
 import platform.UIKit.setOverrideTraitCollection
 import platform.UIKit.systemBackgroundColor
 import platform.UIKit.traitOverrides
+import platform.darwin.DISPATCH_TIME_NOW
 import platform.darwin.NSObject
+import platform.darwin.dispatch_after
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
+import platform.darwin.dispatch_time
 
 /**
  * Sets up the test environment for iOS instrumented tests, runs the given [test][testBlock] against
@@ -932,6 +935,8 @@ internal class UIKitInstrumentedTest(
     }
 }
 
+private const val ChoreographerDisposalDelayNanos = 1_000_000_000L
+
 @OptIn(ExperimentalForeignApi::class)
 internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
     private var _window: UIWindow? = UIWindow(frame = UIScreen.mainScreen.bounds)
@@ -1011,11 +1016,26 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         _window?.resignKeyWindow()
         _window?.windowScene = null
         _window?.rootViewController = UIViewController()
-        _window?.let(FrameChoreographer::disposeForWindow)
+        _window?.let(::scheduleChoreographerDisposal)
         _window = null
 
         allWindows.forEach {
             (it as UIWindow).setHidden(true)
+        }
+    }
+
+    /**
+     * The choreographer is retained by its display link, so it outlives the [window] unless
+     * disposed explicitly. The disposal is postponed: the Compose containers detached from the
+     * window still need the choreographer to tear their scenes down (e.g. finish text input
+     * sessions), which happens on the hierarchy containment check, 0.5 seconds after detaching.
+     */
+    private fun scheduleChoreographerDisposal(window: UIWindow) {
+        dispatch_after(
+            dispatch_time(DISPATCH_TIME_NOW, ChoreographerDisposalDelayNanos),
+            dispatch_get_main_queue()
+        ) {
+            FrameChoreographer.disposeForWindow(window)
         }
     }
 
