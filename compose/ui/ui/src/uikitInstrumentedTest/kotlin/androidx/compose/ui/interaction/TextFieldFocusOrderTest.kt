@@ -28,6 +28,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.test.findFocusedUITextInput
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.runUIKitInstrumentedTestInPrimaryContainer
 import androidx.compose.ui.window.Dialog
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -36,7 +37,7 @@ import platform.UIKit.UITextInputProtocol
 
 class TextFieldFocusOrderTest {
     @Test
-    fun testModalTextFieldsFocusOnDialogAppear() = runUIKitInstrumentedTest {
+    fun testModalTextFieldsFocusOnDialogAppear() = runUIKitInstrumentedTestInPrimaryContainer {
         val dialogFocusRequester = FocusRequester()
 
         setContent {
@@ -54,7 +55,7 @@ class TextFieldFocusOrderTest {
     }
 
     @Test
-    fun testModalTextFieldsRefocus() = runUIKitInstrumentedTest {
+    fun testModalTextFieldsRefocus() = runUIKitInstrumentedTestInPrimaryContainer {
         val showDialog1 = mutableStateOf(false)
         val showDialog2 = mutableStateOf(false)
         val focusRequester0 = FocusRequester()
@@ -162,7 +163,7 @@ class TextFieldFocusOrderTest {
     }
 
     @Test
-    fun testFocusReleaseWhenDialogOnTop() = runUIKitInstrumentedTest {
+    fun testFocusReleaseWhenDialogOnTop() = runUIKitInstrumentedTestInPrimaryContainer {
         val focusRequester1 = FocusRequester()
         val focusRequester2 = FocusRequester()
         val showDialog = mutableStateOf(false)

@@ -36,6 +36,7 @@ import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.findFocusedUITextInput
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.runUIKitInstrumentedTestInPrimaryContainer
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -74,7 +75,7 @@ class DialogInteractionTest {
     }
 
     @Test
-    fun testDialogDismissOnClickOutsideDisabled() = runUIKitInstrumentedTest {
+    fun testDialogDismissOnClickOutsideDisabled() = runUIKitInstrumentedTestInPrimaryContainer {
         var dismissTriggered = false
         setContent {
             Dialog(
@@ -94,7 +95,7 @@ class DialogInteractionTest {
     }
 
     @Test
-    fun testManyDialogsDismissOnClickOutside() = runUIKitInstrumentedTest {
+    fun testManyDialogsDismissOnClickOutside() = runUIKitInstrumentedTestInPrimaryContainer {
         val showDialog1 = mutableStateOf(true)
         val showDialog2 = mutableStateOf(true)
         setContent {
@@ -134,7 +135,7 @@ class DialogInteractionTest {
     }
 
     @Test
-    fun testTextInputFocusInDialog() = runUIKitInstrumentedTest {
+    fun testTextInputFocusInDialog() = runUIKitInstrumentedTestInPrimaryContainer {
         setContent {
             Dialog(onDismissRequest = {}) {
                 TextField("", {}, modifier = Modifier.testTag("TextField"))
@@ -150,7 +151,7 @@ class DialogInteractionTest {
     }
 
     @Test
-    fun testKeyboardHideWhenDialogOpens() = runUIKitInstrumentedTest {
+    fun testKeyboardHideWhenDialogOpens() = runUIKitInstrumentedTestInPrimaryContainer {
         val requester = FocusRequester()
         val showDialog = mutableStateOf(false)
         setContent {
@@ -180,7 +181,7 @@ class DialogInteractionTest {
     }
 
     @Test
-    fun testDialogWithPopupCoexistence() = runUIKitInstrumentedTest {
+    fun testDialogWithPopupCoexistence() = runUIKitInstrumentedTestInPrimaryContainer {
         var showPopup by mutableStateOf(true)
         var showDialog by mutableStateOf(true)
         setContent {
@@ -219,7 +220,7 @@ class DialogInteractionTest {
     }
 
     @Test
-    fun testDialogAbsorbsTouchesWhenDismissDisabled() = runUIKitInstrumentedTest {
+    fun testDialogAbsorbsTouchesWhenDismissDisabled() = runUIKitInstrumentedTestInPrimaryContainer {
         var backgroundButtonClicked = false
         setContent {
             Button(
