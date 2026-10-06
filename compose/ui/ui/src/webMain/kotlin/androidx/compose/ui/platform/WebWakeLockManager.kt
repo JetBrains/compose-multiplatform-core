@@ -46,10 +46,25 @@ internal object WebWakeLockManager {
 
     private val requests = mutableSetOf<Any>()
 
+    @VisibleForTesting
+    internal var requestWakeLock: () -> Promise<WakeLockSentinel> = ::requestScreenWakeLock
+
     init {
         document.addEventListener("visibilitychange") {
-            if (documentIsVisible() && enoughRequestsForLock() && webWakeLockSupported) {
-                requestWakeLock()
+            retryWakeLockRequest()
+        }
+
+        // Safari requires Screen Wake Lock requests to run during transient user activation.
+        listOf(
+            "click",
+            "keydown",
+            "mousedown",
+            "pointerdown",
+            "pointerup",
+            "touchend"
+        ).forEach { eventName ->
+            document.addEventListener(eventName) {
+                retryWakeLockRequest()
             }
         }
     }
@@ -68,21 +83,26 @@ internal object WebWakeLockManager {
             requests.remove(client)
         }
         if (enoughRequestsForLock()) {
-            requestWakeLock()
+            acquireWakeLock()
         } else {
             releaseWakeLock()
         }
     }
 
+    private fun retryWakeLockRequest() {
+        if (documentIsVisible() && enoughRequestsForLock() && webWakeLockSupported) {
+            acquireWakeLock()
+        }
+    }
 
-    private fun requestWakeLock() {
+    private fun acquireWakeLock() {
         if (wakeLockSentinel != null || requestingLock) {
             //A lock is already active or a request is in progress
             return
         }
 
         requestingLock = true
-        requestScreenWakeLock()
+        requestWakeLock()
             .then { sentinel ->
                 //Prevents race condition where a release requestLock could come in before the lock is granted
                 if (requestingLock) {
@@ -134,6 +154,7 @@ internal object WebWakeLockManager {
         requestingLock = false
         requests.clear()
         releaseWakeLock()
+        requestWakeLock = ::requestScreenWakeLock
     }
 
 }
@@ -156,7 +177,7 @@ internal fun isFullWakeLockApiSupported(): Boolean =
     """
     )
 
-private external interface WakeLockSentinel : JsAny {
+internal external interface WakeLockSentinel : JsAny {
     @Suppress("unused")
     val released: Boolean
 
@@ -165,6 +186,3 @@ private external interface WakeLockSentinel : JsAny {
     fun release(): Promise<JsAny?>
     fun addEventListener(type: String, listener: () -> Unit)
 }
-
-
-
