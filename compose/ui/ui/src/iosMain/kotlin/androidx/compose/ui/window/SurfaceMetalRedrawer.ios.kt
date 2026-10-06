@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(org.jetbrains.skiko.ExperimentalSkikoApi::class)
+
 package androidx.compose.ui.window
 
 import androidx.collection.IntIntPair
@@ -28,19 +30,11 @@ import kotlinx.cinterop.autoreleasepool
 import kotlinx.cinterop.objcPtr
 import kotlinx.cinterop.rawValue
 import kotlinx.cinterop.useContents
-import org.jetbrains.skia.BackendRenderTarget
 import org.jetbrains.skia.Canvas
-import org.jetbrains.skia.ColorSpace
-import org.jetbrains.skia.DirectContext
 import org.jetbrains.skia.Picture
 import org.jetbrains.skia.PictureRecorder
-import org.jetbrains.skia.PixelGeometry
 import org.jetbrains.skia.Surface
-import org.jetbrains.skia.SurfaceColorFormat
-import org.jetbrains.skia.SurfaceOrigin
-import org.jetbrains.skia.SurfaceProps
-import org.jetbrains.skia.gpu.ganesh.flushAndSubmit
-import org.jetbrains.skia.gpu.ganesh.makeFromBackendRenderTarget
+import org.jetbrains.skia.gpu.makeMetalContext
 import platform.Foundation.NSLock
 import platform.Foundation.NSThread
 import platform.IOSurface.IOSurfaceGetHeight
@@ -72,7 +66,7 @@ internal class SurfaceMetalRedrawer(
     private val device = metalLayer.device as? MTLDeviceProtocol
         ?: throw IllegalStateException("MetalRedrawer requires MTLDevice")
     private val queue = getCachedCommandQueue(device)
-    private val context = DirectContext.makeMetal(device.objcPtr(), queue.objcPtr())
+    private val context = makeMetalContext(device.objcPtr(), queue.objcPtr())
     private val pictureRecorder = PictureRecorder()
     private val transactionQueue = InteropTransactionQueue()
 
@@ -322,23 +316,13 @@ internal class SurfaceMetalRedrawer(
             ?.takeIf { !it.isClosed }
             ?.let { return it }
 
-        val renderTarget = BackendRenderTarget.makeMetal(
+        val surface = context.makeSurface(
             width = IOSurfaceGetWidth(drawable.surface).toInt(),
             height = IOSurfaceGetHeight(drawable.surface).toInt(),
             texturePtr = drawable.drawableTexture().rawValue,
         )
 
-        val surface = Surface.makeFromBackendRenderTarget(
-            context,
-            renderTarget,
-            SurfaceOrigin.TOP_LEFT,
-            SurfaceColorFormat.BGRA_8888,
-            ColorSpace.sRGB,
-            SurfaceProps(pixelGeometry = PixelGeometry.UNKNOWN)
-        )
-
         if (surface == null) {
-            renderTarget.close()
             return null
         }
 
@@ -346,7 +330,6 @@ internal class SurfaceMetalRedrawer(
 
         activeDrawableAssociatedResourcesDisposes.add {
             surface.close()
-            renderTarget.close()
         }
 
         return surface
@@ -386,7 +369,7 @@ internal class SurfaceMetalRedrawer(
 
         surface.canvas.drawPicture(frame.picture)
         frame.dispose()
-        surface.flushAndSubmit()
+        context.submit()
 
         val commandBuffer = queue.commandBuffer()
         if (commandBuffer == null) {
