@@ -47,16 +47,16 @@ interface PlatformOutOfFrameExecutor {
 
 /**
  * A generic implementation of [PlatformOutOfFrameExecutor] that uses the platform's
- * "schedule-on-EDT" method to schedule the work.
+ * "schedule-on-ui-thread" method to schedule the work.
  *
  * The platform must call [GenericPlatformOutOfFrameExecutor.onBeforeFrame] before executing each
  * frame (recomposition etc.)
  */
 internal class GenericPlatformOutOfFrameExecutor(
-    /** Schedules a task on the EDT. */
+    /** Schedules a task on the UI thread. */
     private val scheduleTask: (block: () -> Unit) -> Unit,
-    /** Returns whether the current thread is the EDT. */
-    private val isExecutingOnEdtThread: () -> Boolean
+    /** Returns whether the current thread is the UI thread. */
+    private val isExecutingOnUiThreadThread: () -> Boolean
 ) : PlatformOutOfFrameExecutor {
 
     /**
@@ -75,7 +75,7 @@ internal class GenericPlatformOutOfFrameExecutor(
         get() = queue.isNotEmpty()
 
     override fun schedule(block: () -> Unit) {
-        requireEdt()
+        requireUiThread()
 
         if (isDisposed) return
 
@@ -104,7 +104,7 @@ internal class GenericPlatformOutOfFrameExecutor(
      * This must be called before a frame is executed.
      */
     fun onBeforeFrame() {
-        requireEdt()
+        requireUiThread()
         if (isDisposed) return
 
         drain()
@@ -116,13 +116,13 @@ internal class GenericPlatformOutOfFrameExecutor(
      * The queue is cleared and scheduled work is cancelled.
      */
     fun dispose() {
-        requireEdt()
+        requireUiThread()
 
         isDisposed = true
         queue.clear()
     }
 
-    private fun requireEdt() {
-        require(isExecutingOnEdtThread()) { "Must be called on the event dispatching thread" }
+    private fun requireUiThread() {
+        require(isExecutingOnUiThreadThread()) { "Must be called on the UI thread" }
     }
 }
