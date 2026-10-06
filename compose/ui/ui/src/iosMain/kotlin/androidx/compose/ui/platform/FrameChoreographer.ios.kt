@@ -71,6 +71,12 @@ internal class FrameChoreographer private constructor(
             window.frameChoreographer = FrameChoreographer(window, coroutineContext)
         }
 
+        @TestOnly
+        fun disposeForWindow(window: UIWindow) {
+            window.frameChoreographer?.dispose()
+            window.frameChoreographer = null
+        }
+
         private const val FramesToAdvanceAfterInvalidation = 2
     }
 
