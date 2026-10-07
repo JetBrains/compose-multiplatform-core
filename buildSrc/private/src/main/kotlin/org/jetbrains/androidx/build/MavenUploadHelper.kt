@@ -171,11 +171,25 @@ private fun Project.configureComponentPublishing(
 
     project.tasks.withType(GenerateModuleMetadata::class.java).configureEach { task ->
 //        val capabilitiesToRemove = publishedRedirectionCapabilities() // TODO CMP-10368 fix old capability mechanism after migration to new artifact redirection
+        // Fleet fork: the modules the fork builds from source although upstream redirects them
+        // (runtime, runtime-saveable) declare their capabilities by hand in build-fork.gradle, so
+        // that inside this build they win over AOSP's and the pre-rename fork artifacts. Those
+        // declarations are for local resolution only, as the redirection capabilities above were:
+        // published, they also reach consumers that cannot handle capabilities at all (Amper's
+        // resolver rejects every such klib for wasm). Upstream publishes none.
+        val declaredCapabilities = project.provider {
+            project.configurations
+                .filter { it.isCanBeConsumed }
+                .flatMap { it.outgoing.capabilities }
+                .map { "${it.group}:${it.name}:${it.version}" }
+                .toSet()
+        }
         task.doLast {
             val metadataFile = task.outputFile.asFile.get()
             val metadataString = metadataFile.readText()
             val modifiedMetadataString = modifyGradleMetadata(metadataString) { metadata ->
 //                filterGradleMetadataCapabilities(metadata, capabilitiesToRemove)  // TODO CMP-10368 fix old capability mechanism after migration to new artifact redirection
+                filterGradleMetadataCapabilities(metadata, declaredCapabilities.get())
                 sortGradleMetadataDependencies(metadata)
             }
 
