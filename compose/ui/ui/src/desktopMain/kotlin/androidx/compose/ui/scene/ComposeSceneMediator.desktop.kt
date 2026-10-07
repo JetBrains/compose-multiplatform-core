@@ -652,6 +652,7 @@ internal class ComposeSceneMediator(
         interopContainer.dispose()
 
         desktopMediaScope.dispose()
+        outOfFrameExecutor.dispose()
 
         _onComponentAttached = null
     }
