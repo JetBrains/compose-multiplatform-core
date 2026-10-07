@@ -66,7 +66,7 @@ import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.platform.ApplicationIdleTimer
-import androidx.compose.ui.platform.MediaScope
+import androidx.compose.ui.platform.IosUiMediaScope
 import androidx.compose.ui.platform.TaskDispatchers
 import androidx.compose.ui.platform.TextInputService
 import androidx.compose.ui.platform.WindowInsetsManager
@@ -215,7 +215,7 @@ internal class ComposeSceneMediator(
     private val architectureComponentsOwner: PlatformArchitectureComponentsOwner,
     val coroutineContext: CoroutineContext,
     private val navigationEventInput: IosBackNavigationEventInput,
-    private val mediaScope: MediaScope,
+    private val mediaScope: IosUiMediaScope,
     composeSceneFactory: (platformContext: PlatformContext) -> ComposeScene,
     private val schedulePendingInteropViewUpdates: () -> Unit = {},
 ) {

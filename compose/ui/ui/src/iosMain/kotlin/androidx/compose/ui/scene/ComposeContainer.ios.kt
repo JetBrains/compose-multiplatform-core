@@ -26,7 +26,7 @@ import androidx.compose.ui.asComposeSystemTheme
 import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.FrameChoreographer
-import androidx.compose.ui.platform.MediaScope
+import androidx.compose.ui.platform.IosUiMediaScope
 import androidx.compose.ui.platform.MotionDurationScaleImpl
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.WindowContext
@@ -139,7 +139,7 @@ internal class ComposeContainer(
         get() = mediatorComponentsOwner
             ?: error("ArchitectureComponentsOwner is not initialized yet.")
 
-    private val mediaScope = MediaScope(windowContext.windowInfo)
+    private val mediaScope = IosUiMediaScope(windowContext.windowInfo)
     private var navigationEventInput: IosBackNavigationEventInput? = null
     private var layoutInvalidationHandler: LayoutInvalidationHandler? = null
     private val fontScaleProvider = FontScaleProvider(
