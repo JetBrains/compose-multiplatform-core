@@ -66,10 +66,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
-import org.jetbrains.skiko.SystemTheme
-import platform.Foundation.NSKeyValueObservingOptionNew
-import platform.Foundation.addObserver
-import platform.Foundation.removeObserver
 import platform.UIKit.UIAccessibilityIsReduceMotionEnabled
 import platform.UIKit.UIApplication
 import platform.UIKit.UIResponder
@@ -479,7 +475,7 @@ internal class ComposeContainer(
         CompositionLocalProvider(
             LocalUIViewController provides containingViewController,
             @Suppress("DEPRECATION")
-            LocalSystemTheme provides mediaScope.systemTheme,
+            LocalSystemTheme provides mediaScope.systemTheme.asComposeSystemTheme(),
             content = content
         )
 
