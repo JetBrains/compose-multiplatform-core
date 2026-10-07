@@ -595,7 +595,7 @@ internal class ComposeSceneMediator(
             TouchesEventKind.MOVED -> {}
         }
 
-        var anyIsStylus = false
+        var anyTouchIsStylus = false
         val pointers = touches.mapIndexed { index, touch ->
             touch as UITouch
             val position = touch.offsetInView(_backgroundView, screenDensity.density)
