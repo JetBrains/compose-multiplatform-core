@@ -16,320 +16,151 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.OnCanvasTests
+import androidx.compose.ui.WebApplicationScope
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalPlatformWindowInsets
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.PlatformWindowInsets
+import androidx.compose.ui.platform.WebInsetsTestEnvironment
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
-import kotlin.js.ExperimentalWasmJsInterop
-import kotlin.js.js
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlinx.browser.window
-import org.w3c.dom.events.Event
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
+import org.w3c.dom.HTMLElement
 
-@OptIn(
-    ExperimentalWasmJsInterop::class,
-    InternalComposeUiApi::class,
-    ExperimentalComposeUiApi::class
-)
+@OptIn(InternalComposeUiApi::class)
 class WebWindowInsetsTest : OnCanvasTests {
-
-    @AfterTest
-    fun cleanup() {
-        cleanupMocks()
-    }
-
-    private fun mockBrowserEnvironment(
-        top: Int = 0,
-        right: Int = 0,
-        bottom: Int = 0,
-        left: Int = 0,
-        viewportFitCover: Boolean = true,
-        canvasTop: Int = 0,
-        canvasLeft: Int = 0,
-        canvasRight: Int = 1024,
-        canvasBottom: Int = 768,
-        innerWidth: Int = 1024,
-        innerHeight: Int = 768
-    ) {
-        mockBrowserEnvironmentInternal(
-            top,
-            right,
-            bottom,
-            left,
-            viewportFitCover,
-            canvasTop,
-            canvasLeft,
-            canvasRight,
-            canvasBottom,
-            innerWidth,
-            innerHeight
-        )
-    }
-
-    private fun cleanupMocks() {
-        cleanupMocksInternal()
-    }
-
     @Test
-    fun testBasicSafeArea() = runApplicationTest {
-        mockBrowserEnvironment(top = 10, right = 20, bottom = 30, left = 40)
-
-        var capturedInsets: PlatformWindowInsets? = null
-        createComposeWindow(
-            configure = { enableBrowserWindowInsets = true }
-        ) {
-            capturedInsets = LocalPlatformWindowInsets.current
-        }
-
-        awaitIdle()
-
-        val insets = capturedInsets ?: error("Insets not captured")
-        val density = Density(window.devicePixelRatio.toFloat())
-
-        with(density) {
-            assertEquals(10.dp.roundToPx(), insets.statusBars.top, "Status bars top")
-            assertEquals(30.dp.roundToPx(), insets.navigationBars.bottom, "Navigation bars bottom")
-
-            assertEquals(40.dp.roundToPx(), insets.displayCutout.left, "Display cutout left")
-            assertEquals(10.dp.roundToPx(), insets.displayCutout.top, "Display cutout top")
-            assertEquals(20.dp.roundToPx(), insets.displayCutout.right, "Display cutout right")
-            assertEquals(30.dp.roundToPx(), insets.displayCutout.bottom, "Display cutout bottom")
-        }
-    }
-
-    @Test
-    fun testDisabledBrowserWindowInsets() = runApplicationTest {
-        mockBrowserEnvironment(top = 10, right = 20, bottom = 30, left = 40)
-
-        var capturedInsets: PlatformWindowInsets? = null
-        createComposeWindow(
-            configure = { enableBrowserWindowInsets = false }
-        ) {
-            capturedInsets = LocalPlatformWindowInsets.current
-        }
-
-        awaitIdle()
-
-        val insets = capturedInsets ?: error("Insets not captured")
-        assertEquals(0, insets.statusBars.top, "Status bars top should be 0")
-        assertEquals(0, insets.navigationBars.bottom, "Navigation bars bottom should be 0")
-    }
-
-    @Test
-    fun testDensityConversion() = runApplicationTest {
-        mockBrowserEnvironment(top = 15)
-
-        var capturedInsets: PlatformWindowInsets? = null
-        createComposeWindow(
-            configure = { enableBrowserWindowInsets = true }
-        ) {
-            capturedInsets = LocalPlatformWindowInsets.current
-        }
-
-        awaitIdle()
-
-        val insets = capturedInsets ?: error("Insets not captured")
-        val density = Density(window.devicePixelRatio.toFloat())
-
-        with(density) {
-            assertEquals(15.dp.roundToPx(), insets.statusBars.top, "Density conversion check")
-        }
-    }
-
-    @Test
-    fun testSafeAreaWithCanvasOffset() = runApplicationTest {
-        // Safe area top is 20px, but canvas starts at 15px from the top.
-        // Resulting inset should be 20 - 15 = 5px.
-        mockBrowserEnvironment(
-            top = 20,
-            canvasTop = 15,
-            innerHeight = 100,
-            canvasBottom = 100
-        )
-
-        var capturedInsets: PlatformWindowInsets? = null
-        createComposeWindow(
-            configure = { enableBrowserWindowInsets = true }
-        ) {
-            capturedInsets = LocalPlatformWindowInsets.current
-        }
-
-        awaitIdle()
-
-        val insets = capturedInsets ?: error("Insets not captured")
-        val density = Density(window.devicePixelRatio.toFloat())
-
-        with(density) {
-            assertEquals(
-                5.dp.roundToPx(),
-                insets.statusBars.top,
-                "Top inset should be clipped by canvas offset"
-            )
-        }
-    }
-
-    @Test
-    fun testDynamicUpdateOnResize() = runApplicationTest {
-        mockBrowserEnvironment(top = 10)
-
-        var capturedInsets: PlatformWindowInsets? = null
-        createComposeWindow(
-            configure = { enableBrowserWindowInsets = true }
-        ) {
-            capturedInsets = LocalPlatformWindowInsets.current
-        }
-
-        awaitIdle()
-
-        val insets = capturedInsets ?: error("Insets not captured")
-        val density = Density(window.devicePixelRatio.toFloat())
-
-        with(density) {
-            assertEquals(10.dp.roundToPx(), insets.statusBars.top, "Initial top inset")
-        }
-
-        // Update mock and trigger resize
-        mockBrowserEnvironment(top = 50)
-        window.dispatchEvent(Event("resize"))
-
-        awaitIdle()
-
-        with(density) {
-            assertEquals(50.dp.roundToPx(), insets.statusBars.top, "Updated top inset after resize")
-        }
-    }
-}
-
-@OptIn(ExperimentalWasmJsInterop::class)
-private fun mockBrowserEnvironmentInternal(
-    safeAreaTop: Int,
-    safeAreaRight: Int,
-    safeAreaBottom: Int,
-    safeAreaLeft: Int,
-    hasViewportFitCover: Boolean,
-    canvasTop: Int,
-    canvasLeft: Int,
-    canvasRight: Int,
-    canvasBottom: Int,
-    innerWidth: Int,
-    innerHeight: Int
-): Unit = js(
-    """(function() {
-        window._mockValues = {
-            top: safeAreaTop,
-            right: safeAreaRight,
-            bottom: safeAreaBottom,
-            left: safeAreaLeft,
-            viewportFitCover: hasViewportFitCover,
-            canvasTop: canvasTop,
-            canvasLeft: canvasLeft,
-            canvasRight: canvasRight,
-            canvasBottom: canvasBottom,
-            innerWidth: innerWidth,
-            innerHeight: innerHeight
-        };
-
-        if (!window._oldGetComputedStyle) {
-            window._oldGetComputedStyle = window.getComputedStyle;
-            window.getComputedStyle = function(el) {
-                var style = window._oldGetComputedStyle(el);
-                if (el === document.documentElement) {
-                    return {
-                        getPropertyValue: function(prop) {
-                            if (prop === '--cmp-safe-top') return window._mockValues.top + 'px';
-                            if (prop === '--cmp-safe-right') return window._mockValues.right + 'px';
-                            if (prop === '--cmp-safe-bottom') return window._mockValues.bottom + 'px';
-                            if (prop === '--cmp-safe-left') return window._mockValues.left + 'px';
-                            return style.getPropertyValue(prop);
-                        }
-                    };
-                }
-                return style;
-            };
-        }
-
-        if (!window._oldQuerySelector) {
-            window._oldQuerySelector = document.querySelector;
-            document.querySelector = function(selector) {
-                if (selector === 'meta[name=viewport]') {
-                    return {
-                        getAttribute: function(name) {
-                            if (name === 'content') {
-                                return window._mockValues.viewportFitCover ? 'viewport-fit=cover' : '';
-                            }
-                            return null;
-                        }
-                    };
-                }
-                return window._oldQuerySelector.call(document, selector);
-            };
-        }
-
-        if (!window._oldInnerWidth) {
-            window._oldInnerWidth = Object.getOwnPropertyDescriptor(window, 'innerWidth') || { value: window.innerWidth };
-            window._oldInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight') || { value: window.innerHeight };
-            Object.defineProperty(window, 'innerWidth', { 
-                get: function() { return window._mockValues.innerWidth; },
-                configurable: true 
-            });
-            Object.defineProperty(window, 'innerHeight', { 
-                get: function() { return window._mockValues.innerHeight; },
-                configurable: true 
-            });
-        }
-
-        if (!window._oldGetBoundingClientRect) {
-            window._oldGetBoundingClientRect = Element.prototype.getBoundingClientRect;
-            Element.prototype.getBoundingClientRect = function() {
-                if (this.nodeName === 'CANVAS' || this.id === 'canvasApp') {
-                     return {
-                        top: window._mockValues.canvasTop,
-                        left: window._mockValues.canvasLeft,
-                        right: window._mockValues.canvasRight,
-                        bottom: window._mockValues.canvasBottom,
-                        width: window._mockValues.canvasRight - window._mockValues.canvasLeft,
-                        height: window._mockValues.canvasBottom - window._mockValues.canvasTop,
-                        x: window._mockValues.canvasLeft,
-                        y: window._mockValues.canvasTop
-                    };
-                }
-                return window._oldGetBoundingClientRect.call(this);
-            };
-        }
-    })()"""
-)
-
-@OptIn(ExperimentalWasmJsInterop::class)
-private fun cleanupMocksInternal(): Unit = js(
-    """(function() {
-        if (window._oldGetComputedStyle) {
-            window.getComputedStyle = window._oldGetComputedStyle;
-            delete window._oldGetComputedStyle;
-        }
-        if (window._oldQuerySelector) {
-            document.querySelector = window._oldQuerySelector;
-            delete window._oldQuerySelector;
-        }
-        if (window._oldInnerWidth) {
-            if (window._oldInnerWidth.get) {
-                Object.defineProperty(window, 'innerWidth', window._oldInnerWidth);
-                Object.defineProperty(window, 'innerHeight', window._oldInnerHeight);
-            } else {
-                window.innerWidth = window._oldInnerWidth.value;
-                window.innerHeight = window._oldInnerHeight.value;
+    fun safeAreaIsProvidedToComposition() = runApplicationTest {
+        withEnvironment { environment, container ->
+            var capturedInsets: SafeAreaSnapshot? = null
+            var density = Density(1f)
+            createComposeWindow(configure = { enableBrowserWindowInsets = true }) {
+                density = LocalDensity.current
+                capturedInsets = LocalPlatformWindowInsets.current.captureSafeArea()
             }
-            delete window._oldInnerWidth;
-            delete window._oldInnerHeight;
+
+            environment.setSafeArea(left = 40f, top = 10f)
+            resize(container)
+
+            val top = with(density) { 10.dp.roundToPx() }
+            val left = with(density) { 40.dp.roundToPx() }
+            awaitValue(SafeAreaSnapshot(
+                statusBarTop = top,
+                cutoutLeft = left,
+                cutoutTop = top
+            )) { capturedInsets }
         }
-        if (window._oldGetBoundingClientRect) {
-            Element.prototype.getBoundingClientRect = window._oldGetBoundingClientRect;
-            delete window._oldGetBoundingClientRect;
+    }
+
+    @Test
+    fun disabledBrowserWindowInsetsStayZeroAfterResize() = runApplicationTest {
+        withEnvironment { environment, container ->
+            var capturedInsets: SafeAreaSnapshot? = null
+            var capturedWidth: Float? = null
+            createComposeWindow(configure = { enableBrowserWindowInsets = false }) {
+                capturedInsets = LocalPlatformWindowInsets.current.captureSafeArea()
+                capturedWidth = LocalWindowInfo.current.containerDpSize.width.value
+            }
+            awaitValue(SafeAreaSnapshot()) { capturedInsets }
+
+            environment.setSafeArea(left = 40f, top = 10f, right = 20f, bottom = 30f)
+            resize(container)
+            // Wait for the resize to reach composition even though the insets stay zero.
+            awaitValue(container.clientWidth.toFloat()) { capturedWidth }
+            assertEquals(SafeAreaSnapshot(), capturedInsets)
         }
-        delete window._mockValues;
-    })()"""
-)
+    }
+
+    @Test
+    fun containerResizeRecomposesInsetReader() = runApplicationTest {
+        withEnvironment { environment, container ->
+            var capturedTop: Int? = null
+            var density = Density(1f)
+            createComposeWindow(configure = { enableBrowserWindowInsets = true }) {
+                density = LocalDensity.current
+                // Read the state inside composition, not through a captured live getter.
+                capturedTop = LocalPlatformWindowInsets.current.statusBars.top
+            }
+
+            environment.setSafeArea(top = 10f)
+            resize(container)
+            val initialTop = with(density) { 10.dp.roundToPx() }
+            awaitValue(initialTop) { capturedTop }
+
+            environment.setSafeArea(top = 50f)
+            resize(container)
+            val updatedTop = with(density) { 50.dp.roundToPx() }
+            awaitValue(updatedTop) { capturedTop }
+        }
+    }
+
+    private suspend fun WebApplicationScope.withEnvironment(
+        block: suspend (WebInsetsTestEnvironment, HTMLElement) -> Unit
+    ) {
+        val environment = WebInsetsTestEnvironment()
+        val container = getContainer() as HTMLElement
+        val originalStyle = container.style.cssText
+        try {
+            // Real geometry, independent of the size of Karma's default test container.
+            container.style.cssText = "position: fixed; left: 0; top: 0; width: 200px; height: 150px;"
+            block(environment, container)
+        } finally {
+            try {
+                getComposeWindowOrNull()?.dispose()
+            } finally {
+                container.style.cssText = originalStyle
+                environment.restore()
+            }
+        }
+    }
+
+    private fun resize(container: HTMLElement) {
+        container.style.width = "${container.clientWidth - 1}px"
+    }
+
+    private suspend fun <T> WebApplicationScope.awaitValue(
+        expected: T,
+        current: () -> T?
+    ) {
+        try {
+            // Browser frames use real time, so do not let runTest advance a virtual timeout.
+            withContext(Dispatchers.Default) {
+                withTimeout(5.seconds) {
+                    while (current() != expected) {
+                        awaitAnimationFrame()
+                        awaitIdle()
+                    }
+                }
+            }
+        } catch (timeout: TimeoutCancellationException) {
+            throw AssertionError("Timed out waiting for $expected; actual: ${current()}", timeout)
+        }
+        assertEquals(expected, current())
+    }
+
+    private data class SafeAreaSnapshot(
+        val statusBarTop: Int = 0,
+        val navigationBarBottom: Int = 0,
+        val cutoutLeft: Int = 0,
+        val cutoutTop: Int = 0,
+        val cutoutRight: Int = 0,
+        val cutoutBottom: Int = 0
+    )
+
+    private fun PlatformWindowInsets.captureSafeArea() = SafeAreaSnapshot(
+        statusBarTop = statusBars.top,
+        navigationBarBottom = navigationBars.bottom,
+        cutoutLeft = displayCutout.left,
+        cutoutTop = displayCutout.top,
+        cutoutRight = displayCutout.right,
+        cutoutBottom = displayCutout.bottom
+    )
+}
