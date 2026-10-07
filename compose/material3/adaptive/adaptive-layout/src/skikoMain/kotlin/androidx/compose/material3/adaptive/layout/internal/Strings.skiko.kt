@@ -29,21 +29,36 @@ import kotlin.jvm.JvmInline
 @Immutable
 internal actual value class Strings(val value: Int) {
     actual companion object {
-        actual val defaultPaneTitlePrimary = Strings(0)
-        actual val defaultPaneTitleSecondary = Strings(1)
-        actual val defaultPaneTitleTertiary = Strings(2)
-        actual val defaultPaneExpansionDragHandleContentDescription = Strings(3)
-        actual val defaultPaneExpansionDragHandleStateDescription = Strings(4)
-        actual val defaultPaneExpansionDragHandleActionDescription = Strings(5)
-        actual val defaultPaneExpansionProportionAnchorDescription = Strings(6)
-        actual val defaultPaneExpansionStartOffsetAnchorDescription = Strings(7)
-        actual val defaultPaneExpansionEndOffsetAnchorDescription = Strings(8)
-        actual val dragToResizeClickToExpandDescription = Strings(9)
-        actual val dragToResizeClickToCollapseDescription = Strings(10)
-        actual val dragToResizeClickToPartiallyExpandDescription = Strings(11)
-        actual val dragToResizeExpandedStateDescription = Strings(12)
-        actual val dragToResizeCollapsedStateDescription = Strings(13)
-        actual val dragToResizePartiallyExpandedStateDescription = Strings(14)
+        actual inline val defaultPaneTitlePrimary: Strings
+            get() = Strings(0)
+        actual inline val defaultPaneTitleSecondary: Strings
+            get() = Strings(1)
+        actual inline val defaultPaneTitleTertiary: Strings
+            get() = Strings(2)
+        actual inline val defaultPaneExpansionDragHandleContentDescription: Strings
+            get() = Strings(3)
+        actual inline val defaultPaneExpansionDragHandleStateDescription: Strings
+            get() = Strings(4)
+        actual inline val defaultPaneExpansionDragHandleActionDescription: Strings
+            get() = Strings(5)
+        actual inline val defaultPaneExpansionProportionAnchorDescription: Strings
+            get() = Strings(6)
+        actual inline val defaultPaneExpansionStartOffsetAnchorDescription: Strings
+            get() = Strings(7)
+        actual inline val defaultPaneExpansionEndOffsetAnchorDescription: Strings
+            get() = Strings(8)
+        actual inline val dragToResizeClickToExpandDescription: Strings
+            get() = Strings(9)
+        actual inline val dragToResizeClickToCollapseDescription: Strings
+            get() = Strings(10)
+        actual inline val dragToResizeClickToPartiallyExpandDescription: Strings
+            get() = Strings(11)
+        actual inline val dragToResizeExpandedStateDescription: Strings
+            get() = Strings(12)
+        actual inline val dragToResizeCollapsedStateDescription: Strings
+            get() = Strings(13)
+        actual inline val dragToResizePartiallyExpandedStateDescription: Strings
+            get() = Strings(14)
     }
 }
 

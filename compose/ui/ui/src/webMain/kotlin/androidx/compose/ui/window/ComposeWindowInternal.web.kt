@@ -35,7 +35,7 @@ import androidx.compose.ui.draganddrop.WebDragAndDropManager
 import androidx.compose.ui.events.EventTargetListener
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.graphics.SkiaCanvasHolder
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
@@ -158,18 +158,23 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
     private var mediaQueryListener: MediaQueryListener? = null
 
     private var viewportTargetListener: EventTargetListener? = null
+    private var viewportContainerResizeObserver: ResizeObserver? = null
 
     override fun init() {
-        val resizeListener: (Event) -> Unit = {
+        val resizeListener: () -> Unit = {
             sizeChangeListener?.invoke()
         }
 
-        globalEvents.addDisposableEvent("resize", resizeListener)
+        // Observe the actual container size:
+        // iOS Safari can change it after a viewport resize without firing another resize event,
+        // leaving the canvas buffer out of sync with its CSS size.
+        viewportContainerResizeObserver = ResizeObserver(resizeListener)
+            .apply { observe(viewportContainer) }
 
         viewportTargetListener = getVisualViewport()?.let { EventTargetListener(it) }
         // Unlike resize on window, this one is also trigerred when visualViewport.scale is changed,
         // so on pinch-to-zoom too:
-        viewportTargetListener?.addDisposableEvent("resize", resizeListener)
+        viewportTargetListener?.addDisposableEvent("resize") { resizeListener() }
 
         recreateMediaQueryListener()
     }
@@ -203,6 +208,7 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
 
     override fun dispose() {
         sizeChangeListener = null
+        viewportContainerResizeObserver?.disconnect()
         viewportTargetListener?.dispose()
         mediaQueryListener?.dispose()
         super.dispose()
@@ -212,9 +218,10 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
 @VisibleForTesting
 // This value is for internal usage, for example, to call ComposeWindow.dispose() in the tests
 // `null` when Compose is not hosted by a ComposeWindow, e.g. in some tests.
-internal val LocalComposeWindow: ProvidableCompositionLocal<ComposeWindow?> = staticCompositionLocalOf {
-    null
-}
+internal val LocalComposeWindow: ProvidableCompositionLocal<ComposeWindow?> =
+    staticCompositionLocalOf {
+        null
+    }
 
 @OptIn(InternalComposeApi::class)
 internal class ComposeWindow(
@@ -267,7 +274,8 @@ internal class ComposeWindow(
 
     // TODO: It must be shared between Compose instances.
     //  It's supposed to be stored in platform's root view or window.
-    private val frameRecomposer = FrameRecomposer(Dispatchers.Main, invalidate = { skiaLayer.needRender() })
+    private val frameRecomposer =
+        FrameRecomposer(Dispatchers.Main, invalidate = { skiaLayer.needRender() })
 
     // TODO: It cannot be used in case of shared [FrameRecomposer], replace this helper with calling
     //  - [frameRecomposer.performFrame] once per frame (across all instances) before platform views layout phase
@@ -290,7 +298,8 @@ internal class ComposeWindow(
                 }
 
             override val architectureComponentsOwner get() = archComponentsOwner
-            override val windowInsets get() = insetsManager?.windowInsets ?: EmptyPlatformWindowInsets
+            override val windowInsets
+                get() = insetsManager?.windowInsets ?: EmptyPlatformWindowInsets
 
             override val dragAndDropManager: PlatformDragAndDropManager = object :
                 WebDragAndDropManager(rootNode, canvasEvents, state.globalEvents, { density }) {
@@ -409,6 +418,8 @@ internal class ComposeWindow(
                 get() = configuration.isClearFocusOnMouseDownEnabled
         }
 
+    private val canvasHolder = SkiaCanvasHolder()
+
     internal val htmlCanvas: HTMLCanvasElement get() = canvas
 
     /**
@@ -423,8 +434,10 @@ internal class ComposeWindow(
             if (skiaDirectContext == null) {
                 skiaDirectContext = canvas.recordingContext
             }
-            with(sceneRenderingScope) {
-                scene.render(frameRecomposer, canvas.asComposeCanvas(), nanoTime)
+            canvasHolder.drawInto(canvas) {
+                with(sceneRenderingScope) {
+                    scene.render(frameRecomposer, this@drawInto, nanoTime)
+                }
             }
         }
     }
@@ -494,8 +507,6 @@ internal class ComposeWindow(
     private val rootScrollObserver = RootScrollObserver()
 
 
-
-
     private fun initEvents(canvas: HTMLCanvasElement) {
 
         val onPointerCallback: (PointerEvent) -> Unit = { onPointerEvent(it) }
@@ -519,6 +530,9 @@ internal class ComposeWindow(
         val webTextInputService = platformContext.textInputService as WebTextInputService
 
         addTypedEvent<TouchEvent>("touchstart", passive = false) { evt ->
+            if (!_windowInfo.isWindowFocused) {
+                restoreWindowFocusFromBackingInput()
+            }
             // preventDefault the touchstart if the corresponding pointerdown hits the active text input.
             // Pros: a long press (touchstart + ~500ms delay after it) triggers focus changes in iOS Safari,
             // and this is the only chance (the only event we have) to prevent that behavior,
@@ -651,7 +665,7 @@ internal class ComposeWindow(
                 LocalActiveClipEventsTarget provides clipEventsTargetProvider,
                 LocalComposeWindow provides this,
                 content = {
-                    installFallbackFontDownloader()
+                    installFallbackFontDownloader(configuration.fontFallbackUrl)
                     WithNestedScrollObserver(rootScrollObserver) {
                         interopContainer.TrackInteropPlacementContainer {
                             content()
@@ -694,6 +708,26 @@ internal class ComposeWindow(
         )
         archComponentsOwner.navigationEventDispatcherOwner
             .navigationEventDispatcher.addInput(navigationEventInput)
+    }
+
+    /**
+     * Requests native window focus through the active text input during a user gesture.
+     *
+     * On iOS Safari, a backing field can remain DOM-focused after the page loses native focus.
+     * WebKit's Document::setFocusedElement skips dispatchFocusEvent (and elementDidFocus) while
+     * the page is unfocused, so focusing a different element can update only the DOM focus.
+     * Two synchronous focus() calls ensure the backing field is selected first, then enter
+     * Element::focus's elementDidRefocus path, which can notify the UI process without that check.
+     * Both calls are unconditional: the DOM-active check in BackingDomInput.focus() would skip
+     * the refocus request. Window focus is still updated only by the browser's focus event.
+     *
+     * See: https://youtrack.jetbrains.com/issue/CMP-10883
+     */
+    private fun restoreWindowFocusFromBackingInput() {
+        val input = (platformContext.textInputService as WebTextInputService).getBackingInput()
+        if (input == null) return
+        input.focus()
+        input.focus()
     }
 
     private fun applyResizeAndScale(
@@ -850,6 +884,7 @@ internal class ComposeWindow(
                 PointerEventType.Press -> {
                     actualActivePointerButtons = event.composeButtons
                 }
+
                 PointerEventType.Release -> {
                     actualActivePointerButtons = PointerButtons()
                 }
@@ -926,7 +961,8 @@ internal class ComposeWindow(
 
                 coalescedEvents.fastForEach { coalescedEvent ->
                     val coalescedEventType = coalescedEvent.getPointerEventType()
-                    val sceneEvent = coalescedEvent.toScenePointerEvent(current.containerOffset, density)
+                    val sceneEvent =
+                        coalescedEvent.toScenePointerEvent(current.containerOffset, density)
                     pointers[indexOfCurrentPointer] = sceneEvent
                     result = scene.sendPointerEvent(
                         eventType = coalescedEventType,
@@ -997,7 +1033,8 @@ internal class ComposeWindow(
 
         // wheels event own buttons property is unreliable in Safari and Firefox
         // see CMP-9900 [web] Wheel event resolves buttons state incorrectly in Safari and Firefox
-        val buttons = if(actualActivePointerButtons != PointerButtons()) actualActivePointerButtons else event.composeButtons
+        val buttons =
+            if (actualActivePointerButtons != PointerButtons()) actualActivePointerButtons else event.composeButtons
 
         val result = scene.sendPointerEvent(
             eventType = PointerEventType.Scroll,
@@ -1058,6 +1095,11 @@ internal class ComposeWindow(
             return document.createElement("compose-component") as HTMLElement
         }
     }
+}
+
+private external class ResizeObserver(callback: () -> Unit) : JsAny {
+    fun observe(target: Element)
+    fun disconnect()
 }
 
 //https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState
@@ -1234,7 +1276,8 @@ private external interface ShadowRootExt {
 // constructor in JS and return it as a JS function so it can be passed directly
 // to `customElements.define`.
 @OptIn(ExperimentalWasmJsInterop::class)
-private fun composeComponentElementCtor(weakMap: WeakMap<JsAny>): JsAny = js("""
+private fun composeComponentElementCtor(weakMap: WeakMap<JsAny>): JsAny = js(
+    """
     (() => {
         class ComposeComponentElement extends HTMLElement {
             disconnectedCallback() {
@@ -1244,14 +1287,15 @@ private fun composeComponentElementCtor(weakMap: WeakMap<JsAny>): JsAny = js("""
         }
         return ComposeComponentElement;
     })()
-""")
+"""
+)
 
 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakMap
 // Kotlin/Wasm JS interop  only allows type parameters with an upper bound of `JsAny` or its subtypes,
 // while the actual value stored here is a Kotlin function type `() -> Unit`.
 @OptIn(ExperimentalWasmJsInterop::class)
-private external class WeakMap<K : JsAny>(): JsAny {
+private external class WeakMap<K : JsAny>() : JsAny {
     fun get(key: K): (() -> Unit)?
     fun set(key: K, value: () -> Unit): WeakMap<K>
     fun has(key: K): Boolean

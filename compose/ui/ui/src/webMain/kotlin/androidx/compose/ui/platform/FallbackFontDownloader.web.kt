@@ -92,13 +92,18 @@ internal class WebFallbackFontDownloader(
 
 @OptIn(InternalComposeApi::class)
 @Composable
-internal fun installFallbackFontDownloader() {
+internal fun installFallbackFontDownloader(fontFallbackUrl: String?) {
+    val baseUrl = fontFallbackUrl ?: return
     val fontFamilyResolver = LocalFontFamilyResolver.current
     val coroutineScope = rememberCoroutineScope()
 
-    DisposableEffect(fontFamilyResolver, coroutineScope) {
+    DisposableEffect(fontFamilyResolver, coroutineScope, baseUrl) {
+        val fontDownloader = when (baseUrl) {
+            FONT_FALLBACK_BASE_URL -> defaultFallbackFontDownloader
+            else -> NotoFontDownloader(baseUrl)
+        }
         val webDownloader = WebFallbackFontDownloader(
-            downloader = defaultFallbackFontDownloader,
+            downloader = fontDownloader,
             scope = coroutineScope,
             onFontsLoaded = { fonts ->
                 if (fonts.isNotEmpty()) {
