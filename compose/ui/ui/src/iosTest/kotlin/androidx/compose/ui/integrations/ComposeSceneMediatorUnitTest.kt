@@ -19,7 +19,7 @@ package androidx.compose.ui.integrations
 import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.FrameChoreographer
-import androidx.compose.ui.platform.MediaScope
+import androidx.compose.ui.platform.IosUiMediaScope
 import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.scene.ComposeSceneContext
@@ -108,7 +108,7 @@ class ComposeSceneMediatorUnitTest {
             getTopLeftOffsetInWindow = { IntOffset.Zero },
             endEdgePanGestureBehavior = EndEdgePanGestureBehavior.Disabled,
         ),
-        mediaScope = MediaScope(windowContext.windowInfo),
+        mediaScope = IosUiMediaScope(windowContext.windowInfo),
         composeSceneFactory = { platformContext ->
             registerSkikoComposeImplementation()
             PlatformLayersComposeScene(

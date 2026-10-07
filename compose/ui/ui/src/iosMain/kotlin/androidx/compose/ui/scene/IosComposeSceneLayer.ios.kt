@@ -27,7 +27,7 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
 import androidx.compose.ui.platform.FrameChoreographer
-import androidx.compose.ui.platform.MediaScope
+import androidx.compose.ui.platform.IosUiMediaScope
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.uikit.ComposeContainerConfiguration
@@ -60,7 +60,7 @@ internal class IosComposeSceneLayer(
     consumePointerInputOutside: Boolean = focusedViewsList != null,
     parentCoroutineContext: CoroutineContext,
     private val ownerProvider: PlatformArchitectureComponentsOwner,
-    private val mediaScope: MediaScope,
+    private val mediaScope: IosUiMediaScope,
     private var invalidateLayout: () -> Unit,
     private var invalidateDraw: () -> Unit,
 ) : ComposeSceneLayer {

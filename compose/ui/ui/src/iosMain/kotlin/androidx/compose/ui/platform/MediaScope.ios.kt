@@ -53,7 +53,7 @@ import platform.UIKit.UIViewAnimationOptions
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
 
-internal class MediaScope(val windowInfo: WindowInfo) : UiMediaScope, KeyboardVisibilitySubscriber {
+internal class IosUiMediaScope(val windowInfo: WindowInfo) : UiMediaScope, KeyboardVisibilitySubscriber {
 
     private var window: UIWindow? = null
     private var isObserving = false
