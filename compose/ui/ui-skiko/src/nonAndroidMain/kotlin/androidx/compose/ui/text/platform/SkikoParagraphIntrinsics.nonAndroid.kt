@@ -17,6 +17,7 @@
  */
 package androidx.compose.ui.text.platform
 
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -46,12 +47,17 @@ internal class SkikoParagraphIntrinsics(
     private val fontFamilyResolver: FontFamily.Resolver,
     private val defaultLocaleList: LocaleList,
 ) : ParagraphIntrinsics {
+    private var resolvedTypefaces: TypefaceDirtyTrackerLinkedList? = null
+
     val textDirection =
         resolveTextDirection(text, style.textDirection, style.localeList ?: defaultLocaleList)
 
     // we need to track it reactively to invalidate the UI
-    override var hasStaleResolvedFonts: Boolean by mutableStateOf(false)
-        private set
+    // Async typeface updates are tracked separately via [resolvedTypefaces].
+    private var hasUnresolvedFontStale by mutableStateOf(false)
+
+    override val hasStaleResolvedFonts: Boolean
+        get() = hasUnresolvedFontStale || (resolvedTypefaces?.isStaleResolvedFont ?: false)
 
     private var layouter: ParagraphLayouter? = newLayouter()
 
@@ -70,8 +76,11 @@ internal class SkikoParagraphIntrinsics(
             placeholders = placeholders,
             density = density,
             fontFamilyResolver = fontFamilyResolver,
-            onFontStale = { hasStaleResolvedFonts = true },
-        )
+            onFontStale = { hasUnresolvedFontStale = true },
+        onFontResolved = { state ->
+            resolvedTypefaces = TypefaceDirtyTrackerLinkedList(state, resolvedTypefaces)
+        },
+    )
 
     override var minIntrinsicWidth = 0f
         private set
@@ -84,6 +93,16 @@ internal class SkikoParagraphIntrinsics(
         minIntrinsicWidth = ceil(para.minIntrinsicWidth)
         maxIntrinsicWidth = ceil(para.maxIntrinsicWidth)
     }
+}
+
+private class TypefaceDirtyTrackerLinkedList(
+    private val resolveResult: State<Any>,
+    private val next: TypefaceDirtyTrackerLinkedList? = null,
+) {
+    private val initial = resolveResult.value
+
+    val isStaleResolvedFont: Boolean
+        get() = resolveResult.value !== initial || (next?.isStaleResolvedFont == true)
 }
 
 internal fun resolveTextDirection(
