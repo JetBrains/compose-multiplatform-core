@@ -361,8 +361,6 @@ includeProject(":compose:material:material-lint")
 includeProject(":compose:material:material-navigation")
 includeProject(":compose:material:material-ripple")
 includeProject(":compose:runtime:runtime")
-includeProject(":compose:runtime:runtime-annotation")
-includeProject(":compose:runtime:runtime-annotation:runtime-annotation-samples", "compose/runtime/runtime-annotation/samples")
 includeProject(":compose:runtime:runtime-lint")
 // The fork builds Compose runtime from source, unlike upstream, which redirects it to AOSP's
 // published artifacts. These projects are what that build (its tests, and the AOSP build of

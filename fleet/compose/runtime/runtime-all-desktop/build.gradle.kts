@@ -25,8 +25,8 @@ plugins {
     id("JetbrainsUnsplitPackagePlugin")
 }
 
-// The upstream `androidx.*` version of savedstate, which this aggregate's dependencies name. Read
-// through the redirect registry because the fork no longer builds savedstate from source.
+// The upstream `androidx.*` versions of savedstate and runtime-annotation, which this aggregate
+// names. Read through the redirect registry because the fork no longer builds either from source.
 // Registered explicitly because this is a plain java/shadow project: it does not apply
 // JetBrainsAndroidXImplPlugin, which is what registers the extension for AndroidX modules.
 registerRedirectVersionsExtension()
@@ -34,7 +34,7 @@ val redirectVersions = extensions.getByType<org.jetbrains.androidx.build.Redirec
 
 unsplitPackage {
     splitPackageModule(project(":compose:runtime:runtime"))
-    splitPackageModule(project(":compose:runtime:runtime-annotation"))
+    splitPackageModule("androidx.compose.runtime:runtime-annotation:${redirectVersions.get("androidx.compose")}")
     splitPackageModule(project(":compose:runtime:runtime-retain"))
     splitPackageModule(project(":compose:runtime:runtime-saveable"))
 
