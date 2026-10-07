@@ -18,7 +18,7 @@ package androidx.compose.runtime.tracing.benchmark
 
 import androidx.benchmark.junit4.BenchmarkRule
 import androidx.benchmark.junit4.measureRepeated
-import androidx.compose.runtime.tracing.stack.Stack
+import androidx.compose.runtime.tracing.collections.Stack
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlin.test.Test
 import org.junit.Rule
@@ -61,7 +61,8 @@ class StackBenchmark {
     @Test
     fun stackBenchmark() {
         val instance = Any()
-        val stack = Stack<Any>(blkCount = 2)
+        @Suppress("DEPRECATION")
+        val stack = Stack<Any>(tid = Thread.currentThread().id, blkCount = 2)
         benchmarkRule.measureRepeated {
             repeat(256) { stack += instance }
             repeat(times = 256) { stack.removeLastOrNull() }

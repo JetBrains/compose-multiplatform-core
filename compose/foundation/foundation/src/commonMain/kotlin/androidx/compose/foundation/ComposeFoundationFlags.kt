@@ -166,6 +166,17 @@ public object ComposeFoundationFlags {
     public var isReverseLayoutNestedScrollConnectionInPagerFixEnabled: Boolean = true
 
     /**
+     * This flag controls whether [androidx.compose.foundation.pager.Pager]'s default nested scroll
+     * connection absorbs unconsumed main-axis deltas during non-gesture scrolls (such as
+     * accessibility actions) to prevent synthetic scrolls from accidentally dragging the parent
+     * Pager.
+     */
+    // TODO: Remove this flag once it has soaked (b/543033546)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isAbsorbNonGestureNestedScrollInPagerFixEnabled: Boolean = true
+
+    /**
      * This flag controls whether [androidx.compose.foundation.text.BasicTextField]'s formatted text
      * features are enabled.
      */
@@ -214,7 +225,7 @@ public object ComposeFoundationFlags {
     // TODO: Remove this flag once it has soaked (b/501080937)
     @field:Suppress("MutableBareField")
     @JvmField
-    public var isDraggableVelocityTrackerFixEnabled: Boolean = false
+    public var isDraggableVelocityTrackerFixEnabled: Boolean = true
 
     /**
      * This flag controls whether it's possible to start selecting (via the mouse) text in a
@@ -254,7 +265,7 @@ public object ComposeFoundationFlags {
     // TODO: b/535884139
     @field:Suppress("MutableBareField")
     @JvmField
-    public var isCacheWindowLookaheadCheckEnabled: Boolean = true
+    public var isCacheWindowLookaheadCheckEnabled: Boolean = false
 
     /**
      * This flag controls whether [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow]
@@ -340,6 +351,17 @@ public object ComposeFoundationFlags {
     @field:Suppress("MutableBareField")
     @JvmField
     public var isUsingDynamicDefaultCacheWindowInStaggeredGrids: Boolean = true
+
+    /**
+     * Controls whether [androidx.compose.foundation.text.BasicTextField] starts the input session
+     * only when the window is focused rather than immediately upon element focus. When enabled, if
+     * the element gains focus while the window is not yet focused, starting the input session is
+     * deferred until the window gains focus.
+     */
+    // TODO: Remove this flag once it has soaked (b/560119132)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isTextFieldWaitWindowFocusForInputSessionEnabled: Boolean = true
 }
 
 /** The initial value of [ComposeFoundationFlags.isNewContextMenuEnabled] */

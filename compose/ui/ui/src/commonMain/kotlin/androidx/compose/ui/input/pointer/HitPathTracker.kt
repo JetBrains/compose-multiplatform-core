@@ -32,6 +32,7 @@ import androidx.compose.ui.node.dispatchForKind
 import androidx.compose.ui.node.layoutCoordinates
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastMap
 
 /**
  * Organizes pointers and the [PointerInputFilter]s that they hit into a hierarchy such that
@@ -397,7 +398,7 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
     private val relevantChanges: LongSparseArray<PointerInputChange> = LongSparseArray(2)
     private var coordinates: LayoutCoordinates? = null
     private var pointerEvent: PointerEvent? = null
-    private var syntheticEnterEvent: PointerEvent? = null
+    private var syntheticHoverEvent: PointerEvent? = null
 
     override fun removeInvalidPointerIdsAndChanges(
         pointerIdValue: Long,
@@ -429,24 +430,24 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
             val event = pointerEvent!!
             val size = coordinates!!.size
 
-            // If a synthetic enter event was generated during a pan gesture, dispatch it first
-            // across Initial, Main, and Final passes so hover listeners can fully activate before
-            // the pan gesture begins.
-            syntheticEnterEvent?.let { enterEvent ->
+            // If a synthetic hover (enter/exit) event was generated during a pan gesture, dispatch
+            // it first across Initial, Main, and Final passes so hover listeners can update hover
+            // state before the pan gesture event is processed.
+            syntheticHoverEvent?.let { hoverEvent ->
                 modifierNode.dispatchForKind(Nodes.PointerInput) {
-                    it.onPointerEvent(enterEvent, PointerEventPass.Initial, size)
+                    it.onPointerEvent(hoverEvent, PointerEventPass.Initial, size)
                 }
                 if (modifierNode.isAttached) {
                     modifierNode.dispatchForKind(Nodes.PointerInput) {
-                        it.onPointerEvent(enterEvent, PointerEventPass.Main, size)
+                        it.onPointerEvent(hoverEvent, PointerEventPass.Main, size)
                     }
                 }
                 if (modifierNode.isAttached) {
                     modifierNode.dispatchForKind(Nodes.PointerInput) {
-                        it.onPointerEvent(enterEvent, PointerEventPass.Final, size)
+                        it.onPointerEvent(hoverEvent, PointerEventPass.Final, size)
                     }
                 }
-                syntheticEnterEvent = null
+                syntheticHoverEvent = null
             }
 
             // Dispatch on the tunneling pass.
@@ -625,10 +626,42 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                 isIn = !activeHoverChange.isOutOfBounds(size)
             }
             val isPan =
-                event.type == PointerEventType.PanStart ||
+                internalPointerEvent.activeGesture == PointerClassification.Pan ||
+                    event.type == PointerEventType.PanStart ||
                     event.type == PointerEventType.PanMove ||
                     event.type == PointerEventType.PanEnd
-            if (event.type == PointerEventType.Move ||
+            if (ComposeUiFlags.isTrackpadPanHoverFixEnabled && isPan && isIn != hasEntered) {
+                // Create a synthetic Enter or Exit event to dispatch to hover listeners
+                // without altering the pan gesture event. Construct new PointerInputChange
+                // instances instead of calling copy() so they do not share consumedDelegate with
+                // the original pan changes.
+                syntheticHoverEvent =
+                    PointerEvent(
+                            changesList.fastMap {
+                                PointerInputChange(
+                                    id = it.id,
+                                    uptimeMillis = it.uptimeMillis,
+                                    position = it.position,
+                                    pressed = it.pressed,
+                                    pressure = it.pressure,
+                                    previousUptimeMillis = it.previousUptimeMillis,
+                                    previousPosition = it.previousPosition,
+                                    previousPressed = it.previousPressed,
+                                    isInitiallyConsumed = it.isConsumed,
+                                    type = it.type,
+                                    historical = it.historical,
+                                    scrollDelta = it.scrollDelta,
+                                    scaleFactor = it.scaleFactor,
+                                    panOffset = it.panOffset,
+                                    originalEventPosition = it.originalEventPosition,
+                                )
+                            },
+                            internalPointerEvent,
+                        )
+                        .also {
+                            it.type = if (isIn) PointerEventType.Enter else PointerEventType.Exit
+                        }
+            } else if (event.type == PointerEventType.Move ||
                 event.type == PointerEventType.Enter ||
                 event.type == PointerEventType.Exit
             ) {
@@ -637,21 +670,11 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                     hasEntered && !isIn -> PointerEventType.Exit
                     else -> PointerEventType.Move
                 }
-            } else if (ComposeUiFlags.isTrackpadPanHoverFixEnabled && isPan && isIn != hasEntered) {
-                if (isIn) {
-                    // Create a synthetic Enter event to dispatch to hover listeners
-                    // without altering the pan gesture event.
-                    syntheticEnterEvent =
-                        PointerEvent(changesList, internalPointerEvent).also {
-                            it.type = PointerEventType.Enter
-                        }
-                } else {
-                    event.type = PointerEventType.Exit
-                }
             }
 
-            if (event.type == PointerEventType.Enter || syntheticEnterEvent != null) hasEntered = true
-            if (event.type == PointerEventType.Exit) hasEntered = false
+            val hoverType = syntheticHoverEvent?.type ?: event.type
+            if (hoverType == PointerEventType.Enter) hasEntered = true
+            if (hoverType == PointerEventType.Exit) hasEntered = false
         }
 
         val changed =
@@ -660,7 +683,7 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                 // Older way optimizes not triggering move events when location hasn't changed
                 (childChanged ||
                     event.type != PointerEventType.Move ||
-                    syntheticEnterEvent != null ||
+                    syntheticHoverEvent != null ||
                     hasPositionChanged(pointerEvent, event))
         pointerEvent = event
         return changed
@@ -689,7 +712,7 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
     private fun clearCache() {
         relevantChanges.clear()
         coordinates = null
-        syntheticEnterEvent = null
+        syntheticHoverEvent = null
     }
 
     /**
