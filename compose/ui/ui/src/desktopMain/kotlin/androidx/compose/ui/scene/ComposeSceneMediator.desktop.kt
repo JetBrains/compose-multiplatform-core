@@ -212,7 +212,7 @@ internal class ComposeSceneMediator(
     val outOfFrameExecutor =
         GenericPlatformOutOfFrameExecutor(
             scheduleTask = { EventQueue.invokeLater(it) },
-            isExecutingOnUiThreadThread = { EventQueue.isDispatchThread() },
+            isExecutingOnUiThread = { EventQueue.isDispatchThread() },
         )
 
     private val canvasHolder: SkiaCanvasHolder = SkiaCanvasHolder()

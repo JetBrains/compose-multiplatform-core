@@ -56,7 +56,7 @@ internal class GenericPlatformOutOfFrameExecutor(
     /** Schedules a task on the UI thread. */
     private val scheduleTask: (block: () -> Unit) -> Unit,
     /** Returns whether the current thread is the UI thread. */
-    private val isExecutingOnUiThreadThread: () -> Boolean
+    private val isExecutingOnUiThread: () -> Boolean
 ) : PlatformOutOfFrameExecutor {
 
     /**
@@ -123,6 +123,6 @@ internal class GenericPlatformOutOfFrameExecutor(
     }
 
     private fun requireUiThread() {
-        require(isExecutingOnUiThreadThread()) { "Must be called on the UI thread" }
+        require(isExecutingOnUiThread()) { "Must be called on the UI thread" }
     }
 }
