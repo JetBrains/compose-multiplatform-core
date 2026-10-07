@@ -92,12 +92,13 @@ class ComposeSceneMediatorUnitTest {
     private fun makeMediator(
         coroutineContext: CoroutineContext,
         frameChoreographer: FrameChoreographer = FrameChoreographer.choreographerForScene(UIWindowScene()),
+        windowContext: WindowContext = WindowContext(),
     ): ComposeSceneMediator = ComposeSceneMediator(
         frameChoreographer = frameChoreographer,
         onFocusBehavior = OnFocusBehavior.DoNothing,
         isClearFocusOnMouseDownEnabled = false,
         focusedViewsList = null,
-        windowContext = WindowContext(),
+        windowContext = windowContext,
         architectureComponentsOwner = DefaultArchitectureComponentsOwner(),
         coroutineContext = coroutineContext,
         navigationEventInput = IosBackNavigationEventInput(
@@ -107,29 +108,18 @@ class ComposeSceneMediatorUnitTest {
             getTopLeftOffsetInWindow = { IntOffset.Zero },
             endEdgePanGestureBehavior = EndEdgePanGestureBehavior.Disabled,
         ),
-        interfaceOrientationState = mutableStateOf(InterfaceOrientation.Portrait),
+        mediaScope = MediaScope(windowContext.windowInfo),
         composeSceneFactory = { platformContext ->
             registerSkikoComposeImplementation()
             PlatformLayersComposeScene(
                 frameRecomposer = frameChoreographer.frameRecomposer,
                 density = Density(1f),
-                initialLayoutDirection = LayoutDirection.Ltr,
-                getTopLeftOffsetInWindow = { IntOffset.Zero },
-                endEdgePanGestureBehavior = EndEdgePanGestureBehavior.Disabled,
-            ),
-            mediaScope = mediaScope,
-            composeSceneFactory = { platformContext ->
-                registerSkikoComposeImplementation()
-                PlatformLayersComposeScene(
-                    frameRecomposer = frameChoreographer.frameRecomposer,
-                    density = Density(1f),
-                    composeSceneContext = object : ComposeSceneContext {
-                        override val platformContext = platformContext
-                    },
-                    invalidateLayout = {},
-                    invalidateDraw = {},
-                )
-            },
-        )
-    }
+                composeSceneContext = object : ComposeSceneContext {
+                    override val platformContext = platformContext
+                },
+                invalidateLayout = {},
+                invalidateDraw = {},
+            )
+        },
+    )
 }
