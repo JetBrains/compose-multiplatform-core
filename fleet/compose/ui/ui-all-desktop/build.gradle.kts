@@ -43,7 +43,8 @@ unsplitPackage {
     splitPackageModule(project(":compose:ui:ui-util"))
 
     dependency(libs.androidx.annotation)
-    dependency("androidx.collection:collection:1.5.0")
+    // The version ui and foundation declare; runtime-all-desktop names its own, older one.
+    dependency("androidx.collection:collection:1.6.0")
     dependency(libs.kotlinStdlib)
     dependency(libs.kotlinCoroutinesCore)
     dependency(libs.kotlinSerializationJson)
