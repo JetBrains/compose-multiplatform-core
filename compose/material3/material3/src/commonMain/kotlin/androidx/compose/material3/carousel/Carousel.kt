@@ -63,7 +63,7 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /**
- * [Material Design Carousel](https://m3.material.io/components/carousel/overview)
+ * [Material Design multi-browse carousel](https://m3.material.io/components/carousel/specs)
  *
  * A horizontal carousel meant to display many items at once for quick browsing of smaller content
  * like album art or photo thumbnails.
@@ -109,13 +109,13 @@ public fun HorizontalMultiBrowseCarousel(
     state: CarouselState,
     preferredItemWidth: Dp,
     modifier: Modifier = Modifier,
-    itemSpacing: Dp = 0.dp,
+    itemSpacing: Dp = CarouselDefaults.ItemSpacing,
     flingBehavior: TargetedFlingBehavior =
         CarouselDefaults.singleAdvanceFlingBehavior(state = state),
     userScrollEnabled: Boolean = true,
     minSmallItemWidth: Dp = CarouselDefaults.MinSmallItemSize,
     maxSmallItemWidth: Dp = CarouselDefaults.MaxSmallItemSize,
-    contentPadding: PaddingValues = PaddingValues(0.dp),
+    contentPadding: PaddingValues = CarouselDefaults.ContentPadding,
     content: @Composable CarouselItemScope.(itemIndex: Int) -> Unit,
 ) {
     val density = LocalDensity.current
@@ -148,7 +148,7 @@ public fun HorizontalMultiBrowseCarousel(
 }
 
 /**
- * [Material Design Carousel](https://m3.material.io/components/carousel/overview)
+ * [Material Design uncontained carousel](https://m3.material.io/components/carousel/specs)
  *
  * A horizontal carousel that displays its items with the given size except for one item at the end
  * that is cut off.
@@ -180,10 +180,10 @@ public fun HorizontalUncontainedCarousel(
     state: CarouselState,
     itemWidth: Dp,
     modifier: Modifier = Modifier,
-    itemSpacing: Dp = 0.dp,
+    itemSpacing: Dp = CarouselDefaults.ItemSpacing,
     flingBehavior: TargetedFlingBehavior = CarouselDefaults.noSnapFlingBehavior(),
     userScrollEnabled: Boolean = true,
-    contentPadding: PaddingValues = PaddingValues(0.dp),
+    contentPadding: PaddingValues = CarouselDefaults.ContentPadding,
     content: @Composable CarouselItemScope.(itemIndex: Int) -> Unit,
 ) {
     val density = LocalDensity.current
@@ -213,18 +213,39 @@ public fun HorizontalUncontainedCarousel(
 }
 
 /**
- * [Material Design Carousel](https://m3.material.io/components/carousel/overview)
+ * [Material Design center-aligned hero carousel](https://m3.material.io/components/carousel/specs)
  *
  * A horizontal carousel that centers at least one large item between two small items.
+ *
+ * Note that this carousel lays out items using the large item size and clips (or masks) items
+ * depending on their scroll offset to create items which smoothly expand and collapse between the
+ * large and small sizes.
+ *
+ * The selected item is centered whenever items sit on both sides of it. At the bounds of the list
+ * the arrangement shifts, so the first item aligns to the start of the viewport and the last item
+ * aligns to its end:
+ * ```
+ * // Five items, one large item between two small items:
+ * item 1 selected:  [        1        ][2][3]
+ * item 3 selected:  [2][        3        ][4]
+ * item 5 selected:  [3][4][        5        ]
+ * ```
+ *
+ * Lists holding fewer items than the arrangement needs (three at a minimum) stay start-aligned.
+ *
+ * Example of a center-aligned hero carousel:
  *
  * @sample androidx.compose.material3.samples.HorizontalCenteredHeroCarouselSample
  * @param state The state object to be used to control the carousel's state
  * @param modifier A modifier instance to be applied to this carousel container
- * @param maxItemWidth The max width a large item should be in dp. The default value of
- *   [Dp.Unspecified] allows one large item to grow to fill the entire viewport minus space for two
- *   surrounding small items. Values other than unspecified will add additional large items as space
- *   allows. To allow items to grow up to a certain aspect ratio, use the carousel's cross axis
- *   size * a multiplier (e.g. `220.dp * 2` for a max aspect ratio of 2:1).
+ * @param preferredItemWidth The width large items aim for in dp. Carousel picks the arrangement
+ *   whose large item width lands closest to this value, resizing small items between
+ *   [minSmallItemWidth] and [maxSmallItemWidth] to fill the rest of the viewport, so the final
+ *   width can differ. The default [Dp.Unspecified] targets the whole viewport, fitting one large
+ *   item beside two small items; smaller values fit more large items. Large items always end up
+ *   wider than the small items beside them, which are never narrower than [minSmallItemWidth], so
+ *   widths at or below that bound cannot be honored. To target an aspect ratio, use the carousel's
+ *   cross axis size * a multiplier (e.g. `220.dp * 2` for a 2:1 ratio).
  * @param itemSpacing The amount of space used to separate items in the carousel
  * @param flingBehavior The [TargetedFlingBehavior] to be used for post scroll gestures
  * @param userScrollEnabled whether the scrolling via the user gestures or accessibility actions is
@@ -240,14 +261,14 @@ public fun HorizontalUncontainedCarousel(
 public fun HorizontalCenteredHeroCarousel(
     state: CarouselState,
     modifier: Modifier = Modifier,
-    maxItemWidth: Dp = Dp.Unspecified,
-    itemSpacing: Dp = 0.dp,
+    preferredItemWidth: Dp = Dp.Unspecified,
+    itemSpacing: Dp = CarouselDefaults.ItemSpacing,
     flingBehavior: TargetedFlingBehavior =
         CarouselDefaults.singleAdvanceFlingBehavior(state = state),
     userScrollEnabled: Boolean = true,
     minSmallItemWidth: Dp = CarouselDefaults.MinSmallItemSize,
     maxSmallItemWidth: Dp = CarouselDefaults.MaxSmallItemSize,
-    contentPadding: PaddingValues = PaddingValues(0.dp),
+    contentPadding: PaddingValues = CarouselDefaults.ContentPadding,
     content: @Composable CarouselItemScope.(itemIndex: Int) -> Unit,
 ) {
     val density = LocalDensity.current
@@ -259,7 +280,8 @@ public fun HorizontalCenteredHeroCarousel(
                 heroKeylineList(
                     density = this,
                     carouselMainAxisSize = availableSpace,
-                    maxItemSize = if (maxItemWidth.isSpecified) maxItemWidth.toPx() else null,
+                    preferredItemSize =
+                        if (preferredItemWidth.isSpecified) preferredItemWidth.toPx() else null,
                     itemSpacing = itemSpacingPx,
                     itemCount = state.pagerState.pageCountState.value.invoke(),
                     isCentered = true,
@@ -313,7 +335,7 @@ internal fun Carousel(
     contentPadding: PaddingValues,
     maxNonFocalVisibleItemCount: Int,
     modifier: Modifier = Modifier,
-    itemSpacing: Dp = 0.dp,
+    itemSpacing: Dp = CarouselDefaults.ItemSpacing,
     flingBehavior: TargetedFlingBehavior =
         CarouselDefaults.singleAdvanceFlingBehavior(state = state),
     userScrollEnabled: Boolean = true,
@@ -326,9 +348,7 @@ internal fun Carousel(
             CarouselPageSize(keylineList, beforeContentPadding, afterContentPadding)
         }
 
-    val snapPosition = remember(pageSize) { KeylineSnapPosition(pageSize) }
-
-    val bringIntoViewSpec = remember(state, pageSize) { CarouselBringIntoViewSpec(state, pageSize) }
+    val snapPosition = KeylineSnapPosition(pageSize)
 
     if (orientation == Orientation.Horizontal) {
         HorizontalPager(
@@ -345,7 +365,6 @@ internal fun Carousel(
             snapPosition = snapPosition,
             flingBehavior = flingBehavior,
             userScrollEnabled = userScrollEnabled,
-            bringIntoViewSpec = bringIntoViewSpec,
             modifier = modifier.semantics { role = Role.Carousel },
         ) { page ->
             val carouselItemInfo = remember { CarouselItemDrawInfoImpl() }
@@ -391,7 +410,6 @@ internal fun Carousel(
             snapPosition = snapPosition,
             flingBehavior = flingBehavior,
             userScrollEnabled = userScrollEnabled,
-            bringIntoViewSpec = bringIntoViewSpec,
             modifier = modifier.semantics { role = Role.Carousel },
         ) { page ->
             val carouselItemInfo = remember { CarouselItemDrawInfoImpl() }
@@ -796,6 +814,12 @@ public object CarouselDefaults {
 
     /** The maximum size that a carousel strategy can choose its small items to be. * */
     public val MaxSmallItemSize: Dp = 56.dp
+
+    /** The default space separating items in a carousel. */
+    public val ItemSpacing: Dp = 0.dp
+
+    /** The default padding around the content of a carousel. */
+    public val ContentPadding: PaddingValues = PaddingValues(0.dp)
 
     internal val AnchorSize = 10.dp
     internal const val MediumLargeItemDiffThreshold = 0.85f

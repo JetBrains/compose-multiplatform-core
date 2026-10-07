@@ -46,6 +46,7 @@ internal object MaterialA2uiBasicCatalogV1List : A2uiBasicCatalogV1.List {
         children: List<A2uiComponentReference>,
         direction: A2uiBasicCatalogV1.List.Direction,
         align: A2uiBasicCatalogV1.List.Align,
+        accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
         modifier: Modifier,
     ) {
         val itemModifier =
@@ -57,10 +58,12 @@ internal object MaterialA2uiBasicCatalogV1List : A2uiBasicCatalogV1.List {
                 }
             }
 
+        val listModifier = modifier.a2uiAccessibility(accessibility)
+
         when (direction) {
             A2uiBasicCatalogV1.List.Direction.Vertical -> {
                 LazyColumn(
-                    modifier = modifier,
+                    modifier = listModifier,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     horizontalAlignment = align.horizontalAlignment,
                 ) {
@@ -77,7 +80,7 @@ internal object MaterialA2uiBasicCatalogV1List : A2uiBasicCatalogV1.List {
 
             A2uiBasicCatalogV1.List.Direction.Horizontal -> {
                 LazyRow(
-                    modifier = modifier,
+                    modifier = listModifier,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = align.verticalAlignment,
                 ) {

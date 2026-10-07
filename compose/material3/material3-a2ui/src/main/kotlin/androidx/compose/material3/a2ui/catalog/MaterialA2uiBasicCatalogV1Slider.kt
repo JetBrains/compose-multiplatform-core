@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SliderState
@@ -37,7 +38,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.error
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastFirstOrNull
 import kotlin.math.roundToInt
 
 /** A Jetpack Compose Material 3 implementation of the A2UI Basic Catalog `"Slider"` component. */
@@ -51,8 +56,13 @@ internal object MaterialA2uiBasicCatalogV1Slider : A2uiBasicCatalogV1.Slider {
         value: Float,
         onValueChange: (Float) -> Unit,
         enabled: Boolean,
+        accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
+        checks: List<A2uiBasicCatalogV1.CheckRule>,
         modifier: Modifier,
     ) {
+        val failedCheck = checks.fastFirstOrNull { !it.condition }
+        val errorMessage = failedCheck?.message
+
         // TODO(b/549060875): Figure out how this should be reflected in the UI: switch back to the
         //  loading state or show some kind of error.
         if (min > max) {
@@ -93,6 +103,13 @@ internal object MaterialA2uiBasicCatalogV1Slider : A2uiBasicCatalogV1.Slider {
 
                 Slider(
                     state = sliderState,
+                    modifier =
+                        Modifier.sliderAccessibility(accessibility = accessibility, label = label)
+                            .semantics {
+                                if (!errorMessage.isNullOrBlank()) {
+                                    error(errorMessage)
+                                }
+                            },
                     onValueChange = onValueChange,
                     enabled = enabled,
                     track = { state ->
@@ -103,6 +120,14 @@ internal object MaterialA2uiBasicCatalogV1Slider : A2uiBasicCatalogV1.Slider {
                         )
                     },
                 )
+
+                if (!errorMessage.isNullOrBlank()) {
+                    Text(
+                        text = errorMessage,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             }
         }
     }
@@ -113,4 +138,24 @@ private val SliderHeaderRowModifier = Modifier.fillMaxWidth()
 private val SliderBottomPaddingModifier = Modifier.padding(bottom = 8.dp)
 private val EmptySliderTrack: DrawScope.(Offset, Color) -> Unit = { _, _ ->
     /* no-op to hide step dots */
+}
+
+/**
+ * Applies slider-specific accessibility semantics using [accessibility] and visual [label].
+ *
+ * Sets [contentDescription] on the slider using the accessibility label if non-blank, falling back
+ * to the visual [label], and combines with [accessibility] description if present.
+ */
+private fun Modifier.sliderAccessibility(
+    accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
+    label: String?,
+): Modifier {
+    val effectiveLabel =
+        accessibility?.label?.takeUnless { it.isBlank() } ?: label?.takeUnless { it.isBlank() }
+    val contentDescription =
+        buildContentDescription(
+            label = effectiveLabel,
+            description = accessibility?.description,
+        ) ?: return this
+    return semantics { this.contentDescription = contentDescription }
 }
