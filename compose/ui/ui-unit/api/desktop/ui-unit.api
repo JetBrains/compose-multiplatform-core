@@ -54,6 +54,7 @@ public abstract interface class androidx/compose/ui/unit/Density : androidx/comp
 	public fun roundToPx-0680j_4 (F)I
 	public fun toDp-u2uoSUM (F)F
 	public fun toDp-u2uoSUM (I)F
+	public fun toDpOffset-RL8oJKU (J)J
 	public fun toDpSize-k-rfVVM (J)J
 	public fun toPx--R2X_6o (J)F
 	public fun toPx-0680j_4 (F)F
@@ -69,6 +70,7 @@ public final class androidx/compose/ui/unit/Density$DefaultImpls {
 	public static fun toDp-GaN1DYA (Landroidx/compose/ui/unit/Density;J)F
 	public static fun toDp-u2uoSUM (Landroidx/compose/ui/unit/Density;F)F
 	public static fun toDp-u2uoSUM (Landroidx/compose/ui/unit/Density;I)F
+	public static fun toDpOffset-RL8oJKU (Landroidx/compose/ui/unit/Density;J)J
 	public static fun toDpSize-k-rfVVM (Landroidx/compose/ui/unit/Density;J)J
 	public static fun toPx--R2X_6o (Landroidx/compose/ui/unit/Density;J)F
 	public static fun toPx-0680j_4 (Landroidx/compose/ui/unit/Density;F)F

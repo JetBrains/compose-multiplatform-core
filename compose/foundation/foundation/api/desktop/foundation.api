@@ -398,8 +398,8 @@ public final class androidx/compose/foundation/content/TransferableContent$Sourc
 public final class androidx/compose/foundation/contextmenu/ComposableSingletons$ContextMenuUiKt {
 	public static final field INSTANCE Landroidx/compose/foundation/contextmenu/ComposableSingletons$ContextMenuUiKt;
 	public fun <init> ()V
-	public final fun getLambda$-1455401925$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$-1571120048$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function8;
+	public final fun getLambda$-1455401925$org_jetbrains_fleet_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-1571120048$org_jetbrains_fleet_compose_foundation_foundation ()Lkotlin/jvm/functions/Function8;
 }
 
 public final class androidx/compose/foundation/draganddrop/DragAndDropSourceKt {
@@ -2309,7 +2309,7 @@ public final class androidx/compose/foundation/style/Shadows$Simple : androidx/c
 	public static final field $stable I
 	public fun <init> (Landroidx/compose/ui/graphics/shadow/Shadow;)V
 	public fun equals (Ljava/lang/Object;)Z
-	public synthetic fun getLerpTarget$org_jetbrains_compose_foundation_foundation ()Ljava/lang/Object;
+	public synthetic fun getLerpTarget$org_jetbrains_fleet_compose_foundation_foundation ()Ljava/lang/Object;
 	public final fun getShadow ()Landroidx/compose/ui/graphics/shadow/Shadow;
 	public fun hashCode ()I
 }
@@ -2593,23 +2593,23 @@ public final class androidx/compose/foundation/text/ClickableTextKt {
 public final class androidx/compose/foundation/text/ComposableSingletons$BasicTextFieldKt {
 	public static final field INSTANCE Landroidx/compose/foundation/text/ComposableSingletons$BasicTextFieldKt;
 	public fun <init> ()V
-	public final fun getLambda$-665310900$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$444370233$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$486633673$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$759698998$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-665310900$org_jetbrains_fleet_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$444370233$org_jetbrains_fleet_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$486633673$org_jetbrains_fleet_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$759698998$org_jetbrains_fleet_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/foundation/text/ComposableSingletons$BasicTextField_desktopKt {
 	public static final field INSTANCE Landroidx/compose/foundation/text/ComposableSingletons$BasicTextField_desktopKt;
 	public fun <init> ()V
-	public final fun getLambda$-580413359$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$1808468638$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-580413359$org_jetbrains_fleet_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$1808468638$org_jetbrains_fleet_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/foundation/text/ComposableSingletons$CoreTextFieldKt {
 	public static final field INSTANCE Landroidx/compose/foundation/text/ComposableSingletons$CoreTextFieldKt;
 	public fun <init> ()V
-	public final fun getLambda$559628295$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$559628295$org_jetbrains_fleet_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/foundation/text/Handle : java/lang/Enum {
@@ -2778,9 +2778,9 @@ public abstract interface class androidx/compose/foundation/text/contextmenu/dat
 public final class androidx/compose/foundation/text/contextmenu/internal/ComposableSingletons$DefaultTextContextMenuDropdownProvider_skikoKt {
 	public static final field INSTANCE Landroidx/compose/foundation/text/contextmenu/internal/ComposableSingletons$DefaultTextContextMenuDropdownProvider_skikoKt;
 	public fun <init> ()V
-	public final fun getLambda$-651812147$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function5;
-	public final fun getLambda$1837043723$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function5;
-	public final fun getLambda$1965104340$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function5;
+	public final fun getLambda$-651812147$org_jetbrains_fleet_compose_foundation_foundation ()Lkotlin/jvm/functions/Function5;
+	public final fun getLambda$1837043723$org_jetbrains_fleet_compose_foundation_foundation ()Lkotlin/jvm/functions/Function5;
+	public final fun getLambda$1965104340$org_jetbrains_fleet_compose_foundation_foundation ()Lkotlin/jvm/functions/Function5;
 }
 
 public final class androidx/compose/foundation/text/contextmenu/modifier/TextContextMenuModifierKt {
@@ -3028,7 +3028,7 @@ public final class androidx/compose/foundation/text/selection/Direction : java/l
 }
 
 public abstract interface class androidx/compose/foundation/text/selection/Selectable {
-	public abstract fun appendSelectableInfoToBuilder (Landroidx/compose/foundation/text/selection/SelectionLayoutBuilder;)V
+	public abstract fun appendSelectableInfoToBuilder (Landroidx/compose/foundation/text/selection/SelectionLayoutBuilder;Z)V
 	public abstract fun getBoundingBox (I)Landroidx/compose/ui/geometry/Rect;
 	public abstract fun getBringIntoViewRequester ()Landroidx/compose/foundation/relocation/BringIntoViewRequester;
 	public abstract fun getCenterYForOffset (I)F
@@ -3150,6 +3150,7 @@ public final class androidx/compose/foundation/text/selection/SelectionLayoutBui
 	public final fun getPreviousLayout ()Landroidx/compose/foundation/text/selection/SelectionLayout;
 	public final fun getPreviousSelection ()Landroidx/compose/foundation/text/selection/Selection;
 	public final fun getSelectableIdOrderingComparator ()Ljava/util/Comparator;
+	public final fun isEmpty ()Z
 	public final fun isStartHandle ()Z
 }
 
@@ -3293,7 +3294,7 @@ public final class androidx/compose/foundation/v2/Scrollbar_desktopKt {
 public final class androidx/compose/foundation/window/ComposableSingletons$WindowDraggableArea_desktopKt {
 	public static final field INSTANCE Landroidx/compose/foundation/window/ComposableSingletons$WindowDraggableArea_desktopKt;
 	public fun <init> ()V
-	public final fun getLambda$358499693$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$358499693$org_jetbrains_fleet_compose_foundation_foundation ()Lkotlin/jvm/functions/Function2;
 }
 
 public final class androidx/compose/foundation/window/WindowDraggableArea_desktopKt {
@@ -3438,6 +3439,18 @@ public final class noria/foundation/layout/AnchorPressPolicy : java/lang/Enum {
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lnoria/foundation/layout/AnchorPressPolicy;
 	public static fun values ()[Lnoria/foundation/layout/AnchorPressPolicy;
+}
+
+public final class noria/foundation/layout/ComposableSingletons$OutsidePressKt {
+	public static final field INSTANCE Lnoria/foundation/layout/ComposableSingletons$OutsidePressKt;
+	public fun <init> ()V
+	public final fun getLambda$1857981350$org_jetbrains_fleet_compose_foundation_foundation ()Lkotlin/jvm/functions/Function2;
+}
+
+public final class noria/foundation/layout/ComposableSingletons$OverlayHostKt {
+	public static final field INSTANCE Lnoria/foundation/layout/ComposableSingletons$OverlayHostKt;
+	public fun <init> ()V
+	public final fun getLambda$-1793087330$org_jetbrains_fleet_compose_foundation_foundation ()Lkotlin/jvm/functions/Function2;
 }
 
 public final class noria/foundation/layout/LocalRepaintHighlightKt {
