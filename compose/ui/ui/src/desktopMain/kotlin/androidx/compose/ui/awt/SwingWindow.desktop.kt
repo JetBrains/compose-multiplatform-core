@@ -181,6 +181,54 @@ fun SwingWindow(
     onKeyEvent: (KeyEvent) -> Boolean = { false },
     init: (ComposeWindow) -> Unit,
     content: @Composable FrameWindowScope.() -> Unit
+): Unit = SwingWindow(
+    onCloseRequest = onCloseRequest,
+    visible = visible,
+    title = title,
+    icon = icon,
+    backgroundColor = backgroundColor,
+    decoration = decoration,
+    transparent = transparent,
+    resizable = resizable,
+    enabled = enabled,
+    focusable = focusable,
+    alwaysOnTop = alwaysOnTop,
+    onPreviewKeyEvent = onPreviewKeyEvent,
+    onKeyEvent = onKeyEvent,
+    init = init,
+    applyInitialGeometry = {},
+    content = content,
+)
+
+/**
+ * [SwingWindow] that also sets the window's initial size and position, once, through
+ * [applyInitialGeometry].
+ *
+ * Sizing a window packs it, which makes it displayable, so it cannot happen in [init]. It runs in
+ * the first update instead, where the upstream window applies its `WindowState`: after the content
+ * has been set, so a window sized to its content measures that content, and after the properties
+ * that must be set before the window is displayable.
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+@ComposableOpenTarget(-1)
+internal fun SwingWindow(
+    onCloseRequest: () -> Unit,
+    visible: Boolean,
+    title: String,
+    icon: Painter?,
+    backgroundColor: Color,
+    decoration: WindowDecoration,
+    transparent: Boolean,
+    resizable: Boolean,
+    enabled: Boolean,
+    focusable: Boolean,
+    alwaysOnTop: Boolean,
+    onPreviewKeyEvent: (KeyEvent) -> Boolean,
+    onKeyEvent: (KeyEvent) -> Boolean,
+    init: (ComposeWindow) -> Unit,
+    applyInitialGeometry: (ComposeWindow) -> Unit,
+    content: @Composable FrameWindowScope.() -> Unit
 ) {
     val currentTitle by rememberUpdatedState(title)
     val currentIcon by rememberUpdatedState(icon)
@@ -194,6 +242,7 @@ fun SwingWindow(
     val currentOnCloseRequest by rememberUpdatedState(onCloseRequest)
 
     val updater = remember(::ComponentUpdater)
+    val initialGeometry = remember { object { var isApplied = false } }
 
     val listeners = remember {
         object {
@@ -250,6 +299,10 @@ fun SwingWindow(
                 set(currentFocusable, window::setFocusableWindowState)
                 set(currentAlwaysOnTop, window::setAlwaysOnTop)
                 set(currentDecoration.resizerThickness, window::undecoratedResizerThickness::set)
+            }
+            if (!initialGeometry.isApplied) {
+                applyInitialGeometry(window)
+                initialGeometry.isApplied = true
             }
         },
         content = content

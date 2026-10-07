@@ -146,7 +146,8 @@ fun Window(
         alwaysOnTop = alwaysOnTop,
         onPreviewKeyEvent = onPreviewKeyEvent,
         onKeyEvent = onKeyEvent,
-        init = {
+        init = {},
+        applyInitialGeometry = {
             it.setSizeSafely(initialSize, WindowPlacement.Floating)
             it.setPositionSafely(initialPosition, WindowPlacement.Floating) {
                 WindowLocationTracker.getCascadeLocationFor(it)
