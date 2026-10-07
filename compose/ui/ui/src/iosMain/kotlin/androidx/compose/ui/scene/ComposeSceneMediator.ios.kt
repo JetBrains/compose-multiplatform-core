@@ -657,11 +657,11 @@ internal class ComposeSceneMediator(
             val pointerType = when (touch.type) {
                 UITouchTypeDirect -> PointerType.Touch
                 UITouchTypeIndirect, UITouchTypeIndirectPointer -> PointerType.Mouse
-                UITouchTypePencil -> PointerType.Stylus
+                UITouchTypePencil -> {
+                    anyTouchIsStylus = true
+                    PointerType.Stylus
+                }
                 else -> PointerType.Touch
-            }
-            if (pointerType == PointerType.Stylus) {
-                anyIsStylus = true
             }
             val id = touch.hashCode().toLong().takeIf {
                 pointerType != PointerType.Mouse
@@ -680,7 +680,7 @@ internal class ComposeSceneMediator(
             )
         }
 
-        if (anyIsStylus) {
+        if (anyTouchIsStylus) {
             mediaScope.updatePointerPrecision(UiMediaScope.PointerPrecision.Fine)
         } else {
             mediaScope.updatePointerPrecision(UiMediaScope.PointerPrecision.Coarse)
