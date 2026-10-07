@@ -25,9 +25,6 @@ plugins {
 
 android {
     compileSdk { version = release(37) }
-    defaultConfig {
-        minSdk { version = release(24) }
-    }
     namespace = "androidx.compose.runtime.benchmark"
 
     buildTypes.release {
@@ -52,6 +49,8 @@ dependencies {
     androidTestImplementation(project(":compose:ui:ui-util"))
     androidTestImplementation(project(":compose:test-utils"))
     androidTestImplementation(project(":compose:benchmark-utils"))
+
+    androidTestImplementation(project(":lifecycle:lifecycle-runtime-compose"))
 
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testExtJunit)

@@ -316,6 +316,12 @@ internal fun ProvideCommonCompositionLocals(owner: Owner, content: @Composable (
         CompositionLocalProvider(
             LocalOwner provides owner,
             LocalRetainedValuesStore provides owner.retainedValuesStore,
+            LocalDensity provides owner.density,
+            LocalLayoutDirection provides owner.layoutDirection,
+            LocalFocusManager provides owner.focusOwner,
+            LocalWindowInfo provides owner.windowInfo,
+            LocalViewConfiguration provides owner.viewConfiguration,
+            LocalFontFamilyResolver providesDefault owner.fontFamilyResolver,
             content = content,
         )
     } else {

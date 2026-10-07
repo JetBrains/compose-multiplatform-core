@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.compose.foundation.text
 
 import androidx.compose.foundation.ComposeFoundationFlags
@@ -768,6 +770,9 @@ private val MinTouchTargetSizeForHandles
  *   parameter "innerTextField" to the decorationBox lambda you provide. You must call
  *   innerTextField exactly once.
  */
+@Deprecated(
+    "This overload of BasicTextField is deprecated in favor of the overload that uses TextFieldState to hoist its state."
+)
 @Composable
 public fun BasicTextField(
     value: String,
@@ -925,6 +930,10 @@ public fun BasicTextField(
  *   parameter "innerTextField" to the decorationBox lambda you provide. You must call
  *   innerTextField exactly once.
  */
+@Suppress("DeprecatedCallableAddReplaceWith")
+@Deprecated(
+    "This overload of BasicTextField is deprecated in favor of the overload that uses TextFieldState to hoist its state."
+)
 @Composable
 public fun BasicTextField(
     value: TextFieldValue,

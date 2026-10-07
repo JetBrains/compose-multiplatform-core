@@ -17,11 +17,22 @@
 package androidx.compose.foundation.gestures
 
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerInputChange
+import androidx.compose.ui.input.pointer.positionChangedIgnoreConsumed
 
 internal actual suspend fun AwaitPointerEventScope.awaitDragOrCancellationImpl(
     pointerId: PointerId
 ): PointerInputChange? {
-    return defaultAwaitDragOrCancellationImpl(pointerId)
+    if (currentEvent.isPointerUp(pointerId)) {
+        return null // The pointer has already been lifted, so the gesture is canceled
+    }
+    // The default/Android implementation just checks whether the pointer moved.
+    // But if the target element has moved instead while the pointer is stationary, we still need to
+    // deliver the (synthetic) move event.
+    val change = awaitDragOrUp(pointerId) { event, change ->
+        change.positionChangedIgnoreConsumed() || (event.type == PointerEventType.Move)
+    }
+    return if (change?.isConsumed == false) change else null
 }

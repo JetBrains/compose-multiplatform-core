@@ -16,10 +16,7 @@
 
 package androidx.compose.ui.uikit
 
-import androidx.compose.ui.ExperimentalComposeUiApi
-
 /**
  * Configuration of [androidx.compose.ui.window.ComposeUIViewController] behavior.
  */
-@ExperimentalComposeUiApi
 class ComposeUIViewConfiguration: ComposeContainerConfiguration()

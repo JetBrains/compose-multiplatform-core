@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.TextInputPosition
 import androidx.compose.ui.platform.TextInputRange
 import androidx.compose.ui.platform.TextInputStringTokenizer
 import androidx.compose.ui.platform.TextEditingDelegate
+import androidx.compose.ui.platform.caretRectForPosition
 import androidx.compose.ui.platform.selectTextNearCursor
 import androidx.compose.ui.platform.toTextRange
 import androidx.compose.ui.platform.toUITextRange
@@ -34,7 +35,6 @@ import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
 import platform.CoreGraphics.CGPoint
 import platform.CoreGraphics.CGRect
-import platform.CoreGraphics.CGRectMake
 import platform.CoreGraphics.CGRectNull
 import platform.CoreGraphics.CGRectZero
 import platform.Foundation.NSComparisonResult
@@ -76,23 +76,36 @@ import platform.darwin.NSInteger
  */
 internal class ComposeTextInputView(
     private val doubleTapTimeoutMillis: Long,
-    input: TextEditingDelegate,
+    // Do not rename to `input`: shadowing the property below makes this view outlive its scene.
+    initialInput: TextEditingDelegate,
 ) : CMPEditMenuView(frame = CGRectZero.readValue()),
     UIKeyInputProtocol, UITextInputProtocol {
     private var _inputDelegate: UITextInputDelegateProtocol? = null
-    var input: TextEditingDelegate = input
+    var input: TextEditingDelegate = initialInput
         set(value) {
-            field = value
-            if (!value.isInteractive) {
-                hideTextMenu()
+            if (field != value) {
+                if (isFirstResponder) {
+                    field.onResignFocus()
+                }
+                field = value
+                if (isFirstResponder) {
+                    field?.onFocus()
+                }
+                if (!field.isInteractive) {
+                    hideTextMenu()
+                }
             }
         }
 
-    override fun canBecomeFirstResponder() = true
+    override fun canBecomeFirstResponder() = input.isInteractive
 
-    override fun isUserInteractionEnabled(): Boolean {
-        return false
-    }
+    override fun becomeFirstResponder(): Boolean =
+        if (input.isInteractive) {
+            input.onFocus()
+            super.becomeFirstResponder()
+        } else {
+            false
+        }
 
     override fun resignFirstResponder(): Boolean {
         input.onResignFocus()
@@ -397,7 +410,7 @@ internal class ComposeTextInputView(
         CGRectNull.readValue()
 
     override fun caretRectForPosition(position: UITextPosition): CValue<CGRect> =
-        CGRectMake(x = 1.0, y = 1.0, width = 0.0, height = 1.0)
+        input.caretRectForPosition(position)
 
     override fun selectionRectsForRange(range: UITextRange): List<*> =
         listOf<UITextSelectionRect>()

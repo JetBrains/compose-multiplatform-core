@@ -23,10 +23,16 @@ package androidx.compose.ui.platform.a11y
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.Button
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.LinearProgressIndicator
+import androidx.compose.material.RangeSlider
+import androidx.compose.material.Slider
+import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.getValue
@@ -36,11 +42,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
+import androidx.compose.ui.events.keyEvent
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -106,6 +115,29 @@ class CfWA11YTest : OnCanvasTests {
             button1.click()
             assertEquals(it + 1, clickCounter)
         }
+    }
+
+    @Test
+    fun mergeDescendantsMergesText() = runApplicationTest {
+        createComposeWindow {
+            Column(
+                modifier = Modifier
+                    .testTag("mergedItem")
+                    .semantics(mergeDescendants = true) {}
+            ) {
+                Row { Text("Hello") }
+                Row { Text("World") }
+            }
+        }
+
+        awaitA11YChanges()
+
+        val mergedNode = assertNotNull(
+            getShadowRoot().getElementById("mergedItem") as? HTMLElement,
+            "The merged semantics node must be present in the a11y tree",
+        )
+        assertEquals("Hello\nWorld", mergedNode.textContent)
+        assertEquals(0, mergedNode.children.length, "Merged text must not expose child nodes")
     }
 
     @Test
@@ -722,6 +754,143 @@ class CfWA11YTest : OnCanvasTests {
 
         assertEquals("textbox", textField.getAttribute("role"))
         assertEquals("Hello, World!", textField.innerText)
+    }
+
+    @Test
+    fun sliderHasSliderRoleAndRangeValues() = runApplicationTest {
+        var value by mutableStateOf(0.5f)
+
+        createComposeWindow {
+            Slider(
+                value = value,
+                onValueChange = { value = it },
+                modifier = Modifier.testTag("slider"),
+            )
+        }
+
+        awaitA11YChanges()
+
+        val slider = getShadowRoot().getElementById("slider") as? HTMLElement
+        assertNotNull(slider)
+        assertEquals("slider", slider.getAttribute("role"))
+        assertEquals("0", slider.getAttribute("tabindex"))
+        assertEquals(0.5f, slider.getAttribute("aria-valuenow")!!.toFloat())
+
+        slider.focus()
+        slider.dispatchEvent(keyEvent("ArrowRight"))
+        awaitA11YChanges()
+
+        assertEquals(0.51f, slider.getAttribute("aria-valuenow")!!.toFloat())
+        assertEquals(0f, slider.getAttribute("aria-valuemin")!!.toFloat())
+        assertEquals(1f, slider.getAttribute("aria-valuemax")!!.toFloat())
+    }
+
+    @OptIn(ExperimentalMaterialApi::class)
+    @Test
+    fun rangeSliderHasSliderRoleForBothThumbs() = runApplicationTest {
+        createComposeWindow {
+            RangeSlider(
+                value = 0.25f..0.75f,
+                onValueChange = {},
+                modifier = Modifier.testTag("rangeSlider"),
+            )
+        }
+
+        awaitA11YChanges()
+
+        val rangeSlider = getShadowRoot().getElementById("rangeSlider") as? HTMLElement
+        assertNotNull(rangeSlider)
+        val sliders = rangeSlider.querySelectorAll("[role=slider]")
+        assertEquals(2, sliders.length)
+        assertEquals(0.25f, (sliders[0] as HTMLElement).getAttribute("aria-valuenow")!!.toFloat())
+        assertEquals(0.75f, (sliders[1] as HTMLElement).getAttribute("aria-valuenow")!!.toFloat())
+    }
+
+    @Test
+    fun progressIndicatorsHaveProgressbarRoleAndRangeValues() = runApplicationTest {
+        createComposeWindow {
+            LinearProgressIndicator(
+                progress = 0.4f,
+                modifier = Modifier.testTag("progress"),
+            )
+        }
+
+        awaitA11YChanges()
+
+        val progress = getShadowRoot().getElementById("progress") as? HTMLElement
+        assertNotNull(progress)
+        assertEquals("progressbar", progress.getAttribute("role"))
+        assertEquals(0f, progress.getAttribute("aria-valuemin")!!.toFloat())
+        assertEquals(1f, progress.getAttribute("aria-valuemax")!!.toFloat())
+        assertEquals(0.4f, progress.getAttribute("aria-valuenow")!!.toFloat())
+    }
+
+    @Test
+    fun indeterminateProgressIndicatorOmitsRangeValues() = runApplicationTest {
+        createComposeWindow {
+            LinearProgressIndicator(modifier = Modifier.testTag("progress"))
+        }
+
+        awaitA11YChanges()
+
+        val progress = getShadowRoot().getElementById("progress") as? HTMLElement
+        assertNotNull(progress)
+        assertEquals("progressbar", progress.getAttribute("role"))
+        assertNull(progress.getAttribute("aria-valuenow"))
+    }
+
+    @Test
+    fun switchHasSwitchRoleAndCheckedState() = runApplicationTest {
+        var checked by mutableStateOf(false)
+
+        createComposeWindow {
+            Switch(
+                checked = checked,
+                onCheckedChange = { checked = it },
+                modifier = Modifier.testTag("switch"),
+            )
+        }
+
+        awaitA11YChanges()
+
+        val switch = getShadowRoot().getElementById("switch") as? HTMLElement
+        assertNotNull(switch)
+        assertEquals("switch", switch.getAttribute("role"))
+        assertEquals("false", switch.getAttribute("aria-checked"))
+
+        switch.click()
+        awaitA11YChanges()
+        assertEquals("true", switch.getAttribute("aria-checked"))
+    }
+
+    @Test
+    fun liveRegionModesAreMappedToAriaLive() = runApplicationTest {
+        createComposeWindow {
+            Column {
+                Text(
+                    "Polite",
+                    modifier = Modifier
+                        .testTag("politeLiveRegion")
+                        .semantics { liveRegion = LiveRegionMode.Polite },
+                )
+                Text(
+                    "Assertive",
+                    modifier = Modifier
+                        .testTag("assertiveLiveRegion")
+                        .semantics { liveRegion = LiveRegionMode.Assertive },
+                )
+            }
+        }
+
+        awaitA11YChanges()
+
+        val polite = getShadowRoot().getElementById("politeLiveRegion") as? HTMLElement
+        assertNotNull(polite)
+        assertEquals("polite", polite.getAttribute("aria-live"))
+
+        val assertive = getShadowRoot().getElementById("assertiveLiveRegion") as? HTMLElement
+        assertNotNull(assertive)
+        assertEquals("assertive", assertive.getAttribute("aria-live"))
     }
 
     @Test

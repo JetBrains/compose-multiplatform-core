@@ -470,7 +470,7 @@ private class NonAdaptiveButtonGroupMeasurePolicy(
         if (measurables.size > 1) {
             for (index in measurables.indices) {
                 if (animatables[index].value == 0f) continue
-                var actualGrowth: Int
+                val actualGrowth: Int
 
                 if (index in 1 until measurables.lastIndex) {
                     // We constrain the growth by the paddings of the neighbors
@@ -520,15 +520,14 @@ private class NonAdaptiveButtonGroupMeasurePolicy(
             }
         }
 
-        placeables =
-            measurables.fastMapIndexed { index, placeable ->
-                placeable.measure(
-                    (childrenConstraints[index] ?: constraints).copy(
-                        minWidth = widths[index],
-                        maxWidth = widths[index],
-                    )
+        placeables = measurables.fastMapIndexed { index, placeable ->
+            placeable.measure(
+                (childrenConstraints[index] ?: constraints).copy(
+                    minWidth = widths[index],
+                    maxWidth = widths[index],
                 )
-            }
+            )
+        }
 
         // Compute the row size and position the children.
         val mainAxisLayoutSize = max((fixedSpace + weightedSpace).coerceAtLeast(0), mainAxisMin)
@@ -611,6 +610,7 @@ private class ButtonGroupMeasurePolicy(
         var weightedSpace = 0
         if (weightChildrenCount == 0) {
             // fixedSpace contains an extra spacing after the last non-weight child.
+            @Suppress("ASSIGNED_VALUE_IS_NEVER_READ")
             fixedSpace -= spaceAfterLastNoWeight
         } else {
             // obtain the constraints of the rest according to their weights.
@@ -719,7 +719,7 @@ private class ButtonGroupMeasurePolicy(
             // The expand and compress logic of button groups.
             for (index in 0 until lastItem) {
                 if (animatables[index].value == 0f) continue
-                var actualGrowth: Int
+                val actualGrowth: Int
 
                 if (index in 1 until lastItem - 1) {
                     val targetGrowth =
@@ -1014,32 +1014,31 @@ internal class EnlargeOnPressNode(
 
     internal fun launchCollectionJob() {
         collectionJob?.cancel()
-        collectionJob =
-            coroutineScope.launch {
-                val pressInteractions = mutableListOf<PressInteraction.Press>()
-                launch {
-                    interactionSource.interactions
-                        .map { interaction ->
-                            when (interaction) {
-                                is PressInteraction.Press -> pressInteractions.add(interaction)
-                                is PressInteraction.Release ->
-                                    pressInteractions.remove(interaction.press)
-                                is PressInteraction.Cancel ->
-                                    pressInteractions.remove(interaction.press)
-                            }
-                            pressInteractions.isNotEmpty()
+        collectionJob = coroutineScope.launch {
+            val pressInteractions = mutableListOf<PressInteraction.Press>()
+            launch {
+                interactionSource.interactions
+                    .map { interaction ->
+                        when (interaction) {
+                            is PressInteraction.Press -> pressInteractions.add(interaction)
+                            is PressInteraction.Release ->
+                                pressInteractions.remove(interaction.press)
+                            is PressInteraction.Cancel ->
+                                pressInteractions.remove(interaction.press)
                         }
-                        .distinctUntilChanged()
-                        .collectLatest { pressed ->
-                            if (pressed) {
-                                launch { pressedAnimatable.animateTo(1f, animationSpec) }
-                            } else {
-                                waitUntil { pressedAnimatable.value > 0.75f }
-                                pressedAnimatable.animateTo(0f, animationSpec)
-                            }
+                        pressInteractions.isNotEmpty()
+                    }
+                    .distinctUntilChanged()
+                    .collectLatest { pressed ->
+                        if (pressed) {
+                            launch { pressedAnimatable.animateTo(1f, animationSpec) }
+                        } else {
+                            waitUntil { pressedAnimatable.value > 0.75f }
+                            pressedAnimatable.animateTo(0f, animationSpec)
                         }
-                }
+                    }
             }
+        }
     }
 
     override fun Density.modifyParentData(parentData: Any?) =

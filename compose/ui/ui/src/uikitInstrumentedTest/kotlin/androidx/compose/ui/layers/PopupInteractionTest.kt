@@ -20,6 +20,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material3.TextField
@@ -51,6 +54,8 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlinx.cinterop.ExperimentalForeignApi
+import platform.CoreGraphics.CGRectMake
 
 class PopupInteractionTest {
     @Test
@@ -509,6 +514,43 @@ class PopupInteractionTest {
 
         assertTrue(dismissFocusableTriggered)
         assertFalse(dismissNonFocusableTriggered)
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    @Test
+    fun testScrollablePopupCanBeReopenedAfterWindowResize() = runUIKitInstrumentedTest {
+        var expanded by mutableStateOf(false)
+
+        setContent {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopStart) {
+                if (expanded) {
+                    Popup(
+                        alignment = Alignment.TopEnd,
+                        onDismissRequest = { expanded = false },
+                        properties = PopupProperties(dismissOnClickOutside = true)
+                    ) {
+                        Column(Modifier.verticalScroll(rememberScrollState())) {
+                            BasicText("Popup content")
+                        }
+                    }
+                }
+            }
+        }
+
+        expanded = true
+        waitForIdle()
+
+        tap(outOfPopupBoundsPoint)
+        waitForIdle()
+        assertEquals(false, expanded)
+
+        val window = checkNotNull(appDelegate.window())
+        window.setFrame(CGRectMake(0.0, 0.0, 300.0, 400.0))
+        window.layoutIfNeeded()
+        waitForIdle()
+
+        expanded = true
+        waitForIdle()
     }
 
     private val UIKitInstrumentedTest.outOfPopupBoundsPoint: DpOffset

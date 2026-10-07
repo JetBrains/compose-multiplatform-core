@@ -20,7 +20,6 @@ import androidx.annotation.Sampled
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.DeferredTransitionState
-import androidx.compose.animation.core.ExperimentalDeferredTransitionApi
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.SeekableTransitionState
@@ -182,8 +181,9 @@ fun AnimateFloatSample() {
         // [animateFloat] function is used here as a property delegate.
         // This float animation will use the default [spring] for all transition destinations, as
         // specified by the default `transitionSpec`.
-        val scale: Float by
-            transition.animateFloat { state -> if (state == ButtonStatus.Pressed) 1.2f else 1f }
+        val scale: Float by transition.animateFloat { state ->
+            if (state == ButtonStatus.Pressed) 1.2f else 1f
+        }
 
         // Alternatively, we can specify different animation specs based on the initial state and
         // target state of the a transition run using `transitionSpec`.
@@ -391,8 +391,9 @@ fun CreateChildTransitionSample() {
             val parentTransition = updateTransition(dialerState)
 
             // Animate to different corner radius based on target state
-            val cornerRadius by
-                parentTransition.animateDp { if (it == DialerState.NumberPad) 0.dp else 20.dp }
+            val cornerRadius by parentTransition.animateDp {
+                if (it == DialerState.NumberPad) 0.dp else 20.dp
+            }
 
             Box(
                 Modifier.align(Alignment.BottomCenter)
@@ -445,8 +446,9 @@ fun TransitionStateIsIdleSample() {
     fun SelectableItem(selectedState: MutableTransitionState<Boolean>) {
         val transition = rememberTransition(selectedState)
         val cornerRadius by transition.animateDp { selected -> if (selected) 10.dp else 0.dp }
-        val backgroundColor by
-            transition.animateColor { selected -> if (selected) Color.Red else Color.White }
+        val backgroundColor by transition.animateColor { selected ->
+            if (selected) Color.Red else Color.White
+        }
         Box(Modifier.background(backgroundColor, RoundedCornerShape(cornerRadius))) {
             // Item content goes here
         }
@@ -598,7 +600,6 @@ fun SnapToSample() {
     // use the transition
 }
 
-@OptIn(ExperimentalDeferredTransitionApi::class)
 @Sampled
 @Composable
 fun DeferredTransitionSample() {

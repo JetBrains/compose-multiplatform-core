@@ -16,8 +16,12 @@
 
 package androidx.compose.ui.text.intl
 
+import kotlin.js.ExperimentalWasmJsInterop
+import kotlin.js.js
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 // Covers https://youtrack.jetbrains.com/issue/CMP-10359
@@ -52,4 +56,47 @@ class PlatformLocaleWebTest {
         val current = Locale.current
         assertTrue(current.toLanguageTag().isNotEmpty())
     }
+
+    @Test
+    fun localeCurrent_isCachedAndUpdatedOnLanguageChange() {
+        val current = Locale.current
+        val frLang = "fr-FR"
+
+        assertNotEquals(frLang, current.toLanguageTag())
+
+        withNavigatorLanguage(frLang) {
+            val first = Locale.current
+            val second = Locale.current
+
+            assertEquals(frLang, first.toLanguageTag())
+            assertSame(first, second)
+        }
+    }
+}
+
+@OptIn(ExperimentalWasmJsInterop::class)
+private fun withNavigatorLanguage(languageTag: String, block: () -> Unit) {
+    js(
+        """
+        const navigator = window.navigator;
+        const hadOwnProperty = Object.prototype.hasOwnProperty.call(navigator, "languages");
+        const originalDescriptor = Object.getOwnPropertyDescriptor(navigator, "languages");
+
+        try {
+            Object.defineProperty(navigator, "languages", {
+                configurable: true,
+                value: [languageTag]
+            });
+            window.dispatchEvent(new Event("languagechange"));
+            block();
+        } finally {
+            if (hadOwnProperty) {
+                Object.defineProperty(navigator, "languages", originalDescriptor);
+            } else {
+                delete navigator.languages;
+            }
+            window.dispatchEvent(new Event("languagechange"));
+        }
+        """
+    )
 }

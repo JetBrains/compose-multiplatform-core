@@ -30,7 +30,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.byValue
-import androidx.compose.foundation.text.input.maxLength
+import androidx.compose.foundation.text.input.maxLengthTrim
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.OutlinedSecureTextField
 import androidx.compose.material3.OutlinedTextField
@@ -83,7 +83,8 @@ fun BasicLoginFormSample() {
                     keyboardType = KeyboardType.Password,
                     capitalization = KeyboardCapitalization.None,
                     imeAction =
-                        ImeAction.Done, // Soft keyboard automatically dismisses the keyboard on Done
+                        ImeAction
+                            .Done, // Soft keyboard automatically dismisses the keyboard on Done
                 ),
             modifier = Modifier.fillMaxWidth(),
         )
@@ -107,7 +108,7 @@ fun PinCodeEntryRowSample() {
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
         inputTransformation =
             InputTransformation.byValue { _, proposed -> proposed.filter { it.isDigit() } }
-                .maxLength(pinLength),
+                .maxLengthTrim(pinLength),
         decorator = { innerTextField ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 repeat(pinLength) { index ->

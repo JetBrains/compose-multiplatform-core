@@ -14,11 +14,7 @@
  * limitations under the License.
  */
 
-@file:OptIn(
-    ExperimentalAnimationApi::class,
-    ExperimentalComposeUiApi::class,
-    ExperimentalDeferredTransitionApi::class,
-)
+@file:OptIn(ExperimentalAnimationApi::class, ExperimentalComposeUiApi::class)
 
 package androidx.compose.animation
 
@@ -26,7 +22,6 @@ import android.annotation.SuppressLint
 import androidx.compose.animation.SharedTransitionScope.PlaceholderSize.Companion.AnimatedSize
 import androidx.compose.animation.SharedTransitionScope.ResizeMode.Companion.RemeasureToBounds
 import androidx.compose.animation.SharedTransitionScope.ResizeMode.Companion.scaleToBounds
-import androidx.compose.animation.core.ExperimentalDeferredTransitionApi
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.SeekableTransitionState
 import androidx.compose.animation.core.Transition
@@ -2786,7 +2781,7 @@ class SharedTransitionTest {
     @Test
     fun testLookaheadPositionInSkipToLookaheadSize() {
         var target by mutableStateOf(true)
-        var targetPos: MutableList<Offset?> = mutableListOf()
+        val targetPos: MutableList<Offset?> = mutableListOf()
         var scope: SharedTransitionScope? = null
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(1f)) {
@@ -3131,7 +3126,7 @@ class SharedTransitionTest {
         // The alignment will be changed amid animation.
         var alignment by mutableStateOf(TopStart)
         var positionInTransition: Offset? = null
-        var selectFirstPositionInTransition: Offset? = null
+        var selectFirstPositionInTransition: Offset?
         var scope: SharedTransitionScope? = null
         rule.setContent {
             val key = remember { Any() }
@@ -3324,7 +3319,6 @@ class SharedTransitionTest {
         var position1: Offset? = null
         var position2: Offset? = null
         val state = LazyListState()
-        var scrollPosition by mutableStateOf(0)
         rule.setContent {
             val key = remember { Any() }
             CompositionLocalProvider(LocalDensity provides Density(1f)) {
@@ -3515,7 +3509,8 @@ class SharedTransitionTest {
                                                     },
                                             ),
                                             this@AnimatedContent,
-                                            boundsTransform = BoundsTransform { _, _ -> tween(160) },
+                                            boundsTransform =
+                                                BoundsTransform { _, _ -> tween(160) },
                                         )
                                         .onPlaced {
                                             sizes2.add(it.size)
@@ -3662,7 +3657,8 @@ class SharedTransitionTest {
                                                     },
                                             ),
                                             this@AnimatedContent,
-                                            boundsTransform = BoundsTransform { _, _ -> tween(160) },
+                                            boundsTransform =
+                                                BoundsTransform { _, _ -> tween(160) },
                                         )
                                         .onPlaced {
                                             sizes2.add(it.size)
@@ -3827,7 +3823,8 @@ class SharedTransitionTest {
                                                 config = disableInSpiteOfAnimationConfig,
                                             ),
                                             this@AnimatedContent,
-                                            boundsTransform = BoundsTransform { _, _ -> tween(160) },
+                                            boundsTransform =
+                                                BoundsTransform { _, _ -> tween(160) },
                                         )
                                         .onPlaced {
                                             sizes2.add(it.size)
@@ -4127,7 +4124,8 @@ class SharedTransitionTest {
                                                 config = configWithAlternativeTarget,
                                             ),
                                             this@AnimatedContent,
-                                            boundsTransform = BoundsTransform { _, _ -> tween(160) },
+                                            boundsTransform =
+                                                BoundsTransform { _, _ -> tween(160) },
                                         )
                                         .onPlaced {
                                             sizes2.add(it.size)
@@ -4782,8 +4780,8 @@ class SharedTransitionTest {
     fun zeroInitialVelocityForExit() {
         var exit by mutableStateOf(false)
         var sharedContentState: SharedTransitionScope.SharedContentState? = null
-        var position: MutableList<Offset> = mutableListOf()
-        var controlPosition: MutableList<Offset> = mutableListOf()
+        val position: MutableList<Offset> = mutableListOf()
+        val controlPosition: MutableList<Offset> = mutableListOf()
         rule.setContent {
             SharedTransitionLayout {
                 AnimatedContent(targetState = exit) {
@@ -4849,8 +4847,8 @@ class SharedTransitionTest {
     fun initialVelocityForDisabledElement() {
         var exit by mutableStateOf(false)
         var sharedContentState: SharedTransitionScope.SharedContentState? = null
-        var position: MutableList<Offset> = mutableListOf()
-        var controlPosition: MutableList<Offset> = mutableListOf()
+        val position: MutableList<Offset> = mutableListOf()
+        val controlPosition: MutableList<Offset> = mutableListOf()
         rule.setContent {
             SharedTransitionLayout {
                 AnimatedContent(targetState = exit) {
@@ -5212,8 +5210,9 @@ class SharedTransitionTest {
         rule.waitForIdle()
 
         // Check animated positions during the transition
-        val inBetweenPositions =
-            positionRecord.count { it.x > 0f && it.x < 200f && it.y > 0f && it.y < 100f }
+        val inBetweenPositions = positionRecord.count {
+            it.x > 0f && it.x < 200f && it.y > 0f && it.y < 100f
+        }
         // At least 3 frames of in-between positions. This check verifies that the position was
         // obtained from before the shared element was detached.
         assertTrue(inBetweenPositions >= 3)
@@ -5285,8 +5284,9 @@ class SharedTransitionTest {
         rule.waitForIdle()
 
         // Check animated positions during the transition
-        val inBetweenPositions =
-            positionRecord.count { it.x > 0f && it.x < 200f && it.y > 0f && it.y < 100f }
+        val inBetweenPositions = positionRecord.count {
+            it.x > 0f && it.x < 200f && it.y > 0f && it.y < 100f
+        }
         // At least 3 frames of in-between positions. This check verifies that the initial position
         // uses the position obtained from before the shared element was detached, rather than
         // after the shared element is re-attached after the movableContent is re-parented.
@@ -5846,6 +5846,223 @@ class SharedTransitionTest {
             rule.waitForIdle()
             rule.mainClock.advanceTimeByFrame()
         }
+    }
+
+    @Test
+    fun testIsTransitionActive_lifecycle_multipleEntries() {
+        var transitionScope: SharedTransitionScope? = null
+        var isExpanded by mutableStateOf(false)
+
+        rule.setContent {
+            SharedTransitionLayout {
+                transitionScope = this
+                AnimatedVisibility(
+                    visible = !isExpanded,
+                    enter = fadeIn(tween(300, easing = LinearEasing)),
+                    exit = fadeOut(tween(300, easing = LinearEasing)),
+                ) {
+                    Column {
+                        Box(
+                            Modifier.sharedElement(
+                                    rememberSharedContentState(key = "first"),
+                                    this@AnimatedVisibility,
+                                    boundsTransform = { _, _ -> tween(300, easing = LinearEasing) },
+                                )
+                                .requiredSize(40.dp)
+                        )
+                        Box(
+                            Modifier.sharedElement(
+                                    rememberSharedContentState(key = "second"),
+                                    this@AnimatedVisibility,
+                                    boundsTransform = { _, _ -> tween(300, easing = LinearEasing) },
+                                )
+                                .requiredSize(40.dp)
+                        )
+                    }
+                }
+                AnimatedVisibility(
+                    visible = isExpanded,
+                    enter = fadeIn(tween(300, easing = LinearEasing)),
+                    exit = fadeOut(tween(300, easing = LinearEasing)),
+                ) {
+                    Column {
+                        Box(
+                            Modifier.sharedElement(
+                                    rememberSharedContentState(key = "first"),
+                                    this@AnimatedVisibility,
+                                    boundsTransform = { _, _ -> tween(300, easing = LinearEasing) },
+                                )
+                                .requiredSize(100.dp)
+                        )
+                        Box(
+                            Modifier.sharedElement(
+                                    rememberSharedContentState(key = "second"),
+                                    this@AnimatedVisibility,
+                                    boundsTransform = { _, _ -> tween(300, easing = LinearEasing) },
+                                )
+                                .requiredSize(100.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.waitForIdle()
+        assertFalse(transitionScope!!.isTransitionActive)
+
+        rule.mainClock.autoAdvance = false
+        isExpanded = true
+
+        rule.waitForIdle()
+        // Advance clock into the active transition
+        rule.mainClock.advanceTimeBy(100)
+        rule.waitForIdle()
+        assertTrue(transitionScope!!.isTransitionActive)
+
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+        assertFalse(transitionScope!!.isTransitionActive)
+    }
+
+    @Test
+    fun testIsTransitionActive_modifierRemovedMidTransition() {
+        var transitionScope: SharedTransitionScope? = null
+        var isExpanded by mutableStateOf(false)
+        var hasSharedElement by mutableStateOf(true)
+
+        rule.setContent {
+            SharedTransitionLayout {
+                transitionScope = this
+                AnimatedVisibility(
+                    visible = !isExpanded,
+                    enter = fadeIn(tween(500, easing = LinearEasing)),
+                    exit = fadeOut(tween(500, easing = LinearEasing)),
+                ) {
+                    if (hasSharedElement) {
+                        Box(
+                            Modifier.sharedElement(
+                                    rememberSharedContentState(key = "box"),
+                                    this@AnimatedVisibility,
+                                    boundsTransform = { _, _ -> tween(500, easing = LinearEasing) },
+                                )
+                                .requiredSize(40.dp)
+                        )
+                    }
+                }
+                AnimatedVisibility(
+                    visible = isExpanded,
+                    enter = fadeIn(tween(500, easing = LinearEasing)),
+                    exit = fadeOut(tween(500, easing = LinearEasing)),
+                ) {
+                    if (hasSharedElement) {
+                        Box(
+                            Modifier.sharedElement(
+                                    rememberSharedContentState(key = "box"),
+                                    this@AnimatedVisibility,
+                                    boundsTransform = { _, _ -> tween(500, easing = LinearEasing) },
+                                )
+                                .requiredSize(100.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.waitForIdle()
+        assertFalse(transitionScope!!.isTransitionActive)
+
+        rule.mainClock.autoAdvance = false
+        isExpanded = true
+
+        // Advance mid-transition
+        rule.mainClock.advanceTimeBy(150)
+        rule.waitForIdle()
+        assertTrue(transitionScope!!.isTransitionActive)
+
+        // Remove the shared element from composition mid-transition
+        hasSharedElement = false
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+        // Because all shared element entries are removed, isTransitionActive switches false
+        assertFalse(transitionScope!!.isTransitionActive)
+    }
+
+    @Test
+    fun testIsTransitionActive_configDisabledEntry() {
+        var transitionScope: SharedTransitionScope? = null
+        var isExpanded by mutableStateOf(false)
+        var isEntryEnabled by mutableStateOf(false)
+
+        rule.setContent {
+            SharedTransitionLayout {
+                transitionScope = this
+                AnimatedVisibility(
+                    visible = !isExpanded,
+                    enter = fadeIn(tween(500, easing = LinearEasing)),
+                    exit = fadeOut(tween(500, easing = LinearEasing)),
+                ) {
+                    Box(
+                        Modifier.sharedElement(
+                                rememberSharedContentState(
+                                    key = "box",
+                                    config = remember { SharedContentConfig { isEntryEnabled } },
+                                ),
+                                this@AnimatedVisibility,
+                                boundsTransform = { _, _ -> tween(500, easing = LinearEasing) },
+                            )
+                            .requiredSize(40.dp)
+                    )
+                }
+                AnimatedVisibility(
+                    visible = isExpanded,
+                    enter = fadeIn(tween(500, easing = LinearEasing)),
+                    exit = fadeOut(tween(500, easing = LinearEasing)),
+                ) {
+                    Box(
+                        Modifier.sharedElement(
+                                rememberSharedContentState(key = "box"),
+                                this@AnimatedVisibility,
+                                boundsTransform = { _, _ -> tween(500, easing = LinearEasing) },
+                            )
+                            .requiredSize(100.dp)
+                    )
+                }
+            }
+        }
+
+        rule.waitForIdle()
+        assertFalse(transitionScope!!.isTransitionActive)
+
+        rule.mainClock.autoAdvance = false
+        isExpanded = true
+
+        // Advance mid-transition when isEntryEnabled is false
+        rule.mainClock.advanceTimeBy(150)
+        rule.waitForIdle()
+        // Because one entry has isEnabled = false, there is no match and transition is not active
+        assertFalse(transitionScope!!.isTransitionActive)
+
+        // Complete the transition
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+        assertFalse(transitionScope!!.isTransitionActive)
+
+        // Now enable the entry and toggle again
+        isEntryEnabled = true
+        rule.waitForIdle()
+
+        rule.mainClock.autoAdvance = false
+        isExpanded = false
+
+        // Advance mid-transition when isEntryEnabled is true
+        rule.mainClock.advanceTimeBy(150)
+        rule.waitForIdle()
+        // Because both entries are enabled, match is found and transition is active
+        assertTrue(transitionScope!!.isTransitionActive)
+
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+        assertFalse(transitionScope!!.isTransitionActive)
     }
 }
 

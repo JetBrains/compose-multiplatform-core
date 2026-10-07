@@ -49,8 +49,7 @@ kotlin {
         outputModuleName = "mpp-demo"
         browser {
             // https://youtrack.jetbrains.com/issue/KT-68614
-            val rootDirPath = project.rootDir.path
-            val projectDirPath = project.projectDir.path
+            val projectDirPath = project.projectDir.resolve("src").path
             commonWebpackConfig {
                 outputFileName = "demo.js"
                 devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
@@ -61,7 +60,6 @@ kotlin {
                     )
                     static = (static ?: mutableListOf()).apply {
                         // Serve sources to debug inside browser
-                        add(rootDirPath)
                         add(projectDirPath)
                     }
                 }
@@ -301,8 +299,13 @@ private fun configureSkikoWebRuntime(
     val unpackRuntime = project.tasks.register("unpackSkikoRuntimeFor$titledTargetName", Copy::class.java) {
         destinationDir = project.file(unpackedRuntimeDir)
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        // Keep the resolution lazy: iterating the file collection here would resolve
+        // the runtime classpath (and configure dependency projects) at configuration time,
+        // which breaks builds with configuration on demand enabled.
         from(
-            skikoWebRuntimeJarFiles.map { artifact -> project.zipTree(artifact) }
+            skikoWebRuntimeJarFiles.elements.map { artifacts ->
+                artifacts.map { project.zipTree(it) }
+            }
         )
     }
 

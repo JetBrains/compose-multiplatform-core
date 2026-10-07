@@ -72,9 +72,12 @@ import androidx.compose.runtime.internal.IntRef
 import androidx.compose.runtime.internal.invokeComposable
 import androidx.compose.runtime.internal.persistentCompositionLocalHashMapOf
 import androidx.compose.runtime.internal.trace
+import androidx.compose.runtime.snapshots.IndirectState
+import androidx.compose.runtime.snapshots.IndirectStateObserver
 import androidx.compose.runtime.snapshots.currentSnapshot
 import androidx.compose.runtime.snapshots.fastForEach
 import androidx.compose.runtime.snapshots.fastToSet
+import androidx.compose.runtime.snapshots.observeIndirectStateRecalculations
 import androidx.compose.runtime.tooling.ComposeStackTrace
 import androidx.compose.runtime.tooling.ComposeStackTraceFrame
 import androidx.compose.runtime.tooling.CompositionData
@@ -334,14 +337,18 @@ internal class LinkComposer(
     override var sourceMarkersEnabled =
         parentContext.collectingSourceInformation || parentContext.collectingCallByInformation
 
-    private val derivedStateObserver =
-        object : DerivedStateObserver {
-            override fun start(derivedState: DerivedState<*>) {
-                childrenComposing++
+    private val indirectStateObserver =
+        object : IndirectStateObserver {
+            override fun start(state: IndirectState<*>) {
+                if (state is DerivedState<*>) {
+                    childrenComposing++
+                }
             }
 
-            override fun done(derivedState: DerivedState<*>) {
-                childrenComposing--
+            override fun done(state: IndirectState<*>, calculatedValue: Any?) {
+                if (state is DerivedState<*>) {
+                    childrenComposing--
+                }
             }
         }
 
@@ -357,10 +364,9 @@ internal class LinkComposer(
         get() = childrenComposing > 0
 
     override val currentRecomposeScope: RecomposeScopeImpl?
-        get() =
-            invalidateStack.let {
-                if (childrenComposing == 0 && it.isNotEmpty()) it.peek() else null
-            }
+        get() = invalidateStack.let {
+            if (childrenComposing == 0 && it.isNotEmpty()) it.peek() else null
+        }
 
     /**
      * Returns the hash of the composite key calculated as a combination of the keys of all the
@@ -1476,7 +1482,7 @@ internal class LinkComposer(
                 // ^^ Experimental for forced
 
                 // Ignore reads of derivedStateOf recalculations
-                observeDerivedStateRecalculations(derivedStateObserver) {
+                observeIndirectStateRecalculations(indirectStateObserver) {
                     if (content != null) {
                         startGroup(invocationKey, invocation)
                         invokeComposable(this, content)

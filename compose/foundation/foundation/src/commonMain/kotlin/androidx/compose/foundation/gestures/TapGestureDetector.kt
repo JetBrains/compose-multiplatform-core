@@ -305,18 +305,42 @@ public suspend fun AwaitPointerEventScope.awaitFirstDown(
     awaitFirstDown(requireUnconsumed = requireUnconsumed, pass = PointerEventPass.Main)
 
 /**
- * Reads events until the first down is received. If [requireUnconsumed] is `true` and the first
- * down is consumed in the [PointerEventPass.Main] pass, that gesture is ignored.
- * If it was down caused by [PointerType.Mouse], this function reacts only on primary button.
+ * Reads events until the first down is received in the given [pass]. If [requireUnconsumed] is
+ * `true` and the first down is already consumed in the pass, that gesture is ignored.
  */
 public suspend fun AwaitPointerEventScope.awaitFirstDown(
     requireUnconsumed: Boolean = true,
     pass: PointerEventPass = PointerEventPass.Main,
 ): PointerInputChange {
+    return awaitFirstDownImpl(
+        requireUnconsumed = requireUnconsumed,
+        pass = pass,
+        onlyPrimaryMouseButton = firstDownRefersToPrimaryMouseButtonOnly(),
+    )
+}
+
+// TODO(b/384562201): Remove once [awaitFirstDown] will be aligned for all platforms and have this
+// behavior.
+internal suspend fun AwaitPointerEventScope.awaitPrimaryFirstDown(
+    requireUnconsumed: Boolean = true,
+    pass: PointerEventPass = PointerEventPass.Main,
+): PointerInputChange {
+    return awaitFirstDownImpl(
+        requireUnconsumed = requireUnconsumed,
+        pass = pass,
+        onlyPrimaryMouseButton = true,
+    )
+}
+
+private suspend fun AwaitPointerEventScope.awaitFirstDownImpl(
+    requireUnconsumed: Boolean = true,
+    pass: PointerEventPass = PointerEventPass.Main,
+    onlyPrimaryMouseButton: Boolean,
+): PointerInputChange {
     var event: PointerEvent
     do {
         event = awaitPointerEvent(pass)
-    } while (!event.isChangedToDown(requireUnconsumed))
+    } while (!event.isChangedToDown(requireUnconsumed, onlyPrimaryMouseButton))
     return event.changes[0]
 }
 
@@ -327,10 +351,12 @@ public suspend fun AwaitPointerEventScope.awaitFirstDown(
  */
 internal expect fun firstDownRefersToPrimaryMouseButtonOnly(): Boolean
 
-internal fun PointerEvent.isChangedToDown(requireUnconsumed: Boolean): Boolean {
+internal fun PointerEvent.isChangedToDown(
+    requireUnconsumed: Boolean,
+    onlyPrimaryMouseButton: Boolean = firstDownRefersToPrimaryMouseButtonOnly(),
+): Boolean {
     val onlyPrimaryButtonCausesDown =
-        firstDownRefersToPrimaryMouseButtonOnly() &&
-            changes.fastAll { it.type == PointerType.Mouse }
+        onlyPrimaryMouseButton && changes.fastAll { it.type == PointerType.Mouse }
     if (onlyPrimaryButtonCausesDown && !buttons.isPrimaryPressed) return false
 
     return changes.fastAll {

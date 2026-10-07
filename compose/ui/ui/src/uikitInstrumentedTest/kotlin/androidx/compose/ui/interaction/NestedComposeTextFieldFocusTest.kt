@@ -85,12 +85,14 @@ class NestedComposeTextFieldFocusTest {
         }
 
         findNodeWithTag(OuterFieldTag).tap()
+        waitForIdle()
         waitUntil("Outer text field should be focused after tap") {
             outerFocused && !nestedFocused
         }
         assertEquals(OuterFieldText, findFocusedUITextInput()?.text)
 
         findNodeWithTag(NestedFieldHostTag).tap()
+        waitForIdle()
         waitUntil("Nested text field should take focus and release the outer text field") {
             nestedFocused && !outerFocused
         }

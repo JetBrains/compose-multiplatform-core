@@ -33,13 +33,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Button
 import androidx.compose.material.Icon
 import androidx.compose.material.SecureTextField
 import androidx.compose.material.Text
@@ -65,6 +68,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.PlatformImeOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.cinterop.BetaInteropApi
+import kotlinx.cinterop.ExperimentalForeignApi
+import platform.UIKit.UITextContentTypeUsername
 
 @OptIn(ExperimentalComposeUiApi::class)
 private val enabledNativeTextInputOptions = PlatformImeOptions {
@@ -85,6 +91,7 @@ val NativeTextInputTextFields = Screen.Selection(
         Screen.Example("GraphicsLayer") { GraphicsLayer() },
         Screen.Example("Appearance modifiers") { AppearanceModifiers() },
         Screen.Example("Secure input") { SecureInput() },
+        Screen.Example("Native Text Input Hot Switch") { NativeTextInputHotSwitchExample() },
     )
 )
 
@@ -527,6 +534,56 @@ private fun SecureInput() {
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 textStyle = TextStyle(color = Color.Black, fontSize = 16.sp)
             )
+        }
+    }
+}
+
+@OptIn(BetaInteropApi::class, ExperimentalForeignApi::class, ExperimentalComposeUiApi::class)
+@Composable
+private fun NativeTextInputHotSwitchExample() {
+    var usingNative by remember { mutableStateOf(false) }
+    var text1 by remember { mutableStateOf("") }
+    val text2 = rememberTextFieldState()
+
+    Column(Modifier.padding(16.dp).safeDrawingPadding()) {
+        Text("Native Text Input: ${usingNative}")
+        Spacer(Modifier.height(16.dp))
+
+        Text("BTF1:")
+        Spacer(Modifier.height(4.dp))
+        TextField(
+            value = text1,
+            onValueChange = { text1 = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("Text") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                platformImeOptions = PlatformImeOptions {
+                    usingNativeTextInput(usingNative)
+                }
+            )
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        Text("BTF2:")
+        Spacer(Modifier.height(4.dp))
+        TextField(
+            state = text2,
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("Text") },
+            lineLimits = TextFieldLineLimits.SingleLine,
+            keyboardOptions = KeyboardOptions(
+                platformImeOptions = PlatformImeOptions {
+                    usingNativeTextInput(usingNative)
+                }
+            )
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        Button(onClick = { usingNative = !usingNative },) {
+            Text(if (usingNative) "Turn OFF" else "Turn ON")
         }
     }
 }

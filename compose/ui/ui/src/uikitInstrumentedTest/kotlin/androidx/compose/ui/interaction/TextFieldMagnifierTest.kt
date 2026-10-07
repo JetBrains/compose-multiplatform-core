@@ -30,7 +30,7 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.platform.NativeTextInputContext
+import androidx.compose.ui.platform.TextInputContainer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
@@ -39,7 +39,7 @@ import androidx.compose.ui.test.utils.isLoupeView
 import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.text.input.PlatformImeOptions
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.uikit.LocalNativeTextInputContext
+import androidx.compose.ui.uikit.LocalTextInputContainer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.seconds
@@ -61,10 +61,10 @@ class TextFieldMagnifierTest {
         params = params
     ) { factory ->
         val focusRequester = FocusRequester()
-        var nativeTextInputContext: NativeTextInputContext? = null
+        var nativeTextInputContext: TextInputContainer? = null
 
         setContent {
-            val currentNativeTextInputContext = LocalNativeTextInputContext.current
+            val currentNativeTextInputContext = LocalTextInputContainer.current
             SideEffect {
                 nativeTextInputContext = currentNativeTextInputContext
             }
@@ -80,7 +80,7 @@ class TextFieldMagnifierTest {
 
         assertEquals(
             expected = factory.useNativeTextInput,
-            actual = nativeTextInputContext?.usingNativeTextInput(),
+            actual = nativeTextInputContext?.activeSessionUsesNativeTextInput(),
             message = "Text input mode should be ${factory.textInputModeName}"
         )
 
@@ -96,10 +96,10 @@ class TextFieldMagnifierTest {
         params = params
     ) { factory ->
         val focusRequester = FocusRequester()
-        var nativeTextInputContext: NativeTextInputContext? = null
+        var nativeTextInputContext: TextInputContainer? = null
 
         setContent {
-            val currentNativeTextInputContext = LocalNativeTextInputContext.current
+            val currentNativeTextInputContext = LocalTextInputContainer.current
             SideEffect {
                 nativeTextInputContext = currentNativeTextInputContext
             }
@@ -115,7 +115,7 @@ class TextFieldMagnifierTest {
 
         assertEquals(
             expected = factory.useNativeTextInput,
-            actual = nativeTextInputContext?.usingNativeTextInput(),
+            actual = nativeTextInputContext?.activeSessionUsesNativeTextInput(),
             message = "Text input mode should be ${factory.textInputModeName}"
         )
 

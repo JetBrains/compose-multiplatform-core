@@ -30,6 +30,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.events.touchEvent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
@@ -187,6 +191,39 @@ class TouchPreventDefaultTest : OnCanvasTests {
 
         // Scrolling happened in Compose - the browser must not take over the gesture.
         assertTrue(touchmove.defaultPrevented, "touchmove should be prevented when Compose scrolls")
+    }
+
+    @Test
+    fun touchmovePreventedWhenParentConsumesPreScroll() = runTest {
+        val preScrollConsumer = object : NestedScrollConnection {
+            override fun onPreScroll(
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset = available
+        }
+        createComposeWindow {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .nestedScroll(preScrollConsumer)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                repeat(50) {
+                    Box(Modifier.fillMaxWidth().height(100.dp).background(Color.LightGray))
+                }
+            }
+        }
+
+        dispatchEvents(
+            WebPointerEvent("pointerdown", touch(0, 50, 80)),
+            // The first move crosses touch slop; the second is consumed by the nested-scroll parent.
+            WebPointerEvent("pointermove", touch(0, 50, 60)),
+            WebPointerEvent("pointermove", touch(0, 50, 30)),
+        )
+        val touchmove = touchEvent("touchmove")
+        dispatchEvents(touchmove)
+
+        assertTrue(touchmove.defaultPrevented, "touchmove should be prevented when a parent consumes pre-scroll")
     }
 
     @Test

@@ -16,7 +16,16 @@
 
 #import "CMPTextInputView.h"
 
-@implementation CMPTextInputView
+@interface CMPTextInputView ()
+
+- (nullable UITextField *)cmp_proxyTextField;
+
+@end
+
+@implementation CMPTextInputView {
+    UITextField *_textField;
+    BOOL _isDeallocating;
+}
 
 @synthesize beginningOfDocument;
 @synthesize hasText;
@@ -123,6 +132,61 @@
 
 - (void)insertText:(nonnull NSString *)text {
     CMP_ABSTRACT_FUNCTION_CALLED
+}
+
+- (BOOL)isSecureTextEntry {
+    CMP_ABSTRACT_FUNCTION_CALLED
+}
+
+- (UITextField *)cmp_proxyTextField {
+    if (![self isSecureTextEntry]) {
+        return nil;
+    }
+    if (!_textField) {
+        _textField = [[UITextField alloc] init];
+    }
+    return _textField;
+}
+
+/// `-[UIView dealloc]` still queries the view while tearing it down (`-isKindOfClass:` from
+/// `-_removeAllGestureRecognizers`, for example). The Kotlin subclass releases its state in its own
+/// `-dealloc` before `super` runs, so from here on the subclass can no longer be asked anything.
+- (void)dealloc {
+    _isDeallocating = YES;
+}
+
+- (BOOL)isKindOfClass:(Class)aClass {
+    if ([super isKindOfClass:aClass]) {
+        return YES;
+    }
+    if (_isDeallocating) {
+        return NO;
+    }
+    UITextField *proxyTextField = [self cmp_proxyTextField];
+    return proxyTextField != nil && [proxyTextField isKindOfClass:aClass];
+}
+
+- (NSMethodSignature*)methodSignatureForSelector:(SEL)aSelector {
+    NSMethodSignature* signature = [super methodSignatureForSelector:aSelector];
+    if (!signature) {
+        signature = [[self cmp_proxyTextField] methodSignatureForSelector:aSelector];
+    }
+    return signature;
+}
+
+- (void)forwardInvocation:(NSInvocation*)anInvocation {
+    UITextField *proxyTextField = [self cmp_proxyTextField];
+    if (proxyTextField != nil) {
+        [anInvocation invokeWithTarget:proxyTextField];
+    } else {
+        [super forwardInvocation:anInvocation];
+    }
+}
+
+- (nullable NSString *)text {
+    UITextRange *range = [self textRangeFromPosition:self.beginningOfDocument
+                                         toPosition:self.endOfDocument];
+    return range != nil ? [self textInRange:range] : nil;
 }
 
 - (void)activateTextInputInteractionIfNeeded {

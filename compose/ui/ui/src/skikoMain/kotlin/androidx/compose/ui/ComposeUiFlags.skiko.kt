@@ -29,10 +29,6 @@ internal object SkikoComposeUiFlags {
 
     @Suppress("MutableBareField")
     @JvmField
-    var areWindowInsetsRulersEnabled: Boolean = true
-
-    @Suppress("MutableBareField")
-    @JvmField
     var useSnapshotCache: Boolean = true
 }
 
@@ -51,23 +47,6 @@ var ComposeUiFlags.isClearFocusOnMouseDownEnabled by SkikoComposeUiFlags::isClea
  */
 @ExperimentalComposeUiApi
 var ComposeUiFlags.isDialogAnimationEnabled by SkikoComposeUiFlags::isDialogAnimationEnabled
-
-/**
- * Enable WindowInsets rulers:
- * * `SystemBarsRulers`
- * * `ImeRulers`
- * * `StatusBarsRulers`
- * * `NavigationBarsRulers`
- * * `CaptionBarRulers`
- * * `MandatorySystemGesturesRulers`
- * * `TappableElementRulers`
- * * `WaterfallRulers`
- * * `SafeDrawingRulers`
- * * `SafeGesturesRulers`
- * * `SafeContentRulers`
- */
-@ExperimentalComposeUiApi
-var ComposeUiFlags.areWindowInsetsRulersEnabled by SkikoComposeUiFlags::areWindowInsetsRulersEnabled
 
 /**
  * Whether [androidx.compose.ui.graphics.layer.GraphicsLayer] record their content into an

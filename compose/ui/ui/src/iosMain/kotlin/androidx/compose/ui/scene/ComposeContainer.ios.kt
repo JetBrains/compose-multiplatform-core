@@ -21,7 +21,8 @@ import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
-import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.graphics.SkiaCanvasHolder
+import androidx.compose.ui.asComposeSystemTheme
 import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.FrameChoreographer
@@ -65,6 +66,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
+import org.jetbrains.skiko.SystemTheme
+import platform.Foundation.NSKeyValueObservingOptionNew
+import platform.Foundation.addObserver
+import platform.Foundation.removeObserver
 import platform.UIKit.UIAccessibilityIsReduceMotionEnabled
 import platform.UIKit.UIApplication
 import platform.UIKit.UIResponder
@@ -98,9 +103,6 @@ internal class ComposeContainer(
         useOpaqueConfiguration = configuration.opaque,
     )
 
-    private val frameChoreographer: FrameChoreographer?
-        get() = view.window?.windowScene?.let { FrameChoreographer.choreographerForScene(it) }
-
     private var mediator: ComposeSceneMediator? = null
 
     @OptIn(InternalComposeUiApi::class)
@@ -125,7 +127,7 @@ internal class ComposeContainer(
         set(value) {
             field = value
             mediator?.layoutDirection = value
-            navigationEventInput.layoutDirection = value
+            navigationEventInput?.layoutDirection = value
         }
     private val motionDurationScale = MotionDurationScaleImpl()
     private var activeStateListener: SceneActiveStateListener? = null
@@ -142,12 +144,7 @@ internal class ComposeContainer(
             ?: error("ArchitectureComponentsOwner is not initialized yet.")
 
     private val mediaScope = MediaScope(windowContext.windowInfo)
-    private val navigationEventInput = IosBackNavigationEventInput(
-        density = view.density,
-        initialLayoutDirection = layoutDirection,
-        getTopLeftOffsetInWindow = { IntOffset.Zero }, //full screen
-        endEdgePanGestureBehavior = configuration.endEdgePanGestureBehavior
-    )
+    private var navigationEventInput: IosBackNavigationEventInput? = null
     private var layoutInvalidationHandler: LayoutInvalidationHandler? = null
     private val fontScaleProvider = FontScaleProvider(
         view = view,
@@ -157,6 +154,8 @@ internal class ComposeContainer(
 
 
     private val focusedViewsList = FocusedViewsList()
+
+    private val canvasHolder = SkiaCanvasHolder()
 
     val currentLifecycleState: Lifecycle.State get() =
         architectureComponentsOwner.lifecycle.currentState
@@ -191,6 +190,7 @@ internal class ComposeContainer(
     private fun onLayoutSubviews() {
         windowContext.updateWindowContainerSize()
 
+        mediator?.updateKeyboardOverlap()
         mediator?.measureAndLayout()
         sceneSizing.onLayout()
     }
@@ -201,7 +201,7 @@ internal class ComposeContainer(
     }
 
     private fun onDidMoveToWindow(window: UIWindow?) {
-        navigationEventInput.onDidMoveToWindow(window, view)
+        navigationEventInput?.onDidMoveToWindow(window, view)
         mediaScope.onDidMoveToWindow(window)
 
         window ?: return
@@ -220,7 +220,7 @@ internal class ComposeContainer(
 
         // Because the container view can change during the modal transition animation,
         // the gesture handlers and layers view are added back when the animation ends.
-        navigationEventInput.onDidMoveToWindow(view.window, view)
+        navigationEventInput?.onDidMoveToWindow(view.window, view)
 
         layoutInvalidationHandler?.invalidateLayoutIfNeeded()
         view.setNeedsDisplay()
@@ -229,15 +229,19 @@ internal class ComposeContainer(
     fun sceneWillDisappear() {
         mediator?.sceneWillDisappear()
 
-        navigationEventInput.onDidMoveToWindow(null, view)
+        navigationEventInput?.onDidMoveToWindow(null, view)
     }
 
     fun updateUserInterfaceStyle(style: UIUserInterfaceStyle) = mediaScope.updateUserInterfaceStyle(style)
 
-    fun initializeComposeScene() {
+ fun initializeComposeScene() {
         sceneJob = Job()
-        val frameChoreographer = frameChoreographer ?: error("No window scene found")
-        val containerCoroutineContext = frameChoreographer.coroutineContext + motionDurationScale + sceneJob
+        val frameChoreographer = view.window?.windowScene
+            ?.let(FrameChoreographer::choreographerForScene)
+            ?: error("No window scene found")
+
+        val containerCoroutineContext =
+            frameChoreographer.coroutineContext + motionDurationScale + sceneJob
 
         val layoutInvalidationHandler = LayoutInvalidationHandler(containerCoroutineContext) {
             view.setNeedsLayout()
@@ -246,12 +250,16 @@ internal class ComposeContainer(
         this.layoutInvalidationHandler = layoutInvalidationHandler
 
         val metalView = MetalView(
-            retrieveInteropTransaction = { mediator?.retrieveInteropTransaction() ?: InteropSyncTransaction.Empty },
+            retrieveInteropTransaction = {
+                mediator?.retrieveInteropTransaction() ?: InteropSyncTransaction.Empty
+            },
             useSeparateRenderThreadWhenPossible = configuration.parallelRendering,
             draw = { canvas ->
+             canvasHolder.drawInto(canvas) {
                 layoutInvalidationHandler.postponeLayoutInvalidationCalls {
-                    mediator?.draw(canvas.asComposeCanvas())
+                    mediator?.draw(this@drawInto)
                 }
+              }
             }
         )
         metalView.canBeOpaque = configuration.opaque
@@ -269,6 +277,16 @@ internal class ComposeContainer(
         )
         architectureComponentsOwner.enableSavedStateHandles()
         lifecycleDelegate.onLifecycleStateUpdated = architectureComponentsOwner::setLifecycleState
+
+        val backNavigationEventInput = IosBackNavigationEventInput(
+            frameChoreographer = frameChoreographer,
+            density = view.density,
+            initialLayoutDirection = layoutDirection,
+            getTopLeftOffsetInWindow = { IntOffset.Zero }, // full screen
+            endEdgePanGestureBehavior = configuration.endEdgePanGestureBehavior
+        ).also {
+            navigationEventInput = it
+        }
 
         mediator = ComposeSceneMediator(
             frameChoreographer = frameChoreographer,
@@ -297,7 +315,7 @@ internal class ComposeContainer(
                     },
                 )
             },
-            navigationEventInput = navigationEventInput,
+            navigationEventInput = backNavigationEventInput,
             mediaScope = mediaScope,
             schedulePendingInteropViewUpdates = view::setNeedsDisplay,
         ).also { mediator ->
@@ -334,9 +352,9 @@ internal class ComposeContainer(
 
         mediaScope.startObserving()
 
-        architectureComponentsOwner.navigationEventDispatcher.addInput(navigationEventInput)
+        architectureComponentsOwner.navigationEventDispatcher.addInput(backNavigationEventInput)
         lifecycleDelegate.windowScene = windowScene
-        navigationEventInput.onDidMoveToWindow(view.window, view)
+        backNavigationEventInput.onDidMoveToWindow(view.window, view)
         onFocusConditionsChanged()
     }
 
@@ -349,8 +367,11 @@ internal class ComposeContainer(
         sceneJob.cancel()
 
         view.updateMetalView(metalView = null)
-        navigationEventInput.onDidMoveToWindow(null, view)
-        architectureComponentsOwner.navigationEventDispatcher.removeInput(navigationEventInput)
+        navigationEventInput?.let {
+            it.onDidMoveToWindow(null, view)
+            architectureComponentsOwner.navigationEventDispatcher.removeInput(it)
+        }
+        navigationEventInput = null
 
         mediator = null
 
@@ -410,6 +431,7 @@ internal class ComposeContainer(
 
                 layer.rootForTestListener = rootForTestListener
                 layersHolder.getLayersViewController().attach(layer)
+                onFontScaleChanged(fontScaleProvider.fontScale)
                 onFocusConditionsChanged()
 
                 return layer
@@ -456,6 +478,7 @@ internal class ComposeContainer(
     private fun ProvideContainerCompositionLocals(content: @Composable () -> Unit) =
         CompositionLocalProvider(
             LocalUIViewController provides containingViewController,
+            @Suppress("DEPRECATION")
             LocalSystemTheme provides mediaScope.systemTheme,
             content = content
         )

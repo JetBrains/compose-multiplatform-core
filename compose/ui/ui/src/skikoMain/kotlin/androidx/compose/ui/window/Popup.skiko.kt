@@ -27,9 +27,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -471,16 +473,18 @@ private fun PopupLayout(
     content: @Composable () -> Unit
 ) {
     // Use a MutableState directly to avoid recomposing when the value changes
-    val parentBoundsInWindow: MutableState<IntRect> = remember { mutableStateOf(IntRect.Zero) }
+    val parentBoundsInWindow: MutableState<IntRect?> = remember { mutableStateOf(null) }
+    var canCalculatePosition by remember { mutableStateOf(false) }
     EmptyLayout(Modifier.onPlaced { childCoordinates ->
-        // This will be called before the popup measure policy is actually asked to calculate
-        // the popup's position, so it will never see the initial value of IntRect.Zero
+        // For a layer in the same scene, this runs before its popup measure policy calculates a
+        // position, so the policy observes the parent bounds in the first frame.
         childCoordinates.parentCoordinates?.let {
             // Nodes which read layout coordinates (including, e.g., positionInWindow) in
             // layout/placement get invalidated when these coordinates change
             val layoutPosition = it.positionInWindow().round()
             val layoutSize = it.size
             parentBoundsInWindow.value = IntRect(layoutPosition, layoutSize)
+            canCalculatePosition = true
         }
     })
 
@@ -511,7 +515,9 @@ private fun PopupLayout(
         ) {
             Layout(
                 content = currentContent,
-                modifier = modifier,
+                // Compose and measure the popup before it can be positioned, but do not show it
+                // until its anchor bounds are available.
+                modifier = modifier.alpha(if (canCalculatePosition) 1f else 0f),
                 measurePolicy = measurePolicy
             )
         }
@@ -541,7 +547,7 @@ private fun rememberPopupMeasurePolicy(
     containerSize: IntSize,
     platformInsets: PlatformInsets,
     layoutDirection: LayoutDirection,
-    parentBoundsInWindow: MutableState<IntRect>
+    parentBoundsInWindow: MutableState<IntRect?>
 ) = remember(
     layer,
     popupPositionProvider,
@@ -556,6 +562,11 @@ private fun rememberPopupMeasurePolicy(
         usePlatformDefaultWidth = properties.usePlatformDefaultWidth
     ) { contentSize ->
         val parentRectInWindow = parentBoundsInWindow.value
+        if (parentRectInWindow == null) {
+            // Keep an unanchored layer out of the visible window until its content is measured.
+            layer.boundsInWindow = IntRect.Zero
+            return@ComposeSceneLayerMeasurePolicy IntOffset.Zero
+        }
         val positionWithInsets =
             positionWithInsets(platformInsets, containerSize) { sizeWithoutInsets ->
                 // Position provider works in coordinates without insets.

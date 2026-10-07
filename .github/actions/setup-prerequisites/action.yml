@@ -11,7 +11,9 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
 
     - name: Setup Android SDK
-      uses: android-actions/setup-android@v2
+      uses: android-actions/setup-android@v4
+      with:
+        packages: platform-tools
 
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v4

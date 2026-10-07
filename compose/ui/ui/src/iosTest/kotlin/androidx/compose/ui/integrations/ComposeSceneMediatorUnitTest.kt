@@ -92,18 +92,26 @@ class ComposeSceneMediatorUnitTest {
     private fun makeMediator(
         coroutineContext: CoroutineContext,
         frameChoreographer: FrameChoreographer = FrameChoreographer.choreographerForScene(UIWindowScene()),
-    ): ComposeSceneMediator {
-        val windowContext = WindowContext()
-        val mediaScope = MediaScope(windowContext.windowInfo)
-        return ComposeSceneMediator(
+    ): ComposeSceneMediator = ComposeSceneMediator(
+        frameChoreographer = frameChoreographer,
+        onFocusBehavior = OnFocusBehavior.DoNothing,
+        isClearFocusOnMouseDownEnabled = false,
+        focusedViewsList = null,
+        windowContext = WindowContext(),
+        architectureComponentsOwner = DefaultArchitectureComponentsOwner(),
+        coroutineContext = coroutineContext,
+        navigationEventInput = IosBackNavigationEventInput(
             frameChoreographer = frameChoreographer,
-            onFocusBehavior = OnFocusBehavior.DoNothing,
-            isClearFocusOnMouseDownEnabled = false,
-            focusedViewsList = null,
-            windowContext = windowContext,
-            architectureComponentsOwner = DefaultArchitectureComponentsOwner(),
-            coroutineContext = coroutineContext,
-            navigationEventInput = IosBackNavigationEventInput(
+            density = Density(1f),
+            initialLayoutDirection = LayoutDirection.Ltr,
+            getTopLeftOffsetInWindow = { IntOffset.Zero },
+            endEdgePanGestureBehavior = EndEdgePanGestureBehavior.Disabled,
+        ),
+        interfaceOrientationState = mutableStateOf(InterfaceOrientation.Portrait),
+        composeSceneFactory = { platformContext ->
+            registerSkikoComposeImplementation()
+            PlatformLayersComposeScene(
+                frameRecomposer = frameChoreographer.frameRecomposer,
                 density = Density(1f),
                 initialLayoutDirection = LayoutDirection.Ltr,
                 getTopLeftOffsetInWindow = { IntOffset.Zero },

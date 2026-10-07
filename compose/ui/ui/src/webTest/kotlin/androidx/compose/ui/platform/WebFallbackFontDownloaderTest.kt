@@ -20,14 +20,19 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.text.font.FontFamily
-import kotlin.coroutines.Continuation
+import androidx.compose.ui.text.platform.WebUnresolvedSymbolsRegistry
 import kotlin.coroutines.resume
+import kotlin.js.ExperimentalWasmJsInterop
+import kotlin.js.js
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -35,7 +40,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
-import kotlinx.coroutines.yield
+import kotlinx.coroutines.withTimeoutOrNull
 
 @OptIn(ExperimentalCoroutinesApi::class, InternalComposeApi::class)
 class WebFallbackFontDownloaderTest : OnCanvasTests {
@@ -286,4 +291,88 @@ class WebFallbackFontDownloaderTest : OnCanvasTests {
             "FakeDownloader should have received codepoint 0x${codepoint.toString(16)}. Actual calls: ${fake.calls}"
         )
     }
+
+    @Test
+    fun customFontFallbackUrlIsUsedForNotoFontDownloads() = runTest {
+        val customBaseUrl = "https://fallback.example/fonts/"
+        mockWindowFetch()
+
+        try {
+            createComposeWindow(configure = { fontFallbackUrl = customBaseUrl }) {
+                BasicText("🤔")
+            }
+
+            val requestedUrl = withContext(Dispatchers.Default) {
+                withTimeout(2.seconds) {
+                    while (true) {
+                        getMockedFontFetchUrl()?.let { return@withTimeout it }
+                        delay(10.milliseconds)
+                    }
+                    error("Unreachable")
+                }
+            }
+            assertTrue(
+                requestedUrl.startsWith(customBaseUrl),
+                "Expected a fallback font request to start with $customBaseUrl, got $requestedUrl"
+            )
+        } finally {
+            getComposeWindowOrNull()?.dispose()
+            WebUnresolvedSymbolsRegistry.onNewFontInstalled()
+            restoreWindowFetch()
+        }
+    }
+
+    @Test
+    fun nullFontFallbackUrlDsablesFallbackFontDownloader() = runTest {
+        val fake = FakeDownloader()
+        val previousDownloader = defaultFallbackFontDownloader
+        defaultFallbackFontDownloader = fake
+
+        try {
+            createComposeWindow(
+                configure = { fontFallbackUrl = null }
+            ) {
+                BasicText("გამარჯობა -> gamarjoba")
+            }
+
+            val downloaderWasCalled = withContext(Dispatchers.Default) {
+                withTimeoutOrNull(200.milliseconds) {
+                    fake.awaitNextDownloadCall()
+                    true
+                } == true
+            }
+            assertFalse(downloaderWasCalled, "Fallback downloader should not be called")
+            assertTrue(fake.calls.isEmpty(), "Fallback downloader should not receive codepoints")
+        } finally {
+            defaultFallbackFontDownloader = previousDownloader
+        }
+    }
+}
+
+@OptIn(ExperimentalWasmJsInterop::class)
+private fun mockWindowFetch() {
+    // language=js
+    js("""{
+        window.__composeFallbackOriginalFetch = window.fetch;
+        window.__composeFallbackFetchUrl = null;
+        window.fetch = (url) => {
+            window.__composeFallbackFetchUrl = String(url);
+            return new Promise(() => {});
+        };
+    }""")
+}
+
+@OptIn(ExperimentalWasmJsInterop::class)
+private fun getMockedFontFetchUrl(): String? =
+    // language=js
+    js("window.__composeFallbackFetchUrl")
+
+@OptIn(ExperimentalWasmJsInterop::class)
+private fun restoreWindowFetch() {
+    // language=js
+    js("""{
+        window.fetch = window.__composeFallbackOriginalFetch;
+        delete window.__composeFallbackOriginalFetch;
+        delete window.__composeFallbackFetchUrl;
+    }""")
 }

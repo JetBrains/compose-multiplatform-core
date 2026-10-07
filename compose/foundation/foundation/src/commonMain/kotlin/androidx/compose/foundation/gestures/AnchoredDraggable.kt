@@ -1258,18 +1258,17 @@ public class AnchoredDraggableState<T>(initialValue: T) {
      *
      * @return true if the synchronous snap was successful, or false if we couldn't snap synchronous
      */
-    private fun trySnapTo(targetValue: T): Boolean =
-        dragMutex.tryMutate {
-            with(anchoredDragScope) {
-                val targetOffset = anchors.positionOf(targetValue)
-                if (!targetOffset.isNaN()) {
-                    dragTo(targetOffset)
-                    dragTarget = null
-                }
-                currentValue = targetValue
-                settledValue = targetValue
+    private fun trySnapTo(targetValue: T): Boolean = dragMutex.tryMutate {
+        with(anchoredDragScope) {
+            val targetOffset = anchors.positionOf(targetValue)
+            if (!targetOffset.isNaN()) {
+                dragTo(targetOffset)
+                dragTarget = null
             }
+            currentValue = targetValue
+            settledValue = targetValue
         }
+    }
 
     public companion object {
         /** The default [Saver] implementation for [AnchoredDraggableState]. */
@@ -1346,7 +1345,7 @@ private suspend fun <T> AnchoredDraggableState<T>.animateTo(
 ) {
     with(anchoredDragScope) {
         val targetOffset = anchors.positionOf(latestTarget)
-        var prev = if (offset.isNaN()) 0f else offset
+        val prev = if (offset.isNaN()) 0f else offset
         if (!targetOffset.isNaN() && prev != targetOffset) {
             debugLog { "Target animation is used" }
             animate(prev, targetOffset, velocity, snapAnimationSpec) { value, velocity ->
@@ -1355,7 +1354,6 @@ private suspend fun <T> AnchoredDraggableState<T>.animateTo(
                 // We respect the user's intention and allow the overshoot, but still use
                 // DraggableState's drag for its mutex.
                 dragTo(value, velocity)
-                prev = value
             }
         }
     }

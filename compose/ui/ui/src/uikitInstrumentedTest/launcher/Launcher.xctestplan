@@ -10,6 +10,12 @@
   ],
   "defaultOptions" : {
     "defaultTestExecutionTimeAllowance" : 60,
+    "environmentVariableEntries" : [
+      {
+        "key" : "OS_ACTIVITY_MODE",
+        "value" : "disable"
+      }
+    ],
     "targetForVariableExpansion" : {
       "containerPath" : "container:CMPUIKitUtils.xcodeproj",
       "identifier" : "997DFCF92B18E5D3000B56B5",

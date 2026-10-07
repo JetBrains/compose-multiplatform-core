@@ -29,6 +29,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.UIKitInstrumentedTest
@@ -52,7 +53,9 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import platform.Foundation.NSTimeInterval
 import platform.UIKit.UITraitEnvironmentLayoutDirectionLeftToRight
 import platform.UIKit.UITraitEnvironmentLayoutDirectionRightToLeft
 
@@ -649,6 +652,100 @@ internal abstract class SwipeBackTest(
         )
     }
 
+    @Test
+    fun testHeldBackSwipeKeepsChoreographerTicking() = runUIKitInstrumentedTest {
+        var transitionState: NavigationEventTransitionState = NavigationEventTransitionState.Idle
+
+        setContent(layoutDirection = UITraitEnvironmentLayoutDirectionLeftToRight) {
+            SwipeBackTestContent(onTransitionStateChanged = { transitionState = it })
+        }
+
+        val choreographer = assertNotNull(frameChoreographer, "frameChoreographer is null")
+        val listener = CountingListener()
+        choreographer.addListener(listener)
+        try {
+            val swipeBack = swipeFromLeftEdge().hold()
+
+            waitUntil("back swipe should be in progress") {
+                transitionState is InProgress
+            }
+
+            // The touch is stationary, so nothing invalidates the content: only the activity
+            // started for the ongoing gesture can keep the display link running.
+            settleChoreographer()
+
+            val ticksDuringGesture = listener.displayLinkCount
+            waitUntil("choreographer should keep ticking during the back gesture") {
+                listener.displayLinkCount > ticksDuringGesture + 3
+            }
+
+            swipeBack.up()
+            settleChoreographer()
+
+            val ticksAfterGesture = listener.displayLinkCount
+            delay(100)
+            assertEquals(
+                ticksAfterGesture,
+                listener.displayLinkCount,
+                "choreographer should pause after the back gesture ends"
+            )
+        } finally {
+            choreographer.removeListener(listener)
+        }
+    }
+
+    @Test
+    fun testChoreographerPausesAfterRepeatedBackSwipes() = runUIKitInstrumentedTest {
+        var backCompletedCount = 0
+
+        setContent(layoutDirection = UITraitEnvironmentLayoutDirectionLeftToRight) {
+            SwipeBackTestContent(onBackCompletedCountChanged = { backCompletedCount = it })
+        }
+
+        val choreographer = assertNotNull(frameChoreographer, "frameChoreographer is null")
+        val listener = CountingListener()
+        choreographer.addListener(listener)
+        try {
+            repeat(3) { index ->
+                swipeFromLeftEdge().up()
+
+                waitUntil("back swipe ${index + 1} should complete") {
+                    backCompletedCount == index + 1
+                }
+            }
+
+            // Every gesture must end exactly the activities it started, otherwise the display link
+            // keeps producing frames forever.
+            settleChoreographer()
+
+            val ticksAfterGestures = listener.displayLinkCount
+            delay(100)
+            assertEquals(
+                ticksAfterGestures,
+                listener.displayLinkCount,
+                "choreographer should pause after all the back gestures end"
+            )
+        } finally {
+            choreographer.removeListener(listener)
+        }
+    }
+
+    private fun UIKitInstrumentedTest.settleChoreographer() {
+        waitForIdle()
+        delay(100)
+    }
+}
+
+private class CountingListener : FrameChoreographer.Listener {
+    var displayLinkCount = 0
+        private set
+
+    override fun onDisplayLinkTick() {
+        displayLinkCount++
+    }
+
+    override fun onOutOfFrame(lastFrameTimestamp: NSTimeInterval, targetTimestamp: NSTimeInterval) =
+        Unit
 }
 
 @Composable

@@ -35,12 +35,13 @@ import org.jetbrains.skia.Image
 import org.jetbrains.skia.Matrix44
 import org.jetbrains.skia.MipmapMode
 import org.jetbrains.skia.SamplingMode
+import org.jetbrains.skia.Surface
 import org.jetbrains.skia.impl.use
 
 /**
  * Convert the [org.jetbrains.skia.Canvas] instance into a Compose-compatible Canvas
  */
-fun SkCanvas.asComposeCanvas(): Canvas = SkiaBackedCanvas(this)
+fun SkCanvas.asComposeCanvas(): Canvas = SkiaBackedCanvas().apply { internalSkiaCanvas = this@asComposeCanvas }
 
 /**
  * Provides access to the underlying [org.jetbrains.skia.Canvas] instance.
@@ -62,9 +63,41 @@ val Canvas.skiaCanvas: SkCanvas
 val Canvas.nativeCanvas: SkCanvas
     get() = skiaCanvas
 
-internal class SkiaBackedCanvas(
-    internal val internalSkiaCanvas: SkCanvas,
-) : Canvas {
+// Stub canvas instance used to keep the internal canvas parameter non-null during its
+// scoped usage and prevent unnecessary byte code null checks from being generated
+private val EmptyCanvas = Surface.makeNull(1,1).canvas
+
+/**
+ * Holder class that is used to issue scoped calls to a [Canvas]
+ * without having to allocate a SkiaBackedCanvas on each draw call.
+ *
+ * **Do not use in functions that can be called concurrently
+ * from different threads** The methods are not thread safe.
+ */
+@InternalComposeUiApi
+class SkiaCanvasHolder(skiaCanvas : SkCanvas? = null) {
+    @PublishedApi
+    internal val skiaBackedCanvas = SkiaBackedCanvas().apply { internalSkiaCanvas = skiaCanvas ?: EmptyCanvas }
+
+    inline fun drawInto(targetCanvas: SkCanvas, crossinline block: Canvas.() -> Unit) {
+        val previousCanvas = skiaBackedCanvas.internalSkiaCanvas
+        skiaBackedCanvas.internalSkiaCanvas = targetCanvas
+        try {
+            skiaBackedCanvas.block()
+        } finally {
+            skiaBackedCanvas.internalSkiaCanvas = previousCanvas
+        }
+    }
+}
+
+@PublishedApi
+@InternalComposeUiApi
+internal class SkiaBackedCanvas : Canvas {
+
+    // Keep the internal canvas as a var prevent having to allocate a SkiaBackedCanvas
+    // instance on each draw call
+    @PublishedApi
+    internal var internalSkiaCanvas: SkCanvas = EmptyCanvas
     override fun save() {
         internalSkiaCanvas.save()
     }

@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformTextInputSession
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.UIKitInstrumentedTest
+import androidx.compose.ui.test.findAllUITextInputViews
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.text.input.ImeAction
@@ -539,23 +540,6 @@ internal class ImeOptionsTest {
         imeOptions: PlatformImeOptions? = null
     ): UITextInputProtocol = setContentAndFindInput(keyboardOptions = KeyboardOptions(platformImeOptions = imeOptions))
 
-    private fun UIKitInstrumentedTest.findFirstUITextInput(): UIView? {
-        val windowScene = viewController.view.window?.windowScene ?: return null
-
-        fun traverseSubviews(view: UIView): UIView? {
-            if (view as? UITextInputProtocol != null) {
-                return view
-            }
-
-            view.subviews.forEach {
-                traverseSubviews(it as UIView)?.let { return it }
-            }
-
-            return null
-        }
-
-        return windowScene.windows.reversed().firstNotNullOfOrNull {
-            traverseSubviews(view = it as UIView)
-        }
-    }
+    private fun UIKitInstrumentedTest.findFirstUITextInput(): UIView? =
+        findAllUITextInputViews().firstOrNull()
 }

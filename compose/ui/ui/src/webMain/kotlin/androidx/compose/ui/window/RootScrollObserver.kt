@@ -30,11 +30,13 @@ import androidx.compose.ui.util.fastMaxOfOrNull
 internal class RootScrollObserver : NestedScrollConnection {
     private var consumedDistance = 0f
     private var totalScrollEvents = 0
+    private var preScrollAvailable = Offset.Zero
 
     // Reset when all pointers are up.
     fun reset() {
         consumedDistance = 0f
         totalScrollEvents = 0
+        preScrollAvailable = Offset.Zero
     }
 
     fun consumedAnyScroll() = totalScrollEvents > 0 && consumedDistance > 0f
@@ -43,6 +45,9 @@ internal class RootScrollObserver : NestedScrollConnection {
     // Descendants call dispatchPreScroll BEFORE trying to scroll themselves.
     // We don't want to steal anything — return Zero.
     override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+        if (source == NestedScrollSource.UserInput) {
+            preScrollAvailable = available
+        }
         return Offset.Zero
     }
 
@@ -56,7 +61,9 @@ internal class RootScrollObserver : NestedScrollConnection {
         // Only care about drag-driven scrolls, not fling/programmatic.
         if (source == NestedScrollSource.UserInput) {
             totalScrollEvents++
-            consumedDistance += consumed.getDistanceSquared()
+            val totalConsumed = preScrollAvailable - available
+            consumedDistance += totalConsumed.getDistanceSquared()
+            preScrollAvailable = Offset.Zero
         }
         return Offset.Zero
     }

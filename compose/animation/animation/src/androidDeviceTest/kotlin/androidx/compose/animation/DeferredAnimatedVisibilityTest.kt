@@ -17,7 +17,6 @@
 package androidx.compose.animation
 
 import androidx.compose.animation.core.DeferredTransitionState
-import androidx.compose.animation.core.ExperimentalDeferredTransitionApi
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.rememberDeferredTransition
@@ -54,7 +53,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalDeferredTransitionApi::class)
 @RunWith(AndroidJUnit4::class)
 @LargeTest
 class DeferredAnimatedVisibilityTest {
@@ -1100,7 +1098,7 @@ class DeferredAnimatedVisibilityTest {
     fun visibility_previewOffset_handoffVelocity() {
         lateinit var state: DeferredTransitionState<Boolean>
         var previewVelocity by mutableStateOf(Offset.Zero)
-        var previewOffset = 100
+        val previewOffset = 100
 
         var measuredX = 0
 
@@ -1248,7 +1246,7 @@ class DeferredAnimatedVisibilityTest {
         assertEquals(fullWidth, measuredWidth, 1f)
     }
 
-    @OptIn(ExperimentalDeferredTransitionApi::class, ExperimentalAnimationApi::class)
+    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun deferredAnimatedVisibility_interruptedEnter_doesNotFreezeVeil() {
         lateinit var state: DeferredTransitionState<Boolean>

@@ -131,9 +131,6 @@ public final class androidx/compose/foundation/layout/ColumnScopeInstance : andr
 	public fun weight (Landroidx/compose/ui/Modifier;FZ)Landroidx/compose/ui/Modifier;
 }
 
-public abstract interface annotation class androidx/compose/foundation/layout/ExperimentalGridApi : java/lang/annotation/Annotation {
-}
-
 public abstract interface annotation class androidx/compose/foundation/layout/ExperimentalLayoutApi : java/lang/annotation/Annotation {
 }
 
@@ -565,6 +562,7 @@ public abstract interface class androidx/compose/foundation/layout/PaddingValues
 
 public final class androidx/compose/foundation/layout/PaddingValues$Absolute : androidx/compose/foundation/layout/PaddingValues {
 	public static final field $stable I
+	public fun <init> ()V
 	public synthetic fun <init> (FFFFILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (FFFFLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun calculateBottomPadding-D9Ej5fM ()F

@@ -955,7 +955,10 @@ class TextFieldTest {
                     modifier = Modifier.testTag(TextFieldTag),
                     state = state,
                     keyboardOptions =
-                        KeyboardOptions(imeAction = ImeAction.Go, keyboardType = KeyboardType.Email),
+                        KeyboardOptions(
+                            imeAction = ImeAction.Go,
+                            keyboardType = KeyboardType.Email,
+                        ),
                 )
             }
         }
@@ -1495,6 +1498,7 @@ class TextFieldTest {
         // Nothing to assert; just make sure it doesn't crash
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textField_stringOverload_doesNotCallOnValueChange_whenCompositionUpdatesOnly() {
         var callbackCounter = 0

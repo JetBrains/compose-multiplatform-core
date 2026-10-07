@@ -34,4 +34,6 @@ NS_ASSUME_NONNULL_END
 
 - (nullable UIView *)inputAccessoryView;
 
+- (BOOL)isSecureTextEntry CMP_ABSTRACT_FUNCTION;
+
 @end
