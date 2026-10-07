@@ -583,60 +583,56 @@ public class ColorScheme(
         )
 
     override fun toString(): String {
-        // Long string concatenation causes atomicfu plugin to be slow/hang.
-        // See https://youtrack.jetbrains.com/issue/KT-65645/Atomicfu-plugin-compilation-hangs-on-a-long-string-concatenation
-        return buildString {
-            append("ColorScheme(")
-            append("primary=$primary, ")
-            append("onPrimary=$onPrimary, ")
-            append("primaryContainer=$primaryContainer, ")
-            append("onPrimaryContainer=$onPrimaryContainer, ")
-            append("inversePrimary=$inversePrimary, ")
-            append("secondary=$secondary, ")
-            append("onSecondary=$onSecondary, ")
-            append("secondaryContainer=$secondaryContainer, ")
-            append("onSecondaryContainer=$onSecondaryContainer, ")
-            append("tertiary=$tertiary, ")
-            append("onTertiary=$onTertiary, ")
-            append("tertiaryContainer=$tertiaryContainer, ")
-            append("onTertiaryContainer=$onTertiaryContainer, ")
-            append("background=$background, ")
-            append("onBackground=$onBackground, ")
-            append("surface=$surface, ")
-            append("onSurface=$onSurface, ")
-            append("surfaceVariant=$surfaceVariant, ")
-            append("onSurfaceVariant=$onSurfaceVariant, ")
-            append("surfaceTint=$surfaceTint, ")
-            append("inverseSurface=$inverseSurface, ")
-            append("inverseOnSurface=$inverseOnSurface, ")
-            append("error=$error, ")
-            append("onError=$onError, ")
-            append("errorContainer=$errorContainer, ")
-            append("onErrorContainer=$onErrorContainer, ")
-            append("outline=$outline, ")
-            append("outlineVariant=$outlineVariant, ")
-            append("scrim=$scrim, ")
-            append("surfaceBright=$surfaceBright, ")
-            append("surfaceDim=$surfaceDim, ")
-            append("surfaceContainer=$surfaceContainer, ")
-            append("surfaceContainerHigh=$surfaceContainerHigh, ")
-            append("surfaceContainerHighest=$surfaceContainerHighest, ")
-            append("surfaceContainerLow=$surfaceContainerLow, ")
-            append("surfaceContainerLowest=$surfaceContainerLowest, ")
-            append("primaryFixed=$primaryFixed, ")
-            append("primaryFixedDim=$primaryFixedDim, ")
-            append("onPrimaryFixed=$onPrimaryContainer, ")
-            append("onPrimaryFixedVariant=$onPrimaryFixedVariant, ")
-            append("secondaryFixed=$secondaryFixed, ")
-            append("secondaryFixedDim=$secondaryFixedDim, ")
-            append("onSecondaryFixed=$onSecondaryFixed, ")
-            append("onSecondaryFixedVariant=$onSecondaryFixedVariant, ")
-            append("tertiaryFixed=$tertiaryFixed, ")
-            append("tertiaryFixedDim=$tertiaryFixedDim, ")
-            append("onTertiaryFixed=$onTertiaryFixed, ")
-            append("onTertiaryFixedVariant=$onTertiaryFixedVariant, ")
-            append(")")
-        }
+        return "ColorScheme(" +
+            "primary=$primary" +
+            "onPrimary=$onPrimary" +
+            "primaryContainer=$primaryContainer" +
+            "onPrimaryContainer=$onPrimaryContainer" +
+            "inversePrimary=$inversePrimary" +
+            "secondary=$secondary" +
+            "onSecondary=$onSecondary" +
+            "secondaryContainer=$secondaryContainer" +
+            "onSecondaryContainer=$onSecondaryContainer" +
+            "tertiary=$tertiary" +
+            "onTertiary=$onTertiary" +
+            "tertiaryContainer=$tertiaryContainer" +
+            "onTertiaryContainer=$onTertiaryContainer" +
+            "background=$background" +
+            "onBackground=$onBackground" +
+            "surface=$surface" +
+            "onSurface=$onSurface" +
+            "surfaceVariant=$surfaceVariant" +
+            "onSurfaceVariant=$onSurfaceVariant" +
+            "surfaceTint=$surfaceTint" +
+            "inverseSurface=$inverseSurface" +
+            "inverseOnSurface=$inverseOnSurface" +
+            "error=$error" +
+            "onError=$onError" +
+            "errorContainer=$errorContainer" +
+            "onErrorContainer=$onErrorContainer" +
+            "outline=$outline" +
+            "outlineVariant=$outlineVariant" +
+            "scrim=$scrim" +
+            "surfaceBright=$surfaceBright" +
+            "surfaceDim=$surfaceDim" +
+            "surfaceContainer=$surfaceContainer" +
+            "surfaceContainerHigh=$surfaceContainerHigh" +
+            "surfaceContainerHighest=$surfaceContainerHighest" +
+            "surfaceContainerLow=$surfaceContainerLow" +
+            "surfaceContainerLowest=$surfaceContainerLowest" +
+            "primaryFixed=$primaryFixed" +
+            "primaryFixedDim=$primaryFixedDim" +
+            "onPrimaryFixed=$onPrimaryContainer" +
+            "onPrimaryFixedVariant=$onPrimaryFixedVariant" +
+            "secondaryFixed=$secondaryFixed" +
+            "secondaryFixedDim=$secondaryFixedDim" +
+            "onSecondaryFixed=$onSecondaryFixed" +
+            "onSecondaryFixedVariant=$onSecondaryFixedVariant" +
+            "tertiaryFixed=$tertiaryFixed" +
+            "tertiaryFixedDim=$tertiaryFixedDim" +
+            "onTertiaryFixed=$onTertiaryFixed" +
+            "onTertiaryFixedVariant=$onTertiaryFixedVariant" +
+            ")"
     }
 
     internal var defaultButtonColorsCached: ButtonColors? = null

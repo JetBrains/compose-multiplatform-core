@@ -198,8 +198,9 @@ internal class FrameChoreographer private constructor(
         }
     }
 
-    private var ongoingActivitiesCount: Int = 0
-        set(value) {
+    @VisibleForTesting
+    internal var ongoingActivitiesCount: Int = 0
+        private set(value) {
             assert(value >= 0)
             field = value
             requestFrame()

@@ -17,7 +17,6 @@
 package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.scene.ComposeHostingView
 import androidx.compose.ui.uikit.ComposeUIViewConfiguration
 import platform.UIKit.UIView
@@ -32,7 +31,6 @@ import platform.UIKit.UIView
  * [ComposeUIView].
  * @return A [UIView] instance capable of hosting the specified Compose content.
  */
-@ExperimentalComposeUiApi
 fun ComposeUIView(content: @Composable () -> Unit): UIView =
     ComposeUIView(configure = {}, content = content)
 
@@ -44,7 +42,6 @@ fun ComposeUIView(content: @Composable () -> Unit): UIView =
  * [ComposeUIView].
  * @return A configured [UIView] instance capable of displaying the provided Compose content.
  */
-@ExperimentalComposeUiApi
 fun ComposeUIView(
     configure: ComposeUIViewConfiguration.() -> Unit = {},
     content: @Composable () -> Unit

@@ -210,7 +210,9 @@ internal class LookaheadPassDelegate(
         private set
 
     private inline fun forEachChildDelegate(block: (LookaheadPassDelegate) -> Unit) =
-        layoutNode.forEachChild { block(it.layoutDelegate.lookaheadPassDelegate!!) }
+        layoutNode.forEachChild {
+            block(it.layoutDelegate.lookaheadPassDelegate!!)
+        }
 
     private val layoutChildrenBlock = {
         clearPlaceOrder()
@@ -229,8 +231,7 @@ internal class LookaheadPassDelegate(
                 // calculations, so we allocate the list here to preserve correctness instead of
                 // reserving a field for this.
                 childrenPlacingForAlignment =
-                    childrenPlacingForAlignment
-                        ?: MutableObjectList<LayoutNode>().also { childrenPlacingForAlignment = it }
+                    childrenPlacingForAlignment ?: MutableObjectList<LayoutNode>()
                 childrenPlacingForAlignment.add(it)
             }
             childDelegate.isPlacingForAlignment = lookaheadDelegate.isPlacingForAlignment

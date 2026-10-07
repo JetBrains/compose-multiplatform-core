@@ -17,6 +17,7 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.text.TextLayoutResult
@@ -109,4 +110,11 @@ actual interface PlatformTextInputMethodRequest {
      */
     @ExperimentalComposeUiApi
     val editText: (block: TextEditingScope.() -> Unit) -> Unit
+
+    /**
+     * Opaque token that uniquely identifies the text editor.
+     */
+    @ExperimentalComposeUiApi
+    val editorToken: Any?
+        get() = null
 }

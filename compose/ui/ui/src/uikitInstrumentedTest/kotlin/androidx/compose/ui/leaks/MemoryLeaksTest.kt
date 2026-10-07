@@ -29,7 +29,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.node.WeakReference
-import androidx.compose.ui.platform.EmptyTextEditingDelegate
 import androidx.compose.ui.scene.ComposeHostingView
 import androidx.compose.ui.scene.ComposeHostingViewController
 import androidx.compose.ui.window.ComposeUIView
@@ -39,7 +38,6 @@ import androidx.compose.ui.test.waitForIdle
 import androidx.compose.ui.uikit.embedSubview
 import androidx.compose.ui.window.ComposeUIViewController
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.ComposeTextInputView
 import kotlin.native.runtime.GC
 import kotlin.native.runtime.NativeRuntimeApi
 import kotlin.test.Test
@@ -60,6 +58,7 @@ import platform.Foundation.NSRunLoop
 import platform.Foundation.dateWithTimeIntervalSinceNow
 import platform.Foundation.runUntilDate
 import platform.UIKit.UIApplication
+import platform.UIKit.UITextField
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 
@@ -118,7 +117,7 @@ class MemoryLeaksTest {
         assertEquals(
             expected = 4,
             actual = subviewsReferences.count(),
-            message = "Expected 4 subviews: [ComposeView, UserInputView, MetalView, UIKitTransparentContainerView]" +
+            message = "Expected 4 subviews: [ComposeContainerView, BackgroundInputView, MetalView, OverlayInputView]" +
                 ", but given: ${
                     subviewsReferences.mapNotNull { ref ->
                         ref.get()?.let { it::class.simpleName }
@@ -198,7 +197,7 @@ class MemoryLeaksTest {
             assertEquals(
                 expected = 5,
                 actual = subviewsReferences.count(),
-                message = "Expected 5 subviews: [ComposeView, UserInputView, MetalView, UIKitTransparentContainerView, IntermediateTextInputUIView]" +
+                message = "Expected 5 subviews: [ComposeContainerView, BackgroundInputView, MetalView, OverlayInputView, ComposeTextInputView]" +
                     ", but given: ${
                         subviewsReferences.mapNotNull { ref ->
                             ref.get()?.let { it::class.simpleName }
@@ -248,9 +247,9 @@ class MemoryLeaksTest {
             )
 
             assertEquals(
-                expected = 6,
+                expected = 5,
                 actual = subviewsReferences.count(),
-                message = "Expected 6 subviews: [ComposeView, UserInputView, MetalView, UIKitTransparentContainerView, CMPEditMenuView, IntermediateTextInputUIView]" +
+                message = "Expected 5 subviews: [ComposeContainerView, BackgroundInputView, MetalView, OverlayInputView, ComposeTextInputView]" +
                     ", but given: ${
                         subviewsReferences.mapNotNull { ref ->
                             ref.get()?.let { it::class.simpleName }
@@ -325,7 +324,7 @@ class MemoryLeaksTest {
         assertEquals(
             expected = 5,
             actual = subviewsReferences.count(),
-            message = "Expected 5 subviews: [ComposeHostingView, ComposeView, UserInputView, MetalView, UIKitTransparentContainerView]" +
+            message = "Expected 5 subviews: [ComposeHostingView, ComposeContainerView, BackgroundInputView, MetalView, OverlayInputView]" +
                 ", but given: ${
                     subviewsReferences.mapNotNull { ref ->
                         ref.get()?.let { it::class.simpleName }
@@ -405,9 +404,9 @@ class MemoryLeaksTest {
             )
 
             assertEquals(
-                expected = 7,
+                expected = 6,
                 actual = subviewsReferences.count(),
-                message = "Expected 7 subviews: [ComposeHostingView, ComposeView, UserInputView, MetalView, UIKitTransparentContainerView, CMPEditMenuView, IntermediateTextInputUIView]" +
+                message = "Expected 6 subviews: [ComposeHostingView, ComposeContainerView, BackgroundInputView, MetalView, OverlayInputView, ComposeTextInputView]" +
                     ", but given: ${
                         subviewsReferences.mapNotNull { ref ->
                             ref.get()?.let { it::class.simpleName }
@@ -425,7 +424,6 @@ class MemoryLeaksTest {
         }
     }
 
-    @OptIn(NativeRuntimeApi::class)
     @Test
     fun testComposeLayersViewControllerDisposal() = runBlocking {
         val appDelegate = MockAppDelegate()
@@ -515,7 +513,6 @@ class MemoryLeaksTest {
         fail("Memory leak detected: references ${reference.mapNotNull { it.get() }} were not collected")
     }
 
-    @OptIn(NativeRuntimeApi::class)
     internal suspend fun assertDeallocated(reference: WeakReference<*>) {
         assertDeallocated(listOf(reference))
     }
@@ -538,12 +535,12 @@ class MemoryLeaksTest {
                 secs = duration.toDouble(DurationUnit.SECONDS)
             )
         )
-        delay(duration.inWholeMilliseconds)
+        delay(duration)
     }
 
     @OptIn(ExperimentalForeignApi::class)
-    private fun startFakeTextInputSession(useNativeInput: Boolean = false) {
-        val input = ComposeTextInputView(0, EmptyTextEditingDelegate)
+    private fun startFakeTextInputSession() {
+        val input = UITextField()
         UIApplication.sharedApplication.keyWindow?.rootViewController?.view?.addSubview(input)
         input.setFrame(CGRectMake(0.0, 0.0, 100.0, 100.0))
         input.becomeFirstResponder()

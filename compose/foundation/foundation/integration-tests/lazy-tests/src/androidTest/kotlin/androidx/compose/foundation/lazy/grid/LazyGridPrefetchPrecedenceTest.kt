@@ -26,6 +26,7 @@ import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.lazy.layout.DefaultLazyLayoutCacheWindow
 import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
@@ -74,7 +75,7 @@ class LazyGridPrefetchPrecedenceTest {
 
     @Before
     fun setup() {
-        ComposeFoundationFlags.isPreferDefaultCacheWindowOverPrefetchStrategy = true
+        ComposeFoundationFlags.isPreferDefaultCacheWindowOverPrefetchStrategyLazyGrid = true
     }
 
     @Test
@@ -83,12 +84,13 @@ class LazyGridPrefetchPrecedenceTest {
 
         val cacheWindowPrefetchStrategy =
             state.layoutInfoState.value.prefetchStrategy as? LazyGridCacheWindowPrefetchStrategy
-        assertThat(cacheWindowPrefetchStrategy?.cacheWindow).isEqualTo(DefaultLazyGridCacheWindow)
+        assertThat(cacheWindowPrefetchStrategy?.cacheWindow)
+            .isInstanceOf(DefaultLazyLayoutCacheWindow::class.java)
     }
 
     @Test
     fun usesDefaultPrefetchStrategyWhenFeatureFlagDisabled() {
-        ComposeFoundationFlags.isPreferDefaultCacheWindowOverPrefetchStrategy = false
+        ComposeFoundationFlags.isPreferDefaultCacheWindowOverPrefetchStrategyLazyGrid = false
         composeLazyGrid(state = LazyGridState().also { state = it }, cacheWindow = null)
 
         assertThat(state.layoutInfoState.value.prefetchStrategy)

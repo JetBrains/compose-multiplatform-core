@@ -17,7 +17,6 @@
 package androidx.compose.animation
 
 import androidx.compose.animation.core.AnimationVector4D
-import androidx.compose.animation.core.ExperimentalDeferredTransitionApi
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
@@ -65,17 +64,17 @@ import androidx.compose.ui.unit.roundToIntSize
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.util.fastRoundToInt
 
-internal data class SharedBoundsNodeElement(val sharedElementState: SharedElementEntry) :
+internal data class SharedBoundsNodeElement(val sharedElementEntry: SharedElementEntry) :
     ModifierNodeElement<SharedBoundsNode>() {
-    override fun create(): SharedBoundsNode = SharedBoundsNode(sharedElementState)
+    override fun create(): SharedBoundsNode = SharedBoundsNode(sharedElementEntry)
 
     override fun update(node: SharedBoundsNode) {
-        node.sharedElementEntry = sharedElementState
+        node.sharedElementEntry = sharedElementEntry
     }
 
     override fun InspectorInfo.inspectableProperties() {
         name = "sharedBounds"
-        properties["sharedElementState"] = sharedElementState
+        properties["sharedElementEntry"] = sharedElementEntry
     }
 }
 
@@ -87,11 +86,8 @@ internal data class SharedBoundsNodeElement(val sharedElementState: SharedElemen
  * visible. Once the target bounds are calculated, the bounds animation will happen during the
  * approach pass.
  */
-@OptIn(
-    ExperimentalLookaheadAnimationVisualDebugApi::class,
-    ExperimentalDeferredTransitionApi::class,
-)
-internal class SharedBoundsNode(state: SharedElementEntry) :
+@OptIn(ExperimentalLookaheadAnimationVisualDebugApi::class)
+internal class SharedBoundsNode(entry: SharedElementEntry) :
     ApproachLayoutModifierNode,
     Modifier.Node(),
     DrawModifierNode,
@@ -145,7 +141,7 @@ internal class SharedBoundsNode(state: SharedElementEntry) :
     private val rootCoords: LayoutCoordinates
         get() = sharedElement.scope.root
 
-    var sharedElementEntry: SharedElementEntry = state
+    var sharedElementEntry: SharedElementEntry = entry
         internal set(value) {
             if (value != field) {
                 // State changed!
@@ -154,6 +150,7 @@ internal class SharedBoundsNode(state: SharedElementEntry) :
                 value.isAttached = isAttached
                 if (isAttached) {
                     setup()
+                    onObservedReadsChanged()
                 }
             }
         }
@@ -180,7 +177,7 @@ internal class SharedBoundsNode(state: SharedElementEntry) :
         get() = sharedElementEntry.sharedElement
 
     override val providedValues =
-        modifierLocalMapOf(ModifierLocalSharedElementInternalState to state)
+        modifierLocalMapOf(ModifierLocalSharedElementInternalState to entry)
 
     private fun setup() {
         provide(ModifierLocalSharedElementInternalState, sharedElementEntry)
@@ -193,9 +190,9 @@ internal class SharedBoundsNode(state: SharedElementEntry) :
     @Suppress("SuspiciousCompositionLocalModifierRead")
     override fun onAttach() {
         super.onAttach()
-        observeReads(sharedElement.observingVisibilityChange)
         setup()
         sharedElementEntry.isAttached = true
+        onObservedReadsChanged()
     }
 
     override fun onDetach() {
@@ -348,8 +345,9 @@ internal class SharedBoundsNode(state: SharedElementEntry) :
 
         val animatedBounds = boundsAnimation.value
         val topLeft: Offset
-        val animatedTopLeft =
-            animatedBounds?.let { targetData.calculateOffsetFromDirectManipulation(it) }
+        val animatedTopLeft = animatedBounds?.let {
+            targetData.calculateOffsetFromDirectManipulation(it)
+        }
 
         if (boundsAnimation.target || activeMatchRemoved) {
             // The visible shared element defines the current bounds, either through animation
@@ -704,7 +702,7 @@ internal class SharedBoundsNode(state: SharedElementEntry) :
 
     override fun onObservedReadsChanged() {
         sharedElement.updateMatch()
-        observeReads(sharedElement.observingVisibilityChange)
+        observeReads(sharedElementEntry.observationBlock)
     }
 
     private fun updateTextMeasurer(fontFamilyResolver: FontFamily.Resolver) {

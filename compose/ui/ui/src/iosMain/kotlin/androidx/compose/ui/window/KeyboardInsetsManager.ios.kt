@@ -27,8 +27,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import platform.CoreGraphics.CGPointMake
 import platform.CoreGraphics.CGRect
+import platform.CoreGraphics.CGRectGetMaxY
 import platform.CoreGraphics.CGRectGetMinY
 import platform.CoreGraphics.CGRectIsEmpty
 import platform.CoreGraphics.CGRectMake
@@ -51,9 +51,9 @@ internal class KeyboardInsetsManager(
     val hasPendingWork get() = activeAnimation != null || awaitingKeyboardFrameJob != null
     private data class KeyboardAnimation(
         val view: UIView,
-        val previousKeyboardHeight: Double,
-        val keyboardHeight: Double,
-        val viewBottomIndent: Double,
+        val previousKeyboardTop: Double,
+        val targetKeyboardTop: Double,
+        val viewBounds: CValue<CGRect>,
     )
 
     fun start() {
@@ -154,33 +154,48 @@ internal class KeyboardInsetsManager(
     ) {
         val screen = view.window?.screen ?: return
 
-        val targetKeyboardHeight = keyboardHeight(targetFrame, screen)
-        val currentKeyboardHeight = keyboardHeight(currentFrame, screen)
-
-        val viewBottomIndent = run {
-            val screenHeight = screen.bounds.useContents { size.height }
-            val composeViewBottomY = screen.coordinateSpace.convertPoint(
-                point = CGPointMake(0.0, view.frame.useContents { size.height }),
-                fromCoordinateSpace = view.coordinateSpace
-            ).useContents { y }
-            screenHeight - composeViewBottomY + view.frame.useContents { origin.y }
-        }
-
         animateKeyboard(
-            previousKeyboardHeight = currentKeyboardHeight,
-            keyboardHeight = targetKeyboardHeight,
-            viewBottomIndent = viewBottomIndent,
+            previousKeyboardTop = keyboardTop(currentFrame, screen),
+            targetKeyboardTop = keyboardTop(targetFrame, screen),
             duration = duration,
             animationOptions = animationOptions
         )
     }
 
-    private fun keyboardHeight(frame: CValue<CGRect>): Double {
-        val screen = view.window?.screen ?: return 0.0
-        return keyboardHeight(frame, screen)
+    /** Recomputes overlap after geometry changes, unless a keyboard animation is running. */
+    fun updateOverlapForCurrentGeometry() {
+        // Recomputing would cancel the running animation and snap to the target overlap.
+        if (!isStarted || activeAnimation != null) return
+
+        val frame = KeyboardVisibilityListener.keyboardFrame
+        adjustViewBounds(
+            currentFrame = frame,
+            targetFrame = frame,
+            duration = 0.0,
+            animationOptions = UIViewAnimationOptionCurveEaseInOut,
+        )
     }
 
-    private fun keyboardHeight(frame: CValue<CGRect>, screen: UIScreen): Double {
+    private fun keyboardTop(frame: CValue<CGRect>, screen: UIScreen): Double {
+        // For an empty frame, animate from the screen's bottom edge rather than y = 0 at the top.
+        val keyboardFrame =
+            if (CGRectIsEmpty(frame)) {
+                screen.bounds.useContents {
+                    CGRectMake(origin.x, origin.y + size.height, size.width, 0.0)
+                }
+            } else {
+                frame
+            }
+        val frameInView =
+            view.coordinateSpace.convertRect(
+                rect = keyboardFrame,
+                fromCoordinateSpace = screen.coordinateSpace,
+            )
+        return CGRectGetMinY(frameInView)
+    }
+
+    private fun keyboardHeight(frame: CValue<CGRect>): Double {
+        val screen = view.window?.screen ?: return 0.0
         return if (CGRectIsEmpty(frame)) {
             0.0
         } else {
@@ -189,27 +204,33 @@ internal class KeyboardInsetsManager(
     }
 
     private fun animateKeyboard(
-        previousKeyboardHeight: Double,
-        keyboardHeight: Double,
-        viewBottomIndent: Double,
+        previousKeyboardTop: Double,
+        targetKeyboardTop: Double,
         duration: Double,
         animationOptions: UIViewAnimationOptions
     ) {
         cancelActiveAnimation()
 
-        if (previousKeyboardHeight == keyboardHeight) {
-            onKeyboardOverlapHeightChanged(max(0.0, keyboardHeight - viewBottomIndent).dp)
+        val viewBounds = view.bounds
+        if (previousKeyboardTop == targetKeyboardTop) {
+            val overlap =
+                (CGRectGetMaxY(viewBounds) - targetKeyboardTop).coerceIn(
+                    0.0,
+                    viewBounds.useContents { size.height },
+                )
+            onKeyboardOverlapHeightChanged(overlap.dp)
             return
         }
 
         val animationView = UIView()
         view.addSubview(animationView)
-        val animation = KeyboardAnimation(
-            view = animationView,
-            previousKeyboardHeight = previousKeyboardHeight,
-            keyboardHeight = keyboardHeight,
-            viewBottomIndent = viewBottomIndent,
-        )
+        val animation =
+            KeyboardAnimation(
+                view = animationView,
+                previousKeyboardTop = previousKeyboardTop,
+                targetKeyboardTop = targetKeyboardTop,
+                viewBounds = viewBounds,
+            )
         activeAnimation = animation
         activitiesHandler.onActivitiesStarted()
 
@@ -234,9 +255,11 @@ internal class KeyboardInsetsManager(
     }
 
     private fun KeyboardAnimation.keyboardOverlapHeight(progress: Double = progress()): Dp {
-        val currentHeight = previousKeyboardHeight +
-            (keyboardHeight - previousKeyboardHeight) * progress
-        return max(0.0, currentHeight - viewBottomIndent).dp
+        val keyboardTop = previousKeyboardTop + (targetKeyboardTop - previousKeyboardTop) * progress
+        // Clamp after interpolation so the inset stays zero until the keyboard reaches the view.
+        return (CGRectGetMaxY(viewBounds) - keyboardTop)
+            .coerceIn(0.0, viewBounds.useContents { size.height })
+            .dp
     }
 
     private fun finishAnimation(animation: KeyboardAnimation) {

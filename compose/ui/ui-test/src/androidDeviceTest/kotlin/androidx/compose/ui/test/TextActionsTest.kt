@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // b/552879150
+
 package androidx.compose.ui.test
 
 import androidx.compose.foundation.border
@@ -197,7 +199,7 @@ class TextActionsTest {
 
     @Test
     fun sendText_whenReadOnly_isNotAllowed() {
-        var lastSeenText = ""
+        val lastSeenText = ""
         rule.setContent { TextFieldUi(readOnly = true) }
 
         expectError<AssertionError> { rule.onNodeWithTag(fieldTag).performTextInput("hi") }
@@ -369,7 +371,7 @@ class TextActionsTest {
         var actualSelectionRange = TextRange.Zero
         rule.setContent { Btf1Selection { actualSelectionRange = it } }
 
-        var expectedRange = TextRange(start = 5, end = 9)
+        val expectedRange = TextRange(start = 5, end = 9)
         rule.onNodeWithTag(fieldTag).performTextInputSelection(expectedRange)
 
         rule.runOnIdle { assertThat(actualSelectionRange).isEqualTo(expectedRange) }
@@ -382,7 +384,7 @@ class TextActionsTest {
 
         rule.onNodeWithTag(fieldTag).performTextInputSelection(TextRange(start = 9, end = 5))
 
-        var expectedRange = TextRange(start = 5, end = 9)
+        val expectedRange = TextRange(start = 5, end = 9)
         rule.runOnIdle { assertThat(actualSelectionRange).isEqualTo(expectedRange) }
     }
 
@@ -391,7 +393,7 @@ class TextActionsTest {
         var actualSelectionRange = TextRange.Zero
         rule.setContent { Btf1Selection(readOnly = true) { actualSelectionRange = it } }
 
-        var expectedRange = TextRange(start = 5, end = 9)
+        val expectedRange = TextRange(start = 5, end = 9)
         rule.onNodeWithTag(fieldTag).performTextInputSelection(expectedRange)
 
         rule.runOnIdle { assertThat(actualSelectionRange).isEqualTo(expectedRange) }
@@ -463,7 +465,7 @@ class TextActionsTest {
         var actualSelectionRange = TextRange.Zero
         rule.setContent { Btf2Selection { actualSelectionRange = it } }
 
-        var expectedRange = TextRange(start = 5, end = 9)
+        val expectedRange = TextRange(start = 5, end = 9)
         rule.onNodeWithTag(fieldTag).performTextInputSelection(expectedRange)
 
         rule.runOnIdle { assertThat(actualSelectionRange).isEqualTo(expectedRange) }
@@ -476,7 +478,7 @@ class TextActionsTest {
 
         rule.onNodeWithTag(fieldTag).performTextInputSelection(TextRange(start = 9, end = 5))
 
-        var expectedRange = TextRange(start = 5, end = 9)
+        val expectedRange = TextRange(start = 5, end = 9)
         rule.runOnIdle { assertThat(actualSelectionRange).isEqualTo(expectedRange) }
     }
 
@@ -485,7 +487,7 @@ class TextActionsTest {
         var actualSelectionRange = TextRange.Zero
         rule.setContent { Btf2Selection(readOnly = true) { actualSelectionRange = it } }
 
-        var expectedRange = TextRange(start = 5, end = 9)
+        val expectedRange = TextRange(start = 5, end = 9)
         rule.onNodeWithTag(fieldTag).performTextInputSelection(expectedRange)
 
         rule.runOnIdle { assertThat(actualSelectionRange).isEqualTo(expectedRange) }

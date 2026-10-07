@@ -115,11 +115,11 @@ public abstract interface class androidx/compose/ui/test/ComposeUiTest : android
 
 public final class androidx/compose/ui/test/ComposeUiTestConfig {
 	public static final field $stable I
-	public synthetic fun <init> (Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JIILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JILandroidx/compose/ui/test/TestFailurePolicy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JILandroidx/compose/ui/test/TestFailurePolicy;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> ()V
+	public synthetic fun <init> (Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JILandroidx/compose/ui/test/TestFailurePolicy;FILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JILandroidx/compose/ui/test/TestFailurePolicy;FLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBoundsAssertionTolerance-D9Ej5fM ()F
 	public final fun getEffectContext ()Lkotlin/coroutines/CoroutineContext;
 	public final fun getFailurePolicy ()Landroidx/compose/ui/test/TestFailurePolicy;
 	public final fun getInputMode-aOaMEAU ()I
@@ -193,7 +193,6 @@ public final class androidx/compose/ui/test/FailureArtifact$Type$Companion {
 public final class androidx/compose/ui/test/FailureContext {
 	public static final field $stable I
 	public fun <init> (Ljava/lang/Throwable;Ljava/util/List;)V
-	public synthetic fun <init> (Ljava/lang/Throwable;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getArtifacts ()Ljava/util/List;
 	public final fun getError ()Ljava/lang/Throwable;
 }
@@ -799,6 +798,7 @@ public final class androidx/compose/ui/test/SkikoImageHelpersKt {
 
 public final class androidx/compose/ui/test/TestContext {
 	public static final field $stable I
+	public synthetic fun <init> (Landroidx/compose/ui/test/TestOwner;FILkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
 public abstract interface class androidx/compose/ui/test/TestFailureHandler {
@@ -807,6 +807,7 @@ public abstract interface class androidx/compose/ui/test/TestFailureHandler {
 
 public final class androidx/compose/ui/test/TestFailurePolicy {
 	public static final field $stable I
+	public fun <init> ()V
 	public synthetic fun <init> (IILjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (IILjava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z

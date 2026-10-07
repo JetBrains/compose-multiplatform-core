@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.TextInputRange
 import androidx.compose.ui.platform.TextInputStringTokenizer
 import androidx.compose.ui.platform.TextLayoutDirection
 import androidx.compose.ui.platform.NativeTextEditingDelegate
+import androidx.compose.ui.platform.caretRectForPosition
 import androidx.compose.ui.platform.selectTextNearCursor
 import androidx.compose.ui.platform.toTextRange
 import androidx.compose.ui.platform.toUITextRange
@@ -101,7 +102,7 @@ import platform.UIKit.systemBlueColor
 import platform.darwin.NSInteger
 
 internal class NativeTextInputView(
-    var input: NativeTextEditingDelegate,
+    initialInput: NativeTextEditingDelegate,
 ) : CMPTextInputView(frame = CGRectZero.readValue()), UIKeyInputProtocol, UITextInputProtocol {
     private var _inputDelegate: UITextInputDelegateProtocol? = null
 
@@ -109,11 +110,24 @@ internal class NativeTextInputView(
         addGestureRecognizer(it)
     }
 
+    var input: NativeTextEditingDelegate = initialInput
+        set(value) {
+            if (field != value) {
+                if (isFirstResponder) {
+                    field.onResignFocus()
+                }
+                field = value
+                if (isFirstResponder) {
+                    field.onFocus()
+                }
+            }
+        }
+
     init {
         clipsToBounds = false
     }
 
-    override fun canBecomeFirstResponder() = true
+    override fun canBecomeFirstResponder() = input.isInteractive
 
     private val selectionInteraction =
         UITextInteraction.textInteractionForMode(UITextInteractionMode.UITextInteractionModeEditable)
@@ -133,6 +147,10 @@ internal class NativeTextInputView(
     }
 
     override fun becomeFirstResponder(): Boolean {
+        if (!input.isInteractive) {
+            return false
+        }
+        input.onFocus()
         val isFirstResponder = this.isFirstResponder()
         val result = super.becomeFirstResponder()
 
@@ -142,6 +160,11 @@ internal class NativeTextInputView(
         }
 
         return result
+    }
+
+    override fun resignFirstResponder(): Boolean {
+        input.onResignFocus()
+        return super.resignFirstResponder()
     }
 
     override fun setTintColor(tintColor: UIColor?) {
@@ -464,12 +487,8 @@ internal class NativeTextInputView(
             ?: fallback
     }
 
-    override fun caretRectForPosition(position: UITextPosition): CValue<CGRect> {
-        val fallbackRect = CGRectMake(x = 1.0, y = 1.0, width = 0.0, height = 1.0)
-        val position = (position as? TextInputPosition)?.position ?: return fallbackRect
-        val caretDpRect = input.caretDpRectForPosition(position)
-        return caretDpRect?.toCGRect() ?: fallbackRect
-    }
+    override fun caretRectForPosition(position: UITextPosition): CValue<CGRect> =
+        input.caretRectForPosition(position)
 
     override fun selectionRectsForRange(range: UITextRange): List<*> {
         val fallbackList = listOf<UITextSelectionRect>()

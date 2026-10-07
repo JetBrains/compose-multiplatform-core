@@ -115,7 +115,8 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
                 textFieldRectInRoot = ::textFieldRectInRoot,
                 textClippingRectInRoot = ::textClippingRectInRoot,
                 unclippedTextOffsetInRoot = ::unclippedTextOffsetInRoot,
-                editText = ::editText
+                editText = ::editText,
+                editorToken = state,
             )
         )
     }
@@ -248,5 +249,6 @@ internal data class SkikoPlatformTextInputMethodRequest(
     override val textFieldRectInRoot: () -> Rect?,
     override val textClippingRectInRoot: () -> Rect?,
     override val unclippedTextOffsetInRoot: () -> Offset?,
-    override val editText: (block: TextEditingScope.() -> Unit) -> Unit
+    override val editText: (block: TextEditingScope.() -> Unit) -> Unit,
+    override val editorToken: Any?,
 ): PlatformTextInputMethodRequest

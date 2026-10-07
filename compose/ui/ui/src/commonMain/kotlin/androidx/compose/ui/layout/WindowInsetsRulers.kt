@@ -168,7 +168,14 @@ public sealed interface WindowInsetsRulers {
         public val SafeDrawing: WindowInsetsRulers =
             InnermostInsetsRulers(
                 "safe drawing",
-                arrayOf(StatusBars, NavigationBars, CaptionBar, DisplayCutout, Ime, TappableElement),
+                arrayOf(
+                    StatusBars,
+                    NavigationBars,
+                    CaptionBar,
+                    DisplayCutout,
+                    Ime,
+                    TappableElement,
+                ),
             )
 
         /**
@@ -210,6 +217,24 @@ public sealed interface WindowInsetsRulers {
         public fun innermostOf(vararg windowInsetsRulers: WindowInsetsRulers): WindowInsetsRulers =
             InnermostInsetsRulers(null, windowInsetsRulers)
     }
+}
+
+/**
+ * Flag to disable WindowInsetsRulers. Some integrations need to disable WindowInsets Rulers for all
+ * Compose roots, so this is a global switch. We don't want them to add a new Compose root and have
+ * it suddenly request WindowInsets updates, changing the behavior so that the insets suddenly
+ * notify.
+ */
+internal var areWindowInsetsRulersEnabled: Boolean = true
+
+/**
+ * Used to disable [androidx.compose.ui.layout.WindowInsetsRulers]. This can be used when UI never
+ * reads WindowInsets across all Compose roots to reduce the overhead of requesting WindowInsets
+ * updates. Only call this when no Compose roots will ever need to handle insets over the lifetime
+ * of the application. This should be called before the first Compose root is created.
+ */
+public fun WindowInsetsRulers.Companion.disable() {
+    areWindowInsetsRulersEnabled = false
 }
 
 /**

@@ -306,12 +306,14 @@ public fun <A : ComponentActivity> runAndroidComposeUiTest(
             try {
                 // Run the test
                 block()
+                // Surface any coroutine / recomposer errors before ActivityScenario closes
+                environment.checkPendingExceptions()
             } catch (t: Throwable) {
                 blockException = t
             }
 
-            // Throw the aggregate exception. May be from the test body or from the cleanup.
-            blockException?.let { throw it }
+            // Handle test failure before ActivityScenario closes
+            blockException?.let { environment.handleTestFailureAndRethrow(it) }
         }
     } finally {
         // Close the scenario outside runTest to avoid getting stuck.
@@ -691,7 +693,7 @@ internal constructor(
 
     internal val testReceiverScope = AndroidComposeUiTestImpl()
     private val testOwner = AndroidTestOwner()
-    private val testContext = TestContext(testOwner)
+    private val testContext = TestContext(testOwner, config.boundsAssertionTolerance)
 
     /**
      * The receiver scope of the test passed to [runTest]. Note that some of the properties and
@@ -709,6 +711,26 @@ internal constructor(
         var result: R? = null
         runTest { result = block() }
         return result
+    }
+
+    /** Checks if there are any pending uncaught coroutine or recomposition exceptions. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun checkPendingExceptions() {
+        throwPendingException()
+        coroutineExceptionHandler.throwUncaught()
+    }
+
+    /**
+     * Runs the test failure pipeline and rethrows the given [throwable].
+     *
+     * @param throwable error that caused the test failure
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun handleTestFailureAndRethrow(throwable: Throwable): Nothing {
+        failurePipelineRunner.runPipeline(
+            throwable = throwable,
+            composeRoots = composeRootRegistry.getCurrentOrPreTearDownRoots(),
+        )
     }
 
     /**
@@ -750,10 +772,7 @@ internal constructor(
                 }
             }
         } catch (throwable: Throwable) {
-            failurePipelineRunner.runPipeline(
-                throwable = throwable,
-                composeRoots = composeRootRegistry.registeredComposeRootsBeforeTearDown,
-            )
+            handleTestFailureAndRethrow(throwable)
         } finally {
             composeRootRegistry.clearRegisteredComposeRootsBeforeTearDown()
         }

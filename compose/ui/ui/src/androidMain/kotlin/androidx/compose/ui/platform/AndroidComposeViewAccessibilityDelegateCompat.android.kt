@@ -1032,9 +1032,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 }
             }
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            Api24Impl.addSetProgressAction(info, semanticsNode)
-        }
+        addSetProgressAction(info, semanticsNode)
 
         setCollectionInfo(semanticsNode, info)
         setCollectionItemInfo(semanticsNode, info)
@@ -1815,15 +1813,14 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         if (scrollableAncestor == null) {
             // there's no scrollable ancestor in the Compose hierarchy, let
             // AndroidComposeView handle it
-            val rect =
-                boundsInRoot.run {
-                    android.graphics.Rect(
-                        floor(left).toInt(),
-                        floor(top).toInt(),
-                        ceil(right).roundToInt(),
-                        ceil(bottom).roundToInt(),
-                    )
-                }
+            val rect = boundsInRoot.run {
+                android.graphics.Rect(
+                    floor(left).toInt(),
+                    floor(top).toInt(),
+                    ceil(right).roundToInt(),
+                    ceil(bottom).roundToInt(),
+                )
+            }
             return view.requestRectangleOnScreen(rect)
         }
 
@@ -2508,6 +2505,22 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             event.maxScrollY = it.maxValue().toInt()
         }
         sendEvent(event)
+
+        // When navigating with a hardware keyboard, scrolling moves the currently focused item
+        // on screen. Dispatching TYPE_VIEW_ACCESSIBILITY_FOCUSED post-scroll ensures TalkBack
+        // recalculates and synchronizes its accessibility focus bounds ("green box") with the
+        // newly scrolled position of the focused item.
+        if (
+            AndroidComposeUiFlags.isScrollAccessibilityFocusEventEnabled &&
+                !view.isInTouchMode &&
+                focusedVirtualViewId != InvalidId &&
+                currentSemanticsNodes.containsKey(focusedVirtualViewId)
+        ) {
+            sendEventForVirtualView(
+                focusedVirtualViewId,
+                AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED,
+            )
+        }
     }
 
     private fun sendSubtreeChangeAccessibilityEvents(
@@ -2908,19 +2921,20 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                         scheduleScrollEventIfNeeded(scope)
                     }
                     SemanticsProperties.Focused -> {
+                        val virtualId = semanticsNodeIdToAccessibilityVirtualNodeId(newNode.id)
                         if (value as Boolean) {
-                            sendEvent(
-                                createEvent(
-                                    semanticsNodeIdToAccessibilityVirtualNodeId(newNode.id),
-                                    AccessibilityEvent.TYPE_VIEW_FOCUSED,
-                                )
-                            )
+                            focusedVirtualViewId = virtualId
+                            sendEvent(createEvent(virtualId, AccessibilityEvent.TYPE_VIEW_FOCUSED))
+                        } else {
+                            if (focusedVirtualViewId == virtualId) {
+                                focusedVirtualViewId = InvalidId
+                            }
                         }
                         // In View.java this window event is sent for unfocused view. But we send
                         // it for focused too so that TalkBack invalidates its cache. Otherwise
                         // PasteText edit option is not displayed properly on some OS versions.
                         sendEventForVirtualView(
-                            semanticsNodeIdToAccessibilityVirtualNodeId(newNode.id),
+                            virtualId,
                             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
                             AccessibilityEvent.CONTENT_CHANGE_TYPE_UNDEFINED,
                         )
@@ -3415,19 +3429,15 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.N)
-    private object Api24Impl {
-        @JvmStatic
-        fun addSetProgressAction(info: AccessibilityNodeInfoCompat, semanticsNode: SemanticsNode) {
-            if (semanticsNode.enabled()) {
-                semanticsNode.unmergedConfig.getOrNull(SemanticsActions.SetProgress)?.let {
-                    info.addAction(
-                        AccessibilityActionCompat(
-                            android.R.id.accessibilityActionSetProgress,
-                            it.label,
-                        )
-                    )
-                }
+    private fun addSetProgressAction(
+        info: AccessibilityNodeInfoCompat,
+        semanticsNode: SemanticsNode,
+    ) {
+        if (semanticsNode.enabled()) {
+            semanticsNode.unmergedConfig.getOrNull(SemanticsActions.SetProgress)?.let {
+                info.addAction(
+                    AccessibilityActionCompat(android.R.id.accessibilityActionSetProgress, it.label)
+                )
             }
         }
     }
@@ -3491,7 +3501,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
 
         @JvmStatic
         fun setExtraRenderingInfo(node: SemanticsNode, info: AccessibilityNodeInfo) {
-            val view = node.layoutNode.owner as? AndroidComposeView ?: return
+            node.layoutNode.owner as? AndroidComposeView ?: return
 
             val builder = AccessibilityNodeInfo.ExtraRenderingInfo.Builder()
 
@@ -3791,13 +3801,12 @@ private fun SemanticsNode.excludeLineAndPageGranularities(): Boolean {
         return true
 
     // text nodes that are part of the 'merged' text field, for example hint or label.
-    val ancestor =
-        layoutNode.findClosestParentNode {
-            // looking for text field merging node
-            val ancestorSemanticsConfiguration = it.semanticsConfiguration
-            ancestorSemanticsConfiguration?.isMergingSemanticsOfDescendants == true &&
-                ancestorSemanticsConfiguration.contains(SemanticsProperties.EditableText)
-        }
+    val ancestor = layoutNode.findClosestParentNode {
+        // looking for text field merging node
+        val ancestorSemanticsConfiguration = it.semanticsConfiguration
+        ancestorSemanticsConfiguration?.isMergingSemanticsOfDescendants == true &&
+            ancestorSemanticsConfiguration.contains(SemanticsProperties.EditableText)
+    }
     return ancestor != null &&
         ancestor.semanticsConfiguration?.getOrNull(SemanticsProperties.Focused) != true
 }

@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.scrollcapture
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.horizontalScroll
@@ -47,6 +46,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onVisibilityChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.dp
@@ -69,239 +69,231 @@ class ScrollCaptureIntegrationTest {
     private val captureTester = ScrollCaptureTester(rule)
 
     @Test
-    fun search_finds_verticalScrollModifier() =
-        captureTester.runTest {
-            captureTester.setContent {
-                with(LocalDensity.current) {
-                    Box(Modifier.size(10.toDp()).verticalScroll(rememberScrollState())) {
-                        Box(Modifier.size(100.toDp()))
+    fun search_finds_verticalScrollModifier() = captureTester.runTest {
+        captureTester.setContent {
+            with(LocalDensity.current) {
+                Box(Modifier.size(10.toDp()).verticalScroll(rememberScrollState())) {
+                    Box(Modifier.size(100.toDp()))
+                }
+            }
+        }
+
+        val targets = captureTester.findCaptureTargets()
+        assertThat(targets).hasSize(1)
+        val target = targets.single()
+        assertThat(target.localVisibleRect.width()).isEqualTo(10)
+        assertThat(target.localVisibleRect.height()).isEqualTo(10)
+    }
+
+    @Test
+    fun search_doesNotFind_horizontalScrollModifier() = captureTester.runTest {
+        captureTester.setContent {
+            with(LocalDensity.current) {
+                Box(Modifier.size(10.toDp()).horizontalScroll(rememberScrollState())) {
+                    Box(Modifier.size(100.toDp()))
+                }
+            }
+        }
+
+        val targets = captureTester.findCaptureTargets()
+        assertThat(targets).isEmpty()
+    }
+
+    @Test
+    fun search_finds_LazyColumn() = captureTester.runTest {
+        captureTester.setContent {
+            with(LocalDensity.current) {
+                LazyColumn(Modifier.size(10.toDp())) { item { Box(Modifier.size(100.toDp())) } }
+            }
+        }
+
+        val targets = captureTester.findCaptureTargets()
+        assertThat(targets).hasSize(1)
+        val target = targets.single()
+        assertThat(target.localVisibleRect.width()).isEqualTo(10)
+        assertThat(target.localVisibleRect.height()).isEqualTo(10)
+    }
+
+    @Test
+    fun search_doesNotFind_LazyRow() = captureTester.runTest {
+        captureTester.setContent {
+            with(LocalDensity.current) {
+                LazyRow(Modifier.size(10.toDp())) { item { Box(Modifier.size(100.toDp())) } }
+            }
+        }
+
+        val targets = captureTester.findCaptureTargets()
+        assertThat(targets).isEmpty()
+    }
+
+    @Test
+    fun search_finds_LazyVerticalGrid() = captureTester.runTest {
+        captureTester.setContent {
+            with(LocalDensity.current) {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(1),
+                    modifier = Modifier.size(10.toDp()),
+                ) {
+                    item { Box(Modifier.size(100.toDp())) }
+                }
+            }
+        }
+
+        val targets = captureTester.findCaptureTargets()
+        assertThat(targets).hasSize(1)
+        val target = targets.single()
+        assertThat(target.localVisibleRect.width()).isEqualTo(10)
+        assertThat(target.localVisibleRect.height()).isEqualTo(10)
+    }
+
+    @Test
+    fun search_finds_LazyVerticalStaggeredGrid() = captureTester.runTest {
+        captureTester.setContent {
+            with(LocalDensity.current) {
+                LazyVerticalStaggeredGrid(
+                    columns = StaggeredGridCells.Fixed(1),
+                    modifier = Modifier.size(10.toDp()),
+                ) {
+                    item { Box(Modifier.size(100.toDp())) }
+                }
+            }
+        }
+
+        val targets = captureTester.findCaptureTargets()
+        assertThat(targets).hasSize(1)
+        val target = targets.single()
+        assertThat(target.localVisibleRect.width()).isEqualTo(10)
+        assertThat(target.localVisibleRect.height()).isEqualTo(10)
+    }
+
+    @Test
+    @Suppress("DEPRECATION") // b/552879150
+    fun search_doesNotFind_TextField1_singleLine() = captureTester.runTest {
+        captureTester.setContent {
+            BasicTextField(
+                "really long value to ensure that the field will scroll horizontally",
+                onValueChange = {},
+                singleLine = true,
+                modifier = Modifier.width(5.dp),
+            )
+        }
+
+        val targets = captureTester.findCaptureTargets()
+        assertThat(targets.isEmpty())
+    }
+
+    @Test
+    @Suppress("DEPRECATION")
+    fun search_doesNotFind_TextField1_multiLine_scrollable() = captureTester.runTest {
+        captureTester.setContent {
+            BasicTextField(
+                "lots\n\nof\n\nnewlines\n\nto\n\nmake\n\nvertically\n\nscrollable",
+                onValueChange = {},
+                singleLine = false,
+                maxLines = 2,
+            )
+        }
+
+        val targets = captureTester.findCaptureTargets()
+        assertThat(targets.isEmpty())
+    }
+
+    @Test
+    fun search_doesNotFind_TextField2_singleLine() = captureTester.runTest {
+        val state =
+            TextFieldState("really long value to ensure that the field will scroll horizontally")
+        captureTester.setContent {
+            BasicTextField(
+                state,
+                lineLimits = TextFieldLineLimits.SingleLine,
+                modifier = Modifier.width(5.dp),
+            )
+        }
+
+        val targets = captureTester.findCaptureTargets()
+        assertThat(targets.isEmpty())
+    }
+
+    @Test
+    fun search_doesNotFind_TextField2_multiLine_scrollable() = captureTester.runTest {
+        val state =
+            TextFieldState("lots\n\nof\n\nnewlines\n\nto\n\nmake\n\nvertically\n\nscrollable")
+        captureTester.setContent {
+            BasicTextField(
+                state,
+                lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 2),
+            )
+        }
+
+        val targets = captureTester.findCaptureTargets()
+        assertThat(targets.isEmpty())
+    }
+
+    @Test
+    fun capture_LazyColumn_stickyHeadersDisabled_byLayout() = captureTester.runTest {
+        val headerHeight = 5
+        val state = LazyListState()
+        var firstHeaderCoords by mutableStateOf<LayoutCoordinates?>(null, neverEqualPolicy())
+        var firstHeaderIsVisible by mutableStateOf(false)
+        var firstItemCoords by mutableStateOf<LayoutCoordinates?>(null, neverEqualPolicy())
+        var firstItemIsVisible by mutableStateOf(false)
+
+        fun assertHeaderNotStuck() {
+            val headerBounds =
+                firstHeaderCoords?.takeIf { firstHeaderIsVisible }?.boundsInParent() ?: return
+            val itemBounds =
+                firstItemCoords?.takeIf { firstItemIsVisible }?.boundsInParent() ?: return
+            assertThat(headerBounds.bottom).isEqualTo(itemBounds.top)
+        }
+
+        captureTester.setContent {
+            with(LocalDensity.current) {
+                LazyColumn(state = state, modifier = Modifier.size(10.toDp())) {
+                    stickyHeader {
+                        Box(
+                            Modifier.background(Color.Red)
+                                .fillMaxWidth()
+                                .height(headerHeight.toDp())
+                                .onGloballyPositioned { firstHeaderCoords = it }
+                                .onVisibilityChanged { firstHeaderIsVisible = it }
+                        )
+                        DisposableEffect(Unit) { onDispose { firstHeaderCoords = null } }
                     }
-                }
-            }
-
-            val targets = captureTester.findCaptureTargets()
-            assertThat(targets).hasSize(1)
-            val target = targets.single()
-            assertThat(target.localVisibleRect.width()).isEqualTo(10)
-            assertThat(target.localVisibleRect.height()).isEqualTo(10)
-        }
-
-    @Test
-    fun search_doesNotFind_horizontalScrollModifier() =
-        captureTester.runTest {
-            captureTester.setContent {
-                with(LocalDensity.current) {
-                    Box(Modifier.size(10.toDp()).horizontalScroll(rememberScrollState())) {
-                        Box(Modifier.size(100.toDp()))
+                    item {
+                        Box(
+                            Modifier.background(Color.Green)
+                                .size(10.toDp())
+                                .onGloballyPositioned { firstItemCoords = it }
+                                .onVisibilityChanged { firstItemIsVisible = it }
+                        )
+                        DisposableEffect(Unit) { onDispose { firstItemCoords = null } }
                     }
-                }
-            }
 
-            val targets = captureTester.findCaptureTargets()
-            assertThat(targets).isEmpty()
-        }
-
-    @Test
-    fun search_finds_LazyColumn() =
-        captureTester.runTest {
-            captureTester.setContent {
-                with(LocalDensity.current) {
-                    LazyColumn(Modifier.size(10.toDp())) { item { Box(Modifier.size(100.toDp())) } }
-                }
-            }
-
-            val targets = captureTester.findCaptureTargets()
-            assertThat(targets).hasSize(1)
-            val target = targets.single()
-            assertThat(target.localVisibleRect.width()).isEqualTo(10)
-            assertThat(target.localVisibleRect.height()).isEqualTo(10)
-        }
-
-    @Test
-    fun search_doesNotFind_LazyRow() =
-        captureTester.runTest {
-            captureTester.setContent {
-                with(LocalDensity.current) {
-                    LazyRow(Modifier.size(10.toDp())) { item { Box(Modifier.size(100.toDp())) } }
-                }
-            }
-
-            val targets = captureTester.findCaptureTargets()
-            assertThat(targets).isEmpty()
-        }
-
-    @Test
-    fun search_finds_LazyVerticalGrid() =
-        captureTester.runTest {
-            captureTester.setContent {
-                with(LocalDensity.current) {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(1),
-                        modifier = Modifier.size(10.toDp()),
-                    ) {
-                        item { Box(Modifier.size(100.toDp())) }
+                    stickyHeader {
+                        Box(
+                            Modifier.background(Color.Red)
+                                .fillMaxWidth()
+                                .height(headerHeight.toDp())
+                        )
                     }
-                }
-            }
-
-            val targets = captureTester.findCaptureTargets()
-            assertThat(targets).hasSize(1)
-            val target = targets.single()
-            assertThat(target.localVisibleRect.width()).isEqualTo(10)
-            assertThat(target.localVisibleRect.height()).isEqualTo(10)
-        }
-
-    @Test
-    fun search_finds_LazyVerticalStaggeredGrid() =
-        captureTester.runTest {
-            captureTester.setContent {
-                with(LocalDensity.current) {
-                    LazyVerticalStaggeredGrid(
-                        columns = StaggeredGridCells.Fixed(1),
-                        modifier = Modifier.size(10.toDp()),
-                    ) {
-                        item { Box(Modifier.size(100.toDp())) }
-                    }
-                }
-            }
-
-            val targets = captureTester.findCaptureTargets()
-            assertThat(targets).hasSize(1)
-            val target = targets.single()
-            assertThat(target.localVisibleRect.width()).isEqualTo(10)
-            assertThat(target.localVisibleRect.height()).isEqualTo(10)
-        }
-
-    @Test
-    fun search_doesNotFind_TextField1_singleLine() =
-        captureTester.runTest {
-            captureTester.setContent {
-                BasicTextField(
-                    "really long value to ensure that the field will scroll horizontally",
-                    onValueChange = {},
-                    singleLine = true,
-                    modifier = Modifier.width(5.dp),
-                )
-            }
-
-            val targets = captureTester.findCaptureTargets()
-            assertThat(targets.isEmpty())
-        }
-
-    @Test
-    fun search_doesNotFind_TextField1_multiLine_scrollable() =
-        captureTester.runTest {
-            captureTester.setContent {
-                BasicTextField(
-                    "lots\n\nof\n\nnewlines\n\nto\n\nmake\n\nvertically\n\nscrollable",
-                    onValueChange = {},
-                    singleLine = false,
-                    maxLines = 2,
-                )
-            }
-
-            val targets = captureTester.findCaptureTargets()
-            assertThat(targets.isEmpty())
-        }
-
-    @Test
-    fun search_doesNotFind_TextField2_singleLine() =
-        captureTester.runTest {
-            val state =
-                TextFieldState(
-                    "really long value to ensure that the field will scroll horizontally"
-                )
-            captureTester.setContent {
-                BasicTextField(
-                    state,
-                    lineLimits = TextFieldLineLimits.SingleLine,
-                    modifier = Modifier.width(5.dp),
-                )
-            }
-
-            val targets = captureTester.findCaptureTargets()
-            assertThat(targets.isEmpty())
-        }
-
-    @Test
-    fun search_doesNotFind_TextField2_multiLine_scrollable() =
-        captureTester.runTest {
-            val state =
-                TextFieldState("lots\n\nof\n\nnewlines\n\nto\n\nmake\n\nvertically\n\nscrollable")
-            captureTester.setContent {
-                BasicTextField(
-                    state,
-                    lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 2),
-                )
-            }
-
-            val targets = captureTester.findCaptureTargets()
-            assertThat(targets.isEmpty())
-        }
-
-    @OptIn(ExperimentalFoundationApi::class)
-    @Test
-    fun capture_LazyColumn_stickyHeadersDisabled_byLayout() =
-        captureTester.runTest {
-            val headerHeight = 5
-            val state = LazyListState()
-            var firstHeaderCoords by mutableStateOf<LayoutCoordinates?>(null, neverEqualPolicy())
-            var firstItemCoords by mutableStateOf<LayoutCoordinates?>(null, neverEqualPolicy())
-
-            fun assertHeaderNotStuck() {
-                val headerBounds =
-                    firstHeaderCoords?.takeIf { it.isAttached }?.boundsInParent() ?: return
-                val itemBounds =
-                    firstItemCoords?.takeIf { it.isAttached }?.boundsInParent() ?: return
-                assertThat(headerBounds.bottom).isEqualTo(itemBounds.top)
-            }
-
-            captureTester.setContent {
-                with(LocalDensity.current) {
-                    LazyColumn(state = state, modifier = Modifier.size(10.toDp())) {
-                        stickyHeader {
-                            Box(
-                                Modifier.background(Color.Red)
-                                    .fillMaxWidth()
-                                    .height(headerHeight.toDp())
-                                    .onGloballyPositioned { firstHeaderCoords = it }
-                            )
-                            DisposableEffect(Unit) { onDispose { firstHeaderCoords = null } }
-                        }
-                        item {
-                            Box(
-                                Modifier.background(Color.Green)
-                                    .size(10.toDp())
-                                    .onGloballyPositioned { firstItemCoords = it }
-                            )
-                            DisposableEffect(Unit) { onDispose { firstItemCoords = null } }
-                        }
-
-                        stickyHeader {
-                            Box(
-                                Modifier.background(Color.Red)
-                                    .fillMaxWidth()
-                                    .height(headerHeight.toDp())
-                            )
-                        }
-                        item { Box(Modifier.background(Color.Green).size(10.toDp())) }
-                    }
-                }
-            }
-
-            // Sticky headers render correctly trivially when starting from the top, so we need to
-            // start a bit down the list.
-            rule.awaitIdle()
-            val scrolled = state.scrollBy(100f)
-
-            val target = captureTester.findCaptureTargets().single()
-            captureTester.capture(target, captureWindowHeight = 1) {
-                repeat(scrolled.toInt()) {
-                    shiftWindowBy(-1)
-                    performCaptureDiscardingBitmap()
-                    rule.awaitIdle()
-                    assertHeaderNotStuck()
+                    item { Box(Modifier.background(Color.Green).size(10.toDp())) }
                 }
             }
         }
+
+        // Sticky headers render correctly trivially when starting from the top, so we need to
+        // start a bit down the list.
+        rule.awaitIdle()
+        val scrolled = state.scrollBy(100f)
+
+        val target = captureTester.findCaptureTargets().single()
+        captureTester.capture(target, captureWindowHeight = 1) {
+            repeat(scrolled.toInt()) {
+                shiftWindowBy(-1)
+                performCaptureDiscardingBitmap()
+                rule.awaitIdle()
+                assertHeaderNotStuck()
+            }
+        }
+    }
 }

@@ -17,6 +17,7 @@
 package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.ComposeUiFlags
 import kotlin.js.js
 import kotlinx.browser.document
 import org.w3c.dom.Element
@@ -55,7 +56,7 @@ fun ComposeViewport(
 
 /**
  * Creates the composition in HTML canvas created in parent container identified by [viewportContainer] Element.
- * This size of canvas is adjusted with the size of the container
+ * This size of canvas is adjusted with the size of the container which must have definite dimensions.
  *
  * <container>
  *   <positioning_container>
@@ -93,6 +94,9 @@ fun ComposeViewport(
     val positioningContainer = ComposeWindow.createComposeComponent()
     positioningContainer.style.apply {
         position = "relative"
+        display = "block" // inline by default for custom elements; 'block' - is the default for <div>
+        width = "100%"
+        height = "100%"
     }
     viewportContainer.appendChild(positioningContainer)
 
@@ -100,6 +104,8 @@ fun ComposeViewport(
     val shadowContainer = document.createElement("div") as HTMLDivElement
     shadowContainer.style.apply {
         position = "relative"
+        width = "100%"
+        height = "100%"
     }
     positioningContainer.appendChild(shadowContainer)
 
@@ -154,6 +160,8 @@ fun ComposeViewport(
     val appContainer = document.createElement("div") as HTMLElement
     appContainer.style.apply {
         position = "relative"
+        width = "100%"
+        height = "100%"
     }
     shadowRoot.appendChild(appContainer)
 
@@ -163,7 +171,25 @@ fun ComposeViewport(
     canvas.setAttribute("role", "generic")
     canvas.setAttribute("draggable", "true")
     canvas.style.outline = "none" // Fixes https://youtrack.jetbrains.com/issue/CMP-9040
-    canvas.style.setProperty("touch-action", "pan-x pan-y") // allow the browser to scroll when compose is not scrolling
+
+    val touchAction = buildString {
+        // Allow the browser to scroll vertically or to "refresh" when compose is not scrolling:
+        append("pan-y")
+
+        // 'pan-x' often interferes with vertical scroll in Compose - the browser steals the gesture and won't let Compose scroll.
+        // pan-x might be needed when ComposeViewport in nested in HTML ViewPager-like horizontally scrollable containers.
+        // In those cases the workaround is to forcefully modify the touch-action style property by adding pan-x.
+        // We keep it disabled by default:
+        // append(" pan-x")
+
+        if (ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled) {
+            // We do it conditionally, only when 0-position-change move events are supported.
+            // Otherwise, the pointerInput handles do not receive such move events and have no chance to
+            // consume them. This lets the browser to zoom in/out (unexpectedly).
+            append(" pinch-zoom") // allow the browser to pinch-zoom when the app doesn't handle it itself
+        }
+    }
+    canvas.style.setProperty("touch-action", touchAction)
     appContainer.appendChild(canvas)
 
     //a11y container

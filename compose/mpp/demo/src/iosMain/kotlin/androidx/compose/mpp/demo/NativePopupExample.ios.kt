@@ -47,6 +47,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import platform.UIKit.*
 import platform.Foundation.*
+import platform.darwin.dispatch_async
+import platform.darwin.dispatch_get_main_queue
 
 /*
  * Copyright 2023 The Android Open Source Project
@@ -131,11 +133,11 @@ private fun NativeNavigationPage() {
                 DisposableEffect(Unit) {
                     val url = NSURL(string = "https://cataas.com/cat/says/$index")
                     val task = NSURLSession.sharedSession.dataTaskWithURL(url, completionHandler = { data, response, error ->
-                        if (data == null) {
-                            return@dataTaskWithURL
-                        }
+                        val decoded = data?.let { UIImage.imageWithData(it) } ?: return@dataTaskWithURL
 
-                        image = UIImage(data = data)
+                        dispatch_async(dispatch_get_main_queue()) {
+                            image = decoded
+                        }
                     })
                     task.resume()
 

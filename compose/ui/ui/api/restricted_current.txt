@@ -78,6 +78,7 @@ package androidx.compose.ui {
     property public boolean isFrameworkVelocityTrackerEnabled;
     property public boolean isOutOfFrameSchedulerForTextInputEventsEnabled;
     property public boolean isPropagateHideFromAccessibilityToMergingChildrenEnabled;
+    property public boolean isScrollAccessibilityFocusEventEnabled;
     property public boolean isTraversalGroupSortingEnabled;
     property public boolean isViewBasedSemanticsHandlerEnabled;
     field public static final androidx.compose.ui.AndroidComposeUiFlags INSTANCE;
@@ -88,6 +89,7 @@ package androidx.compose.ui {
     field public static boolean isFrameworkVelocityTrackerEnabled;
     field public static boolean isOutOfFrameSchedulerForTextInputEventsEnabled;
     field public static boolean isPropagateHideFromAccessibilityToMergingChildrenEnabled;
+    field public static boolean isScrollAccessibilityFocusEventEnabled;
     field public static boolean isTraversalGroupSortingEnabled;
     field public static boolean isViewBasedSemanticsHandlerEnabled;
   }
@@ -165,6 +167,7 @@ package androidx.compose.ui {
     property public boolean isAccessibilityShouldIncludeOffscreenChildrenEnabled;
     property public boolean isBypassUnfocusableComposeViewEnabled;
     property public boolean isFocusRestorationEnabled;
+    property public boolean isHardwareNavigationHandlingEnabled;
     property public boolean isInitialFocusOnFocusableAvailable;
     property public boolean isMediaQueryIntegrationEnabled;
     property public boolean isMinimalistLocalsEnabled;
@@ -179,6 +182,7 @@ package androidx.compose.ui {
     field public static boolean isAccessibilityShouldIncludeOffscreenChildrenEnabled;
     field public static boolean isBypassUnfocusableComposeViewEnabled;
     field public static boolean isFocusRestorationEnabled;
+    field public static boolean isHardwareNavigationHandlingEnabled;
     field public static boolean isInitialFocusOnFocusableAvailable;
     field public static boolean isMediaQueryIntegrationEnabled;
     field public static boolean isMinimalistLocalsEnabled;
@@ -231,6 +235,10 @@ package androidx.compose.ui {
     method @KotlinOnly public static androidx.compose.ui.Modifier preferredFrameRate(androidx.compose.ui.Modifier, androidx.compose.ui.FrameRateCategory frameRateCategory);
     method public static androidx.compose.ui.Modifier preferredFrameRate(androidx.compose.ui.Modifier, @FloatRange(from=0.0, to=360.0) float frameRate);
     method @BytecodeOnly public static androidx.compose.ui.Modifier preferredFrameRate-kI47g10(androidx.compose.ui.Modifier, float);
+  }
+
+  public final class InteractionBarrierKt {
+    method public static androidx.compose.ui.Modifier interactionBarrier(androidx.compose.ui.Modifier);
   }
 
   public final class KeepScreenOnKt {
@@ -689,12 +697,30 @@ package androidx.compose.ui.draw {
   }
 
   public final class BlurKt {
+    method @KotlinOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier blur(androidx.compose.ui.Modifier, androidx.compose.ui.graphics.blur.BlurRadiusSpec radius, optional androidx.compose.ui.draw.BlurredEdgeTreatment edgeTreatment, optional float alpha);
     method @KotlinOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier blur(androidx.compose.ui.Modifier, androidx.compose.ui.unit.Dp radius, optional androidx.compose.ui.draw.BlurredEdgeTreatment edgeTreatment);
     method @KotlinOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier blur(androidx.compose.ui.Modifier, androidx.compose.ui.unit.Dp radiusX, androidx.compose.ui.unit.Dp radiusY, optional androidx.compose.ui.draw.BlurredEdgeTreatment edgeTreatment);
+    method @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier blur(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function1<? super androidx.compose.ui.draw.BlurScope,kotlin.Unit> block);
     method @BytecodeOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier blur-1fqS-gw(androidx.compose.ui.Modifier, float, float, androidx.compose.ui.graphics.Shape);
     method @BytecodeOnly public static androidx.compose.ui.Modifier! blur-1fqS-gw$default(androidx.compose.ui.Modifier!, float, float, androidx.compose.ui.draw.BlurredEdgeTreatment!, int, Object!);
     method @BytecodeOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier blur-F8QBwvs(androidx.compose.ui.Modifier, float, androidx.compose.ui.graphics.Shape);
     method @BytecodeOnly public static androidx.compose.ui.Modifier! blur-F8QBwvs$default(androidx.compose.ui.Modifier!, float, androidx.compose.ui.draw.BlurredEdgeTreatment!, int, Object!);
+    method @BytecodeOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier blur-d3-LrFo(androidx.compose.ui.Modifier, androidx.compose.ui.graphics.blur.BlurRadiusSpec, androidx.compose.ui.graphics.Shape, float);
+    method @BytecodeOnly public static androidx.compose.ui.Modifier! blur-d3-LrFo$default(androidx.compose.ui.Modifier!, androidx.compose.ui.graphics.blur.BlurRadiusSpec!, androidx.compose.ui.draw.BlurredEdgeTreatment!, float, int, Object!);
+  }
+
+  public sealed nonexhaustive interface BlurScope extends androidx.compose.ui.unit.Density {
+    method @InaccessibleFromKotlin public float getAlpha();
+    method @BytecodeOnly public androidx.compose.ui.graphics.Shape getEdgeTreatment---Goahg();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.blur.BlurRadiusSpec getRadius();
+    method @BytecodeOnly public long getSize-MYxV2XQ();
+    method @InaccessibleFromKotlin public void setAlpha(float);
+    method @BytecodeOnly public void setEdgeTreatment-JyGir4Q(androidx.compose.ui.graphics.Shape);
+    method @InaccessibleFromKotlin public void setRadius(androidx.compose.ui.graphics.blur.BlurRadiusSpec);
+    property public abstract float alpha;
+    property public abstract androidx.compose.ui.draw.BlurredEdgeTreatment edgeTreatment;
+    property public abstract androidx.compose.ui.graphics.blur.BlurRadiusSpec radius;
+    property public abstract androidx.compose.ui.unit.DpSize size;
   }
 
   @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public final value class BlurredEdgeTreatment {
@@ -3610,6 +3636,7 @@ package androidx.compose.ui.layout {
   }
 
   public final class WindowInsetsRulersKt {
+    method public static void disable(androidx.compose.ui.layout.WindowInsetsRulers.Companion);
     method public static java.util.List<androidx.compose.ui.layout.RectRulers> getDisplayCutoutBounds(androidx.compose.ui.layout.Placeable.PlacementScope);
   }
 
@@ -4064,12 +4091,14 @@ package androidx.compose.ui.platform {
     method @InaccessibleFromKotlin public static androidx.compose.runtime.ProvidableCompositionLocal<android.content.res.Resources> getLocalResources();
     method @InaccessibleFromKotlin @Deprecated public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.savedstate.SavedStateRegistryOwner> getLocalSavedStateRegistryOwner();
     method @InaccessibleFromKotlin public static androidx.compose.runtime.ProvidableCompositionLocal<android.view.View> getLocalView();
+    method @InaccessibleFromKotlin public static androidx.compose.runtime.ProvidableCompositionLocal<android.view.Window?> getLocalWindow();
     property public static androidx.compose.runtime.ProvidableCompositionLocal<android.content.res.Configuration> LocalConfiguration;
     property public static androidx.compose.runtime.ProvidableCompositionLocal<android.content.Context> LocalContext;
     property @Deprecated public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.lifecycle.LifecycleOwner> LocalLifecycleOwner;
     property public static androidx.compose.runtime.ProvidableCompositionLocal<android.content.res.Resources> LocalResources;
     property @Deprecated public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.savedstate.SavedStateRegistryOwner> LocalSavedStateRegistryOwner;
     property public static androidx.compose.runtime.ProvidableCompositionLocal<android.view.View> LocalView;
+    property public static androidx.compose.runtime.ProvidableCompositionLocal<android.view.Window?> LocalWindow;
   }
 
   public final class AndroidUiDispatcher extends kotlinx.coroutines.CoroutineDispatcher {
@@ -4118,6 +4147,11 @@ package androidx.compose.ui.platform {
     property public float maximumFlingVelocity;
     property public float minimumFlingVelocity;
     property public float touchSlop;
+  }
+
+  public final class AndroidWindowInfo_androidKt {
+    method @InaccessibleFromKotlin public static boolean isCrossWindowBlurEnabled(androidx.compose.ui.platform.WindowInfo);
+    property public static boolean androidx.compose.ui.platform.WindowInfo.isCrossWindowBlurEnabled;
   }
 
   @kotlin.jvm.JvmInline public final value class AutoClearFocusBehavior {
@@ -4194,7 +4228,7 @@ package androidx.compose.ui.platform {
   }
 
   public final class ComposeView_androidKt {
-    method public static void disableWindowInsetsRulers(androidx.compose.ui.platform.ComposeView.Companion);
+    method @Deprecated public static void disableWindowInsetsRulers(androidx.compose.ui.platform.ComposeView.Companion);
     method public static androidx.compose.ui.platform.ComposeViewContext? findViewTreeComposeViewContext(android.view.View);
   }
 

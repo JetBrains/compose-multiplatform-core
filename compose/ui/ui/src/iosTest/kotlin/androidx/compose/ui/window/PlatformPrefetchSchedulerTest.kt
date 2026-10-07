@@ -91,34 +91,46 @@ class PlatformPrefetchSchedulerTest {
     }
 
     @Test
-    fun testReportsNoScheduledWorkWhenNoRequestsAreScheduledAndDidNotDraw() {
-        val hasWorkEvents = mutableListOf<Boolean>()
-        val scheduler = scheduler(onHasWorkScheduled = hasWorkEvents::add)
+    fun testDoesNotVoteForPrefetchWhenNoRequestsAreScheduledAndDidNotDraw() {
+        val prefetchVoteEvents = mutableListOf<Boolean>()
+        val scheduler = scheduler(onPrefetchVoteChanged = prefetchVoteEvents::add)
 
         scheduler.execute(lastFrameTimestamp = 0.0, targetTimestamp = 1.0, didDraw = false)
 
-        assertEquals(listOf(false), hasWorkEvents)
+        assertTrue(prefetchVoteEvents.isEmpty())
     }
 
     @Test
-    fun testReportsNoScheduledWorkWhenNoRequestsAreScheduledAndDidDraw() {
-        val hasWorkEvents = mutableListOf<Boolean>()
-        val scheduler = scheduler(onHasWorkScheduled = hasWorkEvents::add)
+    fun testDoesNotVoteForPrefetchWhenNoRequestsAreScheduledAndDidDraw() {
+        val prefetchVoteEvents = mutableListOf<Boolean>()
+        val scheduler = scheduler(onPrefetchVoteChanged = prefetchVoteEvents::add)
 
         scheduler.execute(lastFrameTimestamp = 0.0, targetTimestamp = 1.0, didDraw = true)
 
-        assertEquals(listOf(false), hasWorkEvents)
+        assertTrue(prefetchVoteEvents.isEmpty())
     }
 
     @Test
-    fun testReportsNoScheduledWorkWhenQueueDrains() {
-        val hasWorkEvents = mutableListOf<Boolean>()
-        val scheduler = scheduler(onHasWorkScheduled = hasWorkEvents::add)
+    fun testVotesForPrefetchWhileWorkIsScheduledAndEndsWhenQueueDrains() {
+        val prefetchVoteEvents = mutableListOf<Boolean>()
+        val scheduler = scheduler(onPrefetchVoteChanged = prefetchVoteEvents::add)
 
         scheduler.scheduleLowPriorityPrefetch(request("request"))
         scheduler.execute(lastFrameTimestamp = 0.0, targetTimestamp = 1.0, didDraw = false)
 
-        assertEquals(listOf(true, false), hasWorkEvents)
+        assertEquals(listOf(true, false), prefetchVoteEvents)
+    }
+
+    @Test
+    fun testDoesNotEmitDuplicatePrefetchVotes() {
+        val prefetchVoteEvents = mutableListOf<Boolean>()
+        val scheduler = scheduler(onPrefetchVoteChanged = prefetchVoteEvents::add)
+
+        scheduler.scheduleLowPriorityPrefetch(request("request-0"))
+        scheduler.scheduleLowPriorityPrefetch(request("request-1"))
+        scheduler.execute(lastFrameTimestamp = 0.0, targetTimestamp = 1.0, didDraw = false)
+
+        assertEquals(listOf(true, false), prefetchVoteEvents)
     }
 
     @Test
@@ -169,10 +181,10 @@ class PlatformPrefetchSchedulerTest {
     }
 
     private fun scheduler(
-        onHasWorkScheduled: (Boolean) -> Unit = {},
+        onPrefetchVoteChanged: (Boolean) -> Unit = {},
         currentTime: () -> NSTimeInterval = { 0.0 },
     ) = IosPrefetchScheduler(
-        onHasWorkScheduled = onHasWorkScheduled,
+        onPrefetchVoteChanged = onPrefetchVoteChanged,
         currentTime = currentTime,
     )
 

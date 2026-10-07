@@ -17,7 +17,7 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.withFrameNanos
-import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.graphics.SkiaCanvasHolder
 import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.uikit.addLayoutConstraintsToMatch
 import androidx.compose.ui.uikit.embedSubview
@@ -88,6 +88,7 @@ internal class ComposeLayersViewController(
         )
     }
 
+    private val canvasHolder = SkiaCanvasHolder()
     private val layoutInvalidationHandler = LayoutInvalidationHandler(coroutineContext) {
         composeContainerView.setNeedsLayout()
         composeContainerView.invalidateIntrinsicContentSize()
@@ -240,7 +241,6 @@ internal class ComposeLayersViewController(
 
     fun attach(layer: IosComposeSceneLayer) {
         val isFirstLayer = layers.isEmpty()
-        layers.add(layer)
         composeContainerView.insertSubview(layer.interactionView, belowSubview = metalView.view)
         layer.interactionView.addLayoutConstraintsToMatch(composeContainerView)
         composeContainerView.embedSubview(layer.overlayView)
@@ -248,6 +248,12 @@ internal class ComposeLayersViewController(
         if (isFirstLayer) {
             show()
         }
+
+        // For the first layer, wait for `show()` to attach and lay out its UIKit views before
+        // registering it for Compose measurement. Otherwise it can be measured with unbounded
+        // constraints during that initial layout pass.
+        layers.add(layer)
+
         if (hasViewAppeared) {
             layer.sceneDidAppear()
         }
@@ -349,15 +355,15 @@ internal class ComposeLayersViewController(
 
     private fun draw(canvas: Canvas) {
         layoutInvalidationHandler.postponeLayoutInvalidationCalls {
-            val composeCanvas = canvas.asComposeCanvas()
-
+        canvasHolder.drawInto(canvas) { 
             // Some layers may be removed during rendering, because recomposition will happen in the
             // process, so we need to make a temporary copy of the list
             layersCache.withCopy { layers ->
                 layers.fastForEach {
-                    it.draw(composeCanvas)
+                    it.draw(this@drawInto)
                 }
             }
+          }
         }
     }
 }

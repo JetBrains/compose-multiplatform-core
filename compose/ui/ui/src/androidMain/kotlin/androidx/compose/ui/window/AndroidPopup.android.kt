@@ -673,13 +673,12 @@ private inline fun SimpleStack(modifier: Modifier, noinline content: @Composable
             else -> {
                 var width = 0
                 var height = 0
-                val placeables =
-                    measurables.fastMap {
-                        it.measure(constraints).apply {
-                            width = max(width, this.width)
-                            height = max(height, this.height)
-                        }
+                val placeables = measurables.fastMap {
+                    it.measure(constraints).apply {
+                        width = max(width, this.width)
+                        height = max(height, this.height)
                     }
+                }
                 layout(width, height) {
                     for (i in 0..placeables.lastIndex) {
                         val p = placeables[i]
@@ -701,7 +700,7 @@ internal class PopupLayout(
     private var onDismissRequest: (() -> Unit)?,
     private var properties: PopupProperties,
     var testTag: String,
-    private val composeView: View,
+    internal val composeView: View,
     density: Density,
     initialPositionProvider: PopupPositionProvider,
     popupId: UUID,

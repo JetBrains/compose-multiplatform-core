@@ -130,7 +130,7 @@ internal fun Project.configureDependencyVerification() {
                     .asSequence()
                     .map { project.configurations.getByName(it) }
                     .flatMap { configuration ->
-                        configuration.allDependencies
+                        configuration.allDependencies.asSequence()
                             .filter { it.group != null && it.version != null }
                             .map { dependency ->
                                 AndroidXDependency(
@@ -140,6 +140,19 @@ internal fun Project.configureDependencyVerification() {
                                     configuration.name,
                                 )
                             }
+                            .plus(
+                                configuration.allDependencyConstraints
+                                    .asSequence()
+                                    .filter { it.version != null }
+                                    .map { constraint ->
+                                        AndroidXDependency(
+                                            constraint.group,
+                                            constraint.name,
+                                            constraint.version!!,
+                                            configuration.name,
+                                        )
+                                    }
+                            )
                     }
                     .toList()
             }

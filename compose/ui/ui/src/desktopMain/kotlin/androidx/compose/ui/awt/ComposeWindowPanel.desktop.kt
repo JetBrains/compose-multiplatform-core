@@ -34,6 +34,7 @@ import java.awt.Insets
 import java.awt.Window
 import java.awt.event.MouseListener
 import java.awt.event.MouseMotionListener
+import javax.swing.JLayeredPane
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import org.jetbrains.skiko.DelicateSkikoApi
@@ -49,7 +50,7 @@ internal class ComposeWindowPanel(
     skiaLayerAnalytics: SkiaLayerAnalytics,
     savedState: SavedState? = null,
     coroutineContext: CoroutineContext = EmptyCoroutineContext,
-) : JLayeredPaneWithTransparencyHack() {
+) : JLayeredPane() {
     private var isDisposed = false
 
     // AWT can leak JFrame in some cases

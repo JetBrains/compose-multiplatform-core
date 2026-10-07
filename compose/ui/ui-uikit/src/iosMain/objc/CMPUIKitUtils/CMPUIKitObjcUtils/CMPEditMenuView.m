@@ -59,6 +59,13 @@
 
 @end
 
+typedef enum : NSUInteger {
+    CMPEditMenuStateHidden = 0,
+    CMPEditMenuStatePresenting,
+    CMPEditMenuStatePresented,
+    CMPEditMenuStateHiding,
+} CMPEditMenuState;
+
 @interface CMPEditMenuView() <UIEditMenuInteractionDelegate>
 
 @property (weak, nonatomic, nullable) UIView *rootView;
@@ -82,13 +89,21 @@
 @property (strong, nonatomic, nullable) dispatch_block_t presentInteractionBlock;
 
 @property (assign, nonatomic) CGRect targetRect;
-@property (assign, nonatomic) BOOL isEditMenuShown;
+@property (assign, nonatomic) CMPEditMenuState editMenuState;
 
 @property (readwrite) UIEditMenuInteraction* editInteraction API_AVAILABLE(ios(16.0));
 
+- (void)dismissEditMenu;
+
+/// Donor text field backing the `UITextField` masquerade below, or `nil` when secure text entry is off.
+- (nullable UITextField *)cmp_proxyTextField;
+
 @end
 
-@implementation CMPEditMenuView
+@implementation CMPEditMenuView {
+    UITextField *_textField;
+    BOOL _isDeallocating;
+}
 
 id _editInteraction;
 
@@ -123,21 +138,56 @@ id _editInteraction;
 
     if (@available(iOS 16, *)) {
         [[CMPEditMenuViewRegister shared] hideAllMenusSkipping:self];
-        if (self.editInteraction == nil || contextMenuItemsChanged || !self.isEditMenuShown) {
-            BOOL isFirstMenuPresentation = self.presentInteractionBlock == nil;
-            [self cancelPresentEditMenuInteraction];
-            NSTimeInterval delay = isFirstMenuPresentation ? 0 : [self editMenuDelay];
-            [self schedulePresentEditMenuInteractionWithDelay:delay];
-        } else if (positionChanged) {
-            [self.editInteraction updateVisibleMenuPositionAnimated:NO];
+
+        switch (self.editMenuState) {
+            case CMPEditMenuStateHidden:
+            case CMPEditMenuStateHiding:
+                [self cancelPresentEditMenuInteraction];
+                [self schedulePresentEditMenuInteractionWithDelay:[self editMenuDelay]];
+                self.editMenuState = CMPEditMenuStatePresenting;
+                break;
+
+            case CMPEditMenuStatePresenting:
+                if (contextMenuItemsChanged) {
+                    [self cancelPresentEditMenuInteraction];
+                    [self schedulePresentEditMenuInteractionWithDelay:[self editMenuDelay]];
+                } else if (positionChanged) {
+                    if (self.presentInteractionBlock == nil) {
+                        // View appearance already started - jsut set the new locaiton.
+                        [self.editInteraction updateVisibleMenuPositionAnimated:NO];
+                    } else {
+                        [self cancelPresentEditMenuInteraction];
+                        [self schedulePresentEditMenuInteractionWithDelay:[self editMenuDelay]];
+                    }
+                }
+                break;
+
+            case CMPEditMenuStatePresented:
+                if (contextMenuItemsChanged) {
+                    [self cancelPresentEditMenuInteraction];
+                    [self schedulePresentEditMenuInteractionWithDelay:0];
+                    self.editMenuState = CMPEditMenuStatePresenting;
+                } else if (positionChanged) {
+                    [self.editInteraction updateVisibleMenuPositionAnimated:NO];
+                    self.editMenuState = CMPEditMenuStatePresented;
+                }
+                break;
         }
     } else {
-        self.isEditMenuShown = YES;
         if (contextMenuItemsChanged || positionChanged) {
-            [self hideEditMenu];
+            [self dismissEditMenu];
             [self scheduleShowMenuController];
         }
+        self.editMenuState = CMPEditMenuStatePresenting;
     }
+}
+
+- (void)setEditMenuState:(CMPEditMenuState)editMenuState {
+    if (_editMenuState == editMenuState) {
+        return;
+    }
+
+    _editMenuState = editMenuState;
 }
 
 - (void)updateAvailableSystemActions:(void (^)(void))copyBlock
@@ -150,6 +200,74 @@ id _editInteraction;
     self.systemPasteBlock = pasteBlock;
     self.systemSelectBlock = selectBlock;
     self.systemSelectAllBlock = selectAllBlock;
+}
+
+- (BOOL)isSecureTextEntry {
+    CMP_ABSTRACT_FUNCTION_CALLED
+}
+
+- (UITextField *)cmp_proxyTextField {
+    if (![self isSecureTextEntry]) {
+        return nil;
+    }
+    if (!_textField) {
+        _textField = [[UITextField alloc] init];
+    }
+    return _textField;
+}
+
+/// `-[UIView dealloc]` still queries the view while tearing it down (`-isKindOfClass:` from
+/// `-_removeAllGestureRecognizers`, for example). The Kotlin subclass releases its state in its own
+/// `-dealloc` before `super` runs, so from here on the subclass can no longer be asked anything.
+- (void)dealloc {
+    _isDeallocating = YES;
+}
+
+- (BOOL)isKindOfClass:(Class)aClass {
+    if ([super isKindOfClass:aClass]) {
+        return YES;
+    }
+    if (_isDeallocating) {
+        return NO;
+    }
+    UITextField *proxyTextField = [self cmp_proxyTextField];
+    return proxyTextField != nil && [proxyTextField isKindOfClass:aClass];
+}
+
+- (NSMethodSignature*)methodSignatureForSelector:(SEL)aSelector {
+    NSMethodSignature* signature = [super methodSignatureForSelector:aSelector];
+    if (!signature) {
+        signature = [[self cmp_proxyTextField] methodSignatureForSelector:aSelector];
+    }
+    return signature;
+}
+
+- (void)forwardInvocation:(NSInvocation*)anInvocation {
+    UITextField *proxyTextField = [self cmp_proxyTextField];
+    if (proxyTextField != nil) {
+        [anInvocation invokeWithTarget:proxyTextField];
+    } else {
+        [super forwardInvocation:anInvocation];
+    }
+}
+
+- (nullable NSString *)text {
+    NSAssert([self conformsToProtocol:@protocol(UITextInput)],
+             @"-text requires a subclass conforming to UITextInput");
+
+    id<UITextInput> textInput = (id<UITextInput>)self;
+    UITextRange *range = [textInput textRangeFromPosition:textInput.beginningOfDocument
+                                               toPosition:textInput.endOfDocument];
+    return range != nil ? [textInput textInRange:range] : nil;
+}
+
+- (BOOL)isEditMenuShown {
+    if (@available(iOS 16, *)) {
+        return _editMenuState == CMPEditMenuStatePresenting || _editMenuState == CMPEditMenuStatePresented;
+    } else {
+        return _editMenuState == CMPEditMenuStatePresenting ||
+        (_editMenuState == CMPEditMenuStatePresented && [UIMenuController sharedMenuController].menuVisible);
+    }
 }
 
 - (void)didMoveToWindow {
@@ -172,6 +290,7 @@ id _editInteraction;
         UIMenuController *controller = [UIMenuController sharedMenuController];
         controller.menuItems = [self makeCustomMenuItems];
         [self becomeFirstResponder];
+        self.editMenuState = CMPEditMenuStatePresented;
         [controller showMenuFromView:self rect:self.targetRect];
 
         self.showContextMenuBlock = nil;
@@ -249,23 +368,16 @@ id _editInteraction;
     _editInteraction = editInteraction;
 }
 
-- (void)presentEditMenuInteraction API_AVAILABLE(ios(16.0)) {
-    NSAssert(self.editInteraction != nil, @"Edit Interaction must be initialized");
-
-    UIEditMenuConfiguration *config = [UIEditMenuConfiguration configurationWithIdentifier:nil
-                                                                               sourcePoint:self.targetRect.origin];
-    [self.editInteraction presentEditMenuWithConfiguration:config];
-}
-
 - (void)schedulePresentEditMenuInteractionWithDelay:(NSTimeInterval)delay API_AVAILABLE(ios(16.0)) {
     __weak __auto_type weak_self = self;
     self.presentInteractionBlock = dispatch_block_create(0 ,^{
         __auto_type self = weak_self;
-        if (self.editInteraction == nil) {
-            self.editInteraction = [[UIEditMenuInteraction alloc] initWithDelegate:self];
-            [self addInteraction:self.editInteraction];
-        }
-        [self presentEditMenuInteraction];
+        self.presentInteractionBlock = nil;
+        self.editInteraction = [[UIEditMenuInteraction alloc] initWithDelegate:self];
+        [self addInteraction:self.editInteraction];
+        UIEditMenuConfiguration *config = [UIEditMenuConfiguration configurationWithIdentifier:nil
+                                                                                   sourcePoint:self.targetRect.origin];
+        [self.editInteraction presentEditMenuWithConfiguration:config];
     });
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)),
                    dispatch_get_main_queue(),
@@ -283,24 +395,39 @@ id _editInteraction;
     return YES;
 }
 
-- (void)hideEditMenu {
+- (void)dismissEditMenu {
     if (@available(iOS 16, *)) {
         [self cancelPresentEditMenuInteraction];
+        switch (self.editMenuState) {
+            case CMPEditMenuStateHidden:
+            case CMPEditMenuStateHiding:
+                break;
 
-        if (self.editInteraction != nil) {
-            [self.editInteraction dismissMenu];
-            [self removeInteraction:self.editInteraction];
-            self.editInteraction = nil;
+            case CMPEditMenuStatePresenting:
+            case CMPEditMenuStatePresented:
+                self.editMenuState = CMPEditMenuStateHiding;
+
+                if (self.editInteraction != nil) {
+                    UIEditMenuInteraction *interaction = self.editInteraction;
+                    [interaction dismissMenu];
+                    self.editInteraction = nil;
+                    [self removeInteraction:interaction];
+                }
         }
     } else {
-        self.isEditMenuShown = NO;
         [self cancelShowMenuController];
+        self.editMenuState = CMPEditMenuStateHidden;
         [[UIMenuController sharedMenuController] hideMenu];
     }
+}
+
+- (void)hideEditMenu {
+    [self dismissEditMenu];
 
     self.copyBlock = nil;
     self.cutBlock = nil;
     self.pasteBlock = nil;
+    self.selectBlock = nil;
     self.selectAllBlock = nil;
     self.customActions = @[];
 }
@@ -447,11 +574,16 @@ const NSInteger customActionsMaxCount = 10;
 - (void)editMenuInteraction:(UIEditMenuInteraction *)interaction
 willDismissMenuForConfiguration:(UIEditMenuConfiguration *)configuration
                    animator:(id<UIEditMenuInteractionAnimating>)animator API_AVAILABLE(ios(16.0)) {
+    if (self.editInteraction != interaction) {
+        return;
+    }
+    self.editInteraction = nil;
+    self.editMenuState = CMPEditMenuStateHiding;
     __weak __auto_type weak_self = self;
     [animator addCompletion:^{
         __auto_type self = weak_self;
-        if (self.editInteraction == interaction) {
-            self.isEditMenuShown = NO;
+        if (self.editInteraction == nil) {
+            self.editMenuState = CMPEditMenuStateHidden;
         }
     }];
 }
@@ -463,7 +595,7 @@ willPresentMenuForConfiguration:(UIEditMenuConfiguration *)configuration
     [animator addCompletion:^{
         __auto_type self = weak_self;
         if (self.editInteraction == interaction) {
-            self.isEditMenuShown = YES;
+            self.editMenuState = CMPEditMenuStatePresented;
         }
     }];
 }

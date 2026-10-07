@@ -131,8 +131,8 @@ public final class androidx/compose/ui/CombinedModifier : androidx/compose/ui/Mo
 public final class androidx/compose/ui/ComposableSingletons$ImageComposeScene_skikoKt {
 	public static final field INSTANCE Landroidx/compose/ui/ComposableSingletons$ImageComposeScene_skikoKt;
 	public fun <init> ()V
-	public final fun getLambda$-120220721$ui ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda$1296475654$ui ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-120220721$org_jetbrains_compose_ui_ui ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$1296475654$org_jetbrains_compose_ui_ui ()Lkotlin/jvm/functions/Function2;
 }
 
 public abstract interface class androidx/compose/ui/ComposeDesktopEntryPoint {
@@ -202,6 +202,10 @@ public final class androidx/compose/ui/ImageComposeScene_skikoMainKt {
 	public static final fun renderComposeScene (IILandroidx/compose/ui/unit/Density;Lkotlin/jvm/functions/Function2;)Lorg/jetbrains/skia/Image;
 	public static synthetic fun renderComposeScene$default (IILandroidx/compose/ui/unit/Density;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lorg/jetbrains/skia/Image;
 	public static final fun use (Landroidx/compose/ui/ImageComposeScene;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+}
+
+public final class androidx/compose/ui/InteractionBarrierKt {
+	public static final fun interactionBarrier (Landroidx/compose/ui/Modifier;)Landroidx/compose/ui/Modifier;
 }
 
 public final class androidx/compose/ui/KeepScreenOnKt {
@@ -720,9 +724,6 @@ public abstract interface class androidx/compose/ui/draganddrop/DragAndDropTarge
 }
 
 public final class androidx/compose/ui/draganddrop/DragAndDropTransferAction$Companion {
-	public final fun getCopy ()Landroidx/compose/ui/draganddrop/DragAndDropTransferAction;
-	public final fun getLink ()Landroidx/compose/ui/draganddrop/DragAndDropTransferAction;
-	public final fun getMove ()Landroidx/compose/ui/draganddrop/DragAndDropTransferAction;
 }
 
 public final class androidx/compose/ui/draganddrop/DragAndDropTransferData {
@@ -748,10 +749,23 @@ public final class androidx/compose/ui/draw/AlphaKt {
 }
 
 public final class androidx/compose/ui/draw/BlurKt {
+	public static final fun blur (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
 	public static final fun blur-1fqS-gw (Landroidx/compose/ui/Modifier;FFLandroidx/compose/ui/graphics/Shape;)Landroidx/compose/ui/Modifier;
 	public static synthetic fun blur-1fqS-gw$default (Landroidx/compose/ui/Modifier;FFLandroidx/compose/ui/draw/BlurredEdgeTreatment;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
 	public static final fun blur-F8QBwvs (Landroidx/compose/ui/Modifier;FLandroidx/compose/ui/graphics/Shape;)Landroidx/compose/ui/Modifier;
 	public static synthetic fun blur-F8QBwvs$default (Landroidx/compose/ui/Modifier;FLandroidx/compose/ui/draw/BlurredEdgeTreatment;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
+	public static final fun blur-d3-LrFo (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;Landroidx/compose/ui/graphics/Shape;F)Landroidx/compose/ui/Modifier;
+	public static synthetic fun blur-d3-LrFo$default (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;Landroidx/compose/ui/draw/BlurredEdgeTreatment;FILjava/lang/Object;)Landroidx/compose/ui/Modifier;
+}
+
+public abstract interface class androidx/compose/ui/draw/BlurScope : androidx/compose/ui/unit/Density {
+	public abstract fun getAlpha ()F
+	public abstract fun getEdgeTreatment---Goahg ()Landroidx/compose/ui/graphics/Shape;
+	public abstract fun getRadius ()Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;
+	public abstract fun getSize-MYxV2XQ ()J
+	public abstract fun setAlpha (F)V
+	public abstract fun setEdgeTreatment-JyGir4Q (Landroidx/compose/ui/graphics/Shape;)V
+	public abstract fun setRadius (Landroidx/compose/ui/graphics/blur/BlurRadiusSpec;)V
 }
 
 public final class androidx/compose/ui/draw/BlurredEdgeTreatment {
@@ -2731,7 +2745,7 @@ public abstract interface class androidx/compose/ui/layout/BeyondBoundsLayoutPro
 public final class androidx/compose/ui/layout/ComposableSingletons$SubcomposeLayoutKt {
 	public static final field INSTANCE Landroidx/compose/ui/layout/ComposableSingletons$SubcomposeLayoutKt;
 	public fun <init> ()V
-	public final fun getLambda$641200809$ui ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$641200809$org_jetbrains_compose_ui_ui ()Lkotlin/jvm/functions/Function2;
 }
 
 public abstract interface class androidx/compose/ui/layout/ContentScale {
@@ -3373,6 +3387,7 @@ public final class androidx/compose/ui/layout/WindowInsetsRulers$Companion {
 }
 
 public final class androidx/compose/ui/layout/WindowInsetsRulersKt {
+	public static final fun disable (Landroidx/compose/ui/layout/WindowInsetsRulers$Companion;)V
 	public static final fun getDisplayCutoutBounds (Landroidx/compose/ui/layout/Placeable$PlacementScope;)Ljava/util/List;
 }
 
@@ -4553,7 +4568,7 @@ public final class androidx/compose/ui/window/AwtWindow_desktopKt {
 public final class androidx/compose/ui/window/ComposableSingletons$Tray_desktopKt {
 	public static final field INSTANCE Landroidx/compose/ui/window/ComposableSingletons$Tray_desktopKt;
 	public fun <init> ()V
-	public final fun getLambda$-2071755610$ui ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-2071755610$org_jetbrains_compose_ui_ui ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/ui/window/DesktopPopup_desktopKt {

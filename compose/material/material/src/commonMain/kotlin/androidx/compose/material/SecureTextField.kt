@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // b/552879150
+
 package androidx.compose.material
 
 import androidx.compose.foundation.interaction.Interaction
@@ -113,7 +115,7 @@ public fun SecureTextField(
     trailingIcon: @Composable (() -> Unit)? = null,
     isError: Boolean = false,
     inputTransformation: InputTransformation? = null,
-    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.RevealLastTyped,
+    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.System,
     textObfuscationCharacter: Char = DefaultObfuscationCharacter,
     keyboardOptions: KeyboardOptions = SecureTextFieldKeyboardOptions,
     onKeyboardAction: KeyboardActionHandler? = null,
@@ -235,7 +237,7 @@ public fun OutlinedSecureTextField(
     trailingIcon: @Composable (() -> Unit)? = null,
     isError: Boolean = false,
     inputTransformation: InputTransformation? = null,
-    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.RevealLastTyped,
+    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.System,
     textObfuscationCharacter: Char = DefaultObfuscationCharacter,
     keyboardOptions: KeyboardOptions = SecureTextFieldKeyboardOptions,
     onKeyboardAction: KeyboardActionHandler? = null,
