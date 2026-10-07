@@ -58,6 +58,20 @@ class JetbrainsUnsplitPackagePlugin @Inject constructor(
         return project.tasks.register<Jar>("sourcesJar") {
             archiveClassifier.set("sources")
             from(sourceJars.elements.map { locations -> locations.map { archiveOperations.zipTree(it) } })
+            // Split-package modules can ship different source files under the same path (ui-text
+            // and ui-skiko both have desktopMain/.../DesktopFont.desktop.kt). Keep every one, renaming
+            // the later ones: a source jar is only indexed for its declarations, so a file's name does
+            // not have to match anything.
+            val seenPaths = HashSet<String>()
+            eachFile { file ->
+                if (!seenPaths.add(file.path)) {
+                    val stem = file.path.substringBeforeLast('.')
+                    val extension = file.path.substringAfterLast('.', "")
+                    var index = 2
+                    while (!seenPaths.add("$stem.$index.$extension")) index++
+                    file.path = "$stem.$index.$extension"
+                }
+            }
         }
     }
 
