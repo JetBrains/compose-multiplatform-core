@@ -56,6 +56,7 @@ import platform.UIKit.UIWindowScene
 internal class MediaScope(val windowInfo: WindowInfo) : UiMediaScope, KeyboardVisibilitySubscriber {
 
     private var window: UIWindow? = null
+    private var isObserving = false
     /*
      * Initial value is arbitrarily chosen to avoid propagating invalid value logic
      * It's never the case in the real usage scenario to reflect that in type system
@@ -70,8 +71,8 @@ internal class MediaScope(val windowInfo: WindowInfo) : UiMediaScope, KeyboardVi
         UiMediaScope.PointerPrecision.Coarse
     )
 
-    private val hasMicrophoneState: MutableState<Boolean> = mutableStateOf(detectHasMicrophone())
-    private val hasCameraState: MutableState<Boolean> = mutableStateOf(detectHasCamera())
+    private val hasMicrophoneState: MutableState<Boolean> = mutableStateOf(false)
+    private val hasCameraState: MutableState<Boolean> = mutableStateOf(false)
 
     private fun detectHasMicrophone(): Boolean =
         AVCaptureDevice.defaultDeviceWithMediaType(AVMediaTypeAudio) != null
@@ -79,7 +80,10 @@ internal class MediaScope(val windowInfo: WindowInfo) : UiMediaScope, KeyboardVi
     private fun detectHasCamera(): Boolean =
         AVCaptureDevice.defaultDeviceWithMediaType(AVMediaTypeVideo) != null
 
-
+    private fun startCaptureDeviceObservation() {
+        updateCaptureDeviceAvailabilityState()
+        captureDeviceAvailabilityObserver.isObservingEnabled = true
+    }
     private fun updateCaptureDeviceAvailabilityState() {
         hasMicrophoneState.value = detectHasMicrophone()
         hasCameraState.value = detectHasCamera()
@@ -122,12 +126,13 @@ internal class MediaScope(val windowInfo: WindowInfo) : UiMediaScope, KeyboardVi
         get() = systemThemeState.value
 
     fun startObserving() {
+        isObserving = true
         interfaceOrientationObserver.isObservingEnabled = true
-        captureDeviceAvailabilityObserver.isObservingEnabled = true
         KeyboardVisibilityListener.addSubscriber(this)
     }
 
     fun stopObserving() {
+        isObserving = false
         interfaceOrientationObserver.isObservingEnabled = false
         captureDeviceAvailabilityObserver.isObservingEnabled = false
         KeyboardVisibilityListener.removeSubscriber(this)
@@ -147,9 +152,19 @@ internal class MediaScope(val windowInfo: WindowInfo) : UiMediaScope, KeyboardVi
             else -> UiMediaScope.KeyboardKind.None
         }
     override val hasMicrophone: Boolean
-        get() = hasMicrophoneState.value
+        get() {
+            if(captureDeviceAvailabilityObserver.isObservingEnabled.not() && isObserving) {
+                startCaptureDeviceObservation()
+            }
+            return hasMicrophoneState.value
+        }
     override val hasCamera: Boolean
-        get() = hasCameraState.value
+        get() {
+            if(captureDeviceAvailabilityObserver.isObservingEnabled.not() && isObserving) {
+                startCaptureDeviceObservation()
+            }
+            return hasCameraState.value
+        }
     override val viewingDistance: UiMediaScope.ViewingDistance
         get() = UiMediaScope.ViewingDistance.Near
 
