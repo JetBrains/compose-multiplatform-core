@@ -24,7 +24,6 @@ import java.awt.EventQueue
 internal class DesktopPlatformOutOfFrameExecutor :
     AbstractPlatformOutOfFrameExecutor(
         tracePrefix = "DesktopOutOfFrameExecutor",
-        isExecutingOnUiThread = { EventQueue.isDispatchThread() }
     ) {
 
     override fun addToQueueAndSchedule(
@@ -39,6 +38,8 @@ internal class DesktopPlatformOutOfFrameExecutor :
             EventQueue.invokeLater(drainLambda)
         }
     }
+
+    override fun isExecutingOnUiThread() = EventQueue.isDispatchThread()
 
     /**
      * This must be called before a frame is executed.

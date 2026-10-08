@@ -23,7 +23,6 @@ import kotlin.js.js
 internal class WebOutOfFrameExecutor :
     AbstractPlatformOutOfFrameExecutor(
         tracePrefix = "WebOutOfFrameExecutor",
-        isExecutingOnUiThread = { true }
     ) {
 
     override fun addToQueueAndSchedule(
@@ -38,6 +37,8 @@ internal class WebOutOfFrameExecutor :
             schedulerPostTask(drainLambda)
         }
     }
+
+    override fun isExecutingOnUiThread() = true
 }
 
 internal val isPostingTasksSupported: Boolean by lazy {

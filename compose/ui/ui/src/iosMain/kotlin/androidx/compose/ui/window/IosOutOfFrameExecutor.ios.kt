@@ -33,7 +33,6 @@ import platform.darwin.dispatch_get_main_queue
 internal class IosOutOfFrameExecutor :
     AbstractPlatformOutOfFrameExecutor(
         tracePrefix = "IosOutOfFrameExecutor",
-        isExecutingOnUiThread = { NSThread.isMainThread }
     ) {
     private var isFrameInProgress = false
     private var isDrainScheduled = false
@@ -56,6 +55,8 @@ internal class IosOutOfFrameExecutor :
             dispatch_async(dispatch_get_main_queue(), drainLambda)
         }
     }
+
+    override fun isExecutingOnUiThread() = NSThread.isMainThread
 
     fun onFrameStart() {
         requireUiThread()

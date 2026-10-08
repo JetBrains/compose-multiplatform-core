@@ -52,9 +52,6 @@ interface PlatformOutOfFrameExecutor {
 internal abstract class AbstractPlatformOutOfFrameExecutor(
     /** The prefix to use for tracing. */
     private val tracePrefix: String,
-
-    /** Returns whether the current thread is the UI thread. */
-    private val isExecutingOnUiThread: () -> Boolean
 ) : PlatformOutOfFrameExecutor {
 
     /**
@@ -120,6 +117,9 @@ internal abstract class AbstractPlatformOutOfFrameExecutor(
         isDisposed = true
         queue.clear()
     }
+
+    /** Returns whether the current thread is the UI thread. */
+    protected abstract fun isExecutingOnUiThread(): Boolean
 
     protected fun requireUiThread() {
         require(isExecutingOnUiThread()) { "Must be called on the UI thread" }
