@@ -277,7 +277,8 @@ internal class SkikoParagraph(
         }
     }
 
-    override fun isLineEllipsized(lineIndex: Int) = false
+    override fun isLineEllipsized(lineIndex: Int): Boolean =
+        ellipsis.isNotEmpty() && lineIndex == lineCount - 1 && didExceedMaxLines
 
     override fun getLineForOffset(offset: Int) =
         when {
