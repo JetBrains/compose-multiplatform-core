@@ -56,7 +56,6 @@ import platform.UIKit.UIWindowScene
 internal class IosUiMediaScope(val windowInfo: WindowInfo) : UiMediaScope, KeyboardVisibilitySubscriber {
 
     private var window: UIWindow? = null
-    private var isObserving = false
     /*
      * Initial value is arbitrarily chosen to avoid propagating invalid value logic
      * It's never the case in the real usage scenario to reflect that in type system
@@ -109,15 +108,14 @@ internal class IosUiMediaScope(val windowInfo: WindowInfo) : UiMediaScope, Keybo
         get() = systemThemeState.value
 
     fun startObserving() {
-        isObserving = true
+        deviceAvailabilityObserver.scopeIsObserving = true
         interfaceOrientationObserver.isObservingEnabled = true
         KeyboardVisibilityListener.addSubscriber(this)
     }
 
     fun stopObserving() {
-        isObserving = false
+        deviceAvailabilityObserver.scopeIsObserving = false
         interfaceOrientationObserver.isObservingEnabled = false
-        deviceAvailabilityObserver.isObservingEnabled = false
         KeyboardVisibilityListener.removeSubscriber(this)
     }
 
@@ -135,19 +133,9 @@ internal class IosUiMediaScope(val windowInfo: WindowInfo) : UiMediaScope, Keybo
             else -> UiMediaScope.KeyboardKind.None
         }
     override val hasMicrophone: Boolean
-        get() {
-            if (!deviceAvailabilityObserver.isObservingEnabled && isObserving) {
-                deviceAvailabilityObserver.isObservingEnabled = true
-            }
-            return deviceAvailabilityObserver.hasMicrophone
-        }
+        get() = deviceAvailabilityObserver.hasMicrophone
     override val hasCamera: Boolean
-        get() {
-            if (!deviceAvailabilityObserver.isObservingEnabled && isObserving) {
-                deviceAvailabilityObserver.isObservingEnabled = true
-            }
-            return deviceAvailabilityObserver.hasCamera
-        }
+        get() = deviceAvailabilityObserver.hasCamera
     override val viewingDistance: UiMediaScope.ViewingDistance
         get() = UiMediaScope.ViewingDistance.Near
 
@@ -229,6 +217,14 @@ private class CaptureDeviceAvailabilityObserver(
     private val notificationCenter: NSNotificationCenter = NSNotificationCenter.defaultCenter
 ) : NSObject() {
 
+    var scopeIsObserving = false
+        set(value) {
+            if (field == value) return
+            field = value
+            if(!value) {
+                isObservingEnabled = false
+            }
+        }
     private val hasMicrophoneState: MutableState<Boolean> by lazy {
         mutableStateOf(detectHasMicrophone())
     }
@@ -237,10 +233,20 @@ private class CaptureDeviceAvailabilityObserver(
     }
 
     val hasMicrophone: Boolean
-        get() = hasMicrophoneState.value
+        get() {
+            if (!isObservingEnabled && scopeIsObserving) {
+                isObservingEnabled = true
+            }
+            return hasMicrophoneState.value
+        }
 
     val hasCamera: Boolean
-        get() = hasCameraState.value
+        get() {
+            if (!isObservingEnabled && scopeIsObserving) {
+                isObservingEnabled = true
+            }
+            return hasCameraState.value
+        }
 
     var isObservingEnabled = false
         set(value) {
