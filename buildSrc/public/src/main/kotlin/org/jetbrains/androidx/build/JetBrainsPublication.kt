@@ -205,8 +205,15 @@ object JetBrainsPublication {
     fun shouldPublish(project: Project): Boolean = shouldPublish(project.path)
     fun shouldPublish(projectPath: String): Boolean = projectPathToComponent.containsKey(projectPath)
 
+    /**
+     * Libraries this repository publishes only through Fleet's `*-all-desktop` aggregates, in
+     * `fleet/`. Upstream #3357 stopped publishing them from here, so they have no components, but
+     * the aggregates still take their version under these names.
+     */
+    val aggregateOnlyLibraries = setOf("LIFECYCLE", "NAVIGATION_EVENT")
+
     fun isLibraryRegistered(libraryName: String) =
-        libraryToComponents.containsKey(libraryName)
+        libraryToComponents.containsKey(libraryName) || libraryName in aggregateOnlyLibraries
 
     fun isJetBrainsProjectWithAndroidTarget(project: Project) =
         jetBrainsProjectsWithAndroidTarget.contains(project.path)
