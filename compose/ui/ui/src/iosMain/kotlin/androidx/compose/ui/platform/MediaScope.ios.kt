@@ -71,25 +71,8 @@ internal class IosUiMediaScope(val windowInfo: WindowInfo) : UiMediaScope, Keybo
         UiMediaScope.PointerPrecision.Coarse
     )
 
-    private val hasMicrophoneState: MutableState<Boolean> = mutableStateOf(false)
-    private val hasCameraState: MutableState<Boolean> = mutableStateOf(false)
 
-    private fun detectHasMicrophone(): Boolean =
-        AVCaptureDevice.defaultDeviceWithMediaType(AVMediaTypeAudio) != null
-
-    private fun detectHasCamera(): Boolean =
-        AVCaptureDevice.defaultDeviceWithMediaType(AVMediaTypeVideo) != null
-
-    private fun startCaptureDeviceObservation() {
-        updateCaptureDeviceAvailabilityState()
-        captureDeviceAvailabilityObserver.isObservingEnabled = true
-    }
-    private fun updateCaptureDeviceAvailabilityState() {
-        hasMicrophoneState.value = detectHasMicrophone()
-        hasCameraState.value = detectHasCamera()
-    }
-
-    private val captureDeviceAvailabilityObserver = CaptureDeviceAvailabilityObserver(::updateCaptureDeviceAvailabilityState)
+    private val deviceAvailabilityObserver = CaptureDeviceAvailabilityObserver()
 
     fun updateInterfaceOrientationState() {
         currentInterfaceOrientation?.let {
@@ -134,7 +117,7 @@ internal class IosUiMediaScope(val windowInfo: WindowInfo) : UiMediaScope, Keybo
     fun stopObserving() {
         isObserving = false
         interfaceOrientationObserver.isObservingEnabled = false
-        captureDeviceAvailabilityObserver.isObservingEnabled = false
+        deviceAvailabilityObserver.isObservingEnabled = false
         KeyboardVisibilityListener.removeSubscriber(this)
     }
 
@@ -153,17 +136,17 @@ internal class IosUiMediaScope(val windowInfo: WindowInfo) : UiMediaScope, Keybo
         }
     override val hasMicrophone: Boolean
         get() {
-            if(captureDeviceAvailabilityObserver.isObservingEnabled.not() && isObserving) {
-                startCaptureDeviceObservation()
+            if (!deviceAvailabilityObserver.isObservingEnabled && isObserving) {
+                deviceAvailabilityObserver.isObservingEnabled = true
             }
-            return hasMicrophoneState.value
+            return deviceAvailabilityObserver.hasMicrophone
         }
     override val hasCamera: Boolean
         get() {
-            if(captureDeviceAvailabilityObserver.isObservingEnabled.not() && isObserving) {
-                startCaptureDeviceObservation()
+            if (!deviceAvailabilityObserver.isObservingEnabled && isObserving) {
+                deviceAvailabilityObserver.isObservingEnabled = true
             }
-            return hasCameraState.value
+            return deviceAvailabilityObserver.hasCamera
         }
     override val viewingDistance: UiMediaScope.ViewingDistance
         get() = UiMediaScope.ViewingDistance.Near
@@ -243,9 +226,21 @@ private class SceneGeometryObserver(
 }
 
 private class CaptureDeviceAvailabilityObserver(
-    val onDeviceAvailabilityChanged: () -> Unit,
     private val notificationCenter: NSNotificationCenter = NSNotificationCenter.defaultCenter
 ) : NSObject() {
+
+    private val hasMicrophoneState: MutableState<Boolean> by lazy {
+        mutableStateOf(detectHasMicrophone())
+    }
+    private val hasCameraState: MutableState<Boolean> by lazy {
+        mutableStateOf(detectHasCamera())
+    }
+
+    val hasMicrophone: Boolean
+        get() = hasMicrophoneState.value
+
+    val hasCamera: Boolean
+        get() = hasCameraState.value
 
     var isObservingEnabled = false
         set(value) {
@@ -257,6 +252,17 @@ private class CaptureDeviceAvailabilityObserver(
                 removeObservers()
             }
         }
+
+    private fun detectHasMicrophone(): Boolean =
+        AVCaptureDevice.defaultDeviceWithMediaType(AVMediaTypeAudio) != null
+
+    private fun detectHasCamera(): Boolean =
+        AVCaptureDevice.defaultDeviceWithMediaType(AVMediaTypeVideo) != null
+
+    private fun updateDeviceAvailabilityState() {
+        hasMicrophoneState.value = detectHasMicrophone()
+        hasCameraState.value = detectHasCamera()
+    }
 
     private fun addObservers() {
         notificationCenter.addObserver(
@@ -280,7 +286,7 @@ private class CaptureDeviceAvailabilityObserver(
     @OptIn(BetaInteropApi::class)
     @ObjCAction
     fun deviceAvailabilityDidChange(arg: NSNotification) {
-        onDeviceAvailabilityChanged()
+        updateDeviceAvailabilityState()
     }
 }
 
