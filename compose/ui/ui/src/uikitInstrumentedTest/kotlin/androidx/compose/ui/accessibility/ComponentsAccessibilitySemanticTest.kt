@@ -904,6 +904,83 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
+    fun testNativeAccessibilityInteropUpdates() = runUIKitInstrumentedTest {
+        val isNativeAccessibilityEnabled = mutableStateOf(false)
+
+        setContent {
+            Column {
+                Text("Compose")
+                UIKitView(
+                    factory = {
+                        UIView().apply {
+                            setIsAccessibilityElement(true)
+                            setAccessibilityLabel("Native")
+                        }
+                    },
+                    properties = UIKitInteropProperties(
+                        isNativeAccessibilityEnabled = isNativeAccessibilityEnabled.value,
+                    ),
+                    modifier = Modifier.size(10.dp),
+                )
+            }
+        }
+
+        assertAccessibilityTree {
+            label = "Compose"
+        }
+
+        isNativeAccessibilityEnabled.value = true
+        waitForIdle()
+
+        assertAccessibilityTree {
+            node {
+                label = "Compose"
+            }
+            node {
+                label = "Native"
+                isAccessibilityElement = true
+            }
+        }
+
+        isNativeAccessibilityEnabled.value = false
+        waitForIdle()
+
+        assertAccessibilityTree {
+            label = "Compose"
+        }
+    }
+
+    @Test
+    fun testChangingNativeAccessibilityDoesNotRecreateTheInteropView() = runUIKitInstrumentedTest {
+        val isNativeAccessibilityEnabled = mutableStateOf(false)
+        var factoryCalls = 0
+
+        setContent {
+            UIKitView(
+                factory = {
+                    factoryCalls++
+                    UIView()
+                },
+                properties = UIKitInteropProperties(
+                    isNativeAccessibilityEnabled = isNativeAccessibilityEnabled.value,
+                ),
+                modifier = Modifier.size(10.dp),
+            )
+        }
+
+        waitForIdle()
+        assertEquals(1, factoryCalls)
+
+        isNativeAccessibilityEnabled.value = true
+        waitForIdle()
+        assertEquals(1, factoryCalls)
+
+        isNativeAccessibilityEnabled.value = false
+        waitForIdle()
+        assertEquals(1, factoryCalls)
+    }
+
+    @Test
     fun testChildrenOfCollapsedNode() = runUIKitInstrumentedTestInBothLayoutDirections { layoutDirection ->
         setContent(layoutDirection = layoutDirection) {
             Column {

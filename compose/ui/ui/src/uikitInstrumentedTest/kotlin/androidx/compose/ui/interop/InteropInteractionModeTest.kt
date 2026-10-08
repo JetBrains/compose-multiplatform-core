@@ -18,6 +18,7 @@ package androidx.compose.ui.interop
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.findNodeWithTag
@@ -34,6 +35,7 @@ import kotlinx.cinterop.readValue
 import platform.CoreGraphics.CGRectZero
 import platform.UIKit.UIButton
 import platform.UIKit.UIEvent
+import platform.UIKit.UIView
 
 internal class InteropInteractionModeTest {
     @Test
@@ -167,6 +169,63 @@ internal class InteropInteractionModeTest {
 
         assertEquals(0, beganCount)
         assertEquals(0, endedCount)
+    }
+
+    @Test
+    fun testInteractionModeUpdates() = runUIKitInstrumentedTest {
+        var beganCount = 0
+        var endedCount = 0
+        val interactionMode = mutableStateOf<UIKitInteropInteractionMode?>(null)
+
+        setContent {
+            UIKitView(
+                factory = { TouchReactingView(onTouchBegin = { beganCount++ }, onTouchEnd = { endedCount++ }) },
+                modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
+                properties = UIKitInteropProperties(interactionMode = interactionMode.value),
+            )
+        }
+
+        val touch = findNodeWithTag("Button").touchDown()
+        assertEquals(0, beganCount)
+        touch.up()
+        assertEquals(0, endedCount)
+
+        interactionMode.value = UIKitInteropInteractionMode.NonCooperative
+        waitForIdle()
+
+        findNodeWithTag("Button").touchDown().up()
+        assertEquals(1, beganCount)
+        assertEquals(1, endedCount)
+    }
+
+    @Test
+    fun testChangingInteractionModeDoesNotRecreateTheInteropView() = runUIKitInstrumentedTest {
+        val interactionMode = mutableStateOf<UIKitInteropInteractionMode?>(null)
+        var factoryCalls = 0
+
+        setContent {
+            UIKitView(
+                factory = {
+                    factoryCalls++
+                    UIView()
+                },
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                properties = UIKitInteropProperties(interactionMode = interactionMode.value),
+            )
+        }
+
+        waitForIdle()
+        assertEquals(1, factoryCalls)
+
+        interactionMode.value = UIKitInteropInteractionMode.NonCooperative
+        waitForIdle()
+
+        assertEquals(1, factoryCalls)
+
+        interactionMode.value = null
+        waitForIdle()
+
+        assertEquals(1, factoryCalls)
     }
 
     @Test
