@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.uikit.utils.CMPInteropHostView
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
@@ -64,7 +65,7 @@ internal class InteropElementLayout(
      * Frame-driven container that defines the "unclipped content bounds".
      * The [userComponent] is constrained to fill this host using Auto Layout.
      */
-    private val userComponentHostView = UIView(frame = CGRectZero.readValue())
+    private val userComponentHostView = CMPInteropHostView(frame = CGRectZero.readValue())
         .also {
             it.translatesAutoresizingMaskIntoConstraints = true
             it.backgroundColor = null
@@ -141,6 +142,15 @@ internal class InteropElementLayout(
      */
     fun updateUserComponentFrame(rect: CValue<CGRect>) {
         userComponentHostView.setFrame(rect)
+    }
+
+    /** Updates the safe-area policy without recreating the user component. */
+    fun updateSafeAreaInsetsPolicy(policy: UIKitInteropSafeAreaInsetsPolicy) {
+        val ignoresSafeAreaInsets = policy == UIKitInteropSafeAreaInsetsPolicy.Ignore
+        if (userComponentHostView.ignoresSafeAreaInsets == ignoresSafeAreaInsets) return
+
+        userComponentHostView.ignoresSafeAreaInsets = ignoresSafeAreaInsets
+        userComponent.setNeedsLayout()
     }
 }
 

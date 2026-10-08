@@ -193,6 +193,7 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
 
     private fun onPropertiesChanged() {
         interopWrappingView.interactionMode = properties.interactionMode
+        layout.updateSafeAreaInsetsPolicy(properties.safeAreaInsetsPolicy)
         // required to properly clip the content of the wrapping view in case interop unclipped
         // bounds are larger than clipped bounds
         interopWrappingView.clipsToBounds = !properties.placedAsOverlay

@@ -29,4 +29,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+/** Frame-driven container placed directly above a UIKit interop component. */
+@interface CMPInteropHostView : UIView
+
+@property(nonatomic, assign) BOOL ignoresSafeAreaInsets;
+
+@end
+
 NS_ASSUME_NONNULL_END
