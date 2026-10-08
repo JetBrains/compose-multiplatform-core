@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.interop
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.runUIKitInstrumentedTest
@@ -39,12 +38,10 @@ class InteropSafeAreaInsetsTest {
         var view: SafeAreaTrackingView? = null
 
         setContent {
-            Box {
-                UIKitView(
-                    factory = { SafeAreaTrackingView().also { view = it } },
-                    modifier = Modifier.size(100.dp),
-                )
-            }
+            UIKitView(
+                factory = { SafeAreaTrackingView().also { view = it } },
+                modifier = Modifier.size(100.dp),
+            )
         }
 
         waitUntil("Inherited safe area was not exposed by the interop host") {
@@ -57,15 +54,13 @@ class InteropSafeAreaInsetsTest {
         var view: SafeAreaTrackingView? = null
 
         setContent {
-            Box {
-                UIKitView(
-                    factory = { SafeAreaTrackingView().also { view = it } },
-                    modifier = Modifier.size(100.dp),
-                    properties = UIKitInteropProperties(
-                        safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Inherit,
-                    ),
-                )
-            }
+            UIKitView(
+                factory = { SafeAreaTrackingView().also { view = it } },
+                modifier = Modifier.size(100.dp),
+                properties = UIKitInteropProperties(
+                    safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Inherit,
+                ),
+            )
         }
 
         waitUntil("Inherited safe area was not exposed by the interop host") {
@@ -78,15 +73,13 @@ class InteropSafeAreaInsetsTest {
         var view: SafeAreaTrackingView? = null
 
         setContent {
-            Box {
-                UIKitView(
-                    factory = { SafeAreaTrackingView().also { view = it } },
-                    modifier = Modifier.size(100.dp),
-                    properties = UIKitInteropProperties(
-                        safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Ignore,
-                    ),
-                )
-            }
+            UIKitView(
+                factory = { SafeAreaTrackingView().also { view = it } },
+                modifier = Modifier.size(100.dp),
+                properties = UIKitInteropProperties(
+                    safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Ignore,
+                ),
+            )
         }
 
         waitUntil("Interop view was not attached and laid out") {
@@ -102,16 +95,14 @@ class InteropSafeAreaInsetsTest {
         var view: SafeAreaTrackingView? = null
 
         setContent {
-            Box {
-                UIKitViewController(
-                    factory = {
-                        UIViewController().also { controller ->
-                            controller.view = SafeAreaTrackingView().also { view = it }
-                        }
-                    },
-                    modifier = Modifier.size(100.dp),
-                )
-            }
+            UIKitViewController(
+                factory = {
+                    UIViewController().also { controller ->
+                        controller.view = SafeAreaTrackingView().also { view = it }
+                    }
+                },
+                modifier = Modifier.size(100.dp),
+            )
         }
 
         waitUntil("Inherited safe area was not exposed by the interop host") {
@@ -124,19 +115,17 @@ class InteropSafeAreaInsetsTest {
         var view: SafeAreaTrackingView? = null
 
         setContent {
-            Box {
-                UIKitViewController(
-                    factory = {
-                        UIViewController().also { controller ->
-                            controller.view = SafeAreaTrackingView().also { view = it }
-                        }
-                    },
-                    modifier = Modifier.size(100.dp),
-                    properties = UIKitInteropProperties(
-                        safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Inherit,
-                    ),
-                )
-            }
+            UIKitViewController(
+                factory = {
+                    UIViewController().also { controller ->
+                        controller.view = SafeAreaTrackingView().also { view = it }
+                    }
+                },
+                modifier = Modifier.size(100.dp),
+                properties = UIKitInteropProperties(
+                    safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Inherit,
+                ),
+            )
         }
 
         waitUntil("Inherited safe area was not exposed by the interop host") {
@@ -149,19 +138,17 @@ class InteropSafeAreaInsetsTest {
         var view: SafeAreaTrackingView? = null
 
         setContent {
-            Box {
-                UIKitViewController(
-                    factory = {
-                        UIViewController().also { controller ->
-                            controller.view = SafeAreaTrackingView().also { view = it }
-                        }
-                    },
-                    modifier = Modifier.size(100.dp),
-                    properties = UIKitInteropProperties(
-                        safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Ignore,
-                    ),
-                )
-            }
+            UIKitViewController(
+                factory = {
+                    UIViewController().also { controller ->
+                        controller.view = SafeAreaTrackingView().also { view = it }
+                    }
+                },
+                modifier = Modifier.size(100.dp),
+                properties = UIKitInteropProperties(
+                    safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Ignore,
+                ),
+            )
         }
 
         waitUntil("Interop view controller was not attached and laid out") {
