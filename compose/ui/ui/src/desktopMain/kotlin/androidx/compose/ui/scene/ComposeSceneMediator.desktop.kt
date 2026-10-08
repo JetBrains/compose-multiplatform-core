@@ -56,10 +56,10 @@ import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.DelegateRootForTestListener
 import androidx.compose.ui.platform.DesktopMediaScope
+import androidx.compose.ui.platform.DesktopPlatformOutOfFrameExecutor
 import androidx.compose.ui.platform.DesktopTextInputService
 import androidx.compose.ui.platform.DesktopTextInputService2
 import androidx.compose.ui.platform.FrameRecomposer
-import androidx.compose.ui.platform.GenericPlatformOutOfFrameExecutor
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformComponent
 import androidx.compose.ui.platform.PlatformContext
@@ -97,7 +97,6 @@ import androidx.compose.ui.window.toDpOffset
 import java.awt.Component
 import java.awt.Cursor
 import java.awt.Dimension
-import java.awt.EventQueue
 import java.awt.Graphics2D
 import java.awt.Point
 import java.awt.Toolkit
@@ -209,11 +208,7 @@ internal class ComposeSceneMediator(
     val windowHandle by skiaLayerComponent::windowHandle
     val renderApi by skiaLayerComponent::renderApi
     val semanticsOwners: Collection<SemanticsOwner> by semanticsOwnerManager::semanticsOwners
-    val outOfFrameExecutor =
-        GenericPlatformOutOfFrameExecutor(
-            scheduleTask = { EventQueue.invokeLater(it) },
-            isExecutingOnUiThread = { EventQueue.isDispatchThread() },
-        )
+    val outOfFrameExecutor = DesktopPlatformOutOfFrameExecutor()
 
     private val canvasHolder: SkiaCanvasHolder = SkiaCanvasHolder()
     /**

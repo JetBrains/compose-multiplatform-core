@@ -46,15 +46,13 @@ interface PlatformOutOfFrameExecutor {
 }
 
 /**
- * A generic implementation of [PlatformOutOfFrameExecutor] that uses the platform's
- * "schedule-on-ui-thread" method to schedule the work.
- *
- * The platform must call [GenericPlatformOutOfFrameExecutor.onBeforeFrame] before executing each
- * frame (recomposition etc.)
+ * A base implementation of [PlatformOutOfFrameExecutor] that provides a common ground for the
+ * platform-specific implementations.
  */
-internal class GenericPlatformOutOfFrameExecutor(
-    /** Schedules a task on the UI thread. */
-    private val scheduleTask: (block: () -> Unit) -> Unit,
+internal abstract class AbstractPlatformOutOfFrameExecutor(
+    /** The prefix to use for tracing. */
+    private val tracePrefix: String,
+
     /** Returns whether the current thread is the UI thread. */
     private val isExecutingOnUiThread: () -> Boolean
 ) : PlatformOutOfFrameExecutor {
@@ -65,11 +63,14 @@ internal class GenericPlatformOutOfFrameExecutor(
     private val queue = ArrayDeque<() -> Unit>()
 
     /**
+     * A lambda that calls [drain].
+     */
+    private val drainLambda = ::drain
+
+    /**
      * Whether this executor has been disposed.
      */
-    private var isDisposed = false
-
-    private val drainLambda = ::drain
+    protected var isDisposed = false
 
     override val hasWorkScheduled: Boolean
         get() = queue.isNotEmpty()
@@ -79,19 +80,27 @@ internal class GenericPlatformOutOfFrameExecutor(
 
         if (isDisposed) return
 
-        val shouldSchedule = queue.isEmpty()
-        queue.addLast(block)
-
-        if (shouldSchedule) {
-            scheduleTask(drainLambda)
-        }
+        addToQueueAndSchedule(queue, block, drainLambda)
     }
+
+    /**
+     * Adds the given block to the queue and schedules the task if necessary.
+     */
+    protected abstract fun addToQueueAndSchedule(
+        /** The queue of scheduled tasks. */
+        queue: ArrayDeque<() -> Unit>,
+        /** The task to schedule. */
+        block: () -> Unit,
+        /** The lambda that drains the queue, running the tasks. */
+        drainLambda: () -> Unit
+    )
 
     /**
      * Runs all queued tasks.
      */
-    private fun drain() {
-        trace("GenericPlatformOutOfFrameExecutor:outOfFrameExecutor") {
+    protected open fun drain() {
+        requireUiThread()
+        trace("$tracePrefix:outOfFrameExecutor") {
             while (queue.isNotEmpty()) {
                 queue.removeLast().invoke()
             }
@@ -101,28 +110,18 @@ internal class GenericPlatformOutOfFrameExecutor(
     override fun drainScheduledWorkForTest() = drain()
 
     /**
-     * This must be called before a frame is executed.
-     */
-    fun onBeforeFrame() {
-        requireUiThread()
-        if (isDisposed) return
-
-        drain()
-    }
-
-    /**
      * Disposes of this executor.
      *
      * The queue is cleared and scheduled work is cancelled.
      */
-    fun dispose() {
+    open fun dispose() {
         requireUiThread()
 
         isDisposed = true
         queue.clear()
     }
 
-    private fun requireUiThread() {
+    protected fun requireUiThread() {
         require(isExecutingOnUiThread()) { "Must be called on the UI thread" }
     }
 }

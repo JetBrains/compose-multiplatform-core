@@ -16,14 +16,15 @@
 
 package androidx.compose.ui.platform
 
-import androidx.compose.ui.node.OutOfFrameExecutor
-import kotlin.js.ExperimentalWasmJsInterop
-import kotlin.js.js
+import java.awt.EventQueue
 
-internal class WebOutOfFrameExecutor :
+/**
+ * An implementation of [PlatformOutOfFrameExecutor] for the desktop.
+ */
+internal class DesktopPlatformOutOfFrameExecutor :
     AbstractPlatformOutOfFrameExecutor(
-        tracePrefix = "WebOutOfFrameExecutor",
-        isExecutingOnUiThread = { true }
+        tracePrefix = "DesktopOutOfFrameExecutor",
+        isExecutingOnUiThread = { EventQueue.isDispatchThread() }
     ) {
 
     override fun addToQueueAndSchedule(
@@ -35,23 +36,17 @@ internal class WebOutOfFrameExecutor :
         queue.addLast(block)
 
         if (shouldSchedule) {
-            schedulerPostTask(drainLambda)
+            EventQueue.invokeLater(drainLambda)
         }
     }
+
+    /**
+     * This must be called before a frame is executed.
+     */
+    fun onBeforeFrame() {
+        requireUiThread()
+        if (isDisposed) return
+
+        drain()
+    }
 }
-
-internal val isPostingTasksSupported: Boolean by lazy {
-    isSchedulerApiSupported()
-}
-
-@OptIn(ExperimentalWasmJsInterop::class)
-private fun isSchedulerApiSupported(): Boolean = js("Boolean('scheduler' in window)")
-
-/**
- * Better reflects [OutOfFrameExecutor] contract
- */
-@Suppress("unused")
-@OptIn(ExperimentalWasmJsInterop::class)
-//language=javascript
-private fun schedulerPostTask(block: () -> Unit): Unit =
-    js("scheduler.postTask(block, { priority: 'user-blocking',})")

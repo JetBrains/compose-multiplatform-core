@@ -16,8 +16,7 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.ui.platform.PlatformOutOfFrameExecutor
-import androidx.compose.ui.util.trace
+import androidx.compose.ui.platform.AbstractPlatformOutOfFrameExecutor
 import platform.Foundation.NSThread
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
@@ -31,43 +30,35 @@ import platform.darwin.dispatch_get_main_queue
  * The async main-queue drain is a best-effort way to run such work early, while [onFrameStart]
  * provides the ordering guarantee if the display-link callback wins the race.
  */
-internal class OutOfFrameExecutor : PlatformOutOfFrameExecutor {
-    private val queue = ArrayDeque<() -> Unit>()
+internal class IosOutOfFrameExecutor :
+    AbstractPlatformOutOfFrameExecutor(
+        tracePrefix = "IosOutOfFrameExecutor",
+        isExecutingOnUiThread = { NSThread.isMainThread }
+    ) {
     private var isFrameInProgress = false
     private var isDrainScheduled = false
     private var isDraining = false
-    private var isDisposed = false
 
-    override val hasWorkScheduled: Boolean
-        get() = queue.isNotEmpty()
-
-    override fun schedule(block: () -> Unit) {
-        check(NSThread.isMainThread) {
-            "MetalOutOfFrameExecutor.schedule() must be called on main thread"
-        }
-        if (isDisposed) {
-            return
-        }
-
+    override fun addToQueueAndSchedule(
+        queue: ArrayDeque<() -> Unit>,
+        block: () -> Unit,
+        drainLambda: () -> Unit
+    ) {
         queue.addLast(block)
 
         if (!isFrameInProgress && !isDraining && !isDrainScheduled) {
             // When work is scheduled during frame recording, onFrameEnd() drains it before the next
-            // frame starts. Outside of a frame there is no such drain point, but running the block
+            // frame starts. Outside a frame there is no such drain point, but running the block
             // inline would make scheduling synchronous and could mutate composition state from the
             // current rendering/layout stack. Post one main-queue drain to defer the work while
             // keeping it on the main thread.
             isDrainScheduled = true
-            dispatch_async(dispatch_get_main_queue()) {
-                drain()
-            }
+            dispatch_async(dispatch_get_main_queue(), drainLambda)
         }
     }
 
     fun onFrameStart() {
-        check(NSThread.isMainThread) {
-            "MetalOutOfFrameExecutor.onFrameStart() must be called on main thread"
-        }
+        requireUiThread()
         if (isDisposed) {
             return
         }
@@ -81,9 +72,7 @@ internal class OutOfFrameExecutor : PlatformOutOfFrameExecutor {
     }
 
     fun onFrameEnd() {
-        check(NSThread.isMainThread) {
-            "MetalOutOfFrameExecutor.onFrameEnd() must be called on main thread"
-        }
+        requireUiThread()
         if (isDisposed) {
             return
         }
@@ -92,22 +81,15 @@ internal class OutOfFrameExecutor : PlatformOutOfFrameExecutor {
         drain()
     }
 
-    fun dispose() {
-        check(NSThread.isMainThread) {
-            "MetalOutOfFrameExecutor.dispose() must be called on main thread"
-        }
-        isDisposed = true
+    override fun dispose() {
+        super.dispose()
+
         isFrameInProgress = false
         isDrainScheduled = false
-        queue.clear()
     }
 
-    override fun drainScheduledWorkForTest() = drain()
-
-    private fun drain() {
-        check(NSThread.isMainThread) {
-            "MetalOutOfFrameExecutor.drain() must be called on main thread"
-        }
+    override fun drain() {
+        requireUiThread()
 
         if (isDisposed || isDraining) {
             return
@@ -115,12 +97,9 @@ internal class OutOfFrameExecutor : PlatformOutOfFrameExecutor {
 
         isDrainScheduled = false
         isDraining = true
+
         try {
-            trace("MetalRedrawer:outOfFrameExecutor") {
-                while (queue.isNotEmpty()) {
-                    queue.removeLast().invoke()
-                }
-            }
+            super.drain()
         } finally {
             isDraining = false
         }
