@@ -24,12 +24,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitInteropSafeAreaInsetsPolicy
 import androidx.compose.ui.viewinterop.UIKitView
+import androidx.compose.ui.viewinterop.UIKitViewController
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import platform.CoreGraphics.CGRectZero
 import platform.UIKit.UIView
+import platform.UIKit.UIViewController
 
 class InteropSafeAreaInsetsTest {
     @Test
@@ -67,6 +69,56 @@ class InteropSafeAreaInsetsTest {
         }
 
         waitUntil("Interop view was not attached and laid out") {
+            view?.hasBeenLaidOutInWindow() == true
+        }
+
+        assertEquals(0.0, view?.superviewTopSafeAreaInset())
+        assertEquals(0.0, view?.lastLayoutSuperviewTopSafeAreaInset)
+    }
+
+    @Test
+    fun defaultPolicyExposesSafeAreaInsetsFromTheInteropHostToViewController() = runUIKitInstrumentedTest {
+        var view: SafeAreaTrackingView? = null
+
+        setContent {
+            Box {
+                UIKitViewController(
+                    factory = {
+                        UIViewController().also { controller ->
+                            controller.view = SafeAreaTrackingView().also { view = it }
+                        }
+                    },
+                    modifier = Modifier.size(100.dp),
+                )
+            }
+        }
+
+        waitUntil("Inherited safe area was not exposed by the interop host") {
+            view?.hasTopSafeAreaInsetFromSuperview() == true
+        }
+    }
+
+    @Test
+    fun ignorePolicyDoesNotExposeSafeAreaInsetsFromTheInteropHostToViewController() = runUIKitInstrumentedTest {
+        var view: SafeAreaTrackingView? = null
+
+        setContent {
+            Box {
+                UIKitViewController(
+                    factory = {
+                        UIViewController().also { controller ->
+                            controller.view = SafeAreaTrackingView().also { view = it }
+                        }
+                    },
+                    modifier = Modifier.size(100.dp),
+                    properties = UIKitInteropProperties(
+                        safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Ignore,
+                    ),
+                )
+            }
+        }
+
+        waitUntil("Interop view controller was not attached and laid out") {
             view?.hasBeenLaidOutInWindow() == true
         }
 
