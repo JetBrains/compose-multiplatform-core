@@ -267,13 +267,13 @@ class TextFieldEditMenuTest {
     @Test
     @Ignore // CMP-10315: Context menu is positioned far from the caret for BTF1.
     fun testBasicTextFieldContextMenuIsPositionedNearCaret() =
-        runTextFieldContextMenuPositionTest(EditableTextFieldKind.BasicTextField)
+        runTextFieldContextMenuPositionTest(BasicTextFieldType.V1)
 
     @Test
     fun testBasicTextField2ContextMenuIsPositionedNearCaret() =
-        runTextFieldContextMenuPositionTest(EditableTextFieldKind.BasicTextField2)
+        runTextFieldContextMenuPositionTest(BasicTextFieldType.V2)
 
-    private fun runTextFieldContextMenuPositionTest(textFieldKind: EditableTextFieldKind) {
+    private fun runTextFieldContextMenuPositionTest(textFieldKind: BasicTextFieldType) {
         for (newContextMenuEnabled in arrayOf(false, true)) {
             runContextMenuTest(newContextMenuEnabled) {
                 UIPasteboard.generalPasteboard().string = "Paste text"
@@ -295,7 +295,7 @@ class TextFieldEditMenuTest {
     }
 
     private fun UIKitInstrumentedTest.setOffsetTextFieldContent(
-        textFieldKind: EditableTextFieldKind,
+        textFieldKind: BasicTextFieldType,
     ): TextFieldLayoutInfo {
         val text = "I am a TextField"
         val focusRequester = FocusRequester()
@@ -314,10 +314,10 @@ class TextFieldEditMenuTest {
         val textFieldState = TextFieldState(text, initialSelection)
 
         val layoutInfo = when (textFieldKind) {
-            EditableTextFieldKind.BasicTextField -> TextFieldLayoutInfo(
+            BasicTextFieldType.V1 -> TextFieldLayoutInfo(
                 selectionOffset = { textFieldValue.value.selection.start }
             )
-            EditableTextFieldKind.BasicTextField2 -> TextFieldLayoutInfo(
+            BasicTextFieldType.V2 -> TextFieldLayoutInfo(
                 selectionOffset = { textFieldState.selection.start }
             )
         }
@@ -330,13 +330,13 @@ class TextFieldEditMenuTest {
                     .padding(start = 80.dp, top = 48.dp)
             ) {
                 when (textFieldKind) {
-                    EditableTextFieldKind.BasicTextField -> BasicTextField(
+                    BasicTextFieldType.V1 -> BasicTextField(
                         value = textFieldValue.value,
                         onValueChange = { textFieldValue.value = it },
                         modifier = offsetTextFieldModifier(layoutInfo),
                         onTextLayout = { layoutInfo.textLayoutResult = it }
                     )
-                    EditableTextFieldKind.BasicTextField2 -> BasicTextField(
+                    BasicTextFieldType.V2 -> BasicTextField(
                         state = textFieldState,
                         modifier = offsetTextFieldModifier(layoutInfo),
                         onTextLayout = { getResult ->
@@ -903,7 +903,7 @@ class TextFieldEditMenuTest {
 
     private fun UIKitInstrumentedTest.assertContextMenuNearCaret(
         caretFrame: DpRect,
-        textFieldKind: EditableTextFieldKind,
+        textFieldKind: BasicTextFieldType,
         newContextMenuEnabled: Boolean,
     ) {
         val menuFrame = findContextMenuFrame()
@@ -999,11 +999,6 @@ class TextFieldEditMenuTest {
                 focusRequester.requestFocus()
             }
         }
-    }
-
-    private enum class EditableTextFieldKind {
-        BasicTextField,
-        BasicTextField2
     }
 
     private class TextFieldLayoutInfo(
