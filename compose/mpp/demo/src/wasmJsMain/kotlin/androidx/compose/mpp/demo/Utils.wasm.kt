@@ -20,6 +20,8 @@ package androidx.compose.mpp.demo
 import androidx.compose.foundation.internal.readText
 import androidx.compose.ui.platform.ClipEntry
 import kotlin.wasm.unsafe.UnsafeWasmMemoryApi
+import kotlin.wasm.unsafe.WebAssembly
+import kotlin.wasm.unsafe.wasmMemory
 import kotlin.wasm.unsafe.withScopedMemoryAllocator
 import kotlinx.browser.window
 import kotlinx.coroutines.Deferred
@@ -50,11 +52,7 @@ fun ArrayBuffer.toByteArray(): ByteArray {
     return jsInt8ArrayToKotlinByteArray(source)
 }
 
-private fun wasmExportsMemoryBuffer(): ArrayBuffer = js("wasmExports.memory.buffer")
-private fun jsExportInt8ArrayToWasm(destination: ArrayBuffer, src: Int8Array, size: Int, dstAddr: Int) {
-    val mem8 = Int8Array(destination, dstAddr, size)
-    mem8.set(src)
-}
+private fun wasmBuffer(memory: WebAssembly.Memory): ArrayBuffer = js("memory.buffer")
 
 internal fun jsInt8ArrayToKotlinByteArray(x: Int8Array): ByteArray {
     val size = x.length
@@ -63,7 +61,7 @@ internal fun jsInt8ArrayToKotlinByteArray(x: Int8Array): ByteArray {
     return withScopedMemoryAllocator { allocator ->
         val memBuffer = allocator.allocate(size)
         val dstAddress = memBuffer.address.toInt()
-        jsExportInt8ArrayToWasm(wasmExportsMemoryBuffer(),  x, size, dstAddress)
+        Int8Array(wasmBuffer(wasmMemory), dstAddress, size).set(x)
         ByteArray(size) { i -> (memBuffer + i).loadByte() }
     }
 }

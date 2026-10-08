@@ -20,7 +20,7 @@ internal class ParsedBuildScript(val text: String) {
     private val nameToSourceSet: Map<String, SourceSet> by lazy {
         val sourceSetsBlock = Block(text).subblock("sourceSets {") ?: return@lazy emptyMap()
         val sourceSetsText = sourceSetsBlock.text
-        MAIN_SOURCE_SET_REFERENCE.findAll(sourceSetsText).mapNotNull { match ->
+        SOURCE_SET_REFERENCE.findAll(sourceSetsText).mapNotNull { match ->
             val sourceSetBlock =
                 sourceSetsBlock.subblockAt(match.range.last) ?: return@mapNotNull null
             val dependenciesBlock = if (".dependencies" in match.value) {
@@ -112,24 +112,23 @@ internal class ParsedBuildScript(val text: String) {
             val (type, argument, inlineComment) =
                 DEPENDENCY_CALL.matchEntire(text)?.destructured
                     ?: return null
-            val dependency = parseDependency(argument.trim()) ?: return null
             return Line.Dependency(
                 type = type,
-                dependency = dependency,
+                dependency = parseDependency(argument.trim()),
                 inlineComment = inlineComment.takeIf { it.isNotEmpty() },
             )
         }
 
-        private fun parseDependency(argument: String): Dependency? = when {
+        private fun parseDependency(argument: String): Dependency = when {
             argument.startsWith("project(") && argument.endsWith(")") ->
                 Dependency.Project(
                     argument.removeSurrounding("project(", ")").trim().trim('"', '\'')
                 )
 
-            argument.startsWith("libs.") -> Dependency.LibsReference(argument)
             else -> argument.trim('"', '\'').split(":")
                 .takeIf { it.size == 3 }
                 ?.let { Dependency.Artifact(it[0], it[1], it[2]) }
+                ?: Dependency.Arbitrary(argument)
         }
     }
 
@@ -163,7 +162,7 @@ internal class ParsedBuildScript(val text: String) {
             override val formatted: String get() = "project(\"$path\")"
         }
 
-        data class LibsReference(
+        data class Arbitrary(
             val notation: String,
         ) : Dependency {
             override val formatted: String get() = notation
@@ -171,8 +170,8 @@ internal class ParsedBuildScript(val text: String) {
     }
 }
 
-private val MAIN_SOURCE_SET_REFERENCE =
-    Regex("""(?:val\s+)?(\w+Main)(?:\.dependencies|\s+by\s+\w+)?\s*\{""")
+private val SOURCE_SET_REFERENCE =
+    Regex("""(?:val\s+)?(\w+(?:Main|Test))(?:\.dependencies|\s+by\s+\w+)?\s*\{""")
 private val DEPENDENCY_CALL = Regex("""\s*(\w+)\((.*)\)(?:\s*\{)?\s*(//.*)?""")
 
 internal data class Block(
