@@ -53,6 +53,27 @@ class InteropSafeAreaInsetsTest {
     }
 
     @Test
+    fun inheritPolicyExposesSafeAreaInsetsFromTheInteropHost() = runUIKitInstrumentedTest {
+        var view: SafeAreaTrackingView? = null
+
+        setContent {
+            Box {
+                UIKitView(
+                    factory = { SafeAreaTrackingView().also { view = it } },
+                    modifier = Modifier.size(100.dp),
+                    properties = UIKitInteropProperties(
+                        safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Inherit,
+                    ),
+                )
+            }
+        }
+
+        waitUntil("Inherited safe area was not exposed by the interop host") {
+            view?.hasTopSafeAreaInsetFromSuperview() == true
+        }
+    }
+
+    @Test
     fun ignorePolicyDoesNotExposeSafeAreaInsetsFromTheInteropHost() = runUIKitInstrumentedTest {
         var view: SafeAreaTrackingView? = null
 
@@ -89,6 +110,31 @@ class InteropSafeAreaInsetsTest {
                         }
                     },
                     modifier = Modifier.size(100.dp),
+                )
+            }
+        }
+
+        waitUntil("Inherited safe area was not exposed by the interop host") {
+            view?.hasTopSafeAreaInsetFromSuperview() == true
+        }
+    }
+
+    @Test
+    fun inheritPolicyExposesSafeAreaInsetsFromTheInteropHostToViewController() = runUIKitInstrumentedTest {
+        var view: SafeAreaTrackingView? = null
+
+        setContent {
+            Box {
+                UIKitViewController(
+                    factory = {
+                        UIViewController().also { controller ->
+                            controller.view = SafeAreaTrackingView().also { view = it }
+                        }
+                    },
+                    modifier = Modifier.size(100.dp),
+                    properties = UIKitInteropProperties(
+                        safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Inherit,
+                    ),
                 )
             }
         }
