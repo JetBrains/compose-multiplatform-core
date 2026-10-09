@@ -171,7 +171,7 @@ private fun AlmostFullscreen2() {
     val state = remember {
         TextFieldState(
             buildString {
-                repeat(100) {
+                repeat(3) {
                     appendLine("Text line $it")
                 }
             }
