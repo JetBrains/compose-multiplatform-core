@@ -80,7 +80,7 @@ internal class SkikoParagraphIntrinsics(
         val para = layouter.layoutParagraph(Float.POSITIVE_INFINITY)
 
         // Skia excludes the indentation from the intrinsic widths, so text laid out at that width
-        // breaks a line early. Android sums the leading margins in, see Layout.measurePara.
+        // breaks a line early.
         val indent = layouter.firstLineIndentPx
         minIntrinsicWidth = ceil(para.minIntrinsicWidth + indent)
         maxIntrinsicWidth = ceil(para.maxIntrinsicWidth + indent)
