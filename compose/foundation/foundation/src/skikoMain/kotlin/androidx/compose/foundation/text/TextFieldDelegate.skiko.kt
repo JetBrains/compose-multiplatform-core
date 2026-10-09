@@ -90,7 +90,7 @@ internal fun determineCursorDesiredOffset(
 
         isRightEdgeTapped(textLayoutResult, offset) -> {
             val lineNumber = textLayoutResult.getLineForOffset(offset)
-            textLayoutResult.getLineEnd(lineNumber)
+            textLayoutResult.getLineEndForCursor(lineNumber)
         }
 
         currentText.requiresCharacterLevelCursorPlacement(offset) -> offset
@@ -131,6 +131,23 @@ private fun isLeftEdgeTapped(textLayoutResult: TextLayoutResult, caretOffset: In
 
 private fun isRightEdgeTapped(textLayoutResult: TextLayoutResult, caretOffset: Int): Boolean {
     val lineNumber = textLayoutResult.getLineForOffset(caretOffset)
-    val lineEndOffset = textLayoutResult.getLineEnd(lineNumber)
+    val lineEndOffset = textLayoutResult.getLineEndForCursor(lineNumber)
     return lineEndOffset == caretOffset
+}
+
+/** Keeps trailing spaces, but excludes the line break from the caret positions on this line. */
+private fun TextLayoutResult.getLineEndForCursor(lineIndex: Int): Int {
+    var end = getLineEnd(lineIndex)
+    val start = getLineStart(lineIndex)
+    val text = layoutInput.text
+    // An empty final line can share its start offset with the preceding line break in Skia.
+    // Only remove line breaks belonging to this line.
+    while (
+        end > start &&
+            (text[end - 1] == '\n' || text[end - 1] == '\r') &&
+            getLineForOffset(end - 1) == lineIndex
+    ) {
+        end--
+    }
+    return end
 }

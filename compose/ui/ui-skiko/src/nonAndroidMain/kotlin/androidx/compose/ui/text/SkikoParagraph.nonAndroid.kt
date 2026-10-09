@@ -264,16 +264,16 @@ internal class SkikoParagraph(
             // we are waiting for fixes
             if (lineIndex > 0 && metrics.startIndex < lineMetrics[lineIndex - 1].endIndex) {
                 metrics.endIndex
-            } else if (
-                metrics.startIndex < text.length &&
-                text[metrics.startIndex] == '\n'
-            ) {
+            } else if (metrics.startIndex < text.length && text[metrics.startIndex] == '\n') {
                 metrics.startIndex
             } else {
                 metrics.endExcludingWhitespaces
             }
+        } else if (isLineEllipsized(lineIndex)) {
+            // The logical end includes the text hidden by the ellipsis.
+            text.length
         } else {
-            metrics.endIndex
+            metrics.endIncludingNewline
         }
     }
 

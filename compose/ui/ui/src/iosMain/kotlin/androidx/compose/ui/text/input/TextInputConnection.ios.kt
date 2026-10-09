@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.getUITextInputTraits
 import androidx.compose.ui.platform.isValidIn
 import androidx.compose.ui.platform.movePositionByGraphemes
 import androidx.compose.ui.scene.ComposeSceneFocusManager
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.unit.DpOffset
@@ -446,7 +447,7 @@ internal abstract class TextInputConnection(
             targetLine < 0 -> 0
             targetLine >= layoutResult.lineCount -> text.length
             else -> {
-                val targetLineEnd = layoutResult.getLineEnd(targetLine)
+                val targetLineEnd = layoutResult.getLineEndForCursor(targetLine)
                 val lineStart = layoutResult.getLineStart(targetLine)
                 positionFromPosition(
                     lineStart, min(offsetInLine, targetLineEnd - lineStart)
@@ -483,3 +484,20 @@ internal abstract class TextInputConnection(
 
 internal fun PlatformTextInputMethodRequest.stateSnapshot() =
     TextFieldValue(state.text, state.selection, state.composition)
+
+/** Keeps trailing spaces, but excludes the line break from the caret positions on this line. */
+internal fun TextLayoutResult.getLineEndForCursor(lineIndex: Int): Int {
+    var end = getLineEnd(lineIndex)
+    val start = getLineStart(lineIndex)
+    val text = layoutInput.text
+    // An empty final line can share its start offset with the preceding line break in Skia.
+    // Only remove line breaks belonging to this line.
+    while (
+        end > start &&
+            (text[end - 1] == '\n' || text[end - 1] == '\r') &&
+            getLineForOffset(end - 1) == lineIndex
+    ) {
+        end--
+    }
+    return end
+}

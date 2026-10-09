@@ -209,6 +209,44 @@ class CupertinoTextFieldDelegateTest : SkikoComposeTestBase() {
         testDetermineCursorDesiredOffset(givenOffset, desiredOffset, sampleText)
     }
 
+    @Test
+    fun determineCursorDesiredOffset_tap_before_line_feed() {
+        for (text in listOf("abc\ndef", "abc   \ndef", "אבג\nדהו", "אבג   \nדהו", "abc\n\ndef")) {
+            val offset = text.indexOf('\n')
+            assertEquals(
+                offset,
+                determineCursorDesiredOffset(offset, createSimpleTextLayoutResult(text), text),
+                "Cursor should stay before the line feed in $text",
+            )
+        }
+    }
+
+    @Test
+    fun determineCursorDesiredOffset_tap_on_empty_line() {
+        val text = "abc\n\ndef"
+        val offset = 4
+        assertEquals(
+            offset,
+            determineCursorDesiredOffset(offset, createSimpleTextLayoutResult(text), text),
+        )
+    }
+
+    @Test
+    fun determineCursorDesiredOffset_tap_on_final_empty_line() {
+        for (text in listOf("abc\n", "abc   \n", "\n")) {
+            assertEquals(
+                text.length,
+                determineCursorDesiredOffset(text.length, createSimpleTextLayoutResult(text), text),
+            )
+        }
+    }
+
+    @Test
+    fun determineCursorDesiredOffset_tap_before_crlf() {
+        val text = "abc   \r\ndef"
+        assertEquals(6, determineCursorDesiredOffset(6, createSimpleTextLayoutResult(text), text))
+    }
+
     private fun createSimpleTextLayoutResult(text: String) = TextLayoutResult(
         layoutInput = simpleTextLayoutInput(text),
         multiParagraph = simpleMultiParagraph(text),

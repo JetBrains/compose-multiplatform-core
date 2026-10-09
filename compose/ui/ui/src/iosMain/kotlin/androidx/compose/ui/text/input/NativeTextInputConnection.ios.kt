@@ -348,7 +348,7 @@ internal class NativeTextInputConnection(
 
                     for (line in startLine..endLine) {
                         add(max(range.start, layout.getLineStart(line)))
-                        add(min(range.end, layout.getLineEnd(line)))
+                        add(min(range.end, layout.getLineEndForCursor(line)))
                     }
                 }
 
