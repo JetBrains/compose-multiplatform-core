@@ -23,6 +23,12 @@ import androidx.compose.ui.ExperimentalComposeUiApi
  */
 @ExperimentalComposeUiApi
 sealed interface UIKitInteropSafeAreaInsetsPolicy {
+    /**
+     * The interop component receives zero insets while its host overlaps UIKit's unsafe area, and
+     * UIKit's computed insets otherwise.
+     */
+    data object Automatic : UIKitInteropSafeAreaInsetsPolicy
+
     /** The interop component receives UIKit's computed safe-area insets. */
     data object Inherit : UIKitInteropSafeAreaInsetsPolicy
 

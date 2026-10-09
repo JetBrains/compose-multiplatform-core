@@ -38,13 +38,14 @@ import androidx.compose.ui.semantics.semantics
  * cut-out in place of the interop view.
  * The default value is false.
  *
- * @property safeAreaInsetsPolicy Determines whether the interop component receives UIKit's computed
- * safe-area insets, or zero insets. UIKit computes insets for each [UIView] from its position
- * relative to unsafe screen areas. Some native components consume those insets during their own
- * layout to keep their content in the safe area, which can change their visual placement when
- * Compose moves or clips an interop view. Use [UIKitInteropSafeAreaInsetsPolicy.Ignore] when
- * Compose owns the safe-area and window-inset handling. The default is
- * [UIKitInteropSafeAreaInsetsPolicy.Inherit].
+ * @property safeAreaInsetsPolicy Determines which safe-area insets the interop component receives.
+ * UIKit computes insets for each [UIView] from its position relative to unsafe screen areas. Some
+ * native components consume those insets during their own layout to keep their content in the safe
+ * area, which can change their visual placement when Compose moves or clips an interop view. The
+ * default, [UIKitInteropSafeAreaInsetsPolicy.Automatic], exposes zero insets while the interop
+ * host overlaps UIKit's unsafe area and UIKit's computed insets otherwise. Use
+ * [UIKitInteropSafeAreaInsetsPolicy.Inherit] to always expose UIKit's computed insets, or
+ * [UIKitInteropSafeAreaInsetsPolicy.Ignore] to always expose zero insets.
  *
  * If this Composable is within a modifier chain that merges the semantics of its children (such as
  * `Modifier.clickable`), the merged subtree data will be ignored in favor of the native
@@ -74,7 +75,7 @@ class UIKitInteropProperties @ExperimentalComposeUiApi constructor(
     val isNativeAccessibilityEnabled: Boolean = false,
     @property:ExperimentalComposeUiApi val placedAsOverlay: Boolean = false,
     @property:ExperimentalComposeUiApi val safeAreaInsetsPolicy: UIKitInteropSafeAreaInsetsPolicy =
-        UIKitInteropSafeAreaInsetsPolicy.Inherit,
+        UIKitInteropSafeAreaInsetsPolicy.Automatic,
 ) {
     /**
      * Indicates whether the user can interact with the interop component.
@@ -98,7 +99,7 @@ class UIKitInteropProperties @ExperimentalComposeUiApi constructor(
         interactionMode = interactionMode,
         isNativeAccessibilityEnabled,
         placedAsOverlay = false,
-        safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Inherit,
+        safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Automatic,
     )
 
     /**
@@ -116,7 +117,7 @@ class UIKitInteropProperties @ExperimentalComposeUiApi constructor(
         interactionMode = if (isInteractive) UIKitInteropInteractionMode.Cooperative() else null,
         isNativeAccessibilityEnabled,
         placedAsOverlay = false,
-        safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Inherit,
+        safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Automatic,
     )
 
     internal companion object {

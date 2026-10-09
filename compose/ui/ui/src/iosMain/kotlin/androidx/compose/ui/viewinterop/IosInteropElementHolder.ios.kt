@@ -73,7 +73,10 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
     private var currentUnclippedRect: IntRect? = null
     private var currentClippedRect: IntRect? = null
     private var currentUserComponentRect: IntRect? = null
-    private val layout = InteropElementLayout(group = group, userComponent = userComponentView)
+    private val layout = InteropElementLayout(
+        interopWrappingView = interopWrappingView,
+        userComponent = userComponentView,
+    )
     override val measurePolicy: MeasurePolicy get() = layout.measurePolicy
 
     val placedAsOverlay: Boolean get() = properties.placedAsOverlay
@@ -113,52 +116,49 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
             return
         }
 
-        // wrapping view itself is always using the clipped rect
-        // don't issue a redundant update, if the clipped rect is the same
-        if (clippedRect != currentClippedRect) {
-            val groupFrame = clippedRect
+        val groupFrame = if (clippedRect != currentClippedRect) {
+            clippedRect
                 .toRect()
                 .toDpRect(screenDensity)
                 .toCGRect()
-            val groupAccessibilityFrame = unclippedRect
-                .toRect()
-                .toDpRect(screenDensity)
-                .toCGRect()
-
-            container.scheduleUpdate {
-                UIView.performWithoutAnimation {
-                    layout.updateGroupFrame(groupFrame)
-                    group.accessibilityFrame = groupAccessibilityFrame
-                }
-            }
+        } else {
+            null
         }
 
-        // user component is always updated if the unclipped or clipped rect changes,
-        // because it needs to be moved inside the clipping view to keep the frame
-        // in window coordinates the same
-        if (currentUnclippedRect != unclippedRect || currentClippedRect != clippedRect) {
-            // offset to move the component to the correct position inside the wrapping view, so
-            // its root space frame stays the same if the wrapping view is clipped
+        // Offset the component inside the wrapping view to preserve its root-space frame when the
+        // wrapping view is clipped.
+        val userComponentRect = IntRect(
+            offset = unclippedRect.topLeft - clippedRect.topLeft,
+            size = unclippedRect.size,
+        )
 
-            val userComponentRect = IntRect(
-                offset = unclippedRect.topLeft - clippedRect.topLeft,
-                size = unclippedRect.size
-            )
+        // The user component's local frame changes only when its offset inside the clipping group
+        // changes.
+        val userComponentFrame = if (userComponentRect != currentUserComponentRect) {
+            currentUserComponentRect = userComponentRect
 
-            // update the user component frame only if it changes
-            if (userComponentRect != currentUserComponentRect) {
-                val userComponentCGRect = userComponentRect
-                    .toRect()
-                    .toDpRect(screenDensity)
-                    .toCGRect()
+            userComponentRect
+                .toRect()
+                .toDpRect(screenDensity)
+                .toCGRect()
+        } else {
+            null
+        }
 
-                container.scheduleUpdate {
-                    UIView.performWithoutAnimation {
-                        layout.updateUserComponentFrame(userComponentCGRect)
+        if (groupFrame != null || userComponentFrame != null) {
+            container.scheduleUpdate {
+                UIView.performWithoutAnimation {
+                    layout.updateFrames(
+                        groupFrame = groupFrame,
+                        userComponentFrame = userComponentFrame,
+                    )
+                    if (groupFrame != null) {
+                        group.accessibilityFrame = unclippedRect
+                            .toRect()
+                            .toDpRect(screenDensity)
+                            .toCGRect()
                     }
                 }
-
-                currentUserComponentRect = userComponentRect
             }
         }
 

@@ -32,7 +32,9 @@ NS_ASSUME_NONNULL_BEGIN
 /** Parent view that positions a UIKit interop component using frames. */
 @interface CMPInteropHostView : UIView
 
-@property(nonatomic, assign) BOOL ignoresSafeAreaInsets;
+@property(nonatomic, assign) UIEdgeInsets safeAreaInsetsOverride;
+
+- (UIEdgeInsets)superSafeAreaInsets;
 
 @end
 

@@ -35,15 +35,11 @@
 @implementation CMPInteropHostView
 
 - (UIEdgeInsets)safeAreaInsets {
-    return self.ignoresSafeAreaInsets ? UIEdgeInsetsZero : [super safeAreaInsets];
+    return self.safeAreaInsetsOverride;
 }
 
-- (void)setIgnoresSafeAreaInsets:(BOOL)ignoresSafeAreaInsets {
-    if (_ignoresSafeAreaInsets == ignoresSafeAreaInsets) {
-        return;
-    }
-
-    _ignoresSafeAreaInsets = ignoresSafeAreaInsets;
+- (UIEdgeInsets)superSafeAreaInsets {
+    return [super safeAreaInsets];
 }
 
 @end
