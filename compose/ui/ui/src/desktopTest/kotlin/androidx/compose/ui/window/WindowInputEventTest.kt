@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.window
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -51,6 +52,7 @@ import androidx.compose.ui.sendMouseEvent
 import androidx.compose.ui.sendMousePress
 import androidx.compose.ui.sendMouseRelease
 import androidx.compose.ui.sendMouseWheelEvent
+import androidx.compose.ui.sendMouseWheelEventToFocusOwner
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import java.awt.Dimension
@@ -363,6 +365,34 @@ class WindowInputEventTest {
     }
 
     @Test
+    fun `clickable fires when mouse release keeps released button modifier`() =
+        runApplicationTest {
+            lateinit var window: ComposeWindow
+            var clicks = 0
+
+            launchTestApplication {
+                Window(
+                    onCloseRequest = ::exitApplication,
+                    state = rememberWindowState(width = 200.dp, height = 100.dp)
+                ) {
+                    window = this.window
+
+                    Box(Modifier.fillMaxSize().clickable { clicks++ })
+                }
+            }
+
+            awaitIdle()
+
+            window.sendMousePress(BUTTON1, 100, 50)
+            awaitIdle()
+
+            window.sendMouseRelease(BUTTON1, 100, 50, modifiers = BUTTON1_DOWN_MASK)
+            awaitIdle()
+
+            assertThat(clicks).isEqualTo(1)
+        }
+
+    @Test
     fun `catch mouse move`() = runApplicationTest {
         lateinit var window: ComposeWindow
 
@@ -460,6 +490,44 @@ class WindowInputEventTest {
         awaitIdle()
         assertThat(deltas.size).isEqualTo(2)
         assertThat(deltas.last()).isEqualTo(Offset(0f, -1f))
+    }
+
+    @Test
+    fun `catch mouse scroll dispatched to focus owner`() = runApplicationTest {
+        lateinit var window: ComposeWindow
+
+        val deltas = mutableListOf<Offset>()
+
+        launchTestApplication {
+            Window(
+                onCloseRequest = ::exitApplication,
+                state = rememberWindowState(width = 200.dp, height = 100.dp)
+            ) {
+                window = this.window
+
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .onPointerEvent(PointerEventType.Scroll) {
+                            deltas.add(it.changes.first().scrollDelta)
+                        }
+                )
+            }
+        }
+
+        awaitIdle()
+        assertThat(deltas.size).isEqualTo(0)
+
+        window.sendMouseWheelEventToFocusOwner(
+            100,
+            50,
+            WHEEL_UNIT_SCROLL,
+            wheelRotation = 1.0,
+            modifiers = BUTTON1_DOWN_MASK,
+        )
+        awaitIdle()
+        assertThat(deltas.size).isEqualTo(1)
+        assertThat(deltas.last()).isEqualTo(Offset(0f, 1f))
     }
 
     @Test
