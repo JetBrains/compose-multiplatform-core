@@ -41,11 +41,7 @@ import androidx.compose.ui.semantics.semantics
  * @property safeAreaInsetsPolicy Determines which safe-area insets the interop component receives.
  * UIKit computes insets for each [UIView] from its position relative to unsafe screen areas. Some
  * native components consume those insets during their own layout to keep their content in the safe
- * area, which can change their visual placement when Compose moves or clips an interop view. The
- * default, [UIKitInteropSafeAreaInsetsPolicy.Automatic], exposes zero insets while the interop
- * host overlaps UIKit's unsafe area and UIKit's computed insets otherwise. Use
- * [UIKitInteropSafeAreaInsetsPolicy.Inherit] to always expose UIKit's computed insets, or
- * [UIKitInteropSafeAreaInsetsPolicy.Ignore] to always expose zero insets.
+ * area, which can change their visual placement when Compose moves or clips an interop view.
  *
  * If this Composable is within a modifier chain that merges the semantics of its children (such as
  * `Modifier.clickable`), the merged subtree data will be ignored in favor of the native

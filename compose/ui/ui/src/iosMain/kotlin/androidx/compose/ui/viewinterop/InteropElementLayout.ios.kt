@@ -75,7 +75,7 @@ internal class InteropElementLayout(
     private var userComponentHostSafeAreaInsets: UserComponentHostSafeAreaInsets? = null
 
     init {
-        interopWrappingView.onMovedToWindow = { userComponentHostSafeAreaInsets?.update() }
+        interopWrappingView.onDidMoveToWindow = { userComponentHostSafeAreaInsets?.update() }
         interopWrappingView.onSafeAreaInsetsChanged = { userComponentHostSafeAreaInsets?.update() }
     }
 
@@ -136,9 +136,6 @@ internal class InteropElementLayout(
         )
     }
 
-    /**
-     * Updates the frame-driven interop hierarchy.
-     */
     fun updateFrames(
         groupFrame: CValue<CGRect>?,
         userComponentFrame: CValue<CGRect>?,
@@ -148,7 +145,6 @@ internal class InteropElementLayout(
         userComponentHostSafeAreaInsets?.update()
     }
 
-    /** Updates the safe-area policy without recreating the user component. */
     fun updateSafeAreaInsetsPolicy(policy: UIKitInteropSafeAreaInsetsPolicy) {
         val currentSafeAreaInsets = userComponentHostSafeAreaInsets
         if (currentSafeAreaInsets == null) {
