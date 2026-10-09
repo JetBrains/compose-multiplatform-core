@@ -17,59 +17,99 @@
 package androidx.compose.ui.text
 
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.geometry.isSimple
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PaintingStyle
-import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.takeOrElse
+import androidx.compose.ui.text.platform.ParagraphLayouter
+import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.util.fastForEachIndexed
+import org.jetbrains.skia.paragraph.LineMetrics
 
 /**
- * Draws [Bullet] markers into the leading margin of a paragraph.
- *
- * Skia's paragraph has no notion of a leading margin span, so the marker is painted separately
- * right after the text. The [Paint] is reused between calls because painting happens on every
- * frame.
- *
- * Note that the right-to-left placement has not been verified visually.
+ * Draws the [Bullet] markers of a paragraph into its leading margin. Skia's paragraph has no
+ * leading margin span, so they are painted right after the text.
  */
-internal class SkikoBulletPainter {
+internal class SkikoBulletPainter(private val layouter: ParagraphLayouter) {
     private val paint = Paint()
 
+    /** Built on first use: nothing an outline depends on changes while this painter is alive. */
+    private val outlines = arrayOfNulls<Outline>(layouter.bullets.size)
+
     /**
-     * @param xStart x coordinate of the left edge of the bullet's bounds
-     * @param yCenter y coordinate of the center of the bullet's bounds
-     * @param textColor color the rest of the text is drawn with, used when the bullet defines
-     *   neither a brush of its own nor [textBrush]
-     * @param textBrush brush the rest of the text is drawn with, if any
-     * @param textAlpha opacity the rest of the text is drawn with, used when the bullet's own alpha
-     *   is [Float.NaN]
+     * @param lineMetricsForOffset metrics of the line the given text offset falls into
+     * @param color color the text is drawn with, used for a bullet that defines neither a brush of
+     *   its own nor [brush]
+     * @param brush brush the text is drawn with, if any
+     * @param alpha opacity the text is drawn with, used for a bullet whose own alpha is [Float.NaN]
      */
     fun paint(
         canvas: Canvas,
+        textDirection: ResolvedTextDirection,
+        lineMetricsForOffset: (Int) -> LineMetrics?,
+        color: Color,
+        brush: Brush?,
+        alpha: Float,
+    ) {
+        val density = layouter.density
+        val contextFontSize = layouter.defaultFont.size
+        val textColor = color.takeOrElse { layouter.textStyle.color }
+        val layoutDirection = when (textDirection) {
+            ResolvedTextDirection.Rtl -> LayoutDirection.Rtl
+            else -> LayoutDirection.Ltr
+        }
+
+        layouter.bullets.fastForEachIndexed { index, range ->
+            val bullet = range.item
+            val widthPx = bullet.width.resolveBulletSizeToPx(density, contextFontSize)
+            val heightPx = bullet.height.resolveBulletSizeToPx(density, contextFontSize)
+            val gapPx = bullet.padding.resolveBulletSizeToPx(density, contextFontSize)
+            if (widthPx.isNaN() || heightPx.isNaN() || gapPx.isNaN()) return@fastForEachIndexed
+
+            val line = lineMetricsForOffset(range.start) ?: return@fastForEachIndexed
+            val lineTop = (line.baseline - line.ascent).toFloat()
+            val lineBottom = (line.baseline + line.descent).toFloat()
+            val yCenter = (lineTop + lineBottom) / 2f
+            val xStart = if (layoutDirection == LayoutDirection.Rtl) {
+                line.right.toFloat() + gapPx
+            } else {
+                (line.left.toFloat() - (widthPx + gapPx)).coerceAtLeast(0f)
+            }
+
+            val size = Size(widthPx, heightPx)
+            preparePaint(bullet, size, textColor, brush, alpha)
+
+            val outline = outlines[index]
+                ?: bullet.shape.createOutline(size, layoutDirection, density).also {
+                    outlines[index] = it
+                }
+
+            canvas.save()
+            canvas.translate(xStart, yCenter - heightPx / 2f)
+            canvas.drawOutline(outline, paint)
+            canvas.restore()
+        }
+    }
+
+    /**
+     * Sets [paint] up to draw [bullet] of the given [size], clearing what the previous bullet left
+     * behind.
+     */
+    private fun preparePaint(
         bullet: Bullet,
-        widthPx: Float,
-        heightPx: Float,
-        xStart: Float,
-        yCenter: Float,
-        layoutDirection: LayoutDirection,
-        density: Density,
+        size: Size,
         textColor: Color,
         textBrush: Brush?,
         textAlpha: Float,
     ) {
-        val size = Size(widthPx, heightPx)
-
-        paint.shader = null
-        paint.pathEffect = null
-        paint.alpha = 1f
-
         val drawStyle = bullet.drawStyle
         if (drawStyle is Stroke) {
             paint.style = PaintingStyle.Stroke
@@ -80,6 +120,7 @@ internal class SkikoBulletPainter {
             paint.pathEffect = drawStyle.pathEffect
         } else {
             paint.style = PaintingStyle.Fill
+            if (paint.pathEffect != null) paint.pathEffect = null
         }
 
         val alpha = if (bullet.alpha.isNaN()) textAlpha else bullet.alpha
@@ -87,42 +128,9 @@ internal class SkikoBulletPainter {
         if (brush != null) {
             brush.applyTo(size, paint, alpha)
         } else {
+            if (paint.shader != null) paint.shader = null
             paint.color = textColor
             paint.alpha = alpha
-        }
-
-        val top = yCenter - heightPx / 2f
-        when (val outline = bullet.shape.createOutline(size, layoutDirection, density)) {
-            is Outline.Rectangle -> {
-                val rect = outline.rect
-                canvas.drawRect(xStart, top, xStart + rect.width, top + rect.height, paint)
-            }
-            is Outline.Rounded -> {
-                val roundRect = outline.roundRect
-                if (roundRect.isSimple) {
-                    canvas.drawRoundRect(
-                        xStart,
-                        top,
-                        xStart + roundRect.width,
-                        top + roundRect.height,
-                        roundRect.topLeftCornerRadius.x,
-                        roundRect.topLeftCornerRadius.y,
-                        paint,
-                    )
-                } else {
-                    val path = Path().apply { addRoundRect(roundRect) }
-                    canvas.save()
-                    canvas.translate(xStart, top)
-                    canvas.drawPath(path, paint)
-                    canvas.restore()
-                }
-            }
-            is Outline.Generic -> {
-                canvas.save()
-                canvas.translate(xStart, top)
-                canvas.drawPath(outline.path, paint)
-                canvas.restore()
-            }
         }
     }
 }
