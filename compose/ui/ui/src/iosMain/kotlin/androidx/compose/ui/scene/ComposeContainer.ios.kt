@@ -210,13 +210,6 @@ internal class ComposeContainer(
             )
         }
 
-    private fun onLayoutSubviews() {
-        windowContext.updateWindowContainerSize()
-
-        mediator?.updateKeyboardOverlap()
-        mediator?.measureAndLayout()
-        sceneSizing.onLayout()
-    }
 
     private fun onTraitCollectionDidChange() {
         fontScaleProvider.onTraitCollectionDidChange()
@@ -354,7 +347,15 @@ internal class ComposeContainer(
             view.updateMetalView(
                 metalView = metalView,
                 onDidMoveToWindow = ::onDidMoveToWindow,
-                onLayoutSubviews = ::onLayoutSubviews,
+                onLayoutSubviews = {
+                    windowContext.updateWindowContainerSize()
+
+                    mediator.updateKeyboardOverlap()
+                    frameChoreographer.performOutsideFrameUpdate {
+                        mediator.measureAndLayout()
+                        sceneSizing.onLayout()
+                    }
+                },
                 onTraitCollectionDidChange = ::onTraitCollectionDidChange,
                 onDraw = { needsSynchronousDraw ->
                     metalView.redrawer.onDraw(
