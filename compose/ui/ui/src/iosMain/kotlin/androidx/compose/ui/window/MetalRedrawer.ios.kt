@@ -39,10 +39,10 @@ internal sealed interface MetalRedrawer {
 
 internal inline fun MetalRedrawer.onDraw(
     needsSynchronousDraw: Boolean,
-    needsComposeSceneDraw: Boolean,
+    needsDraw: Boolean,
     retrievePendingViewUpdatesInteropTransaction: () -> InteropSyncTransaction,
 ) {
-    if (needsComposeSceneDraw || needsSynchronousDraw) {
+    if (needsDraw || needsSynchronousDraw) {
         render(waitUntilCompletion = needsSynchronousDraw)
     } else {
         performTransaction(retrievePendingViewUpdatesInteropTransaction())

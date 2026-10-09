@@ -361,7 +361,7 @@ internal class ComposeContainer(
                 onDraw = { needsSynchronousDraw ->
                     metalView.redrawer.onDraw(
                         needsSynchronousDraw = needsSynchronousDraw,
-                        needsComposeSceneDraw = mediator.needsComposeSceneDraw,
+                        needsDraw = mediator.needsComposeSceneDraw,
                         retrievePendingViewUpdatesInteropTransaction =
                             mediator::retrievePendingViewUpdatesInteropTransaction,
                     )
