@@ -16,17 +16,16 @@
 
 package androidx.compose.ui.integrations
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.FrameChoreographer
+import androidx.compose.ui.platform.IosUiMediaScope
 import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.scene.ComposeSceneContext
 import androidx.compose.ui.scene.ComposeSceneMediator
 import androidx.compose.ui.scene.PlatformLayersComposeScene
 import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
-import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
@@ -93,12 +92,13 @@ class ComposeSceneMediatorUnitTest {
     private fun makeMediator(
         coroutineContext: CoroutineContext,
         frameChoreographer: FrameChoreographer = FrameChoreographer.choreographerForScene(UIWindowScene()),
+        windowContext: WindowContext = WindowContext(),
     ): ComposeSceneMediator = ComposeSceneMediator(
         frameChoreographer = frameChoreographer,
         onFocusBehavior = OnFocusBehavior.DoNothing,
         isClearFocusOnMouseDownEnabled = false,
         focusedViewsList = null,
-        windowContext = WindowContext(),
+        windowContext = windowContext,
         architectureComponentsOwner = DefaultArchitectureComponentsOwner(),
         coroutineContext = coroutineContext,
         navigationEventInput = IosBackNavigationEventInput(
@@ -108,7 +108,7 @@ class ComposeSceneMediatorUnitTest {
             getTopLeftOffsetInWindow = { IntOffset.Zero },
             endEdgePanGestureBehavior = EndEdgePanGestureBehavior.Disabled,
         ),
-        interfaceOrientationState = mutableStateOf(InterfaceOrientation.Portrait),
+        mediaScope = IosUiMediaScope(windowContext.windowInfo),
         composeSceneFactory = { platformContext ->
             registerSkikoComposeImplementation()
             PlatformLayersComposeScene(
