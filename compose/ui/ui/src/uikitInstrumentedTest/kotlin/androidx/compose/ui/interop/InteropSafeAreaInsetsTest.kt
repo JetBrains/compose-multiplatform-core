@@ -17,6 +17,7 @@
 package androidx.compose.ui.interop
 
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.unit.dp
@@ -34,7 +35,7 @@ import platform.UIKit.UIViewController
 
 class InteropSafeAreaInsetsTest {
     @Test
-    fun defaultPolicyExposesSafeAreaInsetsFromTheInteropHost() = runUIKitInstrumentedTest {
+    fun defaultAutomaticPolicyDoesNotExposeSafeAreaInsetsFromTheInteropHost() = runUIKitInstrumentedTest {
         var view: SafeAreaTrackingView? = null
 
         setContent {
@@ -44,8 +45,59 @@ class InteropSafeAreaInsetsTest {
             )
         }
 
+        waitUntil("Interop view was not attached and laid out") {
+            view?.hasBeenLaidOutInWindow() == true
+        }
+
+        assertEquals(0.0, view?.superviewTopSafeAreaInset())
+        assertEquals(0.0, view?.lastLayoutSuperviewTopSafeAreaInset)
+    }
+
+    @Test
+    fun automaticPolicyDoesNotExposeSafeAreaInsetsFromTheInteropHost() = runUIKitInstrumentedTest {
+        var view: SafeAreaTrackingView? = null
+
+        setContent {
+            UIKitView(
+                factory = { SafeAreaTrackingView().also { view = it } },
+                modifier = Modifier.size(100.dp),
+                properties = UIKitInteropProperties(
+                    safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Automatic,
+                ),
+            )
+        }
+
+        waitUntil("Interop view was not attached and laid out") {
+            view?.hasBeenLaidOutInWindow() == true
+        }
+
+        assertEquals(0.0, view?.superviewTopSafeAreaInset())
+        assertEquals(0.0, view?.lastLayoutSuperviewTopSafeAreaInset)
+    }
+
+    @Test
+    fun safeAreaInsetsPolicyUpdatesTheExistingUIKitView() = runUIKitInstrumentedTest {
+        val policy = mutableStateOf<UIKitInteropSafeAreaInsetsPolicy>(
+            UIKitInteropSafeAreaInsetsPolicy.Inherit,
+        )
+        var view: SafeAreaTrackingView? = null
+
+        setContent {
+            UIKitView(
+                factory = { SafeAreaTrackingView().also { view = it } },
+                modifier = Modifier.size(100.dp),
+                properties = UIKitInteropProperties(safeAreaInsetsPolicy = policy.value),
+            )
+        }
+
         waitUntil("Inherited safe area was not exposed by the interop host") {
             view?.hasTopSafeAreaInsetFromSuperview() == true
+        }
+
+        policy.value = UIKitInteropSafeAreaInsetsPolicy.Automatic
+
+        waitUntil("Automatic safe area policy was not applied") {
+            view?.hasNoTopSafeAreaInsetFromSuperview() == true
         }
     }
 
@@ -91,7 +143,7 @@ class InteropSafeAreaInsetsTest {
     }
 
     @Test
-    fun defaultPolicyExposesSafeAreaInsetsFromTheInteropHostToViewController() = runUIKitInstrumentedTest {
+    fun defaultAutomaticPolicyDoesNotExposeSafeAreaInsetsFromTheInteropHostToViewController() = runUIKitInstrumentedTest {
         var view: SafeAreaTrackingView? = null
 
         setContent {
@@ -105,8 +157,67 @@ class InteropSafeAreaInsetsTest {
             )
         }
 
+        waitUntil("Interop view controller was not attached and laid out") {
+            view?.hasBeenLaidOutInWindow() == true
+        }
+
+        assertEquals(0.0, view?.superviewTopSafeAreaInset())
+        assertEquals(0.0, view?.lastLayoutSuperviewTopSafeAreaInset)
+    }
+
+    @Test
+    fun automaticPolicyDoesNotExposeSafeAreaInsetsFromTheInteropHostToViewController() = runUIKitInstrumentedTest {
+        var view: SafeAreaTrackingView? = null
+
+        setContent {
+            UIKitViewController(
+                factory = {
+                    UIViewController().also { controller ->
+                        controller.view = SafeAreaTrackingView().also { view = it }
+                    }
+                },
+                modifier = Modifier.size(100.dp),
+                properties = UIKitInteropProperties(
+                    safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Automatic,
+                ),
+            )
+        }
+
+        waitUntil("Interop view controller was not attached and laid out") {
+            view?.hasBeenLaidOutInWindow() == true
+        }
+
+        assertEquals(0.0, view?.superviewTopSafeAreaInset())
+        assertEquals(0.0, view?.lastLayoutSuperviewTopSafeAreaInset)
+    }
+
+    @Test
+    fun safeAreaInsetsPolicyUpdatesTheExistingUIKitViewController() = runUIKitInstrumentedTest {
+        val policy = mutableStateOf<UIKitInteropSafeAreaInsetsPolicy>(
+            UIKitInteropSafeAreaInsetsPolicy.Inherit,
+        )
+        var view: SafeAreaTrackingView? = null
+
+        setContent {
+            UIKitViewController(
+                factory = {
+                    UIViewController().also { controller ->
+                        controller.view = SafeAreaTrackingView().also { view = it }
+                    }
+                },
+                modifier = Modifier.size(100.dp),
+                properties = UIKitInteropProperties(safeAreaInsetsPolicy = policy.value),
+            )
+        }
+
         waitUntil("Inherited safe area was not exposed by the interop host") {
             view?.hasTopSafeAreaInsetFromSuperview() == true
+        }
+
+        policy.value = UIKitInteropSafeAreaInsetsPolicy.Automatic
+
+        waitUntil("Automatic safe area policy was not applied") {
+            view?.hasNoTopSafeAreaInsetFromSuperview() == true
         }
     }
 
@@ -165,6 +276,9 @@ private fun UIView.superviewTopSafeAreaInset(): Double =
 
 private fun SafeAreaTrackingView.hasTopSafeAreaInsetFromSuperview(): Boolean =
     superviewTopSafeAreaInset() > 0.0 && lastLayoutSuperviewTopSafeAreaInset > 0.0
+
+private fun SafeAreaTrackingView.hasNoTopSafeAreaInsetFromSuperview(): Boolean =
+    superviewTopSafeAreaInset() == 0.0 && lastLayoutSuperviewTopSafeAreaInset == 0.0
 
 private fun SafeAreaTrackingView.hasBeenLaidOutInWindow(): Boolean =
     window != null && !lastLayoutSuperviewTopSafeAreaInset.isNaN()
