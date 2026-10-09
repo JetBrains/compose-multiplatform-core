@@ -39,10 +39,14 @@ import org.jetbrains.skia.paragraph.LineMetrics
  * leading margin span, so they are painted right after the text.
  */
 internal class SkikoBulletPainter(private val layouter: ParagraphLayouter) {
-    private val paint = Paint()
+    private var _paint: Paint? = null
+    private val paint: Paint
+        get() = _paint ?: Paint().also { _paint = it }
 
     /** Built on first use: nothing an outline depends on changes while this painter is alive. */
-    private val outlines = arrayOfNulls<Outline>(layouter.bullets.size)
+    private var _outlines: Array<Outline?>? = null
+    private val outlines: Array<Outline?>
+        get() = _outlines ?: arrayOfNulls<Outline>(layouter.bullets.size).also { _outlines = it }
 
     /**
      * @param lineMetricsForOffset metrics of the line the given text offset falls into
@@ -87,6 +91,7 @@ internal class SkikoBulletPainter(private val layouter: ParagraphLayouter) {
             val size = Size(widthPx, heightPx)
             preparePaint(bullet, size, textColor, brush, alpha)
 
+            val outlines = outlines
             val outline = outlines[index]
                 ?: bullet.shape.createOutline(size, layoutDirection, density).also {
                     outlines[index] = it
