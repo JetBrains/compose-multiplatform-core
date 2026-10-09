@@ -75,6 +75,7 @@ internal abstract class WebTextInputService :
         request: PlatformTextInputMethodRequest,
         onEditCommand: (List<EditCommand>) -> Unit,
     ) {
+        println("[DBG] WebTextInputService.startInput: currentTouchOffset=$currentTouchOffset")
         activeTextInputMethodRequest = request
         backingDomInput = BackingDomInput(
             imeOptions = request.imeOptions,
@@ -84,6 +85,7 @@ internal abstract class WebTextInputService :
                 }
 
                 override fun sendEditCommand(commands: List<EditCommand>) {
+                    println("[DBG] WebTextInputService: sendEditCommand -> $commands")
                     onEditCommand(commands)
                 }
             },
@@ -116,6 +118,7 @@ internal abstract class WebTextInputService :
     }
 
     override fun stopInput() {
+        println("[DBG] WebTextInputService.stopInput")
         backingDomInput?.dispose()
         backingDomInput = null
         activeTextInputMethodRequest = null
@@ -130,10 +133,13 @@ internal abstract class WebTextInputService :
     }
 
     override fun updateState(oldValue: TextFieldValue?, newValue: TextFieldValue) {
+        println("[DBG] WebTextInputService.updateState: old=${oldValue?.selection}, new=${newValue.selection}, " +
+            "textLen=${newValue.text.length}, composition=${newValue.composition}")
         backingDomInput?.updateState(newValue)
     }
 
     override fun notifyFocusedRect(rect: Rect) {
+        println("[DBG] WebTextInputService.notifyFocusedRect: rect=$rect")
         val newRect = getNewGeometryForBackingInput(rect)
         backingDomInput?.updateHtmlInputBox(newRect.left.value, newRect.top.value, newRect.width.value, newRect.height.value)
     }

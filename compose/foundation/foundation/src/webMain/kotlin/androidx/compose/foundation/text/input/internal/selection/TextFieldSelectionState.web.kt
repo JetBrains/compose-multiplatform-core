@@ -40,7 +40,21 @@ internal actual suspend fun TextFieldSelectionState.detectTextFieldTapGestures(
     interactionSource: MutableInteractionSource?,
     requestFocus: () -> Unit,
     showKeyboard: () -> Unit
-) = defaultDetectTextFieldTapGestures(pointerInputScope, interactionSource, requestFocus, showKeyboard)
+) = defaultDetectTextFieldTapGestures(
+    pointerInputScope,
+    interactionSource,
+    requestFocus = {
+        println("[DBG] TextFieldSelectionState.web: tap -> requestFocus, " +
+            "selection=${textFieldState.visualText.selection}, " +
+            "isWindowAndTextFieldFocused=$isWindowAndTextFieldFocused")
+        requestFocus()
+    },
+    showKeyboard = {
+        println("[DBG] TextFieldSelectionState.web: tap -> showKeyboard, " +
+            "selection=${textFieldState.visualText.selection}")
+        showKeyboard()
+    },
+)
 
 /** Runs platform-specific text selection gestures logic. */
 internal actual suspend fun TextFieldSelectionState.textFieldSelectionGestures(
@@ -48,6 +62,7 @@ internal actual suspend fun TextFieldSelectionState.textFieldSelectionGestures(
     mouseSelectionObserver: MouseSelectionObserver,
     textDragObserver: TextDragObserver
 ) = pointerInputScope.defaultTextFieldSelectionGestures(mouseSelectionObserver, textDragObserver)
+
 
 internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
     state: TextFieldSelectionState,
