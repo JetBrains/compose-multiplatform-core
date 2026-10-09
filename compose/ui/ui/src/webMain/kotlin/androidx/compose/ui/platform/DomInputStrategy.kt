@@ -70,12 +70,6 @@ internal class DomInputStrategy(
     fun updateState(textFieldValue: TextFieldValue) {
         val needsTextUpdate = (lastMeaningfulUpdate.text != textFieldValue.text) && !isInCompositionMode
         val needsSelectionUpdate = !isInCompositionMode && (lastMeaningfulUpdate.selection != textFieldValue.selection)
-        println("[DBG] DomInputStrategy.updateState: newSelection=${textFieldValue.selection}, " +
-            "prevSelection=${lastMeaningfulUpdate.selection}, textLen=${textFieldValue.text.length}, " +
-            "prevTextLen=${lastMeaningfulUpdate.text.length}, needsTextUpdate=$needsTextUpdate, " +
-            "needsSelectionUpdate=$needsSelectionUpdate, isInCompositionMode=$isInCompositionMode, " +
-            "pauseSelectionChangeListener=$pauseSelectionChangeListener, isInputActive=${isInputActive()}, " +
-            "isCheckpointScheduled=${nativeInputEventsProcessor.isCheckpointScheduled}")
         lastMeaningfulUpdate = textFieldValue
 
         // Permanent opacity: 0 also suppresses Safari's keyboard avoidance when focusing a field.
@@ -88,29 +82,20 @@ internal class DomInputStrategy(
         if (needsTextUpdate) {
             htmlInput.textContent = textFieldValue.text
 
-            println("[DBG] DomInputStrategy.updateState: textContent replaced -> focus() requested")
             htmlInput.focus()
         }
 
         if (needsTextUpdate || needsSelectionUpdate) {
             pauseSelectionChangeListener = true
-            println("[DBG] DomInputStrategy.updateState: setSelectionRange(${textFieldValue.selection.min}, ${textFieldValue.selection.max}), pause=true")
             setSelectionRange(htmlInput, textFieldValue.selection.min, textFieldValue.selection.max)
 
             // the selectionchange event listeners do not run synchronously - see ttps://www.w3.org/TR/selection-api/#scheduling-selectionchange-event
             // Resetting `pauseSelectionChangeListener` synchronously right after is not enough
             // TODO: this is the cheapest way to make sure that DOM <=> Compose sync won't self-trigger but we need to consider better possible options
             window.requestAnimationFrame {
-                println("[DBG] DomInputStrategy.updateState: rAF -> pause=false (selection in DOM=${debugDomSelection()})")
                 pauseSelectionChangeListener = false
             }
         }
-    }
-
-    private fun debugDomSelection(): String {
-        val range = getSelectionRange(htmlInput) ?: return "null"
-        return "[${computeSelectionOffset(range.startContainer, range.startOffset)}, " +
-            "${computeSelectionOffset(range.endContainer, range.endOffset)}]"
     }
 
     private val tabKeyCode = Key.Tab.keyCode.toInt()
@@ -119,7 +104,6 @@ internal class DomInputStrategy(
     private fun initEvents() {
         // Whenever new type of event is processed, don't forget to sync the NativeInputEventsProcessor::runCheckpoint isIME check
         htmlInput.addEventListener("keydown", { evt ->
-            println("[DBG] DomInputStrategy: keydown key=${(evt as KeyboardEvent).key}, domSelection=${debugDomSelection()}")
             nativeInputEventsProcessor.registerEvent(evt as KeyboardEvent)
 
             if (evt.keyCode == tabKeyCode) {
@@ -145,9 +129,6 @@ internal class DomInputStrategy(
                 // If the browser applies them natively, it splits the contenteditable content
                 // into several nodes (Safari inserts <br> and wraps the rest into a <div>),
                 // which breaks the offset math relying on a single text node.
-                println("[DBG] DomInputStrategy: beforeinput type=${inputExt.inputType}, data=${inputExt.data}, " +
-                    "firstRange=[${inputExt.firstRange?.startOffset}, ${inputExt.firstRange?.endOffset}], " +
-                    "domSelection=${debugDomSelection()}")
 
                 if (inputExt.inputType == "insertParagraph" || inputExt.inputType == "insertLineBreak") {
                     evt.preventDefault()
@@ -165,12 +146,10 @@ internal class DomInputStrategy(
         })
 
         htmlInput.addEventListener("compositionstart", {evt ->
-            println("[DBG] DomInputStrategy: compositionstart")
             isInCompositionMode = true
         })
 
         htmlInput.addEventListener("compositionend", { evt ->
-            println("[DBG] DomInputStrategy: compositionend data=${(evt as CompositionEvent).data}")
             isInCompositionMode = false
             nativeInputEventsProcessor.registerEvent(evt as CompositionEvent)
         })
@@ -181,13 +160,7 @@ internal class DomInputStrategy(
             if (pauseSelectionChangeListener ||
                 nativeInputEventsProcessor.isCheckpointScheduled ||
                 !isInputActive()
-            ) {
-                println("[DBG] DomInputStrategy: selectionchange IGNORED " +
-                    "(pause=$pauseSelectionChangeListener, " +
-                    "checkpointScheduled=${nativeInputEventsProcessor.isCheckpointScheduled}, " +
-                    "isInputActive=${isInputActive()}), domSelection=${debugDomSelection()}")
-                return@listener
-            }
+            ) return@listener
 
             val currentSelection = getSelectionRange(htmlInput)
             val (start, end) = if (currentSelection != null) {
@@ -201,13 +174,9 @@ internal class DomInputStrategy(
 
             val selection = lastMeaningfulUpdate.selection
 
-            println("[DBG] DomInputStrategy: selectionchange dom=[$start, $end], " +
-                "composeSelection=$selection, willSend=${start != selection.min || end != selection.max}")
-
             if (start != selection.min || end != selection.max) {
                 val normalizedStart = minOf(start, end)
                 val normalizedEnd = maxOf(start, end)
-                println("[DBG] DomInputStrategy: sending SetSelectionCommand($normalizedStart, $normalizedEnd)")
                 composeSender.sendEditCommand(SetSelectionCommand(normalizedStart, normalizedEnd))
             }
         }

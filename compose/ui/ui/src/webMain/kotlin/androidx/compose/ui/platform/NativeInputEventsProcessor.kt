@@ -72,8 +72,6 @@ internal abstract class NativeInputEventsProcessor(
     }
 
     fun runCheckpoint(currentTextFieldValue: TextFieldValue) {
-        println("[DBG] NativeInputEventsProcessor.runCheckpoint: events=${collectedEvents.map { it.type }}, " +
-            "currentSelection=${currentTextFieldValue.selection}")
         isCheckpointScheduled = false
 
         collectedEvents.sortBy { it.timeStamp.toInt() }
@@ -169,14 +167,11 @@ internal abstract class NativeInputEventsProcessor(
         }
 
         if (editCommands.isNotEmpty()) {
-            println("[DBG] NativeInputEventsProcessor: inputType=$inputType -> $editCommands")
             composeSender.sendEditCommand(editCommands)
         }
     }
 
     internal fun registerEvent(event: UIEvent) {
-        println("[DBG] NativeInputEventsProcessor.registerEvent: type=${event.type}, " +
-            "checkpointScheduled=$isCheckpointScheduled")
         collectedEvents.add(event)
         internalScheduleCheckpoint()
     }

@@ -248,13 +248,7 @@ internal class TextFieldDecoratorModifierNode(
             SuspendingPointerInputModifierNode {
                 coroutineScope {
                     with(textFieldSelectionState) {
-                        val requestFocus = {
-                            println("[DBG] TextFieldDecoratorModifier: tap requestFocus lambda, " +
-                                "isWindowAndTextFieldFocused=$isWindowAndTextFieldFocused, " +
-                                "nodeFocused=${focusableNode.focusState.isFocused}, " +
-                                "isWindowFocused=${windowInfo?.isWindowFocused}")
-                            if (!isWindowAndTextFieldFocused) requestFocus()
-                        }
+                        val requestFocus = { if (!isWindowAndTextFieldFocused) requestFocus() }
 
                         launch(start = CoroutineStart.UNDISPATCHED) {
                             detectDirectTouchInteraction()
@@ -710,10 +704,6 @@ internal class TextFieldDecoratorModifierNode(
      * sources, so any change to them requires this method to be invoked.
      */
     private fun onIsFocusedUpdated() {
-        println("[DBG] TextFieldDecoratorModifier.onIsFocusedUpdated: isFocused=${this.isFocused}, " +
-            "nodeFocused=${focusableNode.focusState.isFocused}, " +
-            "isWindowFocused=${windowInfo?.isWindowFocused}, " +
-            "selection=${textFieldState.visualText.selection}")
         textFieldSelectionState.isWindowAndTextFieldFocused = this.isFocused
         if (isFocused && toolbarAndHandlesVisibilityObserverJob == null) {
             // only start a new job is there's not an ongoing one.
@@ -792,9 +782,6 @@ internal class TextFieldDecoratorModifierNode(
     private fun updateWindowFocus() {
         observeReads {
             windowInfo = currentValueOf(LocalWindowInfo)
-            println("[DBG] TextFieldDecoratorModifier.updateWindowFocus: " +
-                "isWindowFocused=${windowInfo?.isWindowFocused}, " +
-                "nodeFocused=${focusableNode.focusState.isFocused}")
             onIsFocusedUpdated()
         }
     }

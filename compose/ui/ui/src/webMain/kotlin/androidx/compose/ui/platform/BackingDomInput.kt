@@ -67,7 +67,6 @@ internal class BackingDomInput(
         // and https://youtrack.jetbrains.com/issue/CMP-7836/
         // Safari will ignore a focus request if it's called not during user interaction.
 
-        println("[DBG] BackingDomInput.focus: isInputActive=${inputStrategy.isInputActive()}")
         if (!inputStrategy.isInputActive()) backingElement.focus()
         window.requestAnimationFrame {
             // TODO: requesting focus in rAF is rather redundant; need to verify
@@ -76,13 +75,11 @@ internal class BackingDomInput(
             // Such a request will be ignored and the software keyboard won't show up.
             // See https://github.com/WebKit/WebKit/commit/64ee64bad41e5d511964c29b8ab00ee77269821a
             // Therefore, make a new focus request conditionally:
-            println("[DBG] BackingDomInput.focus: rAF isInputActive=${inputStrategy.isInputActive()}")
             if (!inputStrategy.isInputActive()) backingElement.focus()
         }
     }
 
     fun blur() {
-        println("[DBG] BackingDomInput.blur")
         backingElement.blur()
     }
 
@@ -96,7 +93,6 @@ internal class BackingDomInput(
     }
 
     fun updateState(textFieldValue: TextFieldValue) {
-        println("[DBG] BackingDomInput.updateState: selection=${textFieldValue.selection}")
         inputStrategy.updateState(textFieldValue)
         focus()
     }

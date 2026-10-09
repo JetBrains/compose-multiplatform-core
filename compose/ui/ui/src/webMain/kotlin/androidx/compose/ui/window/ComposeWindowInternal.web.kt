@@ -246,7 +246,6 @@ internal class ComposeWindow(
 
     private val _windowInfo = WindowInfoImpl().apply {
         isWindowFocused = document.hasFocus()
-        println("[DBG] ComposeWindow: init isWindowFocused=$isWindowFocused (document.hasFocus())")
     }
 
     @VisibleForTesting
@@ -531,9 +530,15 @@ internal class ComposeWindow(
         val webTextInputService = platformContext.textInputService as WebTextInputService
 
         addTypedEvent<TouchEvent>("touchstart", passive = false) { evt ->
-            println("[DBG] ComposeWindow: touchstart, isWindowFocused=${_windowInfo.isWindowFocused}, documentHasFocus=${document.hasFocus()}")
             if (!_windowInfo.isWindowFocused) {
                 restoreWindowFocusFromBackingInput()
+                // The user is interacting with the canvas, so the window has to be treated as
+                // focused right away. Otherwise, the logic relying on WindowInfo.isWindowFocused
+                // (e.g. placing the cursor at the tapped position in a text field) would be
+                // skipped for the very first tap: the native `focus` event is delivered
+                // asynchronously, long after the tap gesture is processed.
+                // See https://youtrack.jetbrains.com/issue/CMP-10885
+                _windowInfo.isWindowFocused = true
             }
             // preventDefault the touchstart if the corresponding pointerdown hits the active text input.
             // Pros: a long press (touchstart + ~500ms delay after it) triggers focus changes in iOS Safari,
@@ -621,13 +626,11 @@ internal class ComposeWindow(
         addTypedEvent("keyup", onKeyboardEventCallback)
 
         state.globalEvents.addDisposableEvent("focus") {
-            println("[DBG] ComposeWindow: window 'focus' event -> isWindowFocused=true")
             _windowInfo.isWindowFocused = true
             archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
         }
 
         state.globalEvents.addDisposableEvent("blur") {
-            println("[DBG] ComposeWindow: window 'blur' event -> isWindowFocused=false")
             _windowInfo.isWindowFocused = false
             archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
         }
@@ -729,7 +732,6 @@ internal class ComposeWindow(
      */
     private fun restoreWindowFocusFromBackingInput() {
         val input = (platformContext.textInputService as WebTextInputService).getBackingInput()
-        println("[DBG] ComposeWindow.restoreWindowFocusFromBackingInput: backingInput=${input != null}")
         if (input == null) return
         input.focus()
         input.focus()
