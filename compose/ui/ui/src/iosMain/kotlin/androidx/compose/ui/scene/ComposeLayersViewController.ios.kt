@@ -80,7 +80,7 @@ internal class ComposeLayersViewController(
             onDraw = { needsSynchronousDraw ->
                 metalView.redrawer.onDraw(
                     needsSynchronousDraw = needsSynchronousDraw,
-                    needsComposeSceneDraw = needsComposeSceneDraw(),
+                    needsDraw = needsLayerStackDraw || needsComposeSceneDraw(),
                     retrievePendingViewUpdatesInteropTransaction =
                         ::retrieveAndMergePendingViewUpdatesInteropTransactions,
                 )
@@ -181,6 +181,8 @@ internal class ComposeLayersViewController(
 
     private val layers = mutableListOf<IosComposeSceneLayer>()
 
+    private var needsLayerStackDraw = false
+
     private val layersCache = CopiedList {
         it.addAll(this.layers)
     }
@@ -257,7 +259,7 @@ internal class ComposeLayersViewController(
         if (hasViewAppeared) {
             layer.sceneDidAppear()
         }
-        invalidateDraw()
+        invalidateLayerStackDraw()
     }
 
     fun detach(layer: IosComposeSceneLayer) {
@@ -279,8 +281,7 @@ internal class ComposeLayersViewController(
             // It wasn't the last layer, pending transactions should be added to the list
             removedLayersTransactions.add(transaction)
 
-            // Redraw content with layer removed
-            invalidateDraw()
+            invalidateLayerStackDraw()
         }
     }
 
@@ -346,6 +347,11 @@ internal class ComposeLayersViewController(
         )
     }
 
+    private fun invalidateLayerStackDraw() {
+        needsLayerStackDraw = true
+        invalidateDraw()
+    }
+
     private fun needsComposeSceneDraw(): Boolean {
         layersCache.withCopy { layers ->
             return layers.any { it.needsComposeSceneDraw }
@@ -354,6 +360,7 @@ internal class ComposeLayersViewController(
     }
 
     private fun draw(canvas: Canvas) {
+        needsLayerStackDraw = false
         layoutInvalidationHandler.postponeLayoutInvalidationCalls {
         canvasHolder.drawInto(canvas) { 
             // Some layers may be removed during rendering, because recomposition will happen in the
