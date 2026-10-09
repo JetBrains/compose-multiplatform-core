@@ -248,7 +248,7 @@ private class CaptureDeviceAvailabilityObserver(
             return hasCameraState.value
         }
 
-    var isObservingEnabled = false
+    private var isObservingEnabled = false
         set(value) {
             if (field == value) return
             field = value
