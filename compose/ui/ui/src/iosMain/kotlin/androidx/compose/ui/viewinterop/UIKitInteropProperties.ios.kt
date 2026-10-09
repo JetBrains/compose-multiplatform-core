@@ -38,6 +38,11 @@ import androidx.compose.ui.semantics.semantics
  * cut-out in place of the interop view.
  * The default value is false.
  *
+ * @property safeAreaInsetsPolicy Determines which safe-area insets the interop component receives.
+ * UIKit computes insets for each [UIView] from its position relative to unsafe screen areas. Some
+ * native components consume those insets during their own layout to keep their content in the safe
+ * area, which can change their visual placement when Compose moves or clips an interop view.
+ *
  * If this Composable is within a modifier chain that merges the semantics of its children (such as
  * `Modifier.clickable`), the merged subtree data will be ignored in favor of the native
  * UIAccessibility resolution for the interop view. For example, Compose Button containing
@@ -65,6 +70,8 @@ class UIKitInteropProperties @ExperimentalComposeUiApi constructor(
     val interactionMode: UIKitInteropInteractionMode? = UIKitInteropInteractionMode.Cooperative(),
     val isNativeAccessibilityEnabled: Boolean = false,
     @property:ExperimentalComposeUiApi val placedAsOverlay: Boolean = false,
+    @property:ExperimentalComposeUiApi val safeAreaInsetsPolicy: UIKitInteropSafeAreaInsetsPolicy =
+        UIKitInteropSafeAreaInsetsPolicy.Automatic,
 ) {
     /**
      * Indicates whether the user can interact with the interop component.
@@ -88,6 +95,7 @@ class UIKitInteropProperties @ExperimentalComposeUiApi constructor(
         interactionMode = interactionMode,
         isNativeAccessibilityEnabled,
         placedAsOverlay = false,
+        safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Automatic,
     )
 
     /**
@@ -105,6 +113,7 @@ class UIKitInteropProperties @ExperimentalComposeUiApi constructor(
         interactionMode = if (isInteractive) UIKitInteropInteractionMode.Cooperative() else null,
         isNativeAccessibilityEnabled,
         placedAsOverlay = false,
+        safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Automatic,
     )
 
     internal companion object {
@@ -123,6 +132,7 @@ class UIKitInteropProperties @ExperimentalComposeUiApi constructor(
         if (interactionMode != other.interactionMode) return false
         if (isNativeAccessibilityEnabled != other.isNativeAccessibilityEnabled) return false
         if (placedAsOverlay != other.placedAsOverlay) return false
+        if (safeAreaInsetsPolicy != other.safeAreaInsetsPolicy) return false
 
         return true
     }
@@ -131,6 +141,7 @@ class UIKitInteropProperties @ExperimentalComposeUiApi constructor(
         var result = interactionMode.hashCode()
         result = 31 * result + isNativeAccessibilityEnabled.hashCode()
         result = 31 * result + placedAsOverlay.hashCode()
+        result = 31 * result + safeAreaInsetsPolicy.hashCode()
         return result
     }
 }

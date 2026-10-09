@@ -31,3 +31,15 @@
 }
 
 @end
+
+@implementation CMPInteropHostView
+
+- (UIEdgeInsets)safeAreaInsets {
+    return self.safeAreaInsetsOverride;
+}
+
+- (UIEdgeInsets)superSafeAreaInsets {
+    return [super safeAreaInsets];
+}
+
+@end

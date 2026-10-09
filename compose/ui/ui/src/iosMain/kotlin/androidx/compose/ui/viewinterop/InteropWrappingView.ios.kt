@@ -58,6 +58,8 @@ internal class InteropWrappingView(
 ) : CMPInteropWrappingView(frame = CGRectZero.readValue()) {
     var actualAccessibilityContainer: Any? = null
     var isAccessibilityFocusable: () -> Boolean = { true }
+    var onDidMoveToWindow: () -> Unit = {}
+    var onSafeAreaInsetsChanged: () -> Unit = {}
 
     var interactionMode: UIKitInteropInteractionMode? = interactionMode
         set(value) {
@@ -69,6 +71,16 @@ internal class InteropWrappingView(
     init {
         userInteractionEnabled = interactionMode != null
         attachedCompositionContext = compositionContext
+    }
+
+    override fun didMoveToWindow() {
+        super.didMoveToWindow()
+        onDidMoveToWindow()
+    }
+
+    override fun safeAreaInsetsDidChange() {
+        super.safeAreaInsetsDidChange()
+        onSafeAreaInsetsChanged()
     }
 
     private fun updateAccessibilityElements() {
