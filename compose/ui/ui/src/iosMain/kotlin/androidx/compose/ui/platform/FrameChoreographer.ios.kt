@@ -187,14 +187,29 @@ internal class FrameChoreographer private constructor(
         displayLinkFrameRate.voteFrameRate(frameRate, frameRateCategory)
     }
 
-    private var isPerformingFrame = false
-    fun performFrameIfNeeded() {
-        if (isPerformingFrame) return
-        isPerformingFrame = true
+    fun performOutsideRecomposerFrame(action: () -> Unit) {
+        if (isPerformingRecomposerFrame) {
+            pendingOutsideRecomposerFrameActions.add(action)
+        } else {
+            action()
+        }
+    }
+
+    private var pendingOutsideRecomposerFrameActions = mutableListOf<() -> Unit>()
+
+    private var isPerformingRecomposerFrame = false
+    fun performRecomposerFrameIfNeeded() {
+        if (isPerformingRecomposerFrame) return
+        isPerformingRecomposerFrame = true
         try {
             frameRecomposer.performFrame(displayLink.targetTimestamp.toNanoSeconds())
         } finally {
-            isPerformingFrame = false
+            isPerformingRecomposerFrame = false
+            if (pendingOutsideRecomposerFrameActions.isNotEmpty()) {
+                val actions = pendingOutsideRecomposerFrameActions.toList()
+                pendingOutsideRecomposerFrameActions.clear()
+                actions.forEach { it() }
+            }
         }
     }
 
@@ -268,7 +283,7 @@ internal class FrameChoreographer private constructor(
         advancedFramesCount--
 
         displayLinkFrameRate.updateFrameRateIfNeeded()
-        performFrameIfNeeded()
+        performRecomposerFrameIfNeeded()
         if (advancedFramesCount <= 0 && ongoingActivitiesCount == 0) {
             advancedFramesCount = 0
             displayLink.paused = true

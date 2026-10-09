@@ -214,8 +214,9 @@ internal class ComposeContainer(
         windowContext.updateWindowContainerSize()
 
         mediator?.updateKeyboardOverlap()
-        mediator?.measureAndLayout()
-        sceneSizing.onLayout()
+        mediator?.requestMeasureAndLayout {
+            sceneSizing.onLayout()
+        }
     }
 
     private fun onTraitCollectionDidChange() {
