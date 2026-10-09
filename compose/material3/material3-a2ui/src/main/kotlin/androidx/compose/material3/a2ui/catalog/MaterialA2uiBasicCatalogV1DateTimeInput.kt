@@ -52,9 +52,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.intl.Locale
+import androidx.compose.ui.semantics.error
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastFirstOrNull
 import java.text.DateFormat
 import java.util.Calendar
 import java.util.Date
@@ -75,14 +78,18 @@ internal object MaterialA2uiBasicCatalogV1DateTimeInput : A2uiBasicCatalogV1.Dat
         min: Long?,
         max: Long?,
         label: String?,
+        accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
+        checks: List<A2uiBasicCatalogV1.CheckRule>,
         modifier: Modifier,
     ) {
         val isEnabled = onValueChange != null
+        val failedCheck = checks.fastFirstOrNull { !it.condition }
+        val errorMessage = failedCheck?.message
 
         var showStartDateDialog by rememberSaveable { mutableStateOf(false) }
         var showStartTimeDialog by rememberSaveable { mutableStateOf(false) }
 
-        val currentLocale = Locale.current.platformLocale
+        val currentLocale = LocalLocale.current.platformLocale
 
         val selectDateText = stringResource(R.string.select_date)
         val startDateText =
@@ -150,7 +157,7 @@ internal object MaterialA2uiBasicCatalogV1DateTimeInput : A2uiBasicCatalogV1.Dat
             }
         }
 
-        Column(modifier = modifier.fillMaxWidth()) {
+        Column(modifier = modifier.fillMaxWidth().a2uiAccessibility(accessibility)) {
             if (label != null) {
                 Text(
                     modifier = Modifier.padding(bottom = 4.dp),
@@ -158,6 +165,13 @@ internal object MaterialA2uiBasicCatalogV1DateTimeInput : A2uiBasicCatalogV1.Dat
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
+
+            val chipModifier =
+                if (!errorMessage.isNullOrBlank()) {
+                    Modifier.semantics { error(errorMessage) }
+                } else {
+                    Modifier
+                }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -168,6 +182,7 @@ internal object MaterialA2uiBasicCatalogV1DateTimeInput : A2uiBasicCatalogV1.Dat
                         onClick = { showStartDateDialog = true },
                         enabled = isEnabled,
                         label = { Text(startDateText) },
+                        modifier = chipModifier,
                     )
                 }
                 if (enableDate && enableTime) {
@@ -178,8 +193,18 @@ internal object MaterialA2uiBasicCatalogV1DateTimeInput : A2uiBasicCatalogV1.Dat
                         onClick = { showStartTimeDialog = true },
                         enabled = isEnabled,
                         label = { Text(startTimeText) },
+                        modifier = chipModifier,
                     )
                 }
+            }
+
+            if (!errorMessage.isNullOrBlank()) {
+                Text(
+                    text = errorMessage,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = DateTimeInputErrorModifier,
+                )
             }
         }
 
@@ -322,3 +347,5 @@ private fun TimeInputDialog(
         TimePicker(state = timePickerState)
     }
 }
+
+private val DateTimeInputErrorModifier = Modifier.padding(top = 4.dp)

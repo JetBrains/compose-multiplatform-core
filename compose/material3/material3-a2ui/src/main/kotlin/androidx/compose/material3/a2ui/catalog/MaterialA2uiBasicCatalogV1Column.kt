@@ -44,6 +44,7 @@ internal object MaterialA2uiBasicCatalogV1Column : A2uiBasicCatalogV1.Column {
         children: List<A2uiComponentReference>,
         justify: A2uiBasicCatalogV1.Column.Justify,
         align: A2uiBasicCatalogV1.Column.Align,
+        accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
         modifier: Modifier,
     ) {
         val verticalArrangement =
@@ -70,7 +71,10 @@ internal object MaterialA2uiBasicCatalogV1Column : A2uiBasicCatalogV1.Column {
 
         val isStretchAlignment = align == A2uiBasicCatalogV1.Column.Align.Stretch
         val isStretchJustify = justify == A2uiBasicCatalogV1.Column.Justify.Stretch
-        val columnModifier = if (isStretchAlignment) modifier.fillMaxWidth() else modifier
+        val columnModifier =
+            (if (isStretchAlignment) modifier.fillMaxWidth() else modifier).a2uiAccessibility(
+                accessibility
+            )
         val baseChildModifier = if (isStretchAlignment) Modifier.fillMaxWidth() else Modifier
 
         Column(

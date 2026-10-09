@@ -21,19 +21,38 @@ plugins {
     id("com.android.application")
 }
 
+def jetbrainsComposeExcludeGroups = [
+    "org.jetbrains.androidx.lifecycle",
+    "org.jetbrains.compose.animation",
+    "org.jetbrains.compose.annotation-internal",
+    "org.jetbrains.compose.collection-internal",
+    "org.jetbrains.compose.foundation",
+    "org.jetbrains.compose.runtime",
+    "org.jetbrains.compose.ui",
+    "org.jetbrains.skiko"
+]
+
 dependencies {
     implementation(project(":a2ui:a2ui-model"))
     implementation(project(":a2ui:compose:compose-runtime"))
     implementation(project(":a2ui:compose:compose-ui"))
-    implementation(project(":compose:foundation:foundation"))
-    implementation(project(":compose:material3:material3"))
     implementation(project(":compose:material3:material3-a2ui"))
-    implementation(project(":compose:runtime:runtime"))
-    implementation(project(":compose:ui:ui"))
+
+    implementation("androidx.compose.foundation:foundation:1.13.0-alpha03")
+    implementation("androidx.compose.material3:material3:1.5.0-alpha28")
+    implementation("androidx.compose.runtime:runtime:1.13.0-alpha03")
+    implementation("androidx.compose.ui:ui:1.13.0-alpha03")
 
     implementation("androidx.activity:activity:1.12.1")
     implementation("androidx.activity:activity-compose:1.12.1")
-    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.core:core-ktx:1.17.0")
+
+    implementation("io.coil-kt.coil3:coil-compose-android:3.1.0") {
+        jetbrainsComposeExcludeGroups.each { group ->
+            exclude group: group
+        }
+    }
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.1.0")
 }
 
 android {
