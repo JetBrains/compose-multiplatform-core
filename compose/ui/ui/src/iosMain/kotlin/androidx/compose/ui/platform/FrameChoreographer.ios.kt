@@ -189,13 +189,13 @@ internal class FrameChoreographer private constructor(
 
     fun performOutsideRecomposerFrame(action: () -> Unit) {
         if (isPerformingRecomposerFrame) {
-            pendingOutsideFrameActions.add(action)
+            pendingOutsideRecomposerFrameActions.add(action)
         } else {
             action()
         }
     }
 
-    private var pendingOutsideFrameActions = mutableListOf<() -> Unit>()
+    private var pendingOutsideRecomposerFrameActions = mutableListOf<() -> Unit>()
 
     private var isPerformingRecomposerFrame = false
     fun performRecomposerFrameIfNeeded() {
@@ -205,9 +205,9 @@ internal class FrameChoreographer private constructor(
             frameRecomposer.performFrame(displayLink.targetTimestamp.toNanoSeconds())
         } finally {
             isPerformingRecomposerFrame = false
-            if (pendingOutsideFrameActions.isNotEmpty()) {
-                val actions = pendingOutsideFrameActions.toList()
-                pendingOutsideFrameActions.clear()
+            if (pendingOutsideRecomposerFrameActions.isNotEmpty()) {
+                val actions = pendingOutsideRecomposerFrameActions.toList()
+                pendingOutsideRecomposerFrameActions.clear()
                 actions.forEach { it() }
             }
         }
