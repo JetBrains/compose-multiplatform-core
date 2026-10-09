@@ -214,7 +214,7 @@ internal class ComposeContainer(
         windowContext.updateWindowContainerSize()
 
         mediator?.updateKeyboardOverlap()
-        mediator?.measureAndLayout {
+        mediator?.requestMeasureAndLayout {
             sceneSizing.onLayout()
         }
     }

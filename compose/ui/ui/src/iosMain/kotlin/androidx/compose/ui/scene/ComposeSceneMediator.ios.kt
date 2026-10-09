@@ -456,9 +456,7 @@ internal class ComposeSceneMediator(
         TextInputService(
             updateView = {
                 frameChoreographer.performRecomposerFrameIfNeeded()
-                frameChoreographer.performOutsideRecomposerFrame {
-                    scene.measureAndLayout()
-                }
+                requestMeasureAndLayout()
                 CATransaction.flush()
             },
             view = _overlayView,
@@ -741,7 +739,7 @@ internal class ComposeSceneMediator(
         }
     }
 
-    fun measureAndLayout(completion: () -> Unit) {
+    fun requestMeasureAndLayout(completion: () -> Unit = {}) {
         frameChoreographer.performOutsideRecomposerFrame {
             scene.measureAndLayout()
             completion()

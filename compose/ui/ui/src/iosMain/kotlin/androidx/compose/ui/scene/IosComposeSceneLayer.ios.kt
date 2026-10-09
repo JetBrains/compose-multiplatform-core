@@ -179,7 +179,7 @@ internal class IosComposeSceneLayer(
         navigationEventInput.onDidMoveToWindow(window, interactionView)
     }
 
-    fun doMeasureAndLayout() = mediator.measureAndLayout {}
+    fun doMeasureAndLayout() = mediator.requestMeasureAndLayout()
 
     fun draw(canvas: Canvas) {
         if (scrimColor != null) {
