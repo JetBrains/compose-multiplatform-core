@@ -41,11 +41,11 @@ import platform.UIKit.UIView
  * UIKit-side layout implementation for a Compose interop element.
  *
  * **Hierarchy**:
- *  - [interopWrappingView] is the clipping viewport (clipsToBounds = true on [InteropWrappingView]).
- *    It is positioned by setting its frame to the *clipped* rect from Compose. [interopWrappingView] is placed to hierarchy
+ *  - [group] is the clipping viewport (clipsToBounds = true on [InteropWrappingView]).
+ *    It is positioned by setting its frame to the *clipped* rect from Compose. [group] is placed to hierarchy
  *    in [InteropViewHolder.insertInteropView].
  *  - [userComponentHostView] is the "unclipped content container". It is positioned by setting
- *    its frame to the *unclipped* rect relative to [interopWrappingView].
+ *    its frame to the *unclipped* rect relative to [group].
  *  - [userComponent] is pinned to the edges of [userComponentHostView] with [NSLayoutConstraint]s.
  *
  * This design allows the interop view to keep a stable window position while the visible area is
@@ -53,14 +53,14 @@ import platform.UIKit.UIView
  * for scrolling/positioning.
  *
  * **Important**:
- *  - [interopWrappingView] and [userComponentHostView] are frame driven (translatesAutoresizingMaskIntoConstraints = true).
+ *  - [group] and [userComponentHostView] are frame driven (translatesAutoresizingMaskIntoConstraints = true).
  *  - [userComponent] is Auto Layout–driven inside the host (translatesAutoresizingMaskIntoConstraints = false).
  *
- * @param interopWrappingView clipping viewport that wraps the [userComponent]
+ * @param group clipping viewport that wraps the [userComponent]
  * @param userComponent actual UIKit interop view being embedded
  */
 internal class InteropElementLayout(
-    private val interopWrappingView: InteropWrappingView,
+    private val group: InteropWrappingView,
     private val userComponent: UIView,
 ) {
     /**
@@ -75,8 +75,8 @@ internal class InteropElementLayout(
     private var userComponentHostSafeAreaInsets: UserComponentHostSafeAreaInsets? = null
 
     init {
-        interopWrappingView.onDidMoveToWindow = { userComponentHostSafeAreaInsets?.update() }
-        interopWrappingView.onSafeAreaInsetsChanged = { userComponentHostSafeAreaInsets?.update() }
+        group.onDidMoveToWindow = { userComponentHostSafeAreaInsets?.update() }
+        group.onSafeAreaInsetsChanged = { userComponentHostSafeAreaInsets?.update() }
     }
 
     val measurePolicy = object : MeasurePolicy {
@@ -110,10 +110,10 @@ internal class InteropElementLayout(
     }
 
     /**
-     * Attaches [userComponent] into [interopWrappingView] once and installs edge pinning constraints.
+     * Attaches [userComponent] into [group] once and installs edge pinning constraints.
      *
      * Note: takes ownership of `translatesAutoresizingMaskIntoConstraints`:
-     *  - [interopWrappingView] and [userComponentHostView] are frame-driven
+     *  - [group] and [userComponentHostView] are frame-driven
      *  - [userComponent] is Auto Layout–driven inside the host
      */
     fun attachUserComponent() {
@@ -121,9 +121,9 @@ internal class InteropElementLayout(
         if (userComponent.superview == userComponentHostView) return
 
         userComponentHostView.addSubview(userComponent)
-        interopWrappingView.addSubview(userComponentHostView)
+        group.addSubview(userComponentHostView)
 
-        interopWrappingView.translatesAutoresizingMaskIntoConstraints = true
+        group.translatesAutoresizingMaskIntoConstraints = true
         userComponent.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activateConstraints(
@@ -140,7 +140,7 @@ internal class InteropElementLayout(
         groupFrame: CValue<CGRect>?,
         userComponentFrame: CValue<CGRect>?,
     ) {
-        groupFrame?.let(interopWrappingView::setFrame)
+        groupFrame?.let(group::setFrame)
         userComponentFrame?.let(userComponentHostView::setFrame)
         userComponentHostSafeAreaInsets?.update()
     }
