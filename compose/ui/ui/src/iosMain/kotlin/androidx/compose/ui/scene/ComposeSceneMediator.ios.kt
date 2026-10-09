@@ -455,8 +455,8 @@ internal class ComposeSceneMediator(
     private val textInputService =
         TextInputService(
             updateView = {
-                frameChoreographer.performFrameIfNeeded()
-                frameChoreographer.performOutsideFrameUpdate {
+                frameChoreographer.performRecomposerFrameIfNeeded()
+                frameChoreographer.performOutsideRecomposerFrame {
                     scene.measureAndLayout()
                 }
                 CATransaction.flush()
@@ -741,8 +741,11 @@ internal class ComposeSceneMediator(
         }
     }
 
-    fun measureAndLayout() {
-        scene.measureAndLayout()
+    fun measureAndLayout(completion: () -> Unit) {
+        frameChoreographer.performOutsideRecomposerFrame {
+            scene.measureAndLayout()
+            completion()
+        }
     }
 
     fun updateKeyboardOverlap() {
