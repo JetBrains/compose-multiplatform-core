@@ -30,6 +30,7 @@ import android.graphics.Rect
 import android.hardware.input.InputManager
 import android.os.Build
 import android.os.Build.VERSION.SDK_INT
+import android.os.Build.VERSION_CODES.BAKLAVA
 import android.os.Build.VERSION_CODES.CINNAMON_BUN
 import android.os.Build.VERSION_CODES.M
 import android.os.Build.VERSION_CODES.N
@@ -37,6 +38,7 @@ import android.os.Build.VERSION_CODES.O
 import android.os.Build.VERSION_CODES.Q
 import android.os.Build.VERSION_CODES.S
 import android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM
+import android.os.Build.VERSION_CODES_FULL.BAKLAVA_1
 import android.os.Build.VERSION_CODES_FULL.CINNAMON_BUN_1
 import android.os.Handler
 import android.os.Looper
@@ -175,7 +177,6 @@ import androidx.compose.ui.input.pointer.ProcessResult
 import androidx.compose.ui.input.rotary.RotaryInputModifierNode
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.internal.checkPreconditionNotNull
-import androidx.compose.ui.internal.requirePrecondition
 import androidx.compose.ui.layout.InsetsListener
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.Measurable
@@ -301,28 +302,28 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
     FocusListener,
     ExecuteDelayed {
 
-    private var _composeViewContext by mutableStateOf(composeViewContext)
-    var composeViewContext: ComposeViewContext
-        get() = _composeViewContext
-        set(value) {
-            requirePrecondition(
-                coroutineContext === value.compositionContext.effectCoroutineContext ||
-                    root.children.isEmpty() // composition has likely been disposed
-            ) {
-                "Changing ComposeViewContext cannot change the coroutine context without disposing of the composition first."
-            }
-            val currentComposeViewContext = Snapshot.withoutReadObservation { _composeViewContext }
-            if (value == currentComposeViewContext) {
+    var composeViewContext: ComposeViewContext = composeViewContext
+        set(newContext) {
+            val current = field
+            if (newContext === current) {
                 return
             }
             if (isAttachedToWindow) {
-                currentComposeViewContext.decrementViewCount()
-                value.incrementViewCount()
+                current.decrementViewCount()
+                newContext.incrementViewCount()
+                if (newContext.lifecycleOwner !== current.lifecycleOwner) {
+                    removeLifecycleObservers(current.lifecycleOwner)
+                    addLifecycleObservers(newContext.lifecycleOwner)
+                }
             }
-            _composeViewContext = value
-            coroutineContext = value.compositionContext.effectCoroutineContext
+            field = newContext
+            coroutineContext = newContext.compositionContext.effectCoroutineContext
+            frameEndScheduler =
+                LifecycleRetainedValuesStoreOwner.FrameEndScheduler(
+                    newContext.compositionContext::scheduleFrameEndCallback
+                )
             @OptIn(ExperimentalMediaQueryApi::class)
-            _uiMediaScope?._windowInfo = value.windowInfo
+            _uiMediaScope?._windowInfo = newContext.windowInfo
         }
 
     /**
@@ -733,6 +734,15 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
     override val semanticsOwner: SemanticsOwner =
         SemanticsOwner(root, EmptySemanticsModifier(), layoutNodes)
     private val composeAccessibilityDelegate = AndroidComposeViewAccessibilityDelegateCompat(this)
+
+    /**
+     * Reflects the accessibility delegate's effective touch exploration state, including test
+     * overrides
+     * (`AndroidComposeViewAccessibilityDelegateCompat.accessibilityForceEnabledForTesting`).
+     */
+    internal val isTouchExplorationEnabled: Boolean
+        get() = composeAccessibilityDelegate.isTouchExplorationEnabled
+
     internal var contentCaptureManager =
         AndroidContentCaptureManager(
             view = this,
@@ -751,6 +761,9 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
      * achieving certain visual effects like masks and blurs
      */
     override val graphicsContext = GraphicsContext(this)
+
+    override val graphicsResourceCache: GraphicsResourceCache
+        get() = composeViewContext.graphicsResourceCache
 
     // Used by components that want to provide autofill semantic information.
     // TODO: Replace with SemanticsTree: Temporary hack until we have a semantics tree implemented.
@@ -777,24 +790,8 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
     var configuration: Configuration by
         mutableStateOf(Configuration(context.resources.configuration))
 
-    override val localeList: LocaleList by derivedStateOf {
-        val configurationLocaleListCompat = ConfigurationCompat.getLocales(configuration)
-        val guaranteedNonEmptyLocaleListCompat =
-            if (configurationLocaleListCompat.isEmpty) {
-                // The Configuration doesn't have a locale. This is weird, since we should have a
-                // fully defined Configuration in a fully defined environment, but some
-                // environments like previews may not have one. Instead of crashing, pull a
-                // guaranteed non-empty list.
-                LocaleListCompat.getDefault()
-            } else {
-                configurationLocaleListCompat
-            }
-        LocaleList(
-            List(guaranteedNonEmptyLocaleListCompat.size()) {
-                Locale(guaranteedNonEmptyLocaleListCompat[it]!!)
-            }
-        )
-    }
+    override var localeList: LocaleList by mutableStateOf(getLocaleList(configuration))
+        private set
 
     // Used as a CompositionLocal for performing autofill.
     override val autofill: AndroidAutofill? =
@@ -2419,6 +2416,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
     }
 
     override fun onLayoutNodeDeactivated(layoutNode: LayoutNode) {
+        measureAndLayoutDelegate.onNodeDeactivated(layoutNode)
         if (autofillSupported()) {
             autofillManager?.onLayoutNodeDeactivated(layoutNode)
         }
@@ -2626,9 +2624,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             onReadyForComposition = null
         }
 
-        val lifecycle = composeViewContext.lifecycleOwner.lifecycle
-        lifecycle.addObserver(this)
-        lifecycle.addObserver(contentCaptureManager)
+        addLifecycleObservers(composeViewContext.lifecycleOwner)
         inputModeManager.inputMode = if (isInTouchMode) Touch else Keyboard
         viewTreeObserver.addOnGlobalLayoutListener(this)
         viewTreeObserver.addOnScrollChangedListener(this)
@@ -2671,6 +2667,18 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         return retainedValuesStoreEntry.retainedValuesStore
     }
 
+    private fun addLifecycleObservers(owner: LifecycleOwner) {
+        val lifecycle = owner.lifecycle
+        lifecycle.addObserver(this)
+        lifecycle.addObserver(contentCaptureManager)
+    }
+
+    private fun removeLifecycleObservers(owner: LifecycleOwner) {
+        val lifecycle = owner.lifecycle
+        lifecycle.removeObserver(contentCaptureManager)
+        lifecycle.removeObserver(this)
+    }
+
     @OptIn(ExperimentalComposeUiApi::class, ExperimentalMediaQueryApi::class)
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
@@ -2690,9 +2698,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         removeNotificationForSysPropsChange(this)
         composeViewContext.decrementViewCount()
         snapshotObserver.stopObserving()
-        val lifecycle = composeViewContext.lifecycleOwner.lifecycle
-        lifecycle.removeObserver(contentCaptureManager)
-        lifecycle.removeObserver(this)
+        removeLifecycleObservers(composeViewContext.lifecycleOwner)
         viewTreeObserver.removeOnGlobalLayoutListener(this)
         viewTreeObserver.removeOnScrollChangedListener(this)
         viewTreeObserver.removeOnTouchModeChangeListener(this)
@@ -3255,6 +3261,15 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         if (pointerCount == 0) {
             return
         }
+        val isHover =
+            action == ACTION_HOVER_ENTER ||
+                action == ACTION_HOVER_MOVE ||
+                action == ACTION_HOVER_EXIT
+        val isTrackpadPanHover =
+            ComposeUiFlags.isTrackpadPanHoverFixEnabled &&
+                isHover &&
+                SDK_INT >= 34 &&
+                motionEvent.classification == MotionEvent.CLASSIFICATION_TWO_FINGER_SWIPE
         val pointerProperties = Array(pointerCount) { MotionEvent.PointerProperties() }
         val pointerCoords = Array(pointerCount) { MotionEvent.PointerCoords() }
         for (i in 0 until pointerCount) {
@@ -3266,6 +3281,10 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             val screenPosition = localToScreen(localPosition)
             coords.x = screenPosition.x
             coords.y = screenPosition.y
+            if (isTrackpadPanHover) {
+                coords.setAxisValue(MotionEvent.AXIS_GESTURE_SCROLL_X_DISTANCE, 0f)
+                coords.setAxisValue(MotionEvent.AXIS_GESTURE_SCROLL_Y_DISTANCE, 0f)
+            }
         }
         val buttonState = if (forceHover) 0 else motionEvent.buttonState
 
@@ -3279,11 +3298,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         // layout changes) should not inherit gesture classifications like trackpad pan. Doing so
         // would incorrectly trigger pan gestures or suppress normal hover state updates.
         val classification =
-            if (
-                action == ACTION_HOVER_ENTER ||
-                    action == ACTION_HOVER_MOVE ||
-                    action == ACTION_HOVER_EXIT
-            ) {
+            if (isHover) {
                 MotionEvent.CLASSIFICATION_NONE
             } else if (SDK_INT >= 29) {
                 motionEvent.classification
@@ -3512,6 +3527,31 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         ) {
             density = Density(context.createConfigurationContext(newConfig))
         }
+        val newLocales = ConfigurationCompat.getLocales(newConfig)
+        if (ConfigurationCompat.getLocales(oldConfig) != newLocales) {
+            localeList = getLocaleList(newLocales)
+        }
+    }
+
+    private fun getLocaleList(configuration: Configuration): LocaleList =
+        getLocaleList(ConfigurationCompat.getLocales(configuration))
+
+    private fun getLocaleList(configurationLocaleListCompat: LocaleListCompat): LocaleList {
+        val guaranteedNonEmptyLocaleListCompat =
+            if (configurationLocaleListCompat.isEmpty) {
+                // The Configuration doesn't have a locale. This is weird, since we should have a
+                // fully defined Configuration in a fully defined environment, but some
+                // environments like previews may not have one. Instead of crashing, pull a
+                // guaranteed non-empty list.
+                LocaleListCompat.getDefault()
+            } else {
+                configurationLocaleListCompat
+            }
+        return LocaleList(
+            List(guaranteedNonEmptyLocaleListCompat.size()) {
+                Locale(guaranteedNonEmptyLocaleListCompat[it]!!)
+            }
+        )
     }
 
     override fun onRtlPropertiesChanged(layoutDirection: Int) {
@@ -3739,10 +3779,12 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     override fun dispatchOnScrollChanged(delta: Offset) {
-        // TODO(levima) b/402138549: Use viewTreeObserver.dispatchOnScrollChanged()
-        dispatchOnScrollChanged(viewTreeObserver)
+        if (SDK_INT >= BAKLAVA && Build.VERSION.SDK_INT_FULL >= BAKLAVA_1) {
+            Api36_1Impl.dispatchOnScrollChanged(viewTreeObserver)
+        } else {
+            Api21Impl.dispatchOnScrollChanged(viewTreeObserver)
+        }
     }
 
     // executed when the layout pass has been finished. as a result of it our view could be
@@ -3795,7 +3837,6 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         private var addChangeCallbackMethod: Method? = null
         private val composeViews = mutableObjectListOf<AndroidComposeView>()
         private var systemPropertiesChangedRunnable: Runnable? = null
-        private var dispatchOnScrollChangedMethod: Method? = null
         private var getAccessibilityViewIdMethod: Method? = null
         private var findViewByAccessibilityIdTraversalMethod: Method? = null
 
@@ -3807,12 +3848,10 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             if (SDK_INT < Q) {
                 val getAccessibilityViewIdMethod =
                     getAccessibilityViewIdMethod
-                        ?: Class.forName("android.view.View")
-                            .getDeclaredMethod("getAccessibilityViewId")
-                            .also {
-                                getAccessibilityViewIdMethod = it
-                                it.isAccessible = true
-                            }
+                        ?: View::class.java.getDeclaredMethod("getAccessibilityViewId").also {
+                            getAccessibilityViewIdMethod = it
+                            it.isAccessible = true
+                        }
                 if (getAccessibilityViewIdMethod.invoke(currentView) == accessibilityId) {
                     return currentView
                 }
@@ -3847,12 +3886,16 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
                 return if (SDK_INT >= Q) {
                     val findViewByAccessibilityIdTraversalMethod =
                         findViewByAccessibilityIdTraversalMethod
-                            ?: Class.forName("android.view.View")
+                            ?: View::class
+                                .java
                                 .getDeclaredMethod(
                                     "findViewByAccessibilityIdTraversal",
                                     Int::class.java,
                                 )
-                    findViewByAccessibilityIdTraversalMethod.isAccessible = true
+                                .also {
+                                    findViewByAccessibilityIdTraversalMethod = it
+                                    it.isAccessible = true
+                                }
                     findViewByAccessibilityIdTraversalMethod.invoke(view, accessibilityId) as? View
                 } else {
                     findViewByAccessibilityIdRootedAtCurrentView(accessibilityId, view)
@@ -3936,23 +3979,6 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             if (SDK_INT > 28) {
                 synchronized(composeViews) { composeViews -= composeView }
             }
-        }
-
-        // Back compat implementation
-        @SuppressLint(
-            "BanUncheckedReflection",
-            "PrivateApi",
-        ) // suppress for now, the API is available in MIN_SDK
-        fun dispatchOnScrollChanged(viewTreeObserver: ViewTreeObserver) {
-            try {
-                if (dispatchOnScrollChangedMethod == null) {
-                    dispatchOnScrollChangedMethod =
-                        viewTreeObserver.javaClass
-                            .getDeclaredMethod("dispatchOnScrollChanged")
-                            .also { it.isAccessible = true }
-                }
-                dispatchOnScrollChangedMethod?.invoke(viewTreeObserver)
-            } catch (_: Exception) {}
         }
     }
 
@@ -4252,8 +4278,10 @@ private fun dot(m1: Matrix, row: Int, m2: Matrix, column: Int): Float {
 }
 
 // --- Top-Level SDK Implementation Helper Objects ---
-
 private object Api21Impl {
+
+    private var dispatchOnScrollChangedMethod: Method? = null
+
     @JvmStatic
     @DoNotInline
     fun calculateMatrixToWindow(
@@ -4297,6 +4325,19 @@ private object Api21Impl {
     private fun Matrix.preConcat(other: android.graphics.Matrix, tmpMatrix: Matrix) {
         tmpMatrix.setFrom(other)
         preTransform(tmpMatrix)
+    }
+
+    @SuppressLint("PrivateApi", "BanUncheckedReflection")
+    fun dispatchOnScrollChanged(viewTreeObserver: ViewTreeObserver) {
+        try {
+            if (dispatchOnScrollChangedMethod == null) {
+                dispatchOnScrollChangedMethod =
+                    viewTreeObserver.javaClass.getDeclaredMethod("dispatchOnScrollChanged").also {
+                        it.isAccessible = true
+                    }
+            }
+            dispatchOnScrollChangedMethod?.invoke(viewTreeObserver)
+        } catch (_: Exception) {}
     }
 }
 
@@ -4514,6 +4555,15 @@ private object Api35Impl {
     @DoNotInline
     fun setRequestedFrameRate(view: View, frameRate: Float) {
         view.requestedFrameRate = frameRate
+    }
+}
+
+@RequiresApi(BAKLAVA_1)
+private object Api36_1Impl {
+    @JvmStatic
+    @DoNotInline
+    fun dispatchOnScrollChanged(viewTreeObserver: ViewTreeObserver) {
+        viewTreeObserver.dispatchOnScrollChanged()
     }
 }
 

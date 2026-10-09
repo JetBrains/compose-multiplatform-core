@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+@file:Suppress("INVISIBLE_MEMBER")
 
 package androidx.compose.ui.benchmark
 
@@ -97,7 +97,7 @@ class DisposableSaveableStateRegistryBenchmark {
                 measureRepeated {
                     val serializedState =
                         bundle.getParcelable<Parcelable>("values") as? ParcelableMapHolder
-                    serializedState
+                    @Suppress("UNUSED_EXPRESSION") serializedState
                 }
             }
         }

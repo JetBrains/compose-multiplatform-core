@@ -1244,22 +1244,30 @@ class SnapshotStateObserverTestsCommon {
     }
 
     @Test
-    fun computedStateReentrant() = runSimpleTest { observer, state ->
-        val initialRead = mutableStateOf(true)
-        val computedStates =
-            Array(3) {
-                computedStateOf {
-                    if (state.value >= 2) return@computedStateOf
-                    if (initialRead.value) return@computedStateOf
-                    if (state.value < 2) {
-                        state.value++
-                    }
-                }
+    fun computedState_doesNotLeakDependenciesToScope_whenDependenciesChangeWithoutValueChanged() {
+        var changes = 0
+        val changeBlock: (Any) -> Unit = { changes++ }
+
+        runSimpleTest { stateObserver, _ ->
+            var a by mutableIntStateOf(1)
+            val computed = computedStateOf { a > 0 }
+            val scope = ValueWrapper("scope")
+
+            Snapshot.notifyObjectsInitialized()
+
+            stateObserver.observeReads(scope, changeBlock) {
+                computed.value
             }
+            assertEquals(0, changes)
 
-        observer.observeReads(Unit, {}) { computedStates.forEach { it.value } }
+            a = 2
+            Snapshot.sendApplyNotifications()
+            assertEquals(0, changes)
 
-        initialRead.value = false
+            a = 3
+            Snapshot.sendApplyNotifications()
+            assertEquals(0, changes)
+        }
     }
 
     private fun runSimpleTest(
