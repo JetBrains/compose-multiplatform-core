@@ -35,6 +35,15 @@ internal class ExpireAfterAccessCache<K, V>(
     internal val map = HashMap<K, V>()
     internal val accessTime = LinkedHashMap<K, Long>()
 
+    fun get(key: K): V? {
+        val value = map[key] ?: return null
+        val now = currentNanos()
+        accessTime.remove(key)
+        accessTime[key] = now
+        checkEvicted(now)
+        return value
+    }
+
     inline fun getOrPut(key: K, loader: (K) -> V): V {
         accessTime.remove(key)
         return map.getOrPut(key) {
