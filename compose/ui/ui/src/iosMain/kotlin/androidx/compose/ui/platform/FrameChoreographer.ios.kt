@@ -188,7 +188,7 @@ internal class FrameChoreographer private constructor(
     }
 
     fun performOutsideFrameUpdate(action: () -> Unit) {
-        if (false) {
+        if (isPerformingFrame) {
             pendingOutsideFrameActions.add(action)
         } else {
             action()
