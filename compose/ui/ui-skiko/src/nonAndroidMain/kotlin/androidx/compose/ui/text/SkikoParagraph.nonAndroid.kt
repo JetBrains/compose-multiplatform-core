@@ -33,7 +33,6 @@ import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.skiaCanvas
 import androidx.compose.ui.graphics.toComposeRect
-import androidx.compose.ui.text.PlatformParagraph
 import androidx.compose.ui.text.platform.SkikoParagraphIntrinsics
 import androidx.compose.ui.text.platform.cursorHorizontalPosition
 import androidx.compose.ui.text.style.LineHeightStyle
@@ -66,6 +65,9 @@ internal class SkikoParagraph(
 
     internal val defaultFont
         get() = layouter.defaultFont
+
+    private val bulletPainter =
+        if (layouter.bullets.isEmpty()) null else SkikoBulletPainter(layouter)
 
     /**
      * Paragraph isn't always immutable, it could be changed via [paint] method without
@@ -560,6 +562,14 @@ internal class SkikoParagraph(
             )
         }
         paragraph.paint(canvas.skiaCanvas, 0.0f, 0.0f)
+        bulletPainter?.paint(
+            canvas = canvas,
+            textDirection = paragraphIntrinsics.textDirection,
+            lineMetricsForOffset = ::lineMetricsForOffset,
+            color = color,
+            brush = null,
+            alpha = 1f
+        )
     }
 
     @ExperimentalTextApi
@@ -584,6 +594,14 @@ internal class SkikoParagraph(
             )
         }
         paragraph.paint(canvas.skiaCanvas, 0.0f, 0.0f)
+        bulletPainter?.paint(
+            canvas = canvas,
+            textDirection = paragraphIntrinsics.textDirection,
+            lineMetricsForOffset = ::lineMetricsForOffset,
+            color = color,
+            brush = null,
+            alpha = 1f
+        )
     }
 
     @ExperimentalTextApi
@@ -613,6 +631,14 @@ internal class SkikoParagraph(
             )
         }
         paragraph.paint(canvas.skiaCanvas, 0.0f, 0.0f)
+        bulletPainter?.paint(
+            canvas = canvas,
+            textDirection = paragraphIntrinsics.textDirection,
+            lineMetricsForOffset = ::lineMetricsForOffset,
+            color = Color.Unspecified,
+            brush = brush,
+            alpha = alpha
+        )
     }
 
     /**
