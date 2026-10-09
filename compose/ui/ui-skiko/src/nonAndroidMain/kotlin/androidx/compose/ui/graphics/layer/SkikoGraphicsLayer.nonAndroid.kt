@@ -44,8 +44,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.toSize
 import org.jetbrains.skia.Paint as SkPaint
 import org.jetbrains.skia.Path as SkPath
-import org.jetbrains.skia.Point
-import org.jetbrains.skia.Rect as SkRect
 import org.jetbrains.skiko.node.RenderNode
 
 @OptIn(InternalComposeUiApi::class)
@@ -304,8 +302,9 @@ internal class SkikoGraphicsLayer(
         }
     }
 
-    private fun updateRenderNodeBounds() {
-        renderNode?.bounds = SkRect.makeXYWH(
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun updateRenderNodeBounds() {
+        renderNode?.setNodeBounds(
             topLeft.x.toFloat() - outsetLeft,
             topLeft.y.toFloat() - outsetTop,
             size.width.toFloat() + outsetLeft + outsetRight,
@@ -313,23 +312,25 @@ internal class SkikoGraphicsLayer(
         )
     }
 
-    private fun updateRenderNodePivot() {
-        val renderNode = renderNode ?: return
-        renderNode.pivot =
-            if (pivotOffset.isUnspecified) {
-                Point(
-                    size.width / 2f + outsetLeft,
-                    size.height / 2f + outsetTop
-                )
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun updateRenderNodePivot() {
+        val isUnspecified = pivotOffset.isUnspecified
+        renderNode?.setNodePivot(
+            if (isUnspecified) {
+                size.width / 2f + outsetLeft
             } else {
-                Point(
-                    pivotOffset.x + outsetLeft,
-                    pivotOffset.y + outsetTop
-                )
+                pivotOffset.x + outsetLeft
+            },
+            if (isUnspecified) {
+                size.height / 2f + outsetTop
+            } else {
+                pivotOffset.y + outsetTop
             }
+        )
     }
 
-    private fun outsetOffset(): Offset = Offset(outsetLeft.toFloat(), outsetTop.toFloat())
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun outsetOffset(): Offset = Offset(outsetLeft.toFloat(), outsetTop.toFloat())
 
     private fun updateLayerProperties() {
         val paint = if (requiresLayer()) {
