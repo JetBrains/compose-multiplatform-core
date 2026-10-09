@@ -1,9 +1,6 @@
 public abstract interface annotation class androidx/compose/material3/adaptive/ExperimentalMaterial3AdaptiveApi : java/lang/annotation/Annotation {
 }
 
-public abstract interface annotation class androidx/compose/material3/adaptive/ExperimentalMaterial3AdaptiveComponentOverrideApi : java/lang/annotation/Annotation {
-}
-
 public final class androidx/compose/material3/adaptive/HingeInfo {
 	public static final field $stable I
 	public fun <init> (Landroidx/compose/ui/geometry/Rect;ZZZZ)V
