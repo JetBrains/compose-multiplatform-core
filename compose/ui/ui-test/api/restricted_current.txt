@@ -170,6 +170,7 @@ package androidx.compose.ui.test {
   }
 
   @androidx.compose.runtime.Immutable public final class ComposeUiTestConfig {
+    ctor @BytecodeOnly public ComposeUiTestConfig();
     ctor @KotlinOnly public ComposeUiTestConfig(optional kotlin.coroutines.CoroutineContext effectContext, optional kotlin.coroutines.CoroutineContext runTestContext, optional kotlin.time.Duration testTimeout, optional androidx.compose.ui.input.InputMode inputMode, optional androidx.compose.ui.test.TestFailurePolicy failurePolicy, optional androidx.compose.ui.unit.Dp boundsAssertionTolerance);
     ctor @BytecodeOnly public ComposeUiTestConfig(kotlin.coroutines.CoroutineContext!, kotlin.coroutines.CoroutineContext!, long, int, androidx.compose.ui.test.TestFailurePolicy!, float, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @BytecodeOnly public ComposeUiTestConfig(kotlin.coroutines.CoroutineContext!, kotlin.coroutines.CoroutineContext!, long, int, androidx.compose.ui.test.TestFailurePolicy!, float, kotlin.jvm.internal.DefaultConstructorMarker!);
@@ -373,9 +374,8 @@ package androidx.compose.ui.test {
 
   @Deprecated public final class GestureScope {
     ctor @Deprecated public GestureScope(androidx.compose.ui.semantics.SemanticsNode node, androidx.compose.ui.test.TestContext testContext);
-    method @InaccessibleFromKotlin @Deprecated @kotlin.PublishedApi internal androidx.compose.ui.test.MultiModalInjectionScope getDelegateScope();
+    method @BytecodeOnly @Deprecated @kotlin.PublishedApi internal androidx.compose.ui.test.MultiModalInjectionScope getDelegateScope();
     method @BytecodeOnly @Deprecated public long getVisibleSize-YbymL2g();
-    property @Deprecated @kotlin.PublishedApi internal androidx.compose.ui.test.MultiModalInjectionScope delegateScope;
     property @Deprecated public androidx.compose.ui.unit.IntSize visibleSize;
   }
 
@@ -937,6 +937,7 @@ package androidx.compose.ui.test {
   }
 
   @androidx.compose.runtime.Immutable public final class TestFailurePolicy {
+    ctor @BytecodeOnly public TestFailurePolicy();
     ctor @KotlinOnly public TestFailurePolicy(optional androidx.compose.ui.test.TestFailurePolicy.CaptureMode screenshotCaptureMode, optional androidx.compose.ui.test.TestFailurePolicy.CaptureMode uiHierarchyCaptureMode, optional java.util.List<androidx.compose.ui.test.TestFailureHandler> failureHandlers);
     ctor @BytecodeOnly public TestFailurePolicy(int, int, java.util.List!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @BytecodeOnly public TestFailurePolicy(int, int, java.util.List!, kotlin.jvm.internal.DefaultConstructorMarker!);
@@ -1164,7 +1165,7 @@ package androidx.compose.ui.test {
 
 }
 
-package androidx.compose.ui.test.internal {
+package @SuppressCompatibility androidx.compose.ui.test.internal {
 
   @SuppressCompatibility @androidx.compose.ui.test.InternalTestApi public abstract class DelayPropagatingContinuationInterceptorWrapper extends kotlin.coroutines.AbstractCoroutineContextElement implements kotlin.coroutines.ContinuationInterceptor kotlinx.coroutines.Delay {
     ctor public DelayPropagatingContinuationInterceptorWrapper(kotlin.coroutines.ContinuationInterceptor wrappedInterceptor);
@@ -1187,7 +1188,7 @@ package androidx.compose.ui.test.junit4.android {
 package androidx.compose.ui.test.platform {
 
   public final class Synchronization_androidKt {
-    method @kotlin.PublishedApi internal static inline <R> R synchronized(Object lock, kotlin.jvm.functions.Function0<? extends R> block);
+    method @BytecodeOnly @kotlin.PublishedApi internal static <R> R synchronized(Object, kotlin.jvm.functions.Function0<? extends R>);
   }
 
 }

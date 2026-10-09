@@ -24,8 +24,7 @@ import androidx.compose.ui.unit.Dp
 
 internal class DesktopMediaScope(val windowInfo: WindowInfo) : UiMediaScope {
 
-    override val windowPosture: UiMediaScope.Posture
-        get() = UiMediaScope.Posture.Flat
+    override val windowPosture: UiMediaScope.WindowPosture = UiMediaScope.WindowPosture(emptyList())
 
     override val windowWidth: Dp
         get() = windowInfo.containerDpSize.width

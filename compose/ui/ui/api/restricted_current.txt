@@ -237,10 +237,6 @@ package androidx.compose.ui {
     method @BytecodeOnly public static androidx.compose.ui.Modifier preferredFrameRate-kI47g10(androidx.compose.ui.Modifier, float);
   }
 
-  public final class InteractionBarrierKt {
-    method public static androidx.compose.ui.Modifier interactionBarrier(androidx.compose.ui.Modifier);
-  }
-
   public final class KeepScreenOnKt {
     method public static androidx.compose.ui.Modifier keepScreenOn(androidx.compose.ui.Modifier);
   }
@@ -322,7 +318,7 @@ package androidx.compose.ui {
     method @BytecodeOnly public int getPointerPrecision-fpxItnM();
     method @BytecodeOnly public int getViewingDistance-tKro-MQ();
     method @BytecodeOnly @androidx.compose.runtime.annotation.FrequentlyChangingValue public float getWindowHeight-D9Ej5fM();
-    method @BytecodeOnly public int getWindowPosture-m18o9QQ();
+    method @InaccessibleFromKotlin public androidx.compose.ui.UiMediaScope.WindowPosture getWindowPosture();
     method @BytecodeOnly @androidx.compose.runtime.annotation.FrequentlyChangingValue public float getWindowWidth-D9Ej5fM();
     property public abstract boolean hasCamera;
     property public abstract boolean hasMicrophone;
@@ -330,8 +326,34 @@ package androidx.compose.ui {
     property public abstract androidx.compose.ui.UiMediaScope.PointerPrecision pointerPrecision;
     property public abstract androidx.compose.ui.UiMediaScope.ViewingDistance viewingDistance;
     property @androidx.compose.runtime.annotation.FrequentlyChangingValue public abstract androidx.compose.ui.unit.Dp windowHeight;
-    property public abstract androidx.compose.ui.UiMediaScope.Posture windowPosture;
+    property public abstract androidx.compose.ui.UiMediaScope.WindowPosture windowPosture;
     property @androidx.compose.runtime.annotation.FrequentlyChangingValue public abstract androidx.compose.ui.unit.Dp windowWidth;
+  }
+
+  @SuppressCompatibility @androidx.compose.ui.ExperimentalMediaQueryApi @kotlin.jvm.JvmInline public static final value class UiMediaScope.FoldOrientation {
+    method @BytecodeOnly public static androidx.compose.ui.UiMediaScope.FoldOrientation! box-impl(int);
+    method @BytecodeOnly public int unbox-impl();
+    field public static final androidx.compose.ui.UiMediaScope.FoldOrientation.Companion Companion;
+  }
+
+  @SuppressCompatibility @androidx.compose.ui.ExperimentalMediaQueryApi public static final class UiMediaScope.FoldOrientation.Companion {
+    method @BytecodeOnly public int getHorizontal-hIhEK1o();
+    method @BytecodeOnly public int getVertical-hIhEK1o();
+    property public androidx.compose.ui.UiMediaScope.FoldOrientation Horizontal;
+    property public androidx.compose.ui.UiMediaScope.FoldOrientation Vertical;
+  }
+
+  @SuppressCompatibility @androidx.compose.ui.ExperimentalMediaQueryApi @kotlin.jvm.JvmInline public static final value class UiMediaScope.FoldState {
+    method @BytecodeOnly public static androidx.compose.ui.UiMediaScope.FoldState! box-impl(int);
+    method @BytecodeOnly public int unbox-impl();
+    field public static final androidx.compose.ui.UiMediaScope.FoldState.Companion Companion;
+  }
+
+  @SuppressCompatibility @androidx.compose.ui.ExperimentalMediaQueryApi public static final class UiMediaScope.FoldState.Companion {
+    method @BytecodeOnly public int getFlat-O5fZRa0();
+    method @BytecodeOnly public int getHalfOpened-O5fZRa0();
+    property public androidx.compose.ui.UiMediaScope.FoldState Flat;
+    property public androidx.compose.ui.UiMediaScope.FoldState HalfOpened;
   }
 
   @SuppressCompatibility @androidx.compose.ui.ExperimentalMediaQueryApi @kotlin.jvm.JvmInline public static final value class UiMediaScope.KeyboardKind {
@@ -366,21 +388,6 @@ package androidx.compose.ui {
     property public androidx.compose.ui.UiMediaScope.PointerPrecision None;
   }
 
-  @SuppressCompatibility @androidx.compose.ui.ExperimentalMediaQueryApi @kotlin.jvm.JvmInline public static final value class UiMediaScope.Posture {
-    method @BytecodeOnly public static androidx.compose.ui.UiMediaScope.Posture! box-impl(int);
-    method @BytecodeOnly public int unbox-impl();
-    field public static final androidx.compose.ui.UiMediaScope.Posture.Companion Companion;
-  }
-
-  @SuppressCompatibility @androidx.compose.ui.ExperimentalMediaQueryApi public static final class UiMediaScope.Posture.Companion {
-    method @BytecodeOnly public int getBook-m18o9QQ();
-    method @BytecodeOnly public int getFlat-m18o9QQ();
-    method @BytecodeOnly public int getTabletop-m18o9QQ();
-    property public androidx.compose.ui.UiMediaScope.Posture Book;
-    property public androidx.compose.ui.UiMediaScope.Posture Flat;
-    property public androidx.compose.ui.UiMediaScope.Posture Tabletop;
-  }
-
   @SuppressCompatibility @androidx.compose.ui.ExperimentalMediaQueryApi @kotlin.jvm.JvmInline public static final value class UiMediaScope.ViewingDistance {
     method @BytecodeOnly public static androidx.compose.ui.UiMediaScope.ViewingDistance! box-impl(int);
     method @BytecodeOnly public int unbox-impl();
@@ -394,6 +401,25 @@ package androidx.compose.ui {
     property public androidx.compose.ui.UiMediaScope.ViewingDistance Far;
     property public androidx.compose.ui.UiMediaScope.ViewingDistance Medium;
     property public androidx.compose.ui.UiMediaScope.ViewingDistance Near;
+  }
+
+  @SuppressCompatibility @androidx.compose.runtime.Immutable @androidx.compose.ui.ExperimentalMediaQueryApi public static final class UiMediaScope.WindowFold {
+    ctor @KotlinOnly public UiMediaScope.WindowFold(androidx.compose.ui.UiMediaScope.FoldState state, androidx.compose.ui.UiMediaScope.FoldOrientation orientation);
+    ctor @BytecodeOnly public UiMediaScope.WindowFold(int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method @BytecodeOnly public int getOrientation-hIhEK1o();
+    method @BytecodeOnly public int getState-O5fZRa0();
+    property public androidx.compose.ui.UiMediaScope.FoldOrientation orientation;
+    property public androidx.compose.ui.UiMediaScope.FoldState state;
+  }
+
+  @SuppressCompatibility @androidx.compose.runtime.Immutable @androidx.compose.ui.ExperimentalMediaQueryApi public static final class UiMediaScope.WindowPosture {
+    ctor public UiMediaScope.WindowPosture(java.util.List<androidx.compose.ui.UiMediaScope.WindowFold> folds);
+    method @InaccessibleFromKotlin public java.util.List<androidx.compose.ui.UiMediaScope.WindowFold> getFolds();
+    method @InaccessibleFromKotlin public boolean isFlat();
+    method @InaccessibleFromKotlin public boolean isTabletop();
+    property public java.util.List<androidx.compose.ui.UiMediaScope.WindowFold> folds;
+    property public boolean isFlat;
+    property public boolean isTabletop;
   }
 
   public final class ZIndexModifierKt {
@@ -697,7 +723,7 @@ package androidx.compose.ui.draw {
   }
 
   public final class BlurKt {
-    method @KotlinOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier blur(androidx.compose.ui.Modifier, androidx.compose.ui.graphics.blur.BlurRadiusSpec radius, optional androidx.compose.ui.draw.BlurredEdgeTreatment edgeTreatment, optional float alpha);
+    method @KotlinOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier blur(androidx.compose.ui.Modifier, androidx.compose.ui.graphics.blur.BlurRadiusSpec blurRadiusSpec, optional androidx.compose.ui.draw.BlurredEdgeTreatment edgeTreatment, optional float alpha);
     method @KotlinOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier blur(androidx.compose.ui.Modifier, androidx.compose.ui.unit.Dp radius, optional androidx.compose.ui.draw.BlurredEdgeTreatment edgeTreatment);
     method @KotlinOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier blur(androidx.compose.ui.Modifier, androidx.compose.ui.unit.Dp radiusX, androidx.compose.ui.unit.Dp radiusY, optional androidx.compose.ui.draw.BlurredEdgeTreatment edgeTreatment);
     method @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier blur(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function1<? super androidx.compose.ui.draw.BlurScope,kotlin.Unit> block);
@@ -711,15 +737,15 @@ package androidx.compose.ui.draw {
 
   public sealed nonexhaustive interface BlurScope extends androidx.compose.ui.unit.Density {
     method @InaccessibleFromKotlin public float getAlpha();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.blur.BlurRadiusSpec getBlurRadiusSpec();
     method @BytecodeOnly public androidx.compose.ui.graphics.Shape getEdgeTreatment---Goahg();
-    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.blur.BlurRadiusSpec getRadius();
     method @BytecodeOnly public long getSize-MYxV2XQ();
     method @InaccessibleFromKotlin public void setAlpha(float);
+    method @InaccessibleFromKotlin public void setBlurRadiusSpec(androidx.compose.ui.graphics.blur.BlurRadiusSpec);
     method @BytecodeOnly public void setEdgeTreatment-JyGir4Q(androidx.compose.ui.graphics.Shape);
-    method @InaccessibleFromKotlin public void setRadius(androidx.compose.ui.graphics.blur.BlurRadiusSpec);
     property public abstract float alpha;
+    property public abstract androidx.compose.ui.graphics.blur.BlurRadiusSpec blurRadiusSpec;
     property public abstract androidx.compose.ui.draw.BlurredEdgeTreatment edgeTreatment;
-    property public abstract androidx.compose.ui.graphics.blur.BlurRadiusSpec radius;
     property public abstract androidx.compose.ui.unit.DpSize size;
   }
 
@@ -1255,7 +1281,6 @@ package androidx.compose.ui.graphics {
     method @BytecodeOnly public static float getPivotFractionX-impl(long);
     method @BytecodeOnly public static float getPivotFractionY-impl(long);
     method @BytecodeOnly public long unbox-impl();
-    property @kotlin.PublishedApi internal long packedValue;
     property public float pivotFractionX;
     property public float pivotFractionY;
     field public static final androidx.compose.ui.graphics.TransformOrigin.Companion Companion;
@@ -3154,11 +3179,9 @@ package androidx.compose.ui.layout {
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.ui.UiComposable public static void Layout(kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.ui.Modifier?, androidx.compose.ui.layout.MeasurePolicy, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @Deprecated @androidx.compose.runtime.Composable @androidx.compose.ui.UiComposable public static void MultiMeasureLayout(optional androidx.compose.ui.Modifier modifier, kotlin.jvm.functions.Function0<kotlin.Unit> content, androidx.compose.ui.layout.MeasurePolicy measurePolicy);
     method @BytecodeOnly @Deprecated @androidx.compose.runtime.Composable @androidx.compose.ui.UiComposable public static void MultiMeasureLayout(androidx.compose.ui.Modifier?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.ui.layout.MeasurePolicy, androidx.compose.runtime.Composer?, int, int);
-    method @kotlin.PublishedApi internal static kotlin.jvm.functions.Function0<kotlin.Unit> combineAsVirtualLayouts(java.util.List<? extends kotlin.jvm.functions.Function0<kotlin.Unit>> contents);
-    method @InaccessibleFromKotlin @Deprecated @kotlin.PublishedApi internal static kotlin.jvm.functions.Function1<androidx.compose.runtime.SkippableUpdater<androidx.compose.ui.node.ComposeUiNode>,kotlin.Unit> materializerOf(androidx.compose.ui.Modifier modifier);
-    method @KotlinOnly @kotlin.PublishedApi internal static kotlin.jvm.functions.Function1<androidx.compose.runtime.SkippableUpdater<androidx.compose.ui.node.ComposeUiNode>,kotlin.Unit> materializerOf(androidx.compose.ui.Modifier modifier);
-    method @KotlinOnly @Deprecated @kotlin.PublishedApi internal static kotlin.jvm.functions.Function1<androidx.compose.runtime.SkippableUpdater<androidx.compose.ui.node.ComposeUiNode>,kotlin.Unit> materializerOfWithCompositionLocalInjection(androidx.compose.ui.Modifier modifier);
-    method @InaccessibleFromKotlin @kotlin.PublishedApi internal static kotlin.jvm.functions.Function1<androidx.compose.runtime.SkippableUpdater<androidx.compose.ui.node.ComposeUiNode>,kotlin.Unit> modifierMaterializerOf(androidx.compose.ui.Modifier modifier);
+    method @BytecodeOnly @kotlin.PublishedApi internal static kotlin.jvm.functions.Function2<androidx.compose.runtime.Composer!,java.lang.Integer!,kotlin.Unit!> combineAsVirtualLayouts(java.util.List<? extends kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>!>);
+    method @BytecodeOnly @Deprecated @kotlin.PublishedApi internal static kotlin.jvm.functions.Function3<androidx.compose.runtime.SkippableUpdater<androidx.compose.ui.node.ComposeUiNode!>!,androidx.compose.runtime.Composer!,java.lang.Integer!,kotlin.Unit!> materializerOf(androidx.compose.ui.Modifier);
+    method @BytecodeOnly @kotlin.PublishedApi internal static kotlin.jvm.functions.Function3<androidx.compose.runtime.SkippableUpdater<androidx.compose.ui.node.ComposeUiNode!>!,androidx.compose.runtime.Composer!,java.lang.Integer!,kotlin.Unit!> modifierMaterializerOf(androidx.compose.ui.Modifier);
   }
 
   @kotlin.jvm.JvmDefaultWithCompatibility public interface LayoutModifier extends androidx.compose.ui.Modifier.Element {
@@ -3264,7 +3287,7 @@ package androidx.compose.ui.layout {
   }
 
   public final class MultiContentMeasurePolicyKt {
-    method @kotlin.PublishedApi internal static androidx.compose.ui.layout.MeasurePolicy createMeasurePolicy(androidx.compose.ui.layout.MultiContentMeasurePolicy measurePolicy);
+    method @BytecodeOnly @kotlin.PublishedApi internal static androidx.compose.ui.layout.MeasurePolicy createMeasurePolicy(androidx.compose.ui.layout.MultiContentMeasurePolicy);
   }
 
   public final class OnFirstVisibleModifierKt {
@@ -3546,7 +3569,7 @@ package androidx.compose.ui.layout {
     method public boolean containsAll(java.util.Collection<? extends java.lang.Object?> elements);
     method public inline void fastForEach(kotlin.jvm.functions.Function1<java.lang.Object?,kotlin.Unit> block);
     method public void forEach(kotlin.jvm.functions.Function1<java.lang.Object?,kotlin.Unit> block);
-    method @InaccessibleFromKotlin @kotlin.PublishedApi internal androidx.collection.MutableOrderedScatterSet<java.lang.Object?> getSet();
+    method @BytecodeOnly @kotlin.PublishedApi internal androidx.collection.MutableOrderedScatterSet<java.lang.Object?> getSet();
     method @InaccessibleFromKotlin public int getSize();
     method public boolean isEmpty();
     method public java.util.Iterator<java.lang.Object?> iterator();
@@ -3560,7 +3583,6 @@ package androidx.compose.ui.layout {
     method @BytecodeOnly public Object![]! toArray();
     method @BytecodeOnly public <T> T[]! toArray(T[]!);
     method public void trimToSize(int maxSlotsToRetainForReuse);
-    property @kotlin.PublishedApi internal androidx.collection.MutableOrderedScatterSet<java.lang.Object?> set;
     property public int size;
   }
 
@@ -3704,7 +3726,7 @@ package androidx.compose.ui.modifier {
 
 package androidx.compose.ui.node {
 
-  @kotlin.PublishedApi internal interface ComposeUiNode {
+  @BytecodeOnly @kotlin.PublishedApi internal interface ComposeUiNode {
     method @InaccessibleFromKotlin public int getCompositeKeyHash();
     method @InaccessibleFromKotlin public androidx.compose.runtime.CompositionLocalMap getCompositionLocalMap();
     method @InaccessibleFromKotlin public androidx.compose.ui.unit.Density getDensity();
@@ -3729,7 +3751,7 @@ package androidx.compose.ui.node {
     field public static final androidx.compose.ui.node.ComposeUiNode.Companion Companion;
   }
 
-  public static final class ComposeUiNode.Companion {
+  @BytecodeOnly @kotlin.PublishedApi internal static final class ComposeUiNode.Companion {
     method @InaccessibleFromKotlin public kotlin.jvm.functions.Function1<androidx.compose.ui.node.ComposeUiNode,kotlin.Unit> getApplyOnDeactivatedNodeAssertion();
     method @InaccessibleFromKotlin public kotlin.jvm.functions.Function0<androidx.compose.ui.node.ComposeUiNode> getConstructor();
     method @InaccessibleFromKotlin public kotlin.jvm.functions.Function2<androidx.compose.ui.node.ComposeUiNode,java.lang.Integer,kotlin.Unit> getSetCompositeKeyHash();
@@ -4318,7 +4340,7 @@ package androidx.compose.ui.platform {
     method public static inline kotlin.jvm.functions.Function1<androidx.compose.ui.platform.InspectorInfo,kotlin.Unit> debugInspectorInfo(kotlin.jvm.functions.Function1<? super androidx.compose.ui.platform.InspectorInfo,kotlin.Unit> definitions);
     method @InaccessibleFromKotlin public static kotlin.jvm.functions.Function1<androidx.compose.ui.platform.InspectorInfo,kotlin.Unit> getNoInspectorInfo();
     method @Deprecated public static inline androidx.compose.ui.Modifier inspectable(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function1<? super androidx.compose.ui.platform.InspectorInfo,kotlin.Unit> inspectorInfo, kotlin.jvm.functions.Function1<? super androidx.compose.ui.Modifier,? extends androidx.compose.ui.Modifier> factory);
-    method @kotlin.PublishedApi internal static androidx.compose.ui.Modifier inspectableWrapper(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function1<? super androidx.compose.ui.platform.InspectorInfo,kotlin.Unit> inspectorInfo, androidx.compose.ui.Modifier wrapped);
+    method @BytecodeOnly @kotlin.PublishedApi internal static androidx.compose.ui.Modifier inspectableWrapper(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function1<? super androidx.compose.ui.platform.InspectorInfo!,kotlin.Unit!>, androidx.compose.ui.Modifier);
     method @InaccessibleFromKotlin public static boolean isDebugInspectorInfoEnabled();
     method @InaccessibleFromKotlin public static void setDebugInspectorInfoEnabled(boolean);
     property public static kotlin.jvm.functions.Function1<androidx.compose.ui.platform.InspectorInfo,kotlin.Unit> NoInspectorInfo;
@@ -4399,7 +4421,7 @@ package androidx.compose.ui.platform {
   }
 
   public final class Synchronization_androidKt {
-    method @kotlin.PublishedApi internal static inline <R> R synchronized(Object lock, kotlin.jvm.functions.Function0<? extends R> block);
+    method @BytecodeOnly @kotlin.PublishedApi internal static <R> R synchronized(Object, kotlin.jvm.functions.Function0<? extends R>);
   }
 
   @androidx.compose.runtime.Stable public interface TaskDispatchers {
@@ -4548,8 +4570,8 @@ package androidx.compose.ui.platform {
   }
 
   @SuppressCompatibility @androidx.compose.ui.InternalComposeUiApi public final class WindowRecomposerPolicy {
-    method @kotlin.PublishedApi internal boolean compareAndSetFactory(androidx.compose.ui.platform.WindowRecomposerFactory expected, androidx.compose.ui.platform.WindowRecomposerFactory factory);
-    method @kotlin.PublishedApi internal androidx.compose.ui.platform.WindowRecomposerFactory getAndSetFactory(androidx.compose.ui.platform.WindowRecomposerFactory factory);
+    method @BytecodeOnly @kotlin.PublishedApi internal boolean compareAndSetFactory(androidx.compose.ui.platform.WindowRecomposerFactory, androidx.compose.ui.platform.WindowRecomposerFactory);
+    method @BytecodeOnly @kotlin.PublishedApi internal androidx.compose.ui.platform.WindowRecomposerFactory getAndSetFactory(androidx.compose.ui.platform.WindowRecomposerFactory);
     method public void setFactory(androidx.compose.ui.platform.WindowRecomposerFactory factory);
     method public inline <R> R withFactory(androidx.compose.ui.platform.WindowRecomposerFactory factory, kotlin.jvm.functions.Function0<? extends R> block);
     field public static final androidx.compose.ui.platform.WindowRecomposerPolicy INSTANCE;

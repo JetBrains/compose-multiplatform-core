@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -76,7 +77,8 @@ class ComposeUiSkikoTestTest {
             moveTo(Offset(30f, 40f))
             moveTo(Offset(30f, 50f))
         }
-        assertThat(events).hasSize(2)
+        val extraMoves = if (hasExtraMove()) 1 else 0
+        assertThat(events).hasSize(2 + extraMoves)
         events[0].apply {
             assertThat(type).isEqualTo(Enter)
             assertThat(button).isEqualTo(null)
@@ -84,7 +86,15 @@ class ComposeUiSkikoTestTest {
             assertThat(changes[0].position).isEqualTo(Offset(30f, 40f))
             assertThat(changes[0].type).isEqualTo(Mouse)
         }
-        events[1].apply {
+        if (hasExtraMove()) {
+            // Move accompanying Enter, without position change
+            events[1].apply {
+                assertThat(type).isEqualTo(Move)
+                assertThat(buttons).isEqualTo(PointerButtons())
+                assertThat(changes[0].position).isEqualTo(Offset(30f, 40f))
+            }
+        }
+        events[1 + extraMoves].apply {
             assertThat(type).isEqualTo(Move)
             assertThat(button).isEqualTo(null)
             assertThat(buttons).isEqualTo(PointerButtons())
@@ -103,7 +113,8 @@ class ComposeUiSkikoTestTest {
             press()
             moveTo(Offset(10f, 20f))
         }
-        assertThat(events).hasSize(3)
+        val extraMoves = if (hasExtraMove()) 1 else 0
+        assertThat(events).hasSize(3 + extraMoves)
         events[0].apply {
             assertThat(type).isEqualTo(Enter)
             assertThat(button).isEqualTo(null)
@@ -111,14 +122,22 @@ class ComposeUiSkikoTestTest {
             assertThat(changes[0].position).isEqualTo(Offset(30f, 40f))
             assertThat(changes[0].type).isEqualTo(Mouse)
         }
-        events[1].apply {
+        if (hasExtraMove()) {
+            // Move accompanying Enter, without position change
+            events[1].apply {
+                assertThat(type).isEqualTo(Move)
+                assertThat(buttons).isEqualTo(PointerButtons())
+                assertThat(changes[0].position).isEqualTo(Offset(30f, 40f))
+            }
+        }
+        events[1 + extraMoves].apply {
             assertThat(type).isEqualTo(Press)
             assertThat(button).isEqualTo(PointerButton.Primary)
             assertThat(buttons).isEqualTo(PointerButtons(isPrimaryPressed = true))
             assertThat(changes[0].position).isEqualTo(Offset(30f, 40f))
             assertThat(changes[0].type).isEqualTo(Mouse)
         }
-        events[2].apply {
+        events[2 + extraMoves].apply {
             assertThat(type).isEqualTo(Move)
             assertThat(button).isEqualTo(null)
             assertThat(buttons).isEqualTo(PointerButtons(isPrimaryPressed = true))
@@ -365,13 +384,22 @@ class ComposeUiSkikoTestTest {
         onNodeWithTag("test").performTouchInput {
             click(Offset(10f, 20f))
         }
-        assertThat(events).hasSize(2)
+        val extraMoves = if (hasExtraMove()) 1 else 0
+        assertThat(events).hasSize(2 + extraMoves)
         events[0].apply {
             assertThat(type).isEqualTo(Press)
             assertThat(changes[0].position).isEqualTo(Offset(10f, 20f))
             assertThat(changes[0].type).isEqualTo(PointerType.Touch)
         }
-        events[1].apply {
+        if (hasExtraMove()) {
+            // Move sent by click() between down and up, without position change
+            events[1].apply {
+                assertThat(type).isEqualTo(Move)
+                assertThat(changes[0].position).isEqualTo(Offset(10f, 20f))
+                assertThat(changes[0].type).isEqualTo(PointerType.Touch)
+            }
+        }
+        events[1 + extraMoves].apply {
             assertThat(type).isEqualTo(Release)
             assertThat(changes[0].position).isEqualTo(Offset(10f, 20f))
             assertThat(changes[0].type).isEqualTo(PointerType.Touch)
@@ -439,6 +467,13 @@ class ComposeUiSkikoTestTest {
         assertThat(text.text).isEqualTo("")
     }
 }
+
+/**
+ * Whether Move events without position change are delivered, see
+ * [ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled]
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+private fun hasExtraMove() = ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled
 
 private class AssertThat<T>(val t: T)
 
