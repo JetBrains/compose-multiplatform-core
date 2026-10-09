@@ -2736,7 +2736,7 @@ class DesktopParagraphIntegrationTest : SkikoComposeTestBase() {
     }
 
     @Test
-    @Ignore // FIXME: Figure out why skia reports wrong indexes
+    @Ignore // TODO: CMP-10924
     fun getLineEnd_newline() {
         val text = "aaa\nbbb"
 
@@ -2761,7 +2761,7 @@ class DesktopParagraphIntegrationTest : SkikoComposeTestBase() {
     }
 
     @Test
-    @Ignore // TODO: isLineEllipsized is not implemented
+    @Ignore // TODO: CMP-10924
     fun getLineEllipsisOffset() {
         val text = "aaa\nbbb\nccc"
 
@@ -2784,7 +2784,7 @@ class DesktopParagraphIntegrationTest : SkikoComposeTestBase() {
     }
 
     @Test
-    @Ignore // TODO: isLineEllipsized is not implemented
+    @Ignore // TODO: CMP-10924
     fun getLineEllipsisCount() {
         val text = "aaaaabbbbbccccc"
         val paragraph =
