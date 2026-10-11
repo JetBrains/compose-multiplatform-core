@@ -304,12 +304,11 @@ internal class SkikoGraphicsLayer(
 
     @Suppress("NOTHING_TO_INLINE")
     private inline fun updateRenderNodeBounds() {
-        renderNode?.setNodeBounds(
-            topLeft.x.toFloat() - outsetLeft,
-            topLeft.y.toFloat() - outsetTop,
-            size.width.toFloat() + outsetLeft + outsetRight,
-            size.height.toFloat() + outsetTop + outsetBottom
-        )
+        val left = topLeft.x.toFloat() - outsetLeft
+        val top = topLeft.y.toFloat() - outsetTop
+        val right = left + size.width.toFloat() + outsetLeft + outsetRight
+        val bottom = top + size.height.toFloat() + outsetTop + outsetBottom
+        renderNode?.setNodeBounds(left, top, right, bottom)
     }
 
     @Suppress("NOTHING_TO_INLINE")
