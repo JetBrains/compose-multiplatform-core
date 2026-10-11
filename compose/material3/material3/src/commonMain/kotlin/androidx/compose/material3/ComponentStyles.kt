@@ -21,10 +21,20 @@ import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.tokens.AppBarTokens
 import androidx.compose.material3.tokens.CheckboxTokens
 import androidx.compose.material3.tokens.ColorSchemeKeyTokens
 import androidx.compose.material3.tokens.ColorToken
+import androidx.compose.material3.tokens.ElevationTokens
+import androidx.compose.material3.tokens.NavigationBarTokens
+import androidx.compose.material3.tokens.NavigationRailBaselineItemTokens
+import androidx.compose.material3.tokens.NavigationRailCollapsedTokens
+import androidx.compose.material3.tokens.NavigationRailColorTokens
+import androidx.compose.material3.tokens.NavigationRailExpandedTokens
+import androidx.compose.material3.tokens.NavigationRailHorizontalItemTokens
+import androidx.compose.material3.tokens.NavigationRailVerticalItemTokens
 import androidx.compose.material3.tokens.RadioButtonTokens
 import androidx.compose.material3.tokens.ScrimTokens
 import androidx.compose.material3.tokens.SearchBarTokens
@@ -66,6 +76,8 @@ internal value class ComponentState(val mask: Int = 0) {
 
     fun expanded(expanded: Boolean) = set(EXPANDED, expanded)
 
+    fun orientation(isVertical: Boolean) = set(VERTICAL, isVertical)
+
     @Composable
     fun interactionState(interactionSource: MutableInteractionSource): ComponentState {
         return set(PRESSED, interactionSource.collectIsPressedAsState().value)
@@ -85,6 +97,7 @@ internal value class ComponentState(val mask: Int = 0) {
         const val HOVERED = 1 shl 6
         const val DRAGGED = 1 shl 7
         const val EXPANDED = 1 shl 8
+        const val VERTICAL = 1 shl 9
 
         val Default = ComponentState(ENABLED)
 
@@ -103,6 +116,8 @@ internal value class ComponentState(val mask: Int = 0) {
         fun indeterminate(indeterminate: Boolean) = Default.indeterminate(indeterminate)
 
         fun expanded(expanded: Boolean) = Default.expanded(expanded)
+
+        fun orientation(isVertical: Boolean) = Default.orientation(isVertical)
 
         @Composable
         fun interactionState(interactionSource: MutableInteractionSource) =
@@ -229,6 +244,12 @@ internal interface ExpandedState<T : StatefulStyleScope<T>> : StatefulStyleScope
     fun expanded(style: T.() -> Unit) = setState(ComponentState.EXPANDED, style)
 
     fun collapsed(style: T.() -> Unit) = setNotState(ComponentState.EXPANDED, style)
+}
+
+internal interface OrientationState<T : StatefulStyleScope<T>> : StatefulStyleScope<T> {
+    fun vertical(style: T.() -> Unit) = setState(ComponentState.VERTICAL, style)
+
+    fun horizontal(style: T.() -> Unit) = setNotState(ComponentState.VERTICAL, style)
 }
 
 // Component style definitions start from here.
@@ -451,24 +472,27 @@ internal fun interface SearchBarStyle : ComponentStyle<SearchBarStyleScope> {
     companion object {
         val Default = SearchBarStyle {
             containerColor(SearchBarTokens.ContainerColor.value)
+            contentColor(theme.colorScheme.onSurface)
             shape(SearchBarTokens.ContainerShape.value)
-            tonalElevation(SearchBarDefaults.TonalElevation)
-            shadowElevation(SearchBarDefaults.ShadowElevation)
+            tonalElevation(ElevationTokens.Level0)
+            shadowElevation(ElevationTokens.Level0)
         }
 
         val ExpandedFullScreenContained = SearchBarStyle {
             containerColor(SearchBarTokens.ContainerColor.value)
+            contentColor(theme.colorScheme.onSurface)
             expanded { containerColor(ColorSchemeKeyTokens.SurfaceContainerLow.value) }
             shape(SearchBarTokens.ContainerShape.value)
-            tonalElevation(SearchBarDefaults.TonalElevation)
-            shadowElevation(SearchBarDefaults.ShadowElevation)
+            tonalElevation(ElevationTokens.Level0)
+            shadowElevation(ElevationTokens.Level0)
         }
 
         val ExpandedFullScreen = SearchBarStyle {
             containerColor(SearchBarTokens.ContainerColor.value)
+            contentColor(theme.colorScheme.onSurface)
             shape(SearchBarTokens.ContainerShape.value)
-            tonalElevation(SearchBarDefaults.TonalElevation)
-            shadowElevation(SearchBarDefaults.ShadowElevation)
+            tonalElevation(ElevationTokens.Level0)
+            shadowElevation(ElevationTokens.Level0)
             dividerColor(SearchViewTokens.DividerColor.value)
         }
     }
@@ -482,6 +506,9 @@ internal class SearchBarStyleScope(
     MaterialThemeAccessorScope,
     StyleResolver by StyleResolverImpl() {
     var containerColor: Color = Color.Unspecified
+        private set
+
+    var contentColor: Color = Color.Unspecified
         private set
 
     var shape: Shape = RectangleShape
@@ -498,6 +525,10 @@ internal class SearchBarStyleScope(
 
     fun containerColor(color: Color) {
         containerColor = color
+    }
+
+    fun contentColor(color: Color) {
+        contentColor = color
     }
 
     fun shape(shape: Shape) {
@@ -517,33 +548,35 @@ internal class SearchBarStyleScope(
     }
 }
 
-@JvmInline
-internal value class AppBarWithSearchStyle(
-    private val block: AppBarWithSearchStyleScope.() -> Unit
-) {
-    fun AppBarWithSearchStyleScope.applyStyle() {
-        block()
+internal fun interface AppBarWithSearchStyle : ComponentStyle<AppBarWithSearchStyleScope> {
+    infix fun then(other: AppBarWithSearchStyle): AppBarWithSearchStyle = AppBarWithSearchStyle {
+        this.applyStyle()
+        with(other) { applyStyle() }
     }
 
     companion object {
         val Default = AppBarWithSearchStyle {
             searchBarContainerColor(SearchBarTokens.ContainerColor.value)
+            searchBarContentColor(theme.colorScheme.onSurface)
             scrolledSearchBarContainerColor(ColorSchemeKeyTokens.SurfaceContainerHighest.value)
             appBarContainerColor(AppBarTokens.ContainerColor.value)
             scrolledAppBarContainerColor(AppBarTokens.OnScrollContainerColor.value)
             appBarNavigationIconColor(AppBarTokens.LeadingIconColor.value)
             appBarActionIconColor(AppBarTokens.TrailingIconColor.value)
             shape(SearchBarTokens.ContainerShape.value)
-            tonalElevation(SearchBarDefaults.TonalElevation)
-            shadowElevation(SearchBarDefaults.ShadowElevation)
+            tonalElevation(ElevationTokens.Level0)
+            shadowElevation(ElevationTokens.Level0)
             contentPadding(0.dp, 0.dp, 0.dp, 0.dp)
         }
     }
 }
 
 internal class AppBarWithSearchStyleScope(override val theme: MaterialTheme.Values) :
-    MaterialThemeAccessorScope {
+    MaterialThemeAccessorScope, StyleResolver by StyleResolverImpl() {
     var searchBarContainerColor: Color = Color.Unspecified
+        private set
+
+    var searchBarContentColor: Color = Color.Unspecified
         private set
 
     var scrolledSearchBarContainerColor: Color = Color.Unspecified
@@ -586,6 +619,10 @@ internal class AppBarWithSearchStyleScope(override val theme: MaterialTheme.Valu
         searchBarContainerColor = color
     }
 
+    fun searchBarContentColor(color: Color) {
+        searchBarContentColor = color
+    }
+
     fun scrolledSearchBarContainerColor(color: Color) {
         scrolledSearchBarContainerColor = color
     }
@@ -626,42 +663,47 @@ internal class AppBarWithSearchStyleScope(override val theme: MaterialTheme.Valu
     }
 }
 
-@JvmInline
-internal value class ExpandedDockedSearchBarStyle(
-    private val block: ExpandedDockedSearchBarStyleScope.() -> Unit
-) {
-    fun ExpandedDockedSearchBarStyleScope.applyStyle() {
-        block()
-    }
+internal fun interface ExpandedDockedSearchBarStyle :
+    ComponentStyle<ExpandedDockedSearchBarStyleScope> {
+    infix fun then(other: ExpandedDockedSearchBarStyle): ExpandedDockedSearchBarStyle =
+        ExpandedDockedSearchBarStyle {
+            this.applyStyle()
+            with(other) { applyStyle() }
+        }
 
     companion object {
         val Default = ExpandedDockedSearchBarStyle {
             shape(SearchViewTokens.DockedContainerShape.value)
             containerColor(SearchBarTokens.ContainerColor.value)
+            contentColor(theme.colorScheme.onSurface)
             dividerColor(SearchViewTokens.DividerColor.value)
-            tonalElevation(SearchBarDefaults.TonalElevation)
-            shadowElevation(SearchBarDefaults.ShadowElevation)
+            tonalElevation(ElevationTokens.Level0)
+            shadowElevation(ElevationTokens.Level0)
         }
 
         val WithGap = ExpandedDockedSearchBarStyle {
             shape(SearchViewTokens.DockedContainerShape.value)
-            dropdownShape(SearchBarDefaults.dockedDropdownShape)
-            dropdownGapSize(SearchBarDefaults.dockedDropdownGapSize)
+            dropdownShape(RoundedCornerShape(corner = CornerSize(12.dp)))
+            dropdownGapSize(2.dp)
             dropdownScrimColor(ScrimTokens.ContainerColor.value)
             containerColor(SearchBarTokens.ContainerColor.value)
+            contentColor(theme.colorScheme.onSurface)
             dividerColor(SearchViewTokens.DividerColor.value)
-            tonalElevation(SearchBarDefaults.TonalElevation)
-            shadowElevation(SearchBarDefaults.ShadowElevation)
+            tonalElevation(ElevationTokens.Level0)
+            shadowElevation(ElevationTokens.Level0)
         }
     }
 }
 
 internal class ExpandedDockedSearchBarStyleScope(override val theme: MaterialTheme.Values) :
-    MaterialThemeAccessorScope {
+    MaterialThemeAccessorScope, StyleResolver by StyleResolverImpl() {
     var shape: Shape = RectangleShape
         private set
 
     var containerColor: Color = Color.Unspecified
+        private set
+
+    var contentColor: Color = Color.Unspecified
         private set
 
     var dividerColor: Color = Color.Unspecified
@@ -690,6 +732,10 @@ internal class ExpandedDockedSearchBarStyleScope(override val theme: MaterialThe
         containerColor = color
     }
 
+    fun contentColor(color: Color) {
+        contentColor = color
+    }
+
     fun dividerColor(color: Color) {
         dividerColor = color
     }
@@ -712,5 +758,292 @@ internal class ExpandedDockedSearchBarStyleScope(override val theme: MaterialThe
 
     fun dropdownScrimColor(color: Color) {
         this.dropdownScrimColor = color
+    }
+}
+
+internal fun interface NavigationBarStyle : ComponentStyle<NavigationBarStyleScope> {
+    infix fun then(other: NavigationBarStyle): NavigationBarStyle = NavigationBarStyle {
+        this.applyStyle()
+        with(other) { applyStyle() }
+    }
+
+    companion object {
+        val Default = NavigationBarStyle {
+            containerColor(NavigationBarTokens.ContainerColor.value)
+            contentColor(theme.colorScheme.onSurface)
+            containerHeight(NavigationBarTokens.ContainerHeight)
+        }
+    }
+}
+
+internal class NavigationBarStyleScope(override val theme: MaterialTheme.Values) :
+    MaterialThemeAccessorScope, StyleResolver by StyleResolverImpl() {
+    var containerColor: Color = Color.Unspecified
+        private set
+
+    var contentColor: Color = Color.Unspecified
+        private set
+
+    var containerHeight: Dp = Dp.Unspecified
+        private set
+
+    fun containerColor(color: Color) {
+        containerColor = color
+    }
+
+    fun contentColor(color: Color) {
+        contentColor = color
+    }
+
+    fun containerHeight(height: Dp) {
+        containerHeight = height
+    }
+}
+
+internal fun interface NavigationBarItemStyle : ComponentStyle<NavigationBarItemStyleScope> {
+    infix fun then(other: NavigationBarItemStyle): NavigationBarItemStyle = NavigationBarItemStyle {
+        this.applyStyle()
+        with(other) { applyStyle() }
+    }
+
+    companion object {
+        val Default = NavigationBarItemStyle {
+            iconColor(NavigationBarTokens.ItemInactiveIconColor.value)
+            textColor(NavigationBarTokens.ItemInactiveLabelTextColor.value)
+            indicatorColor(NavigationBarTokens.ItemActiveIndicatorColor.value)
+            disabled {
+                iconColor(NavigationBarTokens.ItemInactiveIconColor.value.copy(alpha = 0.38f))
+                textColor(NavigationBarTokens.ItemInactiveLabelTextColor.value.copy(alpha = 0.38f))
+            }
+            selected {
+                iconColor(NavigationBarTokens.ItemActiveIconColor.value)
+                vertical {
+                    textColor(NavigationBarTokens.ItemActiveLabelTextColor.value)
+                }
+                horizontal {
+                    textColor(NavigationBarTokens.ItemActiveIconColor.value)
+                }
+            }
+        }
+    }
+}
+
+internal class NavigationBarItemStyleScope(
+    override val theme: MaterialTheme.Values,
+    override val state: ComponentState = ComponentState.Default,
+) :
+    MaterialThemeAccessorScope,
+    SelectedState<NavigationBarItemStyleScope>,
+    DisabledState<NavigationBarItemStyleScope>,
+    OrientationState<NavigationBarItemStyleScope>,
+    StyleResolver by StyleResolverImpl() {
+    var iconColor: Color = Color.Unspecified
+        private set
+
+    var textColor: Color = Color.Unspecified
+        private set
+
+    var indicatorColor: Color = Color.Unspecified
+        private set
+
+    fun iconColor(color: Color) {
+        iconColor = color
+    }
+
+    fun textColor(color: Color) {
+        textColor = color
+    }
+
+    fun indicatorColor(color: Color) {
+        indicatorColor = color
+    }
+}
+
+internal fun interface NavigationRailStyle : ComponentStyle<NavigationRailStyleScope> {
+    infix fun then(other: NavigationRailStyle): NavigationRailStyle = NavigationRailStyle {
+        this.applyStyle()
+        with(other) { applyStyle() }
+    }
+
+    companion object {
+        val Default = NavigationRailStyle {
+            containerColor(NavigationRailCollapsedTokens.ContainerColor.value)
+            contentColor(theme.colorScheme.onSurface)
+            shape(NavigationRailCollapsedTokens.ContainerShape.value)
+            contentPadding(0.dp, NavigationRailCollapsedTokens.TopSpace, 0.dp, 0.dp)
+        }
+        val Modal = NavigationRailStyle {
+            containerColor(NavigationRailCollapsedTokens.ContainerColor.value)
+            contentColor(theme.colorScheme.onSurface)
+            modalScrimColor(ScrimTokens.ContainerColor.value.copy(ScrimTokens.ContainerOpacity))
+            shape(NavigationRailCollapsedTokens.ContainerShape.value)
+            contentPadding(0.dp, NavigationRailCollapsedTokens.TopSpace, 0.dp, 0.dp)
+            expanded {
+                containerColor(NavigationRailExpandedTokens.ModalContainerColor.value)
+                shape(NavigationRailExpandedTokens.ModalContainerShape.value)
+            }
+        }
+    }
+}
+
+internal class NavigationRailStyleScope(
+    override val theme: MaterialTheme.Values,
+    override val state: ComponentState = ComponentState.Default,
+) :
+    ExpandedState<NavigationRailStyleScope>,
+    MaterialThemeAccessorScope,
+    StyleResolver by StyleResolverImpl() {
+    var containerColor: Color = Color.Unspecified
+        private set
+
+    var contentColor: Color = Color.Unspecified
+        private set
+
+    var modalScrimColor: Color = Color.Unspecified
+        private set
+
+    var shape: Shape = RectangleShape
+        private set
+
+    var contentPaddingStart: Dp = Dp.Unspecified
+        private set
+
+    var contentPaddingTop: Dp = Dp.Unspecified
+        private set
+
+    var contentPaddingEnd: Dp = Dp.Unspecified
+        private set
+
+    var contentPaddingBottom: Dp = Dp.Unspecified
+        private set
+
+    fun containerColor(color: Color) {
+        containerColor = color
+    }
+
+    fun contentColor(color: Color) {
+        contentColor = color
+    }
+
+    fun modalScrimColor(color: Color) {
+        modalScrimColor = color
+    }
+
+    fun shape(shape: Shape) {
+        this.shape = shape
+    }
+
+    fun contentPadding(start: Dp, top: Dp, end: Dp, bottom: Dp) {
+        contentPaddingStart = start
+        contentPaddingTop = top
+        contentPaddingEnd = end
+        contentPaddingBottom = bottom
+    }
+}
+
+internal fun interface NavigationRailItemStyle : ComponentStyle<NavigationRailItemStyleScope> {
+    infix fun then(other: NavigationRailItemStyle): NavigationRailItemStyle =
+        NavigationRailItemStyle {
+            this.applyStyle()
+            with(other) { applyStyle() }
+        }
+
+    companion object {
+        val Default = NavigationRailItemStyle {
+            iconColor(NavigationRailColorTokens.ItemInactiveIcon.value)
+            textColor(NavigationRailColorTokens.ItemInactiveLabelText.value)
+            indicatorColor(NavigationRailColorTokens.ItemActiveIndicator.value)
+            vertical {
+                indicatorPadding(
+                    start =
+                        (NavigationRailVerticalItemTokens.ActiveIndicatorWidth -
+                            NavigationRailBaselineItemTokens.IconSize) / 2,
+                    end =
+                        (NavigationRailVerticalItemTokens.ActiveIndicatorWidth -
+                            NavigationRailBaselineItemTokens.IconSize) / 2,
+                    top =
+                        (NavigationRailVerticalItemTokens.ActiveIndicatorHeight -
+                            NavigationRailBaselineItemTokens.IconSize) / 2,
+                    bottom =
+                        (NavigationRailVerticalItemTokens.ActiveIndicatorHeight -
+                            NavigationRailBaselineItemTokens.IconSize) / 2,
+                )
+            }
+            horizontal {
+                indicatorPadding(
+                    start = NavigationRailHorizontalItemTokens.FullWidthLeadingSpace,
+                    end = NavigationRailHorizontalItemTokens.FullWidthTrailingSpace,
+                    top =
+                        (NavigationRailHorizontalItemTokens.ActiveIndicatorHeight -
+                            NavigationRailBaselineItemTokens.IconSize) / 2,
+                    bottom =
+                        (NavigationRailHorizontalItemTokens.ActiveIndicatorHeight -
+                            NavigationRailBaselineItemTokens.IconSize) / 2,
+                )
+            }
+            selected {
+                iconColor(NavigationRailColorTokens.ItemActiveIcon.value)
+                vertical {
+                    textColor(NavigationRailColorTokens.ItemActiveLabelText.value)
+                }
+                horizontal {
+                    textColor(NavigationRailColorTokens.ItemActiveIcon.value)
+                }
+            }
+            disabled {
+                iconColor(NavigationRailColorTokens.ItemInactiveIcon.value.copy(DisabledAlpha))
+                textColor(NavigationRailColorTokens.ItemInactiveLabelText.value.copy(DisabledAlpha))
+            }
+        }
+    }
+}
+
+internal class NavigationRailItemStyleScope(
+    override val theme: MaterialTheme.Values,
+    override val state: ComponentState = ComponentState.Default,
+) :
+    MaterialThemeAccessorScope,
+    SelectedState<NavigationRailItemStyleScope>,
+    DisabledState<NavigationRailItemStyleScope>,
+    OrientationState<NavigationRailItemStyleScope>,
+    StyleResolver by StyleResolverImpl() {
+    var iconColor: Color = Color.Unspecified
+        private set
+
+    var textColor: Color = Color.Unspecified
+        private set
+
+    var indicatorColor: Color = Color.Unspecified
+        private set
+
+    var indicatorPaddingStart: Dp = Dp.Unspecified
+        private set
+
+    var indicatorPaddingTop: Dp = Dp.Unspecified
+        private set
+
+    var indicatorPaddingEnd: Dp = Dp.Unspecified
+        private set
+
+    var indicatorPaddingBottom: Dp = Dp.Unspecified
+        private set
+
+    fun iconColor(color: Color) {
+        iconColor = color
+    }
+
+    fun textColor(color: Color) {
+        textColor = color
+    }
+
+    fun indicatorColor(color: Color) {
+        indicatorColor = color
+    }
+
+    fun indicatorPadding(start: Dp, top: Dp, end: Dp, bottom: Dp) {
+        indicatorPaddingStart = start
+        indicatorPaddingTop = top
+        indicatorPaddingEnd = end
+        indicatorPaddingBottom = bottom
     }
 }

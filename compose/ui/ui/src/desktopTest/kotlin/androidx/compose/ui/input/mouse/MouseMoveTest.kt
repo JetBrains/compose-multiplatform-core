@@ -37,6 +37,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
@@ -249,30 +250,34 @@ class MouseMoveTest {
 
     @Test
     @OptIn(ExperimentalComposeUiApi::class)
-    fun `shouldn't send a move events with same position`() = ImageComposeScene(
-        width = 100,
-        height = 100
-    ).use { scene ->
-        val collector = EventCollector()
-        var pressCount = 0
+    fun `shouldn't send a move events with same position`() = withTriggerMoveEventsWhenLocationHasNotChanged(
+        enabled = false
+    ) {
+        ImageComposeScene(
+            width = 100,
+            height = 100
+        ).use { scene ->
+            val collector = EventCollector()
+            var pressCount = 0
 
-        scene.setContent {
-            Box(
-                modifier = Modifier
-                    .size(10.dp)
-                    .collectPointerEvents(collector)
-                    .onPointerEvent(PointerEventType.Press) { pressCount++ }
-            )
+            scene.setContent {
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .collectPointerEvents(collector)
+                        .onPointerEvent(PointerEventType.Press) { pressCount++ }
+                )
+            }
+
+            scene.sendPointerEvent(PointerEventType.Move, Offset(0f, 0f))
+            collector.assertCounts(enter = 1, exit = 0, move = 0)
+
+            scene.sendPointerEvent(PointerEventType.Move, Offset(0f, 0f))
+            collector.assertCounts(enter = 1, exit = 0, move = 0)
+
+            scene.sendPointerEvent(PointerEventType.Move, Offset(0f, 0f))
+            collector.assertCounts(enter = 1, exit = 0, move = 0)
         }
-
-        scene.sendPointerEvent(PointerEventType.Move, Offset(0f, 0f))
-        collector.assertCounts(enter = 1, exit = 0, move = 0)
-
-        scene.sendPointerEvent(PointerEventType.Move, Offset(0f, 0f))
-        collector.assertCounts(enter = 1, exit = 0, move = 0)
-
-        scene.sendPointerEvent(PointerEventType.Move, Offset(0f, 0f))
-        collector.assertCounts(enter = 1, exit = 0, move = 0)
     }
 
     @Test
@@ -297,7 +302,7 @@ class MouseMoveTest {
         collector.assertCounts(enter = 1, exit = 0, move = 0, press = 1)
 
         scene.sendPointerEvent(PointerEventType.Move, Offset(0f, 0f))
-        collector.assertCounts(enter = 1, exit = 0, move = 0, press = 1)
+        collector.assertCounts(enter = 1, exit = 0, move = movesWithSamePosition(1), press = 1)
     }
 
     @Test
@@ -434,20 +439,20 @@ class MouseMoveTest {
 
         scene.sendPointerEvent(PointerEventType.Enter, Offset(0f, 0f))
         scene.sendPointerEvent(PointerEventType.Move, Offset(0f, 0f))
-        collector1.assertCounts(enter = 1, exit = 0, move = 0)
+        collector1.assertCounts(enter = 1, exit = 0, move = movesWithSamePosition(1))
         collector2.assertCounts(enter = 0, exit = 0, move = 0)
 
         scene.sendPointerEvent(PointerEventType.Move, Offset(10f, 0f))
-        collector1.assertCounts(enter = 1, exit = 1, move = 0)
+        collector1.assertCounts(enter = 1, exit = 1, move = movesWithSamePosition(1))
         collector2.assertCounts(enter = 1, exit = 0, move = 0)
 
         scene.sendPointerEvent(PointerEventType.Move, Offset(10f, 0f))
-        collector1.assertCounts(enter = 1, exit = 1, move = 0)
-        collector2.assertCounts(enter = 1, exit = 0, move = 0)
+        collector1.assertCounts(enter = 1, exit = 1, move = movesWithSamePosition(1))
+        collector2.assertCounts(enter = 1, exit = 0, move = movesWithSamePosition(1))
 
         scene.sendPointerEvent(PointerEventType.Move, Offset(9f, 0f))
-        collector1.assertCounts(enter = 2, exit = 1, move = 0)
-        collector2.assertCounts(enter = 1, exit = 1, move = 0)
+        collector1.assertCounts(enter = 2, exit = 1, move = movesWithSamePosition(1))
+        collector2.assertCounts(enter = 1, exit = 1, move = movesWithSamePosition(1))
     }
 
     // bug https://youtrack.jetbrains.com/issue/CMP-2147
@@ -799,6 +804,25 @@ class MouseMoveTest {
         scene.sendPointerEvent(PointerEventType.Release, Offset(10f, 10f), nativeEvent = 4)
 
         assertContentEquals(listOf(1, 2, 3, 4), nativeEventsReceived)
+    }
+}
+
+/**
+ * Expected number of Move events without position change.
+ * They are delivered only if [ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled]
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+private fun movesWithSamePosition(count: Int) =
+    if (ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled) count else 0
+
+@OptIn(ExperimentalComposeUiApi::class)
+private fun withTriggerMoveEventsWhenLocationHasNotChanged(enabled: Boolean, block: () -> Unit) {
+    val previousValue = ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled
+    try {
+        ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled = enabled
+        block()
+    } finally {
+        ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled = previousValue
     }
 }
 

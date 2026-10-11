@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.TextField
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -506,6 +507,7 @@ class MemoryLeaksTest {
         val duration = 100.milliseconds
         repeat((5.seconds / duration).toInt()) {
             runApplicationLoop(duration)
+            Snapshot.sendApplyNotifications()
             GC.collect()
             if (reference.all { it.get() == null }) return
         }
