@@ -31,6 +31,8 @@ internal class InactiveTextInputAdapter(
 
     private val text: String get() = delegate.text
 
+    override fun onFocus() = Unit
+
     override fun onResignFocus() = Unit
 
     override fun beginFloatingCursor(offset: DpOffset) = Unit

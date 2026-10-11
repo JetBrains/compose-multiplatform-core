@@ -90,7 +90,10 @@ class ParagraphIntegrationTest {
             EmojiCompat.reset(null)
             // we want a temporary thread, we don't need to control the font loading thread
             // for this test, hence the deprecation suppression
-            @Suppress("DEPRECATION") EmojiCompat.init(BundledEmojiCompatConfig(appContext))
+            @Suppress("DEPRECATION")
+            EmojiCompat.init(
+                BundledEmojiCompatConfig(appContext).setUseAfterUpdatableSystemFonts(true)
+            )
 
             // wait for EmojiCompat instance to fully load
             while (EmojiCompat.get().loadState != EmojiCompat.LOAD_STATE_SUCCEEDED) {}
@@ -2005,6 +2008,7 @@ class ParagraphIntegrationTest {
                         style = TextStyle(fontSize = fontSize, localeList = localeList),
                         density = defaultDensity,
                         fontFamilyResolver = resourceLoader,
+                        defaultLocaleList = TEST_LOCALE_LIST,
                         // just have 10x font size to have a bitmap
                         constraints = Constraints(maxWidth = (fontSizeInPx * 10).ceilToInt()),
                         overflow = TextOverflow.Clip,
@@ -4599,6 +4603,7 @@ class ParagraphIntegrationTest {
                     annotations = listOf(),
                     density = defaultDensity,
                     fontFamilyResolver = UncachedFontFamilyResolver(context),
+                    defaultLocaleList = TEST_LOCALE_LIST,
                     placeholders = listOf(),
                     softWrap = true,
                 )
@@ -4875,6 +4880,7 @@ class ParagraphIntegrationTest {
             constraints = Constraints(maxWidth = width.ceilToInt(), maxHeight = height.ceilToInt()),
             density = density ?: defaultDensity,
             fontFamilyResolver = UncachedFontFamilyResolver(context),
+            defaultLocaleList = TEST_LOCALE_LIST,
         )
     }
 }

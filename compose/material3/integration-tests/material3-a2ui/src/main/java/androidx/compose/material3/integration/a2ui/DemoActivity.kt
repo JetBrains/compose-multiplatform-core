@@ -20,7 +20,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -35,12 +34,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.core.view.WindowCompat
 
+@OptIn(ExperimentalComposeUiApi::class)
 class DemoActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        ComposeUiFlags.isMediaQueryIntegrationEnabled = true
+        WindowCompat.enableEdgeToEdge(window)
         setContent { DemoTheme { A2uiDemoApp() } }
     }
 }
@@ -48,6 +53,7 @@ class DemoActivity : ComponentActivity() {
 @Composable
 fun A2uiDemoApp() {
     var selectedComponent by rememberSaveable { mutableStateOf<UiComponent?>(null) }
+    val saveableStateHolder = rememberSaveableStateHolder()
 
     BackHandler(enabled = selectedComponent != null) { selectedComponent = null }
 
@@ -74,12 +80,14 @@ fun A2uiDemoApp() {
         },
         label = "ScreenTransition",
     ) { component ->
-        if (component != null) {
-            ComponentDetailScreen(component = component, onBack = { selectedComponent = null })
-        } else {
-            ComponentListScreen(
-                onComponentSelected = { newComponent -> selectedComponent = newComponent }
-            )
+        saveableStateHolder.SaveableStateProvider(component?.name ?: "list") {
+            if (component != null) {
+                ComponentDetailScreen(component = component, onBack = { selectedComponent = null })
+            } else {
+                ComponentListScreen(
+                    onComponentSelected = { newComponent -> selectedComponent = newComponent }
+                )
+            }
         }
     }
 }

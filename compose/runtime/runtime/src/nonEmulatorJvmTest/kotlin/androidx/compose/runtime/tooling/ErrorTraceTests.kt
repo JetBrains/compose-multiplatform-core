@@ -111,7 +111,7 @@ class ErrorTraceTests {
                 "InlineLinear(ErrorTraceComposables.kt:83)",
                 "<lambda>(ErrorTraceTests.kt:<line number>)",
             ),
-            groupKeyTrace(1), // All frames except from initial lambda are source markers
+            groupKeyTrace(1), // All frames are source markers
         ) {
             compose { InlineLinear { throwTestException() } }
         }

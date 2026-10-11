@@ -45,7 +45,6 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlinx.coroutines.CoroutineScope
 import platform.UIKit.UIView
-import platform.UIKit.reloadInputViews
 
 internal class NativeTextInputConnection(
     private var inactiveTextInputDelegate: NativeTextEditingDelegate,
@@ -63,7 +62,7 @@ internal class NativeTextInputConnection(
 
     private val scrollView by lazy { NativeTextInputScrollView() }
 
-    override val textInputView = NativeTextInputView(input = inactiveTextInputDelegate).also {
+    override val textInputView = NativeTextInputView(initialInput = inactiveTextInputDelegate).also {
         scrollView.textView = it
     }
 

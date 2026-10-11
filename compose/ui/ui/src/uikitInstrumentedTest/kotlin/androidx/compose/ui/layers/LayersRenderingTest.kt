@@ -18,24 +18,99 @@ package androidx.compose.ui.layers
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.background
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.test.captureScreenshot
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.forEachPixel
+import androidx.compose.ui.test.utils.forEachPixelInRect
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.DpRect
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import platform.UIKit.UIImage
+import platform.darwin.dispatch_async
+import platform.darwin.dispatch_get_main_queue
 
 class LayersRenderingTest {
+    @Test
+    fun testPopupDoesNotDrawAtOriginBeforeParentAnchor() = runUIKitInstrumentedTest {
+        val popupSize = 20.dp
+        var showPopup by mutableStateOf(false)
+        var captureNextParentDraw by mutableStateOf(false)
+        var firstPopupFrame: UIImage? = null
+        var popupContentPlaced by mutableStateOf(false)
+
+        setContent {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Blue)
+                    .drawBehind {
+                        if (captureNextParentDraw) {
+                            dispatch_async(dispatch_get_main_queue()) {
+                                firstPopupFrame = captureScreenshot()
+                            }
+                            captureNextParentDraw = false
+                        }
+                    }
+            )
+            if (showPopup) {
+                Popup(
+                    alignment = Alignment.Center,
+                    onDismissRequest = {},
+                    properties = PopupProperties(usePlatformInsets = false),
+                ) {
+                    Box(
+                        Modifier
+                            .size(popupSize)
+                            .background(Color.Red)
+                            .onPlaced { popupContentPlaced = true }
+                    )
+                }
+            }
+        }
+
+        captureNextParentDraw = true
+        showPopup = true
+        waitUntil("First popup frame should be captured") { firstPopupFrame != null }
+
+        firstPopupFrame!!.forEachPixel(step = 4) { _, _, color ->
+            assertEquals(Color.Blue, color, "Popup content appeared before its anchor was available")
+        }
+
+        waitUntil("Popup content should be placed") { popupContentPlaced }
+        waitForIdle()
+        val settledPopupFrame = assertNotNull(captureScreenshot())
+        val expectedPopupBounds = with(density) {
+            DpRect(
+                origin = DpOffset(
+                    x = (screenSize.width - popupSize) / 2,
+                    y = (screenSize.height - popupSize) / 2,
+                ),
+                size = DpSize(popupSize, popupSize),
+            ).toRect().roundToIntRect()
+        }
+        settledPopupFrame.forEachPixelInRect(expectedPopupBounds, step = 4) { _, _, color ->
+            assertEquals(Color.Red, color, "Popup content was not drawn at its expected position")
+        }
+    }
+
     @Test
     fun testLayerContentAfterParentAnchorIsAvailable() = runUIKitInstrumentedTest {
         var showRed by mutableStateOf(false)

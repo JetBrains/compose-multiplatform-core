@@ -35,7 +35,7 @@ class CenteredHeroTest {
             heroKeylineList(
                 density = Density,
                 carouselMainAxisSize = 100f + 40f + 40f,
-                maxItemSize = null,
+                preferredItemSize = null,
                 itemSpacing = 0f,
                 itemCount = 6,
                 isCentered = true,
@@ -58,7 +58,7 @@ class CenteredHeroTest {
             heroKeylineList(
                 density = Density,
                 carouselMainAxisSize = 100f + 40f + 40f,
-                maxItemSize = null,
+                preferredItemSize = null,
                 itemSpacing = 0f,
                 itemCount = 2,
                 isCentered = true,
@@ -82,7 +82,7 @@ class CenteredHeroTest {
             heroKeylineList(
                 density = Density,
                 carouselMainAxisSize = 40f + 40f + 40f,
-                maxItemSize = null,
+                preferredItemSize = null,
                 itemSpacing = 0f,
                 itemCount = 1,
                 isCentered = true,
@@ -105,7 +105,7 @@ class CenteredHeroTest {
             heroKeylineList(
                 density = Density,
                 carouselMainAxisSize = 40f + 40f + 40f,
-                maxItemSize = null,
+                preferredItemSize = null,
                 itemSpacing = 0f,
                 itemCount = 6,
                 isCentered = true,
@@ -128,7 +128,7 @@ class CenteredHeroTest {
             heroKeylineList(
                 density = Density,
                 carouselMainAxisSize = 300f + 300f + 300f + 40f + 40f,
-                maxItemSize = 300f,
+                preferredItemSize = 300f,
                 itemSpacing = 0f,
                 itemCount = 7,
                 isCentered = true,
@@ -156,7 +156,7 @@ class CenteredHeroTest {
             heroKeylineList(
                 density = Density,
                 carouselMainAxisSize = 300f + 300f + 300f + 40f + 40f,
-                maxItemSize = 300f,
+                preferredItemSize = 300f,
                 itemSpacing = 12f,
                 itemCount = 7,
                 isCentered = true,
@@ -186,7 +186,7 @@ class CenteredHeroTest {
             heroKeylineList(
                 density = Density,
                 carouselMainAxisSize = 300f + 300f + 300f + 40f + 40f,
-                maxItemSize = 300f,
+                preferredItemSize = 300f,
                 itemSpacing = 12f,
                 itemCount = 10,
                 isCentered = true,
@@ -206,5 +206,19 @@ class CenteredHeroTest {
         assertThat(strategy.defaultKeylines.firstNonAnchor.offset).isEqualTo(20f)
         assertThat(strategy.defaultKeylines.lastNonAnchor.offset)
             .isEqualTo((300f + 300f + 300f + 40f + 40f) - 20f)
+    }
+
+    @Test
+    fun negativeCarouselSize_shouldReturnEmptyList() {
+        val keylineList =
+            heroKeylineList(
+                density = Density,
+                carouselMainAxisSize = -10f,
+                preferredItemSize = 100f,
+                itemSpacing = 0f,
+                itemCount = 5,
+                isCentered = true,
+            )
+        assertThat(keylineList.isEmpty()).isTrue()
     }
 }

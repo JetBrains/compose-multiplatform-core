@@ -312,6 +312,7 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
             modality = modality,
             isInline = isInline,
             isSuspend = isSuspend,
+            companionExtensionsClass = null,
             typeParameters = typeParams,
             valueParameters = allValueParameters,
             returnType = returnType,

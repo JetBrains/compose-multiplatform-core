@@ -102,13 +102,26 @@ import platform.UIKit.systemBlueColor
 import platform.darwin.NSInteger
 
 internal class NativeTextInputView(
-    var input: NativeTextEditingDelegate,
+    initialInput: NativeTextEditingDelegate,
 ) : CMPTextInputView(frame = CGRectZero.readValue()), UIKeyInputProtocol, UITextInputProtocol {
     private var _inputDelegate: UITextInputDelegateProtocol? = null
 
     private val touchesTrackerGestureRecognizer = TouchTrackingGestureRecognizer().also {
         addGestureRecognizer(it)
     }
+
+    var input: NativeTextEditingDelegate = initialInput
+        set(value) {
+            if (field != value) {
+                if (isFirstResponder) {
+                    field.onResignFocus()
+                }
+                field = value
+                if (isFirstResponder) {
+                    field.onFocus()
+                }
+            }
+        }
 
     init {
         clipsToBounds = false
@@ -137,6 +150,7 @@ internal class NativeTextInputView(
         if (!input.isInteractive) {
             return false
         }
+        input.onFocus()
         val isFirstResponder = this.isFirstResponder()
         val result = super.becomeFirstResponder()
 
@@ -146,6 +160,11 @@ internal class NativeTextInputView(
         }
 
         return result
+    }
+
+    override fun resignFirstResponder(): Boolean {
+        input.onResignFocus()
+        return super.resignFirstResponder()
     }
 
     override fun setTintColor(tintColor: UIColor?) {

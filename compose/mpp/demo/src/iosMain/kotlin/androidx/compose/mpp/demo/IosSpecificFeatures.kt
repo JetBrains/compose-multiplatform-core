@@ -18,6 +18,7 @@ package androidx.compose.mpp.demo
 
 val IosSpecificFeatures = Screen.Selection(
     "iOS Features",
+    WindowInsetsDemos,
     NativeModalWithNavigationExample,
     NativePopupWithComposePopupExample,
     HapticFeedbackExample,

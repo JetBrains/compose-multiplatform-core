@@ -180,12 +180,12 @@ internal abstract class NativeInputEventsProcessor(
     internal fun getCollectedEvents() = collectedEvents
 }
 
-private fun InputEventExt.resolveSelection(): SetSelectionCommand? {
-    firstRange?.let { targetRange ->
-        if (!targetRange.collapsed) {
-            return SetSelectionCommand(targetRange.startOffset, targetRange.endOffset)
-        }
-    }
-
-    return null
-}
+/**
+ * The target range reported by the browser is authoritative positional information:
+ * it states where exactly the edit has to be applied.
+ *
+ * A collapsed range is meaningful too - it pins the insertion point and makes the command
+ * immune to a caret drift on the Compose side (see https://youtrack.jetbrains.com/issue/CMP-10753).
+ */
+private fun InputEventExt.resolveSelection(): SetSelectionCommand? =
+    firstRange?.let { SetSelectionCommand(it.startOffset, it.endOffset) }

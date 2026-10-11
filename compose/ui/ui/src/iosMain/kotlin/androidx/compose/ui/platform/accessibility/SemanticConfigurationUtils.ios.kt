@@ -56,6 +56,7 @@ import platform.UIKit.UIAccessibilityTraits
 // Private accessibility trait for text fields
 internal val CMPAccessibilityTraitTextView: UIAccessibilityTraits = (1UL shl 18) or (1UL shl 47)
 internal val CMPAccessibilityTraitIsEditing: UIAccessibilityTraits = 1UL shl 21
+internal val CMPAccessibilityTraitToggle: UIAccessibilityTraits = 1UL shl 53
 
 internal fun SemanticsConfiguration.accessibilityTraits(): UIAccessibilityTraits {
     var result = UIAccessibilityTraitNone
@@ -82,16 +83,8 @@ internal fun SemanticsConfiguration.accessibilityTraits(): UIAccessibilityTraits
         result = result or UIAccessibilityTraitHeader
     }
 
-    getOrNull(SemanticsProperties.ToggleableState)?.let { state ->
-        when (state) {
-            ToggleableState.On -> {
-                result = result or UIAccessibilityTraitSelected
-            }
-
-            ToggleableState.Off, ToggleableState.Indeterminate -> {
-                // Do nothing
-            }
-        }
+    if (contains(SemanticsProperties.ToggleableState)) {
+        result = result or CMPAccessibilityTraitToggle
     }
 
     if (contains(SemanticsProperties.ProgressBarRangeInfo)) {
@@ -158,7 +151,7 @@ internal fun SemanticsConfiguration.accessibilityAttributedValue(): NSAttributed
             ?.let { return it.toAccessibilityNSAttributedString() }
     }
 
-    return getOrNull(SemanticsProperties.ProgressBarRangeInfo)?.let {
+    getOrNull(SemanticsProperties.ProgressBarRangeInfo)?.let {
         return if (it.range.endInclusive > it.range.start) {
             val fraction = (it.current - it.range.start) /
                 (it.range.endInclusive - it.range.start)
@@ -167,6 +160,16 @@ internal fun SemanticsConfiguration.accessibilityAttributedValue(): NSAttributed
             null
         }
     }
+
+    getOrNull(SemanticsProperties.ToggleableState)?.let { state ->
+        return when (state) {
+            ToggleableState.On -> "1"
+            ToggleableState.Off -> "0"
+            ToggleableState.Indeterminate -> null
+        }?.toAccessibilityNSAttributedString()
+    }
+
+    return null
 }
 
 @OptIn(BetaInteropApi::class)

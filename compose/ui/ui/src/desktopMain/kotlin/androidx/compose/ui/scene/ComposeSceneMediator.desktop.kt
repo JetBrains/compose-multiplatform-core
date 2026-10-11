@@ -21,7 +21,9 @@ import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.ProvideSystemTheme
+import androidx.compose.ui.UiMediaScope
 import androidx.compose.ui.awt.AwtEventListener
 import androidx.compose.ui.awt.AwtEventListeners
 import androidx.compose.ui.awt.DebouncingEdtExecutor
@@ -32,7 +34,8 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.SkiaCanvasHolder
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.input.InputModeManager
@@ -49,8 +52,11 @@ import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
 import androidx.compose.ui.platform.AwtDragAndDropManager
+import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.DelegateRootForTestListener
+import androidx.compose.ui.platform.DesktopMediaScope
+import androidx.compose.ui.platform.DesktopPlatformOutOfFrameExecutor
 import androidx.compose.ui.platform.DesktopTextInputService
 import androidx.compose.ui.platform.DesktopTextInputService2
 import androidx.compose.ui.platform.FrameRecomposer
@@ -58,14 +64,20 @@ import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformComponent
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
+import androidx.compose.ui.platform.PlatformOutOfFrameExecutor
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.platform.TaskDispatchers
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.a11y.ComposeSceneAccessibility
+import androidx.compose.ui.platform.createPlatformClipboard
+import androidx.compose.ui.platform.createPlatformUriHandler
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.semantics.SemanticsOwner
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntRect
@@ -162,6 +174,8 @@ internal class ComposeSceneMediator(
         DesktopTextInputService(platformComponent)
     }
 
+    private val desktopMediaScope = DesktopMediaScope(windowInfo = windowContext.windowInfo)
+
     private val textInputService2 by lazy(LazyThreadSafetyMode.NONE) {
         DesktopTextInputService2(platformComponent)
     }
@@ -194,7 +208,9 @@ internal class ComposeSceneMediator(
     val windowHandle by skiaLayerComponent::windowHandle
     val renderApi by skiaLayerComponent::renderApi
     val semanticsOwners: Collection<SemanticsOwner> by semanticsOwnerManager::semanticsOwners
+    val outOfFrameExecutor = DesktopPlatformOutOfFrameExecutor()
 
+    private val canvasHolder: SkiaCanvasHolder = SkiaCanvasHolder()
     /**
      * @see ComposeFeatureFlags.useInteropBlending
      */
@@ -630,6 +646,9 @@ internal class ComposeSceneMediator(
         // Since rendering will not happen after, we need to execute all scheduled updates
         interopContainer.dispose()
 
+        desktopMediaScope.dispose()
+        outOfFrameExecutor.dispose()
+
         _onComponentAttached = null
     }
 
@@ -738,17 +757,18 @@ internal class ComposeSceneMediator(
     }
 
     override fun onRender(canvas: SkCanvas, width: Int, height: Int, nanoTime: Long) = catchExceptions {
+        outOfFrameExecutor.onBeforeFrame()
         interopContainer.postponingExecutingScheduledUpdates {
             canvas.withSceneOffset {
                 with(sceneRenderingScope) {
                     scene.size = IntSize(width, height)
-                    scene.render(frameRecomposer, asComposeCanvas(), nanoTime)
+                    scene.render(frameRecomposer, this@withSceneOffset, nanoTime)
                 }
             }
         }
     }
 
-    private inline fun SkCanvas.withSceneOffset(crossinline block: SkCanvas.() -> Unit) {
+    private inline fun SkCanvas.withSceneOffset(crossinline block: Canvas.() -> Unit) {
         // Offset of scene relative to [container]
         val sceneBoundsOffset = sceneBoundsInPx?.topLeft ?: Offset.Zero
         // Offset of canvas relative to [container]
@@ -759,7 +779,7 @@ internal class ComposeSceneMediator(
         val sceneOffset = sceneBoundsOffset - contentOffset
         save()
         translate(sceneOffset.x, sceneOffset.y)
-        block()
+        canvasHolder.drawInto(this, block)
         restore()
     }
 
@@ -835,6 +855,8 @@ internal class ComposeSceneMediator(
 
     private inner class DesktopPlatformContext : PlatformContext {
         override val windowInfo: WindowInfo get() = windowContext.windowInfo
+        @OptIn(ExperimentalMediaQueryApi::class)
+        override val mediaScope: UiMediaScope get() = desktopMediaScope
 
         override val taskDispatchers: TaskDispatchers = object : TaskDispatchers {
             override val Default = Dispatchers.Default
@@ -871,6 +893,18 @@ internal class ComposeSceneMediator(
             DefaultInputModeManager()
         }
 
+        override val clipboard: Clipboard by lazy(LazyThreadSafetyMode.NONE) {
+            createPlatformClipboard()
+        }
+
+        override val uriHandler: UriHandler by lazy(LazyThreadSafetyMode.NONE) {
+            createPlatformUriHandler()
+        }
+
+        override val fontFamilyResolver: FontFamily.Resolver by lazy(LazyThreadSafetyMode.NONE) {
+            createFontFamilyResolver()
+        }
+
         override val textInputService get() = this@ComposeSceneMediator.textInputService
 
         override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
@@ -901,6 +935,8 @@ internal class ComposeSceneMediator(
             get() = this@ComposeSceneMediator.semanticsOwnerManager
         override val isClearFocusOnMouseDownEnabled: Boolean
             get() = this@ComposeSceneMediator.isClearFocusOnMouseDownEnabled
+        override val outOfFrameExecutor: PlatformOutOfFrameExecutor
+            get() = this@ComposeSceneMediator.outOfFrameExecutor
     }
 
     private inner class DesktopPlatformComponent : PlatformComponent {
@@ -969,7 +1005,7 @@ internal class ComposeSceneMediator(
         target.drawScene(offsetX, offsetY, size, contentComponent.density) {
             fillBackground(contentComponent.background)
             if (!shouldPlaceInteropAbove) drawInterop(interopContainer.root)
-            drawCompose { canvas -> canvas.withSceneOffset { scene.draw(asComposeCanvas()) } }
+            drawCompose { canvas -> canvas.withSceneOffset { scene.draw(this) } }
             if (shouldPlaceInteropAbove) drawInterop(interopContainer.root)
         }
     }

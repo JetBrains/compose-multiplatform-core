@@ -544,6 +544,12 @@ internal class CompositionImpl(
         @TestOnly @Suppress("AsCollectionCall") get() = observations.map.asMap().keys
 
     /**
+     * A set of scopes that were invalidated by a call from [recordModificationsOf]. This set is
+     * only used in [addPendingInvalidationsLocked], and is reused between invocations.
+     */
+    private val invalidatedScopes = MutableScatterSet<RecomposeScopeImpl>()
+
+    /**
      * A set of scopes that were invalidated conditionally (that is they were invalidated by a
      * [derivedStateOf] object) by a call from [recordModificationsOf]. They need to be held in the
      * [observations] map until invalidations are drained for composition as a later call to
@@ -1093,6 +1099,8 @@ internal class CompositionImpl(
             ) {
                 if (scope.isConditional && !forgetConditionalScopes) {
                     conditionallyInvalidatedScopes.add(scope)
+                } else {
+                    invalidatedScopes.add(scope)
                 }
             }
         }
@@ -1134,10 +1142,17 @@ internal class CompositionImpl(
         }
 
         val conditionallyInvalidatedScopes = conditionallyInvalidatedScopes
+        val invalidatedScopes = invalidatedScopes
         if (forgetConditionalScopes && conditionallyInvalidatedScopes.isNotEmpty()) {
-            observations.removeScopeIf { scope -> scope in conditionallyInvalidatedScopes }
+            observations.removeScopeIf { scope ->
+                scope in conditionallyInvalidatedScopes || scope in invalidatedScopes
+            }
             conditionallyInvalidatedScopes.clear()
             cleanUpDerivedStateObservations()
+        } else if (invalidatedScopes.isNotEmpty()) {
+            observations.removeScopeIf { scope -> scope in invalidatedScopes }
+            cleanUpDerivedStateObservations()
+            invalidatedScopes.clear()
         }
     }
 
@@ -1152,6 +1167,7 @@ internal class CompositionImpl(
     }
 
     override fun recordReadOf(value: Any) {
+        // Not acquiring lock since this happens during composition with it already held
         val currentComputingState = computingStates.lastOrNull()
         if (currentComputingState != null) {
             if (value is StateObjectImpl) {
@@ -1256,7 +1272,11 @@ internal class CompositionImpl(
         references: List<Pair<MovableContentStateReference, MovableContentStateReference?>>
     ) {
         runtimeCheck(references.fastAll { it.first.composition == this })
-        guardChanges { composer.insertMovableContentReferences(references) }
+        guardChanges {
+            observeIndirectStateRecalculations(indirectStateObserver) {
+                composer.insertMovableContentReferences(references)
+            }
+        }
     }
 
     override fun disposeUnusedMovableContent(state: MovableContentState) {
@@ -1579,13 +1599,36 @@ internal object ScopeInvalidated
 internal class CompositionObserverHolder(
     var observer: CompositionObserver? = null,
     var root: Boolean = false,
-    private val parent: CompositionContext,
+    parent: CompositionContext,
 ) {
+    /** Resolved once, as [CompositionContext.observerHolder] never changes for a given parent. */
+    private val parentHolder: CompositionObserverHolder? = parent.observerHolder
+
+    /** The observer pinned by [pin] for the current composition pass, returned from [current]. */
+    var pinnedObserver: CompositionObserver? = null
+        private set
+
+    /** True between [pin] and [unpin], even if the pinned observer is `null`. */
+    private var pinned = false
+
+    /** Resolves [current] and keeps returning it from [current] until [unpin] is called. */
+    fun pin(): CompositionObserver? {
+        val observer = current()
+        pinnedObserver = observer
+        pinned = true
+        return observer
+    }
+
+    fun unpin() {
+        pinnedObserver = null
+        pinned = false
+    }
+
     fun current(): CompositionObserver? {
+        if (pinned) return pinnedObserver
         return if (root) {
             observer
         } else {
-            val parentHolder = parent.observerHolder
             val parentObserver = parentHolder?.observer
             if (parentObserver != observer) {
                 observer = parentObserver

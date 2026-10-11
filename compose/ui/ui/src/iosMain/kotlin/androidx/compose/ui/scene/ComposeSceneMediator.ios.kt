@@ -47,7 +47,6 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerId
-import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.isAltPressed
 import androidx.compose.ui.input.pointer.isCtrlPressed
@@ -76,6 +75,13 @@ import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalTextInputContainer
 import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.OnFocusBehavior
+import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
+import androidx.compose.ui.platform.Clipboard
+import androidx.compose.ui.platform.UriHandler
+import androidx.compose.ui.platform.createPlatformClipboard
+import androidx.compose.ui.platform.createPlatformUriHandler
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
@@ -449,8 +455,8 @@ internal class ComposeSceneMediator(
     private val textInputService =
         TextInputService(
             updateView = {
-                frameChoreographer.performFrameIfNeeded()
-                scene.measureAndLayout()
+                frameChoreographer.performRecomposerFrameIfNeeded()
+                requestMeasureAndLayout()
                 CATransaction.flush()
             },
             view = _overlayView,
@@ -733,8 +739,15 @@ internal class ComposeSceneMediator(
         }
     }
 
-    fun measureAndLayout() {
-        scene.measureAndLayout()
+    fun requestMeasureAndLayout(completion: () -> Unit = {}) {
+        frameChoreographer.performOutsideRecomposerFrame {
+            scene.measureAndLayout()
+            completion()
+        }
+    }
+
+    fun updateKeyboardOverlap() {
+        keyboardManager.updateOverlapForCurrentGeometry()
     }
 
     fun draw(canvas: Canvas) {
@@ -767,7 +780,6 @@ internal class ComposeSceneMediator(
             OffsetToFocusedRect(
                 insets = windowInsetsManager.windowInsets.ime,
                 getFocusedRect = ::getFocusedRect,
-                size = scene.size,
                 animationDuration = if (animateKeyboardOffsetChanges) {
                     FOCUS_CHANGE_ANIMATION_DURATION
                 } else {
@@ -958,6 +970,18 @@ internal class ComposeSceneMediator(
 
         override val hapticFeedback: HapticFeedback by lazy(LazyThreadSafetyMode.NONE) {
             CupertinoHapticFeedback()
+        }
+
+        override val clipboard: Clipboard by lazy(LazyThreadSafetyMode.NONE) {
+            createPlatformClipboard()
+        }
+
+        override val uriHandler: UriHandler by lazy(LazyThreadSafetyMode.NONE) {
+            createPlatformUriHandler()
+        }
+
+        override val fontFamilyResolver: FontFamily.Resolver by lazy(LazyThreadSafetyMode.NONE) {
+            createFontFamilyResolver()
         }
 
         override fun convertLocalToWindowPosition(localPosition: Offset): Offset =

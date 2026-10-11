@@ -100,6 +100,7 @@ import androidx.compose.material3.samples.ExitUntilCollapsedMediumTopAppBar
 import androidx.compose.material3.samples.ExpandableHorizontalFloatingToolbarSample
 import androidx.compose.material3.samples.ExpandableVerticalFloatingToolbarSample
 import androidx.compose.material3.samples.ExposedDropdownMenuSample
+import androidx.compose.material3.samples.ExpressiveConnectedTextFieldsSample
 import androidx.compose.material3.samples.ExpressiveOutlinedPasswordTextField
 import androidx.compose.material3.samples.ExpressiveOutlinedTextFieldSample
 import androidx.compose.material3.samples.ExpressiveOutlinedTextFieldWithErrorState
@@ -187,7 +188,7 @@ import androidx.compose.material3.samples.MenuWithScrollStateSample
 import androidx.compose.material3.samples.ModalBottomSheetSample
 import androidx.compose.material3.samples.ModalNavigationDrawerSample
 import androidx.compose.material3.samples.ModalWideNavigationRailSample
-import androidx.compose.material3.samples.MultiAspectCarouselLazyRowSample
+import androidx.compose.material3.samples.MultiAspectCarouselRowSample
 import androidx.compose.material3.samples.MultiAutocompleteExposedDropdownMenuSample
 import androidx.compose.material3.samples.MultiSelectConnectedButtonGroupSample
 import androidx.compose.material3.samples.MultiSelectionListItemSample
@@ -722,6 +723,14 @@ val CarouselExamples =
             HorizontalCenteredHeroCarouselSample()
         },
         Example(
+            name = "MultiAspectCarouselRowSample",
+            description = CarouselExampleDescription,
+            sourceUrl = CarouselExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            MultiAspectCarouselRowSample()
+        },
+        Example(
             name = "FadingHorizontalMultiBrowseCarouselSample",
             description = CarouselExampleDescription,
             sourceUrl = CarouselExampleSourceUrl,
@@ -736,14 +745,6 @@ val CarouselExamples =
             isExpressive = false,
         ) {
             CarouselWithShowAllButtonSample()
-        },
-        Example(
-            name = "MultiAspectCarouselLazyRowSample",
-            description = CarouselExampleDescription,
-            sourceUrl = CarouselExampleSourceUrl,
-            isExpressive = false,
-        ) {
-            MultiAspectCarouselLazyRowSample()
         },
     )
 
@@ -2860,6 +2861,16 @@ val TextFieldsExamples =
                 isExpressive = true,
             ) {
                 ExpressiveOutlinedPasswordTextField()
+            },
+            Example(
+                name = "ExpressiveConnectedTextFieldsSample",
+                description =
+                    "Text fields can be customized to group a small number of related text fields" +
+                        " together, making content easier to digest.",
+                sourceUrl = TextFieldsExampleSourceUrl,
+                isExpressive = true,
+            ) {
+                ExpressiveConnectedTextFieldsSample()
             },
             Example(
                 name = "SimpleTextFieldSample",
