@@ -21,6 +21,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.clearSkikoComposeImplementation
 import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.text.font.createFontFamilyResolver
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextIndent
@@ -506,6 +507,28 @@ class SkikoParagraphTest {
                 paragraph.getCursorRect(offset)
             }
         }
+    }
+
+    @Test
+    fun getCursorRect_hasSameHeightForEmptyAndNonEmptyText() {
+        val style = TextStyle(
+            fontSize = 64.sp,
+            letterSpacing = 0.5.sp,
+            lineHeight = 24.sp,
+            lineHeightStyle = LineHeightStyle(
+                alignment = LineHeightStyle.Alignment.Center,
+                trim = LineHeightStyle.Trim.None,
+                mode = LineHeightStyle.Mode.Fixed,
+            ),
+        )
+        val emptyParagraph = simpleParagraph(text = "", textStyle = style)
+        val nonEmptyText = "q"
+        val nonEmptyParagraph = simpleParagraph(text = nonEmptyText, textStyle = style)
+
+        val emptyCursor = emptyParagraph.getCursorRect(0)
+        val nonEmptyCursor = nonEmptyParagraph.getCursorRect(nonEmptyText.length)
+
+        assertEquals(emptyCursor.height, nonEmptyCursor.height)
     }
 
     private fun simpleParagraph(text: String, textStyle: TextStyle = TextStyle()) = Paragraph(
