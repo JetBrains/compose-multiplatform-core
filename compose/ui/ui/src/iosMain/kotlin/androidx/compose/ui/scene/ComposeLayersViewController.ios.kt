@@ -221,6 +221,7 @@ internal class ComposeLayersViewController(
     }
 
     private fun hide() {
+        needsLayerStackDraw = false
         view.removeFromSuperview()
     }
 
