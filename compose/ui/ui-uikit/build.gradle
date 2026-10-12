@@ -131,12 +131,8 @@ private def configureObjcUtils(target, xcodeProjectDir, sdkName, destination, ar
 
     target.compilations.main {
         def libTaskName = "${compileTaskProvider.name}ObjCLib"
-        def cleanDerivedDataTask = project.tasks.register("${libTaskName}DerivedData", Delete) {
-            delete(derivedDataDir)
-        }
         def libTask = project.tasks.register(libTaskName, Exec) {
             usesService(XcodeBuildLock.instance(project))
-            dependsOn(cleanDerivedDataTask)
             inputs.dir(xcodeProjectDir)
                     .withPropertyName("${libraryName}-${sdkName}")
                     .withPathSensitivity(PathSensitivity.RELATIVE)
@@ -203,14 +199,10 @@ private def configureSwiftUtils(target, xcodeProjectDir, sdkName, destination, a
 
     target.compilations.main {
         def libTaskName = "${compileTaskProvider.name}UIKitSwiftUtilsLib"
-        def cleanDerivedDataTask = project.tasks.register("${libTaskName}DerivedData", Delete) {
-            delete(derivedDataDir)
-        }
 
         // Archive the Swift target first. The archive installs both the static library and the generated -Swift.h header.
         def libTask = project.tasks.register(libTaskName, Exec) {
             usesService(XcodeBuildLock.instance(project))
-            dependsOn(cleanDerivedDataTask)
             inputs.dir(librarySourcesDir)
                     .withPropertyName("${libraryName}-${sdkName}")
                     .withPathSensitivity(PathSensitivity.RELATIVE)
