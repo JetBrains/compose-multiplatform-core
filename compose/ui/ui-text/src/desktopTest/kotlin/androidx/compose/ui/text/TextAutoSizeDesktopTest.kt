@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package androidx.compose.foundation.text
+package androidx.compose.ui.text
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -29,7 +30,7 @@ import org.junit.Rule
 import org.junit.Test
 
 class TextAutoSizeDesktopTest {
-    @Suppress("DEPRECATION") @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun ellipsis_shrinksTextToFitSingleLine() {

@@ -279,6 +279,7 @@ internal class SkikoParagraph(
         }
     }
 
+    // TODO: Won't be correct after CMP-6716
     override fun isLineEllipsized(lineIndex: Int): Boolean =
         ellipsis.isNotEmpty() && lineIndex == lineCount - 1 && didExceedMaxLines
 
