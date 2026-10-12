@@ -35,6 +35,7 @@ internal sealed interface MetalRedrawer {
     var isForcedToPresentWithTransactionEveryFrame: Boolean
     fun awaitRenderingCompletion()
     fun dispose()
+    val hasInvalidations: Boolean
 }
 
 internal inline fun MetalRedrawer.onDraw(
@@ -77,6 +78,7 @@ internal class LegacyMetalRedrawer(
     private var isDrawRecursiveCall = false
 
     override var isForcedToPresentWithTransactionEveryFrame = false
+    override val hasInvalidations: Boolean = false
 
     /**
      * True if Metal layer can be opaque. In this case if no interop views are present, Metal

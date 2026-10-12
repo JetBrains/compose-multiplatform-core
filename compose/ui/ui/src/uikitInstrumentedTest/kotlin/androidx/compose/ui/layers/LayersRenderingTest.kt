@@ -46,6 +46,7 @@ import androidx.compose.ui.window.PopupProperties
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import platform.UIKit.UIImage
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
@@ -230,14 +231,12 @@ class LayersRenderingTest {
             }
         }
 
-        waitUntil("Popups should match their expected layout") {
-            screenshotMatches(listOf(redPopup, bluePopup))
-        }
+        waitForIdle()
+        assertTrue(screenshotMatches(listOf(redPopup, bluePopup)))
 
         showRedPopup = false
-        waitUntil("Only the blue popup should remain") {
-            screenshotMatches(listOf(bluePopup))
-        }
+        waitForIdle()
+        assertTrue(screenshotMatches(listOf(bluePopup)))
     }
 }
 

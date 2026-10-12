@@ -177,7 +177,10 @@ internal class ComposeLayersViewController(
         this.view.addSubview(composeContainerView)
     }
 
-    val hasInvalidations: Boolean get() = this.layers.any { it.hasInvalidations }
+    val hasInvalidations: Boolean
+        get() =
+            composeContainerView.hasInvalidations || needsLayerStackDraw ||
+                this.layers.any { it.hasInvalidations }
 
     private val layers = mutableListOf<IosComposeSceneLayer>()
 
