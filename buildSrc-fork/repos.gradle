@@ -81,7 +81,9 @@ def addMavenRepositories(RepositoryHandler handler) {
                 includeGroupByRegex("com\\.google.*")
             }
         }
-        handler.mavenCentral()
+        handler.mavenCentral {
+            url = "https://cache-redirector.jetbrains.com/maven-central"
+        }
         handler.gradlePluginPortal()
         handler.maven {
             url = "https://packages.jetbrains.team/maven/p/cmp/dev"
