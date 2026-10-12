@@ -40,11 +40,12 @@ kotlin {
     }
 }
 
-private def xcodeArchiveArgs(libraryName, buildDir, sdkName, destination, architecture, extraBuildSettings = []) {
+private def xcodeArchiveArgs(libraryName, buildDir, derivedDataDir, sdkName, destination, architecture, extraBuildSettings = []) {
     return [
             "archive",
             "-scheme", libraryName,
             "-archivePath", buildDir,
+            "-derivedDataPath", derivedDataDir,
             "-sdk", sdkName,
             "-destination", destination,
             "SKIP_INSTALL=NO",
@@ -79,6 +80,7 @@ private def configureObjcUtils(target, xcodeProjectDir, sdkName, destination, ar
     def libraryName = "CMPUIKitObjcUtils"
     def testSchemeName = "CMPUIKitUtilsTests"
     def buildDir = new File(project.buildDir, "objc/${libraryName}-${sdkName}.xcarchive")
+    def derivedDataDir = new File(project.buildDir, "objc/${libraryName}-${sdkName}-${architecture}-derived-data")
     def libraryPath = archivedStaticLibraryPath(buildDir, libraryName)
     def headersPath = new File(xcodeProjectDir, libraryName)
 
@@ -129,8 +131,12 @@ private def configureObjcUtils(target, xcodeProjectDir, sdkName, destination, ar
 
     target.compilations.main {
         def libTaskName = "${compileTaskProvider.name}ObjCLib"
+        def cleanDerivedDataTask = project.tasks.register("${libTaskName}DerivedData", Delete) {
+            delete(derivedDataDir)
+        }
         def libTask = project.tasks.register(libTaskName, Exec) {
             usesService(XcodeBuildLock.instance(project))
+            dependsOn(cleanDerivedDataTask)
             inputs.dir(xcodeProjectDir)
                     .withPropertyName("${libraryName}-${sdkName}")
                     .withPathSensitivity(PathSensitivity.RELATIVE)
@@ -141,7 +147,7 @@ private def configureObjcUtils(target, xcodeProjectDir, sdkName, destination, ar
 
             workingDir(xcodeProjectDir)
             commandLine("xcodebuild")
-            args(xcodeArchiveArgs(libraryName, buildDir, sdkName, destination, architecture))
+            args(xcodeArchiveArgs(libraryName, buildDir, derivedDataDir, sdkName, destination, architecture))
         }
 
         compileTaskProvider.configure {
@@ -181,6 +187,7 @@ private def configureSwiftUtils(target, xcodeProjectDir, sdkName, destination, a
     def libraryName = "CMPUIKitSwiftUtils"
     def librarySourcesDir = new File(xcodeProjectDir, libraryName)
     def buildDir = new File(project.buildDir, "objc/${libraryName}-${sdkName}.xcarchive")
+    def derivedDataDir = new File(project.buildDir, "objc/${libraryName}-${sdkName}-${architecture}-derived-data")
     def libraryPath = archivedStaticLibraryPath(buildDir, libraryName)
     def headersPath = new File(buildDir, "/Products/usr/local/include/${libraryName}")
     def generatedHeaderPath = new File(headersPath, "${libraryName}-Swift.h")
@@ -196,10 +203,14 @@ private def configureSwiftUtils(target, xcodeProjectDir, sdkName, destination, a
 
     target.compilations.main {
         def libTaskName = "${compileTaskProvider.name}UIKitSwiftUtilsLib"
+        def cleanDerivedDataTask = project.tasks.register("${libTaskName}DerivedData", Delete) {
+            delete(derivedDataDir)
+        }
 
         // Archive the Swift target first. The archive installs both the static library and the generated -Swift.h header.
         def libTask = project.tasks.register(libTaskName, Exec) {
             usesService(XcodeBuildLock.instance(project))
+            dependsOn(cleanDerivedDataTask)
             inputs.dir(librarySourcesDir)
                     .withPropertyName("${libraryName}-${sdkName}")
                     .withPathSensitivity(PathSensitivity.RELATIVE)
@@ -216,6 +227,7 @@ private def configureSwiftUtils(target, xcodeProjectDir, sdkName, destination, a
             args(xcodeArchiveArgs(
                     libraryName,
                     buildDir,
+                    derivedDataDir,
                     sdkName,
                     destination,
                     architecture,
