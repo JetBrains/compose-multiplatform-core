@@ -114,9 +114,10 @@ class HapticFeedbackSelectionTest {
         // Perform long press
         val textFieldNode = findNodeWithTag("TextField")
         val touch = textFieldNode.touchDown()
-        delay(600) // Wait for long press timeout
         touch.hold()
-        delay(100)
+        waitUntil("Long press should trigger haptic feedback") {
+            HapticFeedbackType.LongPress in hapticFeedback.performedHaptics
+        }
         touch.up()
 
         waitForIdle()
@@ -182,9 +183,10 @@ class HapticFeedbackSelectionTest {
         // Perform long press
         val textFieldNode = findNodeWithTag("TextField")
         val touch = textFieldNode.touchDown()
-        delay(600) // Wait for long press timeout
         touch.hold()
-        delay(100)
+        waitUntil("Long press should trigger haptic feedback") {
+            HapticFeedbackType.LongPress in hapticFeedback.performedHaptics
+        }
         touch.up()
 
         waitForIdle()
@@ -250,9 +252,10 @@ class HapticFeedbackSelectionTest {
         // Perform long press
         val textNode = findNodeWithTag("SelectionContainer")
         val touch = textNode.touchDown()
-        delay(600) // Wait for long press timeout
         touch.hold()
-        delay(100)
+        waitUntil("Long press should trigger haptic feedback") {
+            HapticFeedbackType.LongPress in hapticFeedback.performedHaptics
+        }
         touch.up()
 
         waitForIdle()

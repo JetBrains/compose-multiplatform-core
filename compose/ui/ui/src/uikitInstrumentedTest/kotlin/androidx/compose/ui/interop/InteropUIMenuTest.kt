@@ -86,14 +86,14 @@ internal class InteropUIMenuTest {
         findNodeWithTag("MenuButton")
             .tap()
 
-        delay(800)
+        waitUntil("UIKit menu should open") { isMenuOpen() }
 
         assertTrue(isMenuOpen())
 
         findNodeWithTag("Box")
             .tap()
 
-        delay(800)
+        waitUntil("UIKit menu should close") { !isMenuOpen() }
 
         assertFalse(isMenuOpen())
     }
@@ -139,14 +139,14 @@ internal class InteropUIMenuTest {
         findNodeWithTag("MenuButton")
             .tap()
 
-        delay(800)
+        waitUntil("UIKit menu should open") { isMenuOpen() }
 
         assertTrue(isMenuOpen())
 
         findNodeWithTag("Box")
             .tap()
 
-        delay(800)
+        waitUntil("UIKit menu should close") { !isMenuOpen() }
 
         assertFalse(isMenuOpen())
     }
@@ -190,14 +190,14 @@ internal class InteropUIMenuTest {
         findNodeWithTag("MenuButton")
             .tap()
 
-        delay(800)
+        waitUntil("UIKit menu should open") { isMenuOpen() }
 
         assertTrue(isMenuOpen())
 
         findNodeWithTag("UIButton")
             .tap()
 
-        delay(800)
+        waitUntil("UIKit menu should close") { !isMenuOpen() }
 
         assertFalse(isMenuOpen())
     }
@@ -224,14 +224,14 @@ internal class InteropUIMenuTest {
         findNodeWithTag("MenuButton")
             .tap()
 
-        delay(800)
+        waitUntil("UIKit menu should open") { isMenuOpen() }
 
         assertTrue(isMenuOpen())
 
         findNodeWithLabel("MenuItem2")
             .tap()
 
-        delay(800)
+        waitUntil("UIKit menu should close") { !isMenuOpen() }
 
         assertFalse(isMenuOpen())
     }
