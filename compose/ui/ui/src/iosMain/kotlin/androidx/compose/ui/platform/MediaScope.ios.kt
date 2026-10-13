@@ -118,9 +118,8 @@ internal class IosUiMediaScope(val windowInfo: WindowInfo) : UiMediaScope, Keybo
         interfaceOrientationObserver.isObservingEnabled = false
         KeyboardVisibilityListener.removeSubscriber(this)
     }
-
-    override val windowPosture: UiMediaScope.Posture
-        get() = UiMediaScope.Posture.Flat //iOS doesn't have foldables yet!
+    //TODO: Implement windowPosture for iPhone DUO
+    override val windowPosture: UiMediaScope.WindowPosture = UiMediaScope.WindowPosture(emptyList())
     override val windowWidth: Dp
         get() = windowInfo.containerDpSize.width
     override val windowHeight: Dp
