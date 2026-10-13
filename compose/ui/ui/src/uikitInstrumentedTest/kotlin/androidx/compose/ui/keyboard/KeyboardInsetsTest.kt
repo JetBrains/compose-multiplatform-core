@@ -144,12 +144,9 @@ internal class KeyboardInsetsRotationTest {
         }
 
         fun assertFocusedAboveKeyboard(step: String) {
-            assertTrue(isFocused, "Text field must be focused $step")
-            assertEquals(
-                expected = screenSize.height - keyboardHeight,
-                actual = textFieldRectInWindow?.bottom,
-                message = "Focused text field must be offset above the keyboard $step"
-            )
+            waitUntil("Text field must be focused and offset above the keyboard $step") {
+                isFocused && textFieldRectInWindow?.bottom == screenSize.height - keyboardHeight
+            }
         }
 
         tapTextField()
