@@ -11,7 +11,9 @@ pluginManagement {
         }
          */
         if (true /* In JetBrains Fork */) {
-            mavenCentral()
+            mavenCentral {
+                url = "https://cache-redirector.jetbrains.com/maven-central"
+            }
             google()
             maven {
                 url = "https://plugins.gradle.org/m2/"
