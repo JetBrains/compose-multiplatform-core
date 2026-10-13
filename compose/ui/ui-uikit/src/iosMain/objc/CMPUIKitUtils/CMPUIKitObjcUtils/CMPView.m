@@ -157,10 +157,6 @@
 
 - (void)dealloc {
     _lastAttachedWindow = nil;
-    if (_lifecycleState == CMPComposeContainerLifecycleStateStarted) {
-        [self viewDidLeaveWindowHierarchy];
-    }
-    
     [_lifecycleDelegate composeContainerWillDealloc];
 }
 
