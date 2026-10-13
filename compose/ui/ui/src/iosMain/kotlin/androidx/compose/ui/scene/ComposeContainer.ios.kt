@@ -164,6 +164,7 @@ internal class ComposeContainer(
             PlistSanityCheck.performIfNeeded()
         }
         lifecycleDelegate.runOnDeinit {
+            disposeComposeScene()
             windowContext.dispose()
         }
     }
@@ -356,6 +357,8 @@ internal class ComposeContainer(
     }
 
     fun disposeComposeScene() {
+        if (mediator == null) return
+
         // Store the current state in the local savedState property. It is used to
         // provide the saved state to the next Compose scene when the container re-enters
         // the window hierarchy.
