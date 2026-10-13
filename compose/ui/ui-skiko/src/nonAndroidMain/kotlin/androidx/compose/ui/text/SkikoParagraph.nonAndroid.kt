@@ -33,7 +33,6 @@ import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.skiaCanvas
 import androidx.compose.ui.graphics.toComposeRect
-import androidx.compose.ui.text.PlatformParagraph
 import androidx.compose.ui.text.platform.SkikoParagraphIntrinsics
 import androidx.compose.ui.text.platform.cursorHorizontalPosition
 import androidx.compose.ui.text.style.LineHeightStyle
@@ -194,11 +193,7 @@ internal class SkikoParagraph(
             (line.startIndex == line.endIndex && offset == text.length) ||
                 (text.isNotEmpty() && !layouter.textStyle.lineHeight.isUnspecified)
         val cursorMetrics = if (usesEmptyLineCursorMetrics && text.isNotEmpty()) {
-            layouter
-                .emptyLineMetrics(paragraph)
-                .first()
-                .trimFirstAscent(defaultFont.metrics, layouter.textStyle)
-                .trimLastDescent(defaultFont.metrics, layouter.textStyle)
+            emptyLineCursorMetrics
         } else {
             line
         }
@@ -338,6 +333,7 @@ internal class SkikoParagraph(
         }
 
     private var _lineMetrics: Array<LineMetrics>? = null
+    private var _emptyLineCursorMetrics: LineMetrics? = null
     private val lineMetrics: Array<LineMetrics>
         get() {
             val lineMetrics = _lineMetrics ?: receiveLineMetrics().also {
@@ -345,6 +341,14 @@ internal class SkikoParagraph(
             }
             return lineMetrics
         }
+
+    private val emptyLineCursorMetrics: LineMetrics
+        get() = _emptyLineCursorMetrics ?: layouter
+            .emptyLineMetrics(paragraph)
+            .first()
+            .trimFirstAscent(defaultFont.metrics, layouter.textStyle)
+            .trimLastDescent(defaultFont.metrics, layouter.textStyle)
+            .also { _emptyLineCursorMetrics = it }
 
     private fun receiveLineMetrics(): Array<LineMetrics> {
         val lineMetrics = if (text.isEmpty()) {
